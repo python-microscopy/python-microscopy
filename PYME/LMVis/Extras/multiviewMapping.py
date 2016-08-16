@@ -32,28 +32,6 @@ import importlib
 import scipy.interpolate as terp
 from PYME.LMVis.inpFilt import cachingResultsFilter  # mappingFilter  # fitResultsSource
 
-def foldX_old(pipeline, x=None):
-    """
-
-    At this point the origin of x should be the corner of the concatenated frame
-
-    Args:
-        pipeline:
-
-    Returns: nothing
-        Adds folded x-coordinates to the pipeline
-        Adds channel assignments to the pipeline
-
-    """
-    if not x.__class__ == np.ndarray:
-        x = pipeline.selectedDataSource.resultsSource.fitResults['fitResults']['x0']
-    roiSizeNM = (pipeline.mdh['Multiview.ROISize'][1]*pipeline.mdh['voxelsize.x']*1000)  # voxelsize is in um
-    xfold = x % roiSizeNM
-    mvQuad = np.floor(x / roiSizeNM)
-
-    pipeline.mapping.setMapping('xFolded', xfold)
-    pipeline.mapping.setMapping('whichChan', mvQuad)
-    return
 
 def foldX(pipeline):
     """
@@ -106,28 +84,6 @@ def plotFolded(X, Y, multiviewChannels, title=''):
     plt.legend()
     return
 
-'''def plotRegistered(regX, regY, numChan, title=''):
-    """
-
-    Args:
-        regX: list in which each element is an array of registered x-positions of molecules for a single channel
-        regY: list in which each element is an array of registered y-positions of molecules for a single channel
-        numChan: number of multiview channels
-        title: title of plot
-
-    Returns: nothing
-        Plots molecules using the format that localization-clump positions are stored in.
-
-    """
-    import matplotlib.pyplot as plt
-    plt.figure()
-    c = iter(plt.cm.rainbow(np.linspace(0, 1, numChan)))
-    for ii in range(numChan):
-        plt.scatter(regX[ii], regY[ii], c=next(c), label='Chan #%i' % ii)
-    plt.title(title)
-    plt.legend()
-    return'''
-
 def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4), nFrameSep=5):
     """
     pairMolecules uses pyDeClump functions to group localization clumps into molecules for registration.
@@ -175,46 +131,6 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
 
 
     return assigned, keep
-
-def applyShiftmaps_old(pipeline, shiftWallet, numChan):
-    """
-    applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
-    objects, applies them to the multiview data, and maps the positions registered to the first channel to the pipeline
-
-    Args:
-        x: vector of localization x-positions
-        y: vector of localization y-positions
-        numChan: number of multiview channels
-
-    Returns: nothing
-        Maps shifted x-, and y-positions into the pipeline
-        xReg and yReg are both lists, where each element is an array of positions corresponding to a given channel
-
-    """
-    fres = pipeline.selectedDataSource.resultsSource.fitResults
-    try:
-        alreadyDone = pipeline.mapping.registered
-        return
-    except:
-        pass
-
-    # import shiftModel to be reconstructed
-    model = shiftWallet['shiftModel'].split('.')[-1]
-    shiftModule = importlib.import_module(shiftWallet['shiftModel'].split('.' + model)[0])
-    shiftModel = getattr(shiftModule, model)
-
-
-    x, y = pipeline.mapping.xFolded, fres['fitResults']['y0']
-    chan = pipeline.mapping.whichChan
-    # note that this will not throw out localizations outside of the frame, this will need to be done elsewhere
-    for ii in range(1, numChan):
-        chanMask = chan == ii
-        x = x + chanMask*shiftModel(dict=shiftWallet['Chan0%s.X' % ii]).ev(x, y)
-        y = y + chanMask*shiftModel(dict=shiftWallet['Chan0%s.Y' % ii]).ev(x, y)
-
-    # flag that this data has already been registered so it is not registered again
-    pipeline.mapping.setMapping('registered', True)
-    return x, y
 
 def applyShiftmaps(pipeline, shiftWallet, numChan):
     """
@@ -431,46 +347,6 @@ class multiviewMapper:
         visFr.Bind(wx.EVT_MENU, self.OnMapZ, id=ID_MAP_Z)
         return
 
-    '''def applyShiftmaps_nonOrderConserving(self, x, y, shiftWallet, numChan):
-        """
-        applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
-        objects, applies them to the multiview data, and maps the positions registered to the first channel to the pipeline
-
-        Args:
-            x: vector of localization x-positions
-            y: vector of localization y-positions
-            numChan: number of multiview channels
-
-        Returns: nothing
-            Maps shifted x-, and y-positions into the pipeline
-            xReg and yReg are both lists, where each element is an array of positions corresponding to a given channel
-
-        """
-        pipeline = self.visFr.pipeline
-
-        # import shiftModel to be reconstructed
-        model = shiftWallet['shiftModel'].split('.')[-1]
-        shiftModule = importlib.import_module(shiftWallet['shiftModel'].split('.' + model)[0])
-        shiftModel = getattr(shiftModule, model)
-
-        # Note: this does not keep
-        xReg, yReg, chan = [x[0]], [y[0]], [np.zeros_like(x[0])]
-        for ii in range(1, numChan):
-            xReg.append(x[ii] + shiftModel(dict=shiftWallet['Chan0%s.X' % ii]).ev(x[ii], y[ii]))
-            yReg.append(y[ii] + shiftModel(dict=shiftWallet['Chan0%s.Y' % ii]).ev(x[ii], y[ii]))
-            chan.append(ii*np.ones_like(xReg[ii]))
-
-        xReg = np.hstack(xReg)
-        yReg = np.hstack(yReg)
-        chan = np.hstack(chan)
-
-        pipeline.mapping.setMapping('xReg', xReg)
-        pipeline.mapping.setMapping('yReg', yReg)
-        pipeline.mapping.setMapping('regChan', chan)
-        #pipeline['xReg'] = xReg
-        #pipeline['yReg'] = yReg
-        return'''
-
     def OnFoldAndMapXY(self, event):
         """
         OnFoldAndMap uses shiftmaps stored in metadata (by default) or loaded through the GUI to register multiview channelss
@@ -484,7 +360,6 @@ class multiviewMapper:
 
         """
         pipeline = self.visFr.pipeline
-        fres = pipeline.selectedDataSource.resultsSource.fitResults
 
         try:  # load shiftmaps from metadata, if present
             shiftWallet = pipeline.mdh['Shiftmap']
@@ -502,7 +377,6 @@ class multiviewMapper:
             except:
                 raise IOError('Shiftmaps not found in metadata and could not be loaded from file')
 
-        from PYME.LMVis.inpFilt import fitResultsSource
         numChan = pipeline.mdh['Multiview.NumROIs']
         # fold x-positions into the first channel
         foldX(pipeline)
@@ -511,10 +385,10 @@ class multiviewMapper:
                             pipeline['whichChan'], 'Raw')
 
         # apply shiftmaps
-        #x, y = applyShiftmaps(pipeline, shiftWallet, numChan)
         applyShiftmaps(pipeline, shiftWallet, numChan)
 
-        # create new data source
+        # create new data source NO LONGER NECESSARY, mapping filter will reg x and y automatically
+        #from PYME.LMVis.inpFilt import fitResultsSource
         #fres = pipeline.selectedDataSource.resultsSource.fitResults
         #regFres = np.copy(fres)
         #regFres['fitResults']['x0'], regFres['fitResults']['y0'] = x, y
@@ -617,61 +491,15 @@ class multiviewMapper:
 
         plotFolded(pipeline['x'], pipeline['y'],
                             pipeline['whichChan'], 'All beads after Registration')
-        #for ii in range(1, numChan):
-        #    chanMask = Chan == ii
-        #    x = x + chanMask*shiftModel(dict=shiftWallet['Chan0%s.X' % ii]).ev(x, y)
-        #    y = y + chanMask*shiftModel(dict=shiftWallet['Chan0%s.Y' % ii]).ev(x, y)
+
         cStack = []
         for ci in range(len(xShifted)):
-            cStack.append(ci*np.ones(len(xShifted[ii])))
+            cStack.append(ci*np.ones(len(xShifted[ci])))
         cStack = np.hstack(cStack)
 
         plotFolded(np.hstack(xClump), np.hstack(yClump), cStack, 'Unregistered Clumps')
 
         plotFolded(np.hstack(xShifted), np.hstack(yShifted), cStack, 'Registered Clumps')
-        '''
-        # deal with coalescence for plotting
-        fres = {}
-        I = pipeline['tIndex'].argsort()
-        for pkey in pipeline.keys():
-            fres[pkey] = pipeline[pkey][I]  # [I][keep]
-
-        for cind in range(numChan):
-            I = fres['tIndex'].argsort()
-
-            for pkey in fres.keys():
-                fres[pkey] = fres[pkey][I]
-
-            # trick
-            chanWithIgnore = np.copy(fres['whichChan'])
-            chanWithIgnore[np.where(chanWithIgnore != cind)] = -9
-
-            # Match up molecules, note that all inputs must be sorted in frame order!
-            clumpID, keep = pairMolecules(fres['tIndex'], fres['x'], fres['y'], chanWithIgnore,
-                                          appearIn=np.arange(numChan))  #, pipeline['error_x'])
-
-            #FIXME: COALESCE HERE
-
-
-            # make sure clumpIDs are contiguous from [1, numClumps)
-            assigned = -1*np.ones_like(clumpID[keep])
-            clumpVec = np.unique(clumpID[keep])
-            for ci in range(len(clumpVec)):  # range(len(assigned)):  # range(len(clumpVec)):
-                cMask = clumpID[keep] == clumpVec[ci]
-                assigned[ci] = ci + 1  #FIXME: cluster assignments currently must start from 1, which is mean.
-
-            cFres = coalesceDict(fres, assigned)
-        #FIXME: plot clumped
-        plotFolded(cFres['x'], cFres['y'],
-                            cFres['whichChan'], 'Clumped')
-
-        pipeline.addDataSource('XY-Registered', cachingResultsFilter(cFres))
-        pipeline.selectDataSource('XY-Registered')
-        applyShiftmaps(pipeline, shiftWallet, numChan)
-        '''
-        #plotFolded(pipeline['x'], pipeline['y'],
-        #                    pipeline['whichChan'], 'Clumps after Registration')
-
 
         # save shiftmaps
         defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + 'MultiView.sf'
