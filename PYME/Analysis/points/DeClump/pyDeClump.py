@@ -80,9 +80,6 @@ def weightedAverage_(vals, errs, dt):
     ws = 1.0/w.sum(0)
     r = (v*w).sum(0)*ws
 
-    #if np.sum(np.isnan(r)) > 2:
-    #    print 'oops!'
-
     return r, np.sqrt(ws)
 
 def deClumpf(h5fFile):
@@ -169,7 +166,7 @@ def coalesceClumps_(fitResults, assigned):
     
 def coalesceClumps(fitResults, assigned):
     """Agregates clumps to a single event"""
-    NClumps = int(assigned.max())  # len(np.unique(assigned))  #
+    NClumps = int(assigned.max())
 
     #work out what the data type for our declumped data should be
     dt = deClumpedDType(fitResults)
@@ -204,25 +201,6 @@ def coalesceClumps(fitResults, assigned):
             fres['nFrames'][i] = len(rvs)
             #fres['ATotal'][i] = vals['fitResults']['A'].sum()
 
-    try:
-        Chans = fitResults['whichChannel']
-        for ii in xrange(NClumps):
-            # FIXME: weight which spline to use based on how many localizations from each channel
-            cl = Chans[clist[ii]]
-            #fres['whichChannel'][ii] =Chans[clist[ii]].min()
-            fres['whichChannel'][ii] = np.array(np.bincount(cl).argmax(), dtype=np.int32)  # set channel to mode
-            #if cl.shape[0] > 1:
-            cind, counts = np.unique(cl, return_counts=True)
-            fres['planeCounts'][ii][:] = 0  # zero everything since the array will be empty, and we don't know numChan
-            fres['planeCounts'][ii][cind] = counts.astype(np.int32)
-
-            #else:
-            #    fres['planeCounts'][ii] = np.array([1])
-            #if np.logical_and(len(np.unique(cl)) > 1, not np.array_equal(np.unique(cl), okChans)):
-            #    print(Chans[clist[ii]])
-
-    except ValueError:
-        pass
 
     return fres
 
