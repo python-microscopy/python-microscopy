@@ -180,7 +180,7 @@ def fitModelToClump(clump, radii = [1., 2., 3., 5., 10], numLeadFrames=10, numFo
     for i, r in enumerate(radii):
         #plt.subplot(len(radii), 1, i + 1)
         c = 0.8*np.array(plt.cm.hsv(float(i)/len(radii)))
-        plt.plot(t, .5*i + 1 * data[i, :] / A, 'x-', c=c, label='r=%d' % r)
+        plt.plot(t, .5*i + 1 * data[i, :] / A, 'x-', c=np.array([0.5, 0.5, 0.5, 1])*c, label='r=%d' % r)
         plt.plot(t, .5*i + fits[i, :], c=c, lw=2)
 
         #plot(t, fitsp[i,:])
