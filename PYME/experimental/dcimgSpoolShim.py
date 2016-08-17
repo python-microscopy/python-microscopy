@@ -114,9 +114,9 @@ class DCIMGSpoolShim:
 
             for pos, fr in zip(positions, startFrames):
                 fakeTime = startTime + cycleTime*fr
-                self.spooler.evtLogger.logEvent(eventName='StartAq', eventDescr='%d' % fr, evtTime=fakeTime)
+                self.spooler.evtLogger.logEvent(eventName='StartAq', eventDescr='%d' % fr, timestamp=fakeTime)
                 self.spooler.evtLogger.logEvent(eventName='ProtocolFocus', eventDescr='%d, %3.3f' % (fr, pos),
-                                                evtTime=fakeTime)
+                                                timestamp=fakeTime)
         
         self.spooler.StopSpool()
         self.spooler.FlushBuffer()
