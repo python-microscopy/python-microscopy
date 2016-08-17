@@ -304,7 +304,7 @@ class PSFTools(HasTraits):
 
         dsigma = res['fitResults_sigmax'] - res['fitResults_sigmay']
 
-        valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 100)* (res['fitError_sigmay'] < 100)*(res['fitResults_A'] > 0) > 0)
+        valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 50)* (res['fitError_sigmay'] < 50)*(res['fitResults_A'] > 0) > 0)
 
         #generate new tab to show results
         use_web_view = True
@@ -339,11 +339,12 @@ class PSFTools(HasTraits):
         plt.tight_layout()
 
         plt.ion()
-
+        dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
+                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
+        
         if use_web_view:
             fig =  mpld3.fig_to_html(f)
-            data = json.dumps({'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
-                               'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()})
+            data = json.dumps(dat)
 
             template = env.get_template('astigCal.html')
             html = template.render(astigplot=fig, data=data)
@@ -351,6 +352,7 @@ class PSFTools(HasTraits):
             self._astig_view.SetPage(html, '')
         else:
             plt.show()
+        return dat
 
         
         

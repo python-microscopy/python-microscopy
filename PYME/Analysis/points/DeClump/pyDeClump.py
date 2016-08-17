@@ -95,7 +95,7 @@ def deClumpf(h5fFile):
     
     return deClump(fr)
 
-def findClumps(t, x, y, delta_x):
+def findClumps(t, x, y, delta_x, nFrames=5):
     """Finds clumps (or single particle trajectories) of data points in a series.
     fitRsults MUST be sorted in increasing time order.
     """
@@ -124,7 +124,7 @@ def findClumps(t, x, y, delta_x):
             assigned[i] = clumpNum
         
             #find all the points which are connected to this one
-            findConnected(i, t,x,y,delta_x, frameIndices, assigned, clumpNum)
+            findConnected(i, t,x,y,delta_x, frameIndices, assigned, clumpNum, nFrames)
 
             #next pass will be a new clump
             clumpNum +=1
