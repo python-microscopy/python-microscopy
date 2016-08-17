@@ -109,7 +109,7 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
         deltaX = 100.*np.ones_like(x)
     # group localizations
     assigned = pyDeClump.findClumps(tIndex, x, y, deltaX, nFrameSep)
-    print assigned.min()
+    # print assigned.min()
     # only look at clumps with localizations from each channel
     clumps = np.unique(assigned)
     # Note that this will never be a keep clump if an ignore channel is present...
@@ -229,7 +229,7 @@ def astigMAPism(fres, stigLib, chanPlane):
 
     return z
 
-def coalesceDict(inD, assigned):  #, notKosher=None):
+def coalesceDict(inD, assigned):  # , notKosher=None):
     """
     Agregates clumps to a single event
     Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
@@ -272,19 +272,18 @@ def coalesceDict(inD, assigned):  #, notKosher=None):
         elif rkey == 'whichChan':
             fres[rkey] = np.empty(NClumps, dtype=np.int32)
             if 'planeCounts' in inD.keys():
-                fres['planeCounts'] = np.empty((NClumps, inD['planeCounts'].shape[1]))
+                fres['planeCounts'] = np.zeros((NClumps, inD['planeCounts'].shape[1]))
                 for i in xrange(NClumps):
-                    ci = clist[i]
-                    cl = inD[rkey][ci]
+                    ci = clist[i]  # clump indices
+                    cl = inD[rkey][ci]  # channel list of clumps
 
                     fres[rkey][i] = np.array(np.bincount(cl).argmax(), dtype=np.int32)  # set channel to mode
 
-                    #if np.logical_and(len(np.unique(cl)) > 1, np.any([entry in cl for entry in notKosher])):
+                    # if np.logical_and(len(np.unique(cl)) > 1, np.any([entry in cl for entry in notKosher])):
 
                     fres['planeCounts'][i][:] = inD['planeCounts'][ci][:].sum(axis=0).astype(np.int32)
-                    cind, counts = np.unique(cl, return_counts=True)
-                    #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
-                    fres['planeCounts'][i][cind] += counts.astype(np.int32)
+                    #cind, counts = np.unique(cl, return_counts=True)
+                    #fres['planeCounts'][i][cind] += counts.astype(np.int32)
 
             else:
                 for i in xrange(NClumps):
@@ -556,15 +555,19 @@ class multiviewMapper:
 
         ni = len(pipeline.mapping['whichChan'])
         fres = {}
-        for pkey in pipeline.keys():
-            fres[pkey] = pipeline[pkey]
+        for pkey in pipeline.mapping.keys():
+            fres[pkey] = pipeline.mapping[pkey]
 
-        fres['planeCounts'] = np.zeros((len(fres['fitResults_x0']), numChan))
+        fres['planeCounts'] = np.zeros((ni, numChan), dtype=np.int32)
+        for j in range(ni):
+                #cind, counts = np.unique(cl, return_counts=True)
+                #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
+                fres['planeCounts'][j][fres['whichChan'][j]] += 1
 
         for cind in np.unique(chanColor):
-            # copy pipeline keys and sort in order of frames
+            # copy keys and sort in order of frames
             I = np.argsort(fres['tIndex'])
-            for pkey in pipeline.keys():
+            for pkey in fres.keys():
                 fres[pkey] = fres[pkey][I]
 
             # make sure NaNs (awarded when there is no sigma in a given plane of a clump) do not carry over from when
@@ -593,7 +596,7 @@ class multiviewMapper:
                 assigned[cMask] = ci + 1  #FIXME: cluster assignments currently must start from 1, which is mean.
 
             # coalesce clumped localizations into single data point
-            fres = coalesceDict(fres, assigned)  #, ignoreChans)
+            fres = coalesceDict(fres, assigned)  # , ignoreChans)
 
         print('Clumped %i localizations' % (ni - len(fres['whichChan'])))
 
