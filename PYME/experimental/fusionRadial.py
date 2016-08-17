@@ -51,6 +51,7 @@ Unfortunately this integral isn't easily solved analytically - it was possible o
 """
 import numpy as np
 from scipy.special import erf, jn
+from PYME.Analysis.Tracking import trackUtils
 from PYME.Analysis import _fithelpers
 reload(_fithelpers)
 
@@ -195,3 +196,181 @@ def fitModelToClump(clump, radii = [1., 2., 3., 5., 10], numLeadFrames=10, numFo
     tau_bl = 100 * tau_bl**2
     enh = enh**2
     plt.title(r'D=%3.2f, $\tau_{rel}$=%3.2f, G=%3.2f, $\tau_{bleach}$=%3.2f' % (D, tau, enh, tau_bl))
+
+
+def cached_property(f):
+    """returns a cached property that is calculated by function f"""
+
+    def get(self):
+        try:
+            return self._property_cache[f]
+        except AttributeError:
+            self._property_cache = {}
+            x = self._property_cache[f] = f(self)
+            return x
+        except KeyError:
+            x = self._property_cache[f] = f(self)
+            return x
+
+    return property(get)
+
+
+class FusionTrack(trackUtils.Track):
+    def __init__(self, track_or_pipeline, clumpID=None, numLeadFrames=10, numFollowFrames=50, sig=1.5, startParams = {}, fitWhich = {}):
+        if isinstance(track_or_pipeline, trackUtils.Track):
+            #copy the track
+            self.__dict__.update(track_or_pipeline.__dict__)
+        else:
+            #create a new track
+            trackUtils.Track.__init__(self, track_or_pipeline, clumpID)
+
+        self.numLeadFrames = numLeadFrames
+        self.numFollowFrames = numFollowFrames
+        self.sig = sig
+
+        self.startParams = {'A' : 1.0, 't_fusion' : None, 'D' : .5, "tau_rel" : 1., 'G' : 5., 'tau_bleach' : 3600.,
+                            't_docked' : -1.0, 'background' : 0.0}
+        self.startParams.update(startParams)
+
+        self.fitWhich =  {'A' : True, 't_fusion' : False, 'D' : True, "tau_rel" : True, 'G' : True, 'tau_bleach' : True,
+                            't_docked' : False, 'background' : False}
+        self.fitWhich.update(fitWhich)
+
+
+    @cached_property
+    def radii(self):
+        radii = []
+        for k in self.keys():
+            if k.startswith('r'):
+                try:
+                    radii.append(int(k[1:]))
+                except ValueError:
+                    # the key didn't match the 'r%d' format expected
+                    pass
+
+        return np.array(sorted(radii))
+
+    @cached_property
+    def _fusion_data(self):
+        t = self['t']
+        t = t - t[0] - self.numLeadFrames
+
+        numDockedFrames = len(t) - self.numLeadFrames - self.numFollowFrames
+
+        radii = self.radii
+
+        data = np.zeros([len(radii), len(t)], 'f')
+        for i, r in enumerate(radii):
+            d_i = self['r%d' % r]
+            data[i, :] = d_i - d_i[:(self.numLeadFrames - 2)].mean()
+
+        #we have already subtracted the background
+        bg = 0# data[0, :numLeadFrames].mean()
+        A = data[-1, self.numLeadFrames:(self.numLeadFrames + numDockedFrames)].mean()
+        A -= bg
+
+        data = data/A
+
+        return t, data
+
+    @cached_property
+    def fusion_fit(self):
+        t, data = self._fusion_data
+
+        weights = np.ones_like(data) / data[:, :(self.numLeadFrames - 2)].std(1)[:, None]
+
+        if self.startParams['t_fusion'] is None:
+            self.startParams['t_fusion'] = t[-1] - self.numFollowFrames - 1
+
+        #sp = [1, t[-1] - self.numFollowFrames - 1, .5, 1., 2., 6., -1, 0]
+        sp = self._unpack_params(self.startParams)
+        fitWhich = self._unpack_fitwhich(self.fitWhich)
+
+        #print sp, fitWhich, self.startParams, self.fitWhich
+
+        res = _fithelpers.FitModelFixed(diffMultiModel, sp, fitWhich, data, t, self.sig, self.radii, eps=.1,
+                                        weights=weights)
+
+        A, t0, D, tau, enh, tau_bl, tdocked, background = res[0]
+        tau = tau ** 2
+        tau_bl = 100 * tau_bl ** 2
+        enh = enh ** 2
+
+        return {'A' : A, 't_fusion' : t0, 'D' : D, "tau_rel" : tau, 'G' : enh, 'tau_bleach' : tau_bl, 't_docked' : tdocked, 'background' : background}
+
+    def _unpack_params(self, params):
+        out = [params['A'],
+              params['t_fusion'],
+              params['D'],
+              np.sqrt(params['tau_rel']),
+              np.sqrt(params['G']),
+              np.sqrt(params['tau_bleach'] / 100),
+              params['t_docked'],
+              params['background']]
+
+        return out
+
+    def _unpack_fitwhich(self, params):
+        out = [params['A'],
+               params['t_fusion'],
+               params['D'],
+               params['tau_rel'],
+               params['G'],
+               params['tau_bleach'],
+               params['t_docked'],
+               params['background']]
+
+        return out
+
+
+    def plot_fusion_fit(self, fig):
+        import matplotlib.pyplot as plt
+
+
+        fitResults = self.fusion_fit
+
+        params = self._unpack_params(fitResults)
+        t, data = self._fusion_data
+
+        fits = diffMultiModel(params, t, self.sig, self.radii)
+
+        if fig is None:
+            fig = plt.figure(figsize=(10, 7))
+
+        ax = fig.gca()
+
+        for i, r in enumerate(self.radii):
+            #plt.subplot(len(radii), 1, i + 1)
+            c = 0.8 * np.array(plt.cm.hsv(float(i) / len(self.radii)))
+            ax.plot(t, .5 * i + 1 * data[i, :], 'x-', c=np.array([0.5, 0.5, 0.5, 1]) * c, label='r=%d' % r)
+            ax.plot(t, .5 * i + fits[i, :], c=c, lw=2)
+
+            #plot(t, fitsp[i,:])
+
+        ax.grid()
+        ax.legend()
+        ax.set_ylabel('Normalized sum intensity')
+        ax.set_xlabel('Time [frames]')
+
+        ax.set_title(r'D=%(D)3.2f, $\tau_{rel}$=%(tau_rel)3.2f, G=%(G)3.2f, $\tau_{bleach}$=%(tau_bleach)3.2f' % fitResults)
+
+    @property
+    def fusion_plot(self):
+        import matplotlib.pyplot as plt
+        import mpld3
+
+        plt.ioff()
+
+        fig = plt.figure(figsize=(10, 7))
+        self.plot_fusion_fit(fig)
+
+        ret = mpld3.fig_to_html(fig)
+        plt.ion()
+        plt.close(fig)
+        return ret
+
+
+
+
+
+

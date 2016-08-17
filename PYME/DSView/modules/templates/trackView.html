@@ -43,6 +43,24 @@
         <td>{{clump.trajectory}}</td>
         {% if clump.nEvents > 10 %} <td>{{clump.msdplot}}</td> {% endif %}
     </tr></table>
+
+    {% if clump.fusion_plot is defined %}
+        <h2>Vesicle Fusion Info</h2>
+        <table style="float: right;margin-right: 20px">
+        <tr><th colspan="2">Fit Parameters</th></tr>
+        {% for name, value in clump.fusion_fit.items() %}
+
+            <tr class="{{ loop.cycle('odd', 'even') }}">
+            <td>{{ name }}</td><td>{{ value }}</td>
+            </tr>
+        {% endfor %}
+        </table>
+
+        {{clump.fusion_plot}}
+
+
+
+    {% endif %}
     
     
     <h2>Measured Variables</h2>
