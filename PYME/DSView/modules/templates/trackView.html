@@ -69,7 +69,7 @@
     {% for k in clump.varnames|sort %}
         <tr class="{{ loop.cycle('odd', 'even') }}">
             <td>{{k}}</td>
-            {#<td>{{clump.dtypes[k]}}</td>#}
+            {#<td>{{clump.dtypes[k]}}</td>#}{##}
             <td>{{clump.featuremean[k]}}</td>
             <td>{{clump.featurestd[k]}}</td>
             <td>{{clump.featureplot[k]}}</td>
