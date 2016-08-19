@@ -185,7 +185,7 @@ class GaussianFitFactory:
 
         # package our results with the right labels
         for ii in range(_warpDrive.candCount):
-            resList[ii] = GaussianFitResultR(_warpDrive.dpars[ii, :], self.metadata, resultCode, CRLB[ii, :], LLH[ii], _warpDrive.candCount)
+            resList[ii] = GaussianFitResultR(dpars[ii, :], self.metadata, resultCode, CRLB[ii, :], LLH[ii], _warpDrive.candCount)
 
         return np.hstack(resList)
 
