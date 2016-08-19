@@ -602,7 +602,6 @@ def subsampidx(arraylen, percentage=10):
     return idx
 
 from scipy.stats import gaussian_kde
-import pylab
 def scatterdens(x,y,subsample=1.0, s=40, **kwargs):
     xf = x.flatten()
     yf = y.flatten()
@@ -617,7 +616,32 @@ def scatterdens(x,y,subsample=1.0, s=40, **kwargs):
     estimator = gaussian_kde([xs,ys]) 
     density = estimator.evaluate([xf,yf])
     print "density min, max: %f, %f" % (density.min(), density.max())
-    pylab.scatter(xf,yf,c=density,marker='o',linewidth='0',zorder=3,s=s,**kwargs)
+    plt.scatter(xf,yf,c=density,marker='o',linewidth='0',zorder=3,s=s,**kwargs)
+    return estimator
+
+def multicolcheck(pipeline,subsample=0.03,dA=20,xrange=[-1000,3000],yrange=[-1000,6000]):
+    p = pipeline
+    plt.figure()
+    plt.subplot(1, 2, 1)
+    estimator = scatterdens(p['fitResults_Ag'],p['fitResults_Ar'],subsample=subsample,s=10)
+    plt.xlim(xrange)
+    plt.ylim(yrange)
+    
+    x1d = np.arange(xrange[0],xrange[1],dA)
+    y1d = np.arange(yrange[0],yrange[1],dA)
+    x2d = x1d[:,None] * np.ones_like(y1d)[None,:]
+    y2d = np.ones_like(x1d)[:,None] * y1d[None,:]
+    
+    imd = estimator.evaluate([x2d.flatten(),y2d.flatten()])
+    imd2d = imd.reshape(x2d.shape)
+    imd2d /= imd2d.max()
+
+    #plt.figure()
+    plt.subplot(1, 2, 2)
+    plt.imshow(imd2d[:,::-1].transpose(),cmap=plt.get_cmap('jet'),extent=[xrange[0],xrange[1],yrange[0],yrange[1]])
+    plt.grid(True)
+    
+    return imd2d
 
 def intdens(image,framenum=0):
     mdh = image.mdh
