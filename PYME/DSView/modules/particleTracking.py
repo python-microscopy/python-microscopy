@@ -96,7 +96,9 @@ def movieplot(clump, image):
     
     plt.ion()
     
-    return mpld3.fig_to_html(f)
+    ret = mpld3.fig_to_html(f)
+    plt.close(f)
+    return ret
     
 #env.filters['movieplot'] = movieplot
 
@@ -198,7 +200,9 @@ def movieplot2(clump, image):
 
     plt.ion()
 
-    return mpld3.fig_to_html(f)
+    ret = mpld3.fig_to_html(f)
+    plt.close(f)
+    return ret
 
 env.filters['movieplot'] = movieplot2
 
@@ -269,7 +273,7 @@ class ParticleTrackingView(HasTraits):
     showSelectedTrack = Bool(True)
     showCandidates = Bool(False)
     showTrackIDs = Bool(False)
-    
+
     candLineWidth = Int(4)
     chosenLineWidth = Int(5)
     trackLineWidth = Int(2)

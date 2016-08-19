@@ -461,7 +461,7 @@ class mappingFilter(inputFilter):
             return self.resultsSource[keys]
 
     def keys(self):
-        return list(self.resultsSource.keys()) + self.mappings.keys() + self.new_columns.keys()
+        return list(set(list(self.resultsSource.keys()) + self.mappings.keys() + self.new_columns.keys()))
 
     def addVariable(self, name, value):
         """

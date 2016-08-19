@@ -47,8 +47,10 @@ class FeaturePlot(object):
         plt.tight_layout()
         
         plt.ion()
-        
-        return mpld3.fig_to_html(f)
+
+        ret = mpld3.fig_to_html(f)
+        plt.close(f)
+        return ret
         
 class FeatureMean(object):
     def __init__(self, clump):
@@ -216,8 +218,10 @@ class Track(Clump):
         plt.tight_layout(pad=2)
         
         plt.ion()
-        
-        return mpld3.fig_to_html(f)
+
+        ret = mpld3.fig_to_html(f)
+        plt.close(f)
+        return ret
         
     @property
     def movieplot(self):
@@ -255,8 +259,10 @@ class Track(Clump):
         plt.tight_layout(pad=1)
         
         plt.ion()
-        
-        return mpld3.fig_to_html(f)
+
+        ret = mpld3.fig_to_html(f)
+        plt.close(f)
+        return ret
         
     #@property
     

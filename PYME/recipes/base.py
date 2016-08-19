@@ -7,10 +7,10 @@ Created on Mon May 25 17:02:04 2015
 #import wx
 
 try:
-    from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
+    from enthought.traits.api import HasTraits, HasPrivateTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
     from enthought.traits.ui.api import View, Item #, EnumEditor, InstanceEditor, Group
 except ImportError:
-    from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
+    from traits.api import HasTraits, HasPrivateTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
     
     #for some reason traitsui raises SystemExit when called from sphinx on OSX
     #This is due to the framework build problem of anaconda on OSX, and also
@@ -187,9 +187,22 @@ class ModuleCollection(HasTraits):
         l = []
         for mod in self.modules:
             #l.append({mod.__class__.__name__: mod.get()})
-            l.append({module_names[mod.__class__]: mod.get()})
+
+            mod_traits_cleaned = {}
+            for k, v in mod.get().items():
+                if not k.startswith('_'): #don't save private data - this is usually used for caching etc ..,
+                    if isinstance(v, dict) and not type(v) == dict:
+                        v = dict(v)
+                    elif isinstance(v, list) and not type(v) == list:
+                        v = list(v)
+                    elif isinstance(v, set) and not type(v) == set:
+                        v = set(v)
+
+                    mod_traits_cleaned[k] = v
+
+            l.append({module_names[mod.__class__]: mod_traits_cleaned})
             
-        return yaml.dump(l, default_flow_style=False)
+        return yaml.safe_dump(l, default_flow_style=False)
         
     def toJSON(self):
         import json
