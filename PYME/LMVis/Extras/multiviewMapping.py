@@ -409,8 +409,10 @@ class multiviewMapper:
         xsort, ysort = pipeline['x'][I], pipeline['y'][I]
         chanSort = pipeline['whichChan'][I]
 
-        clumpID, keep = pairMolecules(pipeline['tIndex'][I], xsort, ysort, chanSort,
-                                          appearIn=np.arange(numChan))
+        clumpRad = 2e3*pipeline.mdh['voxelsize.x']  # clump folded data within 2 pixels
+
+        clumpID, keep = pairMolecules(pipeline['tIndex'][I], xsort, ysort, chanSort, clumpRad*np.ones_like(xsort),
+                                          appearIn=np.arange(numChan), nFrameSep=pipeline['tIndex'].max())
 
 
         # only look at the ones which showed up in all channels
