@@ -14,7 +14,7 @@ import wx
 import numpy as np
 from PYME.contrib.wxPlotPanel import PlotPanel
 from PYME.Acquire import MetaDataHandler
-from PYME.DSView import dsviewer_npy_nb as dsviewer
+from PYME.DSView import dsviewer as dsviewer
 
 def YesNo(parent, question, caption = 'Yes or no?'):
     dlg = wx.MessageDialog(parent, question, caption, wx.YES_NO | wx.ICON_QUESTION)
@@ -243,7 +243,7 @@ class DriftTrackingControl(wx.Panel):
                                   ("{:>+6.1f}".format(88.0*dx), "{:>+6.1f}".format(88.0*dy),
                                    "{:>+6.1f}".format(1e3*dz), "{:>+6.1f}".format(1e3*poffset),
                                    corr/corrmax))
-            if (len(self.dt.get_history(1)) % self.plotInterval == 0) and slef.showPlots:
+            if (len(self.dt.get_history(0)) % self.plotInterval == 0) and self.showPlots:
                 self.trackPlot.draw()
         except AttributeError:
             print "AttrErr"

@@ -69,6 +69,10 @@ class piezoOffsetProxy(Pyro.core.ObjBase):
     	import wx
         #eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
         wx.CallAfter(eventLog.logEvent, 'ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
+
+    def LogFocusCorrection(self,offset):
+        import wx
+        wx.CallAfter(eventLog.logEvent, 'update offset', '%3.4f' %offset)
         
         
 class ServerThread(threading.Thread):

@@ -80,7 +80,7 @@ class SpeciesDialog(wx.Dialog):
         print speclist
         return speclist
 
-from PYME.Analysis.LMVis import renderers
+from PYME.LMVis import renderers
 
 class TimedSpecies:
     def __init__(self, visFr):

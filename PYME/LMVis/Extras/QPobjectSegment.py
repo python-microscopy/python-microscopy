@@ -106,7 +106,7 @@ class QPObjectSegmenter:
         pipeline.selectedDataSource.setMapping(mapname, mapattrname)
 
     def OnMeasure(self, event):
-        from PYME.Analysis.LMVis import objectDarkMeasure
+        from PYME.LMVis import objectDarkMeasure
 
         chans = self.pipeline.colourFilter.getColourChans()
 
