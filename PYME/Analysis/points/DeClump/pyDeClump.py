@@ -105,7 +105,8 @@ def findClumps(t, x, y, delta_x, nFrames=5):
     #there may be a different number of points in each frame; generate a lookup
     #table for frame numbers so we can index into our list of results to get
     #all the points within a certain range of frames
-    frameIndices = (nRes + 2)*np.ones(t.max() + 10, 'int32')
+    # frameIndices = (nRes + 2)*np.ones(t.max() + 10, 'int32')
+    frameIndices = (nRes + 2)*np.ones(t.max() + nFrames + 1, 'int32')
 
     for t_i, i in zip(t, range(nRes)):
         frameIndices[:(t_i+1)] = np.minimum(frameIndices[:(t_i+1)], i)
