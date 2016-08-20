@@ -37,6 +37,8 @@ import PYME.misc.pyme_zeroconf as pzc
 import urlparse
 import requests
 import socket
+import fcntl
+import threading
 
 from PYME.misc.computerName import GetComputerName
 
@@ -44,6 +46,14 @@ compName = GetComputerName()
 procName = compName + ' - PID:%d' % os.getpid()
 
 LOG_REQUESTS = False#True
+
+textfile_locks = {}
+def getTextFileLock(filename):
+    try:
+        return textfile_locks[filename]
+    except KeyError:
+        textfile_locks[filename] = threading.Lock()
+        return textfile_locks[filename]
 
 
 class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
@@ -58,6 +68,83 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     #     self.end_headers()
     #     return
 
+    def _aggregate_txt(self):
+        """
+        support for results aggregation (append into a file). This 'method' does a dumb append to the file on disk,
+        meaning that it will require reasonably carefully formatted input (with, e.g., a trailing newlines on each
+        chunk if results are in .csv
+        This is mostly intended for output in csv or similar formats, where chunks can be 'cat'ed together.
+
+        NOTE: there is no guarantee of ordering, so the record format should contain enough information to re-order
+        the data if necessary
+        """
+        path = self.translate_path(self.path[len('/__aggregate_txt'):])
+
+
+        #append the contents of the put request
+        with getTextFileLock(path):
+            #lock so that we don't corrupt the data by writing from two different threads
+            #TODO ?? - keep a cache of open files
+            with open(path, 'ab') as f:
+                f.write(self.rfile.read(int(self.headers['Content-Length'])))
+
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def _aggregate_h5r(self):
+        """
+        Support for results aggregation into an HDF5 file, using pytables.
+        We treat any path components after the .h5r as locations within the file (ie table names).
+        e.g. /path/to/data.h5r/<tablename>
+        A few special cases / Table names are accommodated:
+
+        MetaData: assumes we have sent PYME metadata in json format and saves to the file using the appropriate metadatahandler
+        No table name: assumes we have a fitResults object (as returned by remFitBuf and saves to the the appropriate tables (as HDF task queue would)
+        """
+        import numpy as np
+        import cStringIO
+        import cPickle
+        from PYME.IO import MetaDataHandler
+        from PYME.IO import h5rFile
+
+        path = self.translate_path(self.path[len('/__aggregate_h5r'):])
+        filename, tablename = path.split('.h5r')
+
+        data = self.rfile.read(int(self.headers['Content-Length']))
+
+        h5f = h5rFile.H5RFile(filename, 'a')
+
+        if tablename == '/MetaData':
+            mdh_in = MetaDataHandler.CachingMDHandler(json.loads(data))
+            mdh_out = MetaDataHandler.HDFMDHandler(h5f, mdToCopy=mdh_in)
+        elif tablename == '':
+            #legacy fitResults structure
+            fitResults = cPickle.loads(data)
+            h5f.fileFitResult(fitResults)
+        else:
+            try:
+                #try to read data as if it was numpy binary formatted
+                data = np.load(cStringIO.StringIO(data))
+            except IOError:
+                #it's not numpy formatted - try json
+                import pandas as pd
+                #FIXME!! - this will work, but will likely be really slow!
+                data = pd.read_json(data).to_records(False)
+
+            h5f.appendToTable(tablename.lstrip('/'), data)
+
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+
+    def _doAggregate(self):
+        if self.path.startswith('/__aggregate_txt'):
+            self._aggregate_txt()
+        elif self.path.startswith('__aggregate_h5r/'):
+            self._aggregate_h5r()
+
     def do_PUT(self):
         if self.bandwidthTesting:
             #just read file and dump contents
@@ -67,9 +154,15 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.end_headers()
             return
 
-        path = self.translate_path(self.path)
+        if self.path.startswith('/__aggregate'):
+            #paths starting with __aggregate are special, and trigger appends to an existing file rather than creation
+            #of a new file.
+            self._doAggregate()
+            return
 
-        #print self.headers
+
+
+        path = self.translate_path(self.path)
 
         if os.path.exists(path):
             #Do not overwrite - we use write-once semantics
