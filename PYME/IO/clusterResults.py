@@ -20,7 +20,7 @@ def fileFormattedResults(URI, data, mimetype=None):
         sequenceName = URI.split('://%s/' % clusterfilter)[1]
 
         clusterIO.putFile(sequenceName, data, clusterfilter)
-    elif URI.startswith('HTTP'):
+    elif URI.startswith('HTTP') or URI.startswith('http'):
         r = requests.put(URI, data=data, timeout=1)
         #print r.status_code
         if not r.status_code == 200:

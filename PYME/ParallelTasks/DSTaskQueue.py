@@ -165,7 +165,7 @@ class DSTaskQueue(HDFResultsTaskQueue):
         nfn = self.ds.getNumSlices()
         if nfn > self.frameNum:
             self.openTasks += range(self.frameNum, nfn+1)
-            self.frameNum = nfn+1
+            self.frameNum = nfn
         
         ev = self.ds.getEvents()
         if len(ev) > self.h5ResultsFile.root.Events.shape[0]:        
