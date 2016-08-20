@@ -148,7 +148,7 @@ def exists(name, serverfilter=''):
     return fname in listdir(dirname, serverfilter)
 
 
-def walk(top, topdown=True, onerror=None, followlinks=False, serverfilter=''):
+def walk(top, topdown=True, on_error=None, followlinks=False, serverfilter=''):
     """Directory tree generator. Adapted from the os.walk 
     function in the python std library.
 
@@ -177,9 +177,9 @@ def walk(top, topdown=True, onerror=None, followlinks=False, serverfilter=''):
         # Note that listdir and error are globals in this module due
         # to earlier import-*.
         names = listdir(top, serverfilter=serverfilter)
-    except Exception, err:
-        if onerror is not None:
-            onerror(err)
+    except Exception as err:
+        if on_error is not None:
+            on_error(err)
         return
 
     dirs, nondirs = [], []
@@ -194,7 +194,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False, serverfilter=''):
     for name in dirs:
         new_path = join(top, name)
         if followlinks or not islink(new_path):
-            for x in walk(new_path, topdown, onerror, followlinks):
+            for x in walk(new_path, topdown, on_error, followlinks):
                 yield x
     if not topdown:
         yield top, dirs, nondirs
@@ -404,3 +404,4 @@ else:
             _lastwritespeed[name] = len(data) / (dt + .001)
 
             r.close()
+
