@@ -48,14 +48,14 @@ def foldX(pipeline):
     """
     roiSizeNM = (pipeline.mdh['Multiview.ROISize'][1]*pipeline.mdh['voxelsize.x']*1000)  # voxelsize is in um
 
-    pipeline.mapping.addVariable('roiSizeNM', roiSizeNM)
+    pipeline.selectedDataSource.addVariable('roiSizeNM', roiSizeNM)
 
     pipeline.addColumn('chromadx', 0*pipeline['x'])
     pipeline.addColumn('chromady', 0*pipeline['y'])
 
-    pipeline.mapping.setMapping('whichChan', 'floor(x/roiSizeNM).astype(int)')
-    pipeline.mapping.setMapping('x', 'x%roiSizeNM + chromadx')
-    pipeline.mapping.setMapping('y', 'y + chromady')
+    pipeline.selectedDataSource.setMapping('whichChan', 'floor(x/roiSizeNM).astype(int)')
+    pipeline.selectedDataSource.setMapping('x', 'x%roiSizeNM + chromadx')
+    pipeline.selectedDataSource.setMapping('y', 'y + chromady')
 
     return
 
@@ -409,8 +409,10 @@ class multiviewMapper:
         xsort, ysort = pipeline['x'][I], pipeline['y'][I]
         chanSort = pipeline['whichChan'][I]
 
-        clumpID, keep = pairMolecules(pipeline['tIndex'][I], xsort, ysort, chanSort,
-                                          appearIn=np.arange(numChan))
+        clumpRad = 2e3*pipeline.mdh['voxelsize.x']  # clump folded data within 2 pixels
+
+        clumpID, keep = pairMolecules(pipeline['tIndex'][I], xsort, ysort, chanSort, clumpRad*np.ones_like(xsort),
+                                          appearIn=np.arange(numChan), nFrameSep=pipeline['tIndex'].max())
 
 
         # only look at the ones which showed up in all channels
