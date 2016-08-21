@@ -4,6 +4,7 @@ import threading
 import time
 from PYME.IO import MetaDataHandler
 import numpy as np
+import traceback
 
 #global lock across all instances of the H5RFile class as we can have problems across files
 tablesLock = threading.Lock()
@@ -17,6 +18,7 @@ def openH5R(filename, mode='r'):
         return file_cache[key]
     else:
         file_cache[key] = H5RFile(filename, mode)
+        return file_cache[key]
 
 
 
@@ -27,7 +29,9 @@ class H5RFile(object):
         self.filename = filename
         self.mode = mode
 
+        logging.debug('pytables open call')
         self._h5file = tables.openFile(filename, mode)
+        logging.debug('pytables file open')
 
         #metadata and events are created on demand
         self._mdh = None
@@ -42,12 +46,17 @@ class H5RFile(object):
         self.useCount = 0
         self.is_alive = True
 
-        self._pollThread = threading.Thread(target=self._pollQueues())
+        #logging.debug('H5RFile - starting poll thread')
+        self._pollThread = threading.Thread(target=self._pollQueues)
         self._pollThread.start()
+        #logging.debug('H5RFile - poll thread started')
 
     def __enter__(self):
+        #logging.debug('entering H5RFile context manager')
         with self.appendQueueLock:
             self.useCount += 1
+
+        return self
 
     def __exit__(self, *args):
         with self.appendQueueLock:
@@ -114,8 +123,11 @@ class H5RFile(object):
     def _pollQueues(self):
         queuesWithData = False
 
+        # logging.debug('h5rfile - poll')
+
         try:
             while self.useCount > 0 or queuesWithData or time.time() < self.keepAliveTimeout:
+                #logging.debug('poll - %s' % time.time())
                 with self.appendQueueLock:
                     #find queues with stuff to save
                     tablenames = [k for k, v in self.appendQueues.items() if len(v) > 0]
@@ -133,9 +145,15 @@ class H5RFile(object):
 
                 time.sleep(0.002)
 
+        except:
+            traceback.print_exc()
+            logging.error(traceback.format_exc())
         finally:
             #remove ourselves from the cache
-            file_cache.pop((self.filename, self.mode))
+            try:
+                file_cache.pop((self.filename, self.mode))
+            except KeyError:
+                pass
 
             self.is_alive = False
             #finally, close the file

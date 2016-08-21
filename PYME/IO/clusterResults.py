@@ -18,10 +18,14 @@ def fileFormattedResults(URI, data, mimetype=None):
     if URI.startswith('PYME-CLUSTER'):
         clusterfilter = URI.split('://')[1].split('/')[0]
         sequenceName = URI.split('://%s/' % clusterfilter)[1]
+        #print sequenceName, clusterfilter
+        if not sequenceName.startswith('/'):
+            sequenceName = '/' + sequenceName
 
         clusterIO.putFile(sequenceName, data, clusterfilter)
     elif URI.startswith('HTTP') or URI.startswith('http'):
-        r = requests.put(URI, data=data, timeout=1)
+        print URI
+        r = requests.put(URI, data=data, timeout=5)
         #print r.status_code
         if not r.status_code == 200:
             raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))

@@ -188,7 +188,7 @@ cameraMaps = CameraInfoManager()
 
 
 class fitTask(taskDef.Task):
-    def __init__(self, dataSourceID, index, threshold, metadata, fitModule, dataSourceModule='HDFDataSource', bgindices = [], SNThreshold = False):
+    def __init__(self, dataSourceID, index, threshold, metadata, fitModule, dataSourceModule='HDFDataSource', bgindices = [], SNThreshold = False, resultsURI=None):
         """Create a new fitting task, which opens data from a supplied filename.
         -------------
         Parameters:
@@ -200,7 +200,7 @@ class fitTask(taskDef.Task):
         fitModule - name of module defining fit factory to use
         bgffiles - (optional) list of files to be averaged and subtracted from image prior to point detection - n.B. fitting is still performed on raw data"""
         
-        taskDef.Task.__init__(self)
+        taskDef.Task.__init__(self, resultsURI=resultsURI)
 
         self.threshold = threshold
         self.dataSourceID = dataSourceID

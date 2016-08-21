@@ -39,6 +39,9 @@ import requests
 import socket
 import fcntl
 import threading
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 
 from PYME.misc.computerName import GetComputerName
 
@@ -61,12 +64,6 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     bandwidthTesting = False
     logrequests = False
 
-    # def do_PUT(self):
-    #     r = self.rfile.read(int(self.headers['Content-Length']))
-    #     self.send_response(200)
-    #     self.send_header("Content-Length", "0")
-    #     self.end_headers()
-    #     return
 
     def _aggregate_txt(self):
         """
@@ -78,15 +75,16 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         NOTE: there is no guarantee of ordering, so the record format should contain enough information to re-order
         the data if necessary
         """
-        path = self.translate_path(self.path[len('/__aggregate_txt'):])
+        path = self.translate_path(self.path.lstrip('/')[len('__aggregate_txt'):])
 
+        data = self.rfile.read(int(self.headers['Content-Length']))
 
         #append the contents of the put request
         with getTextFileLock(path):
             #lock so that we don't corrupt the data by writing from two different threads
             #TODO ?? - keep a cache of open files
             with open(path, 'ab') as f:
-                f.write(self.rfile.read(int(self.headers['Content-Length'])))
+                f.write(data)
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -108,42 +106,51 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         from PYME.IO import MetaDataHandler
         from PYME.IO import h5rFile
 
-        path = self.translate_path(self.path[len('/__aggregate_h5r'):])
+        path = self.translate_path(self.path.lstrip('/')[len('__aggregate_h5r'):])
         filename, tablename = path.split('.h5r')
+        filename += '.h5r'
 
         data = self.rfile.read(int(self.headers['Content-Length']))
 
-        h5f = h5rFile.H5RFile(filename, 'a')
+        #logging.debug('opening h5r file')
+        with h5rFile.openH5R(filename, 'a') as h5f:
+            if tablename == '/MetaData':
+                mdh_in = MetaDataHandler.CachingMDHandler(json.loads(data))
+                mdh_out = MetaDataHandler.HDFMDHandler(h5f, mdToCopy=mdh_in)
+            elif tablename == '':
+                #legacy fitResults structure
+                fitResults = cPickle.loads(data)
+                h5f.fileFitResult(fitResults)
+            else:
+                try:
+                    #try to read data as if it was numpy binary formatted
+                    data = np.load(cStringIO.StringIO(data))
+                except IOError:
+                    #it's not numpy formatted - try json
+                    import pandas as pd
+                    #FIXME!! - this will work, but will likely be really slow!
+                    data = pd.read_json(data).to_records(False)
 
-        if tablename == '/MetaData':
-            mdh_in = MetaDataHandler.CachingMDHandler(json.loads(data))
-            mdh_out = MetaDataHandler.HDFMDHandler(h5f, mdToCopy=mdh_in)
-        elif tablename == '':
-            #legacy fitResults structure
-            fitResults = cPickle.loads(data)
-            h5f.fileFitResult(fitResults)
-        else:
-            try:
-                #try to read data as if it was numpy binary formatted
-                data = np.load(cStringIO.StringIO(data))
-            except IOError:
-                #it's not numpy formatted - try json
-                import pandas as pd
-                #FIXME!! - this will work, but will likely be really slow!
-                data = pd.read_json(data).to_records(False)
+                #logging.debug('adding data to table')
+                h5f.appendToTable(tablename.lstrip('/'), data)
+                #logging.debug('added data to table')
 
-            h5f.appendToTable(tablename.lstrip('/'), data)
+        #logging.debug('left h5r file')
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
         self.end_headers()
+        return
 
 
     def _doAggregate(self):
-        if self.path.startswith('/__aggregate_txt'):
+        # TODO - add authentication/checks for aggregation. Files which still allow appends should not be duplicated.
+        if self.path.lstrip('/').startswith('__aggregate_txt'):
             self._aggregate_txt()
-        elif self.path.startswith('__aggregate_h5r/'):
+        elif self.path.lstrip('/').startswith('__aggregate_h5r'):
             self._aggregate_h5r()
+
+        return
 
     def do_PUT(self):
         if self.bandwidthTesting:
@@ -154,7 +161,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.end_headers()
             return
 
-        if self.path.startswith('/__aggregate'):
+        if self.path.lstrip('/').startswith('__aggregate'):
             #paths starting with __aggregate are special, and trigger appends to an existing file rather than creation
             #of a new file.
             self._doAggregate()

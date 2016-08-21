@@ -24,9 +24,10 @@
 import random
 
 class Task:
-    def __init__(self):
+    def __init__(self, resultsURI=None):
         self.taskID = repr(random.random())
         self.timeout = 300 #seconds
+        self.resultsURI = resultsURI
     def initializeWorkerTimeout(self, curtime):
         self.workerTimeout = curtime + self.timeout
 
