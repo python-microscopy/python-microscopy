@@ -218,8 +218,8 @@ def getFile(filename, serverfilter='', numRetries=3):
 
     if (len(locs) == 0):
         # we did not find the file
-        print(ns.list())
-        raise IOError("Specified file could not be found")
+        logging.debug('could not find file %s on cluster: cluster nodes = %s' % (filename, ns.list()))
+        raise IOError("Specified file could not be found: %s" % filename)
     else:
         url = _chooseLocation(locs).encode()
         s = _getSession(url)

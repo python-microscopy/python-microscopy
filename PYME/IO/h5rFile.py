@@ -94,14 +94,18 @@ class H5RFile(object):
                         Time = tables.Time64Col()
                         EventDescr = tables.StringCol(256)
 
-                    with tablesLock:
-                        self._events = self._h5file.createTable(self._h5file.root, 'Events', SpoolEvent,
+
+                    self._events = self._h5file.createTable(self._h5file.root, 'Events', SpoolEvent,
                                                                         filters=tables.Filters(complevel=5, shuffle=True))
                 else:
                     # our file was opened in read mode and didn't have any events to start with
                     self._events = []
 
         return self._events
+
+    def addEvents(self, events):
+        with tablesLock:
+            self.events.append(events)
 
     def _appendToTable(self, tablename, data):
         with tablesLock:
@@ -119,6 +123,16 @@ class H5RFile(object):
             if not tablename in self.appendQueues.keys():
                 self.appendQueues[tablename] = []
             self.appendQueues[tablename].append(data)
+
+    def getTableData(self, tablename, _slice):
+        with tablesLock:
+            try:
+                table = getattr(self._h5file.root, tablename)
+                res = table[_slice]
+            except AttributeError:
+                res = []
+
+        return res
 
     def _pollQueues(self):
         queuesWithData = False
@@ -143,12 +157,14 @@ class H5RFile(object):
                     #save the data - note that we can release the lock here, as we are the only ones calling this function.
                     self._appendToTable(tablename, np.hstack(entries))
 
+                self._h5file.flush()
                 time.sleep(0.002)
 
         except:
             traceback.print_exc()
             logging.error(traceback.format_exc())
         finally:
+            logging.debug('H5RFile - closing')
             #remove ourselves from the cache
             try:
                 file_cache.pop((self.filename, self.mode))

@@ -20,8 +20,9 @@ class DSTaskQueue(HDFResultsTaskQueue):
 
         HDFResultsTaskQueue.__init__(self, name, resultsFilename, initialTasks, onEmpty, fTaskToPop)
         
-        self.resultsMDH.copyEntriesFrom(mdh)
-        self.metaData.copyEntriesFrom(self.resultsMDH)
+        HDFResultsTaskQueue.setQueueMetaDataEntries(self, mdh)
+        #self.resultsMDH.copyEntriesFrom(mdh)
+        #self.metaData.copyEntriesFrom(self.resultsMDH)
         
         self.queueID = name
         
@@ -140,17 +141,17 @@ class DSTaskQueue(HDFResultsTaskQueue):
 
         
     def getQueueData(self, fieldName, *args):
-        """Get data, defined by fieldName and potntially additional arguments,  ascociated with queue"""
+        """Get data, defined by fieldName and potentially additional arguments,  associated with queue"""
         if fieldName == 'ImageShape':
-            with self.dataFileLock.rlock:
-                res = self.h5DataFile.root.ImageData.shape[1:]           
-            return res
+            #ith self.dataFileLock.rlock:
+            #    res = self.h5DataFile.root.ImageData.shape[1:]
+            return self.ds.getSliceShape()
         elif fieldName == 'ImageData':
             sliceNum, = args
             res = self.ds.getSlice(sliceNum)            
             return res
         elif fieldName == 'NumSlices':
-            return self.getNumSlices()
+            return self.ds.getNumSlices()
         elif fieldName == 'Events':            
             return self.ds.getEvents()
         else:
@@ -164,12 +165,14 @@ class DSTaskQueue(HDFResultsTaskQueue):
     def _updateTasks(self):
         nfn = self.ds.getNumSlices()
         if nfn > self.frameNum:
-            self.openTasks += range(self.frameNum, nfn+1)
+            self.openTasks += range(self.frameNum, nfn)
             self.frameNum = nfn
         
         ev = self.ds.getEvents()
-        if len(ev) > self.h5ResultsFile.root.Events.shape[0]:        
-            self.addQueueEvents(ev[self.h5ResultsFile.root.Events.shape[0]:])
+        numQueueEvents = self.getNumQueueEvents()
+
+        if len(ev) > numQueueEvents:
+            self.addQueueEvents(ev[numQueueEvents:])
 
     def releaseTasks(self, startingAt = 0):
         self.openTasks += range(startingAt, self.imNum)

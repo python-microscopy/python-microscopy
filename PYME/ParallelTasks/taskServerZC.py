@@ -351,6 +351,13 @@ def main():
         from PYME.util.mProfile import mProfile
         mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py', 'TaskQueue.py'])
 
+    if len(sys.argv) > 1 and sys.argv[1] == '-fp':
+        print('profiling')
+        #profile = True
+        from PYME.util.fProfile import fProfile
+        tp = fProfile.thread_profiler()
+        tp.profileOn('.*taskServerMP.*|.*TaskQueue.*', 'taskServer_prof.txt')
+
     Pyro.config.PYRO_MOBILE_CODE = 0
     Pyro.core.initServer()
     #ns=Pyro.naming.NameServerLocator().getNS()

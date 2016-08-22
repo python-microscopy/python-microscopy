@@ -100,6 +100,30 @@ function colorHash(name) {
     return "rgb(" + r + "," + g + "," + b + ")";
     //return "hsl(" + (100*vector) + "%, 50%, 50%)";
 }
+
+function colorHashWarm(thread) {
+    // Return an rgb() color string that is a hash of the provided name,
+    // and with a warm palette.
+    var vector = 0;
+    //
+    vector = (thread % 10)/10.0;
+
+    //vector = name.hashCode()/divisor;
+    //vector = Math.abs(vector/Math.pow(2, 32));
+
+    var b = 0 + Math.round(55 * vector);
+    var g = 0 + Math.round(230 * (1 - vector));
+    var r = 200 + Math.round(55 * (vector));
+    /*var col = hslToRgb(vector, 0.5, 0.5);
+    var r = col[0],
+        g = col[1],
+        b = col[2];*/
+    /*var r = (name.charCodeAt(0) - 90)*2 + 150,
+        g = (name.charCodeAt(1) - 90)*2 + 150,
+        b = (name.charCodeAt(2) - 90)*2 + 150;*/
+    return "rgb(" + r + "," + g + "," + b + ")";
+    //return "hsl(" + (100*vector) + "%, 50%, 50%)";
+}
 //### - end from d3-flame-graph
 
 function label_0(d) {
@@ -149,8 +173,9 @@ function load_data(url) {
     d3.json(url, function (error, prof_data) {
         var callstack = prof_data.callstack;
         var threadNames = prof_data.threadNames;
+        var threadData = prof_data.threadLines;
 
-        var nthreads = threadNames.length;
+        var nthreads = prof_data.maxConcurrentThreads;//threadNames.length;
 
         svg.attr("height", 60 + nthreads * (display_params.OVERVIEW_HEIGHT + display_params.ZOOM_HEIGHT));
 
@@ -242,7 +267,7 @@ function load_data(url) {
                 return xs(d.ts);
             })
             .attr("y", function (d) {
-                return ys(d.l) + d.td * display_params.OVERVIEW_HEIGHT;
+                return ys(d.l) + d.tl * display_params.OVERVIEW_HEIGHT;
             })
             .attr("width", function (d) {
                 return xs(d.tf) - xs(d.ts);
@@ -253,6 +278,42 @@ function load_data(url) {
             .append("svg:title").text(function (d) {
                 return label_0(d);
             });
+
+        //Now for the thread bars
+
+        var sel_t = overview.selectAll(".threadbar")
+            .data(threadData);
+
+        var bar_t = sel_t.enter().append("g")
+            .attr("class", "threadbar")
+            .attr("x", function (d) {
+                return xs(d.ts);
+            })
+            .attr("y", function (d) {
+                return ys(d.tl);
+            });
+
+        sel_t.exit().remove();
+
+        var rect_t = bar_t.append("rect")
+            .attr("x", function (d) {
+                return xs(d.ts);
+            })
+            .attr("y", function (d) {
+                return d.tl* display_params.OVERVIEW_HEIGHT;
+            })
+            .attr("width", function (d) {
+                return xs(d.tf) - xs(d.ts);
+            })
+            .attr("height", function (d) {
+                return 1;
+            })
+            .attr("fill", function (d, i) {
+                        return colorHashWarm(i);
+                    });
+            /*.append("svg:title").text(function (d) {
+                return label_0(d);
+            });*/
 
         //brush
         var brush_ = d3.svg.brush()
@@ -275,6 +336,7 @@ function load_data(url) {
         //zoomed view
         function update_zoomed() {
             zoomed.selectAll(".bar").remove();
+            zoomed.selectAll(".threadbar").remove();
 
             var x0 = xs_z.domain()[0];
             var x1 = xs_z.domain()[1];
@@ -295,7 +357,7 @@ function load_data(url) {
                     return xs_z(d.ts);
                 })
                 .attr("y", function (d) {
-                    return ys_z(d.l) + Y_ZOOM_START + d.td * display_params.ZOOM_HEIGHT;
+                    return ys_z(d.l) + Y_ZOOM_START + d.tl * display_params.ZOOM_HEIGHT;
                 });
 
 
@@ -304,7 +366,7 @@ function load_data(url) {
                         return xs_z(d.ts);
                     })
                     .attr("y", function (d) {
-                        return ys_z(d.l) + Y_ZOOM_START + d.td * display_params.ZOOM_HEIGHT;
+                        return ys_z(d.l) + Y_ZOOM_START + d.tl * display_params.ZOOM_HEIGHT;
                     })
                     .attr("width", function (d) {
                         return xs_z(d.tf) - xs_z(d.ts);
@@ -340,12 +402,45 @@ function load_data(url) {
             var label = bar_1.append("text")
                 .attr("x", "10px")//function(d) { return xs(d.ts); })
                 .attr("y", function (d) {
-                    return d.td * display_params.ZOOM_HEIGHT + Y_ZOOM_START + 20;
+                    return d.tl * display_params.ZOOM_HEIGHT + Y_ZOOM_START + 20;
                 })//function(d) { ; })
                 //.attr("dy", ".35em")
                 .text(function (d) {
                     return label_1(d);
                 });
+
+            //Now for the thread bars
+
+            var sel_t = zoomed.selectAll(".threadbar")
+                .data(threadData);
+
+            var bar_t = sel_t.enter().append("g")
+                .attr("class", "threadbar")
+                .attr("x", function (d) {
+                    return xs_z(d.ts);
+                })
+                .attr("y", function (d) {
+                    return ys_z(d.tl) + Y_ZOOM_START + d.tl * display_params.ZOOM_HEIGHT;
+                });
+
+            //sel_t.exit().remove();
+
+            var rect_t = bar_t.append("rect")
+                .attr("x", function (d) {
+                    return xs_z(d.ts);
+                })
+                .attr("y", function (d) {
+                    return ys_z(0) + Y_ZOOM_START + d.tl * display_params.ZOOM_HEIGHT
+                })
+                .attr("width", function (d) {
+                    return xs_z(d.tf) - xs_z(d.ts);
+                })
+                .attr("height", function (d) {
+                    return 3;
+                })
+                .attr("fill", function (d, i) {
+                            return colorHashWarm(i);
+                        });
 
             //sel.exit().remove();
 
@@ -384,7 +479,7 @@ function load_data(url) {
     });
 }
 
-console.log('script run')
+console.log('script run');
 
 function OnFileUpload() {
     var selectedFile = document.getElementById('file_upload').files[0];
