@@ -63,7 +63,8 @@ class Unmixer:
             numROIs = mdh['Multiview.NumROIs']
             w, h = mdh['Multiview.ROISize']
 
-            print self.image.data.shape, w, h, numROIs
+            #print self.image.data.shape, w, h, numROIs
+            flip = False
 
             if self.image.data.shape[0] == numROIs*w:
                 #we are extracted as expected.
