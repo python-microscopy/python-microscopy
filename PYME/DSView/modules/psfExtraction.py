@@ -111,6 +111,10 @@ class psfExtractor:
 
         vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
+        self.cbAlignZ = wx.CheckBox(pan, -1, 'Align Z:')
+        self.cbAlignZ.SetValue(True)
+        vsizer.Add(self.cbAlignZ, 0, wx.ALL, 5)
+
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)        
         bExtract = wx.Button(pan, -1, 'Extract', style=wx.BU_EXACTFIT)
@@ -266,7 +270,7 @@ class psfExtractor:
             
             if self.chType.GetSelection() == 0:
                 #widefield image - do special background subtraction
-                psf = extractImages.backgroundCorrectPSFWF(psf)
+                psf, offsets = extractImages.backgroundCorrectPSFWF(psf)
 
             from PYME.DSView.dsviewer import ImageStack, ViewIm3D
 
@@ -284,7 +288,10 @@ class psfExtractor:
             psfs = []
 
             for chnum in range(self.image.data.shape[3]):
-                psf = extractImages.getPSF3D(self.image.data[:, :, :, chnum], self.PSFLocs, psfROISize, psfBlur)
+                alignZ = (chnum > 0) and self.cbAlignZ.GetValue()
+                #always align the first channel
+
+                psf, offsets = extractImages.getPSF3D(self.image.data[:, :, :, chnum], self.PSFLocs, psfROISize, psfBlur, centreZ=alignZ)
 
                 if self.chType.GetSelection() == 0:
                     #widefield image - do special background subtraction
@@ -428,7 +435,9 @@ class psfExtractor:
             psfs = []
 
             for i in range(self.image.data.shape[3]):
-                psf = extractImages.getPSF3D(self.image.data[:,:,:,i], self.PSFLocs, psfROISize, psfBlur)
+                alignZ = (i > 0) and self.cbAlignZ.GetValue()
+                #always align the first channel
+                psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,i], self.PSFLocs, psfROISize, psfBlur, centreZ=alignZ)
 
                 if self.chType.GetSelection() == 0:
                     #widefield image - do special background subtraction

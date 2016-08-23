@@ -171,13 +171,19 @@ def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1], normalize=True,
     dys = np.array(dys)
     dzs = np.array(dzs)
 
+    dzm = dzs.mean()
+    dxm = dxs.mean()
+    dym = dys.mean()
+
     if not centreZ:
         #images will still be aligned with each other, but any shift in the channel as a whole will be maintained.
-        dzs = dzs - dzs.mean()
+        dzs = dzs - dzm
+        dzm = 0
 
     if not centreXY:
-        dxs = dxs - dxs.mean()
-        dys = dys - dys.mean()
+        dxs = dxs - dxm
+        dys = dys - dym
+        dzm = 0
 
     for imi, dx, dy, dz in zip(imgs, list(dxs), list(dys), list(dzs)):
         F = fftn(imi)
@@ -193,7 +199,7 @@ def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1], normalize=True,
     elif normalize == 'sum':
         d = d/d[:,:,d.shape[2]/2].sum()
 
-    return d
+    return d, (dxm, dym, dzm)
     
 def backgroundCorrectPSFWF(d):
     import numpy as np
