@@ -70,7 +70,7 @@ def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, LLH=Non
 _warpDrive = None
 
 missing_warpDrive_msg = """
-Could not import the warpDrive module. GPU fitting requires the warpDrive module, 
+Could not import the warpDrive module. GPU fitting requires the warpDrive module,
 which is distributed separately due to licensing issues. The warpDrive module is
 available on request and is free for academic use. Please contact David Baddeley
 or Joerg Bewersdorf.
@@ -79,12 +79,12 @@ or Joerg Bewersdorf.
 class GaussianFitFactory:
     X = None
     Y = None
-    
+
     def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None):
         """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. """
 
-        self.data = np.ascontiguousarray(np.squeeze(data), dtype=np.float32)
+        self.data = np.squeeze(data).astype(np.float32)  # np.ascontiguousarray(np.squeeze(data), dtype=np.float32)
         self.metadata = metadata
 
         """ next 3 lines are currently unused """
@@ -93,29 +93,27 @@ class GaussianFitFactory:
         self.fitfcn = fitfcn
 
 
-
-
-    def FindAndFit(self, threshold=4, gui=False, cameraMaps=None):
+    def refreshWarpDrive(self, cameraMaps):
         try:
             import warpDrive
         except ImportError:
             print("GPU fitting available on-request for academic use. Please contact David Baddeley or Joerg Bewersdorf.")
-            
+
             raise ImportError(missing_warpDrive_msg)
-        
+
         global _warpDrive  # One warpDrive instance for each process, re-used for subsequent fits.
 
         # get varmap and flatmap
         varmap = cameraMaps.getVarianceMap(self.metadata)
         if not np.isscalar(varmap):
-            self.varmap = np.ascontiguousarray(varmap)
+            self.varmap = varmap.astype(np.float32)  # np.ascontiguousarray(varmap)
         else:
             self.varmap = varmap*np.ones_like(self.data)
 
         #fixme currently detector object takes gain, flatmap is one over this. need to switch var maps of our cameras over eventually and reconcile
         flatmap = cameraMaps.getFlatfieldMap(self.metadata)
         if not np.isscalar(flatmap):
-            self.flatmap = np.ascontiguousarray(1./flatmap)
+            self.flatmap = flatmap.astype(np.float32)  # np.ascontiguousarray(1./flatmap)
         else:
             #flatmap = self.metadata['Camera.TrueEMGain']*self.metadata['Camera.ElectronsPerCount']
             self.flatmap = (1./flatmap)*np.ones_like(self.data)
@@ -136,7 +134,7 @@ class GaussianFitFactory:
             _warpDrive = warpDrive.detector(np.shape(self.data), self.data.dtype.itemsize, dfilter1, dfilter2)
             _warpDrive.allocateMem()
             _warpDrive.prepvar(self.varmap, self.flatmap)
-            
+
             #If the data is coming from a different region of the camera, reallocate
             #note that 'and' is short circuiting in Python. Just check the first 20x20 elements
         elif _warpDrive.data.shape == self.data.shape:
@@ -146,18 +144,7 @@ class GaussianFitFactory:
             _warpDrive.allocateMem()
             _warpDrive.prepvar(self.varmap, self.varmap)
 
-        #PYME ROISize is a half size
-        roiSize = int(2*self.metadata.getEntry('Analysis.ROISize') + 1)
-
-        #######################
-        # Actually do the fits
-        _warpDrive.smoothFrame(self.data)
-        _warpDrive.getCand(threshold, roiSize)
-        if _warpDrive.candCount == 0:
-            resList = np.empty(0, FitResultsDType)
-            return resList
-        _warpDrive.fitItToWinIt(roiSize)
-
+    def getRes(self):
         # LLH: (N); dpars and CRLB (N, 6)
         #convert pixels to nm; voxelsize in units of um
         dpars = np.reshape(_warpDrive.dpars, (_warpDrive.maxCandCount, 6))[:_warpDrive.candCount, :]
@@ -189,6 +176,40 @@ class GaussianFitFactory:
 
         return np.hstack(resList)
 
+    def FindAndFit(self, threshold=4, gui=False, cameraMaps=None):
+
+        self.refreshWarpDrive(cameraMaps)
+
+        #PYME ROISize is a half size
+        roiSize = int(2*self.metadata.getEntry('Analysis.ROISize') + 1)
+
+        #######################
+        # Actually do the fits
+        _warpDrive.smoothFrame(self.data)
+        _warpDrive.getCand(threshold, roiSize)
+        if _warpDrive.candCount == 0:
+            resList = np.empty(0, FitResultsDType)
+            return resList
+        _warpDrive.fitItToWinIt(roiSize)
+
+        return self.getRes()
+
+    def FromPoint(self, x, y):
+        from PYME.localization import remFitBuf
+        cameraMaps = remFitBuf.CameraInfoManager()
+        self.refreshWarpDrive(cameraMaps)
+
+
+        #PYME ROISize is a half size
+        roiSize = int(2*self.metadata.getOrDefault('Analysis.ROISize', 7.5) + 1)
+
+
+        _warpDrive.insertTestCandidates(int(x) + int(y)*_warpDrive.rsize)  # 1799)
+        _warpDrive.insertData(self.data)
+        _warpDrive.fitItToWinIt(roiSize)
+
+        return self.getRes()
+
 
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
@@ -201,7 +222,7 @@ class GaussianFitFactory:
 # so that fit tasks know which class to use
 FitFactory = GaussianFitFactory
 FitResult = GaussianFitResultR
-FitResultsDType = fresultdtype #only defined if returning data as numarray
+FitResultsDType = fresultdtype  #only defined if returning data as numarray
 
 #this means that factory is reponsible for it's own object finding and implements
 #a GetAllResults method that returns a list of localisations

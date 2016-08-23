@@ -301,7 +301,7 @@ class PSFTools(HasTraits):
 
         results = []
 
-        for chanNum in range(self.image.shape[3]):
+        for chanNum in range(self.image.data.shape[3]):
             ptFitter.set(channel=chanNum)
             ptFitter.execute(namespace)
 
@@ -330,8 +330,8 @@ class PSFTools(HasTraits):
         plt.subplot(121)
 
         for i, res in enumerate(results):
-            plt.plot(res['z'], res['fitResults_sigmax'], label='x - %d' % i)
-            plt.plot(res['z'], res['fitResults_sigmay'], label='y - %d' % i)
+            plt.plot(res['z'], res['sigmax'], label='x - %d' % i)
+            plt.plot(res['z'], res['sigmay'], label='y - %d' % i)
 
         #plt.ylim(-200, 400)
         plt.grid()
@@ -344,7 +344,7 @@ class PSFTools(HasTraits):
             plt.plot(res['z'], res['dsigma'], lw=2, label='Chan %d' % i)
         plt.grid()
         plt.xlabel('z position [nm]')
-        plt.ylabel('Sigma y - Sigma y [nm]')
+        plt.ylabel('Sigma x - Sigma y [nm]')
 
         plt.tight_layout()
 
