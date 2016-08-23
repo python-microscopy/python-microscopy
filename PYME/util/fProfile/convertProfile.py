@@ -55,15 +55,18 @@ def build_call_tree_threads(df):
                 level += 1
                 stack.append((l.time, l.file, l.function))
             elif l.event == 'return':
-                c = stack.pop()
-                out.append({'ts': c[0],
-                            'f': l.file,
-                            'n': l.function,
-                            'tf': l.time,
-                            'l': level,
-                            'td': threadIDX,
-                            'tl' : float(thread_levels[threadIDX])})
-                level -= 1
+                try:
+                    c = stack.pop()
+                    out.append({'ts': c[0],
+                                'f': l.file,
+                                'n': l.function,
+                                'tf': l.time,
+                                'l': level,
+                                'td': threadIDX,
+                                'tl' : float(thread_levels[threadIDX])})
+                    level -= 1
+                except IndexError:
+                    pass
 
     threadLines = [{'ts' : float(tst_i), 'tf' : float(tet_i), 'tl' : float(tl_i)} for tst_i, tet_i, tl_i in zip(tst, tet, thread_levels)]
 

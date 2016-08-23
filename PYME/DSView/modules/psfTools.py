@@ -298,13 +298,20 @@ class PSFTools(HasTraits):
         ptFitter.set(fitModule='AstigGaussFitFR')
 
         namespace = {'input' : self.image, 'objPositions' : objPositions}
-        ptFitter.execute(namespace)
 
-        res = namespace['fitResults']
+        results = []
 
-        dsigma = res['fitResults_sigmax'] - res['fitResults_sigmay']
+        for chanNum in range(self.image.shape[3]):
+            ptFitter.set(channel=chanNum)
+            ptFitter.execute(namespace)
 
-        valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 50)* (res['fitError_sigmay'] < 50)*(res['fitResults_A'] > 0) > 0)
+            res = namespace['fitResults']
+
+            dsigma = res['fitResults_sigmax'] - res['fitResults_sigmay']
+            valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 50)* (res['fitError_sigmay'] < 50)*(res['fitResults_A'] > 0) > 0)
+
+            results.append({'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
+                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()})
 
         #generate new tab to show results
         use_web_view = True
@@ -321,17 +328,20 @@ class PSFTools(HasTraits):
         f = plt.figure(figsize=(10, 4))
 
         plt.subplot(121)
-        plt.plot(objPositions['z'][valid], res['fitResults_sigmax'][valid])
-        plt.plot(objPositions['z'][valid], res['fitResults_sigmay'][valid])
+
+        for i, res in enumerate(results):
+            plt.plot(res['z'], res['fitResults_sigmax'], label='x - %d' % i)
+            plt.plot(res['z'], res['fitResults_sigmay'], label='y - %d' % i)
 
         #plt.ylim(-200, 400)
         plt.grid()
         plt.xlabel('z position [nm]')
         plt.ylabel('Sigma [nm]')
-        plt.legend(['x', 'y'])
+        plt.legend()
 
         plt.subplot(122)
-        plt.plot(objPositions['z'][valid], dsigma[valid], lw=2)
+        for i, res in enumerate(results):
+            plt.plot(res['z'], res['dsigma'], lw=2, label='Chan %d' % i)
         plt.grid()
         plt.xlabel('z position [nm]')
         plt.ylabel('Sigma y - Sigma y [nm]')
@@ -339,12 +349,12 @@ class PSFTools(HasTraits):
         plt.tight_layout()
 
         plt.ion()
-        dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
-                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
+        #dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
+        #                   'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
         
         if use_web_view:
             fig =  mpld3.fig_to_html(f)
-            data = json.dumps(dat)
+            data = json.dumps(results)
 
             template = env.get_template('astigCal.html')
             html = template.render(astigplot=fig, data=data)
@@ -352,7 +362,7 @@ class PSFTools(HasTraits):
             self._astig_view.SetPage(html, '')
         else:
             plt.show()
-        return dat
+        return results
 
         
         

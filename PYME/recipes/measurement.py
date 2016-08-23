@@ -95,6 +95,7 @@ class FitPoints(ModuleBase):
     inputPositions = CStr('objPositions')
     outputName = CStr('fitResults')
     fitModule = CStr('LatGaussFitFR')
+    channel = Int(0)
 
     def execute(self, namespace):
         #from PYME.localization.FitFactories import DumbellFitR
@@ -128,7 +129,7 @@ class FitPoints(ModuleBase):
         for x, y, t, i in zip(inp['x'], inp['y'], inp['t'], range(len(inp['x']))):
             if not t == ff_t:
                 md['tIndex'] = t
-                ff = fitMod.FitFactory(img.data[:, :, t], md)
+                ff = fitMod.FitFactory(img.data[:, :, t, self.channel], md)
                 ff_t = t
 
             #print x/ps, y/ps

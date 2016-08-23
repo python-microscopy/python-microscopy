@@ -356,7 +356,7 @@ def main():
         #profile = True
         from PYME.util.fProfile import fProfile
         tp = fProfile.thread_profiler()
-        tp.profileOn('.*taskServerMP.*|.*TaskQueue.*', 'taskServer_prof.txt')
+        tp.profileOn('.*taskServerZC.*|.*TaskQueue.*|.*h5rFile.*', 'taskServer_prof.txt')
 
     Pyro.config.PYRO_MOBILE_CODE = 0
     Pyro.core.initServer()
