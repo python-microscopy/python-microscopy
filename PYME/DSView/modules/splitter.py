@@ -41,10 +41,7 @@ class Unmixer:
         dsviewer.AddMenuItem('Processing', "&Unsplit, taking brightest\tCtrl-Shift-U", self.OnUnmixMax)
         dsviewer.AddMenuItem('Processing', "Set Shift Field", self.OnSetShiftField)
 
-    def OnUnmix(self, event):
-        #from PYME.Analysis import deTile
-        from PYME.DSView import ViewIm3D, ImageStack
-
+    def _getUSDataSources(self):
         mdh = self.image.mdh
         if 'chroma.dx' in mdh.getEntryNames():
             sf = (mdh['chroma.dx'], mdh['chroma.dy'])
@@ -56,10 +53,10 @@ class Unmixer:
         flip = True
         if 'Splitter.Flip' in mdh.getEntryNames() and not mdh['Splitter.Flip']:
             flip = False
-            
+
         chanROIs = None
         if 'Splitter.Channel0ROI' in mdh.getEntryNames():
-            chanROIs = [mdh['Splitter.Channel0ROI'],mdh['Splitter.Channel1ROI']]
+            chanROIs = [mdh['Splitter.Channel0ROI'], mdh['Splitter.Channel1ROI']]
 
         ROIX1 = mdh.getEntry('Camera.ROIPosX')
         ROIY1 = mdh.getEntry('Camera.ROIPosY')
@@ -67,16 +64,40 @@ class Unmixer:
         ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
         ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
 
-        um0 = UnsplitDataSource.DataSource(self.image.data,
-                                           [ROIX1, ROIY1, ROIX2, ROIY2],
-                                           0, flip, sf, chanROIs=chanROIs, voxelsize=self.image.voxelsize)
+        numROIs = 2
 
-        um1 = UnsplitDataSource.DataSource(self.image.data, 
-                                           [ROIX1, ROIY1, ROIX2, ROIY2], 1
-                                           , flip, sf, chanROIs=chanROIs, voxelsize=self.image.voxelsize)
+        if 'Multiview.NumROIs' in mdh.getEntryNames():
+            # we have more than 2 ROIs
+            numROIs = mdh['Multiview.NumROIs']
+            w, h = mdh['Multiview.ROISize']
+            if self.image.data.shape[1] == numROIs * h:
+                #we are extracted as expected.
+
+                chanROIs = []
+                for i in range(numROIs):
+                    x0, y0 = mdh['Multiview.ROISize']
+                    chanROIs.append((x0, y0, w, h))
+
+            else:
+                raise RuntimeError(
+                    'Multiview information, but wrong image size. Has this been through the multi-view data source?')
+
+        usds = [UnsplitDataSource.DataSource(self.image.data,
+                                             [ROIX1, ROIY1, ROIX2, ROIY2],
+                                             i, flip, sf, chanROIs=chanROIs, voxelsize=self.image.voxelsize) for i in
+                range(numROIs)]
+
+        return usds
+
+    def OnUnmix(self, event):
+        #from PYME.Analysis import deTile
+        from PYME.DSView import ViewIm3D, ImageStack
+
+        usds = self._getUSDataSources()
+
             
         fns = os.path.split(self.image.filename)[1]
-        im = ImageStack([um0, um1], titleStub = '%s - unsplit' % fns)
+        im = ImageStack(usds, titleStub = '%s - unsplit' % fns)
         im.mdh.copyEntriesFrom(self.image.mdh)
         im.mdh['Parent'] = self.image.filename
         
@@ -98,40 +119,15 @@ class Unmixer:
         #from PYME.Analysis import deTile
         from PYME.DSView import ViewIm3D, ImageStack
 
-        mdh = self.image.mdh
-        if 'chroma.dx' in mdh.getEntryNames():
-            sf = (mdh['chroma.dx'], mdh['chroma.dy'])
-        elif global_shiftfield:
-            sf = global_shiftfield
-        else:
-            #self.OnSetShiftField()
-            #sf = (mdh['chroma.dx'], mdh['chroma.dy'])
-            sf = None
-
-        flip = True
-        if 'Splitter.Flip' in mdh.getEntryNames() and not mdh['Splitter.Flip']:
-            flip = False
-
-        ROIX1 = mdh.getEntry('Camera.ROIPosX')
-        ROIY1 = mdh.getEntry('Camera.ROIPosY')
-
-        ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
-        ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
-
-        um0 = UnsplitDataSource.DataSource(self.image.data,
-                                           [ROIX1, ROIY1, ROIX2, ROIY2],
-                                           0, flip, sf)
-
-        um1 = UnsplitDataSource.DataSource(self.image.data, 
-                                           [ROIX1, ROIY1, ROIX2, ROIY2], 1
-                                           , flip, sf)
+        usds = self._getUSDataSources()
             
         fns = os.path.split(self.image.filename)[1]
-        zm = um0.shape[2]/2
-        if um0[:,:,zm].max() > um1[:,:,zm].max():
-            im = ImageStack(um0, titleStub = '%s - unsplit' % fns)
-        else:
-            im = ImageStack(um1, titleStub = '%s - unsplit' % fns)
+
+        zm = usds[0].shape[2]/2
+
+        maxs = [u[:,:,zm].max() for u in usds]
+        im = ImageStack(usds[np.argmax(maxs)], titleStub = '%s - unsplit' % fns)
+
         im.mdh.copyEntriesFrom(self.image.mdh)
         im.mdh['Parent'] = self.image.filename
         

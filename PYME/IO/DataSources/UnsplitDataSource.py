@@ -96,7 +96,7 @@ class DataSource(BaseDataSource):
                 return dsa[:, :(dsa.shape[1]/2)]
         else: #chan = 1
             if self.chanROIs:
-                x, y, w, h = self.chanROIs[1]
+                x, y, w, h = self.chanROIs[self.chan]
                 x -= (self.ROI[0] - 1)
                 y -= (self.ROI[1] - 1)
                 #print x,y
@@ -104,6 +104,7 @@ class DataSource(BaseDataSource):
                 #print r_.shape
             else:    
                 r_ = dsa[:, (dsa.shape[1]/2):]
+
             if self.flip:
                 r_ = numpy.fliplr(r_)
 

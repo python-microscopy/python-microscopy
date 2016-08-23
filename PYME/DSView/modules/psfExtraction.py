@@ -127,9 +127,13 @@ class psfExtractor:
         bAxialShift.Bind(wx.EVT_BUTTON, self.OnCalcShift)
         vsizer.Add(bAxialShift, 0,wx.ALL|wx.ALIGN_RIGHT, 5)
 
-        bCalibrateMultiview = wx.Button(pan, -1, 'Calibrate multiview astigmatism', style=wx.BU_EXACTFIT)
-        bCalibrateMultiview.Bind(wx.EVT_BUTTON, self.OnCalibrateMultiview)
-        vsizer.Add(bCalibrateMultiview, 0,wx.ALL|wx.ALIGN_RIGHT, 5)
+        bExtractMultColour = wx.Button(pan, -1, 'Extract Multi Colour', style=wx.BU_EXACTFIT)
+        bExtractMultColour.Bind(wx.EVT_BUTTON, self.OnExtractMultiviewPSF)
+        vsizer.Add(bExtractMultColour, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        #bCalibrateMultiview = wx.Button(pan, -1, 'Calibrate multiview astigmatism', style=wx.BU_EXACTFIT)
+        #bCalibrateMultiview.Bind(wx.EVT_BUTTON, self.OnCalibrateMultiview)
+        #vsizer.Add(bCalibrateMultiview, 0,wx.ALL|wx.ALIGN_RIGHT, 5)
 
         pan.SetSizer(vsizer)
         vsizer.Fit(pan)
