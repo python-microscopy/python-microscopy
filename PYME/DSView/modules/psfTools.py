@@ -344,7 +344,7 @@ class PSFTools(HasTraits):
             plt.plot(res['z'], res['dsigma'], lw=2, label='Chan %d' % i)
         plt.grid()
         plt.xlabel('z position [nm]')
-        plt.ylabel('Sigma y - Sigma y [nm]')
+        plt.ylabel('Sigma x - Sigma y [nm]')
 
         plt.tight_layout()
 
