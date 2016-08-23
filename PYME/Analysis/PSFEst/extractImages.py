@@ -23,6 +23,7 @@
 
 from numpy import *
 from numpy.fft import *
+import numpy as np
 import numpy
 from PYME.LMVis import inpFilt
 import scipy.ndimage
@@ -133,7 +134,7 @@ def getIntCenter(im):
     return x, y, z
 
 
-def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1]):
+def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1], normalize=True, centreZ = True, centreXY = True):
     sx, sy, sz = PSshape
     height, width, depth = 2*array(PSshape) + 1
     kx,ky,kz = mgrid[:height,:width,:depth]#,:self.sliceShape[2]]
@@ -146,6 +147,11 @@ def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1]):
     d = zeros((height, width, depth))
     print((d.shape))
 
+    imgs = []
+    dxs = []
+    dys = []
+    dzs = []
+
     for px,py,pz in points:
         print((px, py, pz))
         px = int(px)
@@ -155,6 +161,25 @@ def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1]):
         print((imi.shape))
         dx, dy, dz = getIntCenter(imi)
         dz -= sz
+
+        imgs.append(imi)
+        dxs.append(dx)
+        dys.append(dy)
+        dzs.append(dz)
+
+    dxs = np.array(dxs)
+    dys = np.array(dys)
+    dzs = np.array(dzs)
+
+    if not centreZ:
+        #images will still be aligned with each other, but any shift in the channel as a whole will be maintained.
+        dzs = dzs - dzs.mean()
+
+    if not centreXY:
+        dxs = dxs - dxs.mean()
+        dys = dys - dys.mean()
+
+    for imi, dx, dy, dz in zip(imgs, list(dxs), list(dys), list(dzs)):
         F = fftn(imi)
         d = d + ifftn(F*exp(-2j*pi*(kx*-dx + ky*-dy + kz*-dz))).real
 
@@ -162,7 +187,11 @@ def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1]):
     #estimate background as a function of z by averaging rim pixels
     #bg = (d[0,:,:].squeeze().mean(0) + d[-1,:,:].squeeze().mean(0) + d[:,0,:].squeeze().mean(0) + d[:,-1,:].squeeze().mean(0))/4
     d = d - d.min()
-    d = d/d.max()
+
+    if normalize == True:
+        d = d/d.max()
+    elif normalize == 'sum':
+        d = d/d[:,:,d.shape[2]/2].sum()
 
     return d
     
