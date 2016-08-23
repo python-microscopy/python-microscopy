@@ -58,36 +58,45 @@ class Unmixer:
         if 'Splitter.Channel0ROI' in mdh.getEntryNames():
             chanROIs = [mdh['Splitter.Channel0ROI'], mdh['Splitter.Channel1ROI']]
 
-        ROIX1 = mdh.getEntry('Camera.ROIPosX')
-        ROIY1 = mdh.getEntry('Camera.ROIPosY')
-
-        ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
-        ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
-
-        numROIs = 2
-
         if 'Multiview.NumROIs' in mdh.getEntryNames():
             # we have more than 2 ROIs
             numROIs = mdh['Multiview.NumROIs']
             w, h = mdh['Multiview.ROISize']
-            if self.image.data.shape[1] == numROIs * h:
+
+            print self.image.data.shape, w, h, numROIs
+
+            if self.image.data.shape[0] == numROIs*w:
                 #we are extracted as expected.
+                h_ = min(h, int(self.image.data.shape[1]))
 
                 chanROIs = []
                 for i in range(numROIs):
-                    x0, y0 = (i*w, 0)
-                    chanROIs.append((x0, y0, w, h))
+                    x0, y0 = (i * w, 0)
+                    chanROIs.append((x0, y0, w, h_))
 
                 #TODO - Fix me to use proper coordinates
-                ROIX1, ROIY1 = (0,0)
-                ROIx2, ROIY2 = (w*numROIs, h)
+                ROIX1, ROIY1 = (1, 1)
+                ROIX2, ROIY2 = (w * numROIs, h_)
 
             else:
                 #raw data - do the extraction ourselves
+                raise RuntimeError("data has not been unsplit, we can't handle this at present")
                 chanROIs = []
                 for i in range(numROIs):
                     x0, y0 = mdh['Multiview.ROISize']
                     chanROIs.append((x0, y0, w, h))
+        else:
+            #default to old splitter code
+
+            ROIX1 = mdh.getEntry('Camera.ROIPosX')
+            ROIY1 = mdh.getEntry('Camera.ROIPosY')
+
+            ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
+            ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
+
+            numROIs = 2
+
+
 
         usds = [UnsplitDataSource.DataSource(self.image.data,
                                              [ROIX1, ROIY1, ROIX2, ROIY2],
