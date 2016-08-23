@@ -75,12 +75,19 @@ class Unmixer:
 
                 chanROIs = []
                 for i in range(numROIs):
-                    x0, y0 = mdh['Multiview.ROISize']
+                    x0, y0 = (i*w, 0)
                     chanROIs.append((x0, y0, w, h))
 
+                #TODO - Fix me to use proper coordinates
+                ROIX1, ROIY1 = (0,0)
+                ROIx2, ROIY2 = (w*numROIs, h)
+
             else:
-                raise RuntimeError(
-                    'Multiview information, but wrong image size. Has this been through the multi-view data source?')
+                #raw data - do the extraction ourselves
+                chanROIs = []
+                for i in range(numROIs):
+                    x0, y0 = mdh['Multiview.ROISize']
+                    chanROIs.append((x0, y0, w, h))
 
         usds = [UnsplitDataSource.DataSource(self.image.data,
                                              [ROIX1, ROIY1, ROIX2, ROIY2],
