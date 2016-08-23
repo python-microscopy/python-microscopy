@@ -106,7 +106,7 @@ class GaussianFitFactory:
         # get varmap and flatmap
         varmap = cameraMaps.getVarianceMap(self.metadata)
         if not np.isscalar(varmap):
-            self.varmap = varmap.astype(np.float32)# np.ascontiguousarray(varmap)
+            self.varmap = varmap.astype(np.float32)  # np.ascontiguousarray(varmap)
         else:
             self.varmap = varmap*np.ones_like(self.data)
 
