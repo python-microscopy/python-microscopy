@@ -222,7 +222,7 @@ class GaussianFitFactory:
 # so that fit tasks know which class to use
 FitFactory = GaussianFitFactory
 FitResult = GaussianFitResultR
-FitResultsDType = fresultdtype #only defined if returning data as numarray
+FitResultsDType = fresultdtype  #only defined if returning data as numarray
 
 #this means that factory is reponsible for it's own object finding and implements
 #a GetAllResults method that returns a list of localisations
