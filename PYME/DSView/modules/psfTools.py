@@ -45,6 +45,41 @@ def remove_newlines(s):
     s = ' '.join(s.split())
     return '\n'.join(s.split('<>'))
 
+def findZRange(astigLib):
+    """
+    Find range about highest intensity point over which sigmax - sigmay is monotonic.
+    Note that astigLib[psfIndex]['zCenter'] should contain the offset in nm to the brightest z-slice
+    Args:
+        astigLib: List whose elements are dictionaries containing PSF fit information
+
+    Returns:
+        astigLib: The input list, where zRange key and values have been added to the dictionary in each list element
+
+    """
+    import scipy.interpolate as terp
+    for ii in range(len(astigLib)):
+        # find region of dsigma which is monotonic (smooth a bit, too)
+        dsig = terp.UnivariateSpline(astigLib[ii]['z'], astigLib[ii]['dsigma'], s=5*len(astigLib[ii]['z']))
+
+        # mask where the sign is the same as the center
+        zvec = np.linspace(np.min(astigLib[ii]['z']), np.max(astigLib[ii]['z']), 1000)
+        sgn = np.sign(np.diff(dsig(zvec)))
+        halfway = np.absolute(zvec - astigLib[ii]['zCenter']).argmin()  # len(sgn)/2
+        notmask = sgn != sgn[halfway]
+
+        # find z range for spline generation
+        try:
+            lowerZ = zvec[np.where(notmask[:halfway])[0].max()]
+        except ValueError:
+            lowerZ = zvec[0]
+        try:
+            upperZ = zvec[(halfway + np.where(notmask[halfway:])[0].min() - 1)]
+        except ValueError:
+            upperZ = zvec[-1]
+        astigLib[ii]['zRange'] = [lowerZ, upperZ]
+
+    return astigLib
+
 class PSFQualityPanel(wx.Panel):
     def __init__(self, dsviewer):
         wx.Panel.__init__(self, dsviewer) 
@@ -280,9 +315,12 @@ class PSFTools(HasTraits):
 
     def OnCalibrateAstigmatism(self, event):
         from PYME.recipes.measurement import FitPoints
+        from PYME.IO.FileUtils import nameUtils
         import matplotlib.pyplot as plt
         import mpld3
         import json
+        from PYME.Analysis.PSFEst import extractImages
+
 
         ps = self.image.pixelSize
 
@@ -302,6 +340,9 @@ class PSFTools(HasTraits):
         results = []
 
         for chanNum in range(self.image.data.shape[3]):
+            # get z centers
+            dx, dy, dz = extractImages.getIntCenter(self.image.data[:, :, :, chanNum])
+
             ptFitter.set(channel=chanNum)
             ptFitter.execute(namespace)
 
@@ -310,8 +351,9 @@ class PSFTools(HasTraits):
             dsigma = res['fitResults_sigmax'] - res['fitResults_sigmay']
             valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 50)* (res['fitError_sigmay'] < 50)*(res['fitResults_A'] > 0) > 0)
 
-            results.append({'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
-                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()})
+            results.append({'z': objPositions['z'][valid].tolist(), 'sigmax': res['fitResults_sigmax'][valid].tolist(),
+                           'sigmay': res['fitResults_sigmay'][valid].tolist(), 'dsigma': dsigma[valid].tolist(),
+                            'zCenter': objPositions['z'][dz]})
 
         #generate new tab to show results
         use_web_view = True
@@ -323,15 +365,24 @@ class PSFTools(HasTraits):
             except NotImplementedError:
                 use_web_view = False
 
+        # find reasonable z range for each channel
+        results = findZRange(results)
+
         #do plotting
         plt.ioff()
         f = plt.figure(figsize=(10, 4))
 
+        colors = iter(plt.cm.Dark2(np.linspace(0, 1, 2*self.image.data.shape[3])))
         plt.subplot(121)
-
         for i, res in enumerate(results):
-            plt.plot(res['z'], res['sigmax'], label='x - %d' % i)
-            plt.plot(res['z'], res['sigmay'], label='y - %d' % i)
+            nextColor1 = next(colors)
+            nextColor2 = next(colors)
+            lbz = np.absolute(res['z'] - res['zRange'][0]).argmin()
+            ubz = np.absolute(res['z'] - res['zRange'][1]).argmin()
+            plt.plot(res['z'], res['sigmax'], ':', c=nextColor1)  # , label='x - %d' % i)
+            plt.plot(res['z'], res['sigmay'], ':', c=nextColor2)  # , label='y - %d' % i)
+            plt.plot(res['z'][lbz:ubz], res['sigmax'][lbz:ubz], label='x - %d' % i, c=nextColor1)
+            plt.plot(res['z'][lbz:ubz], res['sigmay'][lbz:ubz], label='y - %d' % i, c=nextColor2)
 
         #plt.ylim(-200, 400)
         plt.grid()
@@ -340,20 +391,27 @@ class PSFTools(HasTraits):
         plt.legend()
 
         plt.subplot(122)
+        colors = iter(plt.cm.Dark2(np.linspace(0, 1, self.image.data.shape[3])))
         for i, res in enumerate(results):
-            plt.plot(res['z'], res['dsigma'], lw=2, label='Chan %d' % i)
+            nextColor = next(colors)
+            lbz = np.absolute(res['z'] - res['zRange'][0]).argmin()
+            ubz = np.absolute(res['z'] - res['zRange'][1]).argmin()
+            plt.plot(res['z'], res['dsigma'], ':', lw=2, c=nextColor)  # , label='Chan %d' % i)
+            plt.plot(res['z'][lbz:ubz], res['dsigma'][lbz:ubz], lw=2, label='Chan %d' % i, c=nextColor)
         plt.grid()
         plt.xlabel('z position [nm]')
         plt.ylabel('Sigma x - Sigma y [nm]')
+        plt.legend()
 
         plt.tight_layout()
 
         plt.ion()
         #dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
         #                   'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
-        
+
+
         if use_web_view:
-            fig =  mpld3.fig_to_html(f)
+            fig = mpld3.fig_to_html(f)
             data = json.dumps(results)
 
             template = env.get_template('astigCal.html')
@@ -362,6 +420,18 @@ class PSFTools(HasTraits):
             self._astig_view.SetPage(html, '')
         else:
             plt.show()
+
+        fdialog = wx.FileDialog(None, 'Save Astigmatism Calibration as ...',
+            wildcard='Astigmatism Map (*.am)|*.am', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath())  #, defaultFile=defFile)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            fpath = fdialog.GetPath()
+
+            fid = open(fpath, 'wb')
+            json.dump(results, fid)
+            fid.close()
+
+
         return results
 
         
