@@ -46,9 +46,19 @@ def remove_newlines(s):
     return '\n'.join(s.split('<>'))
 
 def findZRange(astigLib):
+    """
+    Find range about highest intensity point over which sigmax - sigmay is monotonic.
+    Note that astigLib[psfIndex]['zCenter'] should contain the offset in nm to the brightest z-slice
+    Args:
+        astigLib: List whose elements are dictionaries containing PSF fit information
+
+    Returns:
+        astigLib: The input list, where zRange key and values have been added to the dictionary in each list element
+
+    """
     import scipy.interpolate as terp
     for ii in range(len(astigLib)):
-        # find region of dsigma which is monotonic
+        # find region of dsigma which is monotonic (smooth a bit, too)
         dsig = terp.UnivariateSpline(astigLib[ii]['z'], astigLib[ii]['dsigma'], s=5*len(astigLib[ii]['z']))
 
         # mask where the sign is the same as the center
@@ -61,17 +71,6 @@ def findZRange(astigLib):
         lowerZ = zvec[np.where(notmask[:halfway])[0].max()]
         upperZ = zvec[(halfway + np.where(notmask[halfway:])[0].min() - 1)]
         astigLib[ii]['zRange'] = [lowerZ, upperZ]
-        # zrange = [np.nanmin([lowerZ, zrange[0]]), np.nanmax([upperZ, zrange[1]])]
-
-        #lowsubZ , upsubZ = np.absolute(astigDat[ii]['z'] - zvec[lowerZ]), np.absolute(astigDat[ii]['z'] - zvec[upperZ])
-        #lowZLoc = np.argmin(lowsubZ)
-        #upZLoc = np.argmin(upsubZ)
-        #
-        #astigLib['sigxTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmax'],
-        #                                                    bbox=[lowerZ, upperZ])
-        #astigLib['sigyTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmay'],
-        #                                                    bbox=[lowerZ, upperZ])
-        #astigLib[ii]['z'] = astigLib[ii]['z'].tolist()
 
     return astigLib
 
