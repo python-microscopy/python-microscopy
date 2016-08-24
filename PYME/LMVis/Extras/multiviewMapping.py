@@ -187,7 +187,13 @@ def astigMAPism(fres, stigLib, chanPlane):
     numMols = len(fres['fitResults_x0'])
     whichChan = np.array(fres['whichChan'], dtype=np.int32)
     # stigLib['zRange'] contains the extrema of acceptable z-positions looking over all channels
-    zVal = np.arange(stigLib['zRange'][0], stigLib['zRange'][1])
+
+    # find overall min and max z values
+    zrange = np.nan*np.ones(2)
+    for zi in range(len(stigLib)):
+        zrange = [np.nanmin([stigLib[zi]['zRange'][0], zrange[0]]), np.nanmax([stigLib[zi]['zRange'][1], zrange[1]])]
+    # generate z vector for interpolation
+    zVal = np.arange(zrange[0], zrange[1])
 
     sigCalX = {}
     sigCalY = {}
@@ -196,19 +202,19 @@ def astigMAPism(fres, stigLib, chanPlane):
 
     # generate look up table of sorts
     for ii in np.unique(whichChan):
-        zdat = np.array(stigLib['PSF%i' % ii]['z'])
+        zdat = np.array(stigLib[ii]['z'])
         # find indices of range we trust
-        zrange = stigLib['PSF%i' % ii]['zrange']
+        zrange = stigLib[ii]['zRange']
         lowsubZ , upsubZ = np.absolute(zdat - zrange[0]), np.absolute(zdat - zrange[1])
         lowZLoc = np.argmin(lowsubZ)
         upZLoc = np.argmin(upsubZ)
 
         sigCalX['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
-                                                       np.array(stigLib['PSF%i' % ii]['sigmax'])[lowZLoc:upZLoc],
+                                                       np.array(stigLib[ii]['sigmax'])[lowZLoc:upZLoc],
                                                        ext='zeros')(zVal)
                                                             # bbox=stigLib['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
         sigCalY['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
-                                                       np.array(stigLib['PSF%i' % ii]['sigmay'])[lowZLoc:upZLoc],
+                                                       np.array(stigLib[ii]['sigmay'])[lowZLoc:upZLoc],
                                                        ext='zeros')(zVal)
         # set regions outside of usable interpolation area to very unreasonable sigma values
         sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
