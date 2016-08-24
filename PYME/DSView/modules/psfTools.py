@@ -280,6 +280,7 @@ class PSFTools(HasTraits):
 
     def OnCalibrateAstigmatism(self, event):
         from PYME.recipes.measurement import FitPoints
+        from PYME.IO.FileUtils import nameUtils
         import matplotlib.pyplot as plt
         import mpld3
         import json
@@ -362,6 +363,18 @@ class PSFTools(HasTraits):
             self._astig_view.SetPage(html, '')
         else:
             plt.show()
+
+        fdialog = wx.FileDialog(None, 'Save Astigmatism Calibration as ...',
+            wildcard='Astigmatism Map (*.am)|*.am', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath())  #, defaultFile=defFile)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            fpath = fdialog.GetPath()
+
+            fid = open(fpath, 'wb')
+            json.dump(results, fid)
+            fid.close()
+
+
         return results
 
         
