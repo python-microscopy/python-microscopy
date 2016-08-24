@@ -64,7 +64,7 @@ def findZRange(astigLib):
         # mask where the sign is the same as the center
         zvec = np.linspace(np.min(astigLib[ii]['z']), np.max(astigLib[ii]['z']), 1000)
         sgn = np.sign(np.diff(dsig(zvec)))
-        halfway = np.absolute(zvec-astigLib[ii]['zCenter']).argmin()  # len(sgn)/2
+        halfway = np.absolute(zvec - astigLib[ii]['zCenter']).argmin()  # len(sgn)/2
         notmask = sgn != sgn[halfway]
 
         # find z range for spline generation
@@ -372,15 +372,17 @@ class PSFTools(HasTraits):
         plt.ioff()
         f = plt.figure(figsize=(10, 4))
 
+        colors = iter(plt.cm.Dark2(np.linspace(0, 1, 2*self.image.data.shape[3])))
         plt.subplot(121)
-
         for i, res in enumerate(results):
+            nextColor1 = next(colors)
+            nextColor2 = next(colors)
             lbz = np.absolute(res['z'] - res['zRange'][0]).argmin()
             ubz = np.absolute(res['z'] - res['zRange'][1]).argmin()
-            plt.plot(res['z'], res['sigmax'], ':', label='x - %d' % i)
-            plt.plot(res['z'], res['sigmay'], ':', label='y - %d' % i)
-            plt.plot(res['z'][lbz:ubz], res['sigmax'][lbz:ubz], label='x - %d' % i)
-            plt.plot(res['z'][lbz:ubz], res['sigmay'][lbz:ubz], label='y - %d' % i)
+            plt.plot(res['z'], res['sigmax'], ':', c=nextColor1)  # , label='x - %d' % i)
+            plt.plot(res['z'], res['sigmay'], ':', c=nextColor2)  # , label='y - %d' % i)
+            plt.plot(res['z'][lbz:ubz], res['sigmax'][lbz:ubz], label='x - %d' % i, c=nextColor1)
+            plt.plot(res['z'][lbz:ubz], res['sigmay'][lbz:ubz], label='y - %d' % i, c=nextColor2)
 
         #plt.ylim(-200, 400)
         plt.grid()
@@ -389,11 +391,17 @@ class PSFTools(HasTraits):
         plt.legend()
 
         plt.subplot(122)
+        colors = iter(plt.cm.Dark2(np.linspace(0, 1, self.image.data.shape[3])))
         for i, res in enumerate(results):
-            plt.plot(res['z'], res['dsigma'], lw=2, label='Chan %d' % i)
+            nextColor = next(colors)
+            lbz = np.absolute(res['z'] - res['zRange'][0]).argmin()
+            ubz = np.absolute(res['z'] - res['zRange'][1]).argmin()
+            plt.plot(res['z'], res['dsigma'], ':', lw=2, c=nextColor)  # , label='Chan %d' % i)
+            plt.plot(res['z'][lbz:ubz], res['dsigma'][lbz:ubz], lw=2, label='Chan %d' % i, c=nextColor)
         plt.grid()
         plt.xlabel('z position [nm]')
         plt.ylabel('Sigma x - Sigma y [nm]')
+        plt.legend()
 
         plt.tight_layout()
 
