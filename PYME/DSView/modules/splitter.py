@@ -62,10 +62,9 @@ class Unmixer:
             # we have more than 2 ROIs
             numROIs = mdh['Multiview.NumROIs']
             w, h = mdh['Multiview.ROISize']
-            # default to not flipping frames for multiview data source unless specified in metadata
-            flip = 'Splitter.Flip' in mdh.getEntryNames() and mdh['Splitter.Flip']
 
             print self.image.data.shape, w, h, numROIs
+            flip = False
 
             if self.image.data.shape[0] == numROIs*w:
                 #we are extracted as expected.
