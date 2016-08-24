@@ -45,6 +45,36 @@ def remove_newlines(s):
     s = ' '.join(s.split())
     return '\n'.join(s.split('<>'))
 
+def findZRange(astigLib):
+    import scipy.interpolate as terp
+    for ii in range(len(astigLib)):
+        # find region of dsigma which is monotonic
+        dsig = terp.UnivariateSpline(astigLib[ii]['z'], astigLib[ii]['dsigma'], s=5*len(astigLib[ii]['z']))
+
+        # mask where the sign is the same as the center
+        zvec = np.linspace(np.min(astigLib[ii]['z']), np.max(astigLib[ii]['z']), 1000)
+        sgn = np.sign(np.diff(dsig(zvec)))
+        halfway = np.absolute(zvec-astigLib[ii]['zCenter']).argmin()  # len(sgn)/2
+        notmask = sgn != sgn[halfway]
+
+        # find z range for spline generation
+        lowerZ = zvec[np.where(notmask[:halfway])[0].max()]
+        upperZ = zvec[(halfway + np.where(notmask[halfway:])[0].min() - 1)]
+        astigLib[ii]['zRange'] = [lowerZ, upperZ]
+        # zrange = [np.nanmin([lowerZ, zrange[0]]), np.nanmax([upperZ, zrange[1]])]
+
+        #lowsubZ , upsubZ = np.absolute(astigDat[ii]['z'] - zvec[lowerZ]), np.absolute(astigDat[ii]['z'] - zvec[upperZ])
+        #lowZLoc = np.argmin(lowsubZ)
+        #upZLoc = np.argmin(upsubZ)
+        #
+        #astigLib['sigxTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmax'],
+        #                                                    bbox=[lowerZ, upperZ])
+        #astigLib['sigyTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmay'],
+        #                                                    bbox=[lowerZ, upperZ])
+        #astigLib[ii]['z'] = astigLib[ii]['z'].tolist()
+
+    return astigLib
+
 class PSFQualityPanel(wx.Panel):
     def __init__(self, dsviewer):
         wx.Panel.__init__(self, dsviewer) 
@@ -284,6 +314,8 @@ class PSFTools(HasTraits):
         import matplotlib.pyplot as plt
         import mpld3
         import json
+        from PYME.Analysis.PSFEst import extractImages
+
 
         ps = self.image.pixelSize
 
@@ -303,6 +335,9 @@ class PSFTools(HasTraits):
         results = []
 
         for chanNum in range(self.image.data.shape[3]):
+            # get z centers
+            dx, dy, dz = extractImages.getIntCenter(self.image.data[:, :, :, chanNum])
+
             ptFitter.set(channel=chanNum)
             ptFitter.execute(namespace)
 
@@ -311,8 +346,9 @@ class PSFTools(HasTraits):
             dsigma = res['fitResults_sigmax'] - res['fitResults_sigmay']
             valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 50)* (res['fitError_sigmay'] < 50)*(res['fitResults_A'] > 0) > 0)
 
-            results.append({'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
-                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()})
+            results.append({'z': objPositions['z'][valid].tolist(), 'sigmax': res['fitResults_sigmax'][valid].tolist(),
+                           'sigmay': res['fitResults_sigmay'][valid].tolist(), 'dsigma': dsigma[valid].tolist(),
+                            'zCenter': objPositions['z'][dz]})
 
         #generate new tab to show results
         use_web_view = True
@@ -353,8 +389,11 @@ class PSFTools(HasTraits):
         #dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
         #                   'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
         
+        # find reasonable z range for each channel
+        results = findZRange(results)
+
         if use_web_view:
-            fig =  mpld3.fig_to_html(f)
+            fig = mpld3.fig_to_html(f)
             data = json.dumps(results)
 
             template = env.get_template('astigCal.html')

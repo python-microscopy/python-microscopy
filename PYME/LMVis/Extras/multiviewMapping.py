@@ -187,7 +187,13 @@ def astigMAPism(fres, stigLib, chanPlane):
     numMols = len(fres['fitResults_x0'])
     whichChan = np.array(fres['whichChan'], dtype=np.int32)
     # stigLib['zRange'] contains the extrema of acceptable z-positions looking over all channels
-    zVal = np.arange(stigLib['zRange'][0], stigLib['zRange'][1])
+
+    # find overall min and max z values
+    zrange = np.nan*np.ones(2)
+    for zi in range(len(stigLib)):
+        zrange = [np.nanmin([stigLib[zi]['zRange'][0], zrange[0]]), np.nanmax([stigLib[zi]['zRange'][1], zrange[1]])]
+    # generate z vector for interpolation
+    zVal = np.arange(zrange[0], zrange[1])
 
     sigCalX = {}
     sigCalY = {}
@@ -198,7 +204,7 @@ def astigMAPism(fres, stigLib, chanPlane):
     for ii in np.unique(whichChan):
         zdat = np.array(stigLib[ii]['z'])
         # find indices of range we trust
-        zrange = stigLib[ii]['zrange']
+        zrange = stigLib[ii]['zRange']
         lowsubZ , upsubZ = np.absolute(zdat - zrange[0]), np.absolute(zdat - zrange[1])
         lowZLoc = np.argmin(lowsubZ)
         upZLoc = np.argmin(upsubZ)
