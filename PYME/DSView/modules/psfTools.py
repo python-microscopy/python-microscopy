@@ -68,8 +68,14 @@ def findZRange(astigLib):
         notmask = sgn != sgn[halfway]
 
         # find z range for spline generation
-        lowerZ = zvec[np.where(notmask[:halfway])[0].max()]
-        upperZ = zvec[(halfway + np.where(notmask[halfway:])[0].min() - 1)]
+        try:
+            lowerZ = zvec[np.where(notmask[:halfway])[0].max()]
+        except ValueError:
+            lowerZ = zvec[0]
+        try:
+            upperZ = zvec[(halfway + np.where(notmask[halfway:])[0].min() - 1)]
+        except ValueError:
+            upperZ = zvec[-1]
         astigLib[ii]['zRange'] = [lowerZ, upperZ]
 
     return astigLib
@@ -359,6 +365,9 @@ class PSFTools(HasTraits):
             except NotImplementedError:
                 use_web_view = False
 
+        # find reasonable z range for each channel
+        results = findZRange(results)
+
         #do plotting
         plt.ioff()
         f = plt.figure(figsize=(10, 4))
@@ -366,8 +375,12 @@ class PSFTools(HasTraits):
         plt.subplot(121)
 
         for i, res in enumerate(results):
-            plt.plot(res['z'], res['sigmax'], label='x - %d' % i)
-            plt.plot(res['z'], res['sigmay'], label='y - %d' % i)
+            lbz = np.absolute(res['z'] - res['zRange'][0]).argmin()
+            ubz = np.absolute(res['z'] - res['zRange'][1]).argmin()
+            plt.plot(res['z'], res['sigmax'], ':', label='x - %d' % i)
+            plt.plot(res['z'], res['sigmay'], ':', label='y - %d' % i)
+            plt.plot(res['z'][lbz:ubz], res['sigmax'][lbz:ubz], label='x - %d' % i)
+            plt.plot(res['z'][lbz:ubz], res['sigmay'][lbz:ubz], label='y - %d' % i)
 
         #plt.ylim(-200, 400)
         plt.grid()
@@ -387,9 +400,7 @@ class PSFTools(HasTraits):
         plt.ion()
         #dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
         #                   'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
-        
-        # find reasonable z range for each channel
-        results = findZRange(results)
+
 
         if use_web_view:
             fig = mpld3.fig_to_html(f)
