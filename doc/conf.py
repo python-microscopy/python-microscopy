@@ -116,6 +116,7 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 numpydoc_show_class_members = True
+autoclass_content = 'both'
 
 
 # -- Options for HTML output ---------------------------------------------------

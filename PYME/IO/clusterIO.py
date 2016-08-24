@@ -35,7 +35,7 @@ if not 'sphinx' in sys.modules.keys():
 from collections import OrderedDict
 
 
-class LimitedSizeDict(OrderedDict):
+class _LimitedSizeDict(OrderedDict):
     def __init__(self, *args, **kwds):
         self.size_limit = kwds.pop("size_limit", None)
         OrderedDict.__init__(self, *args, **kwds)
@@ -51,8 +51,8 @@ class LimitedSizeDict(OrderedDict):
                 self.popitem(last=False)
 
 
-_locateCache = LimitedSizeDict(size_limit=500)
-_dirCache = LimitedSizeDict(size_limit=100)
+_locateCache = _LimitedSizeDict(size_limit=500)
+_dirCache = _LimitedSizeDict(size_limit=100)
 DIR_CACHE_TIME = 20
 
 #use one session for each server (to allow http keep-alives)
@@ -92,6 +92,20 @@ def _listSingleDir(dirurl):
 
 
 def locateFile(filename, serverfilter=''):
+    """
+    Searches the cluster to find which server(s) a given file is stored on
+
+    Parameters
+    ----------
+    filename : str
+        The file name
+    serverfilter : str
+        The name of our cluster (allows for having multiple clusters on the same network segment)
+
+    Returns
+    -------
+
+    """
     cache_key = serverfilter + '::' + filename
     try:
         locs, t = _locateCache[cache_key]
