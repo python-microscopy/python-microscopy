@@ -198,7 +198,7 @@ class CRBViewPanel(wx.Panel):
         from PYME.Analysis.PSFGen import fourierHNA
         #print 'b'
         import numpy as np
-        d = self.image.data[:,:,:]
+        d = self.image.data[:,:,:,0].squeeze()
         I = d[:,:,d.shape[2]/2].sum()
         
         vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
