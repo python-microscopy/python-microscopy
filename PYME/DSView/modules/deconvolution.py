@@ -189,11 +189,12 @@ class deconvolver:
                     nChans = self.image.data.shape[3]
                     xs = fs.shape[0]/nChans
                     #NOTE: this relies on the slicing returning a view into the underlying data, not a copy
+
                     fs = [fs[(i*xs):((i+1)*xs), :, :] for i in range(nChans)]
                 
                 im = ImageStack(data = fs, mdh = decMDH, titleStub = 'Deconvolution Result')
                 mode = 'lite'
-                if beadMode:
+                if beadMode and im.data.shape[1] < 100:
                     mode = 'psf'
                     im.defaultExt = '*.psf' #we want to save as PSF by default
                 self.res = ViewIm3D(im, mode=mode, parent=wx.GetTopLevelParent(self.dsviewer))                    
