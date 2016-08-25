@@ -20,7 +20,10 @@
 #
 ##################
 import pylab
-from enthought.mayavi import mlab
+try:
+    from enthought.mayavi import mlab
+except ImportError:
+    from mayavi import mlab
 import os
 import tempfile
 #from PYME.IO.FileUtils.readTiff import read3DTiff

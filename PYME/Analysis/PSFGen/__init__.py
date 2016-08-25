@@ -20,5 +20,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+"""
+This module contains various routines for generating simulated PSFs.
+
+These include:
+
+The Gibson and Lanni model for imaging through stratified media (ps_app) and models based on Fourier propagation. For the
+later, (:py:mod:`PYME.Analysis.PSFGen.fourier`) generates far field paraxial / low NA PSFs, whereas
+(:py:mod:`PYME.Analysis.PSFGen.fourierHNA`) uses a modified Fourier propagation scheme which better reflects a high NA
+and/or vectorial imaging scenario.
+
+Functions are available for simulating the most common PSFs types used in localization microscopy, along with PSFs having
+arbitrary pupils and / or aberrations expressed as in terms of Zernike modes.
+
+(:py:mod:`PYME.Analysis.PSFGen.fourierHNA`) also has a basic implementation of the Gerchberg-Saxton algorithm for pupil
+phase extraction.
+"""
 
 from ps_app import *

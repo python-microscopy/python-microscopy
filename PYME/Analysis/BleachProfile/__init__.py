@@ -20,3 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
+"""
+This module contains code for fitting photophysical models to things like bleaching rates, single molecules intensities,
+and event lifetimes.
+"""

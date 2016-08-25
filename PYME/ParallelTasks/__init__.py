@@ -21,3 +21,9 @@
 
 #
 ################
+"""
+This package contains code for distributing localization analysis tasks across multiple cores on one PC, or across
+multiple computers in a network.
+
+The main point where we interact with this code would be through the `launchWorkers` script.
+"""
