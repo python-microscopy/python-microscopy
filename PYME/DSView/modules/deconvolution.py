@@ -23,6 +23,7 @@
 import wx
 import wx.lib.agw.aui as aui
 import numpy
+import numpy as np
 from PYME.Acquire.mytimer import mytimer
 from scipy import ndimage
 from PYME.DSView import View3D, ViewIm3D, ImageStack
@@ -78,6 +79,7 @@ class deconvolver:
 
     def OnDeconvBead(self, event):
         self.OnDeconvICTM(None, True)
+
     
     def OnDeconvICTM(self, event, beadMode=False):
         from PYME.Deconv.deconvDialogs import DeconvSettingsDialog,DeconvProgressDialog,DeconvProgressPanel
@@ -92,8 +94,6 @@ class deconvolver:
             decMDH['Deconvolution.NumIterations'] = nIter
             decMDH['Deconvolution.OriginalFile'] = self.image.filename
 
-            #self.dlgDeconProg = DeconvProgressDialog(self.dsviewer, nIter)
-            #self.dlgDeconProg.Show()
             vx = self.image.mdh.getEntry('voxelsize.x')
             vy = self.image.mdh.getEntry('voxelsize.y')
             vz = self.image.mdh.getEntry('voxelsize.z')
@@ -105,8 +105,6 @@ class deconvolver:
                 decMDH['Deconvolution.BeadRadius'] = dlg.GetBeadRadius()
                 
             else:
-                #psf, vs = numpy.load(dlg.GetPSFFilename())
-                #psf = numpy.atleast_3d(psf)
                 psfFilename, psf, vs = dlg.GetPSF(vshint = vx)
 
                 decMDH['Deconvolution.PSFFile'] = dlg.GetPSFFilename()
@@ -115,21 +113,23 @@ class deconvolver:
                     #rescale psf to match data voxel size
                     psf = ndimage.zoom(psf, [vs.x/vx, vs.y/vy, vs.z/vz])
 
-            data = self.image.data[:,:,:, dlg.GetChannel()].astype('f') - dlg.GetOffset()
+            #crop PSF in z if bigger than stack
+            if psf.shape[2] > self.image.data.shape[2]:
+                dz = psf.shape[2] - self.image.data.shape[2]
+
+                psf = psf[:, :, numpy.floor(dz / 2):(psf.shape[2] - numpy.ceil(dz / 2))]
+
+
             decMDH['Deconvolution.Offset'] = dlg.GetOffset()
-            
+
             bg = dlg.GetBackground()
             decMDH['Deconvolution.Background'] = bg
 
-            #crop PSF in z if bigger than stack
-
-            print psf.shape, data.shape
-            if psf.shape[2] > data.shape[2]:
-                dz = psf.shape[2] - data.shape[2]
-
-                psf = psf[:,:,numpy.floor(dz/2):(psf.shape[2]-numpy.ceil(dz/2))]
-
-            print((data.shape, psf.shape))
+            if beadMode and self.image.data.shape[3] > 1:
+                #special case for deconvolving multi-channel PSFs
+                data = np.concatenate([self.image.data[:,:,:, i].astype('f') - dlg.GetOffset() for i in range(self.image.data.shape[3])], 0)
+            else:
+                data = self.image.data[:,:,:, dlg.GetChannel()].astype('f') - dlg.GetOffset()
 
             if dlg.GetPadding():
                 padsize = numpy.array(dlg.GetPadSize())
@@ -138,18 +138,14 @@ class deconvolver:
                 weights = numpy.zeros_like(dp)
                 px, py, pz = padsize
 
-                #print data.shape, dp[px:-(px+1), py:-(py+1), pz:-(pz+1)].shape
                 dp[px:-px, py:-py, pz:-pz] = data
-                #if dlg.GetRemovePadding():
-                #    data = dp[px:-px, py:-py, pz:-pz]#should be a slice
-                #else:
-                #    data = dp
                 weights[px:-px, py:-py, pz:-pz] = 1.
 
                 weights = weights.ravel()
             else:
                 dp = data
                 weights = 1
+
 
             if dlg.GetBlocking():
                 decMDH['Deconvolution.Method'] = 'Blocked ICTM'
@@ -188,7 +184,12 @@ class deconvolver:
                 else:
                     fs = self.dec.fs
 
-                
+                if beadMode and self.image.data.shape[3] > 1:
+                    #special case for bead deconvolution - unwind the stacking
+                    nChans = self.image.data.shape[3]
+                    xs = fs.shape[0]/nChans
+                    #NOTE: this relies on the slicing returning a view into the underlying data, not a copy
+                    fs = [fs[(i*xs):((i+1)*xs), :, :] for i in range(nChans)]
                 
                 im = ImageStack(data = fs, mdh = decMDH, titleStub = 'Deconvolution Result')
                 mode = 'lite'
