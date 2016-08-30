@@ -82,30 +82,16 @@ class H5RFile(object):
         with tablesLock:
             self.mdh.update(mdh)
 
+
     @property
     def events(self):
-        if self._events is None:
-            try:
-                self._events = self._h5file.root.Events
-            except AttributeError:
-                if not self.mode == 'r':
-                    class SpoolEvent(tables.IsDescription):
-                        EventName = tables.StringCol(32)
-                        Time = tables.Time64Col()
-                        EventDescr = tables.StringCol(256)
-
-
-                    self._events = self._h5file.createTable(self._h5file.root, 'Events', SpoolEvent,
-                                                                        filters=tables.Filters(complevel=5, shuffle=True))
-                else:
-                    # our file was opened in read mode and didn't have any events to start with
-                    self._events = []
-
-        return self._events
+        try:
+            return self._h5file.root.Events
+        except AttributeError:
+            return []
 
     def addEvents(self, events):
-        with tablesLock:
-            self.events.append(events)
+        self.appendToTable('Events', events)
 
     def _appendToTable(self, tablename, data):
         with tablesLock:
