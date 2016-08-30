@@ -95,7 +95,7 @@ class DataSource(BaseDataSource):
             
             ev.columns = ['EventName', 'EventDescr', 'Time']
 
-            evts = np.empty(len(ev), dtype=[('EventName', 'S32'), ('EventDescr', 'S256'), ('Time', 'f8')])
+            evts = np.empty(len(ev), dtype=[('EventName', 'S32'), ('Time', 'f8'), ('EventDescr', 'S256')])
             evts['EventName'] = ev['EventName']
             evts['EventDescr'] = ev['EventDescr']
             evts['Time'] = ev['Time']
