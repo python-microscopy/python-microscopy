@@ -49,11 +49,12 @@ def foldX(pipeline):
     roiSizeNM = (pipeline.mdh['Multiview.ROISize'][1]*pipeline.mdh['voxelsize.x']*1000)  # voxelsize is in um
 
     pipeline.selectedDataSource.addVariable('roiSizeNM', roiSizeNM)
+    pipeline.selectedDataSource.addVariable('numChannels', len(pipeline.mdh['Multiview.ChannelColor']) - 1)
 
     pipeline.addColumn('chromadx', 0*pipeline['x'])
     pipeline.addColumn('chromady', 0*pipeline['y'])
 
-    pipeline.selectedDataSource.setMapping('whichChan', 'floor(x/roiSizeNM).astype(int)')
+    pipeline.selectedDataSource.setMapping('whichChan', 'clip(floor(x/roiSizeNM), 0, numChannels).astype(int)')
     pipeline.selectedDataSource.setMapping('x', 'x%roiSizeNM + chromadx')
     pipeline.selectedDataSource.setMapping('y', 'y + chromady')
 
@@ -108,7 +109,7 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
     if not deltaX[0]:
         deltaX = 100.*np.ones_like(x)
     # group localizations
-    assigned = pyDeClump.findClumps(tIndex, x, y, deltaX, nFrameSep)
+    assigned = pyDeClump.findClumps(tIndex.astype(np.int32), x, y, deltaX, nFrameSep)
     # print assigned.min()
     # only look at clumps with localizations from each channel
     clumps = np.unique(assigned)
@@ -526,6 +527,7 @@ class multiviewMapper:
             print('Defaulting to single plane, single color channel settings')
             numChan = 1
             chanColor = [0]
+            chanPlane = [0]
             numPlanes = 1
 
         try:  # load astigmatism calibrations from metadata, if present
