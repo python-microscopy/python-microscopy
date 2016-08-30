@@ -49,11 +49,12 @@ def foldX(pipeline):
     roiSizeNM = (pipeline.mdh['Multiview.ROISize'][1]*pipeline.mdh['voxelsize.x']*1000)  # voxelsize is in um
 
     pipeline.selectedDataSource.addVariable('roiSizeNM', roiSizeNM)
+    pipeline.selectedDataSource.addVariable('numChannels', len(pipeline.mdh['Multiview.ChannelColor']) - 1)
 
     pipeline.addColumn('chromadx', 0*pipeline['x'])
     pipeline.addColumn('chromady', 0*pipeline['y'])
 
-    pipeline.selectedDataSource.setMapping('whichChan', 'floor(x/roiSizeNM).astype(int)')
+    pipeline.selectedDataSource.setMapping('whichChan', 'clip(floor(x/roiSizeNM), 0, numChannels).astype(int)')
     pipeline.selectedDataSource.setMapping('x', 'x%roiSizeNM + chromadx')
     pipeline.selectedDataSource.setMapping('y', 'y + chromady')
 
