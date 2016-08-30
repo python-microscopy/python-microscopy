@@ -109,7 +109,7 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
     if not deltaX[0]:
         deltaX = 100.*np.ones_like(x)
     # group localizations
-    assigned = pyDeClump.findClumps(tIndex, x, y, deltaX, nFrameSep)
+    assigned = pyDeClump.findClumps(tIndex.astype(np.int32), x, y, deltaX, nFrameSep)
     # print assigned.min()
     # only look at clumps with localizations from each channel
     clumps = np.unique(assigned)
