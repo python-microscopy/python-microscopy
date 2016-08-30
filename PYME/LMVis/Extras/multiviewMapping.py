@@ -527,6 +527,7 @@ class multiviewMapper:
             print('Defaulting to single plane, single color channel settings')
             numChan = 1
             chanColor = [0]
+            chanPlane = [0]
             numPlanes = 1
 
         try:  # load astigmatism calibrations from metadata, if present
