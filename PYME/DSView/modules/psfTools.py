@@ -198,25 +198,31 @@ class CRBViewPanel(wx.Panel):
         from PYME.Analysis.PSFGen import fourierHNA
         #print 'b'
         import numpy as np
-        d = self.image.data[:,:,:,0].squeeze()
-        I = d[:,:,d.shape[2]/2].sum()
-        
-        vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
-        
-        #print 'fi'        
-        FI = cramerRao.CalcFisherInformZn2(d*(2e3/I) + self.background, 100, voxelsize=vs)
-        #print 'crb'
-        self.crb = cramerRao.CalcCramerReoZ(FI)
-        #print 'crbd'
-        
-        z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
-        self.z_ = z_ - z_.mean()
-        
-        ps_as = fourierHNA.GenAstigPSF(self.z_, vs[0], 2)  
-        I = ps_as[:,:,ps_as.shape[2]/2].sum()
-        self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/I + self.background, 500, voxelsize=vs)))
-        
-        self.draw()
+        try:
+            d = self.image.data[:,:,:,0].squeeze()
+            I = d[:,:,d.shape[2]/2].sum()
+
+            vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
+
+            #print 'fi'
+            FI = cramerRao.CalcFisherInformZn2(d*(2e3/I) + self.background, 100, voxelsize=vs)
+            #print 'crb'
+            self.crb = cramerRao.CalcCramerReoZ(FI)
+            #print 'crbd'
+
+            z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
+            self.z_ = z_ - z_.mean()
+
+            ps_as = fourierHNA.GenAstigPSF(self.z_, vs[0], 2)
+            I = ps_as[:,:,ps_as.shape[2]/2].sum()
+            self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/I + self.background, 500, voxelsize=vs)))
+
+            self.draw()
+        except np.linalg.linalg.LinAlgError:
+            # don't hang if we can't compute the CRLB
+            import traceback
+            traceback.print_exc()
+
 
 
     def draw(self, event=None):
