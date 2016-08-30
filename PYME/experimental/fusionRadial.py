@@ -71,7 +71,7 @@ def _rad_dist(d):
     for r in range(int(np.floor(X.max()))):
         out.append((d * (R < r)).sum())
 
-    return out
+    return np.array(out)
 
 def _genPSF(pixelsize, wavelength, NA, SCA_enhanchement=1.0):
     """
@@ -238,6 +238,9 @@ def diffMultiModel(params, t, sig=1., radii=[1., 2., 3., 5., 10, 1.0]):
 
     return out
 
+def docked_model(p, r, r_cal):
+    return docked_vesc_SCA(r, p[0], r_cal=r_cal)
+
 def fitModelToClump(clump, radii = [1., 2., 3., 5., 10], numLeadFrames=10, numFollowFrames=50, sig=2.0, radii_corr = 0, fig = None):
     import matplotlib.pyplot as plt
 
@@ -385,6 +388,21 @@ class FusionTrack(trackUtils.Track):
         #sp = [1, t[-1] - self.numFollowFrames - 1, .5, 1., 2., 6., -1, 0]
         sp = self._unpack_params(self.startParams)
         fitWhich = self._unpack_fitwhich(self.fitWhich)
+
+        #fit super-critical angle component to the docked stage only
+        if fitWhich[-1]:
+            numDockedFrames = len(t) - self.numLeadFrames - self.numFollowFrames
+            i_mean = data[:, self.numLeadFrames:(self.numLeadFrames + numDockedFrames)].mean(1)
+
+            # sca = _fithelpers.FitModelFixed(lambda p, r: docked_vesc_SCA(r, p[0], r_cal=self.radii[-1]),
+            #                                 [sp[-1],], [True,], i_mean, self.radii, eps=.1)[0][0]
+
+            sca_ = sp[-1]**2 + 1.0
+
+            sca = _fithelpers.FitModelFixed(docked_model, [sca_,], [True,], i_mean, self.radii.astype('i'), int(self.radii[-1]), eps=.1)[0][0]
+
+            sp[-1] = np.sqrt(sca - 1)
+            fitWhich[-1] = False
 
         #print sp, fitWhich, self.startParams, self.fitWhich
 
