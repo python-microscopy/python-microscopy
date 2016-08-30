@@ -233,10 +233,11 @@ class FitFusionTraces(ModuleBase):
     paramsToFit = DictStrBool(desc='a dictionary of parameters whose fit status should be over-ridden. Use in conjunction with startParams to fix parameters at a given value')
 
     def execute(self, namespace):
-        from PYME.experimental.fusionRadial import FusionTrack
+        from PYME.experimental import fusionRadial
+        reload(fusionRadial)
         tracks = namespace[self.inputTracks]
 
-        clumps = [FusionTrack(c, numLeadFrames=self.numLeadFrames, numFollowFrames=self.numFollowFrames, sig=self.psfSigma,
+        clumps = [fusionRadial.FusionTrack(c, numLeadFrames=self.numLeadFrames, numFollowFrames=self.numFollowFrames, sig=self.psfSigma,
                               startParams=self.startParams, fitWhich=self.paramsToFit) for c in tracks]
 
         if 'mdh' in dir(tracks):

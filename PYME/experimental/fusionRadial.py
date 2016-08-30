@@ -53,8 +53,96 @@ import numpy as np
 from scipy.special import erf, jn
 from PYME.Analysis.Tracking import trackUtils
 from PYME.Analysis import _fithelpers
-reload(_fithelpers)
+from PYME.Analysis import PSFGen
+from scipy import ndimage
+#reload(_fithelpers)
 
+#####
+# Helper functions for computing the radial shape of the PSF for super-critical fluorescence
+
+def _rad_dist(d):
+    X, Y = np.mgrid[0.0:d.shape[0], 0.0:d.shape[1]]
+    X = X - X.mean()
+    Y = Y - Y.mean()
+    R = np.sqrt(X * X + Y * Y)
+
+    out = []
+
+    for r in range(int(np.floor(X.max()))):
+        out.append((d * (R < r)).sum())
+
+    return out
+
+def _genPSF(pixelsize, wavelength, NA, SCA_enhanchement=1.0):
+    """
+    Generates a PSF using the Gibson-Lanni model.
+
+    To approximate (very roughly) the effect of super-critical angle fluorescence, we amplify the outer 10% of the pupil
+    by an enhancement factor.
+
+    Parameters
+    ----------
+    pixelsize : float
+        The pixel size in nm
+    wavelength : float
+        The wavelength in nm
+    NA : float
+        The numerical aperture
+    SCA_enhanchement : float
+        How much to enhance the outer 20% of the pupil. A value of one gives a standard widefield PSF
+
+    Returns
+    -------
+
+    """
+    nyquist_pixel_size = wavelength/(2*2.3*NA)
+    if pixelsize > nyquist_pixel_size:
+        #data is undersampled, but we need to generate a properly sampled PSF when simulating.
+        mag_factor = np.ceil(pixelsize/nyquist_pixel_size)
+        sim_pixel_size = pixelsize/mag_factor
+    else:
+        mag_factor = 1
+        sim_pixel_size = pixelsize
+
+    X = sim_pixel_size * np.arange(-mag_factor*20., mag_factor*20)
+    P = np.linspace(0, 1, 500)
+    Z = np.array([0])
+
+    W = np.ones_like(P)
+    W[-50:] *= SCA_enhanchement
+    W = W / W.sum()
+
+    im = PSFGen.genWidefieldPSFW(X, X, Z, P, W, k=2 * np.pi / wavelength, NA=NA, depthInSample=0)
+    if mag_factor > 1:
+        im = ndimage.uniform_filter(im.squeeze() * mag_factor**2, mag_factor)[::mag_factor, ::mag_factor]
+
+    return im.squeeze()
+
+_radCurveCache = {}
+def _getPSFRadialCurve(pixelsize=260, wavelength=640, NA=1.45, SCA_enhancement=1.0):
+    key = (pixelsize, wavelength, NA, SCA_enhancement)
+
+    try:
+        return _radCurveCache[key]
+    except KeyError:
+        rc = _rad_dist(_genPSF(pixelsize,wavelength,NA, SCA_enhancement))
+        _radCurveCache[key] = rc
+        return rc
+
+def getPSFRadialValue(r, r_cal=11, SCA_enhancement=1.0, **kwargs):
+    sca_0 = np.floor(SCA_enhancement)
+    sca_f = SCA_enhancement - sca_0
+
+    rc0 = _getPSFRadialCurve(SCA_enhancement=sca_0, **kwargs)
+    rc0 = rc0[r]/rc0[r_cal]
+
+    rc1 = _getPSFRadialCurve(SCA_enhancement=(sca_0 + 1), **kwargs)
+    rc1 = rc1[r] / rc1[r_cal]
+
+    return sca_f*rc0 + (1-sca_f)*rc1
+
+def docked_vesc_SCA(r, sca, **kwargs):
+    return getPSFRadialValue(r, SCA_enhancement=sca, **kwargs)
 
 def docked_vesc_(r, sig):
     return (1. - np.exp(-(r * r) / (2. * sig * sig)))
@@ -63,7 +151,7 @@ def docked_vesc__(r, sig):
     x = r*2.2/sig
     return 1.0 -jn(0, x)**2-jn(1, x)**2
 
-def docked_vesc(r, sig):
+def docked_vesc_l(r, sig):
     #Lorentizian
     return (2/np.pi)*np.arctan(.7*r/sig)
 
@@ -83,6 +171,15 @@ def diffuse_greens_circ(t, r, D, sig=0.):
     #return (t>1e-9)*erf(r/(2*sqrt(D*t)))/(4*sqrt(pi*D*t))
     return (t > 1e-9) * (1. - np.exp(-(r ** 2) / (4. * D * t + 2 * sig ** 2)))
 
+def diffuse_greens_circ_SCA(t, r, D, sca=1.0, sig=0., **kwargs):
+    t = np.maximum(t, 1e-9)
+    #plot(exp(-(r**2)/4*D*t))
+    #return (t>1e-9)*erf(r/(2*sqrt(D*t)))/(4*sqrt(pi*D*t))
+    vesc = docked_vesc_SCA(r, sca, **kwargs)
+    diff = (1. - np.exp(-(r ** 2) / (4. * D * t + 2 * sig ** 2)))
+
+    return (t > 1e-9) * np.minimum(vesc, diff)
+
 
 def diffModel(params, t, r, sig=1.):
     A, t0, D, tau, enh, tau_bl, tdocked, background = params
@@ -101,11 +198,12 @@ def diffModel(params, t, r, sig=1.):
         -(t - t0) * enh / tau_bl) + background * np.pi * r ** 2
 
 
-def diffMultiModel(params, t, sig=1., radii=[1., 2., 3., 5., 10]):
-    A, t0, D, tau, enh, tau_bl, tdocked, background = params
+def diffMultiModel(params, t, sig=1., radii=[1., 2., 3., 5., 10, 1.0]):
+    A, t0, D, tau, enh, tau_bl, tdocked, background, SCA= params
     tau = tau**2
     enh = enh**2
     tau_bl = 100 * tau_bl**2
+    SCA = 1 + SCA**2
 
     rref = radii[-1]
 
@@ -126,13 +224,15 @@ def diffMultiModel(params, t, sig=1., radii=[1., 2., 3., 5., 10]):
 
     for i, r in enumerate(radii):
         #the signal for a docked vesicle (2D diffraction limited spot)
-        docked = docked_t * docked_vesc(r, sig)
+        #docked = docked_t * docked_vesc(r, sig)
+        docked = docked_t * docked_vesc_SCA(r, SCA, r_cal=rref)
 
         out[i, :] = docked + background * np.pi * r ** 2
 
         #now add the release signal. We approximate the convolution with a sum
         for ti, cw in zip(t_, conv_weights):
-            out[i, :] = out[i, :] + cw * diffuse_greens_circ(t - t0 - ti, r, D, sig) * release_t
+            #out[i, :] = out[i, :] + cw * diffuse_greens_circ(t - t0 - ti, r, D, sig) * release_t
+            out[i, :] = out[i, :] + cw * diffuse_greens_circ_SCA(t - t0 - ti, r, D, SCA, sig) * release_t
 
         #out[i, :] = out[i, :]*(r-1)/rref
 
@@ -163,9 +263,9 @@ def fitModelToClump(clump, radii = [1., 2., 3., 5., 10], numLeadFrames=10, numFo
     A -= bg
     bg /= (2*np.pi*radii[0]**2)
 
-    sp = [1, t[-1] - numFollowFrames-1, .5, 1., 2., 6., -1, bg/A]
+    sp = [1, t[-1] - numFollowFrames-1, .5, 1., 2., 6., -1, bg/A, 1.0]
 
-    res = _fithelpers.FitModelFixed(diffMultiModel, sp, [1, 0, 1, 1, 1, 1, 0, 0], data/A, t, sig, radii, eps=.1, weights=weights)
+    res = _fithelpers.FitModelFixed(diffMultiModel, sp, [1, 0, 1, 1, 1, 1, 0, 0, 0], data/A, t, sig, radii, eps=.1, weights=weights)
 
     def fprint(x):
         print(np.array2string(x, formatter={'float_kind': lambda x: "%.2f" % x}))
@@ -191,7 +291,7 @@ def fitModelToClump(clump, radii = [1., 2., 3., 5., 10], numLeadFrames=10, numFo
     plt.ylabel('Normalized sum intensity')
     plt.xlabel('Time [frames]')
 
-    A, t0, D, tau, enh, tau_bl, tdocked, background = res[0]
+    A, t0, D, tau, enh, tau_bl, tdocked, background, sca = res[0]
     tau = tau ** 2
     tau_bl = 100 * tau_bl**2
     enh = enh**2
@@ -229,11 +329,11 @@ class FusionTrack(trackUtils.Track):
         self.sig = sig
 
         self.startParams = {'A' : 1.0, 't_fusion' : None, 'D' : .5, "tau_rel" : 1., 'G' : 5., 'tau_bleach' : 3600.,
-                            't_docked' : -1.0, 'background' : 0.0}
+                            't_docked' : -1.0, 'background' : 0.0, 'sca': 3.0}
         self.startParams.update(startParams)
 
         self.fitWhich =  {'A' : True, 't_fusion' : False, 'D' : True, "tau_rel" : True, 'G' : True, 'tau_bleach' : True,
-                            't_docked' : False, 'background' : False}
+                            't_docked' : False, 'background' : False, 'sca' : False}
         self.fitWhich.update(fitWhich)
 
 
@@ -291,12 +391,13 @@ class FusionTrack(trackUtils.Track):
         res = _fithelpers.FitModelFixed(diffMultiModel, sp, fitWhich, data, t, self.sig, self.radii, eps=.1,
                                         weights=weights)
 
-        A, t0, D, tau, enh, tau_bl, tdocked, background = res[0]
+        A, t0, D, tau, enh, tau_bl, tdocked, background, sca = res[0]
         tau = tau ** 2
         tau_bl = 100 * tau_bl ** 2
         enh = enh ** 2
+        sca = 1 + sca**2
 
-        return {'A' : A, 't_fusion' : t0, 'D' : D, "tau_rel" : tau, 'G' : enh, 'tau_bleach' : tau_bl, 't_docked' : tdocked, 'background' : background}
+        return {'A' : A, 't_fusion' : t0, 'D' : D, "tau_rel" : tau, 'G' : enh, 'tau_bleach' : tau_bl, 't_docked' : tdocked, 'background' : background, 'sca':sca}
 
     def _unpack_params(self, params):
         out = [params['A'],
@@ -306,7 +407,8 @@ class FusionTrack(trackUtils.Track):
               np.sqrt(params['G']),
               np.sqrt(params['tau_bleach'] / 100),
               params['t_docked'],
-              params['background']]
+              params['background'],
+              np.sqrt(params['sca'] - 1)]
 
         return out
 
@@ -318,7 +420,8 @@ class FusionTrack(trackUtils.Track):
                params['G'],
                params['tau_bleach'],
                params['t_docked'],
-               params['background']]
+               params['background'],
+               params['sca']]
 
         return out
 
