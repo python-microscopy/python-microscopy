@@ -188,23 +188,29 @@ cameraMaps = CameraInfoManager()
 
 
 class fitTask(taskDef.Task):
-    def __init__(self, dataSourceID, index, metadata, dataSourceModule='HDFDataSource', resultsURI=None):
-        """Create a new fitting task, which opens data from a supplied filename.
-        -------------
-        Parameters:
-        filename - name of file containing the frame to be fitted
-        seriesName - name of the series to which the file belongs (to be used in future for sorting processed data)
-        threshold - threshold to be used to detect points n.b. this applies to the filtered, potentially bg subtracted data
-        taskDef.Task.__init__(self)
-        metadata - image metadata (see MetaData.py)
-        fitModule - name of module defining fit factory to use
-        bgffiles - (optional) list of files to be averaged and subtracted from image prior to point detection - n.B. fitting is still performed on raw data"""
+    def __init__(self, dataSourceID, frameIndex, metadata, dataSourceModule='HDFDataSource', resultsURI=None):
+        """
+        Create a new fit task for performing single molecule localization tasks.
+
+        Parameters
+        ----------
+        dataSourceID : str
+            A filename or URI which identifies the data source
+        frameIndex : int
+            The frame to fit
+        metadata : PYME.IO.MetaDataHandler object
+            The image metadata. This defines most of the analysis parameters.
+        dataSourceModule : str
+            The name of the data source module to use
+        resultsURI : str
+            A URI dictating where to store the analysis results.
+        """
         
         taskDef.Task.__init__(self, resultsURI=resultsURI)
 
         self.dataSourceID = dataSourceID
         self.dataSourceModule = dataSourceModule
-        self.index = index
+        self.index = frameIndex
 
         self.md = metadata
 

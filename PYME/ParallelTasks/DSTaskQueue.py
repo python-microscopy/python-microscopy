@@ -85,7 +85,7 @@ class DSTaskQueue(HDFResultsTaskQueue):
         taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
         #print self.dataSourceID, self.dataSourceModule
-        task = fitTask(dataSourceID=self.dataSourceID, index=taskNum, metadata=self.metaData, dataSourceModule = self.dataSourceModule)
+        task = fitTask(dataSourceID=self.dataSourceID, frameIndex=taskNum, metadata=self.metaData, dataSourceModule = self.dataSourceModule)
         
         task.queueID = self.queueID
         task.initializeWorkerTimeout(time.clock())
@@ -111,7 +111,7 @@ class DSTaskQueue(HDFResultsTaskQueue):
         for i in range(cs):
             taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
-            task = fitTask(dataSourceID=self.dataSourceID, index=taskNum, metadata=self.metaData, dataSourceModule = self.dataSourceModule)
+            task = fitTask(dataSourceID=self.dataSourceID, frameIndex=taskNum, metadata=self.metaData, dataSourceModule = self.dataSourceModule)
             
             task.queueID = self.queueID
             task.initializeWorkerTimeout(time.clock())

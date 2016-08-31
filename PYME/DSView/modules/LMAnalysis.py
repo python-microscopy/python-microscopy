@@ -695,7 +695,7 @@ class LMAnalyser2(object):
         if mn == 'BufferedDataSource':
             mn = self.image.dataSource.dataSource.moduleName
 
-        ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, index=zp, metadata=MetaDataHandler.NestedClassMDHandler(analysisMDH), dataSourceModule=mn)
+        ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=MetaDataHandler.NestedClassMDHandler(analysisMDH), dataSourceModule=mn)
         res = ft(gui=gui,taskQueue=self.tq)
         
         if gui:
