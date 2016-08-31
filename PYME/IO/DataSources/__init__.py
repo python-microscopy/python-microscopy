@@ -31,4 +31,29 @@ getNumSlices()
 For more details see BaseDataSource
 
 """
-    
+import os
+
+def getDataSourceForFilename(filename):
+    if filename.startswith('QUEUE://'):
+        import TQDataSource
+        return TQDataSource.DataSource
+    elif filename.startswith('PYME-CLUSTER://'):
+        import ClusterPZFDataSource
+        return ClusterPZFDataSource.DataSource
+    elif filename.startswith('http://') or filename.startswith('HTTP://'):
+        import HTTPDataSource
+        return HTTPDataSource.DataSource
+    elif filename.endswith('.h5'):
+        import HDFDataSource
+        return HDFDataSource.DataSource
+    #elif filename.endswith('.md'): #treat this as being an image series
+    #    self._loadImageSeries(filename)
+    elif os.path.splitext(filename)[1] in ['.tif', '.tif', '.lsm']: #try tiff
+        import TiffDataSource
+        return TiffDataSource.DataSource
+    elif filename.endswith('.dcimg'):
+        import DcimgDataSource
+        return DcimgDataSource.DataSource
+    else: #try bioformats
+        import BioformatsDataSource
+        return BioformatsDataSource.DataSource

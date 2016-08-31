@@ -74,7 +74,13 @@ class BufferManager(object):
         
     def updateBuffers(self, md, dataSourceModule, bufferLen):
         """Update the various buffers. """
-        DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule, fromlist=['DataSource']).DataSource #import our data source
+        if dataSourceModule is None:
+            #if the data source module is not specified, guess based on data source ID
+            import PYME.IO.DataSources
+            DataSource = PYME.IO.DataSources.getDataSourceForFilename(md.dataSourceID)
+        else:
+            DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule, fromlist=['DataSource']).DataSource #import our data source
+
         #read the data
         if not self.dataSourceID == md.dataSourceID: #avoid unnecessary opening and closing 
             self.dBuffer = buffers.dataBuffer(DataSource(md.dataSourceID, md.taskQueue), bufferLen)
@@ -188,7 +194,7 @@ cameraMaps = CameraInfoManager()
 
 
 class fitTask(taskDef.Task):
-    def __init__(self, dataSourceID, frameIndex, metadata, dataSourceModule='HDFDataSource', resultsURI=None):
+    def __init__(self, dataSourceID, frameIndex, metadata, dataSourceModule=None, resultsURI=None):
         """
         Create a new fit task for performing single molecule localization tasks.
 
@@ -201,7 +207,7 @@ class fitTask(taskDef.Task):
         metadata : PYME.IO.MetaDataHandler object
             The image metadata. This defines most of the analysis parameters.
         dataSourceModule : str
-            The name of the data source module to use
+            The name of the data source module to use. If None, the dataSourceModule is inferred from the dataSourceID.
         resultsURI : str
             A URI dictating where to store the analysis results.
         """
