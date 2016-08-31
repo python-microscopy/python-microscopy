@@ -192,7 +192,7 @@ def getFullExistingFilename(relFilename):
     the environment variable PYMEDATADIR. If environment variable not defined,
     or the absolute path exists, assumes path is absolute."""
 
-    if os.path.exists(relFilename):
+    if os.path.exists(relFilename) or relFilename.startswith('PYME-CLUSTER://'):
         return relFilename
     else:
         if relFilename.startswith('d:\\') or relFilename.startswith('D:\\'):
