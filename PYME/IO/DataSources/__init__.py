@@ -37,7 +37,7 @@ def getDataSourceForFilename(filename):
     if filename.startswith('QUEUE://'):
         import TQDataSource
         return TQDataSource.DataSource
-    elif filename.startswith('PYME-CLUSTER://'):
+    elif filename.startswith('PYME-CLUSTER://') or filename.startswith('pyme-cluster://'):
         import ClusterPZFDataSource
         return ClusterPZFDataSource.DataSource
     elif filename.startswith('http://') or filename.startswith('HTTP://'):

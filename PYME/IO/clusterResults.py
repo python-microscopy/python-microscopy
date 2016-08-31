@@ -15,7 +15,7 @@ import socket
 def fileFormattedResults(URI, data, mimetype=None):
     #TODO - send the mimetype
     #handle non-http requests
-    if URI.startswith('PYME-CLUSTER'):
+    if URI.startswith('PYME-CLUSTER') or URI.startswith('pyme-cluster'):
         clusterfilter = URI.split('://')[1].split('/')[0]
         sequenceName = URI.split('://%s/' % clusterfilter)[1]
         #print sequenceName, clusterfilter
@@ -91,7 +91,7 @@ def fileResults(URI, data_raw):
 
 
     #now do URI translation
-    if '__aggregate' in URI and URI.startswith('PYME-CLUSTER'):
+    if '__aggregate' in URI and URI.startswith('PYME-CLUSTER') or URI.startswith('pyme-cluster'):
         # pick a server to  send the results to. This should be the same server which already has the results file, if it
         # already exists. NOTE, this is not advised as there is a possible race condition here if multiple workers try to pick a
         # a location. This can be worked around by e.g. setting the metadata and creating the file from the node which initiates

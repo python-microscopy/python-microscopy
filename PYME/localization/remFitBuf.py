@@ -227,8 +227,12 @@ def createFitTaskFromTaskDef(task):
             mdh.update(json.loads(mdh))
         else:
             #metadata entry is a filename/URI
-            raise NotImplementedError('Loading metadata from a URI in task description is not yet supported')
-            #clusterIO.getFile(mdfn, self.clusterfilter)))
+            from PYME.IO import unifiedIO
+            if md.endswith('.json'):
+                import json
+                mdh.update(json.loads(unifiedIO.read(md)))
+            else:
+                raise NotImplementedError('Loading metadata from a URI in task description is not yet supported')
 
     return fitTask(dataSourceID=dataSourceID, frameIndex=frameIndex, metadata=mdh)
 

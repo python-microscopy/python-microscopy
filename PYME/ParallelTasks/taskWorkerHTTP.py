@@ -48,7 +48,7 @@ def main():
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger('')
 
-    ns = pzc.getNS()
+    ns = pzc.getNS('__pyme-distrib') #fixme to use right selector
 
     procName = compName + ' - PID:%d' % os.getpid()
 
@@ -77,7 +77,7 @@ def main():
 
             try:
                 #ask the queue for tasks
-                #TODO - make the server actually return a list of tasks, not just one
+                #TODO - make the server actually return a list of tasks, not just one (or implement pipelining in another way)
                 r = requests.get(queueURL + 'tasks?workerID=%s' % procName)
                 if r.status_code == 200:
                     resp = r.json()
