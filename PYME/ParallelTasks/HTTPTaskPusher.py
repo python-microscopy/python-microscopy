@@ -7,162 +7,95 @@ Created on Thu Nov 26 23:59:45 2015
 import time
 import numpy as np
 import threading
-from .HDFTaskQueue import HDFResultsTaskQueue, doNix, popZero, CHUNKSIZE, MAXCHUNKSIZE, fitTask
+import requests
+from PYME.IO import DataSources
+from PYME.IO import clusterResults
+import json
+import socket
+import random
 
-class DSTaskQueue(HDFResultsTaskQueue):
-    """ task queue which, when initialised with an hdf image filename, automatically generates tasks - should also (eventually) include support for dynamically adding to data file for on the fly analysis"""
-    def __init__(self, name, mdh, dataSourceModule, dataSourceID, resultsFilename=None, onEmpty = doNix, fTaskToPop = popZero, startAt = 10):
+from PYME.misc import pyme_zeroconf as pzc
+from PYME.misc.computerName import GetComputerName
+compName = GetComputerName()
 
-        self.acceptNewTasks = False
-        self.releaseNewTasks = False
+def _getTaskQueueURI():
+    ns = pzc.getNS('_pyme-taskdist')
 
-        initialTasks = []
+    queueURLs = {}
+    for name, info in ns.advertised_services.items():
+        queueURLs[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
 
-        HDFResultsTaskQueue.__init__(self, name, resultsFilename, initialTasks, onEmpty, fTaskToPop)
-        
-        HDFResultsTaskQueue.setQueueMetaDataEntries(self, mdh)
-        #self.resultsMDH.copyEntriesFrom(mdh)
-        #self.metaData.copyEntriesFrom(self.resultsMDH)
-        
-        self.queueID = name
-        
+    try:
+        #try to grab the distributor on the local computer
+        return queueURLs[compName]
+    except KeyError:
+        #if there is no local distributor, choose one at random
+        return queueURLs.items()[random.randint(0, len(queueURLs)-1)]
+
+import logging
+logging.basicConfig()
+
+class HTTPTaskPusher(object):
+    def __init__(self, dataSourceID, metadata, resultsFilename, queueName = None, startAt = 10, dataSourceModule=None, serverfilter=''):
+        if queueName is None:
+            queueName = resultsFilename
+
+        self.queueID = queueName
         self.dataSourceID = dataSourceID
-        
+        self.resultsURI = 'PYME-CLUSTER://%s/__aggregate_h5r/%s' % (serverfilter, resultsFilename)
+
+        self.taskQueueURI = _getTaskQueueURI()
+
+        self.mdh = metadata
+
         #load data source
-        self.dataSourceModule = dataSourceModule
-        DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule, fromlist=['PYME', 'io', 'DataSources']).DataSource #import our data source
+        if dataSourceModule is None:
+            DataSource = DataSources.getDataSourceForFilename(dataSourceID)
+        else:
+            DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule, fromlist=['PYME', 'io', 'DataSources']).DataSource #import our data source
         self.ds = DataSource(self.dataSourceID)
         
-        if dataSourceModule == 'ClusterPZFDataSource':
-            #fit modules will be able to directly access the data
-            self.serveData = False
-        else:
-            self.serveData = True
-            
-            #the data source we pass to our workers should be this queue
-            self.dataSourceID = self.queueID
-            self.dataSourceModule = 'TQDataSource'
+        #set up results file:
+        clusterResults.fileResults(self.resultsURI + '/MetaData', metadata)
+        clusterResults.fileResults(self.resultsURI + '/Events', self.ds.getEvents())
 
-        self.openTasks = []
-        self.frameNum = startAt
-       
-        self.lastTaskTime = 0
+        self.currentFrameNum = startAt
         
         self.doPoll = True
         
         self.pollT = threading.Thread(target=self._updatePoll)
         self.pollT.start()
-                
 
-    def postTask(self,task):
-        print("can't post new tasks")
-			
+    def fileTasksForFrames(self):
+        numTotalFrames = self.ds.getNumSlices()
+        if  numTotalFrames > (self.currentFrameNum + 1):
+            mdstring = self.mdh.to_JSON() #TODO - use a URI instead
 
-    def postTasks(self,tasks):
-        print("can't post new tasks")
-        #print 'posting tasks not implemented yet'
+            tasks = [{'id':self.queueID,
+                      'type':'localization',
+                      'taskdef': {'frameIndex': frameNum, 'metadata':mdstring},
+                      'inputs' : {'frames': self.dataSourceID},
+                      'outputs' : {'results': self.resultsURI}
+                      } for frameNum in range(self.currentFrameNum, numTotalFrames)]
 
-    def getNumberOpenTasks(self, exact=True):
-        #when doing real time analysis we might not want to tasks out straight
-        #away, in order that our caches still work
-        nOpen = len(self.openTasks)
+            task_list = json.dumps(tasks)
 
-        #Answer truthfully if we are being asked for the exact number of tasks, 
-        #we have enough tasks to give a full chunk, or if it was a while since 
-        #we last gave out any tasks (necessary to make sure all tasks get 
-        #processed at the end of the run.
-        if exact or nOpen > CHUNKSIZE or (time.time() - self.lastTaskTime) > 2:
-            return nOpen
-        else: #otherwise lie and make the workers wait
-            return 0
+            r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list)
+            if r.status_code == 200 and r.json()['Ok']:
+                logging.debug('Successfully posted tasks')
+                self.currentFrameNum = numTotalFrames - 1
+            else:
+                logging.error('Failed on posting tasks with status code: %d' % r.status_code)
 
-    def getTask(self, workerN = 0, NWorkers = 1):
-        """get task from front of list, blocks"""
 
-        while len(self.openTasks) < 1:
-            time.sleep(0.01)
-        
-        taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
-
-        #print self.dataSourceID, self.dataSourceModule
-        task = fitTask(dataSourceID=self.dataSourceID, frameIndex=taskNum, metadata=self.metaData, dataSourceModule = self.dataSourceModule)
-        
-        task.queueID = self.queueID
-        task.initializeWorkerTimeout(time.clock())
-        with self.inProgressLock:
-            self.tasksInProgress.append(task)
-
-        self.lastTaskTime = time.time()
-
-        return task
-
-    def getTasks(self, workerN = 0, NWorkers = 1):
-        """get task from front of list, blocks"""
-        while len(self.openTasks) < 1:
-            time.sleep(0.01)
-
-        tasks = []
-        
-        if not 'Analysis.ChunkSize' in self.metaData.getEntryNames():
-            cs = min(max(CHUNKSIZE, min(MAXCHUNKSIZE, len(self.openTasks))),len(self.openTasks))
-        else:
-            cs = min(self.metaData['Analysis.ChunkSize'], len(self.openTasks))
-
-        for i in range(cs):
-            taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
-
-            task = fitTask(dataSourceID=self.dataSourceID, frameIndex=taskNum, metadata=self.metaData, dataSourceModule = self.dataSourceModule)
-            
-            task.queueID = self.queueID
-            task.initializeWorkerTimeout(time.clock())
-            with self.inProgressLock:
-                self.tasksInProgress.append(task)            
-
-            tasks.append(task)
-
-        self.lastTaskTime = time.time()
-
-        return tasks
-
-        
-    def getQueueData(self, fieldName, *args):
-        """Get data, defined by fieldName and potentially additional arguments,  associated with queue"""
-        if fieldName == 'ImageShape':
-            #ith self.dataFileLock.rlock:
-            #    res = self.h5DataFile.root.ImageData.shape[1:]
-            return self.ds.getSliceShape()
-        elif fieldName == 'ImageData':
-            sliceNum, = args
-            res = self.ds.getSlice(sliceNum)            
-            return res
-        elif fieldName == 'NumSlices':
-            return self.ds.getNumSlices()
-        elif fieldName == 'Events':            
-            return self.ds.getEvents()
-        else:
-            return HDFResultsTaskQueue.getQueueData(self, fieldName, *args)
     
     def _updatePoll(self):
         while (self.doPoll == True):
-            self._updateTasks()
-            time.sleep(1)
-    
-    def _updateTasks(self):
-        nfn = self.ds.getNumSlices()
-        if nfn > self.frameNum:
-            self.openTasks += range(self.frameNum, nfn)
-            self.frameNum = nfn
-        
-        ev = self.ds.getEvents()
-        numQueueEvents = self.getNumQueueEvents()
-
-        if len(ev) > numQueueEvents:
-            self.addQueueEvents(ev[numQueueEvents:])
-
-    def releaseTasks(self, startingAt = 0):
-        self.openTasks += range(startingAt, self.imNum)
-        self.releaseNewTasks = True
+            self.fileTasksForFrames()
+            if self.ds.isComplete():
+                self.doPoll = False
+            else:
+                time.sleep(1)
         
     def cleanup(self):
         self.doPoll = False
-        HDFResultsTaskQueue.cleanup(self)

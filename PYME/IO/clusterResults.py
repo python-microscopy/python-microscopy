@@ -32,18 +32,39 @@ def fileFormattedResults(URI, data, mimetype=None):
     else:
         raise RuntimeError('Unknown protocol %s' % URI.split(':')[0])
 
+_loc_cache = {}
 def pickResultsServer(filename, serverfilter=''):
-    locs = clusterIO.locateFile(filename, serverfilter)
-
-    if len(locs) > 1:
-        raise RuntimeError('More than one copy of the file found. This should never happen, '
-                           'and is probably the result of a race condition. Data corruption is likely.')
-
-    if len(locs) == 1:
-        return[0][0]
+    if filename.startswith('__aggregate_txt/'):
+        fn = filename[len('__aggregate_txt/'):]
+        stub = ''
+    elif filename.startswith('__aggregate_h5r/'):
+        fn = filename[len('__aggregate_h5r/'):]
+        fn, stub = fn.split('.h5r')
+        fn = fn  + '.h5r'
     else:
-        name, info = clusterIO._chooseServer(serverfilter)
-        return 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
+        fn = filename
+        stub = ''
+
+    cache_key = serverfilter + '::' + fn
+    try:
+        return _loc_cache[cache_key]
+    except KeyError:
+        locs = clusterIO.locateFile(fn, serverfilter)
+        locs = [(l + stub, dt) for l, dt in locs]
+
+
+        if len(locs) > 1:
+            raise RuntimeError('More than one copy of the file found. This should never happen, '
+                               'and is probably the result of a race condition. Data corruption is likely.')
+
+        if len(locs) == 1:
+            loc =  locs[0][0]
+        else:
+            name, info = clusterIO._chooseServer(serverfilter)
+            loc = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
+
+        _loc_cache[cache_key] = loc
+        return loc
 
 
 def fileResults(URI, data_raw):
