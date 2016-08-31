@@ -19,6 +19,7 @@ from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
 
 def _getTaskQueueURI():
+    """Discover the distributors using zeroconf and choose one"""
     ns = pzc.getNS('_pyme-taskdist')
 
     queueURLs = {}
