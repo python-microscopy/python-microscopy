@@ -37,6 +37,26 @@ logging.basicConfig()
 
 class HTTPTaskPusher(object):
     def __init__(self, dataSourceID, metadata, resultsFilename, queueName = None, startAt = 10, dataSourceModule=None, serverfilter=''):
+        """
+        Create a pusher and push tasks for each frame in a series. For use with the new cluster distribution architecture
+
+        Parameters
+        ----------
+        dataSourceID : str
+            The URI of the data source - e.g. PYME-CLUSTER://serverfilter/path/to/data
+        metadata : PYME.IO.MetaDataHandler object
+            The acquisition and analysis metadata
+        resultsFilename : str
+            The cluster relative path to the results file. e.g. "<username>/analysis/<date>/seriesname.h5r"
+        queueName : str
+            a name to give the queue. The results filename is used if no name is given.
+        startAt : int
+            which frame to start at. TODO - read from metadata instead of taking as a parameter.
+        dataSourceModule : str [optional]
+            The name of the module to use for reading the raw data. If not given, it will be inferred from the dataSourceID
+        serverfilter : str
+            A cluster filter, for use when multiple PYME clusters are visible on the same network segment.
+        """
         if queueName is None:
             queueName = resultsFilename
 
@@ -69,8 +89,10 @@ class HTTPTaskPusher(object):
     def fileTasksForFrames(self):
         numTotalFrames = self.ds.getNumSlices()
         if  numTotalFrames > (self.currentFrameNum + 1):
+            #turn our metadata to a string once (outside the loop)
             mdstring = self.mdh.to_JSON() #TODO - use a URI instead
 
+            #create task definitions for each frame
             tasks = [{'id':self.queueID,
                       'type':'localization',
                       'taskdef': {'frameIndex': frameNum, 'metadata':mdstring},
