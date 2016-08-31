@@ -81,20 +81,11 @@ class DSTaskQueue(HDFResultsTaskQueue):
 
         while len(self.openTasks) < 1:
             time.sleep(0.01)
-            
-            #patch up old data which doesn't have BGRange in metadata
-        if not 'Analysis.BGRange' in self.metaData.getEntryNames():
-            nBGFrames = self.metaData.getOrDefault('Analysis.NumBGFrames', 10)
-            self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
-        
         
         taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
-        bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
-        
-
-        print self.dataSourceID, self.dataSourceModule        
-        task = fitTask(self.dataSourceID, taskNum, self.metaData['Analysis.DetectionThreshold'], self.metaData, self.metaData['Analysis.FitModule'], bgindices =bgi, SNThreshold = True, dataSourceModule = self.dataSourceModule)
+        #print self.dataSourceID, self.dataSourceModule
+        task = fitTask(dataSourceID=self.dataSourceID, index=taskNum, metadata=self.metaData, dataSourceModule = self.dataSourceModule)
         
         task.queueID = self.queueID
         task.initializeWorkerTimeout(time.clock())
@@ -110,10 +101,6 @@ class DSTaskQueue(HDFResultsTaskQueue):
         while len(self.openTasks) < 1:
             time.sleep(0.01)
 
-        if not 'Analysis.BGRange' in self.metaData.getEntryNames():
-            nBGFrames = self.metaData.getOrDefault('Analysis.NumBGFrames', 10)
-            self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
-
         tasks = []
         
         if not 'Analysis.ChunkSize' in self.metaData.getEntryNames():
@@ -124,9 +111,7 @@ class DSTaskQueue(HDFResultsTaskQueue):
         for i in range(cs):
             taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
-            bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
- 
-            task = fitTask(self.dataSourceID, taskNum, self.metaData['Analysis.DetectionThreshold'], self.metaData, self.metaData['Analysis.FitModule'], bgindices =bgi, SNThreshold = True, dataSourceModule = self.dataSourceModule)
+            task = fitTask(dataSourceID=self.dataSourceID, index=taskNum, metadata=self.metaData, dataSourceModule = self.dataSourceModule)
             
             task.queueID = self.queueID
             task.initializeWorkerTimeout(time.clock())

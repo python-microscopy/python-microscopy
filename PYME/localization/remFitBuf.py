@@ -188,7 +188,7 @@ cameraMaps = CameraInfoManager()
 
 
 class fitTask(taskDef.Task):
-    def __init__(self, dataSourceID, index, threshold, metadata, fitModule, dataSourceModule='HDFDataSource', bgindices = [], SNThreshold = False, resultsURI=None):
+    def __init__(self, dataSourceID, index, metadata, dataSourceModule='HDFDataSource', resultsURI=None):
         """Create a new fitting task, which opens data from a supplied filename.
         -------------
         Parameters:
@@ -202,28 +202,38 @@ class fitTask(taskDef.Task):
         
         taskDef.Task.__init__(self, resultsURI=resultsURI)
 
-        self.threshold = metadata['Analysis.DetectionThreshold']
         self.dataSourceID = dataSourceID
+        self.dataSourceModule = dataSourceModule
         self.index = index
 
-        bgi = range(max(index + metadata['Analysis.BGRange'][0], metadata['EstimatedLaserOnFrameNo']),
-                    max(index + metadata['Analysis.BGRange'][1], metadata['EstimatedLaserOnFrameNo']))
-
-        self.bgindices = bgi
-
         self.md = metadata
+
+        #extract remaining parameters from metadata
+        self.fitModule = self.md['Analysis.FitModule']
+
+        self.threshold = self.md['Analysis.DetectionThreshold']
+        self.SNThreshold = self.md.getOrDefault('Analysis.SNRThreshold', True)
         
-        self.fitModule = metadata['Analysis.FitModule']
-        self.dataSourceModule = dataSourceModule
-        self.SNThreshold = SNThreshold
-        
-        self.driftEst = metadata.getOrDefault('Analysis.TrackFiducials', False)  
-        
+        self.driftEst = self.md.getOrDefault('Analysis.TrackFiducials', False)
                  
         self.bufferLen = 50 #12
         if self.driftEst: 
             #increase the buffer length as we're going to look forward as well
             self.bufferLen = 50 #17
+
+        self._get_bgindices()
+
+    def _get_bgindices(self):
+        if not 'Analysis.BGRange' in self.md.getEntryNames():
+            if 'Analysis.NumBGFrames' in self.md.getEntryNames():
+                nBGFrames = self.md.Analysis.NumBGFrames
+            else:
+                nBGFrames = 10
+
+            self.md.setEntry('Analysis.BGRange', (-nBGFrames, 0))
+
+        self.bgindices = range(max(self.index + self.md['Analysis.BGRange'][0], self.md['EstimatedLaserOnFrameNo']),
+                               max(self.index + self.md['Analysis.BGRange'][1], self.md['EstimatedLaserOnFrameNo']))
             
     def __mapSplitterCoords(self, x,y):
         vx = self.md['voxelsize.x']*1e3
