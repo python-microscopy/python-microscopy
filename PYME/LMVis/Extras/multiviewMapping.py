@@ -534,8 +534,8 @@ class multiviewMapper:
             stigLib = pipeline.mdh['Astigmap']
         except AttributeError:
             try:  # load through GUI dialog
-                fdialog = wx.FileDialog(None, 'Load Astigmatism Calibration', #wildcard='Shift Field file (*.sf)|*.sf',
-                                        wildcard='AstigMAPism file (*.am)|*.am', style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
+                fdialog = wx.FileDialog(None, 'Load Astigmatism Calibration', wildcard='Astigmatism map (*.am)|*.am',
+                                        style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
                 succ = fdialog.ShowModal()
                 if (succ == wx.ID_OK):
                     fpath = fdialog.GetPath()
