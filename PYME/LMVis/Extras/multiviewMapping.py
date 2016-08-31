@@ -531,7 +531,7 @@ class multiviewMapper:
             numPlanes = 1
 
         try:  # load astigmatism calibrations from metadata, if present
-            stigLib = pipeline.mdh['astigLib']
+            stigLib = pipeline.mdh['Astigmap']
         except AttributeError:
             try:  # load through GUI dialog
                 fdialog = wx.FileDialog(None, 'Load Astigmatism Calibration', #wildcard='Shift Field file (*.sf)|*.sf',
