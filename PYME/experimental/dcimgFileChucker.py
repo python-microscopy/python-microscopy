@@ -67,7 +67,7 @@ class venerableFileChucker(object):
             #os.remove(events_filename)
 
     def searchAndHuck(self, onlySpoolNew=False, deleteAfterSpool=False):
-        md_candidates = glob.glob(self.folder + '\*.json')
+        md_candidates = glob.glob(os.path.join(self.folder, '*.json'))
         #changed it to just use a list comprehension as this will be much easier to read (and there is no performance advantage to using arrays) - DB
         metadataFiles = [f for f in md_candidates if not (f.endswith('_events.json') or f.endswith('_zsteps.json'))]
 
