@@ -192,6 +192,45 @@ class CameraInfoManager(object):
 
 cameraMaps = CameraInfoManager()
 
+def createFitTaskFromTaskDef(task):
+    """
+    Creates a fit task from a new-style json task definition
+    Parameters
+    ----------
+    task : dict
+        The parsed task definition. As the task definition will need to be parsed by the worker before we get here,
+        we expect this to take the form of a python dictionary.
+
+    Returns
+    -------
+
+    a fitTask instance
+
+    """
+    from PYME.IO import MetaDataHandler
+
+    dataSourceID = task['inputs']['dataSourceID']
+    frameIndex = task['taskdef']['frameIndex']
+
+    md = task['taskdef']['metadata']
+
+    #sort out our metadata
+    #TODO - Move this somewhere saner - e.g. a helper function in the MetaDataHandler module
+    mdh = MetaDataHandler.NestedClassMDHandler()
+    if isinstance(md, dict):
+        #metadata was parsed with the enclosing json
+        mdh.update(md)
+    elif isinstance(md, str) or isinstance(md, unicode):
+        if md.startswith('{'):
+            #metadata is a quoted json dump
+            import json
+            mdh.update(json.loads(mdh))
+        else:
+            #metadata entry is a filename/URI
+            raise NotImplementedError('Loading metadata from a URI in task description is not yet supported')
+            #clusterIO.getFile(mdfn, self.clusterfilter)))
+
+    return fitTask(dataSourceID=dataSourceID, frameIndex=frameIndex, metadata=mdh)
 
 class fitTask(taskDef.Task):
     def __init__(self, dataSourceID, frameIndex, metadata, dataSourceModule=None, resultsURI=None):
