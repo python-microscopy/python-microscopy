@@ -202,15 +202,18 @@ class fitTask(taskDef.Task):
         
         taskDef.Task.__init__(self, resultsURI=resultsURI)
 
-        self.threshold = threshold
+        self.threshold = metadata['Analysis.DetectionThreshold']
         self.dataSourceID = dataSourceID
         self.index = index
 
-        self.bgindices = bgindices
+        bgi = range(max(index + metadata['Analysis.BGRange'][0], metadata['EstimatedLaserOnFrameNo']),
+                    max(index + metadata['Analysis.BGRange'][1], metadata['EstimatedLaserOnFrameNo']))
+
+        self.bgindices = bgi
 
         self.md = metadata
         
-        self.fitModule = fitModule
+        self.fitModule = metadata['Analysis.FitModule']
         self.dataSourceModule = dataSourceModule
         self.SNThreshold = SNThreshold
         
