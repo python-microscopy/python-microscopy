@@ -244,7 +244,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             # transmitted *less* than the content-length!
             f = open(path, 'rb')
         except IOError:
-            self.send_error(404, "File not found")
+            self.send_error(404, "File not found - %s, [%s]" % (self.path, path))
             return None
         try:
             self.send_response(200)
@@ -384,7 +384,11 @@ def main(protocol="HTTP/1.0"):
     ns.register_service('PYMEDataServer: ' + procName, ip_addr, sa[1])
 
     print "Serving HTTP on", ip_addr, "port", sa[1], "..."
-    httpd.serve_forever()
+    try:
+        httpd.serve_forever()
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
 
 
 if __name__ == '__main__':

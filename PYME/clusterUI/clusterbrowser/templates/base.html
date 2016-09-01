@@ -17,7 +17,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">PYME Storage Cluster</a>
+          <a class="navbar-brand" href="#">PYME Storage &amp; Compute Cluster</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav navbar-right">
@@ -26,9 +26,9 @@
             <li><a href="#">Profile</a></li>
             <li><a href="#">Help</a></li>
           </ul>
-          {#<form class="navbar-form navbar-right">
+          <!--<form class="navbar-form navbar-right">
             <input type="text" class="form-control" placeholder="Search...">
-          </form>#}
+          </form>-->
         </div>
       </div>
     </nav>
@@ -36,6 +36,10 @@
 <div class="container-fluid">
 <div class="row">
 <div class="col-sm-3 col-md-2 sidebar">
+    <ul class="nav nav-sidebar">
+        <li class="{% block files_active_class %}{% endblock %}"><a href="/files/">Files</a></li>
+            <li class="{% block analyis_active_class %}{% endblock %}"><a href="/analysis/">Analysis</a></li>
+          </ul>
     {% block sidebar %}
           <ul class="nav nav-sidebar">
             <li class="active"><a href="#">Overview <span class="sr-only">(current)</span></a></li>

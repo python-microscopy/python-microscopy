@@ -83,12 +83,16 @@ def _listSingleDir(dirurl):
         dt = time.time() - t
         if not r.status_code == 200:
             logging.warn('Request failed with error: %d' % r.status_code)
+
+            #make sure we read a reply so that the far end doesn't hold the connection open
+            dump = r.content
             return [], dt
         try:
             dirL = r.json()
         except ValueError:
             # directory doesn't exist
             return [], dt
+
         _dirCache[dirurl] = (dirL, t, dt)
 
     return dirL, dt
