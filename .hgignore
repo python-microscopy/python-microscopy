@@ -24,3 +24,4 @@ doc/api/*
 doc/html/*
 .idea
 
+*.sqlite3
