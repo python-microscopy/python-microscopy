@@ -27,6 +27,7 @@ import wx
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
+from OpenGL import GLUT
 #import sys,math
 
 
@@ -192,6 +193,39 @@ class SelectionOverlay(object):
             glVertex3f(x0, y1, glcanvas.zc)
             glEnd()
 
+class MessageOverlay(object):
+    def __init__(self, message = '', x=-.7, y=0):
+        self.message = message
+        self.x = x
+        self.y = y
+
+    def render(self, glcanvas):
+        if not self.message == '':
+            glDisable(GL_LIGHTING)
+            glPushMatrix()
+            glLoadIdentity()
+
+            glOrtho(-1, 1, -1, 1, -1, 1)
+            #def glut_print(x, y, font, text, r, g, b, a):
+
+            # blending = False
+            # if glIsEnabled(GL_BLEND):
+            #     blending = True
+
+            #glEnable(GL_BLEND)
+            glColor3f(1, 1, 1)
+            glRasterPos2f(self.x, self.y)
+            for ch in self.message:
+                GLUT.glutBitmapCharacter(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_int(ord(ch)))
+
+            #GLUT.glutBitmapString(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_char_p(self.message))
+
+            # if not blending:
+            #     glDisable(GL_BLEND)
+
+            glPopMatrix()
+            glEnable(GL_LIGHTING)
+
 
 
 class LMGLCanvas(GLCanvas):
@@ -291,6 +325,9 @@ class LMGLCanvas(GLCanvas):
 
         self.overlays.append(SelectionOverlay(self.selectionSettings))
 
+        self.messageOverlay = MessageOverlay()
+        self.overlays.append(self.messageOverlay)
+
 
         self.wantViewChangeNotification = WeakSet()
         self.pointSelectionCallbacks = []
@@ -326,6 +363,11 @@ class LMGLCanvas(GLCanvas):
         
     def OnMove(self, event):
         self.Refresh()
+
+    def setOverlayMessage(self, message=''):
+        self.messageOverlay.message = message
+        if self.init:
+            self.Refresh()
         
     def interlace_stencil(self):
         WindowWidth = self.Size[0]

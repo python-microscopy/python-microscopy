@@ -423,9 +423,12 @@ class VisGUICore(object):
         self.filterPane.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
 
         if len(self.pipeline['x']) == 0:
-            wx.MessageBox('No data points - try adjusting the filter', 
-                          "len(filter['x']) ==0")
+            self.glCanvas.setOverlayMessage('No data points - try adjusting the filter')
+            #wx.MessageBox('No data points - try adjusting the filter',
+            #              "len(filter['x']) ==0")
             return
+        else:
+            self.glCanvas.setOverlayMessage('')
 
         if self.glCanvas.init == 0: #glcanvas is not initialised
             return
