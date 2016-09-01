@@ -259,6 +259,22 @@ class AnalysisController(object):
             return self.pushImagesQueue(image)
         else: #generic catchall for other data sources
             return self.pushImagesDS(image)
+
+    def pushImagesCluster(self, image):
+        from PYME.ParallelTasks import HTTPTaskPusher
+        resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
+
+        debugPrint('Results file = %s' % resultsFilename)
+
+        self.resultsMdh = MetaDataHandler.NestedClassMDHandler(self.analysisMDH)
+        self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
+
+        pusher = HTTPTaskPusher.HTTPTaskPusher(dataSourceID=fileID.genDataSourceID(image.dataSource),
+                                               metadata=self.resultsMdh, resultsFilename=resultsFilename)
+
+        debugPrint('Queue created')
+
+        self.onImagesPushed.send(self)
             
 
     def pushImagesHDF(self, image):
@@ -438,6 +454,8 @@ class LMAnalyser2(object):
 
         self.numAnalysed = 0
         self.numEvents = 0
+
+        self.newStyleTaskDistribution = False
         
         dsviewer.pipeline = pipeline.Pipeline()
         self.ds = None
@@ -518,7 +536,10 @@ class LMAnalyser2(object):
         self.SetFitInfo()
 
     def OnGo(self, event=None):
-        self.analysisController.pushImages(self.image)
+        if self.newStyleTaskDistribution:
+            self.analysisController.pushImagesCluster(self.image)
+        else:
+            self.analysisController.pushImages(self.image)
 
     def OnImagesPushed(self, **kwargs):
         if debug:
