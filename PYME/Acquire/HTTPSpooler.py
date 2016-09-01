@@ -52,7 +52,7 @@ class EventLogger:
         self._events = []
     
     def logEvent(self, eventName, eventDescr = '', timestamp=None):
-        if eventName == 'StartAq':
+        if eventName == 'StartAq' and eventDescr == '':
             eventDescr = '%d' % self.spooler.imNum
 
         if timestamp is None:
