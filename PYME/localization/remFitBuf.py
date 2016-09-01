@@ -74,7 +74,13 @@ class BufferManager(object):
         
     def updateBuffers(self, md, dataSourceModule, bufferLen):
         """Update the various buffers. """
-        DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule, fromlist=['DataSource']).DataSource #import our data source
+        if dataSourceModule is None:
+            #if the data source module is not specified, guess based on data source ID
+            import PYME.IO.DataSources
+            DataSource = PYME.IO.DataSources.getDataSourceForFilename(md.dataSourceID)
+        else:
+            DataSource = __import__('PYME.IO.DataSources.' + dataSourceModule, fromlist=['DataSource']).DataSource #import our data source
+
         #read the data
         if not self.dataSourceID == md.dataSourceID: #avoid unnecessary opening and closing 
             self.dBuffer = buffers.dataBuffer(DataSource(md.dataSourceID, md.taskQueue), bufferLen)
@@ -186,41 +192,103 @@ class CameraInfoManager(object):
 
 cameraMaps = CameraInfoManager()
 
+def createFitTaskFromTaskDef(task):
+    """
+    Creates a fit task from a new-style json task definition
+    Parameters
+    ----------
+    task : dict
+        The parsed task definition. As the task definition will need to be parsed by the worker before we get here,
+        we expect this to take the form of a python dictionary.
+
+    Returns
+    -------
+
+    a fitTask instance
+
+    """
+    from PYME.IO import MetaDataHandler
+
+    dataSourceID = task['inputs']['dataSourceID']
+    frameIndex = task['taskdef']['frameIndex']
+
+    md = task['taskdef']['metadata']
+
+    #sort out our metadata
+    #TODO - Move this somewhere saner - e.g. a helper function in the MetaDataHandler module
+    mdh = MetaDataHandler.NestedClassMDHandler()
+    if isinstance(md, dict):
+        #metadata was parsed with the enclosing json
+        mdh.update(md)
+    elif isinstance(md, str) or isinstance(md, unicode):
+        if md.startswith('{'):
+            #metadata is a quoted json dump
+            import json
+            mdh.update(json.loads(mdh))
+        else:
+            #metadata entry is a filename/URI
+            from PYME.IO import unifiedIO
+            if md.endswith('.json'):
+                import json
+                mdh.update(json.loads(unifiedIO.read(md)))
+            else:
+                raise NotImplementedError('Loading metadata from a URI in task description is not yet supported')
+
+    return fitTask(dataSourceID=dataSourceID, frameIndex=frameIndex, metadata=mdh)
 
 class fitTask(taskDef.Task):
-    def __init__(self, dataSourceID, index, threshold, metadata, fitModule, dataSourceModule='HDFDataSource', bgindices = [], SNThreshold = False, resultsURI=None):
-        """Create a new fitting task, which opens data from a supplied filename.
-        -------------
-        Parameters:
-        filename - name of file containing the frame to be fitted
-        seriesName - name of the series to which the file belongs (to be used in future for sorting processed data)
-        threshold - threshold to be used to detect points n.b. this applies to the filtered, potentially bg subtracted data
-        taskDef.Task.__init__(self)
-        metadata - image metadata (see MetaData.py)
-        fitModule - name of module defining fit factory to use
-        bgffiles - (optional) list of files to be averaged and subtracted from image prior to point detection - n.B. fitting is still performed on raw data"""
+    def __init__(self, dataSourceID, frameIndex, metadata, dataSourceModule=None, resultsURI=None):
+        """
+        Create a new fit task for performing single molecule localization tasks.
+
+        Parameters
+        ----------
+        dataSourceID : str
+            A filename or URI which identifies the data source
+        frameIndex : int
+            The frame to fit
+        metadata : PYME.IO.MetaDataHandler object
+            The image metadata. This defines most of the analysis parameters.
+        dataSourceModule : str
+            The name of the data source module to use. If None, the dataSourceModule is inferred from the dataSourceID.
+        resultsURI : str
+            A URI dictating where to store the analysis results.
+        """
         
         taskDef.Task.__init__(self, resultsURI=resultsURI)
 
-        self.threshold = threshold
         self.dataSourceID = dataSourceID
-        self.index = index
-
-        self.bgindices = bgindices
+        self.dataSourceModule = dataSourceModule
+        self.index = frameIndex
 
         self.md = metadata
+
+        #extract remaining parameters from metadata
+        self.fitModule = self.md['Analysis.FitModule']
+
+        self.threshold = self.md['Analysis.DetectionThreshold']
+        self.SNThreshold = self.md.getOrDefault('Analysis.SNRThreshold', True)
         
-        self.fitModule = fitModule
-        self.dataSourceModule = dataSourceModule
-        self.SNThreshold = SNThreshold
-        
-        self.driftEst = metadata.getOrDefault('Analysis.TrackFiducials', False)  
-        
+        self.driftEst = self.md.getOrDefault('Analysis.TrackFiducials', False)
                  
         self.bufferLen = 50 #12
         if self.driftEst: 
             #increase the buffer length as we're going to look forward as well
             self.bufferLen = 50 #17
+
+        self._get_bgindices()
+
+    def _get_bgindices(self):
+        if not 'Analysis.BGRange' in self.md.getEntryNames():
+            if 'Analysis.NumBGFrames' in self.md.getEntryNames():
+                nBGFrames = self.md.Analysis.NumBGFrames
+            else:
+                nBGFrames = 10
+
+            self.md.setEntry('Analysis.BGRange', (-nBGFrames, 0))
+
+        self.bgindices = range(max(self.index + self.md['Analysis.BGRange'][0], self.md['EstimatedLaserOnFrameNo']),
+                               max(self.index + self.md['Analysis.BGRange'][1], self.md['EstimatedLaserOnFrameNo']))
             
     def __mapSplitterCoords(self, x,y):
         vx = self.md['voxelsize.x']*1e3

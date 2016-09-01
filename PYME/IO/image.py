@@ -859,7 +859,7 @@ class ImageStack(object):
                 self._loadQueue(filename)
             elif filename.startswith('http://'):
                 self._loadHTTP(filename)
-            elif filename.startswith('PYME-CLUSTER://'):
+            elif filename.startswith('PYME-CLUSTER://') or filename.startswith('pyme-cluster://'):
                 self._loadClusterPZF(filename)
             elif filename.endswith('.h5'):
                 self._loadh5(filename)

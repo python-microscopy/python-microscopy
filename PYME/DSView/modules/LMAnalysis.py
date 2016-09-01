@@ -259,6 +259,22 @@ class AnalysisController(object):
             return self.pushImagesQueue(image)
         else: #generic catchall for other data sources
             return self.pushImagesDS(image)
+
+    def pushImagesCluster(self, image):
+        from PYME.ParallelTasks import HTTPTaskPusher
+        resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
+
+        debugPrint('Results file = %s' % resultsFilename)
+
+        self.resultsMdh = MetaDataHandler.NestedClassMDHandler(self.analysisMDH)
+        self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
+
+        pusher = HTTPTaskPusher.HTTPTaskPusher(dataSourceID=fileID.genDataSourceID(image.dataSource),
+                                               metadata=self.resultsMdh, resultsFilename=resultsFilename)
+
+        debugPrint('Queue created')
+
+        self.onImagesPushed.send(self)
             
 
     def pushImagesHDF(self, image):
@@ -438,6 +454,8 @@ class LMAnalyser2(object):
 
         self.numAnalysed = 0
         self.numEvents = 0
+
+        self.newStyleTaskDistribution = False
         
         dsviewer.pipeline = pipeline.Pipeline()
         self.ds = None
@@ -518,7 +536,10 @@ class LMAnalyser2(object):
         self.SetFitInfo()
 
     def OnGo(self, event=None):
-        self.analysisController.pushImages(self.image)
+        if self.newStyleTaskDistribution:
+            self.analysisController.pushImagesCluster(self.image)
+        else:
+            self.analysisController.pushImages(self.image)
 
     def OnImagesPushed(self, **kwargs):
         if debug:
@@ -690,25 +711,12 @@ class LMAnalyser2(object):
         zp = self.do.zp
 
         analysisMDH = self.analysisController.analysisMDH
-
-        fitMod = analysisMDH['Analysis.FitModule']
-
-        bgFrames = analysisMDH['Analysis.BGRange']
-        detThresh = analysisMDH['Analysis.DetectionThreshold']
-        
-        laserOn = analysisMDH.getOrDefault('EstimatedLaserOnFrameNo', 0)
-
-        bgi = range(max(zp + bgFrames[0],laserOn), max(zp + bgFrames[1],laserOn))
         
         mn = self.image.dataSource.moduleName
         if mn == 'BufferedDataSource':
             mn = self.image.dataSource.dataSource.moduleName
 
-        #if 'Splitter' in fitMod:
-        #    ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'SplitterObjFindR', bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
-        #else:
-        #    ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
-        ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(analysisMDH), fitMod, bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
+        ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=MetaDataHandler.NestedClassMDHandler(analysisMDH), dataSourceModule=mn)
         res = ft(gui=gui,taskQueue=self.tq)
         
         if gui:

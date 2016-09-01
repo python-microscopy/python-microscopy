@@ -81,11 +81,14 @@ def _listSingleDir(dirurl):
         s = _getSession(url)
         r = s.get(url, timeout=1)
         dt = time.time() - t
+        if not r.status_code == 200:
+            logging.warn('Request failed with error: %d' % r.status_code)
+            return [], dt
         try:
             dirL = r.json()
         except ValueError:
             # directory doesn't exist
-            dirL = []
+            return [], dt
         _dirCache[dirurl] = (dirL, t, dt)
 
     return dirL, dt

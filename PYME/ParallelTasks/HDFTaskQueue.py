@@ -229,284 +229,284 @@ class SpoolEvent(tables.IsDescription):
    EventDescr = tables.StringCol(256)
 
 
-class HDFResultsTaskQueue_(TaskQueue):
-    """Task queue which saves it's results to a HDF file"""
-    def __init__(self, name, resultsFilename, initialTasks=[], onEmpty = doNix, fTaskToPop = popZero):
-        """
-        Generate a task queue which saves results to an HDF5 file using pytables
-
-        NOTE: This is only ever used as a base class
-
-        Args:
-            name : string
-                the queue name by which this set of task is identified
-            resultsFilename: string
-                the name of the output file
-            initialTasks: list
-                task to populate with initially - not used in practice
-            onEmpty:
-                what to do when the list of tasks is empty (nominally for closing output files etc ... but unused)
-            fTaskToPop:
-                a callback function which decides which task to give a worker. Returns the index of the task to return
-                based on information about the current worker. An inital attempt at load balancing, which is now not
-                really used.
-        """
-
-        if resultsFilename is None:
-            #autogenerate a filename if none given
-            resultsFilename = genResultFileName(name)
-
-        if os.path.exists(resultsFilename): #bail if output file already exists
-            raise RuntimeError('Output file already exists: ' + resultsFilename)
-
-        TaskQueue.__init__(self, name, initialTasks, onEmpty, fTaskToPop)
-        self.resultsFilename = resultsFilename
-
-        self.numClosedTasks = 0
-        
-        logging.info('Creating results file')
-
-        self.h5ResultsFile = tables.openFile(self.resultsFilename, 'w')
-
-        self.prepResultsFile()
-
-        #self.fileResultsLock = threading.Lock()
-        self.fileResultsLock = tablesLock
-        
-        logging.info('Creating results metadata')
-
-        self.resultsMDH = MetaDataHandler.HDFMDHandler(self.h5ResultsFile)
-        self.metaData = MetaDataHandler.NestedClassMDHandler()
-        #self.metaData = None #MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
-        self.metaDataStale = True
-        self.MDHCache = []
-        
-        logging.info('Creating results events table')
-        with self.fileResultsLock.wlock:
-            self.resultsEvents = self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
-        
-        logging.info('Events table created')
-        
-        self.haveResultsTable = False
-        
-        self.resultsQueue = []#Queue.Queue()
-        self.resultsQueueLock = threading.Lock()
-        self.lastResultsQueuePurge = time.time()
-        
-        logging.info('Results file initialised')
-
-    def prepResultsFile(self):
-        pass
-
-    def getCompletedTask(self):
-        return None
-
-    def flushMetaData(self):
-        if len(self.MDHCache) > 0:
-            with self.fileResultsLock.wlock:
-                mdts = list(self.MDHCache)
-                self.MDHCache = []
-                
-                for mdk, mdv in mdts:
-                    self.resultsMDH.setEntry(mdk, mdv)
-
-    def setQueueMetaData(self, fieldName, value):
-        #with self.fileResultsLock.wlock:
-        self.metaData.setEntry(fieldName, value)
-        self.MDHCache.append((fieldName, value))
-        
-    def setQueueMetaDataEntries(self, mdh):
-        with self.fileResultsLock.wlock:
-            self.resultsMDH.copyEntriesFrom(mdh)
-            
-        self.metaData.copyEntriesFrom(mdh)
-        #self.MDHCache.append((fieldName, value))
-        
-
-    def getQueueMetaData(self, fieldName):
-        #res  = None
-        #with self.fileResultsLock.rlock:
-        #    res = self.resultsMDH.getEntry(fieldName)
-        return self.metaData[fieldName]
-        
-        #return res
-
-    def addQueueEvents(self, events):
-        with self.fileResultsLock.wlock:
-            self.resultsEvents.append(events)
-
-
-    def getQueueMetaDataKeys(self):
-        return self.metaData.getEntryNames()
-
-    def getNumberTasksCompleted(self):
-        return self.numClosedTasks
-
-    def purge(self):
-        self.openTasks = []
-        self.numClosedTasks = 0
-        self.tasksInProgress = []
-
-    def cleanup(self):
-        #self.h5DataFile.close()
-        self.h5ResultsFile.close()
-
-
-    def fileResult(self, res):
-        """
-        Called remotely from workers to file / save results
-
-        Adds incoming results to a queue and calls fileResults when enough time has elapsed (5 sec)
-
-        Args:
-            res: a fitResults object, as defined in ParallelTasks.remFitBuf
-
-        Returns:
-
-        """
-        #print res, res.results, res.driftResults, self.h5ResultsFile
-        if res is None:
-            print('res is None')
-            
-        if (len(res.results)==0) and (len(res.driftResults) == 0): #if we had a dud frame
-            print 'dud'
-            return
-            
-        #print len(res.results), len(res.driftResults)
-            
-        rq = None
-        with self.resultsQueueLock:
-            #logging.info('Adding result to queue')
-            self.resultsQueue.append(res)
-            #print 'rq'
-            
-            t = time.time()
-            if (t > (self.lastResultsQueuePurge + 5)):# or (len(self.resultsQueue) > 20):
-                #print 'fr'
-                self.lastResultsQueuePurge = t
-                rq = self.resultsQueue
-                #print(len(rq)), 'r_q'
-                self.resultsQueue = []
-                
-            #print 'rf'
-                
-        if rq:
-            #print 'frf'
-            self.fileResults(rq)
-            #print 'rff'
-                
-        #logging.info('Result added to queue')
-        #logging.info('Result filed result')
-
-    def fileResults(self, ress):
-        """
-        File/save the results of fitting multiple frames
-
-        Args:
-            ress: list of fit results
-
-        Returns:
-
-        """
-            
-        results = []
-        driftResults = []
-        
-        for r in ress:
-            #print r, results
-            if not len(r.results) == 0:
-                results.append(r.results)
-                
-            if not len(r.driftResults) == 0:
-                driftResults.append(r.driftResults)
-        
-        #print         
-        if (len(results)==0) and (len(driftResults) == 0): #if we had a dud frame
-            return
-            
-        #print len(results), len(driftResults)
-
-        with self.fileResultsLock.wlock: #get a lock
-            #logging.info('write lock acquired')
-            
-            if not (len(results) == 0):
-                #print res.results, res.results == []
-                if not self.haveResultsTable: # self.h5ResultsFile.__contains__('/FitResults'):
-                    #logging.info('creating results table')
-                    self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', np.hstack(results), filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
-                    self.haveResultsTable = True
-                else:
-                    self.h5ResultsFile.root.FitResults.append(np.hstack(results))
-                    
-            #print 'rs'
-    
-            if not (len(driftResults) == 0):
-                #logging.info('creating drift table')
-                if not self.h5ResultsFile.__contains__('/DriftResults'):
-                    self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', np.hstack(driftResults), filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
-                else:
-                    self.h5ResultsFile.root.DriftResults.append(np.hstack(driftResults))
-    
-            #self.h5ResultsFile.flush()
-
-        self.numClosedTasks += len(ress)
-
-    def checkTimeouts(self):
-        self.flushMetaData()
-        with self.inProgressLock:
-            curTime = time.clock()
-            for it in self.tasksInProgress:
-                if 'workerTimeout' in dir(it):
-                    if curTime > it.workerTimeout:
-                        self.openTasks.append(it.index)
-                        self.tasksInProgress.remove(it)
-                        
-        with self.resultsQueueLock:
-            t = time.time()
-            if (t > (self.lastResultsQueuePurge + 10)):# or (len(self.resultsQueue) > 20):
-                #print 'fr'
-                self.lastResultsQueuePurge = t
-                rq = self.resultsQueue
-                #print(len(rq)), 'r_q'
-                self.resultsQueue = []
-                self.fileResults(rq)
-        
-        with self.fileResultsLock.wlock: #get a lock
-            self.h5ResultsFile.flush()
-
-    def getQueueData(self, fieldName, *args):
-        """Get data, defined by fieldName and potntially additional arguments,  ascociated with queue"""
-        if fieldName == 'FitResults':
-            startingAt, = args
-            with self.fileResultsLock.rlock:
-                if self.h5ResultsFile.__contains__('/FitResults'):
-                    res = self.h5ResultsFile.root.FitResults[startingAt:]
-                else:
-                    res = []
-            
-            return res
-        elif fieldName == 'PSF':
-            #from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
-            res = None
-
-            modName = self.resultsMDH.getEntry('PSFFile')
-            mf = open(getFullExistingFilename(modName), 'rb')
-            res = np.load(mf)
-            mf.close()
-           
-            return res
-        elif fieldName == 'MAP':
-            mapName, = args
-            #from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
-            from PYME.IO.image import ImageStack
-
-            print('Serving map: %s' %mapName)
-            fn = getFullExistingFilename(mapName)
-            varmap = ImageStack(filename=fn, haveGui=False).data[:,:,0].squeeze() #this should handle .tif, .h5, and a few others
-
-            return varmap
-        else:
-            return None
+# class HDFResultsTaskQueue_(TaskQueue):
+#     """Task queue which saves it's results to a HDF file"""
+#     def __init__(self, name, resultsFilename, initialTasks=[], onEmpty = doNix, fTaskToPop = popZero):
+#         """
+#         Generate a task queue which saves results to an HDF5 file using pytables
+#
+#         NOTE: This is only ever used as a base class
+#
+#         Args:
+#             name : string
+#                 the queue name by which this set of task is identified
+#             resultsFilename: string
+#                 the name of the output file
+#             initialTasks: list
+#                 task to populate with initially - not used in practice
+#             onEmpty:
+#                 what to do when the list of tasks is empty (nominally for closing output files etc ... but unused)
+#             fTaskToPop:
+#                 a callback function which decides which task to give a worker. Returns the index of the task to return
+#                 based on information about the current worker. An inital attempt at load balancing, which is now not
+#                 really used.
+#         """
+#
+#         if resultsFilename is None:
+#             #autogenerate a filename if none given
+#             resultsFilename = genResultFileName(name)
+#
+#         if os.path.exists(resultsFilename): #bail if output file already exists
+#             raise RuntimeError('Output file already exists: ' + resultsFilename)
+#
+#         TaskQueue.__init__(self, name, initialTasks, onEmpty, fTaskToPop)
+#         self.resultsFilename = resultsFilename
+#
+#         self.numClosedTasks = 0
+#
+#         logging.info('Creating results file')
+#
+#         self.h5ResultsFile = tables.openFile(self.resultsFilename, 'w')
+#
+#         self.prepResultsFile()
+#
+#         #self.fileResultsLock = threading.Lock()
+#         self.fileResultsLock = tablesLock
+#
+#         logging.info('Creating results metadata')
+#
+#         self.resultsMDH = MetaDataHandler.HDFMDHandler(self.h5ResultsFile)
+#         self.metaData = MetaDataHandler.NestedClassMDHandler()
+#         #self.metaData = None #MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
+#         self.metaDataStale = True
+#         self.MDHCache = []
+#
+#         logging.info('Creating results events table')
+#         with self.fileResultsLock.wlock:
+#             self.resultsEvents = self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
+#
+#         logging.info('Events table created')
+#
+#         self.haveResultsTable = False
+#
+#         self.resultsQueue = []#Queue.Queue()
+#         self.resultsQueueLock = threading.Lock()
+#         self.lastResultsQueuePurge = time.time()
+#
+#         logging.info('Results file initialised')
+#
+#     def prepResultsFile(self):
+#         pass
+#
+#     def getCompletedTask(self):
+#         return None
+#
+#     def flushMetaData(self):
+#         if len(self.MDHCache) > 0:
+#             with self.fileResultsLock.wlock:
+#                 mdts = list(self.MDHCache)
+#                 self.MDHCache = []
+#
+#                 for mdk, mdv in mdts:
+#                     self.resultsMDH.setEntry(mdk, mdv)
+#
+#     def setQueueMetaData(self, fieldName, value):
+#         #with self.fileResultsLock.wlock:
+#         self.metaData.setEntry(fieldName, value)
+#         self.MDHCache.append((fieldName, value))
+#
+#     def setQueueMetaDataEntries(self, mdh):
+#         with self.fileResultsLock.wlock:
+#             self.resultsMDH.copyEntriesFrom(mdh)
+#
+#         self.metaData.copyEntriesFrom(mdh)
+#         #self.MDHCache.append((fieldName, value))
+#
+#
+#     def getQueueMetaData(self, fieldName):
+#         #res  = None
+#         #with self.fileResultsLock.rlock:
+#         #    res = self.resultsMDH.getEntry(fieldName)
+#         return self.metaData[fieldName]
+#
+#         #return res
+#
+#     def addQueueEvents(self, events):
+#         with self.fileResultsLock.wlock:
+#             self.resultsEvents.append(events)
+#
+#
+#     def getQueueMetaDataKeys(self):
+#         return self.metaData.getEntryNames()
+#
+#     def getNumberTasksCompleted(self):
+#         return self.numClosedTasks
+#
+#     def purge(self):
+#         self.openTasks = []
+#         self.numClosedTasks = 0
+#         self.tasksInProgress = []
+#
+#     def cleanup(self):
+#         #self.h5DataFile.close()
+#         self.h5ResultsFile.close()
+#
+#
+#     def fileResult(self, res):
+#         """
+#         Called remotely from workers to file / save results
+#
+#         Adds incoming results to a queue and calls fileResults when enough time has elapsed (5 sec)
+#
+#         Args:
+#             res: a fitResults object, as defined in ParallelTasks.remFitBuf
+#
+#         Returns:
+#
+#         """
+#         #print res, res.results, res.driftResults, self.h5ResultsFile
+#         if res is None:
+#             print('res is None')
+#
+#         if (len(res.results)==0) and (len(res.driftResults) == 0): #if we had a dud frame
+#             print 'dud'
+#             return
+#
+#         #print len(res.results), len(res.driftResults)
+#
+#         rq = None
+#         with self.resultsQueueLock:
+#             #logging.info('Adding result to queue')
+#             self.resultsQueue.append(res)
+#             #print 'rq'
+#
+#             t = time.time()
+#             if (t > (self.lastResultsQueuePurge + 5)):# or (len(self.resultsQueue) > 20):
+#                 #print 'fr'
+#                 self.lastResultsQueuePurge = t
+#                 rq = self.resultsQueue
+#                 #print(len(rq)), 'r_q'
+#                 self.resultsQueue = []
+#
+#             #print 'rf'
+#
+#         if rq:
+#             #print 'frf'
+#             self.fileResults(rq)
+#             #print 'rff'
+#
+#         #logging.info('Result added to queue')
+#         #logging.info('Result filed result')
+#
+#     def fileResults(self, ress):
+#         """
+#         File/save the results of fitting multiple frames
+#
+#         Args:
+#             ress: list of fit results
+#
+#         Returns:
+#
+#         """
+#
+#         results = []
+#         driftResults = []
+#
+#         for r in ress:
+#             #print r, results
+#             if not len(r.results) == 0:
+#                 results.append(r.results)
+#
+#             if not len(r.driftResults) == 0:
+#                 driftResults.append(r.driftResults)
+#
+#         #print
+#         if (len(results)==0) and (len(driftResults) == 0): #if we had a dud frame
+#             return
+#
+#         #print len(results), len(driftResults)
+#
+#         with self.fileResultsLock.wlock: #get a lock
+#             #logging.info('write lock acquired')
+#
+#             if not (len(results) == 0):
+#                 #print res.results, res.results == []
+#                 if not self.haveResultsTable: # self.h5ResultsFile.__contains__('/FitResults'):
+#                     #logging.info('creating results table')
+#                     self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'FitResults', np.hstack(results), filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+#                     self.haveResultsTable = True
+#                 else:
+#                     self.h5ResultsFile.root.FitResults.append(np.hstack(results))
+#
+#             #print 'rs'
+#
+#             if not (len(driftResults) == 0):
+#                 #logging.info('creating drift table')
+#                 if not self.h5ResultsFile.__contains__('/DriftResults'):
+#                     self.h5ResultsFile.createTable(self.h5ResultsFile.root, 'DriftResults', np.hstack(driftResults), filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+#                 else:
+#                     self.h5ResultsFile.root.DriftResults.append(np.hstack(driftResults))
+#
+#             #self.h5ResultsFile.flush()
+#
+#         self.numClosedTasks += len(ress)
+#
+#     def checkTimeouts(self):
+#         self.flushMetaData()
+#         with self.inProgressLock:
+#             curTime = time.clock()
+#             for it in self.tasksInProgress:
+#                 if 'workerTimeout' in dir(it):
+#                     if curTime > it.workerTimeout:
+#                         self.openTasks.append(it.index)
+#                         self.tasksInProgress.remove(it)
+#
+#         with self.resultsQueueLock:
+#             t = time.time()
+#             if (t > (self.lastResultsQueuePurge + 10)):# or (len(self.resultsQueue) > 20):
+#                 #print 'fr'
+#                 self.lastResultsQueuePurge = t
+#                 rq = self.resultsQueue
+#                 #print(len(rq)), 'r_q'
+#                 self.resultsQueue = []
+#                 self.fileResults(rq)
+#
+#         with self.fileResultsLock.wlock: #get a lock
+#             self.h5ResultsFile.flush()
+#
+#     def getQueueData(self, fieldName, *args):
+#         """Get data, defined by fieldName and potntially additional arguments,  ascociated with queue"""
+#         if fieldName == 'FitResults':
+#             startingAt, = args
+#             with self.fileResultsLock.rlock:
+#                 if self.h5ResultsFile.__contains__('/FitResults'):
+#                     res = self.h5ResultsFile.root.FitResults[startingAt:]
+#                 else:
+#                     res = []
+#
+#             return res
+#         elif fieldName == 'PSF':
+#             #from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+#             res = None
+#
+#             modName = self.resultsMDH.getEntry('PSFFile')
+#             mf = open(getFullExistingFilename(modName), 'rb')
+#             res = np.load(mf)
+#             mf.close()
+#
+#             return res
+#         elif fieldName == 'MAP':
+#             mapName, = args
+#             #from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+#             from PYME.IO.image import ImageStack
+#
+#             print('Serving map: %s' %mapName)
+#             fn = getFullExistingFilename(mapName)
+#             varmap = ImageStack(filename=fn, haveGUI=False).data[:,:,0].squeeze() #this should handle .tif, .h5, and a few others
+#
+#             return varmap
+#         else:
+#             return None
 
 
 class HDFResultsTaskQueue(TaskQueue):
@@ -690,8 +690,7 @@ class HDFResultsTaskQueue(TaskQueue):
 
             print('Serving map: %s' % mapName)
             fn = getFullExistingFilename(mapName)
-            varmap = ImageStack(filename=fn, haveGui=False).data[:, :,
-                     0].squeeze() #this should handle .tif, .h5, and a few others
+            varmap = ImageStack(filename=fn, haveGUI=False).data[:, :,0].squeeze() #this should handle .tif, .h5, and a few others
 
             return varmap
         else:
@@ -856,7 +855,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 #                self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
 #                self.metaDataStale = False
             
-            #patch up old data which doesn't have BGRange in metadata
+        #patch up old data which doesn't have BGRange in metadata
         if not 'Analysis.BGRange' in self.metaData.getEntryNames():
             if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
                 nBGFrames = self.metaData.Analysis.NumBGFrames
@@ -866,15 +865,8 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
         
         taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
-
-        #if 'Analysis.BGRange' in self.metaData.getEntryNames():
-        bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
-        #elif 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
-        #    bgi = range(max(taskNum - self.metaData.Analysis.NumBGFrames,self.metaData.EstimatedLaserOnFrameNo), taskNum)
-        #else:
-        #    bgi = range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum)
         
-        task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices = bgi, SNThreshold = True, resultsURI=self.resultsURI)
+        task = fitTask(dataSourceID=self.queueID, frameIndex=taskNum, metadata=self.metaData, dataSourceModule='TQDataSource', resultsURI=self.resultsURI)
         
         task.queueID = self.queueID
         task.initializeWorkerTimeout(time.clock())
@@ -899,14 +891,6 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 #                self.metaData = MetaDataHandler.NestedClassMDHandler(self.resultsMDH)
 #                self.metaDataStale = False
 
-        if not 'Analysis.BGRange' in self.metaData.getEntryNames():
-            if 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
-                nBGFrames = self.metaData.Analysis.NumBGFrames
-            else:
-                nBGFrames = 10
-
-            self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
-
         tasks = []
         
         if not 'Analysis.ChunkSize' in self.metaData.getEntryNames():
@@ -918,14 +902,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
             taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
-            #if 'Analysis.BGRange' in self.metaData.getEntryNames():
-            bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
-            #elif 'Analysis.NumBGFrames' in self.metaData.getEntryNames():
-            #    bgi = range(max(taskNum - self.metaData.Analysis.NumBGFrames,self.metaData.EstimatedLaserOnFrameNo), taskNum)
-            #else:
-            #    bgi = range(max(taskNum - 10,self.metaData.EstimatedLaserOnFrameNo), taskNum)
-
-            task = fitTask(self.queueID, taskNum, self.metaData.Analysis.DetectionThreshold, self.metaData, self.metaData.Analysis.FitModule, 'TQDataSource', bgindices =bgi, SNThreshold = True, resultsURI=self.resultsURI)
+            task = fitTask(dataSourceID=self.queueID, frameIndex=taskNum, metadata=self.metaData, dataSourceModule='TQDataSource', resultsURI=self.resultsURI)
 
             task.queueID = self.queueID
             task.initializeWorkerTimeout(time.clock())
