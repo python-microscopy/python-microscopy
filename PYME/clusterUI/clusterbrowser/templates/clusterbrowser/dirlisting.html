@@ -4,25 +4,28 @@
 
 {% block files_active_class %}active{% endblock %}
 {% block sidebar %}
-    <div class="panel panel-primary">
-    <div class="panel-heading">Current Directory</div>
-    {#<ul class="nav nav-sidebar"><li>#}
-    <div class="panel-body">
+    <hr>
+    <h4>Current Directory</h4>
     <ol class="breadcrumb">
         <li><a href="/files/">/</a> </li>
         {% for bc in breadcrumbs %}
         <li><a href="/files/{{ bc.path }}">{{ bc.dir }}</a> </li>
         {%  endfor %}
     </ol>{# </li>#}
-        <a href=""><span class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload Files</a>
 
-    </div>
-    </div>
+
+
     {#</ul>#}
     <ul class="nav nav-sidebar">
-
+        <li class="toggle-control" id="newfolder_form_toggle"><a href="#" onclick="togglePanel('#newfolder_form')"><span class="glyphicon glyphicon-folder-close"></span>&nbsp;&nbsp;New Folder</a></li>
+        <li class="toggle-control" id="upload_form_toggle"><a href="#" onclick="togglePanel('#upload_form')"><span class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload File</a></li>
+        <li class="toggle-control" id="recipe_form_toggle"><a href="#" onclick="togglePanel('#recipe_form')"><span class="glyphicon glyphicon-list-alt"></span>&nbsp;&nbsp;Run Recipe</a></li>
+        <li class="toggle-control" id="localization_form_toggle"><a href="#" onclick="togglePanel('#localization_form')"><span class="glyphicon glyphicon-fire"></span>&nbsp;&nbsp;Localize molecules</a></li>
     </ul>
+    <hr>
 {% endblock %}
+
+
 
 {% block content %}
 
@@ -31,7 +34,10 @@
     <h1>Listing of /{% for bc in breadcrumbs %}<a href="/files/{{ bc.path }}">{{ bc.dir }}</a>/{% endfor %}</h1>
 
     <table class="table table-striped">
-    {% for dir in dirs %}
+    {%  if  parent %}
+    <tr><td><span class="glyphicon glyphicon-level-up"></span></td><td><a href="/files/{{ parent }}">..</a> </td><td colspan="3"></td> </tr>
+    {% endif %}
+        {% for dir in dirs %}
         <tr class="directory">
             <td><span class="glyphicon glyphicon-folder-open"></span> </td>
             <td><a href="/files/{{ dirname }}{{ dir.name }}">{{ dir.name }}</a></td>
@@ -58,9 +64,68 @@
     {% for file in files %}
         <tr class="file"><td><span class="glyphicon glyphicon-file"></span> </td><td>{{ file }}</td>
         <td></td><td></td>
-        <td><a <a href="/files/download/{{ dirname }}{{ file }}" class="btn btn-default"><span class="glyphicon glyphicon-download-alt"></span></a></td>
+        <td><a href="/files/download/{{ dirname }}{{ file }}" class="btn btn-default"><span class="glyphicon glyphicon-download-alt"></span></a></td>
         </tr>
     {% endfor %}
     </table>
 
+    <div class="panel panel-primary hidden toggle-panel" id="upload_form">
+    <div class="panel-heading"><span class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload File</div>
+    {#<ul class="nav nav-sidebar"><li>#}
+    <div class="panel-body">
+        <form class="form-inline">
+         <div class="form-group">
+            <input type="file" id="exampleInputFile">
+            </div>
+            <div class="form-group">
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" id="distributeFrames"> Distribute frames
+            </label>
+              <p class="help-block">Split image frames across the cluster.</p>
+          </div>
+                </div>
+            <div class="form-group pull-right">
+          <button type="submit" class="btn btn-default">Upload</button>
+                </div>
+        </form>
+
+    </div>
+    </div>
+
+    <div class="panel panel-primary hidden toggle-panel" id="newfolder_form">
+    <div class="panel-heading"><span class="glyphicon glyphicon-folder-close"></span>&nbsp;&nbsp;New Folder</div>
+    {#<ul class="nav nav-sidebar"><li>#}
+    <div class="panel-body">
+        <form class="form-inline">
+         <div class="form-group">
+
+
+{#             <label for="newFolderName">/{{ dirname }}</label>#}
+
+             <div class="input-group">
+             <span class="input-group-addon">/{{ dirname }}</span>
+
+            <input type="text" class="form-control" id="newFolderName" placeholder="folder name">
+            </div></div>
+
+            <div class="form-group pull-right">
+          <button type="submit" class="btn btn-default">Create</button>
+                </div>
+        </form>
+
+    </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script>
+    function togglePanel(id) {
+        $('.toggle-panel').removeClass('show').addClass('hidden');
+        $('.toggle-control').removeClass('active');
+        $(id).removeClass('hidden').addClass('show');
+        $(id + '_toggle').addClass('active');
+    }
+    </script>
 {% endblock %}

@@ -41,8 +41,14 @@ def listing(request, filename):
     path = filename.lstrip('/').rstrip('/').split('/')
     breadcrumbs = [{'dir': n, 'path': '/'.join(path[:(i+1)])} for i, n in enumerate(path)]
 
+    if len(breadcrumbs) > 1:
+        parent = breadcrumbs[-2]['path']
+    elif len(breadcrumbs) == 1:
+        parent = '/'
+    else:
+        parent = None
 
 
-    context = {'dirname' : filename, 'files':files, 'dirs': dirs, 'series': series, 'breadcrumbs':breadcrumbs}
+    context = {'dirname' : filename, 'files':files, 'dirs': dirs, 'series': series, 'breadcrumbs':breadcrumbs, 'parent' : parent}
     return render(request, 'clusterbrowser/dirlisting.html', context)
     #return HttpResponse(clusterIO.listdir(filename))
