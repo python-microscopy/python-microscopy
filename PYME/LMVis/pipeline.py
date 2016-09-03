@@ -220,7 +220,7 @@ class Pipeline:
         if not 'foreShort' in dir(mapped_ds):
             mapped_ds.addVariable('foreShort', 1.)
 
-        if not 'focus' in mapped_ds.mappings.keys():
+        if not 'focus' in mapped_ds.keys():
             #set up a dummy focus variable if not already present
             mapped_ds.setMapping('focus', '0*x')
 
