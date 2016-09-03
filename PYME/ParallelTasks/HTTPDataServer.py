@@ -208,6 +208,24 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.end_headers()
             return
 
+    def do_GET(self):
+        """Serve a GET request."""
+        f = self.send_head()
+        if f:
+            try:
+                self.copyfile(f, self.wfile)
+            finally:
+                f.close()
+
+    def get_status(self):
+        from PYME.IO.FileUtils.freeSpace import disk_usage
+        status = {}
+        total, used, free = disk_usage(os.getcwd())
+        status['Disk'] = {'total':total, 'used':used, 'free':free}
+        #status['Uptime'] =
+
+        return json.dumps(status)
+
     def send_head(self):
         """Common code for GET and HEAD commands.
 

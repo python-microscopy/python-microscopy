@@ -10,7 +10,7 @@
         <li class="toggle-control" id="newfolder_form_toggle"><a href="#" onclick="togglePanel('#newfolder_form')"><span
                 class="glyphicon glyphicon-folder-close"></span>&nbsp;&nbsp;New Folder</a></li>
         <li class="toggle-control" id="upload_form_toggle"><a href="#" onclick="togglePanel('#upload_form')"><span
-                class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload File</a></li>
+                class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload Files</a></li>
     </ul>
     <h5>Selected Files</h5>
     <ul class="nav nav-sidebar">
@@ -78,7 +78,7 @@
     </table>
 
     <div class="panel panel-primary hidden toggle-panel" id="upload_form">
-        <div class="panel-heading"><span class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload File</div>
+        <div class="panel-heading"><span class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload Files</div>
         {#<ul class="nav nav-sidebar"><li>#}
         <div class="panel-body">
             {% include "clusterbrowser/form_upload_file.html" %}
@@ -126,6 +126,21 @@
             }
           });
 
+
+        });
+
+        $('#inputFile').change(function(e) {
+            var fileList = $('#fileList');
+            fileList.empty();
+            var files = e.target.files;
+
+            if (files.length > 0) {
+                for (var i = 0; i < files.length; i++) {
+                    fileList.append('<br>' + files[i].name );
+                    //console.log(files[i].name);
+                }
+                fileList.append('<br>')
+            }
 
         });
     </script>

@@ -58,6 +58,8 @@ def listing(request, filename):
 
 @csrf_exempt
 def upload(request, directory):
+    #use the temporary file handler by default as we want to be able to read files using PYME.IO.ImageStack
+    #FIXME - this will not work for files with separate metadata
     request.upload_handlers.insert(0, TemporaryFileUploadHandler(request))
     return upload_files(request, directory)
 
@@ -67,9 +69,15 @@ def upload_files(request, directory):
 
     files = request.FILES.getlist('file')
     for file in files:
-        clusterIO.putFile(directory + file.name, file.read())
+        targetFilename = directory + file.name
+        if clusterIO.exists(targetFilename):
+            return HttpResponseForbidden('Upload failed [no files uploaded]. %s already exists on cluster' % targetFilename)
 
-    return HttpResponse('Files Uploaded')
+    for file in files:
+        targetFilename = directory + file.name
+        clusterIO.putFile(targetFilename, file.read())
+
+    return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
 def mkdir(request, basedir):
     from PYME.IO import clusterIO

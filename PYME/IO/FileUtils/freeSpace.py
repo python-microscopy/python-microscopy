@@ -35,3 +35,10 @@ def get_free_space(folder):
     else:
         stats = os.statvfs(folder)
         return stats.f_bfree*stats.f_bsize
+
+def disk_usage(folder):
+    stats = os.statvfs(folder)
+    total = stats.f_blocks * stats.f_bsize
+    free = stats.f_bfree*stats.f_bavail
+    used = total - free
+    return total, used, free
