@@ -7,9 +7,11 @@
     {% load static %}
     <link rel="stylesheet" href="{% static "dashboard.css" %}"/>
 </head>
+
 <body>
+
 <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container-fluid">
+    <div class="container-fluid">
         <div class="navbar-header">
           <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
             <span class="sr-only">Toggle navigation</span>
@@ -30,45 +32,28 @@
             <input type="text" class="form-control" placeholder="Search...">
           </form>-->
         </div>
-      </div>
-    </nav>
+    </div>
+</nav>
 
 <div class="container-fluid">
-<div class="row">
-<div class="col-sm-3 col-md-3 sidebar">
-    <ul class="nav nav-sidebar">
-        <li class="{% block status_active_class %}{% endblock %}"><a href="/status/"><span class="glyphicon glyphicon-signal"></span>&nbsp;&nbsp;Cluster Status</a></li>
-        <li class="{% block files_active_class %}{% endblock %}"><a href="/files/"><span class="glyphicon glyphicon-floppy-disk"></span>&nbsp;&nbsp;Files</a></li>
-            <li class="{% block analyis_active_class %}{% endblock %}"><a href="/analysis/"><span class="glyphicon glyphicon-tasks"></span>&nbsp;&nbsp;Analysis Tasks</a></li>
-          </ul>
-    {% block sidebar %}
-          <ul class="nav nav-sidebar">
-            <li class="active"><a href="#">Overview <span class="sr-only">(current)</span></a></li>
-            <li><a href="#">Reports</a></li>
-            <li><a href="#">Analytics</a></li>
-            <li><a href="#">Export</a></li>
-            <ul><li><a href="#">Foo</a></ul>
-          </ul>
-          <ul class="nav nav-sidebar">
-            <li><a href="">Nav item</a></li>
-            <li><a href="">Nav item again</a></li>
-            <li><a href="">One more nav</a></li>
-            <li><a href="">Another nav item</a></li>
-            <li><a href="">More navigation</a></li>
-          </ul>
-          <ul class="nav nav-sidebar">
-            <li><a href="">Nav item again</a></li>
-            <li><a href="">One more nav</a></li>
-            <li><a href="">Another nav item</a></li>
-          </ul>
-    {% endblock %}
+    <div class="row">
+        <div class="col-sm-3 col-md-3 sidebar">
+            <ul class="nav nav-sidebar">
+                <li class="{% block status_active_class %}{% endblock %}"><a href="/status/"><span class="glyphicon glyphicon-signal"></span>&nbsp;&nbsp;Cluster Status</a></li>
+                <li class="{% block files_active_class %}{% endblock %}"><a href="/files/"><span class="glyphicon glyphicon-floppy-disk"></span>&nbsp;&nbsp;Files</a></li>
+                <li class="{% block analyis_active_class %}{% endblock %}"><a href="/analysis/"><span class="glyphicon glyphicon-tasks"></span>&nbsp;&nbsp;Analysis Tasks</a></li>
+            </ul>
+            {% block sidebar %}
+            {% endblock %}
         </div>
+
         <div class="col-sm-9 col-sm-offset-3 col-md-9 col-md-offset-3 main">
-{% block content %}
-{% endblock %}
+            {% block content %}
+            {% endblock %}
         </div>
+    </div>
 </div>
-</div>
+
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 {% block scripts %}

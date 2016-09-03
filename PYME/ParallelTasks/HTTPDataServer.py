@@ -178,13 +178,16 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             #self.end_headers()
             return None
         else:
-            dir = os.path.split(path)[0]
+            dir, file = os.path.split(path)
             if not os.path.exists(dir):
                 os.makedirs(dir)
 
             query = urlparse.parse_qs(urlparse.urlparse(self.path).query)
 
-            if 'MirrorSource' in query.keys():
+            if file == '':
+                #we're  just making a directory
+                pass
+            elif 'MirrorSource' in query.keys():
                 #File content is not in message content. This computer should
                 #fetch the results from another computer in the cluster instead
                 #used for online duplication

@@ -1,5 +1,8 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
+from django.core.files.uploadhandler import TemporaryFileUploadHandler
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
+
 from PYME.IO import clusterIO
 
 # Create your views here.
@@ -52,3 +55,34 @@ def listing(request, filename):
     context = {'dirname' : filename, 'files':files, 'dirs': dirs, 'series': series, 'breadcrumbs':breadcrumbs, 'parent' : parent}
     return render(request, 'clusterbrowser/dirlisting.html', context)
     #return HttpResponse(clusterIO.listdir(filename))
+
+@csrf_exempt
+def upload(request, directory):
+    request.upload_handlers.insert(0, TemporaryFileUploadHandler(request))
+    return upload_files(request, directory)
+
+@csrf_protect
+def upload_files(request, directory):
+    from PYME.IO import clusterIO
+
+    files = request.FILES.getlist('file')
+    for file in files:
+        clusterIO.putFile(directory + file.name, file.read())
+
+    return HttpResponse('Files Uploaded')
+
+def mkdir(request, basedir):
+    from PYME.IO import clusterIO
+    newDirectory = request.POST.get('newDirectory', request.GET.get('newDirectory', None))
+
+    if newDirectory is None or newDirectory == '':
+        return HttpResponseForbidden('No directory name specified')
+
+    newDirectory = (basedir + newDirectory).rstrip('/') + '/'
+
+    if clusterIO.exists(newDirectory) or clusterIO.exists(newDirectory[:-1]):
+        return HttpResponseForbidden('Directory already exists')
+
+    clusterIO.putFile(newDirectory, '')
+
+    return HttpResponse(newDirectory)
