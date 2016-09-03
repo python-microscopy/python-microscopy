@@ -39,16 +39,20 @@ import requests
 import socket
 import fcntl
 import threading
+import datetime
+from PYME.misc.computerName import GetComputerName
+
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-
-from PYME.misc.computerName import GetComputerName
 
 compName = GetComputerName()
 procName = compName + ' - PID:%d' % os.getpid()
 
 LOG_REQUESTS = False#True
+
+startTime = datetime.datetime.now()
+global_status = {}
 
 textfile_locks = {}
 def getTextFileLock(filename):
@@ -219,12 +223,25 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
     def get_status(self):
         from PYME.IO.FileUtils.freeSpace import disk_usage
+
         status = {}
+        status.update(global_status)
+
         total, used, free = disk_usage(os.getcwd())
         status['Disk'] = {'total':total, 'used':used, 'free':free}
-        #status['Uptime'] =
+        status['Uptime'] = datetime.datetime.now() - startTime
 
-        return json.dumps(status)
+
+        f = StringIO()
+        f.write(json.dumps(status))
+        length = f.tell()
+        f.seek(0)
+        self.send_response(200)
+        encoding = sys.getfilesystemencoding()
+        self.send_header("Content-type", "application/json; charset=%s" % encoding)
+        self.send_header("Content-Length", str(length))
+        self.end_headers()
+        return f
 
     def send_head(self):
         """Common code for GET and HEAD commands.
@@ -239,6 +256,8 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         """
         path = self.translate_path(self.path)
         f = None
+        if self.path.lstrip('/') == '__status':
+            return self.get_status()
         if os.path.isdir(path):
             parts = urlparse.urlsplit(self.path)
             if not parts.path.endswith('/'):
@@ -403,6 +422,13 @@ def main(protocol="HTTP/1.0"):
 
     ns = pzc.getNS('_pyme-http')
     ns.register_service('PYMEDataServer: ' + procName, ip_addr, sa[1])
+
+    global_status['IPAddress'] = ip_addr
+    global_status['BindAddress'] = server_address
+    global_status['Port'] = sa[1]
+    global_status['Protocol'] = options.protocol
+    global_status['TestMode'] = options.test
+    global_status['ComputerName'] = GetComputerName()
 
     print "Serving HTTP on", ip_addr, "port", sa[1], "..."
     try:
