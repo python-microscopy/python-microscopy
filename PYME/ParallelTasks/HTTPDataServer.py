@@ -229,7 +229,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         total, used, free = disk_usage(os.getcwd())
         status['Disk'] = {'total':total, 'used':used, 'free':free}
-        status['Uptime'] = datetime.datetime.now() - startTime
+        status['Uptime'] = str(datetime.datetime.now() - startTime)
 
 
         f = StringIO()

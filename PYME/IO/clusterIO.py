@@ -426,3 +426,28 @@ else:
 
             r.close()
 
+def getStatus(serverfilter=''):
+    """Lists the contents of a directory on the cluster. Similar to os.listdir,
+        but directories are indicated by a trailing slash
+        """
+    import json
+    status = []
+
+    for name, info in ns.advertised_services.items():
+        if serverfilter in name:
+            surl = 'http://%s:%d/__status' % (socket.inet_ntoa(info.address), info.port)
+            url = surl.encode()
+            s = _getSession(url)
+            try:
+                r = s.get(url, timeout=.1)
+                st = r.json()
+                st['Responsive'] = True
+                status.append(st)
+            except requests.Timeout:
+                status.append({"IPAddress":socket.inet_ntoa(info.address), 'Port':info.port, 'Responsive' : False})
+
+
+    return status
+
+
+
