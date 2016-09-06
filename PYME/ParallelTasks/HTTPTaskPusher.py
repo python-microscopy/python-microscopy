@@ -13,6 +13,7 @@ from PYME.IO import clusterResults
 import json
 import socket
 import random
+import logging
 
 from PYME.misc import pyme_zeroconf as pzc
 from PYME.misc.computerName import GetComputerName
@@ -20,7 +21,7 @@ compName = GetComputerName()
 
 def _getTaskQueueURI():
     """Discover the distributors using zeroconf and choose one"""
-    ns = pzc.getNS('_pyme-taskdist')
+    ns = pzc.getNS('_pyme-distrib')
 
     queueURLs = {}
     for name, info in ns.advertised_services.items():
@@ -31,7 +32,8 @@ def _getTaskQueueURI():
         return queueURLs[compName]
     except KeyError:
         #if there is no local distributor, choose one at random
-        return queueURLs.items()[random.randint(0, len(queueURLs)-1)]
+        logging.info('no local distributor, choosing one at random')
+        return random.choice(queueURLs.values())
 
 import logging
 logging.basicConfig()
@@ -77,6 +79,7 @@ class HTTPTaskPusher(object):
         self.ds = DataSource(self.dataSourceID)
         
         #set up results file:
+        logging.debug('resultsURI: ' + self.resultsURI)
         clusterResults.fileResults(self.resultsURI + '/MetaData', metadata)
         clusterResults.fileResults(self.resultsURI + '/Events', self.ds.getEvents())
 
@@ -89,7 +92,10 @@ class HTTPTaskPusher(object):
 
     def fileTasksForFrames(self):
         numTotalFrames = self.ds.getNumSlices()
+        logging.debug('numTotalFrames: %s, currentFrameNum: %d' % (numTotalFrames, self.currentFrameNum))
         if  numTotalFrames > (self.currentFrameNum + 1):
+            logging.debug('we have unpublished frames - push them')
+
             #turn our metadata to a string once (outside the loop)
             mdstring = self.mdh.to_JSON() #TODO - use a URI instead
 
@@ -113,9 +119,11 @@ class HTTPTaskPusher(object):
 
     
     def _updatePoll(self):
+        logging.debug('task pusher poll loop started')
         while (self.doPoll == True):
             self.fileTasksForFrames()
             if self.ds.isComplete():
+                logging.debug('all tasks pushed, ending loop.')
                 self.doPoll = False
             else:
                 time.sleep(1)

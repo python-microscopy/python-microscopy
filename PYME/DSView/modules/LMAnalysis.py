@@ -35,7 +35,7 @@ from PYME.localization import MetaDataEdit as mde
 
 from PYME.IO import MetaDataHandler
 from PYME.IO.FileUtils import fileID
-from PYME.IO.FileUtils.nameUtils import genResultFileName
+from PYME.IO.FileUtils.nameUtils import genResultFileName, genClusterResultFileName
 
 from PYME.LMVis import progGraph as progGraph
 from PYME.LMVis import pipeline, inpFilt
@@ -49,6 +49,7 @@ from PYME.Acquire.mytimer import mytimer
 from PYME.DSView import fitInfo
 from PYME.DSView.OverlaysPanel import OverlayPanel
 
+import logging
 
 debug = True
 
@@ -262,19 +263,23 @@ class AnalysisController(object):
 
     def pushImagesCluster(self, image):
         from PYME.ParallelTasks import HTTPTaskPusher
-        resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
+        #resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
+        resultsFilename = genClusterResultFileName(image.seriesName)
+        logging.debug('Results file: ' + resultsFilename)
 
-        debugPrint('Results file = %s' % resultsFilename)
+        #debugPrint('Results file = %s' % resultsFilename)
 
         self.resultsMdh = MetaDataHandler.NestedClassMDHandler(self.analysisMDH)
         self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
 
-        pusher = HTTPTaskPusher.HTTPTaskPusher(dataSourceID=fileID.genDataSourceID(image.dataSource),
+        self.pusher = HTTPTaskPusher.HTTPTaskPusher(dataSourceID=image.seriesName,
                                                metadata=self.resultsMdh, resultsFilename=resultsFilename)
+
+        self.queueName = self.pusher.queueID
 
         debugPrint('Queue created')
 
-        self.onImagesPushed.send(self)
+        #self.onImagesPushed.send(self)
             
 
     def pushImagesHDF(self, image):

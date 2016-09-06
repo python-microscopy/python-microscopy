@@ -120,7 +120,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         with h5rFile.openH5R(filename, 'a') as h5f:
             if tablename == '/MetaData':
                 mdh_in = MetaDataHandler.CachingMDHandler(json.loads(data))
-                mdh_out = MetaDataHandler.HDFMDHandler(h5f, mdToCopy=mdh_in)
+                h5f.updateMetadata(mdh_in)
             elif tablename == '':
                 #legacy fitResults structure
                 fitResults = cPickle.loads(data)
