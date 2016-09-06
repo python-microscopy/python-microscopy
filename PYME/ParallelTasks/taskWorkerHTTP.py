@@ -48,7 +48,7 @@ def main():
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger('')
 
-    ns = pzc.getNS('__pyme-distrib') #fixme to use right selector
+    ns = pzc.getNS('_pyme-distrib') #fixme to use right selector
 
     procName = compName + ' - PID:%d' % os.getpid()
 
@@ -69,8 +69,9 @@ def main():
             #try queue on current machine first
             #TODO - only try local machine?
             #print queueNames
-            if compName in queueURLs.keys():
-                qName = compName
+            localQueueName = 'PYMENodeServer: ' + compName
+            if localQueueName in queueURLs.keys():
+                qName = localQueueName
                 queueURL = queueURLs.pop(qName)
             else: #pick a queue at random
                 queueURL = queueURLs.pop(queueURLs.keys()[random.randint(0, len(queueURLs)-1)])
