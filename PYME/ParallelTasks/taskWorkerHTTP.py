@@ -121,7 +121,7 @@ def main():
                     from PYME.io import clusterResults
                     clusterResults.fileResults(taskDescr['outputs']['results'], res)
 
-                    r = requests.post(queueURL + 'handin?taskID=%s&status=success' % taskDescr['id'])
+                    r = requests.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
                     if not r.status_code == 200:
                         logging.error('Returning task failed with error: %s' % r.status_code)
 
@@ -129,7 +129,7 @@ def main():
                     import traceback
                     traceback.print_exc()
 
-                    r = requests.post(queueURL + 'handin?taskID=%s&status=failure' % taskDescr['id'])
+                    r = requests.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
                     if not r.status_code == 200:
                         logging.error('Returning task failed with error: %s' % r.status_code)
                 finally:
