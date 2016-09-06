@@ -202,6 +202,7 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
     sigCalY = {}
 
     z = np.zeros(numMols)
+    zerr = 100*np.ones(numMols)
     smoothFac = 1*len(stigLib[0]['z'])
 
     # generate look up table of sorts
@@ -228,16 +229,18 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
         chans = np.where(fres['whichColor'][mi] == chanColor)[0]
         errX, errY = 0, 0
         for ci in chans:
-            if np.isnan(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi]):
-                break
-            wX = 1./(fres['fitError_sigmaxPlane%i' % chanPlane[ci]][mi])**2
-            wY = 1./(fres['fitError_sigmayPlane%i' % chanPlane[ci]][mi])**2
-            errX += wX*(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi] - sigCalX['chan%i' % ci])**2
-            errY += wY*(fres['fitResults_sigmayPlane%i' % chanPlane[ci]][mi] - sigCalY['chan%i' % ci])**2
+            if not np.isnan(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi]):
+                wX = 1./(fres['fitError_sigmaxPlane%i' % chanPlane[ci]][mi])**2
+                wY = 1./(fres['fitError_sigmayPlane%i' % chanPlane[ci]][mi])**2
+                errX += wX*(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi] - sigCalX['chan%i' % ci])**2
+                errY += wY*(fres['fitResults_sigmayPlane%i' % chanPlane[ci]][mi] - sigCalY['chan%i' % ci])**2
         try:
-            z[mi] = zVal[np.nanargmin(errX + errY)]
-        except:
-            print('No sigmas in correct plane for this molecule')
+            err = errX + errY
+            minLoc = np.nanargmin(err)
+            z[mi] = -zVal[minLoc]
+            zerr[mi] = err[minLoc]
+        except (TypeError, ValueError):
+            print('No sigmas in range in correct plane for this molecule')
     '''for mi in range(numMols):
         chans = np.where(fres['planeCounts'][mi] > 0)[0]
         errX, errY = 0, 0
@@ -255,7 +258,7 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
     plt.figure()
     plt.hist(z)
     plt.show()
-    return z
+    return z, zerr
 
 def coalesceDict_Old(inD, assigned):  # , notKosher=None):
     """
@@ -713,8 +716,9 @@ class multiviewMapper:
         print('Clumped %i localizations' % (ni - len(fres['whichChan'])))
 
         # look up z-positions
-        z = astigMAPism(fres, stigLib, chanPlane, chanColor)
+        z, zerr = astigMAPism(fres, stigLib, chanPlane, chanColor)
         fres['astigZ'] = z
+        fres['zLookupError'] = zerr
 
         # make sure there is no z, so that focus will be added during addDataSource
         try:
