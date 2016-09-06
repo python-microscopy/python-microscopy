@@ -227,6 +227,8 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
         # set regions outside of usable interpolation area to very unreasonable sigma values
         sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
         sigCalY['chan%i' % ii][sigCalY['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
+
+    failures = 0
     for mi in range(numMols):
         # chans = np.where(fres['planeCounts'][mi] > 0)[0]
         chans = np.where(fres['whichColor'][mi] == chanColor)[0]
@@ -242,8 +244,10 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
             minLoc = np.nanargmin(err)
             z[mi] = -zVal[minLoc]
             zerr[mi] = err[minLoc]
-        except (TypeError, ValueError):
-            print('No sigmas in range in correct plane for this molecule')
+        except (TypeError, ValueError):  # TypeError if err is scalar 0, ValueError if err is all NaNs
+            failures += 1
+
+    print('%i localizations did not have sigmas in acceptable range/planes (out of %i)' % (failures, numMols))
 
     #import matplotlib.pyplot as plt
     #plt.figure()
