@@ -18,7 +18,7 @@ if __name__ == '__main__':
     serverAddr, serverPort = config['nodeserver']['http_endpoint'].split(':')
     externalAddr = socket.gethostbyname(socket.gethostname())
 
-    ns = pyme_zeroconf.getNS('_pyme-distrib')
+    ns = pyme_zeroconf.getNS('_pyme-taskdist')
 
     #find distributor(s)
     distributors = []

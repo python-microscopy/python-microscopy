@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     proc = subprocess.Popen('distributor -c %s' % confFile, shell=True)
 
-    ns = pyme_zeroconf.getNS('_pyme-distrib')
+    ns = pyme_zeroconf.getNS('_pyme-taskdist')
     ns.register_service('PYMEDistributor: ' + GetComputerName(), externalAddr, int(serverPort))
 
     try:
