@@ -96,6 +96,8 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
         deltaX: distance within which neighbors will be clumped is set by 2*deltaX[i])**2
         appearIn: a clump must have localizations in each of these channels in order to be a keep-clump
         nFrameSep: number of frames a molecule is allowed to blink off and still be clumped as the same molecule
+        returnPaired: boolean flag to return a boolean array where True indicates that the molecule is a member of a
+            clump whose members span the appearIn channels.
 
     Returns:
         assigned: clump assignments for each localization. Note that molecules whose whichChan entry is set to a
@@ -127,7 +129,7 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
     if returnPaired:
         keptMoles = []
         # np.array_equal(clumps, np.arange(1, np.max(assigned) + 1)) evaluates to True
-        # FIXME: Next loop is horrifically slow for large N
+        # TODO: speed up following loop - quite slow for large N
         for elem in assigned:
             keptMoles.append(elem in clumps[np.where(keptClumps)])
         keep = np.where(keptMoles)
@@ -184,7 +186,8 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
 
     Returns:
         z: an array of z-positions for each molecule in nm (assuming proper units were used in astigmatism calibration)
-
+        zerr: an array containing discrepancies between sigma values and the PSF calibration curves. Note that this
+            array is currently unitless and error is not being propagated from sigma fitResults.
     """
     # fres = pipeline.selectedDataSource.resultsSource.fitResults
     numMols = len(fres['fitResults_x0'])
@@ -241,98 +244,13 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
             zerr[mi] = err[minLoc]
         except (TypeError, ValueError):
             print('No sigmas in range in correct plane for this molecule')
-    '''for mi in range(numMols):
-        chans = np.where(fres['planeCounts'][mi] > 0)[0]
-        errX, errY = 0, 0
-        for ci in chans:
-            wX = 1./(fres['fitError_sigmaxPlane%i' % chanPlane[ci]][mi])**2
-            wY = 1./(fres['fitError_sigmayPlane%i' % chanPlane[ci]][mi])**2
-            errX += wX*(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi] - sigCalX['chan%i' % ci])**2
-            errY += wY*(fres['fitResults_sigmayPlane%i' % chanPlane[ci]][mi] - sigCalY['chan%i' % ci])**2
-        try:
-            z[mi] = zVal[np.nanargmin(errX + errY)]
-        except:
-            print('No sigmas in correct plane for this molecule')'''
 
-    import matplotlib.pyplot as plt
-    plt.figure()
-    plt.hist(z)
-    plt.show()
+    #import matplotlib.pyplot as plt
+    #plt.figure()
+    #plt.hist(z)
+    #plt.show()
     return z, zerr
 
-def coalesceDict_Old(inD, assigned):  # , notKosher=None):
-    """
-    Agregates clumps to a single event
-    Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
-    object.
-    Also note that copying a large dictionary can be rather slow, and a structured ndarray approach may be preferable.
-
-    Args:
-        inD: input dictionary containing fit results
-        assigned: clump assignments to be coalesced
-
-    Returns:
-        fres: output dictionary containing the coalesced results
-
-    """
-    NClumps = int(np.max(assigned))  # len(np.unique(assigned))  #
-
-    fres = {}
-
-    clist = [[] for i in xrange(NClumps)]
-    for i, c in enumerate(assigned):
-        clist[int(c-1)].append(i)
-
-
-    for rkey in inD.keys():
-        skey = rkey.split('_')
-
-        if skey[0] == 'fitResults':
-            fres[rkey] = np.empty(NClumps)
-            errKey = 'fitError_' + skey[1]
-            fres[errKey] = np.empty(NClumps)
-            for i in xrange(NClumps):
-                ci = clist[i]
-                fres[rkey][i], fres[errKey][i] = pyDeClump.weightedAverage_(inD[rkey][ci], inD[errKey][ci], None)
-        elif rkey == 'tIndex':
-            fres[rkey] = np.empty(NClumps)
-            for i in xrange(NClumps):
-                ci = clist[i]
-                fres['tIndex'][i] = inD['tIndex'][ci].min()
-
-        elif rkey == 'whichChan':
-            fres[rkey] = np.empty(NClumps, dtype=np.int32)
-            if 'planeCounts' in inD.keys():
-                fres['planeCounts'] = np.zeros((NClumps, inD['planeCounts'].shape[1]))
-                for i in xrange(NClumps):
-                    ci = clist[i]  # clump indices
-                    cl = inD[rkey][ci]  # channel list of clumps
-
-                    fres[rkey][i] = np.array(np.bincount(cl).argmax(), dtype=np.int32)  # set channel to mode
-
-                    # if np.logical_and(len(np.unique(cl)) > 1, np.any([entry in cl for entry in notKosher])):
-
-                    fres['planeCounts'][i][:] = inD['planeCounts'][ci][:].sum(axis=0).astype(np.int32)
-                    #cind, counts = np.unique(cl, return_counts=True)
-                    #fres['planeCounts'][i][cind] += counts.astype(np.int32)
-
-            else:
-                for i in xrange(NClumps):
-                    ci = clist[i]
-                    cl = inD[rkey][ci]
-
-                    fres[rkey][i] = np.array(np.bincount(cl).argmax(), dtype=np.int32)  # set channel to mode
-
-        elif rkey == 'planeCounts' or skey[0] == 'fitError':
-            pass
-
-        else:  # settle for the unweighted mean
-            fres[rkey] = np.empty(NClumps)
-            for i in xrange(NClumps):
-                ci = clist[i]
-                fres[rkey][i] = inD[rkey][ci].mean()
-
-    return fres
 
 def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
     """
@@ -344,6 +262,11 @@ def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
     Args:
         inD: input dictionary containing fit results
         assigned: clump assignments to be coalesced
+        keys: list whose elements are strings corresponding to keys to be copied from the input to output dictionaries
+        weightList: list whose elements describe the weightings to use when coalescing corresponding keys. A scalar
+            weightList entry flags for an unweighted mean is performed during coalescence. Alternatively, if a
+            weightList element is a vector it will be used as the weights, and a string will be used as a key to extract
+            weights from the input dictionary.
 
     Returns:
         fres: output dictionary containing the coalesced results
@@ -461,13 +384,6 @@ class multiviewMapper:
         # apply shiftmaps
         applyShiftmaps(pipeline, shiftWallet, numChan)
 
-        # create new data source NO LONGER NECESSARY, mapping filter will reg x and y automatically
-        #from PYME.LMVis.inpFilt import fitResultsSource
-        #fres = pipeline.selectedDataSource.resultsSource.fitResults
-        #regFres = np.copy(fres)
-        #regFres['fitResults']['x0'], regFres['fitResults']['y0'] = x, y
-        #pipeline.addDataSource('RegisteredXY', fitResultsSource(regFres))
-        #pipeline.selectDataSource('RegisteredXY')
 
     def OnCalibrateShifts(self, event):
         """
@@ -612,7 +528,8 @@ class multiviewMapper:
             chanPlane = [0]
             numPlanes = 1
 
-        try:  # load astigmatism calibrations from metadata, if present
+        try:  # load astigmatism calibrations, if listed in metadata
+            # FIXME: this is only set up to pull a local copy at the moment
             stigLoc = pipeline.mdh['AstigmapID']
             fid = open(stigLoc, 'r')
             stigLib = json.load(fid)
@@ -677,7 +594,6 @@ class multiviewMapper:
         keys.append('t'), weightList.append(None)
         keys.append('x'), weightList.append('fitError_x0')
         keys.append('y'), weightList.append('fitError_y0')
-        #keys.append('z'), weightList.append('fitError_z0')
 
         for cind in np.unique(chanColor):
             # copy keys and sort in order of frames
@@ -708,7 +624,7 @@ class multiviewMapper:
             clumpVec = np.unique(clumpID)
             for ci in range(len(clumpVec)):
                 cMask = clumpID == clumpVec[ci]
-                assigned[cMask] = ci + 1  #FIXME: cluster assignments currently must start from 1, which is mean.
+                assigned[cMask] = ci + 1
 
             # coalesce clumped localizations into single data point
             fres = coalesceDict(fres, assigned, keys, weightList)
@@ -721,10 +637,8 @@ class multiviewMapper:
         fres['zLookupError'] = zerr
 
         # make sure there is no z, so that focus will be added during addDataSource
-        try:
+        if 'z' in fres.keys():
             del fres['z']
-        except KeyError:
-            pass
         pipeline.addDataSource('Zmapped', cachingResultsFilter(fres))
         pipeline.selectDataSource('Zmapped')
 
