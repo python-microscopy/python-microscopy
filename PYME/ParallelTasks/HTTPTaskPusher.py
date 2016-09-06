@@ -21,11 +21,12 @@ compName = GetComputerName()
 
 def _getTaskQueueURI():
     """Discover the distributors using zeroconf and choose one"""
-    ns = pzc.getNS('_pyme-distrib')
+    ns = pzc.getNS('_pyme-taskdist')
 
     queueURLs = {}
     for name, info in ns.advertised_services.items():
-        queueURLs[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
+        if name.startswith('PYMEDistributor'):
+            queueURLs[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
 
     try:
         #try to grab the distributor on the local computer
@@ -98,21 +99,23 @@ class HTTPTaskPusher(object):
 
             #turn our metadata to a string once (outside the loop)
             mdstring = self.mdh.to_JSON() #TODO - use a URI instead
+            
+            newFrameNum = min(self.currentFrameNum + 100, numTotalFrames)
 
             #create task definitions for each frame
-            tasks = [{'id':self.queueID,
+            tasks = [{'id':str(frameNum),
                       'type':'localization',
-                      'taskdef': {'frameIndex': frameNum, 'metadata':mdstring},
+                      'taskdef': {'frameIndex': str(frameNum), 'metadata':mdstring},
                       'inputs' : {'frames': self.dataSourceID},
                       'outputs' : {'results': self.resultsURI}
-                      } for frameNum in range(self.currentFrameNum, numTotalFrames)]
+                      } for frameNum in range(self.currentFrameNum, newFrameNum)]
 
             task_list = json.dumps(tasks)
 
             r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list)
-            if r.status_code == 200 and r.json()['Ok']:
+            if r.status_code == 200 and r.json()['ok']:
                 logging.debug('Successfully posted tasks')
-                self.currentFrameNum = numTotalFrames - 1
+                self.currentFrameNum = newFrameNum - 1
             else:
                 logging.error('Failed on posting tasks with status code: %d' % r.status_code)
 

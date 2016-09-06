@@ -83,7 +83,7 @@ def main():
                 r = requests.get(queueURL + 'node/tasks?workerID=%s' % procName)
                 if r.status_code == 200:
                     resp = r.json()
-                    if resp['Ok']:
+                    if resp['ok']:
                         tasks.append((queueURL, resp['result']))
 
 

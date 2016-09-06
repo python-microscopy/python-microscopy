@@ -209,8 +209,8 @@ def createFitTaskFromTaskDef(task):
     """
     from PYME.IO import MetaDataHandler
 
-    dataSourceID = task['inputs']['dataSourceID']
-    frameIndex = task['taskdef']['frameIndex']
+    dataSourceID = task['inputs']['frames']
+    frameIndex = int(task['taskdef']['frameIndex'])
 
     md = task['taskdef']['metadata']
 
