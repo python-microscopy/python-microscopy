@@ -8,7 +8,7 @@ import time
 import socket
 import tempfile
 import logging
-logging.basicConfig()
+logging.basicConfig(level=logging.DEBUG)
 
 if __name__ == '__main__':
     confFile = os.path.join(config.user_config_dir, 'nodeserver.yaml')
@@ -26,6 +26,7 @@ if __name__ == '__main__':
         if name.startswith('PYMEDistributor'):
             distributors.append('%s:%d' % (socket.inet_ntoa(info.address), info.port))
 
+
     #modify the configuration to reflect the discovered distributor(s)
     config['nodeserver']['distributors'] = distributors
 
@@ -34,7 +35,7 @@ if __name__ == '__main__':
         temp_conf_file_name = temp_conf_file.name
         temp_conf_file.write(yaml.dump(config))
 
-    logging.info('Config file: ' + temp_conf_file_name)
+    logging.debug('Config file: ' + temp_conf_file_name)
 
     proc = subprocess.Popen('nodeserver -c %s' % temp_conf_file_name, shell=True)
     ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, int(serverPort))
