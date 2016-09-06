@@ -610,7 +610,9 @@ class multiviewMapper:
             numPlanes = 1
 
         try:  # load astigmatism calibrations from metadata, if present
-            stigLib = pipeline.mdh['Astigmap']
+            stigLoc = pipeline.mdh['AstigmapID']
+            fid = open(stigLoc, 'r')
+            stigLib = json.load(fid)
         except AttributeError:
             try:  # load through GUI dialog
                 fdialog = wx.FileDialog(None, 'Load Astigmatism Calibration', wildcard='Astigmatism map (*.am)|*.am',
