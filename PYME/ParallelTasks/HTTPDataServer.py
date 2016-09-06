@@ -231,6 +231,15 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         status['Disk'] = {'total':total, 'used':used, 'free':free}
         status['Uptime'] = str(datetime.datetime.now() - startTime)
 
+        try:
+            import psutil
+
+            status['CPUUsage'] = psutil.cpu_percent(interval=.1, percpu=True)
+            status['MemUsage'] = psutil.virtual_memory()._asdict()
+        except ImportError:
+            pass
+
+
 
         f = StringIO()
         f.write(json.dumps(status))

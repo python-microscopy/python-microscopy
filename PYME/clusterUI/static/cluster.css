@@ -10,6 +10,7 @@
     min-height: 20px;
     height: auto;
     display: inline-block;
+    /*overflow: hidden;*/
     width: 100%;
 }
 
@@ -23,12 +24,48 @@
     /*overflow:hidden;*/
 }
 
+.chart-cpu{
+    background-color: #1c94c4;
+    min-height: 30px;
+    height: auto;
+    display: inline-block;
+    /*overflow: hidden;*/
+    width: 100%;
+}
+.chart-cpu-bar{
+    /*background-color: #1c94c4;*/
+    background-color: #ddd;
+    display: inline-block;
+    /*height: 100%;*/
+    float: right;
+
+
+    text-align: right;
+    /*padding-right: 5px;*/
+    /*overflow:hidden;*/
+}
+
+.chart-bar-left{
+    display: inline-block;
+    max-width: 100%;
+    /*overflow:hidden;*/
+    /*min-width: 0;*/
+}
+
+.chart-bar-right{
+
+}
+
 .chart-label{
     padding-left: 10px;
     padding-right: 10px;
     /*padding-top: 2px;
     padding-bottom: 2px;*/
     display: inline-block;
+}
+
+.section{
+    padding-bottom: 50px;
 }
 
 circle {

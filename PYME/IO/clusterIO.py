@@ -439,7 +439,7 @@ def getStatus(serverfilter=''):
             url = surl.encode()
             s = _getSession(url)
             try:
-                r = s.get(url, timeout=.1)
+                r = s.get(url, timeout=.5)
                 st = r.json()
                 st['Responsive'] = True
                 status.append(st)

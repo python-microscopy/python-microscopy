@@ -14,6 +14,8 @@ def status(request):
         total_storage += node['Disk']['total']
         free_storage += node['Disk']['free']
 
+        nodes[i]['percent_mem_free'] = 100 - node['MemUsage']['percent']
+
     context = {'storage_nodes' : nodes, 'total_storage' : total_storage,
                'free_storage' : free_storage, 'used_storage' : total_storage-free_storage,
                'percent_total_free' : int(100*float(free_storage)/total_storage)}

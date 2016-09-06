@@ -11,4 +11,20 @@ stored in .pymerc.yaml files. The following locations are searched in order:
 import yaml
 import os
 
+user_config_dir = os.path.join(os.path.expanduser('~'), '.PYME')
+user_config_file = os.path.join(user_config_dir, 'config.yaml')
+
 config_defaults = {}
+
+config = {}
+config.update(config_defaults)
+
+#read the per-user configuration
+try:
+    with open(user_config_file) as f:
+        user_conf = yaml.load(f)
+        config.update(user_conf)
+
+except IOError:
+    #no local configuration file found
+    pass
