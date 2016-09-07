@@ -94,6 +94,7 @@ class HTTPTaskPusher(object):
     def fileTasksForFrames(self):
         numTotalFrames = self.ds.getNumSlices()
         logging.debug('numTotalFrames: %s, currentFrameNum: %d' % (numTotalFrames, self.currentFrameNum))
+        numFramesOutstanding = 0
         if  numTotalFrames > (self.currentFrameNum + 1):
             logging.debug('we have unpublished frames - push them')
 
@@ -119,13 +120,17 @@ class HTTPTaskPusher(object):
             else:
                 logging.error('Failed on posting tasks with status code: %d' % r.status_code)
 
+            numFramesOutstanding = numTotalFrames - self.currentFrameNum - 1
+
+        return  numFramesOutstanding
+
 
     
     def _updatePoll(self):
         logging.debug('task pusher poll loop started')
         while (self.doPoll == True):
-            self.fileTasksForFrames()
-            if self.ds.isComplete():
+            framesOutstanding = self.fileTasksForFrames()
+            if self.ds.isComplete() and not (framesOutstanding > 0):
                 logging.debug('all tasks pushed, ending loop.')
                 self.doPoll = False
             else:
