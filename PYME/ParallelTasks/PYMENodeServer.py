@@ -11,6 +11,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 from PYME.ParallelTasks import distribution
+from multiprocessing import cpu_count
 
 
 def main():
@@ -45,14 +46,30 @@ def main():
     proc = subprocess.Popen('nodeserver -c %s' % temp_conf_file_name, shell=True)
     ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, int(serverPort))
 
+    time.sleep(2)
+    logging.debug('Launching worker processors')
+    numWorkers = config.get('numWorkers', cpu_count())
+
+    workerProcs = [subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP', shell=True) for i in range(numWorkers)]
+
     try:
         while not proc.poll():
             time.sleep(1)
 
     finally:
         ns.unregister('PYMENodeServer: ' + GetComputerName())
-        proc.kill()
         os.unlink(temp_conf_file_name)
+        try:
+            proc.kill()
+        except:
+            pass
+
+        for p in workerProcs:
+            try:
+                p.kill()
+            except:
+                pass
+
 
 if __name__ == '__main__':
     main()
