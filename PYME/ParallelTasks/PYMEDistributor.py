@@ -7,7 +7,7 @@ import subprocess
 import time
 import socket
 
-if __name__ == '__main__':
+def main():
     confFile = os.path.join(config.user_config_dir, 'distributor.yaml')
     with open(confFile) as f:
         config = yaml.load(f)
@@ -27,6 +27,9 @@ if __name__ == '__main__':
     finally:
         ns.unregister('PYMEDistributor: ' + GetComputerName())
         proc.kill()
+
+if __name__ == '__main__':
+    main()
 
 
 

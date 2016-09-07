@@ -28,6 +28,8 @@ entry_points={
         'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
         'PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main',
         'PYMEClusterDup = PYME.io.clusterDuplication:main',
+        'PYMEDistributor = PYME.ParallelTasks.PYMEDistributor',
+        'PYMENodeServer = PYME.ParallelTasks.PYMENodeServer',
     ],
     'gui_scripts': [
         'dh5view = PYME.DSView.dsviewer:main',

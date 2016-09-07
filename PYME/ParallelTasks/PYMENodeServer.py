@@ -10,7 +10,8 @@ import tempfile
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-if __name__ == '__main__':
+
+def main():
     confFile = os.path.join(config.user_config_dir, 'nodeserver.yaml')
     with open(confFile) as f:
         config = yaml.load(f)
@@ -49,7 +50,8 @@ if __name__ == '__main__':
         proc.kill()
         os.unlink(temp_conf_file_name)
 
-
+if __name__ == '__main__':
+    main()
 
 
 
