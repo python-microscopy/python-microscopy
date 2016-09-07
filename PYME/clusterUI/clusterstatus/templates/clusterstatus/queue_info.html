@@ -1,5 +1,8 @@
 {% extends 'base.html' %}
 {% block title %}Queue Information{% endblock %}
+{% block meta %}
+<meta http-equiv="refresh" content="2">
+{% endblock %}
 {% block analysis_active_class %}active{% endblock %}
 {% block content %}
     <div class="section">
@@ -13,10 +16,10 @@
         {% endfor %}
     </table>
 
-    </div>
-
-    <div class="section">
-    <h1>Distribution nodes</h1>
+{#    </div>#}
+{##}
+{#    <div class="section">#}
+    <h1>Node Servers</h1>
     <table class="table table-striped">
         <tr><th>Name</th><th>URL</th></tr>
         {% for nodeName, nodeURL in distNodes.items %}
