@@ -224,7 +224,7 @@ def createFitTaskFromTaskDef(task):
         if md.startswith('{'):
             #metadata is a quoted json dump
             import json
-            mdh.update(json.loads(mdh))
+            mdh.update(json.loads(md))
         else:
             #metadata entry is a filename/URI
             from PYME.IO import unifiedIO

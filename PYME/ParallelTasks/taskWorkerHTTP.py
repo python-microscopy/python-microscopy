@@ -80,11 +80,14 @@ def main():
             try:
                 #ask the queue for tasks
                 #TODO - make the server actually return a list of tasks, not just one (or implement pipelining in another way)
-                r = requests.get(queueURL + 'node/tasks?workerID=%s' % procName)
+                #try:
+                r = requests.get(queueURL + 'node/tasks?workerID=%s' % procName, timeout=1)
                 if r.status_code == 200:
                     resp = r.json()
                     if resp['ok']:
                         tasks.append((queueURL, resp['result']))
+            except requests.Timeout:
+                logging.error('Read timout requesting tasks from %s' % queueURL)
 
 
             except Exception:
@@ -112,13 +115,14 @@ def main():
                 try:
                     #execute the task,
                     #t1 = time.time()
+                    #print taskDescr
 
                     task = remFitBuf.createFitTaskFromTaskDef(taskDescr)
                     res = task()
                     #t2 = time.time()
 
                     # new style way of returning results to reduce load on server
-                    from PYME.io import clusterResults
+                    from PYME.IO import clusterResults
                     clusterResults.fileResults(taskDescr['outputs']['results'], res)
 
                     r = requests.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
