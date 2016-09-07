@@ -48,6 +48,10 @@ build:
   # python in Mac OS X
   osx_is_app: yes # (defaults to no)
 
+  script_env:
+    - GOPATH
+    - GOBIN
+
   # See the Features section below for more information on features
 
   # Defines what features a package has
