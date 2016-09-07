@@ -1,4 +1,4 @@
-from PYME import config
+from PYME import config as conf
 import os
 import yaml
 from PYME.misc import pyme_zeroconf
@@ -7,8 +7,10 @@ import subprocess
 import time
 import socket
 
+#confFile = os.path.join(config.user_config_dir, 'distributor.yaml')
+
 def main():
-    confFile = os.path.join(config.user_config_dir, 'distributor.yaml')
+    confFile = os.path.join(conf.user_config_dir, 'distributor.yaml')
     with open(confFile) as f:
         config = yaml.load(f)
 

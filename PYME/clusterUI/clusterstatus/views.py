@@ -21,3 +21,16 @@ def status(request):
                'percent_total_free' : int(100*float(free_storage)/total_storage)}
 
     return render(request, 'clusterstatus/status_dash.html', context)
+
+def queues(request):
+    from PYME.ParallelTasks import distribution
+    distributors = distribution.getDistributorInfo()
+    distNodes = distribution.getNodeInfo()
+
+    queueInfo = [{'name':distName, 'queues': distribution.getQueueInfo(distURL)} for distName, distURL in distributors.items()]
+
+    print queueInfo
+
+    context = {'distributors': distributors, 'distNodes': distNodes, 'queueInfo':queueInfo}
+
+    return render(request, 'clusterstatus/queue_info.html', context)

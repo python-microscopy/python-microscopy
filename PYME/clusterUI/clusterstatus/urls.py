@@ -3,4 +3,5 @@ from . import views
 
 urlpatterns = [
     url(r'^$', views.status, name='status'),
+    url(r'^queues/$', views.queues, name='queues'),
 ]

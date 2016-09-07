@@ -1,4 +1,4 @@
-from PYME import config
+from PYME import config as conf
 import os
 import yaml
 from PYME.misc import pyme_zeroconf
@@ -14,7 +14,7 @@ from PYME.ParallelTasks import distribution
 
 
 def main():
-    confFile = os.path.join(config.user_config_dir, 'nodeserver.yaml')
+    confFile = os.path.join(conf.user_config_dir, 'nodeserver.yaml')
     with open(confFile) as f:
         config = yaml.load(f)
 
@@ -29,7 +29,7 @@ def main():
     #     if name.startswith('PYMEDistributor'):
     #         distributors.append('%s:%d' % (socket.inet_ntoa(info.address), info.port))
 
-    distributors = distribution.getDistributorInfo().values()
+    distributors = [u.lstrip('http://').rstrip('/') for u in distribution.getDistributorInfo().values()]
 
 
     #modify the configuration to reflect the discovered distributor(s)

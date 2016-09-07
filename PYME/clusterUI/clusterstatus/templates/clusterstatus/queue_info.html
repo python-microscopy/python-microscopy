@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Queue Information{% endblock %}
+{% block analysis_active_class %}active{% endblock %}
+{% block content %}
+    <div class="section">
+    <h1>Distributors</h1>
+    <table class="table table-striped">
+        <tr><th>Name</th><th>URL</th></tr>
+        {% for distName, distURL in distributors.items %}
+            <tr>
+            <td>{{ distName }}</td><td>{{ distURL }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    </div>
+
+    <div class="section">
+    <h1>Distribution nodes</h1>
+    <table class="table table-striped">
+        <tr><th>Name</th><th>URL</th></tr>
+        {% for nodeName, nodeURL in distNodes.items %}
+            <tr>
+            <td>{{ nodeName }}</td><td>{{ nodeURL }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    </div>
+
+    <div class="section">
+    <h1>Distribution Queues</h1>
+    {% for distQ in  queueInfo %}
+        <br>
+    <h4>{{ distQ.name }}</h4>
+    <table class="table table-striped">
+        <tr><th>ID</th><th>Posted</th><th>Running</th><th>Completed</th><th>Failed</th><th>Avg Cost</th></tr>
+        {% for queueName, queueStats in distQ.queues.items %}
+            <tr>
+            <td>{{ queueName }}</td><td>{{ queueStats.tasksPosted }}</td><td>{{ queueStats.tasksRunning }}</td><td>{{ queueStats.tasksCompleted }}</td>
+            <td>{{ queueStats.tasksFailed }}</td><td>{{ queueStats.averageExecutionCost }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    {% endfor %}
+
+    </div>
+
+
+
+{% endblock %}
