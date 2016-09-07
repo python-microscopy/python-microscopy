@@ -1,6 +1,6 @@
 package:
-  name: python-microscopy       # lower case name of package, may contain '-' but no spaces
-  version: {{ environ.get('PYME_VERSION', '') }}    # version of package. Should use the PEP-386 verlib
+  name: pyme-depends       # lower case name of package, may contain '-' but no spaces
+  version: 1.0    # version of package. Should use the PEP-386 verlib
                       # conventions. Note that YAML will interpret
                       # versions like 1.0 as floats, meaning that 1.0 will
                       # be the same as 1. To avoid this, always put the
@@ -13,7 +13,7 @@ source:
   # or from hg:
   #hg_url: https://code.google.com/p/python-microscopy/ 
   #hg_tag: 15.2.17
-  path: ./PYME/
+  #path: ./PYME/
 
 build:
   # The build number should be incremented for new builds of the same version
@@ -23,22 +23,10 @@ build:
                   # The build string cannot contain a dash '-' character
 
   # Optional Python entry points
-  entry_points:
+  #entry_points:
     # This creates an entry point named bsdiff4 that calls
     # bsdiff4.cli.main_bsdiff4()
-    - dh5view = PYME.DSView.dsviewer:main
-    - PYMEAcquire = PYME.Acquire.PYMEAcquire:main
-    - VisGUI = PYME.LMVis.VisGUI:main
-    - launchWorkers = PYME.ParallelTasks.launchWorkers:main
-    - PYMEBatch = PYME.Analysis.Modules.batchProcess:main
-    - bakeshop = PYME.Analysis.Modules.bakeshop:main
-    - fitMonP = PYME.ParallelTasks.fitMonP:main
-    - taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main
-    - taskServerZC = PYME.ParallelTasks.taskServerZC:main
-    - PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main
-    - PYMEClusterDup = PYME.io.clusterDuplication:main
-    - PYMEDistributor = PYME.ParallelTasks.PYMEDistributor:main
-    - PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main
+
 
 
 
@@ -46,7 +34,7 @@ build:
 
   # If osx_is_app is set, entry points will use python.app instead of
   # python in Mac OS X
-  osx_is_app: yes # (defaults to no)
+  #osx_is_app: yes # (defaults to no)
 
 #  script_env:
 #    - GOPATH
@@ -128,10 +116,10 @@ build:
 requirements:
   # Packages required to build the package. python and numpy must be
   # listed explicitly if they are required.
-  build:
-    - python
-    - numpy x.x
-    - matplotlib
+  #build:
+  #  - python
+  #  - numpy x.x
+  #  - matplotlib
     #- mingw  [win]
   # Packages required to run the package. These are the dependencies that
   # will be installed automatically whenever the package is installed.

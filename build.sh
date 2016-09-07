@@ -21,26 +21,26 @@ if [ -n "$OSX_ARCH" ]
 		install_name_tool -change @rpath/libpython2.7.dylib @executable_path/../../../lib/libpython2.7.dylib $PREFIX/dh5view.app/Contents/MacOS/dh5view
 fi
 
-echo "Attempting to build and install go components"
-
-curdir=`pwd`
-
-PYMEGOdir="$GOPATH/src/github.com/mrd0ll4r/pyme"
-if [ -d "$PYMEGOdir" ]
-    then
-        echo "installing pyme go components"
-
-        cd $PYMEGOdir/cmd/distributor
-        go install .
-
-        cd $PYMEGOdir/cmd/nodeserver
-        go install .
-
-        cd $curdir
-
-        cp $GOBIN/distributor $PREFIX/bin
-        cp $GOBIN/nodeserver $PREFIX/bin
-fi
+#echo "Attempting to build and install go components"
+#
+#curdir=`pwd`
+#
+#PYMEGOdir="$GOPATH/src/github.com/mrd0ll4r/pyme"
+#if [ -d "$PYMEGOdir" ]
+#    then
+#        echo "installing pyme go components"
+#
+#        cd $PYMEGOdir/cmd/distributor
+#        go install .
+#
+#        cd $PYMEGOdir/cmd/nodeserver
+#        go install .
+#
+#        cd $curdir
+#
+#        cp $GOBIN/distributor $PREFIX/bin
+#        cp $GOBIN/nodeserver $PREFIX/bin
+#fi
 
 
 # See
