@@ -28,13 +28,14 @@ import random
 import time
 
 import PYME.version
-import PYME.misc.pyme_zeroconf as pzc
+#import PYME.misc.pyme_zeroconf as pzc
 
 import os
 import requests
-import socket
+#import socket
 
 from PYME.localization import remFitBuf
+from PYME.ParallelTasks import distribution
 
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
@@ -48,20 +49,20 @@ def main():
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger('')
 
-    ns = pzc.getNS('_pyme-taskdist')
+    #ns = pzc.getNS('_pyme-taskdist')
 
     procName = compName + ' - PID:%d' % os.getpid()
 
     #loop forever asking for tasks
     while 1:
         #queueNames = ns.list('HTTPTaskQueues')
-        queueURLs = {}
+        # queueURLs = {}
+        #
+        # for name, info in ns.advertised_services.items() :
+        #     if name.startswith('PYMENodeServer'):
+        #         queueURLs[name] = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
 
-        for name, info in ns.advertised_services.items() :
-            if name.startswith('PYMENodeServer'):
-                queueURLs[name] = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
-        
-        #print queueNames
+        queueURLs = distribution.getNodeInfo()
 
         tasks = []
 

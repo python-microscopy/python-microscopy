@@ -10,6 +10,8 @@ import tempfile
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
+from PYME.ParallelTasks import distribution
+
 
 def main():
     confFile = os.path.join(config.user_config_dir, 'nodeserver.yaml')
@@ -20,12 +22,14 @@ def main():
     externalAddr = socket.gethostbyname(socket.gethostname())
 
     ns = pyme_zeroconf.getNS('_pyme-taskdist')
+    #
+    # #find distributor(s)
+    # distributors = []
+    # for name, info in ns.advertised_services.items():
+    #     if name.startswith('PYMEDistributor'):
+    #         distributors.append('%s:%d' % (socket.inet_ntoa(info.address), info.port))
 
-    #find distributor(s)
-    distributors = []
-    for name, info in ns.advertised_services.items():
-        if name.startswith('PYMEDistributor'):
-            distributors.append('%s:%d' % (socket.inet_ntoa(info.address), info.port))
+    distributors = distribution.getDistributorInfo().values()
 
 
     #modify the configuration to reflect the discovered distributor(s)
