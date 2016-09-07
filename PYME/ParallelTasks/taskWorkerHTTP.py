@@ -82,7 +82,7 @@ def main():
                 #ask the queue for tasks
                 #TODO - make the server actually return a list of tasks, not just one (or implement pipelining in another way)
                 #try:
-                r = requests.get(queueURL + 'node/tasks?workerID=%s' % procName, timeout=1)
+                r = requests.get(queueURL + 'node/tasks?workerID=%s' % procName, timeout=100)
                 if r.status_code == 200:
                     resp = r.json()
                     if resp['ok']:

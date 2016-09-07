@@ -20,7 +20,10 @@ def status(request):
                'free_storage' : free_storage, 'used_storage' : total_storage-free_storage,
                'percent_total_free' : int(100*float(free_storage)/total_storage)}
 
-    return render(request, 'clusterstatus/status_dash.html', context)
+    if '_ajax' in request.GET.keys():
+        return render(request, 'clusterstatus/status_dash_content.html', context)
+    else:
+        return render(request, 'clusterstatus/status_dash.html', context)
 
 def queues(request):
     from PYME.ParallelTasks import distribution
@@ -33,4 +36,7 @@ def queues(request):
 
     context = {'distributors': distributors, 'distNodes': distNodes, 'queueInfo':queueInfo}
 
-    return render(request, 'clusterstatus/queue_info.html', context)
+    if '_ajax' in request.GET.keys():
+        return render(request, 'clusterstatus/queue_info_content.html', context)
+    else:
+        return render(request, 'clusterstatus/queue_info.html', context)
