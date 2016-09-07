@@ -33,7 +33,7 @@ build:
 
   # If osx_is_app is set, entry points will use python.app instead of
   # python in Mac OS X
-  osx_is_app: yes # (defaults to no)
+  #osx_is_app: yes # (defaults to no)
 
   script_env:
     - GOPATH
@@ -123,7 +123,8 @@ requirements:
   # will be installed automatically whenever the package is installed.
   # Package names should be any valid conda spec (see "Specifying versions
   # in requirements" below).
-  #run:
+  run:
+   - python
 
 
   #unfortunately not availible through conda on windows ##FIXME

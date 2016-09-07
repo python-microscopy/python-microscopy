@@ -58,6 +58,7 @@ def configuration(parent_package='',top_path=None):
     #config.add_subpackage('dataBrowser')
     #config.add_subpackage('shmarray')
     config.add_subpackage('SampleDB2')
+    config.add_subpackage('clusterUI')
     
     #config.add_scripts(glob.glob('scripts/*'))
     if False:#not 'CONDA_BUILD' in os.environ.keys():
