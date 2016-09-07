@@ -45,6 +45,6 @@ try:
         user_conf = yaml.load(f)
         config.update(user_conf)
 
-except IOError:
-    #no local configuration file found
+except (IOError, TypeError):
+    #no local configuration file found, or not formatted correctly
     pass
