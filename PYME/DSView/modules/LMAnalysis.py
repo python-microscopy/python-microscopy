@@ -49,6 +49,15 @@ from PYME.Acquire.mytimer import mytimer
 from PYME.DSView import fitInfo
 from PYME.DSView.OverlaysPanel import OverlayPanel
 
+try:
+    from PYME.ParallelTasks import HTTPTaskPusher
+
+    #test for a running task distributor
+    distribURI = HTTPTaskPusher._getTaskQueueURI()
+    NEW_STYLE_DISTRIBUTION=True
+except:
+    NEW_STYLE_DISTRIBUTION=False
+
 import logging
 
 debug = True
@@ -72,6 +81,26 @@ def _verifyResultsFilename(resultsFilename):
         else:
             raise RuntimeError('Invalid results file - not running')
             
+    return resultsFilename
+
+
+def _verifyClusterResultsFilename(resultsFilename):
+    from PYME.IO import clusterIO
+    if clusterIO.exists(resultsFilename):
+        di, fn = os.path.split(resultsFilename)
+        i = 1
+        stub = os.path.splitext(fn)[0]
+        while clusterIO.exists(os.path.join(di, stub + '_%d.h5r' % i)):
+            i += 1
+
+        fdialog = wx.TextEntryDialog(None, 'Analysis file already exists, please select a new filename')#,
+        fdialog.SetValue(stub + '_%d.h5r' % i)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            resultsFilename = os.path.join(di, fdialog.GetValue().encode())
+        else:
+            raise RuntimeError('Invalid results file - not running')
+
     return resultsFilename
 
 
@@ -264,7 +293,7 @@ class AnalysisController(object):
     def pushImagesCluster(self, image):
         from PYME.ParallelTasks import HTTPTaskPusher
         #resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
-        resultsFilename = genClusterResultFileName(image.seriesName)
+        resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(image.seriesName))
         logging.debug('Results file: ' + resultsFilename)
 
         #debugPrint('Results file = %s' % resultsFilename)
@@ -460,7 +489,7 @@ class LMAnalyser2(object):
         self.numAnalysed = 0
         self.numEvents = 0
 
-        self.newStyleTaskDistribution = False
+        self.newStyleTaskDistribution = NEW_STYLE_DISTRIBUTION
         
         dsviewer.pipeline = pipeline.Pipeline()
         self.ds = None
