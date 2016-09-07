@@ -63,6 +63,9 @@ def main():
         #         queueURLs[name] = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
 
         queueURLs = distribution.getNodeInfo()
+        localQueueName = 'PYMENodeServer: ' + compName
+
+        queueURLs = {k: v for k, v in queueURLs.items() if k == localQueueName }
 
         tasks = []
 
@@ -71,12 +74,14 @@ def main():
             #try queue on current machine first
             #TODO - only try local machine?
             #print queueNames
-            localQueueName = 'PYMENodeServer: ' + compName
+
             if localQueueName in queueURLs.keys():
                 qName = localQueueName
                 queueURL = queueURLs.pop(qName)
-            else: #pick a queue at random
-                queueURL = queueURLs.pop(queueURLs.keys()[random.randint(0, len(queueURLs)-1)])
+            else:
+                logging.error('Could not find local node server')
+            #else: #pick a queue at random
+            #    queueURL = queueURLs.pop(queueURLs.keys()[random.randint(0, len(queueURLs)-1)])
 
             try:
                 #ask the queue for tasks
