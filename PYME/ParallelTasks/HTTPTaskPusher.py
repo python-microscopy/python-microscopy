@@ -116,11 +116,11 @@ class HTTPTaskPusher(object):
             r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list)
             if r.status_code == 200 and r.json()['ok']:
                 logging.debug('Successfully posted tasks')
-                self.currentFrameNum = newFrameNum - 1
+                self.currentFrameNum = newFrameNum
             else:
                 logging.error('Failed on posting tasks with status code: %d' % r.status_code)
 
-            numFramesOutstanding = numTotalFrames - self.currentFrameNum - 1
+            numFramesOutstanding = numTotalFrames - self.currentFrameNum
 
         return  numFramesOutstanding
 

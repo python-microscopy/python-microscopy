@@ -32,7 +32,7 @@ def queues(request):
 
     queueInfo = [{'name':distName, 'queues': distribution.getQueueInfo(distURL)} for distName, distURL in distributors.items()]
 
-    print queueInfo
+    #print queueInfo
 
     context = {'distributors': distributors, 'distNodes': distNodes, 'queueInfo':queueInfo}
 
