@@ -23,11 +23,29 @@ THE CODE AS IT STANDS SHOULD ONLY BE USED ON A TRUSTED NETWORK
 
 TODO: Add some form of authentication. Needs to be low overhead (e.g. digest based)
 """
+from PYME import config
+from PYME.misc.computerName import GetComputerName
+compName = GetComputerName()
+import os
 
+#make sure we set up our logging before anyone elses does
+import logging    
+dataserver_root = config.get('dataserver-root')
+if dataserver_root:
+    log_file = '%s/LOGS/%s/PYMEDataServer.log' % (dataserver_root, compName)
+        
+    logging.basicConfig(filename =log_file, level=logging.DEBUG)
+    logger = logging.getLogger('')
+else:
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger('')
+    
+#now do all the normal imports
+    
 import SimpleHTTPServer
 import BaseHTTPServer
 from SocketServer import ThreadingMixIn
-import os
+
 from StringIO import StringIO
 import shutil
 #import urllib
@@ -40,12 +58,6 @@ import socket
 import fcntl
 import threading
 import datetime
-from PYME.misc.computerName import GetComputerName
-from PYME import config
-
-import logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('')
 
 
 compName = GetComputerName()
@@ -423,11 +435,6 @@ def main(protocol="HTTP/1.0"):
     #change to the dataserver root if given
     logger.info('Serving from directory: %s' % options.root)
     os.chdir(options.root)
-    
-    #set up logging
-    fh = logging.FileHandler('%s/LOGS/%s/PYMEDataServer.log' % (options.root, compName), 'w')
-    fh.setLevel(logging.DEBUG)
-    logger.addHandler(fh)
 
     server_address = ('', int(options.port))
 

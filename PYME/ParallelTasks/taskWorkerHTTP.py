@@ -47,7 +47,7 @@ if dataserver_root:
     logging.basicConfig(filename ='%s/%d.log' % (log_dir, os.getpid()), level=logging.DEBUG)
     logger = logging.getLogger('')
 else:
-    logging.basicConfig(filename ='%s/%d.log' % (log_dir, os.getpid()), level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger('')
 
 
@@ -156,6 +156,7 @@ def main():
                 except:
                     import traceback
                     traceback.print_exc()
+                    logger.exception(traceback.format_exc())
 
                     r = requests.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
                     if not r.status_code == 200:
