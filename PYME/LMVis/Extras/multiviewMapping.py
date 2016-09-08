@@ -187,7 +187,7 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
     Returns:
         z: an array of z-positions for each molecule in nm (assuming proper units were used in astigmatism calibration)
         zerr: an array containing discrepancies between sigma values and the PSF calibration curves. Note that this
-            array is currently unitless and error is not being propagated from sigma fitResults.
+            array is in units of nm, but error may not be propagated from sigma fitResults properly as is.
     """
     # fres = pipeline.selectedDataSource.resultsSource.fitResults
     numMols = len(fres['fitResults_x0'])
@@ -206,9 +206,11 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
 
     z = np.zeros(numMols)
     zerr = 1e4*np.ones(numMols)
-    smoothFac = 1*len(stigLib[0]['z'])
+    smoothFac = 5*len(stigLib[0]['z'])
 
     # generate look up table of sorts
+    #import matplotlib.pyplot as plt
+    #plt.figure()
     for ii in range(len(chanPlane)):
         zdat = np.array(stigLib[ii]['z'])
         # find indices of range we trust
@@ -228,6 +230,10 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
         sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
         sigCalY['chan%i' % ii][sigCalY['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
 
+    #    plt.plot(zVal, sigCalX['chan%i' % ii])
+    #    plt.plot(zVal, sigCalY['chan%i' % ii])
+
+
     failures = 0
     for mi in range(numMols):
         # chans = np.where(fres['planeCounts'][mi] > 0)[0]
@@ -244,11 +250,15 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
         try:
             err = (errX + errY)/wSum
             minLoc = np.nanargmin(err)
-            z[mi] = -zVal[minLoc]
-            zerr[mi] = err[minLoc]
+            z[mi] = zVal[minLoc]
+            zerr[mi] = np.sqrt(err[minLoc])
+
+
         except (TypeError, ValueError, ZeroDivisionError):
             # TypeError if err is scalar 0, ValueError if err is all NaNs, ZeroDivErr if wSum and errX are both zero
             failures += 1
+
+    #plt.hist(z)
 
     print('%i localizations did not have sigmas in acceptable range/planes (out of %i)' % (failures, numMols))
 
