@@ -108,7 +108,8 @@ class HTTPTaskPusher(object):
                       'type':'localization',
                       'taskdef': {'frameIndex': str(frameNum), 'metadata':mdstring},
                       'inputs' : {'frames': self.dataSourceID},
-                      'outputs' : {'results': self.resultsURI}
+                      'outputs' : {'fitResults': self.resultsURI+'/FitResults',
+                                   'driftResults':self.resultsURI+'/DriftResults'}
                       } for frameNum in range(self.currentFrameNum, newFrameNum)]
 
             task_list = json.dumps(tasks)

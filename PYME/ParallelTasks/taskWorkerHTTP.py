@@ -129,7 +129,18 @@ def main():
 
                     # new style way of returning results to reduce load on server
                     from PYME.IO import clusterResults
-                    clusterResults.fileResults(taskDescr['outputs']['results'], res)
+                    outputs = taskDescr['outputs']
+
+                    if 'results' in outputs.keys():
+                        #old style pickled results
+                        clusterResults.fileResults(outputs['results'], res)
+                    else:
+                        if len(res.results) > 0:
+                            clusterResults.fileResults(outputs['fitResults'], res.results)
+
+                        if len(res.driftResults) > 0:
+                            clusterResults.fileResults(outputs['driftResults'], res.driftResults)
+
 
                     r = requests.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
                     if not r.status_code == 200:
