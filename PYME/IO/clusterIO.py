@@ -53,7 +53,7 @@ class _LimitedSizeDict(OrderedDict):
 
 _locateCache = _LimitedSizeDict(size_limit=500)
 _dirCache = _LimitedSizeDict(size_limit=100)
-DIR_CACHE_TIME = 20
+DIR_CACHE_TIME = 1
 
 #use one session for each server (to allow http keep-alives)
 sessions = {}
