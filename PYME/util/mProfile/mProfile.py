@@ -133,13 +133,19 @@ def te(frame, event, arg):
 
 
 
-def report():
-    tpath = os.path.join(tempfile.gettempdir(), 'mProf')
+def report(display=True, profiledir=None):
+    if profiledir is None:
+        tpath = os.path.join(tempfile.gettempdir(), 'mProf')
+    else:
+        tpath = profiledir
+        
     if not os.path.exists(tpath):
         os.makedirs(tpath)
 
     for f in filenames:
         tfn = os.path.join(tpath,  f + '.html')
         colorize_db_t.colorize_file(files[f], linecounts[f], fullfilenames[f],open(tfn, 'w'))
-        webbrowser.open('file://' + tfn, 2)
+        
+        if display:
+            webbrowser.open('file://' + tfn, 2)
         

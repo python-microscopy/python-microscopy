@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from PYME import config as conf
 import os
 import yaml
@@ -50,7 +51,10 @@ def main():
     logging.debug('Launching worker processors')
     numWorkers = config.get('numWorkers', cpu_count())
 
-    workerProcs = [subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP', shell=True) for i in range(numWorkers)]
+    workerProcs = [subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP', shell=True) for i in range(numWorkers -1)]
+
+    #last worker has profiling enabled    
+    workerProcs.append(subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP -p /home/ubuntu/PYME/test01/LOGS/%s/mProf'% GetComputerName(), shell=True))
 
     try:
         while not proc.poll():
@@ -63,8 +67,18 @@ def main():
             proc.kill()
         except:
             pass
+        
+        for p in workerProcs:
+            #ask the workers to quit (nicely)
+            try:
+                p.send_signal(1)
+            except:
+                pass
+            
+        time.sleep(2)
 
         for p in workerProcs:
+            #now kill them off
             try:
                 p.kill()
             except:

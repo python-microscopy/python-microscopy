@@ -32,6 +32,8 @@ import PYME.version
 
 import os
 import requests
+import sys
+import signal
 #import socket
 
 from PYME.localization import remFitBuf
@@ -148,6 +150,29 @@ def main():
         #tq.returnCompletedTasks(results, name)
         del tasks
         #del results
+        
+def on_SIGHUP(signum, frame):
+    raise RuntimeError('Recieved SIGHUP')
+    
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '-p':
+            profile = True
+            from PYME.util import mProfile
+            mProfile.profileOn(['taskWorkerHTTP.py'])
+            
+            if len(sys.argv) == 3:
+                profileOutDir = sys.argv[2]
+            else:
+                profileOutDir = None
+    else: 
+        profile = False
+        
+    signal.signal(signal.SIGHUP, on_SIGHUP)
+    
+    try:
+        main()
+    finally:
+        if profile:
+            mProfile.report(display=False, profiledir=profileOutDir)
