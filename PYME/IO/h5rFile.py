@@ -105,6 +105,7 @@ class H5RFile(object):
                                                expectedrows=500000)
 
     def appendToTable(self, tablename, data):
+        logging.debug('h5rfile - append to table: %s' % tablename)
         with self.appendQueueLock:
             if not tablename in self.appendQueues.keys():
                 self.appendQueues[tablename] = []

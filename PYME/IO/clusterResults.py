@@ -26,7 +26,7 @@ def fileFormattedResults(URI, data, mimetype=None):
     elif URI.startswith('HTTP') or URI.startswith('http'):
         logging.debug('fileFormattedResults - URI: ' + URI)
         #logging.debug('data: ' + data)
-        logging.debug('type(data) = %s, len(data) = %d' % (type(data), len(data)))
+        #logging.debug('type(data) = %s, len(data) = %d' % (type(data), len(data)))
         r = requests.put(URI, data=data, timeout=5)
         #print r.status_code
         if not r.status_code == 200:
@@ -137,8 +137,8 @@ def fileResults(URI, data_raw):
         sequenceName = URI.split('://%s/' % clusterfilter)[1]
 
         logging.debug('URI: ' + URI)
-        logging.debug('clusterfilter: ' + clusterfilter)
-        logging.debug('sequencename: ' + sequenceName)
+        #logging.debug('clusterfilter: ' + clusterfilter)
+        #logging.debug('sequencename: ' + sequenceName)
 
         URI = pickResultsServer(sequenceName, clusterfilter)
 

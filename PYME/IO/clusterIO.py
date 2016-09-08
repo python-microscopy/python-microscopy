@@ -82,7 +82,7 @@ def _listSingleDir(dirurl):
         r = s.get(url, timeout=1)
         dt = time.time() - t
         if not r.status_code == 200:
-            logging.warn('Request failed with error: %d' % r.status_code)
+            logging.debug('Request failed with error: %d' % r.status_code)
 
             #make sure we read a reply so that the far end doesn't hold the connection open
             dump = r.content
