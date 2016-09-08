@@ -83,6 +83,9 @@ class HTTPTaskPusher(object):
         logging.debug('resultsURI: ' + self.resultsURI)
         clusterResults.fileResults(self.resultsURI + '/MetaData', metadata)
         clusterResults.fileResults(self.resultsURI + '/Events', self.ds.getEvents())
+        
+        #wait until clusterIO caches clear to avoid replicating the results file.
+        time.sleep(1)
 
         self.currentFrameNum = startAt
         
