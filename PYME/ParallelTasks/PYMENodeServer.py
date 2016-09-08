@@ -51,12 +51,19 @@ def main():
     nodeserver_log_dir = os.path.join(cluster_root, 'LOGS', GetComputerName())
     
     #remove old log files
-    os.remove(os.path.join(nodeserver_log_dir, 'nodeserver.log'))
-    shutil.rmtree(os.path.join(nodeserver_log_dir, 'taskWorkerHTTP'))
+    try:
+        os.remove(os.path.join(nodeserver_log_dir, 'nodeserver.log'))
+    except:
+        pass
+    
+    try:
+        shutil.rmtree(os.path.join(nodeserver_log_dir, 'taskWorkerHTTP'))
+    except:
+        pass
     
     nodeserverLog = open(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w')
 
-    proc = subprocess.Popen('nodeserver -c %s' % temp_conf_file_name, shell=True, stdout=nodeserverLog)
+    proc = subprocess.Popen('nodeserver -c %s' % temp_conf_file_name, shell=True, stdout=nodeserverLog, stderr=nodeserverLog)
     ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, int(serverPort))
 
     time.sleep(2)

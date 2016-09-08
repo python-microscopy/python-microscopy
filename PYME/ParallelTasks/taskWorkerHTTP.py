@@ -26,11 +26,31 @@
 #import Pyro.naming
 import random
 import time
+import os
 
 import PYME.version
 #import PYME.misc.pyme_zeroconf as pzc
+from PYME import config
+from PYME.misc.computerName import GetComputerName
+compName = GetComputerName()
 
-import os
+import logging    
+dataserver_root = config.get('dataserver-root')
+if dataserver_root:
+    log_dir = '%s/LOGS/%s/taskWorkerHTTP' % (dataserver_root, compName)
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+        
+    #fh = logging.FileHandler('%s/%d.log' % (log_dir, os.getpid()), 'w')
+    #fh.setLevel(logging.DEBUG)
+    #logger.addHandler(fh)
+    logging.basicConfig(filename ='%s/%d.log' % (log_dir, os.getpid()), level=logging.DEBUG)
+    logger = logging.getLogger('')
+else:
+    logging.basicConfig(filename ='%s/%d.log' % (log_dir, os.getpid()), level=logging.DEBUG)
+    logger = logging.getLogger('')
+
+
 import requests
 import sys
 import signal
@@ -38,26 +58,15 @@ import signal
 
 from PYME.localization import remFitBuf
 from PYME.ParallelTasks import distribution
-from PYME import config
 
-from PYME.misc.computerName import GetComputerName
-compName = GetComputerName()
+
+
 
 LOCAL = False
 if 'PYME_LOCAL_ONLY' in os.environ.keys():
     LOCAL = os.environ['PYME_LOCAL_ONLY'] == '1'
 
-def main():
-    import logging
-    logging.basicConfig(level=logging.ERROR)
-    logger = logging.getLogger('')
-    
-    dataserver_root = config.get('dataserver-root')
-    if dataserver_root:
-        fh = logging.FileHandler('%s/LOGS/%s/taskWorkerHTTP/%d.log' % (dataserver_root, compName, os.getpid()), 'w')
-        fh.setLevel(logging.DEBUG)
-        logger.addHandler(fh)
-
+def main(): 
     #ns = pzc.getNS('_pyme-taskdist')
 
     procName =  '%s_%d' % (compName, os.getpid())
@@ -88,7 +97,7 @@ def main():
                 qName = localQueueName
                 queueURL = queueURLs.pop(qName)
             else:
-                logging.error('Could not find local node server')
+                logger.error('Could not find local node server')
             #else: #pick a queue at random
             #    queueURL = queueURLs.pop(queueURLs.keys()[random.randint(0, len(queueURLs)-1)])
 
@@ -102,7 +111,7 @@ def main():
                     if resp['ok']:
                         tasks.append((queueURL, resp['result']))
             except requests.Timeout:
-                logging.info('Read timout requesting tasks from %s' % queueURL)
+                logger.info('Read timout requesting tasks from %s' % queueURL)
 
 
             except Exception:
@@ -142,7 +151,7 @@ def main():
 
                     r = requests.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
                     if not r.status_code == 200:
-                        logging.error('Returning task failed with error: %s' % r.status_code)
+                        logger.error('Returning task failed with error: %s' % r.status_code)
 
                 except:
                     import traceback
@@ -150,7 +159,7 @@ def main():
 
                     r = requests.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
                     if not r.status_code == 200:
-                        logging.error('Returning task failed with error: %s' % r.status_code)
+                        logger.error('Returning task failed with error: %s' % r.status_code)
                 finally:
                     del task
             
