@@ -205,7 +205,7 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
     sigCalY = {}
 
     z = np.zeros(numMols)
-    zerr = 100*np.ones(numMols)
+    zerr = 1e4*np.ones(numMols)
     smoothFac = 1*len(stigLib[0]['z'])
 
     # generate look up table of sorts
@@ -233,18 +233,21 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
         # chans = np.where(fres['planeCounts'][mi] > 0)[0]
         chans = np.where(fres['whichColor'][mi] == chanColor)[0]
         errX, errY = 0, 0
+        wSum = 0
         for ci in chans:
             if not np.isnan(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi]):
                 wX = 1./(fres['fitError_sigmaxPlane%i' % chanPlane[ci]][mi])**2
                 wY = 1./(fres['fitError_sigmayPlane%i' % chanPlane[ci]][mi])**2
+                wSum += (wX + wY)
                 errX += wX*(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi] - sigCalX['chan%i' % ci])**2
                 errY += wY*(fres['fitResults_sigmayPlane%i' % chanPlane[ci]][mi] - sigCalY['chan%i' % ci])**2
         try:
-            err = errX + errY
+            err = (errX + errY)/wSum
             minLoc = np.nanargmin(err)
             z[mi] = -zVal[minLoc]
             zerr[mi] = err[minLoc]
-        except (TypeError, ValueError):  # TypeError if err is scalar 0, ValueError if err is all NaNs
+        except (TypeError, ValueError, ZeroDivisionError):
+            # TypeError if err is scalar 0, ValueError if err is all NaNs, ZeroDivErr if wSum and errX are both zero
             failures += 1
 
     print('%i localizations did not have sigmas in acceptable range/planes (out of %i)' % (failures, numMols))
@@ -537,7 +540,7 @@ class multiviewMapper:
             stigLoc = pipeline.mdh['AstigmapID']
             fid = open(stigLoc, 'r')
             stigLib = json.load(fid)
-        except AttributeError:
+        except (AttributeError, IOError):
             try:  # load through GUI dialog
                 fdialog = wx.FileDialog(None, 'Load Astigmatism Calibration', wildcard='Astigmatism map (*.am)|*.am',
                                         style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
