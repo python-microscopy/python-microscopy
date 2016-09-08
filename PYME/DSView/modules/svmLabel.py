@@ -198,7 +198,7 @@ class manualLabel:
         event.Skip()
         
     def FillSelection(self, event=None):
-        if self.mask == None:
+        if self.mask is None:
             print('Create a mask first')
             return
         
@@ -239,7 +239,7 @@ class manualLabel:
         self.labv.Update()
         
     def DrawLine(self, event=None):
-        if self.mask == None:
+        if self.mask is None:
             print('Create a mask first')
             return
         

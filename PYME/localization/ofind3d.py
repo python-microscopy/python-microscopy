@@ -158,7 +158,7 @@ class ObjectIdentifier(list):
         filteredData = np.maximum(self.__FilterData(), 0)
         
         #apply mask
-        if not (self.mask ==None):
+        if not (self.mask is None):
             maskedFilteredData = filteredData*self.mask
         else:
             maskedFilteredData = filteredData

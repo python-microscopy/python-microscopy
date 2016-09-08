@@ -75,7 +75,7 @@ class PreviewAquisator(wx.Timer):
         self.numHWChans = len(self.chans.hw)
         self.cols =  self.chans.cols
    
-        if (self.ds == None or keepds == False):
+        if (self.ds is None or keepds == False):
             self.ds = None
             self.ds = CDataStack(self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
                 self.GetSeqLength(),self.getReqMemChans(self.cols))
@@ -148,10 +148,10 @@ class PreviewAquisator(wx.Timer):
         #self.Wait(15) #give shutters a chance to close - should fix hardware
 
         #self.looppos = self.looppos + 1
-	
+
         contMode = False
         if ('contMode' in dir(self.cam)): #hack for continous acquisition - do not want to/can't keep setting iTime
-	        contMode =self.cam.contMode
+            contMode =self.cam.contMode
 
         if (not contMode and 'itimes' in dir(self.chans)): #maintain compatibility with old versions
             self.cam.SetIntegTime(self.chans.itimes[self.looppos%self.numHWChans])
@@ -233,7 +233,7 @@ class PreviewAquisator(wx.Timer):
             
             if (True): #check that we are aquiring
             
-    	
+
                 if(not (self.cam.CamReady() and self.piezoReady())):
                     # Stop the aquisition if there is a hardware error
                     self.stop()
@@ -242,7 +242,7 @@ class PreviewAquisator(wx.Timer):
                 #is there a picture waiting for us?
                 #if so do the relevant processing
                 #otherwise do nothing ...
-            	
+
                 nFrames = 0 #number of frames grabbed this pass
                 
                 bufferOverflowed = False
@@ -295,7 +295,7 @@ class PreviewAquisator(wx.Timer):
                     self.tThisFrame = time.clock()
     
                     for a in self.WantFrameGroupNotification:
-                    	a(self)
+                        a(self)
             else:
                  self._stop()
         finally:     
@@ -357,7 +357,7 @@ class PreviewAquisator(wx.Timer):
 
         iErr = self.cam.StartExposure()
         self.cam.DisplayError(iErr)
-	
+
         if (iErr < 0):
             self.stop()
             return False

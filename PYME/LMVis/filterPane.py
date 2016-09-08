@@ -80,7 +80,7 @@ class FilterPane(afp.foldingPane):
 
         self.stFilterNumPoints = wx.StaticText(self, -1, '')
 
-        if not self.pipeline.filter == None:
+        if not self.pipeline.filter is None:
             self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
 
         self.AddNewElement(self.stFilterNumPoints)
@@ -184,13 +184,13 @@ class FilterPane(afp.foldingPane):
 
             self.bClipToSelection.SetLabel('Clear Clipping ROI')
 
-        self.visFr.RegenFilter()
+        self.pipeline.Rebuild()
 
     def OnFilterAdd(self, event):
         #key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
 
         possibleKeys = []
-        if not self.pipeline.selectedDataSource == None:
+        if not self.pipeline.selectedDataSource is None:
             possibleKeys = list(self.pipeline.selectedDataSource.keys())
 
         dlg = editFilterDialog.FilterEditDialog(self, mode='new', possibleKeys=possibleKeys)
@@ -214,14 +214,14 @@ class FilterPane(afp.foldingPane):
 
         dlg.Destroy()
 
-        self.visFr.RegenFilter()
+        self.pipeline.Rebuild()
 
     def OnFilterDelete(self, event):
         it = self.lFiltKeys.GetItem(self.currentFilterItem)
         self.lFiltKeys.DeleteItem(self.currentFilterItem)
         self.filterKeys.pop(it.GetText())
 
-        self.visFr.RegenFilter()
+        self.pipeline.Rebuild()
 
     def OnFilterEdit(self, event):
         key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
@@ -241,4 +241,4 @@ class FilterPane(afp.foldingPane):
             self.lFiltKeys.SetStringItem(self.currentFilterItem,2, '%3.2f' % maxVal)
 
         dlg.Destroy()
-        self.visFr.RegenFilter()
+        self.pipeline.Rebuild()

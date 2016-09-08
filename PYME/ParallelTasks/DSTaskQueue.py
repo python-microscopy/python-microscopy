@@ -20,8 +20,9 @@ class DSTaskQueue(HDFResultsTaskQueue):
 
         HDFResultsTaskQueue.__init__(self, name, resultsFilename, initialTasks, onEmpty, fTaskToPop)
         
-        self.resultsMDH.copyEntriesFrom(mdh)
-        self.metaData.copyEntriesFrom(self.resultsMDH)
+        HDFResultsTaskQueue.setQueueMetaDataEntries(self, mdh)
+        #self.resultsMDH.copyEntriesFrom(mdh)
+        #self.metaData.copyEntriesFrom(self.resultsMDH)
         
         self.queueID = name
         
@@ -80,20 +81,11 @@ class DSTaskQueue(HDFResultsTaskQueue):
 
         while len(self.openTasks) < 1:
             time.sleep(0.01)
-            
-            #patch up old data which doesn't have BGRange in metadata
-        if not 'Analysis.BGRange' in self.metaData.getEntryNames():
-            nBGFrames = self.metaData.getOrDefault('Analysis.NumBGFrames', 10)
-            self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
-        
         
         taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
-        bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
-        
-
-        print self.dataSourceID, self.dataSourceModule        
-        task = fitTask(self.dataSourceID, taskNum, self.metaData['Analysis.DetectionThreshold'], self.metaData, self.metaData['Analysis.FitModule'], bgindices =bgi, SNThreshold = True, dataSourceModule = self.dataSourceModule)
+        #print self.dataSourceID, self.dataSourceModule
+        task = fitTask(dataSourceID=self.dataSourceID, frameIndex=taskNum, metadata=self.metaData, dataSourceModule = self.dataSourceModule)
         
         task.queueID = self.queueID
         task.initializeWorkerTimeout(time.clock())
@@ -109,10 +101,6 @@ class DSTaskQueue(HDFResultsTaskQueue):
         while len(self.openTasks) < 1:
             time.sleep(0.01)
 
-        if not 'Analysis.BGRange' in self.metaData.getEntryNames():
-            nBGFrames = self.metaData.getOrDefault('Analysis.NumBGFrames', 10)
-            self.metaData.setEntry('Analysis.BGRange', (-nBGFrames, 0))
-
         tasks = []
         
         if not 'Analysis.ChunkSize' in self.metaData.getEntryNames():
@@ -123,9 +111,7 @@ class DSTaskQueue(HDFResultsTaskQueue):
         for i in range(cs):
             taskNum = self.openTasks.pop(self.fTaskToPop(workerN, NWorkers, len(self.openTasks)))
 
-            bgi = range(max(taskNum + self.metaData.Analysis.BGRange[0],self.metaData.EstimatedLaserOnFrameNo), max(taskNum + self.metaData.Analysis.BGRange[1],self.metaData.EstimatedLaserOnFrameNo))
- 
-            task = fitTask(self.dataSourceID, taskNum, self.metaData['Analysis.DetectionThreshold'], self.metaData, self.metaData['Analysis.FitModule'], bgindices =bgi, SNThreshold = True, dataSourceModule = self.dataSourceModule)
+            task = fitTask(dataSourceID=self.dataSourceID, frameIndex=taskNum, metadata=self.metaData, dataSourceModule = self.dataSourceModule)
             
             task.queueID = self.queueID
             task.initializeWorkerTimeout(time.clock())
@@ -140,17 +126,17 @@ class DSTaskQueue(HDFResultsTaskQueue):
 
         
     def getQueueData(self, fieldName, *args):
-        """Get data, defined by fieldName and potntially additional arguments,  ascociated with queue"""
+        """Get data, defined by fieldName and potentially additional arguments,  associated with queue"""
         if fieldName == 'ImageShape':
-            with self.dataFileLock.rlock:
-                res = self.h5DataFile.root.ImageData.shape[1:]           
-            return res
+            #ith self.dataFileLock.rlock:
+            #    res = self.h5DataFile.root.ImageData.shape[1:]
+            return self.ds.getSliceShape()
         elif fieldName == 'ImageData':
             sliceNum, = args
             res = self.ds.getSlice(sliceNum)            
             return res
         elif fieldName == 'NumSlices':
-            return self.getNumSlices()
+            return self.ds.getNumSlices()
         elif fieldName == 'Events':            
             return self.ds.getEvents()
         else:
@@ -164,12 +150,14 @@ class DSTaskQueue(HDFResultsTaskQueue):
     def _updateTasks(self):
         nfn = self.ds.getNumSlices()
         if nfn > self.frameNum:
-            self.openTasks += range(self.frameNum, nfn+1)
-            self.frameNum = nfn+1
+            self.openTasks += range(self.frameNum, nfn)
+            self.frameNum = nfn
         
         ev = self.ds.getEvents()
-        if len(ev) > self.h5ResultsFile.root.Events.shape[0]:        
-            self.addQueueEvents(ev[self.h5ResultsFile.root.Events.shape[0]:])
+        numQueueEvents = self.getNumQueueEvents()
+
+        if len(ev) > numQueueEvents:
+            self.addQueueEvents(ev[numQueueEvents:])
 
     def releaseTasks(self, startingAt = 0):
         self.openTasks += range(startingAt, self.imNum)

@@ -29,10 +29,22 @@ def timeToFrames(t, events, mdh):
     cycTime = mdh.getEntry('Camera.CycleTime')
     startTime = mdh.getEntry('StartTime')
 
-    se = array([('0', 'start', startTime)], dtype=events.dtype)
-    sf = array([('%d' % iinfo(int32).max, 'end', startTime + 60*60*24*7)], dtype=events.dtype)
+    #se = array([('0', 'start', startTime)], dtype=events.dtype)
+    se = np.empty(1, dtype=events.dtype)
+    se['EventName'] = 'start'
+    se['EventDescr'] = '0'
+    se['Time'] = startTime
+
+    #sf = array([('%d' % iinfo(int32).max, 'end', startTime + 60*60*24*7)], dtype=events.dtype)
+    sf = np.empty(1, dtype=events.dtype)
+    sf['EventName'] = 'end'
+    sf['EventDescr'] = '%d' % iinfo(int32).max
+    sf['Time'] = startTime + 60*60*24*7
+
     #get events corresponding to aquisition starts
     startEvents = hstack((se, events[events['EventName'] == 'StartAq'], sf))
+
+    #print startEvents
 
     sfr = array([int(e['EventDescr']) for e in startEvents])
 
@@ -65,7 +77,12 @@ def framesToTime(fr, events, mdh):
     cycTime = mdh.getEntry('Camera.CycleTime')
     startTime = mdh.getEntry('StartTime')
 
-    se = array([('0', 'start', startTime)], dtype=events.dtype)
+    #se = array([('0', 'start', startTime)], dtype=events.dtype)
+    se = np.empty(1, dtype=events.dtype)
+    se['EventName'] = 'start'
+    se['EventDescr'] = '0'
+    se['Time'] = startTime
+
     #get events corresponding to aquisition starts
     startEvents = hstack((se, events[events['EventName'] == 'StartAq']))
 

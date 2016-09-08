@@ -163,7 +163,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
     ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
 
-    if dark == None:
+    if dark is None:
         offset = float(mdh.getEntry('Camera.ADOffset'))
     else:
         offset = 0.
@@ -178,9 +178,9 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     for i in range(mdh.getEntry('Protocol.DataStartsAt'), numFrames):
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
             d = ds[:,:,i].astype('f')
-            if not dark == None:
+            if not dark is None:
                 d = d - dark
-            if not flat == None:
+            if not flat is None:
                 d = d*flat
 
             if split:

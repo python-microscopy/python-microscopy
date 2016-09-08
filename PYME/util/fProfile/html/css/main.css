@@ -92,6 +92,10 @@ svg {
     display: none;
     font: 10px sans-serif;
 }
+
+.threadbar {
+    fill: green;
+}
 .axis {
     font: 10px sans-serif;
 }

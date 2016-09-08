@@ -126,7 +126,7 @@ def convex_hull(labels, indexes=None):
     counter-clockwise around the perimeter.
     The vector is a vector of #s of points in the convex hull per label
     """
-    if indexes == None:
+    if indexes is None:
         indexes = np.unique(labels)
         indexes.sort()
         indexes=indexes[indexes!=0]

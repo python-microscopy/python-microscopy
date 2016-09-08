@@ -52,6 +52,7 @@ modeModules = {
 'graph' : ['graphViewPanel', 'profileFitting'],
 'fgraph' : ['fastGraphPanel'],
 'pupil' : ['arrayView', 'pupilTools'] + liteModules,
+'tracking' : ['arrayView'] + liteModules + basemodules + ['particleTracking'],
 'bare' : [],
 }
 

@@ -172,7 +172,7 @@ class blobFinder:
 
         self.objPosRA = numpy.rec.fromrecords(self.dsviewer.view.points, names='x,y,z')
 
-        if self.vObjPos == None:
+        if self.vObjPos is None:
             self.vObjPos = recArrayView.recArrayPanel(self.dsviewer, self.objPosRA)
             self.dsviewer.AddPage(self.vObjPos, caption='Object Positions')
         else:

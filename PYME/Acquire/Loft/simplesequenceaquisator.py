@@ -67,7 +67,7 @@ class SimpleSequenceAquisitor(PreviewAquisator):
         return not ((self.GetStepSize() > 0) and
             (self.piezos[self.GetScanChannel()][0].GetControlReady() == False))
     def setPiezoStartPos(self):
-        " Used internally to move the piezo at the beginning of the aquisition "
+        """ Used internally to move the piezo at the beginning of the aquisition """
         #self.curpos = self.piezos[self.GetScanChannel()][0].GetPos(self.piezos[self.GetScanChannel()][1])
         self.SetPrevPos(self._CurPos()) # aktuelle Position der Piezotische merken
         self.startPosRef = self.GetStartPos()       

@@ -279,7 +279,7 @@ class dSimControl(wx.Panel):
         self.setupGrid(self.gSwitch, states, stateTypes)
         self.setupGrid(self.gProbe, states, stateTypes)
         
-        if (startVals == None): #use defaults
+        if (startVals is None): #use defaults
             startVals = fluor.createSimpleTransitionMatrix()
             
         self.fillGrids(startVals)
@@ -331,7 +331,7 @@ class dSimControl(wx.Panel):
 
     def OnBLoadPointsButton(self, event):
         fn = wx.FileSelector('Read point positions from file')
-        if fn == None:
+        if fn is None:
             print('No file selected')
             return
 
@@ -342,7 +342,7 @@ class dSimControl(wx.Panel):
 
     def OnBSavePointsButton(self, event):
         fn = wx.SaveFileSelector('Save point positions to file', '.txt')
-        if fn == None:
+        if fn is None:
             print('No file selected')
             return
 
@@ -407,7 +407,7 @@ class dSimControl(wx.Panel):
         cts = scipy.zeros((len(self.states)))
         #for f in self.scope.cam.fluors:
         #    cts[f.state] +=1
-        if self.scope.cam.fluors == None:
+        if self.scope.cam.fluors is None:
            self.stStatus.SetLabel('No fluorophores defined') 
            return
 

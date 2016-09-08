@@ -24,3 +24,6 @@ def InstanceEditor(*args, **kwargs):
 def EnumEditor(*args, **kwargs):
     """Spoofed traitsui Group for use when running without a GUI. Does nothing"""
     pass
+
+def Controller(*args, **kwargs):
+    pass

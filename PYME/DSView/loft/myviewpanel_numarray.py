@@ -142,7 +142,7 @@ class DisplayOpts:
 class MyViewPanel(viewpanelN.ViewPanel):
     def __init__(self, parent, dstack = None, aspect=None):
         
-        if (dstack == None):
+        if (dstack is None):
             scipy.zeros(10,10)
         else:
             self.ds = dstack
@@ -161,7 +161,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
 
         self.do = DisplayOpts(self.ds.shape[3])
 
-        if not aspect == None:
+        if not aspect is None:
             if scipy.isscalar(aspect):
                 self.do.aspects[2] = aspect
             elif len(aspect) == 3:
@@ -902,7 +902,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
         return wx.ImageFromData(ima.shape[1], ima.shape[0], ima.ravel())
 
     def GetProfile(self,halfLength=10,axis = 2, pos=None, roi=[2,2], background=None):
-        if not pos == None:
+        if not pos is None:
             px, py, pz = pos
         else:
             px, py, pz = self.xp, self.yp, self.zp
@@ -920,7 +920,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
                 pts = numpy.where((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < 2*roi[1])*(abs(points[:,2] - pz) < halfLength))
             #print p.shape
             #p = p.mean(1).mean(0)
-            if not background == None:
+            if not background is None:
                 p -= self.ds[(px - background[0]):(px + background[0]),(py - background[1]):(py + background[1]),(pz - halfLength):(pz + halfLength)].mean(2).mean(1)
         elif axis == 1: #y
             p = self.ds[(px - roi[0]):(px + roi[0]),(py - halfLength):(py + halfLength),(pz - roi[1]):(pz + roi[1])].mean(1).mean(0)
@@ -929,7 +929,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
                 d = numpy.array([((abs(points[:,1] - py) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1])*(points[:,0] == z)).sum() for z in x])
 
                 pts = numpy.where((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,1] - py) < halfLength)*(abs(points[:,2] - pz) < 2*roi[1]))
-            if not background == None:
+            if not background is None:
                 p -= self.ds[(px - background[0]):(px + background[0]),(py - halfLength):(py + halfLength),(pz - background[1]):(pz + background[1]),(pz - halfLength):(pz + halfLength)].mean(1).mean(0)
         elif axis == 0: #x
             p = self.ds[(px - halfLength):(px + halfLength), (py - roi[0]):(py + roi[0]),(pz - roi[1]):(pz + roi[1])].mean(2).mean(0)
@@ -938,7 +938,7 @@ class MyViewPanel(viewpanelN.ViewPanel):
                 d = numpy.array([((abs(points[:,0] - px) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1])*(points[:,1] == z)).sum() for z in x])
 
                 pts = numpy.where((abs(points[:,0] - px) < halfLength)*(abs(points[:,1] - py) < 2*roi[0])*(abs(points[:,2] - pz) < 2*roi[1]))
-            if not background == None:
+            if not background is None:
                 p -= self.ds[(px - halfLength):(px + halfLength),(py - background[0]):(py + background[0]),(pz - background[1]):(pz + background[1])].mean(2).mean(0)
 
         return x,p,d, pts

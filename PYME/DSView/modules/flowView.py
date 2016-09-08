@@ -85,7 +85,7 @@ class FlowView(HasTraits):
     def DrawOverlays_(self, view, dc): 
         flow = self.flowImage
         
-        if (not self.showFlow) or flow == None:
+        if (not self.showFlow) or flow is None:
             return
         
         xb, yb, zb = view._calcVisibleBounds()
@@ -140,7 +140,7 @@ class FlowView(HasTraits):
     def DrawOverlays(self, view, dc): 
         flow = self.flowImage
         
-        if (not self.showFlow) or flow == None:
+        if (not self.showFlow) or flow is None:
             return
         
         xb, yb, zb = view._calcVisibleBounds()

@@ -29,8 +29,12 @@ class psfExtractor:
         self.view = dsviewer.view
         self.do = dsviewer.do
         self.image = dsviewer.image
-        
-        self.multiChannel = self.image.data.shape[3] > 1
+
+        try:  # stack multiview channels
+            self.numChan = self.image.mdh['Multiview.NumROIs']
+        except:
+            self.ChanOffsetZnm = None
+            self.numChan = self.image.data.shape[3]
 
         self.PSFLocs = []
         self.psfROISize = [30,30,30]
@@ -49,9 +53,8 @@ class psfExtractor:
         #if self.multiChannel: #we have channels            
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(pan, -1, 'Channel:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-    
+
         self.chChannel = wx.Choice(pan, -1, choices=self.do.names)
-            
         hsizer.Add(self.chChannel, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
     
         vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)        
@@ -108,6 +111,10 @@ class psfExtractor:
 
         vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
+        self.cbAlignZ = wx.CheckBox(pan, -1, 'Align Z:')
+        self.cbAlignZ.SetValue(True)
+        vsizer.Add(self.cbAlignZ, 0, wx.ALL, 5)
+
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)        
         bExtract = wx.Button(pan, -1, 'Extract', style=wx.BU_EXACTFIT)
@@ -123,6 +130,14 @@ class psfExtractor:
         bAxialShift = wx.Button(pan, -1, 'Estimate axial shift', style=wx.BU_EXACTFIT)
         bAxialShift.Bind(wx.EVT_BUTTON, self.OnCalcShift)
         vsizer.Add(bAxialShift, 0,wx.ALL|wx.ALIGN_RIGHT, 5)
+
+        bExtractMultColour = wx.Button(pan, -1, 'Extract Multi Colour', style=wx.BU_EXACTFIT)
+        bExtractMultColour.Bind(wx.EVT_BUTTON, self.OnExtractMultiviewPSF)
+        vsizer.Add(bExtractMultColour, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        #bCalibrateMultiview = wx.Button(pan, -1, 'Calibrate multiview astigmatism', style=wx.BU_EXACTFIT)
+        #bCalibrateMultiview.Bind(wx.EVT_BUTTON, self.OnCalibrateMultiview)
+        #vsizer.Add(bCalibrateMultiview, 0,wx.ALL|wx.ALIGN_RIGHT, 5)
 
         pan.SetSizer(vsizer)
         vsizer.Fit(pan)
@@ -215,17 +230,17 @@ class psfExtractor:
             
             z_ = numpy.arange(self.image.data.shape[2])*self.image.mdh['voxelsize.z']*1.e3
             z_ -= z_.mean()
-            
+
             pylab.figure()
             p_0 = 1.0*self.image.data[x,y,:,0].squeeze()
             p_0  -= p_0.min()
             p_0 /= p_0.max()
 
             #print (p_0*z_).sum()/p_0.sum()
-            
+
             p0b = numpy.maximum(p_0 - 0.5, 0)
             z0 = (p0b*z_).sum()/p0b.sum()
-            
+
             p_1 = 1.0*self.image.data[x,y,:,1].squeeze()
             p_1 -= p_1.min()
             p_1 /= p_1.max()
@@ -242,7 +257,6 @@ class psfExtractor:
             pylab.vlines(z0, 0, 1)
             pylab.vlines(z1, 0, 1)
             pylab.figtext(.7,.7, 'dz = %3.2f' % dz)
-            
 
     def OnExtractPSF(self, event):
         if (len(self.PSFLocs) > 0):
@@ -256,17 +270,158 @@ class psfExtractor:
             
             if self.chType.GetSelection() == 0:
                 #widefield image - do special background subtraction
-                psf = extractImages.backgroundCorrectPSFWF(psf)
-
-#            from pylab import *
-#            import cPickle
-#            imshow(psf.max(2))
+                psf, offsets = extractImages.backgroundCorrectPSFWF(psf)
 
             from PYME.DSView.dsviewer import ImageStack, ViewIm3D
 
             im = ImageStack(data = psf, mdh = self.image.mdh, titleStub = 'Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
+
+    def OnExtractMultiviewPSF(self, event):
+        if (len(self.PSFLocs) > 0):
+            from PYME.Analysis.PSFEst import extractImages
+
+            psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+            psfBlur = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
+
+            psfs = []
+
+            for chnum in range(self.image.data.shape[3]):
+                alignZ = (chnum > 0) and self.cbAlignZ.GetValue()
+                #always align the first channel
+
+                psf, offsets = extractImages.getPSF3D(self.image.data[:, :, :, chnum], self.PSFLocs, psfROISize, psfBlur, centreZ=alignZ)
+
+                if self.chType.GetSelection() == 0:
+                    #widefield image - do special background subtraction
+                    psf = extractImages.backgroundCorrectPSFWF(psf)
+
+                psfs.append(psf)
+
+
+            from PYME.DSView.dsviewer import ImageStack, ViewIm3D
+
+            im = ImageStack(data=psfs, mdh=self.image.mdh, titleStub='Extracted PSF')
+            im.defaultExt = '*.psf' #we want to save as PSF by default
+            ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
+
+    def OnCalibrateMultiview(self, event):
+        """
+        CalibrateMultiview loops over all channels described in the metadata and runs CalibrateAstigmatism on each one.
+        Results are stored in a library of dictionaries and are saved into a jason astigmatism map file (.am)
+        Args:
+            event: GUI event
+
+        Returns:
+            nothing
+
+        """
+        # first make sure the user is calling the right function
+        try:
+            chanSizeX = self.image.mdh['Multiview.ROISize'][0]
+        except KeyError:
+            raise KeyError('You are not looking at multiview data, or the metadata is incomplete')
+
+        if len(self.PSFLocs) > 0:
+            print('Place cursor on bead in first multiview channel and press Calibrate Multiview Astigmatism')
+            self.OnClearTags(event)
+            return
+
+        from PYME.Analysis.PSFEst import extractImages
+        from PYME.DSView.modules import psfTools
+        import scipy.interpolate as terp
+        import numpy as np
+        from PYME.IO.FileUtils import nameUtils
+        import os
+        import json
+
+        zrange = np.nan*np.ones(2)
+
+        rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+        # astigDat = []
+        astigLib = {}
+        for ii in range(self.numChan):
+            # grab PSFs, currently relying on user to pick psf in first channel
+            xmin, xmax = [(self.do.xp-rsx + ii*chanSizeX), (self.do.xp+rsx + ii*chanSizeX + 1)]
+            # dz returns offset in units of frames, dx dy are in pixels
+            dx, dy, dz = extractImages.getIntCenter(self.image.data[xmin:xmax,
+                                                    (self.do.yp-rsy):(self.do.yp+rsy+1), :, 0])
+            self.PSFLocs.append((self.do.xp + dx, self.do.yp + dy, dz))
+            self.view.psfROIs = self.PSFLocs
+            self.view.Refresh()
+
+            psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+            psfBlur = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
+
+            psf = extractImages.getPSF3D(self.image.data[:, :, :, 0],
+                                         [self.PSFLocs[ii]], psfROISize, psfBlur)
+
+
+            if self.chType.GetSelection() == 0:
+                #widefield image - do special background subtraction
+                psf = extractImages.backgroundCorrectPSFWF(psf)
+
+            from PYME.DSView.dsviewer import ImageStack, ViewIm3D
+
+            im = ImageStack(data=psf, mdh=self.image.mdh, titleStub='Extracted PSF, Chan %i' % ii)
+            im.defaultExt = '*.psf' #we want to save as PSF by default
+            ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
+
+            calibrater = psfTools.PSFTools(self.dsviewer, im)
+            astigLib['PSF%i' % ii] = (calibrater.OnCalibrateAstigmatism(event, plotIt=False))
+            # the next line is only ok if each frame is at a different z position, which it should be
+            astigLib['PSF%i' % ii]['z'] += dz * self.image.mdh['voxelsize.z'] * 1.e3
+
+            # -- spline interpolate --
+            # find region of dsigma which is monotonic
+            dsig = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['dsigma'])#, s=1.5*len(astigDat[ii]['z']))
+
+            # mask where the sign is the same as the center
+            zvec = np.linspace(astigLib['PSF%i' % ii]['z'].min(), astigLib['PSF%i' % ii]['z'].max(), 1000)
+            sgn = np.sign(np.diff(dsig(zvec)))
+            halfway = len(sgn)/2
+            notmask = sgn != sgn[halfway]
+
+            # find z range for spline generation
+            lowerZ = zvec[np.where(notmask[:halfway])[0].max()]
+            upperZ = zvec[(len(sgn)/2 + np.where(notmask[halfway:])[0].min() - 1)]
+            astigLib['PSF%i' % ii]['zrange'] = [lowerZ, upperZ]
+            zrange = [np.nanmin([lowerZ, zrange[0]]), np.nanmax([upperZ, zrange[1]])]
+
+            #lowsubZ , upsubZ = np.absolute(astigDat[ii]['z'] - zvec[lowerZ]), np.absolute(astigDat[ii]['z'] - zvec[upperZ])
+            #lowZLoc = np.argmin(lowsubZ)
+            #upZLoc = np.argmin(upsubZ)
+
+            #
+            #astigLib['sigxTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmax'],
+            #                                                    bbox=[lowerZ, upperZ])
+            #astigLib['sigyTerp%i' % ii] = terp.UnivariateSpline(astigLib['PSF%i' % ii]['z'], astigLib['PSF%i' % ii]['sigmay'],
+            #                                                    bbox=[lowerZ, upperZ])
+            astigLib['PSF%i' % ii]['z'] = astigLib['PSF%i' % ii]['z'].tolist()
+
+        astigLib['zRange'] = np.round(zrange).tolist()
+        astigLib['numChan'] = self.numChan
+
+
+        psfTools.plotAstigCalibration(astigLib)
+
+
+
+        # save to json file
+        #defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.am'
+
+        fdialog = wx.FileDialog(None, 'Save Astigmatism Calibration as ...',
+            wildcard='AstigMAPism file (*.am)|*.am', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath())  #, defaultFile=defFile)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            fpath = fdialog.GetPath()
+
+            fid = open(fpath, 'wb')
+            json.dump(astigLib, fid)
+            fid.close()
+
+
             
     def OnExtractSplitPSF(self, event):
         if (len(self.PSFLocs) > 0):
@@ -277,15 +432,17 @@ class psfExtractor:
             psfBlur = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
             #print psfROISize
 
-            psfs = []            
-            
+            psfs = []
+
             for i in range(self.image.data.shape[3]):
-                psf = extractImages.getPSF3D(self.image.data[:,:,:,i], self.PSFLocs, psfROISize, psfBlur)
-                
+                alignZ = (i > 0) and self.cbAlignZ.GetValue()
+                #always align the first channel
+                psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,i], self.PSFLocs, psfROISize, psfBlur, centreZ=alignZ)
+
                 if self.chType.GetSelection() == 0:
                     #widefield image - do special background subtraction
                     psf = extractImages.backgroundCorrectPSFWF(psf)
-                    
+
                 psfs.append(psf)
                 
             psf = numpy.concatenate(psfs, 0)
@@ -300,36 +457,6 @@ class psfExtractor:
             im.defaultExt = '*.psf' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
-#            fdialog = wx.FileDialog(None, 'Save PSF as ...',
-#                wildcard='PSF file (*.psf)|*.psf|H5P file (*.h5p)|*.h5p', style=wx.SAVE|wx.HIDE_READONLY)
-#            succ = fdialog.ShowModal()
-#            if (succ == wx.ID_OK):
-#                fpath = fdialog.GetPath()
-#                #save as a pickle containing the data and voxelsize
-#
-#                if fpath.endswith('.psf'):
-#                    fid = open(fpath, 'wb')
-#                    cPickle.dump((psf, self.image.mdh.voxelsize), fid, 2)
-#                    fid.close()
-#                else:
-#                    import tables
-#                    h5out = tables.openFile(fpath,'w')
-#                    filters=tables.Filters(5,'zlib',shuffle=True)
-#
-#                    xSize, ySize, nFrames = psf.shape
-#
-#                    ims = h5out.createEArray(h5out.root,'PSFData',tables.Float32Atom(),(0,xSize,ySize), filters=filters, expectedrows=nFrames)
-#                    for frameN in range(nFrames):
-#                        ims.append(psf[:,:,frameN][None, :,:])
-#                        ims.flush()
-#
-#                    outMDH = MetaDataHandler.HDFMDHandler(h5out)
-#
-#                    outMDH.copyEntriesFrom(self.image.mdh)
-#                    outMDH.setEntry('psf.originalFile', self.seriesName)
-#
-#                    h5out.flush()
-#                    h5out.close()
 
 def Plug(dsviewer):
     dsviewer.psfExtractor = psfExtractor(dsviewer)

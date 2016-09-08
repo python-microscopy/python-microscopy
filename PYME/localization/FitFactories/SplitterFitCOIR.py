@@ -43,15 +43,15 @@ fresultdtype=[('tIndex', '<i4'),
                               ('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def COIFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-	if fitErr == None:
-		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+    if fitErr is None:
+        fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
-	#print slicesUsed
+    #print slicesUsed
 
-	tIndex = metadata.tIndex
+    tIndex = metadata.tIndex
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
-		
+    return numpy.array([(tIndex, fitResults.astype('f'), fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
+
 
 class COIFitFactory(FFBase.FitFactory):        
     def __getitem__(self, key):
@@ -85,7 +85,7 @@ class COIFitFactory(FFBase.FitFactory):
         Yr = Yg + DeltaY
 
 
-        if not self.background == None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
+        if not self.background is None and len(numpy.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             bgROI = self.background[xslice, yslice, zslice]
 
             dataROI = dataROI - bgROI
@@ -106,7 +106,7 @@ class COIFitFactory(FFBase.FitFactory):
         Ag = Ag.sum()  #amplitude
         Ar = Ar.sum()  #amplitude
 
-	
+
         res = numpy.array([Ag, Ar, x0, y0, sig_xl, sig_xr, sig_yu, sig_yd])
         
         return COIFitResultR(res, self.metadata, (xslice, yslice, zslice))
@@ -114,10 +114,10 @@ class COIFitFactory(FFBase.FitFactory):
     def FromPoint(self, x, y, z=None, roiHalfSize=4, axialHalfSize=15):
         #if (z == None): # use position of maximum intensity
         #    z = self.data[x,y,:].argmax()
-	
+
         x = round(x)
         y = round(y)
-	
+
         return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
                     max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]
         

@@ -115,7 +115,7 @@ class HistLimitPanel(wx.Panel):
         #x = event.GetX()
         #y = event.GetY()
 
-        if not self.dragging == None:
+        if not self.dragging is None:
             evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
             #evt.ShouldPropagate()
             #wx.PostEvent(self, evt)
@@ -194,7 +194,7 @@ class HistLimitPanel(wx.Panel):
         dc.Clear()
 
         #when being used to determine histogram bins
-        if not self.binSize == None:
+        if not self.binSize is None:
             binEdges = np.arange(self.hmin, self.hmax + self.binSize, self.binSize)
 
             for i in range(len(binEdges) -1):

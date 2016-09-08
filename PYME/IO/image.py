@@ -46,7 +46,7 @@ from PYME.IO.FileUtils.nameUtils import getRelFilename
 
 lastdir = ''
 
-class DefaultDict(dict):
+class _DefaultDict(dict):
     """dictionary which returns a default value (0) for items not in the list"""
     def __init__(self, *args):
         dict.__init__(self, *args)
@@ -67,51 +67,85 @@ openImages = weakref.WeakValueDictionary()
 #created with a stub name e.g. 'Untitled Image', or 'Filter result', followed
 #by an incrementing index - this dictionary stores the current index for each 
 #stub. If a stub hasn't been used yet, the index defaults to zero.
-nUntitled = DefaultDict()
+nUntitled = _DefaultDict()
 
 class ImageStack(object):
-    def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image', haveGUI=True):
-        """ Create an Image Stack.
-        
-        This is a essentially a wrapper of the image data and any ascociated 
-        metadata. The class can be given a ndarray like* data source, or  
-        alternatively supports loading from file, or from a PYME task queue 
-        URI, in which case individual slices will be fetched from the server 
-        as required.  
-        
+    """ An Image Stack. This is the core PYME image type and wraps around the various different supported file formats.
+
+        This is a essentially a wrapper of the image data and any ascociated
+        metadata. The class can be given a ndarray like* data source, or
+        alternatively supports loading from file, or from a PYME task queue
+        URI, in which case individual slices will be fetched from the server
+        as required.
+
         For details on the file type support, see the Load method.
-        
+
         You should provide one of the 'data' or 'filename' parmeters,
         with all other parameters being optional.
-        
-        Parameters:
-            data    Image data. Something that supports ndarray like slicing and exposes
-                    a .shape parameter, something implementing the
-                    PYME.IO.DataSources interface, or a list of either
-                    of the above. Dimensionality can be between 1 and 4, with
-                    the dimensions being interpreted as x, y, z/t, colour.
-                    A mangled (will support slicing, but not necessarily other array 
-                    operations) version of the data will be stored as the .data 
-                    member of the class.
-                    
-            mdh     something derived from PYME.IO.MetaDataHandler.MDHandlerBase
-                    If None, and empty one will be created.
-            
-            filename    filename of the data to load (see Load), or PYME queue identifier
-            
-            queueURI    PYRO URI of the task server. This exists to optionally speed up 
-                        loading from a queue by eliminating the PYRO nameserver
-                        lookup. The queue name itself should be passed in the filename,
-                        with a leading QUEUE://.
-            
-            events      An array of time series events (TODO - more doc)
-            
-            haveGUI     Whether we have a wx GUI available, so that we can
-                        display dialogs asking for, e.g. a file name if no
-                        data or filename is supplied, or for missing metadata
-                        entries
-                    
+
+        Parameters
+        ----------
+        data
+            Image data. Something that supports ndarray like slicing and exposes
+            a .shape parameter, something implementing the
+            PYME.IO.DataSources interface, or a list of either
+            of the above. Dimensionality can be between 1 and 4, with
+            the dimensions being interpreted as x, y, z/t, colour.
+            A mangled (will support slicing, but not necessarily other array
+            operations) version of the data will be stored as the .data
+            member of the class.
+
+        mdh : something derived from PYME.IO.MetaDataHandler.MDHandlerBase
+            Image metadata. If None, and empty one will be created.
+
+        filename : str
+            filename of the data to load (see Load), or PYME queue identifier
+
+        queueURI : str
+            PYRO URI of the task server. This exists to optionally speed up
+            loading from a queue by eliminating the PYRO nameserver
+            lookup. The queue name itself should be passed in the filename,
+            with a leading QUEUE://.
+
+        events : list / array
+            An array of time series events (TODO - more doc)
+
+        haveGUI : bool
+            Whether we have a wx GUI available, so that we can
+            display dialogs asking for, e.g. a file name if no
+            data or filename is supplied, or for missing metadata
+            entries
+
+        Attributes
+        ----------
+        data : PYME.IO.DataSources data source.
+            This is an object which can be sliced as though it was a numpy array, and which yields a numpy array as a
+            result of the slicing. It differs from an array in that it loads data lazily (i.e. individual chunks might
+            still be on disk, and are only loaded and assembled into an array when sliced). Slicing is the only array
+            operation permitted.
+
+        mdh : PYME.IO.MetdataHandler metadata source
+            This contains image metadata. It behaves like a dictionary, and individual metadata entries can be accessed by key.
+
+        events : list/array
+            Any events which occured during image acquisition
+
+        voxelsize : 3-tuple (float)
+            The image voxel size in nm
+
+        pixelsize : float
+            The pixelsize in nm (shortcut for voxelsize[0])
+
+        names : list of str
+            The channel names
+
+        origin : tuple of float
+            position, in nm, of the top-left pixel in the image from the camera origin. Useful for lining up images taken
+            with different ROIs.
+
         """
+    def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image', haveGUI=True):
+
         global nUntitled
         self.data = data      #image data
         self.mdh = mdh        #metadata (a MetaDataHandler class)
@@ -131,7 +165,7 @@ class ImageStack(object):
         #support for specifying metadata as filename
         if isinstance(mdh, str) or isinstance(mdh,unicode):#os.path.exists(mdh):
             self.mdh = None
-            self.FindAndParseMetadata(mdh)
+            self._findAndParseMetadata(mdh)
         
         if (data is None):
             #if we've supplied data, use that, otherwise load from file
@@ -164,6 +198,18 @@ class ImageStack(object):
         openImages[self.filename] = self
 
     def SetData(self, data):
+        """
+        Set / replace the data associated with the image. This is primarily used in the acquisition program when we want
+        a live view of constantly updating data. It is also used for the same purpose during deconvolution.
+
+        Parameters
+        ----------
+        data : numpy array or PYME.IO.DataSources datasource
+
+        Returns
+        -------
+
+        """
         #the data does not need to be a numpy array - it could also be, eg., queue data
         #on a remote server - wrap so that is is indexable like an array
         self.data = dataWrap.Wrap(data)
@@ -272,7 +318,7 @@ class ImageStack(object):
             
 
 
-    def LoadQueue(self, filename):
+    def _loadQueue(self, filename):
         """Load data from a remote PYME.ParallelTasks.HDFTaskQueue queue using
         Pyro.
         
@@ -315,7 +361,7 @@ class ImageStack(object):
 
         self.events = self.dataSource.getEvents()
 
-    def Loadh5(self, filename):
+    def _loadh5(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class"""
         import tables
@@ -359,7 +405,7 @@ class ImageStack(object):
 
         self.events = self.dataSource.getEvents()
         
-    def LoadHTTP(self, filename):
+    def _loadHTTP(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class"""
         import tables
@@ -389,7 +435,7 @@ class ImageStack(object):
 
         self.events = self.dataSource.getEvents()
         
-    def LoadClusterPZF(self, filename):
+    def _loadClusterPZF(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class"""
 
@@ -415,7 +461,7 @@ class ImageStack(object):
 
     
 
-    def LoadPSF(self, filename):
+    def _loadPSF(self, filename):
         """Load PYME .psf data.
         
         .psf files consist of a tuple containing the data and the voxelsize.
@@ -433,12 +479,12 @@ class ImageStack(object):
 
         self.mode = 'psf'
         
-    def LoadNPY(self, filename):
+    def _loadNPY(self, filename):
         """Load numpy .npy data.
         
        
         """
-        mdfn = self.FindAndParseMetadata(filename)
+        mdfn = self._findAndParseMetadata(filename)
         
         self.data = numpy.load(filename)
 
@@ -448,11 +494,11 @@ class ImageStack(object):
 
         self.mode = 'default'
         
-    def LoadDBL(self, filename):
+    def _loadDBL(self, filename):
         """Load Bewersdorf custom STED data.
        
         """
-        mdfn = self.FindAndParseMetadata(filename)
+        mdfn = self._findAndParseMetadata(filename)
         
         self.data = numpy.memmap(filename, dtype='<f4', mode='r', offset=128, shape=(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'],self.mdh['NumImages']), order='F')
 
@@ -463,7 +509,7 @@ class ImageStack(object):
         self.mode = 'default'
         
 
-    def FindAndParseMetadata(self, filename):
+    def _findAndParseMetadata(self, filename):
         """Try and find and load a .xml or .md metadata file that might be ascociated
         with a given image filename. See the relevant metadatahandler classes
         for details."""
@@ -631,11 +677,11 @@ class ImageStack(object):
 
         return mdf
 
-    def LoadTiff(self, filename):
+    def _loadTiff(self, filename):
         #from PYME.IO.FileUtils import readTiff
         from PYME.IO.DataSources import TiffDataSource
 
-        mdfn = self.FindAndParseMetadata(filename)
+        mdfn = self._findAndParseMetadata(filename)
 
         self.dataSource = TiffDataSource.DataSource(filename, None)
         print self.dataSource.shape
@@ -691,7 +737,7 @@ class ImageStack(object):
 
         self.mode = 'default'
         
-    def LoadBioformats(self, filename):
+    def _loadBioformats(self, filename):
         #from PYME.IO.FileUtils import readTiff
         from PYME.IO.DataSources import BioformatsDataSource
         import bioformats
@@ -720,10 +766,10 @@ class ImageStack(object):
 
         self.mode = 'default'
 
-    def LoadDCIMG(self, filename):
+    def _loadDCIMG(self, filename):
         from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
 
-        self.FindAndParseMetadata(filename)
+        self._findAndParseMetadata(filename)
 
         self.dataSource = DcimgDataSource.DataSource(filename)
 
@@ -737,7 +783,7 @@ class ImageStack(object):
         self.mode = 'default'
         
         
-    def LoadImageSeries(self, filename):
+    def _loadImageSeries(self, filename):
         #from PYME.IO.FileUtils import readTiff
         from PYME.IO.DataSources import ImageSeriesDataSource
 
@@ -746,7 +792,7 @@ class ImageStack(object):
         self.data = self.dataSource #this will get replaced with a wrapped version
         #self.data = readTiff.read3DTiff(filename)
 
-        self.FindAndParseMetadata(filename)
+        self._findAndParseMetadata(filename)
 
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
         self.seriesName = getRelFilename(filename)
@@ -754,6 +800,35 @@ class ImageStack(object):
         self.mode = 'default'
 
     def Load(self, filename=None):
+        """
+        Load a file from disk / queue / cluster
+
+        NB: this is usually called from __init__. Call ImageStack(filename = filename) rather than calling this function directly.
+
+        Parameters
+        ----------
+        filename : str [optional]
+            filename or URI of data to load. Natively supported types are:
+                - .tif
+                - .h5 (PYME HDF5 format)
+                - .npy (numpy array)
+                - .psf (PYME PSF files)
+                - .dbl (Bewersdorf STED files)
+                - .dcimg (Hamamatsu .dcimg)
+                - QUEUE:// (PYME task queue data)
+                - PYME-CLUSTER:// (Data stored in our custom cluster file system)
+                - .md (sequence of images with a type supported by PIL, described by a .md metadta file)
+
+            If the filename doesn't match one of these patterns, we fall back on bioformats, if available. This works
+            well for most biological file formats, but can be fairly slow. At present, .tif is handled by our native
+            handler (which falls back on the excellent Gohlke tiffile library) and .tiff is handled by bioformats.
+
+            If no filename is given, we display an open file dialog box.
+
+        Returns
+        -------
+
+        """
         print('filename == %s' % filename)
         if (filename is None or filename == ''):
             import wx #only introduce wx dependency here - so can be used non-interactively
@@ -781,29 +856,29 @@ class ImageStack(object):
 
         if not filename is None:
             if filename.startswith('QUEUE://'):
-                self.LoadQueue(filename)
+                self._loadQueue(filename)
             elif filename.startswith('http://'):
-                self.LoadHTTP(filename)
-            elif filename.startswith('PYME-CLUSTER://'):
-                self.LoadClusterPZF(filename)
+                self._loadHTTP(filename)
+            elif filename.startswith('PYME-CLUSTER://') or filename.startswith('pyme-cluster://'):
+                self._loadClusterPZF(filename)
             elif filename.endswith('.h5'):
-                self.Loadh5(filename)
+                self._loadh5(filename)
             #elif filename.endswith('.kdf'):
             #    self.LoadKdf(filename)
             elif filename.endswith('.psf'): #psf
-                self.LoadPSF(filename)
+                self._loadPSF(filename)
             elif filename.endswith('.md'): #treat this as being an image series
-                self.LoadImageSeries(filename)
+                self._loadImageSeries(filename)
             elif filename.endswith('.npy'): #treat this as being an image series
-                self.LoadNPY(filename)
+                self._loadNPY(filename)
             elif filename.endswith('.dbl'): #treat this as being an image series
-                self.LoadDBL(filename)
+                self._loadDBL(filename)
             elif os.path.splitext(filename)[1] in ['.tif', '.tif', '.lsm']: #try tiff
-                self.LoadTiff(filename)
+                self._loadTiff(filename)
             elif filename.endswith('.dcimg'):
-                self.LoadDCIMG(filename)
+                self._loadDCIMG(filename)
             else: #try bioformats
-                self.LoadBioformats(filename)
+                self._loadBioformats(filename)
 
 
             #self.SetTitle(filename)
@@ -811,6 +886,27 @@ class ImageStack(object):
             self.saved = True
 
     def Save(self, filename=None, crop=False, view=None):
+        """
+        Saves an image to file.
+
+        Parameters
+        ----------
+        filename : str
+            The filename to save to. File type is deduced by the extension. For supported data types, see PYME.IO.dataExporter.
+            If no filename is given, we display a dialog box to ask.
+
+        crop : bool
+            Do we want to crop the image? Note that this displays a cropping dialog box (ie needs a GUI) and requires
+            that view be defined. TODO - remove GUI dependance
+
+        view : PYME.DSView.arrayViewPanel instance
+            Our current view of the data. Used to get selection information to provide starting values for our crop region
+            TODO - make this GUI independant by passing the selection / crop region to save.
+
+        Returns
+        -------
+
+        """
         from PYME.IO import dataExporter
 
         ofn = self.filename

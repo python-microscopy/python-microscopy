@@ -499,7 +499,7 @@ def roberts(image, mask=None):
     # Points near the mask edges and image edges are computed unreliably
     # so make them zero (no edge) in the result
     #
-    if mask == None:
+    if mask is None:
         mask = np.ones(image.shape, bool)
     big_mask = binary_erosion(mask,
                               generate_binary_structure(2,2),
@@ -540,7 +540,7 @@ def hsobel(image, mask=None):
      0   0   0
     -1  -2  -1
     """
-    if mask == None:
+    if mask is None:
         mask = np.ones(image.shape, bool)
     big_mask = binary_erosion(mask,
                               generate_binary_structure(2,2),
@@ -563,7 +563,7 @@ def vsobel(image, mask=None):
      2   0  -2
      1   0  -1
     """
-    if mask == None:
+    if mask is None:
         mask = np.ones(image.shape, bool)
     big_mask = binary_erosion(mask,
                               generate_binary_structure(2,2),
@@ -597,7 +597,7 @@ def hprewitt(image, mask=None):
      0   0   0
     -1  -1  -1
     """
-    if mask == None:
+    if mask is None:
         mask = np.ones(image.shape, bool)
     big_mask = binary_erosion(mask,
                               generate_binary_structure(2,2),
@@ -620,7 +620,7 @@ def vprewitt(image, mask=None):
      1   0  -1
      1   0  -1
     """
-    if mask == None:
+    if mask is None:
         mask = np.ones(image.shape, bool)
     big_mask = binary_erosion(mask,
                               generate_binary_structure(2,2),
@@ -1675,7 +1675,7 @@ def circular_hough(img, radius, nangles = None, mask=None):
     """
     a = np.zeros(img.shape)
     m = np.zeros(img.shape)
-    if nangles == None:
+    if nangles is None:
         # if no angle specified, take the circumference
         # Round to a multiple of 4 to make it bilaterally stable
         nangles = int(np.pi * radius + 3.5) & (~ 3)

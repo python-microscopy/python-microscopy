@@ -20,3 +20,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
+"""
+This package contains code related to VisGUI, the visualization program for localization point data sets. The main
+components would be:
+  - :py:mod:`PYME.LMVis.VisGUI` : the main GUI code used for point visualization
+  - :py:mod:`PYME.LMVis.pipeline` : the underlying pipeline object which handles file opening and manipulation (this is
+                                  the core non-gui component of point processing)
+
+Also of interest are:
+  - :py:mod:`PYME.LMVis.inpFilt` : The filters and mappings used to build up the pipeline
+  - :py:mod:`PYME.LMVis.renderers` : The code which interfaces the individual rendering methods used to convert point
+                                   data to some kind of density map.
+
+Plugins are located in :py:mod:`PYME.LMVis.Extras`.
+
+The VisGUI can be launched using the `VisGUI` script.
+
+"""

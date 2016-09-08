@@ -86,7 +86,7 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
 
     #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
 
-    if c == None:
+    if c is None:
         if numpy.version.version > '1.2':
             c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
         else:
@@ -106,7 +106,7 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
     xs = (xs - imageBounds.x0)/pixelSize
     ys = (ys - imageBounds.y0)/pixelSize
 
-    if im == None:
+    if im is None:
         im = numpy.zeros((sizeX, sizeY))
 
     drawTriangles(im, xs, ys, c)

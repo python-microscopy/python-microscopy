@@ -92,23 +92,35 @@ def main():
 #        subprocess.Popen('pyro-ns', shell=True)
 #        #wait for server to come up
 #        time.sleep(3)
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--local', dest='local', action='store_true',
+                        help='run in local only mode')
+    parser.add_argument('-w', '--no-server', dest='run_server', action='store_false',default=True,
+                        help='Only launch the workers (no server)')
+    parser.add_argument('--no-gui', dest='gui', action='store_false',default=True)
+    parser.add_argument('NWorkers', type=int, nargs='?', default=cpuCount(),
+                        help='Number of worker processes to use')
+    args = parser.parse_args()
     
-    if len(sys.argv) > 1:
-	if sys.argv[1] == '-l':
-            SERVER_PROC = 'taskServerML.py'
-            WORKER_PROC = 'taskWorkerML.py'
-        else:
-            numProcessors = int(sys.argv[1])
+    if args.local:
+        SERVER_PROC = 'taskServerML.py'
+        WORKER_PROC = 'taskWorkerML.py'
+
+    numProcessors = args.NWorkers
     
     if sys.platform == 'win32':
-        print 'Launching server ...'
-        subprocess.Popen('python %s\\%s.py' % (fstub, SERVER_PROC), shell=True)
-    
-        print 'Waiting for server to come up ...'
-        time.sleep(10)
-    
-        print 'Launching task monitor ...'
-        subprocess.Popen('python %s\\fitMonP.py' % fstub, shell=True)
+        if args.run_server:
+            print 'Launching server ...'
+            subprocess.Popen('python %s\\%s.py' % (fstub, SERVER_PROC), shell=True)
+
+            print 'Waiting for server to come up ...'
+            time.sleep(10)
+
+        if args.gui:
+            print 'Launching task monitor ...'
+            subprocess.Popen('python %s\\fitMonP.py' % fstub, shell=True)
     
         print 'Launching %d workers ...' % numProcessors
         for i in range(numProcessors):
@@ -122,32 +134,37 @@ def main():
                 if 'python' in p.name():
                     c = p.cmdline()
                     #print c, SERVER_PROC, WORKER_PROC
-                    if (SERVER_PROC in c[1]) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1]):
+                    if (SERVER_PROC in c[1] and args.run_server) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1] and args.gui):
                         print 'killing %s' % c
                         p.kill()
             except psutil.ZombieProcess:
                 pass
-            
-    
-        subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub, SERVER_PROC)), shell=True)
-    
-        time.sleep(3)
-    
-        subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,'fitMonP.py')), shell=True)
+
+        if args.run_server:
+            subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub, SERVER_PROC)), shell=True)
+
+            time.sleep(10)
+        if args.gui:
+            subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,'fitMonP.py')), shell=True)
     
         for i in range(numProcessors):
             subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub,WORKER_PROC)), shell=True)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...
-        os.system('killall %s' % SERVER_PROC)
-        os.system('killall %s' % WORKER_PROC)
+        if args.run_server:
+            os.system('killall %s' % SERVER_PROC)
+
+        if args.gui:
+            os.system('killall %s' % WORKER_PROC)
         os.system('killall fitMonP')
-    
-        subprocess.Popen(SERVER_PROC, shell=True)
-    
-        time.sleep(3)
-    
-        subprocess.Popen('fitMonP', shell=True)
+
+        if args.run_server:
+            subprocess.Popen(SERVER_PROC, shell=True)
+
+            time.sleep(3)
+
+        if args.gui:
+            subprocess.Popen('fitMonP', shell=True)
     
         for i in range(numProcessors):
             subprocess.Popen(WORKER_PROC, shell=True)

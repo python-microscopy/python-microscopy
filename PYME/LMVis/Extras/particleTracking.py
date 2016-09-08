@@ -53,41 +53,15 @@ class ParticleTracker:
         ret = dlg.ShowModal()
 
         if ret == wx.ID_OK:
-            #nFrames = dlg.GetClumpTimeWindow()
-            #rad_var = dlg.GetClumpRadiusVariable()
             trackUtils.findTracks(pipeline, dlg.GetClumpRadiusVariable(),dlg.GetClumpRadiusMultiplier(), dlg.GetClumpTimeWindow())
-#            if rad_var == '1.0':
-#                delta_x = 0*pipeline.mapping['x'] + dlg.GetClumpRadiusMultiplier()
-#            else:
-#                delta_x = dlg.GetClumpRadiusMultiplier()*pipeline.mapping[rad_var]
-#
-#        clumpIndices = deClump.findClumps(pipeline.mapping['t'].astype('i'), pipeline.mapping['x'].astype('f4'), pipeline.mapping['y'].astype('f4'), delta_x.astype('f4'), nFrames)
-#        numPerClump, b = np.histogram(clumpIndices, np.arange(clumpIndices.max() + 1.5) + .5)
-#
-#        trackVelocities = trackUtils.calcTrackVelocity(pipeline.mapping['x'], pipeline.mapping['y'], clumpIndices)
-#        #print b
-#
-#        pipeline.selectedDataSource.clumpIndices = -1*np.ones(len(pipeline.selectedDataSource['x']))
-#        pipeline.selectedDataSource.clumpIndices[pipeline.filter.Index] = clumpIndices
-#
-#        pipeline.selectedDataSource.clumpSizes = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
-#        pipeline.selectedDataSource.clumpSizes[pipeline.filter.Index] = numPerClump[clumpIndices - 1]
-#
-#        pipeline.selectedDataSource.trackVelocities = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
-#        pipeline.selectedDataSource.trackVelocities[pipeline.filter.Index] = trackVelocities
-#
-#        pipeline.selectedDataSource.setMapping('clumpIndex', 'clumpIndices')
-#        pipeline.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
-#        pipeline.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
 
-            visFr.RegenFilter()
-            visFr.CreateFoldPanel()
+            pipeline.Rebuild()
 
         dlg.Destroy()
 
     def OnCalcMSDs(self,event):
         import pylab
-        from PYME.Analysis._fithelpers import *
+        from PYME.Analysis import _fithelpers as fh
         from PYME.Analysis.points.DistHist import msdHistogram
 
         def powerMod(p,t):
@@ -125,7 +99,7 @@ class ParticleTracker:
 
             pylab.plot(t_, h)
 
-            res = FitModel(powerMod, [h[-1]/t_[-1], 1.], h, t_)
+            res = fh.FitModel(powerMod, [h[-1]/t_[-1], 1.], h, t_)
 
             Ds[i] = res[0][0]
             Ds_[I] = res[0][0]
@@ -133,7 +107,7 @@ class ParticleTracker:
             alphas_[I] = res[0][1]
 
             print((res[0]))#, res[1]
-            if not res[1] == None:
+            if not res[1] is None:
                 error_Ds[i] = np.sqrt(res[1][0,0])
             else:
                 error_Ds[i] = -1e3
@@ -141,17 +115,10 @@ class ParticleTracker:
         pylab.figure()
         pylab.scatter(Ds, alphas)
 
-        pipeline.selectedDataSource.diffusionConstants = -1*np.ones(pipeline.selectedDataSource.clumpIndices.shape)
-        pipeline.selectedDataSource.diffusionConstants[pipeline.filter.Index] = Ds_
+        pipeline.addColumn('diffusionConst', Ds_, -1)
+        pipeline.addColumn('diffusionExp', alphas_)
 
-        pipeline.selectedDataSource.diffusionExponents = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
-        pipeline.selectedDataSource.diffusionExponents[pipeline.filter.Index] = alphas_
-
-        pipeline.selectedDataSource.setMapping('diffusionConst', 'diffusionConstants')
-        pipeline.selectedDataSource.setMapping('diffusionExp', 'diffusionExponents')
-
-        self.visFr.RegenFilter()
-        self.visFr.CreateFoldPanel()
+        pipeline.Rebuild()
         
     def OnCoalesce(self, event):
         from PYME.LMVis import inpFilt
@@ -159,14 +126,13 @@ class ParticleTracker:
         
         pipeline = self.visFr.pipeline
         
-        dclumped = pyDeClump.coalesceClumps(pipeline.selectedDataSource.resultsSource.fitResults, pipeline.selectedDataSource.clumpIndices)
+        dclumped = pyDeClump.coalesceClumps(pipeline.selectedDataSource.resultsSource.fitResults, pipeline.selectedDataSource['clumpIndex'])
         ds = inpFilt.fitResultsSource(dclumped)
-        ds_ = inpFilt.mappingFilter(ds)
-        ds_._name = 'Coalesced'
-        pipeline.selectedDataSource = ds_
-        pipeline.dataSources.append(ds_)
-        self.visFr.RegenFilter()
-        self.visFr.CreateFoldPanel()
+
+        pipeline.addDataSource('Coalesced',  ds)
+        pipeline.selectDataSource('Coalesced')
+
+        self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
 
 

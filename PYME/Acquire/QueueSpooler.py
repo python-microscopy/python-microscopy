@@ -53,10 +53,13 @@ class EventLogger:
       self.tq = tq
       self.queueName = queueName
 
-   def logEvent(self, eventName, eventDescr = ''):
+   def logEvent(self, eventName, eventDescr = '', timestamp=None):
       if eventName == 'StartAq':
           eventDescr = '%d' % self.spooler.imNum
-      self.tq.logQueueEvent(self.queueName, (eventName, eventDescr, sp.timeFcn()))
+
+      if timestamp is None:
+          timestamp = sp.timeFcn()
+      self.tq.logQueueEvent(self.queueName, (eventName, eventDescr, timestamp))
       
 
 class Spooler(sp.Spooler):

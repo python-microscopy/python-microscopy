@@ -61,22 +61,14 @@ class PerFrameVar:
                 pipeline = self.visFr.pipeline
                 
                 #perform lookup            
-                values = var[pipeline.inputMapping['t'].astype('i')]
-                
-                #print values
-                
+                values = var[pipeline.selectedDataSource['t'].astype('i')]
                 
                 #add looked up values to input mapping
-                pipeline.inputMapping.__dict__[varname + '_'] = values
-                pipeline.inputMapping.setMapping(varname, '%s_' % varname)
-                
-                print type('%s_' % varname)
-                
-                print pipeline.inputMapping.mappings
-                
+                pipeline.addColumn(varname,  values)
+
                 #regenerate the pipeline
-                self.visFr.RegenFilter()
-                self.visFr.CreateFoldPanel()
+                pipeline.Rebuild()
+
 
 
 

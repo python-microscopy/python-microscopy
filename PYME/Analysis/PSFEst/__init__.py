@@ -20,3 +20,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
+"""
+This module contains code for extracting PSF images from a 3D image stack (alignment and averaging of bead images)
+(:py:mod:`PYME.Analysis.PSFEst.extractImages`) as
+well as assessing the quality of an extracted PSF for either localization or deconvolution (:py:mod:`PYME.Analysis.PSFEst.psfQuality`).
+"""

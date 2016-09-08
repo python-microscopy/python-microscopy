@@ -35,7 +35,7 @@ def setScope(sc):
 
 def getCalibratedCCDGain(nomGain, temperature):
     ret = scope.settingsDB.execute("SELECT nominalGains, trueGains FROM CCDCalibration2 WHERE temperature=? AND serial=? ORDER BY time DESC", (temperature,scope.cam.GetSerialNumber())).fetchone()
-    if ret == None or np.max(nomGain) > ret[0].max():
+    if ret is None or np.max(nomGain) > ret[0].max():
         return None
     else:
         return np.interp(nomGain, ret[0], ret[1])

@@ -755,7 +755,7 @@ class iXonCamera:
             mdh.setEntry('Camera.ElectronsPerCount', np['ElectronsPerCount'])
 
             realEMGain = ccdCalibrator.getCalibratedCCDGain(self.GetEMGain(), self.GetCCDTempSetPoint())
-            if not realEMGain == None:
+            if not realEMGain is None:
                 mdh.setEntry('Camera.TrueEMGain', realEMGain)
 
     def __getattr__(self, name):

@@ -37,13 +37,30 @@ import PYME.misc.pyme_zeroconf as pzc
 import urlparse
 import requests
 import socket
-
+import fcntl
+import threading
+import datetime
 from PYME.misc.computerName import GetComputerName
+
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 
 compName = GetComputerName()
 procName = compName + ' - PID:%d' % os.getpid()
 
 LOG_REQUESTS = False#True
+
+startTime = datetime.datetime.now()
+global_status = {}
+
+textfile_locks = {}
+def getTextFileLock(filename):
+    try:
+        return textfile_locks[filename]
+    except KeyError:
+        textfile_locks[filename] = threading.Lock()
+        return textfile_locks[filename]
 
 
 class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
@@ -51,12 +68,93 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     bandwidthTesting = False
     logrequests = False
 
-    # def do_PUT(self):
-    #     r = self.rfile.read(int(self.headers['Content-Length']))
-    #     self.send_response(200)
-    #     self.send_header("Content-Length", "0")
-    #     self.end_headers()
-    #     return
+
+    def _aggregate_txt(self):
+        """
+        support for results aggregation (append into a file). This 'method' does a dumb append to the file on disk,
+        meaning that it will require reasonably carefully formatted input (with, e.g., a trailing newlines on each
+        chunk if results are in .csv
+        This is mostly intended for output in csv or similar formats, where chunks can be 'cat'ed together.
+
+        NOTE: there is no guarantee of ordering, so the record format should contain enough information to re-order
+        the data if necessary
+        """
+        path = self.translate_path(self.path.lstrip('/')[len('__aggregate_txt'):])
+
+        data = self.rfile.read(int(self.headers['Content-Length']))
+
+        #append the contents of the put request
+        with getTextFileLock(path):
+            #lock so that we don't corrupt the data by writing from two different threads
+            #TODO ?? - keep a cache of open files
+            with open(path, 'ab') as f:
+                f.write(data)
+
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def _aggregate_h5r(self):
+        """
+        Support for results aggregation into an HDF5 file, using pytables.
+        We treat any path components after the .h5r as locations within the file (ie table names).
+        e.g. /path/to/data.h5r/<tablename>
+        A few special cases / Table names are accommodated:
+
+        MetaData: assumes we have sent PYME metadata in json format and saves to the file using the appropriate metadatahandler
+        No table name: assumes we have a fitResults object (as returned by remFitBuf and saves to the the appropriate tables (as HDF task queue would)
+        """
+        import numpy as np
+        import cStringIO
+        import cPickle
+        from PYME.IO import MetaDataHandler
+        from PYME.IO import h5rFile
+
+        path = self.translate_path(self.path.lstrip('/')[len('__aggregate_h5r'):])
+        filename, tablename = path.split('.h5r')
+        filename += '.h5r'
+
+        data = self.rfile.read(int(self.headers['Content-Length']))
+
+        #logging.debug('opening h5r file')
+        with h5rFile.openH5R(filename, 'a') as h5f:
+            if tablename == '/MetaData':
+                mdh_in = MetaDataHandler.CachingMDHandler(json.loads(data))
+                h5f.updateMetadata(mdh_in)
+            elif tablename == '':
+                #legacy fitResults structure
+                fitResults = cPickle.loads(data)
+                h5f.fileFitResult(fitResults)
+            else:
+                try:
+                    #try to read data as if it was numpy binary formatted
+                    data = np.load(cStringIO.StringIO(data))
+                except IOError:
+                    #it's not numpy formatted - try json
+                    import pandas as pd
+                    #FIXME!! - this will work, but will likely be really slow!
+                    data = pd.read_json(data).to_records(False)
+
+                #logging.debug('adding data to table')
+                h5f.appendToTable(tablename.lstrip('/'), data)
+                #logging.debug('added data to table')
+
+        #logging.debug('left h5r file')
+
+        self.send_response(200)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        return
+
+
+    def _doAggregate(self):
+        # TODO - add authentication/checks for aggregation. Files which still allow appends should not be duplicated.
+        if self.path.lstrip('/').startswith('__aggregate_txt'):
+            self._aggregate_txt()
+        elif self.path.lstrip('/').startswith('__aggregate_h5r'):
+            self._aggregate_h5r()
+
+        return
 
     def do_PUT(self):
         if self.bandwidthTesting:
@@ -67,9 +165,15 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.end_headers()
             return
 
-        path = self.translate_path(self.path)
+        if self.path.lstrip('/').startswith('__aggregate'):
+            #paths starting with __aggregate are special, and trigger appends to an existing file rather than creation
+            #of a new file.
+            self._doAggregate()
+            return
 
-        #print self.headers
+
+
+        path = self.translate_path(self.path)
 
         if os.path.exists(path):
             #Do not overwrite - we use write-once semantics
@@ -78,13 +182,16 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             #self.end_headers()
             return None
         else:
-            dir = os.path.split(path)[0]
+            dir, file = os.path.split(path)
             if not os.path.exists(dir):
                 os.makedirs(dir)
 
             query = urlparse.parse_qs(urlparse.urlparse(self.path).query)
 
-            if 'MirrorSource' in query.keys():
+            if file == '':
+                #we're  just making a directory
+                pass
+            elif 'MirrorSource' in query.keys():
                 #File content is not in message content. This computer should
                 #fetch the results from another computer in the cluster instead
                 #used for online duplication
@@ -105,6 +212,46 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.end_headers()
             return
 
+    def do_GET(self):
+        """Serve a GET request."""
+        f = self.send_head()
+        if f:
+            try:
+                self.copyfile(f, self.wfile)
+            finally:
+                f.close()
+
+    def get_status(self):
+        from PYME.IO.FileUtils.freeSpace import disk_usage
+
+        status = {}
+        status.update(global_status)
+
+        total, used, free = disk_usage(os.getcwd())
+        status['Disk'] = {'total':total, 'used':used, 'free':free}
+        status['Uptime'] = str(datetime.datetime.now() - startTime)
+
+        try:
+            import psutil
+
+            status['CPUUsage'] = psutil.cpu_percent(interval=.1, percpu=True)
+            status['MemUsage'] = psutil.virtual_memory()._asdict()
+        except ImportError:
+            pass
+
+
+
+        f = StringIO()
+        f.write(json.dumps(status))
+        length = f.tell()
+        f.seek(0)
+        self.send_response(200)
+        encoding = sys.getfilesystemencoding()
+        self.send_header("Content-type", "application/json; charset=%s" % encoding)
+        self.send_header("Content-Length", str(length))
+        self.end_headers()
+        return f
+
     def send_head(self):
         """Common code for GET and HEAD commands.
 
@@ -118,6 +265,8 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         """
         path = self.translate_path(self.path)
         f = None
+        if self.path.lstrip('/') == '__status':
+            return self.get_status()
         if os.path.isdir(path):
             parts = urlparse.urlsplit(self.path)
             if not parts.path.endswith('/'):
@@ -144,7 +293,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             # transmitted *less* than the content-length!
             f = open(path, 'rb')
         except IOError:
-            self.send_error(404, "File not found")
+            self.send_error(404, "File not found - %s, [%s]" % (self.path, path))
             return None
         try:
             self.send_response(200)
@@ -283,8 +432,19 @@ def main(protocol="HTTP/1.0"):
     ns = pzc.getNS('_pyme-http')
     ns.register_service('PYMEDataServer: ' + procName, ip_addr, sa[1])
 
+    global_status['IPAddress'] = ip_addr
+    global_status['BindAddress'] = server_address
+    global_status['Port'] = sa[1]
+    global_status['Protocol'] = options.protocol
+    global_status['TestMode'] = options.test
+    global_status['ComputerName'] = GetComputerName()
+
     print "Serving HTTP on", ip_addr, "port", sa[1], "..."
-    httpd.serve_forever()
+    try:
+        httpd.serve_forever()
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
 
 
 if __name__ == '__main__':

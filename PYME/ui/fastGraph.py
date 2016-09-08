@@ -136,7 +136,7 @@ class FastGraphPanel(wx.Panel):
         dc.Clear()
 
         #when being used to determine histogram bins
-        if not self.binSize == None:
+        if not self.binSize is None:
             binEdges = numpy.arange(self.hmin, self.hmax + self.binSize, self.binSize)
 
             for i in range(len(binEdges) -1):

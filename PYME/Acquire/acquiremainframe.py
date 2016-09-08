@@ -147,7 +147,7 @@ class PYMEMainFrame(AUIFrame):
         #self.sh.shell.runfile('init.py')
         #fstub = os.path.join(os.path.split(__file__)[0], 'Scripts')
         initFile = 'init.py'
-        if not self.options == None and not self.options.initFile == None:
+        if not self.options is None and not self.options.initFile is None:
             initFile = self.options.initFile
             
         #initFile = os.path.join(fstub, initFile)
@@ -478,8 +478,8 @@ class PYMEMainFrame(AUIFrame):
             #self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMBIN, 'Turn Binning Off')
             self.bin_on = True
             
-        self.scope.cam.SetCOC()
-        self.scope.cam.GetStatus()
+        #self.scope.cam.SetCOC()
+        #self.scope.cam.GetStatus()
         self.scope.frameWrangler.Prepare()
         self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
         self.pa.start()
@@ -555,8 +555,8 @@ class PYMEMainFrame(AUIFrame):
 
             
         logging.debug('about to set COC')
-        self.scope.cam.SetCOC()
-        self.scope.cam.GetStatus()
+        #self.scope.cam.SetCOC()
+        #self.scope.cam.GetStatus()
         self.scope.frameWrangler.Prepare()
         self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
         
@@ -591,8 +591,8 @@ class PYMEMainFrame(AUIFrame):
         y2 = self.scope.cam.GetPicHeight()
 
 
-        self.scope.cam.SetCOC()
-        self.scope.cam.GetStatus()
+        #self.scope.cam.SetCOC()
+        #self.scope.cam.GetStatus()
         self.scope.frameWrangler.Prepare()
         self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
         

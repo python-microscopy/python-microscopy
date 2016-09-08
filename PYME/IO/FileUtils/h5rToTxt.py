@@ -42,7 +42,7 @@ def convertFile(inFile, outFile):
 
 
 def saveFilter(ds, outFile, keys = None):
-    if keys == None:
+    if keys is None:
         keys = ds.keys()
 
     #nRecords = len(ds[keys[0]])

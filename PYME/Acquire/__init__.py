@@ -22,4 +22,23 @@
 ################
 """
 This package contains all the functionality of the `PYMEAcquire` acquisition program.
+
+The core components are:
+
+- :py:mod:`PYME.Acquire.PYMEAcquire` : the GUI entry point
+- :py:mod:`PYME.Acquire.acquiremainframe` : the GUI code for the main window
+
+- :py:mod:`PYME.Acquire.microscope` : a handler / collection point for all the hardware and microscope state
+- :py:mod:`PYME.Acquire.frameWrangler` : controls the flow of data from the camera(s)
+
+Most of the additional modules serve a supporting role. Of special note are the spoolers (:py:mod:`PYME.Acquire.HDFSpooler`,
+:py:mod:`PYME.Acquire.QueueSpooler`, and :py:mod:`PYME.Acquire.HTTPSpooler`) which are the backends for spooling data acquisition.
+
+Drivers for different pieces of experimental hardware are found in :py:mod:`PYME.Acquire.Hardware`
+
+
+
+`PYMEAcquire` can be launched by running the `PYMEAcquire` script, specifying an initialization file to be used. For more
+info see :py:mod:`PYME.Acquire.PYMEAcquire`.
+
 """

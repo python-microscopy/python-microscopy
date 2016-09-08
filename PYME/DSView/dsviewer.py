@@ -38,6 +38,9 @@ try:
 except ImportError:
     pass
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 #import PYME.ui.autoFoldPanel as afp
 
 from PYME.DSView.displayOptions import DisplayOpts
@@ -90,7 +93,7 @@ class DSViewFrame(AUIFrame):
 
         self.image = image
         #self.image = ImageStack(data = dstack, mdh = mdh, filename = filename, queueURI = queueURI, events = None)
-        if not self.image.filename == None and title == '':
+        if not self.image.filename is None and title == '':
             self.SetTitle(self.image.filename)
 
         
@@ -380,6 +383,7 @@ class MyApp(wx.App):
         op.add_option('-t', '--test', dest='test', help="Show a test image", action="store_true", default=False)
         op.add_option('-d', '--metadata', dest='metadata', help="Load image with specified metadata file", default=None)
         op.add_option('-g', '--start-analysis', dest='start_analysis', action="store_true", help="Automatically start the analysis (where appropriate)", default=False)
+        op.add_option('-r', '--recipe', dest='recipe_filename', help='Recipe to load', default=None)
 
         options, args = op.parse_args()
         
@@ -396,7 +400,7 @@ class MyApp(wx.App):
             else:
                 im = ImageStack(queueURI=options.queueURI)
     
-            if options.mode == None:
+            if options.mode is None:
                 mode = im.mode
             else:
                 mode = options.mode
@@ -405,8 +409,13 @@ class MyApp(wx.App):
             
             #this is a bit of a hack - requires explicit knowledge of the LMAnalysis module here
             if options.start_analysis and 'LMAnalyser' in dir(vframe):
-                print 'Automatically starting analysis'
+                logging.info('Automatically starting analysis')
                 wx.CallLater(5,vframe.LMAnalyser.OnGo)
+
+            #likewise for the recipe module - requires explicit knowledge of the recipe module here
+            if (not options.recipe_filename is None) and 'recipes' in dir(vframe):
+                logging.info('Loading recipe ... ')
+                wx.CallLater(5, vframe.recipes.LoadRecipe, options.recipe_filename)
     
             self.SetTopWindow(vframe)
             vframe.Show(1)

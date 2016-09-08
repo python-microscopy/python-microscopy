@@ -25,7 +25,7 @@ class PointDisplaySettings(HasTraits):
 def _getPossibleKeys(pipeline):
     colKeys = ['<None>']
 
-    if not pipeline.colourFilter == None: #is the test needed?
+    if not pipeline.colourFilter is None: #is the test needed?
         colKeys += list(pipeline.keys())
 
     colKeys += list(pipeline.GeneratedMeasures.keys())
@@ -89,9 +89,11 @@ class PointSettingsPanel(wx.Panel):
         self.chPointColour.Bind(wx.EVT_CHOICE, self.OnChangePointColour)
         self.chPointColour.Bind(wx.EVT_ENTER_WINDOW, self.UpdatePointColourChoices)
 
+        self.pipeline.onKeysChanged.connect(self.UpdatePointColourChoices)
+
         
 
-    def UpdatePointColourChoices(self, event=None):
+    def UpdatePointColourChoices(self, event=None, **kwargs):
         """Update our choice of keys if the pipeline has changed.
         """
         colKeys = _getPossibleKeys(self.pipeline)

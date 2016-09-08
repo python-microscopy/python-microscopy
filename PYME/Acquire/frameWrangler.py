@@ -99,7 +99,7 @@ class FrameWrangler(wx.EvtHandler):
             # array index as x, which might (in retrospect) have been a bad design choice
             order = 'F'
         
-        if (self.currentFrame == None or keepds == False):
+        if (self.currentFrame is None or keepds == False):
 
             self.currentFrame = np.zeros([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
                                 1], dtype = 'uint16', order = order)

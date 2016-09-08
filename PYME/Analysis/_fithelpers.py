@@ -34,6 +34,13 @@ def missfit(p, fcn, data, *args):
     (*args) and compares this with measured data (data)"""
     return data - fcn(p, *args).ravel()
 
+def missfit_fixed(p, fit, sp, fcn, data, weights, *args):
+    """Helper function which evaluates a model function (fcn) with parameters (p) and additional arguments
+    (*args) and compares this with measured data (data)"""
+    p_ = sp.copy()
+    p_[fit] = p
+    return (data.ravel() - fcn(p_, *args).ravel())*weights.ravel()
+
 def weightedMissfit(p, fcn, data, sigmas, *args):
     """Helper function which evaluates a model function (fcn) with parameters (p) and additional arguments
     (*args) and compares this with measured data (data), scaling with the errors in the measured data (sigmas)"""
@@ -128,7 +135,27 @@ def FitModelPoisson(modelFcn, startParmeters, data, *args, **kwargs):
         bg = 0
     return [optimize.fmin_powell(poisson_lhood, startParmeters, ((modelFcn, data,bg) +args))]
     
-def FitModelPoissonBFGS(modelFcn, startParmeters, data, *args):
-    return [optimize.fmin_bfgs(poisson_lhood, startParmeters, args=((modelFcn, data,) +args), epsilon=0.1)]
+def FitModelPoissonBFGS(modelFcn, startParmeters, data, *args, **kwargs):
+    try:
+        bg = kwargs['bg']
+    except KeyError:
+        bg = 0
+    return [optimize.fmin_bfgs(poisson_lhood, startParmeters, args=((modelFcn, data,bg) +args), epsilon=0.1)]
+
+
+def FitModelFixed(modelFcn, startParameters, fitWhich, data, *args, **kwargs):
+    eps = kwargs.get('eps', EPS_FCN)
+    weights = kwargs.get('weights', np.array(1.0))
+
+    startParameters = np.array(startParameters)
+    fitWhich = np.where(fitWhich)
+    p = startParameters[fitWhich]
+    #print p, fitWhich
+    res =  optimize.leastsq(missfit_fixed, p, (fitWhich, startParameters, modelFcn, data, weights) + args, full_output=1, epsfcn=eps)[0]
+
+    out = startParameters.copy()
+    out[fitWhich] = res
+    return [out]
+
     
 #def FitModelPoissonS(modelFcn, startParmeters, data, *args):

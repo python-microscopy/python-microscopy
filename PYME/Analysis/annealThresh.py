@@ -44,7 +44,7 @@ def annealThresh(image, valP50, valPslope=1, neighP50=4, neighSlope=.25, mask=No
     """segment an image based on both intensity and neighbourbood relationships"""
 
     #if no mask then use default
-    if mask == None:
+    if mask is None:
         neighbourMask = genDefaultMask(image.ndim)
     else:
         neighbourMask = mask
@@ -76,7 +76,7 @@ def annealThresh2(image, valP50, valPslope=1, neighP50=.5, neighSlope=1, mask=No
     """segment an image based on both intensity and neighbourbood relationships"""
 
     #if no mask then use default
-    if mask == None:
+    if mask is None:
         neighbourMask = genDefaultMask(image.ndim)
     else:
         neighbourMask = mask
@@ -91,7 +91,7 @@ def annealThresh2(image, valP50, valPslope=1, neighP50=.5, neighSlope=1, mask=No
     #calculate probability that a pixel belongs to object based on it's intensity
     imP = (image/(2*valP50) - 0.5)*valPslope + 0.5
 
-    if out == None:
+    if out is None:
         out = np.zeros_like(image)
 
     #create initial object segmentation
@@ -118,7 +118,7 @@ def annealThresh2D(image, valP50, valPslope=1, neighP50=.5, neighSlope=1, mask=N
     """segment an image based on both intensity and neighbourbood relationships"""
 
     #if no mask then use default
-    if mask == None:
+    if mask is None:
         neighbourMask = gen2DMask(image.ndim)
     else:
         neighbourMask = mask
@@ -133,7 +133,7 @@ def annealThresh2D(image, valP50, valPslope=1, neighP50=.5, neighSlope=1, mask=N
     #calculate probability that a pixel belongs to object based on it's intensity
     imP = (image/(2*valP50) - 0.5)*valPslope + 0.5
 
-    if out == None:
+    if out is None:
         out = np.zeros_like(image)
 
     #create initial object segmentation

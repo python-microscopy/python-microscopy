@@ -19,13 +19,13 @@ def unpickleSlice(start, stop, step):
 copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 def replNoneWith1(n):
-        if n == None:
+        if n is None:
             return 1
         else:
             return n
 
 def fmtSlicesUsed(slicesUsed):
-    if slicesUsed == None:
+    if slicesUsed is None:
         return ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
     else:
         return tuple([(sl.start, sl.stop, replNoneWith1(sl.step)) for sl in slicesUsed] )

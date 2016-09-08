@@ -57,9 +57,9 @@ class FiltWheel(object):
     def SetFilterPos(self, name = None, id = None, pos = None):
         """Set filter by either name, position in list, or postion
         in filter wheel"""
-        if not name == None:
+        if not name is None:
             id = [n for n, f in enumerate(self.installedFilters) if f.name == name][0]
-        elif id == None:
+        elif id is None:
             self.fw.setPos(pos)
             return
             #id = [n for n, f in enumerate(self.installedFilters) if f.pos == pos][0]

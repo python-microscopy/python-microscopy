@@ -356,7 +356,7 @@ class MetadataPanel(wx.Panel):
 
         sizer1.Add(self.tree, 1, wx.EXPAND, 0)
 
-        if refreshable == True:
+        if refreshable:
             bRefresh = wx.Button(self, -1, 'Refresh')
             bRefresh.Bind(wx.EVT_BUTTON, self.rebuild)
 

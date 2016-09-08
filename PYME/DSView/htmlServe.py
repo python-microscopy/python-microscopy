@@ -60,5 +60,8 @@ def StartServing():
     
 #StartServing()
 
+def mount(object, location):
+    cherrypy.tree.mount(object, location)
+
 def getURL():
     return 'http://%s:%d/' % cherrypy.server.httpserver.socket.getsockname()

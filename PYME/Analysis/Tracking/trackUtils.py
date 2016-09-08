@@ -37,7 +37,7 @@ class FeaturePlot(object):
         data = self.clump[key]
             
         plt.ioff()
-        f = plt.figure(figsize=(6,1))        
+        f = plt.figure(figsize=(6,2))
         
         if 't' in self.clump.keys():        
             plt.plot(self.clump['t'], data)
@@ -47,8 +47,10 @@ class FeaturePlot(object):
         plt.tight_layout()
         
         plt.ion()
-        
-        return mpld3.fig_to_html(f)
+
+        ret = mpld3.fig_to_html(f)
+        plt.close(f)
+        return ret
         
 class FeatureMean(object):
     def __init__(self, clump):
@@ -78,7 +80,7 @@ class Clump(object):
         self.pipeline = pipeline
         self.clumpID = clumpID
         
-        self.index = pipeline['clumpIndex'] == clumpID
+        self.index = np.array(pipeline['clumpIndex'] == clumpID, dtype=np.bool)
         self.nEvents = self.index.sum()
         self.enabled = True
         self.cache = {}
@@ -108,7 +110,7 @@ class Clump(object):
 
     def __getitem__(self, key):
         if not key in self.keys():
-            raise RuntimeError('Key not defined')
+            raise KeyError('Key not defined: % s' % key)
         
         if not key in self.cache.keys():
             self.cache[key] = np.array(self.pipeline[key][self.index])
@@ -117,7 +119,7 @@ class Clump(object):
         
     def save(self, filename, keys = None):
         d = {}        
-        if keys == None:                    
+        if keys is None:
             d.update(self)
         else:
             for k in keys:
@@ -187,7 +189,7 @@ class Track(Clump):
             
             dt = self.pipeline.mdh.getOrDefault('Camera.CycleTime', 1.0)
             
-            nT = (t.max() - t.min())/2
+            nT = int((t.max() - t.min())/2)
             
             h = msdHistogram(x, y, t, nT)
             t_ = dt*np.arange(len(h))
@@ -216,8 +218,10 @@ class Track(Clump):
         plt.tight_layout(pad=2)
         
         plt.ion()
-        
-        return mpld3.fig_to_html(f)
+
+        ret = mpld3.fig_to_html(f)
+        plt.close(f)
+        return ret
         
     @property
     def movieplot(self):
@@ -234,7 +238,7 @@ class Track(Clump):
         xp = int(np.round(xp))
         yp = int(np.round(yp))
         
-        if not self.image == None:
+        if not self.image is None:
             for i in range(self.nEvents):
                 plt.subplot(1, self.nEvents, i+1)
                 img = self.image[(xp - 10):(xp + 10), (yp - 10):(yp + 10), self['t'][i]]
@@ -255,8 +259,10 @@ class Track(Clump):
         plt.tight_layout(pad=1)
         
         plt.ion()
-        
-        return mpld3.fig_to_html(f)
+
+        ret = mpld3.fig_to_html(f)
+        plt.close(f)
+        return ret
         
     #@property
     
@@ -322,18 +328,9 @@ def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
     trackVelocities[I] = calcTrackVelocity(x[I], y[I], clumpIndices[I], t.astype('f')[I])
     #print b
 
-    pipeline.selectedDataSource.clumpIndices = -1*np.ones(len(pipeline.selectedDataSource['x']))
-    pipeline.selectedDataSource.clumpIndices[pipeline.filter.Index] = clumpIndices
-
-    pipeline.selectedDataSource.clumpSizes = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
-    pipeline.selectedDataSource.clumpSizes[pipeline.filter.Index] = numPerClump[clumpIndices - 1]
-
-    pipeline.selectedDataSource.trackVelocities = np.zeros(pipeline.selectedDataSource.clumpIndices.shape)
-    pipeline.selectedDataSource.trackVelocities[pipeline.filter.Index] = trackVelocities
-
-    pipeline.selectedDataSource.setMapping('clumpIndex', 'clumpIndices')
-    pipeline.selectedDataSource.setMapping('clumpSize', 'clumpSizes')
-    pipeline.selectedDataSource.setMapping('trackVelocity', 'trackVelocities')
+    pipeline.addColumn('clumpIndex', clumpIndices, -1)
+    pipeline.addColumn('clumpSize', numPerClump[clumpIndices - 1])
+    pipeline.addColumn('trackVelocity', trackVelocities)
     
     pipeline.clumps = ClumpManager(pipeline)
 

@@ -24,25 +24,101 @@
         color: Blue;
         text-decoration: underline; 
     }
+
+    body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+    }
+
+    .head {
+        position: absolute;
+        width: 100%;
+        height: 70px;
+        background-color: #F0F0F0;
+        /*margin: 0;*/
+        padding-top: 10px;
+        padding-left: 20px;
+    }
+
+    .content {
+        overflow: auto;
+        position: absolute;
+        width: 100%;
+        top: 70px;
+        bottom: 0;
+        padding: 20px;
+    }
+
+    .tracksummary {
+        vertical-align: middle;
+        margin-left: 50px;
+        display: inline-block;
+    }
+
+    .fit-notes {
+        font-size: smaller;
+    }
+
+    .disabled{
+        color: Gray;
+    }
     </style>
 
 </head>
 <body>
-
-    <h1>Track {{clump.clumpID}}</h1>
+    <div class="head">
+    <h1 style="display: inline;vertical-align: middle">Track {{clump.clumpID}} {% if not clump.enabled %} <span class="disabled">[disabled]</span> {% endif %}</h1>
+        <div class="tracksummary">
+        <table>
+        <tr><th>Clump ID</th><th>Length [frames]</th><th>Distance [nm]</th></tr>
+        <tr><td>{{clump.clumpID}}</td><td>{{clump.nEvents}}</td><td>{{clump.distance}}</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="content">
 
     {{ clump|movieplot(img) }}
 
     <h2>Basic information</h2>
-    <table>
-        <tr><th>Clump ID</th><th>Length [frames]</th><th>Distance [nm]</th></tr>
-        <tr><td>{{clump.clumpID}}</td><td>{{clump.nEvents}}</td><td>{{clump.distance}}</td></tr>
-    </table>
+
 
     <table><tr>
         <td>{{clump.trajectory}}</td>
         {% if clump.nEvents > 10 %} <td>{{clump.msdplot}}</td> {% endif %}
     </tr></table>
+
+    {% if clump.fusion_plot is defined %}
+        <h2>Vesicle Fusion Info</h2>
+        <table>
+        <tr><td>
+        <table>
+        <tr><th colspan="2">Fit Parameters</th></tr>
+        {% for name, value in clump.fusion_fit.items() %}
+
+            <tr class="{{ loop.cycle('odd', 'even') }}">
+            <td>{{ name }}</td><td>{{ value }}</td>
+            </tr>
+        {% endfor %}
+        </table>
+        <div class="fit-notes">
+            <h4>Notes</h4>
+            <ul>
+                <li>Units are in pixels and frames</li>
+                <li>Amplitudes are pre-normalized</li>
+                <li>Background is pre-corrected</li>
+                <li>t_docked and t_fusion fixed</li>
+            </ul>
+        </div>
+        </td><td>
+        {{clump.fusion_plot}}
+        </td>
+        </tr>
+        </table>
+
+    {% endif %}
     
     
     <h2>Measured Variables</h2>
@@ -51,13 +127,13 @@
     {% for k in clump.varnames|sort %}
         <tr class="{{ loop.cycle('odd', 'even') }}">
             <td>{{k}}</td>
-            {#<td>{{clump.dtypes[k]}}</td>#}
+            {#<td>{{clump.dtypes[k]}}</td>#}{##}
             <td>{{clump.featuremean[k]}}</td>
             <td>{{clump.featurestd[k]}}</td>
             <td>{{clump.featureplot[k]}}</td>
         </tr>
     {% endfor %}
     </table>
-        
+    </div>
 </body>
 </html>

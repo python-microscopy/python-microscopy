@@ -52,7 +52,13 @@ Technical Details:
    
    DataFormats
    SampleDB
-   api/modules
+
+API Documentation:
+##################
+.. toctree::
+   :maxdepth: 1
+
+   api/PYME
 
 
 .. Indices and tables

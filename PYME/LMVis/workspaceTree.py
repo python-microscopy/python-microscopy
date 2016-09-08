@@ -36,7 +36,7 @@ class WorkWrap:
 
     def addKey(self, keyName, colour=None):
         self.keysToReport.append(keyName)
-        if not colour == None:
+        if not colour is None:
             self.keyColours[keyName] = colour
 
     def newColour(self):
@@ -152,7 +152,7 @@ class WorkspaceTree(VirtualTree, wx.gizmos.TreeListCtrl):
 
 
     def OnGetChildrenCount(self, index):
-        if index == None:
+        if index is None:
             return len(self.workspace)
         else:
             curItem = self.workspace
@@ -164,7 +164,7 @@ class WorkspaceTree(VirtualTree, wx.gizmos.TreeListCtrl):
             return self._getNumChildren(curItem)
 
     def OnGetItemText(self, index, column=0):
-        if index == None:
+        if index is None:
             return ''
         else:
             curItem = self.workspace
@@ -198,7 +198,7 @@ class WorkspaceTree(VirtualTree, wx.gizmos.TreeListCtrl):
         
         curItem = self.workspace
         
-        if not index == None:
+        if not index is None:
             #walk down children
             for i in index:
                 curItem = self._getChild(curItem, i)

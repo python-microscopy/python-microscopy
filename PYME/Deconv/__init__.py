@@ -21,3 +21,15 @@
 
 #
 ################
+
+"""
+This package contains deconvolution code. It is currently fairly disorganized, and has a fair bit of deprecated and
+and orphaned code. The interesting (and moderately up to date) modules are:
+
+- :py:mod:`PYME.Deconv.dec` : ICTM deconvolution
+- :py:mod:`PYME.Deconv.richardsonLucy` : Richardson-Lucy deconvolution
+- :py:mod:`PYME.Deconv.deconvDialogs` : GUI elements for configuring deconvolution.
+
+Also of interest are the deconvolution modules in :py:mod:`PYME.DSView.modules.deconvolution` and
+:py:class:`PYME.recipes.processing.Deconvolve` which show how the code here is called and interfaced.
+"""

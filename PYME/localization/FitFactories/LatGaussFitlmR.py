@@ -63,35 +63,35 @@ class GaussianFitResult:
         return scipy.sqrt(self.FWHMnm()**2 - self.FWHM_PSF**2)
 
     def renderFit(self):
-	X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
+        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[self.slicesUsed[0]]
         Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[self.slicesUsed[1]]
         return f_gauss2d(self.fitResults, X, Y)
         
 def replNoneWith1(n):
-	if n == None:
-		return 1
-	else:
-		return n
+    if n is None:
+        return 1
+    else:
+        return n
 
 
 fresultdtype=[('tIndex', '<i4'),('fitResults', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('background', '<f4'),('bx', '<f4'),('by', '<f4')]),('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('background', '<f4'),('bx', '<f4'),('by', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-	if slicesUsed == None:
-		slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
-	else: 		
-		slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)),(slicesUsed[2].start,slicesUsed[2].stop,replNoneWith1(slicesUsed[2].step)))
+    if slicesUsed is None:
+        slicesUsed = ((-1,-1,-1),(-1,-1,-1),(-1,-1,-1))
+    else:
+        slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)),(slicesUsed[2].start,slicesUsed[2].stop,replNoneWith1(slicesUsed[2].step)))
 
-	if fitErr == None:
-		fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+    if fitErr is None:
+        fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
 
-	#print slicesUsed
+    #print slicesUsed
 
-	tIndex = metadata.tIndex
+    tIndex = metadata.tIndex
 
 
-	return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype) 
-		
+    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype)
+
 
 class GaussianFitFactory:
     def __init__(self, data, metadata, fitfcn=None, background=None):
@@ -100,12 +100,12 @@ class GaussianFitFactory:
         self.data = data
         self.metadata = metadata
         self.background = background
-	self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
-	#if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
-	#	self.solver = FitModelWeighted
-	#else: #should be a tuple containing the fit function and its jacobian
-	#	self.solver = FitModelWeightedJac
-		
+        self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
+        #if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
+        #	self.solver = FitModelWeighted
+        #else: #should be a tuple containing the fit function and its jacobian
+        #	self.solver = FitModelWeightedJac
+
         
     def __getitem__(self, key):
         #print key
@@ -118,29 +118,29 @@ class GaussianFitFactory:
         dataMean = dataROI.mean(2)
 
         #generate grid to evaluate function on        
-	X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
+        X = 1e3*self.metadata.voxelsize.x*scipy.mgrid[xslice]
         Y = 1e3*self.metadata.voxelsize.y*scipy.mgrid[yslice]
 
         #estimate some start parameters...
         A = dataMean.max() - dataMean.min() #amplitude
         
-	x0 =  X.mean()
+        x0 =  X.mean()
         y0 =  Y.mean()
 
         startParameters = [A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
 
-	
+
         #estimate errors in data
         nSlices = dataROI.shape[2]
         
         sigma = scipy.sqrt(self.metadata.CCD.ReadNoise**2 + (self.metadata.CCD.noiseFactor**2)*self.metadata.CCD.electronsPerCount*dataMean/nSlices)/self.metadata.CCD.electronsPerCount
-	
-	
+
+
         #do the fit
         #(res, resCode) = FitModel(f_gauss2d, startParameters, dataMean, X, Y)
         #(res, cov_x, infodict, mesg, resCode) = FitModelWeighted(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-	#(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y)
-	(res, ret, cov_x, nIters, resCode) = fitGauss(startParameters, X,Y, dataMean.T.ravel(), 1.0/sigma.T.ravel())
+        #(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y)
+        (res, ret, cov_x, nIters, resCode) = fitGauss(startParameters, X,Y, dataMean.T.ravel(), 1.0/sigma.T.ravel())
         
         fitErrors=None
         try:       
@@ -150,12 +150,12 @@ class GaussianFitFactory:
         return GaussianFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors)
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
-        if (z == None): # use position of maximum intensity
+        if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
-	
-	x = round(x)
-	y = round(y)
-	
+
+        x = round(x)
+        y = round(y)
+
         return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
                     max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 
                     max((z - axialHalfSize), 0):min((z + axialHalfSize + 1), self.data.shape[2])]

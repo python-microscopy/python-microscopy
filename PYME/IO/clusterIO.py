@@ -35,7 +35,7 @@ if not 'sphinx' in sys.modules.keys():
 from collections import OrderedDict
 
 
-class LimitedSizeDict(OrderedDict):
+class _LimitedSizeDict(OrderedDict):
     def __init__(self, *args, **kwds):
         self.size_limit = kwds.pop("size_limit", None)
         OrderedDict.__init__(self, *args, **kwds)
@@ -51,8 +51,8 @@ class LimitedSizeDict(OrderedDict):
                 self.popitem(last=False)
 
 
-_locateCache = LimitedSizeDict(size_limit=500)
-_dirCache = LimitedSizeDict(size_limit=100)
+_locateCache = _LimitedSizeDict(size_limit=500)
+_dirCache = _LimitedSizeDict(size_limit=100)
 DIR_CACHE_TIME = 20
 
 #use one session for each server (to allow http keep-alives)
@@ -81,17 +81,38 @@ def _listSingleDir(dirurl):
         s = _getSession(url)
         r = s.get(url, timeout=1)
         dt = time.time() - t
+        if not r.status_code == 200:
+            logging.warn('Request failed with error: %d' % r.status_code)
+
+            #make sure we read a reply so that the far end doesn't hold the connection open
+            dump = r.content
+            return [], dt
         try:
             dirL = r.json()
         except ValueError:
             # directory doesn't exist
-            dirL = []
+            return [], dt
+
         _dirCache[dirurl] = (dirL, t, dt)
 
     return dirL, dt
 
 
 def locateFile(filename, serverfilter=''):
+    """
+    Searches the cluster to find which server(s) a given file is stored on
+
+    Parameters
+    ----------
+    filename : str
+        The file name
+    serverfilter : str
+        The name of our cluster (allows for having multiple clusters on the same network segment)
+
+    Returns
+    -------
+
+    """
     cache_key = serverfilter + '::' + filename
     try:
         locs, t = _locateCache[cache_key]
@@ -148,7 +169,7 @@ def exists(name, serverfilter=''):
     return fname in listdir(dirname, serverfilter)
 
 
-def walk(top, topdown=True, onerror=None, followlinks=False, serverfilter=''):
+def walk(top, topdown=True, on_error=None, followlinks=False, serverfilter=''):
     """Directory tree generator. Adapted from the os.walk 
     function in the python std library.
 
@@ -177,9 +198,9 @@ def walk(top, topdown=True, onerror=None, followlinks=False, serverfilter=''):
         # Note that listdir and error are globals in this module due
         # to earlier import-*.
         names = listdir(top, serverfilter=serverfilter)
-    except Exception, err:
-        if onerror is not None:
-            onerror(err)
+    except Exception as err:
+        if on_error is not None:
+            on_error(err)
         return
 
     dirs, nondirs = [], []
@@ -194,7 +215,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False, serverfilter=''):
     for name in dirs:
         new_path = join(top, name)
         if followlinks or not islink(new_path):
-            for x in walk(new_path, topdown, onerror, followlinks):
+            for x in walk(new_path, topdown, on_error, followlinks):
                 yield x
     if not topdown:
         yield top, dirs, nondirs
@@ -218,12 +239,12 @@ def getFile(filename, serverfilter='', numRetries=3):
 
     if (len(locs) == 0):
         # we did not find the file
-        print ns.list()
-        raise IOError("Specified file could not be found")
+        logging.debug('could not find file %s on cluster: cluster nodes = %s' % (filename, ns.list()))
+        raise IOError("Specified file could not be found: %s" % filename)
     else:
         url = _chooseLocation(locs).encode()
         s = _getSession(url)
-        r = s.get(url, timeout=.1)
+        r = s.get(url, timeout=.5)
 
         return r.content
 
@@ -404,3 +425,29 @@ else:
             _lastwritespeed[name] = len(data) / (dt + .001)
 
             r.close()
+
+def getStatus(serverfilter=''):
+    """Lists the contents of a directory on the cluster. Similar to os.listdir,
+        but directories are indicated by a trailing slash
+        """
+    import json
+    status = []
+
+    for name, info in ns.advertised_services.items():
+        if serverfilter in name:
+            surl = 'http://%s:%d/__status' % (socket.inet_ntoa(info.address), info.port)
+            url = surl.encode()
+            s = _getSession(url)
+            try:
+                r = s.get(url, timeout=.5)
+                st = r.json()
+                st['Responsive'] = True
+                status.append(st)
+            except requests.Timeout:
+                status.append({"IPAddress":socket.inet_ntoa(info.address), 'Port':info.port, 'Responsive' : False})
+
+
+    return status
+
+
+

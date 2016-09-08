@@ -68,7 +68,7 @@ class PiezoSliders(wx.Panel):
             self.sliderLabels.append(sLab)
 
 
-        if not joystick == None:
+        if not joystick is None:
             self.cbJoystick = wx.CheckBox(self, -1, 'Enable Joystick')
             sizer_2.Add(self.cbJoystick,0,wx.TOP|wx.BOTTOM,2)
             self.cbJoystick.Bind(wx.EVT_CHECKBOX, self.OnJoystickEnable)
@@ -117,10 +117,10 @@ class PiezoSliders(wx.Panel):
                 self.sliders[ind].SetValue(100*pos)
                 self.sliderLabels[ind].SetLabel(u'%s - %2.4f %s' % (self.piezos[ind][2],pos, unit))
                 
-    	    self.sliders[ind].SetMin(100*self.piezos[ind][0].GetMin(self.piezos[ind][1]))
-    	    self.sliders[ind].SetMax(100*self.piezos[ind][0].GetMax(self.piezos[ind][1]))
+            self.sliders[ind].SetMin(100*self.piezos[ind][0].GetMin(self.piezos[ind][1]))
+            self.sliders[ind].SetMax(100*self.piezos[ind][0].GetMax(self.piezos[ind][1]))
 
-        if not self.joystick == None:
+        if not self.joystick is None:
             self.cbJoystick.SetValue(self.joystick.IsEnabled())
 
             

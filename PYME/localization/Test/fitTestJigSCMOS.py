@@ -77,7 +77,7 @@ class fitTestJig(object):
             backwards compatibility. You should set the fit module in the metadata.
         """
         self.md = copy.copy(metadata)
-        if fitModule == None:
+        if fitModule is None:
             self.fitModule = self.md.getEntry('Analysis.FitModule')
         else:
             self.fitModule = fitModule

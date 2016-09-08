@@ -37,7 +37,7 @@ class zDrive:
         self.hardMin = nik.ZDrive.Position.RangeLowerLimit
         self.hardMax = nik.ZDrive.Position.RangeHigherLimit
         self.max_travel = min(maxtravel, self.hardMax*self.stepsize)
-	self.minorTick = self.stepsize*100 #set the slider tick length
+        self.minorTick = self.stepsize*100 #set the slider tick length
         
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
         stepPos = round(fPos/self.stepsize)
@@ -61,8 +61,8 @@ class zDrive:
     def GetMin(self,iChan=1):
         return self.hardMin*self.stepsize
         #return 3500
-	#return round((self.GetPos() - 50)/50)*50
+    #return round((self.GetPos() - 50)/50)*50
     
     def GetMax(self, iChan=1):
         return self.max_travel
-	#return round((self.GetPos() + 50)/50)*50
+    #return round((self.GetPos() + 50)/50)*50

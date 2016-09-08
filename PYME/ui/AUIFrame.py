@@ -47,7 +47,7 @@ class AUIFrame(wx.Frame):
         #if update:
         #    self._mgr.Update()
             
-        if self.pane0 == None:
+        if self.pane0 is None:
             name = caption.replace(' ', '')
             self._mgr.AddPane(page, aui.AuiPaneInfo().
                           Name(name).Caption(caption).Centre().CloseButton(False).CaptionVisible(False))

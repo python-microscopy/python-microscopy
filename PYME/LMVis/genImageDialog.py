@@ -181,22 +181,40 @@ class GenImageDialog(wx.Dialog):
         return float(self.cbPixelSize.GetValue())
 
     def getJitterVariable(self):
-        return self.cJitterVariable.GetStringSelection()
+        try:
+            return self.cJitterVariable.GetStringSelection()
+        except AttributeError:
+            return 0
 
     def getJitterScale(self):
-        return float(self.tJitterScale.GetValue())
+        try:
+            return float(self.tJitterScale.GetValue())
+        except AttributeError:
+            return 0
 
     def getJitterVariableZ(self):
-        return self.cJitterVariableZ.GetStringSelection()
+        try:
+            return self.cJitterVariableZ.GetStringSelection()
+        except AttributeError:
+            return 0
 
     def getJitterScaleZ(self):
-        return float(self.tJitterScaleZ.GetValue())
+        try:
+            return float(self.tJitterScaleZ.GetValue())
+        except AttributeError:
+            return 0
 
     def getMCProbability(self):
-        return float(self.tMCProb.GetValue())
+        try:
+            return float(self.tMCProb.GetValue())
+        except AttributeError:
+            return 1.0
 
     def getNumSamples(self):
-        return int(self.tNumSamps.GetValue())
+        try:
+            return int(self.tNumSamps.GetValue())
+        except AttributeError:
+            return 1
 
     def getColour(self):
         if 'colours' in dir(self):
@@ -211,7 +229,28 @@ class GenImageDialog(wx.Dialog):
             return 0
 
     def getZBounds(self):
-        return self.hZRange.GetValue()
+        try:
+            return self.hZRange.GetValue()
+        except AttributeError:
+            return [0,0]
 
     def getSoftRender(self):
-        return self.cbTriangSoftRender.GetValue()
+        try:
+            return self.cbTriangSoftRender.GetValue()
+        except AttributeError:
+            return True
+
+    def get_settings(self):
+        return {
+            'pixelSize' : self.getPixelSize(),
+            'jitterVariable' : self.getJitterVariable(),
+            'jitterScale' : self.getJitterScale(),
+            'jitterVariableZ' : self.getJitterVariableZ(),
+            'jitterScaleZ' : self.getJitterScaleZ(),
+            'MCProbability' : self.getMCProbability(),
+            'numSamples' : self.getNumSamples(),
+            'colours' : self.getColour(),
+            'zBounds' : self.getZBounds(),
+            'zSliceThickness' : self.getZSliceThickness(),
+            'softRender' : self.getSoftRender()
+        }

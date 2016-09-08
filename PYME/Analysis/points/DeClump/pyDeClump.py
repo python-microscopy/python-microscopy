@@ -95,7 +95,7 @@ def deClumpf(h5fFile):
     
     return deClump(fr)
 
-def findClumps(t, x, y, delta_x):
+def findClumps(t, x, y, delta_x, nFrames=5):
     """Finds clumps (or single particle trajectories) of data points in a series.
     fitRsults MUST be sorted in increasing time order.
     """
@@ -105,7 +105,7 @@ def findClumps(t, x, y, delta_x):
     #there may be a different number of points in each frame; generate a lookup
     #table for frame numbers so we can index into our list of results to get
     #all the points within a certain range of frames
-    frameIndices = (nRes + 2)*np.ones(t.max() + 10, 'int32')
+    frameIndices = (nRes + 2)*np.ones(t.max() + nFrames + 1, 'int32')
 
     for t_i, i in zip(t, range(nRes)):
         frameIndices[:(t_i+1)] = np.minimum(frameIndices[:(t_i+1)], i)
@@ -124,7 +124,7 @@ def findClumps(t, x, y, delta_x):
             assigned[i] = clumpNum
         
             #find all the points which are connected to this one
-            findConnected(i, t,x,y,delta_x, frameIndices, assigned, clumpNum)
+            findConnected(i, t,x,y,delta_x, frameIndices, assigned, clumpNum, nFrames)
 
             #next pass will be a new clump
             clumpNum +=1

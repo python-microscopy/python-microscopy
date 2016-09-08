@@ -221,10 +221,10 @@ class GraphViewPanel(wx.Panel):
     def __init__(self, parent, dstack = None, do = None, xvals=None, xlabel=''):
         wx.Panel.__init__(self, parent)
 
-        if (dstack == None and do == None):
+        if (dstack is None and do is None):
             dstack = scipy.zeros((10,10))
 
-        if do == None:
+        if do is None:
             self.do = DisplayOpts(dstack)
             self.do.Optimise()
         else:
@@ -273,7 +273,7 @@ class GraphViewPanel(wx.Panel):
     def draw(self, event=None):
         self.axes.cla()
 
-        if self.xvals == None:
+        if self.xvals is None:
             xvals = np.arange(self.do.ds.shape[0])
         else:
             xvals = self.xvals

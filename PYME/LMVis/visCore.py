@@ -23,16 +23,11 @@ from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
 import os
-from PYME.LMVis import gl_render3D
 
 #from PYME.LMVis import colourPanel
 from PYME.LMVis import renderers
-#from PYME.LMVis import pipeline
 
-#try:
-#    from PYME.LMVis import recArrayView
-#except:
-#    pass
+import logging
 
 #try importing our drift correction stuff
 HAVE_DRIFT_CORRECTION = False
@@ -74,6 +69,7 @@ class VisGUICore(object):
         self.quadTreeSettings.on_trait_change(self.RefreshView)
         
         self.pipeline.blobSettings.on_trait_change(self.RefreshView)
+        self.pipeline.onRebuild.connect(self.RefreshView)
         
         #initialize the gl canvas
         if isinstance(self, wx.Window):
@@ -122,7 +118,6 @@ class VisGUICore(object):
             quadTreeSettings.GenQuadTreePanel(self, sidePanel)
 
         if self.viewMode == 'points' or self.viewMode == 'tracks':
-            pass
             pointSettingsPanel.GenPointsPanel(self, sidePanel)
 
         if self.viewMode == 'blobs':
@@ -138,11 +133,14 @@ class VisGUICore(object):
         item = afp.foldingPane(pnl, -1, caption="Data Source", pinned = False)
 
         self.dsRadioIds = []
-        for ds in self.pipeline.dataSources:
+        self._ds_keys_by_id = {}
+        for ds in self.pipeline.dataSources.keys():
             rbid = wx.NewId()
             self.dsRadioIds.append(rbid)
-            rb = wx.RadioButton(item, rbid, ds._name)
-            rb.SetValue(ds == self.pipeline.selectedDataSource)
+            rb = wx.RadioButton(item, rbid, ds)
+            rb.SetValue(ds == self.pipeline.selectedDataSourceKey)
+
+            self._ds_keys_by_id[rbid] = ds
 
             rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
             item.AddNewElement(rb)
@@ -151,9 +149,7 @@ class VisGUICore(object):
 
 
     def OnSourceChange(self, event):
-        dsind = self.dsRadioIds.index(event.GetId())
-        self.pipeline.selectedDataSource = self.pipeline.dataSources[dsind]
-        self.RegenFilter()
+        self.pipeline.selectDataSource(self._ds_keys_by_id[event.GetId()])
         
         
     def pointColour(self):
@@ -163,7 +159,7 @@ class VisGUICore(object):
         
         if colData == '<None>':
             pointColour = None
-        elif not self.pipeline.colourFilter == None:
+        elif not self.pipeline.colourFilter is None:
             if colData in self.pipeline.keys():
                 pointColour = self.pipeline[colData]
             elif colData in self.pipeline.GeneratedMeasures.keys():
@@ -417,20 +413,22 @@ class VisGUICore(object):
             self.OpenFile(filename)
             
     def RegenFilter(self):
+        logging.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
         self.pipeline.Rebuild()
-
-        self.filterPane.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
-
-        self.RefreshView()
         
-    def RefreshView(self, event=None):
+    def RefreshView(self, event=None, **kwargs):
         if not self.pipeline.ready:
             return #get out of here
 
+        self.filterPane.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
+
         if len(self.pipeline['x']) == 0:
-            wx.MessageBox('No data points - try adjusting the filter', 
-                          "len(filter['x']) ==0")
+            self.glCanvas.setOverlayMessage('No data points - try adjusting the filter')
+            #wx.MessageBox('No data points - try adjusting the filter',
+            #              "len(filter['x']) ==0")
             return
+        else:
+            self.glCanvas.setOverlayMessage('')
 
         if self.glCanvas.init == 0: #glcanvas is not initialised
             return
@@ -441,12 +439,12 @@ class VisGUICore(object):
         self.glCanvas.layers = []
         self.glCanvas.pointSize = self.pointDisplaySettings.pointSize
 
-        if self.pipeline.objects == None:
+        if self.pipeline.objects is None:
 #            if 'bObjMeasure' in dir(self):
 #                self.bObjMeasure.Enable(False)
             self.objectMeasures = None
 
-            if 'rav' in dir(self) and not self.rav == None: #remove previous event viewer
+            if 'rav' in dir(self) and not self.rav is None: #remove previous event viewer
                 i = 0
                 found = False
                 while not found and i < self.notebook.GetPageCount():
@@ -497,7 +495,7 @@ class VisGUICore(object):
             
 
         elif self.viewMode == 'quads':
-            if self.pipeline.Quads == None:
+            if self.pipeline.Quads is None:
                 status = statusLog.StatusLogger("Generating QuadTree ...")
                 self.pipeline.GenQuads()
                 
@@ -508,7 +506,7 @@ class VisGUICore(object):
             self.glCanvas.setIntTriang(self.pipeline.getTriangles(), self.pointColour())
 
         elif self.viewMode == 'blobs':
-            if self.pipeline.objects == None:
+            if self.pipeline.objects is None:
                 #check to see that we don't have too many points
                 if len(self.pipeline['x']) > 1e5:
                     goAhead = wx.MessageBox('You have %d events in the selected ROI;\nThis could take a LONG time ...' % len(self.pipeline['x']), 'Continue with blob detection', wx.YES_NO|wx.ICON_EXCLAMATION)
@@ -522,7 +520,7 @@ class VisGUICore(object):
         self.displayPane.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], 
                                         self.glCanvas.clim[1])
 
-        if 'colp' in dir(self) and not self.colp == None and self.colp.IsShown():
+        if 'colp' in dir(self) and not self.colp is None and self.colp.IsShown():
             self.colp.refresh()
 
         #self.sh.shell.user_ns.update(self.__dict__)

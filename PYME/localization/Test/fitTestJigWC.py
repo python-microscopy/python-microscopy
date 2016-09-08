@@ -45,7 +45,7 @@ def IQR(x):
 class fitTestJig(object):
     def __init__(self, metadata, fitModule = None):
         self.md = copy.copy(metadata)
-        if fitModule == None:
+        if fitModule is None:
             self.fitModule = self.md.getEntry('Analysis.FitModule')
         else:
             self.fitModule = fitModule

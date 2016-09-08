@@ -33,7 +33,7 @@ from . import deMod
 def calcProf(fn_list):
     sm = np.zeros(len(fn_list), 'f')
 
-    inWxApp = not (wx.GetApp() == None)
+    inWxApp = not (wx.GetApp() is None)
 
     if inWxApp:
         pb = wx.ProgressDialog('Analysing data ... please wait ...', '',maximum = len(fn_list) - 1,style=wx.PD_AUTO_HIDE|wx.PD_APP_MODAL|wx.PD_REMAINING_TIME)

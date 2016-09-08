@@ -1,0 +1,14 @@
+distributor:
+  http_endpoint: 0.0.0.0:1234
+  http_print_debug_logs: false
+  logic:
+    max_allowed_fails: 5
+    node_timeout: 10s
+    max_parallel_rate_requests: 10
+    rating_buffer_size: 50
+    rating_buffer_flush_interval: 1s
+    queue_stats_ttl: 24h0m0s
+    queue_stats_gc_interval: 2m0s
+    rate_request_timeout: 3s
+    http_client_timeout: 10s
+    default_num_want: 50

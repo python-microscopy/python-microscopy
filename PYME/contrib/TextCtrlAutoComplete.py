@@ -120,7 +120,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         else: self.SetChoices ( choices )
 
         gp = self
-        while ( gp != None ) :
+        while (gp is not None) :
             gp.Bind ( wx.EVT_MOVE , self.onControlChanged, gp )
             gp.Bind ( wx.EVT_SIZE , self.onControlChanged, gp )
             gp = None#gp.GetParent()

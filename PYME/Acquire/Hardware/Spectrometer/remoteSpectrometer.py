@@ -37,22 +37,22 @@ class RemoteSpectrometer(com.oceanoptics.omnidriver.api.wrapper.Wrapper, Pyro.co
 
 if __name__ == '__main__':
 
-	Pyro.config.PYRO_MOBILE_CODE = 0
-	Pyro.core.initServer()
-	ns=Pyro.naming.NameServerLocator().getNS()
-	daemon=Pyro.core.Daemon()
-	daemon.useNameServer(ns)
+    Pyro.config.PYRO_MOBILE_CODE = 0
+    Pyro.core.initServer()
+    ns=Pyro.naming.NameServerLocator().getNS()
+    daemon=Pyro.core.Daemon()
+    daemon.useNameServer(ns)
 
-        #get rid of any previous queue
-        try:
-            ns.unregister("USB2000p")
-        except Pyro.errors.NamingError:
-            pass
+    #get rid of any previous queue
+    try:
+        ns.unregister("USB2000p")
+    except Pyro.errors.NamingError:
+        pass
 
-	dd = RemoteSpectrometer()
-	uri=daemon.connect(dd,"USB2000p")
+    dd = RemoteSpectrometer()
+    uri=daemon.connect(dd,"USB2000p")
 
-	try:
-		daemon.requestLoop()
-	finally:
-		daemon.shutdown(True)
+    try:
+        daemon.requestLoop()
+    finally:
+        daemon.shutdown(True)

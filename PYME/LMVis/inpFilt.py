@@ -37,7 +37,7 @@ import tables
 class inputFilter(object):
     def toDataFrame(self, keys=None):
         import pandas as pd
-        if keys == None:
+        if keys is None:
             keys = self.keys()
         
         d = {k: self.__getitem__(k) for k in keys}
@@ -106,14 +106,15 @@ def unNestDtype(descr, parent=''):
 
 class fitResultsSource(inputFilter):
     _name = "recarrayfi Source"
-    def __init__(self, fitResults):
-        self.setResults(fitResults)
+    def __init__(self, fitResults, sort=True):
+        self.setResults(fitResults, sort=sort)
         
-    def setResults(self, fitResults):
+    def setResults(self, fitResults, sort=True):
         self.fitResults = fitResults
 
-        #sort by time
-        self.fitResults.sort(order='tIndex')
+        if sort:
+            #sort by time
+            self.fitResults.sort(order='tIndex')
 
         #allow access using unnested original names
         self._keys = unNestDtype(self.fitResults.dtype.descr)
@@ -336,7 +337,7 @@ class matfileSource(inputFilter):
         return self._keys
 
     def __getitem__(self, key):
-        key, sl = self._getKeySlice(keys)
+        key, sl = self._getKeySlice(key)
         if not key in self._keys:
             raise RuntimeError('Key not found')
 
@@ -442,6 +443,8 @@ class mappingFilter(inputFilter):
         self.resultsSource = resultsSource
 
         self.mappings = {}
+        self.new_columns = {}
+        self.variables = {}
 
         for k in kwargs.keys():
             v = kwargs[k]
@@ -452,11 +455,57 @@ class mappingFilter(inputFilter):
         key, sl = self._getKeySlice(keys)
         if key in self.mappings.keys():
             return self.getMappedResults(key, sl)
+        elif key in self.new_columns.keys():
+            return self.new_columns[key][sl]
         else:
             return self.resultsSource[keys]
 
     def keys(self):
-        return list(self.resultsSource.keys()) + self.mappings.keys()
+        return list(set(list(self.resultsSource.keys()) + self.mappings.keys() + self.new_columns.keys()))
+
+    def addVariable(self, name, value):
+        """
+        Adds a scalar variable to the mapping object. This will be accessible from mappings. An example usage might
+        be to define a scaling parameter for one of our column variables.
+
+        Parameters
+        ----------
+        name : string
+            The name we want to be able to access the variable by
+        value : float (or something which can be cast to a float)
+            The value
+
+        """
+
+        #insert into our __dict__ object (for backwards compatibility - TODO change me to something less hacky)
+        #setattr(self, name, float(value))
+
+        self.variables[name] = float(value)
+
+    def addColumn(self, name, values):
+        """
+        Adds a column of values to the mapping.
+
+        Parameters
+        ----------
+        name : str
+            The new column name
+        values : array-like
+            The values. This should be the same length as the existing columns.
+
+        """
+
+        #force to be an array
+        values = np.array(values)
+
+        if not len(values) == len(self.resultsSource[self.resultsSource.keys()[0]]):
+            raise RuntimeError('New column does not match the length of existing columns')
+
+        #insert into our __dict__ object (for backwards compatibility - TODO change me to something less hacky)
+        #setattr(self, name, values)
+
+        self.new_columns[name] = values
+
 
     def setMapping(self, key, mapping):
         if type(mapping) == types.CodeType:
@@ -476,6 +525,10 @@ class mappingFilter(inputFilter):
                 pass
             if vname in self.resultsSource.keys(): #look at original results first
                 locals()[vname] = self.resultsSource[(vname, sl)]
+            elif vname in self.new_columns.keys():
+                locals()[vname] = self.new_columns[vname][sl]
+            elif vname in self.variables.keys():
+                locals()[vname] = self.variables[vname]
             elif vname in dir(self): #look for constants
                 locals()[vname] = self.__dict__[vname]
             elif vname in self.mappings.keys(): #finally try other mappings
@@ -545,7 +598,7 @@ class cloneSource(inputFilter):
     def __init__(self, resultsSource):
         """Creates an in memory copy of a (filtered) data source"""
 
-        resultsSource
+        #resultsSource
         self.cache = {}
 
         for k in resultsSource.keys():
@@ -559,3 +612,23 @@ class cloneSource(inputFilter):
 
     def keys(self):
         return self.cache.keys()
+
+class recArrayInput(inputFilter):
+    _name = 'RecArray Source'
+    def __init__(self, recordArray):
+        self.recArray = recordArray
+        self._keys = self.recArray.dtype.names
+
+    def keys(self):
+        return self._keys
+
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+
+        if not key in self._keys:
+            raise RuntimeError('Key not found')
+
+        return self.recArray[key][sl]
+
+    def getInfo(self):
+        return 'Record Array Source\n\n %d points' % len(self.recArray['x'])
