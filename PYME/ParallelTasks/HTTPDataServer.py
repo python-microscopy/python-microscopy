@@ -45,6 +45,7 @@ from PYME import config
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger('')
 
 
 compName = GetComputerName()
@@ -420,8 +421,13 @@ def main(protocol="HTTP/1.0"):
     options, args = op.parse_args()
     
     #change to the dataserver root if given
-    logging.info('Serving from directory: %s' % options.root)
+    logger.info('Serving from directory: %s' % options.root)
     os.chdir(options.root)
+    
+    #set up logging
+    fh = logging.FileHandler('%s/LOGS/%s/PYMEDataServer.log' % (options.root, compName), 'w')
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
 
     server_address = ('', int(options.port))
 
@@ -449,7 +455,7 @@ def main(protocol="HTTP/1.0"):
     try:
         httpd.serve_forever()
     finally:
-        logging.info('Shutting down ...')
+        logger.info('Shutting down ...')
         httpd.shutdown()
         httpd.server_close()
         sys.exit()

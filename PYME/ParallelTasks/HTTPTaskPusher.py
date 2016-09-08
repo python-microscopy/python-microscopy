@@ -101,7 +101,7 @@ class HTTPTaskPusher(object):
             #turn our metadata to a string once (outside the loop)
             mdstring = self.mdh.to_JSON() #TODO - use a URI instead
             
-            newFrameNum = min(self.currentFrameNum + 100, numTotalFrames)
+            newFrameNum = min(self.currentFrameNum + 1000, numTotalFrames)
 
             #create task definitions for each frame
             tasks = [{'id':str(frameNum),

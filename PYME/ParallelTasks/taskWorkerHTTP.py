@@ -38,6 +38,7 @@ import signal
 
 from PYME.localization import remFitBuf
 from PYME.ParallelTasks import distribution
+from PYME import config
 
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
@@ -48,12 +49,18 @@ if 'PYME_LOCAL_ONLY' in os.environ.keys():
 
 def main():
     import logging
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.ERROR)
     logger = logging.getLogger('')
+    
+    dataserver_root = config.get('dataserver-root')
+    if dataserver_root:
+        fh = logging.FileHandler('%s/LOGS/%s/taskWorkerHTTP/%d.log' % (dataserver_root, compName, os.getpid()), 'w')
+        fh.setLevel(logging.DEBUG)
+        logger.addHandler(fh)
 
     #ns = pzc.getNS('_pyme-taskdist')
 
-    procName = compName + ' - PID:%d' % os.getpid()
+    procName =  '%s_%d' % (compName, os.getpid())
 
     #loop forever asking for tasks
     while 1:
@@ -95,7 +102,7 @@ def main():
                     if resp['ok']:
                         tasks.append((queueURL, resp['result']))
             except requests.Timeout:
-                logging.error('Read timout requesting tasks from %s' % queueURL)
+                logging.info('Read timout requesting tasks from %s' % queueURL)
 
 
             except Exception:
