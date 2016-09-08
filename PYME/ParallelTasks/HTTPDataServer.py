@@ -23,11 +23,29 @@ THE CODE AS IT STANDS SHOULD ONLY BE USED ON A TRUSTED NETWORK
 
 TODO: Add some form of authentication. Needs to be low overhead (e.g. digest based)
 """
+from PYME import config
+from PYME.misc.computerName import GetComputerName
+compName = GetComputerName()
+import os
 
+#make sure we set up our logging before anyone elses does
+import logging    
+dataserver_root = config.get('dataserver-root')
+if dataserver_root:
+    log_file = '%s/LOGS/%s/PYMEDataServer.log' % (dataserver_root, compName)
+        
+    logging.basicConfig(filename =log_file, level=logging.DEBUG)
+    logger = logging.getLogger('')
+else:
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger('')
+    
+#now do all the normal imports
+    
 import SimpleHTTPServer
 import BaseHTTPServer
 from SocketServer import ThreadingMixIn
-import os
+
 from StringIO import StringIO
 import shutil
 #import urllib
@@ -40,10 +58,6 @@ import socket
 import fcntl
 import threading
 import datetime
-from PYME.misc.computerName import GetComputerName
-
-import logging
-logging.basicConfig(level=logging.DEBUG)
 
 
 compName = GetComputerName()
@@ -408,14 +422,19 @@ def main(protocol="HTTP/1.0"):
 
     op = OptionParser(usage='usage: %s [options] [filename]' % sys.argv[0])
 
-    op.add_option('-p', '--port', dest='port', default=8000,
+    op.add_option('-p', '--port', dest='port', default=config.get('dataserver-port', 8080),
                   help="port number to serve on")
     op.add_option('-t', '--test', dest='test', help="Set up for bandwidth test (don't save files)", action="store_true", default=False)
     op.add_option('-v', '--protocol', dest='protocol', help="HTTP protocol version", default="1.1")
     op.add_option('-l', '--log-requests', dest='log_requests', help="Display http request info", default=False, action="store_true")
+    op.add_option('-r', '--root', dest='root', help="Root directory of virtual filesystem", default=config.get('dataserver-root', os.curdir))
 
 
     options, args = op.parse_args()
+    
+    #change to the dataserver root if given
+    logger.info('Serving from directory: %s' % options.root)
+    os.chdir(options.root)
 
     server_address = ('', int(options.port))
 
@@ -443,8 +462,10 @@ def main(protocol="HTTP/1.0"):
     try:
         httpd.serve_forever()
     finally:
+        logger.info('Shutting down ...')
         httpd.shutdown()
         httpd.server_close()
+        sys.exit()
 
 
 if __name__ == '__main__':

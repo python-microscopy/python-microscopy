@@ -31,7 +31,7 @@
         <br>
     <h4>{{ distQ.name }}</h4>
     <table class="table table-striped">
-        <tr><th>ID</th><th>Posted</th><th>Running</th><th>Completed</th><th>Failed</th><th>Avg Cost</th></tr>
+        <tr><th>ID</th><th>Posted</th><th>Assigned</th><th>Completed</th><th>Failed</th><th>Avg Cost</th></tr>
         {% for queueName, queueStats in distQ.queues.items %}
             <tr>
             <td>{{ queueName }}</td><td>{{ queueStats.tasksPosted }}</td><td>{{ queueStats.tasksRunning }}</td><td>{{ queueStats.tasksCompleted }}</td>

@@ -16,8 +16,16 @@ def main():
 
     serverAddr, serverPort = config['distributor']['http_endpoint'].split(':')
     externalAddr = socket.gethostbyname(socket.gethostname())
+    
+    #set up logging
+    data_root = conf.get('dataserver-root')
+    if data_root:
+        logfile_error = open('%s/LOGS/distributor_error.log' % data_root, 'w')
+        logfile_debug = open('%s/LOGS/distributor_debug.log' % data_root, 'w')
 
-    proc = subprocess.Popen('distributor -c %s' % confFile, shell=True)
+        proc = subprocess.Popen('distributor -c %s' % confFile, shell=True, stdout=logfile_debug, stderr=logfile_error)
+    else:
+         proc = subprocess.Popen('distributor -c %s' % confFile, shell=True)
 
     ns = pyme_zeroconf.getNS('_pyme-taskdist')
     ns.register_service('PYMEDistributor: ' + GetComputerName(), externalAddr, int(serverPort))
@@ -29,6 +37,9 @@ def main():
     finally:
         ns.unregister('PYMEDistributor: ' + GetComputerName())
         proc.kill()
+        
+    logfile_error.close()
+    logfile_debug.close()
 
 if __name__ == '__main__':
     main()

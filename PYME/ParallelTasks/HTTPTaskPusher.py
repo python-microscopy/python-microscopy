@@ -83,6 +83,9 @@ class HTTPTaskPusher(object):
         logging.debug('resultsURI: ' + self.resultsURI)
         clusterResults.fileResults(self.resultsURI + '/MetaData', metadata)
         clusterResults.fileResults(self.resultsURI + '/Events', self.ds.getEvents())
+        
+        #wait until clusterIO caches clear to avoid replicating the results file.
+        time.sleep(1)
 
         self.currentFrameNum = startAt
         
@@ -101,7 +104,7 @@ class HTTPTaskPusher(object):
             #turn our metadata to a string once (outside the loop)
             mdstring = self.mdh.to_JSON() #TODO - use a URI instead
             
-            newFrameNum = min(self.currentFrameNum + 100, numTotalFrames)
+            newFrameNum = min(self.currentFrameNum + 1000, numTotalFrames)
 
             #create task definitions for each frame
             tasks = [{'id':str(frameNum),
