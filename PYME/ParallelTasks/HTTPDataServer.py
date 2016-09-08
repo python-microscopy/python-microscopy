@@ -41,6 +41,7 @@ import fcntl
 import threading
 import datetime
 from PYME.misc.computerName import GetComputerName
+from PYME import config
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -408,14 +409,19 @@ def main(protocol="HTTP/1.0"):
 
     op = OptionParser(usage='usage: %s [options] [filename]' % sys.argv[0])
 
-    op.add_option('-p', '--port', dest='port', default=8000,
+    op.add_option('-p', '--port', dest='port', default=config.get('dataserver-port', 8080),
                   help="port number to serve on")
     op.add_option('-t', '--test', dest='test', help="Set up for bandwidth test (don't save files)", action="store_true", default=False)
     op.add_option('-v', '--protocol', dest='protocol', help="HTTP protocol version", default="1.1")
     op.add_option('-l', '--log-requests', dest='log_requests', help="Display http request info", default=False, action="store_true")
+    op.add_option('-r', '--root', dest='root', help="Root directory of virtual filesystem", default=config.get('dataserver-root', os.curdir))
 
 
     options, args = op.parse_args()
+    
+    #change to the dataserver root if given
+    logging.info('Serving from directory: %s' % options.root)
+    os.chdir(options.root)
 
     server_address = ('', int(options.port))
 
@@ -443,8 +449,10 @@ def main(protocol="HTTP/1.0"):
     try:
         httpd.serve_forever()
     finally:
+        logging.info('Shutting down ...')
         httpd.shutdown()
         httpd.server_close()
+        sys.exit()
 
 
 if __name__ == '__main__':

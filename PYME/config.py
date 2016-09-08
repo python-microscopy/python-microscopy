@@ -48,3 +48,7 @@ try:
 except (IOError, TypeError):
     #no local configuration file found, or not formatted correctly
     pass
+
+
+def get(key, default=None):
+    return config.get(key, default)

@@ -160,7 +160,7 @@ if __name__ == '__main__':
         if sys.argv[1] == '-p':
             profile = True
             from PYME.util import mProfile
-            mProfile.profileOn(['taskWorkerHTTP.py'])
+            mProfile.profileOn(['taskWorkerHTTP.py', 'remFitBuf.py'])
             
             if len(sys.argv) == 3:
                 profileOutDir = sys.argv[2]

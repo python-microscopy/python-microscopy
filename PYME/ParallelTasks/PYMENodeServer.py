@@ -53,8 +53,10 @@ def main():
 
     workerProcs = [subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP', shell=True) for i in range(numWorkers -1)]
 
-    #last worker has profiling enabled    
-    workerProcs.append(subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP -p /home/ubuntu/PYME/test01/LOGS/%s/mProf'% GetComputerName(), shell=True))
+    #last worker has profiling enabled
+    cluster_root = conf.get('dataserver-root', '/home/ubuntu/PYME/test01')
+    profiledir = os.path.join(cluster_root, 'LOGS', GetComputerName(), 'mProf')      
+    workerProcs.append(subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP -p %s' % profiledir, shell=True))
 
     try:
         while not proc.poll():
