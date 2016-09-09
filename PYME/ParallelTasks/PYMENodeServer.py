@@ -83,12 +83,10 @@ def main():
             time.sleep(1)
 
     finally:
+        logging.info('Shutting down workers')
         ns.unregister('PYMENodeServer: ' + GetComputerName())
         os.unlink(temp_conf_file_name)
-        try:
-            proc.kill()
-        except:
-            pass
+
         
         for p in workerProcs:
             #ask the workers to quit (nicely)
@@ -105,6 +103,14 @@ def main():
                 p.kill()
             except:
                 pass
+
+        logging.info('Shutting down nodeserver')
+        try:
+            proc.kill()
+        except:
+            pass
+
+        logging.info('Workers and nodeserver are shut down')
             
     nodeserverLog.close()
 
