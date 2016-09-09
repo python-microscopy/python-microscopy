@@ -362,6 +362,51 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         if self.logrequests:
             self.log_message('"%s" %s %s', self.requestline, str(code), str(size))
 
+    def log_error(self, format, *args):
+        """Log an error.
+
+        This is called when a request cannot be fulfilled.  By
+        default it passes the message on to log_message().
+
+        Arguments are the same as for log_message().
+
+        XXX This should go to the separate error log.
+
+        """
+        logger.error("%s - - [%s] %s\n" %
+                         (self.client_address[0],
+                          self.log_date_time_string(),
+                          format % args))
+
+        #self.log_message(format, *args)
+
+    def log_message(self, format, *args):
+        """Log an arbitrary message.
+
+        This is used by all other logging functions.  Override
+        it if you have specific logging wishes.
+
+        The first argument, FORMAT, is a format string for the
+        message to be logged.  If the format string contains
+        any % escapes requiring parameters, they should be
+        specified as subsequent arguments (it's just like
+        printf!).
+
+        The client ip address and current date/time are prefixed to every
+        message.
+
+        """
+
+        logger.info("%s - - [%s] %s\n" %
+                         (self.client_address[0],
+                          self.log_date_time_string(),
+                          format % args))
+
+        #sys.stderr.write("%s - - [%s] %s\n" %
+        #                 (self.client_address[0],
+        #                  self.log_date_time_string(),
+        #                  format % args))
+
     def send_error(self, code, message=None):
         """Send and log an error reply.
 
