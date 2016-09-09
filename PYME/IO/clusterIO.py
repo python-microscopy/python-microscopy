@@ -16,6 +16,9 @@ import socket
 
 USE_RAW_SOCKETS = True
 
+from PYME.misc.computerName import GetComputerName
+compName = GetComputerName()
+
 
 import sys
 
@@ -98,7 +101,7 @@ def _listSingleDir(dirurl):
     return dirL, dt
 
 
-def locateFile(filename, serverfilter=''):
+def locateFile(filename, serverfilter='', return_first_hit=False):
     """
     Searches the cluster to find which server(s) a given file is stored on
 
@@ -108,6 +111,8 @@ def locateFile(filename, serverfilter=''):
         The file name
     serverfilter : str
         The name of our cluster (allows for having multiple clusters on the same network segment)
+    return_first_hit : bool
+        Whether to try and find all locations, or return when we find the first copy
 
     Returns
     -------
@@ -125,25 +130,58 @@ def locateFile(filename, serverfilter=''):
         if (len(dirname) >= 1):
             dirname += '/'
 
+        servers = []
+        localServers = []
+
         # print ns.advertised_services.keys()
         for name, info in ns.advertised_services.items():
             if serverfilter in name:
                 dirurl = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
 
-                try:
-                    dirL, rt, dt = _dirCache[dirurl]
-                    cached = True
-                except KeyError:
-                    cached = False
+                if compName in name:
+                    localServers.append(dirurl)
+                else:
+                    servers.append(dirurl)
 
-                if cached and fn in dirL: #note we're using short-circuit evaluation here
+        #try data servers on the local machine first
+        for dirurl in localServers:
+            try:
+                dirL, rt, dt = _dirCache[dirurl]
+                cached = True
+            except KeyError:
+                cached = False
+
+            if cached and fn in dirL: #note we're using short-circuit evaluation here
+                locs.append((dirurl + fn, dt))
+
+            else:
+                dirList, dt = _listSingleDir(dirurl)
+
+                if fn in dirList:
                     locs.append((dirurl + fn, dt))
 
-                else:
-                    dirList, dt = _listSingleDir(dirurl)
+            if return_first_hit and len(locs) > 0:
+                return locs
 
-                    if fn in dirList:
-                        locs.append((dirurl + fn, dt))
+        #now try data remote servers
+        for dirurl in servers:
+            try:
+                dirL, rt, dt = _dirCache[dirurl]
+                cached = True
+            except KeyError:
+                cached = False
+
+            if cached and fn in dirL: #note we're using short-circuit evaluation here
+                locs.append((dirurl + fn, dt))
+
+            else:
+                dirList, dt = _listSingleDir(dirurl)
+
+                if fn in dirList:
+                    locs.append((dirurl + fn, dt))
+
+            if return_first_hit and len(locs) > 0:
+                return locs
 
         _locateCache[cache_key] = (locs, time.time())
 
