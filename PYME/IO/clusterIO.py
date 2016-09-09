@@ -211,16 +211,17 @@ def listdir(dirname, serverfilter=''):
 
 
 def exists(name, serverfilter=''):
-    if name.endswith('/'):
-        name = name[:-1]
-        trailing = '/'
-    else:
-        trailing = ''
+#    if name.endswith('/'):
+#        name = name[:-1]
+#        trailing = '/'
+#    else:
+#        trailing = ''
+#
+#    dirname = '/'.join(name.split('/')[:-1])
+#    fname = name.split('/')[-1] + trailing
 
-    dirname = '/'.join(name.split('/')[:-1])
-    fname = name.split('/')[-1] + trailing
-
-    return fname in listdir(dirname, serverfilter)
+    #return fname in listdir(dirname, serverfilter)
+    return len(locateFile(name, serverfilter, True)) > 0
 
 
 def walk(top, topdown=True, on_error=None, followlinks=False, serverfilter=''):
@@ -296,7 +297,7 @@ def getFile(filename, serverfilter='', numRetries=3):
             with open(localpath, 'rb') as f:
                 return f.read()
     
-    locs = locateFile(filename, serverfilter)
+    locs = locateFile(filename, serverfilter, return_first_hit=True)
 
     if (len(locs) == 0):
         # we did not find the file
