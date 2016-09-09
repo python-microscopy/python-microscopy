@@ -58,6 +58,7 @@ import socket
 import fcntl
 import threading
 import datetime
+import time
 
 
 compName = GetComputerName()
@@ -76,6 +77,27 @@ def getTextFileLock(filename):
         textfile_locks[filename] = threading.Lock()
         return textfile_locks[filename]
 
+
+from collections import OrderedDict
+
+class _LimitedSizeDict(OrderedDict):
+    def __init__(self, *args, **kwds):
+        self.size_limit = kwds.pop("size_limit", None)
+        OrderedDict.__init__(self, *args, **kwds)
+        self._check_size_limit()
+
+    def __setitem__(self, key, value):
+        OrderedDict.__setitem__(self, key, value)
+        self._check_size_limit()
+
+    def _check_size_limit(self):
+        if self.size_limit is not None:
+            while len(self) > self.size_limit:
+                self.popitem(last=False)
+
+
+_dirCache = _LimitedSizeDict(size_limit=100)
+_dirCacheTimeout = 1
 
 class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
@@ -329,21 +351,33 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         interface the same as for send_head().
 
         """
+        curTime = time.time()
+
         try:
-            list = os.listdir(path)
-        except os.error:
-            self.send_error(404, "No permission to list directory")
-            return None
-        list.sort(key=lambda a: a.lower())
+            js_dir, expiry = _dirCache[path]
+            if expiry < curTime: raise RuntimeError('Expired')
+        except (KeyError, RuntimeError):
+            try:
+                list = os.listdir(path)
+            except os.error:
+                self.send_error(404, "No permission to list directory")
+                return None
+
+            list.sort(key=lambda a: a.lower())
+
+            #displaypath = cgi.escape(urllib.unquote(self.path))
+            l2 = []
+            for l in list:
+                if os.path.isdir(os.path.join(path, l)):
+                    l2.append(l + '/')
+                else:
+                    l2.append(l)
+
+            js_dir = json.dumps(l2)
+            _dirCache[path] = (js_dir, curTime + _dirCacheTimeout)
+
         f = StringIO()
-        #displaypath = cgi.escape(urllib.unquote(self.path))
-        l2 = []
-        for l in list:
-            if os.path.isdir(os.path.join(path, l)):
-                l2.append(l + '/')
-            else:
-                l2.append(l)
-        f.write(json.dumps(l2))
+        f.write(js_dir)
         length = f.tell()
         f.seek(0)
         self.send_response(200)

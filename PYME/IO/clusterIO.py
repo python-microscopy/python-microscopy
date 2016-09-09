@@ -129,10 +129,21 @@ def locateFile(filename, serverfilter=''):
         for name, info in ns.advertised_services.items():
             if serverfilter in name:
                 dirurl = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
-                dirList, dt = _listSingleDir(dirurl)
 
-                if fn in dirList:
+                try:
+                    dirL, rt, dt = _dirCache[dirurl]
+                    cached = True
+                except KeyError:
+                    cached = False
+
+                if cached and fn in dirL: #note we're using short-circuit evaluation here
                     locs.append((dirurl + fn, dt))
+
+                else:
+                    dirList, dt = _listSingleDir(dirurl)
+
+                    if fn in dirList:
+                        locs.append((dirurl + fn, dt))
 
         _locateCache[cache_key] = (locs, time.time())
 
