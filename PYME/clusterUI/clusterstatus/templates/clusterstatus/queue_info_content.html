@@ -1,5 +1,24 @@
 
     <div class="section">
+    <h1>Distribution Queues</h1>
+    {% for distQ in  queueInfo %}
+        <br>
+    <h4>{{ distQ.name }}</h4>
+    <table class="table table-striped">
+        <tr><th>ID</th><th>Posted</th><th>Assigned</th><th>Completed</th><th>Failed</th><th>Avg Cost</th></tr>
+        {% for queueName, queueStats in distQ.queues.items %}
+            <tr>
+            <td>{{ queueName }}</td><td>{{ queueStats.tasksPosted }}</td><td>{{ queueStats.tasksRunning }}</td><td>{{ queueStats.tasksCompleted }}</td>
+            <td>{{ queueStats.tasksFailed }}</td><td>{{ queueStats.averageExecutionCost }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    {% endfor %}
+
+    </div>
+
+    <div class="section">
     <h1>Distributors</h1>
     <table class="table table-striped">
         <tr><th>Name</th><th>URL</th></tr>
@@ -25,24 +44,7 @@
 
     </div>
 
-    <div class="section">
-    <h1>Distribution Queues</h1>
-    {% for distQ in  queueInfo %}
-        <br>
-    <h4>{{ distQ.name }}</h4>
-    <table class="table table-striped">
-        <tr><th>ID</th><th>Posted</th><th>Assigned</th><th>Completed</th><th>Failed</th><th>Avg Cost</th></tr>
-        {% for queueName, queueStats in distQ.queues.items %}
-            <tr>
-            <td>{{ queueName }}</td><td>{{ queueStats.tasksPosted }}</td><td>{{ queueStats.tasksRunning }}</td><td>{{ queueStats.tasksCompleted }}</td>
-            <td>{{ queueStats.tasksFailed }}</td><td>{{ queueStats.averageExecutionCost }}</td>
-            </tr>
-        {% endfor %}
-    </table>
 
-    {% endfor %}
-
-    </div>
 
 
 

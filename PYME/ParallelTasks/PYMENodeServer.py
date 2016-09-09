@@ -72,19 +72,24 @@ def main():
     logging.debug('Launching worker processors')
     numWorkers = config.get('numWorkers', cpu_count())
 
-    workerProcs = [subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP', shell=True) for i in range(numWorkers -1)]
+    workerProcs = [subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP', shell=True, stdin=subprocess.PIPE) for i in range(numWorkers -1)]
 
     #last worker has profiling enabled
     profiledir = os.path.join(nodeserver_log_dir, 'mProf')      
-    workerProcs.append(subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP -p %s' % profiledir, shell=True))
+    workerProcs.append(subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP -p %s' % profiledir, shell=True, stdin=subprocess.PIPE))
 
     try:
         while not proc.poll():
             time.sleep(1)
-
+    except KeyboardInterrupt:
+        pass
     finally:
         logging.info('Shutting down workers')
-        ns.unregister('PYMENodeServer: ' + GetComputerName())
+        try:
+            ns.unregister('PYMENodeServer: ' + GetComputerName())
+        except:
+            pass
+
         os.unlink(temp_conf_file_name)
 
         
