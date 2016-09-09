@@ -13,11 +13,16 @@ import time
 import numpy as np
 
 import socket
+import os
 
 USE_RAW_SOCKETS = True
 
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
+
+from PYME import config
+local_dataroot = config.get('dataserver-root')
+local_serverfilter = config.get('dataserver-filter', '')
 
 
 import sys
@@ -284,6 +289,13 @@ def _chooseLocation(locs):
 
 
 def getFile(filename, serverfilter='', numRetries=3):
+    if serverfilter == local_serverfilter and local_dataroot:
+        #look for the file in the local server folder (short-circuit the server)
+        localpath = os.path.join(local_dataroot, filename)
+        if os.path.exists(localpath):
+            with open(localpath, 'rb') as f:
+                return f.read()
+    
     locs = locateFile(filename, serverfilter)
 
     if (len(locs) == 0):
