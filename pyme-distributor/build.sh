@@ -17,8 +17,8 @@ if [ -d "$PYMEGOdir" ]
 
         cd $curdir
 
-        cp $GOBIN/distributor $PREFIX/bin
-        cp $GOBIN/nodeserver $PREFIX/bin
+        cp $GOPATH/bin/distributor $PREFIX/bin
+        cp $GOPATH/bin/nodeserver $PREFIX/bin
 fi
 
 
