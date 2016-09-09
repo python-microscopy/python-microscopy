@@ -21,7 +21,7 @@
 #
 ################
 from PYME.LMVis import inpFilt
-from PYME.LMVis.visHelpers import ImageBounds
+from PYME.IO.image import ImageBounds
 from PYME.LMVis import dyeRatios
 from PYME.LMVis import statusLog
 from PYME.LMVis import renderers

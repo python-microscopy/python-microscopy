@@ -19,8 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-from PYME.LMVis.visHelpers import ImageBounds#, GeneratedImage
-from PYME.IO.image import GeneratedImage
+#from PYME.LMVis.visHelpers import ImageBounds#, GeneratedImage
+from PYME.IO.image import GeneratedImage, ImageBounds
 from PYME.LMVis import genImageDialog
 from PYME.LMVis import visHelpers
 #from PYME.LMVis import imageView
