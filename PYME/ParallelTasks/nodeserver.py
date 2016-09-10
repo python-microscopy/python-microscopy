@@ -50,7 +50,7 @@ class NodeServer(object):
         if True:#(t - self._lastAnnounceTime) > .5:
             self._lastAnnounceTime = t
 
-            logger.debug('Announcing to %s' % self.distributor_url)
+            #logger.debug('Announcing to %s' % self.distributor_url)
 
             try:
                 requests.post(self._anounce_url, timeout=1)

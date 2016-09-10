@@ -62,6 +62,7 @@ class _LimitedSizeDict(OrderedDict):
 _locateCache = _LimitedSizeDict(size_limit=500)
 _dirCache = _LimitedSizeDict(size_limit=100)
 DIR_CACHE_TIME = 1
+_fileCache = _LimitedSizeDict(size_limit=100)
 
 #use one session for each server (to allow http keep-alives)
 sessions = {}
@@ -320,6 +321,11 @@ def isLocal(filename, serverfilter):
 
 
 def getFile(filename, serverfilter='', numRetries=3):
+    try:
+        return _fileCache[(filename, serverfilter)]
+    except KeyError:
+        pass
+
     if serverfilter == local_serverfilter and local_dataroot:
         #look for the file in the local server folder (short-circuit the server)
         localpath = os.path.join(local_dataroot, filename)
@@ -367,7 +373,13 @@ def getFile(filename, serverfilter='', numRetries=3):
         logging.error(msg)
         raise RuntimeError(msg)
 
-    return r.content
+    content = r.content
+
+    if len(content) < 1000000:
+        #cache small files
+        _fileCache[(filename, serverfilter)] = content
+        
+    return content
 
 
 _lastwritetime = {}
