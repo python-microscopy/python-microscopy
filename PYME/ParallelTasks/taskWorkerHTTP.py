@@ -110,7 +110,11 @@ def main():
                 if r.status_code == 200:
                     resp = r.json()
                     if resp['ok']:
-                        tasks.append((queueURL, resp['result']))
+                        res = resp['result']
+                        if isinstance(res, list):
+                            tasks += [(queueURL, t) for t in res]
+                        else:
+                            tasks.append((queueURL, res))
             except requests.Timeout:
                 logger.info('Read timout requesting tasks from %s' % queueURL)
 

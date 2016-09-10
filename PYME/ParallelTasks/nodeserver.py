@@ -103,8 +103,19 @@ class NodeServer(object):
         if self._tasks.qsize() < 10:
             self._update_tasks()
 
-        task = self._tasks.get()
-        return {'ok' : True, 'result' :task}
+        tasks = [self._tasks.get()] #wait for at leas 1 task
+        nTasks = 1
+
+        try:
+            while nTasks < 50:
+                tasks.append(self._tasks.get_nowait())
+                nTasks += 1
+        except Queue.Empty:
+            pass
+
+        return {'ok': True, 'result': tasks}
+
+
 
     @cherrypy.expose
     def handin(self, taskID, status):
@@ -114,8 +125,8 @@ class NodeServer(object):
     def _rateTask(self, task):
         cost = 1.0
         if task['type'] == 'localization':
-            filename, serverfilter = clusterIO.parseURL(task['input']['frames'])
-            filename = '/'.join([filename.lstrip('/'), 'frame%05d.pzf' % task['taskdef']['frameIndex']])
+            filename, serverfilter = clusterIO.parseURL(task['inputs']['frames'])
+            filename = '/'.join([filename.lstrip('/'), 'frame%05d.pzf' % int(task['taskdef']['frameIndex'])])
 
             if clusterIO.isLocal(filename, serverfilter):
                 cost = .01
