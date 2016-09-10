@@ -36,7 +36,7 @@ class NodeServer(object):
 
     def _announce(self):
         t = time.time()
-        if (t - self._lastAnnounceTime) > 10:
+        if (t - self._lastAnnounceTime) > 1:
             self._lastAnnounceTime = t
 
             logger.debug('Announcing to %s' % self.distributor_url)
@@ -84,6 +84,7 @@ class NodeServer(object):
 
     def _poll(self):
         while self._do_poll:
+            self._announce()
             self._do_handins()
             self._update_tasks()
             time.sleep(5)
@@ -118,7 +119,7 @@ class NodeServer(object):
 
         ratings = [self._rateTask(task) for task in tasks]
 
-        return ratings
+        return {'ok': True, 'result': ratings}
 
 
 def run(distributor, port):
@@ -132,7 +133,7 @@ def run(distributor, port):
 
     try:
 
-        cherrypy.quickstart(nodeserver, '/')
+        cherrypy.quickstart(nodeserver, '/node/')
     finally:
         nodeserver._do_poll = False
 
