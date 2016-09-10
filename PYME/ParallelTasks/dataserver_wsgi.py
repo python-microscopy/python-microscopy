@@ -29,6 +29,7 @@ compName = GetComputerName()
 import os
 import posixpath
 import urllib
+import mimetypes
 
 #make sure we set up our logging before anyone elses does
 import logging    
@@ -119,30 +120,25 @@ class dataserver(object):
     bandwidthTesting = False
     logrequests = False
     
-    def __init__(self, environ, start_response):
+    def __call__(self, environ, start_response):
         self.bandwidthTesting = server_config['bandwidthTesting']
-        self.environ = environ
-        self.start_response = start_response
         
-        self.path = environ['PATH_INFO']
-        logging.debug('in init')
-    
-    def __iter__(self):
-        logging.debug('in iter')
-        status, headers, body = getattr(self, 'do_' + self.environ['REQUEST_METHOD'])()
-        
-        logging.debug('in iter')
-        print status, headers, body
-        
-        if isinstance(body, str):
-            headers += [('Content-Length', len(body)),]
-            
-        self.start_response(status, headers)
-        
-        yield body
+        path = environ['PATH_INFO']
+        try:
+            data = environ['wsgi.input'].read(environ['CONTENT_LENGTH'])
+        except KeyError:
+            data = None
+
+        status, headers, self.body = getattr(self, 'do_' + environ['REQUEST_METHOD'])(path, data, environ)
+        if isinstance(self.body, str):
+            headers += [('Content-Length', str(len(self.body))), ]
+
+        start_response(status, headers)
+
+        return [self.body]
 
 
-    def _aggregate_txt(self):
+    def _aggregate_txt(self, path, data):
         """
         support for results aggregation (append into a file). This 'method' does a dumb append to the file on disk,
         meaning that it will require reasonably carefully formatted input (with, e.g., a trailing newlines on each
@@ -152,9 +148,7 @@ class dataserver(object):
         NOTE: there is no guarantee of ordering, so the record format should contain enough information to re-order
         the data if necessary
         """
-        path = self.translate_path(self.path.lstrip('/')[len('__aggregate_txt'):])
-
-        data = self.rfile.read(int(self.environ['CONTENT_LENGTH']))
+        path = self.translate_path(path.lstrip('/')[len('__aggregate_txt'):])
 
         #append the contents of the put request
         with getTextFileLock(path):
@@ -166,7 +160,7 @@ class dataserver(object):
         return ResponseOK()
         
 
-    def _aggregate_h5r(self):
+    def _aggregate_h5r(self, path, data):
         """
         Support for results aggregation into an HDF5 file, using pytables.
         We treat any path components after the .h5r as locations within the file (ie table names).
@@ -182,11 +176,9 @@ class dataserver(object):
         from PYME.IO import MetaDataHandler
         from PYME.IO import h5rFile
 
-        path = self.translate_path(self.path.lstrip('/')[len('__aggregate_h5r'):])
+        path = self.translate_path(path.lstrip('/')[len('__aggregate_h5r'):])
         filename, tablename = path.split('.h5r')
         filename += '.h5r'
-
-        data = self.rfile.read(int(self.environ['CONTENT_LENGTH']))
 
         #logging.debug('opening h5r file')
         with h5rFile.openH5R(filename, 'a') as h5f:
@@ -214,40 +206,36 @@ class dataserver(object):
         #logging.debug('left h5r file')
         return ResponseOK()
 
-    def _doAggregate(self):
+    def _doAggregate(self, path, data):
         # TODO - add authentication/checks for aggregation. Files which still allow appends should not be duplicated.
-        if self.path.lstrip('/').startswith('__aggregate_txt'):
-            return self._aggregate_txt()
-        elif self.path.lstrip('/').startswith('__aggregate_h5r'):
-            return self._aggregate_h5r()
+        if path.lstrip('/').startswith('__aggregate_txt'):
+            return self._aggregate_txt(path, data)
+        elif path.lstrip('/').startswith('__aggregate_h5r'):
+            return self._aggregate_h5r(path, data)
 
 
-    def do_PUT(self):
+    def do_PUT(self, path, data, environ):
         if self.bandwidthTesting:
             #just read file and dump contents
-            r = self.rfile.read(int(self.environ['CONTENT_LENGTH']))
             return ResponseOK()
 
-        if self.path.lstrip('/').startswith('__aggregate'):
+        if path.lstrip('/').startswith('__aggregate'):
             #paths starting with __aggregate are special, and trigger appends to an existing file rather than creation
             #of a new file.
-            return self._doAggregate()
+            return self._doAggregate(path, data)
 
 
-        path = self.translate_path(self.path)
+        path = self.translate_path(path)
 
         if os.path.exists(path):
             #Do not overwrite - we use write-once semantics
             return ResponseNotAllowed("File already exists")
-
-            #self.end_headers()
-            return None
         else:
             dir, file = os.path.split(path)
             if not os.path.exists(dir):
                 os.makedirs(dir)
 
-            query = urlparse.parse_qs(self.environ['QUERY_STRING'])
+            query = urlparse.parse_qs(environ['QUERY_STRING'])
 
             if file == '':
                 #we're  just making a directory
@@ -257,7 +245,7 @@ class dataserver(object):
                 #fetch the results from another computer in the cluster instead
                 #used for online duplication
 
-                r = requests.get(query['MirrorSource'][0], timeout=.1)
+                r = requests.get(query['MirrorSource'][0], timeout=1)
 
                 with open(path, 'wb') as f:
                     f.write(r.content)
@@ -265,14 +253,13 @@ class dataserver(object):
             else:
                 #the standard case - use the contents of the put request
                 with open(path, 'wb') as f:
-                    #shutil.copyfileobj(self.rfile, f, int(self.headers['Content-Length']))
-                    f.write(self.rfile.read(int(self.environ['CONTENT_LENGTH'])))
+                    f.write(data)
 
             return ResponseOK()
 
-    def do_HEAD(self):
-        """Serve a GET request."""
-        return self.proc_GET(head=True)
+    def do_HEAD(self, path, data, environ):
+        """Serve a HEAD request."""
+        return self.do_GET(path, data, environ, head=True)
         
 
     def get_status(self):
@@ -323,9 +310,43 @@ class dataserver(object):
         if trailing_slash:
             path += '/'
         return path
-        
 
-    def do_GET(self, head=False):
+    def guess_type(self, path):
+        """Guess the type of a file.
+
+        Argument is a PATH (a filename).
+
+        Return value is a string of the form type/subtype,
+        usable for a MIME Content-type header.
+
+        The default implementation looks the file's extension
+        up in the table self.extensions_map, using application/octet-stream
+        as a default; however it would be permissible (if
+        slow) to look inside the data to make a better guess.
+
+        """
+
+        base, ext = posixpath.splitext(path)
+        if ext in self.extensions_map:
+            return self.extensions_map[ext]
+        ext = ext.lower()
+        if ext in self.extensions_map:
+            return self.extensions_map[ext]
+        else:
+            return self.extensions_map['']
+
+    if not mimetypes.inited:
+        mimetypes.init() # try to read system mime.types
+
+    extensions_map = mimetypes.types_map.copy()
+    extensions_map.update({
+        '': 'application/octet-stream', # Default
+        '.py': 'text/plain',
+        '.c': 'text/plain',
+        '.h': 'text/plain',
+    })
+
+    def do_GET(self, path, data, environ, head=False):
         """Common code for GET and HEAD commands.
 
         This sends the response code and MIME headers.
@@ -336,23 +357,24 @@ class dataserver(object):
         None, in which case the caller has nothing further to do.
 
         """
-        logging.debug('in get')
-        path = self.translate_path(self.path)
-        print path, self.path
-        f = None
-        if self.path.lstrip('/') == '__status':
+        if path.lstrip('/') == '__status':
             return self.get_status()
-        if os.path.isdir(path):
-            return self.list_directory(path)
+
+
+        tpath = self.translate_path(path)
+        f = None
+
+        if os.path.isdir(tpath):
+            return self.list_directory(tpath)
             
-        ctype = self.guess_type(path)
+        ctype = self.guess_type(tpath)
         try:
             # Always read in binary mode. Opening files in text mode may cause
             # newline translations, making the actual size of the content
             # transmitted *less* than the content-length!
-            f = open(path, 'rb')
+            f = open(tpath, 'rb')
         except IOError:
-            return ResponseNotFound("File not found - %s, [%s]" % (self.path, path))
+            return ResponseNotFound("File not found - %s, [%s]" % (path, tpath))
         try:
             #fs = os.fstat(f.fileno())
             headers = [("Content-type", ctype),]
@@ -517,6 +539,7 @@ def main(protocol="HTTP/1.0"):
     """
     from optparse import OptionParser
 
+
     op = OptionParser(usage='usage: %s [options] [filename]' % sys.argv[0])
 
     op.add_option('-p', '--port', dest='port', default=config.get('dataserver-port', 8080),
@@ -533,30 +556,35 @@ def main(protocol="HTTP/1.0"):
     logger.info('Serving from directory: %s' % options.root)
     os.chdir(options.root)
 
-    server_address = ('', int(options.port))
+
 
     #PYMEHTTPRequestHandler.protocol_version = 'HTTP/%s' % options.protocol
     server_config['bandwidthTesting'] = options.test
     #PYMEHTTPRequestHandler.logrequests = options.log_requests
 
     #httpd = ThreadedHTTPServer(server_address, PYMEHTTPRequestHandler)
-    httpd = make_server('', int(options.port), dataserver)
-
-    sa = httpd.socket.getsockname()
-
     ip_addr = socket.gethostbyname(socket.gethostname())
-
-    ns = pzc.getNS('_pyme-http')
-    ns.register_service('PYMEDataServer: ' + procName, ip_addr, sa[1])
+    server_address = ('', int(options.port))
 
     global_status['IPAddress'] = ip_addr
     global_status['BindAddress'] = server_address
-    global_status['Port'] = sa[1]
+    global_status['Port'] = int(options.port)
     global_status['Protocol'] = options.protocol
     global_status['TestMode'] = options.test
     global_status['ComputerName'] = GetComputerName()
 
-    print "Serving HTTP on", ip_addr, "port", sa[1], "..."
+    ns = pzc.getNS('_pyme-http')
+    ns.register_service('PYMEDataServer: ' + procName, ip_addr, int(options.port))
+
+    print "Serving HTTP on", ip_addr, "port", options.port, "..."
+
+    #wsgiref_server(options)
+    cherrypy_server(options)
+
+def wsgiref_server(options):
+    ds = dataserver()
+    httpd = make_server('', int(options.port), ds)
+
     try:
         httpd.serve_forever()
     finally:
@@ -565,6 +593,18 @@ def main(protocol="HTTP/1.0"):
         httpd.server_close()
         sys.exit()
 
+def cherrypy_server(options):
+    from cherrypy import wsgiserver
+    ds = dataserver()
+
+    server = wsgiserver.CherryPyWSGIServer(('0.0.0.0', int(options.port)), ds)
+
+    try:
+        server.start()
+    finally:
+        logger.info('Shutting down ...')
+        server.stop()
+        sys.exit()
 
 if __name__ == '__main__':
     main()
