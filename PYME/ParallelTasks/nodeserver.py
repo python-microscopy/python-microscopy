@@ -28,23 +28,32 @@ class NodeServer(object):
 
         self._lastUpdateTime = 0
         self._lastAnnounceTime = 0
+        self._anounce_url = self.distributor_url + 'distributor/announce?nodeID=%s&ip=%s&port=%d' % (self.nodeID, self.ip_address, self.port)
 
         cherrypy.engine.subscribe('stop', self.stop)
 
         self._do_poll = True
+
+        #set up threads to poll the distributor and announce ourselves and get and return tasks
         self.pollThread = threading.Thread(target=self._poll)
         self.pollThread.start()
 
+        self.announceThread = threading.Thread(target=self._announce_loop)
+        self.announceThread.start()
+
+        self.taskThread = threading.Thread(target=self._poll_tasks)
+        self.taskThread.start()
+
+
     def _announce(self):
         t = time.time()
-        if (t - self._lastAnnounceTime) > 1:
+        if True:#(t - self._lastAnnounceTime) > .5:
             self._lastAnnounceTime = t
 
             logger.debug('Announcing to %s' % self.distributor_url)
-            url = self.distributor_url + 'distributor/announce?nodeID=%s&ip=%s&port=%d' % (self.nodeID, self.ip_address, self.port)
 
             try:
-                requests.post(url, timeout=10)
+                requests.post(self._anounce_url, timeout=1)
             except (requests.Timeout, requests.ConnectionError):
                 logger.error('Could not connect to distributor %s' % self.distributor_url)
 
@@ -87,10 +96,20 @@ class NodeServer(object):
 
     def _poll(self):
         while self._do_poll:
-            self._announce()
+            #self._announce()
             self._do_handins()
+            #self._update_tasks()
+            time.sleep(1)
+
+    def _poll_tasks(self):
+        while self._do_poll:
             self._update_tasks()
-            time.sleep(5)
+            time.sleep(1)
+
+    def _announce_loop(self):
+        while self._do_poll:
+            self._announce()
+            time.sleep(1)
 
     def stop(self):
         self._do_poll = False
