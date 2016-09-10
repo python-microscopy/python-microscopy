@@ -91,8 +91,8 @@ def _listSingleDir(dirurl, nRetries=3):
         while nTries < nRetries and not haveResult:
             try:
                 nTries += 1
-                s = _getSession(url)
-                r = s.get(url, timeout=1)
+                #s = _getSession(url)
+                r = requests.get(url, timeout=1)
                 haveResult = True
             except requests.Timeout as e:
                 logging.exception('Timeout on listing directory')
@@ -321,8 +321,8 @@ def getFile(filename, serverfilter='', numRetries=3):
         while nTries < numRetries and not haveResult:
             try:
                 nTries += 1
-                s = _getSession(url)
-                r = s.get(url, timeout=.5)
+                #s = _getSession(url)
+                r = requests.get(url, timeout=.5)
                 haveResult = True
             except requests.Timeout as e:
                 logging.exception('Timeout on get file')
