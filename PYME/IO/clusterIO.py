@@ -219,7 +219,6 @@ def exists(name, serverfilter=''):
 #
 #    dirname = '/'.join(name.split('/')[:-1])
 #    fname = name.split('/')[-1] + trailing
-
     #return fname in listdir(dirname, serverfilter)
     return len(locateFile(name, serverfilter, True)) > 0
 
