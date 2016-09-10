@@ -12,6 +12,7 @@ import sys
 
 from PYME.misc import computerName
 from PYME import config
+from PYME.IO import clusterIO
 
 class NodeServer(object):
     def __init__(self, distributor, ip_address, port, nodeID=computerName.GetComputerName()):
@@ -65,7 +66,7 @@ class NodeServer(object):
             r = requests.get(url, timeout=10)
             resp = r.json()
             if resp['ok']:
-                for task in resp.result:
+                for task in resp['result']:
                     self._tasks.put(task)
         except requests.Timeout:
             pass
@@ -111,7 +112,15 @@ class NodeServer(object):
 
 
     def _rateTask(self, task):
-        return {'id' : task['id'], 'cost': 1.0}
+        cost = 1.0
+        if task['type'] == 'localization':
+            filename, serverfilter = clusterIO.parseURL(task['input']['frames'])
+            filename = '/'.join([filename.lstrip('/'), 'frame%05d.pzf' % task['taskdef']['frameIndex']])
+
+            if clusterIO.isLocal(filename, serverfilter):
+                cost = .01
+
+        return {'id' : task['id'], 'cost': cost}
 
     @cherrypy.expose
     @cherrypy.tools.json_in()

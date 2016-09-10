@@ -300,6 +300,25 @@ def _chooseLocation(locs):
     return locs[cost.argmin()][0]
 
 
+def parseURL(URL):
+    scheme, body = URL.split('://')
+    parts = body.split('/')
+
+    serverfilter = parts[0]
+    filename = '/'.join(parts[1:])
+
+    return filename, serverfilter
+
+
+def isLocal(filename, serverfilter):
+    if serverfilter == local_serverfilter and local_dataroot:
+        #look for the file in the local server folder (short-circuit the server)
+        localpath = os.path.join(local_dataroot, filename)
+        return os.path.exists(localpath)
+    else:
+        return False
+
+
 def getFile(filename, serverfilter='', numRetries=3):
     if serverfilter == local_serverfilter and local_dataroot:
         #look for the file in the local server folder (short-circuit the server)
