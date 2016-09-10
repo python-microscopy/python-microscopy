@@ -115,9 +115,13 @@ class NodeServer(object):
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
     def rate(self):
+        logger.debug('Rating tasks')
         tasks = cherrypy.request.json
 
+        logging.debug(tasks)
+
         ratings = [self._rateTask(task) for task in tasks]
+        logger.debug('Returning %d ratings ... ' % len(ratings))
 
         return {'ok': True, 'result': ratings}
 
@@ -125,7 +129,11 @@ class NodeServer(object):
 def run(distributor, port):
     import socket
     cherrypy.config.update({'server.socket_port': port,
-                            'server.socket_host': '0.0.0.0'})
+                            'server.socket_host': '0.0.0.0',
+                            'log.screen': False,
+                            'log.access_file': '',
+                            'log.error_file': '',
+                            })
 
     externalAddr = socket.gethostbyname(socket.gethostname())
 
