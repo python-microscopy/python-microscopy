@@ -63,8 +63,10 @@ class NodeServer(object):
         url = self.distributor_url + 'distributor/tasks?nodeID=%s&numWant=%d&timeout=10' % (self.nodeID, self.num_tasks_to_request)
         try:
             r = requests.get(url, timeout=10)
-            for task in r.json():
-                self._tasks.put(task)
+            resp = r.json()
+            if resp['ok']:
+                for task in resp.result:
+                    self._tasks.put(task)
         except requests.Timeout:
             pass
         except requests.ConnectionError:
