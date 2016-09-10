@@ -131,7 +131,7 @@ class HTTPTaskPusher(object):
             # else:
             #     logging.error('Failed on posting tasks with status code: %d' % r.status_code)
 
-            threading.Thread(target=self._postTasks, args=(task_list,))
+            threading.Thread(target=self._postTasks, args=(task_list,)).start()
 
             self.currentFrameNum = newFrameNum
 
