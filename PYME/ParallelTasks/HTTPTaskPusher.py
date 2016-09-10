@@ -94,6 +94,13 @@ class HTTPTaskPusher(object):
         self.pollT = threading.Thread(target=self._updatePoll)
         self.pollT.start()
 
+    def _postTasks(self, task_list):
+        r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list)
+        if r.status_code == 200 and r.json()['ok']:
+            logging.debug('Successfully posted tasks')
+        else:
+            logging.error('Failed on posting tasks with status code: %d' % r.status_code)
+
     def fileTasksForFrames(self):
         numTotalFrames = self.ds.getNumSlices()
         logging.debug('numTotalFrames: %s, currentFrameNum: %d' % (numTotalFrames, self.currentFrameNum))
@@ -117,12 +124,16 @@ class HTTPTaskPusher(object):
 
             task_list = json.dumps(tasks)
 
-            r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list)
-            if r.status_code == 200 and r.json()['ok']:
-                logging.debug('Successfully posted tasks')
-                self.currentFrameNum = newFrameNum
-            else:
-                logging.error('Failed on posting tasks with status code: %d' % r.status_code)
+            # r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list)
+            # if r.status_code == 200 and r.json()['ok']:
+            #     logging.debug('Successfully posted tasks')
+            #     #self.currentFrameNum = newFrameNum
+            # else:
+            #     logging.error('Failed on posting tasks with status code: %d' % r.status_code)
+
+            threading.Thread(target=self._postTasks, args=(task_list,))
+
+            self.currentFrameNum = newFrameNum
 
             numFramesOutstanding = numTotalFrames - self.currentFrameNum
 
