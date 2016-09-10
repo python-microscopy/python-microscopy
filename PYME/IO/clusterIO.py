@@ -76,7 +76,7 @@ def _getSession(url):
     return session
 
 
-def _listSingleDir(dirurl):
+def _listSingleDir(dirurl, nRetries=3):
     t = time.time()
 
     try:
@@ -86,8 +86,20 @@ def _listSingleDir(dirurl):
     except (KeyError, RuntimeError):
         # t = time.time()
         url = dirurl.encode()
-        s = _getSession(url)
-        r = s.get(url, timeout=1)
+        haveResult = False
+        nTries = 0
+        while nTries < nRetries and not haveResult:
+            try:
+                nTries += 1
+                s = _getSession(url)
+                r = s.get(url, timeout=1)
+                haveResult = True
+            except requests.Timeout as e:
+                logging.exception('Timeout on listing directory')
+                logging.info('%d retries left' % (nRetries - nTries))
+                if nTries == nRetries:
+                    raise
+
         dt = time.time() - t
         if not r.status_code == 200:
             logging.debug('Request failed with error: %d' % r.status_code)
@@ -304,8 +316,27 @@ def getFile(filename, serverfilter='', numRetries=3):
         raise IOError("Specified file could not be found: %s" % filename)
     else:
         url = _chooseLocation(locs).encode()
-        s = _getSession(url)
-        r = s.get(url, timeout=.5)
+        haveResult = False
+        nTries = 0
+        while nTries < numRetries and not haveResult:
+            try:
+                nTries += 1
+                s = _getSession(url)
+                r = s.get(url, timeout=.5)
+                haveResult = True
+            except requests.Timeout as e:
+                logging.exception('Timeout on get file')
+                logging.info('%d retries left' % (numRetries - nTries))
+                if nTries == numRetries:
+                    raise
+
+        #s = _getSession(url)
+        #r = s.get(url, timeout=.5)
+
+        if not r.status_code == 200:
+            msg = 'Request for %s failed with error: %d' % (url, r.status_code)
+            logging.error(msg)
+            raise RuntimeError(msg)
 
         return r.content
 
