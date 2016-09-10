@@ -158,6 +158,8 @@ def run(distributor, port):
                             'server.thread_pool': 50,
                             })
 
+    logging.getLogger('cherrypy.access').setLevel(logging.ERROR)
+
     externalAddr = socket.gethostbyname(socket.gethostname())
 
     nodeserver = NodeServer('http://' + distributor + '/', port = port, ip_address=externalAddr)
