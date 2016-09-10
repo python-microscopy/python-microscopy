@@ -61,6 +61,7 @@ from PYME.ParallelTasks import distribution
 
 #import here to pre-populate the zeroconf nameserver
 from PYME.IO import clusterIO
+time.sleep(3)
 
 
 LOCAL = False

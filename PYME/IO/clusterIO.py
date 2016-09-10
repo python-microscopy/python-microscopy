@@ -38,7 +38,7 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 if not 'sphinx' in sys.modules.keys():
     # do not start zeroconf if running under sphinx
     ns = pzc.getNS('_pyme-http')
-    time.sleep(1.5 + np.random.rand())  # wait for ns resonses
+    time.sleep(1.5 + np.random.rand())  # wait for ns responses
 
 from collections import OrderedDict
 
@@ -329,35 +329,45 @@ def getFile(filename, serverfilter='', numRetries=3):
     
     locs = locateFile(filename, serverfilter, return_first_hit=True)
 
+    nTries = 1
+    while nTries < numRetries and len(locs) == 0:
+        #retry, giving a little bit of time for the data servers to come up
+        logging.debug('Could not find file, retrying ...')
+        time.sleep(1)
+        nTries += 1
+        locs = locateFile(filename, serverfilter, return_first_hit=True)
+
+
     if (len(locs) == 0):
         # we did not find the file
         logging.debug('could not find file %s on cluster: cluster nodes = %s' % (filename, ns.list()))
         raise IOError("Specified file could not be found: %s" % filename)
-    else:
-        url = _chooseLocation(locs).encode()
-        haveResult = False
-        nTries = 0
-        while nTries < numRetries and not haveResult:
-            try:
-                nTries += 1
-                #s = _getSession(url)
-                r = requests.get(url, timeout=.5)
-                haveResult = True
-            except requests.Timeout as e:
-                logging.exception('Timeout on get file')
-                logging.info('%d retries left' % (numRetries - nTries))
-                if nTries == numRetries:
-                    raise
 
-        #s = _getSession(url)
-        #r = s.get(url, timeout=.5)
 
-        if not r.status_code == 200:
-            msg = 'Request for %s failed with error: %d' % (url, r.status_code)
-            logging.error(msg)
-            raise RuntimeError(msg)
+    url = _chooseLocation(locs).encode()
+    haveResult = False
+    nTries = 0
+    while nTries < numRetries and not haveResult:
+        try:
+            nTries += 1
+            #s = _getSession(url)
+            r = requests.get(url, timeout=.5)
+            haveResult = True
+        except requests.Timeout as e:
+            logging.exception('Timeout on get file')
+            logging.info('%d retries left' % (numRetries - nTries))
+            if nTries == numRetries:
+                raise
 
-        return r.content
+    #s = _getSession(url)
+    #r = s.get(url, timeout=.5)
+
+    if not r.status_code == 200:
+        msg = 'Request for %s failed with error: %d' % (url, r.status_code)
+        logging.error(msg)
+        raise RuntimeError(msg)
+
+    return r.content
 
 
 _lastwritetime = {}

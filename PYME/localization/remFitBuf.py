@@ -37,6 +37,8 @@ from PYME.localization import ofind_pri
 
 from PYME.Analysis import buffers
 from PYME.IO.image import ImageStack
+
+import logging
     
 import numpy
 import numpy as np
@@ -421,6 +423,8 @@ class fitTask(taskDef.Task):
         md.tIndex = self.index
         md.taskQueue = taskQueue
         md.dataSourceID = self.dataSourceID
+
+        #logging.debug('dataSourceID: %s, cachedDSID: %s', md.dataSourceID, bufferManager.dataSourceID)
 
         #make sure we're buffering the right data stream
         bufferManager.updateBuffers(md, self.dataSourceModule, self.bufferLen)
