@@ -10,6 +10,7 @@ import threading
 import requests
 from PYME.IO import DataSources
 from PYME.IO import clusterResults
+from PYME.IO import clusterIO
 import json
 import socket
 import random
@@ -68,6 +69,9 @@ class HTTPTaskPusher(object):
         self.dataSourceID = dataSourceID
         self.resultsURI = 'PYME-CLUSTER://%s/__aggregate_h5r/%s' % (serverfilter, resultsFilename)
 
+        resultsMDFilename = resultsFilename + '.json'
+        self.results_md_uri = 'PYME-CLUSTER://%s/%s' % (serverfilter, resultsMDFilename)
+
         self.taskQueueURI = _getTaskQueueURI()
 
         self.mdh = metadata
@@ -83,9 +87,11 @@ class HTTPTaskPusher(object):
         logging.debug('resultsURI: ' + self.resultsURI)
         clusterResults.fileResults(self.resultsURI + '/MetaData', metadata)
         clusterResults.fileResults(self.resultsURI + '/Events', self.ds.getEvents())
+
+        clusterIO.putFile(resultsMDFilename, self.mdh.to_JSON(), serverfilter=serverfilter)
         
         #wait until clusterIO caches clear to avoid replicating the results file.
-        time.sleep(1)
+        time.sleep(1.5)
 
         self.currentFrameNum = startAt
         
@@ -109,14 +115,14 @@ class HTTPTaskPusher(object):
             logging.debug('we have unpublished frames - push them')
 
             #turn our metadata to a string once (outside the loop)
-            mdstring = self.mdh.to_JSON() #TODO - use a URI instead
+            #mdstring = self.mdh.to_JSON() #TODO - use a URI instead
             
             newFrameNum = min(self.currentFrameNum + 1000, numTotalFrames)
 
             #create task definitions for each frame
             tasks = [{'id':str(frameNum),
                       'type':'localization',
-                      'taskdef': {'frameIndex': str(frameNum), 'metadata':mdstring},
+                      'taskdef': {'frameIndex': str(frameNum), 'metadata':self.results_md_uri},
                       'inputs' : {'frames': self.dataSourceID},
                       'outputs' : {'fitResults': self.resultsURI+'/FitResults',
                                    'driftResults':self.resultsURI+'/DriftResults'}
