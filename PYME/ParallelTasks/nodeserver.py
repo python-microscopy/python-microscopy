@@ -101,7 +101,7 @@ class NodeServer(object):
             self._update_tasks()
 
         task = self._tasks.get()
-        return task
+        return {'ok' : True, 'result' :task}
 
     @cherrypy.expose
     def handin(self, taskID, status):
@@ -133,6 +133,7 @@ def run(distributor, port):
                             'log.screen': False,
                             'log.access_file': '',
                             'log.error_file': '',
+                            'server.thread_pool': 50,
                             })
 
     externalAddr = socket.gethostbyname(socket.gethostname())
