@@ -185,9 +185,12 @@ def run(distributor, port):
 
     nodeserver = NodeServer('http://' + distributor + '/', port = port, ip_address=externalAddr)
 
+    app = cherrypy.tree.mount(nodeserver, '/node/')
+    app.log.access_log.setLevel(logging.ERROR)
+
     try:
 
-        cherrypy.quickstart(nodeserver, '/node/')
+        cherrypy.quickstart()
     finally:
         nodeserver._do_poll = False
 
