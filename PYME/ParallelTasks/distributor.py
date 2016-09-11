@@ -167,29 +167,11 @@ class TaskQueue(object):
 
 
 
-
-
-
-
-
-
-
-
-
 class Distributor(object):
     def __init__(self):
-        #self._tasks = Queue.Queue()
-        #self._handins = Queue.Queue()
-
-        #self.nodeID = nodeID
-        #self.distributor_url = distributor
-        #self.ip_address = ip_address
-        #self.port = port
         self._queues = {}
 
         self.nodes = {}
-        self._rating_queue = Queue.Queue()
-
 
         cherrypy.engine.subscribe('stop', self.stop)
 
@@ -198,9 +180,6 @@ class Distributor(object):
         #set up threads to poll the distributor and announce ourselves and get and return tasks
         self.pollThread = threading.Thread(target=self._poll)
         self.pollThread.start()
-
-
-
 
 
     def _update_nodes(self):
@@ -220,9 +199,6 @@ class Distributor(object):
                     pass
 
                 self.handin(handins)
-
-
-
 
     def _poll(self):
         while self._do_poll:
@@ -259,6 +235,8 @@ class Distributor(object):
         except Queue.Empty:
             pass
 
+        logger.debug('Gave %d tasks to %s' % (len(tasks), nodeID))
+
         return {'ok': True, 'result': tasks}
 
     def _post_tasks(self, queue):
@@ -284,6 +262,7 @@ class Distributor(object):
     #@cherrypy.tools.json_in()
     #@cherrypy.tools.json_out()
     def handin(self, nodeID):
+        logger.debug('Handing in tasks...')
         for handin in json.loads(cherrypy.request.body.read()):
             queue = handin.split('-')
             self._queues[queue].handin(handin)
@@ -304,6 +283,7 @@ class Distributor(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def queues(self):
+        print self._queues
         return {'ok': True, 'result': [q.info() for q in self._queues]}
 
 
