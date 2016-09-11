@@ -64,9 +64,8 @@ class TaskQueue(object):
         self.rating_queue.append(task)
         self.total_num_tasks += 1
 
-    def handin(self, handins):
-        for h in handins:
-            self.handins.append(h)
+    def handin(self, h):
+        self.handins.append(h)
 
     def _getForRating(self, numToRate = 50):
         tasks = []
