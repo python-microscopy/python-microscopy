@@ -115,7 +115,7 @@ class TaskQueue(object):
         #assign our rated items to a node
         for id, node in min_cost.items():
             self.num_rated += 1
-            self.total_cost += min_cost[id]
+            self.total_cost += costs[id]
             t = TaskInfo(self.ratings_in_progress.pop(id).task, PROCESS_TIMEOUT)
             self.assigned[id] = t
             self.distributor.nodes[node]['taskQueue'].put(t)
