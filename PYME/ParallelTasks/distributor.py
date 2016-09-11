@@ -251,9 +251,12 @@ class Distributor(object):
         t_finish = t + timeout
 
         nTasks = 0
-        while (nTasks < numWant) and (t < t_finish):
-            tasks.append(self.nodes[nodeID]['taskQueue'].get(timeout = (t_finish - t)))
-            t = time.time()
+        try:
+            while (nTasks < numWant) and (t < t_finish):
+                tasks.append(self.nodes[nodeID]['taskQueue'].get(timeout = (t_finish - t)))
+                t = time.time()
+        except Queue.Empty:
+            pass
 
         return {'ok': True, 'result': tasks}
 
@@ -261,7 +264,7 @@ class Distributor(object):
         try:
             q = self._queues[queue]
         except KeyError:
-            q = TaskQueue()
+            q = TaskQueue(self)
             self._queues[queue] = q
 
         tasks = json.loads(cherrypy.request.body)
@@ -301,7 +304,7 @@ class Distributor(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def queues(self):
-        return [q.info() for q in self._queues]
+        return {'ok': True, 'result': [q.info() for q in self._queues]}
 
 
 
