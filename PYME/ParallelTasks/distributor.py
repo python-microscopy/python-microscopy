@@ -275,7 +275,7 @@ class Distributor(object):
     def handin(self, nodeID):
         logger.debug('Handing in tasks...')
         for handin in json.loads(cherrypy.request.body.read()):
-            queue = handin.split('-')
+            queue = handin['id'].split('-')[0]
             self._queues[queue].handin(handin)
         return #{'ok': True}
 
