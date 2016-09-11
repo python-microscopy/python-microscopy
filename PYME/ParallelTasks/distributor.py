@@ -106,7 +106,7 @@ class TaskQueue(object):
         for node, ratings in rated_queue:
             for rating in ratings:
                 id = rating['id']
-                cost = rating['cost']
+                cost = float(rating['cost'])
                 if cost < costs.get(id, 900000):
                     costs[id] = cost
                     min_cost[id] = node
