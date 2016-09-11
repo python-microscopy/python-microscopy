@@ -82,12 +82,15 @@ class TaskQueue(object):
         server = self.distributor.nodes[node]
         url = 'http://%s:%d/node/rate' % (server['ip'], int(server['port']))
         #logger.debug('Requesting rating from %s' % url)
-        r = requests.post(url, json=tasks, timeout=RATE_TIMEOUT)
-        resp = r.json()
-        if resp['ok']:
-            rated_queue.append((node, resp['result']))
+        try:
+            r = requests.post(url, json=tasks, timeout=RATE_TIMEOUT)
+            resp = r.json()
+            if resp['ok']:
+                rated_queue.append((node, resp['result']))
 
-        #logger.debug('Ratings returned from %s' % url)
+            #logger.debug('Ratings returned from %s' % url)
+        except requests.ConnectionError:
+            pass #fail silently for now TODO - unsubscribe node
 
     def _rateAndAssignTasks(self):
         tasks = self._getForRating(NUM_TO_RATE)
