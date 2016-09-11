@@ -73,7 +73,7 @@ class TaskQueue(object):
         try:
             for i in xrange(numToRate):
                 t = self.rating_queue.popleft()
-                self.ratings_in_progress[t.id] = TaskInfo(t, RATE_TIMEOUT)
+                self.ratings_in_progress[t['id']] = TaskInfo(t, RATE_TIMEOUT)
                 tasks.append(t)
         except IndexError:
             pass
