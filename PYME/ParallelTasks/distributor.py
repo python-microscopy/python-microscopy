@@ -148,14 +148,14 @@ class TaskQueue(object):
                 h = self.handins.popleft()
 
                 try:
-                    t = self.assigned.pop(h['id'])
+                    t = self.assigned.pop(h['taskID'])
 
                     if h['status'] == 'success':
                         self.num_tasks_completed += 1
                     elif h['status'] == 'failure':
-                        self.failure_counts[h['id']] = self.failure_counts.get(h['id'], 0) + 1
+                        self.failure_counts[h['taskID']] = self.failure_counts.get(h['taskID'], 0) + 1
 
-                        if self.failure_counts[h['id']] < 5:
+                        if self.failure_counts[h['taskID']] < 5:
                             self.rating_queue.append(t.task)
                     else: #didn't process
                         self.rating_queue.append(t.task)
@@ -205,7 +205,7 @@ class Distributor(object):
                 try:
                     while True:
                         task = q.get_nowait()
-                        handins.append( {'id': task['id'], 'status' : 'notExecuted'})
+                        handins.append( {'taskID': task['id'], 'status' : 'notExecuted'})
                 except Queue.Empty:
                     pass
 
@@ -275,7 +275,7 @@ class Distributor(object):
     def handin(self, nodeID):
         logger.debug('Handing in tasks...')
         for handin in json.loads(cherrypy.request.body.read()):
-            queue = handin['id'].split('-')[0]
+            queue = handin['taskID'].split('-')[0]
             self._queues[queue].handin(handin)
         return #{'ok': True}
 
