@@ -23,8 +23,8 @@ def main():
         logfile_error = open('%s/LOGS/distributor_error.log' % data_root, 'w')
         logfile_debug = open('%s/LOGS/distributor_debug.log' % data_root, 'w')
 
-        #proc = subprocess.Popen('distributor -c %s' % confFile, shell=True, stdout=logfile_debug, stderr=logfile_error)
-        proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True, stdout=logfile_debug, stderr=logfile_error)
+        proc = subprocess.Popen('distributor -c %s' % confFile, shell=True, stdout=logfile_debug, stderr=logfile_error)
+        #proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True, stdout=logfile_debug, stderr=logfile_error)
     else:
         proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True)
 
