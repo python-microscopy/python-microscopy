@@ -17,7 +17,7 @@ from PYME import config
 import collections
 
 NODE_TIMEOUT = config.get('distributor-node_registration_timeout', 10)
-PROCESS_TIMEOUT = config.get('distributor-execution_timeout', 60)
+PROCESS_TIMEOUT = config.get('distributor-execution_timeout', 300)
 RATE_TIMEOUT = config.get('distributor-task_rating_timeout', 10)
 NUM_TO_RATE = config.get('distributor-rating_chunk_size', 50)
 
