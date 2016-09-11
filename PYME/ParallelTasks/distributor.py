@@ -241,7 +241,7 @@ class Distributor(object):
         nTasks = 0
         try:
             while (nTasks < numWant) and (t < t_finish):
-                tasks.append(self.nodes[nodeID]['taskQueue'].get(timeout = (t_finish - t)))
+                tasks.append(self.nodes[nodeID]['taskQueue'].get(timeout = (t_finish - t)).task)
                 t = time.time()
         except Queue.Empty:
             pass
