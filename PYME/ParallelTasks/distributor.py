@@ -267,7 +267,7 @@ class Distributor(object):
             q = TaskQueue(self)
             self._queues[queue] = q
 
-        tasks = json.loads(cherrypy.request.body)
+        tasks = json.loads(cherrypy.request.body.read())
         for task in tasks:
             task['id'] = queue + '-' + task['id']
             q['rating_queue'].put(task)
@@ -284,7 +284,7 @@ class Distributor(object):
     #@cherrypy.tools.json_in()
     #@cherrypy.tools.json_out()
     def handin(self, nodeID):
-        for handin in json.loads(cherrypy.request.body):
+        for handin in json.loads(cherrypy.request.body.read()):
             queue = handin.split('-')
             self._queues[queue].handin(handin)
         return #{'ok': True}
