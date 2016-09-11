@@ -201,7 +201,9 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
             if return_first_hit and len(locs) > 0:
                 return locs
 
-        _locateCache[cache_key] = (locs, time.time())
+        if len(locs) > 0:
+            #cache if we found something (this is safe due to write-once nature of fs)
+            _locateCache[cache_key] = (locs, time.time())
 
         return locs
 
