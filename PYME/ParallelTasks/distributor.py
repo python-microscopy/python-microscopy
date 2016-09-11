@@ -3,7 +3,7 @@ import threading
 import requests
 import Queue
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger('distributor')
 logger.setLevel(logging.DEBUG)
 
