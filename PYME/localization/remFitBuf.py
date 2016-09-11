@@ -39,6 +39,7 @@ from PYME.Analysis import buffers
 from PYME.IO.image import ImageStack
 
 import logging
+logger = logging.getLogger(__name__)
     
 import numpy
 import numpy as np
@@ -213,6 +214,8 @@ def createFitTaskFromTaskDef(task):
 
     dataSourceID = task['inputs']['frames']
     frameIndex = int(task['taskdef']['frameIndex'])
+
+    logger.debug('Creating a task for %s - frame %d' % (dataSourceID, frameIndex))
 
     md = task['taskdef']['metadata']
 
@@ -448,6 +451,9 @@ class fitTask(taskDef.Task):
 
         #calculate noise
         self.sigma = self.calcSigma(md, self.data)
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('data_mean: %3.2f, bg: %3.2f, sigma: %3.2f' % (self.data.mean(), self.sigma.mean(), self.bg.mean()))
         
         #############################################
         # Special cases - defer object finding to fit module
