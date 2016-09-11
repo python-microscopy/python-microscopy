@@ -208,7 +208,7 @@ class Distributor(object):
     def stop(self):
         self._do_poll = False
 
-        for queue in self._queues:
+        for queue in self._queues.values():
             queue.stop()
 
 
