@@ -66,7 +66,8 @@ def main():
     nodeserverLog = open(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w')
 
     #proc = subprocess.Popen('nodeserver -c %s' % temp_conf_file_name, shell=True, stdout=nodeserverLog, stderr=nodeserverLog)
-    proc = subprocess.Popen('python -m PYME.ParallelTasks.nodeserver %s %s' % (distributors[0], serverPort), shell=True)
+    proc = subprocess.Popen('python -m PYME.ParallelTasks.nodeserver %s %s' % (distributors[0], serverPort), shell=True,
+                            stdout=nodeserverLog, stderr=nodeserverLog)
 
     ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, int(serverPort))
 
@@ -74,11 +75,13 @@ def main():
     logging.debug('Launching worker processors')
     numWorkers = config.get('numWorkers', cpu_count())
 
-    workerProcs = [subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP', shell=True, stdin=subprocess.PIPE) for i in range(numWorkers -1)]
+    workerProcs = [subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP', shell=True, stdin=subprocess.PIPE)
+                   for i in range(numWorkers -1)]
 
     #last worker has profiling enabled
     profiledir = os.path.join(nodeserver_log_dir, 'mProf')      
-    workerProcs.append(subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP -p %s' % profiledir, shell=True, stdin=subprocess.PIPE))
+    workerProcs.append(subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP -p %s' % profiledir, shell=True,
+                                        stdin=subprocess.PIPE))
 
     try:
         while not proc.poll():

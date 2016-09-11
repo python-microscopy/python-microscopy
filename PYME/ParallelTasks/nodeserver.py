@@ -3,7 +3,7 @@ import threading
 import requests
 import Queue
 import logging
-#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('nodeserver')
 logger.setLevel(logging.DEBUG)
 
@@ -132,6 +132,8 @@ class NodeServer(object):
         except Queue.Empty:
             pass
 
+        logging.debug('Giving %d tasks to %s' % (len(tasks), workerID))
+
         return {'ok': True, 'result': tasks}
 
 
@@ -159,7 +161,7 @@ class NodeServer(object):
         logger.debug('Rating tasks')
         tasks = cherrypy.request.json
 
-        logging.debug(tasks)
+        #logging.debug(tasks)
 
         ratings = [self._rateTask(task) for task in tasks]
         logger.debug('Returning %d ratings ... ' % len(ratings))

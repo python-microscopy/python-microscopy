@@ -378,7 +378,7 @@ def getFile(filename, serverfilter='', numRetries=3):
     if len(content) < 1000000:
         #cache small files
         _fileCache[(filename, serverfilter)] = content
-        
+
     return content
 
 
