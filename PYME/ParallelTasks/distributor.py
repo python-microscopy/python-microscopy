@@ -46,7 +46,7 @@ class TaskQueue(object):
         self.distributor = distributor
 
         self._do_poll = True
-        self.pollThread = threading.Thread(target=self._do_poll)
+        self.pollThread = threading.Thread(target=self._poll_loop)
         self.pollThread.start()
 
     def info(self):
