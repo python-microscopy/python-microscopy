@@ -157,7 +157,7 @@ class CameraInfoManager(object):
 
         if (mp is None):
             #default to uniform read noise
-            rn = md['Camera.ReadNoise']
+            rn = float(md['Camera.ReadNoise'])
             return rn*rn
         else:
             return mp
@@ -433,6 +433,8 @@ class fitTask(taskDef.Task):
         bufferManager.updateBuffers(md, self.dataSourceModule, self.bufferLen)
         
         self.data = bufferManager.dBuffer.getSlice(self.index)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('data: min - %3.2f, max - %3.2f, mean - %3.2f' % (self.data.min(), self.data.max(), self.data.mean()))
         nTasksProcessed += 1
         #print self.index
 
