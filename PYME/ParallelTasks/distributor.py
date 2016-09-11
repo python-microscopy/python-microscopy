@@ -12,10 +12,11 @@ import sys
 
 from PYME.misc import computerName
 from PYME import config
-from PYME.IO import clusterIO
+#from PYME.IO import clusterIO
 import collections
 
 NODE_TIMEOUT = config.get('distributor-node_registration_timeout', 10)
+PROCESS_TIMEOUT = config.get('distributor-execution_timeout', 60)
 RATE_TIMEOUT = config.get('distributor-task_rating_timeout', 10)
 NUM_TO_RATE = config.get('distributor-rating_chunk_size', 50)
 
@@ -33,8 +34,19 @@ class TaskQueue(object):
         self.num_tasks_completed =  0
         self.num_tasks_failed = 0
 
+        self.num_rated = 0
+        self.total_cost = 0
+
+        self.handins = collections.deque()
+
+        self.failure_counts = {}
+
         self._lock = threading.Lock()
         self.distributor = distributor
+
+        self._do_poll = True
+        self.pollThread = threading.Thread(target=self._do_poll)
+        self.pollThread.start()
 
     def info(self):
         return {'tasksPosted': self.total_num_tasks,
@@ -44,10 +56,20 @@ class TaskQueue(object):
                   'averageExecutionCost' : 1.0,
                 }
 
+    def stop(self):
+        self._do_poll = False
+
+    def posttask(self, task):
+        self.rating_queue.append(task)
+
+    def handin(self, handins):
+        for h in handins:
+            self.handins.append(h)
+
     def _getForRating(self, numToRate = 50):
         tasks = []
         try:
-            for i in xrange(50):
+            for i in xrange(numToRate):
                 t = self.rating_queue.popleft()
                 self.ratings_in_progress[t.id] = TaskInfo(t, RATE_TIMEOUT)
                 tasks.append(t)
@@ -62,7 +84,7 @@ class TaskQueue(object):
         if resp['ok']:
             rated_queue.append(node, resp['results'])
 
-    def rateTasks(self):
+    def _rateAndAssignTasks(self):
         tasks = self._getForRating(NUM_TO_RATE)
         rated_queue = collections.deque()
         r_threads = [threading.Thread(target=self._rate_tasks, args=(tasks, node, rated_queue)) for node in self.distributor.nodes.keys()]
@@ -76,13 +98,74 @@ class TaskQueue(object):
             for rating in ratings:
                 id = rating['id']
                 cost = rating['cost']
-                if cost < costs.get('id', 900000):
-                    cost['id'] = cost
-                    min_cost['id'] = node
+                if cost < costs.get(id, 900000):
+                    cost[id] = cost
+                    min_cost[id] = node
 
+        #assign our rated items to a node
         for id, node in min_cost.items():
-            t = self.ratings_in_progress.pop(id)
+            self.num_rated += 1
+            self.total_cost += min_cost[id]
+            t = TaskInfo(self.ratings_in_progress.pop(id).task, PROCESS_TIMEOUT)
+            self.assigned[id] = t
             self.distributor.nodes[node]['taskQueue'].put(t)
+
+        #push all the unassigned items to the back into the rating queue
+        try:
+            while True:
+                t = self.ratings_in_progress.popitem(False)
+                self.rating_queue.append(t.task)
+        except KeyError:
+            pass
+
+    def _requeue_timed_out(self):
+        t = time.time()
+        try:
+            id = self.assigned.keys()[-1]
+            while self.assigned[id].expiry < t:
+                task = self.assigned.pop(id).task
+                self.rating_queue.append(task)
+                id = self.assigned.keys()[-1]
+        except IndexError:
+            pass
+
+    def _process_handins(self):
+        try:
+            while True:
+                h = self.handins.popleft()
+
+                try:
+                    t = self.assigned.pop(h['id'])
+
+                    if h['status'] == 'success':
+                        self.num_tasks_completed += 1
+                    elif h['status'] == 'failure':
+                        self.failure_counts[h['id']] = self.failure_counts.get(h['id'], 0) + 1
+
+                        if self.failure_counts[h['id']] < 5:
+                            self.rating_queue.append(t.task)
+                    else: #didn't process
+                        self.rating_queue.append(t.task)
+
+                except KeyError:
+                    logger.error('Trying to hand in unasigned task')
+
+        except IndexError:
+            pass
+
+
+    def _poll_loop(self):
+        while self._do_poll:
+            self._rateAndAssignTasks()
+            self._process_handins()
+            self._requeue_timed_out()
+
+            time.sleep(.1)
+
+
+
+
+
 
 
 
@@ -114,55 +197,41 @@ class Distributor(object):
         self.pollThread = threading.Thread(target=self._poll)
         self.pollThread.start()
 
-        self.announceThread = threading.Thread(target=self._announce_loop)
-        self.announceThread.start()
-
-        self.taskThread = threading.Thread(target=self._poll_tasks)
-        self.taskThread.start()
 
 
 
 
-    def _update_tasks(self):
-        """Update our task queue"""
+    def _update_nodes(self):
         t = time.time()
-        if (t - self._lastUpdateTime) < 0.1:
-            return
+        for nodeID, node in self.nodes.items():
+            if node['expiry'] < t:
+                self.nodes.pop(nodeID)
+                logger.info('unsubscribing %s and reassigning tasks' % nodeID)
 
-        self._lastUpdateTime = t
+                q = node['taskQueue']
+                handins = []
+                try:
+                    while True:
+                        task = q.get_nowait()
+                        handins.append( {'id': task['id'], 'status' : 'notExecuted'})
+                except Queue.Empty:
+                    pass
 
-        url = self.distributor_url + 'distributor/tasks?nodeID=%s&numWant=%d&timeout=10' % (self.nodeID, self.num_tasks_to_request)
-        try:
-            r = requests.get(url, timeout=10)
-            resp = r.json()
-            if resp['ok']:
-                for task in resp['result']:
-                    self._tasks.put(task)
-        except requests.Timeout:
-            pass
-        except requests.ConnectionError:
-            logger.error('Could not connect to distributor')
+                self.handin(handins)
+
+
 
 
     def _poll(self):
         while self._do_poll:
-            #self._announce()
-            self._do_handins()
-            #self._update_tasks()
-            time.sleep(1)
-
-    def _poll_tasks(self):
-        while self._do_poll:
-            self._update_tasks()
-            time.sleep(1)
-
-    def _announce_loop(self):
-        while self._do_poll:
-            self._announce()
+            self._update_nodes()
             time.sleep(1)
 
     def stop(self):
         self._do_poll = False
+
+        for queue in self.queues:
+            queue.stop()
 
 
     @cherrypy.expose
@@ -170,7 +239,7 @@ class Distributor(object):
     @cherrypy.tools.json_in()
     def tasks(self, queue=None, nodeID=None, numWant=50, timeout=5):
         if cherrypy.request.method == 'GET':
-            return self._get_tasks(nodeID, numWant, timeout)
+            return self._get_tasks(nodeID, int(numWant), float(timeout))
         elif cherrypy.request.method == 'POST':
             return self._post_tasks(queue)
 
@@ -194,9 +263,13 @@ class Distributor(object):
             q = TaskQueue()
             self.queues[queue] = q
 
-        for task in cherrypy.request.json:
+        tasks = cherrypy.request.json
+        for task in tasks:
+            task['id'] = queue + '-' + task['id']
             q['rating_queue'].put(task)
             q['num_tasks'] += 1
+
+        logger.debug('accepted %d tasks' % len(tasks))
 
         return {'ok' : True}
 
@@ -208,7 +281,8 @@ class Distributor(object):
     #@cherrypy.tools.json_out()
     def handin(self, nodeID):
         for handin in cherrypy.request.json:
-            self._handins.put(handin)
+            queue = handin.split('-')
+            self.queues[queue].handin(handin)
         return #{'ok': True}
 
     @cherrypy.expose
@@ -221,13 +295,17 @@ class Distributor(object):
 
         node.update({'ip': ip, 'port': port, 'expiry' : time.time() + NODE_TIMEOUT})
 
-    @cherrpy.expose
+        return
+
+    @cherrypy.expose
     @cherrypy.tools.json_out()
     def queues(self):
         return [q.info() for q in self.queues]
 
 
-def run(distributor, port):
+
+
+def run(port):
     import socket
     cherrypy.config.update({'server.socket_port': port,
                             'server.socket_host': '0.0.0.0',
@@ -239,17 +317,17 @@ def run(distributor, port):
 
     logging.getLogger('cherrypy.access').setLevel(logging.ERROR)
 
-    externalAddr = socket.gethostbyname(socket.gethostname())
+    #externalAddr = socket.gethostbyname(socket.gethostname())
 
-    nodeserver = NodeServer('http://' + distributor + '/', port = port, ip_address=externalAddr)
+    distributor = Distributor()
 
     try:
 
-        cherrypy.quickstart(nodeserver, '/node/')
+        cherrypy.quickstart(distributor, '/distributor/')
     finally:
-        nodeserver._do_poll = False
+        distributor._do_poll = False
 
 
 if __name__ == '__main__':
-    distributor, port = sys.argv[1:]
-    run(distributor, int(port))
+    port = sys.argv[1]
+    run(int(port))
