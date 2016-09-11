@@ -92,35 +92,36 @@ class TaskQueue(object):
 
     def _rateAndAssignTasks(self):
         tasks = self._getForRating(NUM_TO_RATE)
-        rated_queue = collections.deque()
-        r_threads = [threading.Thread(target=self._rate_tasks, args=(tasks, node, rated_queue)) for node in self.distributor.nodes.keys()]
+        if len(tasks) > 0:
+            rated_queue = collections.deque()
+            r_threads = [threading.Thread(target=self._rate_tasks, args=(tasks, node, rated_queue)) for node in self.distributor.nodes.keys()]
 
-        logger.debug('Asking nodes for rating')
-        for t in r_threads: t.start()
-        for t in r_threads: t.join(timeout=RATE_TIMEOUT)
-        logger.debug('Ratings returned')
+            logger.debug('Asking nodes for rating')
+            for t in r_threads: t.start()
+            for t in r_threads: t.join(timeout=RATE_TIMEOUT)
+            logger.debug('Ratings returned')
 
-        costs = collections.OrderedDict()
-        min_cost = collections.OrderedDict()
+            costs = collections.OrderedDict()
+            min_cost = collections.OrderedDict()
 
-        for node, ratings in rated_queue:
-            for rating in ratings:
-                id = rating['id']
-                cost = float(rating['cost'])
-                if cost < costs.get(id, 900000):
-                    costs[id] = cost
-                    min_cost[id] = node
+            for node, ratings in rated_queue:
+                for rating in ratings:
+                    id = rating['id']
+                    cost = float(rating['cost'])
+                    if cost < costs.get(id, 900000):
+                        costs[id] = cost
+                        min_cost[id] = node
 
-        logger.debug('%d ratings returned' % len(min_cost))
-        #assign our rated items to a node
-        for id, node in min_cost.items():
-            self.num_rated += 1
-            self.total_cost += costs[id]
-            t = TaskInfo(self.ratings_in_progress.pop(id).task, PROCESS_TIMEOUT)
-            self.assigned[id] = t
-            self.distributor.nodes[node]['taskQueue'].put(t)
+            logger.debug('%d ratings returned' % len(min_cost))
+            #assign our rated items to a node
+            for id, node in min_cost.items():
+                self.num_rated += 1
+                self.total_cost += costs[id]
+                t = TaskInfo(self.ratings_in_progress.pop(id).task, PROCESS_TIMEOUT)
+                self.assigned[id] = t
+                self.distributor.nodes[node]['taskQueue'].put(t)
 
-        logger.debug('%d total tasks rated' % self.num_rated)
+            logger.debug('%d total tasks rated' % self.num_rated)
 
         #push all the unassigned items to the back into the rating queue
         try:
