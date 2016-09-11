@@ -62,6 +62,7 @@ class TaskQueue(object):
 
     def posttask(self, task):
         self.rating_queue.append(task)
+        self.total_num_tasks += 1
 
     def handin(self, handins):
         for h in handins:
@@ -270,8 +271,7 @@ class Distributor(object):
         tasks = json.loads(cherrypy.request.body.read())
         for task in tasks:
             task['id'] = queue + '-' + task['id']
-            q['rating_queue'].put(task)
-            q['num_tasks'] += 1
+            q.posttask(task)
 
         logger.debug('accepted %d tasks' % len(tasks))
 
@@ -325,9 +325,12 @@ def run(port):
 
     distributor = Distributor()
 
+    app = cherrypy.tree.mount(distributor, '/distributor/')
+    app.log.access_log.setLevel(logging.ERROR)
+
     try:
 
-        cherrypy.quickstart(distributor, '/distributor/')
+        cherrypy.quickstart()
     finally:
         distributor._do_poll = False
 
