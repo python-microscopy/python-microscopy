@@ -36,7 +36,7 @@ def fileFormattedResults(URI, data, mimetype=None):
 
 _loc_cache = {}
 def pickResultsServer(filename, serverfilter=''):
-    logging.debug('pickResultsServer - input: ' + filename)
+    #logging.debug('pickResultsServer - input: ' + filename)
     if filename.startswith('__aggregate_txt/'):
         fn = filename[len('__aggregate_txt/'):]
         stub = ''
@@ -54,7 +54,7 @@ def pickResultsServer(filename, serverfilter=''):
     cache_key = serverfilter + '::' + fn
     try:
         loc = _loc_cache[cache_key]
-        logging.debug('pickResultsServer - output[cached]: ' + loc + stub)
+        #logging.debug('pickResultsServer - output[cached]: ' + loc + stub)
         return loc + stub
     except KeyError:
         locs_ = clusterIO.locateFile(fn, serverfilter)
@@ -76,7 +76,7 @@ def pickResultsServer(filename, serverfilter=''):
             loc = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, '/'.join([prefix, fn]))
 
         _loc_cache[cache_key] = loc
-        logging.debug('pickResultsServer - output: ' + loc + stub)
+        #logging.debug('pickResultsServer - output: ' + loc + stub)
         return loc + stub
 
 
