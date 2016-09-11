@@ -108,7 +108,7 @@ class TaskQueue(object):
                 id = rating['id']
                 cost = rating['cost']
                 if cost < costs.get(id, 900000):
-                    cost[id] = cost
+                    costs[id] = cost
                     min_cost[id] = node
 
         logger.debug('%d ratings returned' % len(min_cost))
