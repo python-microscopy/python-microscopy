@@ -278,15 +278,15 @@ class Distributor(object):
 
         node.update({'ip': ip, 'port': port, 'expiry' : time.time() + NODE_TIMEOUT})
 
-        logging.debug('Got announcement from %s' % nodeID)
+        #logging.debug('Got announcement from %s' % nodeID)
 
         return
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def queues(self):
-        logging.debug('queues: ' + repr(self._queues))
-        return {'ok': True, 'result': [q.info() for q in self._queues]}
+        #logging.debug('queues: ' + repr(self._queues))
+        return {'ok': True, 'result': {qn: q.info() for qn, q in self._queues.items()}}
 
 
 
