@@ -9,8 +9,9 @@ logger.setLevel(logging.DEBUG)
 
 import time
 import sys
+import json
 
-from PYME.misc import computerName
+#from PYME.misc import computerName
 from PYME import config
 #from PYME.IO import clusterIO
 import collections
@@ -176,14 +177,14 @@ class TaskQueue(object):
 
 class Distributor(object):
     def __init__(self):
-        self._tasks = Queue.Queue()
-        self._handins = Queue.Queue()
+        #self._tasks = Queue.Queue()
+        #self._handins = Queue.Queue()
 
         #self.nodeID = nodeID
         #self.distributor_url = distributor
         #self.ip_address = ip_address
         #self.port = port
-        self.queues = {}
+        self._queues = {}
 
         self.nodes = {}
         self._rating_queue = Queue.Queue()
@@ -230,13 +231,13 @@ class Distributor(object):
     def stop(self):
         self._do_poll = False
 
-        for queue in self.queues:
+        for queue in self._queues:
             queue.stop()
 
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
-    @cherrypy.tools.json_in()
+    #@cherrypy.tools.json_in()
     def tasks(self, queue=None, nodeID=None, numWant=50, timeout=5):
         if cherrypy.request.method == 'GET':
             return self._get_tasks(nodeID, int(numWant), float(timeout))
@@ -258,12 +259,12 @@ class Distributor(object):
 
     def _post_tasks(self, queue):
         try:
-            q = self.queues[queue]
+            q = self._queues[queue]
         except KeyError:
             q = TaskQueue()
-            self.queues[queue] = q
+            self._queues[queue] = q
 
-        tasks = cherrypy.request.json
+        tasks = json.loads(cherrypy.request.body)
         for task in tasks:
             task['id'] = queue + '-' + task['id']
             q['rating_queue'].put(task)
@@ -277,12 +278,12 @@ class Distributor(object):
 
 
     @cherrypy.expose
-    @cherrypy.tools.json_in()
+    #@cherrypy.tools.json_in()
     #@cherrypy.tools.json_out()
     def handin(self, nodeID):
-        for handin in cherrypy.request.json:
+        for handin in json.loads(cherrypy.request.body):
             queue = handin.split('-')
-            self.queues[queue].handin(handin)
+            self._queues[queue].handin(handin)
         return #{'ok': True}
 
     @cherrypy.expose
@@ -300,7 +301,7 @@ class Distributor(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def queues(self):
-        return [q.info() for q in self.queues]
+        return [q.info() for q in self._queues]
 
 
 

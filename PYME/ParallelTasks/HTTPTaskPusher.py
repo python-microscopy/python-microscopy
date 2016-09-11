@@ -101,7 +101,7 @@ class HTTPTaskPusher(object):
         self.pollT.start()
 
     def _postTasks(self, task_list):
-        r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list)
+        r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), json=task_list)
         if r.status_code == 200 and r.json()['ok']:
             logging.debug('Successfully posted tasks')
         else:
@@ -128,7 +128,7 @@ class HTTPTaskPusher(object):
                                    'driftResults':self.resultsURI+'/DriftResults'}
                       } for frameNum in range(self.currentFrameNum, newFrameNum)]
 
-            task_list = json.dumps(tasks)
+            task_list = tasks #json.dumps(tasks)
 
             # r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list)
             # if r.status_code == 200 and r.json()['ok']:
