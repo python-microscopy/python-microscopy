@@ -86,7 +86,7 @@ class TaskQueue(object):
         r = requests.post(url, json=tasks, timeout=RATE_TIMEOUT)
         resp = r.json()
         if resp['ok']:
-            rated_queue.append(node, resp['result'])
+            rated_queue.append((node, resp['result']))
 
         logger.debug('Ratings returned from %s' % url)
 
