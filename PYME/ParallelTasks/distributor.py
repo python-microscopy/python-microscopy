@@ -115,7 +115,7 @@ class TaskQueue(object):
         #push all the unassigned items to the back into the rating queue
         try:
             while True:
-                t = self.ratings_in_progress.popitem(False)
+                id, t = self.ratings_in_progress.popitem(False)
                 self.rating_queue.append(t.task)
         except KeyError:
             pass
