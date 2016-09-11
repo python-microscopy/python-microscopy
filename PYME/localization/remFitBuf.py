@@ -570,7 +570,7 @@ class fitTask(taskDef.Task):
     @classmethod
     def calcSigma(cls, md, data):
         var = np.atleast_3d(cameraMaps.getVarianceMap(md))
-        return np.sqrt(var + (md.Camera.NoiseFactor**2)*(md.Camera.ElectronsPerCount*md.Camera.TrueEMGain*np.maximum(data, 1) + md.Camera.TrueEMGain*md.Camera.TrueEMGain))/md.Camera.ElectronsPerCount    
+        return np.sqrt(var + (float(md.Camera.NoiseFactor)**2)*(float(md.Camera.ElectronsPerCount)*float(md.Camera.TrueEMGain)*np.maximum(data, 1.0) + float(md.Camera.TrueEMGain)*float(md.Camera.TrueEMGain)))/float(md.Camera.ElectronsPerCount)
     
     def calcThreshold(self):
         #from scipy import ndimage
