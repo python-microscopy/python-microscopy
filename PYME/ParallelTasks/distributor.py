@@ -82,13 +82,13 @@ class TaskQueue(object):
     def _rate_tasks(self, tasks, node, rated_queue):
         server = self.distributor.nodes[node]
         url = 'http://%s:%d/node/rate' % (server['ip'], int(server['port']))
-        logger.debug('Requesting rating from %s' % url)
+        #logger.debug('Requesting rating from %s' % url)
         r = requests.post(url, json=tasks, timeout=RATE_TIMEOUT)
         resp = r.json()
         if resp['ok']:
             rated_queue.append((node, resp['result']))
 
-        logger.debug('Ratings returned from %s' % url)
+        #logger.debug('Ratings returned from %s' % url)
 
     def _rateAndAssignTasks(self):
         tasks = self._getForRating(NUM_TO_RATE)
@@ -96,10 +96,10 @@ class TaskQueue(object):
             rated_queue = collections.deque()
             r_threads = [threading.Thread(target=self._rate_tasks, args=(tasks, node, rated_queue)) for node in self.distributor.nodes.keys()]
 
-            logger.debug('Asking nodes for rating')
+            #logger.debug('Asking nodes for rating')
             for t in r_threads: t.start()
             for t in r_threads: t.join(timeout=RATE_TIMEOUT)
-            logger.debug('Ratings returned')
+            #logger.debug('Ratings returned')
 
             costs = collections.OrderedDict()
             min_cost = collections.OrderedDict()
@@ -121,7 +121,7 @@ class TaskQueue(object):
                 self.assigned[id] = t
                 self.distributor.nodes[node]['taskQueue'].put(t)
 
-            logger.debug('%d total tasks rated' % self.num_rated)
+            #logger.debug('%d total tasks rated' % self.num_rated)
 
         #push all the unassigned items to the back into the rating queue
         try:
