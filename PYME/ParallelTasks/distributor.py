@@ -81,7 +81,7 @@ class TaskQueue(object):
 
     def _rate_tasks(self, tasks, node, rated_queue):
         server = self.distributor.nodes[node]
-        r = requests.post('http://%s:%d/node/rate' % (server['ip'], server['port']), json=tasks, timeout=RATE_TIMEOUT)
+        r = requests.post('http://%s:%d/node/rate' % (server['ip'], int(server['port'])), json=tasks, timeout=RATE_TIMEOUT)
         resp = r.json()
         if resp['ok']:
             rated_queue.append(node, resp['results'])
