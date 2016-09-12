@@ -199,7 +199,7 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
     for zi in range(len(stigLib)):
         zrange = [np.nanmin([stigLib[zi]['zRange'][0], zrange[0]]), np.nanmax([stigLib[zi]['zRange'][1], zrange[1]])]
     # generate z vector for interpolation
-    zVal = np.arange(zrange[0], zrange[1])
+    zVal = np.arange(zrange[0]-50, zrange[1]+50)
 
     sigCalX = {}
     sigCalY = {}
@@ -240,8 +240,17 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
         chans = np.where(fres['whichColor'][mi] == chanColor)[0]
         errX, errY = 0, 0
         wSum = 0
+        #plt.figure(10)
+        #plt.subplot(1, 2, 2)
+        #sigxList = []
+        #sigyList = []
         for ci in chans:
             if not np.isnan(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi]):
+                #plt.plot(zVal, sigCalX['chan%i' % ci], label='$\sigma_x$, chan %i' % ci)
+                #plt.plot(zVal, sigCalY['chan%i' % ci], label='$\sigma_y$, chan %i' % ci)
+                #sigxList.append(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi])
+                #sigyList.append(fres['fitResults_sigmayPlane%i' % chanPlane[ci]][mi])
+
                 wX = 1./(fres['fitError_sigmaxPlane%i' % chanPlane[ci]][mi])**2
                 wY = 1./(fres['fitError_sigmayPlane%i' % chanPlane[ci]][mi])**2
                 wSum += (wX + wY)
@@ -250,8 +259,25 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
         try:
             err = (errX + errY)/wSum
             minLoc = np.nanargmin(err)
-            z[mi] = zVal[minLoc]
+            z[mi] = -zVal[minLoc]
             zerr[mi] = np.sqrt(err[minLoc])
+
+            '''if len(sigxList)>1:
+                plt.scatter(z[mi]*np.ones(len(sigxList)), sigxList, label='$\sigma_x$', c='red')
+                plt.scatter(z[mi]*np.ones(len(sigxList)), sigyList, label='$\sigma_y$', c='black')
+                plt.legend()
+
+                plt.subplot(1, 2, 1)
+                plt.plot(zVal, errX/wSum, label='error X')
+                plt.plot(zVal, errY/wSum, label='error Y')
+                plt.plot(zVal, err, label='Total Error')
+                plt.xlabel('Z-position [nm]')
+                plt.ylabel(r'Error [nm$^2$]')
+                plt.legend()
+
+
+                plt.show()
+            plt.clf()'''
 
 
         except (TypeError, ValueError, ZeroDivisionError):
@@ -634,8 +660,10 @@ class multiviewMapper:
             planeInColorChan[np.where(igMask)] = -9  # must be negative to be ignored
 
             # assign molecules to clumps
-            clumpID = pairMolecules(fres['tIndex'], fres['fitResults_x0'], fres['fitResults_y0'],
-                                            planeInColorChan, deltaX=fres['fitError_x0'],
+            clumpRad = fres['fitError_x0']  # 1e3*pipeline.mdh['voxelsize.x']*np.ones_like(fres['x'])  # clump folded data within 2 pixels #fres['fitError_x0'],
+
+            clumpID = pairMolecules(fres['tIndex'], fres['x'], fres['y'],
+                                            planeInColorChan, deltaX=clumpRad,  # fres['fitError_x0'],
                                             appearIn=np.where(chanColor == cind)[0], nFrameSep=1, returnPaired=False)
 
             # make sure clumpIDs are contiguous from [0, numClumps)
