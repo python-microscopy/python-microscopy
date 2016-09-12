@@ -99,6 +99,8 @@ class _LimitedSizeDict(OrderedDict):
 _dirCache = _LimitedSizeDict(size_limit=100)
 _dirCacheTimeout = 1
 
+_listDirLock = threading.Lock()
+
 class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     bandwidthTesting = False
@@ -352,29 +354,30 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         """
         curTime = time.time()
-
-        try:
-            js_dir, expiry = _dirCache[path]
-            if expiry < curTime: raise RuntimeError('Expired')
-        except (KeyError, RuntimeError):
+        with _listDirLock:
+            #make sure only one thread calculates the directory listing
             try:
-                list = os.listdir(path)
-            except os.error:
-                self.send_error(404, "No permission to list directory")
-                return None
-
-            list.sort(key=lambda a: a.lower())
-
-            #displaypath = cgi.escape(urllib.unquote(self.path))
-            l2 = []
-            for l in list:
-                if os.path.isdir(os.path.join(path, l)):
-                    l2.append(l + '/')
-                else:
-                    l2.append(l)
-
-            js_dir = json.dumps(l2)
-            _dirCache[path] = (js_dir, time.time() + _dirCacheTimeout)
+                js_dir, expiry = _dirCache[path]
+                if expiry < curTime: raise RuntimeError('Expired')
+            except (KeyError, RuntimeError):
+                try:
+                    list = os.listdir(path)
+                except os.error:
+                    self.send_error(404, "No permission to list directory")
+                    return None
+    
+                list.sort(key=lambda a: a.lower())
+    
+                #displaypath = cgi.escape(urllib.unquote(self.path))
+                l2 = []
+                for l in list:
+                    if os.path.isdir(os.path.join(path, l)):
+                        l2.append(l + '/')
+                    else:
+                        l2.append(l)
+    
+                js_dir = json.dumps(l2)
+                _dirCache[path] = (js_dir, time.time() + _dirCacheTimeout)
 
         f = StringIO()
         f.write(js_dir)
