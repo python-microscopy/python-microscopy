@@ -34,7 +34,7 @@ dataserver_root = config.get('dataserver-root')
 if dataserver_root:
     log_file = '%s/LOGS/%s/PYMEDataServer.log' % (dataserver_root, compName)
         
-    logging.basicConfig(filename =log_file, level=logging.DEBUG)
+    logging.basicConfig(filename =log_file, level=logging.DEBUG, filemode='w')
     logger = logging.getLogger('')
 else:
     logging.basicConfig(level=logging.DEBUG)
@@ -507,9 +507,16 @@ def main(protocol="HTTP/1.0"):
     op.add_option('-v', '--protocol', dest='protocol', help="HTTP protocol version", default="1.1")
     op.add_option('-l', '--log-requests', dest='log_requests', help="Display http request info", default=False, action="store_true")
     op.add_option('-r', '--root', dest='root', help="Root directory of virtual filesystem", default=config.get('dataserver-root', os.curdir))
+    op.add_option('-k', '--profile', dest='profile', help="Enable profiling", default=False, action="store_true")
 
 
     options, args = op.parse_args()
+    if options.profile:
+        from PYME.util import mProfile
+        mProfile.profileOn(['HTTPDataServer.py',])
+
+        profileOutDir = options.root + '/LOGS/%s/mProf' % compName
+
     
     #change to the dataserver root if given
     logger.info('Serving from directory: %s' % options.root)
@@ -544,6 +551,10 @@ def main(protocol="HTTP/1.0"):
         logger.info('Shutting down ...')
         httpd.shutdown()
         httpd.server_close()
+
+        if options.profile:
+            mProfile.report(display=False, profiledir=profileOutDir)
+
         sys.exit()
 
 
