@@ -3,6 +3,7 @@ import logging
 import threading
 import time
 from PYME.IO import MetaDataHandler
+from PYME import config
 import numpy as np
 import traceback
 
@@ -23,6 +24,7 @@ def openH5R(filename, mode='r'):
 
 
 KEEP_ALIVE_TIMEOUT = 20 #keep the file open for 20s after the last time it was used
+FLUSH_INTERVAL = config.get('h5r-flush_interval', 1)
 
 class H5RFile(object):
     def __init__(self, filename, mode='r'):
@@ -49,6 +51,7 @@ class H5RFile(object):
         #logging.debug('H5RFile - starting poll thread')
         self._pollThread = threading.Thread(target=self._pollQueues)
         self._pollThread.start()
+        self._lastFlushTime = 0
         #logging.debug('H5RFile - poll thread started')
 
     def __enter__(self):
@@ -144,8 +147,12 @@ class H5RFile(object):
                     #save the data - note that we can release the lock here, as we are the only ones calling this function.
                     self._appendToTable(tablename, np.hstack(entries))
 
-                self._h5file.flush()
-                time.sleep(0.002)
+                curTime = time.time()
+                if (curTime - self._lastFlushTime) > FLUSH_INTERVAL:
+                    self._h5file.flush()
+                    self._lastFlushTime = curTime
+
+                time.sleep(0.1)
 
         except:
             traceback.print_exc()
