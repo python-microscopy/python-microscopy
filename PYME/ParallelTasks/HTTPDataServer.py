@@ -374,7 +374,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     l2.append(l)
 
             js_dir = json.dumps(l2)
-            _dirCache[path] = (js_dir, curTime + _dirCacheTimeout)
+            _dirCache[path] = (js_dir, time.time() + _dirCacheTimeout)
 
         f = StringIO()
         f.write(js_dir)
