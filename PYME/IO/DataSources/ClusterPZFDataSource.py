@@ -31,7 +31,7 @@ from .BaseDataSource import BaseDataSource
 #import cPickle as pickle
 import time
 import json
-import pandas as pd
+#import pandas as pd
 import numpy as np
 SHAPE_LIFESPAN = 30
 
@@ -90,6 +90,7 @@ class DataSource(BaseDataSource):
         return self.sequenceName + '/events.json'
 
     def getEvents(self):
+        import pandas as pd #defer pandas import for as long as possible
         try:
             #return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
             ev = pd.read_json(clusterIO.getFile(self.eventFileName, self.clusterfilter))

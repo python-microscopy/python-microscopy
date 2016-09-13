@@ -27,7 +27,8 @@ def fileFormattedResults(URI, data, mimetype=None):
         logging.debug('fileFormattedResults - URI: ' + URI)
         #logging.debug('data: ' + data)
         #logging.debug('type(data) = %s, len(data) = %d' % (type(data), len(data)))
-        r = requests.put(URI, data=data, timeout=5)
+        s = clusterIO._getSession(URI)
+        r = s.put(URI, data=data, timeout=5)
         #print r.status_code
         if not r.status_code == 200:
             raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))

@@ -158,7 +158,7 @@ class NodeServer(object):
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
     def rate(self):
-        logger.debug('Rating tasks')
+        #logger.debug('Rating tasks')
         tasks = cherrypy.request.json
 
         #logging.debug(tasks)

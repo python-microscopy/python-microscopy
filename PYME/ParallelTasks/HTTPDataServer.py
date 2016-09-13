@@ -532,6 +532,7 @@ def main(protocol="HTTP/1.0"):
     PYMEHTTPRequestHandler.logrequests = options.log_requests
 
     httpd = ThreadedHTTPServer(server_address, PYMEHTTPRequestHandler)
+    httpd.daemon_threads = True
 
     sa = httpd.socket.getsockname()
 

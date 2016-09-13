@@ -50,6 +50,7 @@ class H5RFile(object):
 
         #logging.debug('H5RFile - starting poll thread')
         self._pollThread = threading.Thread(target=self._pollQueues)
+        self._pollThread.daemon = False #make sure we finish and close the fiels properly on exit
         self._pollThread.start()
         self._lastFlushTime = 0
         #logging.debug('H5RFile - poll thread started')
