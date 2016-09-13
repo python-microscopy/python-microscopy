@@ -165,8 +165,8 @@ def main():
                         if len(res.driftResults) > 0:
                             clusterResults.fileResults(outputs['driftResults'], res.driftResults)
 
-
-                    r = requests.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
+                    s = clusterIO._getSession(queueURL)
+                    r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
                     if not r.status_code == 200:
                         logger.error('Returning task failed with error: %s' % r.status_code)
 
@@ -175,7 +175,8 @@ def main():
                     traceback.print_exc()
                     logger.exception(traceback.format_exc())
 
-                    r = requests.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
+                    s = clusterIO._getSession(queueURL)
+                    r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
                     if not r.status_code == 200:
                         logger.error('Returning task failed with error: %s' % r.status_code)
                 finally:
