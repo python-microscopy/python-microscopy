@@ -42,7 +42,7 @@ def getmdh(inmodule = False):
     else:
         return None
 
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 def mdhnogui(filename):
     import tables
     h5f = tables.openFile(filename)

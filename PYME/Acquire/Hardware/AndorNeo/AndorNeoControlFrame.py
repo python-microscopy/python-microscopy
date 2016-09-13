@@ -27,7 +27,7 @@
 
 import wx
 from PYME.Acquire.Hardware import ccdCalibrator
-from PYME.misc.autoFoldPanel import collapsingPane
+from PYME.ui.autoFoldPanel import collapsingPane
 
 
 

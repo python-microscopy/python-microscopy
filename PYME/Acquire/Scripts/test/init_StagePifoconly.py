@@ -41,7 +41,7 @@ def GetComputerName():
 
 #scope.cameras = {}
 #scope.camControls = {}
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 pz = InitBG('Fake Piezo(s)', '''
 scope.fakePiezo = fakePiezo.FakePiezo(100)

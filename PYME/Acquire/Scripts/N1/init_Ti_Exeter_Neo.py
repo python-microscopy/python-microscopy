@@ -39,7 +39,7 @@ def GetComputerName():
 
 #scope.cameras = {}
 #scope.camControls = {}
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 
 cm = InitBG('Andor Neo', '''
 from PYME.Acquire.Hardware.AndorNeo import AndorNeo

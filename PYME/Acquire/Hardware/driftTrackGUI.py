@@ -13,7 +13,7 @@ import wx
 
 import numpy as np
 from PYME.contrib.wxPlotPanel import PlotPanel
-from PYME.Acquire import MetaDataHandler
+from PYME.IO import MetaDataHandler
 from PYME.DSView import dsviewer as dsviewer
 
 def YesNo(parent, question, caption = 'Yes or no?'):
