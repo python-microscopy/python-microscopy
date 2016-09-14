@@ -112,7 +112,7 @@ class SpoolController(object):
             #raise RuntimeError('No output file specified')
             #return #bail
         
-        if not (self.spoolType == 'HTTP' or os.path.exists(self.dirname)):
+        if not (self.spoolType == 'Cluster' or os.path.exists(self.dirname)):
             os.makedirs(self.dirname)
 
         if not self.dirname[-1] == os.sep:
@@ -152,9 +152,9 @@ class SpoolController(object):
                                                 frameShape = frameShape, protocol=protocol, 
                                                 guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
                                                 fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
-        elif self.spoolType == 'HTTP':
+        elif self.spoolType == 'Cluster':
             #self.queueName = self.dirname + fn + '.h5'
-            self.queueName = getRelFilename(self.dirname + fn + '.h5')
+            self.queueName = getRelFilename(self.dirname + fn + '.pcs')
             self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                frameShape = frameShape, protocol=protocol, 
                                                guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 

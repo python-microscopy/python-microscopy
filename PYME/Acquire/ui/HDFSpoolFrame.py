@@ -282,7 +282,7 @@ class PanSpool(wx.Panel):
             
             
     def OnSpoolingStarted(self, **kwargs):
-        if self.spoolController.spoolType in ['Queue', 'HTTP']:
+        if self.spoolController.spoolType in ['Queue', 'Cluster']:
             self.bAnalyse.Enable()
 
         self.bStartSpool.Enable(False)
