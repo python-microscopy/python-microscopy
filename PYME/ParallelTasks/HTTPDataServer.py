@@ -165,13 +165,18 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 h5f.fileFitResult(fitResults)
             else:
                 try:
-                    #try to read data as if it was numpy binary formatted
-                    data = np.load(cStringIO.StringIO(data))
-                except IOError:
-                    #it's not numpy formatted - try json
-                    import pandas as pd
-                    #FIXME!! - this will work, but will likely be really slow!
-                    data = pd.read_json(data).to_records(False)
+                    #pickle is much faster than numpy array format (despite the array format being simpler)
+                    #reluctanltly use pickles
+                    data = np.loads(data)
+                except cPickle.UnpicklingError:
+                    try:
+                        #try to read data as if it was numpy binary formatted
+                        data = np.load(cStringIO.StringIO(data))
+                    except IOError:
+                        #it's not numpy formatted - try json
+                        import pandas as pd
+                        #FIXME!! - this will work, but will likely be really slow!
+                        data = pd.read_json(data).to_records(False)
 
                 #logging.debug('adding data to table')
                 h5f.appendToTable(tablename.lstrip('/'), data)
@@ -353,9 +358,10 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         interface the same as for send_head().
 
         """
-        curTime = time.time()
+
         with _listDirLock:
             #make sure only one thread calculates the directory listing
+            curTime = time.time()
             try:
                 js_dir, expiry = _dirCache[path]
                 if expiry < curTime: raise RuntimeError('Expired')

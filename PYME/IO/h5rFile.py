@@ -6,6 +6,7 @@ from PYME.IO import MetaDataHandler
 from PYME import config
 import numpy as np
 import traceback
+import collections
 
 #global lock across all instances of the H5RFile class as we can have problems across files
 tablesLock = threading.Lock()
@@ -113,7 +114,7 @@ class H5RFile(object):
         #logging.debug('h5rfile - append to table: %s' % tablename)
         with self.appendQueueLock:
             if not tablename in self.appendQueues.keys():
-                self.appendQueues[tablename] = []
+                self.appendQueues[tablename] = collections.deque
             self.appendQueues[tablename].append(data)
 
     def getTableData(self, tablename, _slice):
@@ -141,13 +142,23 @@ class H5RFile(object):
                 queuesWithData = len(tablenames) > 0
 
                 #iterate over the queues
-                for tablename in tablenames:
-                    with self.appendQueueLock:
-                        entries = self.appendQueues[tablename]
-                        self.appendQueues[tablename] = []
+                # for tablename in tablenames:
+                #     with self.appendQueueLock:
+                #         entries = self.appendQueues[tablename]
+                #         self.appendQueues[tablename] = collections.deque()
+                #
+                #     #save the data - note that we can release the lock here, as we are the only ones calling this function.
+                #     rows = np.hstack(entries)
+                #     self._appendToTable(tablename, rows)
 
-                    #save the data - note that we can release the lock here, as we are the only ones calling this function.
-                    self._appendToTable(tablename, np.hstack(entries))
+                #iterate over the queues (in a threadsafe manner)
+                for tablename in tablenames:
+                    waiting = self.appendQueues[tablename]
+                    try:
+                        while len(waiting) > 0:
+                            self._appendToTable(tablename, waiting.popleft())
+                    except IndexError:
+                        pass
 
                 curTime = time.time()
                 if (curTime - self._lastFlushTime) > FLUSH_INTERVAL:

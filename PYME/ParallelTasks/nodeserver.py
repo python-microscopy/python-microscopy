@@ -95,7 +95,7 @@ class NodeServer(object):
 
         if len(handins) > 0:
             r = requests.post(self.distributor_url + 'distributor/handin?nodeID=%s' % self.nodeID, json=handins)
-            
+
 
     def _poll(self):
         while self._do_poll:
