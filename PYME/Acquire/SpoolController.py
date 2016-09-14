@@ -102,7 +102,8 @@ class SpoolController(object):
         self.onSpoolProgress.send(self)
 
 
-    def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize):
+    def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize,
+                      compressionSettings=HTTPSpooler.defaultCompSettings):
         """Start spooling
         """
 
@@ -157,7 +158,8 @@ class SpoolController(object):
             self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                frameShape = frameShape, protocol=protocol, 
                                                guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
-                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
+                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
+                                               compressionSettings=compressionSettings)
            
         else:
             self.spooler = HDFSpooler.Spooler(self.dirname + fn + '.h5', self.scope.frameWrangler.onFrame, 

@@ -35,6 +35,8 @@ import PYME.Acquire.Protocols
 import os
 import glob
 
+from PYME.IO import PZFFormat
+
 
 
 [wxID_FRSPOOL, wxID_FRSPOOLBSETSPOOLDIR, wxID_FRSPOOLBSTARTSPOOL, 
@@ -153,7 +155,7 @@ class PanSpool(wx.Panel):
         #queues etcc        
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.rbQueue = wx.RadioBox(self, -1,'Spool to:', choices=['File', 'Queue', 'HTTP'])
+        self.rbQueue = wx.RadioBox(self, -1,'Spool to:', choices=['File', 'Queue', 'Cluster'])
         self.rbQueue.SetSelection(1)
         
         self.rbQueue.Bind(wx.EVT_RADIOBOX, self.OnSpoolMethodChanged)
@@ -176,12 +178,30 @@ class PanSpool(wx.Panel):
 
         hsizer.Add(self.cbCompress, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        vsizer.Add(hsizer, 0, wx.LEFT|wx.RIGHT|wx.EXPAND, 0)
-        
-        
+        self.cbQuantize = wx.CheckBox(self, -1, 'Quantization')
+        self.cbQuantize.SetValue(True)
 
-        self.SetSizer(vsizer)
-        vsizer.Fit(self)
+        hsizer.Add(self.cbQuantize, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        vsizer.Add(hsizer, 0, wx.LEFT|wx.RIGHT|wx.EXPAND, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Quantization offset:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tQuantizeOffset = wx.TextCtrl(self, -1, '0')
+        hsizer.Add(self.tQuantizeOffset, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Quantization scale:'), 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.tQuantizeScale = wx.TextCtrl(self, -1, '1.0')
+        hsizer.Add(self.tQuantizeScale, 1.0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
+
+        self.SetSizerAndFit(vsizer)
 
     def __init__(self, parent, scope, **kwargs):
         """Initialise the spooling panel.
@@ -246,8 +266,15 @@ class PanSpool(wx.Panel):
         else:
             compLevel = 0
 
+        compSettings = {
+            'compression' : PZFFormat.DATA_COMP_HUFFCODE if self.cbCompress.GetValue() else PZFFormat.DATA_COMP_RAW,
+            'quantization' : PZFFormat.DATA_QUANT_SQRT if self.cbQuantize.GetValue() else PZFFormat.DATA_QUANT_NONE,
+            'quantizationOffset' : float(self.tQuantizeOffset.GetValue()),
+            'quantizationScale' : float(self.tQuantizeScale.GetValue())
+        }
+
         try:
-            self.spoolController.StartSpooling(fn, stack=stack, compLevel = compLevel)
+            self.spoolController.StartSpooling(fn, stack=stack, compLevel = compLevel, compressionSettings=compSettings)
         except IOError:
             ans = wx.MessageBox('A series with the same name already exists', 'Error', wx.OK)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)

@@ -61,7 +61,7 @@ from PYME.ParallelTasks import distribution
 
 #import here to pre-populate the zeroconf nameserver
 from PYME.IO import clusterIO
-time.sleep(3)
+#time.sleep(3)
 
 
 LOCAL = False
@@ -107,7 +107,8 @@ def main():
                 #ask the queue for tasks
                 #TODO - make the server actually return a list of tasks, not just one (or implement pipelining in another way)
                 #try:
-                r = requests.get(queueURL + 'node/tasks?workerID=%s' % procName, timeout=100)
+                s = clusterIO._getSession(queueURL)
+                r = s.get(queueURL + 'node/tasks?workerID=%s' % procName, timeout=100)
                 if r.status_code == 200:
                     resp = r.json()
                     if resp['ok']:

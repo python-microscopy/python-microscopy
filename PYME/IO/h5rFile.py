@@ -114,7 +114,7 @@ class H5RFile(object):
         #logging.debug('h5rfile - append to table: %s' % tablename)
         with self.appendQueueLock:
             if not tablename in self.appendQueues.keys():
-                self.appendQueues[tablename] = collections.deque
+                self.appendQueues[tablename] = collections.deque()
             self.appendQueues[tablename].append(data)
 
     def getTableData(self, tablename, _slice):
