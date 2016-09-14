@@ -24,7 +24,7 @@ class NodeServer(object):
         self.ip_address = ip_address
         self.port = port
 
-        self.workerIDs = []
+        self.workerIDs = set()
 
         self._lastUpdateTime = 0
         self._lastAnnounceTime = 0
@@ -33,6 +33,7 @@ class NodeServer(object):
         cherrypy.engine.subscribe('stop', self.stop)
 
         self._do_poll = True
+        self._update_tasks_lock = threading.Lock()
 
         #set up threads to poll the distributor and announce ourselves and get and return tasks
         self.pollThread = threading.Thread(target=self._poll)
@@ -64,23 +65,24 @@ class NodeServer(object):
 
     def _update_tasks(self):
         """Update our task queue"""
-        t = time.time()
-        if (t - self._lastUpdateTime) < 0.1:
-            return
+        with self._update_tasks_lock:
+            t = time.time()
+            if (t - self._lastUpdateTime) < 0.1:
+                return
 
-        self._lastUpdateTime = t
+            self._lastUpdateTime = t
 
-        url = self.distributor_url + 'distributor/tasks?nodeID=%s&numWant=%d&timeout=10' % (self.nodeID, self.num_tasks_to_request)
-        try:
-            r = requests.get(url, timeout=10)
-            resp = r.json()
-            if resp['ok']:
-                for task in resp['result']:
-                    self._tasks.put(task)
-        except requests.Timeout:
-            pass
-        except requests.ConnectionError:
-            logger.error('Could not connect to distributor')
+            url = self.distributor_url + 'distributor/tasks?nodeID=%s&numWant=%d&timeout=10' % (self.nodeID, self.num_tasks_to_request)
+            try:
+                r = requests.get(url, timeout=15)
+                resp = r.json()
+                if resp['ok']:
+                    for task in resp['result']:
+                        self._tasks.put(task)
+            except requests.Timeout:
+                logger.warn('Timeout getting tasks from distributor')
+            except requests.ConnectionError:
+                logger.error('Error getting tasks: Could not connect to distributor')
 
     def _do_handins(self):
         handins = []
@@ -92,7 +94,8 @@ class NodeServer(object):
             pass
 
         if len(handins) > 0:
-            requests.post(self.distributor_url + 'distributor/handin?nodeID=%s' % self.nodeID, json=handins)
+            r = requests.post(self.distributor_url + 'distributor/handin?nodeID=%s' % self.nodeID, json=handins)
+            
 
     def _poll(self):
         while self._do_poll:
@@ -118,7 +121,7 @@ class NodeServer(object):
     @cherrypy.expose
     @cherrypy.tools.json_out()
     def tasks(self, workerID):
-        self.workerIDs.append(workerID)
+        self.workerIDs.add(workerID)
         if self._tasks.qsize() < 10:
             self._update_tasks()
 

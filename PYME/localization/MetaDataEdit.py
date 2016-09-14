@@ -54,6 +54,10 @@ class FloatParam(MDParam):
 
     def updateValue(self, mdh, **kwargs):
         self.tValue.SetValue('%3.2f' % mdh.getOrDefault(self.paramName, self.default))
+
+    def formField(self):
+        from django import forms
+        return {self.paramName : forms.FloatField(label=self.guiName)}
         
 
 class IntParam(MDParam):
@@ -89,6 +93,10 @@ class IntParam(MDParam):
     def updateValue(self, mdh, **kwargs):
         self.tValue.SetValue('%d' % mdh.getOrDefault(self.paramName, self.default))
 
+    def formField(self):
+        from django import forms
+        return {self.paramName: forms.IntField(label=self.guiName)}
+
 class RangeParam(MDParam):
     def __init__(self, paramName, guiName, default=[0, 0], helpText='', **kwargs):
         self.paramName = paramName
@@ -123,6 +131,10 @@ class RangeParam(MDParam):
     def updateValue(self, mdh, **kwargs):
         val = ':'.join(['%d' % v for v in mdh.getOrDefault(self.paramName, self.default)])
         self.tValue.SetValue(val)
+
+    def formField(self):
+        from django import forms
+        return {self.paramName: forms.FloatField(label=self.guiName)}
         
         
 class StringParam(MDParam):

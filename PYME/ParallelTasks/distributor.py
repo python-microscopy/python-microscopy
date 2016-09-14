@@ -19,7 +19,7 @@ import collections
 NODE_TIMEOUT = config.get('distributor-node_registration_timeout', 10)
 PROCESS_TIMEOUT = config.get('distributor-execution_timeout', 300)
 RATE_TIMEOUT = config.get('distributor-task_rating_timeout', 10)
-NUM_TO_RATE = config.get('distributor-rating_chunk_size', 50)
+NUM_TO_RATE = config.get('distributor-rating_chunk_size', 250)
 
 class TaskInfo(object):
     def __init__(self, task, timeout):
@@ -273,13 +273,13 @@ class Distributor(object):
 
     @cherrypy.expose
     #@cherrypy.tools.json_in()
-    #@cherrypy.tools.json_out()
+    @cherrypy.tools.json_out()
     def handin(self, nodeID):
         logger.debug('Handing in tasks...')
         for handin in json.loads(cherrypy.request.body.read()):
             queue = handin['taskID'].split('-')[0]
             self._queues[queue].handin(handin)
-        return #{'ok': True}
+        return {'ok': True}
 
     @cherrypy.expose
     def announce(self, nodeID, ip, port):
