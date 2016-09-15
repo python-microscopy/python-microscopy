@@ -35,6 +35,8 @@ class NodeServer(object):
         self._do_poll = True
         self._update_tasks_lock = threading.Lock()
 
+        self._num_connection_fails = 0
+
         #set up threads to poll the distributor and announce ourselves and get and return tasks
         self.pollThread = threading.Thread(target=self._poll)
         self.pollThread.start()
@@ -79,10 +81,17 @@ class NodeServer(object):
                 if resp['ok']:
                     for task in resp['result']:
                         self._tasks.put(task)
+
+                if self._num_connection_fails > 0:
+                    logger.info('Re-established connection to distributor after %d failures' % self._num_connection_fails)
+                self._num_connection_fails = 0
             except requests.Timeout:
                 logger.warn('Timeout getting tasks from distributor')
             except requests.ConnectionError:
-                logger.error('Error getting tasks: Could not connect to distributor')
+                self._num_connection_fails += 1
+                if self._num_connection_fails < 2:
+                    #don't log subsequent failures to avoid filling up the disk
+                    logger.error('Error getting tasks: Could not connect to distributor')
 
     def _do_handins(self):
         handins = []
