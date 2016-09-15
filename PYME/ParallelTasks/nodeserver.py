@@ -74,9 +74,9 @@ class NodeServer(object):
 
             self._lastUpdateTime = t
 
-            url = self.distributor_url + 'distributor/tasks?nodeID=%s&numWant=%d&timeout=10' % (self.nodeID, self.num_tasks_to_request)
+            url = self.distributor_url + 'distributor/tasks?nodeID=%s&numWant=%d&timeout=5' % (self.nodeID, self.num_tasks_to_request)
             try:
-                r = requests.get(url, timeout=15)
+                r = requests.get(url, timeout=120)
                 resp = r.json()
                 if resp['ok']:
                     for task in resp['result']:
