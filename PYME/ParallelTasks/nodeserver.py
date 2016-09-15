@@ -102,12 +102,12 @@ class NodeServer(object):
             #self._announce()
             self._do_handins()
             #self._update_tasks()
-            time.sleep(1)
+            time.sleep(.5)
 
     def _poll_tasks(self):
         while self._do_poll:
             self._update_tasks()
-            time.sleep(1)
+            time.sleep(.1)
 
     def _announce_loop(self):
         while self._do_poll:

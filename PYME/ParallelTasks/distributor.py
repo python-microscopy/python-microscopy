@@ -114,7 +114,7 @@ class TaskQueue(object):
                         costs[id] = cost
                         min_cost[id] = node
 
-            logger.debug('%d ratings returned' % len(min_cost))
+            #logger.debug('%d ratings returned' % len(min_cost))
             #assign our rated items to a node
             for id, node in min_cost.items():
                 self.num_rated += 1
@@ -130,6 +130,7 @@ class TaskQueue(object):
             while True:
                 id, t = self.ratings_in_progress.popitem(False)
                 self.rating_queue.append(t.task)
+                logger.debug('Resubmitting failed task for rating')
         except KeyError:
             pass
 
@@ -141,6 +142,7 @@ class TaskQueue(object):
                 task = self.assigned.pop(id).task
                 self.rating_queue.append(task)
                 id = self.assigned.keys()[-1]
+                logger.debug('Task timed out, resubmitting')
         except IndexError:
             pass
 
@@ -159,6 +161,10 @@ class TaskQueue(object):
 
                         if self.failure_counts[h['taskID']] < 5:
                             self.rating_queue.append(t.task)
+                            logger.debug('task failed, retrying ... ')
+                        else:
+                            self.num_tasks_failed += 1
+                            logger.error('task failed > 5 times, discarding')
                     else: #didn't process
                         self.rating_queue.append(t.task)
 
@@ -207,7 +213,9 @@ class Distributor(object):
                 try:
                     while True:
                         task = q.get_nowait()
-                        handins.append( {'taskID': task['id'], 'status' : 'notExecuted'})
+                        handin = {'taskID': task['id'], 'status' : 'notExecuted'}
+                        queue = handin['taskID'].split('-')[0]
+                        self._queues[queue].handin(handin)
                 except Queue.Empty:
                     pass
 
@@ -248,7 +256,8 @@ class Distributor(object):
         except Queue.Empty:
             pass
 
-        logger.debug('Gave %d tasks to %s' % (len(tasks), nodeID))
+        if nTasks > 0:
+            logger.debug('Gave %d tasks to %s' % (len(tasks), nodeID))
 
         return {'ok': True, 'result': tasks}
 
@@ -275,7 +284,7 @@ class Distributor(object):
     #@cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
     def handin(self, nodeID):
-        logger.debug('Handing in tasks...')
+        #logger.debug('Handing in tasks...')
         for handin in json.loads(cherrypy.request.body.read()):
             queue = handin['taskID'].split('-')[0]
             self._queues[queue].handin(handin)
