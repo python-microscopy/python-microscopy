@@ -26,7 +26,7 @@ def main():
         if not (len(sys.argv) == 2 and sys.argv[1] == '-n'):
             proc = subprocess.Popen('distributor -c %s' % confFile, shell=True, stdout=logfile_debug, stderr=logfile_error)
         else:
-            proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True, stdout=logfile_debug, stderr=logfile_error)
+            proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234 -k', shell=True, stdout=logfile_debug, stderr=logfile_error)
     else:
         if not (len(sys.argv) == 2 and sys.argv[1] == '-n'):
             proc = subprocess.Popen('distributor -c %s' % confFile, shell=True)
@@ -42,6 +42,9 @@ def main():
 
     finally:
         ns.unregister('PYMEDistributor: ' + GetComputerName())
+        #try and shut down the distributor cleanly
+        proc.send_signal(1)
+        time.sleep(2)
         proc.kill()
         
     logfile_error.close()

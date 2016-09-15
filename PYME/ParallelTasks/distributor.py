@@ -342,8 +342,12 @@ def run(port):
     finally:
         distributor._do_poll = False
 
+def on_SIGHUP(signum, frame):
+    raise RuntimeError('Recieved SIGHUP')
 
 if __name__ == '__main__':
+    import signal
+
     port = sys.argv[1]
 
     if (len(sys.argv) == 3) and (sys.argv[2] == '-k'):
@@ -354,6 +358,8 @@ if __name__ == '__main__':
     else:
         profile = False
         profileOutDir=None
+
+    signal.signal(signal.SIGHUP, on_SIGHUP)
 
     try:
         run(int(port))
