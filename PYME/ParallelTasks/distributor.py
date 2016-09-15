@@ -122,7 +122,7 @@ class TaskQueue(object):
                 self.total_cost += costs[id]
                 t = TaskInfo(self.ratings_in_progress.pop(id).task, PROCESS_TIMEOUT)
                 self.assigned[id] = t
-                self.distributor.nodes[node]['taskQueue'].put(t)
+                self.distributor.nodes[node]['taskQueue'].append(t)
 
             #logger.debug('%d total tasks rated' % self.num_rated)
 
@@ -215,11 +215,11 @@ class Distributor(object):
 
                 try:
                     while True:
-                        task = q.get_nowait()
-                        handin = {'taskID': task['id'], 'status' : 'notExecuted'}
-                        queue = handin['taskID'].split('-')[0]
-                        self._queues[queue].handin(handin)
-                except Queue.Empty:
+                            task = q.popleft()
+                            handin = {'taskID': task['id'], 'status' : 'notExecuted'}
+                            queue = handin['taskID'].split('-')[0]
+                            self._queues[queue].handin(handin)
+                except IndexError:
                     pass
 
 
@@ -251,12 +251,14 @@ class Distributor(object):
         t_finish = t + timeout
 
         nTasks = 0
-        try:
-            while (nTasks < numWant) and (t < t_finish):
-                tasks.append(self.nodes[nodeID]['taskQueue'].get(timeout = (t_finish - t)).task)
-                t = time.time()
-        except Queue.Empty:
-            pass
+
+        while (nTasks < numWant) and (t < t_finish):
+            try:
+                tasks.append(self.nodes[nodeID]['taskQueue'].popleft().task)
+            except IndexError:
+                pass
+            t = time.time()
+
 
         if nTasks > 0:
             logger.debug('Gave %d tasks to %s' % (len(tasks), nodeID))
@@ -299,7 +301,7 @@ class Distributor(object):
         try:
             node = self.nodes[nodeID]
         except KeyError:
-            node = {'taskQueue': Queue.Queue()}
+            node = {'taskQueue': collections.deque()}
             self.nodes[nodeID] = node
 
         node.update({'ip': ip, 'port': port, 'expiry' : time.time() + NODE_TIMEOUT})
@@ -343,6 +345,8 @@ def run(port):
         distributor._do_poll = False
 
 def on_SIGHUP(signum, frame):
+    from PYME.util import mProfile
+    mProfile.report(False, profiledir=profileOutDir)
     raise RuntimeError('Recieved SIGHUP')
 
 if __name__ == '__main__':
