@@ -65,7 +65,7 @@
 {% block scripts %}
 {% endblock %}
 <script>
-    function loadlink(){
+    function loadclusterload(){
         //console.log('about to reload')
         $('#load-content').load('/status/load/',function () {
             //alert( "Load was performed." );
@@ -74,9 +74,9 @@
         });
     }
 
-    loadlink(); // This will run on page load
+    loadclusterload(); // This will run on page load
     setInterval(function(){
-        loadlink(); // this will run after every 5 seconds
+        loadclusterload(); // this will run after every 5 seconds
     }, 1000);
 
 </script>
