@@ -1,0 +1,22 @@
+
+
+    <div class="section">
+    <h2>CPU Utilization</h2>
+    <table>
+        {% for node in storage_nodes %}
+            <tr>
+            <td>{{ node.ComputerName }}</td>
+
+            <td>{#{{ node.CPUUsage }}#}
+                <div class="chart-cpu" style="height: 30px">
+                    {% for cpu_pc in node.CPUUsage %}
+                        <div class="chart-cpu-bar" style="width: calc(100% / {{ node.CPUUsage | length }});height: calc(99.9% - {{ cpu_pc }}%);"></div>
+                    {% endfor %}
+                </div>
+            </td>
+            </tr>
+        {% endfor %}
+    </table>
+    </div>
+
+

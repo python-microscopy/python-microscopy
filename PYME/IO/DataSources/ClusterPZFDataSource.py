@@ -33,7 +33,7 @@ import time
 import json
 #import pandas as pd
 import numpy as np
-SHAPE_LIFESPAN = 30
+SHAPE_LIFESPAN = 5
 
 from PYME.IO import clusterIO
 from PYME.IO import PZFFormat
