@@ -291,6 +291,7 @@ class Distributor(object):
         return {'ok': True}
 
     @cherrypy.expose
+    @cherrypy.tools.json_out()
     def announce(self, nodeID, ip, port):
         try:
             node = self.nodes[nodeID]
@@ -302,7 +303,7 @@ class Distributor(object):
 
         #logging.debug('Got announcement from %s' % nodeID)
 
-        return
+        return {'ok': True}
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
