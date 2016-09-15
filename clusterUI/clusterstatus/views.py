@@ -32,9 +32,7 @@ def load(request):
     total_storage = 0
     free_storage = 0
 
-    context = {'storage_nodes' : nodes, 'total_storage' : total_storage,
-               'free_storage' : free_storage, 'used_storage' : total_storage-free_storage,
-               'percent_total_free' : int(100*float(free_storage)/total_storage)}
+    context = {'storage_nodes' : nodes}
 
 
     return render(request, 'clusterstatus/load_content.html', context)
