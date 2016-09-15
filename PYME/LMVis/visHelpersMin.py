@@ -26,8 +26,6 @@ import numpy
 
 from math import floor
 
-from matplotlib import delaunay
-
 from PYME.Analysis.points.qHull.triangWrap import RenderTetrahedra
 from PYME.Analysis.points import EdgeDB
 
@@ -115,6 +113,7 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
 
 
 def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
+    from matplotlib import delaunay
     for i in range(n):
         #global jParms
         #locals().update(jParms)
@@ -161,6 +160,7 @@ if multiProc:
         return im/n
 else:
     def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
+        from matplotlib import delaunay
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
 

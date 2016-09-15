@@ -28,7 +28,7 @@ from PYME.localization import ofind
 from PYME.localization.FitFactories.LatGaussFitFR import FitFactory, FitResultsDType
 from PYME.Analysis import MetaData
 from scipy.interpolate import Rbf, SmoothBivariateSpline
-from matplotlib import delaunay
+#from matplotlib import delaunay
 import tables
 
 #from PYME.localization.FitFactories import LatGaussFitFRTC
@@ -352,6 +352,7 @@ def dispRatio(res_g, res_r):
 
 
 def genShiftVectors(res_g, res_r):
+    from matplotlib import delaunay
     ind1 = (res_g['fitResults']['A'] > 10)*(res_g['fitResults']['A'] < 500)*(res_g['fitResults']['sigma'] > 100)*(res_g['fitResults']['sigma'] < 400)*(res_g['fitError']['x0'] < 50)
 
 

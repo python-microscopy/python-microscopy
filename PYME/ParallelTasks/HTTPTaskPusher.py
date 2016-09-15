@@ -136,7 +136,7 @@ class HTTPTaskPusher(object):
         numTotalFrames = self.ds.getNumSlices()
         logging.debug('numTotalFrames: %s, currentFrameNum: %d' % (numTotalFrames, self.currentFrameNum))
         numFramesOutstanding = 0
-        if  numTotalFrames > (self.currentFrameNum + 1):
+        while  numTotalFrames > (self.currentFrameNum + 1):
             logging.debug('we have unpublished frames - push them')
 
             #turn our metadata to a string once (outside the loop)
@@ -145,17 +145,17 @@ class HTTPTaskPusher(object):
             newFrameNum = min(self.currentFrameNum + 1000, numTotalFrames)
 
             #create task definitions for each frame
-            # tasks = [{'id': '%04d' % frameNum,
-            #           'type':'localization',
-            #           'taskdef': {'frameIndex': str(frameNum), 'metadata':self.results_md_uri},
-            #           'inputs' : {'frames': self.dataSourceID},
-            #           'outputs' : {'fitResults': self.resultsURI+'/FitResults',
-            #                        'driftResults':self.resultsURI+'/DriftResults'}
-            #           } for frameNum in range(self.currentFrameNum, newFrameNum)]
-            #
-            # task_list = tasks #json.dumps(tasks)
+            tasks = [{'id': '%04d' % frameNum,
+                      'type':'localization',
+                      'taskdef': {'frameIndex': str(frameNum), 'metadata':self.results_md_uri},
+                      'inputs' : {'frames': self.dataSourceID},
+                      'outputs' : {'fitResults': self.resultsURI+'/FitResults',
+                                   'driftResults':self.resultsURI+'/DriftResults'}
+                      } for frameNum in range(self.currentFrameNum, newFrameNum)]
 
-            task_list = [self._taskTemplate.format(frameNum=frameNum) for frameNum in range(self.currentFrameNum, newFrameNum)]
+            task_list = tasks #json.dumps(tasks)
+
+            #task_list = [self._taskTemplate.format(frameNum=frameNum) for frameNum in range(self.currentFrameNum, newFrameNum)]
 
             # r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list)
             # if r.status_code == 200 and r.json()['ok']:
