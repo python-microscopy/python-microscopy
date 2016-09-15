@@ -14,6 +14,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 from PYME.ParallelTasks import distribution
 from multiprocessing import cpu_count
+import sys
 
 
 
@@ -65,9 +66,11 @@ def main():
     
     nodeserverLog = open(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w')
 
-    proc = subprocess.Popen('nodeserver -c %s' % temp_conf_file_name, shell=True, stdout=nodeserverLog, stderr=nodeserverLog)
-    #proc = subprocess.Popen('python -m PYME.ParallelTasks.nodeserver %s %s' % (distributors[0], serverPort), shell=True,
-    #                        stdout=nodeserverLog, stderr=nodeserverLog)
+    if not (len(sys.argv) == 2 and sys.argv[1] == '-n'):
+        proc = subprocess.Popen('nodeserver -c %s' % temp_conf_file_name, shell=True, stdout=nodeserverLog, stderr=nodeserverLog)
+    else:
+        proc = subprocess.Popen('python -m PYME.ParallelTasks.nodeserver %s %s' % (distributors[0], serverPort), shell=True,
+                                stdout=nodeserverLog, stderr=nodeserverLog)
 
     ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, int(serverPort))
 

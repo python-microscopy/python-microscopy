@@ -6,7 +6,7 @@ from PYME.misc.computerName import GetComputerName
 import subprocess
 import time
 import socket
-
+import sys
 #confFile = os.path.join(config.user_config_dir, 'distributor.yaml')
 
 def main():
@@ -23,10 +23,15 @@ def main():
         logfile_error = open('%s/LOGS/distributor_error.log' % data_root, 'w')
         logfile_debug = open('%s/LOGS/distributor_debug.log' % data_root, 'w')
 
-        proc = subprocess.Popen('distributor -c %s' % confFile, shell=True, stdout=logfile_debug, stderr=logfile_error)
-        #proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True, stdout=logfile_debug, stderr=logfile_error)
+        if not (len(sys.argv) == 2 and sys.argv[1] == '-n'):
+            proc = subprocess.Popen('distributor -c %s' % confFile, shell=True, stdout=logfile_debug, stderr=logfile_error)
+        else:
+            proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True, stdout=logfile_debug, stderr=logfile_error)
     else:
-        proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True)
+        if not (len(sys.argv) == 2 and sys.argv[1] == '-n'):
+            proc = subprocess.Popen('distributor -c %s' % confFile, shell=True)
+        else:
+            proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True)
 
     ns = pyme_zeroconf.getNS('_pyme-taskdist')
     ns.register_service('PYMEDistributor: ' + GetComputerName(), externalAddr, int(serverPort))
