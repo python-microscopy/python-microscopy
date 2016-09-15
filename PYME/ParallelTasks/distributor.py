@@ -10,8 +10,9 @@ logger.setLevel(logging.DEBUG)
 import time
 import sys
 import json
+import os
 
-#from PYME.misc import computerName
+from PYME.misc import computerName
 from PYME import config
 #from PYME.IO import clusterIO
 import collections
@@ -196,6 +197,8 @@ class Distributor(object):
 
         self._do_poll = True
 
+        self._queueLock = threading.Lock()
+
         #set up threads to poll the distributor and announce ourselves and get and return tasks
         self.pollThread = threading.Thread(target=self._poll)
         self.pollThread.start()
@@ -209,7 +212,7 @@ class Distributor(object):
                 logger.info('unsubscribing %s and reassigning tasks' % nodeID)
 
                 q = node['taskQueue']
-                handins = []
+
                 try:
                     while True:
                         task = q.get_nowait()
@@ -219,7 +222,6 @@ class Distributor(object):
                 except Queue.Empty:
                     pass
 
-                self.handin(handins)
 
     def _poll(self):
         while self._do_poll:
@@ -262,11 +264,12 @@ class Distributor(object):
         return {'ok': True, 'result': tasks}
 
     def _post_tasks(self, queue):
-        try:
-            q = self._queues[queue]
-        except KeyError:
-            q = TaskQueue(self)
-            self._queues[queue] = q
+        with self._queueLock:
+            try:
+                q = self._queues[queue]
+            except KeyError:
+                q = TaskQueue(self)
+                self._queues[queue] = q
 
         tasks = json.loads(cherrypy.request.body.read())
         for task in tasks:
@@ -342,4 +345,20 @@ def run(port):
 
 if __name__ == '__main__':
     port = sys.argv[1]
-    run(int(port))
+
+    if (len(sys.argv) == 3) and (sys.argv[2] == '-k'):
+        profile = True
+        from PYME.util import mProfile
+        mProfile.profileOn(['distributor.py',])
+        profileOutDir = config.get('dataserver-root', os.curdir) + '/LOGS/%s/mProf' % computerName.GetComputerName()
+    else:
+        profile = False
+        profileOutDir=None
+
+    try:
+        run(int(port))
+    finally:
+        if profile:
+            mProfile.report(False, profiledir=profileOutDir)
+
+
