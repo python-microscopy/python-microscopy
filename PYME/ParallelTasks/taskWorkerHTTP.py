@@ -34,18 +34,27 @@ from PYME import config
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
 
-import logging    
+import logging
+import logging.handlers
 dataserver_root = config.get('dataserver-root')
 if dataserver_root:
     log_dir = '%s/LOGS/%s/taskWorkerHTTP' % (dataserver_root, compName)
     if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+        try:
+            os.makedirs(log_dir)
+        except:
+            #as we are launching multiple processes at once, there is a race condition here and we might
+            #have already created the directory between our test and the makedirs call
+            pass
         
     #fh = logging.FileHandler('%s/%d.log' % (log_dir, os.getpid()), 'w')
     #fh.setLevel(logging.DEBUG)
     #logger.addHandler(fh)
-    logging.basicConfig(filename ='%s/%d.log' % (log_dir, os.getpid()), level=logging.DEBUG)
+    #logging.basicConfig(filename ='%s/%d.log' % (log_dir, os.getpid()), level=logging.DEBUG)
     logger = logging.getLogger('')
+    logger.setLevel(logging.DEBUG)
+    fh = logging.handlers.RotatingFileHandler(filename ='%s/%d.log' % (log_dir, os.getpid()), mode='w', maxBytes=1e6)
+    logger.addHandler(fh)
 else:
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger('')

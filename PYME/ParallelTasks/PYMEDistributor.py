@@ -18,6 +18,9 @@ def main():
     externalAddr = socket.gethostbyname(socket.gethostname())
     
     #set up logging
+    logfile_error = None
+    logfile_debug = None
+
     data_root = conf.get('dataserver-root')
     if data_root:
         logfile_error = open('%s/LOGS/distributor_error.log' % data_root, 'w')
@@ -39,6 +42,14 @@ def main():
     try:
         while not proc.poll():
             time.sleep(1)
+
+            if logfile_error:
+                #do crude log rotation
+                if logfile_error.tell() > 1e6:
+                    logfile_error.seek(0)
+
+                if logfile_debug.tell() > 1e6:
+                    logfile_debug.seek(0)
 
     finally:
         ns.unregister('PYMEDistributor: ' + GetComputerName())

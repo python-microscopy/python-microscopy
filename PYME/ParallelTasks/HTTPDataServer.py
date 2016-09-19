@@ -29,13 +29,22 @@ compName = GetComputerName()
 import os
 
 #make sure we set up our logging before anyone elses does
-import logging    
+import logging
+import logging.handlers
 dataserver_root = config.get('dataserver-root')
 if dataserver_root:
+    log_dir = '%s/LOGS/%s' % (dataserver_root, compName)
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
     log_file = '%s/LOGS/%s/PYMEDataServer.log' % (dataserver_root, compName)
         
-    logging.basicConfig(filename =log_file, level=logging.DEBUG, filemode='w')
+    #logging.basicConfig(filename =log_file, level=logging.DEBUG, filemode='w')
+    #logger = logging.getLogger('')
     logger = logging.getLogger('')
+    logger.setLevel(logging.DEBUG)
+    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6)
+    logger.addHandler(fh)
 else:
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger('')

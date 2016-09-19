@@ -89,6 +89,10 @@ def main():
     try:
         while not proc.poll():
             time.sleep(1)
+
+            #try to keep log size under control by doing crude rotation
+            if nodeserverLog.tell() > 1e6:
+                nodeserverLog.seek(0)
     except KeyboardInterrupt:
         pass
     finally:
