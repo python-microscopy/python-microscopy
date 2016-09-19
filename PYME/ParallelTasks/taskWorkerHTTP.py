@@ -189,8 +189,8 @@ def main():
                     r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
                     if not r.status_code == 200:
                         logger.error('Returning task failed with error: %s' % r.status_code)
-                finally:
-                    del task
+                #finally:
+                #    del task
             
         #tq.returnCompletedTasks(results, name)
         del tasks

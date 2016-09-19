@@ -41,12 +41,15 @@ class NodeServer(object):
         self._num_connection_fails = 0
 
         #set up threads to poll the distributor and announce ourselves and get and return tasks
+        self.handinSession = requests.Session()
         self.pollThread = threading.Thread(target=self._poll)
         self.pollThread.start()
 
+        self.announceSession = requests.Session()
         self.announceThread = threading.Thread(target=self._announce_loop)
         self.announceThread.start()
 
+        self.taskSession = requests.Session()
         self.taskThread = threading.Thread(target=self._poll_tasks)
         self.taskThread.start()
 
@@ -57,10 +60,13 @@ class NodeServer(object):
             self._lastAnnounceTime = t
 
             #logger.debug('Announcing to %s' % self.distributor_url)
+            if self.announceSession is None:
+                self.announceSession = requests.Session()
 
             try:
-                requests.post(self._anounce_url, timeout=1)
+                self.announceSession.post(self._anounce_url, timeout=1)
             except (requests.Timeout, requests.ConnectionError):
+                self.announceSession = Nonne
                 logger.error('Could not connect to distributor %s' % self.distributor_url)
 
 
@@ -77,9 +83,12 @@ class NodeServer(object):
 
             self._lastUpdateTime = t
 
+            if self.taskSession is None:
+                self.taskSession = requests.Session()
+
             url = self.distributor_url + 'distributor/tasks?nodeID=%s&numWant=%d&timeout=5' % (self.nodeID, self.num_tasks_to_request)
             try:
-                r = requests.get(url, timeout=120)
+                r = self.taskSession.get(url, timeout=120)
                 resp = r.json()
                 if resp['ok']:
                     for task in resp['result']:
@@ -91,6 +100,7 @@ class NodeServer(object):
             except requests.Timeout:
                 logger.warn('Timeout getting tasks from distributor')
             except requests.ConnectionError:
+                self.taskSession = None
                 self._num_connection_fails += 1
                 if self._num_connection_fails < 2:
                     #don't log subsequent failures to avoid filling up the disk
@@ -99,6 +109,9 @@ class NodeServer(object):
     def _do_handins(self):
         handins = []
 
+        if self.handinSession is None:
+            self.handinSession = requests.Session()
+
         try:
             while True:
                 handins.append(self._handins.get_nowait())
@@ -106,7 +119,7 @@ class NodeServer(object):
             pass
 
         if len(handins) > 0:
-            r = requests.post(self.distributor_url + 'distributor/handin?nodeID=%s' % self.nodeID, json=handins)
+            r = self.handinSession.post(self.distributor_url + 'distributor/handin?nodeID=%s' % self.nodeID, json=handins)
 
 
     def _poll(self):
