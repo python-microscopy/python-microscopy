@@ -14,6 +14,9 @@ from PYME.misc import computerName
 from PYME import config
 from PYME.IO import clusterIO
 
+#disable socket timeout to prevent us from generating 408 errors
+cherrypy.server.socket_timeout = 0
+
 class NodeServer(object):
     def __init__(self, distributor, ip_address, port, nodeID=computerName.GetComputerName()):
         self._tasks = Queue.Queue()

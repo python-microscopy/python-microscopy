@@ -2,6 +2,8 @@ import requests
 import json
 import socket
 from PYME.misc import pyme_zeroconf
+import logging
+logger = logging.getLogger(__name__)
 
 def getNodeInfo():
     ns = pyme_zeroconf.getNS('_pyme-taskdist')
