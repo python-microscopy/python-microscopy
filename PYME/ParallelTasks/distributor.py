@@ -256,6 +256,7 @@ class Distributor(object):
             try:
                 tasks.append(self.nodes[nodeID]['taskQueue'].popleft().task)
             except IndexError:
+                time.sleep(.2)
                 pass
             except KeyError:
                 logger.debug('tasks requested from unknown node: %s' % nodeID)
