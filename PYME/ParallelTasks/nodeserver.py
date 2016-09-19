@@ -66,7 +66,7 @@ class NodeServer(object):
             try:
                 self.announceSession.post(self._anounce_url, timeout=1)
             except (requests.Timeout, requests.ConnectionError):
-                self.announceSession = Nonne
+                self.announceSession = None
                 logger.error('Could not connect to distributor %s' % self.distributor_url)
 
 

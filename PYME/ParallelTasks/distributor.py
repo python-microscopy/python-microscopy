@@ -84,7 +84,8 @@ class TaskQueue(object):
         url = 'http://%s:%d/node/rate' % (server['ip'], int(server['port']))
         #logger.debug('Requesting rating from %s' % url)
         try:
-            r = requests.post(url, json=tasks, timeout=RATE_TIMEOUT)
+            r = requests.post(url, data=tasks,
+                          headers={'Content-Type': 'application/json'}, timeout=RATE_TIMEOUT)
             resp = r.json()
             if resp['ok']:
                 rated_queue.append((node, resp['result']))
@@ -97,7 +98,8 @@ class TaskQueue(object):
         tasks = self._getForRating(NUM_TO_RATE)
         if len(tasks) > 0:
             rated_queue = collections.deque()
-            r_threads = [threading.Thread(target=self._rate_tasks, args=(tasks, node, rated_queue)) for node in self.distributor.nodes.keys()]
+            task_list = json.dumps(tasks)
+            r_threads = [threading.Thread(target=self._rate_tasks, args=(task_list, node, rated_queue)) for node in self.distributor.nodes.keys()]
 
             #logger.debug('Asking nodes for rating')
             for t in r_threads: t.start()

@@ -12,7 +12,10 @@ def getNodeInfo():
 
     for name, info in ns.advertised_services.items():
         if name.startswith('PYMENodeServer'):
-            queueURLs[name] = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
+            try:
+                queueURLs[name] = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
+            except TypeError:
+                logger.debug('ValueError: %s %s, %s' % (name, repr(info), info.port))
 
     return queueURLs
 
