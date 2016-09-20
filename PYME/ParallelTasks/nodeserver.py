@@ -64,10 +64,15 @@ class NodeServer(object):
                 self.announceSession = requests.Session()
 
             try:
-                self.announceSession.post(self._anounce_url, timeout=1)
-            except (requests.Timeout, requests.ConnectionError):
+                r = self.announceSession.post(self._anounce_url, timeout=1)
+                if r.status_code == 200 or not r.json()['ok']:
+                    logger.error('Announce failed')
+            except requests.ConnectionError:
                 self.announceSession = None
-                logger.error('Could not connect to distributor %s' % self.distributor_url)
+                logger.error('Error announcing - could not connect to distributor %s' % self.distributor_url)
+            except requests.Timeout:
+                logger.error('Error announcing - distributor %s timed out' % self.distributor_url)
+
 
 
     @property
