@@ -33,6 +33,16 @@
     width: 100%;
     min-width: 100px;
 }
+
+.chart-gpu{
+    background-color: #c45c19;
+    min-height: 30px;
+    height: auto;
+    display: inline-block;
+    /*overflow: hidden;*/
+    width: 100%;
+    min-width: 100px;
+}
 .chart-cpu-bar{
     /*background-color: #1c94c4;*/
     background-color: #ddd;

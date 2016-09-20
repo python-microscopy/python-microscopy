@@ -69,6 +69,13 @@ import threading
 import datetime
 import time
 
+#GPU status functions
+try:
+    import pynvml
+    GPU_STATS=True
+except ImportError:
+    GPU_STATS = False
+
 
 compName = GetComputerName()
 procName = compName + ' - PID:%d' % os.getpid()
@@ -291,7 +298,11 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         except ImportError:
             pass
 
-
+        if GPU_STATS:
+            handles = [pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(pynvml.nvmlDeviceCount())]
+            gpu_usage = [pynvml.nvmlDeviceGetUtilizationRates(h) for h in handles]
+            status['GPUUsage'] = [float(gu.gpu) for gu in gpu_usage]
+            status['GPUMem'] = [float(gu.memory) for gu in gpu_usage]
 
         f = StringIO()
         f.write(json.dumps(status))
@@ -563,6 +574,9 @@ def main(protocol="HTTP/1.0"):
     global_status['TestMode'] = options.test
     global_status['ComputerName'] = GetComputerName()
 
+    if GPU_STATS:
+        pynvml.nvmlInit()
+
     print "Serving HTTP on", ip_addr, "port", sa[1], "..."
     try:
         httpd.serve_forever()
@@ -573,6 +587,9 @@ def main(protocol="HTTP/1.0"):
 
         if options.profile:
             mProfile.report(display=False, profiledir=profileOutDir)
+
+        if GPU_STATS:
+            pynvml.Shutdown()
 
         sys.exit()
 
