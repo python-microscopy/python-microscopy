@@ -299,7 +299,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             pass
 
         if GPU_STATS:
-            handles = [pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(pynvml.nvmlDeviceCount())]
+            handles = [pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(pynvml.nvmlDeviceGetCount())]
             gpu_usage = [pynvml.nvmlDeviceGetUtilizationRates(h) for h in handles]
             status['GPUUsage'] = [float(gu.gpu) for gu in gpu_usage]
             status['GPUMem'] = [float(gu.memory) for gu in gpu_usage]
@@ -520,6 +520,7 @@ class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
 
 
 def main(protocol="HTTP/1.0"):
+    global GPU_STATS
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the first command line
@@ -575,7 +576,11 @@ def main(protocol="HTTP/1.0"):
     global_status['ComputerName'] = GetComputerName()
 
     if GPU_STATS:
-        pynvml.nvmlInit()
+        try:
+            pynvml.nvmlInit()
+        except:
+            GPU_STATS = False
+
 
     print "Serving HTTP on", ip_addr, "port", sa[1], "..."
     try:
