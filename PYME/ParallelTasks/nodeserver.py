@@ -65,7 +65,7 @@ class NodeServer(object):
 
             try:
                 r = self.announceSession.post(self._anounce_url, timeout=1)
-                if r.status_code == 200 or not r.json()['ok']:
+                if not r.status_code == 200 or not r.json()['ok']:
                     logger.error('Announce failed')
             except requests.ConnectionError:
                 self.announceSession = None
