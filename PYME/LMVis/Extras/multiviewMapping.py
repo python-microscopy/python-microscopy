@@ -76,10 +76,10 @@ def plotFolded(X, Y, multiviewChannels, title=''):
     plt.figure()
     nChan = len(np.unique(multiviewChannels))
 
-    c = iter(plt.cm.rainbow(np.linspace(0, 1, nChan)))
+    c = iter(plt.cm.Dark2(np.linspace(0, 1, nChan)))
     for ii in range(nChan):
         mask = (ii == multiviewChannels)
-        plt.scatter(X[mask], Y[mask], c=next(c), label='Chan #%i' % ii)
+        plt.scatter(X[mask], Y[mask], edgecolors=next(c), facecolors='none', label='Chan #%i' % ii)
     plt.title(title)
     plt.legend()
     return
@@ -533,6 +533,17 @@ class multiviewMapper:
         for ci in range(len(xShifted)):
             cStack.append(ci*np.ones(len(xShifted[ci])))
         cStack = np.hstack(cStack)
+
+        # calculate standard deviation within clump before and after shift
+        unRegStd = np.empty((numMoles, 2))
+        regStd = np.empty_like(unRegStd)
+        for mi in range(numMoles):
+            # TODO: pull inline loops out, this is just being lazy
+            unRegStd[mi, :] = np.std([xClump[cc][mi] for cc in range(numChan)]), np.std([yClump[cc][mi] for cc in range(numChan)])
+            regStd[mi, :] = np.std([xShifted[cc][mi] for cc in range(numChan)]), np.std([yShifted[cc][mi] for cc in range(numChan)])
+
+        print('Avg std(X) within clumps: unreg= %f, reg =  %f' % (unRegStd[:, 0].mean(), regStd[:, 0].mean()))
+        print('Avg std(Y) within clumps: unreg= %f, reg = %f' % (unRegStd[:, 1].mean(), regStd[:, 1].mean()))
 
         plotFolded(np.hstack(xClump), np.hstack(yClump), cStack, 'Unregistered Clumps')
 
