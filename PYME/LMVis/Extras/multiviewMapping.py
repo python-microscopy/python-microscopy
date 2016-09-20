@@ -660,7 +660,7 @@ class multiviewMapper:
             planeInColorChan[np.where(igMask)] = -9  # must be negative to be ignored
 
             # assign molecules to clumps
-            clumpRad = fres['fitError_x0']  # 1e3*pipeline.mdh['voxelsize.x']*np.ones_like(fres['x'])  # clump folded data within 2 pixels #fres['fitError_x0'],
+            clumpRad = 1e3*pipeline.mdh['voxelsize.x']*np.ones_like(fres['x'])  # clump folded data within 2 pixels #fres['fitError_x0'],
 
             clumpID = pairMolecules(fres['tIndex'], fres['x'], fres['y'],
                                             planeInColorChan, deltaX=clumpRad,  # fres['fitError_x0'],
