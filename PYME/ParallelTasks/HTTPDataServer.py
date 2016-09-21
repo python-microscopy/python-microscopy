@@ -594,7 +594,7 @@ def main(protocol="HTTP/1.0"):
             mProfile.report(display=False, profiledir=profileOutDir)
 
         if GPU_STATS:
-            pynvml.Shutdown()
+            pynvml.nvmlShutdown()
 
         sys.exit()
 
