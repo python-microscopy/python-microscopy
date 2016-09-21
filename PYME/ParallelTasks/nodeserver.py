@@ -150,7 +150,7 @@ class NodeServer(object):
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
-    def tasks(self, workerID):
+    def tasks(self, workerID, numWant=50):
         self.workerIDs.add(workerID)
         if self._tasks.qsize() < 10:
             self._update_tasks()
@@ -159,7 +159,7 @@ class NodeServer(object):
         nTasks = 1
 
         try:
-            while nTasks < 50:
+            while nTasks < numWant:
                 tasks.append(self._tasks.get_nowait())
                 nTasks += 1
         except Queue.Empty:

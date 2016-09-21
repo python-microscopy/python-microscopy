@@ -75,6 +75,7 @@ def main():
     nodeserver_log_handler = logging.handlers.RotatingFileHandler(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w', 1e6)
     nodeserver_log_handler.setFormatter(logging.Formatter('%(message)s'))
     nodeserverLog = logging.getLogger('nodeserver')
+    nodeserverLog.handlers.pop()
     nodeserverLog.addHandler(nodeserver_log_handler)
     nodeserverLog.setLevel(logging.DEBUG)
 
@@ -150,7 +151,7 @@ def main():
 
         logging.info('Workers and nodeserver are shut down')
             
-    nodeserverLog.close()
+    #nodeserverLog.close()
 
 
 if __name__ == '__main__':
