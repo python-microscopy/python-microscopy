@@ -83,7 +83,7 @@ def main():
         proc = subprocess.Popen('nodeserver -c %s' % temp_conf_file_name, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     else:
         proc = subprocess.Popen('python -m PYME.ParallelTasks.nodeserver %s %s' % (distributors[0], serverPort), shell=True,
-                                stdout=nodeserverLog, stderr=nodeserverLog)
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     t_log_stderr = threading.Thread(target=log_stream, args=(proc.stderr, nodeserverLog))
     t_log_stderr.setDaemon(False)

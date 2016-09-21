@@ -9,6 +9,7 @@ import socket
 import sys
 
 import logging, logging.handlers
+logging.basicConfig()
 import threading
 #confFile = os.path.join(config.user_config_dir, 'distributor.yaml')
 
@@ -37,7 +38,7 @@ def main():
         #logfile_error = open('%s/LOGS/distributor_error.log' % data_root, 'w')
         #logfile_debug = open('%s/LOGS/distributor_debug.log' % data_root, 'w')
 
-        distr_log_dir = '%s/LOGS/' % data_root
+        distr_log_dir = '%s/LOGS' % data_root
 
         dist_err_handler = logging.handlers.RotatingFileHandler(
             os.path.join(distr_log_dir, 'distributor_error.log'), 'w', 1e6)
@@ -45,6 +46,7 @@ def main():
         distLogErr = logging.getLogger('dist_err')
         distLogErr.addHandler(dist_err_handler)
         distLogErr.setLevel(logging.DEBUG)
+        distLogErr.propagate = False
 
         dist_dbg_handler = logging.handlers.RotatingFileHandler(
             os.path.join(distr_log_dir, 'distributor_debug.log'), 'w', 1e6)
@@ -52,6 +54,7 @@ def main():
         distLogDbg = logging.getLogger('dist_debug')
         distLogDbg.addHandler(dist_dbg_handler)
         distLogDbg.setLevel(logging.DEBUG)
+        distLogDbg.propagate = False
 
         if not (len(sys.argv) == 2 and sys.argv[1] == '-n'):
             proc = subprocess.Popen('distributor -c %s' % confFile, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
