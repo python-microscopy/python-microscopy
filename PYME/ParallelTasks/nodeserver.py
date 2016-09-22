@@ -124,7 +124,14 @@ class NodeServer(object):
             pass
 
         if len(handins) > 0:
-            r = self.handinSession.post(self.distributor_url + 'distributor/handin?nodeID=%s' % self.nodeID, json=handins)
+            try:
+                r = self.handinSession.post(self.distributor_url + 'distributor/handin?nodeID=%s' % self.nodeID, json=handins)
+                resp = r.json()
+                if not resp['ok']:
+                    raise RuntimeError('')
+            except:
+                logger.error('Error handing in tasks')
+                self.handinSession = None
 
 
     def _poll(self):
