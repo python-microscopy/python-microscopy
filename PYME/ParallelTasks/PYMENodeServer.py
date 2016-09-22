@@ -72,7 +72,7 @@ def main():
         pass
     
     #nodeserverLog = open(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w')
-    nodeserver_log_handler = logging.handlers.RotatingFileHandler(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w', 1e6)
+    nodeserver_log_handler = logging.handlers.RotatingFileHandler(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w', maxBytes=1e6,backupCount=0)
     nodeserver_log_handler.setFormatter(logging.Formatter('%(message)s'))
     nodeserverLog = logging.getLogger('nodeserver')
     nodeserverLog.handlers.pop()
