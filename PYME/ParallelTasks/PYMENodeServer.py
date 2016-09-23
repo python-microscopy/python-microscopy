@@ -75,9 +75,9 @@ def main():
     nodeserver_log_handler = logging.handlers.RotatingFileHandler(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w', maxBytes=1e6,backupCount=0)
     nodeserver_log_handler.setFormatter(logging.Formatter('%(message)s'))
     nodeserverLog = logging.getLogger('nodeserver')
-    nodeserverLog.handlers.pop()
     nodeserverLog.addHandler(nodeserver_log_handler)
     nodeserverLog.setLevel(logging.DEBUG)
+    nodeserverLog.propagate=False
 
     if not (len(sys.argv) == 2 and sys.argv[1] == '-n'):
         proc = subprocess.Popen('nodeserver -c %s' % temp_conf_file_name, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
