@@ -221,14 +221,14 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
 
         sigCalX['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
                                                        np.array(stigLib[ii]['sigmax'])[lowZLoc:upZLoc],
-                                                       ext='const', s=smoothFac)(zVal)
+                                                       ext='extrapolate', s=smoothFac)(zVal)  #  ext='const', s=smoothFac)(zVal)
                                                             # bbox=stigLib['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
         sigCalY['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
                                                        np.array(stigLib[ii]['sigmay'])[lowZLoc:upZLoc],
-                                                       ext='const', s=smoothFac)(zVal)
+                                                       ext='extrapolate', s=smoothFac)(zVal)  # ext='const', s=smoothFac)(zVal)
         # set regions outside of usable interpolation area to very unreasonable sigma values
-        sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
-        sigCalY['chan%i' % ii][sigCalY['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
+        #sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
+        #sigCalY['chan%i' % ii][sigCalY['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
 
         plt.plot(zVal, sigCalX['chan%i' % ii])
         plt.plot(zVal, sigCalY['chan%i' % ii])
@@ -284,7 +284,7 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
             # TypeError if err is scalar 0, ValueError if err is all NaNs, ZeroDivErr if wSum and errX are both zero
             failures += 1
 
-    plt.hist(z)
+    plt.hist(-z)
     plt.xlabel('Z-position from astigmatism [nm]')
     plt.ylabel('Counts [unitless] or Sigma [nm]')
 
@@ -404,7 +404,7 @@ class multiviewMapper:
         pipeline = self.visFr.pipeline
 
         try:  # load shiftmaps from metadata, if present
-            shiftWallet = pipeline.mdh['Shiftmap']
+            shiftWallet = pipeline.mdh['FIXMEShiftmap']
         except AttributeError:
             try:  # load through GUI dialog
                 fdialog = wx.FileDialog(None, 'Load shift field', wildcard='Shift Field file (*.sf)|*.sf',

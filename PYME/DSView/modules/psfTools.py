@@ -59,7 +59,7 @@ def findZRange(astigLib):
     import scipy.interpolate as terp
     for ii in range(len(astigLib)):
         # find region of dsigma which is monotonic (smooth a bit, too)
-        dsig = terp.UnivariateSpline(astigLib[ii]['z'], astigLib[ii]['dsigma'], s=5*len(astigLib[ii]['z']))
+        dsig = terp.UnivariateSpline(astigLib[ii]['z'], astigLib[ii]['dsigma'], s=50*len(astigLib[ii]['z']))
 
         # mask where the sign is the same as the center
         zvec = np.linspace(np.min(astigLib[ii]['z']), np.max(astigLib[ii]['z']), 1000)
