@@ -166,7 +166,7 @@ class NodeServer(object):
         nTasks = 1
 
         try:
-            while nTasks < numWant:
+            while nTasks < int(numWant):
                 tasks.append(self._tasks.get_nowait())
                 nTasks += 1
         except Queue.Empty:
