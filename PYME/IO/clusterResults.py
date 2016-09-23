@@ -12,6 +12,7 @@ import logging
 import socket
 
 
+
 def fileFormattedResults(URI, data, mimetype=None):
     #TODO - send the mimetype
     #handle non-http requests
@@ -24,8 +25,11 @@ def fileFormattedResults(URI, data, mimetype=None):
 
         clusterIO.putFile(sequenceName, data, clusterfilter)
     elif URI.startswith('HTTP') or URI.startswith('http'):
-        print URI
-        r = requests.put(URI, data=data, timeout=5)
+        logging.debug('fileFormattedResults - URI: ' + URI)
+        #logging.debug('data: ' + data)
+        #logging.debug('type(data) = %s, len(data) = %d' % (type(data), len(data)))
+        s = clusterIO._getSession(URI)
+        r = s.put(URI, data=data, timeout=5)
         #print r.status_code
         if not r.status_code == 200:
             raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))
@@ -34,23 +38,33 @@ def fileFormattedResults(URI, data, mimetype=None):
 
 _loc_cache = {}
 def pickResultsServer(filename, serverfilter=''):
+    #logging.debug('pickResultsServer - input: ' + filename)
     if filename.startswith('__aggregate_txt/'):
         fn = filename[len('__aggregate_txt/'):]
         stub = ''
+        prefix = '__aggregate_txt'
     elif filename.startswith('__aggregate_h5r/'):
         fn = filename[len('__aggregate_h5r/'):]
         fn, stub = fn.split('.h5r')
         fn = fn  + '.h5r'
+        prefix = '__aggregate_h5r'
     else:
         fn = filename
         stub = ''
+        prefix = ''
 
     cache_key = serverfilter + '::' + fn
     try:
-        return _loc_cache[cache_key]
+        loc = _loc_cache[cache_key]
+        #logging.debug('pickResultsServer - output[cached]: ' + loc + stub)
+        return loc + stub
     except KeyError:
-        locs = clusterIO.locateFile(fn, serverfilter)
-        locs = [(l + stub, dt) for l, dt in locs]
+        locs_ = clusterIO.locateFile(fn, serverfilter)
+        locs = []
+        for l, dt in locs_:
+            parts = l.split('/')
+            nl = '/'.join(parts[:3] +[prefix,] + parts[3:])
+            locs.append((nl, dt))
 
 
         if len(locs) > 1:
@@ -61,10 +75,13 @@ def pickResultsServer(filename, serverfilter=''):
             loc =  locs[0][0]
         else:
             name, info = clusterIO._chooseServer(serverfilter)
-            loc = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
+            loc = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, '/'.join([prefix, fn]))
 
         _loc_cache[cache_key] = loc
-        return loc
+        #logging.debug('pickResultsServer - output: ' + loc + stub)
+        return loc + stub
+
+
 
 
 def fileResults(URI, data_raw):
@@ -96,10 +113,15 @@ def fileResults(URI, data_raw):
         raise NotImplementedError('Need to add code for saving images')
         #TODO - easy solution is to save locally and then copy. Better solution would be to change exporters to write into a file object
 
-    elif isinstance(data_raw, np.ndarray) or URI.endswith('.npy'):
+    elif URI.endswith('.npy'): # or isinstance(data_raw, np.ndarray):
         #output_format = 'numpy'
         data = cStringIO.StringIO()
         np.save(data, np.array(data_raw))
+        data = data.getvalue()
+
+    elif isinstance(data_raw, np.ndarray):
+        #very reluctantly use pickle to serialize numpy arrays rather than the better .npy format as reading .npy is really slow.
+        data = data_raw.dumps()
 
     elif isinstance(data_raw, MetaDataHandler.MDHandlerBase):
         output_format = 'text/json'
@@ -119,6 +141,10 @@ def fileResults(URI, data_raw):
         # the analysis, or ideally, encoding the correct HTTP:// url in the task specification.
         clusterfilter = URI.split('://')[1].split('/')[0]
         sequenceName = URI.split('://%s/' % clusterfilter)[1]
+
+        logging.debug('URI: ' + URI)
+        #logging.debug('clusterfilter: ' + clusterfilter)
+        #logging.debug('sequencename: ' + sequenceName)
 
         URI = pickResultsServer(sequenceName, clusterfilter)
 

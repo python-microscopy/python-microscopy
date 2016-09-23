@@ -13,8 +13,16 @@ import time
 import numpy as np
 
 import socket
+import os
 
 USE_RAW_SOCKETS = True
+
+from PYME.misc.computerName import GetComputerName
+compName = GetComputerName()
+
+from PYME import config
+local_dataroot = config.get('dataserver-root')
+local_serverfilter = config.get('dataserver-filter', '')
 
 
 import sys
@@ -30,7 +38,7 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 if not 'sphinx' in sys.modules.keys():
     # do not start zeroconf if running under sphinx
     ns = pzc.getNS('_pyme-http')
-    time.sleep(1.5 + np.random.rand())  # wait for ns resonses
+    time.sleep(1.5 + np.random.rand())  # wait for ns responses
 
 from collections import OrderedDict
 
@@ -53,7 +61,8 @@ class _LimitedSizeDict(OrderedDict):
 
 _locateCache = _LimitedSizeDict(size_limit=500)
 _dirCache = _LimitedSizeDict(size_limit=100)
-DIR_CACHE_TIME = 20
+DIR_CACHE_TIME = 1
+_fileCache = _LimitedSizeDict(size_limit=100)
 
 #use one session for each server (to allow http keep-alives)
 sessions = {}
@@ -68,7 +77,7 @@ def _getSession(url):
     return session
 
 
-def _listSingleDir(dirurl):
+def _listSingleDir(dirurl, nRetries=3):
     t = time.time()
 
     try:
@@ -78,23 +87,39 @@ def _listSingleDir(dirurl):
     except (KeyError, RuntimeError):
         # t = time.time()
         url = dirurl.encode()
-        s = _getSession(url)
-        r = s.get(url, timeout=1)
+        haveResult = False
+        nTries = 0
+        while nTries < nRetries and not haveResult:
+            try:
+                nTries += 1
+                s = _getSession(url)
+                r = s.get(url, timeout=1)
+                haveResult = True
+            except requests.Timeout as e:
+                logging.exception('Timeout on listing directory')
+                logging.info('%d retries left' % (nRetries - nTries))
+                if nTries == nRetries:
+                    raise
+
         dt = time.time() - t
         if not r.status_code == 200:
-            logging.warn('Request failed with error: %d' % r.status_code)
+            logging.debug('Request failed with error: %d' % r.status_code)
+
+            #make sure we read a reply so that the far end doesn't hold the connection open
+            dump = r.content
             return [], dt
         try:
             dirL = r.json()
         except ValueError:
             # directory doesn't exist
             return [], dt
+
         _dirCache[dirurl] = (dirL, t, dt)
 
     return dirL, dt
 
 
-def locateFile(filename, serverfilter=''):
+def locateFile(filename, serverfilter='', return_first_hit=False):
     """
     Searches the cluster to find which server(s) a given file is stored on
 
@@ -104,6 +129,8 @@ def locateFile(filename, serverfilter=''):
         The file name
     serverfilter : str
         The name of our cluster (allows for having multiple clusters on the same network segment)
+    return_first_hit : bool
+        Whether to try and find all locations, or return when we find the first copy
 
     Returns
     -------
@@ -121,16 +148,62 @@ def locateFile(filename, serverfilter=''):
         if (len(dirname) >= 1):
             dirname += '/'
 
+        servers = []
+        localServers = []
+
         # print ns.advertised_services.keys()
         for name, info in ns.advertised_services.items():
             if serverfilter in name:
                 dirurl = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
+
+                if compName in name:
+                    localServers.append(dirurl)
+                else:
+                    servers.append(dirurl)
+
+        #try data servers on the local machine first
+        for dirurl in localServers:
+            try:
+                dirL, rt, dt = _dirCache[dirurl]
+                cached = True
+            except KeyError:
+                cached = False
+
+            if cached and fn in dirL: #note we're using short-circuit evaluation here
+                locs.append((dirurl + fn, dt))
+
+            else:
                 dirList, dt = _listSingleDir(dirurl)
 
                 if fn in dirList:
                     locs.append((dirurl + fn, dt))
 
-        _locateCache[cache_key] = (locs, time.time())
+            if return_first_hit and len(locs) > 0:
+                return locs
+
+        #now try data remote servers
+        for dirurl in servers:
+            try:
+                dirL, rt, dt = _dirCache[dirurl]
+                cached = True
+            except KeyError:
+                cached = False
+
+            if cached and fn in dirL: #note we're using short-circuit evaluation here
+                locs.append((dirurl + fn, dt))
+
+            else:
+                dirList, dt = _listSingleDir(dirurl)
+
+                if fn in dirList:
+                    locs.append((dirurl + fn, dt))
+
+            if return_first_hit and len(locs) > 0:
+                return locs
+
+        if len(locs) > 0:
+            #cache if we found something (this is safe due to write-once nature of fs)
+            _locateCache[cache_key] = (locs, time.time())
 
         return locs
 
@@ -153,16 +226,16 @@ def listdir(dirname, serverfilter=''):
 
 
 def exists(name, serverfilter=''):
-    if name.endswith('/'):
-        name = name[:-1]
-        trailing = '/'
-    else:
-        trailing = ''
-
-    dirname = '/'.join(name.split('/')[:-1])
-    fname = name.split('/')[-1] + trailing
-
-    return fname in listdir(dirname, serverfilter)
+#    if name.endswith('/'):
+#        name = name[:-1]
+#        trailing = '/'
+#    else:
+#        trailing = ''
+#
+#    dirname = '/'.join(name.split('/')[:-1])
+#    fname = name.split('/')[-1] + trailing
+    #return fname in listdir(dirname, serverfilter)
+    return len(locateFile(name, serverfilter, True)) > 0
 
 
 def walk(top, topdown=True, on_error=None, followlinks=False, serverfilter=''):
@@ -230,19 +303,85 @@ def _chooseLocation(locs):
     return locs[cost.argmin()][0]
 
 
+def parseURL(URL):
+    scheme, body = URL.split('://')
+    parts = body.split('/')
+
+    serverfilter = parts[0]
+    filename = '/'.join(parts[1:])
+
+    return filename, serverfilter
+
+
+def isLocal(filename, serverfilter):
+    if serverfilter == local_serverfilter and local_dataroot:
+        #look for the file in the local server folder (short-circuit the server)
+        localpath = os.path.join(local_dataroot, filename)
+        return os.path.exists(localpath)
+    else:
+        return False
+
+
 def getFile(filename, serverfilter='', numRetries=3):
-    locs = locateFile(filename, serverfilter)
+    try:
+        return _fileCache[(filename, serverfilter)]
+    except KeyError:
+        pass
+
+    if serverfilter == local_serverfilter and local_dataroot:
+        #look for the file in the local server folder (short-circuit the server)
+        localpath = os.path.join(local_dataroot, filename)
+        if os.path.exists(localpath):
+            with open(localpath, 'rb') as f:
+                return f.read()
+    
+    locs = locateFile(filename, serverfilter, return_first_hit=True)
+
+    nTries = 1
+    while nTries < numRetries and len(locs) == 0:
+        #retry, giving a little bit of time for the data servers to come up
+        logging.debug('Could not find file, retrying ...')
+        time.sleep(1)
+        nTries += 1
+        locs = locateFile(filename, serverfilter, return_first_hit=True)
+
 
     if (len(locs) == 0):
         # we did not find the file
         logging.debug('could not find file %s on cluster: cluster nodes = %s' % (filename, ns.list()))
         raise IOError("Specified file could not be found: %s" % filename)
-    else:
-        url = _chooseLocation(locs).encode()
-        s = _getSession(url)
-        r = s.get(url, timeout=.5)
 
-        return r.content
+
+    url = _chooseLocation(locs).encode()
+    haveResult = False
+    nTries = 0
+    while nTries < numRetries and not haveResult:
+        try:
+            nTries += 1
+            s = _getSession(url)
+            r = s.get(url, timeout=.5)
+            haveResult = True
+        except requests.Timeout as e:
+            logging.exception('Timeout on get file')
+            logging.info('%d retries left' % (numRetries - nTries))
+            if nTries == numRetries:
+                raise
+
+    #s = _getSession(url)
+    #r = s.get(url, timeout=.5)
+
+    if not r.status_code == 200:
+        msg = 'Request for %s failed with error: %d' % (url, r.status_code)
+        logging.error(msg)
+        raise RuntimeError(msg)
+
+    content = r.content
+
+    if len(content) < 1000000:
+        #cache small files
+        _fileCache[(filename, serverfilter)] = content
+
+    return content
 
 
 _lastwritetime = {}
@@ -421,4 +560,29 @@ else:
             _lastwritespeed[name] = len(data) / (dt + .001)
 
             r.close()
+
+def getStatus(serverfilter=''):
+    """Lists the contents of a directory on the cluster. Similar to os.listdir,
+        but directories are indicated by a trailing slash
+        """
+    import json
+    status = []
+
+    for name, info in ns.advertised_services.items():
+        if serverfilter in name:
+            surl = 'http://%s:%d/__status' % (socket.inet_ntoa(info.address), info.port)
+            url = surl.encode()
+            s = _getSession(url)
+            try:
+                r = s.get(url, timeout=.5)
+                st = r.json()
+                st['Responsive'] = True
+                status.append(st)
+            except requests.Timeout:
+                status.append({"IPAddress":socket.inet_ntoa(info.address), 'Port':info.port, 'Responsive' : False})
+
+
+    return status
+
+
 

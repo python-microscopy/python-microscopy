@@ -1,0 +1,29 @@
+
+
+    <div class="section">
+    <h4>CPU & GPU Utilization</h4>
+    <table class="table table-condensed">
+        {% for node in storage_nodes %}
+            <tr>
+            <td>{{ node.ComputerName }}</td>
+
+            <td>{#{{ node.CPUUsage }}#}
+                <div class="chart-cpu" style="height: 30px">
+                    {% for cpu_pc in node.CPUUsage %}
+                        <div class="chart-cpu-bar" style="width: calc(100% / {{ node.CPUUsage | length }});height: calc(99.9% - {{ cpu_pc }}%);"></div>
+                    {% endfor %}
+                </div>
+            </td>
+            <td>
+                <div class="chart-gpu" style="height: 30px">
+                    {% for gpu_pc in node.GPUUsage %}
+                        <div class="chart-cpu-bar" style="width: calc(100% / {{ node.GPUUsage | length }});height: calc(99.9% - {{ gpu_pc }}%);"></div>
+                    {% endfor %}
+                </div>
+            </td>
+            </tr>
+        {% endfor %}
+    </table>
+    </div>
+
+

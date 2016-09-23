@@ -1,0 +1,95 @@
+.pie {
+   fill: #5cb85c;
+  stroke: #ddd;
+  stroke-width: 50;
+  stroke-dasharray: 0 158;
+}
+
+.chart{
+    background-color: #ddd;
+    min-height: 20px;
+    height: auto;
+    display: inline-block;
+    /*overflow: hidden;*/
+    width: 100%;
+}
+
+.chart-bar{
+    background-color: #5cb85c;
+    display: inline-block;
+    height: 100%;
+    float: right;
+    text-align: right;
+    /*padding-right: 5px;*/
+    /*overflow:hidden;*/
+}
+
+.chart-cpu{
+    background-color: #1c94c4;
+    min-height: 30px;
+    height: auto;
+    display: inline-block;
+    /*overflow: hidden;*/
+    width: 100%;
+    min-width: 100px;
+}
+
+.chart-gpu{
+    background-color: #c45c19;
+    min-height: 30px;
+    height: auto;
+    display: inline-block;
+    /*overflow: hidden;*/
+    width: 100%;
+    min-width: 100px;
+}
+.chart-cpu-bar{
+    /*background-color: #1c94c4;*/
+    background-color: #ddd;
+    display: inline-block;
+    /*height: 100%;*/
+    float: right;
+
+
+    text-align: right;
+    /*padding-right: 5px;*/
+    /*overflow:hidden;*/
+}
+
+.chart-bar-left{
+    display: inline-block;
+    max-width: 100%;
+    /*overflow:hidden;*/
+    /*min-width: 0;*/
+}
+
+.chart-bar-right{
+
+}
+
+.chart-label{
+    padding-left: 10px;
+    padding-right: 10px;
+    /*padding-top: 2px;
+    padding-bottom: 2px;*/
+    display: inline-block;
+}
+
+.section{
+    padding-bottom: 50px;
+}
+
+circle {
+
+  -webkit-transition: stroke-dasharray .3s ease;
+  transition: stroke-dasharray .3s ease;
+}
+
+svg {
+  margin: 0 auto;
+  -webkit-transform: rotate(-90deg);
+          transform: rotate(-90deg);
+  background: #ddd;
+  border-radius: 50%;
+  display: block;
+}

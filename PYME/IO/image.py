@@ -39,9 +39,46 @@ from PYME.IO import MetaDataHandler
 from PYME.Analysis import MetaData
 from PYME.IO import dataWrap
 from PYME.IO.DataSources import BufferedDataSource
-from PYME.LMVis.visHelpers import ImageBounds
+#from PYME.LMVis.visHelpers import ImageBounds
 
 from PYME.IO.FileUtils.nameUtils import getRelFilename
+
+class ImageBounds:
+    def __init__(self, x0, y0, x1, y1, z0=0, z1=0):
+        self.x0 = x0
+        self.y0 = y0
+        self.x1 = x1
+        self.y1 = y1
+        self.z0 = z0
+        self.z1 = z1
+
+    @classmethod
+    def estimateFromSource(cls, ds):
+        return cls(ds['x'].min(),ds['y'].min(),ds['x'].max(), ds['y'].max() )
+
+    def width(self):
+        return self.x1 - self.x0
+
+    def height(self):
+        return self.y1 - self.y0
+
+    @classmethod
+    def extractFromMetadata(cls, mdh):
+        x0 = 0
+        y0 = 0
+
+        x1 = mdh['Camera.ROIWidth'] * 1e3 * mdh['voxelsize.x']
+        y1 = mdh['Camera.ROIHeight'] * 1e3 * mdh['voxelsize.y']
+
+        if 'Splitter' in mdh.getOrDefault('Analysis.FitModule', ''):
+            if 'Splitter.Channel0ROI' in mdh.getEntryNames():
+                rx0, ry0, rw, rh = mdh['Splitter.Channel0ROI']
+                x1 = rw * 1e3 * mdh['voxelsize.x']
+                x1 = rh * 1e3 * mdh['voxelsize.x']
+            else:
+                y1 = y1 / 2
+
+        return cls(x0, y0, x1, y1)
 
 
 lastdir = ''

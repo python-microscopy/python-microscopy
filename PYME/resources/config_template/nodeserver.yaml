@@ -1,0 +1,15 @@
+nodeserver:
+  http_endpoint: 0.0.0.0:1337
+  http_print_debug_logs: false
+  distributors:
+  - 10.150.7.1:1234
+  pyme_cluster_rater:
+    data_server_root_dir: /mnt/storage/pyme
+  logic:
+    gc_interval: 1m0s
+    gc_cutoff: 5m0s
+    announce_interval: 3s
+    hand_in_buffer_size: 50
+    hand_in_buffer_flush_interval: 3s
+    num_want_tasks: -1
+    get_tasks_long_polling_timeout: 10s

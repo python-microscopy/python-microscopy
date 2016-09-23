@@ -37,6 +37,9 @@ from PYME.localization import ofind_pri
 
 from PYME.Analysis import buffers
 from PYME.IO.image import ImageStack
+
+import logging
+logger = logging.getLogger(__name__)
     
 import numpy
 import numpy as np
@@ -154,7 +157,7 @@ class CameraInfoManager(object):
 
         if (mp is None):
             #default to uniform read noise
-            rn = md['Camera.ReadNoise']
+            rn = float(md['Camera.ReadNoise'])
             return rn*rn
         else:
             return mp
@@ -209,8 +212,10 @@ def createFitTaskFromTaskDef(task):
     """
     from PYME.IO import MetaDataHandler
 
-    dataSourceID = task['inputs']['dataSourceID']
-    frameIndex = task['taskdef']['frameIndex']
+    dataSourceID = task['inputs']['frames']
+    frameIndex = int(task['taskdef']['frameIndex'])
+
+    logger.debug('Creating a task for %s - frame %d' % (dataSourceID, frameIndex))
 
     md = task['taskdef']['metadata']
 
@@ -224,7 +229,7 @@ def createFitTaskFromTaskDef(task):
         if md.startswith('{'):
             #metadata is a quoted json dump
             import json
-            mdh.update(json.loads(mdh))
+            mdh.update(json.loads(md))
         else:
             #metadata entry is a filename/URI
             from PYME.IO import unifiedIO
@@ -422,10 +427,14 @@ class fitTask(taskDef.Task):
         md.taskQueue = taskQueue
         md.dataSourceID = self.dataSourceID
 
+        #logging.debug('dataSourceID: %s, cachedDSID: %s', md.dataSourceID, bufferManager.dataSourceID)
+
         #make sure we're buffering the right data stream
         bufferManager.updateBuffers(md, self.dataSourceModule, self.bufferLen)
         
         self.data = bufferManager.dBuffer.getSlice(self.index)
+        #if logger.isEnabledFor(logging.DEBUG):
+        #    logger.debug('data: min - %3.2f, max - %3.2f, mean - %3.2f' % (self.data.min(), self.data.max(), self.data.mean()))
         nTasksProcessed += 1
         #print self.index
 
@@ -444,6 +453,9 @@ class fitTask(taskDef.Task):
 
         #calculate noise
         self.sigma = self.calcSigma(md, self.data)
+
+        #if logger.isEnabledFor(logging.DEBUG):
+        #    logger.debug('data_mean: %3.2f, bg: %3.2f, sigma: %3.2f' % (self.data.mean(), self.sigma.mean(), self.bg.mean()))
         
         #############################################
         # Special cases - defer object finding to fit module
@@ -558,7 +570,7 @@ class fitTask(taskDef.Task):
     @classmethod
     def calcSigma(cls, md, data):
         var = np.atleast_3d(cameraMaps.getVarianceMap(md))
-        return np.sqrt(var + (md.Camera.NoiseFactor**2)*(md.Camera.ElectronsPerCount*md.Camera.TrueEMGain*np.maximum(data, 1) + md.Camera.TrueEMGain*md.Camera.TrueEMGain))/md.Camera.ElectronsPerCount    
+        return np.sqrt(var + (float(md.Camera.NoiseFactor)**2)*(float(md.Camera.ElectronsPerCount)*float(md.Camera.TrueEMGain)*np.maximum(data, 1.0) + float(md.Camera.TrueEMGain)*float(md.Camera.TrueEMGain)))/float(md.Camera.ElectronsPerCount)
     
     def calcThreshold(self):
         #from scipy import ndimage

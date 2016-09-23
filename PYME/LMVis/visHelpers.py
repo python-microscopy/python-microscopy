@@ -26,15 +26,10 @@ import scipy
 import numpy
 import numpy.ctypeslib
 
-
-#import subprocess
-#from PYME.IO.FileUtils import saveTiffStack
-from matplotlib import delaunay
 from PYME.Analysis.points.qHull.triangWrap import RenderTetrahedra
-
 from math import floor
 
-#import sys
+from PYME.IO.image import ImageBounds
 
 
 
@@ -61,42 +56,7 @@ except:
 #    multiProc = False
 
 
-class ImageBounds:
-    def __init__(self, x0, y0, x1, y1, z0=0, z1=0):
-        self.x0 = x0
-        self.y0 = y0
-        self.x1 = x1
-        self.y1 = y1
-        self.z0 = z0
-        self.z1 = z1
 
-    @classmethod
-    def estimateFromSource(cls, ds):
-        return cls(ds['x'].min(),ds['y'].min(),ds['x'].max(), ds['y'].max() )
-
-    def width(self):
-        return self.x1 - self.x0
-
-    def height(self):
-        return self.y1 - self.y0
-
-    @classmethod
-    def extractFromMetadata(cls, mdh):
-        x0 = 0
-        y0 = 0
-
-        x1 = mdh['Camera.ROIWidth'] * 1e3 * mdh['voxelsize.x']
-        y1 = mdh['Camera.ROIHeight'] * 1e3 * mdh['voxelsize.y']
-
-        if 'Splitter' in mdh.getOrDefault('Analysis.FitModule', ''):
-            if 'Splitter.Channel0ROI' in mdh.getEntryNames():
-                rx0, ry0, rw, rh = mdh['Splitter.Channel0ROI']
-                x1 = rw * 1e3 * mdh['voxelsize.x']
-                x1 = rh * 1e3 * mdh['voxelsize.x']
-            else:
-                y1 = y1 / 2
-
-        return cls(x0, y0, x1, y1)
 
 class dummy:
     pass
@@ -503,6 +463,7 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
 jParms = {}
 
 def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
+    from matplotlib import delaunay
     for i in range(n):
         #global jParms
         #locals().update(jParms)
@@ -562,6 +523,8 @@ if multiProc:
         return im/n
 else:
     def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
+        from matplotlib import delaunay
+
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
 
@@ -580,6 +543,7 @@ else:
 ###########
 #with weighted averaging
 def rendJitTri2(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
+    from matplotlib import delaunay
     for i in range(n):
         #global jParms
         #locals().update(jParms)
@@ -634,6 +598,7 @@ if multiProc:
         return imn
 else:
     def rendJitTriang2(x,y,n,jsig, mcp, imageBounds, pixelSize):
+        from matplotlib import delaunay
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
 

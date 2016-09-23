@@ -21,11 +21,11 @@
 #
 ##################
 
-import scipy
+#import scipy
 import scipy.optimize as optimize
 import numpy as np
 
-FWHM_CONV_FACTOR = 2*scipy.sqrt(2*scipy.log(2))
+FWHM_CONV_FACTOR = 2*np.sqrt(2*np.log(2))
 
 EPS_FCN = 1e-4
 

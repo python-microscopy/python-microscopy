@@ -56,14 +56,14 @@ static PyObject * genGauss(PyObject *self, PyObject *args, PyObject *keywds)
 
     /* Do the calculations */ 
         
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL) 
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");   
       return NULL;
     }
     
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -71,17 +71,16 @@ static PyObject * genGauss(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
     
-    
-    
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
+      
+    pXvals = (double*)PyArray_DATA(Xvals);
+    pYvals = (double*)PyArray_DATA(Yvals);
     
     
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
         
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
-    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
+    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
     out = (PyArrayObject*) PyArray_New(&PyArray_Type, 2,size,NPY_DOUBLE, NULL, NULL, 0, 1, NULL);
     if (out == NULL)
     {
@@ -95,7 +94,7 @@ static PyObject * genGauss(PyObject *self, PyObject *args, PyObject *keywds)
     //out->strides[0] = sizeof(double);
     //out->strides[1] = sizeof(double)*size[0];
     
-    //res = (double*) out->data;
+    //res = (double*) PyArray_DATA(out);
     res = (double*) PyArray_DATA(out);
     
     ts2 = 2*sigma*sigma;
@@ -158,14 +157,14 @@ static PyObject * genMultiGauss(PyObject *self, PyObject *args, PyObject *keywds
 
     /* Do the calculations */ 
         
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL) 
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");   
       return NULL;
     }
     
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -173,7 +172,7 @@ static PyObject * genMultiGauss(PyObject *self, PyObject *args, PyObject *keywds
         return NULL;
     }
     
-    Pvals = (PyArrayObject *) PyArray_ContiguousFromObject(oP, PyArray_DOUBLE, 0, 1);
+    Pvals = (PyArrayObject *) PyArray_ContiguousFromObject(oP, NPY_DOUBLE, 0, 1);
     if (Pvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -182,9 +181,9 @@ static PyObject * genMultiGauss(PyObject *self, PyObject *args, PyObject *keywds
         return NULL;
     }    
     
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
-    pPvals = (double*)Pvals->data;
+    pXvals = (double*) PyArray_DATA(Xvals);
+    pYvals = (double*) PyArray_DATA(Yvals);
+    pPvals = (double*) PyArray_DATA(Pvals);
     
     
     size[0] = PyArray_Size((PyObject*)Xvals);
@@ -193,8 +192,8 @@ static PyObject * genMultiGauss(PyObject *self, PyObject *args, PyObject *keywds
     numP = PyArray_Size((PyObject*)Pvals)/3;
     //size[1] = PyArray_Size((PyObject*)Yvals);
         
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
-    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
+    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
     out = (PyArrayObject*) PyArray_New(&PyArray_Type, 1,size,NPY_DOUBLE, NULL, NULL, 0, 1, NULL);
     if (out == NULL)
     {
@@ -210,7 +209,7 @@ static PyObject * genMultiGauss(PyObject *self, PyObject *args, PyObject *keywds
     //out->strides[0] = sizeof(double);
     //out->strides[1] = sizeof(double)*size[0];
     
-    //res = (double*) out->data;
+    //res = (double*) PyArray_DATA(out);
     res = (double*) PyArray_DATA(out);
     
     ts2 = 2*sigma*sigma;
@@ -287,14 +286,14 @@ static PyObject * genMultiGaussJac(PyObject *self, PyObject *args, PyObject *key
 
     /* Do the calculations */ 
         
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL) 
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");   
       return NULL;
     }
     
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -302,7 +301,7 @@ static PyObject * genMultiGaussJac(PyObject *self, PyObject *args, PyObject *key
         return NULL;
     }
     
-    Pvals = (PyArrayObject *) PyArray_ContiguousFromObject(oP, PyArray_DOUBLE, 0, 1);
+    Pvals = (PyArrayObject *) PyArray_ContiguousFromObject(oP, NPY_DOUBLE, 0, 1);
     if (Pvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -311,9 +310,9 @@ static PyObject * genMultiGaussJac(PyObject *self, PyObject *args, PyObject *key
         return NULL;
     }    
     
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
-    pPvals = (double*)Pvals->data;
+    pXvals = (double*) PyArray_DATA(Xvals);
+    pYvals = (double*) PyArray_DATA(Yvals);
+    pPvals = (double*) PyArray_DATA(Pvals);
     
     
     lenx = PyArray_Size((PyObject*)Xvals);
@@ -327,8 +326,8 @@ static PyObject * genMultiGaussJac(PyObject *self, PyObject *args, PyObject *key
 
     //size[1] = PyArray_Size((PyObject*)Yvals);
         
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
-    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
+    //out = (PyArrayObject*) PyArray_SimpleNew(2,size,NPY_DOUBLE);
     out = (PyArrayObject*) PyArray_New(&PyArray_Type, 2,size,NPY_DOUBLE, NULL, NULL, 0, 1, NULL);
     if (out == NULL)
     {
@@ -344,7 +343,7 @@ static PyObject * genMultiGaussJac(PyObject *self, PyObject *args, PyObject *key
     //out->strides[0] = sizeof(double);
     //out->strides[1] = sizeof(double)*size[0];
     
-    //res = (double*) out->data;
+    //res = (double*) PyArray_DATA(out);
     res = (double*) PyArray_DATA(out);
     
     ts2 = 1.0/(2*sigma*sigma);
@@ -448,14 +447,14 @@ static PyObject * genGaussInArray(PyObject *self, PyObject *args, PyObject *keyw
 
     /* Do the calculations */
 
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");
       return NULL;
     }
 
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -464,7 +463,7 @@ static PyObject * genGaussInArray(PyObject *self, PyObject *args, PyObject *keyw
     }
 
 /*
-    out = (PyArrayObject *) PyArray_ContiguousFromObject(oOut, PyArray_DOUBLE, 2, 2);
+    out = (PyArrayObject *) PyArray_ContiguousFromObject(oOut, NPY_DOUBLE, 2, 2);
     if (out == NULL)
     {
         Py_DECREF(Xvals);
@@ -476,7 +475,7 @@ static PyObject * genGaussInArray(PyObject *self, PyObject *args, PyObject *keyw
     //out = (PyArrayObject *)oOut;
     //fprintf("array size")
 
-    if (!PyArray_ISFORTRAN(oOut) || PyArray_TYPE(oOut) != PyArray_DOUBLE|| PyArray_DIM(oOut,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oOut, 1) != PyArray_DIM(Yvals, 0))
+    if (!PyArray_ISFORTRAN(oOut) || PyArray_TYPE(oOut) != NPY_DOUBLE|| PyArray_DIM(oOut,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oOut, 1) != PyArray_DIM(Yvals, 0))
     {
         Py_DECREF(Xvals);
         Py_DECREF(Yvals);
@@ -485,14 +484,14 @@ static PyObject * genGaussInArray(PyObject *self, PyObject *args, PyObject *keyw
     }
 
 
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
+    pXvals = (double*) PyArray_DATA(Xvals);
+    pYvals = (double*) PyArray_DATA(Yvals);
 
 
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
 
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
 
     //fix strides
     //out->strides[0] = sizeof(double);
@@ -573,14 +572,14 @@ static PyObject * genSplitGaussInArray(PyObject *self, PyObject *args, PyObject 
 
     /* Do the calculations */
 
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");
       return NULL;
     }
 
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -588,7 +587,7 @@ static PyObject * genSplitGaussInArray(PyObject *self, PyObject *args, PyObject 
         return NULL;
     }
 
-    X2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oX2, PyArray_DOUBLE, 0, 1);
+    X2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oX2, NPY_DOUBLE, 0, 1);
     if (X2vals == NULL)
     {
       Py_DECREF(Xvals);
@@ -597,7 +596,7 @@ static PyObject * genSplitGaussInArray(PyObject *self, PyObject *args, PyObject 
       return NULL;
     }
 
-    Y2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oY2, PyArray_DOUBLE, 0, 1);
+    Y2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oY2, NPY_DOUBLE, 0, 1);
     if (Y2vals == NULL)
     {
         Py_DECREF(Xvals);
@@ -608,7 +607,7 @@ static PyObject * genSplitGaussInArray(PyObject *self, PyObject *args, PyObject 
     }
 
 
-    if (!PyArray_ISFORTRAN(oOut) || PyArray_TYPE(oOut) != PyArray_DOUBLE|| PyArray_DIM(oOut,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oOut, 1) != PyArray_DIM(Yvals, 0))
+    if (!PyArray_ISFORTRAN(oOut) || PyArray_TYPE(oOut) != NPY_DOUBLE|| PyArray_DIM(oOut,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oOut, 1) != PyArray_DIM(Yvals, 0))
     {
         Py_DECREF(Xvals);
         Py_DECREF(Yvals);
@@ -619,14 +618,14 @@ static PyObject * genSplitGaussInArray(PyObject *self, PyObject *args, PyObject 
     }
 
 
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
+    pXvals = (double*) PyArray_DATA(Xvals);
+    pYvals = (double*) PyArray_DATA(Yvals);
 
 
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
 
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
 
     //fix strides
     //out->strides[0] = sizeof(double);
@@ -649,8 +648,8 @@ static PyObject * genSplitGaussInArray(PyObject *self, PyObject *args, PyObject 
 
       }
 
-    pXvals = (double*)X2vals->data;
-    pYvals = (double*)Y2vals->data;
+    pXvals = (double*) PyArray_DATA(X2vals);
+    pYvals = (double*) PyArray_DATA(Y2vals);
 
     for (iy = 0; iy < size[1]; iy++)
       {
@@ -732,7 +731,7 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
 
     /* Do the calculations */
 
-    pVals = (PyArrayObject *) PyArray_ContiguousFromObject(oParameters, PyArray_DOUBLE, 0, 1);
+    pVals = (PyArrayObject *) PyArray_ContiguousFromObject(oParameters, NPY_DOUBLE, 0, 1);
     if (pVals == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");
@@ -753,7 +752,7 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
     }}}}}}}
 
 
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL)
     {
       Py_DECREF(pVals);
@@ -761,7 +760,7 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
       return NULL;
     }
 
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -770,7 +769,7 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
         return NULL;
     }
 
-    X2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oX2, PyArray_DOUBLE, 0, 1);
+    X2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oX2, NPY_DOUBLE, 0, 1);
     if (X2vals == NULL)
     {
       Py_DECREF(Xvals);
@@ -780,7 +779,7 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
       return NULL;
     }
 
-    Y2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oY2, PyArray_DOUBLE, 0, 1);
+    Y2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oY2, NPY_DOUBLE, 0, 1);
     if (Y2vals == NULL)
     {
         Py_DECREF(Xvals);
@@ -792,7 +791,7 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
     }
 
 
-    if (!PyArray_ISFORTRAN(oOut) || PyArray_TYPE(oOut) != PyArray_DOUBLE|| PyArray_DIM(oOut,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oOut, 1) != PyArray_DIM(Yvals, 0))
+    if (!PyArray_ISFORTRAN(oOut) || PyArray_TYPE(oOut) != NPY_DOUBLE|| PyArray_DIM(oOut,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oOut, 1) != PyArray_DIM(Yvals, 0))
     {
         Py_DECREF(Xvals);
         Py_DECREF(Yvals);
@@ -804,14 +803,14 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
     }
 
 
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
+    pXvals = (double*) PyArray_DATA(Xvals);
+    pYvals = (double*) PyArray_DATA(Yvals);
 
 
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
 
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
 
     //fix strides
     //out->strides[0] = sizeof(double);
@@ -834,8 +833,8 @@ static PyObject * genSplitGaussInArrayPVec(PyObject *self, PyObject *args, PyObj
 
       }
 
-    pXvals = (double*)X2vals->data;
-    pYvals = (double*)Y2vals->data;
+    pXvals = (double*) PyArray_DATA(X2vals);
+    pYvals = (double*) PyArray_DATA(Y2vals);
 
     for (iy = 0; iy < size[1]; iy++)
       {
@@ -925,7 +924,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
 
     /* Do the calculations */
 
-    pVals = (PyArrayObject *) PyArray_ContiguousFromObject(oParameters, PyArray_DOUBLE, 0, 1);
+    pVals = (PyArrayObject *) PyArray_ContiguousFromObject(oParameters, NPY_DOUBLE, 0, 1);
     if (pVals == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad parameters");
@@ -947,7 +946,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
     }}}}}}}}
 
 
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL)
     {
       Py_DECREF(pVals);
@@ -955,7 +954,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
       return NULL;
     }
 
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -964,7 +963,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
         return NULL;
     }
 
-    X2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oX2, PyArray_DOUBLE, 0, 1);
+    X2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oX2, NPY_DOUBLE, 0, 1);
     if (X2vals == NULL)
     {
       Py_DECREF(Xvals);
@@ -974,7 +973,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
       return NULL;
     }
 
-    Y2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oY2, PyArray_DOUBLE, 0, 1);
+    Y2vals = (PyArrayObject *) PyArray_ContiguousFromObject(oY2, NPY_DOUBLE, 0, 1);
     if (Y2vals == NULL)
     {
         Py_DECREF(Xvals);
@@ -985,7 +984,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
         return NULL;
     }
 
-    if (!PyArray_ISFORTRAN(oData) || PyArray_TYPE(oData) != PyArray_DOUBLE|| PyArray_DIM(oData,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oData, 1) != PyArray_DIM(Yvals, 0))
+    if (!PyArray_ISFORTRAN(oData) || PyArray_TYPE(oData) != NPY_DOUBLE|| PyArray_DIM(oData,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oData, 1) != PyArray_DIM(Yvals, 0))
     {
         Py_DECREF(Xvals);
         Py_DECREF(Yvals);
@@ -996,7 +995,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
         return NULL;
     }
 
-    if (!PyArray_ISFORTRAN(oWeights) || PyArray_TYPE(oWeights) != PyArray_DOUBLE|| PyArray_DIM(oWeights,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oWeights, 1) != PyArray_DIM(Yvals, 0))
+    if (!PyArray_ISFORTRAN(oWeights) || PyArray_TYPE(oWeights) != NPY_DOUBLE|| PyArray_DIM(oWeights,0) != PyArray_DIM(Xvals, 0) || PyArray_DIM(oWeights, 1) != PyArray_DIM(Yvals, 0))
     {
         Py_DECREF(Xvals);
         Py_DECREF(Yvals);
@@ -1012,7 +1011,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
     dims[0] = PyArray_SIZE(oData);
     printf("trying to allocate arrya of size: %d\n", dims[0]);
 
-    oOut = PyArray_SimpleNew(1, dims, PyArray_DOUBLE);
+    oOut = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     
     if (oOut == NULL)
     {
@@ -1028,7 +1027,7 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
 
 
 
-    if (PyArray_TYPE(oOut) != PyArray_DOUBLE|| PyArray_SIZE(oOut) != PyArray_SIZE(oData))
+    if (PyArray_TYPE(oOut) != NPY_DOUBLE|| PyArray_SIZE(oOut) != PyArray_SIZE(oData))
     {
         Py_DECREF(Xvals);
         Py_DECREF(Yvals);
@@ -1040,14 +1039,14 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
     }
 
 
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
+    pXvals = (double*) PyArray_DATA(Xvals);
+    pYvals = (double*) PyArray_DATA(Yvals);
 
 
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
 
-    //out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
+    //out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
 
     //fix strides
     //out->strides[0] = sizeof(double);
@@ -1074,8 +1073,8 @@ static PyObject *splitGaussArrayPVecWeightedMisfit(PyObject *self, PyObject *arg
 
       }
 
-    pXvals = (double*)X2vals->data;
-    pYvals = (double*)Y2vals->data;
+    pXvals = (double*) PyArray_DATA(X2vals);
+    pYvals = (double*) PyArray_DATA(Y2vals);
 
     for (iy = 0; iy < size[1]; iy++)
       {
@@ -1150,14 +1149,14 @@ static PyObject * genGauss3D(PyObject *self, PyObject *args, PyObject *keywds)
 
     /* Do the calculations */
 
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL)
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");
       return NULL;
     }
 
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -1165,7 +1164,7 @@ static PyObject * genGauss3D(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    Zvals = (PyArrayObject *) PyArray_ContiguousFromObject(oZ, PyArray_DOUBLE, 0, 1);
+    Zvals = (PyArrayObject *) PyArray_ContiguousFromObject(oZ, NPY_DOUBLE, 0, 1);
     if (Zvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -1176,23 +1175,23 @@ static PyObject * genGauss3D(PyObject *self, PyObject *args, PyObject *keywds)
 
 
 
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
-    pZvals = (double*)Zvals->data;
+    pXvals = (double*) PyArray_DATA(Xvals);
+    pYvals = (double*) PyArray_DATA(Yvals);
+    pZvals = (double*) PyArray_DATA(Zvals);
 
 
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
     size[2] = PyArray_Size((PyObject*)Zvals);
 
-    out = (PyArrayObject*) PyArray_FromDims(3,size,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_FromDims(3,size,NPY_DOUBLE);
 
     //fix strides
-    out->strides[0] = sizeof(double);
-    out->strides[1] = sizeof(double)*size[0];
-    out->strides[2] = sizeof(double)*size[0]*size[1];
+    PyArray_STRIDES(out)[0] = sizeof(double);
+    PyArray_STRIDES(out)[1] = sizeof(double)*size[0];
+    PyArray_STRIDES(out)[2] = sizeof(double)*size[0]*size[1];
 
-    res = (double*) out->data;
+    res = (double*) PyArray_DATA(out);
 
     ts2 = 2*sigma*sigma;
     tsz2 = 2*sigma_z*sigma_z;
@@ -1268,14 +1267,14 @@ static PyObject * genGaussF(PyObject *self, PyObject *args, PyObject *keywds)
 
     /* Do the calculations */ 
         
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL) 
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");   
       return NULL;
     }
     
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -1285,20 +1284,20 @@ static PyObject * genGaussF(PyObject *self, PyObject *args, PyObject *keywds)
     
     
     
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
+    pXvals = (double*) PyArray_DATA(Xvals);
+    pYvals = (double*) PyArray_DATA(Yvals);
     
     
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
         
-    out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
     
     //fix strides
-    out->strides[0] = sizeof(double);
-    out->strides[1] = sizeof(double)*size[0];
+    PyArray_STRIDES(out)[0] = sizeof(double);
+    PyArray_STRIDES(out)[1] = sizeof(double)*size[0];
     
-    res = (double*) out->data;
+    res = (double*) PyArray_DATA(out);
     
     ts2 = 2*sigma*sigma;
         
@@ -1370,14 +1369,14 @@ static PyObject * genGaussFJac(PyObject *self, PyObject *args, PyObject *keywds)
 
     /* Do the calculations */ 
         
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL) 
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");   
       return NULL;
     }
     
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -1387,21 +1386,21 @@ static PyObject * genGaussFJac(PyObject *self, PyObject *args, PyObject *keywds)
     
     
     
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
+    pXvals = (double*) PyArray_DATA(Xvals);
+    pYvals = (double*) PyArray_DATA(Yvals);
     
     size[1] = PyArray_Size((PyObject*)Xvals);
     size[2] = PyArray_Size((PyObject*)Yvals);
     size[0] = 7;
         
-    out = (PyArrayObject*) PyArray_FromDims(3,size,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_FromDims(3,size,NPY_DOUBLE);
     
     //fix strides
-    out->strides[0] = sizeof(double);
-    out->strides[1] = sizeof(double)*size[0];
-    out->strides[2] = sizeof(double)*size[0]*size[1];
+    PyArray_STRIDES(out)[0] = sizeof(double);
+    PyArray_STRIDES(out)[1] = sizeof(double)*size[0];
+    PyArray_STRIDES(out)[2] = sizeof(double)*size[0]*size[1];
     
-    res = (double*) out->data;
+    res = (double*) PyArray_DATA(out);
     
     ts2 = 1/(2*sigma*sigma);
     A_s2 = A/(sigma*sigma);
@@ -1484,14 +1483,14 @@ static PyObject * genGaussJac(PyObject *self, PyObject *args, PyObject *keywds)
 
     /* Do the calculations */ 
         
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL) 
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");   
       return NULL;
     }
     
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -1501,21 +1500,21 @@ static PyObject * genGaussJac(PyObject *self, PyObject *args, PyObject *keywds)
     
     
     
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
+    pXvals = (double*) PyArray_DATA(Xvals);
+    pYvals = (double*) PyArray_DATA(Yvals);
     
     size[1] = PyArray_Size((PyObject*)Xvals);
     size[2] = PyArray_Size((PyObject*)Yvals);
     size[0] = 7;
         
-    out = (PyArrayObject*) PyArray_FromDims(3,size,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_FromDims(3,size,NPY_DOUBLE);
     
     //fix strides
-    out->strides[0] = sizeof(double);
-    out->strides[1] = sizeof(double)*size[0];
-    out->strides[2] = sizeof(double)*size[0]*size[1];
+    PyArray_STRIDES(out)[0] = sizeof(double);
+    PyArray_STRIDES(out)[1] = sizeof(double)*size[0];
+    PyArray_STRIDES(out)[2] = sizeof(double)*size[0]*size[1];
     
-    res = (double*) out->data;
+    res = (double*) PyArray_DATA(out);
     
     ts2 = 1/(2*sigma*sigma);
     A_s2 = A/(sigma*sigma);
@@ -1600,14 +1599,14 @@ static PyObject * genGaussJacW(PyObject *self, PyObject *args, PyObject *keywds)
 
     /* Do the calculations */ 
         
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL) 
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");   
       return NULL;
     }
     
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -1615,7 +1614,7 @@ static PyObject * genGaussJacW(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
     
-    weights = (PyArrayObject *) PyArray_ContiguousFromObject(oW, PyArray_DOUBLE, 0, 1);
+    weights = (PyArrayObject *) PyArray_ContiguousFromObject(oW, NPY_DOUBLE, 0, 1);
     if (weights == NULL)
     {
         Py_DECREF(Xvals);
@@ -1624,9 +1623,9 @@ static PyObject * genGaussJacW(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
     
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
-    pWeights = (double*)weights->data;
+    pXvals = (double*) PyArray_DATA(Xvals);
+    pYvals = (double*) PyArray_DATA(Yvals);
+    pWeights = (double*) PyArray_DATA(weights);
     
     size[1] = PyArray_Size((PyObject*)Xvals);
     size[2] = PyArray_Size((PyObject*)Yvals);
@@ -1642,14 +1641,14 @@ static PyObject * genGaussJacW(PyObject *self, PyObject *args, PyObject *keywds)
     }
         
         
-    out = (PyArrayObject*) PyArray_FromDims(3,size,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_FromDims(3,size,NPY_DOUBLE);
     
     //fix strides
-    out->strides[0] = sizeof(double);
-    out->strides[1] = sizeof(double)*size[0];
-    out->strides[2] = sizeof(double)*size[0]*size[1];
+    PyArray_STRIDES(out)[0] = sizeof(double);
+    PyArray_STRIDES(out)[1] = sizeof(double)*size[0];
+    PyArray_STRIDES(out)[2] = sizeof(double)*size[0]*size[1];
     
-    res = (double*) out->data;
+    res = (double*) PyArray_DATA(out);
     
     ts2 = 1/(2*sigma*sigma);
     A_s2 = A/(sigma*sigma);
@@ -1735,14 +1734,14 @@ static PyObject * genGaussA(PyObject *self, PyObject *args, PyObject *keywds)
 
     /* Do the calculations */ 
         
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL) 
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");   
       return NULL;
     }
     
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -1752,20 +1751,20 @@ static PyObject * genGaussA(PyObject *self, PyObject *args, PyObject *keywds)
     
     
     
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
+    pXvals = (double*) PyArray_DATA(Xvals);
+    pYvals = (double*) PyArray_DATA(Yvals);
     
     
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
         
-    out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
     
     //fix strides
-    out->strides[0] = sizeof(double);
-    out->strides[1] = sizeof(double)*size[0];
+    PyArray_STRIDES(out)[0] = sizeof(double);
+    PyArray_STRIDES(out)[1] = sizeof(double)*size[0];
     
-    res = (double*) out->data;
+    res = (double*) PyArray_DATA(out);
     
     tsx2 = 2*sigma_x*sigma_x;
     tsy2 = 2*sigma_y*sigma_y;
@@ -1835,14 +1834,14 @@ static PyObject * genGaussAF(PyObject *self, PyObject *args, PyObject *keywds)
 
     /* Do the calculations */ 
         
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_DOUBLE, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_DOUBLE, 0, 1);
     if (Xvals == NULL) 
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");   
       return NULL;
     }
     
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_DOUBLE, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_DOUBLE, 0, 1);
     if (Yvals == NULL)
     {
         Py_DECREF(Xvals);
@@ -1852,20 +1851,20 @@ static PyObject * genGaussAF(PyObject *self, PyObject *args, PyObject *keywds)
     
     
     
-    pXvals = (double*)Xvals->data;
-    pYvals = (double*)Yvals->data;
+    pXvals = (double*) PyArray_DATA(Xvals);
+    pYvals = (double*) PyArray_DATA(Yvals);
     
     
     size[0] = PyArray_Size((PyObject*)Xvals);
     size[1] = PyArray_Size((PyObject*)Yvals);
         
-    out = (PyArrayObject*) PyArray_FromDims(2,size,PyArray_DOUBLE);
+    out = (PyArrayObject*) PyArray_FromDims(2,size,NPY_DOUBLE);
     
     //fix strides
-    out->strides[0] = sizeof(double);
-    out->strides[1] = sizeof(double)*size[0];
+    PyArray_STRIDES(out)[0] = sizeof(double);
+    PyArray_STRIDES(out)[1] = sizeof(double)*size[0];
     
-    res = (double*) out->data;
+    res = (double*) PyArray_DATA(out);
     
     tsx2 = 2*sigma_x*sigma_x;
     tsy2 = 2*sigma_y*sigma_y;
@@ -1925,38 +1924,38 @@ static PyObject * NRFilter(PyObject *self, PyObject *args, PyObject *keywds)
 
     /* Get values into a cormat we understand */ 
         
-    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, PyArray_INT, 0, 1);
+    Xvals = (PyArrayObject *) PyArray_ContiguousFromObject(oX, NPY_INT, 0, 1);
     if (Xvals == NULL) 
     {
       PyErr_Format(PyExc_RuntimeError, "Bad X");   
       goto abort;
     }
     
-    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, PyArray_INT, 0, 1);
+    Yvals = (PyArrayObject *) PyArray_ContiguousFromObject(oY, NPY_INT, 0, 1);
     if (Yvals == NULL)
     {
         PyErr_Format(PyExc_RuntimeError, "Bad Y");
         goto abort;
     }
     
-    Ivals = (PyArrayObject *) PyArray_ContiguousFromObject(oI, PyArray_DOUBLE, 0, 1);
+    Ivals = (PyArrayObject *) PyArray_ContiguousFromObject(oI, NPY_DOUBLE, 0, 1);
     if (Ivals == NULL)
     {
         PyErr_Format(PyExc_RuntimeError, "Bad I");
         goto abort;
     }
 
-    LUTvals = (PyArrayObject *) PyArray_ContiguousFromObject(oLUT, PyArray_DOUBLE, 0, 1);
+    LUTvals = (PyArrayObject *) PyArray_ContiguousFromObject(oLUT, NPY_DOUBLE, 0, 1);
     if (LUTvals == NULL)
     {
         PyErr_Format(PyExc_RuntimeError, "Bad LUT");
         goto abort;
     }    
     
-    pXvals = (int*)Xvals->data;
-    pYvals = (int*)Yvals->data;
-    pIvals = (double*)Ivals->data;
-    pLUTvals = (double*)LUTvals->data;
+    pXvals = (int*) PyArray_DATA(Xvals);
+    pYvals = (int*) PyArray_DATA(Yvals);
+    pIvals = (double*) PyArray_DATA(Ivals);
+    pLUTvals = (double*) PyArray_DATA(LUTvals);
     
     
     size[0] = PyArray_Size((PyObject*)Xvals);

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Listing of /{{ dirname }}{% endblock %}
+
+{% block files_active_class %}active{% endblock %}
+{% block sidebar %}
+    <hr>
+    <h4>Current Directory</h4>
+    <ul class="nav nav-sidebar">
+        <li class="toggle-control" id="newfolder_form_toggle"><a href="#" onclick="togglePanel('#newfolder_form')"><span
+                class="glyphicon glyphicon-folder-close"></span>&nbsp;&nbsp;New Folder</a></li>
+        <li class="toggle-control" id="upload_form_toggle"><a href="#" onclick="togglePanel('#upload_form')"><span
+                class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload Files</a></li>
+    </ul>
+    <h5>Selected Files</h5>
+    <ul class="nav nav-sidebar">
+        <li class="toggle-control" id="recipe_form_toggle"><a href="#" onclick="togglePanel('#recipe_form')"><span
+                class="glyphicon glyphicon-list-alt"></span>&nbsp;&nbsp;Run Recipe</a></li>
+        <li class="toggle-control" id="localization_form_toggle"><a href="#"
+                                                                    onclick="togglePanel('#localization_form')"><span
+                class="glyphicon glyphicon-fire"></span>&nbsp;&nbsp;Localize molecules</a></li>
+    </ul>
+    <hr>
+{% endblock %}
+
+
+
+{% block content %}
+
+    {#    <h1>Listing of /{{ dirname }}</h1>#}
+
+    <h1>Listing of /{% for bc in breadcrumbs %}<a href="/files/{{ bc.path }}">{{ bc.dir }}</a>/{% endfor %}</h1>
+
+    <table class="table table-striped">
+        {% if  parent %}
+            <tr>
+                <td><a href="/files/{{ parent }}"><span class="glyphicon glyphicon-level-up"></span></a></td>
+                <td><a href="/files/{{ parent }}">..</a></td>
+                <td colspan="3"></td>
+            </tr>
+        {% endif %}
+        {% for dir in dirs %}
+            <tr class="directory">
+                <td><span class="glyphicon glyphicon-folder-open"></span></td>
+                <td><a href="/files/{{ dirname }}{{ dir.name }}">{{ dir.name }}</a></td>
+                <td>{{ dir.numFiles }} files</td>
+                <td></td>
+                <td></td>
+            </tr>
+        {% endfor %}
+        {% for seriesi in series %}
+            <tr class="series">
+                <td><span class="glyphicon glyphicon-film"></span></td>
+                <td><a href="/files/{{ dirname }}{{ seriesi.name }}">{{ seriesi.name }}</a></td>
+                <td>{{ seriesi.numFrames }} frames</td>
+                {% if seriesi.complete %}
+                    <td class="text-success small">spooling complete</td>
+                {% else %}
+                    <td class="test-danger small ">spooling in progress</td>
+                {% endif %}
+                <td><a href="/files/download/{{ dirname }}{{ seriesi.name }}?type=h5" class="btn btn-default">.h5 <span
+                        class="glyphicon glyphicon-download-alt"></span></a>
+                    <a href="/files/download/{{ dirname }}{{ seriesi.name }}?type=tiff" class="btn btn-default">.tif
+                        <span class="glyphicon glyphicon-download-alt"></span></a>
+                </td>
+            </tr>
+        {% endfor %}
+        {% for file in files %}
+            <tr class="file">
+                <td><span class="glyphicon glyphicon-file"></span></td>
+                <td>{{ file }}</td>
+                <td></td>
+                <td></td>
+                <td><a href="/files/download/{{ dirname }}{{ file }}" class="btn btn-default"><span
+                        class="glyphicon glyphicon-download-alt"></span></a></td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    <div class="panel panel-primary hidden toggle-panel" id="upload_form">
+        <div class="panel-heading"><span class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload Files</div>
+        {#<ul class="nav nav-sidebar"><li>#}
+        <div class="panel-body">
+            {% include "clusterbrowser/form_upload_file.html" %}
+        </div>
+    </div>
+
+    <div class="panel panel-primary hidden toggle-panel" id="newfolder_form">
+        <div class="panel-heading"><span class="glyphicon glyphicon-folder-close"></span>&nbsp;&nbsp;New Folder</div>
+        {#<ul class="nav nav-sidebar"><li>#}
+        <div class="panel-body">
+            {% include "clusterbrowser/form_new_folder.html" %}
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        function togglePanel(id) {
+            $('.toggle-panel').removeClass('show').addClass('hidden');
+            $('.toggle-control').removeClass('active');
+            $(id).removeClass('hidden').addClass('show');
+            $(id + '_toggle').addClass('active');
+        }
+
+        $('#form_new_folder').on('submit', function (e) {
+
+          e.preventDefault(); //prevent to reload the page
+
+          $.ajax({
+            type: 'POST', //hide url
+            url: '{% url 'mkdir' dirname %}', //your form validation url
+            data: $('#form_new_folder').serialize(),
+            success: function () {
+                //alert('The form was submitted successfully'); //display an alert whether the form is submitted okay
+                location.reload(true);
+            },
+            error: function(xhr){
+                $('#directory_input').addClass('has-error');
+                $('#directoryHelpBlock').text(xhr.responseText);
+                $('#newDirectory').change(function (){
+                    $('#directory_input').removeClass('has-error');
+                    $('#directoryHelpBlock').text('');
+                });
+            }
+          });
+
+
+        });
+
+        $('#inputFile').change(function(e) {
+            var fileList = $('#fileList');
+            fileList.empty();
+            var files = e.target.files;
+
+            if (files.length > 0) {
+                for (var i = 0; i < files.length; i++) {
+                    fileList.append('<br>' + files[i].name );
+                    //console.log(files[i].name);
+                }
+                fileList.append('<br>')
+            }
+
+        });
+    </script>
+{% endblock %}

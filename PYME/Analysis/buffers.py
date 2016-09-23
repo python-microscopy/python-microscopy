@@ -54,6 +54,7 @@ class backgroundBuffer:
         #subtract frames we're currently holding but don't need
         for fi in self.curFrames.difference(bgi):
             self.curBG[:] = (self.curBG - self.dataBuffer.getSlice(fi))[:]
+            self.curFrames.remove(fi) # make sure we also remove the frame from our list of buffered frames in case we crash later
 
         #add frames we don't already have
         nSlices = self.dataBuffer.dataSource.getNumSlices()
@@ -63,10 +64,11 @@ class backgroundBuffer:
                 bgi.remove(fi)
             else:
                 self.curBG[:] = (self.curBG + self.dataBuffer.getSlice(fi))[:]
+                self.curFrames.add(fi)
 
-        self.curFrames = bgi
+        #self.curFrames = bgi
 
-        return self.curBG/len(bgi)
+        return self.curBG/len(self.curFrames)
         
 class bgFrameBuffer:
     MAXSHORT = 65535
@@ -167,6 +169,7 @@ class backgroundBufferM:
         #subtract frames we're currently holding but don't need
         for fi in self.curFrames.difference(bgi):
             self.bfb.removeFrame(fi)
+            self.curFrames.remove(fi)
 
         #add frames we don't already have
         nSlices = self.dataBuffer.dataSource.getNumSlices()
@@ -176,8 +179,9 @@ class backgroundBufferM:
                 bgi.remove(fi)
             else:
                 self.bfb.addFrame(fi, self.dataBuffer.getSlice(fi).squeeze())
+                self.curFrames.add(fi)
 
-        self.curFrames = bgi
+        #self.curFrames = bgi
         self.curBG = self.bfb.getPercentile(self.pctile).astype('f')
         
         med = self.bfb.getPercentile(0.5).astype('f')

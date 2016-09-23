@@ -10,9 +10,11 @@ import threading
 import requests
 from PYME.IO import DataSources
 from PYME.IO import clusterResults
+from PYME.IO import clusterIO
 import json
 import socket
 import random
+import logging
 
 from PYME.misc import pyme_zeroconf as pzc
 from PYME.misc.computerName import GetComputerName
@@ -24,14 +26,16 @@ def _getTaskQueueURI():
 
     queueURLs = {}
     for name, info in ns.advertised_services.items():
-        queueURLs[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
+        if name.startswith('PYMEDistributor'):
+            queueURLs[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
 
     try:
         #try to grab the distributor on the local computer
         return queueURLs[compName]
     except KeyError:
         #if there is no local distributor, choose one at random
-        return queueURLs.items()[random.randint(0, len(queueURLs)-1)]
+        logging.info('no local distributor, choosing one at random')
+        return random.choice(queueURLs.values())
 
 import logging
 logging.basicConfig()
@@ -65,6 +69,9 @@ class HTTPTaskPusher(object):
         self.dataSourceID = dataSourceID
         self.resultsURI = 'PYME-CLUSTER://%s/__aggregate_h5r/%s' % (serverfilter, resultsFilename)
 
+        resultsMDFilename = resultsFilename + '.json'
+        self.results_md_uri = 'PYME-CLUSTER://%s/%s' % (serverfilter, resultsMDFilename)
+
         self.taskQueueURI = _getTaskQueueURI()
 
         self.mdh = metadata
@@ -77,45 +84,102 @@ class HTTPTaskPusher(object):
         self.ds = DataSource(self.dataSourceID)
         
         #set up results file:
+        logging.debug('resultsURI: ' + self.resultsURI)
         clusterResults.fileResults(self.resultsURI + '/MetaData', metadata)
         clusterResults.fileResults(self.resultsURI + '/Events', self.ds.getEvents())
 
+        clusterIO.putFile(resultsMDFilename, self.mdh.to_JSON(), serverfilter=serverfilter)
+        
+        #wait until clusterIO caches clear to avoid replicating the results file.
+        time.sleep(1.5)
+
         self.currentFrameNum = startAt
+
+        self._task_template = None
         
         self.doPoll = True
         
         self.pollT = threading.Thread(target=self._updatePoll)
         self.pollT.start()
 
+    def _postTasks(self, task_list):
+        if isinstance(task_list[0], basestring):
+            task_list = '[' + ',\n'.join(task_list) + ']'
+        else:
+            task_list = json.dumps(task_list)
+
+        s = clusterIO._getSession(self.taskQueueURI)
+        r = s.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list,
+                          headers={'Content-Type': 'application/json'})
+
+        if r.status_code == 200 and r.json()['ok']:
+            logging.debug('Successfully posted tasks')
+        else:
+            logging.error('Failed on posting tasks with status code: %d' % r.status_code)
+
+    @property
+    def _taskTemplate(self):
+        if self._task_template is None:
+            tt = {'id': '{frameNum:04d}',
+                      'type':'localization',
+                      'taskdef': {'frameIndex': '{frameNum:d}', 'metadata':self.results_md_uri},
+                      'inputs' : {'frames': self.dataSourceID},
+                      'outputs' : {'fitResults': self.resultsURI+'/FitResults',
+                                   'driftResults':self.resultsURI+'/DriftResults'}
+                      }
+            self._task_template = json.dumps(tt)
+
+        return self._task_template
+
+
     def fileTasksForFrames(self):
         numTotalFrames = self.ds.getNumSlices()
-        if  numTotalFrames > (self.currentFrameNum + 1):
+        logging.debug('numTotalFrames: %s, currentFrameNum: %d' % (numTotalFrames, self.currentFrameNum))
+        numFramesOutstanding = 0
+        while  numTotalFrames > (self.currentFrameNum + 1):
+            logging.debug('we have unpublished frames - push them')
+
             #turn our metadata to a string once (outside the loop)
-            mdstring = self.mdh.to_JSON() #TODO - use a URI instead
+            #mdstring = self.mdh.to_JSON() #TODO - use a URI instead
+            
+            newFrameNum = min(self.currentFrameNum + 1000, numTotalFrames)
 
             #create task definitions for each frame
-            tasks = [{'id':self.queueID,
+            tasks = [{'id': '%04d' % frameNum,
                       'type':'localization',
-                      'taskdef': {'frameIndex': frameNum, 'metadata':mdstring},
+                      'taskdef': {'frameIndex': str(frameNum), 'metadata':self.results_md_uri},
                       'inputs' : {'frames': self.dataSourceID},
-                      'outputs' : {'results': self.resultsURI}
-                      } for frameNum in range(self.currentFrameNum, numTotalFrames)]
+                      'outputs' : {'fitResults': self.resultsURI+'/FitResults',
+                                   'driftResults':self.resultsURI+'/DriftResults'}
+                      } for frameNum in range(self.currentFrameNum, newFrameNum)]
 
-            task_list = json.dumps(tasks)
+            task_list = tasks #json.dumps(tasks)
 
-            r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list)
-            if r.status_code == 200 and r.json()['Ok']:
-                logging.debug('Successfully posted tasks')
-                self.currentFrameNum = numTotalFrames - 1
-            else:
-                logging.error('Failed on posting tasks with status code: %d' % r.status_code)
+            #task_list = [self._taskTemplate.format(frameNum=frameNum) for frameNum in range(self.currentFrameNum, newFrameNum)]
+
+            # r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list)
+            # if r.status_code == 200 and r.json()['ok']:
+            #     logging.debug('Successfully posted tasks')
+            #     #self.currentFrameNum = newFrameNum
+            # else:
+            #     logging.error('Failed on posting tasks with status code: %d' % r.status_code)
+
+            threading.Thread(target=self._postTasks, args=(task_list,)).start()
+
+            self.currentFrameNum = newFrameNum
+
+            numFramesOutstanding = numTotalFrames - self.currentFrameNum
+
+        return  numFramesOutstanding
 
 
     
     def _updatePoll(self):
+        logging.debug('task pusher poll loop started')
         while (self.doPoll == True):
-            self.fileTasksForFrames()
-            if self.ds.isComplete():
+            framesOutstanding = self.fileTasksForFrames()
+            if self.ds.isComplete() and not (framesOutstanding > 0):
+                logging.debug('all tasks pushed, ending loop.')
                 self.doPoll = False
             else:
                 time.sleep(1)

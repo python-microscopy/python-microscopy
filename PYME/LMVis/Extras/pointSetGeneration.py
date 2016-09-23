@@ -202,7 +202,7 @@ class Generator(HasTraits):
         from PYMEnf.Simulation import locify
         #from PYME.Acquire.Hardware.Simulator import wormlike2
         from PYME.LMVis import inpFilt
-        from PYME.LMVis.visHelpers import ImageBounds
+        from PYME.IO.image import ImageBounds
         import pylab
         
         #wc = wormlike2.wormlikeChain(100)

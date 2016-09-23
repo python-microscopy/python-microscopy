@@ -31,9 +31,9 @@ from .BaseDataSource import BaseDataSource
 #import cPickle as pickle
 import time
 import json
-import pandas as pd
+#import pandas as pd
 import numpy as np
-SHAPE_LIFESPAN = 30
+SHAPE_LIFESPAN = 5
 
 from PYME.IO import clusterIO
 from PYME.IO import PZFFormat
@@ -43,16 +43,16 @@ class DataSource(BaseDataSource):
     moduleName = 'ClusterPZFDataSource'
     def __init__(self, url, queue=None):
         self.seriesName = url
-        print url
+        #print url
         self.clusterfilter = url.split('://')[1].split('/')[0]
-        print self.clusterfilter
+        #print self.clusterfilter
         self.sequenceName = url.split('://%s/' % self.clusterfilter)[1]
-        print self.sequenceName
+        #print self.sequenceName
         self.lastShapeTime = 0
         
         mdfn = '/'.join([self.sequenceName, 'metadata.json'])  
         
-        print mdfn
+        #print mdfn
         
         self.mdh = MetaDataHandler.NestedClassMDHandler()
         self.mdh.update(json.loads(clusterIO.getFile(mdfn, self.clusterfilter)))
@@ -90,6 +90,7 @@ class DataSource(BaseDataSource):
         return self.sequenceName + '/events.json'
 
     def getEvents(self):
+        import pandas as pd #defer pandas import for as long as possible
         try:
             #return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
             ev = pd.read_json(clusterIO.getFile(self.eventFileName, self.clusterfilter))

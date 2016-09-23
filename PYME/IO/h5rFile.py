@@ -3,8 +3,10 @@ import logging
 import threading
 import time
 from PYME.IO import MetaDataHandler
+from PYME import config
 import numpy as np
 import traceback
+import collections
 
 #global lock across all instances of the H5RFile class as we can have problems across files
 tablesLock = threading.Lock()
@@ -23,6 +25,7 @@ def openH5R(filename, mode='r'):
 
 
 KEEP_ALIVE_TIMEOUT = 20 #keep the file open for 20s after the last time it was used
+FLUSH_INTERVAL = config.get('h5r-flush_interval', 1)
 
 class H5RFile(object):
     def __init__(self, filename, mode='r'):
@@ -47,8 +50,11 @@ class H5RFile(object):
         self.is_alive = True
 
         #logging.debug('H5RFile - starting poll thread')
+        self._lastFlushTime = 0
         self._pollThread = threading.Thread(target=self._pollQueues)
+        self._pollThread.daemon = False #make sure we finish and close the fiels properly on exit
         self._pollThread.start()
+
         #logging.debug('H5RFile - poll thread started')
 
     def __enter__(self):
@@ -105,9 +111,10 @@ class H5RFile(object):
                                                expectedrows=500000)
 
     def appendToTable(self, tablename, data):
+        #logging.debug('h5rfile - append to table: %s' % tablename)
         with self.appendQueueLock:
             if not tablename in self.appendQueues.keys():
-                self.appendQueues[tablename] = []
+                self.appendQueues[tablename] = collections.deque()
             self.appendQueues[tablename].append(data)
 
     def getTableData(self, tablename, _slice):
@@ -135,16 +142,30 @@ class H5RFile(object):
                 queuesWithData = len(tablenames) > 0
 
                 #iterate over the queues
+                # for tablename in tablenames:
+                #     with self.appendQueueLock:
+                #         entries = self.appendQueues[tablename]
+                #         self.appendQueues[tablename] = collections.deque()
+                #
+                #     #save the data - note that we can release the lock here, as we are the only ones calling this function.
+                #     rows = np.hstack(entries)
+                #     self._appendToTable(tablename, rows)
+
+                #iterate over the queues (in a threadsafe manner)
                 for tablename in tablenames:
-                    with self.appendQueueLock:
-                        entries = self.appendQueues[tablename]
-                        self.appendQueues[tablename] = []
+                    waiting = self.appendQueues[tablename]
+                    try:
+                        while len(waiting) > 0:
+                            self._appendToTable(tablename, waiting.popleft())
+                    except IndexError:
+                        pass
 
-                    #save the data - note that we can release the lock here, as we are the only ones calling this function.
-                    self._appendToTable(tablename, np.hstack(entries))
+                curTime = time.time()
+                if (curTime - self._lastFlushTime) > FLUSH_INTERVAL:
+                    self._h5file.flush()
+                    self._lastFlushTime = curTime
 
-                self._h5file.flush()
-                time.sleep(0.002)
+                time.sleep(0.1)
 
         except:
             traceback.print_exc()
