@@ -41,7 +41,7 @@ def main():
         distr_log_dir = '%s/LOGS' % data_root
 
         dist_err_handler = logging.handlers.RotatingFileHandler(
-            os.path.join(distr_log_dir, 'distributor_error.log'), 'w', 1e6)
+            os.path.join(distr_log_dir, 'distributor_error.log'), 'w', maxBytes=1e6, backupCount=1)
         dist_err_handler.setFormatter(logging.Formatter('%(message)s'))
         distLogErr = logging.getLogger('dist_err')
         distLogErr.addHandler(dist_err_handler)
@@ -49,7 +49,7 @@ def main():
         distLogErr.propagate = False
 
         dist_dbg_handler = logging.handlers.RotatingFileHandler(
-            os.path.join(distr_log_dir, 'distributor_debug.log'), 'w', 1e6)
+            os.path.join(distr_log_dir, 'distributor_debug.log'), 'w', maxBytes=1e6, backupCount=1)
         dist_dbg_handler.setFormatter(logging.Formatter('%(message)s'))
         distLogDbg = logging.getLogger('dist_debug')
         distLogDbg.addHandler(dist_dbg_handler)
