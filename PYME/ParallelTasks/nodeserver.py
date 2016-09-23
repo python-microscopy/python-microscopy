@@ -14,6 +14,8 @@ from PYME.misc import computerName
 from PYME import config
 from PYME.IO import clusterIO
 
+import ujson as json
+
 #disable socket timeout to prevent us from generating 408 errors
 cherrypy.server.socket_timeout = 0
 
@@ -94,7 +96,7 @@ class NodeServer(object):
             url = self.distributor_url + 'distributor/tasks?nodeID=%s&numWant=%d&timeout=5' % (self.nodeID, self.num_tasks_to_request)
             try:
                 r = self.taskSession.get(url, timeout=120)
-                resp = r.json()
+                resp = json.loads(r.content) #r.json()
                 if resp['ok']:
                     for task in resp['result']:
                         self._tasks.put(task)
@@ -156,8 +158,9 @@ class NodeServer(object):
 
 
     @cherrypy.expose
-    @cherrypy.tools.json_out()
+    #@cherrypy.tools.json_out()
     def tasks(self, workerID, numWant=50):
+        cherrypy.response.headers['Content-Type'] = 'application/json'
         self.workerIDs.add(workerID)
         if self._tasks.qsize() < 10:
             self._update_tasks()
@@ -174,7 +177,7 @@ class NodeServer(object):
 
         logging.debug('Giving %d tasks to %s' % (len(tasks), workerID))
 
-        return {'ok': True, 'result': tasks}
+        return json.dumps({'ok': True, 'result': tasks})
 
 
 
@@ -195,18 +198,24 @@ class NodeServer(object):
         return {'id' : task['id'], 'cost': cost}
 
     @cherrypy.expose
-    @cherrypy.tools.json_in()
-    @cherrypy.tools.json_out()
+    #@cherrypy.tools.json_in()
+    #@cherrypy.tools.json_out()
     def rate(self):
         #logger.debug('Rating tasks')
-        tasks = cherrypy.request.json
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+        tasks = json.loads(cherrypy.request.content)
 
         #logging.debug(tasks)
 
         ratings = [self._rateTask(task) for task in tasks]
         logger.debug('Returning %d ratings ... ' % len(ratings))
 
-        return {'ok': True, 'result': ratings}
+        return json.dumps({'ok': True, 'result': ratings})
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def status(self):
+        return {'Polling' : self._do_poll, 'nQueued' : self._tasks.qsize()}
 
 
 def run(distributor, port):
