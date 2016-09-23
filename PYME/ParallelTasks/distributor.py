@@ -9,7 +9,7 @@ logger.setLevel(logging.DEBUG)
 
 import time
 import sys
-import json
+import ujson as json
 import os
 
 from PYME.misc import computerName

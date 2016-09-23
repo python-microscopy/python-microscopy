@@ -150,6 +150,8 @@ def main():
             pass
 
         logging.info('Workers and nodeserver are shut down')
+
+        sys.exit()
             
     #nodeserverLog.close()
 
