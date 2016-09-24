@@ -203,7 +203,9 @@ class NodeServer(object):
     def rate(self):
         #logger.debug('Rating tasks')
         cherrypy.response.headers['Content-Type'] = 'application/json'
-        tasks = json.loads(cherrypy.request.content)
+
+        body = cherrypy.request.body.read(int(cherrypy.request.headers['Content-Length']))
+        tasks = json.loads(body)
 
         #logging.debug(tasks)
 
