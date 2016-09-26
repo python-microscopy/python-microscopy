@@ -404,7 +404,7 @@ class multiviewMapper:
         pipeline = self.visFr.pipeline
 
         try:  # load shiftmaps from metadata, if present
-            shiftWallet = pipeline.mdh['FIXMEShiftmap']
+            shiftWallet = pipeline.mdh['Shiftmap']
         except AttributeError:
             try:  # load through GUI dialog
                 fdialog = wx.FileDialog(None, 'Load shift field', wildcard='Shift Field file (*.sf)|*.sf',
