@@ -199,7 +199,7 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
     for zi in range(len(stigLib)):
         zrange = [np.nanmin([stigLib[zi]['zRange'][0], zrange[0]]), np.nanmax([stigLib[zi]['zRange'][1], zrange[1]])]
     # generate z vector for interpolation
-    zVal = np.arange(zrange[0]-50, zrange[1]+50)
+    zVal = np.arange(zrange[0], zrange[1])
 
     sigCalX = {}
     sigCalY = {}
