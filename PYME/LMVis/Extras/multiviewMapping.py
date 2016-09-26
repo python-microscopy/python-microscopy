@@ -221,11 +221,11 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
 
         sigCalX['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
                                                        np.array(stigLib[ii]['sigmax'])[lowZLoc:upZLoc],
-                                                       ext='extrapolate', s=smoothFac)(zVal)  #  ext='const', s=smoothFac)(zVal)
+                                                       ext='const', s=smoothFac)(zVal)  #  ext='const', s=smoothFac)(zVal)
                                                             # bbox=stigLib['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
         sigCalY['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
                                                        np.array(stigLib[ii]['sigmay'])[lowZLoc:upZLoc],
-                                                       ext='extrapolate', s=smoothFac)(zVal)  # ext='const', s=smoothFac)(zVal)
+                                                       ext='const', s=smoothFac)(zVal)  # ext='const', s=smoothFac)(zVal)
         # set regions outside of usable interpolation area to very unreasonable sigma values
         #sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
         #sigCalY['chan%i' % ii][sigCalY['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
