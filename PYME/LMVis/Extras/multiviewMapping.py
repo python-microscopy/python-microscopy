@@ -209,8 +209,8 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
     smoothFac = 5*len(stigLib[0]['z'])
 
     # generate look up table of sorts
-    import matplotlib.pyplot as plt
-    plt.figure()
+    #import matplotlib.pyplot as plt
+    #plt.figure()
     for ii in range(len(chanPlane)):
         zdat = np.array(stigLib[ii]['z'])
         # find indices of range we trust
@@ -230,8 +230,8 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
         #sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
         #sigCalY['chan%i' % ii][sigCalY['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
 
-        plt.plot(zVal, sigCalX['chan%i' % ii])
-        plt.plot(zVal, sigCalY['chan%i' % ii])
+        #plt.plot(zVal, sigCalX['chan%i' % ii])
+        #plt.plot(zVal, sigCalY['chan%i' % ii])
 
 
     failures = 0
@@ -284,9 +284,9 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
             # TypeError if err is scalar 0, ValueError if err is all NaNs, ZeroDivErr if wSum and errX are both zero
             failures += 1
 
-    plt.hist(-z)
-    plt.xlabel('Z-position from astigmatism [nm]')
-    plt.ylabel('Counts [unitless] or Sigma [nm]')
+    #plt.hist(-z)
+    #plt.xlabel('Z-position from astigmatism [nm]')
+    #plt.ylabel('Counts [unitless] or Sigma [nm]')
 
     print('%i localizations did not have sigmas in acceptable range/planes (out of %i)' % (failures, numMols))
 
