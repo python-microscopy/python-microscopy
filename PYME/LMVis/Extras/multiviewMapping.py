@@ -262,22 +262,19 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
             z[mi] = -zVal[minLoc]
             zerr[mi] = np.sqrt(err[minLoc])
 
-            '''if len(sigxList)>1:
-                plt.scatter(z[mi]*np.ones(len(sigxList)), sigxList, label='$\sigma_x$', c='red')
-                plt.scatter(z[mi]*np.ones(len(sigxList)), sigyList, label='$\sigma_y$', c='black')
-                plt.legend()
-
-                plt.subplot(1, 2, 1)
-                plt.plot(zVal, errX/wSum, label='error X')
-                plt.plot(zVal, errY/wSum, label='error Y')
-                plt.plot(zVal, err, label='Total Error')
-                plt.xlabel('Z-position [nm]')
-                plt.ylabel(r'Error [nm$^2$]')
-                plt.legend()
-
-
-                plt.show()
-            plt.clf()'''
+            #if len(sigxList)>1:
+            #    plt.scatter(z[mi]*np.ones(len(sigxList)), sigxList, label='$\sigma_x$', c='red')
+            #    plt.scatter(z[mi]*np.ones(len(sigxList)), sigyList, label='$\sigma_y$', c='black')
+            #    plt.legend()
+            #    plt.subplot(1, 2, 1)
+            #    plt.plot(zVal, errX/wSum, label='error X')
+            #    plt.plot(zVal, errY/wSum, label='error Y')
+            #    plt.plot(zVal, err, label='Total Error')
+            #    plt.xlabel('Z-position [nm]')
+            #    plt.ylabel(r'Error [nm$^2$]')
+            #    plt.legend()
+            #    plt.show()
+            #plt.clf()
 
 
         except (TypeError, ValueError, ZeroDivisionError):
