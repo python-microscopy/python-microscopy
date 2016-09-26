@@ -237,7 +237,7 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
     failures = 0
     for mi in range(numMols):
         # chans = np.where(fres['planeCounts'][mi] > 0)[0]
-        chans = np.where(fres['whichColor'][mi] == chanColor)[0]
+        chans = np.where(fres['probe'][mi] == chanColor)[0]
         errX, errY = 0, 0
         wSum = 0
         #plt.figure(10)
@@ -622,8 +622,8 @@ class multiviewMapper:
 
         ni = len(pipeline.mapping['whichChan'])
         wChan = np.copy(pipeline.mapping['whichChan'])
-        whichColor = [chanColor[wChan[mi]] for mi in range(ni)]
-        pipeline.addColumn('whichColor', whichColor)
+        probe = [chanColor[wChan[mi]] for mi in range(ni)]
+        pipeline.addColumn('probe', probe)
 
 
 
@@ -646,7 +646,7 @@ class multiviewMapper:
                 weightList.append('fitError_' + k.split('_')[1])
         keys.append('whichChan'), weightList.append(None)
         keys.append('tIndex'), weightList.append(None)
-        keys.append('whichColor'), weightList.append(None)
+        keys.append('probe'), weightList.append(None)
         keys.append('t'), weightList.append(None)
         keys.append('x'), weightList.append('fitError_x0')
         keys.append('y'), weightList.append('fitError_y0')
@@ -699,6 +699,7 @@ class multiviewMapper:
             del fres['z']
         pipeline.addDataSource('Zmapped', cachingResultsFilter(fres))
         pipeline.selectDataSource('Zmapped')
+        pipeline._process_colour()
 
 
 
