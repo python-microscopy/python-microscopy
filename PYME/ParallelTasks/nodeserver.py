@@ -162,8 +162,8 @@ class NodeServer(object):
     def tasks(self, workerID, numWant=50):
         cherrypy.response.headers['Content-Type'] = 'application/json'
         self.workerIDs.add(workerID)
-        if self._tasks.qsize() < 10:
-            self._update_tasks()
+        #if self._tasks.qsize() < 10:
+        #    self._update_tasks()
 
         tasks = [self._tasks.get()] #wait for at leas 1 task
         nTasks = 1
