@@ -76,15 +76,15 @@ def plotFolded(X, Y, multiviewChannels, title=''):
     plt.figure()
     nChan = len(np.unique(multiviewChannels))
 
-    c = iter(plt.cm.rainbow(np.linspace(0, 1, nChan)))
+    c = iter(plt.cm.Dark2(np.linspace(0, 1, nChan)))
     for ii in range(nChan):
         mask = (ii == multiviewChannels)
-        plt.scatter(X[mask], Y[mask], c=next(c), label='Chan #%i' % ii)
+        plt.scatter(X[mask], Y[mask], edgecolors=next(c), facecolors='none', label='Chan #%i' % ii)
     plt.title(title)
     plt.legend()
     return
 
-def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4), nFrameSep=5):
+def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4), nFrameSep=5, returnPaired=True):
     """
     pairMolecules uses pyDeClump functions to group localization clumps into molecules for registration.
 
@@ -96,6 +96,8 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
         deltaX: distance within which neighbors will be clumped is set by 2*deltaX[i])**2
         appearIn: a clump must have localizations in each of these channels in order to be a keep-clump
         nFrameSep: number of frames a molecule is allowed to blink off and still be clumped as the same molecule
+        returnPaired: boolean flag to return a boolean array where True indicates that the molecule is a member of a
+            clump whose members span the appearIn channels.
 
     Returns:
         assigned: clump assignments for each localization. Note that molecules whose whichChan entry is set to a
@@ -117,21 +119,23 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
     keptClumps = [np.array_equal(np.unique(whichChan[assigned == clumps[ii]]), appearIn) for ii in range(len(clumps))]
     #keptClumps = [(len(np.unique(whichChan[assigned == clumps[ii]])) >= appearances) for ii in range(len(clumps))]
 
-    keptMoles = []
-    # np.array_equal(clumps, np.arange(1, np.max(assigned) + 1)) evaluates to True
-    for elem in assigned:
-        keptMoles.append(elem in clumps[np.where(keptClumps)])
-    keep = np.where(keptMoles)
-
-    # don't clump molecules from the wrong channel (done by parsing modified whichChan to this function)
+   # don't clump molecules from the wrong channel (done by parsing modified whichChan to this function)
     ignoreChan = whichChan < 0
     numClump = np.max(assigned)
     igVec = np.arange(numClump + 1, numClump + 1 + sum(ignoreChan))
     # give ignored channel localizations unique clump assignments
     assigned[ignoreChan] = igVec
 
-
-    return assigned, keep
+    if returnPaired:
+        keptMoles = []
+        # np.array_equal(clumps, np.arange(1, np.max(assigned) + 1)) evaluates to True
+        # TODO: speed up following loop - quite slow for large N
+        for elem in assigned:
+            keptMoles.append(elem in clumps[np.where(keptClumps)])
+        keep = np.where(keptMoles)
+        return assigned, keep
+    else:
+        return assigned
 
 def applyShiftmaps(pipeline, shiftWallet, numChan):
     """
@@ -170,7 +174,7 @@ def applyShiftmaps(pipeline, shiftWallet, numChan):
     pipeline.addColumn('chromadx', dx)
     pipeline.addColumn('chromady', dy)
 
-def astigMAPism(fres, stigLib, chanPlane):
+def astigMAPism(fres, stigLib, chanPlane, chanColor):
     """
     Generates a look-up table of sorts for z based on sigma x/y fit results and calibration information. If a molecule
     appears on multiple planes, sigma values from both planes will be used in the look up.
@@ -182,7 +186,8 @@ def astigMAPism(fres, stigLib, chanPlane):
 
     Returns:
         z: an array of z-positions for each molecule in nm (assuming proper units were used in astigmatism calibration)
-
+        zerr: an array containing discrepancies between sigma values and the PSF calibration curves. Note that this
+            array is in units of nm, but error may not be propagated from sigma fitResults properly as is.
     """
     # fres = pipeline.selectedDataSource.resultsSource.fitResults
     numMols = len(fres['fitResults_x0'])
@@ -200,9 +205,13 @@ def astigMAPism(fres, stigLib, chanPlane):
     sigCalY = {}
 
     z = np.zeros(numMols)
+    zerr = 1e4*np.ones(numMols)
+    smoothFac = 5*len(stigLib[0]['z'])
 
     # generate look up table of sorts
-    for ii in np.unique(whichChan):
+    #import matplotlib.pyplot as plt
+    #plt.figure()
+    for ii in range(len(chanPlane)):
         zdat = np.array(stigLib[ii]['z'])
         # find indices of range we trust
         zrange = stigLib[ii]['zRange']
@@ -212,31 +221,80 @@ def astigMAPism(fres, stigLib, chanPlane):
 
         sigCalX['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
                                                        np.array(stigLib[ii]['sigmax'])[lowZLoc:upZLoc],
-                                                       ext='zeros')(zVal)
+                                                       ext='const', s=smoothFac)(zVal)  #  ext='const', s=smoothFac)(zVal)
                                                             # bbox=stigLib['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
         sigCalY['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
                                                        np.array(stigLib[ii]['sigmay'])[lowZLoc:upZLoc],
-                                                       ext='zeros')(zVal)
+                                                       ext='const', s=smoothFac)(zVal)  # ext='const', s=smoothFac)(zVal)
         # set regions outside of usable interpolation area to very unreasonable sigma values
-        sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
-        sigCalY['chan%i' % ii][sigCalY['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
+        #sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
+        #sigCalY['chan%i' % ii][sigCalY['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
 
+        #plt.plot(zVal, sigCalX['chan%i' % ii])
+        #plt.plot(zVal, sigCalY['chan%i' % ii])
+
+
+    failures = 0
     for mi in range(numMols):
-        chans = np.where(fres['planeCounts'][mi] > 0)[0]
+        # chans = np.where(fres['planeCounts'][mi] > 0)[0]
+        chans = np.where(fres['probe'][mi] == chanColor)[0]
         errX, errY = 0, 0
+        wSum = 0
+        #plt.figure(10)
+        #plt.subplot(1, 2, 2)
+        #sigxList = []
+        #sigyList = []
         for ci in chans:
-            wx = 1./(fres['fitError_sigmaxPlane%i' % chanPlane[ci]][mi])**2
-            wy = 1./(fres['fitError_sigmayPlane%i' % chanPlane[ci]][mi])**2
-            errX += wx*(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi] - sigCalX['chan%i' % ci])**2
-            errY += wy*(fres['fitResults_sigmayPlane%i' % chanPlane[ci]][mi] - sigCalY['chan%i' % ci])**2
+            if not np.isnan(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi]):
+                #plt.plot(zVal, sigCalX['chan%i' % ci], label='$\sigma_x$, chan %i' % ci)
+                #plt.plot(zVal, sigCalY['chan%i' % ci], label='$\sigma_y$, chan %i' % ci)
+                #sigxList.append(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi])
+                #sigyList.append(fres['fitResults_sigmayPlane%i' % chanPlane[ci]][mi])
+
+                wX = 1./(fres['fitError_sigmaxPlane%i' % chanPlane[ci]][mi])**2
+                wY = 1./(fres['fitError_sigmayPlane%i' % chanPlane[ci]][mi])**2
+                wSum += (wX + wY)
+                errX += wX*(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi] - sigCalX['chan%i' % ci])**2
+                errY += wY*(fres['fitResults_sigmayPlane%i' % chanPlane[ci]][mi] - sigCalY['chan%i' % ci])**2
         try:
-            z[mi] = zVal[np.nanargmin(errX + errY)]
-        except:
-            print('No sigmas in correct plane for this molecule')
+            err = (errX + errY)/wSum
+            minLoc = np.nanargmin(err)
+            z[mi] = -zVal[minLoc]
+            zerr[mi] = np.sqrt(err[minLoc])
 
-    return z
+            #if len(sigxList)>1:
+            #    plt.scatter(z[mi]*np.ones(len(sigxList)), sigxList, label='$\sigma_x$', c='red')
+            #    plt.scatter(z[mi]*np.ones(len(sigxList)), sigyList, label='$\sigma_y$', c='black')
+            #    plt.legend()
+            #    plt.subplot(1, 2, 1)
+            #    plt.plot(zVal, errX/wSum, label='error X')
+            #    plt.plot(zVal, errY/wSum, label='error Y')
+            #    plt.plot(zVal, err, label='Total Error')
+            #    plt.xlabel('Z-position [nm]')
+            #    plt.ylabel(r'Error [nm$^2$]')
+            #    plt.legend()
+            #    plt.show()
+            #plt.clf()
 
-def coalesceDict(inD, assigned):  # , notKosher=None):
+
+        except (TypeError, ValueError, ZeroDivisionError):
+            # TypeError if err is scalar 0, ValueError if err is all NaNs, ZeroDivErr if wSum and errX are both zero
+            failures += 1
+
+    #plt.hist(-z)
+    #plt.xlabel('Z-position from astigmatism [nm]')
+    #plt.ylabel('Counts [unitless] or Sigma [nm]')
+
+    print('%i localizations did not have sigmas in acceptable range/planes (out of %i)' % (failures, numMols))
+
+    #import matplotlib.pyplot as plt
+    #plt.figure()
+    #plt.hist(z)
+    #plt.show()
+    return z, zerr
+
+
+def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
     """
     Agregates clumps to a single event
     Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
@@ -246,6 +304,11 @@ def coalesceDict(inD, assigned):  # , notKosher=None):
     Args:
         inD: input dictionary containing fit results
         assigned: clump assignments to be coalesced
+        keys: list whose elements are strings corresponding to keys to be copied from the input to output dictionaries
+        weightList: list whose elements describe the weightings to use when coalescing corresponding keys. A scalar
+            weightList entry flags for an unweighted mean is performed during coalescence. Alternatively, if a
+            weightList element is a vector it will be used as the weights, and a string will be used as a key to extract
+            weights from the input dictionary.
 
     Returns:
         fres: output dictionary containing the coalesced results
@@ -259,54 +322,38 @@ def coalesceDict(inD, assigned):  # , notKosher=None):
     for i, c in enumerate(assigned):
         clist[int(c-1)].append(i)
 
+    # loop through keys
+    for ki in range(len(keys)):
+        rkey = keys[ki]
+        fres[rkey] = np.empty(NClumps)
+        # determine if weights need to be propogated into new dictionary
+        keepWeights = weightList[ki].__class__ == str
+        if keepWeights:
+            weights = inD[weightList[ki]]
+            fres[weightList[ki]] = np.empty(NClumps)
+        else:
+            weights = weightList[ki]
 
-    for rkey in inD.keys():
-        skey = rkey.split('_')
 
-        if skey[0] == 'fitResults':
-            fres[rkey] = np.empty(NClumps)
-            errKey = 'fitError_' + skey[1]
-            fres[errKey] = np.empty(NClumps)
+        if np.isscalar(weights):
+            # if single value is given as weight, take an unweighted mean
+            fres[rkey][i] = np.mean(inD[rkey][clist[i]])
+        elif type(weights) == type(None):
+            # if None has been passed as the weight for this key, take the minimum
+            for i in xrange(NClumps):
+                fres[rkey][i] = np.min(inD[rkey][clist[i]])
+        else:
+            # if weights is an array, take weighted average
+            errVec = np.empty(NClumps)
             for i in xrange(NClumps):
                 ci = clist[i]
-                fres[rkey][i], fres[errKey][i] = pyDeClump.weightedAverage_(inD[rkey][ci], inD[errKey][ci], None)
-        elif rkey == 'tIndex':
-            fres[rkey] = np.empty(NClumps)
-            for i in xrange(NClumps):
-                ci = clist[i]
-                fres['tIndex'][i] = inD['tIndex'][ci].min()
+                fres[rkey][i], errVec[i] = pyDeClump.weightedAverage_(inD[rkey][ci], weights[ci], None)
 
-        elif rkey == 'whichChan':
-            fres[rkey] = np.empty(NClumps, dtype=np.int32)
-            if 'planeCounts' in inD.keys():
-                fres['planeCounts'] = np.zeros((NClumps, inD['planeCounts'].shape[1]))
-                for i in xrange(NClumps):
-                    ci = clist[i]  # clump indices
-                    cl = inD[rkey][ci]  # channel list of clumps
 
-                    fres[rkey][i] = np.array(np.bincount(cl).argmax(), dtype=np.int32)  # set channel to mode
+        # propagate fitErrors into new dictionary
+        if keepWeights:
+            fres[weightList[ki]] = errVec
 
-                    # if np.logical_and(len(np.unique(cl)) > 1, np.any([entry in cl for entry in notKosher])):
-
-                    fres['planeCounts'][i][:] = inD['planeCounts'][ci][:].sum(axis=0).astype(np.int32)
-                    #cind, counts = np.unique(cl, return_counts=True)
-                    #fres['planeCounts'][i][cind] += counts.astype(np.int32)
-
-            else:
-                for i in xrange(NClumps):
-                    ci = clist[i]
-                    cl = inD[rkey][ci]
-
-                    fres[rkey][i] = np.array(np.bincount(cl).argmax(), dtype=np.int32)  # set channel to mode
-
-        elif rkey == 'planeCounts' or skey[0] == 'fitError':
-            pass
-
-        else:  # settle for the unweighted mean
-            fres[rkey] = np.empty(NClumps)
-            for i in xrange(NClumps):
-                ci = clist[i]
-                fres[rkey][i] = inD[rkey][ci].mean()
 
     return fres
 
@@ -379,13 +426,6 @@ class multiviewMapper:
         # apply shiftmaps
         applyShiftmaps(pipeline, shiftWallet, numChan)
 
-        # create new data source NO LONGER NECESSARY, mapping filter will reg x and y automatically
-        #from PYME.LMVis.inpFilt import fitResultsSource
-        #fres = pipeline.selectedDataSource.resultsSource.fitResults
-        #regFres = np.copy(fres)
-        #regFres['fitResults']['x0'], regFres['fitResults']['y0'] = x, y
-        #pipeline.addDataSource('RegisteredXY', fitResultsSource(regFres))
-        #pipeline.selectDataSource('RegisteredXY')
 
     def OnCalibrateShifts(self, event):
         """
@@ -491,6 +531,17 @@ class multiviewMapper:
             cStack.append(ci*np.ones(len(xShifted[ci])))
         cStack = np.hstack(cStack)
 
+        # calculate standard deviation within clump before and after shift
+        unRegStd = np.empty((numMoles, 2))
+        regStd = np.empty_like(unRegStd)
+        for mi in range(numMoles):
+            # TODO: pull inline loops out, this is just being lazy
+            unRegStd[mi, :] = np.std([xClump[cc][mi] for cc in range(numChan)]), np.std([yClump[cc][mi] for cc in range(numChan)])
+            regStd[mi, :] = np.std([xShifted[cc][mi] for cc in range(numChan)]), np.std([yShifted[cc][mi] for cc in range(numChan)])
+
+        print('Avg std(X) within clumps: unreg= %f, reg =  %f' % (unRegStd[:, 0].mean(), regStd[:, 0].mean()))
+        print('Avg std(Y) within clumps: unreg= %f, reg = %f' % (unRegStd[:, 1].mean(), regStd[:, 1].mean()))
+
         plotFolded(np.hstack(xClump), np.hstack(yClump), cStack, 'Unregistered Clumps')
 
         plotFolded(np.hstack(xShifted), np.hstack(yShifted), cStack, 'Registered Clumps')
@@ -530,9 +581,12 @@ class multiviewMapper:
             chanPlane = [0]
             numPlanes = 1
 
-        try:  # load astigmatism calibrations from metadata, if present
-            stigLib = pipeline.mdh['Astigmap']
-        except AttributeError:
+        try:  # load astigmatism calibrations, if listed in metadata
+            # FIXME: this is only set up to pull a local copy at the moment
+            stigLoc = pipeline.mdh['AstigmapID']
+            fid = open(stigLoc, 'r')
+            stigLib = json.load(fid)
+        except (AttributeError, IOError):
             try:  # load through GUI dialog
                 fdialog = wx.FileDialog(None, 'Load Astigmatism Calibration', wildcard='Astigmatism map (*.am)|*.am',
                                         style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
@@ -564,6 +618,12 @@ class multiviewMapper:
             pipeline.mapping['fitError_sigmayPlane%i' % pind][pipeline.mapping['fitError_sigmayPlane%i' % pind] == 0] = np.inf
 
         ni = len(pipeline.mapping['whichChan'])
+        wChan = np.copy(pipeline.mapping['whichChan'])
+        probe = [chanColor[wChan[mi]] for mi in range(ni)]
+        pipeline.addColumn('probe', probe)
+
+
+
         fres = {}
         for pkey in pipeline.mapping.keys():
             fres[pkey] = pipeline.mapping[pkey]
@@ -573,6 +633,20 @@ class multiviewMapper:
                 #cind, counts = np.unique(cl, return_counts=True)
                 #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
                 fres['planeCounts'][j][fres['whichChan'][j]] += 1
+
+        # pair fit results and errors for weighting
+        # keys = [k for k, v in fres.iteritems() if k.startswith('fitResults')]
+        keys, weightList = [], []
+        for k, v in fres.iteritems():
+            if k.startswith('fitResults'):
+                keys.append(k)
+                weightList.append('fitError_' + k.split('_')[1])
+        keys.append('whichChan'), weightList.append(None)
+        keys.append('tIndex'), weightList.append(None)
+        keys.append('probe'), weightList.append(None)
+        keys.append('t'), weightList.append(None)
+        keys.append('x'), weightList.append('fitError_x0')
+        keys.append('y'), weightList.append('fitError_y0')
 
         for cind in np.unique(chanColor):
             # copy keys and sort in order of frames
@@ -594,30 +668,35 @@ class multiviewMapper:
             planeInColorChan[np.where(igMask)] = -9  # must be negative to be ignored
 
             # assign molecules to clumps
-            clumpID, paired = pairMolecules(fres['tIndex'], fres['fitResults_x0'], fres['fitResults_y0'],
-                                            planeInColorChan, deltaX=fres['fitError_x0'],
-                                            appearIn=np.where(chanColor == cind)[0], nFrameSep=1)
+            clumpRad = 1e3*pipeline.mdh['voxelsize.x']*np.ones_like(fres['x'])  # clump folded data within 2 pixels #fres['fitError_x0'],
+
+            clumpID = pairMolecules(fres['tIndex'], fres['x'], fres['y'],
+                                            planeInColorChan, deltaX=clumpRad,  # fres['fitError_x0'],
+                                            appearIn=np.where(chanColor == cind)[0], nFrameSep=1, returnPaired=False)
 
             # make sure clumpIDs are contiguous from [0, numClumps)
             assigned = -1*np.ones_like(clumpID)
             clumpVec = np.unique(clumpID)
             for ci in range(len(clumpVec)):
                 cMask = clumpID == clumpVec[ci]
-                assigned[cMask] = ci + 1  #FIXME: cluster assignments currently must start from 1, which is mean.
+                assigned[cMask] = ci + 1
 
             # coalesce clumped localizations into single data point
-            fres = coalesceDict(fres, assigned)  # , ignoreChans)
+            fres = coalesceDict(fres, assigned, keys, weightList)
 
         print('Clumped %i localizations' % (ni - len(fres['whichChan'])))
 
         # look up z-positions
-        z = astigMAPism(fres, stigLib, chanPlane)
+        z, zerr = astigMAPism(fres, stigLib, chanPlane, chanColor)
         fres['astigZ'] = z
+        fres['zLookupError'] = zerr
 
         # make sure there is no z, so that focus will be added during addDataSource
-        del fres['z']
+        if 'z' in fres.keys():
+            del fres['z']
         pipeline.addDataSource('Zmapped', cachingResultsFilter(fres))
         pipeline.selectDataSource('Zmapped')
+        pipeline._process_colour()
 
 
 

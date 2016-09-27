@@ -239,7 +239,7 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
         if quantization:
             dataString = bcl.HuffmanCompressQuant(data.ravel(), quantizationOffset, quantizationScale).tostring()
         else:
-            dataString = bcl.HuffmanCompress(data.data).tostring()
+            dataString = bcl.HuffmanCompress(np.ascontiguousarray(data).data).tostring()
     elif compression == DATA_COMP_HUFFCODE_CHUNKS:
         header['DataCompression'] = DATA_COMP_HUFFCODE_CHUNKS
         
