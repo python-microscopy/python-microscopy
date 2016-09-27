@@ -53,7 +53,7 @@ scope.state.registerHandler('Positioning.z', lambda : scope.fakePiezo.GetPos(1),
 pz.join() #piezo must be there before we start camera
 cm = InitBG('Fake Camera', """
 from PYME.Acquire.Hardware.Simulator import fakeCam, dSimControl
-scope.cam = fakeCam.FakeCamera(70*scipy.arange(-256.0, 256.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo)
+scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 768.0 + 128.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo)
 scope.cameras['Fake Camera'] = scope.cam
 #time.sleep(5)
 
