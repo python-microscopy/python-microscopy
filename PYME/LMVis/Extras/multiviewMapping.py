@@ -371,20 +371,17 @@ class multiviewMapper:
 
     """
     def __init__(self, visFr):
-        self.visFr = visFr
+        self.pipeline = visFr.pipeline
 
-        ID_CALIBRATE_SHIFTS = wx.NewId()
-        visFr.extras_menu.Append(ID_CALIBRATE_SHIFTS, "Multiview - Calibrate Shifts")
-        visFr.Bind(wx.EVT_MENU, self.OnCalibrateShifts, id=ID_CALIBRATE_SHIFTS)
+        visFr.AddMenuItem('Multiview', 'Calibrate Shifts', self.OnCalibrateShifts,
+                          helpText='Extract a shift field from bead measurements')
 
-        ID_MAP_XY = wx.NewId()
-        visFr.extras_menu.Append(ID_MAP_XY, "Multiview - Map XY")
-        visFr.Bind(wx.EVT_MENU, self.OnFoldAndMapXY, id=ID_MAP_XY)
+        visFr.AddMenuItem('Multiview', 'Map XY', self.OnFoldAndMapXY,
+                          helpText='Fold channels and correct shifts')
 
-        ID_MAP_Z = wx.NewId()
-        visFr.extras_menu.Append(ID_MAP_Z, "Astigmatism - Map Z")
-        visFr.Bind(wx.EVT_MENU, self.OnMapZ, id=ID_MAP_Z)
-        return
+        visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapZ,
+                          helpText='Look up z value for astigmatic 3D, using a muti-view aware correction')
+
 
     def OnFoldAndMapXY(self, event):
         """
@@ -398,7 +395,7 @@ class multiviewMapper:
             applied (see foldX)
 
         """
-        pipeline = self.visFr.pipeline
+        pipeline = self.pipeline
 
         try:  # load shiftmaps from metadata, if present
             shiftWallet = pipeline.mdh['Shiftmap']
@@ -440,7 +437,7 @@ class multiviewMapper:
             Writes shiftmapWallet into a json formatted .sf file through a GUI dialog
         """
         from PYME.Analysis.points import twoColour
-        pipeline = self.visFr.pipeline
+        pipeline = self.pipeline
 
         try:
             numChan = pipeline.mdh['Multiview.NumROIs']
@@ -547,7 +544,8 @@ class multiviewMapper:
         plotFolded(np.hstack(xShifted), np.hstack(yShifted), cStack, 'Registered Clumps')
 
         # save shiftmaps
-        defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + 'MultiView.sf'
+        #FIXME - Getting the filename through the title is super fragile - should not use pipeline.filename (or similar) instead
+        defFile = os.path.splitext(os.path.split(self.pipeline.filename)[-1])[0] + 'MultiView.sf'
 
         fdialog = wx.FileDialog(None, 'Save shift field as ...',
             wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
@@ -560,7 +558,7 @@ class multiviewMapper:
             fid.close()
 
     def OnMapZ(self, event):
-        pipeline = self.visFr.pipeline
+        pipeline = self.pipeline
 
         # get channel and color info
         try:
