@@ -116,8 +116,10 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
     # group localizations
     assigned = pyDeClump.findClumps(tIndex.astype(np.int32), x, y, deltaX, nFrameSep)
     # print assigned.min()
+
     # only look at clumps with localizations from each channel
     clumps = np.unique(assigned)
+
     # Note that this will never be a keep clump if an ignore channel is present...
     keptClumps = [np.array_equal(np.unique(whichChan[assigned == clumps[ii]]), appearIn) for ii in range(len(clumps))]
     #keptClumps = [(len(np.unique(whichChan[assigned == clumps[ii]])) >= appearances) for ii in range(len(clumps))]
@@ -689,9 +691,6 @@ class multiviewMapper:
         for cind in np.unique(chanColor):
             # trick pairMolecules function by tweaking the channel vector
             planeInColorChan = np.copy(fres['multiviewChannel'])
-            #chanColor = np.array(chanColor)
-            #ignoreChans = np.where(chanColor != cind)[0]
-            #igMask = [mm in ignoreChans.tolist() for mm in planeInColorChan]
 
             igMask = probe != cind
             planeInColorChan[igMask] = -9  # must be negative to be ignored
@@ -704,6 +703,7 @@ class multiviewMapper:
                                             planeInColorChan, deltaX=clumpRad,  # fres['fitError_x0'],
                                             appearIn=np.where(chanColor == cind)[0], nFrameSep=1, returnPaired=False)
 
+            # TODO - Why do clumpIDs need to be contiguous (i.e. can we eliminate this step)
             # make sure clumpIDs are contiguous from [0, numClumps)
             assigned = -1*np.ones_like(clumpID)
             clumpVec = np.unique(clumpID)
