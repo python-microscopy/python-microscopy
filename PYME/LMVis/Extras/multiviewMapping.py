@@ -267,7 +267,6 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
 
     failures = 0
     for mi in range(numMols):
-        # chans = np.where(fres['planeCounts'][mi] > 0)[0]
         chans = np.where(fres['probe'][mi] == chanColor)[0]
         errX, errY = 0, 0
         wSum = 0
@@ -651,16 +650,6 @@ class multiviewMapper:
 
         I = np.argsort(src['t'])
         sorted_src = {k : src[k][I] for k in all_keys}
-
-        #TODO - what are planeCounts used for? Are they required?
-        #fres['planeCounts'] = np.zeros((ni, numChan), dtype=np.int32)
-        # for j in range(ni):
-        #         #cind, counts = np.unique(cl, return_counts=True)
-        #         #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
-        #         fres['planeCounts'][j][fres['multiviewChannel'][j]] += 1
-
-        #fres['planeCounts'][:, fres['multiviewChannel']] = 1
-
 
         grouped = coalesceDict(sorted_src, sorted_src['clumpIndex'], keys_to_aggregate, aggregation_weights)
         self.pipeline.addDataSource('Grouped', cachingResultsFilter(grouped))
