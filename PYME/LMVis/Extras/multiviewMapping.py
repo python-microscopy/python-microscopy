@@ -25,6 +25,7 @@
 import wx
 import numpy as np
 from PYME.Analysis.points.DeClump import pyDeClump
+from PYME.Analysis.points.DeClump import deClump
 import os
 from PYME.IO.FileUtils import nameUtils
 import json
@@ -360,6 +361,7 @@ def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
         #we will aggregate into this and then add to dictionary.
         #performing dictionary lookups (as previously done) on each loop iteration is expensive
         var = np.empty(NClumps)
+        clumped[rkey] = var
 
         # determine if weights need to be propogated into new dictionary
         keepWeights = isinstance(weightList[ki], basestring) # testing __class__ is not idomatic (and will fail in python if we end up with unicode or orther derived string types)
@@ -373,17 +375,89 @@ def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
         if np.isscalar(weights):
             # if single value is given as weight, take an unweighted mean
             for i in xrange(NClumps):
-                var[i] = np.mean(inD[rkey][clist[i]])
+                clumped[rkey][i] = np.mean(inD[rkey][clist[i]])
+                #var[i] = np.mean(inD[rkey][clist[i]])
         elif weights is None:
             # if None has been passed as the weight for this key, take the minimum
             for i in xrange(NClumps):
-                var[i] = np.min(inD[rkey][clist[i]])
+                clumped[rkey][i] = np.min(inD[rkey][clist[i]])
+                #var[i] = np.min(inD[rkey][clist[i]])
         else:
             # if weights is an array, take weighted average
             errVec = np.empty(NClumps)
             for i in xrange(NClumps):
                 ci = clist[i]
-                var[i], errVec[i] = pyDeClump.weightedAverage_(inD[rkey][ci], weights[ci], None)
+                clumped[rkey][i], errVec[i] = pyDeClump.weightedAverage_(inD[rkey][ci], weights[ci], None)
+                #var[i], errVec[i] = pyDeClump.weightedAverage_(inD[rkey][ci], weights[ci], None)
+
+        #clumped[rkey] = var
+        # propagate fitErrors into new dictionary
+        if keepWeights:
+            clumped[weightList[ki]] = errVec
+
+
+    return clumped
+
+def coalesceDictSorted(inD, assigned, keys, weightList):  # , notKosher=None):
+    """
+    Agregates clumps to a single event
+    Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
+    object.
+    Also note that copying a large dictionary can be rather slow, and a structured ndarray approach may be preferable.
+    DB - we should never have a 'large' dictionary (ie there will only ever be a handful of keys)
+
+    Args:
+        inD: input dictionary containing fit results
+        assigned: clump assignments to be coalesced
+        keys: list whose elements are strings corresponding to keys to be copied from the input to output dictionaries
+        weightList: list whose elements describe the weightings to use when coalescing corresponding keys. A scalar
+            weightList entry flags for an unweighted mean is performed during coalescence. Alternatively, if a
+            weightList element is a vector it will be used as the weights, and a string will be used as a key to extract
+            weights from the input dictionary.
+
+    Returns:
+        fres: output dictionary containing the coalesced results
+
+    """
+    NClumps = int(np.max(assigned))  # len(np.unique(assigned))  #
+
+    clumped = {}
+
+    clist = [[] for i in xrange(NClumps)]
+    for i, c in enumerate(assigned):
+        clist[int(c-1)].append(i)
+
+    # loop through keys
+    for ki in range(len(keys)):
+        rkey = keys[ki]
+
+        #we will aggregate into this and then add to dictionary.
+        #performing dictionary lookups (as previously done) on each loop iteration is expensive
+        var = np.empty(NClumps)
+        #clumped[rkey] = var
+
+        # determine if weights need to be propogated into new dictionary
+        keepWeights = isinstance(weightList[ki], basestring) # testing __class__ is not idomatic (and will fail in python if we end up with unicode or orther derived string types)
+        if keepWeights:
+            weights = inD[weightList[ki]]
+            #clumped[weightList[ki]] = np.empty(NClumps)
+        else:
+            weights = weightList[ki]
+
+
+        if np.isscalar(weights):
+            # if single value is given as weight, take an unweighted mean
+            for i in xrange(NClumps):
+                #clumped[rkey][i] = np.mean(inD[rkey][clist[i]])
+                var[i] = np.mean(inD[rkey][clist[i]])
+        elif weights is None:
+            # if None has been passed as the weight for this key, take the minimum
+            for i in xrange(NClumps):
+                #clumped[rkey][i] = np.min(inD[rkey][clist[i]])
+                var[i] = np.min(inD[rkey][clist[i]])
+        else:
+            # if weights is an array, take weighted average
+            var, errVec = deClump.aggregateWeightedMean(assigned.astype('i'), inD[rkey].astype('f'), weights.astype('f'), NClumps)
 
         clumped[rkey] = var
         # propagate fitErrors into new dictionary
@@ -392,6 +466,7 @@ def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
 
 
     return clumped
+
 
 class multiviewMapper:
     """
@@ -648,10 +723,10 @@ class multiviewMapper:
 
         all_keys = keys_to_aggregate + [k for k in aggregation_weights if isinstance(k, basestring)]
 
-        I = np.argsort(src['t'])
+        I = np.argsort(src['clumpIndex'])
         sorted_src = {k : src[k][I] for k in all_keys}
 
-        grouped = coalesceDict(sorted_src, sorted_src['clumpIndex'], keys_to_aggregate, aggregation_weights)
+        grouped = coalesceDictSorted(sorted_src, sorted_src['clumpIndex'], keys_to_aggregate, aggregation_weights)
         self.pipeline.addDataSource('Grouped', cachingResultsFilter(grouped))
         self.pipeline.selectDataSource('Grouped')
 
@@ -691,7 +766,7 @@ class multiviewMapper:
 
         # make sure we have already made channel assignments:
         if 'multiviewChannel' not in pipeline.mapping.keys():
-            print('folding multi-view data without applying shiftmaps')
+            logger.warn('folding multi-view data without applying shiftmaps')
             foldX(pipeline)
 
 

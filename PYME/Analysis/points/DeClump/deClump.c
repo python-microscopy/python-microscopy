@@ -61,6 +61,8 @@ int findConnected(int i, int nPts, int *t, float *x, float *y,float *delta_x, in
         }
     }
 
+    return 0;
+
 }
 
 int findConnectedN(int i, int nPts, int *t, float *x, float *y,float *delta_x, int *frameIndices, int *assigned, int clumpNum, int nFrames, int *recDepth)
@@ -130,7 +132,7 @@ static PyObject * findClumps(PyObject *self, PyObject *args, PyObject *keywds)
     int *assigned = 0;
     int clumpNum = 1;
 
-    int dims[2];
+    npy_intp dims[2];
     int i = 0;
     int j = 0;
     int t_last = 0;
@@ -266,8 +268,8 @@ static PyObject * findClumps(PyObject *self, PyObject *args, PyObject *keywds)
 
     return (PyObject*) assignedA;
 
-fail:
-    return NULL;
+//fail:
+//    return NULL;
 }
 
 static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
@@ -303,7 +305,7 @@ static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
 
     int clump = -1;
 
-    int dims[2];
+    npy_intp dims[2];
     int i = 0;
     int j = 0;
     int t_last = 0;
@@ -446,11 +448,169 @@ static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
 
     return (PyObject*) assignedA;
 
-fail:
-    return NULL;
+//fail:
+ //   return NULL;
 }
 
+/*
+Aggregate data into clumps by taking a weighted mean. This assumes data has been sorted by clumpIndex
+*/
+static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject *keywds)
+{
+    PyObject *clumpIDO = 0;
+    PyObject *varO = 0;
+    PyObject *sigmaO = 0;
 
+    PyArrayObject *clumpIDA = 0;
+    PyArrayObject *varA = 0;
+    PyArrayObject *sigmaA = 0;
+
+    int *clumpIDs = 0;
+    float *vars = 0;
+    float *sigs = 0;
+
+
+    PyObject * outVarA=0;
+    PyObject * outSigA=0;
+
+
+    int nPts = 0;
+    int nClumps = 0;
+    int currentClump = -1;
+
+    int i=0;
+    //int j=0;
+
+    float *outVar = 0;
+    float *outSig = 0;
+
+    float iws, weight_sum, var_sum, w;
+
+    npy_intp dims[2];
+
+    static char *kwlist[] = {"clumpIDs", "var", "sig", "nClumps", NULL};
+
+    dims[0] = 0;
+    dims[1] = 0;
+
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOOi", kwlist,
+         &clumpIDO, &varO, &sigmaO, &nClumps))
+        return NULL;
+
+    clumpIDA = (PyArrayObject *) PyArray_ContiguousFromObject(clumpIDO, PyArray_INT, 0, 1);
+    if (clumpIDA == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad clumpIDs");
+      return NULL;
+    }
+
+    nPts = PyArray_DIM(clumpIDA, 0);
+
+    varA = (PyArrayObject *) PyArray_ContiguousFromObject(varO, PyArray_FLOAT, 0, 1);
+    if ((varA == NULL) || (PyArray_DIM(varA, 0) != nPts))
+    {
+      Py_DECREF(clumpIDA);
+      PyErr_Format(PyExc_RuntimeError, "Bad var");
+      return NULL;
+    }
+
+    sigmaA = (PyArrayObject *) PyArray_ContiguousFromObject(sigmaO, PyArray_FLOAT, 0, 1);
+    if ((sigmaA == NULL) || (PyArray_DIM(sigmaA, 0) != nPts))
+    {
+      Py_DECREF(clumpIDA);
+      Py_DECREF(varA);
+      PyErr_Format(PyExc_RuntimeError, "Bad sigma");
+      return NULL;
+    }
+
+    //retrieve pointers to the various data arrays
+    clumpIDs = (int*)PyArray_DATA(clumpIDA);
+    vars = (float*)PyArray_DATA(varA);
+    sigs = (float*)PyArray_DATA(sigmaA);
+
+    dims[0] = nClumps;
+
+    outVarA = PyArray_SimpleNew(1, dims, PyArray_FLOAT);
+    if (outVarA == NULL)
+    {
+        Py_DECREF(clumpIDA);
+        Py_DECREF(varA);
+        Py_DECREF(sigmaA);
+        PyErr_Format(PyExc_RuntimeError, "Error allocating array for clumped output");
+        return NULL;
+    }
+
+    outSigA = PyArray_SimpleNew(1, dims, PyArray_FLOAT);
+    if (outSigA == NULL)
+    {
+        Py_DECREF(clumpIDA);
+        Py_DECREF(varA);
+        Py_DECREF(sigmaA);
+        Py_DECREF(outVarA);
+        PyErr_Format(PyExc_RuntimeError, "Error allocating array for clumped errors");
+        return NULL;
+    }
+
+    outVar = (float*)PyArray_DATA(outVarA);
+    outSig = (float*)PyArray_DATA(outSigA);
+
+    /*
+    for (i=0; i < nPts; i++)
+    {
+        outVar[i] = 0;
+        outSig[i] = -1e4;
+    }
+    */
+
+
+    //j = 0;
+    for (i=0; i < nPts; i++)
+    {
+        if (currentClump != clumpIDs[i]){
+            //We have moved on to the next clump
+            if (currentClump >= 0)
+            {
+                iws = 1.0/weight_sum;
+                outVar[currentClump] = var_sum*iws;
+                outSig[currentClump] = sqrtf(iws);
+            }
+
+            weight_sum = 0;
+            var_sum = 0;
+
+            currentClump = clumpIDs[i];
+        }
+
+        w = 1.0/(sigs[i]*sigs[i]);
+        weight_sum += w;
+        var_sum += w*vars[i];
+    }
+
+    if (currentClump >= 0)
+    {
+        iws = 1.0/weight_sum;
+        outVar[currentClump] = var_sum*iws;
+        outSig[currentClump] = sqrtf(iws);
+    }
+
+
+    Py_DECREF(clumpIDA);
+    Py_DECREF(varA);
+    Py_DECREF(sigmaA);
+
+    return Py_BuildValue("(O,O)", (PyObject*) outVarA, (PyObject*) outSigA);
+
+/*fail:
+    Py_XDECREF(clumpIDA);
+    Py_XDECREF(varA);
+    Py_XDECREF(sigmaA);
+    Py_XDECREF(outVarA);
+    Py_XDECREF(outSigA);
+
+
+    return NULL;*/
+}
 
 
 static PyMethodDef deClumpMethods[] = {
@@ -458,6 +618,8 @@ static PyMethodDef deClumpMethods[] = {
     ""},
     {"findClumpsN",  findClumpsN, METH_VARARGS | METH_KEYWORDS,
     ""},
+    {"aggregateWeightedMean",  aggregateWeightedMean, METH_VARARGS | METH_KEYWORDS,
+    "Aggregate data into clumps by taking a weighted mean. This assumes data has been sorted by clumpIndex."},
     
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
