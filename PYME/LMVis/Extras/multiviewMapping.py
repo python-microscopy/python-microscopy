@@ -45,15 +45,15 @@ def addColumns(pipeline):
         pipeline.addColumn('chan%d' % chan, chan_mask)
 
         #mappings are cheap if we don't evaluate them
-        pipeline.mapping.setMapping('sigmax%d' % chan, 'chan%d*fitResults_sigmax' % chan)
-        pipeline.mapping.setMapping('sigmay%d' % chan, 'chan%d*fitResults_sigmay' % chan)
-        pipeline.mapping.setMapping('error_sigmax%d' % chan,
+        pipeline.selectedDataSource.setMapping('sigmax%d' % chan, 'chan%d*fitResults_sigmax' % chan)
+        pipeline.selectedDataSource.setMapping('sigmay%d' % chan, 'chan%d*fitResults_sigmay' % chan)
+        pipeline.selectedDataSource.setMapping('error_sigmax%d' % chan,
                                     'chan%(chan)d*fitError_sigmax - 1e4*(1-chan%(chan)d)' % {'chan': chan})
-        pipeline.mapping.setMapping('error_sigmay%d' % chan,
+        pipeline.selectedDataSource.setMapping('error_sigmay%d' % chan,
                                     'chan%(chan)d*fitError_sigmay - 1e4*(1-chan%(chan)d)' % {'chan': chan})
 
         #lets add some more that might be useful
-        pipeline.mapping.setMapping('A%d' % chan, 'chan%d*A' % chan)
+        pipeline.selectedDataSource.setMapping('A%d' % chan, 'chan%d*A' % chan)
 
 def foldX(pipeline):
     """
@@ -411,7 +411,7 @@ class multiviewMapper:
         self.pipeline = visFr.pipeline
         self.clump_gap_tolerance = 1 # the number of frames that can be skipped for a clump to still be considered a single clump
         self.clump_radius_scale = 2.0 # the factor with which to multiply error_x by to determine a radius in which points belong to the same clump
-        self.clump_radius_offset = 0 # an offset in nm to add to the the clump detection radius (useful for detection before shift correction)
+        self.clump_radius_offset = 150. # an offset in nm to add to the the clump detection radius (useful for detection before shift correction)
 
         logging.debug('Adding menu items for multi-view manipulation')
 
@@ -420,6 +420,9 @@ class multiviewMapper:
 
         visFr.AddMenuItem('Multiview', 'Fold Channels', self.OnFold)
         visFr.AddMenuItem('Multiview', 'Shift correct folded channels', self.OnCorrectFolded)
+
+        visFr.AddMenuItem('Multiview', 'Find clumps', self.OnFindClumps)
+        visFr.AddMenuItem('Multiview', 'Group localizations', self.OnMergeClumps)
 
         visFr.AddMenuItem('Multiview', 'Map XY', self.OnFoldAndMapXY,
                           helpText='Fold channels and correct shifts')
@@ -616,7 +619,7 @@ class multiviewMapper:
     def OnFindClumps(self, event=None):
         src = self.pipeline.mapping
         t = src['t']
-        clumps = np.zeros_like(t)
+        clumps = np.zeros(len(t), 'i')
         I = np.argsort(t)
         t = t[I].astype('i')
         x = src['x'][I]
@@ -627,13 +630,17 @@ class multiviewMapper:
         assigned = pyDeClump.findClumps(t, x, y, deltaX, self.clump_gap_tolerance)
         clumps[I] = assigned
 
-        self.pipeline.addColumn('clumpID', clumps)
+        self.pipeline.addColumn('clumpIndex', clumps)
 
     def OnMergeClumps(self, event=None):
+        if not 'clumpIndex' in self.pipeline.keys():
+            logger.debug('No clumps found - running FindClumps')
+            self.OnFindClumps()
+
         src = self.pipeline.mapping
         numChan = self.pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
 
-        keys_to_aggregate = ['x', 'y', 't', 'probe', 'tIndex', 'multiviewChannel', 'clumpID']
+        keys_to_aggregate = ['x', 'y', 't', 'probe', 'tIndex', 'multiviewChannel', 'clumpIndex']
         keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
         keys_to_aggregate += ['sigmay%d' % chan for chan in range(numChan)]
 
@@ -655,7 +662,7 @@ class multiviewMapper:
         #fres['planeCounts'][:, fres['multiviewChannel']] = 1
 
 
-        grouped = coalesceDict(sorted_src, sorted_src['clumpID'], keys_to_aggregate, aggregation_weights)
+        grouped = coalesceDict(sorted_src, sorted_src['clumpIndex'], keys_to_aggregate, aggregation_weights)
         self.pipeline.addDataSource('Grouped', cachingResultsFilter(grouped))
         self.pipeline.selectDataSource('Grouped')
 
@@ -811,4 +818,4 @@ class multiviewMapper:
 
 def Plug(visFr):
     """Plugs this module into the gui"""
-    multiviewMapper(visFr)
+    visFr.multiview = multiviewMapper(visFr)
