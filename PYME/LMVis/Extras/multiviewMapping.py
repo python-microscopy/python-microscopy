@@ -437,7 +437,7 @@ class multiviewMapper:
         pipeline = self.pipeline
 
         try:  # load shiftmaps from metadata, if present
-            shiftWallet = pipeline.mdh['Shiftmap']
+            shiftWallet = pipeline.mdh['FIXMEShiftmap'] #FIXME: break this for now
         except AttributeError:
             try:  # load through GUI dialog
                 fdialog = wx.FileDialog(None, 'Load shift field', wildcard='Shift Field file (*.sf)|*.sf',
@@ -700,16 +700,14 @@ class multiviewMapper:
             except:
                 raise IOError('Astigmatism sigma-Z mapping information not found')
 
-        # make sure xy-registration has already happened:
-        #FIXME - registered is never defined
-        # if 'registered' not in pipeline.keys():
-        #     print('registering multiview channels in x-y plane')
-        #     self.OnFoldAndMapXY(event)
+        # make sure we have already made channel assignments:
+        if 'multiviewChannel' not in pipeline.mapping.keys():
+            foldX(pipeline)
 
 
         # add separate sigmaxy columns for each plane
         for pind in range(numPlanes):
-            pMask = [chanPlane[p] == pind for p in pipeline.mapping['multiviewChannel']]
+            pMask = np.array([chanPlane[p] == pind for p in pipeline.mapping['multiviewChannel']])
 
             pipeline.addColumn('sigmaxPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmax'])
             pipeline.addColumn('sigmayPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmay'])
@@ -778,7 +776,7 @@ class multiviewMapper:
             # trick pairMolecules function by tweaking the channel vector
             planeInColorChan = np.copy(fres['multiviewChannel'])
 
-            igMask = probe != cind
+            igMask = fres['probe'] != cind
             planeInColorChan[igMask] = -9  # must be negative to be ignored
 
             # assign molecules to clumps
