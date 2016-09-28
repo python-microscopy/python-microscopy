@@ -267,7 +267,6 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
 
     failures = 0
     for mi in range(numMols):
-        # chans = np.where(fres['planeCounts'][mi] > 0)[0]
         chans = np.where(fres['probe'][mi] == chanColor)[0]
         errX, errY = 0, 0
         wSum = 0
@@ -428,7 +427,7 @@ class multiviewMapper:
                           helpText='Fold channels and correct shifts')
 
         visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapZ,
-                          helpText='Look up z value for astigmatic 3D, using a muti-view aware correction')
+                          helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
 
     def OnFold(self, event=None):
         foldX(self.pipeline)
@@ -437,7 +436,7 @@ class multiviewMapper:
         pipeline = self.pipeline
 
         try:  # load shiftmaps from metadata, if present
-            shiftWallet = pipeline.mdh['Shiftmap']
+            shiftWallet = pipeline.mdh['FIXMEShiftmap'] #FIXME: break this for now
         except AttributeError:
             try:  # load through GUI dialog
                 fdialog = wx.FileDialog(None, 'Load shift field', wildcard='Shift Field file (*.sf)|*.sf',
@@ -652,16 +651,6 @@ class multiviewMapper:
         I = np.argsort(src['t'])
         sorted_src = {k : src[k][I] for k in all_keys}
 
-        #TODO - what are planeCounts used for? Are they required?
-        #fres['planeCounts'] = np.zeros((ni, numChan), dtype=np.int32)
-        # for j in range(ni):
-        #         #cind, counts = np.unique(cl, return_counts=True)
-        #         #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
-        #         fres['planeCounts'][j][fres['multiviewChannel'][j]] += 1
-
-        #fres['planeCounts'][:, fres['multiviewChannel']] = 1
-
-
         grouped = coalesceDict(sorted_src, sorted_src['clumpIndex'], keys_to_aggregate, aggregation_weights)
         self.pipeline.addDataSource('Grouped', cachingResultsFilter(grouped))
         self.pipeline.selectDataSource('Grouped')
@@ -700,16 +689,15 @@ class multiviewMapper:
             except:
                 raise IOError('Astigmatism sigma-Z mapping information not found')
 
-        # make sure xy-registration has already happened:
-        #FIXME - registered is never defined
-        # if 'registered' not in pipeline.keys():
-        #     print('registering multiview channels in x-y plane')
-        #     self.OnFoldAndMapXY(event)
+        # make sure we have already made channel assignments:
+        if 'multiviewChannel' not in pipeline.mapping.keys():
+            print('folding multi-view data without applying shiftmaps')
+            foldX(pipeline)
 
 
         # add separate sigmaxy columns for each plane
         for pind in range(numPlanes):
-            pMask = [chanPlane[p] == pind for p in pipeline.mapping['multiviewChannel']]
+            pMask = np.array([chanPlane[p] == pind for p in pipeline.mapping['multiviewChannel']])
 
             pipeline.addColumn('sigmaxPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmax'])
             pipeline.addColumn('sigmayPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmay'])
@@ -744,14 +732,6 @@ class multiviewMapper:
         for pkey in pipeline.mapping.keys():
             fres[pkey] = pipeline.mapping[pkey]
 
-        fres['planeCounts'] = np.zeros((ni, numChan), dtype=np.int32)
-        # for j in range(ni):
-        #         #cind, counts = np.unique(cl, return_counts=True)
-        #         #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
-        #         fres['planeCounts'][j][fres['multiviewChannel'][j]] += 1
-
-        fres['planeCounts'][:,fres['multiviewChannel']] = 1
-
         keys_to_aggregate = ['x', 'y', 't', 'probe', 'tIndex', 'multiviewChannel']
         keys_to_aggregate += ['sigmax_%d' % chan for chan in range(numPlanes)]
         keys_to_aggregate += ['sigmay_%d' % chan for chan in range(numPlanes)]
@@ -778,11 +758,14 @@ class multiviewMapper:
             # trick pairMolecules function by tweaking the channel vector
             planeInColorChan = np.copy(fres['multiviewChannel'])
 
-            igMask = probe != cind
+            igMask = fres['probe'] != cind
             planeInColorChan[igMask] = -9  # must be negative to be ignored
 
             # assign molecules to clumps
             #TODO - a 2-pixel radius will break badly when emitter densities increase - should we base this on 'error_x' instead?
+            # Yes, basing this on error_x makes sense, potentially with the inclusion of a offset based on shiftmap precision, i.e.
+            # if the stddev within clumps after applying shiftmap is 15nm, add this in quadrature to 'error_x'. Though this would only be
+            # helpful if you have a bad shiftmap.
             clumpRad = 1e3*pipeline.mdh['voxelsize.x']*np.ones_like(fres['x'])  # clump folded data within 2 pixels #fres['fitError_x0'],
 
             clumpID = pairMolecules(fres['tIndex'], fres['x'], fres['y'],
@@ -790,6 +773,7 @@ class multiviewMapper:
                                             appearIn=np.where(chanColor == cind)[0], nFrameSep=1, returnPaired=False)
 
             # TODO - Why do clumpIDs need to be contiguous (i.e. can we eliminate this step)
+            # FIXME - if we want to eliminate this step, need to change NClumps = int(np.max(assigned)) in coalesceDict
             # make sure clumpIDs are contiguous from [0, numClumps)
             assigned = -1*np.ones_like(clumpID)
             clumpVec = np.unique(clumpID)
