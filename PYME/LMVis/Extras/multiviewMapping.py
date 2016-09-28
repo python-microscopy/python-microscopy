@@ -36,6 +36,25 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def addColumns(pipeline):
+    numChans = pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
+
+    # add separate sigmaxy columns for each plane
+    for chan in range(numChans):
+        chan_mask = pipeline.mapping['multiviewChannel'] == chan
+        pipeline.addColumn('chan%d' % chan, chan_mask)
+
+        #mappings are cheap if we don't evaluate them
+        pipeline.mapping.setMapping('sigmax%d' % chan, 'chan%d*fitResults_sigmax' % chan)
+        pipeline.mapping.setMapping('sigmay%d' % chan, 'chan%d*fitResults_sigmay' % chan)
+        pipeline.mapping.setMapping('error_sigmax%d' % chan,
+                                    'chan%(chan)d*fitError_sigmax - 1e4*(1-chan%(chan)d)' % {'chan': chan})
+        pipeline.mapping.setMapping('error_sigmay%d' % chan,
+                                    'chan%(chan)d*fitError_sigmay - 1e4*(1-chan%(chan)d)' % {'chan': chan})
+
+        #lets add some more that might be useful
+        pipeline.mapping.setMapping('A%d' % chan, 'chan%d*A' % chan)
+
 def foldX(pipeline):
     """
 
@@ -68,7 +87,7 @@ def foldX(pipeline):
     probe = color_chans[pipeline['multiviewChannel']] #should be better performance
     pipeline.addColumn('probe', probe)
 
-    return
+    addColumns(pipeline)
 
 def plotFolded(X, Y, multiviewChannels, title=''):
     """
@@ -339,7 +358,7 @@ def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
         rkey = keys[ki]
         fres[rkey] = np.empty(NClumps)
         # determine if weights need to be propogated into new dictionary
-        keepWeights = weightList[ki].__class__ == str
+        keepWeights = isinstance(weightList[ki], basestring) # testing __class__ is not idomatic (and will fail in python if we end up with unicode or orther derived string types)
         if keepWeights:
             weights = inD[weightList[ki]]
             fres[weightList[ki]] = np.empty(NClumps)
@@ -605,7 +624,34 @@ class multiviewMapper:
         self.pipeline.addColumn('clumpID', clumps)
 
     def OnMergeClumps(self, event=None):
+        src = self.pipeline.mapping
+        numChan = self.pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
 
+        keys_to_aggregate = ['x', 'y', 't', 'probe', 'tIndex', 'multiviewChannel', 'clumpID']
+        keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
+        keys_to_aggregate += ['sigmay%d' % chan for chan in range(numChan)]
+
+        # pair fit results and errors for weighting
+        aggregation_weights = ['error_' + k if 'error_' + k in src.keys() else 1 for k in keys_to_aggregate]
+
+        all_keys = keys_to_aggregate + [k for k in aggregation_weights if isinstance(k, basestring)]
+
+        I = np.argsort(src['t'])
+        sorted_src = {k : src[k][I] for k in all_keys}
+
+        #TODO - what are planeCounts used for? Are they required?
+        #fres['planeCounts'] = np.zeros((ni, numChan), dtype=np.int32)
+        # for j in range(ni):
+        #         #cind, counts = np.unique(cl, return_counts=True)
+        #         #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
+        #         fres['planeCounts'][j][fres['multiviewChannel'][j]] += 1
+
+        #fres['planeCounts'][:, fres['multiviewChannel']] = 1
+
+
+        grouped = coalesceDict(sorted_src, sorted_src['clumpID'], keys_to_aggregate, aggregation_weights)
+        self.pipeline.addDataSource('Grouped', cachingResultsFilter(grouped))
+        self.pipeline.selectDataSource('Grouped')
 
     def OnMapZ(self, event):
         pipeline = self.pipeline
@@ -672,8 +718,8 @@ class multiviewMapper:
             #pipeline.mapping['error_sigmayPlane%i' % pind][pipeline.mapping['error_sigmayPlane%i' % pind] == 0] = np.inf
 
         #ni = len(pipeline.mapping['multiviewChannel'])
-        wChan = np.copy(pipeline.mapping['multiviewChannel']) #Is the copy necessary?
-        ni = len(wChan) #save ourselves one evaluation
+        #wChan = np.copy(pipeline.mapping['multiviewChannel']) #Is the copy necessary?
+        ni = len(pipeline['x']) #look at x rather than multiviewChannel to reduce evaluation cost (x is also always guaranteed to be there) TODO - add a length function to pipeline
 
         ## Moved to folding
         #probe = [chanColor[wChan[mi]] for mi in range(ni)]
