@@ -248,17 +248,17 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
         #sigxList = []
         #sigyList = []
         for ci in chans:
-            if not np.isnan(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi]):
+            if not np.isnan(fres['sigmaxPlane%i' % chanPlane[ci]][mi]):
                 #plt.plot(zVal, sigCalX['chan%i' % ci], label='$\sigma_x$, chan %i' % ci)
                 #plt.plot(zVal, sigCalY['chan%i' % ci], label='$\sigma_y$, chan %i' % ci)
-                #sigxList.append(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi])
-                #sigyList.append(fres['fitResults_sigmayPlane%i' % chanPlane[ci]][mi])
+                #sigxList.append(fres['sigmaxPlane%i' % chanPlane[ci]][mi])
+                #sigyList.append(fres['sigmayPlane%i' % chanPlane[ci]][mi])
 
-                wX = 1./(fres['fitError_sigmaxPlane%i' % chanPlane[ci]][mi])**2
-                wY = 1./(fres['fitError_sigmayPlane%i' % chanPlane[ci]][mi])**2
+                wX = 1./(fres['error_sigmaxPlane%i' % chanPlane[ci]][mi])**2
+                wY = 1./(fres['error_sigmayPlane%i' % chanPlane[ci]][mi])**2
                 wSum += (wX + wY)
-                errX += wX*(fres['fitResults_sigmaxPlane%i' % chanPlane[ci]][mi] - sigCalX['chan%i' % ci])**2
-                errY += wY*(fres['fitResults_sigmayPlane%i' % chanPlane[ci]][mi] - sigCalY['chan%i' % ci])**2
+                errX += wX*(fres['sigmaxPlane%i' % chanPlane[ci]][mi] - sigCalX['chan%i' % ci])**2
+                errY += wY*(fres['sigmayPlane%i' % chanPlane[ci]][mi] - sigCalY['chan%i' % ci])**2
         try:
             err = (errX + errY)/wSum
             minLoc = np.nanargmin(err)
@@ -624,13 +624,13 @@ class multiviewMapper:
         for pind in range(numPlanes):
             pMask = [chanPlane[p] == pind for p in pipeline.mapping['multiviewChannel']]
 
-            pipeline.addColumn('fitResults_sigmaxPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmax'])
-            pipeline.addColumn('fitResults_sigmayPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmay'])
-            pipeline.addColumn('fitError_sigmaxPlane%i' % pind, pMask*pipeline.mapping['fitError_sigmax'])
-            pipeline.addColumn('fitError_sigmayPlane%i' % pind, pMask*pipeline.mapping['fitError_sigmay'])
+            pipeline.addColumn('sigmaxPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmax'])
+            pipeline.addColumn('sigmayPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmay'])
+            pipeline.addColumn('error_sigmaxPlane%i' % pind, pMask*pipeline.mapping['fitError_sigmax'])
+            pipeline.addColumn('error_sigmayPlane%i' % pind, pMask*pipeline.mapping['fitError_sigmay'])
             # replace zeros in fiterror with infs so their weights are zero
-            pipeline.mapping['fitError_sigmaxPlane%i' % pind][pipeline.mapping['fitError_sigmaxPlane%i' % pind] == 0] = np.inf
-            pipeline.mapping['fitError_sigmayPlane%i' % pind][pipeline.mapping['fitError_sigmayPlane%i' % pind] == 0] = np.inf
+            pipeline.mapping['error_sigmaxPlane%i' % pind][pipeline.mapping['error_sigmaxPlane%i' % pind] == 0] = np.inf
+            pipeline.mapping['error_sigmayPlane%i' % pind][pipeline.mapping['error_sigmayPlane%i' % pind] == 0] = np.inf
 
         ni = len(pipeline.mapping['multiviewChannel'])
         wChan = np.copy(pipeline.mapping['multiviewChannel'])
@@ -672,8 +672,8 @@ class multiviewMapper:
             # make sure NaNs (awarded when there is no sigma in a given plane of a clump) do not carry over from when
             # ignored channel localizations were clumped by themselves
             for pp in range(numPlanes):
-                fres['fitResults_sigmaxPlane%i' % pp][np.isnan(fres['fitResults_sigmaxPlane%i' % pp])] = 0
-                fres['fitResults_sigmayPlane%i' % pp][np.isnan(fres['fitResults_sigmayPlane%i' % pp])] = 0
+                fres['sigmaxPlane%i' % pp][np.isnan(fres['sigmaxPlane%i' % pp])] = 0
+                fres['sigmayPlane%i' % pp][np.isnan(fres['sigmayPlane%i' % pp])] = 0
 
             # trick pairMolecules function by tweaking the channel vector
             planeInColorChan = np.copy(fres['multiviewChannel'])
