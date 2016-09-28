@@ -57,7 +57,7 @@ def foldX(pipeline):
     pipeline.addColumn('chromadx', 0*pipeline['x'])
     pipeline.addColumn('chromady', 0*pipeline['y'])
 
-    pipeline.selectedDataSource.setMapping('whichChan', 'clip(floor(x/roiSizeNM), 0, numChannels).astype(int)')
+    pipeline.selectedDataSource.setMapping('multiviewChannel', 'clip(floor(x/roiSizeNM), 0, numChannels).astype(int)')
     pipeline.selectedDataSource.setMapping('x', 'x%roiSizeNM + chromadx')
     pipeline.selectedDataSource.setMapping('y', 'y + chromady')
 
@@ -165,7 +165,7 @@ def applyShiftmaps(pipeline, shiftWallet, numChan):
     # FIXME: the camera roi positions below would not account for the multiview data source
     #x = x + pipeline.mdh['Camera.ROIX0']*pipeline.mdh['voxelsize.x']*1.0e3
     #y = y + pipeline.mdh['Camera.ROIY0']*pipeline.mdh['voxelsize.y']*1.0e3
-    chan = pipeline.mapping['whichChan']
+    chan = pipeline.mapping['multiviewChannel']
 
     dx = 0
     dy = 0
@@ -194,7 +194,7 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
     """
     # fres = pipeline.selectedDataSource.resultsSource.fitResults
     numMols = len(fres['fitResults_x0'])
-    whichChan = np.array(fres['whichChan'], dtype=np.int32)
+    whichChan = np.array(fres['multiviewChannel'], dtype=np.int32)
     # stigLib['zRange'] contains the extrema of acceptable z-positions looking over all channels
 
     # find overall min and max z values
@@ -415,7 +415,7 @@ class multiviewMapper:
         numChan = pipeline.mdh['Multiview.NumROIs']
 
         #plotFolded(pipeline['x'], pipeline['y'],
-        #           pipeline['whichChan'], 'Raw')
+        #           pipeline['channel], 'Raw')
 
         # apply shiftmaps
         applyShiftmaps(pipeline, shiftWallet, numChan)
@@ -433,11 +433,11 @@ class multiviewMapper:
             applied (see foldX)
 
         """
-        if not 'whichChan' in self.pipeline.keys():
+        if not 'multiviewChannel' in self.pipeline.keys():
             self.OnFold()
 
         plotFolded(self.pipeline['x'], self.pipeline['y'],
-                  self.pipeline['whichChan'], 'Raw')
+                  self.pipeline['multiviewChannel'], 'Raw')
 
         self.OnCorrectFolded()
 
@@ -466,11 +466,11 @@ class multiviewMapper:
         # fold x position of channels into the first
         foldX(pipeline)
 
-        plotFolded(pipeline['x'], pipeline['y'], pipeline['whichChan'], 'Raw')
+        plotFolded(pipeline['x'], pipeline['y'], pipeline['multiviewChannel'], 'Raw')
         # sort in frame order
         I = pipeline['tIndex'].argsort()
         xsort, ysort = pipeline['x'][I], pipeline['y'][I]
-        chanSort = pipeline['whichChan'][I]
+        chanSort = pipeline['multiviewChannel'][I]
 
         clumpRad = 2e3*pipeline.mdh['voxelsize.x']  # clump folded data within 2 pixels
 
@@ -540,7 +540,7 @@ class multiviewMapper:
         applyShiftmaps(pipeline, shiftWallet, numChan)
 
         plotFolded(pipeline['x'], pipeline['y'],
-                            pipeline['whichChan'], 'All beads after Registration')
+                            pipeline['multiviewChannel'], 'All beads after Registration')
 
         cStack = []
         for ci in range(len(xShifted)):
@@ -576,30 +576,26 @@ class multiviewMapper:
             json.dump(shiftWallet, fid)
             fid.close()
 
+    def OnFindClumps(self, event=None):
+        pass
+
     def OnMapZ(self, event):
         pipeline = self.pipeline
 
         # get channel and color info
-        try:
-            numChan = pipeline.mdh['Multiview.NumROIs']
-            try:
-                chanColor = pipeline.mdh['Multiview.ChannelColor']  # Bewersdorf Biplane example: [0, 1, 1, 0]
-            except AttributeError:
-                chanColor = [0 for c in range(numChan)]
-            try:
-                chanPlane = pipeline.mdh['Multiview.ChannelPlane']  # Bewersdorf Biplane example: [0, 0, 1, 1]
-            except AttributeError:
-                chanPlane = [0 for c in range(numChan)]
-            numPlanes = len(np.unique(chanPlane))
-        except AttributeError:  # default to non-multiview options
-            print('Defaulting to single plane, single color channel settings')
-            numChan = 1
-            chanColor = [0]
-            chanPlane = [0]
-            numPlanes = 1
+        # DB - Fixed to use idomatic way of getting parameters with default values - catching an attribute error is fragile
+        # as some metadata handlers throw KeyError (and all probably should throw KeyErrors)
+        numChan = pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
+        chanColor = pipeline.mdh.getOrDefault('Multiview.ChannelColor', np.zeros(numChan, 'i'))
+
+        #FIXME - 'plane' assignment does not make any sense - this should not be necessary
+        chanPlane = pipeline.mdh.getOrDefault('Multiview.ChannelPlane', np.zeros(numChan, 'i'))
+        numPlanes = len(np.unique(chanPlane))
+
 
         try:  # load astigmatism calibrations, if listed in metadata
             # FIXME: this is only set up to pull a local copy at the moment
+            # FIXME - Rename metadata key to be more reasonable
             stigLoc = pipeline.mdh['AstigmapID']
             fid = open(stigLoc, 'r')
             stigLib = json.load(fid)
@@ -618,13 +614,15 @@ class multiviewMapper:
                 raise IOError('Astigmatism sigma-Z mapping information not found')
 
         # make sure xy-registration has already happened:
-        if 'registered' not in pipeline.keys():
-            print('registering multiview channels in x-y plane')
-            self.OnFoldAndMapXY(event)
+        #FIXME - registered is never defined
+        # if 'registered' not in pipeline.keys():
+        #     print('registering multiview channels in x-y plane')
+        #     self.OnFoldAndMapXY(event)
+
 
         # add separate sigmaxy columns for each plane
         for pind in range(numPlanes):
-            pMask = [chanPlane[p] == pind for p in pipeline.mapping['whichChan']]
+            pMask = [chanPlane[p] == pind for p in pipeline.mapping['multiviewChannel']]
 
             pipeline.addColumn('fitResults_sigmaxPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmax'])
             pipeline.addColumn('fitResults_sigmayPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmay'])
@@ -634,8 +632,8 @@ class multiviewMapper:
             pipeline.mapping['fitError_sigmaxPlane%i' % pind][pipeline.mapping['fitError_sigmaxPlane%i' % pind] == 0] = np.inf
             pipeline.mapping['fitError_sigmayPlane%i' % pind][pipeline.mapping['fitError_sigmayPlane%i' % pind] == 0] = np.inf
 
-        ni = len(pipeline.mapping['whichChan'])
-        wChan = np.copy(pipeline.mapping['whichChan'])
+        ni = len(pipeline.mapping['multiviewChannel'])
+        wChan = np.copy(pipeline.mapping['multiviewChannel'])
         probe = [chanColor[wChan[mi]] for mi in range(ni)]
         pipeline.addColumn('probe', probe)
 
@@ -649,7 +647,7 @@ class multiviewMapper:
         for j in range(ni):
                 #cind, counts = np.unique(cl, return_counts=True)
                 #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
-                fres['planeCounts'][j][fres['whichChan'][j]] += 1
+                fres['planeCounts'][j][fres['multiviewChannel'][j]] += 1
 
         # pair fit results and errors for weighting
         # keys = [k for k, v in fres.iteritems() if k.startswith('fitResults')]
@@ -658,7 +656,7 @@ class multiviewMapper:
             if k.startswith('fitResults'):
                 keys.append(k)
                 weightList.append('fitError_' + k.split('_')[1])
-        keys.append('whichChan'), weightList.append(None)
+        keys.append('multiviewChannel'), weightList.append(None)
         keys.append('tIndex'), weightList.append(None)
         keys.append('probe'), weightList.append(None)
         keys.append('t'), weightList.append(None)
@@ -678,7 +676,7 @@ class multiviewMapper:
                 fres['fitResults_sigmayPlane%i' % pp][np.isnan(fres['fitResults_sigmayPlane%i' % pp])] = 0
 
             # trick pairMolecules function by tweaking the channel vector
-            planeInColorChan = np.copy(fres['whichChan'])
+            planeInColorChan = np.copy(fres['multiviewChannel'])
             chanColor = np.array(chanColor)
             ignoreChans = np.where(chanColor != cind)[0]
             igMask = [mm in ignoreChans.tolist() for mm in planeInColorChan]
@@ -701,7 +699,7 @@ class multiviewMapper:
             # coalesce clumped localizations into single data point
             fres = coalesceDict(fres, assigned, keys, weightList)
 
-        print('Clumped %i localizations' % (ni - len(fres['whichChan'])))
+        print('Clumped %i localizations' % (ni - len(fres['multiviewChannel'])))
 
         # look up z-positions
         z, zerr = astigMAPism(fres, stigLib, chanPlane, chanColor)
