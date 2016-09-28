@@ -629,33 +629,41 @@ class multiviewMapper:
             pipeline.addColumn('error_sigmaxPlane%i' % pind, pMask*pipeline.mapping['fitError_sigmax'])
             pipeline.addColumn('error_sigmayPlane%i' % pind, pMask*pipeline.mapping['fitError_sigmay'])
             # replace zeros in fiterror with infs so their weights are zero
+            # FIXME - Why are there zeros in fitError to start with. Also not a good idea (performance wise) to use NaNs
+            # as it will cause a floating point error on each pass of the loop - could be orders of magnitude slower than
+            # just using zero (or very small) weights.
             pipeline.mapping['error_sigmaxPlane%i' % pind][pipeline.mapping['error_sigmaxPlane%i' % pind] == 0] = np.inf
             pipeline.mapping['error_sigmayPlane%i' % pind][pipeline.mapping['error_sigmayPlane%i' % pind] == 0] = np.inf
 
-        ni = len(pipeline.mapping['multiviewChannel'])
-        wChan = np.copy(pipeline.mapping['multiviewChannel'])
-        probe = [chanColor[wChan[mi]] for mi in range(ni)]
+        #ni = len(pipeline.mapping['multiviewChannel'])
+        wChan = np.copy(pipeline.mapping['multiviewChannel']) #Is the copy necessary?
+        ni = len(wChan) #save ourselves one evaluation
+
+        #probe = [chanColor[wChan[mi]] for mi in range(ni)]
+        probe = chanColor[wChan] #should be better performance
         pipeline.addColumn('probe', probe)
 
-
-
+        #TODO - why are we copying the pipeline output?
         fres = {}
         for pkey in pipeline.mapping.keys():
             fres[pkey] = pipeline.mapping[pkey]
 
         fres['planeCounts'] = np.zeros((ni, numChan), dtype=np.int32)
-        for j in range(ni):
-                #cind, counts = np.unique(cl, return_counts=True)
-                #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
-                fres['planeCounts'][j][fres['multiviewChannel'][j]] += 1
+        # for j in range(ni):
+        #         #cind, counts = np.unique(cl, return_counts=True)
+        #         #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
+        #         fres['planeCounts'][j][fres['multiviewChannel'][j]] += 1
+
+        fres['planeCounts'][:,fres['multiviewChannel']] = 1
 
         # pair fit results and errors for weighting
         # keys = [k for k, v in fres.iteritems() if k.startswith('fitResults')]
         keys, weightList = [], []
-        for k, v in fres.iteritems():
+        for k in fres.keys():
             if k.startswith('fitResults'):
                 keys.append(k)
                 weightList.append('fitError_' + k.split('_')[1])
+
         keys.append('multiviewChannel'), weightList.append(None)
         keys.append('tIndex'), weightList.append(None)
         keys.append('probe'), weightList.append(None)
@@ -663,6 +671,7 @@ class multiviewMapper:
         keys.append('x'), weightList.append('fitError_x0')
         keys.append('y'), weightList.append('fitError_y0')
 
+        #TODO - Do we really want / need to do this separately for the colour channels (this eliminates the possibility of doing ratiometric detection)
         for cind in np.unique(chanColor):
             # copy keys and sort in order of frames
             I = np.argsort(fres['tIndex'])
