@@ -763,6 +763,9 @@ class multiviewMapper:
 
             # assign molecules to clumps
             #TODO - a 2-pixel radius will break badly when emitter densities increase - should we base this on 'error_x' instead?
+            # Yes, basing this on error_x makes sense, potentially with the inclusion of a offset based on shiftmap precision, i.e.
+            # if the stddev within clumps after applying shiftmap is 15nm, add this in quadrature to 'error_x'. Though this would only be
+            # helpful if you have a bad shiftmap.
             clumpRad = 1e3*pipeline.mdh['voxelsize.x']*np.ones_like(fres['x'])  # clump folded data within 2 pixels #fres['fitError_x0'],
 
             clumpID = pairMolecules(fres['tIndex'], fres['x'], fres['y'],
@@ -770,6 +773,7 @@ class multiviewMapper:
                                             appearIn=np.where(chanColor == cind)[0], nFrameSep=1, returnPaired=False)
 
             # TODO - Why do clumpIDs need to be contiguous (i.e. can we eliminate this step)
+            # FIXME - if we want to eliminate this step, need to change NClumps = int(np.max(assigned)) in coalesceDict
             # make sure clumpIDs are contiguous from [0, numClumps)
             assigned = -1*np.ones_like(clumpID)
             clumpVec = np.unique(clumpID)
