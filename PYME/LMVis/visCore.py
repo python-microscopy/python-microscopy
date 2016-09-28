@@ -309,7 +309,8 @@ class VisGUICore(object):
             menu_bar.AppendSubMenu(self.extras_menu, "&Extras")
             #menu_bar.AppendSubMenu(self.view3d_menu, "View &3D")
         else:
-            menu_bar = wx.MenuBar()
+            #menu_bar = wx.MenuBar()
+            menu_bar = self.menubar
 
             menu_bar.Append(file_menu, "&File")
             menu_bar.Append(self.view_menu, "&View")

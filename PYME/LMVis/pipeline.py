@@ -442,7 +442,7 @@ class Pipeline:
 
             #catch really old files which don't have any metadata
             if 'MetaData' in ds.h5f.root:
-                self.mdh = MetaDataHandler.HDFMDHandler(ds.h5f)
+                self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(ds.h5f))
 
             if ('Events' in ds.h5f.root) and ('StartTime' in self.mdh.keys()):
                 self.events = ds.h5f.root.Events[:]

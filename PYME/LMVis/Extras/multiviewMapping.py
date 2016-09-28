@@ -32,6 +32,9 @@ import importlib
 import scipy.interpolate as terp
 from PYME.LMVis.inpFilt import cachingResultsFilter  # mappingFilter  # fitResultsSource
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def foldX(pipeline):
     """
@@ -373,8 +376,13 @@ class multiviewMapper:
     def __init__(self, visFr):
         self.pipeline = visFr.pipeline
 
+        logging.debug('Adding menu items for multi-view manipulation')
+
         visFr.AddMenuItem('Multiview', 'Calibrate Shifts', self.OnCalibrateShifts,
                           helpText='Extract a shift field from bead measurements')
+
+        visFr.AddMenuItem('Multiview', 'Fold Channels', self.OnFold)
+        visFr.AddMenuItem('Multiview', 'Shift correct folded channels', self.OnCorrectFolded)
 
         visFr.AddMenuItem('Multiview', 'Map XY', self.OnFoldAndMapXY,
                           helpText='Fold channels and correct shifts')
@@ -382,19 +390,10 @@ class multiviewMapper:
         visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapZ,
                           helpText='Look up z value for astigmatic 3D, using a muti-view aware correction')
 
+    def OnFold(self, event=None):
+        foldX(self.pipeline)
 
-    def OnFoldAndMapXY(self, event):
-        """
-        OnFoldAndMap uses shiftmaps stored in metadata (by default) or loaded through the GUI to register multiview
-        channels to the first channel.
-        Args:
-            event: GUI event
-
-        Returns: nothing
-            x- and y-positions will be registered to the first channel in the mappingFilter with shiftmap corrections
-            applied (see foldX)
-
-        """
+    def OnCorrectFolded(self, event=None):
         pipeline = self.pipeline
 
         try:  # load shiftmaps from metadata, if present
@@ -414,14 +413,34 @@ class multiviewMapper:
                 raise IOError('Shiftmaps not found in metadata and could not be loaded from file')
 
         numChan = pipeline.mdh['Multiview.NumROIs']
-        # fold x-positions into the first channel
-        foldX(pipeline)
 
-        plotFolded(pipeline['x'], pipeline['y'],
-                            pipeline['whichChan'], 'Raw')
+        #plotFolded(pipeline['x'], pipeline['y'],
+        #           pipeline['whichChan'], 'Raw')
 
         # apply shiftmaps
         applyShiftmaps(pipeline, shiftWallet, numChan)
+
+
+    def OnFoldAndMapXY(self, event):
+        """
+        OnFoldAndMap uses shiftmaps stored in metadata (by default) or loaded through the GUI to register multiview
+        channels to the first channel.
+        Args:
+            event: GUI event
+
+        Returns: nothing
+            x- and y-positions will be registered to the first channel in the mappingFilter with shiftmap corrections
+            applied (see foldX)
+
+        """
+        if not 'whichChan' in self.pipeline.keys():
+            self.OnFold()
+
+        plotFolded(self.pipeline['x'], self.pipeline['y'],
+                  self.pipeline['whichChan'], 'Raw')
+
+        self.OnCorrectFolded()
+
 
 
     def OnCalibrateShifts(self, event):
