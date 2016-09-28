@@ -331,6 +331,7 @@ def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
     Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
     object.
     Also note that copying a large dictionary can be rather slow, and a structured ndarray approach may be preferable.
+    DB - we should never have a 'large' dictionary (ie there will only ever be a handful of keys)
 
     Args:
         inD: input dictionary containing fit results
@@ -347,7 +348,7 @@ def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
     """
     NClumps = int(np.max(assigned))  # len(np.unique(assigned))  #
 
-    fres = {}
+    clumped = {}
 
     clist = [[] for i in xrange(NClumps)]
     for i, c in enumerate(assigned):
@@ -356,37 +357,42 @@ def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
     # loop through keys
     for ki in range(len(keys)):
         rkey = keys[ki]
-        fres[rkey] = np.empty(NClumps)
+
+        #we will aggregate into this and then add to dictionary.
+        #performing dictionary lookups (as previously done) on each loop iteration is expensive
+        var = np.empty(NClumps)
+
         # determine if weights need to be propogated into new dictionary
         keepWeights = isinstance(weightList[ki], basestring) # testing __class__ is not idomatic (and will fail in python if we end up with unicode or orther derived string types)
         if keepWeights:
             weights = inD[weightList[ki]]
-            fres[weightList[ki]] = np.empty(NClumps)
+            clumped[weightList[ki]] = np.empty(NClumps)
         else:
             weights = weightList[ki]
 
 
         if np.isscalar(weights):
             # if single value is given as weight, take an unweighted mean
-            fres[rkey][i] = np.mean(inD[rkey][clist[i]])
-        elif type(weights) == type(None):
+            for i in xrange(NClumps):
+                var[i] = np.mean(inD[rkey][clist[i]])
+        elif weights is None:
             # if None has been passed as the weight for this key, take the minimum
             for i in xrange(NClumps):
-                fres[rkey][i] = np.min(inD[rkey][clist[i]])
+                var[i] = np.min(inD[rkey][clist[i]])
         else:
             # if weights is an array, take weighted average
             errVec = np.empty(NClumps)
             for i in xrange(NClumps):
                 ci = clist[i]
-                fres[rkey][i], errVec[i] = pyDeClump.weightedAverage_(inD[rkey][ci], weights[ci], None)
+                var[i], errVec[i] = pyDeClump.weightedAverage_(inD[rkey][ci], weights[ci], None)
 
-
+        clumped[rkey] = var
         # propagate fitErrors into new dictionary
         if keepWeights:
-            fres[weightList[ki]] = errVec
+            clumped[weightList[ki]] = errVec
 
 
-    return fres
+    return clumped
 
 class multiviewMapper:
     """
