@@ -691,6 +691,7 @@ class multiviewMapper:
 
         # make sure we have already made channel assignments:
         if 'multiviewChannel' not in pipeline.mapping.keys():
+            print('folding multi-view data without applying shiftmaps')
             foldX(pipeline)
 
 
@@ -730,14 +731,6 @@ class multiviewMapper:
         fres = {}
         for pkey in pipeline.mapping.keys():
             fres[pkey] = pipeline.mapping[pkey]
-
-        #fres['planeCounts'] = np.zeros((ni, numChan), dtype=np.int32)
-        # for j in range(ni):
-        #         #cind, counts = np.unique(cl, return_counts=True)
-        #         #fres['planeCounts'][i][:] = 0  # zero everything since the array will be empty, and we don't know numChan
-        #         fres['planeCounts'][j][fres['multiviewChannel'][j]] += 1
-
-        #fres['planeCounts'][:,fres['multiviewChannel']] = 1
 
         keys_to_aggregate = ['x', 'y', 't', 'probe', 'tIndex', 'multiviewChannel']
         keys_to_aggregate += ['sigmax_%d' % chan for chan in range(numPlanes)]
