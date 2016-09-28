@@ -51,15 +51,22 @@ def foldX(pipeline):
     """
     roiSizeNM = (pipeline.mdh['Multiview.ROISize'][1]*pipeline.mdh['voxelsize.x']*1000)  # voxelsize is in um
 
+    numChan = pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
+    color_chans = np.array(pipeline.mdh.getOrDefault('Multiview.ChannelColor', np.zeros(numChan, 'i'))).astype('i')
+
     pipeline.selectedDataSource.addVariable('roiSizeNM', roiSizeNM)
-    pipeline.selectedDataSource.addVariable('numChannels', len(pipeline.mdh['Multiview.ChannelColor']) - 1)
+    pipeline.selectedDataSource.addVariable('numChannels', numChan)
 
     pipeline.addColumn('chromadx', 0*pipeline['x'])
     pipeline.addColumn('chromady', 0*pipeline['y'])
 
-    pipeline.selectedDataSource.setMapping('multiviewChannel', 'clip(floor(x/roiSizeNM), 0, numChannels).astype(int)')
+    #FIXME - cast to int should probably happen when we use multiViewChannel, not here (because we might have saved and reloaded in between)
+    pipeline.selectedDataSource.setMapping('multiviewChannel', 'clip(floor(x/roiSizeNM), 0, numChannels - 1).astype(int)')
     pipeline.selectedDataSource.setMapping('x', 'x%roiSizeNM + chromadx')
     pipeline.selectedDataSource.setMapping('y', 'y + chromady')
+
+    probe = color_chans[pipeline['multiviewChannel']] #should be better performance
+    pipeline.addColumn('probe', probe)
 
     return
 
@@ -377,6 +384,9 @@ class multiviewMapper:
     """
     def __init__(self, visFr):
         self.pipeline = visFr.pipeline
+        self.clump_gap_tolerance = 1 # the number of frames that can be skipped for a clump to still be considered a single clump
+        self.clump_radius_scale = 2.0 # the factor with which to multiply error_x by to determine a radius in which points belong to the same clump
+        self.clump_radius_offset = 0 # an offset in nm to add to the the clump detection radius (useful for detection before shift correction)
 
         logging.debug('Adding menu items for multi-view manipulation')
 
@@ -579,7 +589,23 @@ class multiviewMapper:
             fid.close()
 
     def OnFindClumps(self, event=None):
-        pass
+        src = self.pipeline.mapping
+        t = src['t']
+        clumps = np.zeros_like(t)
+        I = np.argsort(t)
+        t = t[I].astype('i')
+        x = src['x'][I]
+        y = src['y'][I]
+
+        deltaX = self.clump_radius_scale*src['error_x'][I] + self.clump_radius_offset
+
+        assigned = pyDeClump.findClumps(t, x, y, deltaX, self.clump_gap_tolerance)
+        clumps[I] = assigned
+
+        self.pipeline.addColumn('clumpID', clumps)
+
+    def OnMergeClumps(self, event=None):
+
 
     def OnMapZ(self, event):
         pipeline = self.pipeline
@@ -649,9 +675,10 @@ class multiviewMapper:
         wChan = np.copy(pipeline.mapping['multiviewChannel']) #Is the copy necessary?
         ni = len(wChan) #save ourselves one evaluation
 
+        ## Moved to folding
         #probe = [chanColor[wChan[mi]] for mi in range(ni)]
-        probe = chanColor[wChan] #should be better performance
-        pipeline.addColumn('probe', probe)
+        #probe = chanColor[wChan] #should be better performance
+        #pipeline.addColumn('probe', probe)
 
         #TODO - why are we copying the pipeline output?
         fres = {}
