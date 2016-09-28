@@ -428,7 +428,7 @@ class multiviewMapper:
                           helpText='Fold channels and correct shifts')
 
         visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapZ,
-                          helpText='Look up z value for astigmatic 3D, using a muti-view aware correction')
+                          helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
 
     def OnFold(self, event=None):
         foldX(self.pipeline)
