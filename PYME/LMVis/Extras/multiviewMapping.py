@@ -586,7 +586,7 @@ class multiviewMapper:
         # DB - Fixed to use idomatic way of getting parameters with default values - catching an attribute error is fragile
         # as some metadata handlers throw KeyError (and all probably should throw KeyErrors)
         numChan = pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
-        chanColor = pipeline.mdh.getOrDefault('Multiview.ChannelColor', np.zeros(numChan, 'i'))
+        chanColor = np.array(pipeline.mdh.getOrDefault('Multiview.ChannelColor', np.zeros(numChan, 'i'))).astype('i')
 
         #FIXME - 'plane' assignment does not make any sense - this should not be necessary
         chanPlane = pipeline.mdh.getOrDefault('Multiview.ChannelPlane', np.zeros(numChan, 'i'))
@@ -626,14 +626,22 @@ class multiviewMapper:
 
             pipeline.addColumn('sigmaxPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmax'])
             pipeline.addColumn('sigmayPlane%i' % pind, pMask*pipeline.mapping['fitResults_sigmay'])
-            pipeline.addColumn('error_sigmaxPlane%i' % pind, pMask*pipeline.mapping['fitError_sigmax'])
-            pipeline.addColumn('error_sigmayPlane%i' % pind, pMask*pipeline.mapping['fitError_sigmay'])
+
+            # work around invalid modification of pipeline variables, and change from setting infs to setting a large
+            # -ve sigma as a flag for missing data.
+            sigx = -1e4*(1-pMask) + pMask*pipeline.mapping['fitError_sigmax']
+            pipeline.addColumn('error_sigmaxPlane%i' % pind, sigx)
+            sigy = -1e4*(1 - pMask) + pMask * pipeline.mapping['fitError_sigmay']
+            pipeline.addColumn('error_sigmayPlane%i' % pind, sigy)
+
             # replace zeros in fiterror with infs so their weights are zero
-            # FIXME - Why are there zeros in fitError to start with. Also not a good idea (performance wise) to use NaNs
+            # FIXME - It is not a good idea (performance wise) to use NaNs
             # as it will cause a floating point error on each pass of the loop - could be orders of magnitude slower than
             # just using zero (or very small) weights.
-            pipeline.mapping['error_sigmaxPlane%i' % pind][pipeline.mapping['error_sigmaxPlane%i' % pind] == 0] = np.inf
-            pipeline.mapping['error_sigmayPlane%i' % pind][pipeline.mapping['error_sigmayPlane%i' % pind] == 0] = np.inf
+            # FIXME - You absolutely CANNOT assign to pipeline elements like this! Once added as a column, mappings are
+            # read-only
+            #pipeline.mapping['error_sigmaxPlane%i' % pind][pipeline.mapping['error_sigmaxPlane%i' % pind] == 0] = np.inf
+            #pipeline.mapping['error_sigmayPlane%i' % pind][pipeline.mapping['error_sigmayPlane%i' % pind] == 0] = np.inf
 
         #ni = len(pipeline.mapping['multiviewChannel'])
         wChan = np.copy(pipeline.mapping['multiviewChannel']) #Is the copy necessary?
@@ -656,42 +664,40 @@ class multiviewMapper:
 
         fres['planeCounts'][:,fres['multiviewChannel']] = 1
 
-        # pair fit results and errors for weighting
-        # keys = [k for k, v in fres.iteritems() if k.startswith('fitResults')]
-        keys, weightList = [], []
-        for k in fres.keys():
-            if k.startswith('fitResults'):
-                keys.append(k)
-                weightList.append('fitError_' + k.split('_')[1])
+        keys_to_aggregate = ['x', 'y', 't', 'probe', 'tIndex', 'multiviewChannel']
+        keys_to_aggregate += ['sigmax_%d' % chan for chan in range(numPlanes)]
+        keys_to_aggregate += ['sigmay_%d' % chan for chan in range(numPlanes)]
 
-        keys.append('multiviewChannel'), weightList.append(None)
-        keys.append('tIndex'), weightList.append(None)
-        keys.append('probe'), weightList.append(None)
-        keys.append('t'), weightList.append(None)
-        keys.append('x'), weightList.append('fitError_x0')
-        keys.append('y'), weightList.append('fitError_y0')
+        # pair fit results and errors for weighting
+        aggregation_weights = ['error_' + k if 'error_' + k in fres.keys() else None for k in keys_to_aggregate]
+
+        #Moved following outside loop as it is common to both colour channels
+
+        # copy keys and sort in order of frames
+        I = np.argsort(fres['tIndex'])
+        for pkey in fres.keys():
+            fres[pkey] = fres[pkey][I]
+
+        # make sure NaNs (awarded when there is no sigma in a given plane of a clump) do not carry over from when
+        # ignored channel localizations were clumped by themselves
+        # TODO - is this the correct thing to do?
+        for pp in range(numPlanes):
+            fres['sigmaxPlane%i' % pp][np.isnan(fres['sigmaxPlane%i' % pp])] = 0
+            fres['sigmayPlane%i' % pp][np.isnan(fres['sigmayPlane%i' % pp])] = 0
 
         #TODO - Do we really want / need to do this separately for the colour channels (this eliminates the possibility of doing ratiometric detection)
         for cind in np.unique(chanColor):
-            # copy keys and sort in order of frames
-            I = np.argsort(fres['tIndex'])
-            for pkey in fres.keys():
-                fres[pkey] = fres[pkey][I]
-
-            # make sure NaNs (awarded when there is no sigma in a given plane of a clump) do not carry over from when
-            # ignored channel localizations were clumped by themselves
-            for pp in range(numPlanes):
-                fres['sigmaxPlane%i' % pp][np.isnan(fres['sigmaxPlane%i' % pp])] = 0
-                fres['sigmayPlane%i' % pp][np.isnan(fres['sigmayPlane%i' % pp])] = 0
-
             # trick pairMolecules function by tweaking the channel vector
             planeInColorChan = np.copy(fres['multiviewChannel'])
-            chanColor = np.array(chanColor)
-            ignoreChans = np.where(chanColor != cind)[0]
-            igMask = [mm in ignoreChans.tolist() for mm in planeInColorChan]
-            planeInColorChan[np.where(igMask)] = -9  # must be negative to be ignored
+            #chanColor = np.array(chanColor)
+            #ignoreChans = np.where(chanColor != cind)[0]
+            #igMask = [mm in ignoreChans.tolist() for mm in planeInColorChan]
+
+            igMask = probe != cind
+            planeInColorChan[igMask] = -9  # must be negative to be ignored
 
             # assign molecules to clumps
+            #TODO - a 2-pixel radius will break badly when emitter densities increase - should we base this on 'error_x' instead?
             clumpRad = 1e3*pipeline.mdh['voxelsize.x']*np.ones_like(fres['x'])  # clump folded data within 2 pixels #fres['fitError_x0'],
 
             clumpID = pairMolecules(fres['tIndex'], fres['x'], fres['y'],
@@ -706,7 +712,7 @@ class multiviewMapper:
                 assigned[cMask] = ci + 1
 
             # coalesce clumped localizations into single data point
-            fres = coalesceDict(fres, assigned, keys, weightList)
+            fres = coalesceDict(fres, assigned, keys_to_aggregate, aggregation_weights)
 
         print('Clumped %i localizations' % (ni - len(fres['multiviewChannel'])))
 
