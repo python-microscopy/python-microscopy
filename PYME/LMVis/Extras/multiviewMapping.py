@@ -405,7 +405,7 @@ def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
 
     return clumped
 
-def coalesceDictSorted(inD, assigned, keys, weightList):  # , notKosher=None):
+def coalesceDictSorted(inD, assigned, keys, weights_by_key):  # , notKosher=None):
     """
     Agregates clumps to a single event
     Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
@@ -417,10 +417,7 @@ def coalesceDictSorted(inD, assigned, keys, weightList):  # , notKosher=None):
         inD: input dictionary containing fit results
         assigned: clump assignments to be coalesced
         keys: list whose elements are strings corresponding to keys to be copied from the input to output dictionaries
-        weightList: list whose elements describe the weightings to use when coalescing corresponding keys. A scalar
-            weightList entry flags for an unweighted mean is performed during coalescence. Alternatively, if a
-            weightList element is a vector it will be used as the weights, and a string will be used as a key to extract
-            weights from the input dictionary.
+        weights_by_key: dictionary of weights.
 
     Returns:
         fres: output dictionary containing the coalesced results
@@ -431,33 +428,23 @@ def coalesceDictSorted(inD, assigned, keys, weightList):  # , notKosher=None):
     clumped = {}
 
     # loop through keys
-    for ki in range(len(keys)):
-        rkey = keys[ki]
+    for rkey in keys:
+        weights = weights_by_key.get(rkey, 'mean')
 
-
-        # determine if weights need to be propogated into new dictionary
-        keepWeights = isinstance(weightList[ki], basestring) # testing __class__ is not idomatic (and will fail in python if we end up with unicode or orther derived string types)
-        if keepWeights:
-            weights = inD[weightList[ki]]
-        else:
-            weights = weightList[ki]
-
-
-        if np.isscalar(weights):
+        if weights == 'mean':
             # if single value is given as weight, take an unweighted mean
             var = deClump.aggregateMean(NClumps, assigned.astype('i'), inD[rkey].astype('f'))
-        elif weights is None:
+        elif weights == 'min':
             # if None has been passed as the weight for this key, take the minimum
             var = deClump.aggregateMin(NClumps, assigned.astype('i'), inD[rkey].astype('f'))
+        elif weights == 'sum':
+            var = deClump.aggregateSum(NClumps, assigned.astype('i'), inD[rkey].astype('f'))
         else:
             # if weights is an array, take weighted average
-            var, errVec = deClump.aggregateWeightedMean(NClumps, assigned.astype('i'), inD[rkey].astype('f'), weights.astype('f'))
+            var, errVec = deClump.aggregateWeightedMean(NClumps, assigned.astype('i'), inD[rkey].astype('f'), inD[weights].astype('f'))
+            clumped[weights] = errVec
 
         clumped[rkey] = var
-        # propagate fitErrors into new dictionary
-        if keepWeights:
-            clumped[weightList[ki]] = errVec
-
 
     return clumped
 
@@ -713,10 +700,11 @@ class multiviewMapper:
         keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
         keys_to_aggregate += ['sigmay%d' % chan for chan in range(numChan)]
 
-        # pair fit results and errors for weighting
-        aggregation_weights = ['error_' + k if 'error_' + k in src.keys() else 1 for k in keys_to_aggregate]
+        all_keys = keys_to_aggregate
 
-        all_keys = keys_to_aggregate + [k for k in aggregation_weights if isinstance(k, basestring)]
+        # pair fit results and errors for weighting
+        aggregation_weights = {k: 'error_' + k  for k in keys_to_aggregate if 'error_' + k in src.keys()}
+        all_keys += aggregation_weights.values()
 
         I = np.argsort(src['clumpIndex'])
         sorted_src = {k : src[k][I] for k in all_keys}
