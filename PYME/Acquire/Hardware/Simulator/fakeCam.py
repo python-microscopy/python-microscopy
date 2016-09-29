@@ -118,7 +118,7 @@ class compThread(threading.Thread):
         nChans = len(chan_z_offsets)
         x_pixels = len(self.XVals)
         x_chan_pixels = x_pixels/nChans
-        x_chan_size = self.XVals[x_chan_pixels-1] - self.XVals[0]
+        x_chan_size = (self.XVals[1] - self.XVals[0])*x_chan_pixels
         self._chan_x_offsets = [i*x_chan_size for i in range(nChans)]
 
     @property
@@ -531,6 +531,19 @@ class FakeCamera:
             mdh['Splitter.Channel0ROI'] = [0,0,128, 256]
             mdh['Splitter.Channel1ROI'] = [128,0,128, 256]
             mdh['Splitter.Flip'] = False
+
+        chan_specs = getattr(self, '_chan_specs', None)
+        if not chan_specs is None:
+            nChans  = len(chan_specs)
+            x_pixels = len(self.XVals)
+            x_chan_pixels = x_pixels / nChans
+            y_pixels = len(self.YVals)
+            mdh['Multiview.NumROIs'] = nChans
+            mdh['Multiview.ROISize'] =  [x_chan_pixels, y_pixels]
+            mdh['Multiview.ChannelColor'] =  list(chan_specs)
+            for i in range(nChans):
+                mdh['Multiview.ROI%dOrigin' % i] = [i*x_chan_pixels, 0]
+                mdh['Splitter.Channel%dROI' % i] = [i*x_chan_pixels, 0, x_chan_pixels, y_pixels]
 
     #functions to make us look more like andor camera
     def GetEMGain(self):
