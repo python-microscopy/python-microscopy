@@ -26,6 +26,8 @@ import wx
 import numpy as np
 from PYME.Analysis.points.DeClump import pyDeClump
 from PYME.Analysis.points.DeClump import deClump
+
+from PYME.Analysis.points.astigmatism import astigTools
 import os
 from PYME.IO.FileUtils import nameUtils
 import json
@@ -327,95 +329,7 @@ def astigMAPism(fres, astig_calibrations, chanPlane, chanColor):
     return z, zerr
 
 
-def lookup_astig_z(fres, astig_calibrations):
-    """
-    Generates a look-up table of sorts for z based on sigma x/y fit results and calibration information. If a molecule
-    appears on multiple planes, sigma values from both planes will be used in the look up.
-    Args:
-        fres: dictionary-like object containing relevant fit results
-        astig_calibrations: list of astigmatism calibration dictionaries corresponding to each multiview channel, which are
-            used to recreate shiftmap objects
-        chanPlane: list of which plane each channel corresponds to, e.g. [0, 0, 1, 1]
 
-    Returns:
-        z: an array of z-positions for each molecule in nm (assuming proper units were used in astigmatism calibration)
-        zerr: an array containing discrepancies between sigma values and the PSF calibration curves. Note that this
-            array is in units of nm, but error may not be propagated from sigma fitResults properly as is.
-    """
-    # fres = pipeline.selectedDataSource.resultsSource.fitResults
-    numMolecules = len(fres['x']) # there is no guarantee that fitResults_x0 will be present - change to x
-    numChans = len(astig_calibrations)
-
-    # find overall min and max z values
-    z_min = 0
-    z_max = 0
-    for astig_cal in astig_calibrations: #more idiomatic way of looping through list - also avoids one list access / lookup
-        r_min, r_max = astig_cal['zRange']
-        z_min = min(z_min, r_min)
-        z_max = max(z_max, r_max)
-
-    # generate z vector for interpolation
-    zVal = np.arange(z_min, z_max)
-
-
-    #TODO - Is this a robust choice?
-    smoothFac = 5 * len(astig_calibrations[0]['z'])
-
-    # generate look up table of sorts
-    sigCalX = []
-    sigCalY = []
-    for i, astig_cal in enumerate(astig_calibrations):
-        zdat = np.array(astig_cal['z'])
-        # find indices of range we trust
-        zrange = astig_cal['zRange']
-
-        z_valid_mask = (zdat > zrange[0])*(zdat < zrange[1])
-        z_valid = zdat[z_valid_mask]
-
-        sigCalX.append(UnivariateSpline(z_valid,np.array(astig_cal['sigmax'])[z_valid_mask],ext='const', s=smoothFac)(zVal))
-        sigCalY.append(UnivariateSpline(z_valid,np.array(astig_cal['sigmay'])[z_valid_mask],ext='const', s=smoothFac)(zVal))
-
-    sigCalX = np.array(sigCalX)
-    sigCalY = np.array(sigCalY)
-
-
-    #allocate arrays for the estimated z positions and their errors
-    z = np.zeros(numMolecules)
-    zerr = 1e4 * np.ones(numMolecules)
-
-    failures = 0
-    chans = np.arange(numChans)
-
-    #extract our sigmas and their errors
-    #doing this here means we only do the string operations and look-ups once, rather than once per molecule
-    sxs = np.array([fres['sigmax%i' % ci] for ci in chans])
-    sys = np.array([fres['sigmay%i' % ci] for ci in chans])
-    esxs = [fres['error_sigmax%i' % ci] for ci in chans]
-    esys = [fres['error_sigmay%i' % ci] for ci in chans]
-    wXs = np.array([1. / (esx_i*esx_i) for esx_i in esxs])
-    wYs = np.array([1. / (esy_i*esy_i) for esy_i in esys])
-
-    for i in range(numMolecules):
-        #TODO - can we avoid this loop?
-        wX = wXs[:, i]
-        wY = wYs[:, i]
-        sx = sxs[:, i]
-        sy = sys[:, i]
-
-        wSum = (wX + wY).sum()
-
-        errX = (wX[:,None] * (sx[:, None] - sigCalX)**2).sum(0)
-        errY = (wY[:, None] * (sy[:, None] - sigCalY)**2).sum(0)
-
-        err = (errX + errY) / wSum
-        minLoc = np.argmin(err)
-        z[i] = -zVal[minLoc]
-        zerr[i] = np.sqrt(err[minLoc])
-
-
-    #print('%i localizations did not have sigmas in acceptable range/planes (out of %i)' % (failures, numMolecules))
-
-    return z, zerr
 
 
 def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
@@ -837,10 +751,13 @@ class multiviewMapper:
                 logger.info('User canceled astigmatic calibration selection')
                 return
 
-        z, zerr = lookup_astig_z(pipeline, astig_calibrations)
+        z, zerr = astigTools.lookup_astig_z(pipeline, astig_calibrations, plot=True)
 
         pipeline.addColumn('astigZ', z)
         pipeline.addColumn('zLookupError', zerr)
+
+        pipeline.mapping.addVariable('foreShort', 1.0)
+        pipeline.mapping.setMapping('z', 'focus*foreShort + astigZ')
 
         pipeline._process_colour()
 
