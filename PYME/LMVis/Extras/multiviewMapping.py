@@ -572,6 +572,8 @@ class multiviewMapper:
         visFr.AddMenuItem('Multiview', 'Calibrate Shifts', self.OnCalibrateShifts,
                           helpText='Extract a shift field from bead measurements')
 
+        visFr.AddMenuItem('Multiview', itemType='separator')
+
         visFr.AddMenuItem('Multiview', 'Fold Channels', self.OnFold)
         visFr.AddMenuItem('Multiview', 'Shift correct folded channels', self.OnCorrectFolded)
 
@@ -582,6 +584,11 @@ class multiviewMapper:
                           helpText='Fold channels and correct shifts')
 
         visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapZ,
+                          helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
+
+        visFr.AddMenuItem('Multiview', itemType='separator')
+
+        visFr.AddMenuItem('Multiview', 'Old clump and map function', self.OnGroupAndMapZ,
                           helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
 
     def OnFold(self, event=None):
@@ -810,7 +817,37 @@ class multiviewMapper:
         self.pipeline.addDataSource('Grouped', cachingResultsFilter(grouped))
         self.pipeline.selectDataSource('Grouped')
 
-    def OnMapZ(self, event):
+    def OnMapZ(self, event=None, useMD = True):
+        from PYME.IO import unifiedIO
+        pipeline = self.pipeline
+
+        # FIXME - Rename metadata key to be more reasonable
+        stigLoc = pipeline.mdh.getOrDefault('AstigmapID', None)
+
+        if (not stigLoc is None) and useMD:
+            s = unifiedIO.read(stigLoc)
+            astig_calibrations = json.loads(s)
+        else:
+            fdialog = wx.FileDialog(None, 'Load Astigmatism Calibration', wildcard='Astigmatism map (*.am)|*.am',
+                                    style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
+            succ = fdialog.ShowModal()
+            if (succ == wx.ID_OK):
+                fpath = fdialog.GetPath()
+                # load json
+                with open(fpath, 'r') as fid:
+                    astig_calibrations = json.load(fid)
+            else:
+                logger.info('User canceled astigmatic calibration selection')
+                return
+
+        z, zerr = lookup_astig_z(pipeline, astig_calibrations)
+
+        pipeline.addColumn('astigZ', z)
+        pipeline.addColumn('zLookupError', zerr)
+
+        pipeline._process_colour()
+
+    def OnGroupAndMapZ(self, event):
         pipeline = self.pipeline
 
         # get channel and color info
@@ -842,6 +879,8 @@ class multiviewMapper:
                     astig_calibrations = json.load(fid)
                     fid.close()
             except:
+                #FIXME - blanket except clauses are never a good idea, and even if we were going to use one
+                # it's unclear that an IO error is appropriate
                 raise IOError('Astigmatism sigma-Z mapping information not found')
 
         # make sure we have already made channel assignments:
