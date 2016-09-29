@@ -35,9 +35,7 @@ class PerFrameVar:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        ID_FRAMEVAR = wx.NewId()
-        visFr.extras_menu.Append(ID_FRAMEVAR, "Load per-frame variable")
-        visFr.Bind(wx.EVT_MENU, self.OnPerFrame, id=ID_FRAMEVAR)
+        visFr.AddMenuItem('Extras', "Load per-frame variable", self.OnPerFrame)
 
     def OnPerFrame(self, event):
         import numpy as np

@@ -64,10 +64,12 @@ class CurrentRenderer:
         self._addMenuItems()
 
     def _addMenuItems(self):
-        ID = wx.NewId()
-        self.visFr.gen_menu.Append(ID, self.name)
+        #ID = wx.NewId()
+        #self.visFr.gen_menu.Append(ID, self.name)
 
-        self.mainWind.Bind(wx.EVT_MENU, self.GenerateGUI, id=ID)
+        #self.mainWind.Bind(wx.EVT_MENU, self.GenerateGUI, id=ID)
+
+        self.visFr.AddMenuItem('Generate', self.name, self.GenerateGUI)
 
     def _getImBounds(self):
         if self.visFr is None:
