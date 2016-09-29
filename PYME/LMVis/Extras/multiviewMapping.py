@@ -30,31 +30,15 @@ import os
 from PYME.IO.FileUtils import nameUtils
 import json
 import importlib
-import scipy.interpolate as terp
+
+#import scipy.interpolate as terp #terp doesn't really tell us what it means
+from scipy.interpolate import UnivariateSpline #as we only use this function, interpolate it directly
+
 from PYME.LMVis.inpFilt import cachingResultsFilter  # mappingFilter  # fitResultsSource
 
 import logging
 logger = logging.getLogger(__name__)
 
-
-def addColumns(pipeline):
-    numChans = pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
-
-    # add separate sigmaxy columns for each plane
-    for chan in range(numChans):
-        chan_mask = pipeline.mapping['multiviewChannel'] == chan
-        pipeline.addColumn('chan%d' % chan, chan_mask)
-
-        #mappings are cheap if we don't evaluate them
-        pipeline.selectedDataSource.setMapping('sigmax%d' % chan, 'chan%d*fitResults_sigmax' % chan)
-        pipeline.selectedDataSource.setMapping('sigmay%d' % chan, 'chan%d*fitResults_sigmay' % chan)
-        pipeline.selectedDataSource.setMapping('error_sigmax%d' % chan,
-                                    'chan%(chan)d*fitError_sigmax - 1e4*(1-chan%(chan)d)' % {'chan': chan})
-        pipeline.selectedDataSource.setMapping('error_sigmay%d' % chan,
-                                    'chan%(chan)d*fitError_sigmay - 1e4*(1-chan%(chan)d)' % {'chan': chan})
-
-        #lets add some more that might be useful
-        pipeline.selectedDataSource.setMapping('A%d' % chan, 'chan%d*A' % chan)
 
 def foldX(pipeline):
     """
@@ -71,11 +55,11 @@ def foldX(pipeline):
     """
     roiSizeNM = (pipeline.mdh['Multiview.ROISize'][1]*pipeline.mdh['voxelsize.x']*1000)  # voxelsize is in um
 
-    numChan = pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
-    color_chans = np.array(pipeline.mdh.getOrDefault('Multiview.ChannelColor', np.zeros(numChan, 'i'))).astype('i')
+    numChans = pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
+    color_chans = np.array(pipeline.mdh.getOrDefault('Multiview.ChannelColor', np.zeros(numChans, 'i'))).astype('i')
 
     pipeline.selectedDataSource.addVariable('roiSizeNM', roiSizeNM)
-    pipeline.selectedDataSource.addVariable('numChannels', numChan)
+    pipeline.selectedDataSource.addVariable('numChannels', numChans)
 
     pipeline.addColumn('chromadx', 0*pipeline['x'])
     pipeline.addColumn('chromady', 0*pipeline['y'])
@@ -88,7 +72,21 @@ def foldX(pipeline):
     probe = color_chans[pipeline['multiviewChannel']] #should be better performance
     pipeline.addColumn('probe', probe)
 
-    addColumns(pipeline)
+    # add separate sigmaxy columns for each plane
+    for chan in range(numChans):
+        chan_mask = pipeline.mapping['multiviewChannel'] == chan
+        pipeline.addColumn('chan%d' % chan, chan_mask)
+
+        #mappings are cheap if we don't evaluate them
+        pipeline.selectedDataSource.setMapping('sigmax%d' % chan, 'chan%d*fitResults_sigmax' % chan)
+        pipeline.selectedDataSource.setMapping('sigmay%d' % chan, 'chan%d*fitResults_sigmay' % chan)
+        pipeline.selectedDataSource.setMapping('error_sigmax%d' % chan,
+                                               'chan%(chan)d*fitError_sigmax - 1e4*(1-chan%(chan)d)' % {'chan': chan})
+        pipeline.selectedDataSource.setMapping('error_sigmay%d' % chan,
+                                               'chan%(chan)d*fitError_sigmay - 1e4*(1-chan%(chan)d)' % {'chan': chan})
+
+        #lets add some more that might be useful
+        pipeline.selectedDataSource.setMapping('A%d' % chan, 'chan%d*A' % chan)
 
 def plotFolded(X, Y, multiviewChannels, title=''):
     """
@@ -206,13 +204,13 @@ def applyShiftmaps(pipeline, shiftWallet, numChan):
     pipeline.addColumn('chromadx', dx)
     pipeline.addColumn('chromady', dy)
 
-def astigMAPism(fres, stigLib, chanPlane, chanColor):
+def astigMAPism(fres, astig_calibrations, chanPlane, chanColor):
     """
     Generates a look-up table of sorts for z based on sigma x/y fit results and calibration information. If a molecule
     appears on multiple planes, sigma values from both planes will be used in the look up.
     Args:
         fres: dictionary-like object containing relevant fit results
-        stigLib: library of astigmatism calibration dictionaries corresponding to each multiview channel, which are
+        astig_calibrations: list of astigmatism calibration dictionaries corresponding to each multiview channel, which are
             used to recreate shiftmap objects
         chanPlane: list of which plane each channel corresponds to, e.g. [0, 0, 1, 1]
 
@@ -222,14 +220,16 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
             array is in units of nm, but error may not be propagated from sigma fitResults properly as is.
     """
     # fres = pipeline.selectedDataSource.resultsSource.fitResults
-    numMols = len(fres['fitResults_x0'])
+    numMols = len(fres['x']) # there is no guarantee that fitResults_x0 will be present - change to x
     whichChan = np.array(fres['multiviewChannel'], dtype=np.int32)
-    # stigLib['zRange'] contains the extrema of acceptable z-positions looking over all channels
+
+    # astig_calibrations['zRange'] contains the extrema of acceptable z-positions looking over all channels
 
     # find overall min and max z values
     zrange = np.nan*np.ones(2)
-    for zi in range(len(stigLib)):
-        zrange = [np.nanmin([stigLib[zi]['zRange'][0], zrange[0]]), np.nanmax([stigLib[zi]['zRange'][1], zrange[1]])]
+    for astig_cal in astig_calibrations: #more idiomatic way of looping through list - also avoids one list access / lookup
+        zrange = [np.nanmin(astig_cal['zRange'][0], zrange[0]), np.nanmax(astig_cal['zRange'][1], zrange[1])]
+
     # generate z vector for interpolation
     zVal = np.arange(zrange[0], zrange[1])
 
@@ -238,25 +238,27 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
 
     z = np.zeros(numMols)
     zerr = 1e4*np.ones(numMols)
-    smoothFac = 5*len(stigLib[0]['z'])
+
+    #TODO - Is this a robust choice?
+    smoothFac = 5*len(astig_calibrations[0]['z'])
 
     # generate look up table of sorts
     #import matplotlib.pyplot as plt
     #plt.figure()
     for ii in range(len(chanPlane)):
-        zdat = np.array(stigLib[ii]['z'])
+        zdat = np.array(astig_calibrations[ii]['z'])
         # find indices of range we trust
-        zrange = stigLib[ii]['zRange']
+        zrange = astig_calibrations[ii]['zRange']
         lowsubZ , upsubZ = np.absolute(zdat - zrange[0]), np.absolute(zdat - zrange[1])
         lowZLoc = np.argmin(lowsubZ)
         upZLoc = np.argmin(upsubZ)
 
-        sigCalX['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
-                                                       np.array(stigLib[ii]['sigmax'])[lowZLoc:upZLoc],
+        sigCalX['chan%i' % ii] = UnivariateSpline(zdat[lowZLoc:upZLoc],
+                                                       np.array(astig_calibrations[ii]['sigmax'])[lowZLoc:upZLoc],
                                                        ext='const', s=smoothFac)(zVal)  #  ext='const', s=smoothFac)(zVal)
-                                                            # bbox=stigLib['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
-        sigCalY['chan%i' % ii] = terp.UnivariateSpline(zdat[lowZLoc:upZLoc],
-                                                       np.array(stigLib[ii]['sigmay'])[lowZLoc:upZLoc],
+                                                            # bbox=astig_calibrations['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
+        sigCalY['chan%i' % ii] = UnivariateSpline(zdat[lowZLoc:upZLoc],
+                                                       np.array(astig_calibrations[ii]['sigmay'])[lowZLoc:upZLoc],
                                                        ext='const', s=smoothFac)(zVal)  # ext='const', s=smoothFac)(zVal)
         # set regions outside of usable interpolation area to very unreasonable sigma values
         #sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
@@ -322,6 +324,97 @@ def astigMAPism(fres, stigLib, chanPlane, chanColor):
     #plt.figure()
     #plt.hist(z)
     #plt.show()
+    return z, zerr
+
+
+def lookup_astig_z(fres, astig_calibrations):
+    """
+    Generates a look-up table of sorts for z based on sigma x/y fit results and calibration information. If a molecule
+    appears on multiple planes, sigma values from both planes will be used in the look up.
+    Args:
+        fres: dictionary-like object containing relevant fit results
+        astig_calibrations: list of astigmatism calibration dictionaries corresponding to each multiview channel, which are
+            used to recreate shiftmap objects
+        chanPlane: list of which plane each channel corresponds to, e.g. [0, 0, 1, 1]
+
+    Returns:
+        z: an array of z-positions for each molecule in nm (assuming proper units were used in astigmatism calibration)
+        zerr: an array containing discrepancies between sigma values and the PSF calibration curves. Note that this
+            array is in units of nm, but error may not be propagated from sigma fitResults properly as is.
+    """
+    # fres = pipeline.selectedDataSource.resultsSource.fitResults
+    numMolecules = len(fres['x']) # there is no guarantee that fitResults_x0 will be present - change to x
+    numChans = len(astig_calibrations)
+
+    # find overall min and max z values
+    z_min = 0
+    z_max = 0
+    for astig_cal in astig_calibrations: #more idiomatic way of looping through list - also avoids one list access / lookup
+        r_min, r_max = astig_cal['zRange']
+        z_min = min(z_min, r_min)
+        z_max = max(z_max, r_max)
+
+    # generate z vector for interpolation
+    zVal = np.arange(z_min, z_max)
+
+
+    #TODO - Is this a robust choice?
+    smoothFac = 5 * len(astig_calibrations[0]['z'])
+
+    # generate look up table of sorts
+    sigCalX = []
+    sigCalY = []
+    for i, astig_cal in enumerate(astig_calibrations):
+        zdat = np.array(astig_cal['z'])
+        # find indices of range we trust
+        zrange = astig_cal['zRange']
+
+        z_valid_mask = (zdat > zrange[0])*(zdat < zrange[1])
+        z_valid = zdat[z_valid_mask]
+
+        sigCalX.append(UnivariateSpline(z_valid,np.array(astig_cal['sigmax'])[z_valid_mask],ext='const', s=smoothFac)(zVal))
+        sigCalY.append(UnivariateSpline(z_valid,np.array(astig_cal['sigmay'])[z_valid_mask],ext='const', s=smoothFac)(zVal))
+
+    sigCalX = np.array(sigCalX)
+    sigCalY = np.array(sigCalY)
+
+
+    #allocate arrays for the estimated z positions and their errors
+    z = np.zeros(numMolecules)
+    zerr = 1e4 * np.ones(numMolecules)
+
+    failures = 0
+    chans = np.arange(numChans)
+
+    #extract our sigmas and their errors
+    #doing this here means we only do the string operations and look-ups once, rather than once per molecule
+    sxs = np.array([fres['sigmax%i' % ci] for ci in chans])
+    sys = np.array([fres['sigmay%i' % ci] for ci in chans])
+    esxs = [fres['error_sigmax%i' % ci] for ci in chans]
+    esys = [fres['error_sigmay%i' % ci] for ci in chans]
+    wXs = np.array([1. / (esx_i*esx_i) for esx_i in esxs])
+    wYs = np.array([1. / (esy_i*esy_i) for esy_i in esys])
+
+    for i in range(numMolecules):
+        #TODO - can we avoid this loop?
+        wX = wXs[:, i]
+        wY = wYs[:, i]
+        sx = sxs[:, i]
+        sy = sys[:, i]
+
+        wSum = (wX + wY).sum()
+
+        errX = (wX[:,None] * (sx[:, None] - sigCalX)**2).sum(0)
+        errY = (wY[:, None] * (sy[:, None] - sigCalY)**2).sum(0)
+
+        err = (errX + errY) / wSum
+        minLoc = np.nanargmin(err)
+        z[i] = -zVal[minLoc]
+        zerr[i] = np.sqrt(err[minLoc])
+
+
+    #print('%i localizations did not have sigmas in acceptable range/planes (out of %i)' % (failures, numMolecules))
+
     return z, zerr
 
 
@@ -735,8 +828,8 @@ class multiviewMapper:
             # FIXME: this is only set up to pull a local copy at the moment
             # FIXME - Rename metadata key to be more reasonable
             stigLoc = pipeline.mdh['AstigmapID']
-            fid = open(stigLoc, 'r')
-            stigLib = json.load(fid)
+            fid = open(stigLoc, 'r') #FIXME - this file desciptor is never closed!
+            astig_calibrations = json.load(fid)
         except (AttributeError, IOError):
             try:  # load through GUI dialog
                 fdialog = wx.FileDialog(None, 'Load Astigmatism Calibration', wildcard='Astigmatism map (*.am)|*.am',
@@ -746,7 +839,7 @@ class multiviewMapper:
                     fpath = fdialog.GetPath()
                     # load json
                     fid = open(fpath, 'r')
-                    stigLib = json.load(fid)
+                    astig_calibrations = json.load(fid)
                     fid.close()
             except:
                 raise IOError('Astigmatism sigma-Z mapping information not found')
@@ -849,7 +942,7 @@ class multiviewMapper:
         print('Clumped %i localizations' % (ni - len(fres['multiviewChannel'])))
 
         # look up z-positions
-        z, zerr = astigMAPism(fres, stigLib, chanPlane, chanColor)
+        z, zerr = astigMAPism(fres, astig_calibrations, chanPlane, chanColor)
         fres['astigZ'] = z
         fres['zLookupError'] = zerr
 

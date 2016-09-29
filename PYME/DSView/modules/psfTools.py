@@ -372,6 +372,7 @@ class PSFTools(HasTraits):
                 use_web_view = False
 
         # find reasonable z range for each channel
+        #FIXME - it is somewhat non-obvious that we are effectively injecting the 'zRange' variable into the results here
         results = findZRange(results)
 
         #do plotting
