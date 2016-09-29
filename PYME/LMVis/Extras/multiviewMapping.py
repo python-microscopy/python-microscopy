@@ -86,7 +86,7 @@ def foldX(pipeline):
                                                'chan%(chan)d*fitError_sigmay - 1e4*(1-chan%(chan)d)' % {'chan': chan})
 
         #lets add some more that might be useful
-        pipeline.selectedDataSource.setMapping('A%d' % chan, 'chan%d*A' % chan)
+        #pipeline.selectedDataSource.setMapping('A%d' % chan, 'chan%d*A' % chan)
 
 def plotFolded(X, Y, multiviewChannels, title=''):
     """
@@ -597,28 +597,22 @@ class multiviewMapper:
     def OnCorrectFolded(self, event=None):
         pipeline = self.pipeline
 
-        try:  # load shiftmaps from metadata, if present
+        if 'FIXMESiftmap' in pipeline.mdh.keys():  # load shiftmaps from metadata, if present
             shiftWallet = pipeline.mdh['FIXMEShiftmap'] #FIXME: break this for now
-        except AttributeError:
-            try:  # load through GUI dialog
-                fdialog = wx.FileDialog(None, 'Load shift field', wildcard='Shift Field file (*.sf)|*.sf',
-                                        style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
-                succ = fdialog.ShowModal()
-                if (succ == wx.ID_OK):
-                    fpath = fdialog.GetPath()
-                    # load json
-                    fid = open(fpath, 'r')
+        else:
+            fdialog = wx.FileDialog(None, 'Load shift field', wildcard='Shift Field file (*.sf)|*.sf',
+                                    style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
+            succ = fdialog.ShowModal()
+            if (succ == wx.ID_OK):
+                fpath = fdialog.GetPath()
+                # load json
+                with open(fpath, 'r') as fid:
                     shiftWallet = json.load(fid)
-                    fid.close()
-            except:
-                raise IOError('Shiftmaps not found in metadata and could not be loaded from file')
+            else:
+                raise RuntimeError('Shiftmaps not found in metadata and could not be loaded from file')
 
         numChan = pipeline.mdh['Multiview.NumROIs']
 
-        #plotFolded(pipeline['x'], pipeline['y'],
-        #           pipeline['channel], 'Raw')
-
-        # apply shiftmaps
         applyShiftmaps(pipeline, shiftWallet, numChan)
 
 
