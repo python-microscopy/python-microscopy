@@ -423,41 +423,28 @@ def coalesceDictSorted(inD, assigned, keys, weightList):  # , notKosher=None):
 
     clumped = {}
 
-    clist = [[] for i in xrange(NClumps)]
-    for i, c in enumerate(assigned):
-        clist[int(c-1)].append(i)
-
     # loop through keys
     for ki in range(len(keys)):
         rkey = keys[ki]
 
-        #we will aggregate into this and then add to dictionary.
-        #performing dictionary lookups (as previously done) on each loop iteration is expensive
-        var = np.empty(NClumps)
-        #clumped[rkey] = var
 
         # determine if weights need to be propogated into new dictionary
         keepWeights = isinstance(weightList[ki], basestring) # testing __class__ is not idomatic (and will fail in python if we end up with unicode or orther derived string types)
         if keepWeights:
             weights = inD[weightList[ki]]
-            #clumped[weightList[ki]] = np.empty(NClumps)
         else:
             weights = weightList[ki]
 
 
         if np.isscalar(weights):
             # if single value is given as weight, take an unweighted mean
-            for i in xrange(NClumps):
-                #clumped[rkey][i] = np.mean(inD[rkey][clist[i]])
-                var[i] = np.mean(inD[rkey][clist[i]])
+            var = deClump.aggregateMean(NClumps, assigned.astype('i'), inD[rkey].astype('f'))
         elif weights is None:
             # if None has been passed as the weight for this key, take the minimum
-            for i in xrange(NClumps):
-                #clumped[rkey][i] = np.min(inD[rkey][clist[i]])
-                var[i] = np.min(inD[rkey][clist[i]])
+            var = deClump.aggregateMin(NClumps, assigned.astype('i'), inD[rkey].astype('f'))
         else:
             # if weights is an array, take weighted average
-            var, errVec = deClump.aggregateWeightedMean(assigned.astype('i'), inD[rkey].astype('f'), weights.astype('f'), NClumps)
+            var, errVec = deClump.aggregateWeightedMean(NClumps, assigned.astype('i'), inD[rkey].astype('f'), weights.astype('f'))
 
         clumped[rkey] = var
         # propagate fitErrors into new dictionary
