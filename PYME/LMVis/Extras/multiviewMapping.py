@@ -683,12 +683,12 @@ class multiviewMapper:
         clumps = np.zeros(len(t), 'i')
         I = np.argsort(t)
         t = t[I].astype('i')
-        x = src['x'][I]
-        y = src['y'][I]
+        x = src['x'][I].astype('f4')
+        y = src['y'][I].astype('f4')
 
-        deltaX = self.clump_radius_scale*src['error_x'][I] + self.clump_radius_offset
+        deltaX = (self.clump_radius_scale*src['error_x'][I] + self.clump_radius_offset).astype('f4')
 
-        assigned = pyDeClump.findClumps(t, x, y, deltaX, self.clump_gap_tolerance)
+        assigned = deClump.findClumpsN(t, x, y, deltaX, self.clump_gap_tolerance)
         clumps[I] = assigned
 
         self.pipeline.addColumn('clumpIndex', clumps)

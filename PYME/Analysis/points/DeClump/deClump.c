@@ -81,7 +81,9 @@ int findConnectedN(int i, int nPts, int *t, float *x, float *y,float *delta_x, i
         return -1;
     }*/
 
-    
+    //look backwards at already assigned frames
+    //As frameIndices[t_i] gives you the first event *after* the timepoint t_i, nFrames=1 means look in current frame
+    //etc ...
     for (j = MAX(frameIndices[MAX(t[i] - nFrames, 0)], 0); j < i; j++)
     {      
         if (assigned[j]!=0)
@@ -396,6 +398,15 @@ static PyObject * findClumpsN(PyObject *self, PyObject *args, PyObject *keywds)
         frameIndices[i] = (nPts + 2);
     }
 
+
+    /*
+    set frame indices up to point give the starting frame for each timePoint
+
+    nb tlast starts at 0
+
+    e.g. if t = [0,0,0,1,1,2,2,2,3,4,4,6,6] ,
+    frameIndices = [3,5,8,9,11,11,12]
+    */
     for (i=0; i < nPts; i++)
     {
         t_i = t[i];
@@ -571,9 +582,14 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
             //We have moved on to the next clump
             if (currentClump >= 0)
             {
-                iws = 1.0/weight_sum;
-                outVar[currentClump] = var_sum*iws;
-                outSig[currentClump] = sqrtf(iws);
+                if (weight_sum == 0){
+                    outVar[currentClump] = 0;
+                    outSig[currentClump] = -1e4;
+                } else {
+                    iws = 1.0/weight_sum;
+                    outVar[currentClump] = var_sum*iws;
+                    outSig[currentClump] = sqrtf(iws);
+                }
             }
 
             weight_sum = 0;
@@ -589,9 +605,14 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
 
     if (currentClump >= 0)
     {
-        iws = 1.0/weight_sum;
-        outVar[currentClump] = var_sum*iws;
-        outSig[currentClump] = sqrtf(iws);
+        if (weight_sum == 0){
+            outVar[currentClump] = 0;
+            outSig[currentClump] = -1e4;
+        } else {
+            iws = 1.0/weight_sum;
+            outVar[currentClump] = var_sum*iws;
+            outSig[currentClump] = sqrtf(iws);
+        }
     }
 
 
