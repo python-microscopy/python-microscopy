@@ -465,4 +465,4 @@ def init_renderers(visFr, mainWind = None):
     for g in RENDERER_GROUPS:
         for r in g:
             r(visFr, visFr.pipeline, mainWind)
-        visFr.gen_menu.AppendSeparator()
+        visFr.AddMenuItem('Generate', itemType='separator')

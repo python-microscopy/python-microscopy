@@ -175,8 +175,8 @@ class Generator(HasTraits):
 
         if visFr:
             visFr.AddMenuItem('Extras>Synthetic Data', "Configure", self.OnConfigure)
-            visFr.AddMenuItem('Extras>Generate fluorophore positions and events', self.OnGenPoints)
-            visFr.AddMenuItem('Extras>Generate events', self.OnGenEvents)
+            visFr.AddMenuItem('Extras>Synthetic Data', 'Generate fluorophore positions and events', self.OnGenPoints)
+            visFr.AddMenuItem('Extras>Synthetic Data', 'Generate events', self.OnGenEvents)
 
 
 

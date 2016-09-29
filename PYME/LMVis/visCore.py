@@ -185,7 +185,7 @@ class VisGUICore(object):
         
         if not subMenu:
             self.AddMenuItem('File', itemType='separator')
-            self.AddMenuItem('File', "&Save Measurements", self.OnSaveMeasurments)
+            self.AddMenuItem('File', "&Save Measurements", self.OnSaveMeasurements)
 
             self.AddMenuItem('File', itemType='separator')
 
