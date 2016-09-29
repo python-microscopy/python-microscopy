@@ -114,6 +114,10 @@ class GaussianFitFactory(FFBase.FitFactory):
         fitErrors=None
         try:       
             fitErrors = np.sqrt(np.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
+            if np.any(np.isnan(fitErrors)):
+                #for some reason we occasionally get negatives on the diagonal of the covariance matrix (and NaN for the fitError.
+                # this shouldn't happen, but catch it here in case and flag the fit as having failed
+                fitErrors = None
         except Exception:
             pass
 

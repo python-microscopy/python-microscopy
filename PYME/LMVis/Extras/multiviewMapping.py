@@ -408,7 +408,7 @@ def lookup_astig_z(fres, astig_calibrations):
         errY = (wY[:, None] * (sy[:, None] - sigCalY)**2).sum(0)
 
         err = (errX + errY) / wSum
-        minLoc = np.nanargmin(err)
+        minLoc = np.argmin(err)
         z[i] = -zVal[minLoc]
         zerr[i] = np.sqrt(err[minLoc])
 
@@ -580,13 +580,13 @@ class multiviewMapper:
         visFr.AddMenuItem('Multiview', 'Find clumps', self.OnFindClumps)
         visFr.AddMenuItem('Multiview', 'Group localizations', self.OnMergeClumps)
 
-        visFr.AddMenuItem('Multiview', 'Map XY', self.OnFoldAndMapXY,
-                          helpText='Fold channels and correct shifts')
-
         visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapZ,
                           helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
 
         visFr.AddMenuItem('Multiview', itemType='separator')
+
+        visFr.AddMenuItem('Multiview', 'Map XY', self.OnFoldAndMapXY,
+                          helpText='Fold channels and correct shifts')
 
         visFr.AddMenuItem('Multiview', 'Old clump and map function', self.OnGroupAndMapZ,
                           helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
@@ -827,10 +827,13 @@ class multiviewMapper:
             succ = fdialog.ShowModal()
             if (succ == wx.ID_OK):
                 fpath = fdialog.GetPath()
+
+                fdialog.Destroy()
                 # load json
                 with open(fpath, 'r') as fid:
                     astig_calibrations = json.load(fid)
             else:
+                fdialog.Destroy()
                 logger.info('User canceled astigmatic calibration selection')
                 return
 
