@@ -63,8 +63,8 @@ def lookup_astig_z(fres, astig_calibrations, plot=False):
 
     #extract our sigmas and their errors
     #doing this here means we only do the string operations and look-ups once, rather than once per molecule
-    sxs = np.array([fres['sigmax%i' % ci] for ci in chans])
-    sys = np.array([fres['sigmay%i' % ci] for ci in chans])
+    sxs = np.abs(np.array([fres['sigmax%i' % ci] for ci in chans]))
+    sys = np.abs(np.array([fres['sigmay%i' % ci] for ci in chans]))
     esxs = [fres['error_sigmax%i' % ci] for ci in chans]
     esys = [fres['error_sigmay%i' % ci] for ci in chans]
     wXs = np.array([1. / (esx_i*esx_i) for esx_i in esxs])

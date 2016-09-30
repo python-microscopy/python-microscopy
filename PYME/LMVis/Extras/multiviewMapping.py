@@ -478,13 +478,13 @@ class multiviewMapper:
         visFr.AddMenuItem('Multiview', 'Fold Channels', self.OnFold)
         visFr.AddMenuItem('Multiview', 'Shift correct folded channels', self.OnCorrectFolded)
 
-        visFr.AddMenuItem('Multiview', 'Find clumps', self.OnFindClumps)
         visFr.AddMenuItem('Multiview', 'Group localizations', self.OnMergeClumps)
 
         visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapZ,
                           helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
 
         visFr.AddMenuItem('Multiview', itemType='separator')
+        visFr.AddMenuItem('Multiview', 'Find clumps', self.OnFindClumps)
 
         visFr.AddMenuItem('Multiview', 'Map XY', self.OnFoldAndMapXY,
                           helpText='Fold channels and correct shifts')
@@ -700,7 +700,7 @@ class multiviewMapper:
         keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
         keys_to_aggregate += ['sigmay%d' % chan for chan in range(numChan)]
 
-        all_keys = keys_to_aggregate
+        all_keys = list(keys_to_aggregate) #this should be a copy otherwise we end up adding the weights to our list of stuff to aggregate
 
         # pair fit results and errors for weighting
         aggregation_weights = {k: 'error_' + k  for k in keys_to_aggregate if 'error_' + k in src.keys()}
