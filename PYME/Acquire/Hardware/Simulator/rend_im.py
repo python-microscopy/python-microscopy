@@ -460,13 +460,17 @@ def SIMIllumFcn(fluors, postion):
 
 
     
-def _rFluorSubset(im, fl, A, x0, y0, z, roiSize, dx, dy, dz, ChanXOffsets=[0,], ChanZOffsets=[0,], ChanSpecs = None):
+def _rFluorSubset(im, fl, A, x0, y0, z, dx, dy, dz, maxz, ChanXOffsets=[0,], ChanZOffsets=[0,], ChanSpecs = None):
     if ChanSpecs is None:
-        cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0), (fl['y'] - y0), z, A, roiSize,dx,dy,dz)
+        z_ = np.clip(z - fl['z'], -maxz, maxz).astype('f')
+        roiSize = np.minimum(8 + np.abs(z_) * (2.5 / 70), 140).astype('i')
+        cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0), (fl['y'] - y0), z_, A, roiSize,dx,dy,dz)
     else:
         for x_offset, z_offset, spec_chan in zip(ChanXOffsets, ChanZOffsets, ChanSpecs):
+            z_ = np.clip(z - fl['z'] + z_offset, -maxz, maxz).astype('f')
+            roiSize = np.minimum(8 + np.abs(z_) * (2.5 / 70), 140).astype('i')
             cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0 + x_offset), (fl['y'] - y0),
-                                        z + z_offset, A * fl['spec'][:, spec_chan], roiSize, dx, dy, dz)
+                                        z_, A * fl['spec'][:, spec_chan], roiSize, dx, dy, dz)
 
 
 def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum', ChanXOffsets=[0,], ChanZOffsets=[0,], ChanSpecs = None):
@@ -498,16 +502,16 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPo
     fl = fluors.fl[m]
     A2 = A[m]
     
-    z2 = np.minimum(np.maximum(z - fl['z'], -maxz), maxz)#.astype('f')
+    #z2 = np.minimum(np.maximum(z - fl['z'], -maxz), maxz)#.astype('f')
     
     #roiS = np.minimum(3 + np.abs(z2)*(2.5/70), 100).astype('i')
-    roiS = np.minimum(8 + np.abs(z2)*(2.5/70), 140).astype('i')
+    #roiS = np.minimum(8 + np.abs(z2)*(2.5/70), 140).astype('i')
 
     
     nCPUs = int(min(multiprocessing.cpu_count(), len(flOn)))
     
     if nCPUs > 0:
-        threads = [threading.Thread(target = _rFluorSubset, args=(im, fl[i::nCPUs], A2[i::nCPUs], x0, y0, z2[i::nCPUs], roiS[i::nCPUs], dx, dy, dz, ChanXOffsets, ChanZOffsets, ChanSpecs)) for i in range(nCPUs)]
+        threads = [threading.Thread(target = _rFluorSubset, args=(im, fl[i::nCPUs], A2[i::nCPUs], x0, y0, z, dx, dy, dz, maxz, ChanXOffsets, ChanZOffsets, ChanSpecs)) for i in range(nCPUs)]
     
         for p in threads:
             p.start()
