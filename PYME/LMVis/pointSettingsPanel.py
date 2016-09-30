@@ -29,6 +29,8 @@ def _getPossibleKeys(pipeline):
         colKeys += list(pipeline.keys())
 
     colKeys += list(pipeline.GeneratedMeasures.keys())
+
+    colKeys.sort()
     
     return colKeys
 

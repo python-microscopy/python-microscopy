@@ -42,9 +42,10 @@ def lookup_astig_z(fres, astig_calibrations, plot=False):
     for i, astig_cal in enumerate(astig_calibrations):
         zdat = np.array(astig_cal['z'])
         # find indices of range we trust
-        zrange = astig_cal['zRange']
+        #zrange = astig_cal['zRange']
 
-        z_valid_mask = (zdat > zrange[0])*(zdat < zrange[1])
+        #z_valid_mask = (zdat > zrange[0])*(zdat < zrange[1])
+        z_valid_mask = zdat > -1e6
         z_valid = zdat[z_valid_mask]
 
         sigCalX.append(UnivariateSpline(z_valid,np.array(astig_cal['sigmax'])[z_valid_mask],ext='const', s=smoothFac)(zVal))

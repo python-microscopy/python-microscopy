@@ -95,6 +95,7 @@ class FitPoints(ModuleBase):
     inputPositions = CStr('objPositions')
     outputName = CStr('fitResults')
     fitModule = CStr('LatGaussFitFR')
+    roiHalfSize = Int(7)
     channel = Int(0)
 
     def execute(self, namespace):
@@ -133,7 +134,7 @@ class FitPoints(ModuleBase):
                 ff_t = t
 
             #print x/ps, y/ps
-            r[i] = ff.FromPoint(x/ps, y/ps)
+            r[i] = ff.FromPoint(x/ps, y/ps, roiHalfSize=self.roiHalfSize)
 
         res = inpFilt.fitResultsSource(r, sort=False)
         res.mdh = md

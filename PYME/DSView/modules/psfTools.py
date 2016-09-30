@@ -339,6 +339,7 @@ class PSFTools(HasTraits):
         objPositions['z'] = z - z.mean()
 
         ptFitter = FitPoints()
+        ptFitter.set(roiHalfSize=11)
         ptFitter.set(fitModule='AstigGaussFitFR')
 
         namespace = {'input' : self.image, 'objPositions' : objPositions}
@@ -354,11 +355,11 @@ class PSFTools(HasTraits):
 
             res = namespace['fitResults']
 
-            dsigma = res['fitResults_sigmax'] - res['fitResults_sigmay']
+            dsigma = abs(res['fitResults_sigmax']) - abs(res['fitResults_sigmay'])
             valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 50)* (res['fitError_sigmay'] < 50)*(res['fitResults_A'] > 0) > 0)
 
-            results.append({'z': objPositions['z'][valid].tolist(), 'sigmax': res['fitResults_sigmax'][valid].tolist(),
-                           'sigmay': res['fitResults_sigmay'][valid].tolist(), 'dsigma': dsigma[valid].tolist(),
+            results.append({'z': objPositions['z'][valid].tolist(), 'sigmax': abs(res['fitResults_sigmax'][valid]).tolist(),
+                           'sigmay': abs(res['fitResults_sigmay'][valid]).tolist(), 'dsigma': dsigma[valid].tolist(),
                             'zCenter': objPositions['z'][dz]})
 
         #generate new tab to show results
