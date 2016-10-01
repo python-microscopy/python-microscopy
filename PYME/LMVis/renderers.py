@@ -25,6 +25,7 @@ from PYME.LMVis import genImageDialog
 from PYME.LMVis import visHelpers
 #from PYME.LMVis import imageView
 from PYME.LMVis import statusLog
+from PYME.LMVis import inpFilt
 
 from PYME.IO import MetaDataHandler
 
@@ -61,6 +62,11 @@ class CurrentRenderer:
         
         self.pipeline = pipeline
 
+        if isinstance(pipeline, inpFilt.colourFilter):
+            self.colourFilter = pipeline
+        else:
+            self.colourFilter = pipeline.colourFilter
+
         self._addMenuItems()
 
     def _addMenuItems(self):
@@ -68,8 +74,8 @@ class CurrentRenderer:
         #self.visFr.gen_menu.Append(ID, self.name)
 
         #self.mainWind.Bind(wx.EVT_MENU, self.GenerateGUI, id=ID)
-
-        self.visFr.AddMenuItem('Generate', self.name, self.GenerateGUI)
+        if not self.visFr is None:
+            self.visFr.AddMenuItem('Generate', self.name, self.GenerateGUI)
 
     def _getImBounds(self):
         if self.visFr is None:
@@ -103,15 +109,15 @@ class CurrentRenderer:
     def _genJitVals(self, jitParamName, jitScale):
         #print jitParamName
         if jitParamName == '1.0':
-            jitVals = np.ones(self.pipeline.colourFilter['x'].shape)
-        elif jitParamName in self.pipeline.colourFilter.keys():
-            jitVals = self.pipeline.colourFilter[jitParamName]
+            jitVals = np.ones(self.colourFilter['x'].shape)
+        elif jitParamName in self.colourFilter.keys():
+            jitVals = self.colourFilter[jitParamName]
         elif jitParamName in self.genMeas:
             #print 'f'
             if jitParamName == 'neighbourDistances':
                 jitVals = self.pipeline.getNeighbourDists(True)
             elif jitParamName == 'neighbourErrorMin':
-                jitVals = np.minimum(self.pipeline.colourFilter['error_x'], self.pipeline.getNeighbourDists(True))
+                jitVals = np.minimum(self.colourFilter['error_x'], self.pipeline.getNeighbourDists(True))
             else:
                 jitVals = self.pipeline.GeneratedMeasures[jitParamName]
 
@@ -122,7 +128,7 @@ class CurrentRenderer:
         mdh['Rendering.Method'] = self.name
         if 'imageID' in self.pipeline.mdh.getEntryNames():
             mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
-        mdh['Rendering.SourceFilename'] = self.pipeline.filename
+        mdh['Rendering.SourceFilename'] = getattr(self.pipeline, 'filename', '')
 
         for cb in renderMetadataProviders:
             cb(mdh)
@@ -167,7 +173,7 @@ class ColourRenderer(CurrentRenderer):
         mdh['Rendering.Method'] = self.name
         if 'imageID' in self.pipeline.mdh.getEntryNames():
             mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
-        mdh['Rendering.SourceFilename'] = self.pipeline.filename
+        mdh['Rendering.SourceFilename'] = getattr(self.pipeline, 'filename', '')
 
         mdh.Source = MetaDataHandler.NestedClassMDHandler(self.pipeline.mdh)
 
@@ -201,21 +207,21 @@ class ColourRenderer(CurrentRenderer):
         mdh['Origin.z'] = oz
 
         colours = settings['colours']
-        oldC = self.pipeline.colourFilter.currentColour
+        oldC = self.colourFilter.currentColour
 
         ims = []
 
         for c in colours:
-            self.pipeline.colourFilter.setColour(c)
+            self.colourFilter.setColour(c)
             ims.append(np.atleast_3d(self.genIm(settings, imb, mdh)))
 
-        self.pipeline.colourFilter.setColour(oldC)
+        self.colourFilter.setColour(oldC)
 
         return GeneratedImage(ims, imb, pixelSize, settings['zSliceThickness'], colours, mdh=mdh)
 
     def GenerateGUI(self, event=None):
         jitVars = ['1.0']
-        jitVars += self.pipeline.colourFilter.keys()
+        jitVars += self.colourFilter.keys()
 
         self.genMeas = self.pipeline.GeneratedMeasures.keys()
         if not 'neighbourDistances' in self.genMeas:
@@ -232,7 +238,7 @@ class ColourRenderer(CurrentRenderer):
         else:
             zvals = None
 
-        dlg = genImageDialog.GenImageDialog(self.mainWind, mode=self.mode, defaultPixelSize=self._defaultPixelSize, colours=self.pipeline.colourFilter.getColourChans(), zvals = zvals, jitterVariables = jitVars, jitterVarDefault=self._getDefaultJitVar(jitVars), jitterVarDefaultZ=self._getDefaultZJitVar(jitVars))
+        dlg = genImageDialog.GenImageDialog(self.mainWind, mode=self.mode, defaultPixelSize=self._defaultPixelSize, colours=self.colourFilter.getColourChans(), zvals = zvals, jitterVariables = jitVars, jitterVarDefault=self._getDefaultJitVar(jitVars), jitterVarDefaultZ=self._getDefaultZJitVar(jitVars))
         ret = dlg.ShowModal()
 
         #bCurr = wx.BusyCursor()
@@ -255,7 +261,7 @@ class HistogramRenderer(ColourRenderer):
     mode = 'histogram'
 
     def genIm(self, settings, imb, mdh):
-        return visHelpers.rendHist(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], imb, settings['pixelSize'])
+        return visHelpers.rendHist(self.colourFilter['x'],self.colourFilter['y'], imb, settings['pixelSize'])
 
 class Histogram3DRenderer(HistogramRenderer):
     """3D histogram rendering"""
@@ -265,7 +271,7 @@ class Histogram3DRenderer(HistogramRenderer):
 
     def genIm(self, settings, imb, mdh):
         mdh['Origin.z'] = settings['zBounds'][0]
-        return visHelpers.rendHist3D(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], self.pipeline.colourFilter['z'], imb, settings['pixelSize'], settings['zBounds'], settings['zSliceThickness'])
+        return visHelpers.rendHist3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], imb, settings['pixelSize'], settings['zBounds'], settings['zSliceThickness'])
     
 
 class GaussianRenderer(ColourRenderer):
@@ -290,7 +296,7 @@ class GaussianRenderer(ColourRenderer):
 
         jitVals = self._genJitVals(jitParamName, jitScale)
 
-        return visHelpers.rendGauss(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, imb, pixelSize)
+        return visHelpers.rendGauss(self.colourFilter['x'],self.colourFilter['y'], jitVals, imb, pixelSize)
         
 class LHoodRenderer(ColourRenderer):
     """Log-likelihood of object"""
@@ -316,7 +322,7 @@ class LHoodRenderer(ColourRenderer):
         
         print('starting render')
 
-        im =  visHelpers.rendGaussProd(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'], jitVals, imb, pixelSize)
+        im =  visHelpers.rendGaussProd(self.colourFilter['x'],self.colourFilter['y'], jitVals, imb, pixelSize)
         
         print('done rendering')
         print((im.max()))
@@ -346,8 +352,8 @@ class Gaussian3DRenderer(GaussianRenderer):
         jitVals = self._genJitVals(jitParamName, jitScale)
         jitValsZ = self._genJitVals(jitParamNameZ, jitScaleZ)
 
-        return visHelpers.rendGauss3D(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'],
-                                      self.pipeline.colourFilter['z'], jitVals, jitValsZ, imb, pixelSize,
+        return visHelpers.rendGauss3D(self.colourFilter['x'],self.colourFilter['y'],
+                                      self.colourFilter['z'], jitVals, jitValsZ, imb, pixelSize,
                                       settings['zBounds'], settings['zSliceThickness'])
 
 
@@ -370,11 +376,11 @@ class TriangleRenderer(ColourRenderer):
 
         if settings['softRender']:
             status = statusLog.StatusLogger("Rendering triangles ...")
-            return visHelpers.rendJitTriang(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'],
+            return visHelpers.rendJitTriang(self.colourFilter['x'],self.colourFilter['y'],
                                             settings['numSamples'], jitVals, settings['MCProbability'],imb, pixelSize)
         else:
-            return self.visFr.glCanvas.genJitTim(settings['numSamples'],self.pipeline.colourFilter['x'],
-                                                 self.pipeline.colourFilter['y'], jitVals,
+            return self.visFr.glCanvas.genJitTim(settings['numSamples'],self.colourFilter['x'],
+                                                 self.colourFilter['y'], jitVals,
                                                  settings['MCProbability'],pixelSize)
             
 class TriangleRendererW(ColourRenderer):
@@ -396,11 +402,11 @@ class TriangleRendererW(ColourRenderer):
 
         if settings['softRender']:
             status = statusLog.StatusLogger("Rendering triangles ...")
-            return visHelpers.rendJitTriang2(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'],
+            return visHelpers.rendJitTriang2(self.colourFilter['x'],self.colourFilter['y'],
                                              settings['numSamples'], jitVals, settings['MCProbability'],imb, pixelSize)
         else:
-            return self.visFr.glCanvas.genJitTim(settings['numSamples'],self.pipeline.colourFilter['x'],
-                                                 self.pipeline.colourFilter['y'], jitVals,
+            return self.visFr.glCanvas.genJitTim(settings['numSamples'],self.colourFilter['x'],
+                                                 self.colourFilter['y'], jitVals,
                                                  settings['MCProbability'],pixelSize)
 
 
@@ -427,8 +433,8 @@ class Triangle3DRenderer(TriangleRenderer):
         jitVals = self._genJitVals(jitParamName, jitScale)
         jitValsZ = self._genJitVals(jitParamNameZ, jitScaleZ)
 
-        return visHelpers.rendJitTet(self.pipeline.colourFilter['x'],self.pipeline.colourFilter['y'],
-                                     self.pipeline.colourFilter['z'], settings['numSamples'], jitVals, jitValsZ,
+        return visHelpers.rendJitTet(self.colourFilter['x'],self.colourFilter['y'],
+                                     self.colourFilter['z'], settings['numSamples'], jitVals, jitValsZ,
                                      settings['MCProbability'], imb, pixelSize, settings['zBounds'], settings['zSliceThickness'])
 
 class QuadTreeRenderer(ColourRenderer):

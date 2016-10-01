@@ -60,13 +60,20 @@ class DensityMapping(ModuleBase):
     softRender = Bool(True)
 
     def execute(self, namespace):
+        from PYME.IO.image import ImageBounds
+
         inp = namespace[self.inputLocalizations]
         if not isinstance(inp, inpFilt.colourFilter):
-            inp = inpFilt.colourFilter(inp)
+            cf = inpFilt.colourFilter(inp, None)
+            cf.mdh = inp.mdh
+        else:
+            cf = inp
 
-        renderer = renderers.RENDERERS[str(self.renderingModule)](None, inp)
+        cf.imageBounds = ImageBounds.estimateFromSource(inp)
 
-        namespace[self.outputImage] = renderer.Generate(self)
+        renderer = renderers.RENDERERS[str(self.renderingModule)](None, cf)
+
+        namespace[self.outputImage] = renderer.Generate(self.get())
 
 @register_module('AddPipelineDerivedVars')
 class Pipelineify(ModuleBase):

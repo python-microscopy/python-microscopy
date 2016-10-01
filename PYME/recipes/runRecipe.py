@@ -30,16 +30,17 @@ def loadInput(filename, namespace, key='input'):
     """
     #modify this to allow for different file types - currently only supports images
     if filename.endswith('.h5r'):
-        h5f = tables.openFile(filename)
+        h5f = tables.open_file(filename)
 
         key_prefix = '' if key == 'input' else key + '_'
 
         mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
         for t in  h5f.list_nodes('/'):
-            tab = inpFilt.h5rSource(h5f, t.name)
-            tab.mdh = mdh
+            if isinstance(t, tables.table.Table):
+                tab = inpFilt.h5rSource(h5f, t.name)
+                tab.mdh = mdh
 
-            namespace[key_prefix + t.name] = tab
+                namespace[key_prefix + t.name] = tab
 
         #logger.error('loading h5r not supported yet')
         #raise NotImplementedError
@@ -99,7 +100,7 @@ def runRecipe(recipe, inputs, outputs):
     
     #load any necessary inputs and populate the recipes namespace    
     for k, v in inputs.items():
-        inp = loadInput(v, recipe.namespace, k)
+        loadInput(v, recipe.namespace, k)
         #recipe.namespace[k] = loadInput(v)
     
     ### Run the recipe ###

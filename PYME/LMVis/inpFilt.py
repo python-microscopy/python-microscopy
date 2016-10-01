@@ -179,7 +179,7 @@ class h5rSource(inputFilter):
         self.fitResults = getattr(self.h5f.root, tablename)[:]
 
         #allow access using unnested original names
-        self._keys = unNestNames(getattr(self.h5f.root, tablename).description._v_nestedNames)
+        self._keys = unNestNames(getattr(self.h5f.root, tablename).description._v_nested_names)
         #or shorter aliases
         self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
