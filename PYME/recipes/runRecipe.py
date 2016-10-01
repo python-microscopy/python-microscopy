@@ -10,17 +10,47 @@ from PYME.recipes import modules
 from argparse import ArgumentParser
 from PYME.IO.image import ImageStack
 import pandas as pd
+import tables
+from PYME.LMVis import inpFilt
+from PYME.IO import MetaDataHandler
+
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 #import sys
 
-def loadInput(filename):
-    """Load input data from a file
+
+
+def loadInput(filename, namespace, key='input'):
+    """Load input data from a file and inject into namespace
     
     Currently only handles images (anything you can open in dh5view). TODO - 
     extend to other types.
     """
     #modify this to allow for different file types - currently only supports images
-    return ImageStack(filename=filename, haveGUI=False)
+    if filename.endswith('.h5r'):
+        h5f = tables.openFile(filename)
+
+        key_prefix = '' if key == 'input' else key + '_'
+
+        mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
+        for t in  h5f.list_nodes('/'):
+            tab = inpFilt.h5rSource(h5f, t.name)
+            tab.mdh = mdh
+
+            namespace[key_prefix + t.name] = tab
+
+        #logger.error('loading h5r not supported yet')
+        #raise NotImplementedError
+    elif filename.endswith('.csv'):
+        logger.error('loading .csv not supported yet')
+        raise NotImplementedError
+    elif filename.endswith('.xls') or filename.endswith('.xlsx'):
+        logger.error('loading .xls not supported yet')
+        raise NotImplementedError
+    else:
+        namespace[key] = ImageStack(filename=filename, haveGUI=False)
 
 def saveDataFrame(output, filename):
     """Saves a pandas dataframe, inferring the destination type based on extension"""
@@ -69,7 +99,8 @@ def runRecipe(recipe, inputs, outputs):
     
     #load any necessary inputs and populate the recipes namespace    
     for k, v in inputs.items():
-        recipe.namespace[k] = loadInput(v)
+        inp = loadInput(v, recipe.namespace, k)
+        #recipe.namespace[k] = loadInput(v)
     
     ### Run the recipe ###
     res = recipe.execute()

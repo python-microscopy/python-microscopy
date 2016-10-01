@@ -68,3 +68,34 @@ class DensityMapping(ModuleBase):
 
         namespace[self.outputImage] = renderer.Generate(self)
 
+@register_module('AddPipelineDerivedVars')
+class Pipelineify(ModuleBase):
+    inputFitResults = CStr('FitResults')
+    inputDriftResults = CStr('')
+    inputEvents = CStr('')
+
+    pixelSizeNM = Float(1)
+    def execute(self, namespace):
+        from PYME.LMVis import pipeline
+        fitResults = namespace[self.inputFitResults]
+        mdh = fitResults.mdh
+
+        mapped_ds = inpFilt.mappingFilter(fitResults)
+
+
+        if not self.pixelSizeNM == 1: # TODO - check close instead?
+            mapped_ds.addVariable('pixelSize', self.pixelSizeNM)
+            mapped_ds.setMapping('x', 'x*pixelSize')
+            mapped_ds.setMapping('y', 'y*pixelSize')
+
+        #extract information from any events
+        self._processEvents(mapped_ds)
+
+        #Fit module specific filter settings
+        if 'Analysis.FitModule' in mdh.getEntryNames():
+            fitModule = mdh['Analysis.FitModule']
+
+            if 'LatGaussFitFR' in fitModule:
+                mapped_ds.addColumn('nPhotons', pipeline.getPhotonNums(mapped_ds, mdh))
+
+

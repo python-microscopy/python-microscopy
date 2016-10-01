@@ -744,8 +744,7 @@ class multiviewMapper:
         pipeline.addColumn('astigZ', z)
         pipeline.addColumn('zLookupError', zerr)
 
-        pipeline.mapping.addVariable('foreShort', 1.0)
-        pipeline.mapping.setMapping('z', 'focus*foreShort + astigZ')
+        pipeline.selectedDataSource.setMapping('z', 'focus*foreShort + astigZ')
 
         pipeline._process_colour()
 

@@ -137,7 +137,7 @@ def main():
                     if (SERVER_PROC in c[1] and args.run_server) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1] and args.gui):
                         print 'killing %s' % c
                         p.kill()
-            except psutil.ZombieProcess:
+            except (psutil.ZombieProcess, psutil.AccessDenied):
                 pass
 
         if args.run_server:
