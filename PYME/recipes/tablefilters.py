@@ -73,8 +73,11 @@ class Pipelineify(ModuleBase):
     inputFitResults = CStr('FitResults')
     inputDriftResults = CStr('')
     inputEvents = CStr('')
+    outputLocalizations = CStr('localizations')
 
     pixelSizeNM = Float(1)
+
+
     def execute(self, namespace):
         from PYME.LMVis import pipeline
         fitResults = namespace[self.inputFitResults]
@@ -89,7 +92,8 @@ class Pipelineify(ModuleBase):
             mapped_ds.setMapping('y', 'y*pixelSize')
 
         #extract information from any events
-        self._processEvents(mapped_ds)
+        ev_maps, ev_charts = pipeline._processEvents(mapped_ds, namespace.get(self.inputEvents, None), mdh)
+        pipeline._add_missing_ds_keys(mapped_ds, ev_maps)
 
         #Fit module specific filter settings
         if 'Analysis.FitModule' in mdh.getEntryNames():
@@ -97,5 +101,9 @@ class Pipelineify(ModuleBase):
 
             if 'LatGaussFitFR' in fitModule:
                 mapped_ds.addColumn('nPhotons', pipeline.getPhotonNums(mapped_ds, mdh))
+
+        mapped_ds.mdh = mdh
+
+        namespace[self.outputLocalizations] = mapped_ds
 
 
