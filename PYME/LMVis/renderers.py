@@ -106,20 +106,26 @@ class CurrentRenderer:
         else:
             return 0
 
+    def _get_neighbour_dists(self):
+        from matplotlib import delaunay
+        triangles = delaunay.Triangulation(
+            self.colourFilter['x'] + .1 * np.random.normal(size=len(self.colourFilter['x'])),
+            self.colourFilter['y'] + .1 * np.random.normal(size=len(self.colourFilter['x'])))
+
+        return np.array(visHelpers.calcNeighbourDists(triangles))
+
     def _genJitVals(self, jitParamName, jitScale):
         #print jitParamName
         if jitParamName == '1.0':
             jitVals = np.ones(self.colourFilter['x'].shape)
         elif jitParamName in self.colourFilter.keys():
             jitVals = self.colourFilter[jitParamName]
+        elif jitParamName == 'neighbourDistances':
+            jitVals = self._get_neighbour_dists()
+        elif jitParamName == 'neighbourErrorMin':
+            jitVals = np.minimum(self.colourFilter['error_x'], self._get_neighbour_dists())
         elif jitParamName in self.genMeas:
-            #print 'f'
-            if jitParamName == 'neighbourDistances':
-                jitVals = self.pipeline.getNeighbourDists(True)
-            elif jitParamName == 'neighbourErrorMin':
-                jitVals = np.minimum(self.colourFilter['error_x'], self.pipeline.getNeighbourDists(True))
-            else:
-                jitVals = self.pipeline.GeneratedMeasures[jitParamName]
+            jitVals = self.pipeline.GeneratedMeasures[jitParamName]
 
         return jitVals*jitScale
 

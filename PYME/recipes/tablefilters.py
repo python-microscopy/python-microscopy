@@ -61,7 +61,6 @@ class DensityMapping(ModuleBase):
 
     def execute(self, namespace):
         from PYME.IO.image import ImageBounds
-
         inp = namespace[self.inputLocalizations]
         if not isinstance(inp, inpFilt.colourFilter):
             cf = inpFilt.colourFilter(inp, None)

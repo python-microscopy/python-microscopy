@@ -488,14 +488,15 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
 
 
 
-if multiProc:
-    def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
-        #import threading
+#if multiProc:
+def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
+    #import threading
+    if multiProc and not multiprocessing.current_process().daemon:
         sizeX = int((imageBounds.x1 - imageBounds.x0)/pixelSize)
         sizeY = int((imageBounds.y1 - imageBounds.y0)/pixelSize)
 
         im = shmarray.zeros((sizeX, sizeY))
-        print im.min(), im.max()
+        #print im.min(), im.max()
 
         x = shmarray.create_copy(x)
         y = shmarray.create_copy(y)
@@ -519,10 +520,9 @@ if multiProc:
         for p in processes:
             p.join()
 
-        print im.min(), im.max()
+        #print im.min(), im.max()
         return im/n
-else:
-    def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
+    else:
         from matplotlib import delaunay
 
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
@@ -562,9 +562,10 @@ def rendJitTri2(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
         rendTri2(T, imageBounds, pixelSize, im=im, im1=im1)
 
 
-if multiProc:
-    def rendJitTriang2(x,y,n,jsig, mcp, imageBounds, pixelSize):
-        #import threading
+
+def rendJitTriang2(x,y,n,jsig, mcp, imageBounds, pixelSize):
+    #import threading
+    if multiProc and not multiprocessing.current_process().daemon:
         sizeX = int((imageBounds.x1 - imageBounds.x0)/pixelSize)
         sizeY = int((imageBounds.y1 - imageBounds.y0)/pixelSize)
 
@@ -594,10 +595,9 @@ if multiProc:
             p.join()
 
         imn =  im/(im1 + 1) #n
-        print imn.min(), imn.max()
+        #print imn.min(), imn.max()
         return imn
-else:
-    def rendJitTriang2(x,y,n,jsig, mcp, imageBounds, pixelSize):
+    else:
         from matplotlib import delaunay
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
@@ -632,10 +632,11 @@ def rendJTet(im, x,y,z,jsig, jsigz, mcp, n):
         print((p.shape))
         RenderTetrahedra(p, im)
 
-if multiProc:
+#if multiProc:
 
-    def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
-        #import gen3DTriangs
+def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
+    #import gen3DTriangs
+    if multiProc and not multiprocessing.current_process().daemon:
 
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
@@ -683,10 +684,7 @@ if multiProc:
 
         return im/n
 
-else:
-    def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
-        import gen3DTriangs
-
+    else:
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
 
