@@ -79,7 +79,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         
         #self.Quads = None
                
-        self.SetMenuBar(self.CreateMenuBar())
+        #self.SetMenuBar(self.CreateMenuBar())
+        self.CreateMenuBar()
 
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 

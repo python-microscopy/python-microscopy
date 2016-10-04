@@ -251,10 +251,10 @@ class VisGUICore(object):
         if not subMenu:
             self.AddMenuItem('Help', "&About",)
 
-        menu_bar = self.menubar
+       # menu_bar = self.menubar
 
 
-        return menu_bar
+        #return menu_bar
         
     def OnViewPoints(self,event):
         self.viewMode = 'points'
