@@ -14,6 +14,7 @@ def register_endpoint(path):
 
 class JSONAPIRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     protocol_version='HTTP/1.1'
+    logrequests = False
 
     def _process_request(self):
         up = urlparse.urlparse(self.path)
@@ -47,6 +48,15 @@ class JSONAPIRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_POST(self):
         return self._process_request()
+
+    def log_request(self, code='-', size='-'):
+        """Log an accepted request.
+
+        This is called by send_response().
+
+        """
+        if self.logrequests:
+            self.log_message('"%s" %s %s', self.requestline, str(code), str(size))
 
 
 class APIHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):

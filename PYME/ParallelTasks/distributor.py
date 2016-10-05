@@ -15,6 +15,7 @@ import os
 from PYME.misc import computerName
 from PYME import config
 #from PYME.IO import clusterIO
+from PYME.ParallelTasks import webframework
 import collections
 
 NODE_TIMEOUT = config.get('distributor-node_registration_timeout', 10)
@@ -237,14 +238,13 @@ class Distributor(object):
             queue.stop()
 
 
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    #@cherrypy.tools.json_in()
-    def tasks(self, queue=None, nodeID=None, numWant=50, timeout=5):
-        if cherrypy.request.method == 'GET':
-            return self._get_tasks(nodeID, int(numWant), float(timeout))
-        elif cherrypy.request.method == 'POST':
-            return self._post_tasks(queue)
+
+    @webframework.register_endpoint('/distributor/tasks')
+    def _tasks(self, queue=None, nodeID=None, numWant=50, timeout=5, body=''):
+        if len(body) == 0:
+            return json.dumps(self._get_tasks(nodeID, int(numWant), float(timeout)))
+        else:
+            return json.dumps(self._post_tasks(queue, body))
 
     def _get_tasks(self, nodeID, numWant, timeout):
         tasks = []
@@ -271,7 +271,7 @@ class Distributor(object):
 
         return {'ok': True, 'result': tasks}
 
-    def _post_tasks(self, queue):
+    def _post_tasks(self, queue, body):
         with self._queueLock:
             try:
                 q = self._queues[queue]
@@ -279,7 +279,7 @@ class Distributor(object):
                 q = TaskQueue(self)
                 self._queues[queue] = q
 
-        tasks = json.loads(cherrypy.request.body.read())
+        tasks = json.loads(body)
         for task in tasks:
             task['id'] = queue + '-' + task['id']
             q.posttask(task)
@@ -289,21 +289,17 @@ class Distributor(object):
         return {'ok' : True}
 
 
+    @webframework.register_endpoint('/distributor/handin')
+    def _handin(self, nodeID, body):
 
-
-    @cherrypy.expose
-    #@cherrypy.tools.json_in()
-    @cherrypy.tools.json_out()
-    def handin(self, nodeID):
         #logger.debug('Handing in tasks...')
-        for handin in json.loads(cherrypy.request.body.read()):
+        for handin in json.loads(body):
             queue = handin['taskID'].split('-')[0]
             self._queues[queue].handin(handin)
-        return {'ok': True}
+        return json.dumps({'ok': True})
 
-    @cherrypy.expose
-    @cherrypy.tools.json_out()
-    def announce(self, nodeID, ip, port):
+    @webframework.register_endpoint('/distributor/announce')
+    def _announce(self, nodeID, ip, port):
         try:
             node = self.nodes[nodeID]
         except KeyError:
@@ -314,18 +310,56 @@ class Distributor(object):
 
         #logging.debug('Got announcement from %s' % nodeID)
 
-        return {'ok': True}
+        return json.dumps({'ok': True})
+
+    @webframework.register_endpoint('/distributor/queues')
+    def _get_queues(self):
+        return json.dumps({'ok': True, 'result': {qn: q.info() for qn, q in self._queues.items()}})
+
+
+
+class CPDistributor(Distributor):
+    @cherrypy.expose
+    def tasks(self, queue=None, nodeID=None, numWant=50, timeout=5):
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+
+        body = ''
+        #if cherrypy.request.method == 'GET':
+
+        if cherrypy.request.method == 'POST':
+            body = cherrypy.request.body.read()
+
+        return self._tasks(queue, nodeID, numWant, timeout, body)
 
     @cherrypy.expose
-    @cherrypy.tools.json_out()
+    def handin(self, nodeID):
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+
+        body = cherrypy.request.body.read()
+
+        return self._handin(nodeID, body)
+
+    @cherrypy.expose
+    def announce(self, nodeID, ip, port):
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+
+        self._announce(nodeID, ip, port)
+
+    @cherrypy.expose
     def queues(self):
-        #logging.debug('queues: ' + repr(self._queues))
-        return {'ok': True, 'result': {qn: q.info() for qn, q in self._queues.items()}}
+        cherrypy.response.headers['Content-Type'] = 'application/json'
 
+        return self._get_queues()
 
+class WFDistributor(webframework.APIHTTPServer, Distributor):
+    def __init__(self, port):
+        Distributor.__init__(self)
 
+        server_address = ('', port)
+        webframework.APIHTTPServer.__init__(self, server_address)
+        self.daemon_threads = True
 
-def run(port):
+def runCP(port):
     import socket
     cherrypy.config.update({'server.socket_port': port,
                             'server.socket_host': '0.0.0.0',
@@ -339,7 +373,7 @@ def run(port):
 
     #externalAddr = socket.gethostbyname(socket.gethostname())
 
-    distributor = Distributor()
+    distributor = CPDistributor()
 
     app = cherrypy.tree.mount(distributor, '/distributor/')
     app.log.access_log.setLevel(logging.ERROR)
@@ -350,10 +384,29 @@ def run(port):
     finally:
         distributor._do_poll = False
 
+
+def run(port):
+    import socket
+
+    externalAddr = socket.gethostbyname(socket.gethostname())
+    distributor = WFDistributor(port)
+
+    try:
+        logger.info('Starting distributor on %s:%d' % (externalAddr, port))
+        distributor.serve_forever()
+    finally:
+        distributor._do_poll = False
+        logger.info('Shutting down ...')
+        distributor.shutdown()
+        distributor.server_close()
+
+
 def on_SIGHUP(signum, frame):
     from PYME.util import mProfile
     mProfile.report(False, profiledir=profileOutDir)
     raise RuntimeError('Recieved SIGHUP')
+
+
 
 if __name__ == '__main__':
     import signal
