@@ -1,6 +1,8 @@
 import BaseHTTPServer
 from SocketServer import ThreadingMixIn
 import urlparse
+import logging
+logger = logging.getLogger(__name__)
 
 def register_endpoint(path):
     def _reg_ep(func):
@@ -18,10 +20,15 @@ class JSONAPIRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         kwargs = urlparse.parse_qs(up.query)
 
+        kwargs = {k : v[0] for k, v in kwargs.items()}
+
         cl = int(self.headers.get('Content-Length', 0))
         if cl > 0:
             body = self.rfile.read(cl)
             kwargs['body'] = body
+
+        #logger.debug('Request path: ' + up.path)
+        #logger.debug('Requests args: ' + repr(kwargs))
 
         handler = self.server._endpoints[up.path]
         resp = handler(**kwargs)

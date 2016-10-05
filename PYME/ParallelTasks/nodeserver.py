@@ -239,15 +239,16 @@ class CPNodeServer(NodeServer):
 
 
 
-class NodeAPIServer(webframework.APIHTTPServer, NodeServer):
+class WFNodeServer(webframework.APIHTTPServer, NodeServer):
     def __init__(self, distributor, ip_address, port, nodeID=computerName.GetComputerName()):
         NodeServer.__init__(self, distributor, ip_address, port, nodeID=computerName.GetComputerName())
 
         server_address = ('', port)
         webframework.APIHTTPServer.__init__(self, server_address)
+        self.daemon_threads = True
 
 
-def run(distributor, port):
+def runCP(distributor, port):
     import socket
     cherrypy.config.update({'server.socket_port': port,
                             'server.socket_host': '0.0.0.0',
@@ -273,7 +274,21 @@ def run(distributor, port):
         nodeserver._do_poll = False
 
 
-        
+def run(distributor, port):
+    import socket
+
+    externalAddr = socket.gethostbyname(socket.gethostname())
+    nodeserver = WFNodeServer('http://' + distributor + '/', port = port, ip_address=externalAddr)
+
+    try:
+        logger.info('Starting nodeserver on %s:%d' % (externalAddr, port))
+        nodeserver.serve_forever()
+    finally:
+        nodeserver._do_poll = False
+        logger.info('Shutting down ...')
+        nodeserver.shutdown()
+        nodeserver.server_close()
+
 
 
 if __name__ == '__main__':
