@@ -620,7 +620,11 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
     Py_DECREF(varA);
     Py_DECREF(sigmaA);
 
-    return Py_BuildValue("(O,O)", (PyObject*) outVarA, (PyObject*) outSigA);
+    PyObject* out = Py_BuildValue("(O,O)", (PyObject*) outVarA, (PyObject*) outSigA);
+
+    Py_XDECREF(outVarA);
+    Py_XDECREF(outSigA);
+    return out;
 
 /*fail:
     Py_XDECREF(clumpIDA);
@@ -1034,7 +1038,7 @@ static PyMethodDef deClumpMethods[] = {
     "Aggregate data into clumps by taking an unweighted mean. This assumes data has been sorted by clumpIndex."},
     {"aggregateMin",  aggregateMin, METH_VARARGS | METH_KEYWORDS,
     "Aggregate data into clumps by taking the minimum. This assumes data has been sorted by clumpIndex."},
-    {"aggregateSum",  aggregateMin, METH_VARARGS | METH_KEYWORDS,
+    {"aggregateSum",  aggregateSum, METH_VARARGS | METH_KEYWORDS,
     "Aggregate data into clumps by taking the sum. This assumes data has been sorted by clumpIndex."},
     
     {NULL, NULL, 0, NULL}        /* Sentinel */
@@ -1046,7 +1050,7 @@ PyMODINIT_FUNC initdeClump(void)
     PyObject *m;
 
     m = Py_InitModule("deClump", deClumpMethods);
-    import_array()
+    import_array();
 
     //SpamError = PyErr_NewException("spam.error", NULL, NULL);
     //Py_INCREF(SpamError);
