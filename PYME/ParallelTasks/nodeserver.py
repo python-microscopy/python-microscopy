@@ -14,6 +14,8 @@ from PYME.misc import computerName
 from PYME import config
 from PYME.IO import clusterIO
 
+from PYME.ParallelTasks import webframework
+
 import ujson as json
 
 #disable socket timeout to prevent us from generating 408 errors
@@ -157,10 +159,8 @@ class NodeServer(object):
         self._do_poll = False
 
 
-    @cherrypy.expose
-    #@cherrypy.tools.json_out()
-    def tasks(self, workerID, numWant=50):
-        cherrypy.response.headers['Content-Type'] = 'application/json'
+    @webframework.register_endpoint('/node/tasks')
+    def _get_tasks(self, workerID, numWant=50):
         self.workerIDs.add(workerID)
         #if self._tasks.qsize() < 10:
         #    self._update_tasks()
@@ -181,9 +181,10 @@ class NodeServer(object):
 
 
 
-    @cherrypy.expose
-    def handin(self, taskID, status):
+    @webframework.register_endpoint('/node/handin')
+    def _handin(self, taskID, status):
         self._handins.put({'taskID': taskID, 'status':status})
+        return json.dumps({'ok' : True})
 
 
     def _rateTask(self, task):
@@ -197,27 +198,53 @@ class NodeServer(object):
 
         return {'id' : task['id'], 'cost': cost}
 
-    @cherrypy.expose
-    #@cherrypy.tools.json_in()
-    #@cherrypy.tools.json_out()
-    def rate(self):
-        #logger.debug('Rating tasks')
-        cherrypy.response.headers['Content-Type'] = 'application/json'
-
-        body = cherrypy.request.body.read(int(cherrypy.request.headers['Content-Length']))
+    @webframework.register_endpoint('/node/rate')
+    def _rate(self, body):
         tasks = json.loads(body)
-
-        #logging.debug(tasks)
 
         ratings = [self._rateTask(task) for task in tasks]
         logger.debug('Returning %d ratings ... ' % len(ratings))
 
         return json.dumps({'ok': True, 'result': ratings})
 
+    @webframework.register_endpoint('/node/status')
+    def _status(self):
+        return json.dumps({'Polling' : self._do_poll, 'nQueued' : self._tasks.qsize()})\
+
+
+
+class CPNodeServer(NodeServer):
     @cherrypy.expose
-    @cherrypy.tools.json_out()
     def status(self):
-        return {'Polling' : self._do_poll, 'nQueued' : self._tasks.qsize()}
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+        return self._status()
+
+    @cherrypy.expose
+    def rate(self):
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+
+        body = cherrypy.request.body.read(int(cherrypy.request.headers['Content-Length']))
+
+        return self.rate(body)
+
+    @cherrypy.expose
+    def tasks(self, workerID, numWant=50):
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+        return self._get_tasks(workerID, numWant)
+
+    @cherrypy.expose
+    def handin(self, taskID, status):
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+        return self._handin(taskID, status)
+
+
+
+class NodeAPIServer(webframework.APIHTTPServer, NodeServer):
+    def __init__(self, distributor, ip_address, port, nodeID=computerName.GetComputerName()):
+        NodeServer.__init__(self, distributor, ip_address, port, nodeID=computerName.GetComputerName())
+
+        server_address = ('', port)
+        webframework.APIHTTPServer.__init__(self, server_address)
 
 
 def run(distributor, port):
@@ -234,7 +261,7 @@ def run(distributor, port):
 
     externalAddr = socket.gethostbyname(socket.gethostname())
 
-    nodeserver = NodeServer('http://' + distributor + '/', port = port, ip_address=externalAddr)
+    nodeserver = CPNodeServer('http://' + distributor + '/', port = port, ip_address=externalAddr)
 
     app = cherrypy.tree.mount(nodeserver, '/node/')
     app.log.access_log.setLevel(logging.ERROR)
@@ -244,6 +271,9 @@ def run(distributor, port):
         cherrypy.quickstart()
     finally:
         nodeserver._do_poll = False
+
+
+        
 
 
 if __name__ == '__main__':
