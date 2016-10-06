@@ -154,27 +154,6 @@ def applyShiftmaps(pipeline, shiftWallet):
     """
     from PYME.Analysis.points import multiview
     multiview.applyShiftmaps(pipeline.selectedDataSource, shiftWallet)
-    '''model = shiftWallet['shiftModel'].split('.')[-1]
-    shiftModule = importlib.import_module(shiftWallet['shiftModel'].split('.' + model)[0])
-    shiftModel = getattr(shiftModule, model)
-
-
-    x, y = pipeline.mapping['x'], pipeline.mapping['y']
-
-    # FIXME: the camera roi positions below would not account for the multiview data source
-    #x = x + pipeline.mdh['Camera.ROIX0']*pipeline.mdh['voxelsize.x']*1.0e3
-    #y = y + pipeline.mdh['Camera.ROIY0']*pipeline.mdh['voxelsize.y']*1.0e3
-    chan = pipeline.mapping['multiviewChannel']
-
-    dx = 0
-    dy = 0
-    for ii in range(1, numChan):
-        chanMask = chan == ii
-        dx = dx + chanMask*shiftModel(dict=shiftWallet['Chan0%s.X' % ii]).ev(x, y)
-        dy = dy + chanMask*shiftModel(dict=shiftWallet['Chan0%s.Y' % ii]).ev(x, y)
-
-    pipeline.addColumn('chromadx', dx)
-    pipeline.addColumn('chromady', dy)'''
 
 def astigMAPism(fres, astig_calibrations, chanPlane, chanColor):
     """
@@ -605,20 +584,7 @@ class multiviewMapper:
         from PYME.Analysis.points import multiview
         multiview.findClumps(self.pipeline.selectedDataSource, self.clump_gap_tolerance,
                              self.clump_radius_scale, self.clump_radius_offset)
-        '''src = self.pipeline.mapping
-        t = src['t']
-        clumps = np.zeros(len(t), 'i')
-        I = np.argsort(t)
-        t = t[I].astype('i')
-        x = src['x'][I].astype('f4')
-        y = src['y'][I].astype('f4')
 
-        deltaX = (self.clump_radius_scale*src['error_x'][I] + self.clump_radius_offset).astype('f4')
-
-        assigned = deClump.findClumpsN(t, x, y, deltaX, self.clump_gap_tolerance)
-        clumps[I] = assigned
-
-        self.pipeline.addColumn('clumpIndex', clumps)'''
 
     def OnMergeClumps(self, event=None):
         from PYME.Analysis.points import multiview
@@ -633,23 +599,7 @@ class multiviewMapper:
 
         self.pipeline.addDataSource('Grouped', grouped)
         self.pipeline.selectDataSource('Grouped')
-        '''
-        keys_to_aggregate = ['x', 'y', 't', 'probe', 'tIndex', 'multiviewChannel', 'clumpIndex']
-        keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
-        keys_to_aggregate += ['sigmay%d' % chan for chan in range(numChan)]
 
-        all_keys = list(keys_to_aggregate) #this should be a copy otherwise we end up adding the weights to our list of stuff to aggregate
-
-        # pair fit results and errors for weighting
-        aggregation_weights = {k: 'error_' + k  for k in keys_to_aggregate if 'error_' + k in src.keys()}
-        all_keys += aggregation_weights.values()
-
-        I = np.argsort(src['clumpIndex'])
-        sorted_src = {k : src[k][I] for k in all_keys}
-
-        grouped = coalesceDictSorted(sorted_src, sorted_src['clumpIndex'], keys_to_aggregate, aggregation_weights)
-        self.pipeline.addDataSource('Grouped', cachingResultsFilter(grouped))
-        self.pipeline.selectDataSource('Grouped')'''
 
     def OnMapZ(self, event=None, useMD = True):
         from PYME.IO import unifiedIO
