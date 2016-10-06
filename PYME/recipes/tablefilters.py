@@ -172,7 +172,7 @@ class ShiftCorrect(ModuleBase):
 class FindClumps(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     inputName = CStr('registered')
-    gapTolerance = Float(1, desc='Number of off-frames allowed to still be a single clump')
+    gapTolerance = Int(1, desc='Number of off-frames allowed to still be a single clump')
     radiusScale = Float(2.0)
     radius_offset_nm = Float(150., desc='[nm]')
     outputName = CStr('clumped')
