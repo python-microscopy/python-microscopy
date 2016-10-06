@@ -113,3 +113,145 @@ class Pipelineify(ModuleBase):
         namespace[self.outputLocalizations] = mapped_ds
 
 
+@register_module('Fold')
+class Fold(ModuleBase):
+    """Create a new mapping object which derives mapped keys from original ones"""
+    inputName = CStr('localizations')
+    outputName = CStr('folded')
+
+    def execute(self, namespace):
+        from PYME.Analysis.points import multiview
+
+        inp = namespace[self.inputName]
+
+        if 'mdh' not in dir(inp):
+            raise RuntimeError('Unfold needs metadata')
+
+        mapped = inpFilt.mappingFilter(inp)
+
+        multiview.foldX(mapped, inp.mdh)
+        mapped.mdh = inp.mdh
+
+        namespace[self.outputName] = mapped
+
+
+@register_module('ShiftCorrect')
+class ShiftCorrect(ModuleBase):
+    """Create a new mapping object which derives mapped keys from original ones"""
+    inputName = CStr('folded')
+    inputShiftMap = CStr('')
+    outputName = CStr('registered')
+
+    def execute(self, namespace):
+        from PYME.Analysis.points import multiview
+        from PYME.IO import unifiedIO
+        import json
+
+        inp = namespace[self.inputName]
+
+        if 'mdh' not in dir(inp):
+            raise RuntimeError('ShiftCorrect needs metadata')
+
+        if self.inputShiftMap == '':  # grab shftmap from the metadata
+            s = unifiedIO.read(inp.mdh['Shiftmap'])
+        else:
+            s = unifiedIO.read(self.inputShiftMap)
+
+        shiftMaps = json.loads(s)
+
+        mapped = inpFilt.mappingFilter(inp)
+
+        multiview.applyShiftmaps(mapped, shiftMaps)  # FIXME: parse mdh for camera.ROIX
+
+        mapped.mdh = inp.mdh
+
+        namespace[self.outputName] = mapped
+
+
+@register_module('FindClumps')
+class FindClumps(ModuleBase):
+    """Create a new mapping object which derives mapped keys from original ones"""
+    inputName = CStr('registered')
+    gapTolerance = Float(1, desc='Number of off-frames allowed to still be a single clump')
+    radiusScale = Float(2.0)
+    radius_offset_nm = Float(150., desc='[nm]')
+    outputName = CStr('clumped')
+
+    def execute(self, namespace):
+        from PYME.Analysis.points import multiview
+
+        inp = namespace[self.inputName]
+
+
+        #    raise RuntimeError('Unfold needs metadata')
+
+        mapped = inpFilt.mappingFilter(inp)
+
+        multiview.findClumps(mapped, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
+
+        if 'mdh' in dir(inp):
+            mapped.mdh = inp.mdh
+
+        namespace[self.outputName] = mapped
+
+
+@register_module('MergeClumps')
+class MergeClumps(ModuleBase):
+    """Create a new mapping object which derives mapped keys from original ones"""
+    inputName = CStr('clumped')
+    outputName = CStr('merged')
+
+    def execute(self, namespace):
+        from PYME.Analysis.points import multiview
+
+        inp = namespace[self.inputName]
+
+        mapped = inpFilt.mappingFilter(inp)
+
+        if 'mdh' not in dir(inp):
+            raise RuntimeError('MergeClumps needs metadata')
+
+        grouped = multiview.mergeClumps(mapped, inp.mdh)
+
+        grouped.mdh = inp.mdh
+
+        namespace[self.outputName] = grouped
+
+
+@register_module('MapAstigZ')
+class MapAstigZ(ModuleBase):
+    """Create a new mapping object which derives mapped keys from original ones"""
+    inputName = CStr('folded')
+    inputAstigmatismMapID = CStr('')
+    outputName = CStr('registered')
+
+    def execute(self, namespace):
+        from PYME.Analysis.points.astigmatism import astigTools
+        from PYME.IO import unifiedIO
+        import json
+
+        inp = namespace[self.inputName]
+
+        if 'mdh' not in dir(inp):
+            raise RuntimeError('MapAstigZ needs metadata')
+
+        if self.inputAstigmatismMapID == '':  # grab calibration from the metadata
+            s = unifiedIO.read(inp.mdh['Analysis.AstigmatismMapID'])
+        else:
+            s = unifiedIO.read(self.inputAstigmatismMapID)
+
+        astig_calibrations = json.loads(s)
+
+        mapped = inpFilt.mappingFilter(inp)
+
+        z, zerr = astigTools.lookup_astig_z(mapped, astig_calibrations, plot=False)
+
+        mapped.addColumn('astigZ', z)
+        mapped.addColumn('zLookupError', zerr)
+
+        mapped.mdh = inp.mdh
+
+        namespace[self.outputName] = mapped
+
+
+

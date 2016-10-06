@@ -31,12 +31,12 @@ from PYME.Analysis.points.astigmatism import astigTools
 import os
 from PYME.IO.FileUtils import nameUtils
 import json
-import importlib
+# import importlib
 
 #import scipy.interpolate as terp #terp doesn't really tell us what it means
 from scipy.interpolate import UnivariateSpline #as we only use this function, interpolate it directly
 
-from PYME.LMVis.inpFilt import cachingResultsFilter  # mappingFilter  # fitResultsSource
+#from PYME.LMVis.inpFilt import cachingResultsFilter  # mappingFilter  # fitResultsSource
 
 import logging
 logger = logging.getLogger(__name__)
@@ -55,40 +55,9 @@ def foldX(pipeline):
         Adds channel assignments to the pipeline
 
     """
-    roiSizeNM = (pipeline.mdh['Multiview.ROISize'][1]*pipeline.mdh['voxelsize.x']*1000)  # voxelsize is in um
+    from PYME.Analysis.points import multiview
+    multiview.foldX(pipeline.selectedDataSource, pipeline.mdh)
 
-    numChans = pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
-    color_chans = np.array(pipeline.mdh.getOrDefault('Multiview.ChannelColor', np.zeros(numChans, 'i'))).astype('i')
-
-    pipeline.selectedDataSource.addVariable('roiSizeNM', roiSizeNM)
-    pipeline.selectedDataSource.addVariable('numChannels', numChans)
-
-    pipeline.addColumn('chromadx', 0*pipeline['x'])
-    pipeline.addColumn('chromady', 0*pipeline['y'])
-
-    #FIXME - cast to int should probably happen when we use multiViewChannel, not here (because we might have saved and reloaded in between)
-    pipeline.selectedDataSource.setMapping('multiviewChannel', 'clip(floor(x/roiSizeNM), 0, numChannels - 1).astype(int)')
-    pipeline.selectedDataSource.setMapping('x', 'x%roiSizeNM + chromadx')
-    pipeline.selectedDataSource.setMapping('y', 'y + chromady')
-
-    probe = color_chans[pipeline['multiviewChannel']] #should be better performance
-    pipeline.addColumn('probe', probe)
-
-    # add separate sigmaxy columns for each plane
-    for chan in range(numChans):
-        chan_mask = pipeline.mapping['multiviewChannel'] == chan
-        pipeline.addColumn('chan%d' % chan, chan_mask)
-
-        #mappings are cheap if we don't evaluate them
-        pipeline.selectedDataSource.setMapping('sigmax%d' % chan, 'chan%d*fitResults_sigmax' % chan)
-        pipeline.selectedDataSource.setMapping('sigmay%d' % chan, 'chan%d*fitResults_sigmay' % chan)
-        pipeline.selectedDataSource.setMapping('error_sigmax%d' % chan,
-                                               'chan%(chan)d*fitError_sigmax - 1e4*(1-chan%(chan)d)' % {'chan': chan})
-        pipeline.selectedDataSource.setMapping('error_sigmay%d' % chan,
-                                               'chan%(chan)d*fitError_sigmay - 1e4*(1-chan%(chan)d)' % {'chan': chan})
-
-        #lets add some more that might be useful
-        #pipeline.selectedDataSource.setMapping('A%d' % chan, 'chan%d*A' % chan)
 
 def plotFolded(X, Y, multiviewChannels, title=''):
     """
@@ -169,7 +138,7 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
     else:
         return assigned
 
-def applyShiftmaps(pipeline, shiftWallet, numChan):
+def applyShiftmaps(pipeline, shiftWallet):
     """
     applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
     objects, applies them to the multiview data, and maps the positions registered to the first channel to the pipeline
@@ -183,8 +152,9 @@ def applyShiftmaps(pipeline, shiftWallet, numChan):
         Adds shifts into the pipeline which will then be applied automatically by the mappingFilter (see foldX)
 
     """
-
-    model = shiftWallet['shiftModel'].split('.')[-1]
+    from PYME.Analysis.points import multiview
+    multiview.applyShiftmaps(pipeline.selectedDataSource, shiftWallet)
+    '''model = shiftWallet['shiftModel'].split('.')[-1]
     shiftModule = importlib.import_module(shiftWallet['shiftModel'].split('.' + model)[0])
     shiftModel = getattr(shiftModule, model)
 
@@ -204,7 +174,7 @@ def applyShiftmaps(pipeline, shiftWallet, numChan):
         dy = dy + chanMask*shiftModel(dict=shiftWallet['Chan0%s.Y' % ii]).ev(x, y)
 
     pipeline.addColumn('chromadx', dx)
-    pipeline.addColumn('chromady', dy)
+    pipeline.addColumn('chromady', dy)'''
 
 def astigMAPism(fres, astig_calibrations, chanPlane, chanColor):
     """
@@ -405,48 +375,7 @@ def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
 
     return clumped
 
-def coalesceDictSorted(inD, assigned, keys, weights_by_key):  # , notKosher=None):
-    """
-    Agregates clumps to a single event
-    Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
-    object.
-    Also note that copying a large dictionary can be rather slow, and a structured ndarray approach may be preferable.
-    DB - we should never have a 'large' dictionary (ie there will only ever be a handful of keys)
 
-    Args:
-        inD: input dictionary containing fit results
-        assigned: clump assignments to be coalesced
-        keys: list whose elements are strings corresponding to keys to be copied from the input to output dictionaries
-        weights_by_key: dictionary of weights.
-
-    Returns:
-        fres: output dictionary containing the coalesced results
-
-    """
-    NClumps = int(np.max(assigned))  # len(np.unique(assigned))  #
-
-    clumped = {}
-
-    # loop through keys
-    for rkey in keys:
-        weights = weights_by_key.get(rkey, 'mean')
-
-        if weights == 'mean':
-            # if single value is given as weight, take an unweighted mean
-            var = deClump.aggregateMean(NClumps, assigned.astype('i'), inD[rkey].astype('f'))
-        elif weights == 'min':
-            # if None has been passed as the weight for this key, take the minimum
-            var = deClump.aggregateMin(NClumps, assigned.astype('i'), inD[rkey].astype('f'))
-        elif weights == 'sum':
-            var = deClump.aggregateSum(NClumps, assigned.astype('i'), inD[rkey].astype('f'))
-        else:
-            # if weights is an array, take weighted average
-            var, errVec = deClump.aggregateWeightedMean(NClumps, assigned.astype('i'), inD[rkey].astype('f'), inD[weights].astype('f'))
-            clumped[weights] = errVec
-
-        clumped[rkey] = var
-
-    return clumped
 
 
 class multiviewMapper:
@@ -514,7 +443,7 @@ class multiviewMapper:
 
         numChan = pipeline.mdh['Multiview.NumROIs']
 
-        applyShiftmaps(pipeline, shiftWallet, numChan)
+        applyShiftmaps(pipeline, shiftWallet)
 
 
     def OnFoldAndMapXY(self, event):
@@ -633,7 +562,7 @@ class multiviewMapper:
 
         shiftWallet['shiftModel'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
 
-        applyShiftmaps(pipeline, shiftWallet, numChan)
+        applyShiftmaps(pipeline, shiftWallet)
 
         plotFolded(pipeline['x'], pipeline['y'],
                             pipeline['multiviewChannel'], 'All beads after Registration')
@@ -673,7 +602,10 @@ class multiviewMapper:
             fid.close()
 
     def OnFindClumps(self, event=None):
-        src = self.pipeline.mapping
+        from PYME.Analysis.points import multiview
+        multiview.findClumps(self.pipeline.selectedDataSource, self.clump_gap_tolerance,
+                             self.clump_radius_scale, self.clump_radius_offset)
+        '''src = self.pipeline.mapping
         t = src['t']
         clumps = np.zeros(len(t), 'i')
         I = np.argsort(t)
@@ -686,16 +618,22 @@ class multiviewMapper:
         assigned = deClump.findClumpsN(t, x, y, deltaX, self.clump_gap_tolerance)
         clumps[I] = assigned
 
-        self.pipeline.addColumn('clumpIndex', clumps)
+        self.pipeline.addColumn('clumpIndex', clumps)'''
 
     def OnMergeClumps(self, event=None):
+        from PYME.Analysis.points import multiview
+
         if not 'clumpIndex' in self.pipeline.keys():
             logger.debug('No clumps found - running FindClumps')
             self.OnFindClumps()
 
-        src = self.pipeline.mapping
         numChan = self.pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
 
+        grouped = multiview.mergeClumps(self.pipeline.selectedDataSource, numChan)
+
+        self.pipeline.addDataSource('Grouped', grouped)
+        self.pipeline.selectDataSource('Grouped')
+        '''
         keys_to_aggregate = ['x', 'y', 't', 'probe', 'tIndex', 'multiviewChannel', 'clumpIndex']
         keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
         keys_to_aggregate += ['sigmay%d' % chan for chan in range(numChan)]
@@ -711,14 +649,14 @@ class multiviewMapper:
 
         grouped = coalesceDictSorted(sorted_src, sorted_src['clumpIndex'], keys_to_aggregate, aggregation_weights)
         self.pipeline.addDataSource('Grouped', cachingResultsFilter(grouped))
-        self.pipeline.selectDataSource('Grouped')
+        self.pipeline.selectDataSource('Grouped')'''
 
     def OnMapZ(self, event=None, useMD = True):
         from PYME.IO import unifiedIO
         pipeline = self.pipeline
 
         # FIXME - Rename metadata key to be more reasonable
-        stigLoc = pipeline.mdh.getOrDefault('AstigmapID', None)
+        stigLoc = pipeline.mdh.getOrDefault('Analysis.AstigmatismMapID', None)
 
         if (not stigLoc is None) and useMD:
             s = unifiedIO.read(stigLoc)
