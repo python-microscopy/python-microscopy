@@ -2,7 +2,7 @@ from PYME.IO.FileUtils import nameUtils
 import os
 import cStringIO
 
-def open(filename):
+def openFile(filename):
     filename = nameUtils.getFullExistingFilename(filename)
 
     if os.path.exists(filename):
