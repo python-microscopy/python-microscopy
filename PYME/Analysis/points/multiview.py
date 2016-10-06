@@ -154,7 +154,7 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset):
 def mergeClumps(datasource, numChan):
     from PYME.LMVis.inpFilt import cachingResultsFilter
 
-    keys_to_aggregate = ['x', 'y', 't', 'probe', 'tIndex', 'multiviewChannel', 'clumpIndex']
+    keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', 'clumpIndex']
     keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
     keys_to_aggregate += ['sigmay%d' % chan for chan in range(numChan)]
 
@@ -163,6 +163,8 @@ def mergeClumps(datasource, numChan):
     # pair fit results and errors for weighting
     aggregation_weights = {k: 'error_' + k for k in keys_to_aggregate if 'error_' + k in datasource.keys()}
     all_keys += aggregation_weights.values()
+
+    aggregation_weights['A'] = 'sum'
 
     I = np.argsort(datasource['clumpIndex'])
     sorted_src = {k: datasource[k][I] for k in all_keys}

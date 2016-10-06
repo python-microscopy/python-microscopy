@@ -211,7 +211,7 @@ class MergeClumps(ModuleBase):
         if 'mdh' not in dir(inp):
             raise RuntimeError('MergeClumps needs metadata')
 
-        grouped = multiview.mergeClumps(mapped, inp.mdh)
+        grouped = multiview.mergeClumps(mapped, inp.mdh.getOrDefault('Multiview.NumROIs', 0))
 
         grouped.mdh = inp.mdh
 
