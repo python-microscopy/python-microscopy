@@ -55,7 +55,7 @@ class DensityMapping(ModuleBase):
     MCProbability = Float(1.0)
     numSamples = Int(10)
     colours = List(['none'])
-    zBounds = ListFloat([-500,500])
+    zBounds = ListFloat([-500, 500])
     zSliceThickness = Float(50.0)
     softRender = Bool(True)
 
@@ -248,6 +248,7 @@ class MapAstigZ(ModuleBase):
 
         mapped.addColumn('astigZ', z)
         mapped.addColumn('zLookupError', zerr)
+        mapped.setMapping('z', 'astigZ + z')
 
         mapped.mdh = inp.mdh
 
