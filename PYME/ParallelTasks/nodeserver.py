@@ -18,6 +18,8 @@ from PYME.ParallelTasks import webframework
 
 import ujson as json
 
+WORKER_GET_TIMEOUT = config.get('nodeserver-worker-get-timeout', 60)
+
 #disable socket timeout to prevent us from generating 408 errors
 cherrypy.server.socket_timeout = 0
 
@@ -165,11 +167,13 @@ class NodeServer(object):
         #if self._tasks.qsize() < 10:
         #    self._update_tasks()
 
-        tasks = [self._tasks.get()] #wait for at leas 1 task
+        t_f = time.time() + WORKER_GET_TIMEOUT
+
+        tasks = [self._tasks.get(timeout=WORKER_GET_TIMEOUT)] #wait for at leas 1 task
         nTasks = 1
 
         try:
-            while nTasks < int(numWant):
+            while (nTasks < int(numWant)) and (time.time() < t_f):
                 tasks.append(self._tasks.get_nowait())
                 nTasks += 1
         except Queue.Empty:
