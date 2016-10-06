@@ -221,9 +221,9 @@ class MergeClumps(ModuleBase):
 @register_module('MapAstigZ')
 class MapAstigZ(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = CStr('folded')
+    inputName = CStr('merged')
     AstigmatismMapID = CStr('')
-    outputName = CStr('registered')
+    outputName = CStr('zmapped')
 
     def execute(self, namespace):
         from PYME.Analysis.points.astigmatism import astigTools
