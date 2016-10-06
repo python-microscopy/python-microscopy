@@ -50,20 +50,26 @@ def settings_form(analysisModule):
 
 # Create your views here.
 def settings(request, analysisModule='LatGaussFitFR'):
+    import PYME.localization.FitFactories
+
     if request.method == 'POST':
         f = settings_form(analysisModule)(request.POST)
     else:
         f = settings_form(analysisModule)()
 
 
-    return render(request, 'localization/settings_form.html', {'form':f})
+    return render(request, 'localization/settings_form.html', {'form':f, 'analysisModule' : analysisModule, 'analysisModuleChoices' : PYME.localization.FitFactories.resFitFactories})
 
 
 def localize(request, analysisModule='LatGaussFitFR', files=[]):
+    import json
     f = settings_form(analysisModule)(request.POST)
 
-    print f.is_valid()
-    print f.cleaned_data
+    f.is_valid()
+
+    f.cleaned_data['Analysis.FitModule'] = analysisModule
+
+    print json.dumps(f.cleaned_data)
 
 
     return HttpResponseRedirect('/status/queues/')
