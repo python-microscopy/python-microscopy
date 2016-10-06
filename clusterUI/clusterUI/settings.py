@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'clusterbrowser',
     'clusterstatus',
+    'localization',
 ]
 
 MIDDLEWARE_CLASSES = [

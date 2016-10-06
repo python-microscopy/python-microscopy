@@ -273,7 +273,6 @@ class taskWorker(object):
                 break
 
             if self.inputQueue.empty():
-
                 #loop over all queues, looking for tasks to process
                 while len(tasks) == 0 and len(queueURLs) > 0:
                     #try queue on current machine first
@@ -310,10 +309,11 @@ class taskWorker(object):
 
 
             if len(tasks) == 0: #no queues had tasks
-                time.sleep(1) #put ourselves to sleep to avoid constant polling
+                time.sleep(.1) #put ourselves to sleep to avoid constant polling
             else:
                 for t in tasks:
                     self.inputQueue.put(t)
+
 
     def computeLoop(self):
         while self._loop_alive:

@@ -17,7 +17,7 @@
         <li class="toggle-control" id="recipe_form_toggle"><a href="#" onclick="togglePanel('#recipe_form')"><span
                 class="glyphicon glyphicon-list-alt"></span>&nbsp;&nbsp;Run Recipe</a></li>
         <li class="toggle-control" id="localization_form_toggle"><a href="#"
-                                                                    onclick="togglePanel('#localization_form')"><span
+                                                                    onclick="on_analysis_settings()"><span
                 class="glyphicon glyphicon-fire"></span>&nbsp;&nbsp;Localize molecules</a></li>
     </ul>
     <hr>
@@ -93,6 +93,8 @@
         </div>
     </div>
 
+    <div class="panel panel-primary hidden toggle-panel" id="localization_form"></div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -103,6 +105,8 @@
             $(id).removeClass('hidden').addClass('show');
             $(id + '_toggle').addClass('active');
         }
+
+
 
         $('#form_new_folder').on('submit', function (e) {
 
@@ -143,5 +147,15 @@
             }
 
         });
+
+        function on_analysis_settings(){
+        //console.log('about to reload')
+            togglePanel('#localization_form');
+            $('#localization_form').load('/localization/settings/',function () {
+                //alert( "Load was performed." );
+                // $(this).unwrap();
+                //console.log('load performed')
+            });
+    }
     </script>
 {% endblock %}

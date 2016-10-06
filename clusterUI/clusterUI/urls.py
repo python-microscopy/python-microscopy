@@ -21,5 +21,6 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^files/', include('clusterbrowser.urls')),
     url(r'^status/', include('clusterstatus.urls')),
+    url(r'^localization/', include('localization.urls')),
     url(r'^$', RedirectView.as_view(url='/files/')), #redirect the base view to files for now
 ]
