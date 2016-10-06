@@ -94,21 +94,24 @@ def runRecipe(recipe, inputs, outputs):
                   corresponding members of the namespace are saved to disk
                   following execution of the recipe.
     """
-    
-    #the recipe instance might be re-used - clear any previous data
-    recipe.namespace.clear()
-    
-    #load any necessary inputs and populate the recipes namespace    
-    for k, v in inputs.items():
-        loadInput(v, recipe.namespace, k)
-        #recipe.namespace[k] = loadInput(v)
-    
-    ### Run the recipe ###
-    res = recipe.execute()
+    try:
+        #the recipe instance might be re-used - clear any previous data
+        recipe.namespace.clear()
 
-    #Save any outputs
-    for k, v in outputs.items():
-        saveOutput(recipe.namespace[k],v)    
+        #load any necessary inputs and populate the recipes namespace
+        for k, v in inputs.items():
+            loadInput(v, recipe.namespace, k)
+            #recipe.namespace[k] = loadInput(v)
+
+        ### Run the recipe ###
+        res = recipe.execute()
+
+        #Save any outputs
+        for k, v in outputs.items():
+            saveOutput(recipe.namespace[k],v)
+    except:
+        logger.exception('Error running recipe')
+        raise
     
 
 def main():
