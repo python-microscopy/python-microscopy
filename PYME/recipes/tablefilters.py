@@ -222,7 +222,7 @@ class MergeClumps(ModuleBase):
 class MapAstigZ(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     inputName = CStr('folded')
-    inputAstigmatismMapID = CStr('')
+    AstigmatismMapID = CStr('')
     outputName = CStr('registered')
 
     def execute(self, namespace):
@@ -235,10 +235,10 @@ class MapAstigZ(ModuleBase):
         if 'mdh' not in dir(inp):
             raise RuntimeError('MapAstigZ needs metadata')
 
-        if self.inputAstigmatismMapID == '':  # grab calibration from the metadata
+        if self.AstigmatismMapID == '':  # grab calibration from the metadata
             s = unifiedIO.read(inp.mdh['Analysis.AstigmatismMapID'])
         else:
-            s = unifiedIO.read(self.inputAstigmatismMapID)
+            s = unifiedIO.read(self.AstigmatismMapID)
 
         astig_calibrations = json.loads(s)
 
