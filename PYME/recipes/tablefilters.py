@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, Filter, Float, Enum, CStr, Bool, Int, View, Item, List#, Group
-from traits.api import DictStrStr, DictStrList
+from traits.api import DictStrStr, DictStrList, ListFloat
 import numpy as np
 import pandas as pd
 from PYME.LMVis import inpFilt
@@ -55,7 +55,7 @@ class DensityMapping(ModuleBase):
     MCProbability = Float(1.0)
     numSamples = Int(10)
     colours = List(['none'])
-    zBounds = List([0,0])
+    zBounds = ListFloat([-500,500])
     zSliceThickness = Float(50.0)
     softRender = Bool(True)
 
