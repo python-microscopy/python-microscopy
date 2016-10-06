@@ -239,6 +239,7 @@ class taskWorker(object):
 
             try:
                 while True:
+                    #print 'getting results'
                     queueURL, taskDescr, res = self.resultsQueue.get_nowait()
                     outputs = taskDescr['outputs']
 
@@ -271,7 +272,7 @@ class taskWorker(object):
             if not self._loop_alive:
                 break
 
-            if not self.inputQueue.empty():
+            if self.inputQueue.empty():
 
                 #loop over all queues, looking for tasks to process
                 while len(tasks) == 0 and len(queueURLs) > 0:
@@ -308,11 +309,11 @@ class taskWorker(object):
                         logger.exception(traceback.format_exc())
 
 
-                if len(tasks) == 0: #no queues had tasks
-                    time.sleep(1) #put ourselves to sleep to avoid constant polling
-                else:
-                    for t in tasks:
-                        self.inputQueue.put(t)
+            if len(tasks) == 0: #no queues had tasks
+                time.sleep(1) #put ourselves to sleep to avoid constant polling
+            else:
+                for t in tasks:
+                    self.inputQueue.put(t)
 
     def computeLoop(self):
         while self._loop_alive:
@@ -325,14 +326,14 @@ class taskWorker(object):
                     task = remFitBuf.createFitTaskFromTaskDef(taskDescr)
                     res = task()
 
-                    self.resultsQueue.put(queueURL, taskDescr, res)
+                    self.resultsQueue.put((queueURL, taskDescr, res))
 
                 except:
                     import traceback
                     traceback.print_exc()
                     logger.exception(traceback.format_exc())
 
-                    self.resultsQueue.put(queueURL, taskDescr, None)
+                    self.resultsQueue.put((queueURL, taskDescr, None))
 
         
 def on_SIGHUP(signum, frame):
