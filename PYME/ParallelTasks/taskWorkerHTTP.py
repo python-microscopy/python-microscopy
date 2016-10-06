@@ -117,7 +117,7 @@ def main():
                 #TODO - make the server actually return a list of tasks, not just one (or implement pipelining in another way)
                 #try:
                 s = clusterIO._getSession(queueURL)
-                r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % procName, timeout=0)
+                r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % procName)#, timeout=0)
                 if r.status_code == 200:
                     resp = r.json()
                     if resp['ok']:

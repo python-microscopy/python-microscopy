@@ -218,7 +218,7 @@ class Distributor(object):
 
                 try:
                     while True:
-                            task = q.popleft()
+                            task = q.popleft().task
                             handin = {'taskID': task['id'], 'status' : 'notExecuted'}
                             queue = handin['taskID'].split('-')[0]
                             self._queues[queue].handin(handin)

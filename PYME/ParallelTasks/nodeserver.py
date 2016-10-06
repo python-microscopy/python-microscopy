@@ -171,7 +171,7 @@ class NodeServer(object):
         tasks = []
 
         try:
-            tasks = [self._tasks.get(timeout=WORKER_GET_TIMEOUT)] #wait for at least 1 task
+            tasks += [self._tasks.get(timeout=WORKER_GET_TIMEOUT)] #wait for at least 1 task
             nTasks = 1
 
             while (nTasks < int(numWant)) and (time.time() < t_f):
