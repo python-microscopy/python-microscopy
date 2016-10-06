@@ -28,6 +28,9 @@ import random
 import time
 import os
 
+import Queue
+import threading
+
 import PYME.version
 #import PYME.misc.pyme_zeroconf as pzc
 from PYME import config
@@ -195,6 +198,142 @@ def main():
         #tq.returnCompletedTasks(results, name)
         del tasks
         #del results
+
+
+class taskWorker(object):
+    def __init__(self):
+        self.inputQueue = Queue.Queue()
+        self.resultsQueue = Queue.Queue()
+
+        self.procName = '%s_%d' % (compName, os.getpid())
+
+        self._loop_alive = True
+
+    def loop_forever(self):
+        self.tCompute = threading.Thread(target=self.computeLoop)
+        self.tCompute.daemon = True
+        self.tCompute.start()
+
+        self.tIO = threading.Thread(target=self.ioLoop)
+        self.tIO.daemon = True
+        self.tIO.start()
+
+        try:
+            while True:
+                time.sleep(1)
+        finally:
+            self._loop_alive = False
+
+    def ioLoop(self):
+        #loop forever asking for tasks
+        while True:
+            queueURLs = distribution.getNodeInfo()
+            localQueueName = 'PYMENodeServer: ' + compName
+
+            queueURLs = {k: v for k, v in queueURLs.items() if k == localQueueName}
+
+            tasks = []
+
+            # new style way of returning results to reduce load on server
+            from PYME.IO import clusterResults
+
+            try:
+                while True:
+                    queueURL, taskDescr, res = self.resultsQueue.get_nowait()
+                    outputs = taskDescr['outputs']
+
+                    if res is None:
+                        #failure
+                        s = clusterIO._getSession(queueURL)
+                        r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
+                        if not r.status_code == 200:
+                            logger.error('Returning task failed with error: %s' % r.status_code)
+                    else:
+                        #success
+                        if 'results' in outputs.keys():
+                            #old style pickled results
+                            clusterResults.fileResults(outputs['results'], res)
+                        else:
+                            if len(res.results) > 0:
+                                clusterResults.fileResults(outputs['fitResults'], res.results)
+
+                            if len(res.driftResults) > 0:
+                                clusterResults.fileResults(outputs['driftResults'], res.driftResults)
+
+                        s = clusterIO._getSession(queueURL)
+                        r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
+                        if not r.status_code == 200:
+                            logger.error('Returning task failed with error: %s' % r.status_code)
+
+            except Queue.Empty:
+                pass
+
+            if not self._loop_alive:
+                break
+
+            if not self.inputQueue.empty():
+
+                #loop over all queues, looking for tasks to process
+                while len(tasks) == 0 and len(queueURLs) > 0:
+                    #try queue on current machine first
+                    #TODO - only try local machine?
+                    #print queueNames
+
+                    if localQueueName in queueURLs.keys():
+                        qName = localQueueName
+                        queueURL = queueURLs.pop(qName)
+                    else:
+                        logger.error('Could not find local node server')
+
+
+                    try:
+                        #ask the queue for tasks
+                        #TODO - make the server actually return a list of tasks, not just one (or implement pipelining in another way)
+                        #try:
+                        s = clusterIO._getSession(queueURL)
+                        r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % self.procName)#, timeout=0)
+                        if r.status_code == 200:
+                            resp = r.json()
+                            if resp['ok']:
+                                res = resp['result']
+                                if isinstance(res, list):
+                                    tasks += [(queueURL, t) for t in res]
+                                else:
+                                    tasks.append((queueURL, res))
+                    except requests.Timeout:
+                        logger.info('Read timout requesting tasks from %s' % queueURL)
+
+                    except Exception:
+                        import traceback
+                        logger.exception(traceback.format_exc())
+
+
+                if len(tasks) == 0: #no queues had tasks
+                    time.sleep(1) #put ourselves to sleep to avoid constant polling
+                else:
+                    for t in tasks:
+                        self.inputQueue.put(t)
+
+    def computeLoop(self):
+        while self._loop_alive:
+            #loop over tasks - we pop each task and then delete it after processing
+            #to keep memory usage down
+
+            queueURL, taskDescr = self.inputQueue.get()
+            if taskDescr['type'] == 'localization':
+                try:
+                    task = remFitBuf.createFitTaskFromTaskDef(taskDescr)
+                    res = task()
+
+                    self.resultsQueue.put(queueURL, taskDescr, res)
+
+                except:
+                    import traceback
+                    traceback.print_exc()
+                    logger.exception(traceback.format_exc())
+
+                    self.resultsQueue.put(queueURL, taskDescr, None)
+
         
 def on_SIGHUP(signum, frame):
     raise RuntimeError('Recieved SIGHUP')
@@ -217,7 +356,9 @@ if __name__ == '__main__':
     signal.signal(signal.SIGHUP, on_SIGHUP)
     
     try:
-        main()
+        #main()
+        tW = taskWorker()
+        tW.loop_forever()
     finally:
         if profile:
             mProfile.report(display=False, profiledir=profileOutDir)
