@@ -24,6 +24,14 @@
 import ctypes
 import platform
 #import ctypes
+from ctypes import POINTER, c_int, c_uint, c_double, c_void_p
+
+#### typedefs
+AT_H = ctypes.c_int
+AT_BOOL = ctypes.c_int
+AT_64 = ctypes.c_int64
+AT_U8 = ctypes.c_uint8
+AT_WC = ctypes.c_wchar
 
 _stdcall_libraries = {}
 
@@ -37,18 +45,11 @@ if plat.startswith('Windows'):
     else:
         _stdcall_libraries['ATCORE'] =ctypes. WinDLL('atcore')
         _stdcall_libraries['ATUTIL'] = ctypes.WinDLL('atutility')
+    CALLBACKTYPE = ctypes.WINFUNCTYPE(c_int, AT_H, POINTER(AT_WC), c_void_p)
 else:
     _stdcall_libraries['ATCORE'] = ctypes.CDLL('atcore.so')
     _stdcall_libraries['ATUTIL'] = ctypes.CDLL('atutility.so')
-
-#### typedefs
-AT_H = ctypes.c_int
-AT_BOOL = ctypes.c_int
-AT_64 = ctypes.c_int64
-AT_U8 = ctypes.c_uint8
-AT_WC = ctypes.c_wchar
-
-from ctypes import POINTER, c_int, c_uint, c_double
+    CALLBACKTYPE = ctypes.CFUNCTYPE(c_int, AT_H, POINTER(AT_WC), c_void_p)
 
 #### Defines
 errorCodes = {}
@@ -286,6 +287,8 @@ dllFunc('AT_QueueBuffer', [AT_H, POINTER(AT_U8), c_int])
 dllFunc('AT_WaitBuffer', [AT_H, OUTPUT(POINTER(AT_U8)), OUTPUT(c_int), c_uint])
 dllFunc('AT_Flush', [AT_H])
 
+dllFunc('AT_RegisterFeatureCallback', [AT_H, POINTER(AT_WC), CALLBACKTYPE, c_void_p])
+dllFunc('AT_UnregisterFeatureCallback', [AT_H, POINTER(AT_WC), CALLBACKTYPE, c_void_p])
 #####################################
 ##Utility library (for unpacking etc ...)
 dllFunc('AT_InitialiseUtilityLibrary', lib='ATUTIL')
