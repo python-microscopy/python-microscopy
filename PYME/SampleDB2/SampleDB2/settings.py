@@ -97,7 +97,7 @@ USE_TZ = True
 STATIC_URL = '/media/'
 STATIC_ROOT = '/var/www/SampleDB/static/'
 
-#AUTOCOMPLETE_MEDIA_PREFIX = '/media/autocomplete/'
+AUTOCOMPLETE_MEDIA_PREFIX = '/media/autocomplete/'
 STATICFILES_DIRS = (
 	os.path.join(BASE_DIR, 'media'),
 )
