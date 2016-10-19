@@ -26,7 +26,7 @@ import os
 import sys
 from PIL import Image
     
-from PYME.FileUtils import thumbnailDatabase
+from PYME.IO.FileUtils import thumbnailDatabase
 
 def thumb(request, filename, size=200):
     if 'size' in request.REQUEST:
