@@ -134,7 +134,7 @@ class TaskQueue(object):
             while True:
                 id, t = self.ratings_in_progress.popitem(False)
                 self.rating_queue.append(t.task)
-                logger.debug('Resubmitting unrated task for rating')
+                #logger.debug('Resubmitting unrated task for rating')
         except KeyError:
             pass
 

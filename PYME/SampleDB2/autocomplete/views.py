@@ -26,7 +26,10 @@ import operator
 from django.db import models
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponse, HttpResponseForbidden
-from django.utils import simplejson
+try:
+    from django.utils import simplejson
+except ImportError:
+    import json as simplejson
 from django.utils.encoding import smart_str
 
 

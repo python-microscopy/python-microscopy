@@ -62,18 +62,18 @@ if 'PYME_DATABASE_HOST' in os.environ.keys():
     DATABASE_HOST = os.environ['PYME_DATABASE_HOST']
 
 DATABASES = {
-	'default': {
-        'NAME': 'sample_db',
-        'HOST' : DATABASE_HOST,
-        'ENGINE': 'django.db.backends.mysql',
-        'USER': 'sample_db',
-        'PASSWORD': 'PYMEUSER',
-        'OPTIONS': {"connect_timeout": 5,},
-    },
-    #'default': {
-    #    'ENGINE': 'django.db.backends.sqlite3',
-    #    'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    #}
+    # 'default': {
+    #     'NAME': 'sample_db',
+    #     'HOST' : DATABASE_HOST,
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'USER': 'sample_db',
+    #     'PASSWORD': 'PYMEUSER',
+    #     'OPTIONS': {"connect_timeout": 5,},
+    # },
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
 }
 
 # Internationalization
@@ -97,7 +97,7 @@ USE_TZ = True
 STATIC_URL = '/media/'
 STATIC_ROOT = '/var/www/SampleDB/static/'
 
-AUTOCOMPLETE_MEDIA_PREFIX = '/media/autocomplete/'
+#AUTOCOMPLETE_MEDIA_PREFIX = '/media/autocomplete/'
 STATICFILES_DIRS = (
 	os.path.join(BASE_DIR, 'media'),
 )
