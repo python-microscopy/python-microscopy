@@ -41,9 +41,10 @@ sqlite3.register_adapter(ndarray, adapt_numarray)
 sqlite3.register_converter("ndarray", convert_numarray)
 
 dbOpen = False
+thumbDB = None
 
 def openDB():
-    global dbOpen
+    global dbOpen, thumbDB
     
     if not dbOpen:
         dbOpen = True
