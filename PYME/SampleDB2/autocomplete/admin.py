@@ -74,7 +74,10 @@ class AutocompleteAdmin(object):
     media = property(_media)
 
     def _autocomplete_view(self, request, field):
-        info = self.model._meta.app_label, self.model._meta.module_name, field
+        try:
+            info = self.model._meta.app_label, self.model._meta.module_name, field
+        except AttributeError:
+            info = self.model._meta.app_label, self.model._meta.model_name, field
 
         if field in self.autocomplete_fields:
             ac_id = self.autocomplete_fields[field]
@@ -87,7 +90,10 @@ class AutocompleteAdmin(object):
         # autocomplete_view.
         from django.conf.urls import patterns, url
 
-        info = self.model._meta.app_label, self.model._meta.module_name
+        try:
+            info = self.model._meta.app_label, self.model._meta.module_name
+        except AttributeError:
+            info = self.model._meta.app_label, self.model._meta.model_name
 
         urlpatterns = super(AutocompleteAdmin, self).get_urls()
         urlpatterns += patterns('',

@@ -65,7 +65,12 @@ class AutocompleteSettings(object):
             self.field = id
             self.model = self.field.rel.to
             opts = self.field.related.opts
-            self.id = '.'.join((opts.app_label, opts.module_name,
+            try:
+                info = opts.app_label, opts.module_name
+            except AttributeError:
+                info = opts.app_label, opts.model_name
+
+            self.id = '.'.join((info[0], opts.info[1],
                 self.field.name))
             if self.queryset is None:
                 self.queryset = self.model._default_manager.complex_filter(
