@@ -79,6 +79,15 @@
     padding-bottom: 50px;
 }
 
+.cu-form-field{
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.cu-form-field input[type=number]{
+    width: 50px;
+}
+
 circle {
 
   -webkit-transition: stroke-dasharray .3s ease;
