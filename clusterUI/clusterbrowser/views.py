@@ -34,7 +34,7 @@ def listing(request, filename):
                 complete = 'events.json' in dirListing
                 nFrames = len([1 for f in dirListing if f.endswith('.pzf')])
 
-                series.append({'name':l, 'numFrames' : nFrames, 'complete':complete})
+                series.append({'name':l, 'numFrames' : nFrames, 'complete':complete, 'cluster_uri':('pyme-cluster:///' + filename + l).rstrip('/')})
         else:
             files.append(l)
 

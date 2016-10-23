@@ -88,6 +88,13 @@
     width: 50px;
 }
 
+.cu-selected{
+    background-color: #ccf8cc;
+}
+.table-striped>tbody>tr:nth-of-type(odd).cu-selected {
+    background-color: #ccf8cc;
+}
+
 circle {
 
   -webkit-transition: stroke-dasharray .3s ease;

@@ -2,7 +2,7 @@
 <div class="panel-body">
 
 
-    <form class="form" id="form_new_folder" action="/localization/localize/" method="post">
+    <form class="form" id="form_localize" action="/localization/localize/" method="post">
 
         {% csrf_token %}
 
@@ -39,6 +39,22 @@
             <input type="submit" value="Submit" class="btn btn-primary"/>
         </div>
     </form>
+
+    <script>
+        var findSelected = function () {
+            f = $('#form_localize');
+            $('.cu-hidden-seriesname').remove();
+            var seriesNames=[];
+            $('.cu-selected').each(function(index, item){
+                var sn = item.getAttribute('data-cu-seriesname');
+                seriesNames.push(sn);
+                f.append('<input name="series" class="cu-hidden-seriesname" type="hidden" value="' + sn + '">')
+            });
+            console.log(seriesNames);
+        };
+
+        $('#form_localize').submit(findSelected);
+    </script>
 
 </div>
 

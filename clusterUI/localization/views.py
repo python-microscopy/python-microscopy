@@ -105,6 +105,8 @@ def localize(request, analysisModule='LatGaussFitFR', files=[]):
     f.cleaned_data['Analysis.FitModule'] = analysisModule
 
     print json.dumps(f.cleaned_data)
+    #print request.GET
+    print request.POST.getlist('series', [])
 
 
     return HttpResponseRedirect('/status/queues/')

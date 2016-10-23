@@ -49,7 +49,7 @@
             </tr>
         {% endfor %}
         {% for seriesi in series %}
-            <tr class="series">
+            <tr class="series" onclick="toggleSelection(this);" data-cu-seriesname={{ seriesi.cluster_uri }}>
                 <td><span class="glyphicon glyphicon-film"></span></td>
                 <td><a href="/files/{{ dirname }}{{ seriesi.name }}">{{ seriesi.name }}</a></td>
                 <td>{{ seriesi.numFrames }} frames</td>
@@ -104,6 +104,11 @@
             $('.toggle-control').removeClass('active');
             $(id).removeClass('hidden').addClass('show');
             $(id + '_toggle').addClass('active');
+        }
+
+        function toggleSelection(id){
+            //console.log('toggling selection:' + id)
+            $(id).toggleClass('cu-selected');
         }
 
 
