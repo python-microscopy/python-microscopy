@@ -440,7 +440,7 @@ class fitTask(taskDef.Task):
 
         #when camera buffer overflows, empty pictures are produced - deal with these here
         if self.data.max() == 0:
-            return fitResult(self, [])
+            return fitResult(self, [], [])
         
         #squash 4th dimension
         #NB - this now subtracts the ADOffset
