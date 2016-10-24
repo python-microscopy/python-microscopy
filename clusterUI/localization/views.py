@@ -142,6 +142,7 @@ def _launch_localize(analysisMDH, seriesName):
 def localize(request, analysisModule='LatGaussFitFR'):
     #import json
     from PYME.IO import MetaDataHandler
+    from PYME.Analysis import MetaData
 
     f = settings_form(analysisModule)(request.POST)
 
@@ -150,7 +151,7 @@ def localize(request, analysisModule='LatGaussFitFR'):
     f.cleaned_data['Analysis.FitModule'] = analysisModule
 
     #print json.dumps(f.cleaned_data)
-    analysisMDH = MetaDataHandler.NestedClassMDHandler()
+    analysisMDH = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
     analysisMDH.update(f.cleaned_data)
 
     #print request.GET
