@@ -27,13 +27,9 @@ class ParticleTracker:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        ID_GET_IDS = wx.NewId()
-        visFr.extras_menu.Append(ID_GET_IDS, "Get segmented IDs from image")
-        visFr.Bind(wx.EVT_MENU, self.OnGetIDs, id=ID_GET_IDS)
+        visFr.AddMenuItem('Extras', "Get segmented IDs from image", self.OnGetIDs)
+        visFr.AddMenuItem('Extras', "Measure objects", self.OnMeasure)
 
-        ID_MEASURE = wx.NewId()
-        visFr.extras_menu.Append(ID_MEASURE, "Measure objects")
-        visFr.Bind(wx.EVT_MENU, self.OnMeasure, id=ID_MEASURE)
 
     def OnGetIDs(self, event):
         from PYME.IO import image

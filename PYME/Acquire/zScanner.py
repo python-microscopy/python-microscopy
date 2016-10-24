@@ -68,7 +68,15 @@ class zScanner:
     def Start(self):
         self.image = np.zeros((self.ds.shape[0], self.ds.shape[1], 2), 'uint16')
 
-        self.view = View3D(self.image, 'Live Stack')
+        mdh = MetaDataHandler.NestedClassMDHandler()
+        mdh.setEntry('StartTime', time.time())
+        mdh.setEntry('AcquisitionType', 'Stack')
+
+        #loop over all providers of metadata
+        for mdgen in MetaDataHandler.provideStartMetadata:
+            mdgen(mdh)
+
+        self.view = View3D(self.image, 'Live Stack', mdh = mdh)
         self.running = True
         
         self.zPoss = np.arange(self.stackSettings.GetStartPos(), self.stackSettings.GetEndPos()+.95*self.stackSettings.GetStepSize(),self.stackSettings.GetStepSize()*self.stackSettings.GetDirection())
@@ -85,10 +93,12 @@ class zScanner:
         #self.scope.frameWrangler.WantStopNotification.append(self.OnAqStop)
 
         self.scope.frameWrangler.onFrame.connect(self.OnCameraFrame)
-        self.scope.frameWrangler.onStart.connect(self.OnAqStart)
-        self.scope.frameWrangler.onStop.connect(self.OnAqStop)        
+
+        #self.scope.frameWrangler.onStart.connect(self.OnAqStart)
+        #self.scope.frameWrangler.onStop.connect(self.OnAqStop)
         
         self.scope.frameWrangler.start()
+        self.OnAqStart()
         
     def Stop(self):
         self.scope.frameWrangler.stop()
@@ -97,10 +107,12 @@ class zScanner:
         #self.scope.frameWrangler.WantStopNotification.remove(self.OnAqStop)
         
         self.scope.frameWrangler.onFrame.disconnect(self.OnCameraFrame)
-        self.scope.frameWrangler.onStart.disconnect(self.OnAqStart)
-        self.scope.frameWrangler.onStop.disconnect(self.OnAqStop)
+        #self.scope.frameWrangler.onStart.disconnect(self.OnAqStart)
+        #self.scope.frameWrangler.onStop.disconnect(self.OnAqStop)
         
         self.scope.frameWrangler.start()
+
+        self.OnAqStop()
         
         self.running = False
         

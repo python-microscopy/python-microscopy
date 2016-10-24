@@ -766,7 +766,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
         #copy events to results file
         if len (self.h5DataFile.root.Events) > 0:
-            HDFResultsTaskQueue.addQueueEvents(self.h5DataFile.root.Events[:])
+            HDFResultsTaskQueue.addQueueEvents(self, self.h5DataFile.root.Events[:])
             #self.resultsEvents.append(self.h5DataFile.root.Events[:])
 
         self.queueID = name

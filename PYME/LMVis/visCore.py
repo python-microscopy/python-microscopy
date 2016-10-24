@@ -28,6 +28,7 @@ import os
 from PYME.LMVis import renderers
 
 import logging
+logger = logging.getLogger(__name__)
 
 #try importing our drift correction stuff
 HAVE_DRIFT_CORRECTION = False
@@ -175,93 +176,45 @@ class VisGUICore(object):
         else:
             parent = self
 
-        # Make a menubar
-        file_menu = wx.Menu()
+        #ID_TOGGLE_SETTINGS = wx.NewId()
 
-        ID_OPEN = wx.ID_OPEN
+        self.AddMenuItem('File', '&Open', self.OnOpenFile)
+        if not subMenu:
+            self.AddMenuItem('File', "Open &Raw/Prebleach Data", self.OnOpenRaw)
+            self.AddMenuItem('File', "Open Extra &Channel", self.OnOpenChannel)
         
         if not subMenu:
-            ID_SAVE_MEASUREMENTS = wx.ID_SAVE
-            ID_QUIT = wx.ID_EXIT
-    
-            ID_OPEN_RAW = wx.NewId()
-            ID_ABOUT = wx.ID_ABOUT
-            
-        ID_OPEN_CHANNEL = wx.NewId()
+            self.AddMenuItem('File', itemType='separator')
+            self.AddMenuItem('File', "&Save Measurements", self.OnSaveMeasurements)
 
-        ID_VIEW_POINTS = wx.NewId()
-        ID_VIEW_TRIANGS = wx.NewId()
-        ID_VIEW_QUADS = wx.NewId()
+            self.AddMenuItem('File', itemType='separator')
 
-        ID_VIEW_BLOBS = wx.NewId()
+            self.AddMenuItem('File', "&Exit", self.OnQuit,id = wx.ID_EXIT)
 
-        ID_VIEW_VORONOI = wx.NewId()
-        ID_VIEW_INTERP_TRIANGS = wx.NewId()
-        ID_VIEW_TRACKS = wx.NewId()
 
-        ID_VIEW_FIT = wx.NewId()
-        ID_VIEW_FIT_ROI = wx.NewId()
-        
+        self.AddMenuItem('View', '&Points', self.OnViewPoints, itemType='normal') #TODO - add radio type
+        self.AddMenuItem('View',  '&Triangles', self.OnViewTriangles)
+        self.AddMenuItem('View', '3D Triangles', self.OnViewTriangles3D)
+        self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
+        self.AddMenuItem('View', '&Voronoi', self.OnViewVoronoi)
+        self.AddMenuItem('View', '&Interpolated Triangles', self.OnViewInterpTriangles)
+        self.AddMenuItem('View', '&Blobs', self.OnViewBlobs)
+        self.AddMenuItem('View', '&Tracks', self.OnViewTracks)
 
-        ID_TOGGLE_SETTINGS = wx.NewId()
-
-        
-
-        ID_VIEW_3D_POINTS = wx.NewId()
-        ID_VIEW_3D_TRIANGS = wx.NewId()
-        ID_VIEW_3D_BLOBS = wx.NewId()
-
-        ID_VIEW_BLOBS = wx.NewId()
-        
-        
-        file_menu.Append(ID_OPEN, "&Open")
-        if not subMenu:
-            file_menu.Append(ID_OPEN_RAW, "Open &Raw/Prebleach Data")
-        file_menu.Append(ID_OPEN_CHANNEL, "Open Extra &Channel")
-        
-        if not subMenu:
-            file_menu.AppendSeparator()
-            file_menu.Append(ID_SAVE_MEASUREMENTS, "&Save Measurements")
-    
-            file_menu.AppendSeparator()
-            
-            file_menu.Append(ID_QUIT, "&Exit")
-
-        self.view_menu = wx.Menu()
-
-        try: #stop us bombing on Mac
-            self.view_menu.AppendRadioItem(ID_VIEW_POINTS, '&Points')
-            self.view_menu.AppendRadioItem(ID_VIEW_TRIANGS, '&Triangles')
-            self.view_menu.AppendRadioItem(ID_VIEW_3D_TRIANGS, '3D Triangles')
-            self.view_menu.AppendRadioItem(ID_VIEW_QUADS, '&Quad Tree')
-            self.view_menu.AppendRadioItem(ID_VIEW_VORONOI, '&Voronoi')
-            self.view_menu.AppendRadioItem(ID_VIEW_INTERP_TRIANGS, '&Interpolated Triangles')
-            self.view_menu.AppendRadioItem(ID_VIEW_BLOBS, '&Blobs')
-            self.view_menu.AppendRadioItem(ID_VIEW_TRACKS, '&Tracks')
-        except:
-            self.view_menu.Append(ID_VIEW_POINTS, '&Points')
-            self.view_menu.Append(ID_VIEW_TRIANGS, '&Triangles')
-            self.view_menu.Append(ID_VIEW_3D_TRIANGS, '3D Triangles')
-            self.view_menu.Append(ID_VIEW_QUADS, '&Quad Tree')
-            self.view_menu.Append(ID_VIEW_VORONOI, '&Voronoi')
-            self.view_menu.Append(ID_VIEW_INTERP_TRIANGS, '&Interpolated Triangles')
-            self.view_menu.Append(ID_VIEW_BLOBS, '&Blobs')
-            self.view_menu.Append(ID_VIEW_TRACKS, '&Tracks')
-
-        self.view_menu.Check(ID_VIEW_POINTS, True)
+        #self.view_menu.Check(ID_VIEW_POINTS, True)
         #self.view_menu.Enable(ID_VIEW_QUADS, False)
 
-        self.view_menu.AppendSeparator()
-        self.view_menu.Append(ID_VIEW_FIT, '&Fit')
-        self.view_menu.Append(ID_VIEW_FIT_ROI, 'Fit &ROI')
+        self.AddMenuItem('View', itemType='separator')
+        self.AddMenuItem('View', '&Fit', self.SetFit)
+        self.AddMenuItem('View', 'Fit &ROI', self.OnFitROI)
 
+        #this needs an ID as we bind to it elsewhere (in the filter panel)
         self.ID_VIEW_CLIP_ROI = wx.NewId()
-        self.view_menu.Append(self.ID_VIEW_CLIP_ROI, 'Clip to ROI\tF8')
+        self.AddMenuItem('View', 'Clip to ROI\tF8', id=self.ID_VIEW_CLIP_ROI)
 
-
-        self.view_menu.AppendSeparator()
-        self.view_menu.AppendCheckItem(ID_TOGGLE_SETTINGS, "Show Settings")
-        self.view_menu.Check(ID_TOGGLE_SETTINGS, True)
+        #self.AddMenuItem('View', itemType='separator')
+        #self.view_menu.AppendCheckItem(ID_TOGGLE_SETTINGS, "Show Settings")
+        #self.view_menu.Check(ID_TOGGLE_SETTINGS, True)
 
     #     if not subMenu:        
     #         self.view3d_menu = wx.Menu()
@@ -280,13 +233,11 @@ class VisGUICore(object):
     
     #         #self.view_menu.Check(ID_VIEW_3D_POINTS, True)
 
-        self.gen_menu = wx.Menu()
+        #self.gen_menu = wx.Menu()
         
-        
-        renderers.init_renderers(self, parent)
-        
+        renderers.init_renderers(self)
 
-        self.extras_menu = wx.Menu()
+        #self.extras_menu = wx.Menu()
         from PYME.LMVis import Extras
         Extras.InitPlugins(self)
         
@@ -297,60 +248,13 @@ class VisGUICore(object):
         except ImportError:
             pass
 
-        if not subMenu:       
-            help_menu = wx.Menu()
-            help_menu.Append(ID_ABOUT, "&About")
-
-        if subMenu:
-            menu_bar = wx.Menu()
-            menu_bar.AppendSubMenu(file_menu, "&File")
-            menu_bar.AppendSubMenu(self.view_menu, "&View")
-            menu_bar.AppendSubMenu(self.gen_menu, "&Generate Image")
-            menu_bar.AppendSubMenu(self.extras_menu, "&Extras")
-            #menu_bar.AppendSubMenu(self.view3d_menu, "View &3D")
-        else:
-            menu_bar = wx.MenuBar()
-
-            menu_bar.Append(file_menu, "&File")
-            menu_bar.Append(self.view_menu, "&View")
-            menu_bar.Append(self.gen_menu, "&Generate Image")
-            menu_bar.Append(self.extras_menu, "&Extras")
-            #menu_bar.Append(self.view3d_menu, "View &3D")
-            
-            menu_bar.Append(help_menu, "&Help")
-
-        parent.Bind(wx.EVT_MENU, self.OnOpenFile, id=ID_OPEN)
-        
         if not subMenu:
-            parent.Bind(wx.EVT_MENU, self.OnAbout, id=ID_ABOUT)
-            parent.Bind(wx.EVT_MENU, self.OnQuit, id=ID_QUIT)
-            #parent.Bind(wx.EVT_MENU, self.OnToggleWindow, id=ID_TOGGLE_SETTINGS)
-    
-            
-            parent.Bind(wx.EVT_MENU, self.OnOpenChannel, id=ID_OPEN_CHANNEL)
-            parent.Bind(wx.EVT_MENU, self.OnOpenRaw, id=ID_OPEN_RAW)
-    
-            parent.Bind(wx.EVT_MENU, self.OnSaveMeasurements, id=ID_SAVE_MEASUREMENTS)
+            self.AddMenuItem('Help', "&About",)
 
-        parent.Bind(wx.EVT_MENU, self.OnViewPoints, id=ID_VIEW_POINTS)
-        parent.Bind(wx.EVT_MENU, self.OnViewTriangles, id=ID_VIEW_TRIANGS)
-        parent.Bind(wx.EVT_MENU, self.OnViewTriangles3D, id=ID_VIEW_3D_TRIANGS)
-        parent.Bind(wx.EVT_MENU, self.OnViewQuads, id=ID_VIEW_QUADS)
-        parent.Bind(wx.EVT_MENU, self.OnViewVoronoi, id=ID_VIEW_VORONOI)
-        parent.Bind(wx.EVT_MENU, self.OnViewInterpTriangles, id=ID_VIEW_INTERP_TRIANGS)
+       # menu_bar = self.menubar
 
-        parent.Bind(wx.EVT_MENU, self.OnViewBlobs, id=ID_VIEW_BLOBS)
-        parent.Bind(wx.EVT_MENU, self.OnViewTracks, id=ID_VIEW_TRACKS)
 
-        parent.Bind(wx.EVT_MENU, self.SetFit, id=ID_VIEW_FIT)
-        parent.Bind(wx.EVT_MENU, self.OnFitROI, id=ID_VIEW_FIT_ROI)
-
-        # if not subMenu:        
-        #     parent.Bind(wx.EVT_MENU, self.OnView3DPoints, id=ID_VIEW_3D_POINTS)
-        #     parent.Bind(wx.EVT_MENU, self.OnView3DTriangles, id=ID_VIEW_3D_TRIANGS)
-        #     #self.Bind(wx.EVT_MENU, self.OnView3DBlobs, id=ID_VIEW_3D_BLOBS)
-
-        return menu_bar
+        #return menu_bar
         
     def OnViewPoints(self,event):
         self.viewMode = 'points'
@@ -413,7 +317,7 @@ class VisGUICore(object):
             self.OpenFile(filename)
             
     def RegenFilter(self):
-        logging.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
+        logger.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
         self.pipeline.Rebuild()
         
     def RefreshView(self, event=None, **kwargs):
@@ -572,6 +476,12 @@ class VisGUICore(object):
         
         if HAVE_DRIFT_CORRECTION and 'x' in self.pipeline.mapping.mappings.keys(): #drift correction has been applied
             self.driftPane.dp.SaveMetadata(mdh)
+
+    def AddMenuItem(self, menuName, *args, **kwargs):
+        """ Add a menu item. Calls AUIFrame.AddMenuItem. Should be over-ridden when called from VisGUI, and only
+        exposed / used when called from within a dsviewer module."""
+        logger.debug('Calling AddMenuItem from visCore')
+        self.dsviewer.AddMenuItem('Points>' + menuName, *args, **kwargs)
 
     def OpenFile(self, filename):
         args = {}

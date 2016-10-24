@@ -2,6 +2,8 @@ import requests
 import json
 import socket
 from PYME.misc import pyme_zeroconf
+import logging
+logger = logging.getLogger(__name__)
 
 def getNodeInfo():
     ns = pyme_zeroconf.getNS('_pyme-taskdist')
@@ -10,7 +12,10 @@ def getNodeInfo():
 
     for name, info in ns.advertised_services.items():
         if name.startswith('PYMENodeServer'):
-            queueURLs[name] = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
+            try:
+                queueURLs[name] = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
+            except TypeError:
+                logger.debug('ValueError: %s %s, %s' % (name, repr(info), info.port))
 
     return queueURLs
 

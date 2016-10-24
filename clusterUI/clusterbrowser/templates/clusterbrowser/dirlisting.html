@@ -17,7 +17,7 @@
         <li class="toggle-control" id="recipe_form_toggle"><a href="#" onclick="togglePanel('#recipe_form')"><span
                 class="glyphicon glyphicon-list-alt"></span>&nbsp;&nbsp;Run Recipe</a></li>
         <li class="toggle-control" id="localization_form_toggle"><a href="#"
-                                                                    onclick="togglePanel('#localization_form')"><span
+                                                                    onclick="on_analysis_settings()"><span
                 class="glyphicon glyphicon-fire"></span>&nbsp;&nbsp;Localize molecules</a></li>
     </ul>
     <hr>
@@ -30,6 +30,8 @@
     {#    <h1>Listing of /{{ dirname }}</h1>#}
 
     <h1>Listing of /{% for bc in breadcrumbs %}<a href="/files/{{ bc.path }}">{{ bc.dir }}</a>/{% endfor %}</h1>
+
+    <div>
 
     <table class="table table-striped">
         {% if  parent %}
@@ -49,7 +51,7 @@
             </tr>
         {% endfor %}
         {% for seriesi in series %}
-            <tr class="series">
+            <tr class="series" onclick="toggleSelection(this);" data-cu-seriesname={{ seriesi.cluster_uri }}>
                 <td><span class="glyphicon glyphicon-film"></span></td>
                 <td><a href="/files/{{ dirname }}{{ seriesi.name }}">{{ seriesi.name }}</a></td>
                 <td>{{ seriesi.numFrames }} frames</td>
@@ -77,6 +79,8 @@
         {% endfor %}
     </table>
 
+    </div>
+
     <div class="panel panel-primary hidden toggle-panel" id="upload_form">
         <div class="panel-heading"><span class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload Files</div>
         {#<ul class="nav nav-sidebar"><li>#}
@@ -93,6 +97,8 @@
         </div>
     </div>
 
+    <div class="panel panel-primary hidden toggle-panel" id="localization_form"></div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -103,6 +109,13 @@
             $(id).removeClass('hidden').addClass('show');
             $(id + '_toggle').addClass('active');
         }
+
+        function toggleSelection(id){
+            //console.log('toggling selection:' + id)
+            $(id).toggleClass('cu-selected');
+        }
+
+
 
         $('#form_new_folder').on('submit', function (e) {
 
@@ -143,5 +156,15 @@
             }
 
         });
+
+        function on_analysis_settings(fitModule='LatGaussFitFR'){
+        //console.log('about to reload')
+            togglePanel('#localization_form');
+            $('#localization_form').load('/localization/settings/' + fitModule,function () {
+                //alert( "Load was performed." );
+                // $(this).unwrap();
+                //console.log('load performed')
+            });
+    }
     </script>
 {% endblock %}

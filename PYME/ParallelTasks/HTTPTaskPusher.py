@@ -94,6 +94,8 @@ class HTTPTaskPusher(object):
         time.sleep(1.5)
 
         self.currentFrameNum = startAt
+
+        self._task_template = None
         
         self.doPoll = True
         
@@ -101,17 +103,40 @@ class HTTPTaskPusher(object):
         self.pollT.start()
 
     def _postTasks(self, task_list):
-        r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), json=task_list)
+        if isinstance(task_list[0], basestring):
+            task_list = '[' + ',\n'.join(task_list) + ']'
+        else:
+            task_list = json.dumps(task_list)
+
+        s = clusterIO._getSession(self.taskQueueURI)
+        r = s.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list,
+                          headers={'Content-Type': 'application/json'})
+
         if r.status_code == 200 and r.json()['ok']:
             logging.debug('Successfully posted tasks')
         else:
             logging.error('Failed on posting tasks with status code: %d' % r.status_code)
 
+    @property
+    def _taskTemplate(self):
+        if self._task_template is None:
+            tt = {'id': '{frameNum:04d}',
+                      'type':'localization',
+                      'taskdef': {'frameIndex': '{frameNum:d}', 'metadata':self.results_md_uri},
+                      'inputs' : {'frames': self.dataSourceID},
+                      'outputs' : {'fitResults': self.resultsURI+'/FitResults',
+                                   'driftResults':self.resultsURI+'/DriftResults'}
+                      }
+            self._task_template = json.dumps(tt)
+
+        return self._task_template
+
+
     def fileTasksForFrames(self):
         numTotalFrames = self.ds.getNumSlices()
         logging.debug('numTotalFrames: %s, currentFrameNum: %d' % (numTotalFrames, self.currentFrameNum))
         numFramesOutstanding = 0
-        if  numTotalFrames > (self.currentFrameNum + 1):
+        while  numTotalFrames > (self.currentFrameNum + 1):
             logging.debug('we have unpublished frames - push them')
 
             #turn our metadata to a string once (outside the loop)
@@ -120,7 +145,7 @@ class HTTPTaskPusher(object):
             newFrameNum = min(self.currentFrameNum + 1000, numTotalFrames)
 
             #create task definitions for each frame
-            tasks = [{'id':str(frameNum),
+            tasks = [{'id': '%04d' % frameNum,
                       'type':'localization',
                       'taskdef': {'frameIndex': str(frameNum), 'metadata':self.results_md_uri},
                       'inputs' : {'frames': self.dataSourceID},
@@ -129,6 +154,8 @@ class HTTPTaskPusher(object):
                       } for frameNum in range(self.currentFrameNum, newFrameNum)]
 
             task_list = tasks #json.dumps(tasks)
+
+            #task_list = [self._taskTemplate.format(frameNum=frameNum) for frameNum in range(self.currentFrameNum, newFrameNum)]
 
             # r = requests.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list)
             # if r.status_code == 200 and r.json()['ok']:

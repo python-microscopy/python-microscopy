@@ -12,6 +12,7 @@ import logging
 import socket
 
 
+
 def fileFormattedResults(URI, data, mimetype=None):
     #TODO - send the mimetype
     #handle non-http requests
@@ -27,7 +28,8 @@ def fileFormattedResults(URI, data, mimetype=None):
         logging.debug('fileFormattedResults - URI: ' + URI)
         #logging.debug('data: ' + data)
         #logging.debug('type(data) = %s, len(data) = %d' % (type(data), len(data)))
-        r = requests.put(URI, data=data, timeout=5)
+        s = clusterIO._getSession(URI)
+        r = s.put(URI, data=data, timeout=5)
         #print r.status_code
         if not r.status_code == 200:
             raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))
@@ -111,11 +113,15 @@ def fileResults(URI, data_raw):
         raise NotImplementedError('Need to add code for saving images')
         #TODO - easy solution is to save locally and then copy. Better solution would be to change exporters to write into a file object
 
-    elif isinstance(data_raw, np.ndarray) or URI.endswith('.npy'):
+    elif URI.endswith('.npy'): # or isinstance(data_raw, np.ndarray):
         #output_format = 'numpy'
         data = cStringIO.StringIO()
         np.save(data, np.array(data_raw))
         data = data.getvalue()
+
+    elif isinstance(data_raw, np.ndarray):
+        #very reluctantly use pickle to serialize numpy arrays rather than the better .npy format as reading .npy is really slow.
+        data = data_raw.dumps()
 
     elif isinstance(data_raw, MetaDataHandler.MDHandlerBase):
         output_format = 'text/json'

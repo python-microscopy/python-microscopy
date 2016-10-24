@@ -131,7 +131,7 @@ class CameraInfoManager(object):
 
     def _getMap(self, md, mapName):
         """Returns the map specified, from cache if possible"""
-        if mapName is None or mapName == '':
+        if mapName is None or mapName == '' or mapName == '<none>':
             return None
 
         ROI = self._parseROI(md)
@@ -433,8 +433,8 @@ class fitTask(taskDef.Task):
         bufferManager.updateBuffers(md, self.dataSourceModule, self.bufferLen)
         
         self.data = bufferManager.dBuffer.getSlice(self.index)
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug('data: min - %3.2f, max - %3.2f, mean - %3.2f' % (self.data.min(), self.data.max(), self.data.mean()))
+        #if logger.isEnabledFor(logging.DEBUG):
+        #    logger.debug('data: min - %3.2f, max - %3.2f, mean - %3.2f' % (self.data.min(), self.data.max(), self.data.mean()))
         nTasksProcessed += 1
         #print self.index
 
@@ -454,8 +454,8 @@ class fitTask(taskDef.Task):
         #calculate noise
         self.sigma = self.calcSigma(md, self.data)
 
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug('data_mean: %3.2f, bg: %3.2f, sigma: %3.2f' % (self.data.mean(), self.sigma.mean(), self.bg.mean()))
+        #if logger.isEnabledFor(logging.DEBUG):
+        #    logger.debug('data_mean: %3.2f, bg: %3.2f, sigma: %3.2f' % (self.data.mean(), self.sigma.mean(), self.bg.mean()))
         
         #############################################
         # Special cases - defer object finding to fit module

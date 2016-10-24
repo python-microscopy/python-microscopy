@@ -35,6 +35,7 @@ class HistLimitPanel(wx.Panel):
         wx.Panel.__init__(self, parent, id, size=size, pos=pos, style=wx.BORDER_SUNKEN)
         
         self.data = data.ravel()
+        self.data = self.data[np.isfinite(self.data)]
 
         self.dragging = None
         self.binSize=None
@@ -73,6 +74,7 @@ class HistLimitPanel(wx.Panel):
 
     def SetData(self, data, lower, upper):
         self.data = np.array(data).ravel()
+        self.data = self.data[np.isfinite(self.data)]
 
         dSort = np.argsort(data)
 
@@ -280,8 +282,8 @@ class HistLimitPanel(wx.Panel):
         self.ProcessEvent(evt)
         
     def SetMinMax(self):
-        self.limit_lower = float(self.data.min())
-        self.limit_upper = float(self.data.max())
+        self.limit_lower = float(np.nanmin(self.data))
+        self.limit_upper = float(np.nanmax(self.data.max))
         self.GenHist()
         self.Refresh()
         self.Update()

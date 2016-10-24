@@ -119,18 +119,28 @@ class AUIFrame(wx.Frame):
     def AddMenuItem(self, menuName, itemName='', itemCallback = None, itemType='normal', helpText = '', id = wx.ID_ANY):   
         mItem = None
         if not menuName in self._menus.keys():
-            menu = wx.Menu()
+            menuParts = menuName.split('>')
+            top_level = menuParts[0]
+            for i, part in enumerate(menuParts):
+                mn = '>'.join(menuParts[:(i+1)])
+                if not mn in self._menus.keys():
+                    menu = wx.Menu()
 
-            #put new menus to the left of help or modules menus
-            lp = 0
-            if 'Help' in self._menus.keys():
-                lp +=1
+                    if i == 0: #top level menu
+                        #put new menus to the left of help or modules menus
+                        lp = 0
+                        if 'Help' in self._menus.keys():
+                            lp +=1
 
-            if '&Modules' in self._menus.keys():
-                lp += 1
+                        if '&Modules' in self._menus.keys():
+                            lp += 1
 
-            self.menubar.Insert(self.menubar.GetMenuCount()-lp, menu, menuName)
-            self._menus[menuName] = menu
+                        self.menubar.Insert(self.menubar.GetMenuCount()-lp, menu, part)
+                    else:
+                        parent = self._menus['>'.join(menuParts[:i])]
+                        parent.AppendSubMenu(menu, part)
+
+                    self._menus[mn] = menu
         else:
             menu = self._menus[menuName]
         

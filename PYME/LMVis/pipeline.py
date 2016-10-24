@@ -39,6 +39,196 @@ import dispatch
 from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
 
+def _processPriSplit(ds):
+    """set mappings ascociated with the use of a splitter"""
+
+    ds.setMapping('gFrac', 'fitResults_ratio')
+    ds.setMapping('error_gFrac', 'fitError_ratio')
+
+    ds.setMapping('fitResults_Ag', 'gFrac*A')
+    ds.setMapping('fitResults_Ar', '(1.0 - gFrac)*A + error_gFrac*A')
+    ds.setMapping('fitError_Ag', 'gFrac*fitError_A + error_gFrac*A')
+    ds.setMapping('fitError_Ar', '(1.0 - gFrac)*fitError_A')
+    #ds.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1e-3)')
+    #ds.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1e-3)')
+
+    sg = ds['fitError_Ag']
+    sr = ds['fitError_Ar']
+    g = ds['fitResults_Ag']
+    r = ds['fitResults_Ar']
+    I = ds['A']
+
+    colNorm = np.sqrt(2 * np.pi) * sg * sr / (2 * np.sqrt(sg ** 2 + sr ** 2) * I) * (
+        scipy.special.erf((sg ** 2 * r + sr ** 2 * (I - g)) / (np.sqrt(2) * sg * sr * np.sqrt(sg ** 2 + sr ** 2)))
+        - scipy.special.erf((sg ** 2 * (r - I) - sr ** 2 * g) / (np.sqrt(2) * sg * sr * np.sqrt(sg ** 2 + sr ** 2))))
+
+    colNorm /= (sg * sr)
+
+    ds.addColumn('ColourNorm', colNorm)
+
+
+def _processSplitter(ds):
+    """set mappings ascociated with the use of a splitter"""
+
+    #ds.gF_zcorr = 0
+    ds.setMapping('A', 'fitResults_Ag + fitResults_Ar')
+    if 'fitResults_z0' in ds.keys():
+        ds.addVariable('gF_zcorr', 0)
+        ds.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar) + gF_zcorr*fitResults_z0')
+    else:
+        ds.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+
+    if 'fitError_Ag' in ds.keys():
+        ds.setMapping('error_gFrac',
+                      'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+    else:
+        ds.setMapping('error_gFrac', '0*x + 0.01')
+        ds.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1)')
+        ds.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1)')
+
+    sg = ds['fitError_Ag']
+    sr = ds['fitError_Ar']
+    g = ds['fitResults_Ag']
+    r = ds['fitResults_Ar']
+    I = ds['A']
+
+    colNorm = np.sqrt(2 * np.pi) * sg * sr / (2 * np.sqrt(sg ** 2 + sr ** 2) * I) * (
+        scipy.special.erf((sg ** 2 * r + sr ** 2 * (I - g)) / (np.sqrt(2) * sg * sr * np.sqrt(sg ** 2 + sr ** 2)))
+        - scipy.special.erf((sg ** 2 * (r - I) - sr ** 2 * g) / (np.sqrt(2) * sg * sr * np.sqrt(sg ** 2 + sr ** 2))))
+
+    ds.addColumn('ColourNorm', colNorm)
+
+
+def _add_eventvars_to_ds(ds, ev_mappings):
+    zm = ev_mappings.get('zm', None)
+    if zm:
+        z_focus = 1.e3 * zm(ds['t'])
+        ds.addColumn('focus', z_focus)
+
+    xm = ev_mappings.get('xm', None)
+    if xm:
+        scan_x = 1.e3 * xm(ds['t'] - .01)
+        ds.addColumn('scanx', scan_x)
+        ds.setMapping('x', 'x + scanx')
+
+    ym = ev_mappings.get('ym', None)
+    if ym:
+        scan_y = 1.e3 * ym(ds['t'] - .01)
+        ds.addColumn('scany', scan_y)
+        ds.setMapping('y', 'y + scany')
+
+    driftx = ev_mappings.get('driftx', None)
+    drifty = ev_mappings.get('drifty', None)
+    driftz = ev_mappings.get('driftz', None)
+    if driftx:
+        ds.addColumn('driftx', driftx(ds['t'] - .01))
+        ds.addColumn('drifty', drifty(ds['t'] - .01))
+        ds.addColumn('driftz', driftz(ds['t'] - .01))
+
+
+def _add_missing_ds_keys(mapped_ds, ev_mappings={}):
+    """
+    VisGUI, and various rendering and postprocessing commands rely on having certain parameters defined or re-mapped
+    within a data source. Take care of these here.
+
+    Parameters
+    ----------
+    mapped_ds
+
+    """
+    _add_eventvars_to_ds(mapped_ds, ev_mappings)
+
+    #handle special cases which get detected by looking for the presence or
+    #absence of certain variables in the data.
+    if 'fitResults_Ag' in mapped_ds.keys():
+        #if we used the splitter set up a number of mappings e.g. total amplitude and ratio
+        _processSplitter(mapped_ds)
+
+    if 'fitResults_ratio' in mapped_ds.keys():
+        #if we used the splitter set up a number of mappings e.g. total amplitude and ratio
+        _processPriSplit(mapped_ds)
+
+    if 'fitResults_sigxl' in mapped_ds.keys():
+        #fast, quickpalm like astigmatic fitting
+        mapped_ds.setMapping('sig', 'fitResults_sigxl + fitResults_sigyu')
+        mapped_ds.setMapping('sig_d', 'fitResults_sigxl - fitResults_sigyu')
+
+        mapped_ds.addVariable('dsigd_dz', -30.)
+        mapped_ds.setMapping('fitResults_z0', 'dsigd_dz*sig_d')
+    if not 'y' in mapped_ds.keys():
+        mapped_ds.setMapping('y', '10*t')
+
+    #set up correction for foreshortening and z focus stepping
+    if not 'foreShort' in dir(mapped_ds):
+        mapped_ds.addVariable('foreShort', 1.)
+
+    if not 'focus' in mapped_ds.keys():
+        #set up a dummy focus variable if not already present
+        mapped_ds.setMapping('focus', '0*x')
+
+    if not 'z' in mapped_ds.keys():
+        if 'fitResults_z0' in mapped_ds.keys():
+            mapped_ds.setMapping('z', 'fitResults_z0 + foreShort*focus')
+        elif 'astigZ' in mapped_ds.keys():
+            mapped_ds.setMapping('z', 'astigZ + foreShort*focus')
+        else:
+            mapped_ds.setMapping('z', 'foreShort*focus')
+
+
+def _processEvents(ds, events, mdh):
+    """Read data from events table and translate it into mappings for,
+    e.g. z position"""
+
+    eventCharts = []
+    ev_mappings = {}
+
+    if not events is None:
+        evKeyNames = set()
+        for e in events:
+            evKeyNames.add(e['EventName'])
+
+        if 'ProtocolFocus' in evKeyNames:
+            zm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'])
+            ev_mappings['zm'] = zm
+            eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
+
+        if 'ScannerXPos' in evKeyNames:
+            x0 = 0
+            if 'Positioning.Stage_X' in mdh.getEntryNames():
+                x0 = mdh.getEntry('Positioning.Stage_X')
+            xm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], x0, 'ScannerXPos', 0)
+            ev_mappings['xm'] = xm
+            eventCharts.append(('XPos [um]', xm, 'ScannerXPos'))
+
+        if 'ScannerYPos' in evKeyNames:
+            y0 = 0
+            if 'Positioning.Stage_Y' in mdh.getEntryNames():
+                y0 = mdh.getEntry('Positioning.Stage_Y')
+            ym = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
+            ev_mappings['ym'] = ym
+            eventCharts.append(('YPos [um]', ym, 'ScannerYPos'))
+
+        if 'ShiftMeasure' in evKeyNames:
+            driftx = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
+                                                              0)
+            drifty = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
+                                                              1)
+            driftz = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
+                                                              2)
+
+            ev_mappings['driftx'] = driftx
+            ev_mappings['drifty'] = drifty
+            ev_mappings['driftz'] = driftz
+
+            eventCharts.append(('X Drift [px]', driftx, 'ShiftMeasure'))
+            eventCharts.append(('Y Drift [px]', drifty, 'ShiftMeasure'))
+            eventCharts.append(('Z Drift [px]', driftz, 'ShiftMeasure'))
+
+            #self.eventCharts = eventCharts
+            #self.ev_mappings = ev_mappings
+
+    return ev_mappings, eventCharts
+
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
         self.dataSources = {}
@@ -179,58 +369,11 @@ class Pipeline:
             ds = inpFilt.mappingFilter(ds)
 
         #add keys which might not already be defined
-        self._add_missing_ds_keys(ds)
+        _add_missing_ds_keys(ds,self.ev_mappings)
 
         self.dataSources[dskey] = ds
 
-    def _add_missing_ds_keys(self, mapped_ds):
-        """
-        VisGUI, and various rendering and postprocessing commands rely on having certain parameters defined or re-mapped
-        within a data source. Take care of these here.
 
-        Parameters
-        ----------
-        mapped_ds
-
-        """
-        self._add_eventvars_to_ds(mapped_ds)
-
-
-        #handle special cases which get detected by looking for the presence or
-        #absence of certain variables in the data.
-        if 'fitResults_Ag' in mapped_ds.keys():
-            #if we used the splitter set up a number of mappings e.g. total amplitude and ratio
-            self._processSplitter(mapped_ds)
-
-        if 'fitResults_ratio' in mapped_ds.keys():
-            #if we used the splitter set up a number of mappings e.g. total amplitude and ratio
-            self._processPriSplit(mapped_ds)
-
-        if 'fitResults_sigxl' in mapped_ds.keys():
-            #fast, quickpalm like astigmatic fitting
-            mapped_ds.setMapping('sig', 'fitResults_sigxl + fitResults_sigyu')
-            mapped_ds.setMapping('sig_d', 'fitResults_sigxl - fitResults_sigyu')
-
-            mapped_ds.addVariable('dsigd_dz', -30.)
-            mapped_ds.setMapping('fitResults_z0', 'dsigd_dz*sig_d')
-        if not 'y' in mapped_ds.keys():
-            mapped_ds.setMapping('y', '10*t')
-
-        #set up correction for foreshortening and z focus stepping
-        if not 'foreShort' in dir(mapped_ds):
-            mapped_ds.addVariable('foreShort', 1.)
-
-        if not 'focus' in mapped_ds.keys():
-            #set up a dummy focus variable if not already present
-            mapped_ds.setMapping('focus', '0*x')
-
-        if not 'z' in mapped_ds.keys():
-            if 'fitResults_z0' in mapped_ds.keys():
-                mapped_ds.setMapping('z', 'fitResults_z0 + foreShort*focus')
-            elif 'astigZ' in mapped_ds.keys():
-                mapped_ds.setMapping('z', 'astigZ + foreShort*focus')
-            else:
-                mapped_ds.setMapping('z', 'foreShort*focus')
 
     def Rebuild(self):
         """
@@ -278,124 +421,14 @@ class Pipeline:
             self.onKeysChanged.send(sender=self)
         
         
-    def _processEvents(self, ds):
-        """Read data from events table and translate it into mappings for,
-        e.g. z position"""
-        
-        if not self.events is None:
-            evKeyNames = set()
-            for e in self.events:
-                evKeyNames.add(e['EventName'])
-                
-            self.eventCharts = []
-        
-            if 'ProtocolFocus' in evKeyNames:
-                self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
-                
-                self.eventCharts.append(('Focus [um]', self.zm, 'ProtocolFocus'))
-        
-            if 'ScannerXPos' in evKeyNames:
-                x0 = 0
-                if 'Positioning.Stage_X' in self.mdh.getEntryNames():
-                    x0 = self.mdh.getEntry('Positioning.Stage_X')
-                self.xm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), x0, 'ScannerXPos', 0)
-                
-                self.eventCharts.append(('XPos [um]', self.xm, 'ScannerXPos'))
-        
-            if 'ScannerYPos' in evKeyNames:
-                y0 = 0
-                if 'Positioning.Stage_Y' in self.mdh.getEntryNames():
-                    y0 = self.mdh.getEntry('Positioning.Stage_Y')
-                self.ym = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
-                
-                self.eventCharts.append(('YPos [um]', self.ym, 'ScannerYPos'))
-                
-            if 'ShiftMeasure' in evKeyNames:
-                self.driftx = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 0)
-                self.drifty = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 1)
-                self.driftz = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), 0, 'ShiftMeasure', 2)
 
-                self.eventCharts.append(('X Drift [px]', self.driftx, 'ShiftMeasure'))
-                self.eventCharts.append(('Y Drift [px]', self.drifty, 'ShiftMeasure'))
-                self.eventCharts.append(('Z Drift [px]', self.driftz, 'ShiftMeasure'))
 
-    def _add_eventvars_to_ds(self, ds):
-        if 'zm' in dir(self):
-            z_focus = 1.e3 * self.zm(ds['t'])
-            ds.addColumn('focus', z_focus)
 
-        if 'xm' in dir(self):
-            scan_x = 1.e3 * self.xm(ds['t'] - .01)
-            ds.addColumn('scanx', scan_x)
-            ds.setMapping('x', 'x + scanx')
-
-        if 'ym' in dir(self):
-            scan_y = 1.e3 * self.ym(ds['t'] - .01)
-            ds.addColumn('scany', scan_y)
-            ds.setMapping('y', 'y + scany')
-
-        if 'driftx' in dir(self):
-            ds.addColumn('driftx', self.driftx(ds['t'] - .01))
-            ds.addColumn('drifty', self.drifty(ds['t'] - .01))
-            ds.addColumn('driftz', self.driftz(ds['t'] - .01))
                 
                 
-    def _processSplitter(self, ds):
-        """set mappings ascociated with the use of a splitter"""
 
-        #ds.gF_zcorr = 0
-        ds.setMapping('A', 'fitResults_Ag + fitResults_Ar')
-        if 'fitResults_z0' in ds.keys():
-            ds.addVariable('gF_zcorr', 0)
-            ds.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar) + gF_zcorr*fitResults_z0')
-        else:
-            ds.setMapping('gFrac', 'fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
-        
-        if 'fitError_Ag' in ds.keys():
-            ds.setMapping('error_gFrac', 'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
-        else:
-            ds.setMapping('error_gFrac','0*x + 0.01')
-            ds.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1)')
-            ds.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1)')
-            
-        sg = ds['fitError_Ag']
-        sr = ds['fitError_Ar']
-        g = ds['fitResults_Ag']
-        r = ds['fitResults_Ar']
-        I = ds['A']
-        
-        colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
-            scipy.special.erf((sg**2*r + sr**2*(I-g))/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2)))
-            - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
-        
-        ds.addColumn('ColourNorm', colNorm)
 
-    def _processPriSplit(self, ds):
-        """set mappings ascociated with the use of a splitter"""
 
-        ds.setMapping('gFrac', 'fitResults_ratio')
-        ds.setMapping('error_gFrac','fitError_ratio')
-
-        ds.setMapping('fitResults_Ag','gFrac*A')
-        ds.setMapping('fitResults_Ar','(1.0 - gFrac)*A + error_gFrac*A')
-        ds.setMapping('fitError_Ag','gFrac*fitError_A + error_gFrac*A')
-        ds.setMapping('fitError_Ar','(1.0 - gFrac)*fitError_A')
-        #ds.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1e-3)')
-        #ds.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1e-3)')
-        
-        sg = ds['fitError_Ag']
-        sr = ds['fitError_Ar']
-        g  = ds['fitResults_Ag']
-        r  = ds['fitResults_Ar']
-        I  = ds['A']
-        
-        colNorm = np.sqrt(2*np.pi)*sg*sr/(2*np.sqrt(sg**2 + sr**2)*I)*(
-            scipy.special.erf((sg**2*r + sr**2*(I-g))/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2)))
-            - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
-            
-        colNorm /= (sg*sr)
-        
-        ds.addColumn('ColourNorm', colNorm)
 
 
         
@@ -442,7 +475,7 @@ class Pipeline:
 
             #catch really old files which don't have any metadata
             if 'MetaData' in ds.h5f.root:
-                self.mdh = MetaDataHandler.HDFMDHandler(ds.h5f)
+                self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(ds.h5f))
 
             if ('Events' in ds.h5f.root) and ('StartTime' in self.mdh.keys()):
                 self.events = ds.h5f.root.Events[:]
@@ -512,7 +545,7 @@ class Pipeline:
             mapped_ds.setMapping('y', 'y*pixelSize')
 
         #extract information from any events
-        self._processEvents(mapped_ds)
+        self.ev_mappings, self.eventCharts = _processEvents(mapped_ds, self.events, self.mdh)
 
         #Retrieve or estimate image bounds
         if False:#'imgBounds' in kwargs.keys():

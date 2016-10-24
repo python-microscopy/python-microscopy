@@ -101,6 +101,18 @@ class Zoom(Filter):
         
         if not self.processFramesIndividually:
             im.mdh['voxelsize.z'] = im.mdh['voxelsize.z']/self.zoom
+
+@register_module('MaskEdges')
+class MaskEdges(Filter):
+    widthPixels = Int(10)
+
+    def applyFilter(self, data, chanNum, frNum, im):
+        dm = data.copy()
+        dm[:self.widthPixels, :] = 0
+        dm[-self.widthPixels:, :] = 0
+        dm[:, :self.widthPixels] = 0
+        dm[:, -self.widthPixels:] = 0
+        return dm
             
 @register_module('DoGFilter')         
 class DoGFilter(Filter):

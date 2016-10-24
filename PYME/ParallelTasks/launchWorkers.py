@@ -102,6 +102,7 @@ def main():
     parser.add_argument('--no-gui', dest='gui', action='store_false',default=True)
     parser.add_argument('NWorkers', type=int, nargs='?', default=cpuCount(),
                         help='Number of worker processes to use')
+    parser.add_argument('-k', '--kill', dest='kill', default=False, action='store_true', help='Kill all existing workers without launching new ones')
     args = parser.parse_args()
     
     if args.local:
@@ -111,6 +112,9 @@ def main():
     numProcessors = args.NWorkers
     
     if sys.platform == 'win32':
+        if args.kill:
+            raise RuntimeError('Kill functionality not supported on windows. Close the window that the previous launchWorkers instance was run from instead')
+
         if args.run_server:
             print 'Launching server ...'
             subprocess.Popen('python %s\\%s.py' % (fstub, SERVER_PROC), shell=True)
@@ -137,8 +141,11 @@ def main():
                     if (SERVER_PROC in c[1] and args.run_server) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1] and args.gui):
                         print 'killing %s' % c
                         p.kill()
-            except psutil.ZombieProcess:
+            except (psutil.ZombieProcess, psutil.AccessDenied):
                 pass
+
+        if args.kill:
+            return
 
         if args.run_server:
             subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub, SERVER_PROC)), shell=True)
@@ -157,6 +164,9 @@ def main():
         if args.gui:
             os.system('killall %s' % WORKER_PROC)
         os.system('killall fitMonP')
+
+        if args.kill:
+            return
 
         if args.run_server:
             subprocess.Popen(SERVER_PROC, shell=True)

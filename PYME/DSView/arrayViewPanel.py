@@ -484,12 +484,12 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
     
     
-    def DoPaint(self, dc):
+    def DoPaint(self, dc, fullImage=False):
         #print 'p'
         
         dc.Clear()
                                      
-        im = self.Render()
+        im = self.Render(fullImage)
 
         sc = pow(2.0,(self.do.scale))
         sc2 = sc
@@ -523,6 +523,42 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
         for ovl in self.do.overlays:
             ovl(self, dc)
+
+    def GrabImage(self, fullImage=True):
+        #TODO - get suitable image dependent viewport
+
+        xs, ys = self._unscrolled_view_size()
+        if fullImage:
+            if (xs > 2e3 or ys > 2e3) and wx.MessageBox('Captured image will be very large, continue?', 'Warning', style=wx.OK|wx.CANCEL) != wx.OK:
+                return
+        else:
+            s = self.GetClientSize()
+            xs = min(s.GetWidth(), xs)
+            ys = min(s.GetHeight(), ys)
+
+        MemBitmap = wx.EmptyBitmap(xs, ys)
+        MemDC = wx.MemoryDC()
+        OldBitmap = MemDC.SelectObject(MemBitmap)
+
+        self.DoPaint(MemDC, fullImage)
+
+        return MemBitmap
+
+    def GrabPNG(self, filename, fullImage=True):
+        MemBitmap = self.GrabImage(fullImage)
+        img = MemBitmap.ConvertToImage()
+        img.SaveFile(filename, wx.BITMAP_TYPE_PNG)
+
+    def CopyImage(self, fullImage=True):
+        """ Copies the currently displayed image to the clipboard"""
+        bmp = self.GrabImage(fullImage)
+        try:
+            wx.TheClipboard.Open()
+            bmpDataObject = wx.BitmapDataObject(bmp)
+            wx.TheClipboard.SetData(bmpDataObject)
+        finally:
+            wx.TheClipboard.Close()
+
             
 #    def OnPaint(self,event):
 #        self.painting = True
@@ -646,6 +682,13 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         elif event.GetKeyCode() == 77: #M
             #print 'o'
             self.do.Optimise()
+        elif event.GetKeyCode() == ord('C'):
+            if event.GetModifiers() == wx.MOD_CMD:
+                self.CopyImage()
+            elif event.GetModifiers() == wx.MOD_CMD|wx.MOD_SHIFT:
+                self.CopyImage(False)
+            else:
+                event.Skip()
         else:
             event.Skip()
         
@@ -767,6 +810,22 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         event.Skip()
     
             
+    def _unscrolled_view_size(self):
+        sc = pow(2.0, (self.do.scale))
+        shp = self.do.ds.shape
+
+        if (self.do.slice == self.do.SLICE_XY):
+            xs = int(shp[0] * sc)
+            ys = int(shp[1] * sc*self.aspect)
+        elif (self.do.slice == self.do.SLICE_XZ):
+            xs = int(shp[0] * sc)
+            ys = int(shp[2] * sc * self.aspect)
+        elif (self.do.slice == self.do.SLICE_YZ):
+            xs = int(shp[1] * sc)
+            ys = int(shp[2] * sc * self.aspect)
+
+        return xs, ys
+
     def OnSetPosition(self,event):
         dc = wx.ClientDC(self.imagepanel)
         #self.imagepanel.PrepareDC(dc)
@@ -981,10 +1040,14 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.Refresh()
         self.Update()
 
-    def Render(self):
+    def Render(self, fullImage=False):
         #print 'rend'
-        x0,y0 = self.CalcUnscrolledPosition(0,0)
-        sX, sY = self.imagepanel.Size
+        if fullImage:
+            x0, y0 = 0,0
+            sX, sY = self._unscrolled_view_size()
+        else:
+            x0,y0 = self.CalcUnscrolledPosition(0,0)
+            sX, sY = self.imagepanel.Size
         
         sig = self._gensig(x0, y0, sX, sY, self.do)
         if sig == self._oldImSig:# and not self._oldIm is None:

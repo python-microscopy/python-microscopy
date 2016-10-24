@@ -37,10 +37,6 @@ import time
 from PYME.Acquire.Hardware import EMCCDTheory
 from PYME.Acquire.Hardware import ccdCalibrator
 
-#class CDataStack(example.CDataStack):
-#    def getCurrentChannelSlice(self, curMemChn):
-#        return example.CDataStack_AsArray(self, curMemChn)[:,:,self.getZPos()]
-
 class NoiseMaker:
     def __init__(self, QE=.8, electronsPerCount=27.32, readoutNoise=109.8, EMGain=0, background=0., floor=967, shutterOpen = True,
                  numGainElements=536, vbreakdown=6.6, temperature = -70.):
@@ -56,14 +52,11 @@ class NoiseMaker:
         self.shutterOpen = shutterOpen
 
     def noisify(self, im):
-        #if im.min() < 0:
-        #    print im.min()
+        """Add noise to image using an EMCCD noise model"""
+
         M = EMCCDTheory.M((80. + self.EMGain)/(255 + 80.), self.vbreakdown, self.temperature, self.NGainElements, 2.2)
         F2 = 1.0/EMCCDTheory.FSquared(M, self.NGainElements)
-        #print im.min(), F2, self.QE, self.background
-        #print F2
-        #print im.max()
-        #print M, F2
+
         return self.ADOffset + \
                M*scipy.random.poisson(int(self.shutterOpen)*(im + self.background)*self.QE*F2)/(self.ElectronsPerCount*F2) + \
                self.ReadoutNoise*scipy.random.standard_normal(im.shape)/self.ElectronsPerCount
@@ -71,9 +64,7 @@ class NoiseMaker:
     def getbg(self):
         M = EMCCDTheory.M((80. + self.EMGain)/(255 + 80.), self.vbreakdown, self.temperature, self.NGainElements, 2.2)
         F2 = 1.0/EMCCDTheory.FSquared(M, self.NGainElements)
-        #print im.min(), F2, self.QE, self.background
-        #print F2
-        #print im.max()
+
         return self.ADOffset + M*(int(self.shutterOpen)*(0 + self.background)*self.QE*F2)/(self.ElectronsPerCount*F2) 
 
 
@@ -82,8 +73,8 @@ class NoiseMaker:
 
 #calculate image in a separate thread to maintain GUI reponsiveness
 class compThread(threading.Thread):
-#class compThread(processing.Process):
-    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True, bufferlength=100, biplane = False, biplane_z = 500, xpiezo=None, ypiezo=None, illumFcn = 'ConstIllum'):
+    def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True,
+                 bufferlength=100, biplane = False, biplane_z = 500, xpiezo=None, ypiezo=None, illumFcn = 'ConstIllum'):
         threading.Thread.__init__(self)
         self.XVals = XVals
         self.YVals = YVals
@@ -120,9 +111,56 @@ class compThread(threading.Thread):
         #self.frameLock = threading.Lock()
         #self.frameLock.acquire()
 
+    def setSplitterInfo(self, chan_z_offsets, chan_specs):
+        self._chan_z_offsets = chan_z_offsets
+        self._chan_specs = chan_specs
+
+        nChans = len(chan_z_offsets)
+        x_pixels = len(self.XVals)
+        x_chan_pixels = x_pixels/nChans
+        x_chan_size = (self.XVals[1] - self.XVals[0])*x_chan_pixels
+        self._chan_x_offsets = [i*x_chan_size for i in range(nChans)]
+
+    @property
+    def ChanXOffsets(self):
+        try:
+            return getattr(self, '_chan_x_offsets')
+        except AttributeError:
+            if not self.fluors:
+                return [0,]
+            elif not self.biplane and not 'spec' in self.fluors.fl.dtype.fields.keys():
+                return [0,]
+            else:
+                return [0, self.XVals[self.XVals.shape[0] / 2] - self.XVals[0]]
+
+    @property
+    def ChanZOffsets(self):
+        try:
+            return getattr(self, '_chan_z_offsets')
+        except AttributeError:
+            if not self.fluors:
+                return [0, ]
+            elif not self.biplane and not 'spec' in self.fluors.fl.dtype.fields.keys():
+                return [0, ]
+            else:
+                return [0, self.deltaZ]
+
+    @property
+    def ChanSpecs(self):
+        try:
+            return getattr(self, '_chan_specs')
+        except AttributeError:
+            if not self.fluors:
+                return None
+            elif not 'spec' in self.fluors.fl.dtype.fields.keys():
+                return None
+            else:
+                return [0,1]
+
 
     def run(self):
-        #self.im = self.noiseMaker.noisify(rend_im.simPalmIm(self.XVals, self.YVals, self.zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
+        #self.im = self.noiseMaker.noisify(rend_im.simPalmIm(self.XVals, self.YVals, self.zPos,self.fluors,
+        #                                   laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
 
         while not self.kill:
             #self.frameLock.acquire()
@@ -138,16 +176,15 @@ class compThread(threading.Thread):
 
             if not self.xPiezo is None:
                 yp = (self.yPiezo.GetPos() - self.yPiezo.max_travel/2)*1e3
+
+            #print self.ChanSpecs, self.ChanXOffsets
                 
-            if not self.fluors is None and not 'spec' in self.fluors.fl.dtype.fields.keys():
-                if self.biplane:
-                    self.im = self.noiseMaker.noisify(rend_im.simPalmImFBP(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime, deltaZ = self.deltaZ))[:,:].astype('uint16')
-                else:
-                    self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals + xp, self.YVals + yp, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime, position=[xp,yp,zPos], illuminationFunction=self.illumFcn))[:,:].astype('uint16')
-            else:
-                #self.im = self.noiseMaker.noisify(rend_im.simPalmImFSpecI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
-                #self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals, self.YVals, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime))[:,:].astype('uint16')
-                self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals + xp, self.YVals + yp, zPos,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime, position=[xp,yp,zPos], illuminationFunction=self.illumFcn, Chan2XOffset=70.*self.XVals.shape[0]/4., Chan2ZOffset=self.deltaZ))[:,:].astype('uint16')
+
+            self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals + xp, self.YVals + yp, zPos,self.fluors,
+                                                                  laserPowers=self.laserPowers, intTime=self.intTime,
+                                                                  position=[xp,yp,zPos], illuminationFunction=self.illumFcn,
+                                                                  ChanXOffsets=self.ChanXOffsets, ChanZOffsets=self.ChanZOffsets,
+                                                                  ChanSpecs=self.ChanSpecs))[:,:].astype('uint16')
 
             self.buffer[:,:,self.bufferWritePos] = self.im
             self.bufferWritePos +=1
@@ -252,6 +289,11 @@ class FakeCamera:
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
+    def setSplitterInfo(self, chan_z_offsets, chan_specs):
+        self._chan_z_offsets = chan_z_offsets
+        self._chan_specs = chan_specs
+
+
     def setFluors(self, fluors):
         self.fluors = fluors
 
@@ -260,6 +302,12 @@ class FakeCamera:
         self.compT.kill = True
 
         self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime, xpiezo=self.xPiezo, ypiezo=self.yPiezo, illumFcn=self.illumFcn)
+
+        try:
+            self.compT.setSplitterInfo(self._chan_z_offsets, self._chan_specs)
+        except AttributeError:
+            pass
+
         self.compT.start()
 
         self.compT.aqRunning = running
@@ -483,6 +531,19 @@ class FakeCamera:
             mdh['Splitter.Channel0ROI'] = [0,0,128, 256]
             mdh['Splitter.Channel1ROI'] = [128,0,128, 256]
             mdh['Splitter.Flip'] = False
+
+        chan_specs = getattr(self, '_chan_specs', None)
+        if not chan_specs is None:
+            nChans  = len(chan_specs)
+            x_pixels = len(self.XVals)
+            x_chan_pixels = x_pixels / nChans
+            y_pixels = len(self.YVals)
+            mdh['Multiview.NumROIs'] = nChans
+            mdh['Multiview.ROISize'] =  [x_chan_pixels, y_pixels]
+            mdh['Multiview.ChannelColor'] =  list(chan_specs)
+            for i in range(nChans):
+                mdh['Multiview.ROI%dOrigin' % i] = [i*x_chan_pixels, 0]
+                mdh['Splitter.Channel%dROI' % i] = [i*x_chan_pixels, 0, x_chan_pixels, y_pixels]
 
     #functions to make us look more like andor camera
     def GetEMGain(self):

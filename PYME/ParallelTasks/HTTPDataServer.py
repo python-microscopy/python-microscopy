@@ -29,13 +29,22 @@ compName = GetComputerName()
 import os
 
 #make sure we set up our logging before anyone elses does
-import logging    
+import logging
+import logging.handlers
 dataserver_root = config.get('dataserver-root')
 if dataserver_root:
+    log_dir = '%s/LOGS/%s' % (dataserver_root, compName)
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
     log_file = '%s/LOGS/%s/PYMEDataServer.log' % (dataserver_root, compName)
         
-    logging.basicConfig(filename =log_file, level=logging.DEBUG)
+    #logging.basicConfig(filename =log_file, level=logging.DEBUG, filemode='w')
+    #logger = logging.getLogger('')
     logger = logging.getLogger('')
+    logger.setLevel(logging.DEBUG)
+    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6)
+    logger.addHandler(fh)
 else:
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger('')
@@ -59,6 +68,13 @@ import fcntl
 import threading
 import datetime
 import time
+
+#GPU status functions
+try:
+    import pynvml
+    GPU_STATS=True
+except ImportError:
+    GPU_STATS = False
 
 
 compName = GetComputerName()
@@ -98,6 +114,8 @@ class _LimitedSizeDict(OrderedDict):
 
 _dirCache = _LimitedSizeDict(size_limit=100)
 _dirCacheTimeout = 1
+
+_listDirLock = threading.Lock()
 
 class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
@@ -163,13 +181,18 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 h5f.fileFitResult(fitResults)
             else:
                 try:
-                    #try to read data as if it was numpy binary formatted
-                    data = np.load(cStringIO.StringIO(data))
-                except IOError:
-                    #it's not numpy formatted - try json
-                    import pandas as pd
-                    #FIXME!! - this will work, but will likely be really slow!
-                    data = pd.read_json(data).to_records(False)
+                    #pickle is much faster than numpy array format (despite the array format being simpler)
+                    #reluctanltly use pickles
+                    data = np.loads(data)
+                except cPickle.UnpicklingError:
+                    try:
+                        #try to read data as if it was numpy binary formatted
+                        data = np.load(cStringIO.StringIO(data))
+                    except IOError:
+                        #it's not numpy formatted - try json
+                        import pandas as pd
+                        #FIXME!! - this will work, but will likely be really slow!
+                        data = pd.read_json(data).to_records(False)
 
                 #logging.debug('adding data to table')
                 h5f.appendToTable(tablename.lstrip('/'), data)
@@ -275,7 +298,11 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         except ImportError:
             pass
 
-
+        if GPU_STATS:
+            handles = [pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(pynvml.nvmlDeviceGetCount())]
+            gpu_usage = [pynvml.nvmlDeviceGetUtilizationRates(h) for h in handles]
+            status['GPUUsage'] = [float(gu.gpu) for gu in gpu_usage]
+            status['GPUMem'] = [float(gu.memory) for gu in gpu_usage]
 
         f = StringIO()
         f.write(json.dumps(status))
@@ -351,30 +378,32 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         interface the same as for send_head().
 
         """
-        curTime = time.time()
 
-        try:
-            js_dir, expiry = _dirCache[path]
-            if expiry < curTime: raise RuntimeError('Expired')
-        except (KeyError, RuntimeError):
+        with _listDirLock:
+            #make sure only one thread calculates the directory listing
+            curTime = time.time()
             try:
-                list = os.listdir(path)
-            except os.error:
-                self.send_error(404, "No permission to list directory")
-                return None
-
-            list.sort(key=lambda a: a.lower())
-
-            #displaypath = cgi.escape(urllib.unquote(self.path))
-            l2 = []
-            for l in list:
-                if os.path.isdir(os.path.join(path, l)):
-                    l2.append(l + '/')
-                else:
-                    l2.append(l)
-
-            js_dir = json.dumps(l2)
-            _dirCache[path] = (js_dir, curTime + _dirCacheTimeout)
+                js_dir, expiry = _dirCache[path]
+                if expiry < curTime: raise RuntimeError('Expired')
+            except (KeyError, RuntimeError):
+                try:
+                    list = os.listdir(path)
+                except os.error:
+                    self.send_error(404, "No permission to list directory")
+                    return None
+    
+                list.sort(key=lambda a: a.lower())
+    
+                #displaypath = cgi.escape(urllib.unquote(self.path))
+                l2 = []
+                for l in list:
+                    if os.path.isdir(os.path.join(path, l)):
+                        l2.append(l + '/')
+                    else:
+                        l2.append(l)
+    
+                js_dir = json.dumps(l2)
+                _dirCache[path] = (js_dir, time.time() + _dirCacheTimeout)
 
         f = StringIO()
         f.write(js_dir)
@@ -491,6 +520,7 @@ class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
 
 
 def main(protocol="HTTP/1.0"):
+    global GPU_STATS
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the first command line
@@ -507,9 +537,16 @@ def main(protocol="HTTP/1.0"):
     op.add_option('-v', '--protocol', dest='protocol', help="HTTP protocol version", default="1.1")
     op.add_option('-l', '--log-requests', dest='log_requests', help="Display http request info", default=False, action="store_true")
     op.add_option('-r', '--root', dest='root', help="Root directory of virtual filesystem", default=config.get('dataserver-root', os.curdir))
+    op.add_option('-k', '--profile', dest='profile', help="Enable profiling", default=False, action="store_true")
 
 
     options, args = op.parse_args()
+    if options.profile:
+        from PYME.util import mProfile
+        mProfile.profileOn(['HTTPDataServer.py',])
+
+        profileOutDir = options.root + '/LOGS/%s/mProf' % compName
+
     
     #change to the dataserver root if given
     logger.info('Serving from directory: %s' % options.root)
@@ -522,6 +559,7 @@ def main(protocol="HTTP/1.0"):
     PYMEHTTPRequestHandler.logrequests = options.log_requests
 
     httpd = ThreadedHTTPServer(server_address, PYMEHTTPRequestHandler)
+    httpd.daemon_threads = True
 
     sa = httpd.socket.getsockname()
 
@@ -537,6 +575,13 @@ def main(protocol="HTTP/1.0"):
     global_status['TestMode'] = options.test
     global_status['ComputerName'] = GetComputerName()
 
+    if GPU_STATS:
+        try:
+            pynvml.nvmlInit()
+        except:
+            GPU_STATS = False
+
+
     print "Serving HTTP on", ip_addr, "port", sa[1], "..."
     try:
         httpd.serve_forever()
@@ -544,6 +589,13 @@ def main(protocol="HTTP/1.0"):
         logger.info('Shutting down ...')
         httpd.shutdown()
         httpd.server_close()
+
+        if options.profile:
+            mProfile.report(display=False, profiledir=profileOutDir)
+
+        if GPU_STATS:
+            pynvml.nvmlShutdown()
+
         sys.exit()
 
 

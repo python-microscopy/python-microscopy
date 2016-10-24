@@ -54,6 +54,10 @@ class FloatParam(MDParam):
 
     def updateValue(self, mdh, **kwargs):
         self.tValue.SetValue('%3.2f' % mdh.getOrDefault(self.paramName, self.default))
+
+    def formField(self):
+        from django import forms
+        return self.paramName , forms.FloatField(label=self.guiName, initial=self.default)
         
 
 class IntParam(MDParam):
@@ -89,6 +93,10 @@ class IntParam(MDParam):
     def updateValue(self, mdh, **kwargs):
         self.tValue.SetValue('%d' % mdh.getOrDefault(self.paramName, self.default))
 
+    def formField(self):
+        from django import forms
+        return self.paramName, forms.IntegerField(label=self.guiName, initial=self.default)
+
 class RangeParam(MDParam):
     def __init__(self, paramName, guiName, default=[0, 0], helpText='', **kwargs):
         self.paramName = paramName
@@ -123,6 +131,16 @@ class RangeParam(MDParam):
     def updateValue(self, mdh, **kwargs):
         val = ':'.join(['%d' % v for v in mdh.getOrDefault(self.paramName, self.default)])
         self.tValue.SetValue(val)
+
+    def formField(self):
+        from django import forms
+        class RangeField(forms.CharField):
+            def clean(self, value):
+                import json
+                val = json.loads(value)
+                return val
+
+        return self.paramName, RangeField(label=self.guiName, initial=repr(self.default))
         
         
 class StringParam(MDParam):
@@ -158,6 +176,10 @@ class StringParam(MDParam):
 
     def updateValue(self, mdh, **kwargs):
         self.tValue.SetValue(mdh.getOrDefault(self.paramName, self.default))
+
+    def formField(self):
+        from django import forms
+        return self.paramName, forms.CharField(label=self.guiName, initial=self.default)
 
         
 class FloatListParam(MDParam):
@@ -200,6 +222,16 @@ class FloatListParam(MDParam):
 
     def updateValue(self, mdh, **kwargs):
         self.tValue.SetValue(self._valToString(mdh.getOrDefault(self.paramName, self.default)))
+
+    def formField(self):
+        from django import forms
+        class FloatListField(forms.CharField):
+            def clean(self, value):
+                import json
+                val = json.loads(value)
+                return [float(v) for v in val]
+
+        return self.paramName, forms.FloatListField(label=self.guiName, initial=repr(self.default))
         
 
 class ChoiceParam(MDParam):
@@ -239,6 +271,10 @@ class ChoiceParam(MDParam):
 
     def updateValue(self, mdh, **kwargs):
         self.cValue.SetSelection(self.choices.index(mdh.getOrDefault(self.paramName, self.default)))
+
+    def formField(self):
+        from django import forms
+        return self.paramName, forms.ChoiceField(label=self.guiName, choices=[(c, c) for c in self.choiceNames], initial=self.default)
         
         
         
@@ -336,6 +372,10 @@ class FilenameParam(MDParam):
             self.stFilename.SetForegroundColour(wx.Colour(0, 0, 0))
         else:
             self.stFilename.SetForegroundColour(wx.Colour(0, 128, 0))
+
+    def formField(self):
+        from django import forms
+        return self.paramName, forms.CharField(label=self.guiName, initial=self.default)
        
 
 class ShiftFieldParam(FilenameParam):    
@@ -388,6 +428,10 @@ class BoolParam(MDParam):
 
     def updateValue(self, mdh, **kwargs):
         self.cbValue.SetValue(mdh.getOrDefault(self.paramName, self.default))
+
+    def formField(self):
+        from django import forms
+        return self.paramName, forms.BooleanField(label=self.guiName, initial=self.default)
  
 
 class BoolFloatParam(MDParam):
@@ -444,6 +488,11 @@ class BoolFloatParam(MDParam):
 
         self.tValue.SetValue('%3.2f' % fval)
         self.cbValue.SetValue(cval)
+
+    def formField(self):
+        from django import forms
+        #FIXME - find a suitable way to represent this
+        return self.paramName, forms.FloatField(label=self.guiName, initial=float(self.default)*self.ondefault)
 
 
 

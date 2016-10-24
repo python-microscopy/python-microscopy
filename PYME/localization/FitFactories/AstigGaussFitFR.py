@@ -114,6 +114,10 @@ class GaussianFitFactory(FFBase.FitFactory):
         fitErrors=None
         try:       
             fitErrors = np.sqrt(np.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataMean.ravel())- len(res)))
+            if np.any(np.isnan(fitErrors)):
+                #for some reason we occasionally get negatives on the diagonal of the covariance matrix (and NaN for the fitError.
+                # this shouldn't happen, but catch it here in case and flag the fit as having failed
+                fitErrors = None
         except Exception:
             pass
 
@@ -136,6 +140,14 @@ class GaussianFitFactory(FFBase.FitFactory):
 FitFactory = GaussianFitFactory
 FitResult = GaussianFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
+
+
+import PYME.localization.MetaDataEdit as mde
+
+PARAMETERS = [
+    mde.IntParam('Analysis.ROISize', u'ROI half size', 7),
+
+]
 
 DESCRIPTION = 'Vanilla 2D Gaussian fit.'
 LONG_DESCRIPTION = 'Single colour 2D Gaussian fit. This should be the first stop for simple analyisis.'

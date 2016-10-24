@@ -25,10 +25,25 @@ def status(request):
     else:
         return render(request, 'clusterstatus/status_dash.html', context)
 
+def load(request):
+    from PYME.IO import clusterIO
+    nodes = clusterIO.getStatus()
+
+    total_storage = 0
+    free_storage = 0
+
+    context = {'storage_nodes' : nodes}
+
+
+    return render(request, 'clusterstatus/load_content.html', context)
+
 def queues(request):
     from PYME.ParallelTasks import distribution
+    #from PYME.IO import clusterIO
     distributors = distribution.getDistributorInfo()
     distNodes = distribution.getNodeInfo()
+
+    #nodes = clusterIO.getStatus()
 
     queueInfo = [{'name':distName, 'queues': distribution.getQueueInfo(distURL)} for distName, distURL in distributors.items()]
 

@@ -295,7 +295,7 @@ class HDFMDHandler(MDHandlerBase):
         en = entPath[-1]
         ep = entPath[:-1]
 
-        res =  self.h5file.getNodeAttr('/'.join(['', 'MetaData']+ ep), en)
+        res =  self.h5file.get_node_attr('/'.join(['', 'MetaData']+ ep), en)
         
         #dodgy hack to get around a problem with zero length strings not
         #being picklable if they are numpy (rather than pure python) types
@@ -309,7 +309,7 @@ class HDFMDHandler(MDHandlerBase):
 
     def getEntryNames(self):
         entryNames = []
-        for a in [self.md] + list(self.md._f_walkNodes()):
+        for a in [self.md] + list(self.md._f_walknodes()):
             entryNames.extend(['.'.join(a._v_pathname.split('/')[2:] +[ i]) for i in a._v_attrs._f_list()])
 
         return entryNames

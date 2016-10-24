@@ -168,5 +168,5 @@ class PickledObjectField(models.Field):
         # actual lookup, so all we need to do is limit the lookup types.
         return super(PickledObjectField, self).get_db_prep_lookup(lookup_type, value)
         
-from south.modelsinspector import add_introspection_rules
-add_introspection_rules([], ["^SampleDB.samples\.fields\.PickledObjectField"])
+#from south.modelsinspector import add_introspection_rules
+#add_introspection_rules([], ["^SampleDB.samples\.fields\.PickledObjectField"])

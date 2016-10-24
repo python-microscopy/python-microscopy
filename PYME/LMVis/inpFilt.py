@@ -162,26 +162,24 @@ class fitResultsSource(inputFilter):
 
 class h5rSource(inputFilter):
     _name = "h5r Data Source"
-    def __init__(self, h5fFile):
+    def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
         component. Takes either an open h5r file or a string filename to be
         opened."""
+        self.tablename = tablename
 
         if type(h5fFile) == tables.file.File:
             self.h5f = h5fFile
         else:
             self.h5f = tables.open_file(h5fFile)
         
-        if not 'FitResults' in dir(self.h5f.root):
-            raise RuntimeError('Was expecting to find a "FitResults" table')
+        if not tablename in dir(self.h5f.root):
+            raise RuntimeError('Was expecting to find a "%s" table' % tablename)
 
-        self.fitResults = self.h5f.root.FitResults[:]
-
-        #sort by time
-        self.fitResults.sort(order='tIndex')
+        self.fitResults = getattr(self.h5f.root, tablename)[:]
 
         #allow access using unnested original names
-        self._keys = unNestNames(self.h5f.root.FitResults.description._v_nestedNames)
+        self._keys = unNestNames(getattr(self.h5f.root, tablename).description._v_nested_names)
         #or shorter aliases
         self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
@@ -190,6 +188,10 @@ class h5rSource(inputFilter):
         for k in self.transkeys.keys():
             if not self.transkeys[k] in self._keys:
                 self.transkeys.pop(k)
+
+        #sort by time
+        if 'tIndex' in self._keys:
+            self.fitResults.sort(order='tIndex')
 
 
     def keys(self):
@@ -221,66 +223,78 @@ class h5rSource(inputFilter):
         self.h5f.close()
 
     def getInfo(self):
-        return 'PYME h5r Data Source\n\n %d points' % self.h5f.root.FitResults.shape[0]
+        return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
-class h5rDSource(inputFilter):
+class h5rDSource(h5rSource):
     _name = "h5r Drift Source"
+
     def __init__(self, h5fFile):
         """ Data source for use with h5r files as saved by the PYME analysis
         component"""
-        
-        if type(h5fFile) == tables.file.File:
-            self.h5f = h5fFile
-        else:
-            self.h5f = tables.openFile(h5fFile)
 
-        if not 'DriftResults' in dir(self.h5f.root):
-            raise RuntimeError('Was expecting to find a "DriftResults" table')
-            
-        self.driftResults = self.h5f.root.DriftResults[:]
-
-        #sort by time
-        self.driftResults.sort(order='tIndex')
-
-        #allow access using unnested original names
-        self._keys = unNestNames(self.h5f.root.DriftResults.description._v_nestedNames)
-        #or shorter aliases
-        self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
-                          'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
-                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0', 't':'tIndex'}
-
-
-    def keys(self):
-        return self._keys + self.transkeys.keys()
-
-    def __getitem__(self, keys):
-        key, sl = self._getKeySlice(keys)
-            
-        #if we're using an alias replace with actual key
-        if key in self.transkeys.keys():
-            key = self.transkeys[key]
-
-        if not key in self._keys:
-            raise RuntimeError('Key not found')
-
-        k = key.split('_')
-        
-        if len(k) == 1:
-            return self.driftResults[sl][k[0]].astype('f')
-        elif len(k) == 2:
-            return self.driftResults[sl][k[0]][k[1]].astype('f')
-        elif len(k) == 3:
-            return self.driftResults[sl][k[0]][k[1]][k[2]].astype('f')
-        else:
-            raise RuntimeError("Don't know about deeper nesting yet")
-        
-
-    def close(self):
-        self.h5f.close()
+        h5rSource.__init__(self, h5fFile, 'DriftResults')
 
     def getInfo(self):
-        return 'PYME h5r Drift Data Source\n\n %d points' % self.h5f.root.DriftResults.shape[0]
+        return 'PYME h5r Drift Data Source\n\n %d points' % self.fitResults.shape[0]
+
+# class h5rDSource(inputFilter):
+#     _name = "h5r Drift Source"
+#     def __init__(self, h5fFile):
+#         """ Data source for use with h5r files as saved by the PYME analysis
+#         component"""
+#
+#         if type(h5fFile) == tables.file.File:
+#             self.h5f = h5fFile
+#         else:
+#             self.h5f = tables.openFile(h5fFile)
+#
+#         if not 'DriftResults' in dir(self.h5f.root):
+#             raise RuntimeError('Was expecting to find a "DriftResults" table')
+#
+#         self.driftResults = self.h5f.root.DriftResults[:]
+#
+#         #sort by time
+#         self.driftResults.sort(order='tIndex')
+#
+#         #allow access using unnested original names
+#         self._keys = unNestNames(self.h5f.root.DriftResults.description._v_nestedNames)
+#         #or shorter aliases
+#         self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
+#                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma',
+#                           'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0', 't':'tIndex'}
+#
+#
+#     def keys(self):
+#         return self._keys + self.transkeys.keys()
+#
+#     def __getitem__(self, keys):
+#         key, sl = self._getKeySlice(keys)
+#
+#         #if we're using an alias replace with actual key
+#         if key in self.transkeys.keys():
+#             key = self.transkeys[key]
+#
+#         if not key in self._keys:
+#             raise RuntimeError('Key not found')
+#
+#         k = key.split('_')
+#
+#         if len(k) == 1:
+#             return self.driftResults[sl][k[0]].astype('f')
+#         elif len(k) == 2:
+#             return self.driftResults[sl][k[0]][k[1]].astype('f')
+#         elif len(k) == 3:
+#             return self.driftResults[sl][k[0]][k[1]][k[2]].astype('f')
+#         else:
+#             raise RuntimeError("Don't know about deeper nesting yet")
+#
+#
+#     def close(self):
+#         self.h5f.close()
+#
+#     def getInfo(self):
+#         return 'PYME h5r Drift Data Source\n\n %d points' % self.h5f.root.DriftResults.shape[0]
 
 class textfileSource(inputFilter):
     _name = "Text File Source"

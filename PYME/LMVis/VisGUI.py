@@ -79,7 +79,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         
         #self.Quads = None
                
-        self.SetMenuBar(self.CreateMenuBar())
+        #self.SetMenuBar(self.CreateMenuBar())
+        self.CreateMenuBar()
 
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
@@ -387,6 +388,9 @@ def main():
         visFr.RefreshView()
         
 if __name__ == '__main__':
+    from PYME.util import mProfile
+    mProfile.profileOn(['multiviewMapping.py', 'pyDeClump.py'])
     main()
+    mProfile.report()
 
 

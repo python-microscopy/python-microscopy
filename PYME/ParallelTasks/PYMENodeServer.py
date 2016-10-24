@@ -9,16 +9,24 @@ import subprocess
 import time
 import socket
 import tempfile
-import logging
+import logging, logging.handlers
 logging.basicConfig(level=logging.DEBUG)
 
 from PYME.ParallelTasks import distribution
 from multiprocessing import cpu_count
+import sys
+import threading
 
 
+LOG_STREAMS = True
 
+def log_stream(stream, logger):
+    while LOG_STREAMS:
+        line = stream.readline()
+        logger.debug(line.strip())
 
 def main():
+    global LOG_STREAMS
     cluster_root = conf.get('dataserver-root', '/home/ubuntu/PYME/test01')
     
     confFile = os.path.join(conf.user_config_dir, 'nodeserver.yaml')
@@ -63,11 +71,27 @@ def main():
     except:
         pass
     
-    nodeserverLog = open(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w')
+    #nodeserverLog = open(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w')
+    nodeserver_log_handler = logging.handlers.RotatingFileHandler(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w', maxBytes=1e6,backupCount=0)
+    nodeserver_log_handler.setFormatter(logging.Formatter('%(message)s'))
+    nodeserverLog = logging.getLogger('nodeserver')
+    nodeserverLog.addHandler(nodeserver_log_handler)
+    nodeserverLog.setLevel(logging.DEBUG)
+    nodeserverLog.propagate=False
 
-    #proc = subprocess.Popen('nodeserver -c %s' % temp_conf_file_name, shell=True, stdout=nodeserverLog, stderr=nodeserverLog)
-    proc = subprocess.Popen('python -m PYME.ParallelTasks.nodeserver %s %s' % (distributors[0], serverPort), shell=True,
-                            stdout=nodeserverLog, stderr=nodeserverLog)
+    if not (len(sys.argv) == 2 and sys.argv[1] == '-n'):
+        proc = subprocess.Popen('nodeserver -c %s' % temp_conf_file_name, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    else:
+        proc = subprocess.Popen('python -m PYME.ParallelTasks.nodeserver %s %s' % (distributors[0], serverPort), shell=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    t_log_stderr = threading.Thread(target=log_stream, args=(proc.stderr, nodeserverLog))
+    t_log_stderr.setDaemon(False)
+    t_log_stderr.start()
+
+    t_log_stdout = threading.Thread(target=log_stream, args=(proc.stdout, nodeserverLog))
+    t_log_stdout.setDaemon(False)
+    t_log_stdout.start()
 
     ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, int(serverPort))
 
@@ -86,9 +110,14 @@ def main():
     try:
         while not proc.poll():
             time.sleep(1)
+
+            #try to keep log size under control by doing crude rotation
+            #if nodeserverLog.tell() > 1e6:
+            #    nodeserverLog.seek(0)
     except KeyboardInterrupt:
         pass
     finally:
+        LOG_STREAMS = False
         logging.info('Shutting down workers')
         try:
             ns.unregister('PYMENodeServer: ' + GetComputerName())
@@ -121,8 +150,10 @@ def main():
             pass
 
         logging.info('Workers and nodeserver are shut down')
+
+        sys.exit()
             
-    nodeserverLog.close()
+    #nodeserverLog.close()
 
 
 if __name__ == '__main__':

@@ -95,6 +95,7 @@ class FitPoints(ModuleBase):
     inputPositions = CStr('objPositions')
     outputName = CStr('fitResults')
     fitModule = CStr('LatGaussFitFR')
+    roiHalfSize = Int(7)
     channel = Int(0)
 
     def execute(self, namespace):
@@ -133,7 +134,7 @@ class FitPoints(ModuleBase):
                 ff_t = t
 
             #print x/ps, y/ps
-            r[i] = ff.FromPoint(x/ps, y/ps)
+            r[i] = ff.FromPoint(x/ps, y/ps, roiHalfSize=self.roiHalfSize)
 
         res = inpFilt.fitResultsSource(r, sort=False)
         res.mdh = md
@@ -171,15 +172,16 @@ class IntensityAtPoints(ModuleBase):
         roi = data[(x-radius):(x + radius + 1), (y-radius):(y + radius + 1), t].squeeze()
         mask = self._get_mask(radius)
 
-        return (roi*mask).sum()/mask.sum()
+        return (roi.squeeze()*mask).sum()/mask.sum()
 
     def _get_sum(self, data, x, y, t, radius):
+        print data.shape, x, y, t
         roi = data[(x - radius):(x + radius + 1), (y - radius):(y + radius + 1), t].squeeze()
         mask = self._get_mask(radius)
 
-        #print mask.shape, roi.shape, (roi * mask).shape
+        print mask.shape, roi.shape#, (roi * mask).shape
 
-        return (roi * mask).sum()
+        return (roi.squeeze() * mask).sum()
 
     def execute(self, namespace):
         #from PYME.localization.FitFactories import DumbellFitR
