@@ -71,14 +71,19 @@ class correlator(Pyro.core.ObjBase):
         self.NCalibStates = 2*self.stackHalfSize + 1
 
         self.tracking = False
+        self.lockActive = False
+        
+        self._last_target_z = -1
         #self.initialise()
         
     def initialise(self):
         d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()        
         
         self.X, self.Y = np.mgrid[0.0:d.shape[0], 0.0:d.shape[1]]
-        self.X -= d.shape[0]/2
-        self.Y -= d.shape[1]/2
+#        self.X -= d.shape[0]/2
+#        self.Y -= d.shape[1]/2
+        self.X -= np.ceil(d.shape[0]*0.5)
+        self.Y -= np.ceil(d.shape[1]*0.5)
         
         #we want to discard edges after accounting for x-y drift
         self.mask = np.ones_like(d)
@@ -93,6 +98,7 @@ class correlator(Pyro.core.ObjBase):
 
         
         self.lockFocus = False
+        self.lockActive = False
         self.logShifts = True
         self.lastAdjustment = 5 
         self.homePos = self.piezo.GetPos(0)
@@ -197,6 +203,11 @@ class correlator(Pyro.core.ObjBase):
         #find closest calibration position
         posInd = np.argmin(np.abs(nomPos - self.calPositions))
         
+        #dz = float('inf')
+        #count = 0
+        #while np.abs(dz) > 0.5*self.deltaZ and count < 1:
+        #    count += 1
+        
         #retrieve calibration information at this location        
         calPos = self.calPositions[posInd]
         FA = self.calFTs[:,:,posInd]
@@ -230,13 +241,20 @@ class correlator(Pyro.core.ObjBase):
         #calculate z offset between actual position and calibration position
         dz = self.deltaZ*np.dot(self.ds_A.ravel(), ddz)*dzn
         
+        #posInd += np.round(dz / self.deltaZ)
+        #posInd = int(np.clip(posInd, 0, self.NCalibStates))
+            
+#            print count, dz
+        
         #add the offset back to determine how far we are from the target position
-        dz = dz + posDelta
+        dz = dz - posDelta
         
         return dx, dy, dz, Cm
         
     
     def tick(self, **kwargs):
+        targetZ = self.piezo.GetTargetPos(0)
+        
         if not 'mask' in dir(self) or not self.scope.frameWrangler.currentFrame.shape[:2] == self.mask.shape[:2]:
             self.initialise()
             
@@ -280,7 +298,7 @@ class correlator(Pyro.core.ObjBase):
             
             self.calibState += 1
             
-        elif self.calibState > self.NCalibStates:
+        elif (self.calibState > self.NCalibStates) and np.allclose(self._last_target_z, targetZ):
             #fully calibrated
             dx, dy, dz, cCoeff = self.compare()
             
@@ -289,21 +307,25 @@ class correlator(Pyro.core.ObjBase):
             #print dx, dy, dz
             
             self.history.append((time.time(), dx, dy, dz, cCoeff))
-            if self.logShifts:
-                self.piezo.LogShifts(dx, dy, dz)
             
-            if self.lockFocus and (cCoeff > .5*self.corrRef):
+            self.lockActive = self.lockFocus and (cCoeff > .5*self.corrRef)
+            if self.lockActive:
                 if abs(dz) > self.focusTolerance and self.lastAdjustment >= 2:
                     self.piezo.SetOffset(self.piezo.GetOffset() - dz)
                     self.historyCorrections.append((time.time(), dz))
                     self.lastAdjustment = 0
                 else:
                     self.lastAdjustment += 1
-                    
+            
+            if self.logShifts:
+                self.piezo.LogShifts(dx, dy, dz, self.lockActive)
+        
+        self._last_target_z = targetZ                    
             
     def reCalibrate(self):
         self.calibState = 0
         self.corrRef = 0
+        self.lockActive = False
         
     def register(self):
         #self.scope.frameWrangler.WantFrameGroupNotification.append(self.tick)
