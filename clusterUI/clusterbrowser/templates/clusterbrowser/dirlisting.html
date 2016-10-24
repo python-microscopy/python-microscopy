@@ -31,6 +31,8 @@
 
     <h1>Listing of /{% for bc in breadcrumbs %}<a href="/files/{{ bc.path }}">{{ bc.dir }}</a>/{% endfor %}</h1>
 
+    <div>
+
     <table class="table table-striped">
         {% if  parent %}
             <tr>
@@ -76,6 +78,8 @@
             </tr>
         {% endfor %}
     </table>
+
+    </div>
 
     <div class="panel panel-primary hidden toggle-panel" id="upload_form">
         <div class="panel-heading"><span class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload Files</div>
