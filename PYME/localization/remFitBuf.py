@@ -215,7 +215,7 @@ def createFitTaskFromTaskDef(task):
     dataSourceID = task['inputs']['frames']
     frameIndex = int(task['taskdef']['frameIndex'])
 
-    logger.debug('Creating a task for %s - frame %d' % (dataSourceID, frameIndex))
+    #logger.debug('Creating a task for %s - frame %d' % (dataSourceID, frameIndex))
 
     md = task['taskdef']['metadata']
 
