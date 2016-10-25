@@ -561,11 +561,19 @@ else:
 
             r.close()
 
+_cached_status = None
+_cached_status_expiry = 0
 def getStatus(serverfilter=''):
     """Lists the contents of a directory on the cluster. Similar to os.listdir,
         but directories are indicated by a trailing slash
         """
     import json
+    global _cached_status, _cached_status_expiry
+
+    t = time.time()
+    if t < _cached_status_expiry:
+        return _cached_status
+
     status = []
 
     for name, info in ns.advertised_services.items():
@@ -581,6 +589,8 @@ def getStatus(serverfilter=''):
             except requests.Timeout:
                 status.append({"IPAddress":socket.inet_ntoa(info.address), 'Port':info.port, 'Responsive' : False})
 
+    _cached_status = status
+    _cached_status_expiry = time.time() + 1
 
     return status
 
