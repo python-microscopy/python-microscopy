@@ -275,7 +275,7 @@ class idTransientFrames(ModuleBase):
         else:
             fps = inp.mdh['StackSettings.FramesPerStep']
 
-        eventFilterUtils.idTransientFrames(mapped, inp.events, fps)
+        eventFilterUtils.idTransientFrames(mapped, namespace['Events'], fps)
 
         mapped.mdh = inp.mdh
 
