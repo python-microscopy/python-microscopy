@@ -87,7 +87,7 @@ class GaussianFitFactory:
         self.data = np.squeeze(data).astype(np.float32)  # np.ascontiguousarray(np.squeeze(data), dtype=np.float32)
         self.metadata = metadata
 
-        self.background = background  # if not none, will be set to contiguous float32 inside of detector class method
+        self.background = np.squeeze(background)  # if not none, will be set to contiguous float32 inside of detector class method
         self.noiseSigma = noiseSigma
         self.fitfcn = fitfcn
 
@@ -184,7 +184,7 @@ class GaussianFitFactory:
 
         #######################
         # Actually do the fits
-        _warpDrive.smoothFrame(self.data)
+        _warpDrive.smoothFrame(self.data, self.background)
         _warpDrive.getCand(threshold, roiSize)
         if _warpDrive.candCount == 0:
             resList = np.empty(0, FitResultsDType)
