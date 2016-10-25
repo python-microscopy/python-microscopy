@@ -2,7 +2,7 @@
     <div class="section">
     <h1>Storage Nodes</h1>
     <table class="table table-striped">
-        <tr><th>Name</th><th>Address</th><th colspan="2">Disk Space </th><th>Uptime</th><td>Responding</td></tr>
+        <tr><th>Name</th><th>Address</th><th colspan="2">Disk Space </th><th>Uptime</th><th>Responding</th></tr>
         {% for node in storage_nodes %}
             <tr>
             <td>{{ node.ComputerName }}</td><td>http://{{ node.IPAddress }}:{{ node.Port }}</td>
