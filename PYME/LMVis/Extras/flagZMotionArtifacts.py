@@ -46,9 +46,13 @@ class motionFlagger:
         Adds an 'isTransient' column to the input datasource so that one can filter localizations that are from frames
         acquired during z-translation
         """
-        from PYME.experimental import eventFilterUtils
-        eventFilterUtils.idTransientFrames(self.pipeline.selectedDataSource, self.pipeline.events,
+        from PYME.experimental import zMotionArtifactUtils
+        mask = zMotionArtifactUtils.flagMotionArtifacts((self.pipeline.selectedDataSource, self.pipeline.events,
                                            self.pipeline.mdh['StackSettings.FramesPerStep'])
+                                           
+        self.pipeline.selectedDataSource.addColumn('piezoUnstable', mask)
+        #eventFilterUtils.idTransientFrames(self.pipeline.selectedDataSource, self.pipeline.events,
+        #                                   self.pipeline.mdh['StackSettings.FramesPerStep'])
 
 def Plug(visFr):
     """Plugs this module into the gui"""
