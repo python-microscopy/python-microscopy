@@ -1,6 +1,6 @@
 
 ##################
-# eventFilters.py
+# findLostFrames.py
 #
 # Copyright David Baddeley, Andrew Barentine
 # david.baddeley@yale.edu
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 
-class eventFilter:
+class frameFinder:
     """
     Class with methods to flag localizations for filtering with respect to information stored in the events table
     """
@@ -52,5 +52,5 @@ class eventFilter:
 
 def Plug(visFr):
     """Plugs this module into the gui"""
-    visFr.eventfilters = eventFilter(visFr)
+    visFr.eventfilters = frameFinder(visFr)
 

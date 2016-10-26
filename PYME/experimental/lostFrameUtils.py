@@ -1,6 +1,6 @@
 
 ##################
-# eventFilterUtils.py
+# lostFrameUtils.py
 #
 # Copyright David Baddeley, Andrew Barentine
 # david.baddeley@yale.edu
