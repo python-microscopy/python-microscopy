@@ -604,7 +604,7 @@ class multiviewMapper:
     def OnMapZ(self, event=None, useMD = True):
         from PYME.IO import unifiedIO
         pipeline = self.pipeline
-        useMD=False
+
         # FIXME - Rename metadata key to be more reasonable
         stigLoc = pipeline.mdh.getOrDefault('Analysis.AstigmatismMapID', None)
 
