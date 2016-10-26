@@ -266,7 +266,7 @@ class idTransientFrames(ModuleBase):
     outputName = CStr('transientFiltered')
 
     def execute(self, namespace):
-        from PYME.experimental import eventFilterUtils
+        from PYME.experimental import zMotionArtifactUtils
 
         inp = namespace[self.inputName]
 
@@ -280,7 +280,8 @@ class idTransientFrames(ModuleBase):
         else:
             fps = inp.mdh['StackSettings.FramesPerStep']
 
-        eventFilterUtils.idTransientFrames(mapped, namespace[self.inputEvents], fps)
+        mask = zMotionArtifactUtils.flagMotionArtifacts(mapped, namespace[self.inputEvents], fps)
+        mapped.addColumn('piezoUnstable', mask)
 
         mapped.mdh = inp.mdh
 
