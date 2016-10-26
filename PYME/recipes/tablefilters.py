@@ -257,6 +257,7 @@ class MapAstigZ(ModuleBase):
 @register_module('idTransientFrames')
 class idTransientFrames(ModuleBase):
     inputName = CStr('zmapped')
+    inputEvents = CStr('Events')
     framesPerStep = Float()
     outputName = CStr('transientFiltered')
 
@@ -275,7 +276,7 @@ class idTransientFrames(ModuleBase):
         else:
             fps = inp.mdh['StackSettings.FramesPerStep']
 
-        eventFilterUtils.idTransientFrames(mapped, namespace['Events'], fps)
+        eventFilterUtils.idTransientFrames(mapped, namespace[self.inputEvents], fps)
 
         mapped.mdh = inp.mdh
 

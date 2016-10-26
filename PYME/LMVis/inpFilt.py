@@ -143,7 +143,7 @@ class fitResultsSource(inputFilter):
 
         k = key.split('_')
 
-        if len(k) == 1:
+        if len(k) == 1:  # TODO: evaluate why these are cast as floats
             return self.fitResults[k[0]].astype('f')[sl]
         elif len(k) == 2:
             return self.fitResults[k[0]][k[1]].astype('f')[sl]
@@ -210,11 +210,11 @@ class h5rSource(inputFilter):
         k = key.split('_')
         
         if len(k) == 1:
-            return self.fitResults[k[0]][sl].astype('f')
+            return self.fitResults[k[0]][sl]
         elif len(k) == 2:
-            return self.fitResults[k[0]][k[1]][sl].astype('f')
+            return self.fitResults[k[0]][k[1]][sl]
         elif len(k) == 3:
-            return self.fitResults[k[0]][k[1]][k[2]][sl].astype('f')
+            return self.fitResults[k[0]][k[1]][k[2]][sl]
         else:
             raise RuntimeError("Don't know about deeper nesting yet")
         
@@ -305,7 +305,7 @@ class textfileSource(inputFilter):
         for the position data and it's error should ensure that this functions
         with the visualisation backends"""
 
-        self.res = np.loadtxt(filename, dtype={'names' : columnnames, 
+        self.res = np.loadtxt(filename, dtype={'names' : columnnames,  # TODO: evaluate why these are cast as floats
                                                'formats' :  ['f4' for i in range(len(columnnames))]}, delimiter = delimiter, skiprows=skiprows)
         
         self._keys = list(columnnames)
@@ -339,7 +339,7 @@ class matfileSource(inputFilter):
 
         import scipy.io
 
-        self.res = scipy.io.loadmat(filename)[varName].astype('f4')
+        self.res = scipy.io.loadmat(filename)[varName].astype('f4')  # TODO: evaluate why these are cast as floats
         
         self.res = np.rec.fromarrays(self.res.T, dtype={'names' : columnnames,  'formats' :  ['f4' for i in range(len(columnnames))]})
 
