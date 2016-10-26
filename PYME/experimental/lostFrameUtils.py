@@ -1,6 +1,6 @@
 
 ##################
-# lostFrameUtils.py
+# motionArtifactUtils.py
 #
 # Copyright David Baddeley, Andrew Barentine
 # david.baddeley@yale.edu
@@ -44,6 +44,7 @@ def idTransientFrames(dataSource, events, fps):
     t = np.copy(dataSource['t'])
     ti = np.ones_like(t, dtype=int)
 
+    # TODO: note that this works for a broken implementation of ProtocolFocus, where the ProtocolFocus event is written after piezo settling rather than on initiation of movement
     for fi in focusChanges:
         fi = float(fi.split(',')[0])  # only interested in frame# at the moment
         ti[np.logical_and(t >= fi, t < fi+fps)] -= 1
