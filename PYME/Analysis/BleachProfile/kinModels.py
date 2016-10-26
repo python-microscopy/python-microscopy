@@ -247,7 +247,7 @@ def chi2_mse(model, data, r, *args):
 @applyByChannel
 def fitDecay(colourFilter, metadata, channame='', i=0):
     #get frames in which events occured and convert into seconds
-    t = colourFilter['t']*metadata.getEntry('Camera.CycleTime')
+    t = colourFilter['t'].astype('f')*metadata.getEntry('Camera.CycleTime')
 
     n,bins = np.histogram(t, 100)
 
@@ -371,7 +371,7 @@ def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
     #from mpl_toolkits.mplot3d import Axes3D
     
     nPh = getPhotonNums(colourFilter, metadata)
-    t = (colourFilter['t'] - metadata['Protocol.DataStartsAt'])*metadata.getEntry('Camera.CycleTime')
+    t = (colourFilter['t'].astype('f') - metadata['Protocol.DataStartsAt'])*metadata.getEntry('Camera.CycleTime')
     
     if rng is None:
         rng = nPh.mean()*3

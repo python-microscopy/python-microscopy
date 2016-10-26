@@ -136,7 +136,7 @@ def applyShiftmaps(datasource, shiftWallet):  # FIXME: add metadata for camera r
 
 def findClumps(datasource, gap_tolerance, radius_scale, radius_offset):
     from PYME.Analysis.points.DeClump import deClump
-    t = datasource['t']
+    t = datasource['t'] #OK as int
     clumps = np.zeros(len(t), 'i')
     I = np.argsort(t)
     t = t[I].astype('i')

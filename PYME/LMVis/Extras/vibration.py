@@ -96,9 +96,9 @@ class VibrationAnalyser:
         
         # plot x, y vs time to visualize drift        
         pl.figure('x- and y-drift visualization')      
-        pl.plot(pipeline['t'] / Fs, x)
+        pl.plot(pipeline['t'].astype('f') / Fs, x)
         pl.xlabel('Time [s]')
-        pl.plot(pipeline['t'] / Fs, y)
+        pl.plot(pipeline['t'].astype('f') / Fs, y)
         pl.ylabel('relative position [nm]')
         
 

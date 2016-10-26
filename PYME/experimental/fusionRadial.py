@@ -246,7 +246,7 @@ def fitModelToClump(clump, radii = [1., 2., 3., 5., 10], numLeadFrames=10, numFo
 
     #sp = [1, 10., 2, 3, 2., 6., 0, .7]
 
-    t = clump['t']
+    t = clump['t'].astype('f')
     t = t - t[0] - numLeadFrames
 
     numDockedFrames = len(t) - numLeadFrames - numFollowFrames
@@ -355,7 +355,7 @@ class FusionTrack(trackUtils.Track):
 
     @cached_property
     def _fusion_data(self):
-        t = self['t']
+        t = self['t'].astype('f')
         t = t - t[0] - self.numLeadFrames
 
         numDockedFrames = len(t) - self.numLeadFrames - self.numFollowFrames

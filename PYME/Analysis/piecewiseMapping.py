@@ -106,6 +106,7 @@ class piecewiseMap:
         self.xIsSecs = xIsSecs
 
     def __call__(self, xp, xpInFrames=True):
+        xp = xp.astype('f') #fast to float in case we get passed an int
         yp = 0 * xp
 
         if not xpInFrames:

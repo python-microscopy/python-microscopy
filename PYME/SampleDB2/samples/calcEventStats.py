@@ -35,9 +35,9 @@ def getStatsChan(pipeline, chanName, file):
     else:
         label = p.fluorSpeciesDyes[chanName]
     if 'Camera.CycleTime' in p.mdh.getEntryNames():
-        t = p.colourFilter['t']*p.mdh.getEntry('Camera.CycleTime')
+        t = p.colourFilter['t'].astype('f')*p.mdh.getEntry('Camera.CycleTime')
     else:
-        t = p.colourFilter['t']*p.mdh.getEntry('Camera.IntegrationTime')
+        t = p.colourFilter['t'].astype('f')*p.mdh.getEntry('Camera.IntegrationTime')
     nEvents = t.size
     tMax = t.max()
     tMedian = np.median(t)
