@@ -131,7 +131,7 @@ class CameraInfoManager(object):
 
     def _getMap(self, md, mapName):
         """Returns the map specified, from cache if possible"""
-        if mapName is None or mapName == '':
+        if mapName is None or mapName == '' or mapName == '<none>':
             return None
 
         ROI = self._parseROI(md)
@@ -215,7 +215,7 @@ def createFitTaskFromTaskDef(task):
     dataSourceID = task['inputs']['frames']
     frameIndex = int(task['taskdef']['frameIndex'])
 
-    logger.debug('Creating a task for %s - frame %d' % (dataSourceID, frameIndex))
+    #logger.debug('Creating a task for %s - frame %d' % (dataSourceID, frameIndex))
 
     md = task['taskdef']['metadata']
 
@@ -440,7 +440,7 @@ class fitTask(taskDef.Task):
 
         #when camera buffer overflows, empty pictures are produced - deal with these here
         if self.data.max() == 0:
-            return fitResult(self, [])
+            return fitResult(self, [], [])
         
         #squash 4th dimension
         #NB - this now subtracts the ADOffset

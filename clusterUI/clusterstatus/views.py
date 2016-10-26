@@ -25,8 +25,10 @@ def status(request):
     else:
         return render(request, 'clusterstatus/status_dash.html', context)
 
+
 def load(request):
     from PYME.IO import clusterIO
+
     nodes = clusterIO.getStatus()
 
     total_storage = 0

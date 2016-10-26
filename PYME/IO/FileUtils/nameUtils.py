@@ -42,7 +42,7 @@ def getUsername():
         return os.environ['USER']
     else: #linux
         #return os.getlogin() #broken when not runing from command line
-        return os.environ['USER']
+        return os.environ.get('USER', 'nobody')
 
 
 dtn = datetime.datetime.now()

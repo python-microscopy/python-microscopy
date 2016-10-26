@@ -57,7 +57,7 @@ class FloatParam(MDParam):
 
     def formField(self):
         from django import forms
-        return {self.paramName : forms.FloatField(label=self.guiName, initial=self.default)}
+        return self.paramName , forms.FloatField(label=self.guiName, initial=self.default)
         
 
 class IntParam(MDParam):
@@ -95,7 +95,7 @@ class IntParam(MDParam):
 
     def formField(self):
         from django import forms
-        return {self.paramName: forms.IntegerField(label=self.guiName, initial=self.default)}
+        return self.paramName, forms.IntegerField(label=self.guiName, initial=self.default)
 
 class RangeParam(MDParam):
     def __init__(self, paramName, guiName, default=[0, 0], helpText='', **kwargs):
@@ -140,7 +140,7 @@ class RangeParam(MDParam):
                 val = json.loads(value)
                 return val
 
-        return {self.paramName: RangeField(label=self.guiName, initial=repr(self.default))}
+        return self.paramName, RangeField(label=self.guiName, initial=repr(self.default))
         
         
 class StringParam(MDParam):
@@ -179,7 +179,7 @@ class StringParam(MDParam):
 
     def formField(self):
         from django import forms
-        return {self.paramName: forms.CharField(label=self.guiName, initial=self.default)}
+        return self.paramName, forms.CharField(label=self.guiName, initial=self.default)
 
         
 class FloatListParam(MDParam):
@@ -231,7 +231,7 @@ class FloatListParam(MDParam):
                 val = json.loads(value)
                 return [float(v) for v in val]
 
-        return {self.paramName: forms.FloatListField(label=self.guiName, initial=repr(self.default))}
+        return self.paramName, forms.FloatListField(label=self.guiName, initial=repr(self.default))
         
 
 class ChoiceParam(MDParam):
@@ -274,7 +274,7 @@ class ChoiceParam(MDParam):
 
     def formField(self):
         from django import forms
-        return {self.paramName: forms.ChoiceField(label=self.guiName, choices=self.choiceNames, initial=self.default)}
+        return self.paramName, forms.ChoiceField(label=self.guiName, choices=[(c, c) for c in self.choiceNames], initial=self.default)
         
         
         
@@ -375,7 +375,7 @@ class FilenameParam(MDParam):
 
     def formField(self):
         from django import forms
-        return {self.paramName: forms.CharField(label=self.guiName, initial=self.default)}
+        return self.paramName, forms.CharField(label=self.guiName, initial=self.default)
        
 
 class ShiftFieldParam(FilenameParam):    
@@ -431,7 +431,7 @@ class BoolParam(MDParam):
 
     def formField(self):
         from django import forms
-        return {self.paramName: forms.BooleanField(label=self.guiName, initial=self.default)}
+        return self.paramName, forms.BooleanField(label=self.guiName, initial=self.default)
  
 
 class BoolFloatParam(MDParam):
@@ -492,7 +492,7 @@ class BoolFloatParam(MDParam):
     def formField(self):
         from django import forms
         #FIXME - find a suitable way to represent this
-        return {self.paramName: forms.FloatField(label=self.guiName, initial=float(self.default)*self.ondefault)}
+        return self.paramName, forms.FloatField(label=self.guiName, initial=float(self.default)*self.ondefault)
 
 
 

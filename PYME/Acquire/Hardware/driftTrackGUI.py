@@ -77,7 +77,10 @@ class DriftTrackingControl(wx.Panel):
         self.cbTrack.Bind(wx.EVT_CHECKBOX, self.OnCBTrack)
         self.cbLock = wx.CheckBox(self, -1, 'Lock')
         self.cbLock.Bind(wx.EVT_CHECKBOX, self.OnCBLock)
-        hsizer.Add(self.cbLock, 0, wx.ALL, 2)        
+        hsizer.Add(self.cbLock, 0, wx.ALL, 2)
+        self.cbLockActive = wx.CheckBox(self, -1, 'Lock Active')
+        self.cbLockActive.Enable(False)
+        hsizer.Add(self.cbLockActive, 0, wx.ALL, 2)        
         sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -145,6 +148,7 @@ class DriftTrackingControl(wx.Panel):
             self.stError.SetLabel('Error: x = %3.2f px\ny = %3.2f px\nz = %3.2f nm\noffset = %3.2f' % (dx, dy, dz*1000, self.dt.get_offset()))
             self.cbLock.SetValue(self.dt.get_focus_lock())
             self.cbTrack.SetValue(self.dt.is_tracking())
+            self.cbLockActive.SetValue(self.dt.lockActive)
 
             if self.showPlots:
                 self.trackPlot.draw()

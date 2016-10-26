@@ -142,7 +142,7 @@ def fileResults(URI, data_raw):
         clusterfilter = URI.split('://')[1].split('/')[0]
         sequenceName = URI.split('://%s/' % clusterfilter)[1]
 
-        logging.debug('URI: ' + URI)
+        #logging.debug('URI: ' + URI)
         #logging.debug('clusterfilter: ' + clusterfilter)
         #logging.debug('sequencename: ' + sequenceName)
 

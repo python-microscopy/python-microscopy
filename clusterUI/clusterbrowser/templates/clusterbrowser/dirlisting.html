@@ -31,7 +31,9 @@
 
     <h1>Listing of /{% for bc in breadcrumbs %}<a href="/files/{{ bc.path }}">{{ bc.dir }}</a>/{% endfor %}</h1>
 
-    <table class="table table-striped">
+    <div>
+
+    <table class="table table-striped table-condensed">
         {% if  parent %}
             <tr>
                 <td><a href="/files/{{ parent }}"><span class="glyphicon glyphicon-level-up"></span></a></td>
@@ -49,7 +51,7 @@
             </tr>
         {% endfor %}
         {% for seriesi in series %}
-            <tr class="series">
+            <tr class="series" onclick="toggleSelection(this);" data-cu-seriesname={{ seriesi.cluster_uri }}>
                 <td><span class="glyphicon glyphicon-film"></span></td>
                 <td><a href="/files/{{ dirname }}{{ seriesi.name }}">{{ seriesi.name }}</a></td>
                 <td>{{ seriesi.numFrames }} frames</td>
@@ -76,6 +78,8 @@
             </tr>
         {% endfor %}
     </table>
+
+    </div>
 
     <div class="panel panel-primary hidden toggle-panel" id="upload_form">
         <div class="panel-heading"><span class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload Files</div>
@@ -104,6 +108,11 @@
             $('.toggle-control').removeClass('active');
             $(id).removeClass('hidden').addClass('show');
             $(id + '_toggle').addClass('active');
+        }
+
+        function toggleSelection(id){
+            //console.log('toggling selection:' + id)
+            $(id).toggleClass('cu-selected');
         }
 
 
@@ -148,10 +157,10 @@
 
         });
 
-        function on_analysis_settings(){
+        function on_analysis_settings(fitModule='LatGaussFitFR'){
         //console.log('about to reload')
             togglePanel('#localization_form');
-            $('#localization_form').load('/localization/settings/',function () {
+            $('#localization_form').load('/localization/settings/' + fitModule,function () {
                 //alert( "Load was performed." );
                 // $(this).unwrap();
                 //console.log('load performed')

@@ -253,7 +253,11 @@ def fillInBlanks(md, dataSource):
                 #print """WARNING: No clear laser turn on signature found - assuming laser was already on
                 #         and fudging ADOffset Estimation"""
 
+    fixEMGain(md)
 
+
+
+def fixEMGain(md):
 
     #Quick hack for approximate EMGain for gain register settings of 150 & 200
 

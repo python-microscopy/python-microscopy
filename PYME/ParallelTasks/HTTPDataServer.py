@@ -83,7 +83,48 @@ procName = compName + ' - PID:%d' % os.getpid()
 LOG_REQUESTS = False#True
 
 startTime = datetime.datetime.now()
-global_status = {}
+#global_status = {}
+
+status = {}
+
+def updateStatus():
+    from PYME.IO.FileUtils.freeSpace import disk_usage
+
+    #status = {}
+    #status.update(global_status)
+
+    total, used, free = disk_usage(os.getcwd())
+    status['Disk'] = {'total': total, 'used': used, 'free': free}
+    status['Uptime'] = str(datetime.datetime.now() - startTime)
+
+    try:
+        import psutil
+
+        status['CPUUsage'] = psutil.cpu_percent(interval=0, percpu=True)
+        status['MemUsage'] = psutil.virtual_memory()._asdict()
+    except ImportError:
+        pass
+
+    if GPU_STATS:
+        handles = [pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(pynvml.nvmlDeviceGetCount())]
+        gpu_usage = [pynvml.nvmlDeviceGetUtilizationRates(h) for h in handles]
+        status['GPUUsage'] = [float(gu.gpu) for gu in gpu_usage]
+        status['GPUMem'] = [float(gu.memory) for gu in gpu_usage]
+
+class statusPoller(threading.Thread):
+    def __init__(self, *args, **kwargs):
+        self.poll = True
+
+        threading.Thread.__init__(self, *args, **kwargs)
+        self.daemon = True
+
+    def run(self):
+        while self.poll:
+            updateStatus()
+            time.sleep(1)
+
+    def stop(self):
+        self.poll = False
 
 textfile_locks = {}
 def getTextFileLock(filename):
@@ -281,28 +322,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 f.close()
 
     def get_status(self):
-        from PYME.IO.FileUtils.freeSpace import disk_usage
 
-        status = {}
-        status.update(global_status)
-
-        total, used, free = disk_usage(os.getcwd())
-        status['Disk'] = {'total':total, 'used':used, 'free':free}
-        status['Uptime'] = str(datetime.datetime.now() - startTime)
-
-        try:
-            import psutil
-
-            status['CPUUsage'] = psutil.cpu_percent(interval=.1, percpu=True)
-            status['MemUsage'] = psutil.virtual_memory()._asdict()
-        except ImportError:
-            pass
-
-        if GPU_STATS:
-            handles = [pynvml.nvmlDeviceGetHandleByIndex(i) for i in range(pynvml.nvmlDeviceGetCount())]
-            gpu_usage = [pynvml.nvmlDeviceGetUtilizationRates(h) for h in handles]
-            status['GPUUsage'] = [float(gu.gpu) for gu in gpu_usage]
-            status['GPUMem'] = [float(gu.memory) for gu in gpu_usage]
 
         f = StringIO()
         f.write(json.dumps(status))
@@ -568,18 +588,21 @@ def main(protocol="HTTP/1.0"):
     ns = pzc.getNS('_pyme-http')
     ns.register_service('PYMEDataServer: ' + procName, ip_addr, sa[1])
 
-    global_status['IPAddress'] = ip_addr
-    global_status['BindAddress'] = server_address
-    global_status['Port'] = sa[1]
-    global_status['Protocol'] = options.protocol
-    global_status['TestMode'] = options.test
-    global_status['ComputerName'] = GetComputerName()
+    status['IPAddress'] = ip_addr
+    status['BindAddress'] = server_address
+    status['Port'] = sa[1]
+    status['Protocol'] = options.protocol
+    status['TestMode'] = options.test
+    status['ComputerName'] = GetComputerName()
 
     if GPU_STATS:
         try:
             pynvml.nvmlInit()
         except:
             GPU_STATS = False
+
+    sp = statusPoller()
+    sp.start()
 
 
     print "Serving HTTP on", ip_addr, "port", sa[1], "..."
@@ -592,6 +615,8 @@ def main(protocol="HTTP/1.0"):
 
         if options.profile:
             mProfile.report(display=False, profiledir=profileOutDir)
+
+        sp.stop()
 
         if GPU_STATS:
             pynvml.nvmlShutdown()
