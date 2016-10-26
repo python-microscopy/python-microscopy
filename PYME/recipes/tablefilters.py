@@ -256,6 +256,10 @@ class MapAstigZ(ModuleBase):
 
 @register_module('idTransientFrames')
 class idTransientFrames(ModuleBase):
+    """
+    Adds an 'isTransient' column to the input datasource so that one can filter localizations that are from frames
+    acquired during z-translation
+    """
     inputName = CStr('zmapped')
     inputEvents = CStr('Events')
     framesPerStep = Float()
