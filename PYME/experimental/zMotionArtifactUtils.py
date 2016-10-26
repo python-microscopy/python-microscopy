@@ -1,6 +1,6 @@
 
 ##################
-# motionArtifactUtils.py
+# zMotionArtifactUtils.py
 #
 # Copyright David Baddeley, Andrew Barentine
 # david.baddeley@yale.edu
