@@ -179,7 +179,7 @@ class StringParam(MDParam):
 
     def formField(self):
         from django import forms
-        return self.paramName, forms.CharField(label=self.guiName, initial=self.default)
+        return self.paramName, forms.CharField(label=self.guiName, initial=self.default, required=False)
 
         
 class FloatListParam(MDParam):
@@ -375,7 +375,7 @@ class FilenameParam(MDParam):
 
     def formField(self):
         from django import forms
-        return self.paramName, forms.CharField(label=self.guiName, initial=self.default)
+        return self.paramName, forms.CharField(label=self.guiName, initial=self.default, required=False)
        
 
 class ShiftFieldParam(FilenameParam):    
@@ -431,7 +431,7 @@ class BoolParam(MDParam):
 
     def formField(self):
         from django import forms
-        return self.paramName, forms.BooleanField(label=self.guiName, initial=self.default)
+        return self.paramName, forms.BooleanField(label=self.guiName, initial=self.default, required=False)
  
 
 class BoolFloatParam(MDParam):
