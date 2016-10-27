@@ -187,18 +187,13 @@ class GaussianFitFactory:
         # toggle background subtraction (done both in detection and the fit)
         if self.metadata.getOrDefault('Analysis.subtractBackground', False):
             _warpDrive.smoothFrame(self.data, self.background)
-            _warpDrive.getCand(threshold, roiSize)
-            if _warpDrive.candCount == 0:
-                resList = np.empty(0, FitResultsDType)
-                return resList
-            _warpDrive.fitItToWinIt(roiSize)
         else:
             _warpDrive.smoothFrame(self.data)
-            _warpDrive.getCand(threshold, roiSize)
-            if _warpDrive.candCount == 0:
-                resList = np.empty(0, FitResultsDType)
-                return resList
-            _warpDrive.fitItToWinIt(roiSize)
+        _warpDrive.getCand(threshold, roiSize)
+        if _warpDrive.candCount == 0:
+            resList = np.empty(0, FitResultsDType)
+            return resList
+        _warpDrive.fitItToWinIt(roiSize)
         return self.getRes()
 
     def FromPoint(self, x, y):
