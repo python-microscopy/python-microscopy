@@ -182,15 +182,22 @@ class GaussianFitFactory:
         #PYME ROISize is a half size
         roiSize = int(2*self.metadata.getEntry('Analysis.ROISize') + 1)
 
-        #######################
-        # Actually do the fits
-        _warpDrive.smoothFrame(self.data, self.background)
-        _warpDrive.getCand(threshold, roiSize)
-        if _warpDrive.candCount == 0:
-            resList = np.empty(0, FitResultsDType)
-            return resList
-        _warpDrive.fitItToWinIt(roiSize, self.background)
-
+        ########## Actually do the fits #############
+        # toggle background subtraction
+        if self.metadata.getOrDefault('Analysis.subtractBackground', False):
+            _warpDrive.smoothFrame(self.data)
+            _warpDrive.getCand(threshold, roiSize)
+            if _warpDrive.candCount == 0:
+                resList = np.empty(0, FitResultsDType)
+                return resList
+            _warpDrive.fitItToWinIt(roiSize)
+        else:
+            _warpDrive.smoothFrame(self.data, self.background)
+            _warpDrive.getCand(threshold, roiSize)
+            if _warpDrive.candCount == 0:
+                resList = np.empty(0, FitResultsDType)
+                return resList
+            _warpDrive.fitItToWinIt(roiSize, self.background)
         return self.getRes()
 
     def FromPoint(self, x, y):
