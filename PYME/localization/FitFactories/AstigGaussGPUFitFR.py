@@ -183,7 +183,7 @@ class GaussianFitFactory:
         roiSize = int(2*self.metadata.getEntry('Analysis.ROISize') + 1)
 
         ########## Actually do the fits #############
-        # toggle background subtraction
+        # toggle background subtraction (done both in detection and the fit)
         if self.metadata.getOrDefault('Analysis.subtractBackground', False):
             _warpDrive.smoothFrame(self.data)
             _warpDrive.getCand(threshold, roiSize)
@@ -197,7 +197,7 @@ class GaussianFitFactory:
             if _warpDrive.candCount == 0:
                 resList = np.empty(0, FitResultsDType)
                 return resList
-            _warpDrive.fitItToWinIt(roiSize, self.background)
+            _warpDrive.fitItToWinIt(roiSize)
         return self.getRes()
 
     def FromPoint(self, x, y):
