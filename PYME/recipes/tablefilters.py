@@ -254,5 +254,39 @@ class MapAstigZ(ModuleBase):
 
         namespace[self.outputName] = mapped
 
+@register_module('idTransientFrames')
+class idTransientFrames(ModuleBase):
+    """
+    Adds an 'isTransient' column to the input datasource so that one can filter localizations that are from frames
+    acquired during z-translation
+    """
+    inputName = CStr('zmapped')
+    inputEvents = CStr('Events')
+    framesPerStep = Float()
+    outputName = CStr('transientFiltered')
+
+    def execute(self, namespace):
+        from PYME.experimental import zMotionArtifactUtils
+
+        inp = namespace[self.inputName]
+
+        mapped = inpFilt.mappingFilter(inp)
+
+        if 'mdh' not in dir(inp):
+            if self.framesPerStep <= 0:
+                raise RuntimeError('idTransientFrames needs metadata')
+            else:
+                fps = self.framesPerStep
+        else:
+            fps = inp.mdh['StackSettings.FramesPerStep']
+
+        mask = zMotionArtifactUtils.flagMotionArtifacts(mapped, namespace[self.inputEvents], fps)
+        mapped.addColumn('piezoUnstable', mask)
+
+        mapped.mdh = inp.mdh
+
+        namespace[self.outputName] = mapped
+
+
 
 
