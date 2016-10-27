@@ -22,17 +22,19 @@
 
 import numpy as np
 
-def idTransientFrames(dataSource, events, fps):
+def flagMotionArtifacts(dataSource, events, fps):
     """
-    Adds a 'isTransient' column to the input datasource, so that localizations from frames which were acquired during
-    z-translation can be selectively filtered
+    flags frames where we think the piezo might be moving so we can filter them out later
+    
+    NOTE: Only works for a non-standard usage of ProtocolFocus
+    
     Args:
         dataSource: dictionary or recarray
         events: dictionary-like object
         fps: frames acquired per step
 
     Returns:
-        nothing, but adds column to input datasource
+        array with mask for frames without potential motion artifacts
 
     """
     # need this next bit to work if events is a dictionary or a recarray:
@@ -41,7 +43,7 @@ def idTransientFrames(dataSource, events, fps):
     focusChanges = descr[names == 'ProtocolFocus']
 
     # for ProtocolFocus events, description is 'frame#, position'
-    t = np.copy(dataSource['t'])
+    t = dataSource['t']
     ti = np.ones_like(t, dtype=int)
 
     # TODO: note that this works for a broken implementation of ProtocolFocus, where the ProtocolFocus event is written after piezo settling rather than on initiation of movement
@@ -49,5 +51,5 @@ def idTransientFrames(dataSource, events, fps):
         fi = float(fi.split(',')[0])  # only interested in frame# at the moment
         ti[np.logical_and(t >= fi, t < fi+fps)] -= 1
 
-    dataSource.addColumn('isTransient', ti)
-    return
+    #dataSource.addColumn('isTransient', ti)
+    return ti

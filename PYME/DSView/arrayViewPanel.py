@@ -303,7 +303,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             
     def DrawTracks(self, view, dc):
         if self.showTracks and 'filter' in dir(self) and 'clumpIndex' in self.filter.keys():
-            t = self.filter['t']
+            t = self.filter['t'] #prob safe as int
             x = self.filter['x']/self.voxelsize[0]
             y = self.filter['y']/self.voxelsize[1]
             
@@ -354,7 +354,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                 
     def DrawContours(self, view, dc):
         if self.showContours and 'filter' in dir(self) and 'contour' in self.filter.keys() and self.do.slice ==self.do.SLICE_XY:
-            t = self.filter['t']
+            t = self.filter['t'] # prob safe as int
             x = self.filter['x']/self.voxelsize[0]
             y = self.filter['y']/self.voxelsize[1]
             
@@ -390,7 +390,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         if self.showPoints and ('filter' in dir(self) or len(self.points) > 0):
             if 'filter' in dir(self):
-                t = self.filter['t']
+                t = self.filter['t'] #prob safe as int
                 x = self.filter['x']/self.voxelsize[0]
                 y = self.filter['y']/self.voxelsize[1]
                 

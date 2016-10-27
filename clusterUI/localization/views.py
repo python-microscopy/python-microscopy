@@ -144,6 +144,8 @@ def localize(request, analysisModule='LatGaussFitFR'):
     from PYME.IO import MetaDataHandler
     from PYME.Analysis import MetaData
 
+    analysisModule = request.POST.get('Analysis.FitModule', analysisModule).encode()
+
     f = settings_form(analysisModule)(request.POST)
 
     f.is_valid()

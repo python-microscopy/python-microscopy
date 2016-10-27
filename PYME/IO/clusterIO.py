@@ -590,7 +590,7 @@ def getStatus(serverfilter=''):
                 status.append({"IPAddress":socket.inet_ntoa(info.address), 'Port':info.port, 'Responsive' : False})
 
     _cached_status = status
-    _cached_status_expiry = time.time() + 1
+    _cached_status_expiry = time.time() + .5
 
     return status
 
