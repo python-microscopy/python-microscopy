@@ -111,7 +111,7 @@ class GaussianFitFactory:
 
         flatmap = cameraMaps.getFlatfieldMap(self.metadata)
         if not np.isscalar(flatmap):
-            self.flatmap = flatmap.astype(np.float32)  # np.ascontiguousarray(1./flatmap)
+            self.flatmap = flatmap.astype(np.float32)
         else:
             #flatmap = self.metadata['Camera.TrueEMGain']*self.metadata['Camera.ElectronsPerCount']
             self.flatmap = flatmap*np.ones_like(self.data)
@@ -133,16 +133,16 @@ class GaussianFitFactory:
             dfilter2 = warpDrive.normUnifFilter(6)
             _warpDrive = warpDrive.detector(np.shape(self.data), self.data.dtype.itemsize, dfilter1, dfilter2)
             _warpDrive.allocateMem()
-            _warpDrive.prepvar(self.varmap, self.flatmap)
+            _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
 
             #If the data is coming from a different region of the camera, reallocate
             #note that 'and' is short circuiting in Python. Just check the first 20x20 elements
         elif _warpDrive.data.shape == self.data.shape:
             if (not np.array_equal(self.varmap[:20, :20], _warpDrive.varmap[:20, :20])):
-                _warpDrive.prepvar(self.varmap, self.flatmap)
+                _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
         else:  # data is a different shape - we know that we need to re-allocate and prepvar
             _warpDrive.allocateMem()
-            _warpDrive.prepvar(self.varmap, self.varmap)
+            _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
 
     def getRes(self):
         # LLH: (N); dpars and CRLB (N, 6)
