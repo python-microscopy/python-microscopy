@@ -176,9 +176,24 @@ class GaussianFitFactory:
 
         return np.hstack(resList)
 
-    def FindAndFit(self, threshold=4, gui=False, cameraMaps=None):
+    def FindAndFit(self, threshold=4, gui=False, cameraMaps=None, noiseSigma=None):
+        """
 
+        Args:
+            threshold:
+            gui: unused
+            cameraMaps:
+            noiseSigma:
+
+        Returns:
+            output of self.getRes
+
+        """
+        # make sure we've loaded and pre-filtered maps for the correct FOV
         self.refreshWarpDrive(cameraMaps)
+
+        # use signal to noise thresholding if available
+        #thresh = threshold*noiseSigma if (noiseSigma is not None) else threshold
 
         #PYME ROISize is a half size
         roiSize = int(2*self.metadata.getEntry('Analysis.ROISize') + 1)
@@ -189,7 +204,7 @@ class GaussianFitFactory:
             _warpDrive.smoothFrame(self.data, self.background)
         else:
             _warpDrive.smoothFrame(self.data)
-        _warpDrive.getCand(threshold, roiSize)
+        _warpDrive.getCand(threshold, roiSize, noiseSigma)
         if _warpDrive.candCount == 0:
             resList = np.empty(0, FitResultsDType)
             return resList
