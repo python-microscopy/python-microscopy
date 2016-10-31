@@ -180,10 +180,10 @@ class GaussianFitFactory:
         """
 
         Args:
-            threshold:
+            threshold: in units of noiseSigma (if supplied)
             gui: unused
-            cameraMaps:
-            noiseSigma:
+            cameraMaps: cameraInfoManager object (see remFitBuf.py)
+            noiseSigma: (over-)estimate of the noise level at each pixel (see fitTask.calcSigma in remFitBuf.py)
 
         Returns:
             output of self.getRes
