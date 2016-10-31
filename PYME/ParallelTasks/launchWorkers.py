@@ -117,18 +117,18 @@ def main():
 
         if args.run_server:
             print 'Launching server ...'
-            subprocess.Popen('python %s\\%s.py' % (fstub, SERVER_PROC), shell=True)
+            subprocess.Popen('python "%s\\%s.py"' % (fstub, SERVER_PROC), shell=True)
 
             print 'Waiting for server to come up ...'
             time.sleep(10)
 
         if args.gui:
             print 'Launching task monitor ...'
-            subprocess.Popen('python %s\\fitMonP.py' % fstub, shell=True)
+            subprocess.Popen('python "%s\\fitMonP.py"' % fstub, shell=True)
     
         print 'Launching %d workers ...' % numProcessors
         for i in range(numProcessors):
-            subprocess.Popen('python %s\\%s.py' % (fstub, WORKER_PROC), shell=True)
+            subprocess.Popen('python "%s\\%s.py"' % (fstub, WORKER_PROC), shell=True)
     elif sys.platform == 'darwin':
         import psutil
         
