@@ -1,4 +1,4 @@
-.. _installationAnaconda:
+.. _installation_anaconda:
 
 Installation of PYME on 64 bit Windows, OSX, or Linux
 #####################################################

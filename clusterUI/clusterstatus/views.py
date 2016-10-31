@@ -1,4 +1,5 @@
 from django.shortcuts import render
+import time
 
 # Create your views here.
 
@@ -38,6 +39,9 @@ def load(request):
 
 
     return render(request, 'clusterstatus/load_content.html', context)
+
+_numCompleted = {}
+_lastTime = 0
 
 def queues(request):
     from PYME.ParallelTasks import distribution
