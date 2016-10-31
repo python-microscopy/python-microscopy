@@ -3,7 +3,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidde
 from django.core.files.uploadhandler import TemporaryFileUploadHandler
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
-from django.core.servers.basehttp import FileWrapper
+from wsgiref.util import FileWrapper
 
 from PYME.IO import clusterIO
 import os
