@@ -111,7 +111,7 @@ class GaussianFitFactory:
 
         flatmap = cameraMaps.getFlatfieldMap(self.metadata)
         if not np.isscalar(flatmap):
-            self.flatmap = flatmap.astype(np.float32)  # np.ascontiguousarray(1./flatmap)
+            self.flatmap = flatmap.astype(np.float32)
         else:
             #flatmap = self.metadata['Camera.TrueEMGain']*self.metadata['Camera.ElectronsPerCount']
             self.flatmap = flatmap*np.ones_like(self.data)
@@ -133,16 +133,16 @@ class GaussianFitFactory:
             dfilter2 = warpDrive.normUnifFilter(6)
             _warpDrive = warpDrive.detector(np.shape(self.data), self.data.dtype.itemsize, dfilter1, dfilter2)
             _warpDrive.allocateMem()
-            _warpDrive.prepvar(self.varmap, self.flatmap)
+            _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
 
             #If the data is coming from a different region of the camera, reallocate
             #note that 'and' is short circuiting in Python. Just check the first 20x20 elements
         elif _warpDrive.data.shape == self.data.shape:
             if (not np.array_equal(self.varmap[:20, :20], _warpDrive.varmap[:20, :20])):
-                _warpDrive.prepvar(self.varmap, self.flatmap)
+                _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
         else:  # data is a different shape - we know that we need to re-allocate and prepvar
             _warpDrive.allocateMem()
-            _warpDrive.prepvar(self.varmap, self.varmap)
+            _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
 
     def getRes(self):
         # LLH: (N); dpars and CRLB (N, 6)
@@ -176,9 +176,24 @@ class GaussianFitFactory:
 
         return np.hstack(resList)
 
-    def FindAndFit(self, threshold=4, gui=False, cameraMaps=None):
+    def FindAndFit(self, threshold=4, gui=False, cameraMaps=None, noiseSigma=None):
+        """
 
+        Args:
+            threshold: in units of noiseSigma (if supplied)
+            gui: unused
+            cameraMaps: cameraInfoManager object (see remFitBuf.py)
+            noiseSigma: (over-)estimate of the noise level at each pixel (see fitTask.calcSigma in remFitBuf.py)
+
+        Returns:
+            output of self.getRes
+
+        """
+        # make sure we've loaded and pre-filtered maps for the correct FOV
         self.refreshWarpDrive(cameraMaps)
+
+        # use signal to noise thresholding if available
+        #thresh = threshold*noiseSigma if (noiseSigma is not None) else threshold
 
         #PYME ROISize is a half size
         roiSize = int(2*self.metadata.getEntry('Analysis.ROISize') + 1)
@@ -189,7 +204,7 @@ class GaussianFitFactory:
             _warpDrive.smoothFrame(self.data, self.background)
         else:
             _warpDrive.smoothFrame(self.data)
-        _warpDrive.getCand(threshold, roiSize)
+        _warpDrive.getCand(threshold, roiSize, noiseSigma)
         if _warpDrive.candCount == 0:
             resList = np.empty(0, FitResultsDType)
             return resList
