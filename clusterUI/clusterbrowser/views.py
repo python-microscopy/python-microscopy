@@ -3,13 +3,45 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidde
 from django.core.files.uploadhandler import TemporaryFileUploadHandler
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
+from django.core.servers.basehttp import FileWrapper
+
 from PYME.IO import clusterIO
+import os
 
 # Create your views here.
-def file(request, filename, type='raw'):
+def file(request, filename):
+    type = request.GET.get('type', 'raw')
     #print 'file'
     if type == 'raw':
         return HttpResponse(clusterIO.getFile(filename), content_type='')
+    elif type in  ['tiff', 'h5']:
+        from PYME.IO import image
+        import tempfile
+        img = image.ImageStack(filename='pyme-cluster:///%s' % filename.rstrip('/'), haveGUI=False)
+
+        if type == 'tiff':
+            ext = '.tif'
+        else:
+            ext = '.' + type
+
+        fn = os.path.splitext(os.path.split(filename.rstrip('/'))[-1])[0] + ext
+
+        #note we are being a bit tricky here to ensure our temporary file gets deleted when we are done
+        # 1) We create the temporary file using the tempfile module. This gets automagically deleted when we close the
+        #    file (at the end of the with block)
+        # 2) We pass the filename of the temporary file to img.Save. This will mean that a second file object / file handle
+        #    gets created, the contents get written, and the file gets closed
+        with tempfile.NamedTemporaryFile(mode='w+b', suffix=ext) as outf:
+            img.Save(outf.name)
+
+            #seek to update temporary file (so that it knows the new length)
+            outf.seek(0)
+
+            wrapper = FileWrapper(outf)
+            response = HttpResponse(wrapper, content_type='image/%s' % ext.lstrip('.'))
+            response['Content-Disposition'] = 'attachment; filename=%s' % fn
+            response['Content-Length'] = os.path.getsize(outf.name)
+            return response
 
 def listing(request, filename):
     #print 'listing'
