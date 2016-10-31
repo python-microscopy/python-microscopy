@@ -74,7 +74,7 @@ class H5Exporter(Exporter):
     extension = '*.h5'
     descr = 'PYME HDF - .h5'
 
-    def __init__(self, complib='zlib', complevel=6):
+    def __init__(self, complib='zlib', complevel=1):
         self.complib = complib
         self.complevel = complevel
 
