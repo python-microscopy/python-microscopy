@@ -87,8 +87,7 @@ class GaussianFitFactory:
         self.data = np.squeeze(data).astype(np.float32)  # np.ascontiguousarray(np.squeeze(data), dtype=np.float32)
         self.metadata = metadata
 
-        """ next 3 lines are currently unused """
-        self.background = background
+        self.background = np.squeeze(background)  # if not none, will be set to contiguous float32 inside of detector class method
         self.noiseSigma = noiseSigma
         self.fitfcn = fitfcn
 
@@ -110,21 +109,22 @@ class GaussianFitFactory:
         else:
             self.varmap = varmap*np.ones_like(self.data)
 
-        #fixme currently detector object takes gain, flatmap is one over this. need to switch var maps of our cameras over eventually and reconcile
         flatmap = cameraMaps.getFlatfieldMap(self.metadata)
         if not np.isscalar(flatmap):
             self.flatmap = flatmap.astype(np.float32)  # np.ascontiguousarray(1./flatmap)
         else:
             #flatmap = self.metadata['Camera.TrueEMGain']*self.metadata['Camera.ElectronsPerCount']
-            self.flatmap = (1./flatmap)*np.ones_like(self.data)
+            self.flatmap = flatmap*np.ones_like(self.data)
 
         # subtract darkmap
         #### DB - Dark map is already subtracted by remFitBuf!!!! NOTE: flatfielding will also have been done, so undo
         #darkmap = cameraMaps.getDarkMap(self.metadata)
         #self.data -= darkmap #same op for scalar or array
 
-        ### Undo the flatfielding we did in remFitBuf
-        self.data = self.data*self.flatmap
+        ### Undo the flatfielding we did in remFitBuf: (img.astype('f')-dk)*flat
+        self.data = self.data/self.flatmap
+        if self.background is not None:  # flatfielding is also done on moving-averaged background
+            self.background = self.background/self.flatmap
 
         # Account for any changes we need to make in memory allocation on the GPU
         if not _warpDrive:
@@ -183,15 +183,17 @@ class GaussianFitFactory:
         #PYME ROISize is a half size
         roiSize = int(2*self.metadata.getEntry('Analysis.ROISize') + 1)
 
-        #######################
-        # Actually do the fits
-        _warpDrive.smoothFrame(self.data)
+        ########## Actually do the fits #############
+        # toggle background subtraction (done both in detection and the fit)
+        if self.metadata.getOrDefault('Analysis.subtractBackground', False):
+            _warpDrive.smoothFrame(self.data, self.background)
+        else:
+            _warpDrive.smoothFrame(self.data)
         _warpDrive.getCand(threshold, roiSize)
         if _warpDrive.candCount == 0:
             resList = np.empty(0, FitResultsDType)
             return resList
         _warpDrive.fitItToWinIt(roiSize)
-
         return self.getRes()
 
     def FromPoint(self, x, y):
