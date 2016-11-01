@@ -28,7 +28,7 @@ from PYME.localization import ofind
 from PYME.localization.FitFactories.LatGaussFitFR import FitFactory, FitResultsDType
 from PYME.Analysis import MetaData
 from scipy.interpolate import Rbf, SmoothBivariateSpline
-#from matplotlib import delaunay
+from matplotlib import delaunay
 import tables
 
 #from PYME.localization.FitFactories import LatGaussFitFRTC
