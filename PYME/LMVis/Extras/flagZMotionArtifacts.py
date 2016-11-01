@@ -47,7 +47,7 @@ class motionFlagger:
         acquired during z-translation
         """
         from PYME.experimental import zMotionArtifactUtils
-        mask = zMotionArtifactUtils.flagMotionArtifacts((self.pipeline.selectedDataSource, self.pipeline.events,
+        mask = zMotionArtifactUtils.flagMotionArtifacts(self.pipeline.selectedDataSource, self.pipeline.events,
                                            self.pipeline.mdh['StackSettings.FramesPerStep'])
                                            
         self.pipeline.selectedDataSource.addColumn('piezoUnstable', mask)
