@@ -28,7 +28,7 @@ from PYME.localization import ofind
 from PYME.localization.FitFactories.LatGaussFitFR import FitFactory, FitResultsDType
 from PYME.Analysis import MetaData
 from scipy.interpolate import Rbf, SmoothBivariateSpline
-from matplotlib import delaunay
+#from matplotlib import delaunay
 import tables
 
 #from PYME.localization.FitFactories import LatGaussFitFRTC
@@ -393,6 +393,7 @@ def genShiftVectors(res_g, res_r):
 
 def findWonkyVectors(x, y,dx,dy, tol=100):
     from PYME.LMVis.visHelpers import genEdgeDB
+    from matplotlib import delaunay
     T = delaunay.Triangulation(x,y)
 
     edb = genEdgeDB(T)
@@ -533,6 +534,7 @@ def calcCorrections(filenames):
     return (gs, rs, res_gs, res_rs, Ags, Ars, dx, dy)
 
 def warpCorrectRedImage(r, dx, dy):
+    from matplotlib import delaunay
     X, Y = sp.meshgrid(np.arange(0, 512*70, 70), np.arange(0, 256*70,70))
     cx, cy = getCorrection(X,Y, dx, dy)
 
