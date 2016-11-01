@@ -472,6 +472,8 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
     PyObject *varO = 0;
     PyObject *sigmaO = 0;
 
+    PyObject* out = 0;
+
     PyArrayObject *clumpIDA = 0;
     PyArrayObject *varA = 0;
     PyArrayObject *sigmaA = 0;
@@ -620,7 +622,7 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
     Py_DECREF(varA);
     Py_DECREF(sigmaA);
 
-    PyObject* out = Py_BuildValue("(O,O)", (PyObject*) outVarA, (PyObject*) outSigA);
+    out = Py_BuildValue("(O,O)", (PyObject*) outVarA, (PyObject*) outSigA);
 
     Py_XDECREF(outVarA);
     Py_XDECREF(outSigA);

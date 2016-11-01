@@ -74,12 +74,12 @@ class H5Exporter(Exporter):
     extension = '*.h5'
     descr = 'PYME HDF - .h5'
 
-    def __init__(self, complib='zlib', complevel=6):
+    def __init__(self, complib='zlib', complevel=1):
         self.complib = complib
         self.complevel = complevel
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
-        h5out = tables.openFile(outFile,'w')
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
+        h5out = tables.openFile(outFile,'w', chunk_cache_size=2**23)
         filters=tables.Filters(self.complevel,self.complib,shuffle=True)
 
         nframes = (zslice.stop - zslice.start)/zslice.step
@@ -91,9 +91,11 @@ class H5Exporter(Exporter):
         #atm = tables.UInt16Atom()
         atm = tables.Atom.from_dtype(data[xslice, yslice, 0].dtype)
 
-        ims = h5out.createEArray(h5out.root,'ImageData',atm,(0,xSize,ySize), filters=filters, expectedrows=nframes)#, chunkshape=(1,xSize,ySize))
+        ims = h5out.createEArray(h5out.root,'ImageData',atm,(0,xSize,ySize), filters=filters, expectedrows=nframes, chunkshape=(1,xSize,ySize))
 
+        curFrame = 0
         for frameN in range(zslice.start,zslice.stop, zslice.step):
+            curFrame += 1
             im = data[xslice, yslice, frameN].squeeze()
             
             for fN in range(frameN+1, frameN+zslice.step):
@@ -106,6 +108,11 @@ class H5Exporter(Exporter):
             
             #print im.shape    
             ims.append(im)
+            if ((curFrame % 10) == 0)  and progressCallback:
+                try:
+                    progressCallback(curFrame, nframes)
+                except:
+                    pass
             #ims.flush()
             
         ims.flush()
@@ -136,6 +143,12 @@ class H5Exporter(Exporter):
         h5out.flush()
         h5out.close()
 
+        if progressCallback:
+            try:
+                progressCallback(nframes, nframes)
+            except:
+                pass
+
 exporter(H5Exporter)
 
 
@@ -144,7 +157,7 @@ class TiffStackExporter(Exporter):
     extension = '*.tiff'
     descr = 'TIFF (stack if 3D) - .tiff'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         #xmd = None
         if not metadata is None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
@@ -188,13 +201,19 @@ class TiffStackExporter(Exporter):
             xmd.writeXML(xmlFile)
             # xmd.WriteSimple(xmlFile)
 
+        if progressCallback:
+            try:
+                progressCallback(100, 100)
+            except:
+                pass
+
 exporter(TiffStackExporter)
 
 class OMETiffExporter(Exporter):
     extension = '*.tif'
     descr = 'OME TIFF - .tif'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         from PYME.contrib.gohlke import tifffile
         from PYME.IO import dataWrap
         
@@ -215,7 +234,13 @@ class OMETiffExporter(Exporter):
             
             
             
-        tifffile.imsave_f(outFile, dw, description = description) 
+        tifffile.imsave_f(outFile, dw, description = description)
+
+        if progressCallback:
+            try:
+                progressCallback(100, 100)
+            except:
+                pass
 
 
 exporter(OMETiffExporter)
@@ -225,7 +250,7 @@ class TiffSeriesExporter(Exporter):
     extension = '*.xml'
     descr = 'TIFF Series - .xml'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         #nframes = (zslice.stop - zslice.start)/zslice.step
 
         outDir = os.path.splitext(outFile)[0]
@@ -253,6 +278,12 @@ class TiffSeriesExporter(Exporter):
             xmd.writeXML(xmlFile)
             # xmd.WriteSimple(xmlFile)
 
+        if progressCallback:
+            try:
+                progressCallback(100, 100)
+            except:
+                pass
+
 exporter(TiffSeriesExporter)
 
 
@@ -261,7 +292,7 @@ class NumpyExporter(Exporter):
     extension = '*.npy'
     descr = 'Pickled numpy ndarray - .npy'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         numpy.save(outFile, data[xslice, yslice, zslice])
 
         if not metadata is None:
@@ -277,6 +308,12 @@ class NumpyExporter(Exporter):
             xmd.writeXML(xmlFile)
             #xmd.WriteSimple(xmlFile)
 
+        if progressCallback:
+            try:
+                progressCallback(100, 100)
+            except:
+                pass
+
 exporter(NumpyExporter)
 
 #@exporter
@@ -284,12 +321,18 @@ class PSFExporter(Exporter):
     extension = '*.psf'
     descr = 'PYME psf data - .psf'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         #numpy.save(outFile, data[xslice, yslice, zslice])
         import cPickle
         fid = open(outFile, 'wb')
         cPickle.dump((data[xslice, yslice, zslice], metadata.voxelsize), fid, 2)
         fid.close()
+
+        if progressCallback:
+            try:
+                progressCallback(100, 100)
+            except:
+                pass
 
 exporter(PSFExporter)
 
@@ -298,7 +341,7 @@ class TxtExporter(Exporter):
     extension = '*.txt'
     descr = 'Tab formatted txt  - .txt'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         #numpy.save(outFile, data[xslice, yslice, zslice])
         #import cPickle
 
@@ -329,6 +372,12 @@ class TxtExporter(Exporter):
             fid.write('\n' + '\t'.join(['%f' % d[i] for d in dat]))
 
         fid.close()
+
+        if progressCallback:
+            try:
+                progressCallback(100, 100)
+            except:
+                pass
 
 exporter(TxtExporter)
 #exporters = {'PYME HDF - .h5': H5Exporter,
@@ -482,7 +531,7 @@ def CropExportData(vp, mdh=None, events=None, origName = None):
     
 
 
-def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif', filename=None):
+def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif', filename=None, progressCallback=None):
     if filename is None:
         #show file selection dialog box
         filename = _getFilename(defaultExt)
@@ -503,7 +552,7 @@ def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif',
         return
 
     exp = exportersByExtension[ext]()
-    exp.Export(ds, filename, slice(0, ds.shape[0], 1), slice(0, ds.shape[1], 1), slice(0, ds.shape[2], 1),mdh, events, origName)
+    exp.Export(ds, filename, slice(0, ds.shape[0], 1), slice(0, ds.shape[1], 1), slice(0, ds.shape[2], 1),mdh, events, origName, progressCallback=progressCallback)
     return filename
     
 
