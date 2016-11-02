@@ -224,6 +224,21 @@ def deClump(fitResults):
 
             
 
+def dbscanClump(dataSource, eps=100, min_samples=3, filterIndex=None):
+    from sklearn.cluster import dbscan
+    import numpy as np
+
+    dbl = -0.5*np.ones_like(dataSource['x'])
+    if filterIndex is not None:
+        fi = np.where(filterIndex)
+        core_samp, dbLabels = dbscan(np.vstack([dataSource['x'][fi], dataSource['y'][fi], dataSource['z'][fi]]).T, eps, min_samples)
+        dbl[fi] = dbLabels
+    else:
+        core_samp, dbLabels = dbscan(np.vstack([dataSource['x'], dataSource['y'], dataSource['z']]).T, eps, min_samples)
+        dbl = dbLabels
+
+    dataSource.addColumn('dbscanClumpID', dbl)
+
 
 
 
