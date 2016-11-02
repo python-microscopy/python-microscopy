@@ -113,7 +113,7 @@ def applyShiftmaps(datasource, shiftWallet):  # FIXME: add metadata for camera r
     shiftModule = importlib.import_module(shiftWallet['shiftModel'].split('.' + model)[0])
     shiftModel = getattr(shiftModule, model)
 
-    numChan = np.sum([(k.startswith('chan') and k.endswith('.X')) for k in shiftWallet.keys()])
+    numChan = np.sum([(k.startswith('Chan') and k.endswith('.X')) for k in shiftWallet.keys()])
 
     x, y = datasource['x'], datasource['y']
 
