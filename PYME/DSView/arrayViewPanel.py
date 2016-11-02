@@ -198,6 +198,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
     def _PixelToScreenCoordinates(self, x, y):
         #sc = pow(2.0,(self.do.scale-2))
+        #print self.scale, self.aspect
         return self._AbsToScreenCoordinates(x*self.scale, y*self.scale*self.aspect)
         
     def _PixelToScreenCoordinates3D(self, x, y, z):
