@@ -62,12 +62,16 @@ class CurrentRenderer:
         
         self.pipeline = pipeline
 
-        if isinstance(pipeline, inpFilt.colourFilter):
-            self.colourFilter = pipeline
-        else:
-            self.colourFilter = pipeline.colourFilter
+
 
         self._addMenuItems()
+
+    @property
+    def colourFilter(self):
+        if isinstance(self.pipeline, inpFilt.colourFilter):
+            return self.pipeline
+        else:
+            return self.pipeline.colourFilter
 
     def _addMenuItems(self):
         #ID = wx.NewId()

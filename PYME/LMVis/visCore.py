@@ -366,7 +366,7 @@ class VisGUICore(object):
                 self.glCanvas.setPoints3D(self.pipeline['x'], 
                                       self.pipeline['y'], 
                                       self.pipeline['z'], 
-                                      self.pointColour())
+                                      self.pointColour(), alpha=self.pointDisplaySettings.alpha)
             else:
                 self.glCanvas.setPoints(self.pipeline['x'], 
                                     self.pipeline['y'], self.pointColour())

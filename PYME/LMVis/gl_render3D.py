@@ -106,8 +106,9 @@ class RenderLayer(object):
         
     def render(self, glcanvas=None):
         if self.mode in ['points']:
-            glDisable(GL_LIGHTING)
+            #glDisable(GL_LIGHTING)
             #glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
+            glEnable(GL_POINT_SMOOTH)
             if glcanvas:
                 glPointSize(self.pointSize/glcanvas.pixelsize)
             else:
@@ -119,7 +120,7 @@ class RenderLayer(object):
         if self.mode in ['wireframe']:
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
         else:
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+            glPolygonMode(GL_FRONT, GL_FILL)
             
         nVertices = self.verts.shape[0]
             
@@ -497,7 +498,7 @@ class LMGLCanvas(GLCanvas):
         light_position = [2.0, 2.00, 2.0, 0.0]
 
         glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
-        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE)
 
         glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse)
         glLightfv(GL_LIGHT0, GL_SPECULAR, [0.3,0.3,0.3,1.0])
@@ -546,6 +547,7 @@ class LMGLCanvas(GLCanvas):
         glEnableClientState(GL_NORMAL_ARRAY)
         glEnable (GL_BLEND)
         glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        #glBlendFunc (GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_POINT_SMOOTH)
 
         #self.vs = glVertexPointerf(numpy.array([[5, 5],[10000, 10000], [10000, 5]]).astype('f'))
