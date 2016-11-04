@@ -22,51 +22,66 @@
 
 import numpy as np
 import wx
-from PYME.Analysis.points.DeClump import pyDeClump
+from sklearn.cluster import dbscan
 
-class clumper:
+def clumpCOM(dataSource):
+
+    cvec = dataSource[[k for k in dataSource.keys() if k.endswith('ClumpID')][0]]
+    numClumps = np.max(cvec)
+    print numClumps
+    com = np.empty((numClumps, 3))
+    for ci in range(numClumps):
+        cmask = cvec == ci
+        com[ci, :] = dataSource['x'][cmask].mean(), dataSource['y'][cmask].mean(), dataSource['z'][cmask].mean()
+
+    return com
+
+class DBSCANer:
     """
 
 
     """
     def __init__(self, visFr):
         self.pipeline = visFr.pipeline
-        self.visFr = visFr
-        #self.clump_gap_tolerance = 1 # the number of frames that can be skipped for a clump to still be considered a single clump
-        #self.clump_radius_scale = 2.0 # the factor with which to multiply error_x by to determine a radius in which points belong to the same clump
-        #self.clump_radius_offset = 150. # an offset in nm to add to the the clump detection radius (useful for detection before shift correction)
-
-
 
         visFr.AddMenuItem('Extras', 'DBSCAN Clump', self.OnClumpDBSCAN,
                           helpText='')
-
-
+        #visFr.AddMenuItem('Extras', 'Scatterplot Clumps', self.OnScatterClumps,
+        #                  helpText='')
 
     def OnClumpDBSCAN(self, event=None):
-        eps_dlg = wx.NumberEntryDialog(None, 'aa', 'eps', 'cc', 1, 0, 9e9)
+        """
+        Runs sklearn DBSCAN clustering algorithm pipeline x, y, and z output (post filter).
+
+        Args are user defined through GUI
+            eps: search radius for clustering
+            min_points: number of points within eps required for a given point to be considered a core point
+
+        """
+        eps_dlg = wx.NumberEntryDialog(None, 'DBSCAN parameters', 'eps [nm]', 'esp [nm]', 1, 0, 9e9)
         eps_dlg.ShowModal()
-        min_points_dlg = wx.NumberEntryDialog(None, 'aa', 'min_points', 'cc', 1, 0, 9e9)
+        min_points_dlg = wx.NumberEntryDialog(None, 'DBSCAN parameters', 'min_points to be a core point', 'min_points', 1, 0, 9e9)
         min_points_dlg.ShowModal()
 
-        # get probe (color channel) to be clumped
-        probe_dlg = wx.NumberEntryDialog(None, 'aa', 'probe channel to clump', 'cc', 1, 0, np.max(self.pipeline['probe']) + 1)
+        # TODO: add dialog for choosing pipeline keys to cluster (and how many keys to cluster)
 
-        probe_dlg.ShowModal()
-        probeID = probe_dlg.GetValue()
+        # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
+        core_samp, dbLabels = dbscan(np.vstack([self.pipeline['x'], self.pipeline['y'], self.pipeline['z']]).T,
+                                     eps_dlg.GetValue(), min_points_dlg.GetValue())
 
-        # generate boolean array of localizations to be searched
-        if probeID is None:
-            fi = self.pipeline.filter.Index
-        else:
-            fi = np.logical_and(self.pipeline.filter.Index, self.pipeline.selectedDataSource['probe'] == probeID)
+        # shift dbscan labels up by one, so that the 0th cluster doesn't get lost when pipeline fills in filtered points
+        self.pipeline.addColumn('dbscanClumpID', dbLabels + 1)
 
-        pyDeClump.dbscanClump(self.pipeline.selectedDataSource, float(eps_dlg.GetValue()),
-                              float(min_points_dlg.GetValue()), filterIndex=fi)
+
+    #def OnScatterClumps(self, event=None):
+    #    com = clumpCOM(self.pipeline.selectedDataSource)
+    #    self.visFr.glCanvas.setPoints3D(com[:, 0], com[:, 1], com[:, 2])
+
 
 
 
 
 def Plug(visFr):
     """Plugs this module into the gui"""
-    visFr.multiview = clumper(visFr)
+    visFr.multiview = DBSCANer(visFr)
+
