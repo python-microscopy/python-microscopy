@@ -51,10 +51,13 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS):
         out_d = {k:('%s_%s'% (fns,k)) for k in  outputNames}
         
         taskParams.append((recipe, in_d, out_d))
-        
-    pool = multiprocessing.Pool(num_procs)
+
+    if num_procs == 1:
+        map(runRec, taskParams)
+    else:
+        pool = multiprocessing.Pool(num_procs)
     
-    pool.map(runRec, taskParams)
+        pool.map(runRec, taskParams)
 
 
 def main():
