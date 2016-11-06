@@ -1,8 +1,8 @@
 
 ##################
-# multiviewMapping.py
+# dbscanClustering.py
 #
-# Copyright Andrew Barentine, David Baddeley
+# Copyright David Baddeley, Andrew Barentine
 # david.baddeley@yale.edu
 #
 # This program is free software: you can redistribute it and/or modify
