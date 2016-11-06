@@ -111,10 +111,10 @@ class GaussianFitFactory:
 
         flatmap = cameraMaps.getFlatfieldMap(self.metadata)
         if not np.isscalar(flatmap):
-            self.flatmap = flatmap.astype(np.float32)
+            self.flatmap = flatmap.astype(np.float32)  # flatmat is mean-normalized and unitless
         else:
             #flatmap = self.metadata['Camera.TrueEMGain']*self.metadata['Camera.ElectronsPerCount']
-            self.flatmap = flatmap*np.ones_like(self.data)
+            self.flatmap = flatmap*np.ones_like(self.data) # flatmat is mean-normalized and unitless
 
         # subtract darkmap
         #### DB - Dark map is already subtracted by remFitBuf!!!! NOTE: flatfielding will also have been done, so undo
@@ -122,9 +122,9 @@ class GaussianFitFactory:
         #self.data -= darkmap #same op for scalar or array
 
         ### Undo the flatfielding we did in remFitBuf: (img.astype('f')-dk)*flat
-        self.data = self.data/self.flatmap
+        self.data = self.data/self.flatmap  # no conversion here, flatmap normed so data still in [ADU]
         if self.background is not None:  # flatfielding is also done on moving-averaged background
-            self.background = self.background/self.flatmap
+            self.background = self.background/self.flatmap  # no conversion here, flatmap normed so data still in [ADU]
 
         # Account for any changes we need to make in memory allocation on the GPU
         if not _warpDrive:
@@ -204,7 +204,7 @@ class GaussianFitFactory:
             _warpDrive.smoothFrame(self.data, self.background)
         else:
             _warpDrive.smoothFrame(self.data)
-        _warpDrive.getCand(threshold, roiSize, noiseSigma)
+        _warpDrive.getCand(threshold, roiSize, noiseSigma, self.metadata['Camera.ElectronsPerCount'])
         if _warpDrive.candCount == 0:
             resList = np.empty(0, FitResultsDType)
             return resList
