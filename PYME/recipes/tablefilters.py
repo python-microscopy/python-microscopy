@@ -290,7 +290,7 @@ class idTransientFrames(ModuleBase):
 @register_module('dbscanClustering')
 class dbscanClustering(ModuleBase):
     """
-    Performs DBSCAN clustering on input dictionary, and adds
+    Performs DBSCAN clustering on input dictionary
     Args:
         searchRadius: search radius for clustering
         minPtsForCore: number of points within SearchRadius required for a given point to be considered a core point
