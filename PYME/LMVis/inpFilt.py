@@ -34,7 +34,7 @@ from PYME.Analysis.piecewise import * #allow piecewise linear mappings
 
 import tables
 
-class inputFilter(object):
+class TabularBase(object):
     def toDataFrame(self, keys=None):
         import pandas as pd
         if keys is None:
@@ -58,7 +58,7 @@ class inputFilter(object):
         
     
 
-class randomSource(inputFilter):
+class randomSource(TabularBase):
     _name = "Random Source"
     def __init__(self, xmax, ymax, nsamps):
         """Uniform random source, for testing and as an example"""
@@ -104,7 +104,7 @@ def unNestDtype(descr, parent=''):
             unList += unNestDtype(n[1], parent + n[0] + '_')
     return unList
 
-class fitResultsSource(inputFilter):
+class fitResultsSource(TabularBase):
     _name = "recarrayfi Source"
     def __init__(self, fitResults, sort=True):
         self.setResults(fitResults, sort=sort)
@@ -160,7 +160,7 @@ class fitResultsSource(inputFilter):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
-class h5rSource(inputFilter):
+class h5rSource(TabularBase):
     _name = "h5r Data Source"
     def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
@@ -296,7 +296,7 @@ class h5rDSource(h5rSource):
 #     def getInfo(self):
 #         return 'PYME h5r Drift Data Source\n\n %d points' % self.h5f.root.DriftResults.shape[0]
 
-class textfileSource(inputFilter):
+class textfileSource(TabularBase):
     _name = "Text File Source"
     def __init__(self, filename, columnnames, delimiter=None, skiprows=0):
         """ Input filter for use with delimited text data. Defaults
@@ -328,7 +328,7 @@ class textfileSource(inputFilter):
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
 
-class matfileSource(inputFilter):
+class matfileSource(TabularBase):
     _name = "Matlab Source"
     def __init__(self, filename, columnnames, varName='Orte'):
         """ Input filter for use with matlab data. Need to provide a variable name
@@ -363,7 +363,7 @@ class matfileSource(inputFilter):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
         
 
-class resultsFilter(inputFilter):
+class resultsFilter(TabularBase):
     _name = "Results Filter"
     def __init__(self, resultsSource, **kwargs):
         """Class to permit filtering of fit results - masquarades
@@ -398,7 +398,7 @@ class resultsFilter(inputFilter):
     def keys(self):
         return self.resultsSource.keys()
 
-class cachingResultsFilter(inputFilter):
+class cachingResultsFilter(TabularBase):
     _name = "Caching Results Filter"
     def __init__(self, resultsSource, **kwargs):
         """Class to permit filtering of fit results - masquarades
@@ -440,7 +440,7 @@ class cachingResultsFilter(inputFilter):
         return self.resultsSource.keys()
 
 
-class mappingFilter(inputFilter):
+class mappingFilter(TabularBase):
     _name = "Mapping Filter"
     def __init__(self, resultsSource, **kwargs):
         """Class to permit transformations (e.g. drift correction) of fit results
@@ -554,7 +554,7 @@ class mappingFilter(inputFilter):
 
         return eval(map)
 
-class colourFilter(inputFilter):
+class colourFilter(TabularBase):
     _name = "Colour Filter"
     def __init__(self, resultsSource, visFr, currentColour=None):
         """Class to permit filtering by colour
@@ -607,7 +607,7 @@ class colourFilter(inputFilter):
 
     
     
-class cloneSource(inputFilter):
+class cloneSource(TabularBase):
     _name = "Cloned Source"
     def __init__(self, resultsSource):
         """Creates an in memory copy of a (filtered) data source"""
@@ -627,7 +627,7 @@ class cloneSource(inputFilter):
     def keys(self):
         return self.cache.keys()
 
-class recArrayInput(inputFilter):
+class recArrayInput(TabularBase):
     _name = 'RecArray Source'
     def __init__(self, recordArray):
         self.recArray = recordArray

@@ -441,7 +441,7 @@ class Measure2D(ModuleBase):
         labels = namespace[self.inputLabels]
         
         #define the measurement class, which behaves like an input filter        
-        class measurements(inpFilt.inputFilter):
+        class measurements(inpFilt.TabularBase):
             _name = 'Measue 2D source'
             ps = labels.pixelSize
             

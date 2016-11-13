@@ -312,6 +312,10 @@ class ImageStack(object):
         self.mdh['ImageBounds.y1'] = value.y1
         self.mdh['ImageBounds.z0'] = value.z0
         self.mdh['ImageBounds.z1'] = value.z1
+
+    @property
+    def metadata(self):
+        return self.mdh
         
     @property
     def origin(self):

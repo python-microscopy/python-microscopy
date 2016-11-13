@@ -362,7 +362,7 @@ class Pipeline:
 
         """
         #check that we have a suitable object - note that this could potentially be relaxed
-        assert isinstance(ds, inpFilt.inputFilter)
+        assert isinstance(ds, inpFilt.TabularBase)
 
         if not isinstance(ds, inpFilt.mappingFilter):
             #wrap with a mapping filter
