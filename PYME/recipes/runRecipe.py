@@ -11,7 +11,7 @@ from argparse import ArgumentParser
 from PYME.IO.image import ImageStack
 import pandas as pd
 import tables
-from PYME.LMVis import inpFilt
+from PYME.IO import tabular
 from PYME.IO import MetaDataHandler
 
 import logging
@@ -37,7 +37,7 @@ def loadInput(filename, namespace, key='input'):
         mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
         for t in  h5f.list_nodes('/'):
             if isinstance(t, tables.table.Table):
-                tab = inpFilt.h5rSource(h5f, t.name)
+                tab = tabular.h5rSource(h5f, t.name)
                 tab.mdh = mdh
 
                 namespace[key_prefix + t.name] = tab

@@ -21,13 +21,13 @@
 #
 ##################
 
-from PYME.LMVis import inpFilt
+from PYME.IO import tabular
 import os
 import sys
 
 
 def convertFile(inFile, outFile):
-    ds = inpFilt.h5rSource(inFile)
+    ds = tabular.h5rSource(inFile)
 
     nRecords = len(ds[ds.keys()[0]])
 

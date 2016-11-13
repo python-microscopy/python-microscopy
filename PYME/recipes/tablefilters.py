@@ -2,7 +2,7 @@ from .base import register_module, ModuleBase, Filter, Float, Enum, CStr, Bool, 
 from traits.api import DictStrStr, DictStrList, ListFloat
 import numpy as np
 import pandas as pd
-from PYME.LMVis import inpFilt
+from PYME.IO import tabular
 from PYME.LMVis import renderers
 
 @register_module('Mapping')
@@ -15,7 +15,7 @@ class Mapping(ModuleBase):
     def execute(self, namespace):
         inp = namespace[self.inputName]
 
-        map = inpFilt.mappingFilter(inp, **self.mappings)
+        map = tabular.mappingFilter(inp, **self.mappings)
 
         if 'mdh' in dir(inp):
             map.mdh = inp.mdh
@@ -33,7 +33,7 @@ class Filter(ModuleBase):
     def execute(self, namespace):
         inp = namespace[self.inputName]
 
-        map = inpFilt.resultsFilter(inp, **self.filters)
+        map = tabular.resultsFilter(inp, **self.filters)
 
         if 'mdh' in dir(inp):
             map.mdh = inp.mdh
@@ -62,8 +62,8 @@ class DensityMapping(ModuleBase):
     def execute(self, namespace):
         from PYME.IO.image import ImageBounds
         inp = namespace[self.inputLocalizations]
-        if not isinstance(inp, inpFilt.colourFilter):
-            cf = inpFilt.colourFilter(inp, None)
+        if not isinstance(inp, tabular.colourFilter):
+            cf = tabular.colourFilter(inp, None)
             cf.mdh = inp.mdh
         else:
             cf = inp
@@ -89,7 +89,7 @@ class Pipelineify(ModuleBase):
         fitResults = namespace[self.inputFitResults]
         mdh = fitResults.mdh
 
-        mapped_ds = inpFilt.mappingFilter(fitResults)
+        mapped_ds = tabular.mappingFilter(fitResults)
 
 
         if not self.pixelSizeNM == 1: # TODO - check close instead?
@@ -127,7 +127,7 @@ class Fold(ModuleBase):
         if 'mdh' not in dir(inp):
             raise RuntimeError('Unfold needs metadata')
 
-        mapped = inpFilt.mappingFilter(inp)
+        mapped = tabular.mappingFilter(inp)
 
         multiview.foldX(mapped, inp.mdh)
         mapped.mdh = inp.mdh
@@ -159,7 +159,7 @@ class ShiftCorrect(ModuleBase):
 
         shiftMaps = json.loads(s)
 
-        mapped = inpFilt.mappingFilter(inp)
+        mapped = tabular.mappingFilter(inp)
 
         multiview.applyShiftmaps(mapped, shiftMaps)  # FIXME: parse mdh for camera.ROIX
 
@@ -185,7 +185,7 @@ class FindClumps(ModuleBase):
 
         #    raise RuntimeError('Unfold needs metadata')
 
-        mapped = inpFilt.mappingFilter(inp)
+        mapped = tabular.mappingFilter(inp)
 
         multiview.findClumps(mapped, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
 
@@ -206,7 +206,7 @@ class MergeClumps(ModuleBase):
 
         inp = namespace[self.inputName]
 
-        mapped = inpFilt.mappingFilter(inp)
+        mapped = tabular.mappingFilter(inp)
 
         if 'mdh' not in dir(inp):
             raise RuntimeError('MergeClumps needs metadata')
@@ -242,7 +242,7 @@ class MapAstigZ(ModuleBase):
 
         astig_calibrations = json.loads(s)
 
-        mapped = inpFilt.mappingFilter(inp)
+        mapped = tabular.mappingFilter(inp)
 
         z, zerr = astigTools.lookup_astig_z(mapped, astig_calibrations, plot=False)
 
@@ -270,7 +270,7 @@ class idTransientFrames(ModuleBase):
 
         inp = namespace[self.inputName]
 
-        mapped = inpFilt.mappingFilter(inp)
+        mapped = tabular.mappingFilter(inp)
 
         if 'mdh' not in dir(inp):
             if self.framesPerStep <= 0:

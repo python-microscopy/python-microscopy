@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from PYME.LMVis import inpFilt
+from PYME.IO import tabular
 from PYME.IO.image import ImageBounds
 from PYME.LMVis import dyeRatios
 from PYME.LMVis import statusLog
@@ -289,7 +289,7 @@ class Pipeline:
     def selectedDataSource(self):
         """
 
-        The currently selected data source (an instance of inpFilt.inputFilter derived class)
+        The currently selected data source (an instance of tabular.inputFilter derived class)
 
         """
         if self.selectedDataSourceKey is None:
@@ -357,16 +357,16 @@ class Pipeline:
         ----------
         dskey : str
             The name of the new data source
-        ds : an inpFilt.inputFilter derived class
+        ds : an tabular.inputFilter derived class
             The new data source
 
         """
         #check that we have a suitable object - note that this could potentially be relaxed
-        assert isinstance(ds, inpFilt.TabularBase)
+        assert isinstance(ds, tabular.TabularBase)
 
-        if not isinstance(ds, inpFilt.mappingFilter):
+        if not isinstance(ds, tabular.mappingFilter):
             #wrap with a mapping filter
-            ds = inpFilt.mappingFilter(ds)
+            ds = tabular.mappingFilter(ds)
 
         #add keys which might not already be defined
         _add_missing_ds_keys(ds,self.ev_mappings)
@@ -392,14 +392,14 @@ class Pipeline:
             if self.mapping:
                 self.mapping.resultsSource = self.selectedDataSource
             else:
-                self.mapping = inpFilt.mappingFilter(self.selectedDataSource)
+                self.mapping = tabular.mappingFilter(self.selectedDataSource)
 
             #the filter, however needs to be re-generated with new keys and or data source
-            self.filter = inpFilt.resultsFilter(self.mapping, **self.filterKeys)
+            self.filter = tabular.resultsFilter(self.mapping, **self.filterKeys)
 
             #we can also recycle the colour filter
             if not self.colourFilter:
-                self.colourFilter = inpFilt.colourFilter(self.filter, self)
+                self.colourFilter = tabular.colourFilter(self.filter, self)
             else:
                 self.colourFilter.resultsSource = self.filter
                 
@@ -454,22 +454,22 @@ class Pipeline:
 
         if os.path.splitext(filename)[1] == '.h5r':
             try:
-                ds = inpFilt.h5rSource(filename)
+                ds = tabular.h5rSource(filename)
                 self.filesToClose.append(ds.h5f)
 
                 if 'DriftResults' in ds.h5f.root:
-                    driftDS = inpFilt.h5rDSource(ds.h5f)
-                    self.driftInputMapping = inpFilt.mappingFilter(driftDS)
+                    driftDS = tabular.h5rDSource(ds.h5f)
+                    self.driftInputMapping = tabular.mappingFilter(driftDS)
                     self.dataSources['Fiducials'] = self.driftInputMapping
 
                     if len(ds['x']) == 0:
                         self.selectDataSource('Fiducials')
 
             except: #fallback to catch series that only have drift data
-                ds = inpFilt.h5rDSource(filename)
+                ds = tabular.h5rDSource(filename)
                 self.filesToClose.append(ds.h5f)
 
-                self.driftInputMapping = inpFilt.mappingFilter(ds)
+                self.driftInputMapping = tabular.mappingFilter(ds)
                 self.dataSources['Fiducials'] = self.driftInputMapping
                 #self.selectDataSource('Fiducials')
 
@@ -482,20 +482,20 @@ class Pipeline:
 
 
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
-            ds = inpFilt.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
+            ds = tabular.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
 
         elif os.path.splitext(filename)[1] == '.csv':
             #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter
             if 'SkipRows' in kwargs.keys():
-                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], delimiter=',', skiprows=kwargs['SkipRows'])
+                ds = tabular.textfileSource(filename, kwargs['FieldNames'], delimiter=',', skiprows=kwargs['SkipRows'])
             else:
-                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], delimiter=',')
+                ds = tabular.textfileSource(filename, kwargs['FieldNames'], delimiter=',')
 
         else: #assume it's a tab (or other whitespace) delimited text file
             if 'SkipRows' in kwargs.keys():
-                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
+                ds = tabular.textfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
             else:
-                ds = inpFilt.textfileSource(filename, kwargs['FieldNames'])
+                ds = tabular.textfileSource(filename, kwargs['FieldNames'])
 
         return ds
 
@@ -536,7 +536,7 @@ class Pipeline:
             
         #wrap the data source with a mapping so we can fiddle with things
         #e.g. combining z position and focus 
-        mapped_ds = inpFilt.mappingFilter(ds)
+        mapped_ds = tabular.mappingFilter(ds)
 
         
         if 'PixelSize' in kwargs.keys():

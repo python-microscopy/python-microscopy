@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from PYME.LMVis import inpFilt
+from PYME.IO import tabular as inpFilt
 
 from PYME.Analysis import piecewiseMapping
 

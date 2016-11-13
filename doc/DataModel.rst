@@ -75,10 +75,16 @@ Tabular Data
 ============
 
 The second principle data type in PYME is tabular data. In it's loosest form this consists of columns which are accessible
-by name (behaving a little like a dictionary). The mode canonical form of tabular data is a class  derived from
-:class:`PYME.LMVis.inpFilt.inputFilter` [#inpFilt]_. In some parts of the code, however, you will find numpy record arrays,
-pandas DataFrames, or even dictionaries standing in as tabular data.
+by name (behaving a little like a dictionary). The most canonical form of tabular data is a class derived from
+:class:`PYME.IO.tabular.TabularBase` [#inpFilt]_. In some parts of the code, however, you will find numpy record arrays,
+pandas data frames, or even dictionaries standing in as tabular data.
 
+The 4 key requirements for a tabular data are:
+
+* It should be indexable by column name like a dictionary
+* Each column should be returned as a one-dimensional numpy array [#pandasviolation]_
+* Each column should have the same length
+* It should implement a ``.keys()`` function which returns a list of the column names [#recarrayviolation]_
 
 
 .. rubric:: Footnotes
@@ -88,4 +94,11 @@ pandas DataFrames, or even dictionaries standing in as tabular data.
 
 .. [#getitem] Inherited from a common base class.
 
-.. [#inpFilt] This naming is an awful historical artifact, and will should be refactored
+.. [#pandasviolation] This is not strictly true if using pandas data frames (indexing by column returns another data
+    frame). In most cases these are sufficiently similar to numpy arrays that you can get away with it, but caution is
+    advised. TODO: write a ``TabularBase`` derived wrapper for data frames.
+
+.. [#inpFilt] This was previously ``PYME.LMVis.inpFilt``
+
+.. [#recarrayviolation] numpy recarrays do not implement a ``keys()`` method and should normally be wrapped in an instance
+   :class:`PYME.IO.tabular.recarrayInput`

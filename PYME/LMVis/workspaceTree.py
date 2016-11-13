@@ -25,7 +25,7 @@ import wx.gizmos
 from wx.lib.mixins.treemixin import VirtualTree
 #from pylab import cm, array
 
-import inpFilt
+from PYME.IO import tabular
 
 class WorkWrap:
     def __init__(self, dict):
@@ -176,13 +176,13 @@ class WorkspaceTree(VirtualTree, wx.gizmos.TreeListCtrl):
             if column ==0:
                 return self._getChildName(curItem, index[-1])
             elif column == 1:
-                if isinstance(curItem, inpFilt.TabularBase):
+                if isinstance(curItem, tabular.TabularBase):
                     return 'ndarray'
                 else:
                     curItem = self._getChild(curItem, index[-1])
                     return curItem.__class__.__name__
             elif column == 2:
-                if isinstance(curItem, inpFilt.TabularBase):
+                if isinstance(curItem, tabular.TabularBase):
                     return ''
                 else:
                     curItem = self._getChild(curItem, index[-1])

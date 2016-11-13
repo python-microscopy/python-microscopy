@@ -1,18 +1,4 @@
-/Users/david/python-microscopy/doc/BasicAcquisition.rst:4: ERROR: Unknown target name: "advancedimaging".
-/Users/david/python-microscopy/doc/BasicAcquisition.rst:29: ERROR: Unknown target name: "shiftfield".
-/Users/david/python-microscopy/doc/BasicAcquisition.rst:31: ERROR: Unknown target name: "advancedimaging".
 /Users/david/python-microscopy/doc/DataModel.rst:21: ERROR: Unknown interpreted text role "module".
-/Users/david/python-microscopy/doc/DataModel.rst:77: ERROR: Unknown interpreted text role "module".
-/Users/david/python-microscopy/doc/Installation/InstallationFromSource.rst:107: WARNING: Literal block ends without a blank line; unexpected unindent.
-/Users/david/python-microscopy/doc/Recipes.rst:28: WARNING: Inline literal start-string without end-string.
-/Users/david/python-microscopy/doc/SampleDB.rst:20: ERROR: Unexpected indentation.
-/Users/david/python-microscopy/doc/SampleDB.rst:32: ERROR: Unexpected indentation.
-/Users/david/python-microscopy/doc/SampleDB.rst:38: ERROR: Unexpected indentation.
-/Users/david/python-microscopy/doc/SampleDB.rst:44: ERROR: Unexpected indentation.
-/Users/david/python-microscopy/doc/SampleDB.rst:66: ERROR: Unexpected indentation.
-/Users/david/python-microscopy/doc/SampleDB.rst:70: ERROR: Unexpected indentation.
-/Users/david/python-microscopy/doc/SampleDB.rst:87: ERROR: Unexpected indentation.
-/Users/david/python-microscopy/doc/SplitterMulticolour.rst:29: WARNING: Enumerated list ends without a blank line; unexpected unindent.
 /Users/david/python-microscopy/doc/Technical.rst:4: WARNING: toctree contains reference to nonexisting document u'FitModules'
 /Users/david/python-microscopy/doc/index.rst:7: WARNING: Explicit markup ends without a blank line; unexpected unindent.
 /Users/david/python-microscopy/doc/index.rst:58: WARNING: toctree contains reference to nonexisting document u'api/PYME'
@@ -20,8 +6,4 @@
 /Users/david/python-microscopy/doc/Installation/InstallationWithAnacondaNoConsole.rst:: WARNING: document isn't included in any toctree
 /Users/david/python-microscopy/doc/Technical.rst:: WARNING: document isn't included in any toctree
 /Users/david/python-microscopy/doc/dh5view.rst:: WARNING: document isn't included in any toctree
-/Users/david/python-microscopy/doc/Installation/InstallationFromSource.rst:53: WARNING: undefined label: installationanaconda (if the link has no caption the label must precede a section header)
-/Users/david/python-microscopy/doc/VisGUI.rst:11: WARNING: undefined label: installation (if the link has no caption the label must precede a section header)
-/Users/david/python-microscopy/doc/VisGUI.rst:60: WARNING: undefined label: the filter (if the link has no caption the label must precede a section header)
-/Users/david/python-microscopy/doc/VisGUI.rst:157: WARNING: undefined label: sec:intqt (if the link has no caption the label must precede a section header)
 WARNING: html_static_path entry u'/Users/david/python-microscopy/doc/_static' does not exist

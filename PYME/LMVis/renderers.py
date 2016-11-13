@@ -25,7 +25,7 @@ from PYME.LMVis import genImageDialog
 from PYME.LMVis import visHelpers
 #from PYME.LMVis import imageView
 from PYME.LMVis import statusLog
-from PYME.LMVis import inpFilt
+from PYME.IO import tabular
 
 from PYME.IO import MetaDataHandler
 
@@ -68,7 +68,7 @@ class CurrentRenderer:
 
     @property
     def colourFilter(self):
-        if isinstance(self.pipeline, inpFilt.colourFilter):
+        if isinstance(self.pipeline, tabular.colourFilter):
             return self.pipeline
         else:
             return self.pipeline.colourFilter

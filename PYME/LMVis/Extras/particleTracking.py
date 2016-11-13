@@ -113,13 +113,13 @@ class ParticleTracker:
         pipeline.Rebuild()
         
     def OnCoalesce(self, event):
-        from PYME.LMVis import inpFilt
+        from PYME.IO import tabular
         from PYME.Analysis.points.DeClump import pyDeClump
         
         pipeline = self.visFr.pipeline
         
         dclumped = pyDeClump.coalesceClumps(pipeline.selectedDataSource.resultsSource.fitResults, pipeline.selectedDataSource['clumpIndex'])
-        ds = inpFilt.fitResultsSource(dclumped)
+        ds = tabular.fitResultsSource(dclumped)
 
         pipeline.addDataSource('Coalesced',  ds)
         pipeline.selectDataSource('Coalesced')

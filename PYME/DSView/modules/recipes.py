@@ -99,8 +99,8 @@ class RecipePlugin(recipeGui.RecipeManager):
                     if not 'pipeline' in dir(dv):
                         dv.pipeline = pipeline.Pipeline()
                     
-                    from PYME.LMVis import inpFilt
-                    cache = inpFilt.cachingResultsFilter(self.activeRecipe.namespace['out_meas'])
+                    from PYME.IO import tabular
+                    cache = tabular.cachingResultsFilter(self.activeRecipe.namespace['out_meas'])
                     dv.pipeline.OpenFile(ds = cache)
                     dv.view.filter = dv.pipeline
                     
@@ -123,8 +123,8 @@ class RecipePlugin(recipeGui.RecipeManager):
                 if not 'pipeline' in dir(self.dsviewer):
                     self.dsviewer.pipeline = pipeline.Pipeline()
                 
-                from PYME.LMVis import inpFilt
-                cache = inpFilt.cachingResultsFilter(self.outp)
+                from PYME.IO import tabular
+                cache = tabular.cachingResultsFilter(self.outp)
                 self.dsviewer.pipeline.OpenFile(ds = cache)
                 self.dsviewer.pipeline.filterKeys = {}
                 self.dsviewer.pipeline.Rebuild()
@@ -152,7 +152,7 @@ class RecipePlugin(recipeGui.RecipeManager):
             
     def OnLoadOutputs(self, event):
         import pandas
-        from PYME.LMVis import inpFilt
+        from PYME.IO import tabular
         
         filename = wx.FileSelector('Save results as ...', 
                                    wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx|HDF5 files (*.hdf)|*.hdf", 
@@ -170,7 +170,7 @@ class RecipePlugin(recipeGui.RecipeManager):
             if not 'pipeline' in dir(self.dsviewer):
                 self.dsviewer.pipeline = pipeline.Pipeline()
                 
-            cache = inpFilt.cachingResultsFilter(data)
+            cache = tabular.cachingResultsFilter(data)
             self.dsviewer.pipeline.OpenFile(ds = cache)
             self.dsviewer.view.filter = self.dsviewer.pipeline
                 

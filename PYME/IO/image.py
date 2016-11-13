@@ -407,7 +407,7 @@ class ImageStack(object):
         hard work to the HDFDataSource class"""
         import tables
         from PYME.IO.DataSources import HDFDataSource, BGSDataSource
-        from PYME.LMVis import inpFilt
+        from PYME.IO import tabular
         
         #open hdf5 file
         self.dataSource = HDFDataSource.DataSource(filename, None)
@@ -439,7 +439,7 @@ class ImageStack(object):
 
             if 'FitResults' in dir(h5Results.root):
                 self.fitResults = h5Results.root.FitResults[:]
-                self.resultsSource = inpFilt.h5rSource(h5Results)
+                self.resultsSource = tabular.h5rSource(h5Results)
 
                 self.resultsMdh = MetaData.TIRFDefault
                 self.resultsMdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5Results))
