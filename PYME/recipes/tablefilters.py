@@ -315,6 +315,8 @@ class dbscanClustering(ModuleBase):
                                      self.searchRadius, self.minPtsForCore)
 
         # shift dbscan labels up by one, so that the 0th cluster doesn't get lost when pipeline fills in filtered points
+        # but keep the unclustered points at -1
+        dbLabels[dbLabels == -1] = -2
         mapped.addColumn('dbscanClumpID', dbLabels + 1)
 
         # propogate metadata, if present
