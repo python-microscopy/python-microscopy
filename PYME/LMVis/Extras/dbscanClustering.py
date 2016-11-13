@@ -22,49 +22,18 @@
 
 import numpy as np
 import wx
-from sklearn.cluster import dbscan, KMeans
+from sklearn.cluster import dbscan
 
-def clumpCOM(dataSource):
-
-    cvec = dataSource[[k for k in dataSource.keys() if k.endswith('dbscanClumpID')][0]]
-    numClumps = np.max(cvec)
-    print numClumps
-    com = np.empty((numClumps, 3))
-    for ci in range(numClumps):
-        cmask = cvec == ci
-        com[ci, :] = dataSource['x'][cmask].mean(), dataSource['y'][cmask].mean(), dataSource['z'][cmask].mean()
-
-    return com
-
-def splitLargeClumps(pipeline, labelKey, expectedClumpVolume, xKey='x', yKey='y', zKey='z'):
-
-    lastClump = int(np.max(pipeline[labelKey]))
-    stdCube = np.empty(lastClump, dtype=float)
-    for ci in range(1, 1 + lastClump):
-        cMask = ci == pipeline[labelKey]
-        cVec = np.vstack([pipeline[xKey][cMask], pipeline[yKey][cMask], pipeline[zKey][cMask]]).T
-
-        # how many maxClumpDimensions are spanned? Estimate volume of box containing cluster
-        stdCube[ci-1] = np.prod(cVec.std(axis=0))
-
-        numDegenClumps = int(np.prod(cVec.std(axis=0)) / expectedClumpVolume)
-
-        if numDegenClumps > 1:
-            # KMeans
-            kmeans = KMeans(n_clusters=numDegenClumps, init='k-means++', n_init=10).fit_predict(cVec)
 
 class DBSCANer:
     """
-
-
+    Provides GUI handling for sklearn's DBSCAN clustering function
     """
     def __init__(self, visFr):
         self.pipeline = visFr.pipeline
 
         visFr.AddMenuItem('Extras', 'DBSCAN Clump', self.OnClumpDBSCAN,
                           helpText='')
-        #visFr.AddMenuItem('Extras', 'DBSCAN - split degen. clumps', self.OnSplitDegenClumps,
-        #                  helpText='')
 
     def OnClumpDBSCAN(self, event=None):
         """
@@ -92,16 +61,6 @@ class DBSCANer:
         # channel)
         dbLabels[dbLabels == -1] = -2
         self.pipeline.addColumn('dbscanClumpID', dbLabels + 1)
-
-    #def OnSplitDegenClumps(self, event=None):
-    #    vol_dlg = wx.NumberEntryDialog(None, 'DBSCAN parameters', 'expected clump volume [nm^3]', 'Volume [nm^3]', 1, 0, 9e9)
-    #    vol_dlg.ShowModal()
-    #    splitLabs = splitLargeClumps(self.pipeline, 'dbscanClumpID', vol_dlg.GetValue())
-    #    self.pipeline.addColumn('dbscanSplitClumpID', splitLabs)
-
-    #def OnScatterClumps(self, event=None):
-    #    com = clumpCOM(self.pipeline.selectedDataSource)
-    #    self.visFr.glCanvas.setPoints3D(com[:, 0], com[:, 1], com[:, 2])
 
 
 
