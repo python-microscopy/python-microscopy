@@ -150,6 +150,8 @@ requirements:
     - requests
     - pandas
     - yaml
+    - ujson
+    - jinja2
     - dispatch
     - pymecompress
 
