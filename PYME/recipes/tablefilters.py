@@ -287,8 +287,8 @@ class idTransientFrames(ModuleBase):
 
         namespace[self.outputName] = mapped
 
-@register_module('dbscanClustering')
-class dbscanClustering(ModuleBase):
+@register_module('DBSCANClustering')
+class DBSCANClustering(ModuleBase):
     """
     Performs DBSCAN clustering on input dictionary
     Args:
@@ -308,7 +308,7 @@ class dbscanClustering(ModuleBase):
         from sklearn.cluster import dbscan
 
         inp = namespace[self.inputName]
-        mapped = inpFilt.mappingFilter(inp)
+        mapped = tabular.mappingFilter(inp)
 
         # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
         core_samp, dbLabels = dbscan(np.vstack([inp[self.xKey], inp[self.yKey], inp[self.zKey]]).T,
