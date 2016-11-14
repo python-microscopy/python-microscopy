@@ -287,6 +287,44 @@ class idTransientFrames(ModuleBase):
 
         namespace[self.outputName] = mapped
 
+@register_module('dbscanClustering')
+class dbscanClustering(ModuleBase):
+    """
+    Performs DBSCAN clustering on input dictionary
+    Args:
+        searchRadius: search radius for clustering
+        minPtsForCore: number of points within SearchRadius required for a given point to be considered a core point
+    """
+    inputName = CStr('filtered')
+    xKey = CStr('x')
+    yKey = CStr('y')
+    zKey = CStr('z')
+    searchRadius = Float()
+    minPtsForCore = Int()
 
+    outputName = CStr('dbscanClustered')
+
+    def execute(self, namespace):
+        from sklearn.cluster import dbscan
+
+        inp = namespace[self.inputName]
+        mapped = inpFilt.mappingFilter(inp)
+
+        # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
+        core_samp, dbLabels = dbscan(np.vstack([inp[self.xKey], inp[self.yKey], inp[self.zKey]]).T,
+                                     self.searchRadius, self.minPtsForCore)
+
+        # shift dbscan labels up by one, so that the 0th cluster doesn't get lost when pipeline fills in filtered points
+        # but keep the unclustered points at -1
+        dbLabels[dbLabels == -1] = -2
+        mapped.addColumn('dbscanClumpID', dbLabels + 1)
+
+        # propogate metadata, if present
+        try:
+            mapped.mdh = inp.mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = mapped
 
 
