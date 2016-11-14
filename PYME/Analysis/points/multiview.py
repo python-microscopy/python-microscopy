@@ -125,7 +125,7 @@ def applyShiftmaps(datasource, shiftWallet):  # FIXME: add metadata for camera r
 
     dx = 0
     dy = 0
-    for ii in range(1, numChan):
+    for ii in range(1, numChan + 1):
         chanMask = chan == ii
         dx = dx + chanMask*shiftModel(dict=shiftWallet['Chan0%s.X' % ii]).ev(x, y)
         dy = dy + chanMask*shiftModel(dict=shiftWallet['Chan0%s.Y' % ii]).ev(x, y)
