@@ -3,11 +3,12 @@
 PYME Data Model
 ***************
 
-PYME fundamentally supports two types of data. `Image Data`_, and `Tabular Data`. These are outlined below:
+PYME fundamentally supports two types of data. `Image Data`_, and `Tabular Data`_. These are outlined below:
 
 Image Data
 ==========
 
+.. _imagestack:
 The ImageStack object
 ---------------------
 
@@ -21,7 +22,7 @@ DataSources
 The ``ImageStack.data`` attribute is an instance of a *DataSource*. These datasources implement lazy loading logic which
 permits us to rapidly load data without needing to pull the entire contents of a file into memory. This is accomplished
 by addressing the file on a frame by frame basis. Low level data source modules (which can be thought of as input drivers
-or adapters) can be found in :module:`PYME.IO.DataSources`. Each of these data sources implements 3 core methods:
+or adapters) can be found in :mod:`PYME.IO.DataSources`. Each of these data sources implements 3 core methods:
 
 ``getSlice(ind)``, ``getNumSlices()``, and ``getSliceShape()``
 
@@ -79,12 +80,23 @@ by name (behaving a little like a dictionary). The most canonical form of tabula
 :class:`PYME.IO.tabular.TabularBase` [#inpFilt]_. In some parts of the code, however, you will find numpy record arrays,
 pandas data frames, or even dictionaries standing in as tabular data.
 
-The 4 key requirements for a tabular data are:
+The 4 key requirements for tabular data are:
 
 * It should be indexable by column name like a dictionary
 * Each column should be returned as a one-dimensional numpy array [#pandasviolation]_
 * Each column should have the same length
 * It should implement a ``.keys()`` function which returns a list of the column names [#recarrayviolation]_
+
+If these requirements are met, tabular data can be processed by *filters* and *mappings* (defined in :py:mod:`PYME.IO.tabular`)
+and a processing pipeline built up by cascading filters. One example of a tabular processing pipleine is the VisGUI
+pipeline, :class:`PYME.LMVis.pipeline.Pipeline`.
+
+.. note::
+
+    At this point in time saving support is not baked into ``TabularBase``, and the most consistent / easiest way of
+    saving tabular data is probably to call the ``.toDataFrame()`` method and then use pandas io functions. e.g. ::
+
+        table.toDataFrame().to_csv('filename.csv')
 
 
 .. rubric:: Footnotes
@@ -101,4 +113,4 @@ The 4 key requirements for a tabular data are:
 .. [#inpFilt] This was previously ``PYME.LMVis.inpFilt``
 
 .. [#recarrayviolation] numpy recarrays do not implement a ``keys()`` method and should normally be wrapped in an instance
-   :class:`PYME.IO.tabular.recarrayInput`
+   :class:`PYME.IO.tabular.recArrayInput`
