@@ -14,7 +14,7 @@ from PYME.Analysis.Tracking import tracking
 from PYME.Analysis.Tracking import trackUtils
 from traits.api import on_trait_change
 
-from PYME.LMVis import inpFilt
+from PYME.IO import tabular
 
 @register_module('TrackFeatures')
 class TrackFeatures(ModuleBase):
@@ -170,10 +170,10 @@ class LoadSpeckles(ModuleBase):
                                                       followFrames=self.followFrames, seriesLength=seriesLength)
 
         #turn this into an inputFilter object
-        inp = inpFilt.recArrayInput(traces)
+        inp = tabular.recArrayInput(traces)
 
         #create a mapping to covert the co-ordinates in pixels to co-ordinates in nm
-        map = inpFilt.mappingFilter(inp, x = 'x_pixels*%3.2f' % (1000*mdh['voxelsize.x']),
+        map = tabular.mappingFilter(inp, x = 'x_pixels*%3.2f' % (1000*mdh['voxelsize.x']),
                                     y='y_pixels*%3.2f' % (1000 * mdh['voxelsize.y']))
 
         map.mdh = mdh

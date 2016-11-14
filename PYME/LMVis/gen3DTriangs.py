@@ -21,10 +21,12 @@
 #
 ##################
 
-try:
-    import delaunay
-except:
-    print('could not import delaunay')
+#try:
+#    from delaunay import Triangulation
+#except:
+#    print('could not import delaunay')
+
+from scipy.spatial import Delaunay
 
 from numpy import *
 import numpy as np
@@ -50,9 +52,9 @@ def calcTetVolume(f):
 
 
 def renderTetrahedra(im, y, x, z, scale = [1,1,1], pixelsize=[5,5,5]):
-    T = delaunay.Triangulation(array([x/scale[0],y/scale[1],z/scale[2]]).T.ravel(),3)
+    T = Delaunay(array([x/scale[0],y/scale[1],z/scale[2]]).T)
 
-    f = array(T.facets)
+    f = T.points[T.simplices]
 
     x_ = scale[0]*f[:,:,0]/pixelsize[0]
     y_ = scale[1]*f[:,:,1]/pixelsize[1]
@@ -72,20 +74,22 @@ def testObj():
     return x, y, z
 
 def gen3DTriangs(x,y,z, sizeCutoff=inf, internalCull=True, pcut=inf):
-    T = delaunay.Triangulation(array([x,y,z]).T.ravel(),3)
+    T = Delaunay(array([x,y,z]).T)
 
     return gen3DTriangsTFC(T, sizeCutoff, internalCull, pcut=sizeCutoff)[:3]
 
 def gen3DTriangsT(T, sizeCutoff=inf):
     #T = delaunay.Triangulation(array([x,y,z]).T.ravel(),3)
 
-    P = zeros((len(T.facets)*3*4, 3))
-    N = zeros((len(T.facets)*3*4, 3))
-    A = zeros(len(T.facets)*3*4)
+    facets = T.points[T.simplices]
+
+    P = zeros((len(facets)*3*4, 3))
+    N = zeros((len(facets)*3*4, 3))
+    A = zeros(len(facets)*3*4)
 
     pos = 0
 
-    for f in T.facets:
+    for f in facets:
         fa = array(f)
         s_01 = fa[0, :] - fa[1,:]
         s01 = (s_01**2).sum()
@@ -158,9 +162,9 @@ class emptyListDict(dict):
             return []
 
 def gen3DTriangsTF(T, sizeCutoff = inf, internalCull=False):
-    iarray = array(T.indices)
+    iarray = array(T.simplices)
     
-    va = array(T.set)
+    va = array(T.points)
     
     
     s_01 = va[iarray[:, 0]] - va[iarray[:, 1]]
@@ -292,9 +296,9 @@ def gen3DTriangsTF(T, sizeCutoff = inf, internalCull=False):
     return (P, A, N, triInds.ravel())
     
 def gen3DTriangsTFC(T, sizeCutoff = inf, internalCull=True, pcut = inf):
-    iarray = array(T.indices)
+    iarray = array(T.simplices)
     
-    va = array(T.set)
+    va = array(T.points)
     
     if internalCull:
         
@@ -419,9 +423,9 @@ def gen3DTriangsTFC(T, sizeCutoff = inf, internalCull=True, pcut = inf):
 
 
 def gen2DTriangsTF(T, sizeCutoff = inf):
-    iarray = array(T.indices)
+    iarray = array(T.simplices)
 
-    va = array(T.set)
+    va = array(T.points)
 
 
     s_01 = va[iarray[:, 0]] - va[iarray[:, 1]]
@@ -459,7 +463,7 @@ def gen2DTriangsTF(T, sizeCutoff = inf):
     #triInds = triInds[surfInds,:]
 
 
-    P = array(T.set)[triInds.ravel(), :]
+    P = array(T.points)[triInds.ravel(), :]
 
     A = A[cutInd]
 
@@ -532,7 +536,7 @@ def getExternalEdges(triInds):
     return Edges[edgeInd > 0, :]
 
 def getPerimeter(extEdges, T):
-    verts = array(T.set)
+    verts = array(T.points)
 
     edVecs = verts[extEdges[:,0], :] - verts[extEdges[:,1], :]
 
@@ -591,7 +595,7 @@ def averageNormalsF(P,N, triI):
 def collectConnected(T, v, verts, va, lenThresh2, objInd):
     connected = []
 
-    for v2_ in T.neighbours[tuple(v)]:
+    for v2_ in T.neighbours[tuple(v)]: #FIXME - update for scipy.spatial.Delaunay
         v2 = array(v2_, 'd')
         #find index
 #        i = 0
@@ -634,15 +638,15 @@ def collectConnected(T, v, verts, va, lenThresh2, objInd):
 def segment(T, lenThresh, minSize=None):
     objects = []
     #verts = list(range(len(T.set)))
-    verts = ones(len(T.set))
-    va = array(T.set)
+    verts = ones(len(T.points))
+    va = array(T.points)
 
     objInd = {}
 
     lenThresh2 = lenThresh**2
 
     #dictionary mapping vertices to indicex
-    for i in range(len(T.set)):
+    for i in range(len(T.points)):
         #print tuple(T.set[i])
         objInd[tuple(va[i, :])] = i
 
@@ -675,8 +679,8 @@ def segment(T, lenThresh, minSize=None):
 def segmentNR(T, lenThresh, minSize=None):
     #non-recursive version of segmentation
     objects = []
-    verts = list(range(len(T.set)))
-    va = array(T.set)
+    verts = list(range(len(T.points)))
+    va = array(T.points)
 
     if minSize is None:
         minSize = va.shape[1] + 1 #only return objects which have enough points to be a volume
@@ -717,7 +721,7 @@ def blobify(objects, sizeCutoff, sm=False, sc=[10, 10, 10]):
             #print o.shape
 
 
-        T = delaunay.Triangulation(o.ravel(),3)
+        T = Delaunay(o)
         #print T.indices
         #for ti in T.indices:
         #    print len(ti)
@@ -747,7 +751,7 @@ def blobify2D(objects, sizeCutoff):
     A_ = []
 
     for o, i in zip(objects, range(len(objects))):
-        T = delaunay.Triangulation(o.ravel(),2)
+        T = Delaunay(o)
         #T2 = matplotlib.delaunay.Triangulation(o[:, 0], o[:,1])
         P, A, triI = gen2DTriangsTF(T, sizeCutoff)
 
@@ -766,7 +770,7 @@ def blobify2D(objects, sizeCutoff):
     return (vstack(P_), hstack(A_))
 
 def gen3DBlobs(x,y,z, sizeCutoff=inf, sm=False, sc=[10, 10, 10]):
-    T = delaunay.Triangulation(array([x,y,z]).T.ravel(),3)
+    T = Delaunay(array([x,y,z]).T)
 
     objects = segment(T, sizeCutoff)
 

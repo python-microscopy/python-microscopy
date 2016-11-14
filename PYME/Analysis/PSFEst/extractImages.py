@@ -25,12 +25,12 @@ from numpy import *
 from numpy.fft import *
 import numpy as np
 import numpy
-from PYME.LMVis import inpFilt
+from PYME.IO import tabular
 import scipy.ndimage
 
 
 def getPSFSlice(datasource, resultsSource, metadata, zm=None):
-    f1 = inpFilt.resultsFilter(resultsSource, error_x=[1,30], A=[10, 500], sig=(150/2.35, 900/2.35))
+    f1 = tabular.resultsFilter(resultsSource, error_x=[1,30], A=[10, 500], sig=(150/2.35, 900/2.35))
 
     ims, pts, zvals, zis = extractIms(datasource, f1, metadata, zm)
     return getPSF(ims, pts, zvals, zis)

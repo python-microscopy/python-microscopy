@@ -7,7 +7,7 @@ Created on Mon May 25 17:10:02 2015
 from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, List, View, Item#, Group
 import numpy as np
 import pandas as pd
-from PYME.LMVis import inpFilt
+from PYME.IO import tabular
 from PYME.IO import MetaDataHandler
 import os
 
@@ -32,7 +32,7 @@ class MultifitBlobs(ModuleBase):
             md['tIndex'] = i
             ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,i], img.mdh, noiseSigma=np.ones_like(img.data[:,:,i].squeeze()))
         
-            res.append(inpFilt.fitResultsSource(ff.FindAndFit(self.threshold)))
+            res.append(tabular.fitResultsSource(ff.FindAndFit(self.threshold)))
             
         res = pd.DataFrame(np.vstack(res))
         res.mdh = img.mdh
@@ -80,7 +80,7 @@ class FitDumbells(ModuleBase):
             r[i] = ff.FromPoint(x/ps, y/ps)
             
         
-        res = inpFilt.fitResultsSource(r)
+        res = tabular.fitResultsSource(r)
         res.mdh = md
         
         namespace[self.outputName] = res
@@ -136,7 +136,7 @@ class FitPoints(ModuleBase):
             #print x/ps, y/ps
             r[i] = ff.FromPoint(x/ps, y/ps, roiHalfSize=self.roiHalfSize)
 
-        res = inpFilt.fitResultsSource(r, sort=False)
+        res = tabular.fitResultsSource(r, sort=False)
         res.mdh = md
 
         namespace[self.outputName] = res
@@ -214,7 +214,7 @@ class IntensityAtPoints(ModuleBase):
             for r in self.radii:
                 res[i]['r%d' % r] = aggFunc(img.data, np.round(x / ps), np.round(y / ps), t, r)
 
-        res = inpFilt.recArrayInput(res)
+        res = tabular.recArrayInput(res)
         res.mdh = md
 
         namespace[self.outputName] = res
@@ -441,7 +441,7 @@ class Measure2D(ModuleBase):
         labels = namespace[self.inputLabels]
         
         #define the measurement class, which behaves like an input filter        
-        class measurements(inpFilt.inputFilter):
+        class measurements(tabular.TabularBase):
             _name = 'Measue 2D source'
             ps = labels.pixelSize
             
@@ -680,7 +680,7 @@ class AggregateMeasurements(ModuleBase):
         
         meas1 = namespace[self.inputMeasurements1]
         #res = pd.DataFrame(res)
-        res = inpFilt.cloneSource(res)
+        res = tabular.cloneSource(res)
         if 'mdh' in dir(meas1):
             res.mdh = meas1.mdh
             

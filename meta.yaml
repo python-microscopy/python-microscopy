@@ -165,7 +165,9 @@ requirements:
     - dispatch
     - pymecompress
     - ujson
-    - python-bioformats [osx] #todo make cross-platform versions
+    - python-bioformats [osx]
+
+    #todo make cross-platform versions
     #- nvidia-ml-py  [linux] #optional - maybe better as dependency for gpu-fitting package
 
   #unfortunately not availible through conda on windows ##FIXME

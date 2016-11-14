@@ -191,7 +191,7 @@ class Generator(HasTraits):
     def OnGenEvents(self, event):
         from PYMEnf.Simulation import locify
         #from PYME.Acquire.Hardware.Simulator import wormlike2
-        from PYME.LMVis import inpFilt
+        from PYME.IO import tabular
         from PYME.IO.image import ImageBounds
         import pylab
         
@@ -208,7 +208,7 @@ class Generator(HasTraits):
         res = locify.eventify(self.xp, self.yp, self.meanIntensity, self.meanDuration, self.backgroundIntensity, self.meanEventNumber, self.scaleFactor, self.meanTime)
         pylab.plot(res['fitResults']['x0'],res['fitResults']['y0'], '+')
 
-        ds = inpFilt.mappingFilter(inpFilt.fitResultsSource(res))
+        ds = tabular.mappingFilter(tabular.fitResultsSource(res))
         pipeline.imageBounds = ImageBounds.estimateFromSource(ds)
         pipeline.addDataSource('Generated Points', ds)
         pipeline.selectDataSource('Generated Points')

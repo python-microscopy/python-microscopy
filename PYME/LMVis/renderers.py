@@ -25,7 +25,7 @@ from PYME.LMVis import genImageDialog
 from PYME.LMVis import visHelpers
 #from PYME.LMVis import imageView
 from PYME.LMVis import statusLog
-from PYME.LMVis import inpFilt
+from PYME.IO import tabular
 
 from PYME.IO import MetaDataHandler
 
@@ -62,12 +62,16 @@ class CurrentRenderer:
         
         self.pipeline = pipeline
 
-        if isinstance(pipeline, inpFilt.colourFilter):
-            self.colourFilter = pipeline
-        else:
-            self.colourFilter = pipeline.colourFilter
+
 
         self._addMenuItems()
+
+    @property
+    def colourFilter(self):
+        if isinstance(self.pipeline, tabular.colourFilter):
+            return self.pipeline
+        else:
+            return self.pipeline.colourFilter
 
     def _addMenuItems(self):
         #ID = wx.NewId()

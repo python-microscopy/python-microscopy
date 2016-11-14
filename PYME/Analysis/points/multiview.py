@@ -152,7 +152,7 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset):
 
 
 def mergeClumps(datasource, numChan):
-    from PYME.LMVis.inpFilt import cachingResultsFilter
+    from PYME.IO.tabular import cachingResultsFilter
 
     keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', 'clumpIndex']
     keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
