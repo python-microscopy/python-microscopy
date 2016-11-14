@@ -20,10 +20,6 @@
 #
 ##################
 
-import numpy as np
-import wx
-from sklearn.cluster import dbscan
-
 
 class DBSCANer:
     """
