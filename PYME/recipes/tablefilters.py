@@ -254,8 +254,8 @@ class MapAstigZ(ModuleBase):
 
         namespace[self.outputName] = mapped
 
-@register_module('idTransientFrames')
-class idTransientFrames(ModuleBase):
+@register_module('IDTransientFrames')
+class IDTransientFrames(ModuleBase):
     """
     Adds an 'isTransient' column to the input datasource so that one can filter localizations that are from frames
     acquired during z-translation
