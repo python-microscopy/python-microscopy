@@ -5,7 +5,13 @@ Created on Mon May 25 17:15:01 2015
 @author: david
 """
 
-from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, View, Item, Group, File
+from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int,  File
+#try:
+#    from traitsui.api import View, Item, Group
+#except SystemExit:
+#    print('Got stupid OSX SystemExit exception - using dummy traitsui')
+#    from PYME.misc.mock_traitsui import *
+
 import numpy as np
 from scipy import ndimage
 from PYME.IO.image import ImageStack
@@ -291,25 +297,28 @@ class Deconvolve(Filter):
     
     _psfCache = {}
     _decCache = {}
-    
-    view = View(Item(name='inputName'),
-                Item(name='outputName'),
-                Item(name='processFramesIndividually'),
-                Group(Item(name='method'),
-                      Item(name='iterations'),
-                      Item(name='offset'),
-                      Item(name='padding'),
-                      Item(name='zPadding'),
-                      Item(name='regularisationLambda', visible_when='method=="ICTM"'),
-                      label='Deconvolution Parameters'),
-                Group(Item(name='psfType'),
-                      Item(name='psfFilename', visible_when='psfType=="file"'),
-                      Item(name='lorentzianFWHM', visible_when='psfType=="Lorentzian"'),
-                      Item(name='gaussianFWHM', visible_when='psfType=="Gaussian"'),
-                      Item(name='beadDiameter', visible_when='psfType=="bead"'),
-                      label='PSF Parameters'),
-                resizable = True,
-                buttons   = [ 'OK' ])
+
+    def default_traits_view(self):
+        from traitsui.api import View, Item, Group
+
+        return View(Item(name='inputName'),
+                    Item(name='outputName'),
+                    Item(name='processFramesIndividually'),
+                    Group(Item(name='method'),
+                          Item(name='iterations'),
+                          Item(name='offset'),
+                          Item(name='padding'),
+                          Item(name='zPadding'),
+                          Item(name='regularisationLambda', visible_when='method=="ICTM"'),
+                          label='Deconvolution Parameters'),
+                    Group(Item(name='psfType'),
+                          Item(name='psfFilename', visible_when='psfType=="file"'),
+                          Item(name='lorentzianFWHM', visible_when='psfType=="Lorentzian"'),
+                          Item(name='gaussianFWHM', visible_when='psfType=="Gaussian"'),
+                          Item(name='beadDiameter', visible_when='psfType=="bead"'),
+                          label='PSF Parameters'),
+                    resizable = True,
+                    buttons   = [ 'OK' ])
                 
 
     

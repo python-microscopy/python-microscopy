@@ -11,7 +11,7 @@
 ##################
 
 from PYME.Analysis.points import DistHist
-from pylab import *
+
 #from PYME.Acquire.ExecTools import execBG
 
 
@@ -24,6 +24,7 @@ def rebin(a, fact):
     return b
 
 def calcDistCorr(cfilter, colourA, colourB, nbins=100, binsize=10):
+    from pylab import *
     '''Do pointwise / ripley based colocalisation between colourA and colourB'''
     #save current state of colour filter
     old_col = cfilter.currentColour

@@ -1,4 +1,4 @@
-from .base import register_module, ModuleBase, Filter, Float, Enum, CStr, Bool, Int, View, Item, List#, Group
+from .base import register_module, ModuleBase, Filter, Float, Enum, CStr, Bool, Int, List#, View, Item, List#, Group
 from traits.api import DictStrStr, DictStrList, ListFloat
 import numpy as np
 import pandas as pd

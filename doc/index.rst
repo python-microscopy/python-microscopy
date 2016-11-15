@@ -4,6 +4,7 @@
    contain the root `toctree` directive.
 
 .. _pymemaindocs:
+
 PYME's Documentation
 ====================
 
@@ -16,9 +17,6 @@ currently no API documentation. If you want to extend or otherwise hack PYME I'd
 recommend getting in touch with me and I'll tell you what bits of the API are
 fairly mature, what is on the TODO list for restructuring, and what is deprecated.
 I might even be persuaded to write some more docs.
-
-Contents:
----------
 
 Installation:
 #############
@@ -45,8 +43,23 @@ Component programs/tasks:
 
    VisGUI
 
+
+Hacking PYME
+############
+
+Extending PYME and writing plugins
+**********************************
+.. toctree::
+   :maxdepth: 1
+
+   DataModel
+   WritingRecipeModules
+   ExtendingDsviewer
+   ExtendingVisGUI
+
+
 Technical Details:
-##################
+******************
 .. toctree::
    :maxdepth: 1
    
@@ -54,7 +67,7 @@ Technical Details:
    SampleDB
 
 API Documentation:
-##################
+******************
 .. toctree::
    :maxdepth: 1
 

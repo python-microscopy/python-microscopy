@@ -9,6 +9,7 @@ Image Data
 ==========
 
 .. _imagestack:
+
 The ImageStack object
 ---------------------
 
@@ -71,6 +72,8 @@ We currently use a 4D model, where the first and second dimensions are *x* and *
   time series and 3D stacks when processing. Up until this point, this has not been a major limitation, but it would be
   nicer if we had a consistent 5D data model. Transitioning to a 5D model is on the roadmap, but I have not yet decided
   if this will be a backwards compatible change.
+
+.. _tabular_data:
 
 Tabular Data
 ============
