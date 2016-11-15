@@ -20,10 +20,6 @@
 #
 ##################
 
-import numpy as np
-import wx
-from sklearn.cluster import dbscan
-
 
 class DBSCANer:
     """
@@ -37,32 +33,21 @@ class DBSCANer:
 
     def OnClumpDBSCAN(self, event=None):
         """
-        Runs sklearn DBSCAN clustering algorithm pipeline x, y, and z output (post filter).
+        Runs sklearn DBSCAN clustering algorithm on pipeline filtered results using the GUI defined in the DBSCAN
+        recipe module.
 
         Args are user defined through GUI
             eps: search radius for clustering
             min_points: number of points within eps required for a given point to be considered a core point
 
         """
-        eps_dlg = wx.NumberEntryDialog(None, 'DBSCAN parameters', 'eps [nm]', 'esp [nm]', 1, 0, 9e9)
-        eps_dlg.ShowModal()
-        min_points_dlg = wx.NumberEntryDialog(None, 'DBSCAN parameters', 'min_points to be a core point', 'min_points', 1, 0, 9e9)
-        min_points_dlg.ShowModal()
+        from PYME.recipes import tablefilters
+        namespace = {'filtered': self.pipeline}
+        clumper = tablefilters.DBSCANClustering()
+        if clumper.configure_traits(kind='modal'):
+            clumper.execute(namespace)
 
-        # TODO: add dialog for choosing pipeline keys to cluster (and how many keys to cluster)
-
-        # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
-        core_samp, dbLabels = dbscan(np.vstack([self.pipeline['x'], self.pipeline['y'], self.pipeline['z']]).T,
-                                     eps_dlg.GetValue(), min_points_dlg.GetValue())
-
-        # shift dbscan labels up by one, so that the 0th cluster doesn't get lost when pipeline fills in filtered points
-        # need to move dbscan labels up by one, except for the noisy labels (-1), which we want to push down by one to
-        # make room for pipeline giving zeros to currently filtered points that might be added back later (i.e. a color
-        # channel)
-        dbLabels[dbLabels == -1] = -2
-        self.pipeline.addColumn('dbscanClumpID', dbLabels + 1)
-
-
+            self.pipeline.addColumn('dbscanClumpID', namespace['dbscanClustered']['dbscanClumpID'])
 
 
 

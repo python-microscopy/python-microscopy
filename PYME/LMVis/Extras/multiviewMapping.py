@@ -467,6 +467,9 @@ class multiviewMapper:
         except AttributeError:
             raise AttributeError('You are either not looking at multiview Data, or your metadata is incomplete')
 
+        rad_dlg = wx.NumberEntryDialog(None, 'Search Radius In Pixels', 'rad [pix]', 'rad [pix]', 1, 0, 9e9)
+        rad_dlg.ShowModal()
+        clumpRad = rad_dlg.GetValue()*1e3*pipeline.mdh['voxelsize.x']  # clump folded data within X pixels
         # fold x position of channels into the first
         foldX(pipeline)
 
@@ -475,8 +478,6 @@ class multiviewMapper:
         I = pipeline['tIndex'].argsort()
         xsort, ysort = pipeline['x'][I], pipeline['y'][I]
         chanSort = pipeline['multiviewChannel'][I]
-
-        clumpRad = 2e3*pipeline.mdh['voxelsize.x']  # clump folded data within 2 pixels
 
         clumpID, keep = pairMolecules(pipeline['tIndex'][I], xsort, ysort, chanSort, clumpRad*np.ones_like(xsort),
                                           appearIn=np.arange(numChan), nFrameSep=pipeline['tIndex'].max())
