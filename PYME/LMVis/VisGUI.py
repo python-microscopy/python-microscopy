@@ -40,7 +40,7 @@ from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
 #import os
-from PYME.LMVis import gl_render3D
+#from PYME.LMVis import gl_render3D
 
 from PYME.LMVis import colourPanel
 #from PYME.LMVis import renderers
@@ -52,7 +52,6 @@ from PYME.LMVis import pipeline
 from PYME.ui import MetadataTree
 
 import numpy as np
-
 
 from PYME.DSView import eventLogViewer
 

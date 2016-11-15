@@ -30,6 +30,10 @@ from PYME.LMVis.triBlobs import BlobSettings
 from PYME.Analysis import piecewiseMapping
 from PYME.IO import MetaDataHandler
 
+#from traits.api import HasTraits
+#from traitsui.api import View
+from PYME.recipes import modules
+
 import numpy as np
 import scipy.special
 import os
@@ -232,6 +236,8 @@ def _processEvents(ds, events, mdh):
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
         self.dataSources = {}
+        #self.recipe = recipeModules.ModuleCollection()
+
         self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
 
@@ -284,6 +290,10 @@ class Pipeline:
 
     def keys(self):
         return self.colourFilter.keys()
+
+    #@property
+    #def dataSources(self):
+    #    return self.recipe.namespace
 
     @property
     def selectedDataSource(self):

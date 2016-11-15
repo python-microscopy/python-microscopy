@@ -8,7 +8,7 @@ Created on Mon May 25 17:02:04 2015
 
 try:
     from enthought.traits.api import HasTraits, HasPrivateTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
-    from enthought.traits.ui.api import View, Item #, EnumEditor, InstanceEditor, Group
+    #from enthought.traits.ui.api import View, Item #, EnumEditor, InstanceEditor, Group
 except ImportError:
     from traits.api import HasTraits, HasPrivateTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
     
@@ -17,10 +17,11 @@ except ImportError:
     #creates a problem whenever there is no GUI available.
     #as we want to be able to use recipes without a GUI (presumably the reason for this problem)
     #it's prudent to catch this and spoof the View and Item functions which are not going to be used anyway
-    try:
-        from traitsui.api import View, Item, Group# EnumEditor, InstanceEditor, Group
-    except SystemExit:
-        from PYME.misc.mock_traitsui import *
+    #try:
+    #    from traitsui.api import View, Item, Group# EnumEditor, InstanceEditor, Group
+    #except SystemExit:
+    #    print('Got stupid OSX SystemExit exception - using dummy traitsui')
+    #    from PYME.misc.mock_traitsui import *
 
 from PYME.IO.image import ImageStack
 #from scipy import ndimage
