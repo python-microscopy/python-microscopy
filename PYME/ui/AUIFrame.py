@@ -117,6 +117,32 @@ class AUIFrame(wx.Frame):
         self._mgr.Update()
 
     def AddMenuItem(self, menuName, itemName='', itemCallback = None, itemType='normal', helpText = '', id = wx.ID_ANY):   
+        """
+        Add a menu item to dh5view, VisGUI, or PYMEAcquire.
+
+        Parameters
+        ----------
+        menuName : basestring
+            The name of the menu to add an item to. Submenus are optionally designated by using ``>`` characters as a separator, e.g. ``"File>Recent"``.
+            If a menu or submenu does not already exist it is created.
+
+        itemName : basestring
+            The name of the item to add. Required if itemType is 'normal' or 'check'. wxpython accelerator specification is supported.
+
+        itemCallback : function
+            A function to call when the menu item is selected. Should accept a wx.Event as the first and only argument.
+
+        itemType : basestring
+            One of 'normal', 'check', or 'separator'.
+        helpText : basestring
+        id : int
+            wx ID for the menu item. Should normally be ignored, and only set if there is a standard ID for the menu item, and facilitates
+            using platform standard icons and shortcuts for open, save, quit, etc ....
+
+        Returns
+        -------
+
+        """
         mItem = None
         if not menuName in self._menus.keys():
             menuParts = menuName.split('>')

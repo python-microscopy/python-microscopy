@@ -17,9 +17,6 @@ recommend getting in touch with me and I'll tell you what bits of the API are
 fairly mature, what is on the TODO list for restructuring, and what is deprecated.
 I might even be persuaded to write some more docs.
 
-Contents:
----------
-
 Installation:
 #############
 .. toctree::
@@ -45,8 +42,22 @@ Component programs/tasks:
 
    VisGUI
 
+
+Hacking PYME
+############
+
+Extending PYME and writing plugins
+**********************************
+.. toctree::
+   :maxdepth: 1
+
+   DataModel
+   ExtendingDsviewer
+   WritingRecipeModules
+
+
 Technical Details:
-##################
+******************
 .. toctree::
    :maxdepth: 1
    
@@ -54,7 +65,7 @@ Technical Details:
    SampleDB
 
 API Documentation:
-##################
+******************
 .. toctree::
    :maxdepth: 1
 

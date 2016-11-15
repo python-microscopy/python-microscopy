@@ -1,4 +1,3 @@
-/Users/david/python-microscopy/doc/DataModel.rst:12: WARNING: Explicit markup ends without a blank line; unexpected unindent.
 /Users/david/python-microscopy/doc/Technical.rst:4: WARNING: toctree contains reference to nonexisting document u'FitModules'
 /Users/david/python-microscopy/doc/api/PYME.Analysis.points.twoColDep.rst:4: WARNING: autodoc: failed to import module u'PYME.Analysis.points.twoColDep'; the following exception was raised:
 Traceback (most recent call last):
@@ -268,13 +267,11 @@ Traceback (most recent call last):
   File "/Users/david/python-microscopy/PYME/util/install_dependencies.py", line 25, in <module>
     import apt #hope this is there
 ImportError: No module named apt
-/Users/david/python-microscopy/doc/DataModel.rst:: WARNING: document isn't included in any toctree
-/Users/david/python-microscopy/doc/ExtendingDsviewer.rst:: WARNING: document isn't included in any toctree
+/Users/david/python-microscopy/doc/index.rst:7: WARNING: Explicit markup ends without a blank line; unexpected unindent.
 /Users/david/python-microscopy/doc/Installation/InstallationWithAnacondaNoConsole.rst:: WARNING: document isn't included in any toctree
 /Users/david/python-microscopy/doc/Technical.rst:: WARNING: document isn't included in any toctree
 /Users/david/python-microscopy/doc/api/modules.rst:: WARNING: document isn't included in any toctree
 /Users/david/python-microscopy/doc/dh5view.rst:: WARNING: document isn't included in any toctree
-/Users/david/python-microscopy/doc/ExtendingDsviewer.rst:30: WARNING: undefined label: _imagestack (if the link has no caption the label must precede a section header)
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.DeClump.deClumpGUI.deClumpDialog.GetClumpRadiusMultiplier'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.DeClump.deClumpGUI.deClumpDialog.GetClumpRadiusVariable'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.DeClump.deClumpGUI.deClumpDialog.GetClumpTimeWindow'
@@ -6305,6 +6302,7 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Filter.inputs'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Filter.outputs'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Filter.completeMetadata'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Filter.dsviewer_plugin_callback'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Filter.execute'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Filter.filter'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Filter.outputs_in_namespace'
@@ -6317,6 +6315,7 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Invert.outputs'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Invert.applyFilter'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Invert.completeMetadata'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Invert.dsviewer_plugin_callback'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Invert.execute'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Invert.filter'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Invert.outputs_in_namespace'
@@ -6374,6 +6373,7 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Normalize.outputs'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Normalize.applyFilter'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Normalize.completeMetadata'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Normalize.dsviewer_plugin_callback'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Normalize.execute'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Normalize.filter'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Normalize.outputs_in_namespace'
@@ -6386,6 +6386,7 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.NormalizeMean.outputs'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.NormalizeMean.applyFilter'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.NormalizeMean.completeMetadata'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.NormalizeMean.dsviewer_plugin_callback'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.NormalizeMean.execute'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.NormalizeMean.filter'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.NormalizeMean.outputs_in_namespace'
@@ -6398,6 +6399,7 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Scale.outputs'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Scale.applyFilter'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Scale.completeMetadata'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Scale.dsviewer_plugin_callback'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Scale.execute'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Scale.filter'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Scale.outputs_in_namespace'
@@ -6981,6 +6983,13 @@ None:None: WARNING: toctree contains reference to nonexisting document u'api/PYM
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.skfilters.SKFilter.trait_property_changed'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.skfilters.SKFilter.traits_init'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.skfilters.SKFilter.traits_inited'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.tablefilters.DBSCANClustering.inputs'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.tablefilters.DBSCANClustering.outputs'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.tablefilters.DBSCANClustering.execute'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.tablefilters.DBSCANClustering.trait_items_event'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.tablefilters.DBSCANClustering.trait_property_changed'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.tablefilters.DBSCANClustering.traits_init'
+None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.tablefilters.DBSCANClustering.traits_inited'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.tablefilters.DensityMapping.inputs'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.tablefilters.DensityMapping.outputs'
 None:None: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.tablefilters.DensityMapping.execute'
