@@ -116,6 +116,7 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 numpydoc_show_class_members = True
+#class_members_toctree=False
 autoclass_content = 'both'
 
 

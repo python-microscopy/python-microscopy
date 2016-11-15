@@ -4,6 +4,7 @@
    contain the root `toctree` directive.
 
 .. _pymemaindocs:
+
 PYME's Documentation
 ====================
 
@@ -52,8 +53,9 @@ Extending PYME and writing plugins
    :maxdepth: 1
 
    DataModel
-   ExtendingDsviewer
    WritingRecipeModules
+   ExtendingDsviewer
+   ExtendingVisGUI
 
 
 Technical Details:
