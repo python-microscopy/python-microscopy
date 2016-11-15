@@ -32,7 +32,7 @@ from PYME.IO import MetaDataHandler
 
 #from traits.api import HasTraits
 #from traitsui.api import View
-from PYME.recipes import modules
+from PYME.recipes.base import ModuleCollection
 
 import numpy as np
 import scipy.special
@@ -235,8 +235,8 @@ def _processEvents(ds, events, mdh):
 
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
-        self.dataSources = {}
-        #self.recipe = recipeModules.ModuleCollection()
+        #self.dataSources = {}
+        self.recipe = ModuleCollection()
 
         self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
@@ -291,9 +291,9 @@ class Pipeline:
     def keys(self):
         return self.colourFilter.keys()
 
-    #@property
-    #def dataSources(self):
-    #    return self.recipe.namespace
+    @property
+    def dataSources(self):
+        return self.recipe.namespace
 
     @property
     def selectedDataSource(self):
@@ -430,18 +430,6 @@ class Pipeline:
         if not newKeys == self._keys:
             self.onKeysChanged.send(sender=self)
         
-        
-
-
-
-                
-                
-
-
-
-
-
-        
     def CloseFiles(self):
         while len(self.filesToClose) > 0:
             self.filesToClose.pop().close()
@@ -528,7 +516,7 @@ class Pipeline:
             self.filesToClose.pop().close()
         
         #clear our state
-        self.dataSources = {}
+        self.dataSources.clear()
         if 'zm' in dir(self):
             del self.zm
         self.filter = None

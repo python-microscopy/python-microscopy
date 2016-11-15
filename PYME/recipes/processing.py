@@ -298,9 +298,7 @@ class Deconvolve(Filter):
     _psfCache = {}
     _decCache = {}
 
-
-    @property
-    def view(self):
+    def default_traits_view(self):
         from traitsui.api import View, Item, Group
 
         return View(Item(name='inputName'),

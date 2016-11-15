@@ -18,10 +18,10 @@ except ImportError:
     #as we want to be able to use recipes without a GUI (presumably the reason for this problem)
     #it's prudent to catch this and spoof the View and Item functions which are not going to be used anyway
     #try:
-    #    from traitsui.api import View, Item, Group# EnumEditor, InstanceEditor, Group
+    #from traitsui.api import View, Item, Group# EnumEditor, InstanceEditor, Group
     #except SystemExit:
-    #    print('Got stupid OSX SystemExit exception - using dummy traitsui')
-    #    from PYME.misc.mock_traitsui import *
+    #   print('Got stupid OSX SystemExit exception - using dummy traitsui')
+    #   from PYME.misc.mock_traitsui import *
 
 from PYME.IO.image import ImageStack
 #from scipy import ndimage

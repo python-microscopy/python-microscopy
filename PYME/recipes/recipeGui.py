@@ -20,17 +20,19 @@ from PYME.DSView import ViewIm3D
 from PYME.contrib import wxPlotPanel
 
 
-try:
-    from traitsui.api import Controller
-except SystemExit:
-    def Controller(*args, **kwargs):
-        """Spoofed traitsui Controller"""
-        pass
+# try:
+#     from traitsui.api import Controller
+# except SystemExit:
+#     def Controller(*args, **kwargs):
+#         """Spoofed traitsui Controller"""
+#         pass
 
 import os
 import glob
 import textwrap
 
+import logging
+logger = logging.getLogger(__name__)
 
 
 RECIPE_DIR = os.path.join(os.path.split(modules.__file__)[0], 'Recipes')
@@ -248,6 +250,7 @@ class RecipeView(wx.Panel):
     
     def configureModule(self, k):
         p = self
+        from traitsui.api import Controller
         class MControl(Controller):
             def closed(self, info, is_ok):
                 wx.CallLater(10, p.update)
@@ -312,7 +315,8 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
     def __init__(self, parent=None):                
         wx.Frame.__init__(self, parent, wx.ID_ANY, 'The PYME Bakery')
         
-        self.dropFiles = dt(self)      
+        self.dropFiles = dt(self)
+        logger.debug('BatchFrame.__init__ start')
         self.rm = RecipeManager()
         self.inputFiles = []
         self.inputFiles2 = []
@@ -393,6 +397,8 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         
         #self.SetDropTarget(self.drop)
         self.lFiles.SetDropTarget(self.dropFiles)
+
+        logger.debug('BatchFrame.__init__ done')
         
     def UpdateFileList(self, filenames):
         self.inputFiles += filenames        
