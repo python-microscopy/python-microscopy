@@ -178,6 +178,10 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         data = self.rfile.read(int(self.headers['Content-Length']))
 
+        dirname = os.path.dirname(path)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
         #append the contents of the put request
         with getTextFileLock(path):
             #lock so that we don't corrupt the data by writing from two different threads
@@ -210,6 +214,10 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         filename += '.h5r'
 
         data = self.rfile.read(int(self.headers['Content-Length']))
+
+        dirname = os.path.dirname(filename)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
 
         #logging.debug('opening h5r file')
         with h5rFile.openH5R(filename, 'a') as h5f:
