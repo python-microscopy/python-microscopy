@@ -44,6 +44,7 @@ def file(request, filename):
             return response
 
 def listing(request, filename):
+    from PYME.IO import clusterListing as cl
     #print 'listing'
     if not filename.endswith('/'):
         filename = filename + '/'
@@ -51,22 +52,20 @@ def listing(request, filename):
     if filename == '/':
         filename = ''
 
-    listing = clusterIO.listdir(filename)
+    listing = clusterIO.listdirectory(filename)
     #print filename, listing
     dirs = []
     series = []
     files = []
-    for l in listing:
-        if l.endswith('/'):
-            dirListing = clusterIO.listdir(filename + l)
-            nFiles = len(dirListing)
-            if not 'metadata.json' in dirListing:
-                dirs.append({'name':l, 'numFiles' : nFiles})
-            else:
-                complete = 'events.json' in dirListing
-                nFrames = len([1 for f in dirListing if f.endswith('.pzf')])
+    for l, file_info in listing:
+        if file_info.type & cl.FILETYPE_SERIES:
+            complete = (file_info.type & cl.FILETYPE_SERIES_COMPLETE) > 0
+            nFrames = file_info.size - 3 #assume we have metadata.json, events.json, and final_metadata.json - all others are  frames
+            series.append({'name': l, 'numFrames': nFrames, 'complete': complete,
+                           'cluster_uri': ('pyme-cluster:///' + filename + l).rstrip('/')})
 
-                series.append({'name':l, 'numFrames' : nFrames, 'complete':complete, 'cluster_uri':('pyme-cluster:///' + filename + l).rstrip('/')})
+        elif file_info.type & cl.FILETYPE_DIRECTORY:
+            dirs.append({'name':l, 'numFiles' : file_info.size})
         else:
             files.append(l)
 

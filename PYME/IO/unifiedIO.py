@@ -2,11 +2,11 @@ from PYME.IO.FileUtils import nameUtils
 import os
 import cStringIO
 
-def openFile(filename):
+def openFile(filename, mode='rb'):
     filename = nameUtils.getFullExistingFilename(filename)
 
     if os.path.exists(filename):
-        return open(filename)
+        return open(filename, mode)
 
     elif filename.startswith('pyme-cluster') or filename.startswith('PYME-CLUSTER'):
         import clusterIO

@@ -554,7 +554,8 @@ class ImageStack(object):
         """Try and find and load a .xml or .md metadata file that might be ascociated
         with a given image filename. See the relevant metadatahandler classes
         for details."""
-        import xml.parsers.expat 
+        import xml.parsers.expat
+        from PYME.IO import unifiedIO
         
         if not self.mdh is None:
             return #we already have metadata (probably passed in on command line)
@@ -633,9 +634,8 @@ class ImageStack(object):
 
                 import json
                 try:
-                    with open(jsonfn, 'r') as f:
-                        mdd = json.load(f)
-                        self.mdh.update(mdd)
+                    mdd = json.loads(unifiedIO.read(jsonfn))
+                    self.mdh.update(mdd)
 
                 except IOError:
                     pass
@@ -645,7 +645,7 @@ class ImageStack(object):
                 entrydict = {}
                 
                 try: #try to read in extra metadata if possible
-                    with open(mdfn, 'r') as mf:
+                    with unifiedIO.openFile(mdfn, 'r') as mf:
                         for line in mf:
                             s = line.split(':')
                             if len(s) == 2:
@@ -665,7 +665,7 @@ class ImageStack(object):
 #                
 #                self.mdh['NumImages'] = int(entrydict['# Images'])
                 
-                with open(filename) as df:
+                with unifiedIO.openFile(filename) as df:
                     s = df.read(8)
                     Z, X, Y, T = numpy.fromstring(s, '>u2')
                     s = df.read(16)

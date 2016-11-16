@@ -175,7 +175,7 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
             else:
                 dirList, dt = _listSingleDir(dirurl)
 
-                if fn in dirList:
+                if fn in dirList.keys():
                     locs.append((dirurl + fn, dt))
 
             if return_first_hit and len(locs) > 0:
@@ -195,7 +195,7 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
             else:
                 dirList, dt = _listSingleDir(dirurl)
 
-                if fn in dirList:
+                if fn in dirList.keys():
                     locs.append((dirurl + fn, dt))
 
             if return_first_hit and len(locs) > 0:
@@ -207,12 +207,13 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
 
         return locs
 
+def listdirectory(dirname, serverfilter=''):
+    """Lists the contents of a directory on the cluster.
 
-def listdir(dirname, serverfilter=''):
-    """Lists the contents of a directory on the cluster. Similar to os.listdir,
-    but directories are indicated by a trailing slash
+    Returns a dictionary mapping filenames to clusterListing.FileInfo named tuples.
     """
-    dirlist = set()
+    from . import clusterListing as cl
+    dirlist = dict()
 
     for name, info in ns.advertised_services.items():
         if serverfilter in name:
@@ -220,9 +221,17 @@ def listdir(dirname, serverfilter=''):
             # print dirurl
             dirL, dt = _listSingleDir(dirurl)
 
-            dirlist.update(dirL)
+            #dirlist.update(dirL)
+            cl.aggregate_dirlisting(dirlist, dirL)
 
-    return list(dirlist)
+    return dirlist
+
+def listdir(dirname, serverfilter=''):
+    """Lists the contents of a directory on the cluster. Similar to os.listdir,
+    but directories are indicated by a trailing slash
+    """
+
+    return list(listdirectory(dirname, serverfilter).keys())
 
 
 def exists(name, serverfilter=''):

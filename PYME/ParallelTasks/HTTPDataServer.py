@@ -398,6 +398,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         interface the same as for send_head().
 
         """
+        from PYME.IO import clusterListing as cl
 
         with _listDirLock:
             #make sure only one thread calculates the directory listing
@@ -415,12 +416,23 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 list.sort(key=lambda a: a.lower())
     
                 #displaypath = cgi.escape(urllib.unquote(self.path))
-                l2 = []
+                l2 = {}
                 for l in list:
-                    if os.path.isdir(os.path.join(path, l)):
-                        l2.append(l + '/')
+                    fpath = os.path.join(path, l)
+                    if os.path.isdir(fpath):
+                        ftype=cl.FILETYPE_DIRECTORY
+
+                        if os.path.exists(fpath + '/metadata.json'):
+                            #if there is a metadata.json, set the series flag
+                            ftype |= cl.FILETYPE_SERIES
+
+                        if os.path.exists(fpath + '/events.json'):
+                            #if there is a metadata.json, set the series flag
+                            ftype |= cl.FILETYPE_SERIES_COMPLETE
+
+                        l2[l + '/'] = cl.FileInfo(ftype, len(os.listdir(fpath)))
                     else:
-                        l2.append(l)
+                        l2[l] = cl.FileInfo(cl.FILETYPE_NORMAL, os.path.getsize(fpath))
     
                 js_dir = json.dumps(l2)
                 _dirCache[path] = (js_dir, time.time() + _dirCacheTimeout)
