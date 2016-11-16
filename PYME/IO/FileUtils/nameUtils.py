@@ -120,6 +120,9 @@ def genClusterResultFileName(dataFileName, create=True):
     clusterfilter = fn.split('://')[1].split('/')[0]
     rel_name = fn.split('://%s/' % clusterfilter)[1]
 
+    dir_name = os.path.dirname(rel_name)
+    file_name = os.path.basename(rel_name)
+
     #fn = fn.replace(':', '/')
     #print os.path.join(*seps.split(resultsdirPatternShort)) % dateDict
     #p = os.path.join(*(seps.split(resultsdirPatternShort) + seps.split(fn)[-2:])) %dateDict
@@ -127,7 +130,7 @@ def genClusterResultFileName(dataFileName, create=True):
     #if create and not os.path.exists(os.path.split(p)[0]): #create the necessary directories
     #    os.makedirs(os.path.split(p)[0])
 
-    return rel_name + '.h5r'
+    return '/'.join([dir_name, 'analysis', rel_name]) + '.h5r'
 
 def genResultDirectoryPath():
     """Returns the default destination for saving fit reults"""
