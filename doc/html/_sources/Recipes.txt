@@ -1,3 +1,5 @@
+.. _recipes::
+
 Using recipes for data processing and quantification
 ****************************************************
 

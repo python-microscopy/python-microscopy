@@ -267,6 +267,8 @@ class Pipeline:
         
         self.filesToClose = []
 
+        self.ev_mappings = {}
+
         #define a signal which a GUI can hook if the pipeline is rebuilt (i.e. the output changes)
         self.onRebuild = dispatch.Signal()
 
@@ -379,6 +381,7 @@ class Pipeline:
             ds = tabular.mappingFilter(ds)
 
         #add keys which might not already be defined
+
         _add_missing_ds_keys(ds,self.ev_mappings)
 
         self.dataSources[dskey] = ds
@@ -478,6 +481,25 @@ class Pipeline:
             if ('Events' in ds.h5f.root) and ('StartTime' in self.mdh.keys()):
                 self.events = ds.h5f.root.Events[:]
 
+        elif filename.endswith('.hdf'):
+            #recipe output - handles generically formatted .h5
+            import tables
+            h5f = tables.open_file(filename)
+
+            #mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
+            for t in h5f.list_nodes('/'):
+                #print t
+                if isinstance(t, tables.table.Table):
+                    tab = tabular.hdfSource(h5f, t.name)
+                    #tab.mdh = mdh
+
+                    self.addDataSource(t.name, tab)
+
+            if 'MetaData' in h5f.root:
+                self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))
+
+            ds = self.dataSources.values()[-1].resultsSource
+            #print ds, self.dataSources, ds.resultsSource.fitResults
 
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
             ds = tabular.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
