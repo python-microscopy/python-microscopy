@@ -57,7 +57,7 @@ def listing(request, filename):
     dirs = []
     series = []
     files = []
-    for l, file_info in listing:
+    for l, file_info in listing.iteritems():
         if file_info.type & cl.FILETYPE_SERIES:
             complete = (file_info.type & cl.FILETYPE_SERIES_COMPLETE) > 0
             nFrames = file_info.size - 3 #assume we have metadata.json, events.json, and final_metadata.json - all others are  frames
