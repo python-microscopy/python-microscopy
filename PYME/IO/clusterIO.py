@@ -107,12 +107,12 @@ def _listSingleDir(dirurl, nRetries=3):
 
             #make sure we read a reply so that the far end doesn't hold the connection open
             dump = r.content
-            return [], dt
+            return {}, dt
         try:
             dirL = r.json()
         except ValueError:
             # directory doesn't exist
-            return [], dt
+            return {}, dt
 
         _dirCache[dirurl] = (dirL, t, dt)
 
