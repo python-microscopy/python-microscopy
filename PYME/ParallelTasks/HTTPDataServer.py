@@ -59,7 +59,7 @@ from StringIO import StringIO
 import shutil
 #import urllib
 import sys
-import json
+import ujson as json
 import PYME.misc.pyme_zeroconf as pzc
 import urlparse
 import requests
