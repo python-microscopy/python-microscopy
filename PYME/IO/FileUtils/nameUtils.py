@@ -130,7 +130,7 @@ def genClusterResultFileName(dataFileName, create=True):
     #if create and not os.path.exists(os.path.split(p)[0]): #create the necessary directories
     #    os.makedirs(os.path.split(p)[0])
 
-    return '/'.join([dir_name, 'analysis', rel_name]) + '.h5r'
+    return '/'.join([dir_name, 'analysis', file_name]) + '.h5r'
 
 def genResultDirectoryPath():
     """Returns the default destination for saving fit reults"""
