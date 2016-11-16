@@ -2,6 +2,7 @@
 This file provides utility functions for creating and interpreting clusterIO directory listings.
 """
 from collections import namedtuple
+import os
 
 #flags (bitfields) for file type specification
 FILETYPE_NORMAL = 0
@@ -45,3 +46,42 @@ def aggregate_dirlisting(dir_list, single_dir):
                 size += fi.size
 
         dir_list[k] = FileInfo(type, size)
+
+def _file_info(path, fn):
+    fpath = os.path.join(path, fn)
+    if os.path.isdir(fpath):
+        ftype = FILETYPE_DIRECTORY
+
+        if os.path.exists(fpath + '/metadata.json'):
+            #if there is a metadata.json, set the series flag
+            ftype |= FILETYPE_SERIES
+
+        if os.path.exists(fpath + '/events.json'):
+            #if there is a metadata.json, set the series flag
+            ftype |= FILETYPE_SERIES_COMPLETE
+
+        return (fn + '/',  FileInfo(ftype, len(os.listdir(fpath))))
+    else:
+        return (fn,  FileInfo(FILETYPE_NORMAL, os.path.getsize(fpath)))
+
+
+def list_directory_s(path):
+    list = os.listdir(path)
+
+    list.sort(key=lambda a: a.lower())
+
+    l2 = dict(map(lambda fn : _file_info(path, fn), list))
+
+    return l2
+
+def list_directory(path):
+    from multiprocessing.pool import ThreadPool
+    list = os.listdir(path)
+
+    list.sort(key=lambda a: a.lower())
+
+    pool = ThreadPool(10)
+
+    l2 = dict(pool.map(lambda fn : _file_info(path, fn), list))
+
+    return l2

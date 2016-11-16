@@ -416,31 +416,10 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 if expiry < curTime: raise RuntimeError('Expired')
             except (KeyError, RuntimeError):
                 try:
-                    list = os.listdir(path)
+                    l2 = cl.list_directory(path)
                 except os.error:
                     self.send_error(404, "No permission to list directory")
                     return None
-    
-                list.sort(key=lambda a: a.lower())
-    
-                #displaypath = cgi.escape(urllib.unquote(self.path))
-                l2 = {}
-                for l in list:
-                    fpath = os.path.join(path, l)
-                    if os.path.isdir(fpath):
-                        ftype=cl.FILETYPE_DIRECTORY
-
-                        if os.path.exists(fpath + '/metadata.json'):
-                            #if there is a metadata.json, set the series flag
-                            ftype |= cl.FILETYPE_SERIES
-
-                        if os.path.exists(fpath + '/events.json'):
-                            #if there is a metadata.json, set the series flag
-                            ftype |= cl.FILETYPE_SERIES_COMPLETE
-
-                        l2[l + '/'] = cl.FileInfo(ftype, len(os.listdir(fpath)))
-                    else:
-                        l2[l] = cl.FileInfo(cl.FILETYPE_NORMAL, os.path.getsize(fpath))
     
                 js_dir = json.dumps(l2)
                 _dirCache[path] = (js_dir, time.time() + _dirCacheTimeout)
