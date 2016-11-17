@@ -12,12 +12,16 @@ static PyObject * dirsize(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s", &path))
         return NULL;
 
+    Py_BEGIN_ALLOW_THREADS
+
     dir = opendir(path);
 
     while((ent = readdir(dir)))
             ++count;
 
     closedir(dir);
+
+    Py_END_ALLOW_THREADS
 
     return Py_BuildValue("i", count);
 }
