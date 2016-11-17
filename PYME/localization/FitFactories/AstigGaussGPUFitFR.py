@@ -131,17 +131,19 @@ class GaussianFitFactory:
             #Initialize new detector object for this process
             dfilter1 = warpDrive.normUnifFilter(12)
             dfilter2 = warpDrive.normUnifFilter(6)
-            _warpDrive = warpDrive.detector(np.shape(self.data), self.data.dtype.itemsize, dfilter1, dfilter2)
-            _warpDrive.allocateMem()
+            _warpDrive = warpDrive.detector(dfilter1, dfilter2)
+            _warpDrive.allocateMem(np.shape(self.data), self.data.dtype.itemsize)
             _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
 
             #If the data is coming from a different region of the camera, reallocate
-            #note that 'and' is short circuiting in Python. Just check the first 20x20 elements
         elif _warpDrive.data.shape == self.data.shape:
-            if (not np.array_equal(self.varmap[:20, :20], _warpDrive.varmap[:20, :20])):
+            # check if both corners are the same
+            topLeft = np.array_equal(self.varmap[:20, :20], _warpDrive.varmap[:20, :20])
+            botRight = np.array_equal(self.varmap[-20:, -20:], _warpDrive.varmap[-20:, -20:])
+            if not (topLeft or botRight):
                 _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
         else:  # data is a different shape - we know that we need to re-allocate and prepvar
-            _warpDrive.allocateMem()
+            _warpDrive.allocateMem(np.shape(self.data), self.data.dtype.itemsize)
             _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
 
     def getRes(self):
