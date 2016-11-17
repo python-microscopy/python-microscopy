@@ -3,6 +3,7 @@ This file provides utility functions for creating and interpreting clusterIO dir
 """
 from collections import namedtuple
 import os
+from PYME.IO.countdir import dirsize
 
 #flags (bitfields) for file type specification
 FILETYPE_NORMAL = 0
@@ -60,7 +61,7 @@ def _file_info(path, fn):
             #if there is a metadata.json, set the series flag
             ftype |= FILETYPE_SERIES_COMPLETE
 
-        return (fn + '/',  FileInfo(ftype, len(os.listdir(fpath))))
+        return (fn + '/',  FileInfo(ftype, dirsize(fpath)))
     else:
         return (fn,  FileInfo(FILETYPE_NORMAL, os.path.getsize(fpath)))
 
