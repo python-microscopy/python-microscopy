@@ -229,11 +229,7 @@ def listdirectory(dirname, serverfilter=''):
             urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
 
     listings = _pool.map(_listSingleDir, urls)
-            # print dirurl
-            #dirL, dt = _listSingleDir(dirurl)
 
-            #dirlist.update(dirL)
-    
     for dirL, dt in listings:
         cl.aggregate_dirlisting(dirlist, dirL)
 
