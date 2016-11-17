@@ -20,6 +20,9 @@ size: is the size of the file in bytes, OR the number of entries in a directory
 """
 FileInfo = namedtuple('FileInfo', 'type, size')
 
+def dirsize_(path):
+    return len(os.listdir(path))
+
 def aggregate_dirlisting(dir_list, single_dir):
     """
     aggregate / add file info in a dir listing
@@ -71,18 +74,23 @@ def list_directory(path):
 
     list.sort(key=lambda a: a.lower())
 
-    l2 = dict(map(lambda fn : _file_info(path, fn), list))
+    #l2 = dict(map(lambda fn : _file_info(path, fn), list))
+    l2 = dict([_file_info(path, fn) for fn in list])
 
     return l2
 
+_pool = None
+
 def list_directory_p(path):
+    global _pool
     from multiprocessing.pool import ThreadPool
     list = os.listdir(path)
 
     list.sort(key=lambda a: a.lower())
 
-    pool = ThreadPool(10)
+    if _pool is None:
+        _pool = ThreadPool(10)
 
-    l2 = dict(pool.map(lambda fn : _file_info(path, fn), list))
+    l2 = dict(_pool.map(lambda fn : _file_info(path, fn), list))
 
     return l2
