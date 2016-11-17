@@ -207,22 +207,35 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
 
         return locs
 
+_pool = None
 def listdirectory(dirname, serverfilter=''):
     """Lists the contents of a directory on the cluster.
 
     Returns a dictionary mapping filenames to clusterListing.FileInfo named tuples.
     """
+    global _pool
     from . import clusterListing as cl
+    from multiprocessing.pool import ThreadPool
+
+    if _pool is None:
+        _pool = ThreadPool(10)
+
     dirlist = dict()
+
+    urls = []
 
     for name, info in ns.advertised_services.items():
         if serverfilter in name:
-            dirurl = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
+            urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
+
+    listings = _pool.map(_listSingleDir, urls)
             # print dirurl
-            dirL, dt = _listSingleDir(dirurl)
+            #dirL, dt = _listSingleDir(dirurl)
 
             #dirlist.update(dirL)
-            cl.aggregate_dirlisting(dirlist, dirL)
+    
+    for dirL, dt in listings:
+        cl.aggregate_dirlisting(dirlist, dirL)
 
     return dirlist
 
