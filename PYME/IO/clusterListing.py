@@ -65,7 +65,7 @@ def _file_info(path, fn):
         return (fn,  FileInfo(FILETYPE_NORMAL, os.path.getsize(fpath)))
 
 
-def list_directory_s(path):
+def list_directory(path):
     list = os.listdir(path)
 
     list.sort(key=lambda a: a.lower())
@@ -74,7 +74,7 @@ def list_directory_s(path):
 
     return l2
 
-def list_directory(path):
+def list_directory_p(path):
     from multiprocessing.pool import ThreadPool
     list = os.listdir(path)
 
