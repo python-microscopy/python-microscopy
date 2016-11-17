@@ -3,7 +3,7 @@ This file provides utility functions for creating and interpreting clusterIO dir
 """
 from collections import namedtuple
 import os
-from PYME.IO.countdir import dirsize
+from PYME.IO.countdir import dirsize, file_info
 
 #flags (bitfields) for file type specification
 FILETYPE_NORMAL = 0
@@ -51,7 +51,7 @@ def aggregate_dirlisting(dir_list, single_dir):
 
         dir_list[k] = FileInfo(type, size)
 
-def _file_info(path, fn):
+def __file_info(path, fn):
     fpath = os.path.join(path, fn)
     if os.path.isdir(fpath):
         ftype = FILETYPE_DIRECTORY
@@ -67,6 +67,12 @@ def _file_info(path, fn):
         return (fn + '/',  FileInfo(ftype, dirsize(fpath)))
     else:
         return (fn,  FileInfo(FILETYPE_NORMAL, os.path.getsize(fpath)))
+
+
+def _file_info(path, fn):
+    fpath = os.path.join(path, fn)
+
+    return (fn, file_info(fpath))
 
 
 def list_directory(path):
