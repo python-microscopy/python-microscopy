@@ -64,7 +64,10 @@ class ListWrap:
         #if kL.__class__ == slice:
         #    return ListWrap([self.wrapList[i].__getitem__(keys[:self.listDim]) for i in range(*kL.indices(len(self.wrapList)))])
 
-        return self.wrapList[kL].__getitem__(keys[:self.listDim])
+        if isinstance(kL, slice):
+            return np.concatenate([self.wrapList[i].__getitem__(keys[:self.listDim]) for i in range(*kL.indices(len(self.wrapList)))], self.listDim)
+        else:
+            return self.wrapList[kL].__getitem__(keys[:self.listDim])
 
 
 class DataWrap: #permit indexing with more dimensions larger than len(shape)

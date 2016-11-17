@@ -740,7 +740,7 @@ class TIFFfile(object):
     """
     def __init__(self, filename):
         """Initialize instance from file."""
-        from PYME.io import unifiedIO
+        from PYME.IO import unifiedIO
         #filename = os.path.abspath(filename)
         #self._fd = open(filename, 'rb')
         self._fd = unifiedIO.openFile(filename)
