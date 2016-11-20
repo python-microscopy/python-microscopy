@@ -387,9 +387,9 @@ def main():
         visFr.RefreshView()
         
 if __name__ == '__main__':
-    from PYME.util import mProfile
-    mProfile.profileOn(['multiviewMapping.py', 'pyDeClump.py'])
+    #from PYME.util import mProfile
+    #mProfile.profileOn(['multiviewMapping.py', 'pyDeClump.py'])
     main()
-    mProfile.report()
+    #mProfile.report()
 
 
