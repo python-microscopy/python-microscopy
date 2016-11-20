@@ -246,22 +246,22 @@ class MeanNeighbourDistances(ModuleBase):
         
         namespace[self.outputName] = res
 
-@register_module('NearestNeighbourDistances')         
+@register_module('NearestNeighbourDistances')
 class NearestNeighbourDistances(ModuleBase):
     """Calculates the nearest neighbour distances between supplied points using
     a kdtree"""
     inputPositions = CStr('input')
     outputName = CStr('neighbourDists')
+    columns = List(['x', 'y'])
     key = CStr('neighbourDists')
     
     def execute(self, namespace):
         from scipy.spatial import cKDTree
         pos = namespace[self.inputPositions]
-        
-        x, y = pos['x'], pos['y']
+
         
         #create a kdtree
-        p = np.vstack([x,y]).T
+        p = np.vstack([pos[k] for k in self.columns]).T
         kdt = cKDTree(p)
         
         #query the two closest entries - the closest entry will be the 
@@ -275,7 +275,36 @@ class NearestNeighbourDistances(ModuleBase):
         
         namespace[self.outputName] = res
 
-@register_module('PairwiseDistanceHistogram')         
+@register_module('NearestNeighbourTwoSpecies')
+class NearestNeighbourTwoSpecies(ModuleBase):
+    """Calculates the nearest neighbour distances between supplied points using
+    a kdtree"""
+    inputChan0 = CStr('input')
+    inputChan1 = CStr('input')
+    outputName = CStr('neighbourDists')
+    columns = List(['x', 'y'])
+    key = CStr('neighbourDists')
+
+    def execute(self, namespace):
+        from scipy.spatial import cKDTree
+        pos = namespace[self.inputChan0]
+        pos1 = namespace[self.inputChan1]
+
+        #create a kdtree
+        p1 = np.vstack([pos[k] for k in self.columns]).T
+        p2 = np.vstack([pos1[k] for k in self.columns]).T
+        kdt = cKDTree(p1)
+
+        d, i = kdt.query(p2, 1)
+        res = d[:,0]
+
+        res = pd.DataFrame({self.key:res})
+        if 'mdh' in dir(pos):
+            res.mdh = pos.mdh
+
+        namespace[self.outputName] = res
+
+@register_module('PairwiseDistanceHistogram')
 class PairwiseDistanceHistogram(ModuleBase):
     """Calculates a histogram of pairwise distances"""
     inputPositions = CStr('input')
@@ -686,3 +715,46 @@ class AggregateMeasurements(ModuleBase):
             
         namespace[self.outputName] = res
         
+
+'''
+@register_module('NearestNeighborDistancesSlow')
+class NearestNeighborDistances(ModuleBase):
+    """
+
+    """
+    inputName = CStr('filtered')
+    populationDivider = CStr('probe')
+    clusterKeys = List(['x', 'y', 'z'])
+    outputName = CStr('NearestNeighborMeasurements')
+
+    def execute(self, namespace):
+        from sklearn.cluster import dbscan
+
+        inp = namespace[self.inputName]
+        mapped = tabular.mappingFilter(inp)
+
+        pops, counts = np.unique(mapped[self.populationDivider], return_counts=True)
+        numPops = len(pops)
+        numLocs = len(mapped[self.populationDivider])
+        #distDim = [counts[pi] for pi in range(numPops)]
+        #dist = np.zeros(tuple(distDim))
+        #minDist = [np.zeros(counts[pi]) for pi in range(numPops)]
+        for pi in range(numPops-1):
+            mask0 = mapped[self.populationDivider] == pops[pi]
+            mask1 = mapped[self.populationDivider] == pops[pi + 1]
+
+            # need to output arrays of length mapped[key]
+            minDist = -np.ones(numLocs)
+            for ii in range(np.sum(mask0, dtype=int)):
+                minDist[mask0][ii] = np.min(np.sqrt(np.sum([(mapped[ck][mask0][ii] - mapped[ck][mask1])**2 for ck in self.clusterKeys])))
+            mapped.addColumn('minDist%s_%i%i' % (self.populationDivider, pi, pi + 1), minDist)
+
+        # propogate metadata, if present
+        try:
+            mapped.mdh = inp.mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = mapped'''
+
+
