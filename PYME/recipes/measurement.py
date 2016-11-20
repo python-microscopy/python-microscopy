@@ -269,7 +269,7 @@ class NearestNeighbourDistances(ModuleBase):
         d, i = kdt.query(p, 2)
         res = d[:,1]
         
-        res = pd.DataFrame({self.key:res})
+        res = pd.DataFrame({self.key: res})
         if 'mdh' in dir(pos):
             res.mdh = pos.mdh
         
@@ -296,9 +296,8 @@ class NearestNeighbourTwoSpecies(ModuleBase):
         kdt = cKDTree(p1)
 
         d, i = kdt.query(p2, 1)
-        res = d[:,0]
 
-        res = pd.DataFrame({self.key:res})
+        res = pd.DataFrame({self.key: d})
         if 'mdh' in dir(pos):
             res.mdh = pos.mdh
 
