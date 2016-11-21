@@ -1,6 +1,6 @@
 
 ##################
-# dbscanClustering.py
+# clusterAnalysis.py
 #
 # Copyright David Baddeley, Andrew Barentine
 # david.baddeley@yale.edu
@@ -50,7 +50,8 @@ def splitDataSource(pipeline, keyToSplit):
 
     return dSources
 
-class DBSCANer:
+
+class ClusterAnalyser:
     """
     Provides GUI handling for sklearn's DBSCAN clustering function
     """
@@ -118,5 +119,5 @@ class DBSCANer:
 
 def Plug(visFr):
     """Plugs this module into the gui"""
-    visFr.multiview = DBSCANer(visFr)
+    visFr.ClusterAnalyser = ClusterAnalyser(visFr)
 
