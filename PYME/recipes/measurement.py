@@ -250,37 +250,8 @@ class MeanNeighbourDistances(ModuleBase):
 class NearestNeighbourDistances(ModuleBase):
     """Calculates the nearest neighbour distances between supplied points using
     a kdtree"""
-    inputPositions = CStr('input')
-    outputName = CStr('neighbourDists')
-    columns = List(['x', 'y'])
-    key = CStr('neighbourDists')
-    
-    def execute(self, namespace):
-        from scipy.spatial import cKDTree
-        pos = namespace[self.inputPositions]
-
-        
-        #create a kdtree
-        p = np.vstack([pos[k] for k in self.columns]).T
-        kdt = cKDTree(p)
-        
-        #query the two closest entries - the closest entry will be the 
-        #original point, the next closest it's nearest neighbour
-        d, i = kdt.query(p, 2)
-        res = d[:,1]
-        
-        res = pd.DataFrame({self.key: res})
-        if 'mdh' in dir(pos):
-            res.mdh = pos.mdh
-        
-        namespace[self.outputName] = res
-
-@register_module('NearestNeighbourTwoSpecies')
-class NearestNeighbourTwoSpecies(ModuleBase):
-    """Calculates the nearest neighbour distances between supplied points using
-    a kdtree"""
     inputChan0 = CStr('input')
-    inputChan1 = CStr('input')
+    inputChan1 = CStr('')
     outputName = CStr('neighbourDists')
     columns = List(['x', 'y'])
     key = CStr('neighbourDists')
@@ -288,7 +259,11 @@ class NearestNeighbourTwoSpecies(ModuleBase):
     def execute(self, namespace):
         from scipy.spatial import cKDTree
         pos = namespace[self.inputChan0]
-        pos1 = namespace[self.inputChan1]
+        
+        if self.inputChan1 == '':
+            pos1 = pos
+        else:
+            pos1 = namespace[self.inputChan1]
 
         #create a kdtree
         p1 = np.vstack([pos[k] for k in self.columns]).T
