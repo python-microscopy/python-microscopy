@@ -45,12 +45,12 @@ def f_gaussAstigSlow(p, X, Y):
 
 fresultdtype=[('tIndex', '<i4'),
               ('fitResults', [('y0', '<f4'), ('x0', '<f4'), #Fang and Davids xys are swapped
-                              ('photons', '<f4'),
+                              ('A', '<f4'),
                               ('background', '<f4'),
                               ('sigmay', '<f4'),('sigmax', '<f4')]),
 
               ('fitError', [('y0', '<f4'), ('x0', '<f4'),
-                              ('photons', '<f4'),
+                              ('A', '<f4'),
                               ('background', '<f4'),
                               ('sigmay', '<f4'),('sigmax', '<f4')]),
               ('resultCode', '<i4'),
