@@ -77,7 +77,7 @@ class ClusterAnalyser:
 
         dSources = splitDataSource(self.pipeline, str(split_dlg.GetValue()))
 
-        matchMaker = measurement.NearestNeighbourTwoSpecies()
+        matchMaker = measurement.NearestNeighbourDistances()
         matchMaker.columns = str(column_dlg.GetValue()).replace(' ', '').split(',')
 
         for di in range(len(dSources)-1):
