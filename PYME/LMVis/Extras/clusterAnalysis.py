@@ -92,9 +92,9 @@ class ClusterAnalyser:
 
             self.GeneratedMeasures['NearestNeighborDistances_%s%s' % (di, di + 1)] = namespace[matchMaker.outputName][matchMaker.outputName].as_matrix()
 
-        print 'Nearest neighbor results have been stored in pipeline.GeneratedMeasures[NearestNeighborDistances_##]'
+        print 'Nearest neighbor results have been stored in pipeline.visFr.clusterAnalyser.GeneratedMeasures[NearestNeighborDistances_##]'
 
 def Plug(visFr):
     """Plugs this module into the gui"""
-    visFr.multiview = ClusterAnalyser(visFr)
+    visFr.clusterAnalyser = ClusterAnalyser(visFr)
 
