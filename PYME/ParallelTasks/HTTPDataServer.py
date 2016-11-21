@@ -59,7 +59,7 @@ from StringIO import StringIO
 import shutil
 #import urllib
 import sys
-import json
+import ujson as json
 import PYME.misc.pyme_zeroconf as pzc
 import urlparse
 import requests
@@ -178,6 +178,10 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         data = self.rfile.read(int(self.headers['Content-Length']))
 
+        dirname = os.path.dirname(path)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+
         #append the contents of the put request
         with getTextFileLock(path):
             #lock so that we don't corrupt the data by writing from two different threads
@@ -210,6 +214,10 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         filename += '.h5r'
 
         data = self.rfile.read(int(self.headers['Content-Length']))
+
+        dirname = os.path.dirname(filename)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
 
         #logging.debug('opening h5r file')
         with h5rFile.openH5R(filename, 'a') as h5f:
@@ -398,6 +406,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         interface the same as for send_head().
 
         """
+        from PYME.IO import clusterListing as cl
 
         with _listDirLock:
             #make sure only one thread calculates the directory listing
@@ -407,20 +416,10 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 if expiry < curTime: raise RuntimeError('Expired')
             except (KeyError, RuntimeError):
                 try:
-                    list = os.listdir(path)
+                    l2 = cl.list_directory(path)
                 except os.error:
                     self.send_error(404, "No permission to list directory")
                     return None
-    
-                list.sort(key=lambda a: a.lower())
-    
-                #displaypath = cgi.escape(urllib.unquote(self.path))
-                l2 = []
-                for l in list:
-                    if os.path.isdir(os.path.join(path, l)):
-                        l2.append(l + '/')
-                    else:
-                        l2.append(l)
     
                 js_dir = json.dumps(l2)
                 _dirCache[path] = (js_dir, time.time() + _dirCacheTimeout)

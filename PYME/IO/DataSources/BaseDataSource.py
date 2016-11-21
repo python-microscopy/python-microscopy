@@ -103,12 +103,22 @@ class BaseDataSource(object):
         if self.nTrueDims <= 3: #x,y, z/t
             r = np.concatenate([np.atleast_2d(self.getSlice(i)[keys[0], keys[1]])[:,:,None] for i in range(*keys[2].indices(self.getNumSlices()))], 2)
         elif self.nTrueDims == 4:
-            if self.additionalDims == 'TC':
-                indices = np.arange(*keys[2].indices(self.shape[2])) + keys[3].start*self.shape[2]
-            elif self.additionalDims == 'CT':
-                indices = np.arange(*keys[2].indices(self.shape[2]))*self.shape[3] + keys[3].start
-                
-            r = np.concatenate([np.atleast_2d(self.getSlice(i)[keys[0], keys[1]])[:,:,None] for i in indices], 2)
+            #print keys[3]
+            col_indices =  range(*keys[3].indices(self.shape[3]))
+            #print col_indices
+            r = []
+            for c_i in col_indices:
+                if self.additionalDims == 'TC':
+                    indices = np.arange(*keys[2].indices(self.shape[2])) + c_i*self.shape[2]
+                elif self.additionalDims == 'CT':
+                    indices = np.arange(*keys[2].indices(self.shape[2]))*self.shape[3] + c_i
+
+                r.append(np.concatenate([np.atleast_2d(self.getSlice(i)[keys[0], keys[1]])[:,:,None] for i in indices], 2))
+
+            if len(r) > 1:
+                r = np.concatenate([r_i[:,:,:,None] for r_i in r], 3)
+            else:
+                r = r[0]
             
 
         self.oldData = r

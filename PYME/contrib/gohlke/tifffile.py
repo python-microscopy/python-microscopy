@@ -740,8 +740,10 @@ class TIFFfile(object):
     """
     def __init__(self, filename):
         """Initialize instance from file."""
-        filename = os.path.abspath(filename)
-        self._fd = open(filename, 'rb')
+        from PYME.IO import unifiedIO
+        #filename = os.path.abspath(filename)
+        #self._fd = open(filename, 'rb')
+        self._fd = unifiedIO.openFile(filename)
         self.fname = os.path.basename(filename)
         self.fpath = os.path.dirname(filename)
         self._tiffs = {self.fname: self}  # cache of TIFFfiles

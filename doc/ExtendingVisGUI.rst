@@ -32,7 +32,8 @@ form, and a mapping filter which adapts column names and scaling to fit VisGUIs 
 The variable section
 --------------------
 
-This is implemented as a PYME recipe. It takes the output of the input adapter, and performs any additional manipulation
+This is implemented as a :ref:`PYME recipe <recipes>` (see also :ref:`writingrecipemodules`). It takes the output of the
+input adapter, and performs any additional manipulation
 that might be sample, microscope, or dataset specific. This should include tasks such as event clumping and any
 calibrations or corrections. The recipes *namespace* replaces the previous ``.dataSources`` attribute of
 the pipeline.

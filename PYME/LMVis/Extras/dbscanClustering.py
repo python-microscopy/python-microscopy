@@ -42,12 +42,13 @@ class DBSCANer:
 
         """
         from PYME.recipes import tablefilters
-        namespace = {'filtered': self.pipeline}
+
         clumper = tablefilters.DBSCANClustering()
         if clumper.configure_traits(kind='modal'):
+            namespace = {clumper.inputName: self.pipeline}
             clumper.execute(namespace)
 
-            self.pipeline.addColumn('dbscanClumpID', namespace['dbscanClustered']['dbscanClumpID'])
+            self.pipeline.addColumn(clumper.outputName, namespace[clumper.outputName]['dbscanClumpID'])
 
 
 

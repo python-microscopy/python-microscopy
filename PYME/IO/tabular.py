@@ -55,6 +55,12 @@ class TabularBase(object):
         #print key, sl
             
         return key, sl
+
+    def to_hdf(self, filename, tablename='Data', keys=None):
+        from PYME.IO import h5rFile
+
+        with h5rFile.H5RFile(filename, 'a') as f:
+            f.appendToTable(tablename, self.toDataFrame(keys).to_records())
         
     
 
@@ -237,6 +243,51 @@ class h5rDSource(h5rSource):
 
     def getInfo(self):
         return 'PYME h5r Drift Data Source\n\n %d points' % self.fitResults.shape[0]
+
+class hdfSource(h5rSource):
+    _name = "hdf Data Source"
+
+    def __init__(self, h5fFile, tablename='FitResults'):
+        """ Data source for use with h5r files as saved by the PYME analysis
+        component. Takes either an open h5r file or a string filename to be
+        opened."""
+        self.tablename = tablename
+
+        if type(h5fFile) == tables.file.File:
+            self.h5f = h5fFile
+        else:
+            self.h5f = tables.open_file(h5fFile)
+
+        if not tablename in dir(self.h5f.root):
+            raise RuntimeError('Was expecting to find a "%s" table' % tablename)
+
+        self.fitResults = getattr(self.h5f.root, tablename)[:]
+
+        #allow access using unnested original names
+        self._keys = unNestNames(getattr(self.h5f.root, tablename).description._v_nested_names)
+        #or shorter aliases
+
+        #sort by time
+        if 'tIndex' in self._keys:
+            self.fitResults.sort(order='tIndex')
+
+    def keys(self):
+        return self._keys #+ self.transkeys.keys()
+
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+
+        if not key in self._keys:
+            raise RuntimeError('Key not found')
+
+        return self.fitResults[key][sl]
+
+
+    def close(self):
+        self.h5f.close()
+
+    def getInfo(self):
+        return 'PYME hdf Data Source\n\n %d points' % self.fitResults.shape[0]
 
 # class h5rDSource(inputFilter):
 #     _name = "h5r Drift Source"

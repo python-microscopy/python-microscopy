@@ -60,9 +60,19 @@ def saveDataFrame(output, filename):
     elif filename.endswith('.xlsx') or filename.endswith('.xls'):
         output.to_excell(filename)
     elif filename.endswith('.hdf'):
+        tabular.mappingFilter(output).to_hdf(filename)
+    else:
+        tabular.mappingFilter(output).to_hdf(filename + '.hdf', 'Data')
+
+def saveTabular(output, filename):
+    """Saves a pandas dataframe, inferring the destination type based on extension"""
+    if filename.endswith('.csv'):
+        output.toDataFrame().to_csv(filename)
+    elif filename.endswith('.xlsx') or filename.endswith('.xls'):
+        output.toDataFrame().to_excell(filename)
+    elif filename.endswith('.hdf'):
         output.to_hdf(filename)
-    else: #append a .csv
-        #output.to_csv(filename + '.csv')
+    else:
         output.to_hdf(filename + '.hdf', 'Data')
     
 def saveOutput(output, filename):
@@ -72,14 +82,14 @@ def saveOutput(output, filename):
             output.Save(filename)
         except RuntimeError:
             output.Save(filename + '.tif')
+    elif isinstance(output, tabular.TabularBase):
+        saveTabular(output, filename)
     elif isinstance(output, pd.DataFrame):
         saveDataFrame(output, filename)
-    elif 'toDataFrame' in dir(output):
-        saveDataFrame(output.toDataFrame(), filename)
     elif isinstance(output, matplotlib.figure.Figure):
         output.savefig(filename)
-    else: #hope we can convert to a data frame
-        saveDataFrame(pd.DataFrame(output), filename)
+    else: #hope we can convert to a tabular format
+        saveTabular(tabular.mappingFilter(output), filename)
         
 def runRecipe(recipe, inputs, outputs):
     """Load inputs and run recipe, saving outputs.

@@ -486,7 +486,9 @@ class VisGUICore(object):
     def OpenFile(self, filename):
         args = {}
         
-        if os.path.splitext(filename)[1] == '.h5r':
+        if os.path.splitext(filename)[1] =='.h5r':
+            pass
+        elif os.path.splitext(filename)[1] == '.hdf':
             pass
         elif os.path.splitext(filename)[1] == '.mat':
             from PYME.LMVis import importTextDialog

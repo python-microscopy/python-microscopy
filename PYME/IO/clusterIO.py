@@ -107,12 +107,12 @@ def _listSingleDir(dirurl, nRetries=3):
 
             #make sure we read a reply so that the far end doesn't hold the connection open
             dump = r.content
-            return [], dt
+            return {}, dt
         try:
             dirL = r.json()
         except ValueError:
             # directory doesn't exist
-            return [], dt
+            return {}, dt
 
         _dirCache[dirurl] = (dirL, t, dt)
 
@@ -175,7 +175,7 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
             else:
                 dirList, dt = _listSingleDir(dirurl)
 
-                if fn in dirList:
+                if fn in dirList.keys():
                     locs.append((dirurl + fn, dt))
 
             if return_first_hit and len(locs) > 0:
@@ -195,7 +195,7 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
             else:
                 dirList, dt = _listSingleDir(dirurl)
 
-                if fn in dirList:
+                if fn in dirList.keys():
                     locs.append((dirurl + fn, dt))
 
             if return_first_hit and len(locs) > 0:
@@ -207,22 +207,40 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
 
         return locs
 
+_pool = None
+def listdirectory(dirname, serverfilter=''):
+    """Lists the contents of a directory on the cluster.
+
+    Returns a dictionary mapping filenames to clusterListing.FileInfo named tuples.
+    """
+    global _pool
+    from . import clusterListing as cl
+    from multiprocessing.pool import ThreadPool
+
+    if _pool is None:
+        _pool = ThreadPool(10)
+
+    dirlist = dict()
+
+    urls = []
+
+    for name, info in ns.advertised_services.items():
+        if serverfilter in name:
+            urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
+
+    listings = _pool.map(_listSingleDir, urls)
+
+    for dirL, dt in listings:
+        cl.aggregate_dirlisting(dirlist, dirL)
+
+    return dirlist
 
 def listdir(dirname, serverfilter=''):
     """Lists the contents of a directory on the cluster. Similar to os.listdir,
     but directories are indicated by a trailing slash
     """
-    dirlist = set()
 
-    for name, info in ns.advertised_services.items():
-        if serverfilter in name:
-            dirurl = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
-            # print dirurl
-            dirL, dt = _listSingleDir(dirurl)
-
-            dirlist.update(dirL)
-
-    return list(dirlist)
+    return list(listdirectory(dirname, serverfilter).keys())
 
 
 def exists(name, serverfilter=''):

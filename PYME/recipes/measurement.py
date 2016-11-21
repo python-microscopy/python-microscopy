@@ -246,36 +246,39 @@ class MeanNeighbourDistances(ModuleBase):
         
         namespace[self.outputName] = res
 
-@register_module('NearestNeighbourDistances')         
+@register_module('NearestNeighbourDistances')
 class NearestNeighbourDistances(ModuleBase):
     """Calculates the nearest neighbour distances between supplied points using
     a kdtree"""
-    inputPositions = CStr('input')
+    inputChan0 = CStr('input')
+    inputChan1 = CStr('')
     outputName = CStr('neighbourDists')
+    columns = List(['x', 'y'])
     key = CStr('neighbourDists')
-    
+
     def execute(self, namespace):
         from scipy.spatial import cKDTree
-        pos = namespace[self.inputPositions]
+        pos = namespace[self.inputChan0]
         
-        x, y = pos['x'], pos['y']
-        
+        if self.inputChan1 == '':
+            pos1 = pos
+        else:
+            pos1 = namespace[self.inputChan1]
+
         #create a kdtree
-        p = np.vstack([x,y]).T
-        kdt = cKDTree(p)
-        
-        #query the two closest entries - the closest entry will be the 
-        #original point, the next closest it's nearest neighbour
-        d, i = kdt.query(p, 2)
-        res = d[:,1]
-        
-        res = pd.DataFrame({self.key:res})
+        p1 = np.vstack([pos[k] for k in self.columns]).T
+        p2 = np.vstack([pos1[k] for k in self.columns]).T
+        kdt = cKDTree(p1)
+
+        d, i = kdt.query(p2, 1)
+
+        res = pd.DataFrame({self.key: d})
         if 'mdh' in dir(pos):
             res.mdh = pos.mdh
-        
+
         namespace[self.outputName] = res
 
-@register_module('PairwiseDistanceHistogram')         
+@register_module('PairwiseDistanceHistogram')
 class PairwiseDistanceHistogram(ModuleBase):
     """Calculates a histogram of pairwise distances"""
     inputPositions = CStr('input')
@@ -686,3 +689,4 @@ class AggregateMeasurements(ModuleBase):
             
         namespace[self.outputName] = res
         
+
