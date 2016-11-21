@@ -90,7 +90,7 @@ class ClusterAnalyser:
 
             matchMaker.execute(namespace)
 
-            self.pipeline.GeneratedMeasures['NearestNeighborDistances_%s%s' % (di, di + 1)] = namespace[matchMaker.outputName][matchMaker.outputName].as_matrix()
+            self.GeneratedMeasures['NearestNeighborDistances_%s%s' % (di, di + 1)] = namespace[matchMaker.outputName][matchMaker.outputName].as_matrix()
 
         print 'Nearest neighbor results have been stored in pipeline.GeneratedMeasures[NearestNeighborDistances_##]'
 
