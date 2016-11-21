@@ -42,6 +42,9 @@ from PYME.IO.DataSources import BufferedDataSource
 #from PYME.LMVis.visHelpers import ImageBounds
 
 from PYME.IO.FileUtils.nameUtils import getRelFilename
+from collections import namedtuple
+
+VS = namedtuple('VS', 'x,y,z')
 
 class ImageBounds:
     def __init__(self, x0, y0, x1, y1, z0=0, z1=0):
@@ -256,9 +259,9 @@ class ImageStack(object):
         """Returns voxel size, in nm, as a 3-tuple. Expects metadata voxel size
         to be in um"""
         try:
-            return 1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y'],  1e3*self.mdh['voxelsize.z']
+            return VS(1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y'],  1e3*self.mdh['voxelsize.z'])
         except:
-            return 1,1,1    
+            return (1,1,1)    
     
     @property
     def pixelSize(self):
