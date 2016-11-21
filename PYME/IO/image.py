@@ -508,7 +508,7 @@ class ImageStack(object):
         .psf files consist of a tuple containing the data and the voxelsize.
         """
         self.data, vox = numpy.load(filename)
-        self.mdh = MetaData.ConfocDefault
+        self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.ConfocDefault)
 
         self.mdh.setEntry('voxelsize.x', vox.x)
         self.mdh.setEntry('voxelsize.y', vox.y)
