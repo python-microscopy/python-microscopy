@@ -162,7 +162,7 @@ class AnalysisSettingsView(object):
     def OnFitModuleChanged(self, event):
         self.customOptionsSizer.Clear(True)
         self._populateCustomAnalysisPanel(self.customOptionsPan, self.customOptionsSizer)
-		self.customOptionsPan.GetTopLevelParent().OnSize(None)
+        self.customOptionsPan.GetTopLevelParent().OnSize(None)
         self.analysisMDH['Analysis.FitModule'] = self.fitFactories[self.cFitType.GetSelection()]
 
     def GenAnalysisPanel(self, _pnl):
