@@ -113,7 +113,6 @@ class ClusterAnalyser:
         """
         from PYME.recipes import tablefilters
         import wx
-        import numpy as np
 
         clumper = tablefilters.DBSCANClustering()
 
