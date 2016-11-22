@@ -90,14 +90,14 @@ class ClusterAnalyser:
 
         matchMaker = measurement.NearestNeighbourDistances()
         matchMaker.columns = ['x', 'y', 'z']
-        matchMaker.inputChan0 = chans[0]
-        matchMaker.inputChan1 = chans[1]
-        matchMaker.outputName = 'neighbourDists_%s%s' % tuple(chans)
+        matchMaker.inputChan0 = selectedChans[0]
+        matchMaker.inputChan1 = selectedChans[1]
+        matchMaker.outputName = 'neighbourDists_%s%s' % tuple(selectedChans)
         matchMaker.key = matchMaker.outputName
 
         matchMaker.execute(namespace)
 
-        okey = 'neighborDistances_%s%s' % tuple(chans)
+        okey = 'neighborDistances_%s%s' % tuple(selectedChans)
 
         self.GeneratedMeasures[okey] = namespace[matchMaker.outputName][matchMaker.outputName].as_matrix()
 
