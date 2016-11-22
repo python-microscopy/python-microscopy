@@ -309,7 +309,7 @@ class FilenameParam(MDParam):
         if syncMdh:
             if mdhChangedSignal:
                 mdhChangedSignal.connect(self.updateValue)
-            self.retrieveValue(mdh)
+            self.retrieveValue(mdh, False)
             bSetFile.Bind(wx.EVT_BUTTON, lambda e : self._setFile(mdh))
         hsizer.Add(bSetFile, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -341,14 +341,15 @@ class FilenameParam(MDParam):
         else:
             return False
         
-    def retrieveValue(self, mdh):
+    def retrieveValue(self, mdh, must_be_defined=True):
         if not self.filename == self.default:
             mdh[self.paramName] = self.filename
-        elif self._setFile():
-            #try to call this manually
-            mdh[self.paramName] = self.filename
-        else:
-            raise RuntimeError('Required fit filename %s not defined' % self.paramName)
+        elif must_be_defined:
+            if self._setFile(mdh):
+                #try to call this manually
+                mdh[self.paramName] = self.filename
+            else:
+                raise RuntimeError('Required fit filename %s not defined' % self.paramName)
 
     def updateValue(self, mdh, **kwargs):
         import os, wx
@@ -379,7 +380,7 @@ class FilenameParam(MDParam):
        
 
 class ShiftFieldParam(FilenameParam):    
-    def retrieveValue(self, mdh):
+    def retrieveValue(self, mdh, *args, **kwargs):
         import numpy as np
         
         oldfn = mdh.getOrDefault(self.paramName, None)
@@ -387,9 +388,9 @@ class ShiftFieldParam(FilenameParam):
             if self.filename == self.default:
                 self.filename = 'legacy'
                 oldfn = 'legacy'
-        FilenameParam.retrieveValue(self, mdh)
+        FilenameParam.retrieveValue(self, mdh, *args, **kwargs)
         
-        if not self.filename == oldfn:
+        if not self.filename == oldfn and not self.filename in ['<none>', '']:
             dx, dy = np.load(self.filename)
             mdh.setEntry('chroma.dx', dx)
             mdh.setEntry('chroma.dy', dy)
