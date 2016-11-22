@@ -80,7 +80,7 @@ class ClusterAnalyser:
         if not chan_dlg.ShowModal() == wx.ID_OK:
             return #need to handle cancel
             
-        selectedChans = chans[chan_dlg.GetSelections()]
+        selectedChans = [chans[ci] for ci in chan_dlg.GetSelections()]
         if not len(selectedChans) == 2:
             raise RuntimeError('NearestNeighborTwoSpecies requires two color channels')
 
@@ -98,7 +98,8 @@ class ClusterAnalyser:
         self.pipeline.colourFilter.setColour(dispColor)
 
 
-        matchMaker = measurement.NearestNeighbourDistances(columns=['x', 'y', 'z'], inputChan0='A', inputChan1='B', outputname='output',key='neighbourDists')
+        matchMaker = measurement.NearestNeighbourDistances(columns=['x', 'y', 'z'], inputChan0='A', inputChan1='B',
+                                                           outputName='output',key='neighbourDists')
         matchMaker.execute(namespace)
 
         self.nearestNeighbourDistances[selectedChans] = np.array(namespace['output']['neighbourDists'])
