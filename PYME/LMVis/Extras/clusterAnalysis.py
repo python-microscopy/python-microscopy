@@ -26,6 +26,7 @@ class ClusterAnalyser:
 
     """
     def __init__(self, visFr):
+        self.visFr = visFr
         self.pipeline = visFr.pipeline
         self.nearestNeighbourDistances = {}
 
@@ -71,11 +72,14 @@ class ClusterAnalyser:
             raise RuntimeError('NearestNeighborTwoSpecies requires two color channels')
 
         # select with GUI, as this allows flexibility of choosing which channel neighbor distances are with respect to
-        chan_dlg = wx.TextEntryDialog(None, 'Pick two color channels for nearest neighbors distance calculation',
-                                      'Nearest neighbor of colors[1] in colors[0]', ','.join(chans))
-        chan_dlg.ShowModal()
-        selectedChans = str(chan_dlg.GetValue()).replace(' ', '').split(',')
-        if (selectedChans[0] not in chans) or (selectedChans[1] not in chans):
+        chan_dlg = wx.MultiChoiceDialog(self.visFr, 'Pick two color channels for nearest neighbors distance calculation',
+                                      'Nearest neighbour channel selection', chans)
+        chan_dlg.SetSelections([0,1])
+        if not chan_dlg.ShowModal() == wx.ID_OK:
+            return #need to handle cancel
+            
+        selectedChans = chans[chan_dlg.GetSelections()]
+        if not len(selectedChans) == 2:
             raise RuntimeError('NearestNeighborTwoSpecies requires two color channels')
 
         dispColor = self.pipeline.colourFilter.currentColour
