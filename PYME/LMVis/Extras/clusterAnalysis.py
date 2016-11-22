@@ -109,7 +109,9 @@ class ClusterAnalyser:
 
     def OnFindMixedClusters(self, event=None):
         """
-
+        FindMixedClusters first uses DBSCAN clustering on two color channels separately for denoising purposes, then
+        after having removed noisy points, DBSCAN is run again on both channels combined, and the fraction of clumps
+        containing both colors is determined.
         """
         from PYME.recipes import tablefilters
         import wx
@@ -120,8 +122,8 @@ class ClusterAnalyser:
             raise RuntimeError('FindMixedClusters requires at least two color channels')
         elif nchan > 2:
             # select with GUI, as this allows flexibility of choosing which channel neighbor distances are with respect to
-            chan_dlg = wx.MultiChoiceDialog(self.visFr, 'Pick two color channels for nearest neighbors distance calculation',
-                                          'Nearest neighbour channel selection', chans)
+            chan_dlg = wx.MultiChoiceDialog(self.visFr, 'Pick two color channels to find clusters containing both channels',
+                                          'Find mixed clusters channel selection', chans)
             chan_dlg.SetSelections([0, 1])
             if not chan_dlg.ShowModal() == wx.ID_OK:
                 return #need to handle cancel
