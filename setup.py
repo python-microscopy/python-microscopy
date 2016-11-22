@@ -30,8 +30,6 @@ entry_points={
         'PYMEClusterDup = PYME.io.clusterDuplication:main',
         'PYMEDistributor = PYME.ParallelTasks.PYMEDistributor',
         'PYMENodeServer = PYME.ParallelTasks.PYMENodeServer',
-    ],
-    'gui_scripts': [
         'dh5view = PYME.DSView.dsviewer:main',
         'PYMEAcquire = PYME.Acquire.PYMEAcquire:main',
         'VisGUI = PYME.LMVis.VisGUI:main',

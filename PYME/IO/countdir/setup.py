@@ -35,11 +35,12 @@ def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('countdir', parent_package, top_path)
 
-    config.add_extension('countdir',
-        sources=['countdir.c'],
-        include_dirs = [get_numpy_include_dirs()],
-	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=nocona', '-mtune=nocona'],
-        extra_link_args=linkArgs)
+    if not sys.platform == 'win32':
+      config.add_extension('countdir',
+          sources=['countdir.c'],
+          include_dirs = [get_numpy_include_dirs()],
+  	      extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=nocona', '-mtune=nocona'],
+          extra_link_args=linkArgs)
 
     return config
 
