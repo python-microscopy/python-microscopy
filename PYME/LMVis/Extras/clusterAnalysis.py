@@ -191,15 +191,15 @@ class ClusterAnalyser:
         print('Total clumps: %i' % len(totMixed))
 
         c0Ratio = float(len([c for c in c0Clumps if c in totMixed]))/len(totMixed)
-        print c0Ratio
+        print('fraction clumps with channel %i present: %f' % (selectedChans[0], c0Ratio))
         self.colocalizationRatios['Channel%iin%i%i' % (selectedChans[0], selectedChans[0], selectedChans[1])] = c0Ratio
 
         c1Ratio = float(len([c for c in c1Clumps if c in totMixed]))/len(totMixed)
-        print c1Ratio
+        print('fraction clumps with channel %i present: %f' % (selectedChans[1], c1Ratio))
         self.colocalizationRatios['Channel%iin%i%i' % (selectedChans[1], selectedChans[0], selectedChans[1])] = c1Ratio
 
         bothChanRatio = float(len([c for c in totMixed if ((c in c0Clumps) and (c in c1Clumps))]))/len(totMixed)
-        print bothChanRatio
+        print('fraction of clumps with both channel %i and %i present: %f' % (selectedChans[0], selectedChans[1], c1Ratio))
         self.colocalizationRatios['mixedClumps%i%i' % tuple(selectedChans)] = bothChanRatio
 
         self.pipeline.colourFilter.setColour('Everything')
