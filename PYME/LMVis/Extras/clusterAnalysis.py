@@ -20,40 +20,10 @@
 #
 ##################
 
-def splitDataSource(pipeline, keyToSplit):
-    """
-
-    Args:
-        pipeline: data source or dictionary-like object
-        keyToSplit: key to generate separate datasource based on. Unique values of pipeline[keyToSplit] will be given
-            their own data source
-
-    Returns:
-        dSources: a list where each element is a data source corresponding to a value of np.unique(pipeline[keyToSplit])
-
-    """
-    from PYME.recipes import tablefilters
-    import numpy as np
-
-    sieve = tablefilters.Filter()
-    sieve.inputName = 'pipeline'
-    namespace = {'pipeline': pipeline}
-
-    dSources = []
-    for ci in np.unique(pipeline[keyToSplit]).astype(int):
-        sieve.filters = {keyToSplit: [ci-0.5, ci+0.5]}
-        sieve.outputName = 'species%s' % ci
-
-        sieve.execute(namespace)
-
-        dSources.append(namespace[sieve.outputName])
-
-    return dSources
-
 
 class ClusterAnalyser:
     """
-    Provides GUI handling for sklearn's DBSCAN clustering function
+
     """
     def __init__(self, visFr):
         self.pipeline = visFr.pipeline
@@ -62,6 +32,8 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Extras', 'Nearest Neighbor Distances: two-species', self.OnNearestNeighborTwoSpecies,
                           helpText='')
+
+        self.GeneratedMeasures = dict()
 
     def OnClumpDBSCAN(self, event=None):
         """
@@ -92,29 +64,44 @@ class ClusterAnalyser:
         from PYME.recipes import measurement
         import wx
 
-        split_dlg = wx.TextEntryDialog(None, 'Key to split species based on', 'Split Key', 'probe')
-        split_dlg.ShowModal()
-        column_dlg = wx.TextEntryDialog(None, 'Keys to use in distance calculations', 'Distance keys', 'x,y,z')
-        column_dlg.ShowModal()
+        chans = self.pipeline.colourFilter.getColourChans()
+        nchan = len(chans)
+        if nchan < 2:
+            raise RuntimeError('NearestNeighborTwoSpecies requires two color channels')
 
-        dSources = splitDataSource(self.pipeline, str(split_dlg.GetValue()))
+        # select with GUI, as this allows flexibility of choosing which channel neighbor distances are with respect to
+        chan_dlg = wx.TextEntryDialog(None, 'Pick two color channels for nearest neighbors distance calculation',
+                                      'Nearest neighbor of colors[1] in colors[0]', ','.join(chans))
+        chan_dlg.ShowModal()
+        selectedChans = str(chan_dlg.GetValue()).replace(' ', '').split(',')
+        if (selectedChans[0] not in chans) or (selectedChans[1] not in chans):
+            raise RuntimeError('NearestNeighborTwoSpecies requires two color channels')
+
+        dispColor = self.pipeline.colourFilter.currentColour
+        self.pipeline.colourFilter.setColour(chans[0])
+        chan0 = {'x': self.pipeline['x'], 'y': self.pipeline['y'], 'z': self.pipeline['z']}
+        self.pipeline.colourFilter.setColour(chans[1])
+        chan1 = {'x': self.pipeline['x'], 'y': self.pipeline['y'], 'z': self.pipeline['z']}
+        namespace = {chans[0]: chan0, chans[1]: chan1}
+
+        # restore original display settings
+        self.pipeline.colourFilter.setColour(dispColor)
+
 
         matchMaker = measurement.NearestNeighbourDistances()
-        matchMaker.columns = str(column_dlg.GetValue()).replace(' ', '').split(',')
+        matchMaker.columns = ['x', 'y', 'z']
+        matchMaker.inputChan0 = chans[0]
+        matchMaker.inputChan1 = chans[1]
+        matchMaker.outputName = 'neighbourDists_%s%s' % tuple(chans)
+        matchMaker.key = matchMaker.outputName
 
-        for di in range(len(dSources)-1):
-            matchMaker.inputChan0 = 'in%s' % di
-            matchMaker.inputChan1 = 'in%s' % (di + 1)
-            matchMaker.outputName = 'neighbourDists_%s%s' % (di, di + 1)
-            matchMaker.key = matchMaker.outputName
+        matchMaker.execute(namespace)
 
-            namespace = {'in%s' % di: dSources[di], 'in%s' % (di + 1): dSources[di + 1]}
+        okey = 'neighborDistances_%s%s' % tuple(chans)
 
-            matchMaker.execute(namespace)
+        self.GeneratedMeasures[okey] = namespace[matchMaker.outputName][matchMaker.outputName].as_matrix()
 
-            self.GeneratedMeasures['NearestNeighborDistances_%s%s' % (di, di + 1)] = namespace[matchMaker.outputName][matchMaker.outputName].as_matrix()
-
-        print 'Nearest neighbor results have been stored in pipeline.visFr.clusterAnalyser.GeneratedMeasures[NearestNeighborDistances_##]'
+        print 'Results are stored in pipeline.visFr.ClusterAnalyser.GeneratedMeasures[%s]' % okey
 
 
 def Plug(visFr):
