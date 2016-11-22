@@ -243,8 +243,8 @@ class ColourRenderer(CurrentRenderer):
         jitVars += self.genMeas
         
         
-        if 'z' in self.pipeline.mapping.keys():
-            zvals = self.pipeline.mapping['z']
+        if 'z' in self.pipeline.keys():
+            zvals = self.pipeline['z']
         else:
             zvals = None
 

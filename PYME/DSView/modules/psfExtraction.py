@@ -266,11 +266,11 @@ class psfExtractor:
             psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
             psfBlur = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
             #print psfROISize
-            psf = extractImages.getPSF3D(self.image.data[:,:,:,chnum], self.PSFLocs, psfROISize, psfBlur)
+            psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,chnum], self.PSFLocs, psfROISize, psfBlur)
             
             if self.chType.GetSelection() == 0:
                 #widefield image - do special background subtraction
-                psf, offsets = extractImages.backgroundCorrectPSFWF(psf)
+                psf = extractImages.backgroundCorrectPSFWF(psf)
 
             from PYME.DSView.dsviewer import ImageStack, ViewIm3D
 

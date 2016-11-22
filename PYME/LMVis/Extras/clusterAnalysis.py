@@ -26,7 +26,9 @@ class ClusterAnalyser:
 
     """
     def __init__(self, visFr):
+        self.visFr = visFr
         self.pipeline = visFr.pipeline
+        self.nearestNeighbourDistances = {}
 
         visFr.AddMenuItem('Extras', 'DBSCAN Clump', self.OnClumpDBSCAN,
                           helpText='')
@@ -72,38 +74,36 @@ class ClusterAnalyser:
             raise RuntimeError('NearestNeighborTwoSpecies requires two color channels')
 
         # select with GUI, as this allows flexibility of choosing which channel neighbor distances are with respect to
-        chan_dlg = wx.TextEntryDialog(None, 'Pick two color channels for nearest neighbors distance calculation',
-                                      'Nearest neighbor of colors[1] in colors[0]', ','.join(chans))
-        chan_dlg.ShowModal()
-        selectedChans = str(chan_dlg.GetValue()).replace(' ', '').split(',')
-        if (selectedChans[0] not in chans) or (selectedChans[1] not in chans):
+        chan_dlg = wx.MultiChoiceDialog(self.visFr, 'Pick two color channels for nearest neighbors distance calculation',
+                                      'Nearest neighbour channel selection', chans)
+        chan_dlg.SetSelections([0,1])
+        if not chan_dlg.ShowModal() == wx.ID_OK:
+            return #need to handle cancel
+            
+        selectedChans = chans[chan_dlg.GetSelections()]
+        if not len(selectedChans) == 2:
             raise RuntimeError('NearestNeighborTwoSpecies requires two color channels')
 
         dispColor = self.pipeline.colourFilter.currentColour
-        self.pipeline.colourFilter.setColour(chans[0])
+        
+        self.pipeline.colourFilter.setColour(selectedChans[0])
         chan0 = {'x': self.pipeline['x'], 'y': self.pipeline['y'], 'z': self.pipeline['z']}
-        self.pipeline.colourFilter.setColour(chans[1])
+        
+        self.pipeline.colourFilter.setColour(selectedChans[1])
         chan1 = {'x': self.pipeline['x'], 'y': self.pipeline['y'], 'z': self.pipeline['z']}
-        namespace = {chans[0]: chan0, chans[1]: chan1}
+        
+        namespace = {'A': chan0, 'B': chan1}
 
         # restore original display settings
         self.pipeline.colourFilter.setColour(dispColor)
 
 
-        matchMaker = measurement.NearestNeighbourDistances()
-        matchMaker.columns = ['x', 'y', 'z']
-        matchMaker.inputChan0 = selectedChans[0]
-        matchMaker.inputChan1 = selectedChans[1]
-        matchMaker.outputName = 'neighbourDists_%s%s' % tuple(selectedChans)
-        matchMaker.key = matchMaker.outputName
-
+        matchMaker = measurement.NearestNeighbourDistances(columns=['x', 'y', 'z'], inputChan0='A', inputChan1='B', outputname='output',key='neighbourDists')
         matchMaker.execute(namespace)
 
-        okey = 'neighborDistances_%s%s' % tuple(selectedChans)
+        self.nearestNeighbourDistances[selectedChans] = np.array(namespace['output']['neighbourDists'])
 
-        self.GeneratedMeasures[okey] = namespace[matchMaker.outputName][matchMaker.outputName].as_matrix()
-
-        print 'Results are stored in pipeline.visFr.ClusterAnalyser.GeneratedMeasures[%s]' % okey
+        print 'Results are stored in clusterAnalyser.nearestNeighbourDistances[%s]' % selectedChans
 
     def OnFindMixedClusters(self, event=None):
         """
@@ -188,5 +188,5 @@ class ClusterAnalyser:
 
 def Plug(visFr):
     """Plugs this module into the gui"""
-    visFr.ClusterAnalyser = ClusterAnalyser(visFr)
+    visFr.clusterAnalyser = ClusterAnalyser(visFr)
 

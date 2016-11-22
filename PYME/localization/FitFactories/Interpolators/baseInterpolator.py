@@ -21,6 +21,7 @@
 #
 ################
 from numpy import *
+from PYME.IO.image import ImageStack
 #import cPickle
 from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 
@@ -61,9 +62,13 @@ class __interpolator:
                 try:
                     mod, voxelsize = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
                 except:
-                    mf = open(getFullExistingFilename(modName), 'rb')
-                    mod, voxelsize = load(mf)
-                    mf.close()
+                    #mf = open(getFullExistingFilename(modName), 'rb')
+                    #mod, voxelsize = load(mf)
+                    #mf.close()
+                    mf = ImageStack(filename=modName)
+                    mod = mf.data[:,:,:].astype('f')
+                    voxelsize = mf.voxelsize
+
 
             self.setModel(modName, mod, voxelsize)
 
@@ -84,9 +89,12 @@ class __interpolator:
                 params = eval(modName[7:])
                 mod, voxelsize = self.genTheoreticalModelZernike(md, **params)
             else: 
-                mf = open(getFullExistingFilename(modName), 'rb')
-                mod, voxelsize = load(mf)
-                mf.close()
+                #mf = open(getFullExistingFilename(modName), 'rb')
+                #mod, voxelsize = load(mf)
+                #mf.close()
+                mf = ImageStack(filename=modName)
+                mod = mf.data[:,:,:].astype('f')
+                voxelsize = mf.voxelsize
 
             self.setModel(modName, mod, voxelsize)
 
@@ -104,20 +112,20 @@ class __interpolator:
         if mod.shape[0] == 2*mod.shape[1]: 
             #using a split model - we have 2 PSFs side by side
             self.SplitPSF = True
-            self.PSF2Offset = 1e3*voxelsize.x*mod.shape[1]
-            self.IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[1]/2.):(mod.shape[0]-mod.shape[1]/2.)]
-            self.IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-            self.IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+            self.PSF2Offset = voxelsize.x*mod.shape[1]
+            self.IntXVals = voxelsize.x*mgrid[-(mod.shape[1]/2.):(mod.shape[0]-mod.shape[1]/2.)]
+            self.IntYVals = voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+            self.IntZVals = voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
         else:
             self.SplitPSF = False
             self.PSF2Offset = 0
-            self.IntXVals = 1e3*voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-            self.IntYVals = 1e3*voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-            self.IntZVals = 1e3*voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
+            self.IntXVals = voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
+            self.IntYVals = voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
+            self.IntZVals = voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
 
-        self.dx = voxelsize.x*1e3
-        self.dy = voxelsize.y*1e3
-        self.dz = voxelsize.z*1e3
+        self.dx = voxelsize.x
+        self.dy = voxelsize.y
+        self.dz = voxelsize.z
 
         self.interpModel = (mod/mod[:,:, mod.shape[2]/2].sum()).astype('f') #normalise to 1
         self.shape = mod.shape
@@ -129,11 +137,11 @@ class __interpolator:
         zs = arange(-1e3, 1e3, 50)
         
         voxelsize = dummy()
-        voxelsize.x = md['voxelsize.x']
-        voxelsize.y = md['voxelsize.x']
-        voxelsize.z = .05
+        voxelsize.x = 1e3*md['voxelsize.x']
+        voxelsize.y = 1e3*md['voxelsize.x']
+        voxelsize.z = 1e3*.05
 
-        ps = fourierHNA.GenZernikeDPSF(zs, 1e3*voxelsize.x, zmodes,lamb=wavelength, NA = NA, n=nDesign, ns=nSample)
+        ps = fourierHNA.GenZernikeDPSF(zs, voxelsize.x, zmodes,lamb=wavelength, NA = NA, n=nDesign, ns=nSample)
         
         return ps, voxelsize
 
