@@ -30,7 +30,9 @@ class ClusterAnalyser:
 
         visFr.AddMenuItem('Extras', 'DBSCAN Clump', self.OnClumpDBSCAN,
                           helpText='')
-        visFr.AddMenuItem('Extras', 'Nearest Neighbor Distances: two-species', self.OnNearestNeighborTwoSpecies,
+        visFr.AddMenuItem('Extras', 'Nearest Neighbor Distances- two-species', self.OnNearestNeighborTwoSpecies,
+                          helpText='')
+        visFr.AddMenuItem('Extras', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
                           helpText='')
 
         self.GeneratedMeasures = dict()
@@ -102,6 +104,86 @@ class ClusterAnalyser:
         self.GeneratedMeasures[okey] = namespace[matchMaker.outputName][matchMaker.outputName].as_matrix()
 
         print 'Results are stored in pipeline.visFr.ClusterAnalyser.GeneratedMeasures[%s]' % okey
+
+    def OnFindMixedClusters(self, event=None):
+        """
+
+        """
+        from PYME.recipes import tablefilters
+        import wx
+        import numpy as np
+
+        clumper = tablefilters.DBSCANClustering()
+
+        namespace = {'pipeline': self.pipeline}
+        clumper.inputName = 'pipeline'
+
+        print 'Input DBSCAN parameters for channel 0'
+        # ignore other channels for now
+        self.pipeline.filterKeys['probe'] = (-0.5, 0.5)
+        self.pipeline.Rebuild()
+
+        rad_dlg = wx.NumberEntryDialog(None, 'Search Radius For Core Points', 'rad [nm]', 'rad [nm]', 125, 0, 9e9)
+        rad_dlg.ShowModal()
+        clumper.searchRadius = rad_dlg.GetValue()
+        minPt_dlg = wx.NumberEntryDialog(None, 'Minimum Points To Be Core Point', 'min pts', 'min pts', 3, 0, 9e9)
+        minPt_dlg.ShowModal()
+        clumper.minPtsForCore = minPt_dlg.GetValue()
+        clumper.outputName = 'chan0Clumps'
+        clumper.execute(namespace)
+        self.pipeline.addColumn(clumper.outputName, namespace[clumper.outputName]['dbscanClumpID'])
+        # filter unclumped points from this channel
+        self.pipeline.filterKeys[clumper.outputName] = (-0.5, np.max(self.pipeline[clumper.outputName]) + 1)
+        self.pipeline.Rebuild()
+
+        print 'Input DBSCAN parameters for channel 1'
+        # ignore other channels for now
+        self.pipeline.filterKeys['probe'] = (0.5, 1.5)
+        self.pipeline.Rebuild()
+        rad_dlg.ShowModal()
+        minPt_dlg.ShowModal()
+        clumper.searchRadius = rad_dlg.GetValue()
+        clumper.minPtsForCore = minPt_dlg.GetValue()
+        clumper.outputName = 'chan1Clumps'
+        clumper.execute(namespace)
+        self.pipeline.addColumn(clumper.outputName, namespace[clumper.outputName]['dbscanClumpID'])
+        # filter unclumped points from this channel
+        self.pipeline.filterKeys[clumper.outputName] = (-0.5, np.max(self.pipeline[clumper.outputName]) + 1)
+
+
+        # Clump both colors together
+
+        # add back in all colors
+        del self.pipeline.filterKeys['probe']
+        self.pipeline.Rebuild()
+        print 'Input DBSCAN parameters for combined channel clumping'
+        rad_dlg.ShowModal()
+        minPt_dlg.ShowModal()
+        clumper.searchRadius = rad_dlg.GetValue()
+        clumper.minPtsForCore = minPt_dlg.GetValue()
+        clumper.outputName = 'mixedClumps'
+        clumper.execute(namespace)
+        self.pipeline.addColumn(clumper.outputName, namespace[clumper.outputName]['dbscanClumpID'])
+        # filter noisy clumps (shouldn't be any to begin with if appropriate value of minPtsForcore is used
+        self.pipeline.filterKeys[clumper.outputName] = (0, np.max(self.pipeline[clumper.outputName]) + 1)
+
+        totMixed = np.unique(self.pipeline[clumper.outputName])
+        self.pipeline.colourFilter.setColour('chan0')
+        c0Clumps = np.unique(self.pipeline[clumper.outputName])
+        self.pipeline.colourFilter.setColour('chan1')
+        c1Clumps = np.unique(self.pipeline[clumper.outputName])
+        print('Total clumps: %i' % len(totMixed))
+
+        c0Ratio = float(len([c for c in c0Clumps if c in totMixed]))/len(totMixed)
+        print c0Ratio
+
+        c1Ratio = float(len([c for c in c1Clumps if c in totMixed]))/len(totMixed)
+        print c1Ratio
+
+        bothChanRatio = float(len([c for c in totMixed if ((c in c0Clumps) and (c in c1Clumps))]))/len(totMixed)
+        print bothChanRatio
+
+        self.pipeline.colourFilter.setColour('Everything')
 
 
 def Plug(visFr):
