@@ -102,7 +102,7 @@ class ClusterAnalyser:
                                                            outputName='output',key='neighbourDists')
         matchMaker.execute(namespace)
 
-        self.nearestNeighbourDistances[selectedChans] = np.array(namespace['output']['neighbourDists'])
+        self.nearestNeighbourDistances[''.join(selectedChans)] = np.array(namespace['output']['neighbourDists'])
 
         print 'Results are stored in clusterAnalyser.nearestNeighbourDistances[%s]' % selectedChans
 
