@@ -27,6 +27,7 @@ class ClusterAnalyser:
     """
     def __init__(self, visFr):
         self.pipeline = visFr.pipeline
+        self.nearestNeighbourDistances = {}
 
         visFr.AddMenuItem('Extras', 'DBSCAN Clump', self.OnClumpDBSCAN,
                           helpText='')
@@ -78,33 +79,28 @@ class ClusterAnalyser:
             raise RuntimeError('NearestNeighborTwoSpecies requires two color channels')
 
         dispColor = self.pipeline.colourFilter.currentColour
-        self.pipeline.colourFilter.setColour(chans[0])
+        
+        self.pipeline.colourFilter.setColour(selectedChans[0])
         chan0 = {'x': self.pipeline['x'], 'y': self.pipeline['y'], 'z': self.pipeline['z']}
-        self.pipeline.colourFilter.setColour(chans[1])
+        
+        self.pipeline.colourFilter.setColour(selectedChans[1])
         chan1 = {'x': self.pipeline['x'], 'y': self.pipeline['y'], 'z': self.pipeline['z']}
-        namespace = {chans[0]: chan0, chans[1]: chan1}
+        
+        namespace = {'A': chan0, 'B': chan1}
 
         # restore original display settings
         self.pipeline.colourFilter.setColour(dispColor)
 
 
-        matchMaker = measurement.NearestNeighbourDistances()
-        matchMaker.columns = ['x', 'y', 'z']
-        matchMaker.inputChan0 = selectedChans[0]
-        matchMaker.inputChan1 = selectedChans[1]
-        matchMaker.outputName = 'neighbourDists_%s%s' % tuple(selectedChans)
-        matchMaker.key = matchMaker.outputName
-
+        matchMaker = measurement.NearestNeighbourDistances(columns=['x', 'y', 'z'], inputChan0='A', inputChan1='B', outputname='output',key='neighbourDists')
         matchMaker.execute(namespace)
 
-        okey = 'neighborDistances_%s%s' % tuple(selectedChans)
+        self.nearestNeighbourDistances[selectedChans] = np.array(namespace['output']['neighbourDists'])
 
-        self.GeneratedMeasures[okey] = namespace[matchMaker.outputName][matchMaker.outputName].as_matrix()
-
-        print 'Results are stored in pipeline.visFr.ClusterAnalyser.GeneratedMeasures[%s]' % okey
+        print 'Results are stored in clusterAnalyser.nearestNeighbourDistances[%s]' % selectedChans
 
 
 def Plug(visFr):
     """Plugs this module into the gui"""
-    visFr.ClusterAnalyser = ClusterAnalyser(visFr)
+    visFr.clusterAnalyser = ClusterAnalyser(visFr)
 
