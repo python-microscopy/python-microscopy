@@ -37,6 +37,8 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Extras', 'Nearest Neighbor Distances- two-species', self.OnNearestNeighborTwoSpecies,
                           helpText='')
+        visFr.AddMenuItem('Extras', 'Pairwise Distances- two-color', self.OnPairwiseDistanceTwoColor,
+                          helpText='')
         visFr.AddMenuItem('Extras', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
                           helpText='')
 
@@ -210,6 +212,41 @@ class ClusterAnalyser:
         del self.pipeline.filterKeys['chan0Clumps']
         del self.pipeline.filterKeys['chan1Clumps']
         del self.pipeline.filterKeys[clumper.outputName]
+
+    def OnPairwiseDistanceTwoColor(self, event=None):
+        from PYME.recipes import measurement
+        import wx
+
+        chans = self.pipeline.colourFilter.getColourChans()
+        nchan = len(chans)
+        if nchan < 2:
+            raise RuntimeError('PairwiseDistanceTwoColor requires two color channels')
+
+        # select channels with GUI
+        chan_dlg = wx.MultiChoiceDialog(self.visFr, 'Pick two color channels for pairwise distance calculations',
+                                      'Pairwise distance channel selection', chans)
+        chan_dlg.SetSelections([0,1])
+        if not chan_dlg.ShowModal() == wx.ID_OK:
+            return  # need to handle cancel
+
+        selectedChans = [chans[ci] for ci in chan_dlg.GetSelections()]
+        nSel = len(selectedChans)
+        if nSel > 2:
+            raise RuntimeError('PairwiseDistanceTwoColor requires two color channels')
+
+        nbins
+
+        distogram = measurement.PairwiseDistanceHistogram()
+
+        distogram.inputPositions = selectedChans[0]
+        if nSel == 2:
+            distogram.inputPositions2 = selectedChans[1]
+
+
+
+
+
+
 
 
 def Plug(visFr):
