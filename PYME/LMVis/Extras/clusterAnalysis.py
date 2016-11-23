@@ -33,6 +33,7 @@ class ClusterAnalyser:
         self.pipeline = visFr.pipeline
         self.nearestNeighbourDistances = {}
         self.colocalizationRatios = {}
+        self.pairwiseDistances = {}
 
         visFr.AddMenuItem('Extras', 'DBSCAN Clump', self.OnClumpDBSCAN,
                           helpText='')
@@ -210,8 +211,10 @@ class ClusterAnalyser:
         self._rec = rec
 
     def OnPairwiseDistanceTwoColor(self, event=None):
-        from PYME.recipes import measurement
+        from PYME.recipes import tablefilters, measurement
+        from PYME.recipes.base import ModuleCollection
         import wx
+        import matplotlib.pyplot as plt
 
         chans = self.pipeline.colourFilter.getColourChans()
         nchan = len(chans)
@@ -230,18 +233,36 @@ class ClusterAnalyser:
         if nSel > 2:
             raise RuntimeError('PairwiseDistanceTwoColor requires two color channels')
 
-        nbins
+        # build a recipe programatically
+        distogram = ModuleCollection()
+        # split input according to colour channels
+        distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan0',
+                                                              channel=selectedChans[0]))
+        distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan1',
+                                                              channel=selectedChans[1]))
 
-        distogram = measurement.PairwiseDistanceHistogram()
+        # Histogram
+        distogram.add_module(measurement.PairwiseDistanceHistogram(inputPositions='chan0',
+                                                                   inputPositions2='chan1', outputName='output'))
 
-        distogram.inputPositions = selectedChans[0]
-        if nSel == 2:
-            distogram.inputPositions2 = selectedChans[1]
+        #configure parameters TODO - make this cleaner
+        import traitsui.api as tu
+        v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True), style='custom', show_label=False),
+                    buttons=['OK', 'Cancel'])
 
+        if not distogram.configure_traits(view=v, kind='modal'):
+            return #handle cancel
 
+        #run recipe
+        distances = distogram.execute(input=self.pipeline)
+        cs = 'counts_' + ''.join(selectedChans)
+        bs = 'bins_' + ''.join(selectedChans)
+        self.pairwiseDistances[cs] = np.array(distances['counts'])
+        # store center of bins
+        self.pairwiseDistances[bs] = distances['bins'] + 0.5*(distances['bins'][1] - distances['bins'][0])
 
-
-
+        plt.figure()
+        plt.bar(self.pairwiseDistances[bs], self.pairwiseDistances[cs])
 
 
 
