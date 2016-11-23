@@ -45,7 +45,7 @@ Slicing a ``DataSource`` returns a new numpy array built on the fly by concatena
 calls to ``getSlice``. Because 2D slicing is performed before concatenation, this allows axial line profiles or ROIs to
 be extracted without ever having the full image file in memory. *DataSources* also present a ``.shape`` attribute which
 is very similar to the ``.shape`` attribute of numpy arrays, with the major difference that a number of empty dimensions
-are appended to the end of the shape. It is perfectly OK to index (but not currently slice) a data source outside it's
+are appended to the end of the shape. It is perfectly OK to index a data source outside it's
 true dimensionality. e.g. for a 3D data source ::
 
     image.data[100:120,230:250,10:30]
@@ -60,8 +60,9 @@ it is always possible to access the 0th slice along the 3rd dimension, even if t
 
 .. warning::
 
-    With the way colour channels are currently implemented, it is not possible to slice the 4th dimension (indexing is OK).
-    This will hopefully be fixed in the near future.
+    With the way colour channels were implemented in older versions of the code, it was not possible to slice the
+    4th dimension (indexing was OK). You can now slice along the 4th dimension, but it is possible that some parts of
+    the code have not caught up.
 
 We currently use a 4D model, where the first and second dimensions are *x* and *y*, the third dimension is either *z* or
 *t* and the 4th dimension is the colour channel.

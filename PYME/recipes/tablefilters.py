@@ -23,8 +23,9 @@ class Mapping(ModuleBase):
         namespace[self.outputName] = map
 
 
-@register_module('Filter')
-class Filter(ModuleBase):
+@register_module('FilterTable')
+@register_module('Filter') #Deprecated - use FilterTable in new code / recipes
+class FilterTable(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     inputName = CStr('measurements')
     filters = DictStrList()
@@ -37,6 +38,40 @@ class Filter(ModuleBase):
 
         if 'mdh' in dir(inp):
             map.mdh = inp.mdh
+
+        namespace[self.outputName] = map
+
+@register_module('ExtractTableChannel')
+class ExtractTableChannel(ModuleBase):
+    """Create a new mapping object which derives mapped keys from original ones"""
+    inputName = CStr('measurements')
+    channel = CStr('everything')
+    outputName = CStr('filtered')
+
+    def execute(self, namespace):
+        inp = namespace[self.inputName]
+
+        map = tabular.colourFilter(inp, currentColour=self.channel)
+
+        if 'mdh' in dir(inp):
+            map.mdh = inp.mdh
+
+        namespace[self.outputName] = map
+
+@register_module('ConcatenateTables')
+class ConcatenateTables(ModuleBase):
+    inputName0 = CStr('chan0')
+    inputName1 = CStr('chan1')
+    outputName = CStr('output')
+
+    def execute(self, namespace):
+        inp0 = namespace[self.inputName0]
+        inp1 = namespace[self.inputName1]
+
+        map = tabular.concatenateFilter(inp0, inp1)
+
+        if 'mdh' in dir(inp0):
+            map.mdh = inp0.mdh
 
         namespace[self.outputName] = map
 
@@ -300,7 +335,7 @@ class DBSCANClustering(ModuleBase):
     yKey = CStr('y')
     zKey = CStr('z')
     searchRadius = Float()
-    minPtsForCore = Int()
+    minClumpSize = Int()
 
     outputName = CStr('dbscanClustered')
 
@@ -312,11 +347,9 @@ class DBSCANClustering(ModuleBase):
 
         # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
         core_samp, dbLabels = dbscan(np.vstack([inp[self.xKey], inp[self.yKey], inp[self.zKey]]).T,
-                                     self.searchRadius, self.minPtsForCore)
+                                     self.searchRadius, self.minClumpSize)
 
-        # shift dbscan labels up by one, so that the 0th cluster doesn't get lost when pipeline fills in filtered points
-        # but keep the unclustered points at -1
-        dbLabels[dbLabels == -1] = -2
+        # shift dbscan labels up by one to match existing convention that a clumpID of 0 corresponds to unclumped
         mapped.addColumn('dbscanClumpID', dbLabels + 1)
 
         # propogate metadata, if present

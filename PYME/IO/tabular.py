@@ -211,7 +211,7 @@ class h5rSource(TabularBase):
             key = self.transkeys[key]
 
         if not key in self._keys:
-            raise RuntimeError('Key not found')
+            raise RuntimeError('Key not found - %s' % key)
 
         k = key.split('_')
         
@@ -449,6 +449,31 @@ class resultsFilter(TabularBase):
     def keys(self):
         return self.resultsSource.keys()
 
+
+class concatenateFilter(TabularBase):
+    _name = "Concatenation Filter"
+
+    def __init__(self, source0, source1):
+        """Class which concatenates two tabular data sources. The data sources should have the same keys.
+
+        The filter class does not have any explicit knowledge of the keys
+        supported by the underlying data source."""
+
+        self.source0 = source0
+        self.source1 = source1
+
+
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+        if key == 'concatSource':
+            return np.hstack((np.zeros(len(self.source0[self.source0.keys()[0]])), np.ones(len(self.source1[self.source1.keys()[0]]))))
+        else:
+            return np.hstack((self.source0[key], self.source1[key]))[sl]
+
+    def keys(self):
+        s1_keys = self.source1.keys()
+        return list(set(['concatSource', ] + [k for k in self.source0.keys() if k in s1_keys]))
+
 class cachingResultsFilter(TabularBase):
     _name = "Caching Results Filter"
     def __init__(self, resultsSource, **kwargs):
@@ -607,15 +632,17 @@ class mappingFilter(TabularBase):
 
 class colourFilter(TabularBase):
     _name = "Colour Filter"
-    def __init__(self, resultsSource, visFr, currentColour=None):
+    def __init__(self, resultsSource, currentColour=None):
         """Class to permit filtering by colour
         """
 
         self.resultsSource = resultsSource
         self.currentColour = currentColour
-        #self.shifts = {}
+        self.chromaticShifts = {}
 
-        self.visFr = visFr
+        self.t_p_dye = 0.1
+        self.t_p_other = 0.1
+        self.t_p_background = .01
 
 
     def __getitem__(self, keys):
@@ -628,7 +655,7 @@ class colourFilter(TabularBase):
             p_dye = self.resultsSource['p_%s' % self.currentColour]
 
             p_other = 0*p_dye
-            p_tot = self.visFr.t_p_background*self.resultsSource['ColourNorm']
+            p_tot = self.t_p_background*self.resultsSource['ColourNorm']
 
             for k in colChans:
                 p_tot  += self.resultsSource['p_%s' % k]
@@ -638,12 +665,12 @@ class colourFilter(TabularBase):
             p_dye = p_dye/p_tot
             p_other = p_other/p_tot
 
-            ind = (p_dye > self.visFr.t_p_dye)*(p_other < self.visFr.t_p_other)
+            ind = (p_dye > self.t_p_dye)*(p_other < self.t_p_other)
 
             #chromatic shift correction
             #print self.currentColour
-            if self.currentColour in self.visFr.chromaticShifts.keys() and key in self.visFr.chromaticShifts[self.currentColour].keys():
-                return self.resultsSource[key][ind][sl] + self.visFr.chromaticShifts[self.currentColour][key]
+            if  self.currentColour in self.chromaticShifts.keys() and key in self.chromaticShifts[self.currentColour].keys():
+                return self.resultsSource[key][ind][sl] + self.chromaticShifts[self.currentColour][key]
             else:
                 return self.resultsSource[key][ind][sl]
 

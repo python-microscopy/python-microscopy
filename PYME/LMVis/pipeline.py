@@ -248,10 +248,10 @@ class Pipeline:
 
         self.fluorSpecies = {}
         self.fluorSpeciesDyes = {}
-        self.chromaticShifts = {}
-        self.t_p_dye = 0.1
-        self.t_p_other = 0.1
-        self.t_p_background = .01
+        #self.chromaticShifts = {}
+        #self.t_p_dye = 0.1
+        #self.t_p_other = 0.1
+        #self.t_p_background = .01
 
         self.blobSettings = BlobSettings()
         self.objects = None
@@ -292,6 +292,10 @@ class Pipeline:
 
     def keys(self):
         return self.colourFilter.keys()
+
+    @property
+    def chromaticShifts(self):
+        return self.colourFilter.chromaticShifts
 
     @property
     def dataSources(self):
@@ -412,7 +416,7 @@ class Pipeline:
 
             #we can also recycle the colour filter
             if not self.colourFilter:
-                self.colourFilter = tabular.colourFilter(self.filter, self)
+                self.colourFilter = tabular.colourFilter(self.filter)
             else:
                 self.colourFilter.resultsSource = self.filter
                 

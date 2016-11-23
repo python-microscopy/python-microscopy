@@ -21,6 +21,7 @@
 ##################
 
 import numpy as np
+import sys
 
 
 class ClusterAnalyser:
@@ -114,6 +115,7 @@ class ClusterAnalyser:
         containing both colors is determined.
         """
         from PYME.recipes import tablefilters
+        from PYME.recipes.base import ModuleCollection
         import wx
 
         chans = self.pipeline.colourFilter.getColourChans()
@@ -132,84 +134,78 @@ class ClusterAnalyser:
         else:
             selectedChans = [0, 1]
 
-        clumper = tablefilters.DBSCANClustering()
+        #TODO - find a better way of getting these
+        #rad_dlg = wx.NumberEntryDialog(None, 'Search Radius For Core Points', 'rad [nm]', 'rad [nm]', 125, 0, 9e9)
+        #rad_dlg.ShowModal()
+        searchRadius = 125.0 #rad_dlg.GetValue()
+        #minPt_dlg = wx.NumberEntryDialog(None, 'Minimum Points To Be Core Point', 'min pts', 'min pts', 3, 0, 9e9)
+        #minPt_dlg.ShowModal()
+        minClumpSize = 3 #minPt_dlg.GetValue()
 
-        namespace = {'pipeline': self.pipeline}
-        clumper.inputName = 'pipeline'
+        #build a recipe programatically
+        rec = ModuleCollection()
+        #split input according to colour channels
+        rec.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan0', channel=chans[selectedChans[0]]))
+        rec.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan1', channel=chans[selectedChans[1]]))
 
-        print 'Input DBSCAN parameters for channel %i' % selectedChans[0]
-        # ignore other channels for now
-        self.pipeline.filterKeys['probe'] = (selectedChans[0]-0.5, selectedChans[0]+0.5)
-        self.pipeline.Rebuild()
+        #clump each channel
+        rec.add_module(tablefilters.DBSCANClustering(inputName='chan0', outputName='chan0_clumped',
+                                                         searchRadius=searchRadius, minClumpSize=minClumpSize))
+        rec.add_module(tablefilters.DBSCANClustering(inputName='chan1', outputName='chan1_clumped',
+                                                         searchRadius=searchRadius, minClumpSize=minClumpSize))
 
-        rad_dlg = wx.NumberEntryDialog(None, 'Search Radius For Core Points', 'rad [nm]', 'rad [nm]', 125, 0, 9e9)
-        rad_dlg.ShowModal()
-        clumper.searchRadius = rad_dlg.GetValue()
-        minPt_dlg = wx.NumberEntryDialog(None, 'Minimum Points To Be Core Point', 'min pts', 'min pts', 3, 0, 9e9)
-        minPt_dlg.ShowModal()
-        clumper.minPtsForCore = minPt_dlg.GetValue()
-        clumper.outputName = 'chan0Clumps'
-        clumper.execute(namespace)
-        self.pipeline.addColumn(clumper.outputName, namespace[clumper.outputName]['dbscanClumpID'])
-        # filter unclumped points from this channel
-        self.pipeline.filterKeys[clumper.outputName] = (-0.5, np.max(self.pipeline[clumper.outputName]) + 1)
-        self.pipeline.Rebuild()
+        #filter unclumped points
+        rec.add_module(tablefilters.FilterTable(inputName='chan0_clumped', outputName='chan0_cleaned',
+                                                         filters={'dbscanClumpID' : [.5, sys.maxint]}))
+        rec.add_module(tablefilters.FilterTable(inputName='chan1_clumped', outputName='chan1_cleaned',
+                                               filters={'dbscanClumpID': [.5, sys.maxint]}))
 
-        print 'Input DBSCAN parameters for channel %i' % selectedChans[1]
-        # ignore other channels for now
-        self.pipeline.filterKeys['probe'] = (selectedChans[1]-0.5, selectedChans[1]+0.5)
-        self.pipeline.Rebuild()
-        rad_dlg.ShowModal()
-        minPt_dlg.ShowModal()
-        clumper.searchRadius = rad_dlg.GetValue()
-        clumper.minPtsForCore = minPt_dlg.GetValue()
-        clumper.outputName = 'chan1Clumps'
-        clumper.execute(namespace)
-        self.pipeline.addColumn(clumper.outputName, namespace[clumper.outputName]['dbscanClumpID'])
-        # filter unclumped points from this channel
-        self.pipeline.filterKeys[clumper.outputName] = (-0.5, np.max(self.pipeline[clumper.outputName]) + 1)
+        #rejoin cleaned datasets
+        rec.add_module(tablefilters.ConcatenateTables(inputName0='chan0_cleaned', inputName1='chan1_cleaned',
+                                                      outputName='joined'))
 
-        # Clump both colors together
+        #clump on cleaded and rejoined data
+        rec.add_module(tablefilters.DBSCANClustering(inputName='joined', outputName='output',
+                                                     searchRadius=searchRadius, minClumpSize=minClumpSize))
 
-        # add back in all colors
-        del self.pipeline.filterKeys['probe']
-        self.pipeline.Rebuild()
-        print 'Input DBSCAN parameters for combined channel clumping'
-        rad_dlg.ShowModal()
-        minPt_dlg.ShowModal()
-        clumper.searchRadius = rad_dlg.GetValue()
-        clumper.minPtsForCore = minPt_dlg.GetValue()
-        clumper.outputName = 'mixedClumps'
-        clumper.execute(namespace)
-        self.pipeline.addColumn(clumper.outputName, namespace[clumper.outputName]['dbscanClumpID'])
-        # filter noisy clumps (shouldn't be any to begin with if appropriate value of minPtsForcore is used
-        self.pipeline.filterKeys[clumper.outputName] = (0, np.max(self.pipeline[clumper.outputName]) + 1)
+        #configure parameters TODO - make this cleaner
+        import traitsui.api as tu
+        v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True), style='custom', show_label=False),
+                    buttons=['OK', 'Cancel'])
 
-        totMixed = np.unique(self.pipeline[clumper.outputName])
-        self.pipeline.colourFilter.setColour('chan%i' % selectedChans[0])
-        c0Clumps = np.unique(self.pipeline[clumper.outputName])
-        self.pipeline.colourFilter.setColour('chan%i' % selectedChans[1])
-        c1Clumps = np.unique(self.pipeline[clumper.outputName])
-        print('Total clumps: %i' % len(totMixed))
+        if not rec.configure_traits(view=v, kind='modal'):
+            return #handle cancel
 
-        c0Ratio = float(len([c for c in c0Clumps if c in totMixed]))/len(totMixed)
+        #run recipe
+        joined_clumps = rec.execute(input=self.pipeline)
+
+        joined_clump_IDs = np.unique(joined_clumps['dbscanClumpID'])
+        joined_clump_IDs = joined_clump_IDs[joined_clump_IDs > .5] #reject unclumped points
+
+        chan0_clump_IDs = np.unique(joined_clumps['dbscanClumpID'][joined_clumps['concatSource'] < .5])
+        chan0_clump_IDs = chan0_clump_IDs[chan0_clump_IDs > .5]
+
+        chan1_clump_IDs = np.unique(joined_clumps['dbscanClumpID'][joined_clumps['concatSource'] > .5])
+        chan1_clump_IDs = chan1_clump_IDs[chan1_clump_IDs > .5]
+
+        both_chans_IDS = [c for c in chan0_clump_IDs if c in chan1_clump_IDs]
+
+        n_total_clumps = len(joined_clump_IDs)
+
+        print('Total clumps: %i' % n_total_clumps)
+        c0Ratio = float(len(chan0_clump_IDs)) / n_total_clumps
         print('fraction clumps with channel %i present: %f' % (selectedChans[0], c0Ratio))
         self.colocalizationRatios['Channel%iin%i%i' % (selectedChans[0], selectedChans[0], selectedChans[1])] = c0Ratio
 
-        c1Ratio = float(len([c for c in c1Clumps if c in totMixed]))/len(totMixed)
+        c1Ratio = float(len(chan1_clump_IDs)) / n_total_clumps
         print('fraction clumps with channel %i present: %f' % (selectedChans[1], c1Ratio))
         self.colocalizationRatios['Channel%iin%i%i' % (selectedChans[1], selectedChans[0], selectedChans[1])] = c1Ratio
 
-        bothChanRatio = float(len([c for c in totMixed if ((c in c0Clumps) and (c in c1Clumps))]))/len(totMixed)
-        print('fraction of clumps with both channel %i and %i present: %f' % (selectedChans[0], selectedChans[1], c1Ratio))
+        bothChanRatio = float(len(both_chans_IDS)) / n_total_clumps
+        print( 'fraction of clumps with both channel %i and %i present: %f' % (selectedChans[0], selectedChans[1], bothChanRatio))
         self.colocalizationRatios['mixedClumps%i%i' % tuple(selectedChans)] = bothChanRatio
 
-        self.pipeline.colourFilter.setColour('Everything')
-
-        # remove filters we injected
-        del self.pipeline.filterKeys['chan0Clumps']
-        del self.pipeline.filterKeys['chan1Clumps']
-        del self.pipeline.filterKeys[clumper.outputName]
+        self._rec = rec
 
 
 def Plug(visFr):
