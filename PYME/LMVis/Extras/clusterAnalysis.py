@@ -39,7 +39,7 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Extras', 'Nearest Neighbor Distances- two-species', self.OnNearestNeighborTwoSpecies,
                           helpText='')
-        visFr.AddMenuItem('Extras', 'Pairwise Distances- two-color', self.OnPairwiseDistanceTwoColor,
+        visFr.AddMenuItem('Extras', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
         visFr.AddMenuItem('Extras', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
                           helpText='')
@@ -210,7 +210,7 @@ class ClusterAnalyser:
 
         self._rec = rec
 
-    def OnPairwiseDistanceTwoColor(self, event=None):
+    def OnPairwiseDistanceHistogram(self, event=None):
         from PYME.recipes import tablefilters, measurement
         from PYME.recipes.base import ModuleCollection
         import wx
@@ -218,32 +218,50 @@ class ClusterAnalyser:
 
         chans = self.pipeline.colourFilter.getColourChans()
         nchan = len(chans)
-        if nchan < 2:
-            raise RuntimeError('PairwiseDistanceTwoColor requires two color channels')
 
-        # select channels with GUI
-        chan_dlg = wx.MultiChoiceDialog(self.visFr, 'Pick two color channels for pairwise distance calculations',
-                                      'Pairwise distance channel selection', chans)
-        chan_dlg.SetSelections([0,1])
-        if not chan_dlg.ShowModal() == wx.ID_OK:
-            return  # need to handle cancel
+        if nchan > 0:
+            # select channels with GUI
+            chan_dlg = wx.MultiChoiceDialog(self.visFr, 'Pick channel(s) for pairwise distance calculations',
+                                          'Pairwise distance channel selection', chans)
+            chan_dlg.SetSelections([0,1])
+            if not chan_dlg.ShowModal() == wx.ID_OK:
+                return  # need to handle cancel
+            selectedChans = [chans[ci] for ci in chan_dlg.GetSelections()]
+            nSel = len(selectedChans)
 
-        selectedChans = [chans[ci] for ci in chan_dlg.GetSelections()]
-        nSel = len(selectedChans)
-        if nSel > 2:
-            raise RuntimeError('PairwiseDistanceTwoColor requires two color channels')
+        else:
+            selectedChans = ['chan0']
+            nSel = 0
+
 
         # build a recipe programatically
         distogram = ModuleCollection()
-        # split input according to colour channels
-        distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan0',
-                                                              channel=selectedChans[0]))
-        distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan1',
-                                                              channel=selectedChans[1]))
 
-        # Histogram
-        distogram.add_module(measurement.PairwiseDistanceHistogram(inputPositions='chan0',
-                                                                   inputPositions2='chan1', outputName='output'))
+        if nSel == 0:  # no channel to select, do calculation on everything
+            # Histogram
+            distogram.add_module(measurement.PairwiseDistanceHistogram(inputPositions='input',
+                                                                       inputPositions2='', outputName='output'))
+        elif nSel == 1:
+            # split input according to colour channel selection
+            distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan0',
+                                                                  channel=selectedChans[0]))
+            # Histogram
+            distogram.add_module(measurement.PairwiseDistanceHistogram(inputPositions='chan0',
+                                                                       inputPositions2='', outputName='output'))
+
+        elif nSel == 2:
+            # split input according to colour channels selected
+            distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan0',
+                                                                  channel=selectedChans[0]))
+            distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan1',
+                                                                  channel=selectedChans[1]))
+
+            # Histogram
+            distogram.add_module(measurement.PairwiseDistanceHistogram(inputPositions='chan0',
+                                                                       inputPositions2='chan1', outputName='output'))
+        else:
+            RuntimeError('Pairwise distance histogram can only run on 1 or 2 channels')
+
 
         #configure parameters TODO - make this cleaner
         import traitsui.api as tu
@@ -259,7 +277,7 @@ class ClusterAnalyser:
         bs = 'bins_' + ''.join(selectedChans)
         self.pairwiseDistances[cs] = np.array(distances['counts'])
         # store center of bins
-        self.pairwiseDistances[bs] = distances['bins'] + 0.5*(distances['bins'][1] - distances['bins'][0])
+        self.pairwiseDistances[bs] = np.array(distances['bins'] + 0.5*(distances['bins'][1] - distances['bins'][0]))
 
         plt.figure()
         plt.bar(self.pairwiseDistances[bs], self.pairwiseDistances[cs])
