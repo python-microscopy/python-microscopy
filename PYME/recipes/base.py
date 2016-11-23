@@ -7,10 +7,10 @@ Created on Mon May 25 17:02:04 2015
 #import wx
 
 try:
-    from enthought.traits.api import HasTraits, HasPrivateTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
+    from enthought.traits.api import HasTraits, HasPrivateTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change, Property
     #from enthought.traits.ui.api import View, Item #, EnumEditor, InstanceEditor, Group
 except ImportError:
-    from traits.api import HasTraits, HasPrivateTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
+    from traits.api import HasTraits, HasPrivateTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change, Property
     
     #for some reason traitsui raises SystemExit when called from sphinx on OSX
     #This is due to the framework build problem of anaconda on OSX, and also
@@ -46,15 +46,14 @@ def register_module(moduleName):
 
 class ModuleBase(HasTraits):
     def __init__(self, parent=None, **kwargs):
+        self._parent = parent
+
         HasTraits.__init__(self)
-
-        self.__dict__['_parent'] = parent
-
         self.set(**kwargs)
 
     @on_trait_change('anytrait')
     def remove_outputs(self):
-        if not self._parent is None:
+        if not self.__dict__.get('_parent', None) is None:
             self._parent.pruneDependanciesFromNamespace(self.outputs)
 
     def outputs_in_namespace(self, namespace):
@@ -76,6 +75,36 @@ class ModuleBase(HasTraits):
     @property
     def outputs(self):
         return {v for k, v in self.get().items() if k.startswith('output')}
+
+    def trait_view(self, name=None, view_element=None):
+        import traitsui.api as tui
+
+        if view_element is None and isinstance(name, basestring):
+            try:
+                tc = getattr(self, name)
+
+                if isinstance(tc, tui.View):
+                    return tc
+            except AttributeError:
+                pass
+
+        return HasTraits.trait_view(self, name, view_element)
+
+    @property
+    def hide_in_overview(self):
+        return []
+
+    @property
+    def pipeline_view(self):
+        import traitsui.api as tui
+
+        modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
+
+        hidden = self.hide_in_overview
+
+        params = [tn for tn in self.class_editable_traits() if not (tn.startswith('input') or tn.startswith('output') or tn in hidden)]
+
+        return tui.View(tui.Group([tui.Item(tn) for tn in params],label=modname))
 
 
 class ModuleCollection(HasTraits):
@@ -154,7 +183,7 @@ class ModuleCollection(HasTraits):
         
         downstream = list(keys_to_prune) + list(self._getAllDownstream(rdg, list(keys_to_prune)))
         
-        print downstream
+        #print downstream
         
         for dsi in downstream:
             try:
@@ -174,9 +203,9 @@ class ModuleCollection(HasTraits):
         
     def execute(self, **kwargs):
         #remove anything which is downstream from changed inputs
-        print self.namespace.keys()
+        #print self.namespace.keys()
         for k, v in kwargs.items():
-            print k, v
+            #print k, v
             try:
                 if not (self.namespace[k] == v):
                     #input has changed

@@ -145,36 +145,44 @@ class ClusterAnalyser:
         #build a recipe programatically
         rec = ModuleCollection()
         #split input according to colour channels
-        rec.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan0', channel=chans[selectedChans[0]]))
-        rec.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan1', channel=chans[selectedChans[1]]))
+        rec.add_module(tablefilters.ExtractTableChannel(rec, inputName='input', outputName='chan0', channel=chans[selectedChans[0]]))
+        rec.add_module(tablefilters.ExtractTableChannel(rec,inputName='input', outputName='chan1', channel=chans[selectedChans[1]]))
 
         #clump each channel
-        rec.add_module(tablefilters.DBSCANClustering(inputName='chan0', outputName='chan0_clumped',
+        rec.add_module(tablefilters.DBSCANClustering(rec,inputName='chan0', outputName='chan0_clumped',
                                                          searchRadius=searchRadius, minClumpSize=minClumpSize))
-        rec.add_module(tablefilters.DBSCANClustering(inputName='chan1', outputName='chan1_clumped',
+        rec.add_module(tablefilters.DBSCANClustering(rec,inputName='chan1', outputName='chan1_clumped',
                                                          searchRadius=searchRadius, minClumpSize=minClumpSize))
 
         #filter unclumped points
-        rec.add_module(tablefilters.FilterTable(inputName='chan0_clumped', outputName='chan0_cleaned',
+        rec.add_module(tablefilters.FilterTable(rec,inputName='chan0_clumped', outputName='chan0_cleaned',
                                                          filters={'dbscanClumpID' : [.5, sys.maxint]}))
-        rec.add_module(tablefilters.FilterTable(inputName='chan1_clumped', outputName='chan1_cleaned',
+        rec.add_module(tablefilters.FilterTable(rec,inputName='chan1_clumped', outputName='chan1_cleaned',
                                                filters={'dbscanClumpID': [.5, sys.maxint]}))
 
         #rejoin cleaned datasets
-        rec.add_module(tablefilters.ConcatenateTables(inputName0='chan0_cleaned', inputName1='chan1_cleaned',
+        rec.add_module(tablefilters.ConcatenateTables(rec,inputName0='chan0_cleaned', inputName1='chan1_cleaned',
                                                       outputName='joined'))
 
         #clump on cleaded and rejoined data
-        rec.add_module(tablefilters.DBSCANClustering(inputName='joined', outputName='output',
+        rec.add_module(tablefilters.DBSCANClustering(rec,inputName='joined', outputName='output',
                                                      searchRadius=searchRadius, minClumpSize=minClumpSize))
 
         #configure parameters TODO - make this cleaner
         import traitsui.api as tu
-        v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True), style='custom', show_label=False),
+        #v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True, view='pipeline_view'), style='custom', show_label=False),
+        #            buttons=['OK', 'Cancel'])
+
+        v = tu.View(tu.Item('modules',
+                            editor=tu.ListEditor(style='custom', editor=tu.InstanceEditor(view='pipeline_view'),mutable=False),
+                            style='custom',
+                            show_label=False),
                     buttons=['OK', 'Cancel'])
 
         if not rec.configure_traits(view=v, kind='modal'):
             return #handle cancel
+
+        rec.trait_views()
 
         #run recipe
         joined_clumps = rec.execute(input=self.pipeline)

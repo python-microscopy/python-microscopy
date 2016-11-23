@@ -360,4 +360,8 @@ class DBSCANClustering(ModuleBase):
 
         namespace[self.outputName] = mapped
 
+    @property
+    def hide_in_overview(self):
+        return ['xKey', 'yKey', 'zKey']
+
 
