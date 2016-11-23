@@ -295,14 +295,21 @@ class PairwiseDistanceHistogram(ModuleBase):
         if np.count_nonzero(pos0['z']) == 0 and np.count_nonzero(pos1['z']) == 0:
             res = DistHist.distanceHistogram(pos0['x'], pos0['y'], pos1['x'], pos1['y'], self.nbins, self.binsize)
         else:
-            res = DistHist.distanceHistogram3D(pos0['x'], pos0['y'], pos0['z'], pos1['x'],
-                                               pos1['y'], pos1['z'], self.nbins, self.binsize)
+            res = DistHist.distanceHistogram3D(pos0['x'], pos0['y'], pos0['z'],
+                                               pos1['x'], pos1['y'], pos1['z'], self.nbins, self.binsize)
 
         d = self.binsize*np.arange(self.nbins)
-        
-        res = pd.DataFrame({'bins' : d, 'counts' : res})
-        if 'mdh' in dir(pos):
-            res.mdh = pos.mdh
+
+        res = pd.DataFrame({'bins': d, 'counts': res})
+
+        # propagate metadata, if present
+        try:
+            res.mdh = pos0.mdh
+        except AttributeError:
+            try:
+                res.mdh = pos1.mdh
+            except AttributeError:
+                pass
         
         namespace[self.outputName] = res
         
