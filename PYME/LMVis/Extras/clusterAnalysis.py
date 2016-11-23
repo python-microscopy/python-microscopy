@@ -34,11 +34,11 @@ class ClusterAnalyser:
         self.nearestNeighbourDistances = {}
         self.colocalizationRatios = {}
 
-        visFr.AddMenuItem('Extras', 'DBSCAN Clump', self.OnClumpDBSCAN,
+        visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN Clump', self.OnClumpDBSCAN,
                           helpText='')
-        visFr.AddMenuItem('Extras', 'Nearest Neighbor Distances- two-species', self.OnNearestNeighborTwoSpecies,
+        visFr.AddMenuItem('Extras>DBSCAN', 'Nearest Neighbor Distances- two-species', self.OnNearestNeighborTwoSpecies,
                           helpText='')
-        visFr.AddMenuItem('Extras', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
+        visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
                           helpText='')
 
     def OnClumpDBSCAN(self, event=None):
