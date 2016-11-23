@@ -65,12 +65,14 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
             c = -5e3*numpy.ones(x.shape)
 #            print (c < -1).sum(), c.min()
 
+            cf = self.pipeline.colourFilter
+
             for k, v in self.pipeline.fluorSpecies.items():
                 p_dye = self.pipeline.filter['p_%s' % k][::max(l_x/1e4, 1)]
 
                 p_other = numpy.zeros(x.shape)
                 #p_tot = numpy.zeros(p_dye.shape)
-                p_tot = self.pipeline.t_p_background*self.pipeline.filter['ColourNorm'][::max(l_x/1e4, 1)]
+                p_tot = cf.t_p_background*self.pipeline.filter['ColourNorm'][::max(l_x/1e4, 1)]
 
                 for k2 in self.pipeline.fluorSpecies.keys():
                     p_tot  += self.pipeline.filter['p_%s' % k2][::max(l_x/1e4, 1)]
@@ -80,7 +82,7 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
                 p_dye = p_dye/p_tot
                 p_other = p_other/p_tot
 
-                c[(p_dye > self.pipeline.t_p_dye)*(p_other < self.pipeline.t_p_other)] = v
+                c[(p_dye > cf.t_p_dye)*(p_other < cf.t_p_other)] = v
 
             cs = 0.75*cm.jet_r(c.copy())[:,:3]
             
@@ -215,7 +217,7 @@ class colourPanel(wx.Panel):
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
         hsizer2.Add(wx.StaticText(self, -1, 'p_dye:   '), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.tPBelong = wx.TextCtrl(self, -1, '%3.3f' % self.pipeline.t_p_dye)
+        self.tPBelong = wx.TextCtrl(self, -1, '%3.3f' % self.pipeline.colourFilter.t_p_dye)
         hsizer2.Add(self.tPBelong, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tPBelong.Bind(wx.EVT_TEXT, self.OnChangePDye)
 
@@ -224,7 +226,7 @@ class colourPanel(wx.Panel):
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
         hsizer2.Add(wx.StaticText(self, -1, 'p_other:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.tPOther = wx.TextCtrl(self, -1, '%3.3f' % self.pipeline.t_p_other)
+        self.tPOther = wx.TextCtrl(self, -1, '%3.3f' % self.pipeline.colourFilter.t_p_other)
         hsizer2.Add(self.tPOther, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         self.tPOther.Bind(wx.EVT_TEXT, self.OnChangePOther)
 
@@ -240,11 +242,11 @@ class colourPanel(wx.Panel):
         self.Bind(wx.EVT_SHOW, self.OnShow)
 
     def OnChangePDye(self, event):
-        self.pipeline.t_p_dye = float(self.tPBelong.GetValue())
+        self.pipeline.colourFilter.t_p_dye = float(self.tPBelong.GetValue())
         self.refresh()
 
     def OnChangePOther(self, event):
-        self.pipeline.t_p_other = float(self.tPOther.GetValue())
+        self.pipeline.colourFilter.t_p_other = float(self.tPOther.GetValue())
         self.refresh()
 
     def OnSpecListRightClick(self, event):
@@ -415,7 +417,7 @@ class colourPanel(wx.Panel):
 
             p_other = numpy.zeros(p_dye.shape)
             #p_tot = numpy.zeros(p_dye.shape)
-            p_tot = self.pipeline.t_p_background*self.pipeline.mapping['ColourNorm']
+            p_tot = self.pipeline.colourFilter.t_p_background*self.pipeline.mapping['ColourNorm']
 
             for k2 in self.pipeline.fluorSpecies.keys():
                 p_tot  += self.pipeline.mapping['p_%s' % k2]
@@ -425,7 +427,7 @@ class colourPanel(wx.Panel):
             p_dye = p_dye/p_tot
             p_other = p_other/p_tot
 
-            self.lFluorSpecies.SetStringItem(ind,2, '%d' % ((p_dye > self.pipeline.t_p_dye)*(p_other < self.pipeline.t_p_other)).sum())
+            self.lFluorSpecies.SetStringItem(ind,2, '%d' % ((p_dye > self.pipeline.colourFilter.t_p_dye)*(p_other < self.pipeline.colourFilter.t_p_other)).sum())
 
 
         #self.colPlotPan._SetSize()

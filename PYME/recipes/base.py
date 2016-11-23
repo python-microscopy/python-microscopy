@@ -44,6 +44,39 @@ def register_module(moduleName):
 #    all_modules[cls.__class__.__name__] = cls
 #    return cls
 
+class ModuleBase(HasTraits):
+    def __init__(self, parent=None, **kwargs):
+        HasTraits.__init__(self)
+
+        self.__dict__['_parent'] = parent
+
+        self.set(**kwargs)
+
+    @on_trait_change('anytrait')
+    def remove_outputs(self):
+        if not self._parent is None:
+            self._parent.pruneDependanciesFromNamespace(self.outputs)
+
+    def outputs_in_namespace(self, namespace):
+        keys = namespace.keys()
+        return np.all([op in keys for op in self.outputs])
+
+    def execute(self, namespace):
+        """prototype function - should be over-ridden in derived classes
+
+        takes a namespace (a dictionary like object) from which it reads its inputs and
+        into which it writes outputs
+        """
+        pass
+
+    @property
+    def inputs(self):
+        return {v for k, v in self.get().items() if k.startswith('input') and not v == ""}
+
+    @property
+    def outputs(self):
+        return {v for k, v in self.get().items() if k.startswith('output')}
+
 
 class ModuleCollection(HasTraits):
     modules = List()
@@ -236,6 +269,9 @@ class ModuleCollection(HasTraits):
         c.modules = mc
             
         return c#cls(modules=mc)
+
+    def add_module(self, module):
+        self.modules.append(module)
         
     @property
     def inputs(self):
@@ -254,38 +290,7 @@ class ModuleCollection(HasTraits):
             
     
 
-class ModuleBase(HasTraits):
-    def __init__(self, parent=None, **kwargs):
-        HasTraits.__init__(self)
-        
-        self.__dict__['_parent'] = parent
 
-        self.set(**kwargs)
-        
-    @on_trait_change('anytrait')
-    def remove_outputs(self):
-        if not self._parent is None:
-            self._parent.pruneDependanciesFromNamespace(self.outputs)
-            
-    def outputs_in_namespace(self, namespace):
-        keys = namespace.keys()
-        return np.all([op in keys for op in self.outputs])
-        
-    def execute(self, namespace):
-        """prototype function - should be over-ridden in derived classes
-        
-        takes a namespace (a dictionary like object) from which it reads its inputs and 
-        into which it writes outputs
-        """
-        pass
-    
-    @property
-    def inputs(self):
-        return {v for k,v in self.get().items() if k.startswith('input') and not v == ""}
-        
-    @property
-    def outputs(self):
-        return {v for k,v in self.get().items() if k.startswith('output')}
         
 class Filter(ModuleBase):
     """Module with one image input and one image output"""

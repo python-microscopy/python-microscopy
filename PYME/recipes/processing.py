@@ -299,7 +299,7 @@ class Deconvolve(Filter):
     _decCache = {}
 
     def default_traits_view(self):
-        from traitsui.api import View, Item, Group
+        from traitsui.api import View, Item, Group, ListEditor
 
         return View(Item(name='inputName'),
                     Item(name='outputName'),
