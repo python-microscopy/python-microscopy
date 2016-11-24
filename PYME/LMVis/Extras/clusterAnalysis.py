@@ -39,9 +39,9 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Extras>DBSCAN', 'Nearest Neighbor Distances- two-species', self.OnNearestNeighborTwoSpecies,
                           helpText='')
-        visFr.AddMenuItem('Extras>DBSCAN', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
-                          helpText='')
         visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
+                          helpText='')
+        visFr.AddMenuItem('Extras>DBSCAN', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
 
     def OnClumpDBSCAN(self, event=None):
