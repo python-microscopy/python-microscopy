@@ -136,8 +136,8 @@ class ClusterAnalyser:
         #build a recipe programatically
         rec = ModuleCollection()
         #split input according to colour channels
-        rec.add_module(tablefilters.ExtractTableChannel(rec, inputName='input', outputName='chan0', channel=chans[selectedChans[0]]))
-        rec.add_module(tablefilters.ExtractTableChannel(rec,inputName='input', outputName='chan1', channel=chans[selectedChans[1]]))
+        rec.add_module(tablefilters.ExtractTableChannel(rec, inputName='input', outputName='chan0', channel=chans[0]))
+        rec.add_module(tablefilters.ExtractTableChannel(rec,inputName='input', outputName='chan1', channel=chans[1]))
 
         #clump each channel
         rec.add_module(tablefilters.DBSCANClustering(rec,inputName='chan0', outputName='chan0_clumped',

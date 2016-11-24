@@ -396,7 +396,7 @@ class Pipeline:
 
 
 
-    def Rebuild(self):
+    def Rebuild(self, **kwargs):
         """
         Rebuild the pipeline. Called when the selected data source is changed/modified and/or the filter is changed.
 

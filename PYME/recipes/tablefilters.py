@@ -41,6 +41,33 @@ class FilterTable(ModuleBase):
 
         namespace[self.outputName] = map
 
+    @property
+    def _ds(self):
+        try:
+            return self._parent.namespace[self.inputName]
+        except:
+            return None
+
+    @property
+    def pipeline_view(self):
+        from traitsui.api import View, Group, Item
+        from PYME.ui.custom_traits_editors import FilterEditor
+
+        modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
+
+        return View(Group(Item('filters', editor=FilterEditor(datasource=self._ds)), label=modname))
+
+    @property
+    def default_view(self):
+        from traitsui.api import View, Group, Item
+        from PYME.ui.custom_traits_editors import CBEditor, FilterEditor
+
+        return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
+                    Item('_'),
+                    Item('filters', editor=FilterEditor(datasource=self._ds)),
+                    Item('_'),
+                    Item('outputName'), buttons=['OK'])
+
 @register_module('ExtractTableChannel')
 class ExtractTableChannel(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
@@ -84,7 +111,7 @@ class ExtractTableChannel(ModuleBase):
                     Item('_'),
                     Item('channel', editor=CBEditor(choices=self._colour_choices)),
                     Item('_'),
-                    Item('outputName'))
+                    Item('outputName'), buttons=['OK'])
 
 
 @register_module('ConcatenateTables')
