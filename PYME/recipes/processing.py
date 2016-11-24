@@ -300,8 +300,9 @@ class Deconvolve(Filter):
 
     def default_traits_view(self):
         from traitsui.api import View, Item, Group, ListEditor
+        from PYME.ui.custom_traits_editors import CBEditor
 
-        return View(Item(name='inputName'),
+        return View(Item(name='inputName', editor=CBEditor(choices=self._namespace_keys)),
                     Item(name='outputName'),
                     Item(name='processFramesIndividually'),
                     Group(Item(name='method'),

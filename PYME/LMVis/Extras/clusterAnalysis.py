@@ -122,19 +122,10 @@ class ClusterAnalyser:
         nchan = len(chans)
         if nchan < 2:
             raise RuntimeError('FindMixedClusters requires at least two color channels')
-        elif nchan > 2:
-            # select with GUI, as this allows flexibility of choosing which channel neighbor distances are with respect to
-            chan_dlg = wx.MultiChoiceDialog(self.visFr, 'Pick two color channels to find clusters containing both channels',
-                                          'Find mixed clusters channel selection', chans)
-            chan_dlg.SetSelections([0, 1])
-            if not chan_dlg.ShowModal() == wx.ID_OK:
-                return #need to handle cancel
-
-            selectedChans = chan_dlg.GetSelections()
         else:
             selectedChans = [0, 1]
 
-        #TODO - find a better way of getting these
+
         #rad_dlg = wx.NumberEntryDialog(None, 'Search Radius For Core Points', 'rad [nm]', 'rad [nm]', 125, 0, 9e9)
         #rad_dlg.ShowModal()
         searchRadius = 125.0 #rad_dlg.GetValue()
@@ -168,24 +159,13 @@ class ClusterAnalyser:
         rec.add_module(tablefilters.DBSCANClustering(rec,inputName='joined', outputName='output',
                                                      searchRadius=searchRadius, minClumpSize=minClumpSize))
 
-        #configure parameters TODO - make this cleaner
-        import traitsui.api as tu
-        #v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True, view='pipeline_view'), style='custom', show_label=False),
-        #            buttons=['OK', 'Cancel'])
 
-        v = tu.View(tu.Item('modules',
-                            editor=tu.ListEditor(style='custom', editor=tu.InstanceEditor(view='pipeline_view'),mutable=False),
-                            style='custom',
-                            show_label=False),
-                    buttons=['OK', 'Cancel'])
-
-        if not rec.configure_traits(view=v, kind='modal'):
+        rec.namespace['input'] = self.pipeline #do it before configuring so that we already have the channe; names populated
+        if not rec.configure_traits(view=rec.pipeline_view, kind='modal'):
             return #handle cancel
 
-        rec.trait_views()
-
         #run recipe
-        joined_clumps = rec.execute(input=self.pipeline)
+        joined_clumps = rec.execute()
 
         joined_clump_IDs = np.unique(joined_clumps['dbscanClumpID'])
         joined_clump_IDs = joined_clump_IDs[joined_clump_IDs > .5] #reject unclumped points

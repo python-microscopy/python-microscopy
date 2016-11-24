@@ -674,8 +674,12 @@ class colourFilter(TabularBase):
             else:
                 return self.resultsSource[key][ind][sl]
 
+    @classmethod
+    def get_colour_chans(cls, resultsSource):
+        return [k[2:] for k in resultsSource.keys() if k.startswith('p_')]
+
     def getColourChans(self):
-        return [k[2:] for k in self.keys() if k.startswith('p_')]
+        return self.get_colour_chans(self)
 
     def setColour(self, colour):
         self.currentColour = colour
