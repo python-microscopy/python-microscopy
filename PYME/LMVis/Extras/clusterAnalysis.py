@@ -41,7 +41,7 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
                           helpText='')
-        visFr.AddMenuItem('Extras>DBSCAN', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
+        visFr.AddMenuItem('Extras', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
 
     def OnClumpDBSCAN(self, event=None):
@@ -247,22 +247,28 @@ class ClusterAnalyser:
         distogram = ModuleCollection()
 
         # split input according to colour channels selected
-        distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan0',
+        distogram.add_module(tablefilters.ExtractTableChannel(distogram, inputName='input', outputName='chan0',
                                                               channel=selectedChans[0]))
-        distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan1',
+        distogram.add_module(tablefilters.ExtractTableChannel(distogram, inputName='input', outputName='chan1',
                                                               channel=selectedChans[1]))
 
         # Histogram
-        distogram.add_module(measurement.PairwiseDistanceHistogram(inputPositions='chan0',
+        distogram.add_module(measurement.PairwiseDistanceHistogram(distogram, inputPositions='chan0',
                                                                    inputPositions2='chan1', outputName='output'))
 
-        #configure parameters TODO - make this cleaner
+        #configure parameters
         import traitsui.api as tu
-        v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True), style='custom', show_label=False),
+
+        v = tu.View(tu.Item('modules',
+                            editor=tu.ListEditor(style='custom', editor=tu.InstanceEditor(view='pipeline_view'), mutable=False),
+                            style='custom',
+                            show_label=False),
                     buttons=['OK', 'Cancel'])
 
         if not distogram.configure_traits(view=v, kind='modal'):
-            return #handle cancel
+            return  # handle cancel
+
+        distogram.trait_views()
 
         #run recipe
         distances = distogram.execute(input=self.pipeline)
