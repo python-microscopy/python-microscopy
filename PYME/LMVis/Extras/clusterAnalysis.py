@@ -201,36 +201,16 @@ class ClusterAnalyser:
     def OnPairwiseDistanceHistogram(self, event=None):
         from PYME.recipes import tablefilters, measurement
         from PYME.recipes.base import ModuleCollection
-        import wx
         import matplotlib.pyplot as plt
-
-        chans = self.pipeline.colourFilter.getColourChans()
-        nchan = len(chans)
-
-        if nchan > 0:
-            # select channels with GUI
-            chan_dlg = wx.MultiChoiceDialog(self.visFr, 'Pick channel(s) for pairwise distance calculations',
-                                          'Pairwise distance channel selection', chans)
-            chan_dlg.SetSelections([0, 1])
-            if not chan_dlg.ShowModal() == wx.ID_OK:
-                return  # need to handle cancel
-            selectedChans = [chans[ci] for ci in chan_dlg.GetSelections()]
-            nSel = len(selectedChans)
-            if nSel == 0 or nSel > 2:
-                raise RuntimeError('Pairwise distance histogram can only run on 1 or 2 channels')
-
-        else:
-            selectedChans = ['chan0', 'chan0']
-
 
         # build a recipe programatically
         distogram = ModuleCollection()
 
         # split input according to colour channels selected
         distogram.add_module(tablefilters.ExtractTableChannel(distogram, inputName='input', outputName='chan0',
-                                                              channel=selectedChans[0]))
+                                                              channel='chan0'))
         distogram.add_module(tablefilters.ExtractTableChannel(distogram, inputName='input', outputName='chan1',
-                                                              channel=selectedChans[1]))
+                                                              channel='chan0'))
 
         # Histogram
         distogram.add_module(measurement.PairwiseDistanceHistogram(distogram, inputPositions='chan0',
@@ -240,15 +220,15 @@ class ClusterAnalyser:
         #configure parameters
         if not distogram.configure_traits(view=distogram.pipeline_view, kind='modal'):
             return #handle cancel
-
+        selectedChans = (distogram.modules[-1].inputPositions, distogram.modules[-1].inputPositions2)
         #run recipe
         distances = distogram.execute()
 
-        self.pairwiseDistances[tuple(selectedChans)] = {'counts': np.array(distances['counts']),
+        self.pairwiseDistances[selectedChans] = {'counts': np.array(distances['counts']),
                                                         'bins': np.array(distances['bins'] + 0.5*(distances['bins'][1] - distances['bins'][0]))}
 
         plt.figure()
-        plt.bar(self.pairwiseDistances[tuple(selectedChans)]['bins'], self.pairwiseDistances[tuple(selectedChans)]['counts'])
+        plt.bar(self.pairwiseDistances[selectedChans]['bins'], self.pairwiseDistances[selectedChans]['counts'])
 
 
 
