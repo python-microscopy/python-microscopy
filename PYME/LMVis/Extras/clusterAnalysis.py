@@ -137,7 +137,7 @@ class ClusterAnalyser:
         else:
             selectedChans = [0, 1]
 
-        #TODO - find a better way of getting these
+
         #rad_dlg = wx.NumberEntryDialog(None, 'Search Radius For Core Points', 'rad [nm]', 'rad [nm]', 125, 0, 9e9)
         #rad_dlg.ShowModal()
         searchRadius = 125.0 #rad_dlg.GetValue()
@@ -148,8 +148,8 @@ class ClusterAnalyser:
         #build a recipe programatically
         rec = ModuleCollection()
         #split input according to colour channels
-        rec.add_module(tablefilters.ExtractTableChannel(rec, inputName='input', outputName='chan0', channel=chans[selectedChans[0]]))
-        rec.add_module(tablefilters.ExtractTableChannel(rec,inputName='input', outputName='chan1', channel=chans[selectedChans[1]]))
+        rec.add_module(tablefilters.ExtractTableChannel(rec, inputName='input', outputName='chan0', channel=chans[0]))
+        rec.add_module(tablefilters.ExtractTableChannel(rec,inputName='input', outputName='chan1', channel=chans[1]))
 
         #clump each channel
         rec.add_module(tablefilters.DBSCANClustering(rec,inputName='chan0', outputName='chan0_clumped',
@@ -176,19 +176,12 @@ class ClusterAnalyser:
         #v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True, view='pipeline_view'), style='custom', show_label=False),
         #            buttons=['OK', 'Cancel'])
 
-        v = tu.View(tu.Item('modules',
-                            editor=tu.ListEditor(style='custom', editor=tu.InstanceEditor(view='pipeline_view'),mutable=False),
-                            style='custom',
-                            show_label=False),
-                    buttons=['OK', 'Cancel'])
-
-        if not rec.configure_traits(view=v, kind='modal'):
+        rec.namespace['input'] = self.pipeline #do it before configuring so that we already have the channe; names populated
+        if not rec.configure_traits(view=rec.pipeline_view, kind='modal'):
             return #handle cancel
 
-        rec.trait_views()
-
         #run recipe
-        joined_clumps = rec.execute(input=self.pipeline)
+        joined_clumps = rec.execute()
 
         joined_clump_IDs = np.unique(joined_clumps['dbscanClumpID'])
         joined_clump_IDs = joined_clump_IDs[joined_clump_IDs > .5] #reject unclumped points

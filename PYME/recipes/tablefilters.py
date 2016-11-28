@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, Filter, Float, Enum, CStr, Bool, Int, List#, View, Item, List#, Group
-from traits.api import DictStrStr, DictStrList, ListFloat
+from traits.api import DictStrStr, DictStrList, ListFloat, ListStr
 import numpy as np
 import pandas as pd
 from PYME.IO import tabular
@@ -41,6 +41,33 @@ class FilterTable(ModuleBase):
 
         namespace[self.outputName] = map
 
+    @property
+    def _ds(self):
+        try:
+            return self._parent.namespace[self.inputName]
+        except:
+            return None
+
+    @property
+    def pipeline_view(self):
+        from traitsui.api import View, Group, Item
+        from PYME.ui.custom_traits_editors import FilterEditor
+
+        modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
+
+        return View(Group(Item('filters', editor=FilterEditor(datasource=self._ds)), label=modname))
+
+    @property
+    def default_view(self):
+        from traitsui.api import View, Group, Item
+        from PYME.ui.custom_traits_editors import CBEditor, FilterEditor
+
+        return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
+                    Item('_'),
+                    Item('filters', editor=FilterEditor(datasource=self._ds)),
+                    Item('_'),
+                    Item('outputName'), buttons=['OK'])
+
 @register_module('ExtractTableChannel')
 class ExtractTableChannel(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
@@ -57,6 +84,35 @@ class ExtractTableChannel(ModuleBase):
             map.mdh = inp.mdh
 
         namespace[self.outputName] = map
+
+    @property
+    def _colour_choices(self):
+        #try and find the available column names
+        try:
+            return tabular.colourFilter.get_colour_chans(self._parent.namespace[self.inputName])
+        except:
+            return []
+
+    @property
+    def pipeline_view(self):
+        from traitsui.api import View, Group, Item
+        from PYME.ui.custom_traits_editors import CBEditor
+
+        modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
+
+        return View(Group(Item('channel', editor=CBEditor(choices=self._colour_choices)), label=modname))
+
+    @property
+    def default_view(self):
+        from traitsui.api import View, Group, Item
+        from PYME.ui.custom_traits_editors import CBEditor
+
+        return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
+                    Item('_'),
+                    Item('channel', editor=CBEditor(choices=self._colour_choices)),
+                    Item('_'),
+                    Item('outputName'), buttons=['OK'])
+
 
 @register_module('ConcatenateTables')
 class ConcatenateTables(ModuleBase):
@@ -331,9 +387,8 @@ class DBSCANClustering(ModuleBase):
         minPtsForCore: number of points within SearchRadius required for a given point to be considered a core point
     """
     inputName = CStr('filtered')
-    xKey = CStr('x')
-    yKey = CStr('y')
-    zKey = CStr('z')
+
+    columns = ListStr(['x', 'y', 'z'])
     searchRadius = Float()
     minClumpSize = Int()
 
@@ -346,7 +401,7 @@ class DBSCANClustering(ModuleBase):
         mapped = tabular.mappingFilter(inp)
 
         # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
-        core_samp, dbLabels = dbscan(np.vstack([inp[self.xKey], inp[self.yKey], inp[self.zKey]]).T,
+        core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
                                      self.searchRadius, self.minClumpSize)
 
         # shift dbscan labels up by one to match existing convention that a clumpID of 0 corresponds to unclumped
@@ -362,6 +417,10 @@ class DBSCANClustering(ModuleBase):
 
     @property
     def hide_in_overview(self):
-        return ['xKey', 'yKey', 'zKey']
+        return ['columns']
+
+
+
+
 
 

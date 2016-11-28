@@ -107,6 +107,35 @@ class ModuleBase(HasTraits):
         return tui.View(tui.Group([tui.Item(tn) for tn in params],label=modname))
 
 
+    @property
+    def _namespace_keys(self):
+        try:
+            namespace_keys = {'input', } | set(self._parent.namespace.keys())
+            namespace_keys.update(self._parent.module_outputs)
+            return list(namespace_keys)
+        except:
+            return []
+
+    @property
+    def default_view(self):
+        from traitsui.api import View, Item, Group
+        from PYME.ui.custom_traits_editors import CBEditor
+
+        editable = self.class_editable_traits()
+        inputs = [tn for tn in editable if tn.startswith('input')]
+        outputs = [tn for tn in editable if tn.startswith('output')]
+        params = [tn for tn in editable if not (tn in inputs or tn in outputs or tn.startswith('_'))]
+
+        return View([Item(tn, editor=CBEditor(choices=self._namespace_keys)) for tn in inputs] + [Item('_'),] +
+                    [Item(tn) for tn in params] + [Item('_'),] +
+                    [Item(tn) for tn in outputs], buttons=['OK', 'Cancel'])
+
+
+
+    def default_traits_view( self ):
+        return self.default_view
+
+
 class ModuleCollection(HasTraits):
     modules = List()
     
@@ -315,10 +344,25 @@ class ModuleCollection(HasTraits):
         for mod in self.modules:
             op.update({k for k in mod.outputs if k.startswith('out')})
         return op
-        
-            
-    
 
+    @property
+    def module_outputs(self):
+        op = set()
+        for mod in self.modules:
+            op.update(set(mod.outputs))
+        return op
+
+
+    @property
+    def pipeline_view(self):
+        from traitsui.api import View, ListEditor, InstanceEditor, Item
+        #v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True, view='pipeline_view'), style='custom', show_label=False),
+        #            buttons=['OK', 'Cancel'])
+
+        return View(Item('modules', editor=ListEditor(style='custom', editor=InstanceEditor(view='pipeline_view'),
+                                                      mutable=False),
+                         style='custom', show_label=False),
+                    buttons=['OK', 'Cancel'])
 
         
 class Filter(ModuleBase):
