@@ -245,16 +245,8 @@ class ClusterAnalyser:
         distogram.add_module(measurement.PairwiseDistanceHistogram(distogram, inputPositions='chan0',
                                                                    inputPositions2='chan1', outputName='output'))
 
-        #configure parameters
-        import traitsui.api as tu
-
-        v = tu.View(tu.Item('modules',
-                            editor=tu.ListEditor(style='custom', editor=tu.InstanceEditor(view='pipeline_view'), mutable=False),
-                            style='custom',
-                            show_label=False),
-                    buttons=['OK', 'Cancel'])
-
         distogram.namespace['input'] = self.pipeline #do before configuring so that we already have the channel names populated
+        #configure parameters
         if not distogram.configure_traits(view=distogram.pipeline_view, kind='modal'):
             return #handle cancel
 
