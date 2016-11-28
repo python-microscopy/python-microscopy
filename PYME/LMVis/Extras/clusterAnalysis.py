@@ -125,15 +125,6 @@ class ClusterAnalyser:
         nchan = len(chans)
         if nchan < 2:
             raise RuntimeError('FindMixedClusters requires at least two color channels')
-        elif nchan > 2:
-            # select with GUI, as this allows flexibility of choosing which channel neighbor distances are with respect to
-            chan_dlg = wx.MultiChoiceDialog(self.visFr, 'Pick two color channels to find clusters containing both channels',
-                                          'Find mixed clusters channel selection', chans)
-            chan_dlg.SetSelections([0, 1])
-            if not chan_dlg.ShowModal() == wx.ID_OK:
-                return #need to handle cancel
-
-            selectedChans = chan_dlg.GetSelections()
         else:
             selectedChans = [0, 1]
 
