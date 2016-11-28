@@ -171,10 +171,6 @@ class ClusterAnalyser:
         rec.add_module(tablefilters.DBSCANClustering(rec,inputName='joined', outputName='output',
                                                      searchRadius=searchRadius, minClumpSize=minClumpSize))
 
-        #configure parameters TODO - make this cleaner
-        import traitsui.api as tu
-        #v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True, view='pipeline_view'), style='custom', show_label=False),
-        #            buttons=['OK', 'Cancel'])
 
         rec.namespace['input'] = self.pipeline #do it before configuring so that we already have the channe; names populated
         if not rec.configure_traits(view=rec.pipeline_view, kind='modal'):
@@ -258,13 +254,12 @@ class ClusterAnalyser:
                             show_label=False),
                     buttons=['OK', 'Cancel'])
 
-        if not distogram.configure_traits(view=v, kind='modal'):
-            return  # handle cancel
-
-        distogram.trait_views()
+        distogram.namespace['input'] = self.pipeline #do before configuring so that we already have the channel names populated
+        if not distogram.configure_traits(view=distogram.pipeline_view, kind='modal'):
+            return #handle cancel
 
         #run recipe
-        distances = distogram.execute(input=self.pipeline)
+        distances = distogram.execute()
 
         self.pairwiseDistances[tuple(selectedChans)] = {'counts': np.array(distances['counts']),
                                                         'bins': np.array(distances['bins'] + 0.5*(distances['bins'][1] - distances['bins'][0]))}
