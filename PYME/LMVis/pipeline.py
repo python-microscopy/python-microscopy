@@ -178,6 +178,10 @@ def _add_missing_ds_keys(mapped_ds, ev_mappings={}):
         else:
             mapped_ds.setMapping('z', 'foreShort*focus')
 
+    if not 'A' in mapped_ds.keys() and 'fitResults_photons' in mapped_ds.keys():
+        mapped_ds.setMapping('A', 'fitResults_photons')
+
+
 
 def _processEvents(ds, events, mdh):
     """Read data from events table and translate it into mappings for,
