@@ -223,45 +223,30 @@ class ClusterAnalyser:
             # select channels with GUI
             chan_dlg = wx.MultiChoiceDialog(self.visFr, 'Pick channel(s) for pairwise distance calculations',
                                           'Pairwise distance channel selection', chans)
-            chan_dlg.SetSelections([0,1])
+            chan_dlg.SetSelections([0, 1])
             if not chan_dlg.ShowModal() == wx.ID_OK:
                 return  # need to handle cancel
             selectedChans = [chans[ci] for ci in chan_dlg.GetSelections()]
             nSel = len(selectedChans)
+            if nSel == 0 or nSel > 2:
+                raise RuntimeError('Pairwise distance histogram can only run on 1 or 2 channels')
 
         else:
-            selectedChans = ['chan0']
-            nSel = 0
+            selectedChans = ['chan0', 'chan0']
 
 
         # build a recipe programatically
         distogram = ModuleCollection()
 
-        if nSel == 0:  # no channel to select, do calculation on everything
-            # Histogram
-            distogram.add_module(measurement.PairwiseDistanceHistogram(inputPositions='input',
-                                                                       inputPositions2='', outputName='output'))
-        elif nSel == 1:
-            # split input according to colour channel selection
-            distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan0',
-                                                                  channel=selectedChans[0]))
-            # Histogram
-            distogram.add_module(measurement.PairwiseDistanceHistogram(inputPositions='chan0',
-                                                                       inputPositions2='', outputName='output'))
+        # split input according to colour channels selected
+        distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan0',
+                                                              channel=selectedChans[0]))
+        distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan1',
+                                                              channel=selectedChans[1]))
 
-        elif nSel == 2:
-            # split input according to colour channels selected
-            distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan0',
-                                                                  channel=selectedChans[0]))
-            distogram.add_module(tablefilters.ExtractTableChannel(inputName='input', outputName='chan1',
-                                                                  channel=selectedChans[1]))
-
-            # Histogram
-            distogram.add_module(measurement.PairwiseDistanceHistogram(inputPositions='chan0',
-                                                                       inputPositions2='chan1', outputName='output'))
-        else:
-            RuntimeError('Pairwise distance histogram can only run on 1 or 2 channels')
-
+        # Histogram
+        distogram.add_module(measurement.PairwiseDistanceHistogram(inputPositions='chan0',
+                                                                   inputPositions2='chan1', outputName='output'))
 
         #configure parameters TODO - make this cleaner
         import traitsui.api as tu
@@ -273,14 +258,12 @@ class ClusterAnalyser:
 
         #run recipe
         distances = distogram.execute(input=self.pipeline)
-        cs = 'counts_' + ''.join(selectedChans)
-        bs = 'bins_' + ''.join(selectedChans)
-        self.pairwiseDistances[cs] = np.array(distances['counts'])
-        # store center of bins
-        self.pairwiseDistances[bs] = np.array(distances['bins'] + 0.5*(distances['bins'][1] - distances['bins'][0]))
+
+        self.pairwiseDistances[tuple(selectedChans)] = {'counts': np.array(distances['counts']),
+                                                        'bins': np.array(distances['bins'] + 0.5*(distances['bins'][1] - distances['bins'][0]))}
 
         plt.figure()
-        plt.bar(self.pairwiseDistances[bs], self.pairwiseDistances[cs])
+        plt.bar(self.pairwiseDistances[tuple(selectedChans)]['bins'], self.pairwiseDistances[tuple(selectedChans)]['counts'])
 
 
 
