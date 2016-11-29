@@ -284,6 +284,7 @@ class NearestNeighbourDistances(ModuleBase):
 class PairwiseDistanceHistogram(ModuleBase):
     """Calculates a histogram of pairwise distances"""
     inputPositions = CStr('input')
+    inputPositions2 = CStr('')
     outputName = CStr('distHist')
     nbins = Int(50)
     binSize = Float(50.)
@@ -291,16 +292,26 @@ class PairwiseDistanceHistogram(ModuleBase):
     def execute(self, namespace):
         from PYME.Analysis.points import DistHist
         
-        pos = namespace[self.inputPositions]
-        
-        x, y = pos['x'], pos['y']
-        
-        res = DistHist.distanceHistogram(x, y, x, y, self.nbins, self.binsize)
-        d = self.binsize*np.arange(self.nbins)
-        
-        res = pd.DataFrame({'bins' : d, 'counts' : res})
-        if 'mdh' in dir(pos):
-            res.mdh = pos.mdh
+        pos0 = namespace[self.inputPositions]
+        pos1 = namespace[self.inputPositions2 if self.inputPositions2 is not '' else self.inputPositions]
+        if np.count_nonzero(pos0['z']) == 0 and np.count_nonzero(pos1['z']) == 0:
+            res = DistHist.distanceHistogram(pos0['x'], pos0['y'], pos1['x'], pos1['y'], self.nbins, self.binSize)
+        else:
+            res = DistHist.distanceHistogram3D(pos0['x'], pos0['y'], pos0['z'],
+                                               pos1['x'], pos1['y'], pos1['z'], self.nbins, self.binSize)
+
+        d = self.binSize*np.arange(self.nbins)
+
+        res = pd.DataFrame({'bins': d, 'counts': res})
+
+        # propagate metadata, if present
+        try:
+            res.mdh = pos0.mdh
+        except AttributeError:
+            try:
+                res.mdh = pos1.mdh
+            except AttributeError:
+                pass
         
         namespace[self.outputName] = res
         

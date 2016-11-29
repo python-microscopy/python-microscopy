@@ -33,12 +33,15 @@ class ClusterAnalyser:
         self.pipeline = visFr.pipeline
         self.nearestNeighbourDistances = {}
         self.colocalizationRatios = {}
+        self.pairwiseDistances = {}
 
         visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN Clump', self.OnClumpDBSCAN,
                           helpText='')
         visFr.AddMenuItem('Extras>DBSCAN', 'Nearest Neighbor Distances- two-species', self.OnNearestNeighborTwoSpecies,
                           helpText='')
         visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
+                          helpText='')
+        visFr.AddMenuItem('Extras', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
 
     def OnClumpDBSCAN(self, event=None):
@@ -194,6 +197,39 @@ class ClusterAnalyser:
         self.colocalizationRatios['mixedClumps%i%i' % tuple(selectedChans)] = bothChanRatio
 
         self._rec = rec
+
+    def OnPairwiseDistanceHistogram(self, event=None):
+        from PYME.recipes import tablefilters, measurement
+        from PYME.recipes.base import ModuleCollection
+        import matplotlib.pyplot as plt
+
+        # build a recipe programatically
+        distogram = ModuleCollection()
+
+        # split input according to colour channels selected
+        distogram.add_module(tablefilters.ExtractTableChannel(distogram, inputName='input', outputName='chan0',
+                                                              channel='chan0'))
+        distogram.add_module(tablefilters.ExtractTableChannel(distogram, inputName='input', outputName='chan1',
+                                                              channel='chan0'))
+
+        # Histogram
+        distogram.add_module(measurement.PairwiseDistanceHistogram(distogram, inputPositions='chan0',
+                                                                   inputPositions2='chan1', outputName='output'))
+
+        distogram.namespace['input'] = self.pipeline #do before configuring so that we already have the channel names populated
+        #configure parameters
+        if not distogram.configure_traits(view=distogram.pipeline_view, kind='modal'):
+            return #handle cancel
+        selectedChans = (distogram.modules[-1].inputPositions, distogram.modules[-1].inputPositions2)
+        #run recipe
+        distances = distogram.execute()
+
+        self.pairwiseDistances[selectedChans] = {'counts': np.array(distances['counts']),
+                                                        'bins': np.array(distances['bins'] + 0.5*(distances['bins'][1] - distances['bins'][0]))}
+
+        plt.figure()
+        plt.bar(self.pairwiseDistances[selectedChans]['bins'], self.pairwiseDistances[selectedChans]['counts'])
+
 
 
 def Plug(visFr):
