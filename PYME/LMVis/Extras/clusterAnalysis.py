@@ -40,7 +40,7 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
                           helpText='')
-        visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - clumps in time', self.OnClumpsInTime,
+        visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - clumps in time', self.OnClustersInTime,
                           helpText='')
 
     def OnClumpDBSCAN(self, event=None):
@@ -197,7 +197,7 @@ class ClusterAnalyser:
 
         self._rec = rec
 
-    def OnClumpsInTime(self, event=None):
+    def OnClustersInTime(self, event=None):
         from PYME.recipes import tablefilters, measurement
         from PYME.recipes.base import ModuleCollection
         import matplotlib.pyplot as plt
@@ -209,12 +209,8 @@ class ClusterAnalyser:
         rec.add_module(tablefilters.ExtractTableChannel(rec, inputName='input', outputName='chan0',
                                                               channel='chan0'))
 
-        minClumpSize = 3
-        rec.add_module(tablefilters.DBSCANClustering(rec, inputName='chan0', outputName='chan0_clumped',
-                                                         searchRadius=75, minClumpSize=minClumpSize))
-
-        rec.add_module(measurement.ClumpsInTime(rec, inputName='chan0_clumped', stepSize=3000,
-                                                minPtsPerClump=minClumpSize, outputName='output'))
+        rec.add_module(measurement.ClumpsInTime(rec, inputName='chan0', stepSize=3000, searchRadius=75,
+                                                minPtsPerClump=3, outputName='output'))
 
 
         rec.namespace['input'] = self.pipeline #do before configuring so that we already have the channel names populated
@@ -224,11 +220,18 @@ class ClusterAnalyser:
 
         incrementedClumps = rec.execute()
 
-        #self.pairwiseDistances[selectedChans] = {'counts': np.array(distances['counts']),
-        #                                                'bins': np.array(distances['bins'] + 0.5*(distances['bins'][1] - distances['bins'][0]))}
-
         plt.figure()
-        plt.scatter(incrementedClumps['t'], incrementedClumps['clumpCount'])
+        plt.scatter(incrementedClumps['t'], incrementedClumps['N_origClustersWithMinPoints'],
+                    label='Original Clusters with N > minPts', edgecolors='r', facecolors='none', marker='s')
+        plt.scatter(incrementedClumps['t'], incrementedClumps['N_rawDBSCAN'], label='raw DBSCAN', edgecolors='b',
+                    facecolors='b', marker='x')
+        plt.scatter(incrementedClumps['t'], incrementedClumps['N_origClusterDBSCAN'],
+                    label='DBSCAN on points originally clustered', edgecolors='g', facecolors='none')
+        plt.legend(loc=4, scatterpoints=1)
+        plt.xlabel('Number of frames included')
+        plt.ylabel('Number of Clusters')
+        plt.title('minPoints=%i, searchRadius = %.0f nm' % (rec.modules[-1].minPtsPerClump, rec.modules[-1].searchRadius))
+
 
 
 def Plug(visFr):
