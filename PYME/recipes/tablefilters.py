@@ -1,5 +1,6 @@
-from .base import register_module, ModuleBase, Filter, Float, Enum, CStr, Bool, Int, List#, View, Item, List#, Group
-from traits.api import DictStrStr, DictStrList, ListFloat, ListStr
+from .base import register_module, ModuleBase, Filter
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr
+
 import numpy as np
 import pandas as pd
 from PYME.IO import tabular

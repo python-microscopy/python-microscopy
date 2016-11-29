@@ -644,6 +644,28 @@ class colourFilter(TabularBase):
         self.t_p_other = 0.1
         self.t_p_background = .01
 
+    @property
+    def index(self):
+        colChans = self.getColourChans()
+
+        if not self.currentColour in colChans:
+            return np.ones(len(self.resultsSource[self.resultsSource.keys()[0]]), 'bool')
+        else:
+            p_dye = self.resultsSource['p_%s' % self.currentColour]
+
+            p_other = 0 * p_dye
+            p_tot = self.t_p_background * self.resultsSource['ColourNorm']
+
+            for k in colChans:
+                p_tot += self.resultsSource['p_%s' % k]
+                if not self.currentColour == k:
+                    p_other = np.maximum(p_other, self.resultsSource['p_%s' % k])
+
+            p_dye = p_dye / p_tot
+            p_other = p_other / p_tot
+
+            return (p_dye > self.t_p_dye) * (p_other < self.t_p_other)
+
 
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
@@ -652,27 +674,12 @@ class colourFilter(TabularBase):
         if not self.currentColour in colChans:
             return self.resultsSource[keys]
         else:
-            p_dye = self.resultsSource['p_%s' % self.currentColour]
-
-            p_other = 0*p_dye
-            p_tot = self.t_p_background*self.resultsSource['ColourNorm']
-
-            for k in colChans:
-                p_tot  += self.resultsSource['p_%s' % k]
-                if not self.currentColour == k:
-                    p_other = np.maximum(p_other, self.resultsSource['p_%s' % k])
-
-            p_dye = p_dye/p_tot
-            p_other = p_other/p_tot
-
-            ind = (p_dye > self.t_p_dye)*(p_other < self.t_p_other)
-
             #chromatic shift correction
             #print self.currentColour
             if  self.currentColour in self.chromaticShifts.keys() and key in self.chromaticShifts[self.currentColour].keys():
-                return self.resultsSource[key][ind][sl] + self.chromaticShifts[self.currentColour][key]
+                return self.resultsSource[key][self.index][sl] + self.chromaticShifts[self.currentColour][key]
             else:
-                return self.resultsSource[key][ind][sl]
+                return self.resultsSource[key][self.index][sl]
 
     @classmethod
     def get_colour_chans(cls, resultsSource):

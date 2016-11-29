@@ -6,11 +6,7 @@ Created on Mon May 25 17:02:04 2015
 """
 #import wx
 
-try:
-    from enthought.traits.api import HasTraits, HasPrivateTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change, Property
-    #from enthought.traits.ui.api import View, Item #, EnumEditor, InstanceEditor, Group
-except ImportError:
-    from traits.api import HasTraits, HasPrivateTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change, Property
+from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, on_trait_change, Input, Output
     
     #for some reason traitsui raises SystemExit when called from sphinx on OSX
     #This is due to the framework build problem of anaconda on OSX, and also
@@ -24,9 +20,7 @@ except ImportError:
     #   from PYME.misc.mock_traitsui import *
 
 from PYME.IO.image import ImageStack
-#from scipy import ndimage
 import numpy as np
-#import os
 
 all_modules = {}
 module_names = {}
@@ -38,11 +32,6 @@ def register_module(moduleName):
         return cls
         
     return c_decorate
-    
-    
-#def register_module(cls):
-#    all_modules[cls.__class__.__name__] = cls
-#    return cls
 
 class ModuleBase(HasTraits):
     def __init__(self, parent=None, **kwargs):
@@ -367,8 +356,8 @@ class ModuleCollection(HasTraits):
         
 class Filter(ModuleBase):
     """Module with one image input and one image output"""
-    inputName = CStr('input')
-    outputName = CStr('filtered_image')
+    inputName = Input('input')
+    outputName = Output('filtered_image')
     
     processFramesIndividually = Bool(True)
     
@@ -425,9 +414,9 @@ class Filter(ModuleBase):
     
 class ArithmaticFilter(ModuleBase):
     """Module with one image input and one image output"""
-    inputName0 = CStr('input')
-    inputName1 = CStr('input')
-    outputName = CStr('filtered_image')
+    inputName0 = Input('input')
+    inputName1 = Input('input')
+    outputName = Output('filtered_image')
     
     processFramesIndividually = Bool(False)
     
@@ -465,8 +454,8 @@ class ArithmaticFilter(ModuleBase):
 @register_module('ExtractChannel')    
 class ExtractChannel(ModuleBase):
     """extract one channel from an image"""
-    inputName = CStr('input')
-    outputName = CStr('filtered_image')     
+    inputName = Input('input')
+    outputName = Output('filtered_image')
     
     channelToExtract = Int(0)
     
@@ -485,11 +474,11 @@ class ExtractChannel(ModuleBase):
 @register_module('JoinChannels')    
 class JoinChannels(ModuleBase):
     """extract one channel from an image"""
-    inputChan0 = CStr('input0')
-    inputChan1 = CStr('')
-    inputChan2 = CStr('')
-    inputChan3 = CStr('')
-    outputName = CStr('output')     
+    inputChan0 = Input('input0')
+    inputChan1 = Input('')
+    inputChan2 = Input('')
+    inputChan3 = Input('')
+    outputName = Output('output')
     
     #channelToExtract = Int(0)
     

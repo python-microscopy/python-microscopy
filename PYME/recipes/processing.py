@@ -5,7 +5,9 @@ Created on Mon May 25 17:15:01 2015
 @author: david
 """
 
-from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int,  File
+from .base import ModuleBase, register_module, Filter
+from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int,  File
+
 #try:
 #    from traitsui.api import View, Item, Group
 #except SystemExit:

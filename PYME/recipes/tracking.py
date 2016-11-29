@@ -4,9 +4,9 @@ Created on Tue Dec 29 19:59:15 2015
 
 @author: david
 """
-from .base import register_module, ModuleBase, Filter, Float, Enum, CStr, Bool, Int #, View, Item#, Group
-from traits.api import DictStrFloat, DictStrBool
-##from PYME.IO.image import ImageStack
+from .base import register_module, ModuleBase,Filter
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, DictStrFloat, DictStrBool
+
 import numpy as np
 import pandas as pd
 
