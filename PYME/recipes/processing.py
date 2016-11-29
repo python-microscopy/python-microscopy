@@ -127,9 +127,9 @@ class OpticalFlow(ModuleBase):
     filterRadius = Float(1)
     supportRadius = Float(10) 
     regularizationLambda = Float(0)
-    inputName = CStr('input')
-    outputNameX = CStr('flow_x')
-    outputNameY = CStr('flow_y')
+    inputName = Input('input')
+    outputNameX = Output('flow_x')
+    outputNameY = Output('flow_y')
     
     def calc_flow(self, data, chanNum):
         from PYME.Analysis import optic_flow
@@ -182,9 +182,9 @@ class OpticalFlow(ModuleBase):
         
 @register_module('Gradient')         
 class Gradient2D(ModuleBase):   
-    inputName = CStr('input')
-    outputNameX = CStr('grad_x')
-    outputNameY = CStr('grad_y')
+    inputName = Input('input')
+    outputNameX = Output('grad_x')
+    outputNameY = Output('grad_y')
     
     def calc_grad(self, data, chanNum):
         grad_x = []
@@ -224,13 +224,13 @@ class Gradient2D(ModuleBase):
 @register_module('ProjectOnVector')         
 class ProjectOnVector(ModuleBase):
     """Project onto a set of direction vectors, producing p and s components"""
-    inputX = CStr('inputX')
-    inputY = CStr('inputY')
-    inputDirX = CStr('dirX')
-    inputDirY = CStr('dirY')
+    inputX = Input('inputX')
+    inputY = Input('inputY')
+    inputDirX = Input('dirX')
+    inputDirY = Input('dirY')
     
-    outputNameP = CStr('proj_p')
-    outputNameS = CStr('proj_s')
+    outputNameP = Output('proj_p')
+    outputNameS = Output('proj_s')
     
     def do_proj(self, inpX, inpY, dirX, dirY):
         """project onto basis vectors"""
@@ -554,10 +554,10 @@ class WhiteTophat(Filter):
 @register_module('Watershed')         
 class Watershed(ModuleBase):
     """Module with one image input and one image output"""
-    inputImage = CStr('input')
-    inputMarkers = CStr('markers')
-    inputMask = CStr('')
-    outputName = CStr('watershed')
+    inputImage = Input('input')
+    inputMarkers = Input('markers')
+    inputMask = Input('')
+    outputName = Output('watershed')
     
     processFramesIndividually = Bool(False)
     

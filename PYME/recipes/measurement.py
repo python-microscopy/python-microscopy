@@ -15,7 +15,7 @@ import os
 
 @register_module('MultifitBlobs') 
 class MultifitBlobs(ModuleBase):
-    inputImage = CStr('input')
+    inputImage = Output('input')
     outputName = CStr('positions')
     blobSigma = Float(45.0)
     threshold = Float(2.0)
@@ -43,9 +43,9 @@ class MultifitBlobs(ModuleBase):
 
 @register_module('FitDumbells') 
 class FitDumbells(ModuleBase):
-    inputImage = CStr('input')
-    inputPositions = CStr('objPostiions')
-    outputName = CStr('fitResults')
+    inputImage = Input('input')
+    inputPositions = Input('objPostiions')
+    outputName = Output('fitResults')
     
     def execute(self, namespace):
         from PYME.localization.FitFactories import DumbellFitR
@@ -93,9 +93,9 @@ class FitPoints(ModuleBase):
     """ Apply one of the fit modules from PYME.localization.FitFactories to each of the points in the provided
     in inputPositions
     """
-    inputImage = CStr('input')
-    inputPositions = CStr('objPositions')
-    outputName = CStr('fitResults')
+    inputImage = Input('input')
+    inputPositions = Input('objPositions')
+    outputName = Output('fitResults')
     fitModule = CStr('LatGaussFitFR')
     roiHalfSize = Int(7)
     channel = Int(0)
@@ -148,9 +148,9 @@ class IntensityAtPoints(ModuleBase):
     """ Apply one of the fit modules from PYME.localization.FitFactories to each of the points in the provided
     in inputPositions
     """
-    inputImage = CStr('input')
-    inputPositions = CStr('objPostiions')
-    outputName = CStr('fitResults')
+    inputImage = Input('input')
+    inputPositions = Input('objPostiions')
+    outputName = Output('fitResults')
     radii = List([3, 5, 7, 9, 11])
     mode = Enum(['sum', 'mean'])
     #fitModule = CStr('LatGaussFitFR')
@@ -227,8 +227,8 @@ class IntensityAtPoints(ModuleBase):
 class MeanNeighbourDistances(ModuleBase):
     """Calculates mean distance to nearest neighbour in a triangulation of the
     supplied points"""
-    inputPositions = CStr('input')
-    outputName = CStr('neighbourDists')
+    inputPositions = Input('input')
+    outputName = Output('neighbourDists')
     key = CStr('neighbourDists')
     
     def execute(self, namespace):
@@ -252,9 +252,9 @@ class MeanNeighbourDistances(ModuleBase):
 class NearestNeighbourDistances(ModuleBase):
     """Calculates the nearest neighbour distances between supplied points using
     a kdtree"""
-    inputChan0 = CStr('input')
-    inputChan1 = CStr('')
-    outputName = CStr('neighbourDists')
+    inputChan0 = Input('input')
+    inputChan1 = Input('')
+    outputName = Output('neighbourDists')
     columns = List(['x', 'y'])
     key = CStr('neighbourDists')
 
@@ -283,9 +283,9 @@ class NearestNeighbourDistances(ModuleBase):
 @register_module('PairwiseDistanceHistogram')
 class PairwiseDistanceHistogram(ModuleBase):
     """Calculates a histogram of pairwise distances"""
-    inputPositions = CStr('input')
-    inputPositions2 = CStr('')
-    outputName = CStr('distHist')
+    inputPositions = Input('input')
+    inputPositions2 = Input('')
+    outputName = Output('distHist')
     nbins = Int(50)
     binSize = Float(50.)
     
@@ -319,8 +319,8 @@ class PairwiseDistanceHistogram(ModuleBase):
 @register_module('Histogram')         
 class Histogram(ModuleBase):
     """Calculates a histogram of a given measurement key"""
-    inputMeasurements = CStr('input')
-    outputName = CStr('hist')
+    inputMeasurements = Input('input')
+    outputName = Output('hist')
     key = CStr('key')
     nbins = Int(50)
     left = Float(0.)
@@ -344,9 +344,9 @@ class Histogram(ModuleBase):
 @register_module('ImageHistogram')         
 class ImageHistogram(ModuleBase):
     """Calculates a histogram of a given measurement key"""
-    inputImage = CStr('input')
-    outputName = CStr('hist')
-    inputMask = CStr('')
+    inputImage = Input('input')
+    outputName = Output('hist')
+    inputMask = Input('')
     nbins = Int(50)
     left = Float(0.)
     right = Float(1000)
@@ -373,9 +373,9 @@ class ImageHistogram(ModuleBase):
 @register_module('ImageCumulativeHistogram')         
 class ImageCumulativeHistogram(ModuleBase):
     """Calculates a histogram of a given measurement key"""
-    inputImage = CStr('input')
-    outputName = CStr('hist')
-    inputMask = CStr('')
+    inputImage = Input('input')
+    outputName = Output('hist')
+    inputMask = Input('')
     #nbins = Int(50)
     #left = Float(0.)
     #right = Float(1000)
@@ -403,10 +403,10 @@ class ImageCumulativeHistogram(ModuleBase):
 @register_module('BinnedHistogram')
 class BinnedHistogram(ModuleBase):
     """Calculates a histogram of a given measurement key, binned by a separate value"""
-    inputImage = CStr('input')
+    inputImage = Input('input')
     binBy = CStr('indepvar')
-    outputName = CStr('hist')
-    inputMask = CStr('')
+    outputName = Output('hist')
+    inputMask = Input('')
 
     nbins = Int(50)
     left = Float(0.)
@@ -447,9 +447,9 @@ class BinnedHistogram(ModuleBase):
 @register_module('Measure2D') 
 class Measure2D(ModuleBase):
     """Module with one image input and one image output"""
-    inputLabels = CStr('labels')
-    inputIntensity = CStr('data')
-    outputName = CStr('measurements')
+    inputLabels = Input('labels')
+    inputIntensity = Input('data')
+    outputName = Output('measurements')
     
     measureContour = Bool(True)    
         
@@ -585,9 +585,9 @@ class Measure2D(ModuleBase):
 @register_module('SelectMeasurementColumns')         
 class SelectMeasurementColumns(ModuleBase):
     """Take just certain columns of a variable"""
-    inputMeasurements = CStr('measurements')
+    inputMeasurements = Input('measurements')
     keys = CStr('')
-    outputName = CStr('selectedMeasurements') 
+    outputName = Output('selectedMeasurements')
     
     def execute(self, namespace):       
         meas = namespace[self.inputMeasurements]
@@ -601,13 +601,13 @@ class SelectMeasurementColumns(ModuleBase):
 @register_module('Plot')         
 class Plot(ModuleBase):
     """Take just certain columns of a variable"""
-    input0 = CStr('measurements')
-    input1 = CStr('')
-    input2 = CStr('')
-    input3 = CStr('')
+    input0 = Input('measurements')
+    input1 = Input('')
+    input2 = Input('')
+    input3 = Input('')
     xkey = CStr('')
     ykey = CStr('')
-    outputName = CStr('outGraph') 
+    outputName = Output('outGraph')
     
     def execute(self, namespace):
         ms = []
@@ -640,11 +640,11 @@ class Plot(ModuleBase):
 @register_module('AddMetadataToMeasurements')         
 class AddMetadataToMeasurements(ModuleBase):
     """Adds metadata entries as extra column(s) to the output"""
-    inputMeasurements = CStr('measurements')
-    inputImage = CStr('input')
+    inputMeasurements = Input('measurements')
+    inputImage = Input('input')
     keys = CStr('SampleNotes')
     metadataKeys = CStr('Sample.Notes')
-    outputName = CStr('annotatedMeasurements')
+    outputName = Output('annotatedMeasurements')
     
     def execute(self, namespace):
         res = {}
@@ -673,15 +673,15 @@ class AddMetadataToMeasurements(ModuleBase):
 class AggregateMeasurements(ModuleBase):
     """Create a new composite measurement containing the results of multiple
     previous measurements"""
-    inputMeasurements1 = CStr('meas1')
+    inputMeasurements1 = Input('meas1')
     suffix1 = CStr('')
-    inputMeasurements2 = CStr('')
+    inputMeasurements2 = Input('')
     suffix2 = CStr('')
-    inputMeasurements3 = CStr('')
+    inputMeasurements3 = Input('')
     suffix3 = CStr('')
-    inputMeasurements4 = CStr('')
+    inputMeasurements4 = Input('')
     suffix4 = CStr('')
-    outputName = CStr('aggregatedMeasurements') 
+    outputName = Output('aggregatedMeasurements')
     
     def execute(self, namespace):
         res = {}
