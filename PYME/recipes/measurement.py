@@ -688,5 +688,54 @@ class AggregateMeasurements(ModuleBase):
             res.mdh = meas1.mdh
             
         namespace[self.outputName] = res
+
+
+@register_module('ClumpsInTime')
+class ClumpsInTime(ModuleBase):
+    """ """
+    inputName = CStr('clumped')
+    clumpKey = CStr('dbscanClumpID')
+    stepSize = Int(3000)
+    minPtsPerClump = Int(3)
+    searchRadius = Float(75)
+    outputName = CStr('incremented')
+
+    def execute(self, namespace):
+        from PYME.IO import tabular
+        from sklearn.cluster import dbscan
+
+        iters = (int(np.max(namespace[self.inputName]['t']))/int(self.stepSize)) + 1
+
+        t = [0]
+        clumpCount = [0]
+        for ind in range(1, iters):  # start from 1 since t=[0,0] will yield no clumps
+            inc = tabular.resultsFilter(namespace[self.inputName], t=[0, self.stepSize*ind])
+
+            # store-brand DBSCAN ops scales as n^2, so just look at clumps that at least contain minpts, and cluster them separately
+            cid, counts = np.unique(inc[self.clumpKey], return_counts=True)
+            cid = cid[counts >= self.minPtsPerClump]
+
+            nclusters = len(cid)
+            cvec = np.empty(nclusters)
+            for ci in range(nclusters):
+                cmask = cid[ci] == inc[self.clumpKey]
+                core_samp, dbLabels = dbscan(np.vstack([inc['x'][cmask], inc['y'][cmask], inc['z'][cmask]]).T,
+                                             self.searchRadius, self.minPtsPerClump)
+                cvec[ci] = len(np.unique(dbLabels[dbLabels > -0.5]))
+                if cvec[ci] > 1:
+                    print 'overdetecting by %i' % (cvec[ci]-1)
+
+            clumpCount.append(cvec.sum())
+            t.append(np.max(inc['t']))
+
+        res = pd.DataFrame({'t': t, 'clumpCount': clumpCount})
+
+        # propagate metadata, if present
+        try:
+            res.mdh = namespace[self.inputName].mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = res
         
 

@@ -40,6 +40,8 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
                           helpText='')
+        visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - clumps in time', self.OnClumpsInTime,
+                          helpText='')
 
     def OnClumpDBSCAN(self, event=None):
         """
@@ -194,6 +196,39 @@ class ClusterAnalyser:
         self.colocalizationRatios['mixedClumps%i%i' % tuple(selectedChans)] = bothChanRatio
 
         self._rec = rec
+
+    def OnClumpsInTime(self, event=None):
+        from PYME.recipes import tablefilters, measurement
+        from PYME.recipes.base import ModuleCollection
+        import matplotlib.pyplot as plt
+
+        # build a recipe programatically
+        rec = ModuleCollection()
+
+        # split input according to colour channel selected
+        rec.add_module(tablefilters.ExtractTableChannel(rec, inputName='input', outputName='chan0',
+                                                              channel='chan0'))
+
+        minClumpSize = 3
+        rec.add_module(tablefilters.DBSCANClustering(rec, inputName='chan0', outputName='chan0_clumped',
+                                                         searchRadius=75, minClumpSize=minClumpSize))
+
+        rec.add_module(measurement.ClumpsInTime(rec, inputName='chan0_clumped', stepSize=3000,
+                                                minPtsPerClump=minClumpSize, outputName='output'))
+
+
+        rec.namespace['input'] = self.pipeline #do before configuring so that we already have the channel names populated
+        #configure parameters
+        if not rec.configure_traits(view=rec.pipeline_view, kind='modal'):
+            return #handle cancel
+
+        incrementedClumps = rec.execute()
+
+        #self.pairwiseDistances[selectedChans] = {'counts': np.array(distances['counts']),
+        #                                                'bins': np.array(distances['bins'] + 0.5*(distances['bins'][1] - distances['bins'][0]))}
+
+        plt.figure()
+        plt.scatter(incrementedClumps['t'], incrementedClumps['clumpCount'])
 
 
 def Plug(visFr):
