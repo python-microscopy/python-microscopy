@@ -226,7 +226,7 @@ class ClusterAnalyser:
         plt.scatter(incrementedClumps['t'], incrementedClumps['N_rawDBSCAN'], label='raw DBSCAN', edgecolors='b',
                     facecolors='b', marker='x')
         plt.scatter(incrementedClumps['t'], incrementedClumps['N_origClusterDBSCAN'],
-                    label='DBSCAN on points originally clustered', edgecolors='g', facecolors='none')
+                    label='DBSCAN on points in og clusters with N> minPts', edgecolors='g', facecolors='none')
         plt.legend(loc=4, scatterpoints=1)
         plt.xlabel('Number of frames included')
         plt.ylabel('Number of Clusters')
