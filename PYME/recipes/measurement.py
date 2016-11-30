@@ -728,11 +728,11 @@ class ClumpsInTime(ModuleBase):
     clusters. A DBSCAN cluster consists of at least one core point. As other points may be border points to more than
     one cluster, there is no guarantee that at least minPts points are included in every cluster."
     """
-    inputName = CStr('input')
+    inputName = Input('input')
     stepSize = Int(3000)
     minPtsForCore = Int(3)
     searchRadius = Float(75)
-    outputName = CStr('incremented')
+    outputName = Output('incremented')
 
     def execute(self, namespace):
         from PYME.IO import tabular
