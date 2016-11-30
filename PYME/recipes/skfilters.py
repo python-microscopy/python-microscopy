@@ -4,9 +4,11 @@ Created on Fri Feb 20 17:11:05 2015
 
 @author: david
 """
-from .base import register_module, ModuleBase, Filter, Float, Enum, CStr, Bool, Int
+from .base import register_module, ModuleBase, Filter
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int
 from scipy import ndimage
-#from PYME.IO.image import ImageStack
+
+
 import numpy as np
 import skimage.filters as skf
 import inspect

@@ -1,5 +1,6 @@
-from .base import register_module, ModuleBase, Filter, Float, Enum, CStr, Bool, Int, List#, View, Item, List#, Group
-from traits.api import DictStrStr, DictStrList, ListFloat, ListStr
+from .base import register_module, ModuleBase, Filter
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr
+
 import numpy as np
 import pandas as pd
 from PYME.IO import tabular
@@ -8,9 +9,9 @@ from PYME.LMVis import renderers
 @register_module('Mapping')
 class Mapping(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = CStr('measurements')
+    inputName = Input('measurements')
     mappings = DictStrStr()
-    outputName = CStr('mapped')
+    outputName = Output('mapped')
 
     def execute(self, namespace):
         inp = namespace[self.inputName]
@@ -27,9 +28,9 @@ class Mapping(ModuleBase):
 @register_module('Filter') #Deprecated - use FilterTable in new code / recipes
 class FilterTable(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = CStr('measurements')
+    inputName = Input('measurements')
     filters = DictStrList()
-    outputName = CStr('filtered')
+    outputName = Output('filtered')
 
     def execute(self, namespace):
         inp = namespace[self.inputName]
@@ -71,9 +72,9 @@ class FilterTable(ModuleBase):
 @register_module('ExtractTableChannel')
 class ExtractTableChannel(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = CStr('measurements')
+    inputName = Input('measurements')
     channel = CStr('everything')
-    outputName = CStr('filtered')
+    outputName = Output('filtered')
 
     def execute(self, namespace):
         inp = namespace[self.inputName]
@@ -116,9 +117,9 @@ class ExtractTableChannel(ModuleBase):
 
 @register_module('ConcatenateTables')
 class ConcatenateTables(ModuleBase):
-    inputName0 = CStr('chan0')
-    inputName1 = CStr('chan1')
-    outputName = CStr('output')
+    inputName0 = Input('chan0')
+    inputName1 = Input('chan1')
+    outputName = Output('output')
 
     def execute(self, namespace):
         inp0 = namespace[self.inputName0]
@@ -134,8 +135,8 @@ class ConcatenateTables(ModuleBase):
 @register_module('DensityMapping')
 class DensityMapping(ModuleBase):
     """ Use density estimation methods to generate an image from localizations - or more specifically a colour filter"""
-    inputLocalizations = CStr('localizations')
-    outputImage = CStr('output')
+    inputLocalizations = Input('localizations')
+    outputImage = Output('output')
     renderingModule = Enum(renderers.RENDERERS.keys())
 
     pixelSize = Float(5)
@@ -167,10 +168,10 @@ class DensityMapping(ModuleBase):
 
 @register_module('AddPipelineDerivedVars')
 class Pipelineify(ModuleBase):
-    inputFitResults = CStr('FitResults')
-    inputDriftResults = CStr('')
-    inputEvents = CStr('')
-    outputLocalizations = CStr('localizations')
+    inputFitResults = Input('FitResults')
+    inputDriftResults = Input('')
+    inputEvents = Input('')
+    outputLocalizations = Output('localizations')
 
     pixelSizeNM = Float(1)
 
@@ -204,11 +205,11 @@ class Pipelineify(ModuleBase):
         namespace[self.outputLocalizations] = mapped_ds
 
 
-@register_module('Fold')
+@register_module('Fold') #FIXME - move to multi-view specific module and potentially rename
 class Fold(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = CStr('localizations')
-    outputName = CStr('folded')
+    inputName = Input('localizations')
+    outputName = Output('folded')
 
     def execute(self, namespace):
         from PYME.Analysis.points import multiview
@@ -226,12 +227,12 @@ class Fold(ModuleBase):
         namespace[self.outputName] = mapped
 
 
-@register_module('ShiftCorrect')
+@register_module('ShiftCorrect') #FIXME - move to multi-view specific module and rename OR make consistent with existing shift correction
 class ShiftCorrect(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = CStr('folded')
-    inputShiftMap = CStr('')
-    outputName = CStr('registered')
+    inputName = Input('folded')
+    inputShiftMap = CStr('') #FIXME - change name to indicate that this is a filename/path/URL. Should probably be a File trait (or derived class which deals with clusterIO)
+    outputName = Output('registered')
 
     def execute(self, namespace):
         from PYME.Analysis.points import multiview
@@ -259,14 +260,14 @@ class ShiftCorrect(ModuleBase):
         namespace[self.outputName] = mapped
 
 
-@register_module('FindClumps')
+@register_module('FindClumps') #FIXME - move to multi-view specific module and rename OR make consistent with existing clumping
 class FindClumps(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = CStr('registered')
+    inputName = Input('registered')
     gapTolerance = Int(1, desc='Number of off-frames allowed to still be a single clump')
     radiusScale = Float(2.0)
     radius_offset_nm = Float(150., desc='[nm]')
-    outputName = CStr('clumped')
+    outputName = Output('clumped')
 
     def execute(self, namespace):
         from PYME.Analysis.points import multiview
@@ -286,11 +287,11 @@ class FindClumps(ModuleBase):
         namespace[self.outputName] = mapped
 
 
-@register_module('MergeClumps')
+@register_module('MergeClumps') #FIXME - move to multi-view specific module and rename OR make consistent with existing clumping
 class MergeClumps(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = CStr('clumped')
-    outputName = CStr('merged')
+    inputName = Input('clumped')
+    outputName = Output('merged')
 
     def execute(self, namespace):
         from PYME.Analysis.points import multiview
@@ -309,12 +310,12 @@ class MergeClumps(ModuleBase):
         namespace[self.outputName] = grouped
 
 
-@register_module('MapAstigZ')
+@register_module('MapAstigZ') #FIXME - move to multi-view specific module and rename
 class MapAstigZ(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = CStr('merged')
-    AstigmatismMapID = CStr('')
-    outputName = CStr('zmapped')
+    inputName = Input('merged')
+    AstigmatismMapID = CStr('') #FIXME - rename and possibly change type
+    outputName = Output('zmapped')
 
     def execute(self, namespace):
         from PYME.Analysis.points.astigmatism import astigTools
@@ -346,15 +347,15 @@ class MapAstigZ(ModuleBase):
         namespace[self.outputName] = mapped
 
 @register_module('IDTransientFrames')
-class IDTransientFrames(ModuleBase):
+class IDTransientFrames(ModuleBase): #FIXME - move to multi-view specific module and potentially rename (depending on whether we introduce scoping)
     """
     Adds an 'isTransient' column to the input datasource so that one can filter localizations that are from frames
     acquired during z-translation
     """
-    inputName = CStr('zmapped')
-    inputEvents = CStr('Events')
+    inputName = Input('zmapped')
+    inputEvents = Input('Events')
     framesPerStep = Float()
-    outputName = CStr('transientFiltered')
+    outputName = Output('transientFiltered')
 
     def execute(self, namespace):
         from PYME.experimental import zMotionArtifactUtils
@@ -386,13 +387,13 @@ class DBSCANClustering(ModuleBase):
         searchRadius: search radius for clustering
         minPtsForCore: number of points within SearchRadius required for a given point to be considered a core point
     """
-    inputName = CStr('filtered')
+    inputName = Input('filtered')
 
     columns = ListStr(['x', 'y', 'z'])
     searchRadius = Float()
     minClumpSize = Int()
 
-    outputName = CStr('dbscanClustered')
+    outputName = Output('dbscanClustered')
 
     def execute(self, namespace):
         from sklearn.cluster import dbscan

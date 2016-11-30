@@ -362,8 +362,14 @@ class Pipeline:
             #length matches the length of our input data source - do a simple add
             self.selectedDataSource.addColumn(name, values)
         elif val_len == len(self[self.keys()[0]]):
+
+            col_index = self.colourFilter.index
+
+            idx = np.copy(self.filter.Index)
+            idx[self.filter.Index] = col_index
+
             ds_vals = np.zeros(ds_len) + default
-            ds_vals[self.filter.Index] = np.array(values)
+            ds_vals[col_index] = np.array(values)
 
             self.selectedDataSource.addColumn(name, ds_vals)
         else:

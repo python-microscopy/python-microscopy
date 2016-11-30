@@ -18,7 +18,7 @@ def calc_harmonic_representation(pipeline, mmax=5, zscale=5.0):
     -------
 
     """
-    modes, coeffs, centre = spharm.sphere_expansion(pipeline['x'], pipeline['y'], zscale*pipeline['z'], mmax=mmax)
+    modes, coeffs, centre = spharm.sphere_expansion_clean(pipeline['x'], pipeline['y'], zscale*pipeline['z'], mmax=mmax)
 
     print modes, coeffs, centre
 
