@@ -723,24 +723,26 @@ class ClumpsInTime(ModuleBase):
         for ind in range(1, iters):  # start from 1 since t=[0,0] will yield no clumps
             # filter time
             inc = tabular.resultsFilter(inp, t=[0, self.stepSize*ind])
+            t[ind] = np.max(inc['t'])
 
             cid, counts = np.unique(inc['DBSCAN_allFrames'], return_counts=True)
 
             cmask = np.in1d(inc['DBSCAN_allFrames'], cid)
             core_samp, dbLabels = dbscan(np.vstack([inc['x'][cmask], inc['y'][cmask], inc['z'][cmask]]).T,
                                          self.searchRadius, self.minPtsPerClump)
+            clumpCount[ind] = len(np.unique(dbLabels[dbLabels > -0.5]))
 
             # Now only look at original clumps that at least contain minPts
             cid = cid[counts >= self.minPtsPerClump]
-            nclusters = np.sum(cid != 0)  # ignore unclumped in count
+            origClustersWithMinPoints[ind] = np.sum(cid != -1)  # ignore unclumped in count
+
+            # regenerate mask ignoring og clumps that don't contain minPts pts
             cmask = np.in1d(inc['DBSCAN_allFrames'], cid)
             core_samp, dbLabelsFilt = dbscan(np.vstack([inc['x'][cmask], inc['y'][cmask], inc['z'][cmask]]).T,
                                          self.searchRadius, self.minPtsPerClump)
 
-            clumpCount[ind] = len(np.unique(dbLabels[dbLabels > -0.5]))
-            origClustersWithMinPoints[ind] = nclusters
             origClusterDBSCAN[ind] = len(np.unique(dbLabelsFilt[dbLabelsFilt > -0.5]))
-            t[ind] = np.max(inc['t'])
+
 
         res = pd.DataFrame({'t': t, 'N_rawDBSCAN': clumpCount, 'N_origClustersWithMinPoints': origClustersWithMinPoints,
                             'N_origClusterDBSCAN': origClusterDBSCAN})
