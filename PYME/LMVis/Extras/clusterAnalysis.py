@@ -43,7 +43,7 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - clumps in time', self.OnClustersInTime,
                           helpText='')
-		visFr.AddMenuItem('Extras', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
+        visFr.AddMenuItem('Extras', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
 
     def OnClumpDBSCAN(self, event=None):
