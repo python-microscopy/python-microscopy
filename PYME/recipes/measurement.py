@@ -738,7 +738,7 @@ class ClumpsInTime(ModuleBase):
 
 
         core_samp, dbLabelsOrig = dbscan(np.vstack([namespace[self.inputName]['x'], namespace[self.inputName]['y'], namespace[self.inputName]['z']]).T,
-                                         self.searchRadius, self.minPtsPerClump)
+                                         self.searchRadius, self.minPtsForCore)
         inp = tabular.mappingFilter(namespace[self.inputName])
         inp.addColumn('DBSCAN_allFrames', dbLabelsOrig)
 
@@ -751,17 +751,17 @@ class ClumpsInTime(ModuleBase):
 
             cmask = np.in1d(inc['DBSCAN_allFrames'], cid)
             core_samp, dbLabels = dbscan(np.vstack([inc['x'][cmask], inc['y'][cmask], inc['z'][cmask]]).T,
-                                         self.searchRadius, self.minPtsPerClump)
+                                         self.searchRadius, self.minPtsForCore)
             clumpCount[ind] = len(np.unique(dbLabels[dbLabels > -0.5]))
 
             # Now only look at original clumps that at least contain minPts
-            cid = cid[counts >= self.minPtsPerClump]
+            cid = cid[counts >= self.minPtsForCore]
             origClustersWithMinPoints[ind] = np.sum(cid != -1)  # ignore unclumped in count
 
             # regenerate mask ignoring og clumps that don't contain minPts pts
             cmask = np.in1d(inc['DBSCAN_allFrames'], cid)
             core_samp, dbLabelsFilt = dbscan(np.vstack([inc['x'][cmask], inc['y'][cmask], inc['z'][cmask]]).T,
-                                         self.searchRadius, self.minPtsPerClump)
+                                         self.searchRadius, self.minPtsForCore)
 
             origClusterDBSCAN[ind] = len(np.unique(dbLabelsFilt[dbLabelsFilt > -0.5]))
 
