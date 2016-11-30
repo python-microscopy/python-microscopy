@@ -692,10 +692,32 @@ class AggregateMeasurements(ModuleBase):
 
 @register_module('ClumpsInTime')
 class ClumpsInTime(ModuleBase):
-    """ """
+    """
+    ClumpsInTime first runs DBSCAN on the pipeline output (which in general will contain all frames), which is refered
+    to as the original DBSCAN. Then the pipeline output is iteratively filtered on t before subsequent DBSCANs on the
+    first XX frames.
+
+    args:
+        stepSize: number of frames to add in on each iteration
+        searchRadius: search radius for clustering
+        minPtsForCore: number of points within SearchRadius required for a given point to be considered a core point
+
+    returns:
+        pandas dataframe with the following keys:
+            t: upper bound on frame number included in calculations on each iteration.
+            N_rawDBSCAN: number of unique labels returned by dbscan on each iteration.
+            N_origClustersWithMinPoints: number of original (all frames included) DBSCAN labels comprising of at least
+                minPtsForCore points. NB - this is not always the same as the number of labels (see below)!
+            N_origClusterWithMinPointsDBSCAN: number of unique labels returned by running dbscan on each iteration after
+                filtering out all original clusters that do not contain minPtsForCore number of points.
+
+    From wikipedia: "While minPts intuitively is the minimum cluster size, in some cases DBSCAN can produce smaller
+    clusters. A DBSCAN cluster consists of at least one core point. As other points may be border points to more than
+    one cluster, there is no guarantee that at least minPts points are included in every cluster."
+    """
     inputName = CStr('input')
     stepSize = Int(3000)
-    minPtsPerClump = Int(3)
+    minPtsForCore = Int(3)
     searchRadius = Float(75)
     outputName = CStr('incremented')
 
@@ -745,7 +767,7 @@ class ClumpsInTime(ModuleBase):
 
 
         res = pd.DataFrame({'t': t, 'N_rawDBSCAN': clumpCount, 'N_origClustersWithMinPoints': origClustersWithMinPoints,
-                            'N_origClusterDBSCAN': origClusterDBSCAN})
+                            'N_origClusterWithMinPointsDBSCAN': origClusterDBSCAN})
 
         # propagate metadata, if present
         try:

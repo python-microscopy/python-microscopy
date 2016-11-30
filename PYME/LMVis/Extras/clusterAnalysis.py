@@ -210,7 +210,7 @@ class ClusterAnalyser:
                                                               channel='chan0'))
 
         rec.add_module(measurement.ClumpsInTime(rec, inputName='chan0', stepSize=3000, searchRadius=75,
-                                                minPtsPerClump=3, outputName='output'))
+                                                minPtsForCore=3, outputName='output'))
 
 
         rec.namespace['input'] = self.pipeline #do before configuring so that we already have the channel names populated
@@ -225,12 +225,12 @@ class ClusterAnalyser:
                     label='Original Clusters with N > minPts', edgecolors='r', facecolors='none', marker='s')
         plt.scatter(incrementedClumps['t'], incrementedClumps['N_rawDBSCAN'], label='raw DBSCAN', edgecolors='b',
                     facecolors='b', marker='x')
-        plt.scatter(incrementedClumps['t'], incrementedClumps['N_origClusterDBSCAN'],
+        plt.scatter(incrementedClumps['t'], incrementedClumps['N_origClusterWithMinPointsDBSCAN'],
                     label='DBSCAN on points in og clusters with N> minPts', edgecolors='g', facecolors='none')
         plt.legend(loc=4, scatterpoints=1)
         plt.xlabel('Number of frames included')
         plt.ylabel('Number of Clusters')
-        plt.title('minPoints=%i, searchRadius = %.0f nm' % (rec.modules[-1].minPtsPerClump, rec.modules[-1].searchRadius))
+        plt.title('minPoints=%i, searchRadius = %.0f nm' % (rec.modules[-1].minPtsForCore, rec.modules[-1].searchRadius))
 
 
 
