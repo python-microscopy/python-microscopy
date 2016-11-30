@@ -134,7 +134,7 @@ def getIntCenter(im):
     return x, y, z
 
 
-def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1], normalize=True, centreZ = True, centreXY = True):
+def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1], normalize=True, centreZ = True, centreXY = True, x_offset=0, y_offset=0, z_offset=0):
     sx, sy, sz = PSshape
     height, width, depth = 2*array(PSshape) + 1
     kx,ky,kz = mgrid[:height,:width,:depth]#,:self.sliceShape[2]]
@@ -177,12 +177,12 @@ def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1], normalize=True,
 
     if not centreZ:
         #images will still be aligned with each other, but any shift in the channel as a whole will be maintained.
-        dzs = dzs - dzm
+        dzs = dzs - dzm - z_offset
         dzm = 0
 
     if not centreXY:
-        dxs = dxs - dxm
-        dys = dys - dym
+        dxs = dxs - dxm - x_offset
+        dys = dys - dym - y_offset
         dzm = 0
 
     for imi, dx, dy, dz in zip(imgs, list(dxs), list(dys), list(dzs)):

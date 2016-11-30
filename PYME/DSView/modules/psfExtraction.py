@@ -434,10 +434,18 @@ class psfExtractor:
 
             psfs = []
 
-            for i in range(self.image.data.shape[3]):
-                alignZ = (i > 0) and self.cbAlignZ.GetValue()
-                #always align the first channel
-                psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,i], self.PSFLocs, psfROISize, psfBlur, centreZ=alignZ)
+            #extract first channel (always aligned)
+            psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,0], self.PSFLocs, psfROISize, psfBlur, centreZ=True)
+            if self.chType.GetSelection() == 0:
+                #widefield image - do special background subtraction
+                psf = extractImages.backgroundCorrectPSFWF(psf)
+
+            alignZ = self.cbAlignZ.GetValue()
+            z_offset = offsets[2]
+
+            #extract subsequent channels, aligning if necessary, otherwise offsetting by the calculated offset for the first channel
+            for i in range(1, self.image.data.shape[3]):
+                psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,i], self.PSFLocs, psfROISize, psfBlur, centreZ=alignZ, z_offset=z_offset)
 
                 if self.chType.GetSelection() == 0:
                     #widefield image - do special background subtraction
