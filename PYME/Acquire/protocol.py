@@ -25,6 +25,8 @@ from math import floor
 import numpy as np
 from PYME.Acquire import eventLog
 
+from PYME import config
+
 from sys import maxsize as maxint
 
 #minimal protocol which does nothing
@@ -190,3 +192,28 @@ class ZStackTaskListProtocol(TaskListProtocol):
 
 NullZProtocol = ZStackTaskListProtocol([], 0, 100)
 NullZProtocol.filename = '<none>'
+
+
+def _get_protocol_dict():
+    import glob, os
+    prot_dir = (os.path.dirname(__file__)) + '/Protocols/[a-zA-Z]*.py'
+    #print prot_dir
+    protocolList = glob.glob(prot_dir)
+    protocolDict = {os.path.split(p)[-1] : p for p in protocolList}
+
+    return protocolDict
+
+def get_protocol_list():
+    protocolList = ['<None>', ] + list(_get_protocol_dict().keys())
+
+    return protocolList
+
+def get_protocol(protocol_name, reloadProtocol=True):
+    import imp
+
+    pmod = imp.load_source(protocol_name.split('.')[0], _get_protocol_dict()[protocol_name])
+
+    #if reloadProtocol:
+    #    reload(pmod)
+
+    return pmod

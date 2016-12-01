@@ -231,10 +231,11 @@ class SpoolController(object):
             self.protocol = prot.NullProtocol
             self.protocolZ = prot.NullZProtocol
         else:
-            pmod = __import__('PYME.Acquire.Protocols.' + protocolName.split('.')[0],fromlist=['PYME', 'Acquire','Protocols'])
+            #pmod = __import__('PYME.Acquire.Protocols.' + protocolName.split('.')[0],fromlist=['PYME', 'Acquire','Protocols'])
             
-            if reloadProtocol:            
-                reload(pmod) #force module to be reloaded so that changes in the protocol will be recognised
+            #if reloadProtocol:
+            #    reload(pmod) #force module to be reloaded so that changes in the protocol will be recognised
+            pmod = prot.get_protocol(protocol_name=protocolName, reloadProtocol=reloadProtocol)
 
             self.protocol = pmod.PROTOCOL
             self.protocol.filename = protocolName
