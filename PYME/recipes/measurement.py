@@ -779,8 +779,8 @@ class ClumpsInTime(ModuleBase):
             origClusterDBSCAN[ind] = len(np.unique(dbLabelsFilt[dbLabelsFilt > -0.5]))
 
 
-        res = pd.DataFrame({'t': t, 'N_rawDBSCAN': clumpCount, 'N_origClustersWithMinPoints': origClustersWithMinPoints,
-                            'N_origClusterWithMinPointsDBSCAN': origClusterDBSCAN})
+        res = tabular.resultsFilter({'t': t, 'N_rawDBSCAN': clumpCount, 'N_origClustersWithMinPoints': origClustersWithMinPoints,
+                                   'N_origClusterWithMinPointsDBSCAN': origClusterDBSCAN})
 
         # propagate metadata, if present
         try:
