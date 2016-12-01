@@ -6,7 +6,17 @@ Created on Fri May 29 16:33:47 2015
 """
 
 import wx
+import wx.gizmos
+import wx.html
+
 import numpy as np
+
+import inspect
+import locale
+
+#fudge to make things load properly under wx
+locale.setlocale(locale.LC_CTYPE, 'C')
+import docutils.core
 
 from PYME.recipes import modules
 #from PYME.recipes import runRecipe
@@ -142,6 +152,114 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         self.canvas.draw()
 
 
+class ModuleSelectionDialog(wx.Dialog):
+    def __init__(self, parent):
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, "Select a module to add", size=(1000, 500))
+
+        self.pan = wx.Panel(self)
+
+        modNames = modules.base.all_modules.keys()
+        modNames.sort()
+
+        self.rootNodes = {}
+        self.modnames = {}
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.tree_list = wx.gizmos.TreeListCtrl(self.pan, -1, size=(250, 400), style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT|wx.TR_FULL_ROW_HIGHLIGHT|
+                                                            wx.TR_LINES_AT_ROOT)
+
+        self.tree_list.AddColumn('Module name')
+        #self.tree_list.AddColumn('Description')
+        self.tree_list.SetMainColumn(0)
+        self.tree_list.SetColumnWidth(0, 250)
+        #self.tree_list.SetColumnWidth(1, 600)
+
+        root = self.tree_list.AddRoot('root')
+        self.tree_list.SetItemText(root, "root", 0)
+
+        for mn in modNames:
+            basename, modname = mn.split('.')
+            try:
+                base = self.rootNodes[basename]
+            except KeyError:
+                base = self.tree_list.AppendItem(root, basename)
+                self.tree_list.SetItemText(base, basename, 0)
+                self.rootNodes[basename] = base
+
+            item = self.tree_list.AppendItem(base, modname)
+            self.tree_list.SetPyData(item, mn)
+            self.tree_list.SetItemText(item, modname, 0)
+            #try:
+            #    doc = inspect.getdoc(modules.base.all_modules[mn]).splitlines()[0]
+            #    self.tree_list.SetItemText(item,doc, 1)
+            #except AttributeError:
+            #    pass
+
+            #self.modnames[item] = mn
+
+        self.tree_list.ExpandAll(root)
+
+        #self.tree_list.GetMainWindow().Bind(wx.EVT_LEFT_UP, self.OnSelect)
+        self.tree_list.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelect)
+
+        hsizer.Add(self.tree_list, 1, wx.EXPAND|wx.ALL, 2)
+
+        self.stModuleHelp = wx.html.HtmlWindow(self, -1, size=(400, -1))#wx.StaticText(self, -1, '', size=(400, -1))
+        hsizer.Add(self.stModuleHelp, 0, wx.EXPAND|wx.ALL, 5)
+
+        vsizer.Add(hsizer, 1, wx.EXPAND|wx.ALL, 0)
+
+        sbsizer = wx.StdDialogButtonSizer()
+
+        self.bOK = wx.Button(self.pan, wx.ID_OK, 'Add')
+        self.bOK.Enable(False)
+        #self.bOK.Bind(wx.EVT_BUTTON, self.OnOK)
+
+        sbsizer.AddButton(self.bOK)
+
+        self.bCancel = wx.Button(self.pan, wx.ID_CANCEL, 'Cancel')
+        sbsizer.AddButton(self.bCancel)
+
+        sbsizer.Realize()
+
+        vsizer.Add(sbsizer, 0, wx.EXPAND, 0)
+
+        self.pan.SetSizerAndFit(vsizer)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.pan, 1, wx.EXPAND, 0)
+        self.SetSizerAndFit(sizer)
+        self.Layout()
+
+    def OnSelect(self, evt):
+        from sphinx.util.docstrings import prepare_docstring
+
+
+        #print self.tree_list.GetSelection()
+        mn = self.tree_list.GetPyData(self.tree_list.GetSelection())
+        #print mn
+        if not mn is None:
+            self.bOK.Enable(True)
+
+            doc = modules.base.all_modules[mn].__doc__
+            if doc:
+                doc = '\n'.join(prepare_docstring(doc))
+                docHTML = docutils.core.publish_parts(doc, writer_name='html')['html_body']
+                print docHTML
+                self.stModuleHelp.SetPage(docHTML)
+            else:
+                self.stModuleHelp.SetPage('')
+            #self.stModuleHelp.SetLabelText(doc)
+            #self.stModuleHelp.Wrap(self.stModuleHelp.GetSize()[0] - 20)
+        else:
+            self.stModuleHelp.SetPage('')
+            self.bOK.Enable(False)
+
+
+    def GetSelectedModule(self):
+        return self.tree_list.GetPyData(self.tree_list.GetSelection())
 
 
 class RecipeView(wx.Panel):
@@ -212,17 +330,21 @@ class RecipeView(wx.Panel):
     def OnAddModule(self, event):
         #mods = 
         mods = modules.base.all_modules
-        modNames = mods.keys()
-        modNames.sort()        
-        
-        dlg = wx.SingleChoiceDialog(
-                self, 'Select module to add', 'Add a module',
-                modNames, 
-                wx.CHOICEDLG_STYLE
-                )
+        #modNames = mods.keys()
+        #modNames.sort()
+        #
+        # dlg = wx.SingleChoiceDialog(
+        #         self, 'Select module to add', 'Add a module',
+        #         modNames,
+        #         wx.CHOICEDLG_STYLE
+        #         )
+        #
+        # if dlg.ShowModal() == wx.ID_OK:
+        #     modName = dlg.GetStringSelection()
 
+        dlg = ModuleSelectionDialog(self)
         if dlg.ShowModal() == wx.ID_OK:
-            modName = dlg.GetStringSelection()
+            modName = dlg.GetSelectedModule()
             
             c = mods[modName](self.recipes.activeRecipe)
             self.recipes.activeRecipe.modules.append(c)
