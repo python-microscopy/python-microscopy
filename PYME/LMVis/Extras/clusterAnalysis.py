@@ -260,10 +260,14 @@ class ClusterAnalyser:
         plt.figure()
         plt.scatter(incrementedClumps['t'], incrementedClumps['N_origClustersWithMinPoints'],
                     label='Original Clusters with N > minPts', edgecolors='r', facecolors='none', marker='s')
-        plt.scatter(incrementedClumps['t'], incrementedClumps['N_rawDBSCAN'], label='raw DBSCAN', edgecolors='b',
+        plt.scatter(incrementedClumps['t'], incrementedClumps['N_rawDBSCAN'], label='raw DBSCAN on all points within time filter', edgecolors='b',
                     facecolors='b', marker='x')
+        plt.scatter(incrementedClumps['t'], incrementedClumps['N_origClusterDBSCAN'], label='DBSCAN on points originally clustered', edgecolors='b',
+                    facecolors='k', marker='*')
         plt.scatter(incrementedClumps['t'], incrementedClumps['N_origClusterWithMinPointsDBSCAN'],
                     label='DBSCAN on points in og clusters with N> minPts', edgecolors='g', facecolors='none')
+        plt.scatter(incrementedClumps['t'], incrementedClumps['N_densityScaledMinPtsDBSCAN'],
+                    label='raw DBSCAN, scaling minPts based on density', edgecolors='m', facecolors='none')
         plt.legend(loc=4, scatterpoints=1)
         plt.xlabel('Number of frames included')
         plt.ylabel('Number of Clusters')

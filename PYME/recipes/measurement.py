@@ -740,14 +740,23 @@ class ClumpsInTime(ModuleBase):
 
         iters = (int(np.max(namespace[self.inputName]['t']))/int(self.stepSize)) + 2
 
+        # DBSCAN counts
         clumpCount = np.empty(iters)
         clumpCount[0] = 0
-        t = np.empty_like(clumpCount)
-        t[0] = 0
-        origClustersWithMinPoints = np.empty_like(clumpCount)
-        origClustersWithMinPoints[0] = 0
         origClusterDBSCAN = np.empty_like(clumpCount)
         origClusterDBSCAN[0] = 0
+        scaledDensDBSCAN = np.empty_like(clumpCount)
+        scaledDensDBSCAN[0] = 0
+        origClusterWithMinPointsDBSCAN = np.empty_like(clumpCount)
+        origClusterWithMinPointsDBSCAN[0] = 0
+
+        # other counts
+        minPtsDensityScaled = np.empty_like(clumpCount)
+        minPtsDensityScaled[0] = 0
+        origClustersWithMinPoints = np.empty_like(clumpCount)
+        origClustersWithMinPoints[0] = 0
+        t = np.empty_like(clumpCount)
+        t[0] = 0
 
 
         core_samp, dbLabelsOrig = dbscan(np.vstack([namespace[self.inputName]['x'], namespace[self.inputName]['y'], namespace[self.inputName]['z']]).T,
@@ -760,27 +769,46 @@ class ClumpsInTime(ModuleBase):
             inc = tabular.resultsFilter(inp, t=[0, self.stepSize*ind])
             t[ind] = np.max(inc['t'])
 
-            cid, counts = np.unique(inc['DBSCAN_allFrames'], return_counts=True)
-
-            cmask = np.in1d(inc['DBSCAN_allFrames'], cid)
-            core_samp, dbLabels = dbscan(np.vstack([inc['x'][cmask], inc['y'][cmask], inc['z'][cmask]]).T,
+            # ----------------------------------------------------------------------------------------------------------
+            # run raw DBSCAN on available labels
+            core_samp, dbLabels = dbscan(np.vstack([inc['x'], inc['y'], inc['z']]).T,
                                          self.searchRadius, self.minPtsForCore)
             clumpCount[ind] = len(np.unique(dbLabels[dbLabels > -0.5]))
 
-            # Now only look at original clumps that at least contain minPts
+            # ----------------------------------------------------------------------------------------------------------
+            # scale minPts based on number of localizations, assume volume stays constant
+            scaledMinPts = int(np.max([round(self.minPtsForCore*float(len(inc['x']))/len(namespace[self.inputName]['x'])), 1]))
+            minPtsDensityScaled[ind] = scaledMinPts
+
+            core_samp, dbLabelsScaled = dbscan(np.vstack([inc['x'], inc['y'], inc['z']]).T,
+                                         self.searchRadius, scaledMinPts)
+            scaledDensDBSCAN[ind] = len(np.unique(dbLabelsScaled[dbLabelsScaled > -0.5]))
+
+            # ----------------------------------------------------------------------------------------------------------
+            # run DBSCAN on original cluster labels
+            cid, counts = np.unique(inc['DBSCAN_allFrames'], return_counts=True)
+            cmask = np.in1d(inc['DBSCAN_allFrames'], cid)
+            core_samp, dbLabelsOrigClusters = dbscan(np.vstack([inc['x'][cmask], inc['y'][cmask], inc['z'][cmask]]).T,
+                                         self.searchRadius, self.minPtsForCore)
+            origClusterDBSCAN[ind] = len(np.unique(dbLabelsOrigClusters[dbLabelsOrigClusters > -0.5]))
+            # ----------------------------------------------------------------------------------------------------------
+            # Now count original clumps that contain at least contain minPts, and DBSCAN them
             cid = cid[counts >= self.minPtsForCore]
             origClustersWithMinPoints[ind] = np.sum(cid != -1)  # ignore unclumped in count
-
             # regenerate mask ignoring og clumps that don't contain minPts pts
             cmask = np.in1d(inc['DBSCAN_allFrames'], cid)
             core_samp, dbLabelsFilt = dbscan(np.vstack([inc['x'][cmask], inc['y'][cmask], inc['z'][cmask]]).T,
                                          self.searchRadius, self.minPtsForCore)
 
-            origClusterDBSCAN[ind] = len(np.unique(dbLabelsFilt[dbLabelsFilt > -0.5]))
+            origClusterWithMinPointsDBSCAN[ind] = len(np.unique(dbLabelsFilt[dbLabelsFilt > -0.5]))
 
-
-        res = tabular.resultsFilter({'t': t, 'N_rawDBSCAN': clumpCount, 'N_origClustersWithMinPoints': origClustersWithMinPoints,
-                                   'N_origClusterWithMinPointsDBSCAN': origClusterDBSCAN})
+        res = tabular.resultsFilter({'N_rawDBSCAN': clumpCount,
+                                     'N_origClusterDBSCAN': origClusterDBSCAN,
+                                     'N_origClusterWithMinPointsDBSCAN': origClusterWithMinPointsDBSCAN,
+                                     'N_densityScaledMinPtsDBSCAN': scaledDensDBSCAN,
+                                     'minPts_densityScaled': minPtsDensityScaled,
+                                     't': t,
+                                     'N_origClustersWithMinPoints': origClustersWithMinPoints})
 
         # propagate metadata, if present
         try:
