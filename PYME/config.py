@@ -15,9 +15,58 @@ Within each configuration directory there can be a ``config.yaml`` file which st
 pairs. These are accessed using the :func:`get` function.
 
 The directories may also contain a ``plugins`` folder, which in turn can contain subfolders for ``visgui``, ``dsviewer``,
-and ``recipes``.  TODO - add support for protocols and startup scripts.
+and ``recipes``.  PYME will also detect custom acquisition protocols saved in the ``.PYME/protocols`` directory. the
+overall template for a configuration directory is as follows: ::
 
-In addition, a few legacy environment variables are recognized.
+    .PYME
+      |- config.yaml
+      |- plugins
+      |     |- visgui
+      |     |     |- somemodule.txt
+      |     |     |- anothermodule.txt
+      |     |
+      |     |- dsviewer
+      |     |     |- somemodule.txt
+      |     |
+      |     |- recipes
+      |           |- anothermodule.txt
+      |
+      |- protocols
+            |- a_protocol.py
+            |- another_protocol.py
+
+
+Examples
+========
+
+config.yaml
+-----------
+
+The config.yaml file is essentially nothing more than a set of keys and values separated by colons. List and dictionary
+parameter values are supported using standard yaml notation.
+
+.. code-block:: yaml
+
+    dataserver-root: "/Users/david/srvtest/test1"
+    h5f-flush_interval: 1
+
+
+plugins/visgui/PYME.txt
+-----------------------
+If we were to use the plugin architecture to register some of the native plugins (rather than using explicit knowledge
+of their locations), the registration file would look something like this. Each line is a fully qualified module import
+path.
+
+::
+
+    PYME.LMVis.Extras.photophysics
+    PYME.LMVis.Extras.particleTracking
+
+In addition to the configuration derived from config.yaml, a few legacy environment variables are recognized. Subpackages
+are also permitted to save configuration files in the ``.PYME`` directory.
+
+Functions
+=========
 """
 import yaml
 import os
@@ -72,6 +121,22 @@ for fn in [dist_config_file, site_config_file, user_config_file]:
 
 
 def get(key, default=None):
+    """
+    Gets a configuration parameter, by name
+
+    Parameters
+    ----------
+    key : basestring
+        The parameter name
+    default : unspecified, optional
+        The default value you want to assume if the parameter is undefined.
+
+    Returns
+    -------
+
+    The parameter value, or the default value if undefined.
+
+    """
     return config.get(key, default)
 
 
@@ -115,6 +180,15 @@ def get_plugins(application):
 
 
 def get_custom_protocols():
+    """
+    Get a dictionary recording the locations of any custom protocols.
+
+    Returns
+    -------
+
+    A dictionary of {basename : full path} for any protocols found.
+
+    """
     import glob
     prots = {}
     for config_dir in [dist_config_directory, site_config_directory, user_config_dir]:
