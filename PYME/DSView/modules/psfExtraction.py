@@ -436,6 +436,7 @@ class psfExtractor:
 
             #extract first channel (always aligned)
             psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,0], self.PSFLocs, psfROISize, psfBlur, centreZ=True)
+            psfs.append(psf)
             if self.chType.GetSelection() == 0:
                 #widefield image - do special background subtraction
                 psf = extractImages.backgroundCorrectPSFWF(psf)
