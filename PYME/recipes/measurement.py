@@ -582,21 +582,7 @@ class Measure2D(ModuleBase):
             
         return rp, ct
 
-@register_module('SelectMeasurementColumns')         
-class SelectMeasurementColumns(ModuleBase):
-    """Take just certain columns of a variable"""
-    inputMeasurements = Input('measurements')
-    keys = CStr('')
-    outputName = Output('selectedMeasurements')
-    
-    def execute(self, namespace):       
-        meas = namespace[self.inputMeasurements]
-        out = pd.DataFrame({k:meas[k] for k in self.keys.split()})
-        if 'mdh' in dir(meas):
-            #propagate metadata
-            out.mdh = meas.mdh
-            
-        namespace[self.outputName] = out
+
         
 @register_module('Plot')         
 class Plot(ModuleBase):
@@ -639,7 +625,12 @@ class Plot(ModuleBase):
 
 @register_module('AddMetadataToMeasurements')         
 class AddMetadataToMeasurements(ModuleBase):
-    """Adds metadata entries as extra column(s) to the output"""
+    """Adds metadata entries as extra column(s) to the output
+
+    This was written to allow key parameters or experimental variables to be tracked prior to aggregating / concatenating
+    measurements from multiple different images. By adding, e.g. the sample labelling, or a particular experimental
+    parameter to an output table as an extra column we can then aggregate and group that data in processing.
+    """
     inputMeasurements = Input('measurements')
     inputImage = Input('input')
     keys = CStr('SampleNotes')
@@ -669,37 +660,6 @@ class AddMetadataToMeasurements(ModuleBase):
         namespace[self.outputName] = res
 
 
-@register_module('AggregateMeasurements')         
-class AggregateMeasurements(ModuleBase):
-    """Create a new composite measurement containing the results of multiple
-    previous measurements"""
-    inputMeasurements1 = Input('meas1')
-    suffix1 = CStr('')
-    inputMeasurements2 = Input('')
-    suffix2 = CStr('')
-    inputMeasurements3 = Input('')
-    suffix3 = CStr('')
-    inputMeasurements4 = Input('')
-    suffix4 = CStr('')
-    outputName = Output('aggregatedMeasurements')
-    
-    def execute(self, namespace):
-        res = {}
-        for mk, suffix in [(getattr(self, n), getattr(self, 'suffix' + n[-1])) for n in dir(self) if n.startswith('inputMeas')]:
-            if not mk == '':
-                meas = namespace[mk]
-                
-                #res.update(meas)
-                for k in meas.keys():
-                    res[k + suffix] = meas[k]
-                
-        
-        meas1 = namespace[self.inputMeasurements1]
-        #res = pd.DataFrame(res)
-        res = tabular.cloneSource(res)
-        if 'mdh' in dir(meas1):
-            res.mdh = meas1.mdh
-            
-        namespace[self.outputName] = res
+
         
 
