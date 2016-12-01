@@ -440,6 +440,7 @@ class psfExtractor:
                 #widefield image - do special background subtraction
                 psf = extractImages.backgroundCorrectPSFWF(psf)
 
+            psfs.append(psf)
             alignZ = self.cbAlignZ.GetValue()
             z_offset = offsets[2]
 
