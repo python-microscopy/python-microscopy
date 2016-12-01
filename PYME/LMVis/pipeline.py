@@ -369,7 +369,7 @@ class Pipeline:
             idx[self.filter.Index] = col_index
 
             ds_vals = np.zeros(ds_len) + default
-            ds_vals[col_index] = np.array(values)
+            ds_vals[idx] = np.array(values)
 
             self.selectedDataSource.addColumn(name, ds_vals)
         else:

@@ -245,9 +245,9 @@ class ModuleSelectionDialog(wx.Dialog):
 
             doc = modules.base.all_modules[mn].__doc__
             if doc:
-                doc = '\n'.join(prepare_docstring(doc))
-                docHTML = docutils.core.publish_parts(doc, writer_name='html')['html_body']
-                print docHTML
+                doc = [mn, '#'*len(mn), ''] + prepare_docstring(doc)
+                docHTML = docutils.core.publish_parts('\n'.join(doc), writer_name='html')['html_body']
+                #print docHTML
                 self.stModuleHelp.SetPage(docHTML)
             else:
                 self.stModuleHelp.SetPage('')
