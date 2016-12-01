@@ -383,9 +383,18 @@ class IDTransientFrames(ModuleBase): #FIXME - move to multi-view specific module
 class DBSCANClustering(ModuleBase):
     """
     Performs DBSCAN clustering on input dictionary
-    Args:
+
+    Parameters
+    ----------
+
         searchRadius: search radius for clustering
         minPtsForCore: number of points within SearchRadius required for a given point to be considered a core point
+
+    Notes
+    -----
+
+    See :func:`sklearn.cluster.dbscan` for more details about the underlying algorithm and parameter meanings.
+
     """
     inputName = Input('filtered')
 

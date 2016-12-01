@@ -23,12 +23,18 @@ from PYME.IO.image import ImageStack
 import numpy as np
 
 all_modules = {}
+_legacy_modules = {}
 module_names = {}
 
 def register_module(moduleName):
     def c_decorate(cls):
-        all_modules[moduleName] = cls
-        module_names[cls] = moduleName
+        py_module = cls.__module__.split('.')[-1]
+        full_module_name = '.'.join([py_module, moduleName])
+
+        all_modules[full_module_name] = cls
+        _legacy_modules[moduleName] = cls #allow acces by non-hierarchical names for backwards compatibility
+
+        module_names[cls] = full_module_name
         return cls
         
     return c_decorate
@@ -309,7 +315,13 @@ class ModuleCollection(HasTraits):
         
         for mdd in l:
             mn, md = mdd.items()[0]
-            mod = all_modules[mn](c)
+            try:
+                mod = all_modules[mn](c)
+            except KeyError:
+                # still support loading old recipes which do not use hierarchical names
+                # also try and support modules which might have moved
+                mod = _legacy_modules[mn.split('.')[-1]](c)
+
             mod.set(**md)
             mc.append(mod)
             

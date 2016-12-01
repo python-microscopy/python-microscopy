@@ -120,7 +120,7 @@ def getIntCenter(im):
     Z = Z.astype('f')
 
     im2 = im - im.min()
-    im2 = im2 - 0.1*im2.max()
+    im2 = im2 - 0.5*im2.max()
     im2 = im2*(im2 > 0)
 
     ims = im2.sum()
