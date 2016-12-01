@@ -1,4 +1,4 @@
-.. _installation_anaconda_gui:
+.. _installationanacondagui:
 
 Completely graphical installation of PYME on OSX
 ################################################
@@ -22,7 +22,7 @@ PYME will only work with the Python 2.7 version.*
 STEP 2: Installing PYME using Anaconda-navigator
 ================================================
 
-NB: Those who are not afraid of the console would probably be better served by following the instructions in :ref:`installation_anaconda`.
+NB: Those who are not afraid of the console would probably be better served by following the instructions in :ref:`installationanaconda`.
 These instructions are for those who want a completely graphical method of installation.
 At present these instructions only work on OSX (windows to follow soon).
 

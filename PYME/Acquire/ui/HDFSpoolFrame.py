@@ -342,9 +342,8 @@ class PanSpool(wx.Panel):
         """Set the current protocol (GUI callback).
         
         See also: PYME.Acquire.Protocols."""
-        protocolList = glob.glob(PYME.Acquire.Protocols.__path__[0] + '/[a-zA-Z]*.py')
-        protocolList = ['<None>',] + [os.path.split(p)[-1] for p in protocolList]
-        pDlg = wx.SingleChoiceDialog(self, '', 'Select Protocol', protocolList)
+        from PYME.Acquire import protocol
+        pDlg = wx.SingleChoiceDialog(self, '', 'Select Protocol', protocol.get_protocol_list())
 
         if pDlg.ShowModal() == wx.ID_OK:
             pname = pDlg.GetStringSelection()

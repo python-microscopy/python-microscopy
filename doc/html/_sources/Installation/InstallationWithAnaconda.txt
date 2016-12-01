@@ -1,4 +1,4 @@
-.. _installation_anaconda:
+.. _installationanaconda:
 
 Installation of PYME on 64 bit Windows, OSX, or Linux
 #####################################################
@@ -9,15 +9,24 @@ by far the easiest way to get a system up and running is to install a pre-packag
 'scientfic python' distribution. `Anaconda <https://store.continuum.io/cshop/anaconda/>`_ 
 is one such distribution which is free for both academic and commercial use and includes 
 extensive package management capabilities which allow us to easily distribute and update 
-PYME on a variety of platforms. We currently provide compiled packages for 64 bit windows, OSX, and Linux. 
+PYME on a variety of platforms. We currently provide compiled packages for 64 bit windows, OSX, and Linux.
+
+.. note::
+
+    This is the recommended way of installing PYME in most circumstances. If you absolutely don't want to deal with the
+    command line there is also a :ref:`completely graphical way of doing the installation <installationanacondagui>`. If
+    you are looking to actively develop PYME or want to use it to control microscope hardware, see :ref:`installationFromSource`.
 
 STEP 1: Installing Anaconda
 ===========================
 
-Download and install `Anaconda <https://store.continuum.io/cshop/anaconda/>`_ from 
-https://store.continuum.io/cshop/anaconda/. Choose the 64 bit version of Python 2.7
-for your prefered platform. *NB: Anaconda is available in both Python 2.7 and Python 3.x flavours.
-PYME will only work with the Python 2.7 version.*
+Download and install `Anaconda <https://store.continuum.io/cshop/anaconda/>`_ from
+https://store.continuum.io/cshop/anaconda/. Choose the **64 bit** version of **Python 2.7**
+for your prefered platform.
+
+.. warning::
+
+    Anaconda is available in both Python 2.7 and Python 3.x flavours. PYME will **only** work with the Python 2.7 version.
 
 STEP 2: Installing PYME using conda
 ===========================================
