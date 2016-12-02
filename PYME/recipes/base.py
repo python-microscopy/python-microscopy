@@ -39,6 +39,21 @@ def register_module(moduleName):
         
     return c_decorate
 
+
+def register_legacy_module(moduleName):
+    """Permits a module to be accessed by an old name"""
+    def c_decorate(cls):
+        py_module = cls.__module__.split('.')[-1]
+        full_module_name = '.'.join([py_module, moduleName])
+
+        _legacy_modules[full_module_name] = cls
+        _legacy_modules[moduleName] = cls #allow access by non-hierarchical names for backwards compatibility
+
+        #module_names[cls] = full_module_name
+        return cls
+
+    return c_decorate
+
 class ModuleBase(HasTraits):
     def __init__(self, parent=None, **kwargs):
         self._parent = parent
@@ -425,7 +440,7 @@ class Filter(ModuleBase):
 
     
 class ArithmaticFilter(ModuleBase):
-    """Module with one image input and one image output"""
+    """Module with two image inputs and one image output"""
     inputName0 = Input('input')
     inputName1 = Input('input')
     outputName = Output('filtered_image')
@@ -465,7 +480,7 @@ class ArithmaticFilter(ModuleBase):
 
 @register_module('ExtractChannel')    
 class ExtractChannel(ModuleBase):
-    """extract one channel from an image"""
+    """Extract one channel from an image"""
     inputName = Input('input')
     outputName = Output('filtered_image')
     
@@ -485,7 +500,7 @@ class ExtractChannel(ModuleBase):
         
 @register_module('JoinChannels')    
 class JoinChannels(ModuleBase):
-    """extract one channel from an image"""
+    """Join multiple channels to form a composite image"""
     inputChan0 = Input('input0')
     inputChan1 = Input('')
     inputChan2 = Input('')
@@ -527,7 +542,7 @@ class Add(ArithmaticFilter):
         
 @register_module('Subtract')    
 class Subtract(ArithmaticFilter):
-    """Add two images"""
+    """Subtract two images"""
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
         
@@ -535,7 +550,7 @@ class Subtract(ArithmaticFilter):
         
 @register_module('Multiply')    
 class Multiply(ArithmaticFilter):
-    """Add two images"""
+    """Multiply two images"""
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
         
@@ -543,7 +558,7 @@ class Multiply(ArithmaticFilter):
     
 @register_module('Divide')    
 class Divide(ArithmaticFilter):
-    """Add two images"""
+    """Divide two images"""
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
         
@@ -551,7 +566,7 @@ class Divide(ArithmaticFilter):
         
 @register_module('Scale')    
 class Scale(Filter):
-    """Add two images"""
+    """Scale an image intensities by a constant"""
     
     scale = Float(1)
     
@@ -584,7 +599,11 @@ class NormalizeMean(Filter):
         
 @register_module('Invert')    
 class Invert(Filter):
-    """Invert image"""
+    """Invert image
+
+    This is implemented as :math:`B = (1-A)`. As such the results only really make sense for binary images / masks and
+    for images which have been normalized such that the maximum value is 1.
+    """
     
     #scale = Float(1)
     
@@ -594,7 +613,13 @@ class Invert(Filter):
         
 @register_module('BinaryOr')    
 class BinaryOr(ArithmaticFilter):
-    """Add two images"""
+    """Perform a bitwise OR on images
+
+    Notes
+    -----
+
+    This is actually implemented as :math:`(A + B) > .5`
+    """
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
         

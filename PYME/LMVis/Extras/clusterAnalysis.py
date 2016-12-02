@@ -56,9 +56,9 @@ class ClusterAnalyser:
             min_points: number of points within eps required for a given point to be considered a core point
 
         """
-        from PYME.recipes import tablefilters
+        from PYME.recipes import localisations
 
-        clumper = tablefilters.DBSCANClustering()
+        clumper = localisations.DBSCANClustering()
         if clumper.configure_traits(kind='modal'):
             namespace = {clumper.inputName: self.pipeline}
             clumper.execute(namespace)
@@ -119,7 +119,7 @@ class ClusterAnalyser:
         after having removed noisy points, DBSCAN is run again on both channels combined, and the fraction of clumps
         containing both colors is determined.
         """
-        from PYME.recipes import tablefilters
+        from PYME.recipes import tablefilters, localisations
         from PYME.recipes.base import ModuleCollection
         import wx
 
@@ -141,13 +141,13 @@ class ClusterAnalyser:
         #build a recipe programatically
         rec = ModuleCollection()
         #split input according to colour channels
-        rec.add_module(tablefilters.ExtractTableChannel(rec, inputName='input', outputName='chan0', channel=chans[0]))
-        rec.add_module(tablefilters.ExtractTableChannel(rec,inputName='input', outputName='chan1', channel=chans[1]))
+        rec.add_module(localisations.ExtractTableChannel(rec, inputName='input', outputName='chan0', channel=chans[0]))
+        rec.add_module(localisations.ExtractTableChannel(rec,inputName='input', outputName='chan1', channel=chans[1]))
 
         #clump each channel
-        rec.add_module(tablefilters.DBSCANClustering(rec,inputName='chan0', outputName='chan0_clumped',
+        rec.add_module(localisations.DBSCANClustering(rec,inputName='chan0', outputName='chan0_clumped',
                                                          searchRadius=searchRadius, minClumpSize=minClumpSize))
-        rec.add_module(tablefilters.DBSCANClustering(rec,inputName='chan1', outputName='chan1_clumped',
+        rec.add_module(localisations.DBSCANClustering(rec,inputName='chan1', outputName='chan1_clumped',
                                                          searchRadius=searchRadius, minClumpSize=minClumpSize))
 
         #filter unclumped points
@@ -161,7 +161,7 @@ class ClusterAnalyser:
                                                       outputName='joined'))
 
         #clump on cleaded and rejoined data
-        rec.add_module(tablefilters.DBSCANClustering(rec,inputName='joined', outputName='output',
+        rec.add_module(localisations.DBSCANClustering(rec,inputName='joined', outputName='output',
                                                      searchRadius=searchRadius, minClumpSize=minClumpSize))
 
 
@@ -201,7 +201,7 @@ class ClusterAnalyser:
         self._rec = rec
 
     def OnPairwiseDistanceHistogram(self, event=None):
-        from PYME.recipes import tablefilters, measurement
+        from PYME.recipes import tablefilters, localisations, measurement
         from PYME.recipes.base import ModuleCollection
         import matplotlib.pyplot as plt
 
@@ -209,9 +209,9 @@ class ClusterAnalyser:
         distogram = ModuleCollection()
 
         # split input according to colour channels selected
-        distogram.add_module(tablefilters.ExtractTableChannel(distogram, inputName='input', outputName='chan0',
+        distogram.add_module(localisations.ExtractTableChannel(distogram, inputName='input', outputName='chan0',
                                                               channel='chan0'))
-        distogram.add_module(tablefilters.ExtractTableChannel(distogram, inputName='input', outputName='chan1',
+        distogram.add_module(localisations.ExtractTableChannel(distogram, inputName='input', outputName='chan1',
                                                               channel='chan0'))
 
         # Histogram
