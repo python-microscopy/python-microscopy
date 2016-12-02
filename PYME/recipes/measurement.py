@@ -658,5 +658,8 @@ class AddMetadataToMeasurements(ModuleBase):
         res.mdh = img.mdh
         
         namespace[self.outputName] = res
-        
+
+
+
+
 
