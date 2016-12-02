@@ -41,7 +41,7 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
                           helpText='')
-        visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - clumps in time', self.OnClustersInTime,
+        visFr.AddMenuItem('Extras', 'Cluster count vs. imaging time', self.OnClustersInTime,
                           helpText='')
         visFr.AddMenuItem('Extras', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
