@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.interpolate import UnivariateSpline #as we only use this function, interpolate it directly
 
+from . import astiglookup
+
 
 def lookup_astig_z(fres, astig_calibrations, plot=False):
     """
@@ -84,23 +86,49 @@ def lookup_astig_z(fres, astig_calibrations, plot=False):
             plt.plot(astig_cal['z'], astig_cal['sigmay'], ':', c=col)
             plt.plot(zVal, interp_sigy, c=col)
 
+    # _lenz_chunked = np.floor(len(zVal)) - 1
+    # sigCalX_chunked = np.ascontiguousarray(sigCalX[:,::100])
+    # sigCalY_chunked = np.ascontiguousarray(sigCalY[:,::100])
+    #
+    # for i in range(numMolecules):
+    #     #TODO - can we avoid this loop?
+    #     wX = wXs[:, i]
+    #     wY = wYs[:, i]
+    #     sx = sxs[:, i]
+    #     sy = sys[:, i]
+    #
+    #     wSum = (wX + wY).sum()
+    #
+    #     #estimate the position in two steps - coarse then fine
+    #
+    #     #coarse step:
+    #     errX = (wX[:,None] * (sx[:, None] - sigCalX_chunked)**2).sum(0)
+    #     errY = (wY[:, None] * (sy[:, None] - sigCalY_chunked)**2).sum(0)
+    #
+    #     err = (errX + errY) / wSum
+    #     loc_coarse = min(max(np.argmin(err), 1), _lenz_chunked)
+    #
+    #     fine_s =  100*(loc_coarse - 1)
+    #     fine_end = 100*(loc_coarse + 1)
+    #
+    #     #print loc_coarse, fine_s, fine_end, sigCalX.shape
+    #
+    #     #fine step
+    #     errX = (wX[:, None] * (sx[:, None] - sigCalX[:,fine_s:fine_end]) ** 2).sum(0)
+    #     errY = (wY[:, None] * (sy[:, None] - sigCalY[:,fine_s:fine_end]) ** 2).sum(0)
+    #
+    #     err = (errX + errY) / wSum
+    #     minLoc = np.argmin(err)
+    #
+    #     z[i] = -zVal[fine_s + minLoc]
+    #     zerr[i] = np.sqrt(err[minLoc])
 
-    for i in range(numMolecules):
-        #TODO - can we avoid this loop?
-        wX = wXs[:, i]
-        wY = wYs[:, i]
-        sx = sxs[:, i]
-        sy = sys[:, i]
+    zi, ze = astiglookup.astig_lookup(sigCalX.T.astype('f'), sigCalY.T.astype('f'), sxs.T.astype('f'), sys.T.astype('f'), wXs.T.astype('f'), wYs.T.astype('f'))
 
-        wSum = (wX + wY).sum()
+    print 'used c lookup'
 
-        errX = (wX[:,None] * (sx[:, None] - sigCalX)**2).sum(0)
-        errY = (wY[:, None] * (sy[:, None] - sigCalY)**2).sum(0)
-
-        err = (errX + errY) / wSum
-        minLoc = np.argmin(err)
-        z[i] = -zVal[minLoc]
-        zerr[i] = np.sqrt(err[minLoc])
+    z = -zVal[zi]
+    zerr = np.sqrt(ze)
 
 
     #print('%i localizations did not have sigmas in acceptable range/planes (out of %i)' % (failures, numMolecules))

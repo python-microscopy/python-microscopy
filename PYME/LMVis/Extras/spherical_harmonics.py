@@ -18,11 +18,13 @@ def calc_harmonic_representation(pipeline, mmax=5, zscale=5.0):
     -------
 
     """
+    from mayavi import mlab
     modes, coeffs, centre = spharm.sphere_expansion_clean(pipeline['x'], pipeline['y'], zscale*pipeline['z'], mmax=mmax)
 
     print modes, coeffs, centre
 
     spharm.visualize_reconstruction(modes, coeffs, zscale=1./zscale)
+    mlab.points3d(pipeline['x'] - centre[0], pipeline['y'] - centre[1], pipeline['z'] - centre[2]/zscale, mode='point')
 
 
 def Plug(visFr):
