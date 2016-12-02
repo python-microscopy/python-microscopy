@@ -41,6 +41,8 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
                           helpText='')
+        visFr.AddMenuItem('Extras', 'Cluster count vs. imaging time', self.OnClustersInTime,
+                          helpText='')
         visFr.AddMenuItem('Extras', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
 
@@ -229,6 +231,41 @@ class ClusterAnalyser:
 
         plt.figure()
         plt.bar(self.pairwiseDistances[selectedChans]['bins'], self.pairwiseDistances[selectedChans]['counts'])
+
+
+
+    def OnClustersInTime(self, event=None):
+        from PYME.recipes import localisations
+        from PYME.recipes.base import ModuleCollection
+        import matplotlib.pyplot as plt
+
+        # build a recipe programatically
+        rec = ModuleCollection()
+
+        # split input according to colour channel selected
+        rec.add_module(localisations.ExtractTableChannel(rec, inputName='input', outputName='chan0',
+                                                              channel='chan0'))
+
+        rec.add_module(localisations.ClusterCountVsImagingTime(rec, inputName='chan0', stepSize=3000, outputName='output'))
+
+
+        rec.namespace['input'] = self.pipeline #do before configuring so that we already have the channel names populated
+        #configure parameters
+        if not rec.configure_traits(view=rec.pipeline_view, kind='modal'):
+            return #handle cancel
+
+        incrementedClumps = rec.execute()
+
+        plt.figure()
+        plt.scatter(incrementedClumps['t'], incrementedClumps['N_labelsWithLowMinPoints'],
+                    label=('clusters with Npoints > %i' % rec.modules[-1].lowerMinPtsPerCluster), c='b', marker='s')
+        plt.scatter(incrementedClumps['t'], incrementedClumps['N_labelsWithHighMinPoints'],
+                    label=('clusters with Npoints > %i' % rec.modules[-1].higherMinPtsPerCluster), c='g', marker='o')
+
+        plt.legend(loc=4, scatterpoints=1)
+        plt.xlabel('Number of frames included')
+        plt.ylabel('Number of Clusters')
+        #plt.title('minPoints=%i, searchRadius = %.0f nm' % (, rec.modules[-1].higherMinPtsPerCluster))
 
 
 
