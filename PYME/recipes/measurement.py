@@ -729,86 +729,52 @@ class ClumpsInTime(ModuleBase):
     one cluster, there is no guarantee that at least minPts points are included in every cluster."
     """
     inputName = Input('input')
+
+    labelsKey = CStr('dbscanClumpID')
+    lowerMinPtsPerCluster = Int(3)
+    higherMinPtsPerCluster = Int(6)
     stepSize = Int(3000)
-    minPtsForCore = Int(3)
-    searchRadius = Float(75)
+
     outputName = Output('incremented')
 
     def execute(self, namespace):
         from PYME.IO import tabular
-        from sklearn.cluster import dbscan
+
+        if self.lowerMinPtsPerCluster > self.higherMinPtsPerCluster:
+            print('Swapping low and high MinPtsPerCluster - input was reversed')
+            temp = self.lowerMinPtsPerCluster
+            self.lowerMinPtsPerCluster = self.higherMinPtsPerCluster
+            self.higherMinPtsPerCluster = temp
 
         iters = (int(np.max(namespace[self.inputName]['t']))/int(self.stepSize)) + 2
 
-        # DBSCAN counts
-        clumpCount = np.empty(iters)
-        clumpCount[0] = 0
-        origClusterDBSCAN = np.empty_like(clumpCount)
-        origClusterDBSCAN[0] = 0
-        scaledDensDBSCAN = np.empty_like(clumpCount)
-        scaledDensDBSCAN[0] = 0
-        origClusterWithMinPointsDBSCAN = np.empty_like(clumpCount)
-        origClusterWithMinPointsDBSCAN[0] = 0
-
         # other counts
-        minPtsDensityScaled = np.empty_like(clumpCount)
-        minPtsDensityScaled[0] = 0
-        origClustersWithMinPoints = np.empty_like(clumpCount)
-        origClustersWithMinPoints[0] = 0
-        t = np.empty_like(clumpCount)
+        lowDensMinPtsClumps = np.empty(iters)
+        lowDensMinPtsClumps[0] = 0
+        hiDensMinPtsClumps = np.empty(iters)
+        hiDensMinPtsClumps[0] = 0
+        t = np.empty(iters)
         t[0] = 0
 
-
-        core_samp, dbLabelsOrig = dbscan(np.vstack([namespace[self.inputName]['x'], namespace[self.inputName]['y'], namespace[self.inputName]['z']]).T,
-                                         self.searchRadius, self.minPtsForCore)
         inp = tabular.mappingFilter(namespace[self.inputName])
-        inp.addColumn('DBSCAN_allFrames', dbLabelsOrig)
 
         for ind in range(1, iters):  # start from 1 since t=[0,0] will yield no clumps
             # filter time
             inc = tabular.resultsFilter(inp, t=[0, self.stepSize*ind])
             t[ind] = np.max(inc['t'])
 
-            # ----------------------------------------------------------------------------------------------------------
-            # run raw DBSCAN on available labels
-            core_samp, dbLabels = dbscan(np.vstack([inc['x'], inc['y'], inc['z']]).T,
-                                         self.searchRadius, self.minPtsForCore)
-            clumpCount[ind] = len(np.unique(dbLabels[dbLabels > -0.5]))
+            cid, counts = np.unique(inc[self.labelsKey], return_counts=True)
+            # cmask = np.in1d(inc['DBSCAN_allFrames'], cid)
 
-            # ----------------------------------------------------------------------------------------------------------
-            # scale minPts based on number of localizations, assume volume stays constant
-            scaledMinPts = int(np.max([round(self.minPtsForCore*float(len(inc['x']))/len(namespace[self.inputName]['x'])), 1]))
-            minPtsDensityScaled[ind] = scaledMinPts
+            cidL = cid[counts >= self.lowerMinPtsPerCluster]
+            lowDensMinPtsClumps[ind] = np.sum(cidL != -1)  # ignore unclumped in count
+            cid = cid[counts >= self.higherMinPtsPerCluster]
+            hiDensMinPtsClumps[ind] = np.sum(cid != -1)  # ignore unclumped in count
 
-            core_samp, dbLabelsScaled = dbscan(np.vstack([inc['x'], inc['y'], inc['z']]).T,
-                                         self.searchRadius, scaledMinPts)
-            scaledDensDBSCAN[ind] = len(np.unique(dbLabelsScaled[dbLabelsScaled > -0.5]))
 
-            # ----------------------------------------------------------------------------------------------------------
-            # run DBSCAN on original cluster labels
-            cid, counts = np.unique(inc['DBSCAN_allFrames'], return_counts=True)
-            cmask = np.in1d(inc['DBSCAN_allFrames'], cid)
-            core_samp, dbLabelsOrigClusters = dbscan(np.vstack([inc['x'][cmask], inc['y'][cmask], inc['z'][cmask]]).T,
-                                         self.searchRadius, self.minPtsForCore)
-            origClusterDBSCAN[ind] = len(np.unique(dbLabelsOrigClusters[dbLabelsOrigClusters > -0.5]))
-            # ----------------------------------------------------------------------------------------------------------
-            # Now count original clumps that contain at least contain minPts, and DBSCAN them
-            cid = cid[counts >= self.minPtsForCore]
-            origClustersWithMinPoints[ind] = np.sum(cid != -1)  # ignore unclumped in count
-            # regenerate mask ignoring og clumps that don't contain minPts pts
-            cmask = np.in1d(inc['DBSCAN_allFrames'], cid)
-            core_samp, dbLabelsFilt = dbscan(np.vstack([inc['x'][cmask], inc['y'][cmask], inc['z'][cmask]]).T,
-                                         self.searchRadius, self.minPtsForCore)
-
-            origClusterWithMinPointsDBSCAN[ind] = len(np.unique(dbLabelsFilt[dbLabelsFilt > -0.5]))
-
-        res = tabular.resultsFilter({'N_rawDBSCAN': clumpCount,
-                                     'N_origClusterDBSCAN': origClusterDBSCAN,
-                                     'N_origClusterWithMinPointsDBSCAN': origClusterWithMinPointsDBSCAN,
-                                     'N_densityScaledMinPtsDBSCAN': scaledDensDBSCAN,
-                                     'minPts_densityScaled': minPtsDensityScaled,
-                                     't': t,
-                                     'N_origClustersWithMinPoints': origClustersWithMinPoints})
+        res = tabular.resultsFilter({'t': t,
+                                     'N_labelsWithLowMinPoints': lowDensMinPtsClumps,
+                                     'N_labelsWithHighMinPoints': hiDensMinPtsClumps})
 
         # propagate metadata, if present
         try:
