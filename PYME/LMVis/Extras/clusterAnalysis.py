@@ -235,7 +235,7 @@ class ClusterAnalyser:
 
 
     def OnClustersInTime(self, event=None):
-        from PYME.recipes import tablefilters, measurement
+        from PYME.recipes import localisations
         from PYME.recipes.base import ModuleCollection
         import matplotlib.pyplot as plt
 
@@ -243,10 +243,10 @@ class ClusterAnalyser:
         rec = ModuleCollection()
 
         # split input according to colour channel selected
-        rec.add_module(tablefilters.ExtractTableChannel(rec, inputName='input', outputName='chan0',
+        rec.add_module(localisations.ExtractTableChannel(rec, inputName='input', outputName='chan0',
                                                               channel='chan0'))
 
-        rec.add_module(measurement.ClumpsInTime(rec, inputName='chan0', stepSize=3000, outputName='output'))
+        rec.add_module(localisations.ClusterCountVsImagingTime(rec, inputName='chan0', stepSize=3000, outputName='output'))
 
 
         rec.namespace['input'] = self.pipeline #do before configuring so that we already have the channel names populated

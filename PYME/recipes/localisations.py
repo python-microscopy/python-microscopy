@@ -352,7 +352,84 @@ class DBSCANClustering(ModuleBase):
     def hide_in_overview(self):
         return ['columns']
 
+@register_module('ClusterCountVsImagingTime')
+class ClusterCountVsImagingTime(ModuleBase):
+    """
+    ClusterCountVsImagingTime iteratively filters a dictionary-like object on t, and at each step counts the number of
+    labeled objects (e.g. DBSCAN clusters) which contain at least N-points. It does this for two N-points, so one can be
+    set according to density with all frames included, and the other can be set for one of the earlier frame-counts.
 
+    args:
+        stepSize: number of frames to add in on each iteration
+        labelsKey: key containing labels for each localization
+        lowerMinPtsPerCluster:
+        higherMinPtsPerCluster:
+
+    returns:
+        dictionary-like object with the following keys:
+            t: upper bound on frame number included in calculations on each iteration.
+            N_labelsWithLowMinPoints:
+            N_labelsWithHighMinPoints:
+
+    From wikipedia: "While minPts intuitively is the minimum cluster size, in some cases DBSCAN can produce smaller
+    clusters. A DBSCAN cluster consists of at least one core point. As other points may be border points to more than
+    one cluster, there is no guarantee that at least minPts points are included in every cluster."
+    """
+    inputName = Input('input')
+
+    labelsKey = CStr('dbscanClumpID')
+    lowerMinPtsPerCluster = Int(3)
+    higherMinPtsPerCluster = Int(6)
+    stepSize = Int(3000)
+
+    outputName = Output('incremented')
+
+    def execute(self, namespace):
+        from PYME.IO import tabular
+
+        if self.lowerMinPtsPerCluster > self.higherMinPtsPerCluster:
+            print('Swapping low and high MinPtsPerCluster - input was reversed')
+            temp = self.lowerMinPtsPerCluster
+            self.lowerMinPtsPerCluster = self.higherMinPtsPerCluster
+            self.higherMinPtsPerCluster = temp
+
+        iters = (int(np.max(namespace[self.inputName]['t']))/int(self.stepSize)) + 2
+
+        # other counts
+        lowDensMinPtsClumps = np.empty(iters)
+        lowDensMinPtsClumps[0] = 0
+        hiDensMinPtsClumps = np.empty(iters)
+        hiDensMinPtsClumps[0] = 0
+        t = np.empty(iters)
+        t[0] = 0
+
+        inp = tabular.mappingFilter(namespace[self.inputName])
+
+        for ind in range(1, iters):  # start from 1 since t=[0,0] will yield no clumps
+            # filter time
+            inc = tabular.resultsFilter(inp, t=[0, self.stepSize*ind])
+            t[ind] = np.max(inc['t'])
+
+            cid, counts = np.unique(inc[self.labelsKey], return_counts=True)
+            # cmask = np.in1d(inc['DBSCAN_allFrames'], cid)
+
+            cidL = cid[counts >= self.lowerMinPtsPerCluster]
+            lowDensMinPtsClumps[ind] = np.sum(cidL != -1)  # ignore unclumped in count
+            cid = cid[counts >= self.higherMinPtsPerCluster]
+            hiDensMinPtsClumps[ind] = np.sum(cid != -1)  # ignore unclumped in count
+
+
+        res = tabular.resultsFilter({'t': t,
+                                     'N_labelsWithLowMinPoints': lowDensMinPtsClumps,
+                                     'N_labelsWithHighMinPoints': hiDensMinPtsClumps})
+
+        # propagate metadata, if present
+        try:
+            res.mdh = namespace[self.inputName].mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = res
 
 
 
