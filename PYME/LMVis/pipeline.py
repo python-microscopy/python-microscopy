@@ -502,16 +502,21 @@ class Pipeline:
 
             for t in h5f.list_nodes('/'):
                 if isinstance(t, tables.table.Table):
-                    if 'EventName' in t.description._v_names:
-                        self.events = h5f.root.Events[:]  # this does not handle multiple events tables per hdf file
-                    else:
-                        tab = tabular.hdfSource(h5f, t.name)
-                        self.addDataSource(t.name, tab)
+                    tab = tabular.hdfSource(h5f, t.name)
+                    self.addDataSource(t.name, tab)
+                        
+                    if 'EventName' in t.description._v_names: #FIXME - we shouldn't have a special case here
+                        self.events = t[:]  # this does not handle multiple events tables per hdf file
 
             if 'MetaData' in h5f.root:
                 self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))
 
-            ds = self.dataSources.values()[-1].resultsSource
+            for dsname, ds_ in self.dataSources.items():
+                #loop through tables until we get one which defines x. If no table defines x, take the last table to be added
+                #TODO make this logic better.
+                ds = ds_.resultsSource
+                if 'x' in ds.keys():
+                    break
 
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
             ds = tabular.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
