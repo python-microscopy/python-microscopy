@@ -500,22 +500,18 @@ class Pipeline:
             import tables
             h5f = tables.open_file(filename)
 
-            #mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
             for t in h5f.list_nodes('/'):
-                #print t
                 if isinstance(t, tables.table.Table):
-                    if 'EventName' not in t.description._v_names:
+                    if 'EventName' in t.description._v_names:
+                        self.events = h5f.root.Events[:]  # this does not handle multiple events tables per hdf file
+                    else:
                         tab = tabular.hdfSource(h5f, t.name)
-
-                    self.addDataSource(t.name, tab)
+                        self.addDataSource(t.name, tab)
 
             if 'MetaData' in h5f.root:
                 self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))
-            if ('Events' in h5f.root) and ('StartTime' in self.mdh.keys()):
-                self.events = h5f.root.Events[:]
 
             ds = self.dataSources.values()[-1].resultsSource
-            #print ds, self.dataSources, ds.resultsSource.fitResults
 
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
             ds = tabular.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
