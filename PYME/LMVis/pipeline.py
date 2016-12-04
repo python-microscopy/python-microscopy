@@ -504,13 +504,15 @@ class Pipeline:
             for t in h5f.list_nodes('/'):
                 #print t
                 if isinstance(t, tables.table.Table):
-                    tab = tabular.hdfSource(h5f, t.name)
-                    #tab.mdh = mdh
+                    if 'EventName' not in t.description._v_names:
+                        tab = tabular.hdfSource(h5f, t.name)
 
                     self.addDataSource(t.name, tab)
 
             if 'MetaData' in h5f.root:
                 self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))
+            if ('Events' in h5f.root) and ('StartTime' in self.mdh.keys()):
+                self.events = h5f.root.Events[:]
 
             ds = self.dataSources.values()[-1].resultsSource
             #print ds, self.dataSources, ds.resultsSource.fitResults
