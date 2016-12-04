@@ -624,8 +624,8 @@ static PyObject * aggregateWeightedMean(PyObject *self, PyObject *args, PyObject
 
     out = Py_BuildValue("(O,O)", (PyObject*) outVarA, (PyObject*) outSigA);
 
-    Py_XDECREF(outVarA);
-    Py_XDECREF(outSigA);
+    //Py_XDECREF(outVarA);
+    //Py_XDECREF(outSigA);
     return out;
 
 /*fail:
