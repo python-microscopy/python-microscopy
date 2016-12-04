@@ -56,7 +56,7 @@ class TabularBase(object):
             
         return key, sl
 
-    def to_hdf(self, filename, tablename='Data', keys=None, metadata=None, events=None):
+    def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
         from PYME.IO import h5rFile
 
         with h5rFile.H5RFile(filename, 'a') as f:
@@ -64,8 +64,6 @@ class TabularBase(object):
 
             if metadata is not None:
                 f.updateMetadata(metadata)
-            if events is not None:
-                f.addEvents(events)
         
     
 
