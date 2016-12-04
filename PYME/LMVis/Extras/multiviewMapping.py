@@ -371,6 +371,7 @@ class multiviewMapper:
 
     """
     def __init__(self, visFr):
+        self.visFr = visFr
         self.pipeline = visFr.pipeline
         self.clump_gap_tolerance = 1 # the number of frames that can be skipped for a clump to still be considered a single clump
         self.clump_radius_scale = 2.0 # the factor with which to multiply error_x by to determine a radius in which points belong to the same clump
@@ -628,7 +629,7 @@ class multiviewMapper:
                 logger.info('User canceled astigmatic calibration selection')
                 return
 
-        z, zerr = astigTools.lookup_astig_z(pipeline, astig_calibrations, plot=True)
+        z, zerr = astigTools.lookup_astig_z(pipeline, astig_calibrations, plot=False)
 
         pipeline.addColumn('astigZ', z)
         pipeline.addColumn('zLookupError', zerr)
@@ -636,6 +637,9 @@ class multiviewMapper:
         pipeline.selectedDataSource.setMapping('z', 'focus*foreShort + astigZ')
 
         pipeline._process_colour()
+
+        self.visFr.RefreshView()
+        self.visFr.CreateFoldPanel()
 
     def OnGroupAndMapZ(self, event):
         pipeline = self.pipeline

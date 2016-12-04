@@ -30,10 +30,10 @@ else:
 
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    config = Configuration('DistHist', parent_package, top_path)
+    config = Configuration('astigmatism', parent_package, top_path)
 
-    config.add_extension('distHist',
-        sources=['distHist.c'],
+    config.add_extension('astiglookup',
+        sources=['astiglookup.c'],
         include_dirs = [get_numpy_include_dirs()],
 	extra_compile_args = ['-O3', '-fno-exceptions', '-march=native', '-mtune=native'],
         extra_link_args=linkArgs)
@@ -42,7 +42,7 @@ def configuration(parent_package = '', top_path = None):
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    setup(description = 'c coded pairwise distances',
+    setup(description = 'c coded lookup function for astigmatic z mapping',
     	author = 'David Baddeley',
        	author_email = 'd.baddeley@auckland.ac.nz',
        	url = '',
