@@ -157,14 +157,18 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, keepColor
     x = datasource['x'][I].astype('f4')
     y = datasource['y'][I].astype('f4')
 
+    deltaX = (radius_scale*datasource['error_x'][I] + radius_offset).astype('f4')
+
+    # extract color channel information, if present
     try:
         uprobe = np.unique(datasource['probe'])
         probe = datasource['probe'][I]
     except AttributeError:
-        print('fold multiview data before pairing if you want to keep color channels separate')
+        if keepColorsSeparate:
+            print('fold multiview data before pairing if you want to keep color channels separate')
         keepColorsSeparate = False
 
-    deltaX = (radius_scale*datasource['error_x'][I] + radius_offset).astype('f4')
+    # assign localizations to clumps
     if not keepColorsSeparate:  # clump all together
         assigned = deClump.findClumpsN(t, x, y, deltaX, gap_tolerance)
         clumps[I] = assigned
