@@ -584,7 +584,12 @@ class multiviewMapper:
 
     def OnFindClumps(self, event=None):
         from PYME.Analysis.points import multiview
-        multiview.findClumps(self.pipeline.selectedDataSource, self.clump_gap_tolerance,
+        try:
+            multiview.multicolorFindClumps(self.pipeline.selectedDataSource, self.clump_gap_tolerance,
+                             self.clump_radius_scale, self.clump_radius_offset)
+        except AttributeError:
+            print('running single-color clump finding')
+            multiview.findClumps(self.pipeline.selectedDataSource, self.clump_gap_tolerance,
                              self.clump_radius_scale, self.clump_radius_offset)
 
 

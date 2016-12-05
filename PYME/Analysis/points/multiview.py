@@ -133,8 +133,23 @@ def applyShiftmaps(datasource, shiftWallet):  # FIXME: add metadata for camera r
     datasource.addColumn('chromadx', dx)
     datasource.addColumn('chromady', dy)
 
+def findClumps(datasource, gap_tolerance, radius_scale, radius_offset):
+    from PYME.Analysis.points.DeClump import deClump
+    t = datasource['t'] #OK as int
+    clumps = np.zeros(len(t), 'i')
+    I = np.argsort(t)
+    t = t[I].astype('i')
+    x = datasource['x'][I].astype('f4')
+    y = datasource['y'][I].astype('f4')
 
-def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, keepColorsSeparate=True):
+    deltaX = (radius_scale*datasource['error_x'][I] + radius_offset).astype('f4')
+
+    assigned = deClump.findClumpsN(t, x, y, deltaX, gap_tolerance)
+    clumps[I] = assigned
+
+    datasource.addColumn('clumpIndex', clumps)
+
+def multicolorFindClumps(datasource, gap_tolerance, radius_scale, radius_offset):
     """
 
     Args:
@@ -143,7 +158,6 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, keepColor
             it returns
         radius_scale: multiplicative factor applied to the error_x term in deciding search radius for pairing
         radius_offset: term added to radius_scale*error_x to set search radius
-        keepColorsSeparate: boolean flag to determine whether only like-color clumps are identified
 
     Returns:
         Nothing, but adds clumpIndex column to datasource input
@@ -159,31 +173,23 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, keepColor
 
     deltaX = (radius_scale*datasource['error_x'][I] + radius_offset).astype('f4')
 
-    # extract color channel information, if present
-    try:
-        uprobe = np.unique(datasource['probe'])
-        probe = datasource['probe'][I]
-    except AttributeError:
-        if keepColorsSeparate:
-            print('fold multiview data before pairing if you want to keep color channels separate')
-        keepColorsSeparate = False
+    # extract color channel information
+    uprobe = np.unique(datasource['probe'])
+    probe = datasource['probe'][I]
 
-    # assign localizations to clumps
-    if not keepColorsSeparate:  # clump all together
-        assigned = deClump.findClumpsN(t, x, y, deltaX, gap_tolerance)
-        clumps[I] = assigned
-    else:  # only clump within color channels
-        assigned = np.zeros_like(clumps)
-        startAt = 0
-        for pi in uprobe:
-            pmask = probe == pi
-            pClumps = deClump.findClumpsN(t[pmask], x[pmask], y[pmask], deltaX, gap_tolerance) + startAt
-            # throw all unclumped into the 0th clumpID, and preserve pClumps[-1] of the last iteration
-            pClumps[pClumps == startAt] = 0
-            # patch in assignments for this color channel
-            assigned[pmask] = pClumps
-            startAt = np.max(assigned)
-        clumps[I] = assigned
+
+    # only clump within color channels
+    assigned = np.zeros_like(clumps)
+    startAt = 0
+    for pi in uprobe:
+        pmask = probe == pi
+        pClumps = deClump.findClumpsN(t[pmask], x[pmask], y[pmask], deltaX, gap_tolerance) + startAt
+        # throw all unclumped into the 0th clumpID, and preserve pClumps[-1] of the last iteration
+        pClumps[pClumps == startAt] = 0
+        # patch in assignments for this color channel
+        assigned[pmask] = pClumps
+        startAt = np.max(assigned)
+    clumps[I] = assigned
 
     datasource.addColumn('clumpIndex', clumps)
 
