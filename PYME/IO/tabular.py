@@ -80,7 +80,7 @@ class randomSource(TabularBase):
         key, sl = self._getKeySlice(keys)
         
         if not key in self._keys:
-            raise RuntimeError('Key not defined')
+            raise KeyError('Key (%s) not defined' % key)
         
         if key == 'x':
             return self.x[sl]
@@ -145,7 +145,7 @@ class fitResultsSource(TabularBase):
             key = self.transkeys[key]
 
         if not key in self._keys:
-            raise RuntimeError('Key not found')
+            raise KeyError('Key  (%s) not found' % key)
 
         k = key.split('_')
 
@@ -156,7 +156,7 @@ class fitResultsSource(TabularBase):
         elif len(k) == 3:
             return self.fitResults[k[0]][k[1]][k[2]].astype('f')[sl]
         else:
-            raise RuntimeError("Don't know about deeper nesting yet")
+            raise KeyError("Don't know about deeper nesting yet")
 
 
     def close(self):
@@ -211,7 +211,7 @@ class h5rSource(TabularBase):
             key = self.transkeys[key]
 
         if not key in self._keys:
-            raise RuntimeError('Key not found - %s' % key)
+            raise KeyError('Key not found - %s' % key)
 
         k = key.split('_')
         
@@ -222,7 +222,7 @@ class h5rSource(TabularBase):
         elif len(k) == 3:
             return self.fitResults[k[0]][k[1]][k[2]][sl]
         else:
-            raise RuntimeError("Don't know about deeper nesting yet")
+            raise KeyError("Don't know about deeper nesting yet")
         
 
     def close(self):
@@ -278,7 +278,7 @@ class hdfSource(h5rSource):
         key, sl = self._getKeySlice(keys)
 
         if not key in self._keys:
-            raise RuntimeError('Key not found')
+            raise KeyError('Key (%s) not found' % key)
 
         return self.fitResults[key][sl]
 
@@ -370,7 +370,7 @@ class textfileSource(TabularBase):
         key, sl = self._getKeySlice(keys)
         
         if not key in self._keys:
-            raise RuntimeError('Key not found')
+            raise KeyError('Key (%s) not found' % key)
 
        
         return self.res[key][sl]
@@ -404,7 +404,7 @@ class matfileSource(TabularBase):
     def __getitem__(self, key):
         key, sl = self._getKeySlice(key)
         if not key in self._keys:
-            raise RuntimeError('Key not found')
+            raise KeyError('Key (%s) not found' % key)
 
 
         return self.res[key][sl]
@@ -433,7 +433,7 @@ class resultsFilter(TabularBase):
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
-                raise RuntimeError('Requested key not present: ' + k)
+                raise KeyError('Requested key not present: ' + k)
 
             range = kwargs[k]
             if not len(range) == 2:
@@ -494,7 +494,7 @@ class cachingResultsFilter(TabularBase):
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
-                raise RuntimeError('Requested key not present: ' + k)
+                raise KeyError('Requested key not present: ' + k)
 
             range = kwargs[k]
             if not len(range) == 2:
@@ -729,7 +729,7 @@ class recArrayInput(TabularBase):
         key, sl = self._getKeySlice(keys)
 
         if not key in self._keys:
-            raise RuntimeError('Key not found')
+            raise KeyError('Key (%s) not found' % key)
 
         return self.recArray[key][sl]
 
