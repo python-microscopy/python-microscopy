@@ -20,7 +20,7 @@ def coalesceDictSorted(inD, assigned, keys, weights_by_key):  # , notKosher=None
     """
     from PYME.Analysis.points.DeClump import deClump
 
-    NClumps = int(np.max(assigned))  # len(np.unique(assigned))  #
+    NClumps = int(np.max(assigned) + 1)  # len(np.unique(assigned))  #
 
     clumped = {}
 
