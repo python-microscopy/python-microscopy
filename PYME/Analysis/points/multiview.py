@@ -135,6 +135,20 @@ def applyShiftmaps(datasource, shiftWallet):  # FIXME: add metadata for camera r
 
 
 def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, keepColorsSeparate=True):
+    """
+
+    Args:
+        datasource: PYME datasource object - dictionary-like object with addColumn method
+        gap_tolerance: number of frames acceptable for a molecule to go MIA and still be called the same molecule when
+            it returns
+        radius_scale: multiplicative factor applied to the error_x term in deciding search radius for pairing
+        radius_offset: term added to radius_scale*error_x to set search radius
+        keepColorsSeparate: boolean flag to determine whether only like-color clumps are identified
+
+    Returns:
+        Nothing, but adds clumpIndex column to datasource input
+
+    """
     from PYME.Analysis.points.DeClump import deClump
     t = datasource['t'] #OK as int
     clumps = np.zeros(len(t), 'i')
