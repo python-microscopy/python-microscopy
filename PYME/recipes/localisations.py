@@ -203,7 +203,7 @@ class FindClumps(ModuleBase):
         mapped = tabular.mappingFilter(inp)
         try:
             multiview.multicolorFindClumps(mapped, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
-        except AttributeError:
+        except KeyError:
             multiview.findClumps(mapped, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
 
         if 'mdh' in dir(inp):

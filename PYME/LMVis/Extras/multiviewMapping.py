@@ -587,7 +587,7 @@ class multiviewMapper:
         try:
             multiview.multicolorFindClumps(self.pipeline.selectedDataSource, self.clump_gap_tolerance,
                              self.clump_radius_scale, self.clump_radius_offset)
-        except AttributeError:
+        except KeyError:
             print('running single-color clump finding')
             multiview.findClumps(self.pipeline.selectedDataSource, self.clump_gap_tolerance,
                              self.clump_radius_scale, self.clump_radius_offset)
