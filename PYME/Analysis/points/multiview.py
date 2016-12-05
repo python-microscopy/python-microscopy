@@ -134,7 +134,7 @@ def applyShiftmaps(datasource, shiftWallet):  # FIXME: add metadata for camera r
     datasource.addColumn('chromady', dy)
 
 
-def findClumps(datasource, gap_tolerance, radius_scale, radius_offset):
+def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, keepColorsSeparate=True):
     from PYME.Analysis.points.DeClump import deClump
     t = datasource['t'] #OK as int
     clumps = np.zeros(len(t), 'i')
@@ -143,10 +143,27 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset):
     x = datasource['x'][I].astype('f4')
     y = datasource['y'][I].astype('f4')
 
-    deltaX = (radius_scale*datasource['error_x'][I] + radius_offset).astype('f4')
+    try:
+        uprobe = np.unique(datasource['probe'])
+        probe = datasource['probe'][I]
+    except AttributeError:
+        print('fold multiview data before pairing if you want to keep color channels separate')
+        keepColorsSeparate = False
 
-    assigned = deClump.findClumpsN(t, x, y, deltaX, gap_tolerance)
-    clumps[I] = assigned
+    deltaX = (radius_scale*datasource['error_x'][I] + radius_offset).astype('f4')
+    if not keepColorsSeparate:
+        assigned = deClump.findClumpsN(t, x, y, deltaX, gap_tolerance)
+        clumps[I] = assigned
+    else:  # only clump within color channels
+        assigned = np.zeros_like(clumps)
+        startAt = 0
+        for pi in uprobe:
+            pmask = probe == pi
+            pClumps = deClump.findClumpsN(t[pmask], x[pmask], y[pmask], deltaX, gap_tolerance) + startAt
+            pClumps[pClumps == startAt] = 0  # make sure we throw all unclumped into the 0th clumpID
+            assigned[pmask] = pClumps
+            startAt = np.max(assigned)
+        clumps[I] = assigned
 
     datasource.addColumn('clumpIndex', clumps)
 
