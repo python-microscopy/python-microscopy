@@ -151,7 +151,7 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, keepColor
         keepColorsSeparate = False
 
     deltaX = (radius_scale*datasource['error_x'][I] + radius_offset).astype('f4')
-    if not keepColorsSeparate:
+    if not keepColorsSeparate:  # clump all together
         assigned = deClump.findClumpsN(t, x, y, deltaX, gap_tolerance)
         clumps[I] = assigned
     else:  # only clump within color channels
@@ -160,7 +160,9 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, keepColor
         for pi in uprobe:
             pmask = probe == pi
             pClumps = deClump.findClumpsN(t[pmask], x[pmask], y[pmask], deltaX, gap_tolerance) + startAt
-            pClumps[pClumps == startAt] = 0  # make sure we throw all unclumped into the 0th clumpID
+            # throw all unclumped into the 0th clumpID, and preserve pClumps[-1] of the last iteration
+            pClumps[pClumps == startAt] = 0
+            # patch in assignments for this color channel
             assigned[pmask] = pClumps
             startAt = np.max(assigned)
         clumps[I] = assigned
