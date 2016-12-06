@@ -91,7 +91,7 @@ def saveOutput(output, filename):
     else: #hope we can convert to a tabular format
         saveTabular(tabular.mappingFilter(output), filename)
         
-def runRecipe(recipe, inputs, outputs):
+def runRecipe(recipe, inputs, outputs, context={}):
     """Load inputs and run recipe, saving outputs.
     
     Parameters
@@ -116,9 +116,12 @@ def runRecipe(recipe, inputs, outputs):
         ### Run the recipe ###
         res = recipe.execute()
 
-        #Save any outputs
+        #Save any outputs [old-style, detected using the 'out' prefix.
         for k, v in outputs.items():
             saveOutput(recipe.namespace[k],v)
+
+        #new style output saving - using OutputModules
+        recipe.save(context)
     except:
         logger.exception('Error running recipe')
         raise
@@ -150,7 +153,7 @@ def main():
     outputs = {k: getattr(args, k) for k in recipe.outputs}
     
     ##Run the recipe    
-    runRecipe(recipe, inputs, outputs)
+    runRecipe(recipe, inputs, outputs) #TODO - fix for contexts
         
 if __name__ == '__main__':
     main()

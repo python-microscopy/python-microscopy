@@ -101,7 +101,11 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 #################
                 s = k.__class__.__name__
                 #pylab.plot(v[0], v[1], 'o', ms=5)
-                rect = pylab.Rectangle([v[0], v[1]-.25], 1, .5, ec='k', fc=[.8,.8, 1], picker=True)
+                if isinstance(k, modules.base.OutputModule):
+                    fc = [.8, 1, .8]
+                else:
+                    fc = [.8,.8, 1]
+                rect = pylab.Rectangle([v[0], v[1]-.25], 1, .5, ec='k', fc=fc, picker=True)
                 
                 rect._data = k
                 self.ax.add_patch(rect)

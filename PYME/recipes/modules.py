@@ -15,7 +15,7 @@ from . import processing
 from . import measurement
 from . import tracking
 from . import tablefilters
-from . import inputoutput
+from . import output
 from . import localisations
 try:
     from . import skfilters

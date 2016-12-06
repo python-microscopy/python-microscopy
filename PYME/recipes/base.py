@@ -6,7 +6,7 @@ Created on Mon May 25 17:02:04 2015
 """
 #import wx
 
-from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, on_trait_change, Input, Output
+from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, on_trait_change, Input, Output
     
     #for some reason traitsui raises SystemExit when called from sphinx on OSX
     #This is due to the framework build problem of anaconda on OSX, and also
@@ -144,6 +144,18 @@ class ModuleBase(HasTraits):
 
     def default_traits_view( self ):
         return self.default_view
+
+
+class OutputModule(ModuleBase):
+    filePattern = CStr('{output_dir}/{file_stub}.csv')
+    #scheme = Enum('File', 'pyme-cluster://', 'pyme-cluster://_aggregate_h5r/')
+
+    def execute(self, namespace):
+        """
+        Output modules be definition do nothing when executed - they act as a sink and implement a save method instead.
+
+        """
+        pass
 
 
 class ModuleCollection(HasTraits):
@@ -367,6 +379,20 @@ class ModuleCollection(HasTraits):
         for mod in self.modules:
             op.update(set(mod.outputs))
         return op
+
+    def save(self, context={}):
+        """
+        Find all OutputModule instances and call their save methods with the recipe context
+
+        Parameters
+        ----------
+        context : dict
+            A context dictionary used to substitute and create variable names.
+
+        """
+        for mod in self.modules:
+            if isinstance(mod, OutputModule):
+                mod.save(self.namespace, context)
 
 
     @property
