@@ -56,11 +56,18 @@ class TabularBase(object):
             
         return key, sl
 
+    def to_recarray(self, keys=None):
+        from numpy.core import records
+        if keys is None:
+            keys = self.keys()
+
+        return records.fromarrays([self.__getitem__(k) for k in keys], names = keys)
+
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
         from PYME.IO import h5rFile
 
         with h5rFile.H5RFile(filename, 'a') as f:
-            f.appendToTable(tablename, self.toDataFrame(keys).to_records())
+            f.appendToTable(tablename, self.to_recarray(keys))
 
             if metadata is not None:
                 f.updateMetadata(metadata)
