@@ -94,6 +94,30 @@ def foldX(datasource, mdh):
         #lets add some more that might be useful
         #datasource.setMapping('A%d' % chan, 'chan%d*A' % chan)
 
+def calcShifts(datasource, shiftWallet):
+    import importlib
+    model = shiftWallet['shiftModel'].split('.')[-1]
+    shiftModule = importlib.import_module(shiftWallet['shiftModel'].split('.' + model)[0])
+    shiftModel = getattr(shiftModule, model)
+
+    numChan = np.sum([(k.startswith('Chan') and k.endswith('.X')) for k in shiftWallet.keys()])
+
+    x, y = datasource['x'], datasource['y']
+
+    # FIXME: the camera roi positions below would not account for the multiview data source
+    #x = x + pipeline.mdh['Camera.ROIX0']*pipeline.mdh['voxelsize.x']*1.0e3
+    #y = y + pipeline.mdh['Camera.ROIY0']*pipeline.mdh['voxelsize.y']*1.0e3
+    chan = datasource['multiviewChannel']
+
+    dx = 0
+    dy = 0
+    for ii in range(1, numChan + 1):
+        chanMask = chan == ii
+        dx = dx + chanMask * shiftModel(dict=shiftWallet['Chan0%s.X' % ii]).ev(x, y)
+        dy = dy + chanMask * shiftModel(dict=shiftWallet['Chan0%s.Y' % ii]).ev(x, y)
+
+    return dx, dy
+
 def applyShiftmaps(datasource, shiftWallet):  # FIXME: add metadata for camera roi positions
     """
     applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
@@ -108,27 +132,7 @@ def applyShiftmaps(datasource, shiftWallet):  # FIXME: add metadata for camera r
         Adds shifts into the pipeline which will then be applied automatically by the mappingFilter (see foldX)
 
     """
-    import importlib
-    model = shiftWallet['shiftModel'].split('.')[-1]
-    shiftModule = importlib.import_module(shiftWallet['shiftModel'].split('.' + model)[0])
-    shiftModel = getattr(shiftModule, model)
-
-    numChan = np.sum([(k.startswith('Chan') and k.endswith('.X')) for k in shiftWallet.keys()])
-
-    x, y = datasource['x'], datasource['y']
-
-
-    # FIXME: the camera roi positions below would not account for the multiview data source
-    #x = x + pipeline.mdh['Camera.ROIX0']*pipeline.mdh['voxelsize.x']*1.0e3
-    #y = y + pipeline.mdh['Camera.ROIY0']*pipeline.mdh['voxelsize.y']*1.0e3
-    chan = datasource['multiviewChannel']
-
-    dx = 0
-    dy = 0
-    for ii in range(1, numChan + 1):
-        chanMask = chan == ii
-        dx = dx + chanMask*shiftModel(dict=shiftWallet['Chan0%s.X' % ii]).ev(x, y)
-        dy = dy + chanMask*shiftModel(dict=shiftWallet['Chan0%s.Y' % ii]).ev(x, y)
+    dx, dy = calcShifts(datasource, shiftWallet)
 
     datasource.addColumn('chromadx', dx)
     datasource.addColumn('chromady', dy)

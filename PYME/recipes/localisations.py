@@ -150,8 +150,8 @@ class Fold(ModuleBase):
         namespace[self.outputName] = mapped
 
 
-@register_module('ShiftCorrect') #FIXME - move to multi-view specific module and rename OR make consistent with existing shift correction
-class ShiftCorrect(ModuleBase):
+@register_module('MultiviewShiftCorrect') #FIXME - move to multi-view specific module and rename OR make consistent with existing shift correction
+class MultiviewShiftCorrect(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     inputName = Input('folded')
     inputShiftMap = CStr('') #FIXME - change name to indicate that this is a filename/path/URL. Should probably be a File trait (or derived class which deals with clusterIO)
@@ -176,7 +176,12 @@ class ShiftCorrect(ModuleBase):
 
         mapped = tabular.mappingFilter(inp)
 
-        multiview.applyShiftmaps(mapped, shiftMaps)  # FIXME: parse mdh for camera.ROIX
+        dx, dy = multiview.calcShifts(mapped, shiftMaps)
+        mapped.addColumn('chromadx', dx)
+        mapped.addColumn('chromady', dy)
+
+        mapped.setMapping('x', 'x + chromadx')
+        mapped.setMapping('y', 'y + chromady')
 
         mapped.mdh = inp.mdh
 
