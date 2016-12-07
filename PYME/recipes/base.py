@@ -296,8 +296,7 @@ class ModuleCollection(HasTraits):
             
         return c
         
-    def toYAML(self):
-        import yaml
+    def get_cleaned_module_list(self):
         l = []
         for mod in self.modules:
             #l.append({mod.__class__.__name__: mod.get()})
@@ -315,31 +314,27 @@ class ModuleCollection(HasTraits):
                     mod_traits_cleaned[k] = v
 
             l.append({module_names[mod.__class__]: mod_traits_cleaned})
-            
-        return yaml.safe_dump(l, default_flow_style=False)
+
+        return l
+
+
+    def toYAML(self):
+        import yaml
+        return yaml.safe_dump(self.get_cleaned_module_list(), default_flow_style=False)
         
     def toJSON(self):
         import json
-        l = []
-        for mod in self.modules:
-            #l.append({mod.__class__.__name__: mod.get()})
-            l.append({module_names[mod.__class__]: mod.get()})
-            
-        return json.dumps(l)
+        return json.dumps(self.get_cleaned_module_list())
     
     @classmethod
-    def fromYAML(cls, data):
-        import yaml
-        
+    def from_module_list(cls, l):
         c = cls()
-        
-        l = yaml.load(data)
-        
+
         mc = []
-        
+
         if l is None:
             l = []
-        
+
         for mdd in l:
             mn, md = mdd.items()[0]
             try:
@@ -351,10 +346,22 @@ class ModuleCollection(HasTraits):
 
             mod.set(**md)
             mc.append(mod)
-            
+
         c.modules = mc
-            
-        return c#cls(modules=mc)
+        return c
+
+    @classmethod
+    def fromYAML(cls, data):
+        import yaml
+
+        l = yaml.load(data)
+        return cls.from_module_list(l)
+
+    @classmethod
+    def fromJSON(cls, data):
+        import json
+        return cls.from_module_list(json.loads(data))
+
 
     def add_module(self, module):
         self.modules.append(module)

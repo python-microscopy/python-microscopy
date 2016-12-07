@@ -13,6 +13,7 @@ import pandas as pd
 import tables
 from PYME.IO import tabular
 from PYME.IO import MetaDataHandler
+from PYME.IO import unifiedIO
 
 import logging
 logger = logging.getLogger(__name__)
@@ -30,17 +31,18 @@ def loadInput(filename, namespace, key='input'):
     """
     #modify this to allow for different file types - currently only supports images
     if filename.endswith('.h5r'):
-        h5f = tables.open_file(filename)
+        with unifiedIO.local_or_temp_filename(filename) as fn:
+            h5f = tables.open_file(fn)
 
-        key_prefix = '' if key == 'input' else key + '_'
+            key_prefix = '' if key == 'input' else key + '_'
 
-        mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
-        for t in  h5f.list_nodes('/'):
-            if isinstance(t, tables.table.Table):
-                tab = tabular.h5rSource(h5f, t.name)
-                tab.mdh = mdh
+            mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
+            for t in  h5f.list_nodes('/'):
+                if isinstance(t, tables.table.Table):
+                    tab = tabular.h5rSource(h5f, t.name)
+                    tab.mdh = mdh
 
-                namespace[key_prefix + t.name] = tab
+                    namespace[key_prefix + t.name] = tab
 
         #logger.error('loading h5r not supported yet')
         #raise NotImplementedError

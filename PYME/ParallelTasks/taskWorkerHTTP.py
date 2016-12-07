@@ -335,6 +335,27 @@ class taskWorker(object):
 
                     self.resultsQueue.put((queueURL, taskDescr, None))
 
+            elif taskDescr['type'] == 'recipe':
+                from PYME.recipes.modules import ModuleCollection
+                from PYME.IO import unifiedIO
+
+                try:
+                    taskdefRef = taskDescr.get('taskdefRef', None)
+                    if taskdefRef: #recipe is defined in a file - go find it
+                        recipe_yaml = unifiedIO.read(taskdefRef)
+                        recipe = ModuleCollection.fromYAML(recipe_yaml)
+                    else: #recipe is defined in the task
+                        recipe = ModuleCollection.fromYAML(taskDescr['taskdef']['recipe'])
+
+                    r
+
+                except:
+                    import traceback
+                    traceback.print_exc()
+                    logger.exception(traceback.format_exc())
+
+                    self.resultsQueue.put((queueURL, taskDescr, None))
+
         
 def on_SIGHUP(signum, frame):
     raise RuntimeError('Recieved SIGHUP')

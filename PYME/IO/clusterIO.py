@@ -339,6 +339,12 @@ def isLocal(filename, serverfilter):
     else:
         return False
 
+def get_local_path(filename, serverfilter):
+    if serverfilter == local_serverfilter and local_dataroot:
+        #look for the file in the local server folder (short-circuit the server)
+        localpath = os.path.join(local_dataroot, filename)
+        if os.path.exists(localpath):
+            return localpath
 
 def getFile(filename, serverfilter='', numRetries=3):
     try:
@@ -346,12 +352,11 @@ def getFile(filename, serverfilter='', numRetries=3):
     except KeyError:
         pass
 
-    if serverfilter == local_serverfilter and local_dataroot:
-        #look for the file in the local server folder (short-circuit the server)
-        localpath = os.path.join(local_dataroot, filename)
-        if os.path.exists(localpath):
-            with open(localpath, 'rb') as f:
-                return f.read()
+    #look for the file in the local server folder (short-circuit the server)
+    localpath = get_local_path(filename, serverfilter)
+    if localpath:
+        with open(localpath, 'rb') as f:
+            return f.read()
     
     locs = locateFile(filename, serverfilter, return_first_hit=True)
 
