@@ -167,6 +167,8 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=Fa
 
     datasource.addColumn('clumpIndex', clumps)
 
+    return datasource
+
 
 def mergeClumps(datasource, numChan):
     from PYME.IO.tabular import cachingResultsFilter, mappingFilter
