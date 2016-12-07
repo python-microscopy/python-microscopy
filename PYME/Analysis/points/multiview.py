@@ -169,7 +169,7 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=Fa
 
     return datasource
 
-def multicolorFindClumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=False):
+def probeAwareFindClumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=False):
     """
 
     Args:
@@ -181,6 +181,9 @@ def multicolorFindClumps(datasource, gap_tolerance, radius_scale, radius_offset,
 
     Returns:
         Nothing, but adds clumpIndex column to datasource input
+        
+    FIXME: This function should probably not exist as channel handling should ideally only be in one place within the code base. A prefered solution would be to split using a colour filter, clump
+    each channel separately, and then merge channels.
 
     """
     from PYME.Analysis.points.DeClump import deClump
