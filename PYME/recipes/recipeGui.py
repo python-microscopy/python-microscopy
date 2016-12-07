@@ -119,7 +119,9 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 params = k.get().items()
                 s2 = []
                 for i in params:
-                    s2 += TW.wrap('%s : %s' %i)
+                    pn, p = i
+                    if not (pn.startswith('_') or pn.startswith('input') or pn.startswith('output')):
+                        s2 += TW.wrap('%s : %s' %i)
                 
                 if len(s2) > 5:
                     s2 = '\n'.join(s2[:4]) + '\n ...'

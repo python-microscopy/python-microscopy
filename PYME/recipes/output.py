@@ -63,6 +63,7 @@ class XLSOutput(OutputModule):
 class HDFOutput(OutputModule):
     inputVariables = DictStrStr()
 
+    @property
     def inputs(self):
         return set(self.inputVariables.keys())
 
