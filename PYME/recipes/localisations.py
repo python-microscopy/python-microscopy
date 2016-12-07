@@ -160,7 +160,7 @@ class MultiviewShiftCorrect(ModuleBase):
     """Applies chromatic shift correction to folded localization data that was acquired with an image splitting device,
     but localized without splitter awareness."""
     inputName = Input('folded')
-    inputShiftMap = CStr('') #FIXME - change name to indicate that this is a filename/path/URL. Should probably be a File trait (or derived class which deals with clusterIO)
+    shiftMapLocation = CStr('') #FIXME - change name to indicate that this is a filename/path/URL. Should probably be a File trait (or derived class which deals with clusterIO)
     outputName = Output('registered')
 
     def execute(self, namespace):
@@ -173,10 +173,10 @@ class MultiviewShiftCorrect(ModuleBase):
         if 'mdh' not in dir(inp):
             raise RuntimeError('ShiftCorrect needs metadata')
 
-        if self.inputShiftMap == '':  # grab shftmap from the metadata
+        if self.shiftMapLocation == '':  # grab shftmap from the metadata
             s = unifiedIO.read(inp.mdh['Shiftmap'])
         else:
-            s = unifiedIO.read(self.inputShiftMap)
+            s = unifiedIO.read(self.shiftMapLocation)
 
         shiftMaps = json.loads(s)
 
@@ -232,12 +232,12 @@ class MergeClumps(ModuleBase):
 
         inp = namespace[self.inputName]
 
-        mapped = tabular.mappingFilter(inp)
+        #mapped = tabular.mappingFilter(inp)
 
         if 'mdh' not in dir(inp):
             raise RuntimeError('MergeClumps needs metadata')
 
-        grouped = multiview.mergeClumps(mapped, inp.mdh.getOrDefault('Multiview.NumROIs', 0))
+        grouped = multiview.mergeClumps(inp, inp.mdh.getOrDefault('Multiview.NumROIs', 0))
 
         grouped.mdh = inp.mdh
 
@@ -248,7 +248,7 @@ class MergeClumps(ModuleBase):
 class MapAstigZ(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     inputName = Input('merged')
-    AstigmatismMapID = CStr('') #FIXME - rename and possibly change type
+    astigmatismMapLocation = CStr('') #FIXME - rename and possibly change type
     outputName = Output('zmapped')
 
     def execute(self, namespace):
@@ -261,10 +261,10 @@ class MapAstigZ(ModuleBase):
         if 'mdh' not in dir(inp):
             raise RuntimeError('MapAstigZ needs metadata')
 
-        if self.AstigmatismMapID == '':  # grab calibration from the metadata
+        if self.astigmatismMapLocation == '':  # grab calibration from the metadata
             s = unifiedIO.read(inp.mdh['Analysis.AstigmatismMapID'])
         else:
-            s = unifiedIO.read(self.AstigmatismMapID)
+            s = unifiedIO.read(self.astigmatismMapLocation)
 
         astig_calibrations = json.loads(s)
 

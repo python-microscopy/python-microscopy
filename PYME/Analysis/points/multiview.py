@@ -165,11 +165,14 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset):
 
 
 def mergeClumps(datasource, numChan):
-    from PYME.IO.tabular import cachingResultsFilter
+    from PYME.IO.tabular import cachingResultsFilter, mappingFilter
 
-    keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', 'clumpIndex']
+    keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', 'clumpIndex', 'focus']
     keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
     keys_to_aggregate += ['sigmay%d' % chan for chan in range(numChan)]
+
+    ds_keys = datasource.keys()
+    keys_to_aggregate = [k for k in keys_to_aggregate if k in ds_keys] #discard any keys which are not in the underlying datasource
 
     all_keys = list(keys_to_aggregate) #this should be a copy otherwise we end up adding the weights to our list of stuff to aggregate
 
@@ -183,7 +186,7 @@ def mergeClumps(datasource, numChan):
     sorted_src = {k: datasource[k][I] for k in all_keys}
 
     grouped = coalesceDictSorted(sorted_src, sorted_src['clumpIndex'], keys_to_aggregate, aggregation_weights)
-    return cachingResultsFilter(grouped)
+    return mappingFilter(grouped)
 
 
 

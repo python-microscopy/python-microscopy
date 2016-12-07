@@ -398,6 +398,9 @@ class Pipeline:
 
         _add_missing_ds_keys(ds,self.ev_mappings)
 
+        if getattr(ds, 'mdh', None) is None:
+            ds.mdh = self.mdh
+
         self.dataSources[dskey] = ds
 
 

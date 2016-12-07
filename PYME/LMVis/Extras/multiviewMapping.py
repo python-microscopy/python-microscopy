@@ -402,10 +402,18 @@ class multiviewMapper:
                           helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
 
     def OnFold(self, event=None):
-        foldX(self.pipeline)
+        from PYME.recipes.localisations import MultiviewFold
+        #foldX(self.pipeline)
+        recipe = self.pipeline.recipe
+        recipe.add_module(MultiviewFold(recipe, inputName=self.pipeline.selectedDataSourceKey,
+                                                      outputName='folded'))
+        recipe.execute()
+        self.pipeline.selectDataSource('folded')
 
     def OnCorrectFolded(self, event=None):
+        from PYME.recipes.localisations import MultiviewShiftCorrect
         pipeline = self.pipeline
+        recipe = self.pipeline.recipe
 
         if 'FIXMESiftmap' in pipeline.mdh.keys():  # load shiftmaps from metadata, if present
             shiftWallet = pipeline.mdh['FIXMEShiftmap'] #FIXME: break this for now
@@ -416,14 +424,21 @@ class multiviewMapper:
             if (succ == wx.ID_OK):
                 fpath = fdialog.GetPath()
                 # load json
-                with open(fpath, 'r') as fid:
-                    shiftWallet = json.load(fid)
+                #with open(fpath, 'r') as fid:
+                #    shiftWallet = json.load(fid)
+                recipe.add_module(MultiviewShiftCorrect(recipe, inputName=pipeline.selectedDataSourceKey,
+                                                        shiftMapLocation=fpath,
+                                                        outputName='shift_corrected'))
+                recipe.execute()
+                self.pipeline.selectDataSource('shift_corrected')
             else:
                 raise RuntimeError('Shiftmaps not found in metadata and could not be loaded from file')
 
-        numChan = pipeline.mdh['Multiview.NumROIs']
+        #numChan = pipeline.mdh['Multiview.NumROIs']
 
-        applyShiftmaps(pipeline, shiftWallet)
+        #applyShiftmaps(pipeline, shiftWallet)
+
+
 
 
     def OnFoldAndMapXY(self, event):
@@ -583,36 +598,52 @@ class multiviewMapper:
             fid.close()
 
     def OnFindClumps(self, event=None):
-        from PYME.Analysis.points import multiview
-        multiview.findClumps(self.pipeline.selectedDataSource, self.clump_gap_tolerance,
-                             self.clump_radius_scale, self.clump_radius_offset)
+        from PYME.recipes.localisations import FindClumps
+        recipe = self.pipeline.recipe
+        recipe.add_module(FindClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='with_clumps',
+                                     gapTolerance=self.clump_gap_tolerance, radiusScale=self.clump_radius_scale,
+                                     radius_offset_nm=self.clump_radius_offset))
+        recipe.execute()
+        self.pipeline.selectDataSource('with_clumps')
+
+        # from PYME.Analysis.points import multiview
+        # multiview.findClumps(self.pipeline.selectedDataSource, self.clump_gap_tolerance,
+        #                      self.clump_radius_scale, self.clump_radius_offset)
 
 
     def OnMergeClumps(self, event=None):
-        from PYME.Analysis.points import multiview
+        #from PYME.Analysis.points import multiview
+        from PYME.recipes.localisations import MergeClumps
 
         if not 'clumpIndex' in self.pipeline.keys():
             logger.debug('No clumps found - running FindClumps')
             self.OnFindClumps()
 
-        numChan = self.pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
+        recipe = self.pipeline.recipe
+        recipe.add_module(MergeClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='clumped'))
+        recipe.execute()
+        self.pipeline.selectDataSource('clumped')
 
-        grouped = multiview.mergeClumps(self.pipeline.selectedDataSource, numChan)
-
-        self.pipeline.addDataSource('Grouped', grouped)
-        self.pipeline.selectDataSource('Grouped')
+        # numChan = self.pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
+        #
+        # grouped = multiview.mergeClumps(self.pipeline.selectedDataSource, numChan)
+        #
+        #self.pipeline.addDataSource('Grouped', grouped)
+        # self.pipeline.selectDataSource('Grouped')
 
 
     def OnMapZ(self, event=None, useMD = True):
-        from PYME.IO import unifiedIO
+        from PYME.recipes.localisations import MapAstigZ
+        #from PYME.IO import unifiedIO
         pipeline = self.pipeline
 
         # FIXME - Rename metadata key to be more reasonable
         stigLoc = pipeline.mdh.getOrDefault('Analysis.AstigmatismMapID', None)
 
         if (not stigLoc is None) and useMD:
-            s = unifiedIO.read(stigLoc)
-            astig_calibrations = json.loads(s)
+            #s = unifiedIO.read(stigLoc)
+            #astig_calibrations = json.loads(s)
+            pathToMap = stigLoc
         else:
             fdialog = wx.FileDialog(None, 'Load Astigmatism Calibration', wildcard='Astigmatism map (*.am)|*.am',
                                     style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
@@ -622,19 +653,28 @@ class multiviewMapper:
 
                 fdialog.Destroy()
                 # load json
-                with open(fpath, 'r') as fid:
-                    astig_calibrations = json.load(fid)
+                #with open(fpath, 'r') as fid:
+                #    astig_calibrations = json.load(fid)
+                pathToMap = fpath
             else:
                 fdialog.Destroy()
                 logger.info('User canceled astigmatic calibration selection')
                 return
 
-        z, zerr = astigTools.lookup_astig_z(pipeline, astig_calibrations, plot=False)
+        # z, zerr = astigTools.lookup_astig_z(pipeline, astig_calibrations, plot=False)
+        #
+        # pipeline.addColumn('astigZ', z)
+        # pipeline.addColumn('zLookupError', zerr)
+        #
+        # pipeline.selectedDataSource.addVariable('foreShort', 1.0)
+        #
+        # pipeline.selectedDataSource.setMapping('z', 'focus*foreShort + astigZ')
 
-        pipeline.addColumn('astigZ', z)
-        pipeline.addColumn('zLookupError', zerr)
-
-        pipeline.selectedDataSource.setMapping('z', 'focus*foreShort + astigZ')
+        recipe = self.pipeline.recipe
+        recipe.add_module(MapAstigZ(recipe, inputName=self.pipeline.selectedDataSourceKey,
+                                    astigmatismMapLocation=pathToMap, outputName='z_mapped'))
+        recipe.execute()
+        self.pipeline.selectDataSource('z_mapped')
 
         pipeline._process_colour()
 
