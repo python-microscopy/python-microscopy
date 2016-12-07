@@ -128,9 +128,16 @@ class Pipelineify(ModuleBase):
         namespace[self.outputLocalizations] = mapped_ds
 
 
-@register_module('Fold') #FIXME - move to multi-view specific module and potentially rename
-class Fold(ModuleBase):
-    """Create a new mapping object which derives mapped keys from original ones"""
+@register_module('MultiviewFold') #FIXME - move to multi-view specific module and potentially rename
+class MultiviewFold(ModuleBase):
+    """Fold localizations from images which have been taken with an image splitting device but analysed without channel
+    awareness.
+
+    Images taken in this fashion will have the channels side by side. This module folds the x co-ordinate to overlay the
+    different channels, using the image metadata to determine the appropriate ROI boundaries. The current implementation
+    is somewhat limited as it only handles folding along the x axis, and assumes that ROI sizes and spacings are completely
+    uniform.
+    """
     inputName = Input('localizations')
     outputName = Output('folded')
 
@@ -142,9 +149,7 @@ class Fold(ModuleBase):
         if 'mdh' not in dir(inp):
             raise RuntimeError('Unfold needs metadata')
 
-        mapped = tabular.mappingFilter(inp)
-
-        multiview.foldX(mapped, inp.mdh)
+        mapped = multiview.foldX(inp, inp.mdh)
         mapped.mdh = inp.mdh
 
         namespace[self.outputName] = mapped
@@ -152,7 +157,8 @@ class Fold(ModuleBase):
 
 @register_module('MultiviewShiftCorrect') #FIXME - move to multi-view specific module and rename OR make consistent with existing shift correction
 class MultiviewShiftCorrect(ModuleBase):
-    """Create a new mapping object which derives mapped keys from original ones"""
+    """Applies chromatic shift correction to folded localization data that was acquired with an image splitting device,
+    but localized without splitter awareness."""
     inputName = Input('folded')
     inputShiftMap = CStr('') #FIXME - change name to indicate that this is a filename/path/URL. Should probably be a File trait (or derived class which deals with clusterIO)
     outputName = Output('registered')

@@ -56,7 +56,7 @@ def foldX(pipeline):
 
     """
     from PYME.Analysis.points import multiview
-    multiview.foldX(pipeline.selectedDataSource, pipeline.mdh)
+    multiview.foldX(pipeline.selectedDataSource, pipeline.mdh, inject=True, chroma_mappings=True)
 
 
 def plotFolded(X, Y, multiviewChannels, title=''):

@@ -46,7 +46,7 @@ def coalesceDictSorted(inD, assigned, keys, weights_by_key):  # , notKosher=None
     return clumped
 
 
-def foldX(datasource, mdh):
+def foldX(datasource, mdh, inject=False, chroma_mappings=False):
     """
 
     At this point the origin of x should be the corner of the concatenated frame
@@ -59,6 +59,10 @@ def foldX(datasource, mdh):
         Adds channel assignments to the datasource
 
     """
+    from PYME.IO import tabular
+    if not inject:
+        datasource = tabular.mappingFilter(datasource)
+
     roiSizeNM = (mdh['Multiview.ROISize'][1]*mdh['voxelsize.x']*1000)  # voxelsize is in um
 
     numChans = mdh.getOrDefault('Multiview.NumROIs', 1)
@@ -67,13 +71,16 @@ def foldX(datasource, mdh):
     datasource.addVariable('roiSizeNM', roiSizeNM)
     datasource.addVariable('numChannels', numChans)
 
-    datasource.addColumn('chromadx', 0*datasource['x'])
-    datasource.addColumn('chromady', 0*datasource['y'])
-
     #FIXME - cast to int should probably happen when we use multiViewChannel, not here (because we might have saved and reloaded in between)
     datasource.setMapping('multiviewChannel', 'clip(floor(x/roiSizeNM), 0, numChannels - 1).astype(int)')
-    datasource.setMapping('x', 'x%roiSizeNM + chromadx')
-    datasource.setMapping('y', 'y + chromady')
+    if chroma_mappings:
+        datasource.addColumn('chromadx', 0 * datasource['x'])
+        datasource.addColumn('chromady', 0 * datasource['y'])
+
+        datasource.setMapping('x', 'x%roiSizeNM + chromadx')
+        datasource.setMapping('y', 'y + chromady')
+    else:
+        datasource.setMapping('x', 'x%roiSizeNM')
 
     probe = color_chans[datasource['multiviewChannel']] #should be better performance
     datasource.addColumn('probe', probe)
@@ -93,6 +100,8 @@ def foldX(datasource, mdh):
 
         #lets add some more that might be useful
         #datasource.setMapping('A%d' % chan, 'chan%d*A' % chan)
+
+    return datasource
 
 def calcShifts(datasource, shiftWallet):
     import importlib
