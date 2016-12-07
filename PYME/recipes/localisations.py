@@ -213,9 +213,9 @@ class FindClumps(ModuleBase):
         inp = namespace[self.inputName]
 
         try:
-            mapped = multiview.findClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
-        except KeyError:
             mapped = multiview.multicolorFindClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
+        except KeyError:
+            mapped = multiview.findClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
         
         if 'mdh' in dir(inp):
             mapped.mdh = inp.mdh
