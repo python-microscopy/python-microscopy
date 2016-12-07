@@ -113,7 +113,11 @@ class Pipelineify(ModuleBase):
             mapped_ds.setMapping('y', 'y*pixelSize')
 
         #extract information from any events
-        ev_maps, ev_charts = pipeline._processEvents(mapped_ds, namespace.get(self.inputEvents, None), mdh)
+        events = namespace.get(self.inputEvents, None)
+        if isinstance(events, tabular.TabularBase):
+            events = events.to_recarray()
+
+        ev_maps, ev_charts = pipeline._processEvents(mapped_ds, events, mdh)
         pipeline._add_missing_ds_keys(mapped_ds, ev_maps)
 
         #Fit module specific filter settings
