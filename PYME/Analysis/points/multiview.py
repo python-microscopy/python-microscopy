@@ -147,8 +147,9 @@ def applyShiftmaps(datasource, shiftWallet):  # FIXME: add metadata for camera r
     datasource.addColumn('chromady', dy)
 
 
-def findClumps(datasource, gap_tolerance, radius_scale, radius_offset):
+def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=False):
     from PYME.Analysis.points.DeClump import deClump
+    from PYME.IO import tabular
     t = datasource['t'] #OK as int
     clumps = np.zeros(len(t), 'i')
     I = np.argsort(t)
@@ -160,6 +161,9 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset):
 
     assigned = deClump.findClumpsN(t, x, y, deltaX, gap_tolerance)
     clumps[I] = assigned
+
+    if not inject:
+        datasource = tabular.mappingFilter(datasource)
 
     datasource.addColumn('clumpIndex', clumps)
 

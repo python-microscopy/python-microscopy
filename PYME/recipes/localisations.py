@@ -208,12 +208,7 @@ class FindClumps(ModuleBase):
 
         inp = namespace[self.inputName]
 
-
-        #    raise RuntimeError('Unfold needs metadata')
-
-        mapped = tabular.mappingFilter(inp)
-
-        multiview.findClumps(mapped, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
+        mapped = multiview.findClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
 
         if 'mdh' in dir(inp):
             mapped.mdh = inp.mdh
