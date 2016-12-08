@@ -201,6 +201,12 @@ class NodeServer(object):
             if clusterIO.isLocal(filename, serverfilter):
                 cost = .01
 
+        elif task['type'] == 'recipe':
+            for URL in task['inputs'].values():
+                if clusterIO.isLocal(*clusterIO.parseURL(URL)):
+                    cost *= .2
+
+
         return {'id' : task['id'], 'cost': cost}
 
     @webframework.register_endpoint('/node/rate')

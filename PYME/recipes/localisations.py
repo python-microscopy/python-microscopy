@@ -230,6 +230,7 @@ class MergeClumps(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     inputName = Input('clumped')
     outputName = Output('merged')
+    labelKey = CStr('clumpIndex')
 
     def execute(self, namespace):
         from PYME.Analysis.points import multiview
@@ -241,7 +242,7 @@ class MergeClumps(ModuleBase):
         if 'mdh' not in dir(inp):
             raise RuntimeError('MergeClumps needs metadata')
 
-        grouped = multiview.mergeClumps(inp, inp.mdh.getOrDefault('Multiview.NumROIs', 0))
+        grouped = multiview.mergeClumps(inp, inp.mdh.getOrDefault('Multiview.NumROIs', 0), labelKey=self.labelKey)
 
         grouped.mdh = inp.mdh
 
