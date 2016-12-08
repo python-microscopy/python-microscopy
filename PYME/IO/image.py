@@ -411,8 +411,7 @@ class ImageStack(object):
         import tables
         from PYME.IO.DataSources import HDFDataSource, BGSDataSource
         from PYME.IO import tabular
-        
-        #open hdf5 file
+
         self.dataSource = HDFDataSource.DataSource(filename, None)
         #chain on a background subtraction data source, so we can easily do 
         #background subtraction in the GUI the same way as in the analysis
@@ -510,7 +509,9 @@ class ImageStack(object):
         
         .psf files consist of a tuple containing the data and the voxelsize.
         """
-        self.data, vox = numpy.load(filename)
+        from PYME.IO import unifiedIO
+        with unifiedIO.local_or_temp_filename(filename) as fn:
+            self.data, vox = numpy.load(fn)
         self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.ConfocDefault)
 
         self.mdh.setEntry('voxelsize.x', vox.x)
@@ -528,9 +529,11 @@ class ImageStack(object):
         
        
         """
+        from PYME.IO import unifiedIO
         mdfn = self._findAndParseMetadata(filename)
-        
-        self.data = numpy.load(filename)
+
+        with unifiedIO.local_or_temp_filename(filename) as fn:
+            self.data = numpy.load(fn)
 
 
         #from PYME.ParallelTasks.relativeFiles import getRelFilename
