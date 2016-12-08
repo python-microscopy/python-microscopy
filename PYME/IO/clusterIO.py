@@ -224,6 +224,11 @@ def listdirectory(dirname, serverfilter=''):
 
     urls = []
 
+    dirname = dirname.lstrip('/')
+
+    if not dirname.endswith('/'):
+        dirname = dirname + '/'
+
     for name, info in ns.advertised_services.items():
         if serverfilter in name:
             urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
@@ -242,6 +247,9 @@ def listdir(dirname, serverfilter=''):
 
     return list(listdirectory(dirname, serverfilter).keys())
 
+def isdir(name, serverfilter=''):
+    return len(listdir(name, serverfilter)) > 0
+
 
 def exists(name, serverfilter=''):
 #    if name.endswith('/'):
@@ -253,7 +261,7 @@ def exists(name, serverfilter=''):
 #    dirname = '/'.join(name.split('/')[:-1])
 #    fname = name.split('/')[-1] + trailing
     #return fname in listdir(dirname, serverfilter)
-    return len(locateFile(name, serverfilter, True)) > 0
+    return (len(locateFile(name, serverfilter, True)) > 0) or isdir(name, serverfilter)
 
 
 def walk(top, topdown=True, on_error=None, followlinks=False, serverfilter=''):
