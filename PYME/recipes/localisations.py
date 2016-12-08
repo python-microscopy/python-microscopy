@@ -205,6 +205,8 @@ class FindClumps(ModuleBase):
     gapTolerance = Int(1, desc='Number of off-frames allowed to still be a single clump')
     radiusScale = Float(2.0)
     radius_offset_nm = Float(150., desc='[nm]')
+    probeAwareClumping = Bool(False, desc='''Use probe-aware clumping. NB this option does not work with standard methods of colour 
+                                             specification, and splitting by channel and clumping separately is preferred''') 
     outputName = Output('clumped')
 
     def execute(self, namespace):
@@ -212,8 +214,11 @@ class FindClumps(ModuleBase):
 
         inp = namespace[self.inputName]
 
-        mapped = multiview.findClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
-
+        if self.probeAwareClumping and 'probe' in inp.keys(): #special case for using probe aware clumping NB this is a temporary fudge for non-standard colour handling
+            mapped = multiview.probeAwareFindClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
+        else: #default
+            mapped = multiview.findClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
+        
         if 'mdh' in dir(inp):
             mapped.mdh = inp.mdh
 

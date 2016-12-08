@@ -169,6 +169,58 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=Fa
 
     return datasource
 
+def probeAwareFindClumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=False):
+    """
+
+    Args:
+        datasource: PYME datasource object - dictionary-like object with addColumn method
+        gap_tolerance: number of frames acceptable for a molecule to go MIA and still be called the same molecule when
+            it returns
+        radius_scale: multiplicative factor applied to the error_x term in deciding search radius for pairing
+        radius_offset: term added to radius_scale*error_x to set search radius
+
+    Returns:
+        Nothing, but adds clumpIndex column to datasource input
+        
+    FIXME: This function should probably not exist as channel handling should ideally only be in one place within the code base. A prefered solution would be to split using a colour filter, clump
+    each channel separately, and then merge channels.
+
+    """
+    from PYME.Analysis.points.DeClump import deClump
+    from PYME.IO import tabular
+    t = datasource['t'] #OK as int
+    clumps = np.zeros(len(t), 'i')
+    I = np.argsort(t)
+    t = t[I].astype('i')
+    x = datasource['x'][I].astype('f4')
+    y = datasource['y'][I].astype('f4')
+
+    deltaX = (radius_scale*datasource['error_x'][I] + radius_offset).astype('f4')
+
+    # extract color channel information
+    uprobe = np.unique(datasource['probe'])
+    probe = datasource['probe'][I]
+
+
+    # only clump within color channels
+    assigned = np.zeros_like(clumps)
+    startAt = 0
+    for pi in uprobe:
+        pmask = probe == pi
+        pClumps = deClump.findClumpsN(t[pmask], x[pmask], y[pmask], deltaX, gap_tolerance) + startAt
+        # throw all unclumped into the 0th clumpID, and preserve pClumps[-1] of the last iteration
+        pClumps[pClumps == startAt] = 0
+        # patch in assignments for this color channel
+        assigned[pmask] = pClumps
+        startAt = np.max(assigned)
+    clumps[I] = assigned
+
+    if not inject:
+        datasource = tabular.mappingFilter(datasource)
+
+    datasource.addColumn('clumpIndex', clumps)
+
+    return datasource
 
 def mergeClumps(datasource, numChan):
     from PYME.IO.tabular import cachingResultsFilter, mappingFilter
