@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 import numpy as np
 #import sys
 
-
 def saveDataFrame(output, filename):
     """Saves a pandas dataframe, inferring the destination type based on extension"""
     if filename.endswith('.csv'):
