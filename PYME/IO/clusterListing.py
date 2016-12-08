@@ -72,7 +72,12 @@ def __file_info(path, fn):
 def _file_info(path, fn):
     fpath = os.path.join(path, fn)
 
-    return (fn, file_info(fpath))
+    finfo = file_info(fpath)
+
+    if finfo[0] & FILETYPE_DIRECTORY:
+        fn = fn + '/'
+
+    return (fn, finfo)
 
 
 def list_directory(path):
