@@ -11,6 +11,7 @@ import socket
 import requests
 import time
 import numpy as np
+import threading
 
 import socket
 import os
@@ -47,11 +48,14 @@ class _LimitedSizeDict(OrderedDict):
     def __init__(self, *args, **kwds):
         self.size_limit = kwds.pop("size_limit", None)
         OrderedDict.__init__(self, *args, **kwds)
+
+        self._lock = threading.Lock()
         self._check_size_limit()
 
     def __setitem__(self, key, value):
-        OrderedDict.__setitem__(self, key, value)
-        self._check_size_limit()
+        with self._lock:
+            OrderedDict.__setitem__(self, key, value)
+            self._check_size_limit()
 
     def _check_size_limit(self):
         if self.size_limit is not None:
