@@ -331,7 +331,8 @@ class RecipeView(wx.Panel):
         self.recipes.LoadRecipeText(self.tRecipeText.GetValue())
         
     def OnNewRecipe(self, event):
-        self.recipes.LoadRecipeText('')
+        if wx.MessageBox("Clear recipe?", "Confirm", wx.YES_NO | wx.CANCEL, self) == wx.YES:
+            self.recipes.LoadRecipeText('')
         
     def OnAddModule(self, event):
         #mods = 
