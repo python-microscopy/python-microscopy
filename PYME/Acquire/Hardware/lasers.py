@@ -269,11 +269,11 @@ class SBox:
 
 
 class SerialSwitchedLaser(Laser):
-    def __init__(self, name, sbox, ioNo, turnOn=False):
+    def __init__(self, name, sbox, ioNo, turnOn=False, **kwargs):
         self.sbox = sbox
         self.ioNo = ioNo
 
-        Laser.__init__(self,name,turnOn)
+        Laser.__init__(self,name,turnOn, **kwargs)
 
     def IsOn(self):
         return self.sbox.getState(self.ioNo)
