@@ -117,17 +117,23 @@ class AndorBase(SDK3Camera):
     class SimpleGainEnum(object):
         def __init__(self, cam):
             self.cam = cam
-            self.gainmodes = SimpleGainModes
+            self.gainmodes = cam.SimpleGainModes
+            self.propertyName = 'SimpleGainModes'
             
-        def getAvailableValues():
+        def getAvailableValues(self):
             return self.gainmodes.keys()
 
-        def setString(str):
+        def setString(self,str):
             self.cam.SetGainMode(str)
 
-        def getString():
+        def getString(self):
             return self.cam.GetGainMode()
 
+
+    def setNoisePropertiesByCam(self,serno):
+        if serno not in self.NoiseProperties.keys():
+            serno = 'VSC-00954' # default
+        self.baseNoiseProps = self.NoiseProperties[serno] 
 
     def __init__(self, camNum):
         #define properties
@@ -145,7 +151,7 @@ class AndorBase(SDK3Camera):
         self.PixelReadoutRate = ATEnum()
         self.PreAmpGain = ATEnum()
         self.PreAmpGainSelector = ATEnum()
-        # self.SimplePreAmpGainControl = ATEnum()
+        self.SimplePreAmpGainControl = ATEnum()
         self.TriggerMode = ATEnum()
         
         self.AOIHeight = ATInt()
@@ -226,7 +232,7 @@ class AndorBase(SDK3Camera):
         #self.PixelReadoutRate.setIndex(1)
         # test if we have only fixed ROIs
         self._fixed_ROIs = not self.FullAOIControl.isImplemented() or not self.FullAOIControl.getValue()
-        self.baseNoiseProps = self.NoiseProperties[self.GetSerialNumber()]
+        self.setNoisePropertiesByCam(self.GetSerialNumber())
         # gain mode has been set via EMGain above
         self.noiseProps = self.baseNoiseProps[self.GetGainMode()]
 
@@ -718,7 +724,7 @@ class AndorZyla(AndorBase):
         self.TemperatureControl = ATEnum()
         self.TemperatureStatus = ATEnum()
         self.SimplePreAmpGainControl = ATEnum()
-        self.SimpleGainEnum = SimpleGainEnum(self)
+        self.SimpleGainEnumInstance = self.SimpleGainEnum(self) # this instance is compatible with use in Zylacontrolpanel
         self.BitDepth = ATEnum()
         
         self.ActualExposureTime = ATFloat()
