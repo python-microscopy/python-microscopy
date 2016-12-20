@@ -153,7 +153,6 @@ class AndorBase(SDK3Camera):
         self.PixelReadoutRate = ATEnum()
         self.PreAmpGain = ATEnum()
         self.PreAmpGainSelector = ATEnum()
-        self.SimplePreAmpGainControl = ATEnum()
         self.TriggerMode = ATEnum()
         
         self.AOIHeight = ATInt()
