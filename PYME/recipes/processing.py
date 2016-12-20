@@ -220,7 +220,194 @@ class Gradient2D(ModuleBase):
         
         #self.completeMetadata(im)
         namespace[self.outputNameY] = im
-        
+
+
+@register_module('Gradient3D')
+class Gradient3D(ModuleBase):
+    inputName = Input('input')
+    outputNameX = Output('grad_x')
+    outputNameY = Output('grad_y')
+    outputNameZ = Output('grad_z')
+
+    def calc_grad(self, data, chanNum):
+        dx, dy, dz = np.gradient(np.atleast_3d(data[:,:,:,chanNum].squeeze()))
+
+        return dx, dy, dz
+
+    def execute(self, namespace):
+        image = namespace[self.inputName]
+        grad_x = []
+        grad_y = []
+        grad_z = []
+
+        for chanNum in range(image.data.shape[3]):
+            fx, fy, fz = self.calc_grad(image.data, chanNum)
+            grad_x.append(fx)
+            grad_y.append(fy)
+            grad_z.append(fz)
+
+        im = ImageStack(grad_x, titleStub=self.outputNameX)
+        im.mdh.copyEntriesFrom(image.mdh)
+        namespace[self.outputNameX] = im
+
+        im = ImageStack(grad_y, titleStub=self.outputNameY)
+        im.mdh.copyEntriesFrom(image.mdh)
+        namespace[self.outputNameY] = im
+
+        im = ImageStack(grad_z, titleStub=self.outputNameY)
+        im.mdh.copyEntriesFrom(image.mdh)
+        namespace[self.outputNameZ] = im
+
+@register_module('DirectionToMask3D')
+class DirectionToMask3D(ModuleBase):
+    """
+    Estimates the direction from a pixel to the edge of a mask.
+    """
+    inputName = Input('input')
+    outputNameX = Output('grad_x')
+    outputNameY = Output('grad_y')
+    outputNameZ = Output('grad_z')
+
+    kernelSize = Int(7)
+
+    def calc_grad(self, data, chanNum):
+        from scipy import ndimage
+
+        data = np.atleast_3d(data[:,:,:,chanNum].squeeze())
+
+        ks = float(self.kernelSize)
+        X,Y,Z = np.mgrid[-ks:(ks+1), -ks:(ks+1), -ks:(ks+1)]
+        R = np.sqrt(X*X + Y*Y + Z*Z)
+
+        kernel_norm = 1.0/R
+        kernel_norm[ks,ks,ks] = 0
+
+        kernel_x = X/(R*R)
+        kernel_x[ks, ks, ks] = 0
+
+        kernel_y = Y / (R * R)
+        kernel_y[ks, ks, ks] = 0
+
+        kernel_z = Z / (R * R)
+        kernel_z[ks, ks, ks] = 0
+
+        norm = np.maximum(0.01, ndimage.convolve(data, kernel_norm))
+
+        dx = ndimage.convolve(data, kernel_x)/norm
+        dy = ndimage.convolve(data, kernel_y) / norm
+        dz = ndimage.convolve(data, kernel_z) / norm
+
+        norm2 = np.maximum(.01, np.sqrt(dx*dx + dy*dy + dz*dz))
+
+        return dx/norm2, dy/norm2, dz/norm2
+
+    def execute(self, namespace):
+        image = namespace[self.inputName]
+        grad_x = []
+        grad_y = []
+        grad_z = []
+
+        for chanNum in range(image.data.shape[3]):
+            fx, fy, fz = self.calc_grad(image.data, chanNum)
+            grad_x.append(fx)
+            grad_y.append(fy)
+            grad_z.append(fz)
+
+        im = ImageStack(grad_x, titleStub=self.outputNameX)
+        im.mdh.copyEntriesFrom(image.mdh)
+        namespace[self.outputNameX] = im
+
+        im = ImageStack(grad_y, titleStub=self.outputNameY)
+        im.mdh.copyEntriesFrom(image.mdh)
+        namespace[self.outputNameY] = im
+
+        im = ImageStack(grad_z, titleStub=self.outputNameY)
+        im.mdh.copyEntriesFrom(image.mdh)
+        namespace[self.outputNameZ] = im
+
+@register_module('VectorfieldCurl')
+class VectorfieldCurl(ModuleBase):
+    """Calculates the curl of a vector field defined by three inputs.
+
+
+    Notes
+    -----
+
+    returns
+    .. math::
+
+        (\frac{\del F_z}{\del y} - \frac{\del F_y}{\del z}, \frac{\del F_x}{\del z} - \frac{\del F_z}{\del x}, \frac{\del F_y}{\del x} - \frac{\del F_x}{\del y})$$
+    """
+    inputX = Input('inp_x')
+    inputY = Input('inp_y')
+    inputZ = Input('inp_z')
+
+    outputX = Output('out_x')
+    outputY = Output('out_y')
+    outputZ = Output('out_z')
+
+
+    def execute(self, namespace):
+        Fx = namespace[self.inputX].data[:,:,:,0].squeeze()
+        Fy = namespace[self.inputY].data[:, :, :, 0].squeeze()
+        Fz = namespace[self.inputZ].data[:, :, :, 0].squeeze()
+
+        mdh = namespace[self.inputX].mdh
+
+        dFzdx, dFzdy, dFzdz = np.gradient(Fz)
+        dFydx, dFydy, dFydz = np.gradient(Fy)
+        dFxdx, dFxdy, dFxdz = np.gradient(Fx)
+
+        im = ImageStack(dFzdy - dFydz, titleStub=self.outputX)
+        im.mdh.copyEntriesFrom(mdh)
+        namespace[self.outputX] = im
+
+        im = ImageStack(dFxdz - dFzdx, titleStub=self.outputY)
+        im.mdh.copyEntriesFrom(mdh)
+        namespace[self.outputY] = im
+
+        im = ImageStack(dFydx - dFzdy, titleStub=self.outputZ)
+        im.mdh.copyEntriesFrom(mdh)
+        namespace[self.outputZ] = im
+
+@register_module('VectorfieldNorm')
+class VectorfieldNorm(ModuleBase):
+    """Calculates the norm of a vector field defined by three inputs.
+
+
+    Notes
+    -----
+
+    returns
+    .. math::
+
+        sqrt(x*x + y*y + z*z)
+
+    Also works for 2D vector fields if inputZ is an empty string.
+    """
+    inputX = Input('inp_x')
+    inputY = Input('inp_y')
+    inputZ = Input('inp_z')
+
+    outputName = Output('output')
+
+    def execute(self, namespace):
+        x = namespace[self.inputX].data[:,:,:,0].squeeze()
+        y = namespace[self.inputY].data[:, :, :, 0].squeeze()
+        if self.inputZ == '':
+            z = 0
+        else:
+            z = namespace[self.inputZ].data[:, :, :, 0].squeeze()
+
+        mdh = namespace[self.inputX].mdh
+
+        norm = np.sqrt(x*x + y*y + z*z)
+
+        im = ImageStack(norm, titleStub=self.outputName)
+        im.mdh.copyEntriesFrom(mdh)
+        namespace[self.outputName] = im
+
+
 @register_module('ProjectOnVector')         
 class ProjectOnVector(ModuleBase):
     """Project onto a set of direction vectors, producing p and s components"""
@@ -463,7 +650,7 @@ class DistanceTransform(Filter):
         mask = 1.0*(data > 0.5)
         voxelsize = np.array(im.voxelsize)[:mask.ndim]
         dt = -ndimage.distance_transform_edt(data, sampling=voxelsize)
-        dt = dt + ndimage.distance_transform_edt(ndimage.binary_dilation(1-mask), sampling=voxelsize)
+        dt = dt + ndimage.distance_transform_edt(1 - ndimage.binary_dilation(mask), sampling=voxelsize)
         return dt
 
 @register_module('BinaryDilation')      
