@@ -73,8 +73,7 @@ class ZylaControl(wx.Panel):
         self.cam = cam
         self.scope = scope
         
-        self.ctrls = [EnumControl(self, cam.SimplePreAmpGainControl),
-                      EnumControl(self, cam.PixelEncoding),
+        self.ctrls = [EnumControl(self, cam.SimpleGainEnumInstance),
                       EnumControl(self, cam.PixelReadoutRate),
                       BoolControl(self, cam.SpuriousNoiseFilter),
                       BoolControl(self, cam.StaticBlemishCorrection),

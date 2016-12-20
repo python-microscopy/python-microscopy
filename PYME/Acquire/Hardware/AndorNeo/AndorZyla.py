@@ -114,20 +114,22 @@ class AndorBase(SDK3Camera):
                 'SaturationThreshold' : (2**16 -1)
             }}}
 
+    # this class is compatible with the ATEnum object properties that are used in ZylaControlPanel
+    # we use it as a higher level alternative to setting gainmode and encoding directly
     class SimpleGainEnum(object):
         def __init__(self, cam):
             self.cam = cam
-            self.gainmodes = cam.SimpleGainModes
+            self.gainmodes = cam.SimpleGainModes.keys()
             self.propertyName = 'SimpleGainModes'
             
         def getAvailableValues(self):
-            return self.gainmodes.keys()
+            return self.gainmodes
 
         def setString(self,str):
-            self.cam.SetGainMode(str)
+            self.cam.SetSimpleGainMode(str)
 
         def getString(self):
-            return self.cam.GetGainMode()
+            return self.cam.GetSimpleGainMode()
 
 
     def setNoisePropertiesByCam(self,serno):
@@ -209,7 +211,7 @@ class AndorBase(SDK3Camera):
         self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
         try:
-            self.SetEMGain(0) # note that this sets 'high dynamic range' mode
+            self.SetSimpleGainMode('high dynamic range') # note that this sets 'high dynamic range' mode
         except:
             print "error setting gain mode"
             pass
@@ -234,7 +236,7 @@ class AndorBase(SDK3Camera):
         self._fixed_ROIs = not self.FullAOIControl.isImplemented() or not self.FullAOIControl.getValue()
         self.setNoisePropertiesByCam(self.GetSerialNumber())
         # gain mode has been set via EMGain above
-        self.noiseProps = self.baseNoiseProps[self.GetGainMode()]
+        self.noiseProps = self.baseNoiseProps[self.GetSimpleGainMode()]
 
         self.SetIntegTime(.100)
         
@@ -500,7 +502,7 @@ class AndorBase(SDK3Camera):
         self.AOITop.setValue(y1+1)
         #print >>sys.stderr, 'AOITop was set'
 
-    def SetGainMode(self,mode):
+    def SetSimpleGainMode(self,mode):
         from warnings import warn
         if not any(mode in s for s in self.SimpleGainModes.keys()):
             warn('invalid mode "%s" requested - ignored' % mode)
@@ -510,7 +512,7 @@ class AndorBase(SDK3Camera):
         self.PixelEncoding.setString(self.SimpleGainModes[mode]['PEncoding'])
         self.noiseProps = self.baseNoiseProps[self._gainmode] # update noise properties for new mode
 
-    def GetGainMode(self):
+    def GetSimpleGainMode(self):
         return self._gainmode
 
     def GetROIX1(self):
@@ -597,9 +599,10 @@ class AndorBase(SDK3Camera):
 
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
             mdh.setEntry('Camera.CycleTime', self.GetCycleTime())
-            mdh.setEntry('Camera.EMGain', self.GetEMGain())
+            mdh.setEntry('Camera.EMGain', 0)
             mdh.setEntry('Camera.DefaultEMGain', 1) # needed for some protocols
-    
+            mdh.setEntry('Camera.SimpleGainMode', self.GetSimpleGainMode())
+
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
@@ -608,7 +611,7 @@ class AndorBase(SDK3Camera):
 
             # values for readnoise and EpC from Neo sheet for Gain 4
             # should be selected with 11 bit low noise setting
-            np = self.baseNoiseProps[self.GetGainMode()]
+            np = self.baseNoiseProps[self.GetSimpleGainMode()]
             mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
             mdh.setEntry('Camera.NoiseFactor', 1.0)
             mdh.setEntry('Camera.ElectronsPerCount', np['ElectronsPerCount'])
@@ -660,13 +663,9 @@ class AndorBase(SDK3Camera):
         #pass
 
     def SetEMGain(self, gain):
-        self.EMGain = gain
-        if gain > 0:
-            print 'low noise mode'
-            self.SetGainMode('low noise')
-        else:
-            print 'high dynamic range mode'
-            self.SetGainMode('high dynamic range')
+        print 'EMGain ignored'
+        self.EMGain = 0
+        return
     
     def SetAcquisitionMode(self, aqMode):
         self.CycleMode.setIndex(aqMode)
