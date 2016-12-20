@@ -21,8 +21,8 @@
 #
 ##################
 
-#from PYME.Acquire.Hardware.AndorIXon import AndorIXon
-from PYME.Acquire.Hardware.AndorNeo import AndorNeoControlFrame
+from PYME.Acquire.Hardware.AndorNeo import ZylaControlPanel
+from PYME.Acquire.Hardware.AndorNeo import AndorZyla
 
 import scipy
 from PYME.Acquire.Hardware.Simulator import fakeCam, fakePiezo
@@ -42,12 +42,10 @@ def GetComputerName():
 from PYME.IO import MetaDataHandler
 
 InitBG('Andor Zyla', '''
-from PYME.Acquire.Hardware.AndorNeo import AndorZyla
 scope.cameras['Zyla'] =  AndorZyla.AndorZyla(0)
 scope.cam = scope.cameras['Zyla']
+scope.cameras['Zyla'].Init()
 ''')
-
-InitGUI('''scope.cameras['Zyla'].Init()''')
 
 #PIFoc
 #pz1 = InitBG('PIFoc', '''
@@ -83,13 +81,8 @@ InitGUI('''scope.cameras['Zyla'].Init()''')
 #''')
 
 InitGUI('''
-# scope.camControls['Zyla'] = 'Test'
-scope.camControls['Zyla'] = AndorNeoControlFrame.AndorNeoPanel(MainFrame, scope.cameras['Zyla'], scope)
-camPanels.append((scope.camControls['Zyla'], 'Zyla Properties'))
-
-#scope.camControls['B - Right'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['B - Right'], scope)
-#camPanels.append((scope.camControls['B - Right'], 'EMCCD B Properties'))
-
+scope.camControls['Zyla'] = ZylaControlPanel.ZylaControl(MainFrame, scope.cameras['Zyla'], scope)
+camPanels.append((scope.camControls['Zyla'], 'sCMOS Properties'))
 ''')
 
 #InitGUI('''
@@ -281,15 +274,6 @@ if 'lasers'in dir(scope):
 #    scope.fc.addMenuItems(MainFrame, MainMenu)
 #    scope.fc.Start(2000)
 #''')
-
-from PYME import cSMI
-
-
-Is = []
-
-def calcSum(caller):
-    Is.append(cSMI.CDataStack_AsArray(caller.ds, 0).sum())
-
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread
