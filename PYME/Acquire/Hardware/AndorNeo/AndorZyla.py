@@ -56,31 +56,79 @@ class AndorBase(SDK3Camera):
             { 'name' : '16-bit (low noise & high well capacity)', 'PEncoding' : 'Mono16' }}
 
     NoiseProperties = {
-        'low noise': {
-            'ReadNoise' : 1.1,
-            'ElectronsPerCount' : 0.28,
-            'NGainStages' : -1,
-            'ADOffset' : 100, # check mean (or median) offset
-            'DefaultEMGain' : 85,
-            'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
-        },
-        'high capacity': {
-            'ReadNoise' : 5.96,
-            'ElectronsPerCount' : 6.97,
-            'NGainStages' : -1,
-            'ADOffset' : 100,
-            'DefaultEMGain' : 85,
-            'SaturationThreshold' : 2**11-1#(2**16 -1)         
-        },
-        'high dynamic range': {
-            'ReadNoise' : 1.33,
-            'ElectronsPerCount' : 0.5,
-            'NGainStages' : -1,
-            'ADOffset' : 100,
-            'DefaultEMGain' : 85,
-            'SaturationThreshold' : (2**16 -1)
-        }}
-    
+        'VSC-00954': {
+            'low noise': {
+                'ReadNoise' : 1.1,
+                'ElectronsPerCount' : 0.28,
+                'ADOffset' : 100, # check mean (or median) offset
+                'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
+            },
+            'high capacity': {
+                'ReadNoise' : 5.96,
+                'ElectronsPerCount' : 6.97,
+                'ADOffset' : 100,
+                'SaturationThreshold' : 2**11-1#(2**16 -1)         
+            },
+            'high dynamic range': {
+                'ReadNoise' : 1.33,
+                'ElectronsPerCount' : 0.5,
+                'ADOffset' : 100,
+                'SaturationThreshold' : (2**16 -1)
+            }},
+        'VSC-02858': {
+             'low noise': {
+                'ReadNoise' : 1.19,
+                'ElectronsPerCount' : 0.3,
+                'ADOffset' : 100, # check mean (or median) offset
+                'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
+            },
+            'high capacity': {
+                'ReadNoise' : 6.18,
+                'ElectronsPerCount' : 7.2,
+                'ADOffset' : 100,
+                'SaturationThreshold' : 2**11-1#(2**16 -1)         
+            },
+            'high dynamic range': {
+                'ReadNoise' : 1.42,
+                'ElectronsPerCount' : 0.5,
+                'ADOffset' : 100,
+                'SaturationThreshold' : (2**16 -1)
+            }},
+        'VSC-02698': {
+             'low noise': {
+                'ReadNoise' : 1.16,
+                'ElectronsPerCount' : 0.26,
+                'ADOffset' : 100, # check mean (or median) offset
+                'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
+            },
+            'high capacity': {
+                'ReadNoise' : 6.64,
+                'ElectronsPerCount' : 7.38,
+                'ADOffset' : 100,
+                'SaturationThreshold' : 2**11-1#(2**16 -1)         
+            },
+            'high dynamic range': {
+                'ReadNoise' : 1.36,
+                'ElectronsPerCount' : 0.49,
+                'ADOffset' : 100,
+                'SaturationThreshold' : (2**16 -1)
+            }}}
+
+    class SimpleGainEnum(object):
+        def __init__(self, cam):
+            self.cam = cam
+            self.gainmodes = SimpleGainModes
+            
+        def getAvailableValues():
+            return self.gainmodes.keys()
+
+        def setString(str):
+            self.cam.SetGainMode(str)
+
+        def getString():
+            return self.cam.GetGainMode()
+
+
     def __init__(self, camNum):
         #define properties
         self.CameraAcquiring = ATBool()
@@ -178,7 +226,9 @@ class AndorBase(SDK3Camera):
         #self.PixelReadoutRate.setIndex(1)
         # test if we have only fixed ROIs
         self._fixed_ROIs = not self.FullAOIControl.isImplemented() or not self.FullAOIControl.getValue()
-        self.noiseProps = self.NoiseProperties[self.GetGainMode()] # gain mode has been set via EMGain above
+        self.baseNoiseProps = self.NoiseProperties[self.GetSerialNumber()]
+        # gain mode has been set via EMGain above
+        self.noiseProps = self.baseNoiseProps[self.GetGainMode()]
 
         self.SetIntegTime(.100)
         
@@ -189,7 +239,6 @@ class AndorBase(SDK3Camera):
         self.pollLoopActive = True
         self.pollThread = threading.Thread(target = self._pollLoop)
         self.pollThread.start()
-        
         
         
     #Neo buffer helper functions    
@@ -453,7 +502,7 @@ class AndorBase(SDK3Camera):
         self._gainmode = mode
         self.SimplePreAmpGainControl.setString(self.SimpleGainModes[mode]['name'])
         self.PixelEncoding.setString(self.SimpleGainModes[mode]['PEncoding'])
-        self.noiseProps = self.NoiseProperties[self._gainmode] # update noise properties for new mode
+        self.noiseProps = self.baseNoiseProps[self._gainmode] # update noise properties for new mode
 
     def GetGainMode(self):
         return self._gainmode
@@ -543,7 +592,7 @@ class AndorBase(SDK3Camera):
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
             mdh.setEntry('Camera.CycleTime', self.GetCycleTime())
             mdh.setEntry('Camera.EMGain', self.GetEMGain())
-            mdh.setEntry('Camera.DefaultEMGain', 85) # needed for some protocols
+            mdh.setEntry('Camera.DefaultEMGain', 1) # needed for some protocols
     
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
@@ -553,7 +602,7 @@ class AndorBase(SDK3Camera):
 
             # values for readnoise and EpC from Neo sheet for Gain 4
             # should be selected with 11 bit low noise setting
-            np = self.NoiseProperties[self.GetGainMode()]
+            np = self.baseNoiseProps[self.GetGainMode()]
             mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
             mdh.setEntry('Camera.NoiseFactor', 1.0)
             mdh.setEntry('Camera.ElectronsPerCount', np['ElectronsPerCount'])
@@ -669,6 +718,7 @@ class AndorZyla(AndorBase):
         self.TemperatureControl = ATEnum()
         self.TemperatureStatus = ATEnum()
         self.SimplePreAmpGainControl = ATEnum()
+        self.SimpleGainEnum = SimpleGainEnum(self)
         self.BitDepth = ATEnum()
         
         self.ActualExposureTime = ATFloat()
