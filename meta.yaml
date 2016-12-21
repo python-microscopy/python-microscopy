@@ -37,6 +37,7 @@ build:
     - taskServerZC = PYME.ParallelTasks.taskServerZC:main
     - PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main
     - PYMEClusterDup = PYME.io.clusterDuplication:main
+    - genmaps = PYME.localization.genmaps:main
 
 
 
