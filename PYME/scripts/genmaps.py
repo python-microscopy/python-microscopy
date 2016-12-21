@@ -39,31 +39,55 @@ def makePathUnlessExists(path):
         if exception.errno != errno.EEXIST:
             raise
 
+def mkDestPath(destdir,stem,mdh):
+    if not os.path.isdir(destdir):
+        raise ValueError('directory %s does not exist; please create' % destdir)
+    itime = int(1000*mdh['Camera.IntegrationTime'])
+    return os.path.join(destdir,'%s_%dms.tif' % (stem,itime))
+
+from PYME.IO.FileUtils import nameUtils
 def mkDefaultPath(stem,mdh):
-   from PYME.IO.FileUtils import nameUtils
    caldir = nameUtils.getCalibrationDir(mdh['Camera.SerialNumber'])
    makePathUnlessExists(caldir)
-   itime = int(1000*mdh['Camera.IntegrationTime'])
-   return os.path.join(caldir, '%s_%dms.tif' % (stem,itime))
+   return mkDestPath(caldir,stem,mdh)
+
+import os
+from glob import glob
+def listCalibrationDirs():
+    rootdir = nameUtils.getCalibrationDir('')
+    result = [y for x in os.walk(rootdir) for y in glob(os.path.join(x[0], '*.tif'))]
+    if result is not None:
+        print 'List of installed maps:'
+        for m in result:
+            print m
 
 # options parsing
 op = argparse.ArgumentParser(description='generate offset and variance maps from darkseries.')
-op.add_argument('filename', metavar='filename',
+op.add_argument('filename', metavar='filename', nargs='?', default=None,
                 help='filename of the darkframe series')
 op.add_argument('-s', '--start', type=int, default=0, 
                 help='start frame to use')
 op.add_argument('-e', '--end', type=int, default=-1, 
                 help='end frame to use')
-op.add_argument('--postfix', nargs='?', default='',
-                help='postfix added after offset/variance name stems')
-op.add_argument('-i','--install', action='store_true',
-                help='install in default location, overrides --postfix')
+op.add_argument('-d', '--dir', metavar='destdir', default=None,
+                help='destination directory (default is PYME calibration path)')
+#op.add_argument('-i','--install', action='store_true',
+#                help='install in default location, overrides --postfix')
+op.add_argument('-l','--list', action='store_true',
+                help='list all maps in default location')
+
 
 args = op.parse_args()
 
+if args.list:
+    listCalibrationDirs()
+    sys.exit(0)
 
 # body of script
 filename = args.filename
+
+if filename is None:
+    op.error('need a file name if -l or --list not requested')
 
 print >> sys.stderr, 'Opening image series...'
 st = im.ImageStack(filename=filename)
@@ -80,15 +104,16 @@ ve = v*eperADU*eperADU
 
 print >> sys.stderr, 'Saving results...'
 
-if args.install:
+if args.dir is None:
     print >> sys.stderr, 'installing in standard location...'
     mname = mkDefaultPath('dark',st.mdh)
     vname = mkDefaultPath('variance',st.mdh)
-    print  >> sys.stderr, 'dark map -> %s...' % mname
-    print  >> sys.stderr, 'var  map -> %s...' % vname
 else:
-    mname = ('dark%s.tif' % args.postfix)
-    vname = ('variance%s.tif' % args.postfix)
+    mname = mkDestPath(args.dir,'dark',st.mdh)
+    vname = mkDestPath(args.dir,'variance',st.mdh)
+
+print  >> sys.stderr, 'dark map -> %s...' % mname
+print  >> sys.stderr, 'var  map -> %s...' % vname
 
 mmd = NestedClassMDHandler()
 mmd.copyEntriesFrom(st.mdh)
