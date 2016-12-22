@@ -47,8 +47,10 @@
             var seriesNames=[];
             $('.cu-selected').each(function(index, item){
                 var sn = item.getAttribute('data-cu-seriesname');
-                seriesNames.push(sn);
-                f.append('<input name="series" class="cu-hidden-seriesname" type="hidden" value="' + sn + '">')
+                if (sn != null) {
+                    seriesNames.push(sn);
+                    f.append('<input name="series" class="cu-hidden-seriesname" type="hidden" value="' + sn + '">')
+                }
             });
             console.log(seriesNames);
         };

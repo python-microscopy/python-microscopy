@@ -43,7 +43,7 @@ def file(request, filename):
             response['Content-Length'] = os.path.getsize(outf.name)
             return response
 
-def listing(request, filename):
+def _get_listing(filename):
     from PYME.IO import clusterListing as cl
     #print 'listing'
     if not filename.endswith('/'):
@@ -65,7 +65,7 @@ def listing(request, filename):
                            'cluster_uri': ('pyme-cluster:///' + filename + l).rstrip('/')})
 
         elif file_info.type & cl.FILETYPE_DIRECTORY:
-            dirs.append({'name':l, 'numFiles' : file_info.size})
+            dirs.append({'name': l, 'numFiles': file_info.size})
         else:
             files.append(l)
 
@@ -73,7 +73,7 @@ def listing(request, filename):
     files.sort()
 
     path = filename.lstrip('/').rstrip('/').split('/')
-    breadcrumbs = [{'dir': n, 'path': '/'.join(path[:(i+1)])} for i, n in enumerate(path)]
+    breadcrumbs = [{'dir': n, 'path': '/'.join(path[:(i + 1)])} for i, n in enumerate(path)]
 
     if len(breadcrumbs) > 1:
         parent = breadcrumbs[-2]['path']
@@ -82,10 +82,23 @@ def listing(request, filename):
     else:
         parent = None
 
+    return {'dirname': filename, 'files': files, 'dirs': dirs, 'series': series, 'breadcrumbs': breadcrumbs,
+               'parent': parent}
 
-    context = {'dirname' : filename, 'files':files, 'dirs': dirs, 'series': series, 'breadcrumbs':breadcrumbs, 'parent' : parent}
+
+def listing(request, filename):
+    context = _get_listing(filename)
     return render(request, 'clusterbrowser/dirlisting.html', context)
     #return HttpResponse(clusterIO.listdir(filename))
+
+def listing_lite(request):
+    """A version of the listing to use in file selection boxes and the like"""
+    filename = request.GET.get('path', '')
+    context = _get_listing(filename)
+    return render(request, 'clusterbrowser/lightlisting.html', context)
+
+
+
 
 @csrf_exempt
 def upload(request, directory):

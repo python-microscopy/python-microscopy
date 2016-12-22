@@ -243,7 +243,7 @@ class taskWorker(object):
                 while True:
                     #print 'getting results'
                     queueURL, taskDescr, res = self.resultsQueue.get_nowait()
-                    outputs = taskDescr['outputs']
+                    outputs = taskDescr.get('outputs', {})
 
                     if res is None:
                         #failure
@@ -357,14 +357,28 @@ class taskWorker(object):
                         recipe = ModuleCollection.fromYAML(taskDescr['taskdef']['recipe'])
 
                     #load recipe inputs
-                    for key, url in taskDescr['inputs']:
+                    for key, url in taskDescr['inputs'].items():
                         recipe.loadInput(url, key)
 
+                    #print recipe.namespace
                     recipe.execute()
 
                     #save results
                     context = {'data_root' : clusterIO.local_dataroot,}
-                    context.update(taskDescr['outputs']) #abuse outputs as context
+
+                    #update context with file stub and input directory
+                    try:
+                        principle_input = taskDescr['inputs']['input'] #default input
+                        context['file_stub'] = os.path.splitext(os.path.basename(principle_input))[0]
+                        context['input_dir'] = unifiedIO.dirname(principle_input)
+                    except KeyError:
+                        pass
+
+                    #print taskDescr['inputs']
+                    #print context
+
+                    context.update(taskDescr.get('outputs', {})) #abuse outputs as context
+                    #print context, context['input_dir']
                     recipe.save(context)
 
                     self.resultsQueue.put((queueURL, taskDescr, True))

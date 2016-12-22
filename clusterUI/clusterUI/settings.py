@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'clusterbrowser',
     'clusterstatus',
     'localization',
+    'recipes',
 ]
 
 MIDDLEWARE_CLASSES = [

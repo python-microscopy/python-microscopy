@@ -4,6 +4,21 @@ import cStringIO
 from contextlib import contextmanager
 import tempfile
 
+def split_cluster_url(url):
+    if not (url.startswith('pyme-cluster') or url.startswith('PYME-CLUSTER')):
+        raise RuntimeError('Not a cluster URL')
+
+    clusterfilter = url.split('://')[1].split('/')[0]
+    sequenceName = url.split('://%s/' % clusterfilter)[1]
+
+    return sequenceName, clusterfilter
+
+def dirname(url):
+    try:
+        return os.path.dirname(split_cluster_url(url)[0])
+    except RuntimeError:
+        return os.path.dirname(nameUtils.getFullExistingFilename(url))
+
 @contextmanager
 def local_or_temp_filename(url):
     """
@@ -44,8 +59,7 @@ def local_or_temp_filename(url):
     elif filename.startswith('pyme-cluster') or filename.startswith('PYME-CLUSTER'):
         import clusterIO
 
-        clusterfilter = filename.split('://')[1].split('/')[0]
-        sequenceName = filename.split('://%s/' % clusterfilter)[1]
+        sequenceName, clusterfilter = split_cluster_url(filename)
 
         localpath = clusterIO.get_local_path(sequenceName, clusterfilter)
         if localpath:
@@ -73,8 +87,7 @@ def openFile(filename, mode='rb'):
     elif filename.startswith('pyme-cluster') or filename.startswith('PYME-CLUSTER'):
         import clusterIO
 
-        clusterfilter = filename.split('://')[1].split('/')[0]
-        sequenceName = filename.split('://%s/' % clusterfilter)[1]
+        sequenceName, clusterfilter = split_cluster_url(filename)
 
         s = clusterIO.getFile(sequenceName, clusterfilter)
         return cStringIO.StringIO(s)
@@ -92,8 +105,7 @@ def read(filename):
     elif filename.startswith('pyme-cluster') or filename.startswith('PYME-CLUSTER'):
         import clusterIO
 
-        clusterfilter = filename.split('://')[1].split('/')[0]
-        sequenceName = filename.split('://%s/' % clusterfilter)[1]
+        sequenceName, clusterfilter = split_cluster_url(filename)
 
         s = clusterIO.getFile(sequenceName, clusterfilter)
         return s

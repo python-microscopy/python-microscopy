@@ -192,7 +192,7 @@ class HTTPTaskPusher(object):
 
 class HTTPRecipePusher(object):
     def __init__(self, recipe=None, recipeURI=None):
-        from PYME.recipes.base import ModuleCollection
+        from PYME.recipes.modules import ModuleCollection
         if recipe:
             if isinstance(recipe, basestring):
                 self.recipe_text = recipe
@@ -235,14 +235,16 @@ class HTTPRecipePusher(object):
 
 
     def _generate_task(self, **kwargs):
+        input_names = kwargs.keys()
+
         #our id will be a hash of our recipe text (or name), the time, and the input names
         h = hashlib.md5(self.recipeURI if self.recipeURI else self.recipe_text)
         h.update('%s' % time.time())
-        h.update(''.join([kwargs[input_name] for input_name in self.recipe.inputs]))
+        h.update(''.join([kwargs[input_name] for input_name in input_names]))
 
         task = {'id': h.hexdigest(),
               'type': 'recipe',
-              'inputs': {input_name: kwargs[input_name] for input_name in self.recipe.inputs},
+              'inputs': {input_name: kwargs[input_name] for input_name in input_names},
               #'outputs': {output_name: kwargs[output_name] for output_name in self.recipe.outputs}
               }
 
@@ -255,9 +257,14 @@ class HTTPRecipePusher(object):
 
     def fileTasksForInputs(self, **kwargs):
         from PYME.IO import clusterGlob
-        inputs = {k : kwargs[k] if isinstance(kwargs[k], list) else clusterGlob.glob(kwargs[k]) for k in self.recipe.inputs}
+        input_names = kwargs.keys()
+        inputs = {k : kwargs[k] if isinstance(kwargs[k], list) else clusterGlob.glob(kwargs[k], include_scheme=True) for k in input_names}
 
-        numTotalFrames = len(inputs.items()[0])
+        numTotalFrames = len(inputs.values()[0])
+        self.currentFrameNum = 0
+
+        logger.debug('numTotalFrames = %d' % numTotalFrames)
+        logger.debug('inputs = %s' % inputs)
 
         while numTotalFrames > (self.currentFrameNum + 1):
             logging.debug('we have unpublished frames - push them')
@@ -268,6 +275,8 @@ class HTTPRecipePusher(object):
             tasks = [self._generate_task(**{k : inputs[k][frameNum] for k in inputs.keys()}) for frameNum in range(self.currentFrameNum, newFrameNum)]
 
             task_list = tasks #json.dumps(tasks)
+
+            #print tasks
 
 
             threading.Thread(target=self._postTasks, args=(task_list,)).start()

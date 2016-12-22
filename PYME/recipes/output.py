@@ -63,7 +63,7 @@ class CSVOutput(OutputModule):
 
         """
 
-        out_filename = self.filePattern.format(context)
+        out_filename = self.filePattern.format(**context)
         v = namespace[self.inputName]
 
         if self.scheme == 'pyme-cluster:// - aggregate':
@@ -127,7 +127,7 @@ class XLSOutput(OutputModule):
 
         """
 
-        out_filename = self._schemafy_filename(self.filePattern.format(context))
+        out_filename = self._schemafy_filename(self.filePattern.format(**context))
 
         v = namespace[self.inputName]
         v.toDataFrame.to_excel(out_filename)
@@ -185,10 +185,10 @@ class ImageOutput(OutputModule):
 
         """
 
-        out_filename = self._schemafy_filename(self.filePattern.format(context))
+        out_filename = self._schemafy_filename(self.filePattern.format(**context))
 
         v = namespace[self.inputName]
-        v.save(out_filename)
+        v.Save(out_filename)
 
 
 @register_module('HDFOutput')
@@ -246,7 +246,7 @@ class HDFOutput(OutputModule):
 
         """
 
-        out_filename = self.filePattern.format(context)
+        out_filename = self.filePattern.format(**context)
 
         if self.scheme == 'pyme-cluster:// - aggregate':
             from PYME.IO import clusterResults
