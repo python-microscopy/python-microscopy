@@ -77,7 +77,22 @@ def insertIntoFullMap(m, ve, smdh, chipsize=(2048,2048)):
     bmdh.setEntry('Analysis.valid.ROIWidth', validROI['Width'])
     bmdh.setEntry('Analysis.valid.ROIHeight', validROI['Height'])
 
-    return mfull, vefull, basemdh
+    bmdh['Camera.ROIPosX'] = 1
+    bmdh['Camera.ROIPosY'] = 1
+    bmdh['Camera.ROIWidth'] = chipsize[0]
+    bmdh['Camera.ROIHeight'] = chipsize[1]
+    bmdh['Camera.ROI'] = (1,1,chipsize[0]+1,chipsize[1]+1)
+
+    mfull = np.zeros(chipsize, dtype=m.dtype)
+    vefull = np.zeros(chipsize, dtype=ve.dtype)
+    mfull.fill(smdh['Camera.ADOffset'])
+    vefull.fill(smdh['Camera.ReadNoise']**2)
+    
+    mfull[validROI['PosX']-1:validROI['PosX']-1+validROI['Width'],
+          validROI['PosY']-1:validROI['PosY']-1+validROI['Height']] = m
+    vefull[validROI['PosX']-1:validROI['PosX']-1+validROI['Width'],
+          validROI['PosY']-1:validROI['PosY']-1+validROI['Height']] = ve      
+    return mfull, vefull, bmdh
 
 def main():
 
@@ -93,8 +108,6 @@ def main():
                     help='end frame to use')
     op.add_argument('-d', '--dir', metavar='destdir', default=None,
                     help='destination directory (default is PYME calibration path)')
-    #op.add_argument('-i','--install', action='store_true',
-    #                help='install in default location, overrides --postfix')
     op.add_argument('-l','--list', action='store_true',
                 help='list all maps in default location')
     args = op.parse_args()
@@ -122,8 +135,8 @@ def main():
     eperADU = source.mdh['Camera.ElectronsPerCount']
     ve = v*eperADU*eperADU
 
-    #mfull, vefull, basemdh = insertIntoFullMap(m, ve, source.mdh, chipsize=chipsize)
-    mfull, vefull, basemdh = (m, ve, source.mdh)
+    mfull, vefull, basemdh = insertIntoFullMap(m, ve, source.mdh, chipsize=chipsize)
+    #mfull, vefull, basemdh = (m, ve, source.mdh)
 
     print >> sys.stderr, 'Saving results...'
 
@@ -139,7 +152,7 @@ def main():
     print  >> sys.stderr, 'var  map -> %s...' % vname
 
     mmd = NestedClassMDHandler()
-    mmd.copyEntriesFrom(source.mdh)
+    mmd.copyEntriesFrom(basemdh)
 
     mmd.setEntry('Analysis.name', 'mean-variance')
     mmd.setEntry('Analysis.resultname', 'mean')
@@ -149,10 +162,10 @@ def main():
     mmd.setEntry('Analysis.Source.Filename', filename)
 
     vmd = NestedClassMDHandler()
-    vmd.copyEntriesFrom(source.mdh)
+    vmd.copyEntriesFrom(basemdh)
 
-    mmd.setEntry('Analysis.name', 'mean-variance')
-    mmd.setEntry('Analysis.resultname', 'variance')
+    vmd.setEntry('Analysis.name', 'mean-variance')
+    vmd.setEntry('Analysis.resultname', 'variance')
     vmd.setEntry('Analysis.start', start)
     vmd.setEntry('Analysis.end', end)
     vmd.setEntry('Analysis.units', 'electrons^2')
