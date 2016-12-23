@@ -678,6 +678,19 @@ class LMAnalyser2(object):
     #     show()
     #     matplotlib.interactive(True)
         
+    def _checkmap(self,mapid):
+        maptype = 'Camera.%s' % mapid
+        import sys
+        # check if requested maps can be read
+        # the below test checks for non-empty string
+        analysisMDH = self.analysisController.analysisMDH
+        if analysisMDH.getOrDefault(maptype,''):
+            print >> sys.stderr, 'testframe: trying to read map'
+            md = remFitBuf.cameraMaps._getMap(analysisMDH,
+                                              analysisMDH[maptype])
+            if md is None:
+                print >> sys.stderr, 'CANNOT FIND %s %s' % (maptype, analysisMDH[maptype])
+
     def testFrame(self, gui=True):
         from pylab import *
         #close('all')
@@ -699,7 +712,11 @@ class LMAnalyser2(object):
         laserOn = analysisMDH.getOrDefault('EstimatedLaserOnFrameNo', 0)
 
         bgi = range(max(zp + bgFrames[0],laserOn), max(zp + bgFrames[1],laserOn))
-        
+
+        self._checkmap('DarkMapID')
+        self._checkmap('VarianceMapID')
+        self._checkmap('FlatfieldMapID')
+
         mn = self.image.dataSource.moduleName
         if mn == 'BufferedDataSource':
             mn = self.image.dataSource.dataSource.moduleName
