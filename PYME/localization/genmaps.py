@@ -61,6 +61,11 @@ def listCalibrationDirs():
         for m in result:
             print m
 
+
+# this function embeds the calculated maps into a full chipsize array
+# that is padded with the camera default readnoise and offset as extracted from the
+# metadata
+# if m, ve are None nothing is copied into the map and just the uniform array is returned
 def insertIntoFullMap(m, ve, smdh, chipsize=(2048,2048)):
     validROI = {
         'PosX' : smdh['Camera.ROIPosX'],
@@ -83,20 +88,27 @@ def insertIntoFullMap(m, ve, smdh, chipsize=(2048,2048)):
     bmdh['Camera.ROIHeight'] = chipsize[1]
     bmdh['Camera.ROI'] = (1,1,chipsize[0]+1,chipsize[1]+1)
 
-    mfull = np.zeros(chipsize, dtype=m.dtype)
-    vefull = np.zeros(chipsize, dtype=ve.dtype)
+    if m is None:
+        mfull = np.zeros(chipsize, dtype='float64')
+        vefull = np.zeros(chipsize, dtype='float64')
+    else:
+        mfull = np.zeros(chipsize, dtype=m.dtype)
+        vefull = np.zeros(chipsize, dtype=ve.dtype)
     mfull.fill(smdh['Camera.ADOffset'])
     vefull.fill(smdh['Camera.ReadNoise']**2)
     
-    mfull[validROI['PosX']-1:validROI['PosX']-1+validROI['Width'],
-          validROI['PosY']-1:validROI['PosY']-1+validROI['Height']] = m
-    vefull[validROI['PosX']-1:validROI['PosX']-1+validROI['Width'],
-          validROI['PosY']-1:validROI['PosY']-1+validROI['Height']] = ve      
+    if m is not None:
+        mfull[validROI['PosX']-1:validROI['PosX']-1+validROI['Width'],
+              validROI['PosY']-1:validROI['PosY']-1+validROI['Height']] = m
+        vefull[validROI['PosX']-1:validROI['PosX']-1+validROI['Width'],
+               validROI['PosY']-1:validROI['PosY']-1+validROI['Height']] = ve      
+
     return mfull, vefull, bmdh
 
 def main():
 
-    chipsize = [2048,2048]
+    chipsize = (2048,2048) # we currently assume this is correct but could be chosen based
+                           # on camera model in meta data
     
     # options parsing
     op = argparse.ArgumentParser(description='generate offset and variance maps from darkseries.')
@@ -106,6 +118,8 @@ def main():
                     help='start frame to use')
     op.add_argument('-e', '--end', type=int, default=-1, 
                     help='end frame to use')
+    op.add_argument('-u','--uniform', action='store_true',
+                help='make uniform map using metadata info')
     op.add_argument('-d', '--dir', metavar='destdir', default=None,
                     help='destination directory (default is PYME calibration path)')
     op.add_argument('-l','--list', action='store_true',
@@ -131,9 +145,12 @@ def main():
         end = int(source.dataSource.getNumSlices() + end)
 
     print >> sys.stderr, 'Calculating mean and variance...'
-    m, v = meanvards(source.dataSource, start = start, end=end)
-    eperADU = source.mdh['Camera.ElectronsPerCount']
-    ve = v*eperADU*eperADU
+
+    m, ve = (None,None)
+    if not args.uniform:
+        m, v = meanvards(source.dataSource, start = start, end=end)
+        eperADU = source.mdh['Camera.ElectronsPerCount']
+        ve = v*eperADU*eperADU
 
     mfull, vefull, basemdh = insertIntoFullMap(m, ve, source.mdh, chipsize=chipsize)
     #mfull, vefull, basemdh = (m, ve, source.mdh)
@@ -160,6 +177,8 @@ def main():
     mmd.setEntry('Analysis.end', end)
     mmd.setEntry('Analysis.units', 'ADU')
     mmd.setEntry('Analysis.Source.Filename', filename)
+    if args.uniform:
+        mmd.setEntry('Analysis.isuniform', True)
 
     vmd = NestedClassMDHandler()
     vmd.copyEntriesFrom(basemdh)
@@ -170,6 +189,8 @@ def main():
     vmd.setEntry('Analysis.end', end)
     vmd.setEntry('Analysis.units', 'electrons^2')
     vmd.setEntry('Analysis.Source.Filename', filename)
+    if args.uniform:
+        vmd.setEntry('Analysis.isuniform', True)
 
     saveasmap(mfull,mname,mdh=mmd)
     saveasmap(vefull,vname,mdh=vmd)
