@@ -120,6 +120,8 @@ def main():
                     help='end frame to use')
     op.add_argument('-u','--uniform', action='store_true',
                 help='make uniform map using metadata info')
+    op.add_argument('-i','--install', action='store_true',
+                help='install map in default location - the filename argument is a map')
     op.add_argument('-d', '--dir', metavar='destdir', default=None,
                     help='destination directory (default is PYME calibration path)')
     op.add_argument('-l','--list', action='store_true',
@@ -139,6 +141,19 @@ def main():
     print >> sys.stderr, 'Opening image series...'
     source = im.ImageStack(filename=filename)
 
+    if args.install:
+        if source.mdh.getOrDefault('Analysis.name','') != 'mean-variance':
+            print >> sys.stderr, 'Analysis.name is not equal to "mean-variance" - probably not a map'
+            sys.exit('aborting...')
+            
+        if source.mdh['Analysis.resultname'] == 'mean':
+            maptype = 'dark'
+        else:
+            maptype = 'variance'
+        mapname = mkDefaultPath(maptype,source.mdh)
+        saveasmap(source.dataSource.getSlice(0),mapname,mdh=source.mdh)
+        sys.exit(0)
+
     start = args.start
     end = args.end
     if end < 0:
@@ -152,6 +167,8 @@ def main():
         eperADU = source.mdh['Camera.ElectronsPerCount']
         ve = v*eperADU*eperADU
 
+    # if the uniform flag is set m and ve are passed as None
+    # which makes sure that just the uniform defaults from meta data are used 
     mfull, vefull, basemdh = insertIntoFullMap(m, ve, source.mdh, chipsize=chipsize)
     #mfull, vefull, basemdh = (m, ve, source.mdh)
 
@@ -168,8 +185,7 @@ def main():
     print  >> sys.stderr, 'dark map -> %s...' % mname
     print  >> sys.stderr, 'var  map -> %s...' % vname
 
-    mmd = NestedClassMDHandler()
-    mmd.copyEntriesFrom(basemdh)
+    mmd = NestedClassMDHandler(basemdh)
 
     mmd.setEntry('Analysis.name', 'mean-variance')
     mmd.setEntry('Analysis.resultname', 'mean')
@@ -180,8 +196,7 @@ def main():
     if args.uniform:
         mmd.setEntry('Analysis.isuniform', True)
 
-    vmd = NestedClassMDHandler()
-    vmd.copyEntriesFrom(basemdh)
+    vmd = NestedClassMDHandler(basemdh)
 
     vmd.setEntry('Analysis.name', 'mean-variance')
     vmd.setEntry('Analysis.resultname', 'variance')
