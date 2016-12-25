@@ -421,8 +421,10 @@ class FitDefaults(object):
         itime = int(1000*self.analysisMDH['Camera.IntegrationTime'])
         darkpath = os.path.join(caldir,'dark_%dms.tif' % (itime))
         varpath = os.path.join(caldir,'variance_%dms.tif' % (itime))
-        self.analysisMDH['Camera.DarkMapID'] = darkpath
-        self.analysisMDH['Camera.VarianceMapID'] = varpath
+        if os.path.exists(darkpath):
+            self.analysisMDH['Camera.DarkMapID'] = darkpath
+        if os.path.exists(varpath):
+            self.analysisMDH['Camera.VarianceMapID'] = varpath
 
         self.onMetaDataChange.send(self, mdh=self.analysisMDH)
 
