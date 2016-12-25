@@ -113,11 +113,15 @@ class CameraInfoManager(object):
         """retrive a map, with a given name. First try and get it from the Queue,
         then try finding it locally"""
         try:
-            varmap = md.taskQueue.getQueueData(md.dataSourceID, 'MAP',  mapName)
+            return md.taskQueue.getQueueData(md.dataSourceID, 'MAP',  mapName)
         except:
+            pass
+        try:
             fn = getFullExistingFilename(mapName)
             varmap = ImageStack(filename=fn).data[:,:,0].squeeze() #this should handle .tif, .h5, and a few others
-
+        except:
+            varmap = None # if we get read errors, or can't find file we fail gracefully
+            # FIXME issue: the h5r metadata will assume incorrectly that the maps were used
         return varmap
 
     def _getMap(self, md, mapName):
@@ -133,7 +137,9 @@ class CameraInfoManager(object):
         except KeyError: 
             #cache miss
             x0, y0, x1, y1 = ROI
-            mp = self._fetchMap(md, mapName)[x0:x1, y0:y1]
+            mp = self._fetchMap(md, mapName)
+            if mp is not None:
+                mp = mp[x0:x1, y0:y1]
             
             self._cache[mapKey] = mp
 

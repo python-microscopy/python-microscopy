@@ -357,6 +357,8 @@ class FitDefaults(object):
         self.dsviewer.AddMenuItem('Analysis defaults', "3D analysis", self.OnStandard3D)
         self.dsviewer.AddMenuItem('Analysis defaults', "3D with splitter", self.OnSplitter3D)
         self.dsviewer.AddMenuItem('Analysis defaults', "PRI", self.OnPRI3D)
+        self.dsviewer.AddMenuItem('Analysis defaults', "DNA-PAINT", self.OnDNAPaint)
+        self.dsviewer.AddMenuItem('Analysis defaults', "Set Maps from default location", self.OnSetMapsDefault)
 
     def OnCalibrateSplitter(self, event):
         self.analysisMDH['Analysis.FitModule'] = 'SplitterShiftEstFR'
@@ -406,6 +408,23 @@ class FitDefaults(object):
 
         self.onMetaDataChange.send(self, mdh=self.analysisMDH)
 
+    def OnDNAPaint(self, event):
+        self.analysisMDH['Analysis.BGRange'] = (0,0)
+        self.analysisMDH['Analysis.DetectionThreshold'] = 2.
+
+        self.onMetaDataChange.send(self, mdh=self.analysisMDH)
+
+    def OnSetMapsDefault(self, event):
+        from PYME.IO.FileUtils.nameUtils import getCalibrationDir
+        
+        caldir = getCalibrationDir(self.analysisMDH['Camera.SerialNumber'])
+        itime = int(1000*self.analysisMDH['Camera.IntegrationTime'])
+        darkpath = os.path.join(caldir,'dark_%dms.tif' % (itime))
+        varpath = os.path.join(caldir,'variance_%dms.tif' % (itime))
+        self.analysisMDH['Camera.DarkMapID'] = darkpath
+        self.analysisMDH['Camera.VarianceMapID'] = varpath
+
+        self.onMetaDataChange.send(self, mdh=self.analysisMDH)
 
 
 class LMAnalyser2(object):
@@ -518,6 +537,9 @@ class LMAnalyser2(object):
         self.SetFitInfo()
 
     def OnGo(self, event=None):
+        self._checkmap('DarkMapID')
+        self._checkmap('VarianceMapID')
+        self._checkmap('FlatfieldMapID')
         self.analysisController.pushImages(self.image)
 
     def OnImagesPushed(self, **kwargs):
@@ -678,6 +700,20 @@ class LMAnalyser2(object):
     #     show()
     #     matplotlib.interactive(True)
         
+    def _checkmap(self,mapid):
+        maptype = 'Camera.%s' % mapid
+        import sys
+        # check if requested maps can be read
+        # the below test checks for non-empty string
+        analysisMDH = self.analysisController.analysisMDH
+        if analysisMDH.getOrDefault(maptype,''):
+            print >> sys.stderr, 'testframe: trying to read map'
+            md = remFitBuf.cameraMaps._getMap(analysisMDH,
+                                              analysisMDH[maptype])
+            if md is None:
+                print >> sys.stderr, 'CANNOT FIND %s %s' % (maptype, analysisMDH[maptype])
+                analysisMDH[maptype] = '' # unset the map ID in this case
+
     def testFrame(self, gui=True):
         from pylab import *
         #close('all')
@@ -699,7 +735,11 @@ class LMAnalyser2(object):
         laserOn = analysisMDH.getOrDefault('EstimatedLaserOnFrameNo', 0)
 
         bgi = range(max(zp + bgFrames[0],laserOn), max(zp + bgFrames[1],laserOn))
-        
+
+        self._checkmap('DarkMapID')
+        self._checkmap('VarianceMapID')
+        self._checkmap('FlatfieldMapID')
+
         mn = self.image.dataSource.moduleName
         if mn == 'BufferedDataSource':
             mn = self.image.dataSource.dataSource.moduleName
