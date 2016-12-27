@@ -109,7 +109,7 @@ def main():
 
     chipsize = (2048,2048) # we currently assume this is correct but could be chosen based
                            # on camera model in meta data
-    darkthreshold = 1e4    # this really should depend on the gain mode (12bit vs 16 bit)
+    darkthreshold = 1e4    # this really should depend on the gain mode (12bit vs 16 bit etc)
     variancethreshold = 300**2  # again this is currently picked fairly arbitrarily
     blemishvariance = 1e8
 
@@ -171,10 +171,13 @@ def main():
         ve = v*eperADU*eperADU
 
     # occasionally the cameras seem to have completely unusable pixels
+    # one example was dark being 65535 (i.e. max value for 16 bit)
     if m.max() > darkthreshold:
         ve[m > darkthreshold] = blemishvariance
     if ve.max() > variancethreshold:
         ve[ve > variancethreshold] = blemishvariance
+
+    nbad = np.sum((m > darkthreshold)*(ve > variancethreshold))
 
     # if the uniform flag is set, then m and ve are passed as None
     # which makes sure that just the uniform defaults from meta data are used 
@@ -202,6 +205,7 @@ def main():
     commonMD.setEntry('Analysis.darkThreshold', darkthreshold)
     commonMD.setEntry('Analysis.varianceThreshold', variancethreshold)
     commonMD.setEntry('Analysis.blemishVariance', blemishvariance)
+    commonMD.setEntry('Analysis.NBadPixels', nbad)
     if args.uniform:
         commonMD.setEntry('Analysis.isuniform', True)
     
