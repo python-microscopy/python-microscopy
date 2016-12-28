@@ -13,7 +13,7 @@ from PYME.IO.image import ImageStack
 @register_module('SimpleThreshold') 
 class SimpleThreshold(Filter):
     threshold = Float(0.5)
-
+    
     def applyFilter(self, data, chanNum, frNum, im):
         mask = data > self.threshold
         return mask

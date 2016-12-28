@@ -268,7 +268,7 @@ class ImageStack(object):
             return ox, oy, 0
             
         else:
-            return 0,0,0
+            return 0,0, 0
             
 
 
