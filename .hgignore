@@ -22,5 +22,6 @@ Deconv/fftw_wisdom
 *.egg-info*
 doc/api/*
 .idea
-
-PYME/Acquire/Scripts/Pyro_NS_URI
+patches/*
+*Pyro_NS_URI
+*\#*\#
