@@ -109,7 +109,10 @@ def main():
 
     chipsize = (2048,2048) # we currently assume this is correct but could be chosen based
                            # on camera model in meta data
-    
+    darkthreshold = 1e4    # this really should depend on the gain mode (12bit vs 16 bit etc)
+    variancethreshold = 300**2  # again this is currently picked fairly arbitrarily
+    blemishvariance = 1e8
+
     # options parsing
     op = argparse.ArgumentParser(description='generate offset and variance maps from darkseries.')
     op.add_argument('filename', metavar='filename', nargs='?', default=None,
@@ -167,7 +170,16 @@ def main():
         eperADU = source.mdh['Camera.ElectronsPerCount']
         ve = v*eperADU*eperADU
 
-    # if the uniform flag is set m and ve are passed as None
+    # occasionally the cameras seem to have completely unusable pixels
+    # one example was dark being 65535 (i.e. max value for 16 bit)
+    if m.max() > darkthreshold:
+        ve[m > darkthreshold] = blemishvariance
+    if ve.max() > variancethreshold:
+        ve[ve > variancethreshold] = blemishvariance
+
+    nbad = np.sum((m > darkthreshold)*(ve > variancethreshold))
+
+    # if the uniform flag is set, then m and ve are passed as None
     # which makes sure that just the uniform defaults from meta data are used 
     mfull, vefull, basemdh = insertIntoFullMap(m, ve, source.mdh, chipsize=chipsize)
     #mfull, vefull, basemdh = (m, ve, source.mdh)
@@ -185,27 +197,27 @@ def main():
     print  >> sys.stderr, 'dark map -> %s...' % mname
     print  >> sys.stderr, 'var  map -> %s...' % vname
 
-    mmd = NestedClassMDHandler(basemdh)
-
-    mmd.setEntry('Analysis.name', 'mean-variance')
-    mmd.setEntry('Analysis.resultname', 'mean')
-    mmd.setEntry('Analysis.start', start)
-    mmd.setEntry('Analysis.end', end)
-    mmd.setEntry('Analysis.units', 'ADU')
-    mmd.setEntry('Analysis.Source.Filename', filename)
+    commonMD = NestedClassMDHandler()
+    commonMD.setEntry('Analysis.name', 'mean-variance')
+    commonMD.setEntry('Analysis.start', start)
+    commonMD.setEntry('Analysis.end', end)
+    commonMD.setEntry('Analysis.SourceFilename', filename)
+    commonMD.setEntry('Analysis.darkThreshold', darkthreshold)
+    commonMD.setEntry('Analysis.varianceThreshold', variancethreshold)
+    commonMD.setEntry('Analysis.blemishVariance', blemishvariance)
+    commonMD.setEntry('Analysis.NBadPixels', nbad)
     if args.uniform:
-        mmd.setEntry('Analysis.isuniform', True)
+        commonMD.setEntry('Analysis.isuniform', True)
+    
+    mmd = NestedClassMDHandler(basemdh)
+    mmd.copyEntriesFrom(commonMD)
+    mmd.setEntry('Analysis.resultname', 'mean')
+    mmd.setEntry('Analysis.units', 'ADU')
 
     vmd = NestedClassMDHandler(basemdh)
-
-    vmd.setEntry('Analysis.name', 'mean-variance')
+    vmd.copyEntriesFrom(commonMD)
     vmd.setEntry('Analysis.resultname', 'variance')
-    vmd.setEntry('Analysis.start', start)
-    vmd.setEntry('Analysis.end', end)
     vmd.setEntry('Analysis.units', 'electrons^2')
-    vmd.setEntry('Analysis.Source.Filename', filename)
-    if args.uniform:
-        vmd.setEntry('Analysis.isuniform', True)
 
     saveasmap(mfull,mname,mdh=mmd)
     saveasmap(vefull,vname,mdh=vmd)
