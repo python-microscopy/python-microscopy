@@ -209,8 +209,9 @@ class AndorBase(SDK3Camera):
         #set some intial parameters
         self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
+        # we use a try block as this will allow us to use the SDK software cams for simple testing
         try:
-            self.SetSimpleGainMode('high dynamic range') # note that this sets 'high dynamic range' mode
+            self.SetSimpleGainMode('high dynamic range')
         except:
             print "error setting gain mode"
             pass
@@ -493,13 +494,9 @@ class AndorBase(SDK3Camera):
         
         #have to set width before x, height before y
         self.AOIWidth.setValue(x2-x1)
-        #print >>sys.stderr, 'width was set'
         self.AOIHeight.setValue(y2 - y1)
-        #print >>sys.stderr, 'height was set'
         self.AOILeft.setValue(x1+1)
-        #print >>sys.stderr, 'AOILeft was set'
         self.AOITop.setValue(y1+1)
-        #print >>sys.stderr, 'AOITop was set'
 
     def SetSimpleGainMode(self,mode):
         from warnings import warn
@@ -554,9 +551,7 @@ class AndorBase(SDK3Camera):
         
         eventLog.logEvent('StartAq', '')
         self._flush()
-        #print >>sys.stderr, '_flush done'
         self.InitBuffers()
-        #print >>sys.stderr, 'InitBuffers done'
         self.AcquisitionStart()
 
         return 0
@@ -608,8 +603,7 @@ class AndorBase(SDK3Camera):
             mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
             #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
 
-            # values for readnoise and EpC from Neo sheet for Gain 4
-            # should be selected with 11 bit low noise setting
+            # pick up noise settings for gain mode
             np = self.baseNoiseProps[self.GetSimpleGainMode()]
             mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
             mdh.setEntry('Camera.NoiseFactor', 1.0)
@@ -637,12 +631,6 @@ class AndorBase(SDK3Camera):
             print varfn
             if os.path.exists(varfn):
                 mdh['Camera.VarianceMapID'] = varfn
-
-            # this should not be needed anymore with the changes in NoiseProperties dict
-            #update the scmos Metadata for different gain modes
-            #if int(self.EMGain) == 0:
-            #    mdh.setEntry('Camera.ElectronsPerCount', 0.5)
-            #    mdh.setEntry('Camera.ReadNoise', 1.33)
 
             if  self.StaticBlemishCorrection.isImplemented():
                 mdh.setEntry('Camera.StaticBlemishCorrection', self.StaticBlemishCorrection.getValue())
