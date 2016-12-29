@@ -87,9 +87,7 @@ class TimedSpecies:
         self.visFr = visFr
         self.timedSpecies = None
 
-        ID_TIMED_SPECIES = wx.NewId()
-        visFr.extras_menu.Append(ID_TIMED_SPECIES, "&Sequential Imaging - Species assignment")
-        visFr.Bind(wx.EVT_MENU, self.OnTimedSpecies, id=ID_TIMED_SPECIES)
+        visFr.AddMenuItem('Extras', "&Sequential Imaging - Species assignment",self.OnTimedSpecies)
         renderers.renderMetadataProviders.append(self.SaveMetadata)
 
     def OnTimedSpecies(self,event):

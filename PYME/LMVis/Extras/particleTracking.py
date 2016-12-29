@@ -30,10 +30,7 @@ class ParticleTracker:
         visFr.AddMenuItem('Extras', "&Track single molecule trajectories", self.OnTrackMolecules)
         visFr.AddMenuItem('Extras', "Plot Mean Squared Displacement", self.OnCalcMSDs)
         visFr.AddMenuItem('Extras', "Coalesce clumps", self.OnCoalesce)
-
-        ID_CALCWIDTH = wx.NewId()
-        visFr.extras_menu.Append(ID_CALCWIDTH, "Calculate clump widths")
-        visFr.Bind(wx.EVT_MENU, self.OnCalcWidths, id=ID_CALCWIDTH)
+        visFr.AddMenuItem('Extras', "Calculate clump widths", self.OnCalcWidths)
 
     def OnTrackMolecules(self, event):
         import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI

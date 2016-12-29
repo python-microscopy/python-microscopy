@@ -40,19 +40,11 @@ class QPObjectSegmenter:
         self.visFr = visFr
         self.pipeline = self.visFr.pipeline
 
-        visFr.extras_menu.AppendSeparator()
-        ID_GET_IDS = wx.NewId()
-        visFr.extras_menu.Append(ID_GET_IDS, "qPAINT - Get object IDs from image")
-        visFr.Bind(wx.EVT_MENU, self.OnGetIDs, id=ID_GET_IDS)
-
-        ID_MEASURE = wx.NewId()
-        visFr.extras_menu.Append(ID_MEASURE, "qPAINT - Measure nonzero object ID dark times")
-        visFr.Bind(wx.EVT_MENU, self.OnMeasure, id=ID_MEASURE)
-
-        ID_DARKT = wx.NewId()
-        visFr.extras_menu.Append(ID_DARKT, "qPAINT - Plot Dark Time Histogram")
-        visFr.Bind(wx.EVT_MENU, self.OnDarkT, id=ID_DARKT)
-        visFr.extras_menu.AppendSeparator() 
+        visFr.AddMenuItem('Extras', itemType='separator')
+        visFr.AddMenuItem('Extras', "qPAINT - Get object IDs from image",self.OnGetIDs)
+        visFr.AddMenuItem('Extras', "qPAINT - Measure nonzero object ID dark times",self.OnMeasure)
+        visFr.AddMenuItem('Extras', "qPAINT - Plot Dark Time Histogram",self.OnDarkT)
+        visFr.AddMenuItem('Extras', itemType='separator')
 
     def OnGetIDs(self, event):
         from PYME.DSView import dsviewer

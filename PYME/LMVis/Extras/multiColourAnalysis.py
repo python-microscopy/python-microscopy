@@ -82,9 +82,7 @@ class MultiColAnalyzer:
         self.visFr = visFr
         self.pipeline = self.visFr.pipeline
 
-        ID_MCA = wx.NewId()
-        visFr.extras_menu.Append(ID_MCA, "Analyse Multicolour Events")
-        visFr.Bind(wx.EVT_MENU, self.OnMCA, id=ID_MCA)
+        visFr.AddMenuItem('Extras',  "Analyse Multicolour Events", self.OnMCA)
 
     def OnMCA(self, event):
         from PYME.DSView import dsviewer

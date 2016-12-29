@@ -139,7 +139,7 @@ class CurrentRenderer:
         if 'imageID' in self.pipeline.mdh.getEntryNames():
             mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
         mdh['Rendering.SourceFilename'] = getattr(self.pipeline, 'filename', '')
-            mdh['Rendering.NEventsRendered'] = self.pipeline.filter.Index.sum() # in future good to use colourfilter for per channel info?
+        mdh['Rendering.NEventsRendered'] = self.pipeline.filter.Index.sum() # in future good to use colourfilter for per channel info?
 
         for cb in renderMetadataProviders:
             cb(mdh)
