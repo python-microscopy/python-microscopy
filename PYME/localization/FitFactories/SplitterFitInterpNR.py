@@ -129,7 +129,7 @@ def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode
     fr['fitResults'].view('9f4')[0,:n] = fitResults   
     fr['startParams'].view('9f4')[0,:n] = startParams
     
-    if fitErr == None:
+    if fitErr is None:
         fr['fitError'].view('9f4')[0,:] = -5e3
     else:
         fr['fitError'].view('9f4')[0,:n] = fitErr
@@ -146,7 +146,7 @@ def BlankResult(metadata):
     r['tIndex'] = metadata.tIndex
     r['fitError'].view('f4')[:] = -5e3
     return r
-		
+
 
 def getDataErrors(im, metadata):
     # TODO - Fix me for camera maps (ie use correctImage function not ADOffset) or remove
@@ -217,7 +217,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         Zr = Zg + md.Analysis.AxialShift
 
         return f_Interp3d2c(params, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, md.Analysis.AxialShift, np.ones_like(params)), Xg.ravel()[0], Yg.ravel()[0], Zg.ravel()[0]
-		
+
         
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         Xg, Yg, Xr, Yr, dataROI, bgROI, sigma, xslice, yslice, xslice2, yslice2 = self.getSplitROIAtPoint(x, y, z, roiHalfSize, axialHalfSize)
@@ -314,7 +314,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
         #normalised Chi-squared
         nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
 
-	#print res, fitErrors, resCode
+        #print res, fitErrors, resCode
         return PSFFitResultR(res, self.metadata, np.array(startParameters), (xslice, yslice, xslice2, yslice2), resCode, fitErrors, nchi2, bgROI.mean(0).mean(0))
         #return PSFFitResultR(res, self.metadata, , resCode, fitErrors, numpy.array(startParameters), nchi2)
     

@@ -440,9 +440,9 @@ class Decoder(object):
 
     def _clear_codes(self):
         self._codepoints = dict( (pt, struct.pack("B", pt)) for pt in range(256) )
-        if not CLEAR_CODE == None:
+        if not CLEAR_CODE is None:
             self._codepoints[CLEAR_CODE] = CLEAR_CODE
-        if not END_OF_INFO_CODE == None:
+        if not END_OF_INFO_CODE is None:
             self._codepoints[END_OF_INFO_CODE] = END_OF_INFO_CODE
         self._prefix = None
 

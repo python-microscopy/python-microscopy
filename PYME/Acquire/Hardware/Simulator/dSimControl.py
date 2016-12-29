@@ -140,13 +140,28 @@ class dSimControl(wx.Panel):
         hsizer.Add(self.bSavePoints, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
         
         sbsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 2)
-
-                
-        
         
         
         vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
-        
+
+        ################ Splitter ######################
+
+        sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Image splitting'),
+                                    wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(self, -1, 'Number of channels: '),0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        self.cNumSplitterChans = wx.Choice(self, -1, choices=['1', '2', '4'])
+        hsizer.Add(self.cNumSplitterChans, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 10)
+        sbsizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+
+        self.gSplitter = wx.grid.Grid(self, -1)
+        self.setupSplitterGrid()
+        sbsizer.Add(self.gSplitter, 0, wx.RIGHT|wx.EXPAND, 2)
+
+
+        vsizer.Add(sbsizer, 0, wx.ALL | wx.EXPAND, 2)
         ################ Virtual Fluorophores ###########
         
         sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Generate Virtual Fluorophores'), 
@@ -253,7 +268,7 @@ class dSimControl(wx.Panel):
             for j in range(nStates):
                 self.gSpontan.SetCellValue(i,j, '%f' % vals[i,j,0]) 
                 self.gSwitch.SetCellValue(i,j, '%f' % vals[i,j,1])
-                self.gProbe.SetCellValue(i,j, '%f' % vals[i,j,2])   
+                self.gProbe.SetCellValue(i,j, '%f' % vals[i,j,2])
                 
     def getTensorFromGrids(self):
         nStates = len(self.states)
@@ -265,7 +280,37 @@ class dSimControl(wx.Panel):
                 transTens[i,j,1] = float(self.gSwitch.GetCellValue(i,j))
                 transTens[i,j,2] = float(self.gProbe.GetCellValue(i,j))
         
-        return transTens   
+        return transTens
+
+    def setupSplitterGrid(self):
+        grid = self.gSplitter
+
+        #grid.SetDefaultColSize(70)
+        grid.CreateGrid(2, 4)
+
+        grid.SetRowLabelValue(0, 'Spectral chan')
+        grid.SetRowLabelValue(1, 'Z offset [nm]')
+
+        #hard code some initial values
+        spec = [0, 1, 1, 0]
+        z_offset = [0, -200, 300., 500.]
+
+        for i in range(4):
+            grid.SetColLabelValue(i, 'Chan %d' % i)
+
+            grid.SetCellValue(0, i, '%d' % spec[i])
+            grid.SetCellValue(1, i, '%3.2f' % z_offset[i])
+
+            #grid.SetCellTextColour(i, i, wx.LIGHT_GREY)
+
+    def getSplitterInfo(self):
+        nChans = int(self.cNumSplitterChans.GetStringSelection())
+
+        zOffsets = [float(self.gSplitter.GetCellValue(1, i)) for i in range(nChans)]
+        specChans = [int(self.gSplitter.GetCellValue(0, i)) for i in range(nChans)]
+
+        return zOffsets, specChans
+
         
     
     def __init__(self, parent, scope=None, states=['Caged', 'On', 'Blinked', 'Bleached'], stateTypes=[fluor.FROM_ONLY, fluor.ALL_TRANS, fluor.ALL_TRANS, fluor.TO_ONLY], startVals=None, activeState=fluor.states.active):
@@ -279,7 +324,7 @@ class dSimControl(wx.Panel):
         self.setupGrid(self.gSwitch, states, stateTypes)
         self.setupGrid(self.gProbe, states, stateTypes)
         
-        if (startVals == None): #use defaults
+        if (startVals is None): #use defaults
             startVals = fluor.createSimpleTransitionMatrix()
             
         self.fillGrids(startVals)
@@ -299,39 +344,49 @@ class dSimControl(wx.Panel):
         persistLength= float(self.tPersist.GetValue())
         #wc = wormlike2.fibre30nm(kbp, 10*kbp/numFluors)
         wc = wormlike2.wiglyFibre(kbp, persistLength, kbp/numFluors)
-        
-        if self.cbColour.GetValue():        
-            wc.xp -= wc.xp.mean() + 64*70
-            wc.xp = np.mod(wc.xp, 128*70) - 64*70
+
+        XVals = self.scope.cam.XVals
+        YVals = self.scope.cam.YVals
+
+        x_pixels = len(XVals)
+        y_pixels = len(YVals)
+
+        #numChans = 1 + int(self.cbColour.GetValue())
+
+        numChans = int(self.cNumSplitterChans.GetStringSelection())
+
+        x_chan_pixels = x_pixels/numChans
+        x_chan_size = XVals[x_chan_pixels-1] - XVals[0]
+
+        y_chan_size = YVals[-1] - YVals[0]
+
+        wc.xp -= wc.xp.mean() + XVals[x_chan_pixels/2]
+        wc.xp = np.mod(wc.xp, x_chan_size) - x_chan_size/2
+
+        wc.yp -= wc.yp.mean() + YVals[y_pixels/2]
+        wc.yp = np.mod(wc.yp, y_chan_size) - y_chan_size/2
+
+        if self.cbFlatten.GetValue():
+            wc.zp *= 0
         else:
-            wc.xp -= wc.xp.mean() + 128*70
-            wc.xp = np.mod(wc.xp, 256*70) - 128*70
-        wc.yp -= wc.yp.mean() + 128*70
-        wc.yp = np.mod(wc.yp, 256*70) - 128*70
-        wc.zp -= wc.zp.mean()
-        
-        wc.zp *= float(self.tZScale.GetValue())
+            wc.zp -= wc.zp.mean()
+            wc.zp *= float(self.tZScale.GetValue())
         
         self.points = []
         
         for i in range(len(wc.xp)):
-            if not self.cbFlatten.GetValue():
-                if self.cbColour.GetValue():
-                    self.points.append((wc.xp[i],wc.yp[i],wc.zp[i], float(i/((len(wc.xp) + 1)/3))))
-                else:
-                    self.points.append((wc.xp[i],wc.yp[i],wc.zp[i]))
+            if self.cbColour.GetValue():
+                self.points.append((wc.xp[i],wc.yp[i],wc.zp[i], float(i/((len(wc.xp) + 1)/3))))
             else:
-                if self.cbColour.GetValue():
-                    self.points.append((wc.xp[i],wc.yp[i],0,float(i/((len(wc.xp)+1)/3))))
-                else:
-                    self.points.append((wc.xp[i],wc.yp[i],0))
+                self.points.append((wc.xp[i],wc.yp[i],wc.zp[i]))
+
         
         self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
         #event.Skip()
 
     def OnBLoadPointsButton(self, event):
         fn = wx.FileSelector('Read point positions from file')
-        if fn == None:
+        if fn is None:
             print('No file selected')
             return
 
@@ -345,7 +400,7 @@ class dSimControl(wx.Panel):
 
     def OnBSavePointsButton(self, event):
         fn = wx.SaveFileSelector('Save point positions to file', '.txt')
-        if fn == None:
+        if fn is None:
             print('No file selected')
             return
 
@@ -384,8 +439,12 @@ class dSimControl(wx.Panel):
         else:
             fluors = fluor.fluors(x, y, z, transTens, exCrosses, activeState=self.activeState)
 
+        chan_z_offsets, chan_specs = self.getSplitterInfo()
+        self.scope.cam.setSplitterInfo(chan_z_offsets, chan_specs)
         
         self.scope.cam.setFluors(fluors)
+
+
         
 #        pylab.figure(1)
 #        pylab.clf()
@@ -410,7 +469,7 @@ class dSimControl(wx.Panel):
         cts = scipy.zeros((len(self.states)))
         #for f in self.scope.cam.fluors:
         #    cts[f.state] +=1
-        if self.scope.cam.fluors == None:
+        if self.scope.cam.fluors is None:
            self.stStatus.SetLabel('No fluorophores defined') 
            return
 

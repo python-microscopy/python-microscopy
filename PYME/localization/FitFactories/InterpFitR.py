@@ -35,13 +35,17 @@ from PYME.Analysis._fithelpers import FitModelWeighted_, FitModelWeighted, FitMo
 
 def f_Interp3d(p, interpolator, X, Y, Z, safeRegion, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
-    A, x0, y0, z0, b = p
+    if len(p) == 5:
+        A, x0, y0, z0, b = p
+    else:
+        A, x0, y0, z0 = p
+        b = 0
 
     #currently just come to a hard stop when the optimiser tries to leave the safe region
     #prob. not ideal, for a number of reasons
     x0 = min(max(x0, safeRegion[0][0]), safeRegion[0][1])
     y0 = min(max(y0, safeRegion[1][0]), safeRegion[1][1])
-    z0 = min(max(z0, safeRegion[2][0]), safeRegion[2][1])
+    z0 = min(np.nanmax([z0, safeRegion[2][0]]), safeRegion[2][1])
 
     return interpolator.interp(X - x0 + 1, Y - y0 + 1, Z - z0 + 1)*A + b
 
@@ -56,15 +60,15 @@ fresultdtype=[('tIndex', '<i4'),
     ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('nchi2', '<f4')]
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
-	if fitErr is None:
-		fitErr = -5e3*np.ones(fitResults.shape, 'f')
+    if fitErr is None:
+        fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
-	if startParams is None:
-		startParams = -5e3*np.ones(fitResults.shape, 'f')
+    if startParams is None:
+        startParams = -5e3*np.ones(fitResults.shape, 'f')
 
-	tIndex = metadata.tIndex
+    tIndex = metadata.tIndex
 
-	return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), startParams.astype('f'), nchi2)], dtype=fresultdtype)
+    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), startParams.astype('f'), nchi2)], dtype=fresultdtype)
 
 
 def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
@@ -82,7 +86,7 @@ def getDataErrors(im, metadata):
 
     return np.sqrt(metadata.getEntry('Camera.ReadNoise')**2 + (metadata.getEntry('Camera.NoiseFactor')**2)*metadata.getEntry('Camera.ElectronsPerCount')*metadata.getEntry('Camera.TrueEMGain')*dataROI)/metadata.getEntry('Camera.ElectronsPerCount')
 
-		
+
 
 class PSFFitFactory(FFBase.FFBase):
     def __init__(self, data, metadata, fitfcn=f_Interp3d, background=None, noiseSigma=None):
@@ -160,6 +164,10 @@ class PSFFitFactory(FFBase.FFBase):
 
         #estimate start parameters        
         startParameters = self.startPosEstimator.getStartParameters(dataROI, X_, Y_)
+        
+        fitBackground = self.metadata.getOrDefault('Analysis.FitBackground', True)
+        if not fitBackground:
+            startParameters = startParameters[0:-1]
 
         #do the fit
         (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, self.interpolator, X, Y, Z, safeRegion)
@@ -193,7 +201,8 @@ PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpola
               #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
               #mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),
               mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
-              mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'none', choices=['x', 'y', 'none'])]
+              mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'none', choices=['x', 'y', 'none']),
+              mde.BoolParam('Analysis.FitBackground', 'Fit Background', True),]
               
 DESCRIPTION = '3D, single colour fitting using an interpolated measured PSF.'
 LONG_DESCRIPTION = '3D, single colour fitting using an interpolated measured PSF. Should work for any 3D engineered PSF, with the default parameterisation optimised for astigmatism.'

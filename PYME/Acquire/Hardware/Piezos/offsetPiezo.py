@@ -10,6 +10,7 @@ import threading
 from PYME.misc.computerName import GetComputerName
 
 from PYME.Acquire import eventLog
+import time
 
 #import Queue
 #import time
@@ -61,14 +62,18 @@ class piezoOffsetProxy(Pyro.core.ObjBase):
         return self.offset
         
     def SetOffset(self, val):
-        p = self.GetPos()
+        p = self.GetTargetPos()
         self.offset = val
         self.MoveTo(0, p)
         
-    def LogShifts(self, dx, dy, dz):
-    	import wx
+    def LogShifts(self, dx, dy, dz, active=True):
+        import wx
         #eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
         wx.CallAfter(eventLog.logEvent, 'ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
+        wx.CallAfter(eventLog.logEvent, 'PiezoOffset', '%3.4f, %d' % (self.GetOffset(), active))
+        
+    def OnTarget(self):
+        return self.basePiezo.OnTarget()
 
     def LogFocusCorrection(self,offset):
         import wx
@@ -138,9 +143,13 @@ def getClient(compName = GetComputerName()):
     try:
         from PYME.misc import pyme_zeroconf 
         ns = pyme_zeroconf.getNS()
+        time.sleep(2)
+        print ns.list()
         URI = ns.resolve('%s.Piezo' % compName)
     except:
         URI ='PYRONAME://%s.Piezo'%compName
+
+    print URI
 
     return Pyro.core.getProxyForURI(URI)
     

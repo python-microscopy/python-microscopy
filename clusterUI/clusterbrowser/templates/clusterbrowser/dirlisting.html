@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+{% endblock %}
+
+{% block title %}Listing of /{{ dirname }}{% endblock %}
+
+{% block files_active_class %}active{% endblock %}
+{% block sidebar %}
+    <hr>
+    <h4>Current Directory</h4>
+    <ul class="nav nav-sidebar">
+        <li class="toggle-control" id="newfolder_form_toggle"><a href="#" onclick="togglePanel('#newfolder_form')"><span
+                class="glyphicon glyphicon-folder-close"></span>&nbsp;&nbsp;New Folder</a></li>
+        <li class="toggle-control" id="upload_form_toggle"><a href="#" onclick="togglePanel('#upload_form')"><span
+                class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload Files</a></li>
+    </ul>
+    <h5>Selected Files</h5>
+    <ul class="nav nav-sidebar">
+        <li class="toggle-control" id="recipe_form_toggle"><a href="#" onclick="on_recipe_settings()"><span
+                class="glyphicon glyphicon-list-alt"></span>&nbsp;&nbsp;Run Recipe</a></li>
+        <li class="toggle-control" id="localization_form_toggle"><a href="#"
+                                                                    onclick="on_analysis_settings()"><span
+                class="glyphicon glyphicon-fire"></span>&nbsp;&nbsp;Localize molecules</a></li>
+    </ul>
+    <hr>
+{% endblock %}
+
+
+
+{% block content %}
+    <!-- Modal dialog for file selection-->
+    <div class="modal fade" id="file_select_modal" tabindex="-1" role="dialog" aria-labelledby="file_select_label">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="file_select_label">Select a file</h4>
+          </div>
+          <div class="modal-body">
+            <div id="file_selector_tree" data-path=""></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" id="file_select_ok">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {#    <h1>Listing of /{{ dirname }}</h1>#}
+
+    <h1>Listing of /{% for bc in breadcrumbs %}<a href="/files/{{ bc.path }}">{{ bc.dir }}</a>/{% endfor %}</h1>
+
+    <button type="button" class="btn btn-default btn-xs" onclick="selectAllSeries();">Select all series</button>
+    <div>
+
+    <table class="table table-striped table-condensed">
+        {% if  parent %}
+            <tr>
+                <td><a href="/files/{{ parent }}"><span class="glyphicon glyphicon-level-up"></span></a></td>
+                <td><a href="/files/{{ parent }}">..</a></td>
+                <td colspan="3"></td>
+            </tr>
+        {% endif %}
+        {% for dir in dirs %}
+            <tr class="directory">
+                <td><span class="glyphicon glyphicon-folder-open"></span></td>
+                <td><a href="/files/{{ dirname }}{{ dir.name }}">{{ dir.name }}</a></td>
+                <td>{{ dir.numFiles }} files</td>
+                <td></td>
+                <td></td>
+            </tr>
+        {% endfor %}
+        {% for seriesi in series %}
+            <tr class="series" onclick="toggleSelection(this);" data-cu-seriesname={{ seriesi.cluster_uri }}>
+                <td><span class="glyphicon glyphicon-film"></span></td>
+                <td><a href="/files/{{ dirname }}{{ seriesi.name }}">{{ seriesi.name }}</a></td>
+                <td>{{ seriesi.numFrames }} frames</td>
+                {% if seriesi.complete %}
+                    <td class="text-success small">spooling complete</td>
+                {% else %}
+                    <td class="test-danger small ">spooling in progress</td>
+                {% endif %}
+                <td><a href="/files/download/{{ dirname }}{{ seriesi.name }}?type=h5" class="btn btn-default btn-xs">.h5 <span
+                        class="glyphicon glyphicon-download-alt"></span></a>
+                    <a href="/files/download/{{ dirname }}{{ seriesi.name }}?type=tiff" class="btn btn-default btn-xs">.tif
+                        <span class="glyphicon glyphicon-download-alt"></span></a>
+                </td>
+            </tr>
+        {% endfor %}
+        {% for file in files %}
+            <tr class="file" onclick="toggleSelection(this);" data-cu-filename="pyme-cluster:///{{ dirname }}{{ file }}">
+                <td><span class="glyphicon glyphicon-file"></span></td>
+                <td>{{ file }}</td>
+                <td></td>
+                <td></td>
+                <td><a href="/files/download/{{ dirname }}{{ file }}" class="btn btn-default btn-xs"><span
+                        class="glyphicon glyphicon-download-alt"></span></a></td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    </div>
+
+    <div class="panel panel-primary hidden toggle-panel" id="upload_form">
+        <div class="panel-heading"><span class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload Files</div>
+        {#<ul class="nav nav-sidebar"><li>#}
+        <div class="panel-body">
+            {% include "clusterbrowser/form_upload_file.html" %}
+        </div>
+    </div>
+
+    <div class="panel panel-primary hidden toggle-panel" id="newfolder_form">
+        <div class="panel-heading"><span class="glyphicon glyphicon-folder-close"></span>&nbsp;&nbsp;New Folder</div>
+        {#<ul class="nav nav-sidebar"><li>#}
+        <div class="panel-body">
+            {% include "clusterbrowser/form_new_folder.html" %}
+        </div>
+    </div>
+
+    <div class="panel panel-primary hidden toggle-panel" id="localization_form"></div>
+
+    <div class="panel panel-primary hidden toggle-panel" id="recipe_form"> </div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
+    <script>
+        function togglePanel(id) {
+            $('.toggle-panel').removeClass('show').addClass('hidden');
+            $('.toggle-control').removeClass('active');
+            $(id).removeClass('hidden').addClass('show');
+            $(id + '_toggle').addClass('active');
+        }
+
+        function toggleSelection(id){
+            //console.log('toggling selection:' + id)
+            $(id).toggleClass('cu-selected');
+        }
+
+        function selectAllSeries(){
+            $('tr.series').addClass('cu-selected');
+        }
+
+        function clearSelection(){
+            $('tr.series').removeClass('cu-selected');
+        }
+
+        function clearFileSelection(){
+            $('tr.file').removeClass('cu-selected');
+        }
+
+        function selectAllFiles(){
+            $('tr.file').addClass('cu-selected');
+        }
+
+
+        $('#form_new_folder').on('submit', function (e) {
+
+          e.preventDefault(); //prevent to reload the page
+
+          $.ajax({
+            type: 'POST', //hide url
+            url: '{% url 'mkdir' dirname %}', //your form validation url
+            data: $('#form_new_folder').serialize(),
+            success: function () {
+                //alert('The form was submitted successfully'); //display an alert whether the form is submitted okay
+                location.reload(true);
+            },
+            error: function(xhr){
+                $('#directory_input').addClass('has-error');
+                $('#directoryHelpBlock').text(xhr.responseText);
+                $('#newDirectory').change(function (){
+                    $('#directory_input').removeClass('has-error');
+                    $('#directoryHelpBlock').text('');
+                });
+            }
+          });
+
+
+        });
+
+        $('#inputFile').change(function(e) {
+            var fileList = $('#fileList');
+            fileList.empty();
+            var files = e.target.files;
+
+            if (files.length > 0) {
+                for (var i = 0; i < files.length; i++) {
+                    fileList.append('<br>' + files[i].name );
+                    //console.log(files[i].name);
+                }
+                fileList.append('<br>')
+            }
+
+        });
+
+        function _log_path(path){
+            console.log(path);
+        }
+
+        function select_file(callback, message='Select a file', basedir=''){
+            $('#file_select_modal').modal('show');
+
+            $('#file_select_label').html(message);
+
+            var tree = $('#file_selector_tree').jstree({
+              'core' : {
+                'data' : {
+                  'url' : '/files/_lite/',
+                  'data' : function (node) {
+                      //console.log(node);
+                      try{ return { 'path' : node.data.path };}
+                      catch (err) { return {'path' : ''}}
+
+                  }
+                }
+              }
+            });
+
+            $('#file_select_ok').click(function(){
+                $('#file_select_modal').modal('hide');
+                $('#file_select_ok').off('click');
+                var path = $('#file_selector_tree').jstree(true).get_selected(true)[0].data.path;
+                callback(path);
+            })
+
+        }
+
+        function on_analysis_settings(fitModule='LatGaussFitFR'){
+        //console.log('about to reload')
+            togglePanel('#localization_form');
+            $('#localization_form').load('/localization/settings/' + fitModule,function () {
+                //alert( "Load was performed." );
+                // $(this).unwrap();
+                //console.log('load performed')
+            });
+        }
+
+        function on_recipe_settings(recipePath='') {
+            //console.log('about to reload')
+            togglePanel('#recipe_form');
+            $('#recipe_form').load('/recipes/simple_form/' + recipePath, function () {
+                //alert( "Load was performed." );
+                // $(this).unwrap();
+                //console.log('load performed')
+            });
+        }
+
+
+    </script>
+{% endblock %}

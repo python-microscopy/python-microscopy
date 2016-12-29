@@ -55,7 +55,7 @@ class DataSource(BaseDataSource): #buffer our io to avoid decompressing multiple
                 #print self.insertAt
                 #print self.buffer
 
-                if self.buffer == None: #buffer doesn't exist yet
+                if self.buffer is None: #buffer doesn't exist yet
                     self.buffer = numpy.zeros((self.bLen, ) + self.dataSource.getSliceShape(), sl.dtype)
 
                 #print self.buffer.shape

@@ -928,7 +928,7 @@ class LMGLCanvas(GLCanvas):
             glEnd()
 
     def drawLUT(self):
-        if self.LUTDraw == True:
+        if self.LUTDraw:
             mx = self.c.max()
 
             view_size_x = self.xmax - self.xmin

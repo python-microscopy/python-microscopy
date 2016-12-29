@@ -88,7 +88,7 @@ class manualSegment:
         event.Skip()
         
     def FillSelection(self, event=None):
-        if self.mask == None:
+        if self.mask is None:
             print('Create a mask first')
             return
         

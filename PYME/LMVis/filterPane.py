@@ -24,6 +24,7 @@ import wx
 import sys
 import PYME.ui.autoFoldPanel as afp
 import numpy as np
+import dispatch
 
 from PYME.ui import histLimits
 from PYME.LMVis import editFilterDialog
@@ -33,26 +34,37 @@ def CreateFilterPane(panel, mapping, pipeline, visFr):
     panel.AddPane(pane)
     return pane
 
-class FilterPane(afp.foldingPane):
-    def __init__(self, panel, filterKeys, pipeline, visFr):
-        afp.foldingPane.__init__(self, panel, -1, caption="Filter", pinned = False)
+class FilterPanel(wx.Panel):
+    def __init__(self, parent, filterKeys, dataSource=None):
+        """
+
+        Parameters
+        ----------
+        parent : wx.Window
+
+        filterKeys : dict
+            Dictionary keys
+
+        dataSource : function
+            function to call to get the current data source
+        """
+        wx.Panel.__init__(self, parent)
 
         self.filterKeys = filterKeys
-        self.pipeline = pipeline
-        self.visFr = visFr
+        self._dataSource = dataSource
 
-        self.lFiltKeys = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(-1, 200))
+        self.on_filter_changed=dispatch.Signal()
 
-        self.AddNewElement(self.lFiltKeys)
+        #GUI stuff
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        self.lFiltKeys = wx.ListCtrl(self, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER, size=(-1, 30*(len(self.filterKeys.keys())+1)))
 
         self.lFiltKeys.InsertColumn(0, 'Key')
         self.lFiltKeys.InsertColumn(1, 'Min')
         self.lFiltKeys.InsertColumn(2, 'Max')
 
-        for key, value in self.filterKeys.items():
-            ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
-            self.lFiltKeys.SetStringItem(ind,1, '%3.2f' % value[0])
-            self.lFiltKeys.SetStringItem(ind,2, '%3.2f' % value[1])
+        self.populate()
 
         self.lFiltKeys.SetColumnWidth(0, wx.LIST_AUTOSIZE)
         self.lFiltKeys.SetColumnWidth(1, wx.LIST_AUTOSIZE)
@@ -78,28 +90,22 @@ class FilterPane(afp.foldingPane):
         self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnFilterItemDeselected)
         self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnFilterEdit)
 
-        self.stFilterNumPoints = wx.StaticText(self, -1, '')
+        vsizer.Add(self.lFiltKeys, 1, wx.ALL|wx.EXPAND, 0)
+        self.SetSizerAndFit(vsizer)
 
-        if not self.pipeline.filter == None:
-            self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
+    def populate(self):
+        self.lFiltKeys.DeleteAllItems()
+        for key, value in self.filterKeys.items():
+            ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
+            self.lFiltKeys.SetStringItem(ind, 1, '%3.2f' % value[0])
+            self.lFiltKeys.SetStringItem(ind, 2, '%3.2f' % value[1])
 
-        self.AddNewElement(self.stFilterNumPoints)
-        #self._pnl.AddFoldPanelWindow(self, self.stFilterNumPoints, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-
-        self.bClipToSelection = wx.Button(self, -1, 'Clip to selection')
-        self.AddNewElement(self.bClipToSelection)
-        #self._pnl.AddFoldPanelWindow(self, self.bClipToSelection, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-
-
-        self.bClipToSelection.Bind(wx.EVT_BUTTON, self.OnFilterClipToSelection)
-        
-        
-        try:        
-            visFr.Bind(wx.EVT_MENU, self.OnFilterClipToSelection, id=visFr.ID_VIEW_CLIP_ROI)
-        except AttributeError:
-            pass
-
-
+    @property
+    def dataSource(self):
+        if self._dataSource is None:
+            return None
+        else:
+            return self._dataSource
 
     def OnFilterListRightClick(self, event):
 
@@ -107,7 +113,6 @@ class FilterPane(afp.foldingPane):
         y = event.GetY()
 
         item, flags = self.lFiltKeys.HitTest((x, y))
-
 
         # make a menu
         menu = wx.Menu()
@@ -128,70 +133,19 @@ class FilterPane(afp.foldingPane):
 
     def OnFilterItemSelected(self, event):
         self.currentFilterItem = event.m_itemIndex
-
         event.Skip()
 
     def OnFilterItemDeselected(self, event):
         self.currentFilterItem = None
-
         event.Skip()
-
-    def OnFilterClipToSelection(self, event):
-        if 'x' in self.filterKeys.keys() or 'y' in self.filterKeys.keys():
-            if 'x' in self.filterKeys.keys():
-                i = 0
-                while not self.lFiltKeys.GetItemText(i) == 'x':
-                    i +=1
-                self.lFiltKeys.DeleteItem(i)
-                self.filterKeys.pop('x')
-            if 'y' in self.filterKeys.keys():
-                i = 0
-                while not self.lFiltKeys.GetItemText(i) == 'y':
-                    i +=1
-                self.lFiltKeys.DeleteItem(i)
-                self.filterKeys.pop('y')
-
-            self.bClipToSelection.SetLabel('Clip to Selection')
-        else:
-            try:
-                #old glcanvas
-                x0, y0 = self.visFr.glCanvas.selectionStart
-                x1, y1 = self.visFr.glCanvas.selectionFinish
-            except AttributeError:
-                #new glcanvas
-                x0, y0 = self.visFr.glCanvas.selectionSettings.start
-                x1, y1 = self.visFr.glCanvas.selectionSettings.finish
-
-            if not 'x' in self.filterKeys.keys():
-                indx = self.lFiltKeys.InsertStringItem(sys.maxint, 'x')
-            else:
-                indx = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('x')
-
-            if not 'y' in self.filterKeys.keys():
-                indy = self.lFiltKeys.InsertStringItem(sys.maxint, 'y')
-            else:
-                indy = [self.lFiltKeys.GetItemText(i) for i in range(self.lFiltKeys.GetItemCount())].index('y')
-
-
-            self.filterKeys['x'] = (min(x0, x1), max(x0, x1))
-            self.filterKeys['y'] = (min(y0, y1), max(y0,y1))
-
-            self.lFiltKeys.SetStringItem(indx,1, '%3.2f' % min(x0, x1))
-            self.lFiltKeys.SetStringItem(indx,2, '%3.2f' % max(x0, x1))
-
-            self.lFiltKeys.SetStringItem(indy,1, '%3.2f' % min(y0, y1))
-            self.lFiltKeys.SetStringItem(indy,2, '%3.2f' % max(y0, y1))
-
-            self.bClipToSelection.SetLabel('Clear Clipping ROI')
-
-        self.visFr.RegenFilter()
 
     def OnFilterAdd(self, event):
         #key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
 
-        possibleKeys = []
-        if not self.pipeline.selectedDataSource == None:
-            possibleKeys = list(self.pipeline.selectedDataSource.keys())
+        try:
+            possibleKeys = list(self.dataSource.keys())
+        except:
+            possibleKeys = []
 
         dlg = editFilterDialog.FilterEditDialog(self, mode='new', possibleKeys=possibleKeys)
 
@@ -206,39 +160,146 @@ class FilterPane(afp.foldingPane):
             if key == "":
                 return
 
-            self.filterKeys[key] = (minVal, maxVal)
+            self.filterKeys[key] = [minVal, maxVal]
 
             ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
-            self.lFiltKeys.SetStringItem(ind,1, '%3.2f' % minVal)
-            self.lFiltKeys.SetStringItem(ind,2, '%3.2f' % maxVal)
+            self.lFiltKeys.SetStringItem(ind, 1, '%3.2f' % minVal)
+            self.lFiltKeys.SetStringItem(ind, 2, '%3.2f' % maxVal)
 
         dlg.Destroy()
 
-        self.visFr.RegenFilter()
+        self.on_filter_changed.send(self)
 
     def OnFilterDelete(self, event):
         it = self.lFiltKeys.GetItem(self.currentFilterItem)
         self.lFiltKeys.DeleteItem(self.currentFilterItem)
         self.filterKeys.pop(it.GetText())
 
-        self.visFr.RegenFilter()
+        self.on_filter_changed.send(self)
 
     def OnFilterEdit(self, event):
-        key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
-
+        key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText().encode()
+        minVal, maxVal = self.filterKeys[key]
         #dlg = editFilterDialog.FilterEditDialog(self, mode='edit', possibleKeys=[], key=key, minVal=self.filterKeys[key][0], maxVal=self.filterKeys[key][1])
-        dlg = histLimits.HistLimitDialog(self, np.array(self.pipeline.selectedDataSource[key]), self.filterKeys[key][0], self.filterKeys[key][1], title=key)
-        ret = dlg.ShowModal()
+        try:
+            data = np.array(self.dataSource[key])
 
-        if ret == wx.ID_OK:
-            #minVal = float(dlg.tMin.GetValue())
-            #maxVal = float(dlg.tMax.GetValue())
-            minVal, maxVal = dlg.GetLimits()
+            dlg = histLimits.HistLimitDialog(self, data, minVal, maxVal, title=key)
+            ret = dlg.ShowModal()
 
-            self.filterKeys[key] = (minVal, maxVal)
+            if ret == wx.ID_OK:
+                #minVal = float(dlg.tMin.GetValue())
+                #maxVal = float(dlg.tMax.GetValue())
+                minVal, maxVal = dlg.GetLimits()
 
-            self.lFiltKeys.SetStringItem(self.currentFilterItem,1, '%3.2f' % minVal)
-            self.lFiltKeys.SetStringItem(self.currentFilterItem,2, '%3.2f' % maxVal)
+                self.filterKeys[key] = [minVal, maxVal]
 
-        dlg.Destroy()
-        self.visFr.RegenFilter()
+                self.lFiltKeys.SetStringItem(self.currentFilterItem, 1, '%3.2f' % minVal)
+                self.lFiltKeys.SetStringItem(self.currentFilterItem, 2, '%3.2f' % maxVal)
+
+            dlg.Destroy()
+        except (RuntimeError, KeyError, TypeError):
+            dlg = editFilterDialog.FilterEditDialog(self, mode='edit', key=key,minVal=minVal, maxVal=maxVal)
+
+            ret = dlg.ShowModal()
+
+            if ret == wx.ID_OK:
+                minVal = float(dlg.tMin.GetValue())
+                maxVal = float(dlg.tMax.GetValue())
+
+                self.filterKeys[key] = [minVal, maxVal]
+
+                self.lFiltKeys.SetStringItem(self.currentFilterItem, 1, '%3.2f' % minVal)
+                self.lFiltKeys.SetStringItem(self.currentFilterItem, 2, '%3.2f' % maxVal)
+
+            dlg.Destroy()
+
+        self.on_filter_changed.send(self)
+
+class FilterPane(afp.foldingPane):
+    def __init__(self, panel, filterKeys, pipeline, visFr):
+        afp.foldingPane.__init__(self, panel, -1, caption="Filter", pinned = False)
+
+        self.filterKeys = filterKeys
+        self.pipeline = pipeline
+        self.visFr = visFr
+
+        #self.lFiltKeys = wx.ListCtrl(self, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(-1, 200))
+
+        self.pFilter = FilterPanel(self, filterKeys, pipeline.selectedDataSource)
+        self.pFilter.on_filter_changed.connect(pipeline.Rebuild)
+
+        self.AddNewElement(self.pFilter)
+
+        self.stFilterNumPoints = wx.StaticText(self, -1, '')
+
+        if not self.pipeline.filter is None:
+            self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
+
+        self.AddNewElement(self.stFilterNumPoints)
+        #self._pnl.AddFoldPanelWindow(self, self.stFilterNumPoints, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+        self.bClipToSelection = wx.Button(self, -1, 'Clip to selection')
+        self.AddNewElement(self.bClipToSelection)
+        #self._pnl.AddFoldPanelWindow(self, self.bClipToSelection, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+
+
+        self.bClipToSelection.Bind(wx.EVT_BUTTON, self.OnFilterClipToSelection)
+        
+        
+        try:        
+            visFr.Bind(wx.EVT_MENU, self.OnFilterClipToSelection, id=visFr.ID_VIEW_CLIP_ROI)
+        except AttributeError:
+            pass
+
+
+    def OnFilterClipToSelection(self, event):
+        if 'x' in self.filterKeys.keys() or 'y' in self.filterKeys.keys():
+            if 'x' in self.filterKeys.keys():
+                i = 0
+                while not self.pFilter.lFiltKeys.GetItemText(i) == 'x':
+                    i +=1
+                self.pFilter.lFiltKeys.DeleteItem(i)
+                self.filterKeys.pop('x')
+            if 'y' in self.filterKeys.keys():
+                i = 0
+                while not self.pFilter.lFiltKeys.GetItemText(i) == 'y':
+                    i +=1
+                self.pFilter.lFiltKeys.DeleteItem(i)
+                self.filterKeys.pop('y')
+
+            self.bClipToSelection.SetLabel('Clip to Selection')
+        else:
+            try:
+                #old glcanvas
+                x0, y0 = self.visFr.glCanvas.selectionStart
+                x1, y1 = self.visFr.glCanvas.selectionFinish
+            except AttributeError:
+                #new glcanvas
+                x0, y0 = self.visFr.glCanvas.selectionSettings.start
+                x1, y1 = self.visFr.glCanvas.selectionSettings.finish
+
+            if not 'x' in self.filterKeys.keys():
+                indx = self.pFilter.lFiltKeys.InsertStringItem(sys.maxint, 'x')
+            else:
+                indx = [self.pFilter.lFiltKeys.GetItemText(i) for i in range(self.pFilter.lFiltKeys.GetItemCount())].index('x')
+
+            if not 'y' in self.filterKeys.keys():
+                indy = self.pFilter.lFiltKeys.InsertStringItem(sys.maxint, 'y')
+            else:
+                indy = [self.pFilter.lFiltKeys.GetItemText(i) for i in range(self.pFilter.lFiltKeys.GetItemCount())].index('y')
+
+
+            self.filterKeys['x'] = (min(x0, x1), max(x0, x1))
+            self.filterKeys['y'] = (min(y0, y1), max(y0,y1))
+
+            self.pFilter.lFiltKeys.SetStringItem(indx,1, '%3.2f' % min(x0, x1))
+            self.pFilter.lFiltKeys.SetStringItem(indx,2, '%3.2f' % max(x0, x1))
+
+            self.pFilter.lFiltKeys.SetStringItem(indy,1, '%3.2f' % min(y0, y1))
+            self.pFilter.lFiltKeys.SetStringItem(indy,2, '%3.2f' % max(y0, y1))
+
+            self.bClipToSelection.SetLabel('Clear Clipping ROI')
+
+        self.pipeline.Rebuild()
+

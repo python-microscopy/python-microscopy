@@ -174,21 +174,11 @@ class Generator(HasTraits):
         self.source = self.sources[0]
 
         if visFr:
-            ID_GEN_POINTS = wx.NewId()
-            ID_CONF_SIMUL = wx.NewId()
-            ID_GEN_EVENTS = wx.NewId()
+            visFr.AddMenuItem('Extras>Synthetic Data', "Configure", self.OnConfigure)
+            visFr.AddMenuItem('Extras>Synthetic Data', 'Generate fluorophore positions and events', self.OnGenPoints)
+            visFr.AddMenuItem('Extras>Synthetic Data', 'Generate events', self.OnGenEvents)
 
-            mSimul = wx.Menu()
 
-            mSimul.Append(ID_CONF_SIMUL, "Configure")
-            mSimul.Append(ID_GEN_POINTS, "Generate fluorophore positions and events")
-            mSimul.Append(ID_GEN_EVENTS, "Generate events")
-
-            visFr.extras_menu.AppendSubMenu(mSimul, 'Synthetic Data')
-
-            visFr.Bind(wx.EVT_MENU, self.OnGenPoints, id=ID_GEN_POINTS)
-            visFr.Bind(wx.EVT_MENU, self.OnGenEvents, id=ID_GEN_EVENTS)
-            visFr.Bind(wx.EVT_MENU, self.OnConfigure, id=ID_CONF_SIMUL)
 
     def OnConfigure(self, event):
         self.source.refresh_choices()
@@ -201,8 +191,8 @@ class Generator(HasTraits):
     def OnGenEvents(self, event):
         from PYMEnf.Simulation import locify
         #from PYME.Acquire.Hardware.Simulator import wormlike2
-        from PYME.LMVis import inpFilt
-        from PYME.LMVis.visHelpers import ImageBounds
+        from PYME.IO import tabular
+        from PYME.IO.image import ImageBounds
         import pylab
         
         #wc = wormlike2.wormlikeChain(100)
@@ -218,7 +208,7 @@ class Generator(HasTraits):
         res = locify.eventify(self.xp, self.yp, self.meanIntensity, self.meanDuration, self.backgroundIntensity, self.meanEventNumber, self.scaleFactor, self.meanTime)
         pylab.plot(res['fitResults']['x0'],res['fitResults']['y0'], '+')
 
-        ds = inpFilt.mappingFilter(inpFilt.fitResultsSource(res))
+        ds = tabular.mappingFilter(tabular.fitResultsSource(res))
         pipeline.imageBounds = ImageBounds.estimateFromSource(ds)
         pipeline.addDataSource('Generated Points', ds)
         pipeline.selectDataSource('Generated Points')
@@ -234,7 +224,8 @@ class Generator(HasTraits):
             pipeline.filterKeys.pop('sig')
         except:
             pass
-        self.visFr.RegenFilter()
+
+        pipeline.Rebuild()
         self.visFr.SetFit()
 
 

@@ -82,7 +82,7 @@ class ATString(ATProperty):
         SDK3.SetString(self.handle, self.propertyName, val)
         
     def maxLength(self):
-        return SDK3.GetStingMaxLength(self.handle, self.propertyName).value
+        return SDK3.GetStringMaxLength(self.handle, self.propertyName).value
         
 class ATEnum(ATProperty):
     def getIndex(self):

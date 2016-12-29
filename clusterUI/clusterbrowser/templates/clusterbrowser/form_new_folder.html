@@ -1,0 +1,18 @@
+<form class="form-inline" id="form_new_folder">{% csrf_token %}
+    <div class="form-group" id="directory_input">
+
+    {#             <label for="newFolderName">/{{ dirname }}</label>#}
+
+        <div class="input-group">
+            <span class="input-group-addon">/{{ dirname }}</span>
+
+            <input type="text" class="form-control" name="newDirectory" id="newDirectory" placeholder="folder name">
+        </div>
+
+    </div>
+
+    <div class="form-group">
+        <button type="submit" class="btn btn-default">Create</button>
+    </div>
+    <span id="directoryHelpBlock" class="help-block has-error"></span>
+</form>

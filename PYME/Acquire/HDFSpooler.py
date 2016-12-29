@@ -64,7 +64,7 @@ class EventLogger:
     
       self.evts = self.hdf5File.createTable(hdf5File.root, 'Events', SpoolEvent)
 
-    def logEvent(self, eventName, eventDescr = ''):
+    def logEvent(self, eventName, eventDescr = '', timestamp=None):
         """Log an event.
           
         Parameters
@@ -94,7 +94,11 @@ class EventLogger:
         
         ev['EventName'] = eventName
         ev['EventDescr'] = eventDescr
-        ev['Time'] = sp.timeFcn()
+
+        if timestamp is None:
+            ev['Time'] = sp.timeFcn()
+        else:
+            ev['Time'] = timestamp
         
         #if eventName == 'ShiftMeasure':
         #    ev['Time'] = eventtimestamp

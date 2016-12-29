@@ -31,9 +31,9 @@ from .BaseDataSource import BaseDataSource
 #import cPickle as pickle
 import time
 import json
-import pandas as pd
+#import pandas as pd
 import numpy as np
-SHAPE_LIFESPAN = 30
+SHAPE_LIFESPAN = 5
 
 from PYME.IO import clusterIO
 from PYME.IO import PZFFormat
@@ -43,16 +43,16 @@ class DataSource(BaseDataSource):
     moduleName = 'ClusterPZFDataSource'
     def __init__(self, url, queue=None):
         self.seriesName = url
-        print url
+        #print url
         self.clusterfilter = url.split('://')[1].split('/')[0]
-        print self.clusterfilter
+        #print self.clusterfilter
         self.sequenceName = url.split('://%s/' % self.clusterfilter)[1]
-        print self.sequenceName
+        #print self.sequenceName
         self.lastShapeTime = 0
         
         mdfn = '/'.join([self.sequenceName, 'metadata.json'])  
         
-        print mdfn
+        #print mdfn
         
         self.mdh = MetaDataHandler.NestedClassMDHandler()
         self.mdh.update(json.loads(clusterIO.getFile(mdfn, self.clusterfilter)))
@@ -85,14 +85,21 @@ class DataSource(BaseDataSource):
             
         return self.numFrames
 
+    @property
+    def eventFileName(self):
+        return self.sequenceName + '/events.json'
+
     def getEvents(self):
-        eventFileName = self.sequenceName + '/events.json'
+        import pandas as pd #defer pandas import for as long as possible
         try:
             #return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
-            ev = pd.read_json(clusterIO.getFile(eventFileName, self.clusterfilter))
+            ev = pd.read_json(clusterIO.getFile(self.eventFileName, self.clusterfilter))
+            if len(ev) == 0:
+                return []
+            
             ev.columns = ['EventName', 'EventDescr', 'Time']
 
-            evts = np.empty(len(ev), dtype=[('EventName', 'S32'), ('EventDescr', 'S256'), ('Time', 'f8')])
+            evts = np.empty(len(ev), dtype=[('EventName', 'S32'), ('Time', 'f8'), ('EventDescr', 'S256')])
             evts['EventName'] = ev['EventName']
             evts['EventDescr'] = ev['EventDescr']
             evts['Time'] = ev['Time']
@@ -103,4 +110,8 @@ class DataSource(BaseDataSource):
         
     def getMetadata(self):
         return self.mdh
+
+    def isComplete(self):
+        #TODO - add check to see if we have an updated number of frames
+        return clusterIO.exists(self.eventFileName, self.clusterfilter)
  

@@ -22,11 +22,16 @@
 ################
 import os.path
 
-
 import glob
 import os
 
-mods = list(set([os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]))
+from PYME import config
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+mods = list(set([os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py') + glob.glob(__path__[0] + '/[a-zA-Z]*.pyc')]))
 
 def InitPlugins(visFr):
     
@@ -36,3 +41,12 @@ def InitPlugins(visFr):
         m = __import__('PYME.LMVis.Extras.' + mn, fromlist=['PYME', 'LMVis', 'Extras'])
         
         m.Plug(visFr)
+
+    for mn in config.get_plugins('visgui'):
+        try:
+            m = __import__(mn, fromlist=mn.split('.')[:-1])
+            m.Plug(visFr)
+        except Exception as e:
+            #import traceback
+            #traceback.print_exc()
+            logger.exception('Error loading plugin: %s' % mn)

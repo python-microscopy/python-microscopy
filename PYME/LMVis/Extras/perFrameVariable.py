@@ -35,9 +35,7 @@ class PerFrameVar:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        ID_FRAMEVAR = wx.NewId()
-        visFr.extras_menu.Append(ID_FRAMEVAR, "Load per-frame variable")
-        visFr.Bind(wx.EVT_MENU, self.OnPerFrame, id=ID_FRAMEVAR)
+        visFr.AddMenuItem('Extras', "Load per-frame variable", self.OnPerFrame)
 
     def OnPerFrame(self, event):
         import numpy as np
@@ -61,22 +59,14 @@ class PerFrameVar:
                 pipeline = self.visFr.pipeline
                 
                 #perform lookup            
-                values = var[pipeline.inputMapping['t'].astype('i')]
-                
-                #print values
-                
+                values = var[pipeline.selectedDataSource['t'].astype('i')]
                 
                 #add looked up values to input mapping
-                pipeline.inputMapping.__dict__[varname + '_'] = values
-                pipeline.inputMapping.setMapping(varname, '%s_' % varname)
-                
-                print type('%s_' % varname)
-                
-                print pipeline.inputMapping.mappings
-                
+                pipeline.addColumn(varname,  values)
+
                 #regenerate the pipeline
-                self.visFr.RegenFilter()
-                self.visFr.CreateFoldPanel()
+                pipeline.Rebuild()
+
 
 
 

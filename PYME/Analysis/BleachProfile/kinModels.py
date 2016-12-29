@@ -253,7 +253,7 @@ def chi2_mse(model, data, r, *args):
 @applyByChannel
 def fitDecay(colourFilter, metadata, channame='', i=0):
     #get frames in which events occured and convert into seconds
-    t = colourFilter['t']*metadata.getEntry('Camera.CycleTime')
+    t = colourFilter['t'].astype('f')*metadata.getEntry('Camera.CycleTime')
 
     n,bins = np.histogram(t, 100)
 
@@ -346,7 +346,7 @@ def fitFluorBrightness(colourFilter, metadata, channame='', i=0, rng = None, qui
     #nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
     nPh = getPhotonNums(colourFilter, metadata)
     
-    if rng == None:
+    if rng is None:
         rng = nPh.mean()*6
         
     n, bins = np.histogram(nPh, np.linspace(0, rng, 100))
@@ -381,10 +381,10 @@ def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
     #from mpl_toolkits.mplot3d import Axes3D
     
     nPh = getPhotonNums(colourFilter, metadata)
-    t = (colourFilter['t'] - metadata['Protocol.DataStartsAt'])*metadata.getEntry('Camera.CycleTime')
+    t = (colourFilter['t'].astype('f') - metadata['Protocol.DataStartsAt'])*metadata.getEntry('Camera.CycleTime')
     NEvents = len(t)
 
-    if rng == None:
+    if rng is None:
         rng = nPh.mean()*3
         
     Nco = nPh.min()

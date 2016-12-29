@@ -91,7 +91,7 @@ static PyObject * applyLUTuint16(PyObject *self, PyObject *args, PyObject *keywd
 
     if (PyArray_NDIM(oout) != 3)
     {
-        PyErr_Format(PyExc_RuntimeError, "Expecting a 2 dimensional array");
+        PyErr_Format(PyExc_RuntimeError, "Expecting a 3 dimensional output array");
         Py_DECREF(adata);
         return NULL;
     }

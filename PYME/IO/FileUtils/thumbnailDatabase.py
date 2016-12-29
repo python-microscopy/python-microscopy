@@ -41,9 +41,10 @@ sqlite3.register_adapter(ndarray, adapt_numarray)
 sqlite3.register_converter("ndarray", convert_numarray)
 
 dbOpen = False
+thumbDB = None
 
 def openDB():
-    global dbOpen
+    global dbOpen, thumbDB
     
     if not dbOpen:
         dbOpen = True
@@ -72,12 +73,12 @@ def getThumbnail(filename):
 
     ret = thumbDB.execute("SELECT thumbnail FROM Thumbnails WHERE filename=?", (filename,)).fetchone()
 
-    if ret == None:
+    if ret is None:
         #cludge around old entries with extra /
         ret = thumbDB.execute("SELECT thumbnail FROM Thumbnails WHERE filename=?", ('/' + filename,)).fetchone()
 
 
-    if ret == None:
+    if ret is None:
         ext = os.path.splitext(filename)[-1]
 
         if ext in thumbnailers.keys():

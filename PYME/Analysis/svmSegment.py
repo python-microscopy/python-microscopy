@@ -88,7 +88,7 @@ def extractFeatures2(im):
     return fv
     
 def normalizeFeatures(fv, normalization= None):
-    if normalization == None:
+    if normalization is None:
         fvm = fv.mean(1)
         fvs = fv.std(1)
     else:
@@ -124,7 +124,7 @@ class svmClassifier(object):
         self.normalization = None
         self.clf = clf
         
-        if clf == None and not filename == None:
+        if clf is None and not filename is None:
             self.loadFile(filename)
             
     def _getNormalizedFeatures(self, im):
@@ -147,7 +147,7 @@ class svmClassifier(object):
         
         features = self._getAndCacheFeatures(im)
             
-        if self.clf == None or newInstance:
+        if self.clf is None or newInstance:
             self.clf = svm.SVC(C=100.)
             
         print 'Training classifier ...'

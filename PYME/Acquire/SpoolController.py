@@ -105,7 +105,8 @@ class SpoolController(object):
         self.onSpoolProgress.send(self)
 
 
-    def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize):
+    def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize,
+                      compressionSettings=HTTPSpooler.defaultCompSettings):
         """Start spooling
         """
 
@@ -114,7 +115,7 @@ class SpoolController(object):
             #raise RuntimeError('No output file specified')
             #return #bail
         
-        if not (self.spoolType == 'HTTP' or os.path.exists(self.dirname)):
+        if not (self.spoolType == 'Cluster' or os.path.exists(self.dirname)):
             os.makedirs(self.dirname)
 
         if not self.dirname[-1] == os.sep:
@@ -154,13 +155,14 @@ class SpoolController(object):
                                                 frameShape = frameShape, protocol=protocol, 
                                                 guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
                                                 fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
-        elif self.spoolType == 'HTTP':
+        elif self.spoolType == 'Cluster':
             #self.queueName = self.dirname + fn + '.h5'
-            self.queueName = getRelFilename(self.dirname + fn + '.h5')
+            self.queueName = getRelFilename(self.dirname + fn + '.pcs')
             self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                frameShape = frameShape, protocol=protocol, 
                                                guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
-                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
+                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
+                                               compressionSettings=compressionSettings)
            
         else:
             self.spooler = HDFSpooler.Spooler(self.dirname + fn + '.h5', self.scope.frameWrangler.onFrame, 
@@ -232,10 +234,11 @@ class SpoolController(object):
             self.protocol = prot.NullProtocol
             self.protocolZ = prot.NullZProtocol
         else:
-            pmod = __import__('PYME.Acquire.Protocols.' + protocolName.split('.')[0],fromlist=['PYME', 'Acquire','Protocols'])
+            #pmod = __import__('PYME.Acquire.Protocols.' + protocolName.split('.')[0],fromlist=['PYME', 'Acquire','Protocols'])
             
-            if reloadProtocol:            
-                reload(pmod) #force module to be reloaded so that changes in the protocol will be recognised
+            #if reloadProtocol:
+            #    reload(pmod) #force module to be reloaded so that changes in the protocol will be recognised
+            pmod = prot.get_protocol(protocol_name=protocolName, reloadProtocol=reloadProtocol)
 
             self.protocol = pmod.PROTOCOL
             self.protocol.filename = protocolName

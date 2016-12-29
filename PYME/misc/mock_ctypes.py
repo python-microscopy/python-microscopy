@@ -20,3 +20,6 @@ class CDLL(object):
         return doNothing
         
 WinDLL = CDLL
+
+def _dlopen(*args, **kwargs):
+    return WinDLL()

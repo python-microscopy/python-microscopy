@@ -134,6 +134,12 @@ def main():
                 t1 = time.time()
                 res = task(taskQueue=tq)
                 t2 = time.time()
+
+                if not task.resultsURI is None:
+                    # new style way of returning results to reduce load on server
+                    from PYME.io import clusterResults
+                    clusterResults.fileResults(task.resultsURI, res)
+
                 tq.returnCompletedTask(res, procName, t2-t1)
             except:
                 import traceback

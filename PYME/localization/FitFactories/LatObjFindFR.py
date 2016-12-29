@@ -36,7 +36,7 @@ fresultdtype=[('tIndex', '<i4'),
                               ('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
-    if fitErr == None:
+    if fitErr is None:
         fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
     tIndex = metadata.tIndex
@@ -46,7 +46,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
 class GaussianFitFactory(FFBase.FitFactory):        
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
-        if (z == None): # use position of maximum intensity
+        if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
 	
         x_ = round(x)

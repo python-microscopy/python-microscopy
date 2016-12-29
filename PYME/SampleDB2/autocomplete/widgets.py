@@ -22,8 +22,17 @@
 #
 ################
 from django import forms
-from django.forms.util import flatatt
-from django.utils import simplejson
+try:
+    from django.forms.util import flatatt
+except ImportError:
+    #catch rename in Django 1.9
+    from django.forms.utils import flatatt
+
+try:
+    from django.utils import simplejson
+except ImportError:
+    import json as simplejson
+
 from django.utils.safestring import mark_safe
 from django.conf import settings
 

@@ -356,7 +356,7 @@ class MetadataPanel(wx.Panel):
 
         sizer1.Add(self.tree, 1, wx.EXPAND, 0)
 
-        if refreshable == True:
+        if refreshable:
             bRefresh = wx.Button(self, -1, 'Refresh')
             bRefresh.Bind(wx.EVT_BUTTON, self.rebuild)
 
@@ -366,7 +366,7 @@ class MetadataPanel(wx.Panel):
 
     def addEntries(self, mdh, node, entrypath=''):
         #en = []
-        for k in mdh.__dict__.keys():
+        for k in sorted(mdh.__dict__.keys()):
             child = self.tree.AppendItem(node, k)
             self.tree.SetItemText(child, k, 0)
             if mdh.__dict__[k].__class__ == NestedClassMDHandler:

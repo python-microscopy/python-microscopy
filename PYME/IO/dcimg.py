@@ -46,7 +46,8 @@ SESSION_HEADER_BYTES_INT2P24 = np.zeros(1, dtype=SESSION_HEADER_DTYPE_INT2P24).n
 
 class DCIMGFile(object):
     def __init__(self, filename):
-        with open(filename, 'rb') as hfile:
+        from PYME.IO import unifiedIO
+        with unifiedIO.openFile(filename, 'rb') as hfile:
             header_bytes = hfile.read(728)  #Read enough of the header to open both verssions (previously 232) 
 
         self._info = self._parse_header(header_bytes)

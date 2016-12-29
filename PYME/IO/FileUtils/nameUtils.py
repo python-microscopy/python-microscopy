@@ -42,7 +42,7 @@ def getUsername():
         return os.environ['USER']
     else: #linux
         #return os.getlogin() #broken when not runing from command line
-        return os.environ['USER']
+        return os.environ.get('USER', 'nobody')
 
 
 dtn = datetime.datetime.now()
@@ -111,6 +111,26 @@ def genResultFileName(dataFileName, create=True):
         os.makedirs(os.path.split(p)[0])
 
     return p + '.h5r'
+
+def genClusterResultFileName(dataFileName, create=True):
+    """Generates a filename for saving fit results based on the original image
+    filename"""
+    fn, ext = os.path.splitext(dataFileName) #remove extension
+
+    clusterfilter = fn.split('://')[1].split('/')[0]
+    rel_name = fn.split('://%s/' % clusterfilter)[1]
+
+    dir_name = os.path.dirname(rel_name)
+    file_name = os.path.basename(rel_name)
+
+    #fn = fn.replace(':', '/')
+    #print os.path.join(*seps.split(resultsdirPatternShort)) % dateDict
+    #p = os.path.join(*(seps.split(resultsdirPatternShort) + seps.split(fn)[-2:])) %dateDict
+
+    #if create and not os.path.exists(os.path.split(p)[0]): #create the necessary directories
+    #    os.makedirs(os.path.split(p)[0])
+
+    return '/'.join([dir_name, 'analysis', file_name]) + '.h5r'
 
 def genResultDirectoryPath():
     """Returns the default destination for saving fit reults"""
@@ -192,7 +212,7 @@ def getFullExistingFilename(relFilename):
     the environment variable PYMEDATADIR. If environment variable not defined,
     or the absolute path exists, assumes path is absolute."""
 
-    if os.path.exists(relFilename):
+    if os.path.exists(relFilename) or relFilename.startswith('PYME-CLUSTER://') or relFilename.startswith('pyme-cluster://'):
         return relFilename
     else:
         if relFilename.startswith('d:\\') or relFilename.startswith('D:\\'):

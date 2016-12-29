@@ -28,9 +28,9 @@ entry_points={
         'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
         'PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main',
         'PYMEClusterDup = PYME.io.clusterDuplication:main',
+        'PYMEDistributor = PYME.ParallelTasks.PYMEDistributor',
         'genmaps = PYME.localization.genmaps:main'
-    ],
-    'gui_scripts': [
+        'PYMENodeServer = PYME.ParallelTasks.PYMENodeServer',
         'dh5view = PYME.DSView.dsviewer:main',
         'PYMEAcquire = PYME.Acquire.PYMEAcquire:main',
         'VisGUI = PYME.LMVis.VisGUI:main',

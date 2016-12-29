@@ -27,10 +27,10 @@ import threading
 CHUNKSIZE = 50
 
 def doNix(taskQueue): #do nothing
-	pass
+    pass
 
 def popZero(workerN, NWorkers, NTasks): #give worker oldest task irrespective of which worker called
-	return 0
+    return 0
 
 class TaskQueue:
     def __init__(self, name, initialTasks=[], onEmpty = doNix, fTaskToPop = popZero):

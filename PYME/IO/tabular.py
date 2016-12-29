@@ -34,10 +34,10 @@ from PYME.Analysis.piecewise import * #allow piecewise linear mappings
 
 import tables
 
-class inputFilter(object):
+class TabularBase(object):
     def toDataFrame(self, keys=None):
         import pandas as pd
-        if keys == None:
+        if keys is None:
             keys = self.keys()
         
         d = {k: self.__getitem__(k) for k in keys}
@@ -55,10 +55,26 @@ class inputFilter(object):
         #print key, sl
             
         return key, sl
+
+    def to_recarray(self, keys=None):
+        from numpy.core import records
+        if keys is None:
+            keys = self.keys()
+
+        return records.fromarrays([self.__getitem__(k) for k in keys], names = keys)
+
+    def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
+        from PYME.IO import h5rFile
+
+        with h5rFile.H5RFile(filename, 'a') as f:
+            f.appendToTable(tablename, self.to_recarray(keys))
+
+            if metadata is not None:
+                f.updateMetadata(metadata)
         
     
 
-class randomSource(inputFilter):
+class randomSource(TabularBase):
     _name = "Random Source"
     def __init__(self, xmax, ymax, nsamps):
         """Uniform random source, for testing and as an example"""
@@ -74,7 +90,7 @@ class randomSource(inputFilter):
         key, sl = self._getKeySlice(keys)
         
         if not key in self._keys:
-            raise RuntimeError('Key not defined')
+            raise KeyError('Key (%s) not defined' % key)
         
         if key == 'x':
             return self.x[sl]
@@ -104,7 +120,7 @@ def unNestDtype(descr, parent=''):
             unList += unNestDtype(n[1], parent + n[0] + '_')
     return unList
 
-class fitResultsSource(inputFilter):
+class fitResultsSource(TabularBase):
     _name = "recarrayfi Source"
     def __init__(self, fitResults, sort=True):
         self.setResults(fitResults, sort=sort)
@@ -139,18 +155,18 @@ class fitResultsSource(inputFilter):
             key = self.transkeys[key]
 
         if not key in self._keys:
-            raise RuntimeError('Key not found')
+            raise KeyError('Key  (%s) not found' % key)
 
         k = key.split('_')
 
-        if len(k) == 1:
+        if len(k) == 1:  # TODO: evaluate why these are cast as floats
             return self.fitResults[k[0]].astype('f')[sl]
         elif len(k) == 2:
             return self.fitResults[k[0]][k[1]].astype('f')[sl]
         elif len(k) == 3:
             return self.fitResults[k[0]][k[1]][k[2]].astype('f')[sl]
         else:
-            raise RuntimeError("Don't know about deeper nesting yet")
+            raise KeyError("Don't know about deeper nesting yet")
 
 
     def close(self):
@@ -160,28 +176,26 @@ class fitResultsSource(inputFilter):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
-class h5rSource(inputFilter):
+class h5rSource(TabularBase):
     _name = "h5r Data Source"
-    def __init__(self, h5fFile):
+    def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
         component. Takes either an open h5r file or a string filename to be
         opened."""
+        self.tablename = tablename
 
         if type(h5fFile) == tables.file.File:
             self.h5f = h5fFile
         else:
             self.h5f = tables.open_file(h5fFile)
         
-        if not 'FitResults' in dir(self.h5f.root):
-            raise RuntimeError('Was expecting to find a "FitResults" table')
+        if not tablename in dir(self.h5f.root):
+            raise RuntimeError('Was expecting to find a "%s" table' % tablename)
 
-        self.fitResults = self.h5f.root.FitResults[:]
-
-        #sort by time
-        self.fitResults.sort(order='tIndex')
+        self.fitResults = getattr(self.h5f.root, tablename)[:]
 
         #allow access using unnested original names
-        self._keys = unNestNames(self.h5f.root.FitResults.description._v_nestedNames)
+        self._keys = unNestNames(getattr(self.h5f.root, tablename).description._v_nested_names)
         #or shorter aliases
         self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
@@ -191,6 +205,10 @@ class h5rSource(inputFilter):
             if not self.transkeys[k] in self._keys:
                 self.transkeys.pop(k)
 
+        #sort by time
+        if 'tIndex' in self._keys:
+            self.fitResults.sort(order='tIndex')
+
 
     def keys(self):
         return self._keys + self.transkeys.keys()
@@ -203,86 +221,143 @@ class h5rSource(inputFilter):
             key = self.transkeys[key]
 
         if not key in self._keys:
-            raise RuntimeError('Key not found')
+            raise KeyError('Key not found - %s' % key)
 
         k = key.split('_')
         
         if len(k) == 1:
-            return self.fitResults[k[0]][sl].astype('f')
+            return self.fitResults[k[0]][sl]
         elif len(k) == 2:
-            return self.fitResults[k[0]][k[1]][sl].astype('f')
+            return self.fitResults[k[0]][k[1]][sl]
         elif len(k) == 3:
-            return self.fitResults[k[0]][k[1]][k[2]][sl].astype('f')
+            return self.fitResults[k[0]][k[1]][k[2]][sl]
         else:
-            raise RuntimeError("Don't know about deeper nesting yet")
+            raise KeyError("Don't know about deeper nesting yet")
         
 
     def close(self):
         self.h5f.close()
 
     def getInfo(self):
-        return 'PYME h5r Data Source\n\n %d points' % self.h5f.root.FitResults.shape[0]
+        return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
-class h5rDSource(inputFilter):
+class h5rDSource(h5rSource):
     _name = "h5r Drift Source"
+
     def __init__(self, h5fFile):
         """ Data source for use with h5r files as saved by the PYME analysis
         component"""
-        
+
+        h5rSource.__init__(self, h5fFile, 'DriftResults')
+
+    def getInfo(self):
+        return 'PYME h5r Drift Data Source\n\n %d points' % self.fitResults.shape[0]
+
+class hdfSource(h5rSource):
+    _name = "hdf Data Source"
+
+    def __init__(self, h5fFile, tablename='FitResults'):
+        """ Data source for use with h5r files as saved by the PYME analysis
+        component. Takes either an open h5r file or a string filename to be
+        opened."""
+        self.tablename = tablename
+
         if type(h5fFile) == tables.file.File:
             self.h5f = h5fFile
         else:
-            self.h5f = tables.openFile(h5fFile)
+            self.h5f = tables.open_file(h5fFile)
 
-        if not 'DriftResults' in dir(self.h5f.root):
-            raise RuntimeError('Was expecting to find a "DriftResults" table')
-            
-        self.driftResults = self.h5f.root.DriftResults[:]
+        if not tablename in dir(self.h5f.root):
+            raise RuntimeError('Was expecting to find a "%s" table' % tablename)
 
-        #sort by time
-        self.driftResults.sort(order='tIndex')
+        self.fitResults = getattr(self.h5f.root, tablename)[:]
 
         #allow access using unnested original names
-        self._keys = unNestNames(self.h5f.root.DriftResults.description._v_nestedNames)
+        self._keys = unNestNames(getattr(self.h5f.root, tablename).description._v_nested_names)
         #or shorter aliases
-        self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
-                          'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
-                          'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0', 't':'tIndex'}
 
+        #sort by time
+        if 'tIndex' in self._keys:
+            self.fitResults.sort(order='tIndex')
 
     def keys(self):
-        return self._keys + self.transkeys.keys()
+        return self._keys #+ self.transkeys.keys()
 
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
-            
-        #if we're using an alias replace with actual key
-        if key in self.transkeys.keys():
-            key = self.transkeys[key]
 
         if not key in self._keys:
-            raise RuntimeError('Key not found')
+            raise KeyError('Key (%s) not found' % key)
 
-        k = key.split('_')
-        
-        if len(k) == 1:
-            return self.driftResults[sl][k[0]].astype('f')
-        elif len(k) == 2:
-            return self.driftResults[sl][k[0]][k[1]].astype('f')
-        elif len(k) == 3:
-            return self.driftResults[sl][k[0]][k[1]][k[2]].astype('f')
-        else:
-            raise RuntimeError("Don't know about deeper nesting yet")
-        
+        return self.fitResults[key][sl]
+
 
     def close(self):
         self.h5f.close()
 
     def getInfo(self):
-        return 'PYME h5r Drift Data Source\n\n %d points' % self.h5f.root.DriftResults.shape[0]
+        return 'PYME hdf Data Source\n\n %d points' % self.fitResults.shape[0]
 
-class textfileSource(inputFilter):
+# class h5rDSource(inputFilter):
+#     _name = "h5r Drift Source"
+#     def __init__(self, h5fFile):
+#         """ Data source for use with h5r files as saved by the PYME analysis
+#         component"""
+#
+#         if type(h5fFile) == tables.file.File:
+#             self.h5f = h5fFile
+#         else:
+#             self.h5f = tables.openFile(h5fFile)
+#
+#         if not 'DriftResults' in dir(self.h5f.root):
+#             raise RuntimeError('Was expecting to find a "DriftResults" table')
+#
+#         self.driftResults = self.h5f.root.DriftResults[:]
+#
+#         #sort by time
+#         self.driftResults.sort(order='tIndex')
+#
+#         #allow access using unnested original names
+#         self._keys = unNestNames(self.h5f.root.DriftResults.description._v_nestedNames)
+#         #or shorter aliases
+#         self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
+#                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma',
+#                           'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0', 't':'tIndex'}
+#
+#
+#     def keys(self):
+#         return self._keys + self.transkeys.keys()
+#
+#     def __getitem__(self, keys):
+#         key, sl = self._getKeySlice(keys)
+#
+#         #if we're using an alias replace with actual key
+#         if key in self.transkeys.keys():
+#             key = self.transkeys[key]
+#
+#         if not key in self._keys:
+#             raise RuntimeError('Key not found')
+#
+#         k = key.split('_')
+#
+#         if len(k) == 1:
+#             return self.driftResults[sl][k[0]].astype('f')
+#         elif len(k) == 2:
+#             return self.driftResults[sl][k[0]][k[1]].astype('f')
+#         elif len(k) == 3:
+#             return self.driftResults[sl][k[0]][k[1]][k[2]].astype('f')
+#         else:
+#             raise RuntimeError("Don't know about deeper nesting yet")
+#
+#
+#     def close(self):
+#         self.h5f.close()
+#
+#     def getInfo(self):
+#         return 'PYME h5r Drift Data Source\n\n %d points' % self.h5f.root.DriftResults.shape[0]
+
+class textfileSource(TabularBase):
     _name = "Text File Source"
     def __init__(self, filename, columnnames, delimiter=None, skiprows=0):
         """ Input filter for use with delimited text data. Defaults
@@ -291,7 +366,7 @@ class textfileSource(inputFilter):
         for the position data and it's error should ensure that this functions
         with the visualisation backends"""
 
-        self.res = np.loadtxt(filename, dtype={'names' : columnnames, 
+        self.res = np.loadtxt(filename, dtype={'names' : columnnames,  # TODO: evaluate why these are cast as floats
                                                'formats' :  ['f4' for i in range(len(columnnames))]}, delimiter = delimiter, skiprows=skiprows)
         
         self._keys = list(columnnames)
@@ -305,7 +380,7 @@ class textfileSource(inputFilter):
         key, sl = self._getKeySlice(keys)
         
         if not key in self._keys:
-            raise RuntimeError('Key not found')
+            raise KeyError('Key (%s) not found' % key)
 
        
         return self.res[key][sl]
@@ -314,7 +389,7 @@ class textfileSource(inputFilter):
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
 
-class matfileSource(inputFilter):
+class matfileSource(TabularBase):
     _name = "Matlab Source"
     def __init__(self, filename, columnnames, varName='Orte'):
         """ Input filter for use with matlab data. Need to provide a variable name
@@ -325,7 +400,7 @@ class matfileSource(inputFilter):
 
         import scipy.io
 
-        self.res = scipy.io.loadmat(filename)[varName].astype('f4')
+        self.res = scipy.io.loadmat(filename)[varName].astype('f4')  # TODO: evaluate why these are cast as floats
         
         self.res = np.rec.fromarrays(self.res.T, dtype={'names' : columnnames,  'formats' :  ['f4' for i in range(len(columnnames))]})
 
@@ -337,9 +412,9 @@ class matfileSource(inputFilter):
         return self._keys
 
     def __getitem__(self, key):
-        key, sl = self._getKeySlice(keys)
+        key, sl = self._getKeySlice(key)
         if not key in self._keys:
-            raise RuntimeError('Key not found')
+            raise KeyError('Key (%s) not found' % key)
 
 
         return self.res[key][sl]
@@ -349,7 +424,7 @@ class matfileSource(inputFilter):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
         
 
-class resultsFilter(inputFilter):
+class resultsFilter(TabularBase):
     _name = "Results Filter"
     def __init__(self, resultsSource, **kwargs):
         """Class to permit filtering of fit results - masquarades
@@ -368,7 +443,7 @@ class resultsFilter(inputFilter):
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
-                raise RuntimeError('Requested key not present: ' + k)
+                raise KeyError('Requested key not present: ' + k)
 
             range = kwargs[k]
             if not len(range) == 2:
@@ -384,7 +459,32 @@ class resultsFilter(inputFilter):
     def keys(self):
         return self.resultsSource.keys()
 
-class cachingResultsFilter(inputFilter):
+
+class concatenateFilter(TabularBase):
+    _name = "Concatenation Filter"
+
+    def __init__(self, source0, source1):
+        """Class which concatenates two tabular data sources. The data sources should have the same keys.
+
+        The filter class does not have any explicit knowledge of the keys
+        supported by the underlying data source."""
+
+        self.source0 = source0
+        self.source1 = source1
+
+
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+        if key == 'concatSource':
+            return np.hstack((np.zeros(len(self.source0[self.source0.keys()[0]])), np.ones(len(self.source1[self.source1.keys()[0]]))))
+        else:
+            return np.hstack((self.source0[key], self.source1[key]))[sl]
+
+    def keys(self):
+        s1_keys = self.source1.keys()
+        return list(set(['concatSource', ] + [k for k in self.source0.keys() if k in s1_keys]))
+
+class cachingResultsFilter(TabularBase):
     _name = "Caching Results Filter"
     def __init__(self, resultsSource, **kwargs):
         """Class to permit filtering of fit results - masquarades
@@ -404,7 +504,7 @@ class cachingResultsFilter(inputFilter):
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
-                raise RuntimeError('Requested key not present: ' + k)
+                raise KeyError('Requested key not present: ' + k)
 
             range = kwargs[k]
             if not len(range) == 2:
@@ -426,7 +526,7 @@ class cachingResultsFilter(inputFilter):
         return self.resultsSource.keys()
 
 
-class mappingFilter(inputFilter):
+class mappingFilter(TabularBase):
     _name = "Mapping Filter"
     def __init__(self, resultsSource, **kwargs):
         """Class to permit transformations (e.g. drift correction) of fit results
@@ -461,7 +561,7 @@ class mappingFilter(inputFilter):
             return self.resultsSource[keys]
 
     def keys(self):
-        return list(self.resultsSource.keys()) + self.mappings.keys() + self.new_columns.keys()
+        return list(set(list(self.resultsSource.keys()) + self.mappings.keys() + self.new_columns.keys()))
 
     def addVariable(self, name, value):
         """
@@ -524,7 +624,7 @@ class mappingFilter(inputFilter):
             if vname in globals():
                 pass
             if vname in self.resultsSource.keys(): #look at original results first
-                locals()[vname] = self.resultsSource[(vname, sl)]
+                locals()[vname] = self.resultsSource[vname][sl]
             elif vname in self.new_columns.keys():
                 locals()[vname] = self.new_columns[vname][sl]
             elif vname in self.variables.keys():
@@ -540,17 +640,41 @@ class mappingFilter(inputFilter):
 
         return eval(map)
 
-class colourFilter(inputFilter):
+class colourFilter(TabularBase):
     _name = "Colour Filter"
-    def __init__(self, resultsSource, visFr, currentColour=None):
+    def __init__(self, resultsSource, currentColour=None):
         """Class to permit filtering by colour
         """
 
         self.resultsSource = resultsSource
         self.currentColour = currentColour
-        #self.shifts = {}
+        self.chromaticShifts = {}
 
-        self.visFr = visFr
+        self.t_p_dye = 0.1
+        self.t_p_other = 0.1
+        self.t_p_background = .01
+
+    @property
+    def index(self):
+        colChans = self.getColourChans()
+
+        if not self.currentColour in colChans:
+            return np.ones(len(self.resultsSource[self.resultsSource.keys()[0]]), 'bool')
+        else:
+            p_dye = self.resultsSource['p_%s' % self.currentColour]
+
+            p_other = 0 * p_dye
+            p_tot = self.t_p_background * self.resultsSource['ColourNorm']
+
+            for k in colChans:
+                p_tot += self.resultsSource['p_%s' % k]
+                if not self.currentColour == k:
+                    p_other = np.maximum(p_other, self.resultsSource['p_%s' % k])
+
+            p_dye = p_dye / p_tot
+            p_other = p_other / p_tot
+
+            return (p_dye > self.t_p_dye) * (p_other < self.t_p_other)
 
 
     def __getitem__(self, keys):
@@ -560,30 +684,19 @@ class colourFilter(inputFilter):
         if not self.currentColour in colChans:
             return self.resultsSource[keys]
         else:
-            p_dye = self.resultsSource['p_%s' % self.currentColour]
-
-            p_other = 0*p_dye
-            p_tot = self.visFr.t_p_background*self.resultsSource['ColourNorm']
-
-            for k in colChans:
-                p_tot  += self.resultsSource['p_%s' % k]
-                if not self.currentColour == k:
-                    p_other = np.maximum(p_other, self.resultsSource['p_%s' % k])
-
-            p_dye = p_dye/p_tot
-            p_other = p_other/p_tot
-
-            ind = (p_dye > self.visFr.t_p_dye)*(p_other < self.visFr.t_p_other)
-
             #chromatic shift correction
             #print self.currentColour
-            if self.currentColour in self.visFr.chromaticShifts.keys() and key in self.visFr.chromaticShifts[self.currentColour].keys():
-                return self.resultsSource[key][ind][sl] + self.visFr.chromaticShifts[self.currentColour][key]
+            if  self.currentColour in self.chromaticShifts.keys() and key in self.chromaticShifts[self.currentColour].keys():
+                return self.resultsSource[key][self.index][sl] + self.chromaticShifts[self.currentColour][key]
             else:
-                return self.resultsSource[key][ind][sl]
+                return self.resultsSource[key][self.index][sl]
+
+    @classmethod
+    def get_colour_chans(cls, resultsSource):
+        return [k[2:] for k in resultsSource.keys() if k.startswith('p_')]
 
     def getColourChans(self):
-        return [k[2:] for k in self.keys() if k.startswith('p_')]
+        return self.get_colour_chans(self)
 
     def setColour(self, colour):
         self.currentColour = colour
@@ -593,12 +706,12 @@ class colourFilter(inputFilter):
 
     
     
-class cloneSource(inputFilter):
+class cloneSource(TabularBase):
     _name = "Cloned Source"
     def __init__(self, resultsSource):
         """Creates an in memory copy of a (filtered) data source"""
 
-        resultsSource
+        #resultsSource
         self.cache = {}
 
         for k in resultsSource.keys():
@@ -613,7 +726,7 @@ class cloneSource(inputFilter):
     def keys(self):
         return self.cache.keys()
 
-class recArrayInput(inputFilter):
+class recArrayInput(TabularBase):
     _name = 'RecArray Source'
     def __init__(self, recordArray):
         self.recArray = recordArray
@@ -626,7 +739,7 @@ class recArrayInput(inputFilter):
         key, sl = self._getKeySlice(keys)
 
         if not key in self._keys:
-            raise RuntimeError('Key not found')
+            raise KeyError('Key (%s) not found' % key)
 
         return self.recArray[key][sl]
 

@@ -28,6 +28,7 @@ def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration #, get_numpy_include_dirs
     config = Configuration('resources', parent_package, top_path)
     config.add_data_dir('icons')
+    config.add_data_dir('config_template')
 
     #if sys.platform == 'win32':
     #    config.add_scripts(['dh5view.cmd'])

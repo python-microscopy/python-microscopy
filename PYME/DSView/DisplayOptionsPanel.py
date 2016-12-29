@@ -295,7 +295,7 @@ class OptionsPanel(wx.Panel):
     def CreateToolBar(self, wind):
         global bmCrosshairs, bmRectSelect, bmLineSelect, bmSquiggleSelect
 
-        if bmCrosshairs == None: #load bitmaps on first use
+        if bmCrosshairs is None: #load bitmaps on first use
             bmCrosshairs = wx.Bitmap(resources.getIconPath('crosshairs.png'))
             bmRectSelect = wx.Bitmap(resources.getIconPath('rect_select.png'))
             bmLineSelect = wx.Bitmap(resources.getIconPath('line_select.png'))

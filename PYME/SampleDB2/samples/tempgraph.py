@@ -29,7 +29,11 @@ matplotlib.use('Agg')
 from pylab import *
 import numpy as np
 import time
-from PYME.misc import tempDB
+try:
+    from PYME.misc import tempDB
+except:
+    #this will fail if we don't have mysqldb installled
+    pass
 from datetime import datetime
 
 def temprecord(request):

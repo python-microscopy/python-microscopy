@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Queue Information{% endblock %}
+{% block meta %}
+{#<meta http-equiv="refresh" content="2">#}
+{% endblock %}
+{% block analysis_active_class %}active{% endblock %}
+{% block content %}
+    <div id="queue-content"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function loadlink(){
+        //console.log('about to reload')
+        $('#queue-content').load('/status/queues/?_ajax=true',function () {
+            //alert( "Load was performed." );
+            // $(this).unwrap();
+            //console.log('load performed')
+        });
+    }
+
+    loadlink(); // This will run on page load
+    setInterval(function(){
+        loadlink(); // this will run after every 5 seconds
+    }, 1000);
+
+</script>
+{% endblock %}

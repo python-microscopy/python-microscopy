@@ -71,7 +71,9 @@ class LMDisplay(visCore.VisGUICore):
         self.pipeline.visFr = self
         
         #self.Quads = None
-        dsviewer.menubar.Insert(dsviewer.menubar.GetMenuCount()-1, self.CreateMenuBar(subMenu=True), 'Points')      
+        #dsviewer.menubar.Insert(dsviewer.menubar.GetMenuCount()-1, self.CreateMenuBar(subMenu=True), 'Points')
+
+        self.CreateMenuBar(subMenu=True)
 
 
 

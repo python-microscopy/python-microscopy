@@ -4,23 +4,23 @@ Created on Tue Dec 29 19:59:15 2015
 
 @author: david
 """
-from .base import register_module, ModuleBase, Filter, Float, Enum, CStr, Bool, Int, View, Item#, Group
-##from PYME.IO.image import ImageStack
+from .base import register_module, ModuleBase,Filter
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, DictStrFloat, DictStrBool, on_trait_change
+
 import numpy as np
 import pandas as pd
 
 from PYME.Analysis.Tracking import tracking
 from PYME.Analysis.Tracking import trackUtils
-from traits.api import on_trait_change
 
-from PYME.LMVis import inpFilt
+from PYME.IO import tabular
 
 @register_module('TrackFeatures')
 class TrackFeatures(ModuleBase):
     """Take just certain columns of a variable"""
-    inputMeasurements = CStr('measurements')
-    outputTrackInfo = CStr('track_info')
-    outputTracks = CStr('tracks') 
+    inputMeasurements = Input('measurements')
+    outputTrackInfo = Output('track_info')
+    outputTracks = Output('tracks')
     
     
     features = CStr('x, y')    
@@ -39,7 +39,7 @@ class TrackFeatures(ModuleBase):
         
     @on_trait_change('pNew, r0, pLinkCutoff')    
     def OnParamChange(self):
-        if not self._tracker == None:
+        if not self._tracker is None:
             self._tracker.pNew=self.pNew
             self._tracker.r0 = self.r0
             self._tracker.linkageCuttoffProb = self.pLinkCutoff
@@ -50,7 +50,7 @@ class TrackFeatures(ModuleBase):
         
     def Track(self, objects, newTracker=False):
         """Track objects based on a given set of feature vectors"""
-        if (self._tracker == None) or not (len(self._tracker.t) == len(objects['t'])) or newTracker:
+        if (self._tracker is None) or not (len(self._tracker.t) == len(objects['t'])) or newTracker:
             featNames = [s.strip() for s in self.features.split(',')]
             
             def _calcWeights(s):
@@ -120,9 +120,9 @@ class TrackFeatures(ModuleBase):
         into the pipeline (used when called from PYME.DSView.modules.particleTracking)"""
         clumpInfo, clumps = self.Track(pipeline)
 
-        pipeline.selectedDataSource.addColumn('clumpIndex', clumpInfo['clumpIndex'])
-        pipeline.selectedDataSource.addColumn('clumpSize', clumpInfo['clumpSize'])
-        pipeline.selectedDataSource.addColumn('trackVelocity', clumpInfo['trackVelocity'])
+        pipeline.addColumn('clumpIndex', clumpInfo['clumpIndex'])
+        pipeline.addColumn('clumpSize', clumpInfo['clumpSize'])
+        pipeline.addColumn('trackVelocity', clumpInfo['trackVelocity'])
         
         #self.clumps = clumps        
         pipeline.clumps = clumps
@@ -132,11 +132,11 @@ class TrackFeatures(ModuleBase):
 @register_module('LoadSpeckles')
 class LoadSpeckles(ModuleBase):
     """Loads Speckle data as used by the karatekin lab"""
-    inputImage = CStr('', desc='The image to which the speckles file refers. Useful for determining speckle filename, series length, and voxelsize')
+    inputImage = Input('', desc='The image to which the speckles file refers. Useful for determining speckle filename, series length, and voxelsize')
     speckleFilename = CStr('{DIRNAME}{SEP}{IMAGESTUB}speckles.csv',
                            desc='The filename of the speckle file. Anything in {} will be substituted with info from the input image.')
     #mappings = DictStrStr()
-    outputName = CStr('speckles')
+    outputName = Output('speckles')
     leadFrames = Int(10, desc='The number of frames to add to the trace before the start of the speckle')
     followFrames = Int(50, desc='The number of frames to add to the trace after the end of the speckle')
 
@@ -169,10 +169,10 @@ class LoadSpeckles(ModuleBase):
                                                       followFrames=self.followFrames, seriesLength=seriesLength)
 
         #turn this into an inputFilter object
-        inp = inpFilt.recArrayInput(traces)
+        inp = tabular.recArrayInput(traces)
 
         #create a mapping to covert the co-ordinates in pixels to co-ordinates in nm
-        map = inpFilt.mappingFilter(inp, x = 'x_pixels*%3.2f' % (1000*mdh['voxelsize.x']),
+        map = tabular.mappingFilter(inp, x = 'x_pixels*%3.2f' % (1000*mdh['voxelsize.x']),
                                     y='y_pixels*%3.2f' % (1000 * mdh['voxelsize.y']))
 
         map.mdh = mdh
@@ -183,9 +183,9 @@ class LoadSpeckles(ModuleBase):
 @register_module('ExtractTracks')
 class ExtractTracks(ModuleBase):
     """Extract tracks from a measurement set with pre-assigned clump IDs"""
-    inputMeasurements = CStr('speckles', desc='a set of particle positions already containing a clumpIndex column which identifies groups of particles')
+    inputMeasurements = Input('speckles', desc='a set of particle positions already containing a clumpIndex column which identifies groups of particles')
     #outputTrackInfo = CStr('track_info', desc='a pandas data frame with clumpSize and trackVelocity information')
-    outputTracks = CStr('tracks', desc='A clump / track manager object - aka the actual tracks')
+    outputTracks = Output('tracks', desc='A clump / track manager object - aka the actual tracks')
 
     def execute(self, namespace):
         #print
@@ -218,4 +218,28 @@ class ExtractTracks(ModuleBase):
             #clumpInfo.mdh = data.mdh
 
         #namespace[self.outputTrackInfo] = clumpInfo
+        namespace[self.outputTracks] = clumps
+
+@register_module('FitFusionTraces')
+class FitFusionTraces(ModuleBase):
+    """Extract tracks from a measurement set with pre-assigned clump IDs"""
+    inputTracks = Input('tracks', desc='A clump / track manager object - with tracks corresponding to vesicle fusion events')
+    outputTracks = Output('fusion_tracks', desc='A clump / track manager object - which has tracks with fusion info')
+    numLeadFrames = Int(10, desc='The number of frames which the profile extends before docking. This should be the same as in the LoadSpeckles module.')
+    numFollowFrames = Int(50, desc='The number of frames the trace extends after fusion. This should be the same as in the LoadSpeckles module.')
+    psfSigma = Float(1.5, desc='The std deviation of the microscope PSF, in pixels')
+    startParams = DictStrFloat(desc='a dictionary of parameters whose start value should be over-ridden')
+    paramsToFit = DictStrBool(desc='a dictionary of parameters whose fit status should be over-ridden. Use in conjunction with startParams to fix parameters at a given value')
+
+    def execute(self, namespace):
+        from PYME.experimental import fusionRadial
+        reload(fusionRadial)
+        tracks = namespace[self.inputTracks]
+
+        clumps = [fusionRadial.FusionTrack(c, numLeadFrames=self.numLeadFrames, numFollowFrames=self.numFollowFrames, sig=self.psfSigma,
+                              startParams=self.startParams, fitWhich=self.paramsToFit) for c in tracks]
+
+        if 'mdh' in dir(tracks):
+            pass
+
         namespace[self.outputTracks] = clumps

@@ -108,7 +108,7 @@ def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resul
     fr['fitResults'].view('f4')[:n] = fitResults   
     fr['startParams'].view('f4')[:n] = startParams
     
-    if fitErr == None:
+    if fitErr is None:
         fr['fitError'].view('f4')[:] = -5e3
     else:
         fr['fitError'].view('f4')[:n] = fitErr

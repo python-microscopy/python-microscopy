@@ -98,7 +98,7 @@ def __validate_tuple(vector, pad_width):
             and isinstance(pad_width[0], (int, float, long))
             and len(pad_width) == 2):
         pw = (pad_width, ) * shapelen
-    if pw == None:
+    if pw is None:
         raise PadWidthWrongNumberOfValues(shapelen, pad_width)
     for i in pw:
         if len(i) != 2:

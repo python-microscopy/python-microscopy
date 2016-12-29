@@ -349,7 +349,7 @@ class piezo_c867T(object):
         
     def MoveTo(self, iChannel, fPos, bTimeOut=True, vel=None):
         chan = iChannel - 1
-        if vel == None:
+        if vel is None:
             vel = self.maxvelocity
         self.targetVelocity[chan] = vel
         self.targetPosition[chan] = min(max(fPos, self.validRegion[chan][0]),self.validRegion[chan][1]) 
@@ -360,7 +360,7 @@ class piezo_c867T(object):
             
             
     def MoveToXY(self, xPos, yPos, bTimeOut=True, vel=None):
-        if vel == None:
+        if vel is None:
             vel = self.maxvelocity
         self.targetPosition[0] = min(max(xPos, self.validRegion[0][0]),self.validRegion[0][1])
         self.targetPosition[1] = min(max(yPos, self.validRegion[1][0]),self.validRegion[1][1])

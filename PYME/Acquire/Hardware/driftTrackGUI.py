@@ -102,6 +102,9 @@ class DriftTrackingControl(wx.Panel):
         self.bSaveHist = wx.Button(self, -1, 'Save Hist')
         hsizer.Add(self.bSaveHist, 0, wx.ALL, 2) 
         self.bSaveHist.Bind(wx.EVT_BUTTON, self.OnBSaveHist)        
+        self.cbLockActive = wx.CheckBox(self, -1, 'Lock Active')
+        self.cbLockActive.Enable(False)
+        hsizer.Add(self.cbLockActive, 0, wx.ALL, 2)        
         sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -243,6 +246,7 @@ class DriftTrackingControl(wx.Panel):
                                   ("{:>+6.1f}".format(88.0*dx), "{:>+6.1f}".format(88.0*dy),
                                    "{:>+6.1f}".format(1e3*dz), "{:>+6.1f}".format(1e3*poffset),
                                    corr/corrmax))
+            self.cbLockActive.SetValue(self.dt.lockActive)
             if (len(self.dt.get_history(0)) % self.plotInterval == 0) and self.showPlots:
                 self.trackPlot.draw()
         except AttributeError:

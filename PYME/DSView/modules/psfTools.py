@@ -45,6 +45,41 @@ def remove_newlines(s):
     s = ' '.join(s.split())
     return '\n'.join(s.split('<>'))
 
+def findZRange(astigLib):
+    """
+    Find range about highest intensity point over which sigmax - sigmay is monotonic.
+    Note that astigLib[psfIndex]['zCenter'] should contain the offset in nm to the brightest z-slice
+    Args:
+        astigLib: List whose elements are dictionaries containing PSF fit information
+
+    Returns:
+        astigLib: The input list, where zRange key and values have been added to the dictionary in each list element
+
+    """
+    import scipy.interpolate as terp
+    for ii in range(len(astigLib)):
+        # find region of dsigma which is monotonic (smooth a bit, too)
+        dsig = terp.UnivariateSpline(astigLib[ii]['z'], astigLib[ii]['dsigma'], s=5*len(astigLib[ii]['z']))
+
+        # mask where the sign is the same as the center
+        zvec = np.linspace(np.min(astigLib[ii]['z']), np.max(astigLib[ii]['z']), 1000)
+        sgn = np.sign(np.diff(dsig(zvec)))
+        halfway = np.absolute(zvec - astigLib[ii]['zCenter']).argmin()  # len(sgn)/2
+        notmask = sgn != sgn[halfway]
+
+        # find z range for spline generation
+        try:
+            lowerZ = zvec[np.where(notmask[:halfway])[0].max()]
+        except ValueError:
+            lowerZ = zvec[0]
+        try:
+            upperZ = zvec[(halfway + np.where(notmask[halfway:])[0].min() - 1)]
+        except ValueError:
+            upperZ = zvec[-1]
+        astigLib[ii]['zRange'] = [lowerZ, upperZ]
+
+    return astigLib
+
 class PSFQualityPanel(wx.Panel):
     def __init__(self, dsviewer):
         wx.Panel.__init__(self, dsviewer) 
@@ -163,25 +198,31 @@ class CRBViewPanel(wx.Panel):
         from PYME.Analysis.PSFGen import fourierHNA
         #print 'b'
         import numpy as np
-        d = self.image.data[:,:,:]
-        I = d[:,:,d.shape[2]/2].sum()
-        
-        vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
-        
-        #print 'fi'        
-        FI = cramerRao.CalcFisherInformZn2(d*(2e3/I) + self.background, 100, voxelsize=vs)
-        #print 'crb'
-        self.crb = cramerRao.CalcCramerReoZ(FI)
-        #print 'crbd'
-        
-        z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
-        self.z_ = z_ - z_.mean()
-        
-        ps_as = fourierHNA.GenAstigPSF(self.z_, vs[0], 2)  
-        I = ps_as[:,:,ps_as.shape[2]/2].sum()
-        self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/I + self.background, 500, voxelsize=vs)))
-        
-        self.draw()
+        try:
+            d = self.image.data[:,:,:,0].squeeze()
+            I = d[:,:,d.shape[2]/2].sum()
+
+            vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
+
+            #print 'fi'
+            FI = cramerRao.CalcFisherInformZn2(d*(2e3/I) + self.background, 100, voxelsize=vs)
+            #print 'crb'
+            self.crb = cramerRao.CalcCramerReoZ(FI)
+            #print 'crbd'
+
+            z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
+            self.z_ = z_ - z_.mean()
+
+            ps_as = fourierHNA.GenAstigPSF(self.z_, vs[0], 2)
+            I = ps_as[:,:,ps_as.shape[2]/2].sum()
+            self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/I + self.background, 500, voxelsize=vs)))
+
+            self.draw()
+        except np.linalg.linalg.LinAlgError:
+            # don't hang if we can't compute the CRLB
+            import traceback
+            traceback.print_exc()
+
 
 
     def draw(self, event=None):
@@ -280,9 +321,12 @@ class PSFTools(HasTraits):
 
     def OnCalibrateAstigmatism(self, event):
         from PYME.recipes.measurement import FitPoints
+        from PYME.IO.FileUtils import nameUtils
         import matplotlib.pyplot as plt
         import mpld3
         import json
+        from PYME.Analysis.PSFEst import extractImages
+
 
         ps = self.image.pixelSize
 
@@ -295,56 +339,108 @@ class PSFTools(HasTraits):
         objPositions['z'] = z - z.mean()
 
         ptFitter = FitPoints()
+        ptFitter.set(roiHalfSize=11)
         ptFitter.set(fitModule='AstigGaussFitFR')
 
         namespace = {'input' : self.image, 'objPositions' : objPositions}
-        ptFitter.execute(namespace)
 
-        res = namespace['fitResults']
+        results = []
 
-        dsigma = res['fitResults_sigmax'] - res['fitResults_sigmay']
+        for chanNum in range(self.image.data.shape[3]):
+            # get z centers
+            dx, dy, dz = extractImages.getIntCenter(self.image.data[:, :, :, chanNum])
 
-        valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 100)* (res['fitError_sigmay'] < 100)*(res['fitResults_A'] > 0) > 0)
+            ptFitter.set(channel=chanNum)
+            ptFitter.execute(namespace)
+
+            res = namespace['fitResults']
+
+            dsigma = abs(res['fitResults_sigmax']) - abs(res['fitResults_sigmay'])
+            valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 50)* (res['fitError_sigmay'] < 50)*(res['fitResults_A'] > 0) > 0)
+
+            results.append({'z': objPositions['z'][valid].tolist(), 'sigmax': abs(res['fitResults_sigmax'][valid]).tolist(),
+                           'sigmay': abs(res['fitResults_sigmay'][valid]).tolist(), 'dsigma': dsigma[valid].tolist(),
+                            'zCenter': objPositions['z'][dz]})
 
         #generate new tab to show results
+        use_web_view = True
         if not '_astig_view' in dir(self):
-            self._astig_view= wx.html2.WebView.New(self.dsviewer)
-            self.dsviewer.AddPage(self._astig_view, True, 'Astigmatic calibration')
+            try:
+                self._astig_view= wx.html2.WebView.New(self.dsviewer)
+                self.dsviewer.AddPage(self._astig_view, True, 'Astigmatic calibration')
+
+            except NotImplementedError:
+                use_web_view = False
+
+        # find reasonable z range for each channel
+        #FIXME - it is somewhat non-obvious that we are effectively injecting the 'zRange' variable into the results here
+        results = findZRange(results)
 
         #do plotting
         plt.ioff()
         f = plt.figure(figsize=(10, 4))
 
+        colors = iter(plt.cm.Dark2(np.linspace(0, 1, 2*self.image.data.shape[3])))
         plt.subplot(121)
-        plt.plot(objPositions['z'][valid], res['fitResults_sigmax'][valid])
-        plt.plot(objPositions['z'][valid], res['fitResults_sigmay'][valid])
+        for i, res in enumerate(results):
+            nextColor1 = next(colors)
+            nextColor2 = next(colors)
+            lbz = np.absolute(res['z'] - res['zRange'][0]).argmin()
+            ubz = np.absolute(res['z'] - res['zRange'][1]).argmin()
+            plt.plot(res['z'], res['sigmax'], ':', c=nextColor1)  # , label='x - %d' % i)
+            plt.plot(res['z'], res['sigmay'], ':', c=nextColor2)  # , label='y - %d' % i)
+            plt.plot(res['z'][lbz:ubz], res['sigmax'][lbz:ubz], label='x - %d' % i, c=nextColor1)
+            plt.plot(res['z'][lbz:ubz], res['sigmay'][lbz:ubz], label='y - %d' % i, c=nextColor2)
 
         #plt.ylim(-200, 400)
         plt.grid()
         plt.xlabel('z position [nm]')
         plt.ylabel('Sigma [nm]')
-        plt.legend(['x', 'y'])
+        plt.legend()
 
         plt.subplot(122)
-        plt.plot(objPositions['z'][valid], dsigma[valid], lw=2)
+        colors = iter(plt.cm.Dark2(np.linspace(0, 1, self.image.data.shape[3])))
+        for i, res in enumerate(results):
+            nextColor = next(colors)
+            lbz = np.absolute(res['z'] - res['zRange'][0]).argmin()
+            ubz = np.absolute(res['z'] - res['zRange'][1]).argmin()
+            plt.plot(res['z'], res['dsigma'], ':', lw=2, c=nextColor)  # , label='Chan %d' % i)
+            plt.plot(res['z'][lbz:ubz], res['dsigma'][lbz:ubz], lw=2, label='Chan %d' % i, c=nextColor)
         plt.grid()
         plt.xlabel('z position [nm]')
-        plt.ylabel('Sigma y - Sigma y [nm]')
+        plt.ylabel('Sigma x - Sigma y [nm]')
+        plt.legend()
 
         plt.tight_layout()
 
         plt.ion()
+        #dat = {'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
+        #                   'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()}
 
-        fig =  mpld3.fig_to_html(f)
-        data = json.dumps({'z' : objPositions['z'][valid].tolist(), 'sigmax' : res['fitResults_sigmax'][valid].tolist(),
-                           'sigmay' : res['fitResults_sigmay'][valid].tolist(), 'dsigma' : dsigma[valid].tolist()})
 
-        #print data
+        if use_web_view:
+            fig = mpld3.fig_to_html(f)
+            data = json.dumps(results)
 
-        template = env.get_template('astigCal.html')
-        html = template.render(astigplot=fig, data=data)
-        #print html
-        self._astig_view.SetPage(html, '')
+            template = env.get_template('astigCal.html')
+            html = template.render(astigplot=fig, data=data)
+            #print html
+            self._astig_view.SetPage(html, '')
+        else:
+            plt.show()
+
+        fdialog = wx.FileDialog(None, 'Save Astigmatism Calibration as ...',
+            wildcard='Astigmatism Map (*.am)|*.am', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath())  #, defaultFile=defFile)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            fpath = fdialog.GetPath()
+
+            fid = open(fpath, 'wb')
+            json.dump(results, fid)
+            fid.close()
+
+
+        return results
 
         
         

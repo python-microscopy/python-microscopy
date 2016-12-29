@@ -120,7 +120,7 @@ class AOMLaser(Laser):
     AMPLITUDE_PIN=5
     FULL_SCALE_VOLTS = 5.0
     def __init__(self, name,turnOn=False, ios = None, maxpower=1, **kwargs):
-        if ios == None:
+        if ios is None:
             self.ios = IOSlave()
         else:
             self.ios = ios

@@ -26,15 +26,10 @@ import scipy
 import numpy
 import numpy.ctypeslib
 
-
-#import subprocess
-#from PYME.IO.FileUtils import saveTiffStack
-from matplotlib import delaunay
 from PYME.Analysis.points.qHull.triangWrap import RenderTetrahedra
-
 from math import floor
 
-#import sys
+from PYME.IO.image import ImageBounds
 
 
 
@@ -61,42 +56,7 @@ except:
 #    multiProc = False
 
 
-class ImageBounds:
-    def __init__(self, x0, y0, x1, y1, z0=0, z1=0):
-        self.x0 = x0
-        self.y0 = y0
-        self.x1 = x1
-        self.y1 = y1
-        self.z0 = z0
-        self.z1 = z1
 
-    @classmethod
-    def estimateFromSource(cls, ds):
-        return cls(ds['x'].min(),ds['y'].min(),ds['x'].max(), ds['y'].max() )
-
-    def width(self):
-        return self.x1 - self.x0
-
-    def height(self):
-        return self.y1 - self.y0
-
-    @classmethod
-    def extractFromMetadata(cls, mdh):
-        x0 = 0
-        y0 = 0
-
-        x1 = mdh['Camera.ROIWidth'] * 1e3 * mdh['voxelsize.x']
-        y1 = mdh['Camera.ROIHeight'] * 1e3 * mdh['voxelsize.y']
-
-        if 'Splitter' in mdh.getOrDefault('Analysis.FitModule', ''):
-            if 'Splitter.Channel0ROI' in mdh.getEntryNames():
-                rx0, ry0, rw, rh = mdh['Splitter.Channel0ROI']
-                x1 = rw * 1e3 * mdh['voxelsize.x']
-                x1 = rh * 1e3 * mdh['voxelsize.x']
-            else:
-                y1 = y1 / 2
-
-        return cls(x0, y0, x1, y1)
 
 class dummy:
     pass
@@ -452,7 +412,7 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
     
     c = numpy.abs(a[:,0]*b[:,1] + a[:,1]*b[:,0])
 
-    if c == None:
+    if c is None:
         if numpy.version.version > '1.2':
             c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
         else:
@@ -474,7 +434,7 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
     xs = (xs - imageBounds.x0)/pixelSize
     ys = (ys - imageBounds.y0)/pixelSize
 
-    if im == None:
+    if im is None:
         im = numpy.zeros((sizeX, sizeY))
         im1 = numpy.zeros_like(im)
 
@@ -503,6 +463,7 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
 jParms = {}
 
 def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
+    from matplotlib import delaunay
     for i in range(n):
         #global jParms
         #locals().update(jParms)
@@ -527,14 +488,15 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
 
 
 
-if multiProc:
-    def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
-        #import threading
+#if multiProc:
+def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
+    #import threading
+    if multiProc and not multiprocessing.current_process().daemon:
         sizeX = int((imageBounds.x1 - imageBounds.x0)/pixelSize)
         sizeY = int((imageBounds.y1 - imageBounds.y0)/pixelSize)
 
         im = shmarray.zeros((sizeX, sizeY))
-        print im.min(), im.max()
+        #print im.min(), im.max()
 
         x = shmarray.create_copy(x)
         y = shmarray.create_copy(y)
@@ -558,10 +520,11 @@ if multiProc:
         for p in processes:
             p.join()
 
-        print im.min(), im.max()
+        #print im.min(), im.max()
         return im/n
-else:
-    def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
+    else:
+        from matplotlib import delaunay
+
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
 
@@ -580,6 +543,7 @@ else:
 ###########
 #with weighted averaging
 def rendJitTri2(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
+    from matplotlib import delaunay
     for i in range(n):
         #global jParms
         #locals().update(jParms)
@@ -598,9 +562,10 @@ def rendJitTri2(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
         rendTri2(T, imageBounds, pixelSize, im=im, im1=im1)
 
 
-if multiProc:
-    def rendJitTriang2(x,y,n,jsig, mcp, imageBounds, pixelSize):
-        #import threading
+
+def rendJitTriang2(x,y,n,jsig, mcp, imageBounds, pixelSize):
+    #import threading
+    if multiProc and not multiprocessing.current_process().daemon:
         sizeX = int((imageBounds.x1 - imageBounds.x0)/pixelSize)
         sizeY = int((imageBounds.y1 - imageBounds.y0)/pixelSize)
 
@@ -630,10 +595,10 @@ if multiProc:
             p.join()
 
         imn =  im/(im1 + 1) #n
-        print imn.min(), imn.max()
+        #print imn.min(), imn.max()
         return imn
-else:
-    def rendJitTriang2(x,y,n,jsig, mcp, imageBounds, pixelSize):
+    else:
+        from matplotlib import delaunay
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
 
@@ -667,10 +632,11 @@ def rendJTet(im, x,y,z,jsig, jsigz, mcp, n):
         print((p.shape))
         RenderTetrahedra(p, im)
 
-if multiProc:
+#if multiProc:
 
-    def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
-        #import gen3DTriangs
+def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
+    #import gen3DTriangs
+    if multiProc and not multiprocessing.current_process().daemon:
 
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
@@ -718,10 +684,7 @@ if multiProc:
 
         return im/n
 
-else:
-    def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
-        import gen3DTriangs
-
+    else:
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
 

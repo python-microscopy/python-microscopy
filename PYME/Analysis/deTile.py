@@ -163,7 +163,7 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
     ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
 
-    if dark == None:
+    if dark is None:
         offset = float(mdh.getEntry('Camera.ADOffset'))
     else:
         offset = 0.
@@ -178,9 +178,9 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     for i in range(mdh.getEntry('Protocol.DataStartsAt'), numFrames):
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
             d = ds[:,:,i].astype('f')
-            if not dark == None:
+            if not dark is None:
                 d = d - dark
-            if not flat == None:
+            if not flat is None:
                 d = d*flat
 
             if split:
@@ -257,3 +257,247 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     ret[occupancy.squeeze() == 0] = 0 #fix up /0s
 
     return ret
+
+
+
+
+
+class ImagePyramid(object):
+    def __init__(self, storage_directory, pyramid_tile_size=256):
+        import os
+
+        self.base_dir = storage_directory
+        self.tile_size = pyramid_tile_size
+
+        self.pyramid_valid = False
+
+        if not os.path.exists(self.base_dir):
+            os.makedirs(self.base_dir)
+
+    def get_tile(self, layer, x, y):
+        import os
+        fname = os.path.join(self.base_dir, '%d' % layer, '%03d_%03d_img.npy' % (2*x, 2*y))
+        try:
+            return np.load(fname)
+        except IOError:
+            return None
+
+    def _make_layer(self, inputLevel):
+        import os, glob
+        from scipy import ndimage
+
+        out_dir = os.path.join(self.base_dir, '%d' % (inputLevel+1))
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+
+        base_tile_dir = os.path.join(self.base_dir, '%d' % inputLevel)
+        base_tile_names = glob.glob(os.path.join(base_tile_dir, '*img.npy'))
+
+        tile_coords = [np.array([int(s) for s in os.path.split(fn)[-1].split('_')[:2]]) for fn in base_tile_names]
+
+        new_tile_coords = list(set([np.floor(tc/2).astype('i') for tc in tile_coords]))
+
+        for xc, yc in new_tile_coords:
+            out_filename = os.path.join(out_dir,  '%03d_%03d_img.npy' % (xc, yc))
+
+            if not os.path.exists(out_filename):
+                tile = np.zeros([self.tile_size, self.tile_size])
+
+                try:
+                    NW = self.get_tile(inputLevel, 2*xc, 2*yc)
+                    tile[:128, :128] = ndimage.zoom(NW, .5)
+                except IOError:
+                    pass
+
+                try:
+                    NE = self.get_tile(inputLevel, 2 * xc + 1, 2 * yc)
+                    tile[128:, :128] = ndimage.zoom(NE, .5)
+                except IOError:
+                    pass
+
+                try:
+                    SW = self.get_tile(inputLevel, 2 * xc, 2 * yc + 1)
+                    tile[:128, 128:] = ndimage.zoom(SW, .5)
+                except IOError:
+                    pass
+
+                try:
+                    SE = self.get_tile(inputLevel, 2 * xc+ 1, 2 * yc +1)
+                    tile[128:, 128:] = ndimage.zoom(SE, .5)
+                except IOError:
+                    pass
+
+                np.save(out_filename, tile)
+
+
+        return len(new_tile_coords)
+
+    def _rebuild_base(self):
+        import os, glob
+
+
+        for fn in glob.glob(os.path.join(self.base_dir, '0',  '*_occ.npy')):
+            out_fn = fn[:-7] + 'img.npy'
+
+            if not os.path.exists(out_fn):
+                occ = np.load(fn)
+                sf = 1.0 / occ
+                sf[occ <= .1] = 0
+                tile_ = np.load(fn[:-7] + 'acc.npy') * sf
+
+                np.save(out_fn, tile_)
+
+    def update_pyramid(self):
+        self._rebuild_base()
+        inputLevel = 0
+
+        while self._make_layer(inputLevel) > 1:
+            inputLevel += 1
+
+        self.pyramid_valid = True
+
+    def _clean_tiles(self, x, y):
+        import os
+        level = 0
+
+        tn = os.path.join(self.base_dir, '%d' % level, '%03d_%03d_img.npy' % (x, y))
+
+        while os.path.exists(tn):
+            os.remove(tn)
+
+            level += 1
+            x = int(np.floor(x / 2))
+            y = int(np.floor(y / 2))
+
+            tn = os.path.join(self.base_dir, '%d' % level, '%03d_%03d_img.npy' % (x, y))
+
+
+    def add_base_tile(self, x, y, frame, weights):
+        import os
+        frameSizeX, frameSizeY = frame.shape[:2]
+
+        out_folder = os.path.join(self.base_dir, '0')
+        if not os.path.exists(out_folder):
+            os.makedirs(out_folder)
+
+        tile_xs = range(int(np.floor(x / self.tile_size)), int(np.ceil((x + frameSizeX) / self.tile_size) + 1))
+        tile_ys = range(int(np.floor(y / self.tile_size)), int(np.ceil((y + frameSizeY) / self.tile_size) + 1))
+
+        for tile_x in tile_xs:
+            for tile_y in tile_ys:
+                tile_filename = os.path.join(out_folder, '%03d_%03d_acc.npy' % (tile_x, tile_y))
+                occ_filename = os.path.join(out_folder, '%03d_%03d_occ.npy' % (tile_x, tile_y))
+
+                try:
+                    tile_ = np.load(tile_filename)
+                    occ_ = np.load(occ_filename)
+                except IOError:
+                    tile_ = np.zeros([self.tile_size, self.tile_size])
+                    occ_ = np.zeros([self.tile_size, self.tile_size])
+
+                xs, xe = max(tile_x * self.tile_size - x, 0), min((tile_x + 1) * self.tile_size - x,
+                                                                       frameSizeX)
+                xst, xet = max(x-tile_x * self.tile_size, 0), min(frameSizeX - (tile_x + 1) * self.tile_size - x, 0) #FIXME
+
+                print xs, xe, xst, xet
+
+                ys, ye = max(tile_y * self.tile_size - y, 0), min((tile_y + 1) * self.tile_size - y,
+                                                                       frameSizeY)
+
+                yst, yet = max(y - tile_y * self.tile_size, 0), min(frameSizeY - (tile_y + 1) * self.tile_size - y,
+                                                                    0) #FIXME
+
+                tile_[xst:-xet, yst:-yet] += frame[xs:xe, ys:ye]
+                occ_[xst:-xet, yst:-yet] += weights[xs:xe, ys:ye]
+
+                np.save(tile_filename, tile_)
+                np.save(occ_filename, occ_)
+
+                self._clean_tiles(tile_x, tile_y)
+
+
+        self.pyramid_valid = False
+
+
+def tile_pyramid(out_folder, ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None,
+                 mixmatrix=[[1., 0.], [0., 1.]],
+                 correlate=False, dark=None, flat=None, pyramid_tile_size=256):
+    import os, glob
+
+    P = ImagePyramid(out_folder, pyramid_tile_size)
+
+    frameSizeX, frameSizeY, numFrames = ds.shape[:3]
+
+    if split:
+        frameSizeY /= 2
+        nchans = 2
+        unmux = splitter.Unmixer(shiftfield, 1e3 * mdh.getEntry('voxelsize.x'))
+    else:
+        nchans = 1
+
+    #x & y positions of each frame
+    xps = xm(np.arange(numFrames))
+    yps = ym(np.arange(numFrames))
+
+    if mdh.getOrDefault('CameraOrientation.FlipX', False):
+        xps = -xps
+
+    if mdh.getOrDefault('CameraOrientation.FlipY', False):
+        yps = -yps
+
+    #give some room at the edges
+    bufSize = 0
+    if correlate:
+        bufSize = 300
+
+    #convert to pixels
+    xdp = (bufSize + (xps / (mdh.getEntry('voxelsize.x'))).round()).astype('i')
+    ydp = (bufSize + (yps / (mdh.getEntry('voxelsize.y'))).round()).astype('i')
+
+    #calculate a weighting matrix (to allow feathering at the edges - TODO)
+    weights = np.ones((frameSizeX, frameSizeY, nchans))
+    #weights[:, :10, :] = 0 #avoid splitter edge artefacts
+    #weights[:, -10:, :] = 0
+
+    #print weights[:20, :].shape
+    edgeRamp = min(100, int(.5 * ds.shape[0]))
+    weights[:edgeRamp, :, :] *= np.linspace(0, 1, edgeRamp)[:, None, None]
+    weights[-edgeRamp:, :, :] *= np.linspace(1, 0, edgeRamp)[:, None, None]
+    weights[:, :edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[None, :, None]
+    weights[:, -edgeRamp:, :] *= np.linspace(1, 0, edgeRamp)[None, :, None]
+
+    ROIX1 = mdh.getEntry('Camera.ROIPosX')
+    ROIY1 = mdh.getEntry('Camera.ROIPosY')
+
+    ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
+    ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
+
+    if dark is None:
+        offset = float(mdh.getEntry('Camera.ADOffset'))
+    else:
+        offset = 0.
+
+    for i in range(mdh.getEntry('Protocol.DataStartsAt'), numFrames):
+        if xdp[i - 1] == xdp[i] or not skipMoveFrames:
+            x_i = xdp[i]
+            y_i = ydp[i]
+            d = ds[:, :, i].astype('f')
+            if not dark is None:
+                d = d - dark
+            if not flat is None:
+                d = d * flat
+
+            if split:
+                d = np.concatenate(unmux.Unmix(d, mixmatrix, offset, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
+
+            d_weighted = weights * d
+
+            P.add_base_tile(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
+
+
+    P.update_pyramid()
+
+    return P
+
+
+

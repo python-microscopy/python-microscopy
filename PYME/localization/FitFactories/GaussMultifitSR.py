@@ -139,7 +139,7 @@ class GaussianFitFactory:
         #estimate errors in data
         nSlices = self.data.shape[2]
         
-        if self.noiseSigma is None:        
+        if self.noiseSigma is None:  # Note: this should be calculated in remFitBuf
             sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
         else:
             sigma = self.noiseSigma
@@ -293,8 +293,8 @@ class GaussianFitFactory:
                 #print res, fitErrors, resCode
                 #recreate a list of events in the desired format
                 resList = np.empty(nEvents, FitResultsDType)
-                for i in range(nEvents):
-                    i3 = 3*i
+                for j in range(nEvents):
+                    i3 = 3*j
                     i31 = i3 + 3
                     
                     if not fitErrors is None:            

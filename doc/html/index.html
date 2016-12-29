@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>PYME’s Documentation &mdash; PYME 16.05.24 documentation</title>
+    <title>PYME’s Documentation &mdash; PYME 16.11.10 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '16.05.24',
+        VERSION:     '16.11.10',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 16.05.24 documentation" href="#" />
+    <link rel="top" title="PYME 16.11.10 documentation" href="#" />
     <link rel="next" title="Installation of PYME on 64 bit Windows, OSX, or Linux" href="Installation/InstallationWithAnaconda.html" /> 
   </head>
   <body role="document">
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="Installation/InstallationWithAnaconda.html" title="Installation of PYME on 64 bit Windows, OSX, or Linux"
              accesskey="N">next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">PYME 16.05.24 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="#">PYME 16.11.10 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/index.rst">Edit</a> &raquo;</li>
  
 
@@ -54,12 +54,14 @@
   <h3><a href="#">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">PYME&#8217;s Documentation</a><ul>
-<li><a class="reference internal" href="#contents">Contents:</a><ul>
 <li><a class="reference internal" href="#installation">Installation:</a></li>
 <li><a class="reference internal" href="#component-programs-tasks">Component programs/tasks:</a><ul>
 </ul>
 </li>
+<li><a class="reference internal" href="#hacking-pyme">Hacking PYME</a><ul>
+<li><a class="reference internal" href="#extending-pyme-and-writing-plugins">Extending PYME and writing plugins</a></li>
 <li><a class="reference internal" href="#technical-details">Technical Details:</a></li>
+<li><a class="reference internal" href="#api-documentation">API Documentation:</a></li>
 </ul>
 </li>
 </ul>
@@ -91,7 +93,7 @@
           <div class="body" role="main">
             
   <div class="section" id="pyme-s-documentation">
-<h1>PYME&#8217;s Documentation<a class="headerlink" href="#pyme-s-documentation" title="Permalink to this headline">¶</a></h1>
+<span id="pymemaindocs"></span><h1>PYME&#8217;s Documentation<a class="headerlink" href="#pyme-s-documentation" title="Permalink to this headline">¶</a></h1>
 <p>Thank you for your interest in PYME. I&#8217;ll be the first to admit that the documentation
 could use a lot of work, but this takes time and I hope there is enough here to get you started. Some
 aspects are currently pretty specific to our internal workflows, but I have left
@@ -101,19 +103,17 @@ currently no API documentation. If you want to extend or otherwise hack PYME I&#
 recommend getting in touch with me and I&#8217;ll tell you what bits of the API are
 fairly mature, what is on the TODO list for restructuring, and what is deprecated.
 I might even be persuaded to write some more docs.</p>
-<div class="section" id="contents">
-<h2>Contents:<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="installation">
-<h3>Installation:<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
+<h2>Installation:<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="Installation/InstallationWithAnaconda.html">Installation of PYME on 64 bit Windows, OSX, or Linux</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Installation/InstallationFromSource.html">Installation From Source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installation/InstallationFromSource.html">Installation for development or instrument control</a></li>
 </ul>
 </div>
 </div>
 <div class="section" id="component-programs-tasks">
-<h3>Component programs/tasks:<a class="headerlink" href="#component-programs-tasks" title="Permalink to this headline">¶</a></h3>
+<h2>Component programs/tasks:<a class="headerlink" href="#component-programs-tasks" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="PYMEAcquire.html"><strong>PYMEAcquire</strong> - Instrument control and simulation</a><ul>
@@ -153,13 +153,33 @@ I might even be persuaded to write some more docs.</p>
 </ul>
 </div>
 </div>
+<div class="section" id="hacking-pyme">
+<h2>Hacking PYME<a class="headerlink" href="#hacking-pyme" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="extending-pyme-and-writing-plugins">
+<h3>Extending PYME and writing plugins<a class="headerlink" href="#extending-pyme-and-writing-plugins" title="Permalink to this headline">¶</a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="DataModel.html">PYME Data Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="WritingRecipeModules.html">Writing a Recipe Module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingDsviewer.html">Extending the image data viewer (dh5view/View3D)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ExtendingVisGUI.html">Extending VisGUI</a></li>
+</ul>
+</div>
+</div>
 <div class="section" id="technical-details">
 <h3>Technical Details:<a class="headerlink" href="#technical-details" title="Permalink to this headline">¶</a></h3>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="DataFormats.html">PYME Data Formats</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SampleDB.html">The Sample Database</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api/modules.html">PYME</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="api-documentation">
+<h3>API Documentation:<a class="headerlink" href="#api-documentation" title="Permalink to this headline">¶</a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api/PYME.html">PYME package</a></li>
 </ul>
 </div>
 </div>
@@ -184,7 +204,7 @@ I might even be persuaded to write some more docs.</p>
         <li class="right" >
           <a href="Installation/InstallationWithAnaconda.html" title="Installation of PYME on 64 bit Windows, OSX, or Linux"
              >next</a> |</li>
-        <li class="nav-item nav-item-0"><a href="#">PYME 16.05.24 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="#">PYME 16.11.10 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/index.rst">Edit</a> &raquo;</li>
  
 

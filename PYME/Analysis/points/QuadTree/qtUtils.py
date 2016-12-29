@@ -31,6 +31,6 @@ def compareOriginalWithRec(ofd, qt, radius = 250, md = MetaData.TIRFDefault):
 
     N_points = []
     for p in ofd:
-    	Ns.append(len(pointQT.getInRadius(qt, 1e3*p.x*md.voxelsize.x, 1e3*p.y*md.voxelsize.y, radius)))
+        Ns.append(len(pointQT.getInRadius(qt, 1e3*p.x*md.voxelsize.x, 1e3*p.y*md.voxelsize.y, radius)))
 
     return (I_origs, N_points)

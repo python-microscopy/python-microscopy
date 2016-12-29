@@ -17,7 +17,7 @@ source:
 
 build:
   # The build number should be incremented for new builds of the same version
-  number: 0       # (defaults to 0)
+  number: {{ environ.get('BUILD_NUM', 0) }}       # (defaults to 0)
   #string: abc     # (defaults to default conda build string plus the build
                   # number)
                   # The build string cannot contain a dash '-' character
@@ -37,7 +37,9 @@ build:
     - taskServerZC = PYME.ParallelTasks.taskServerZC:main
     - PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main
     - PYMEClusterDup = PYME.io.clusterDuplication:main
+    - PYMEDistributor = PYME.ParallelTasks.PYMEDistributor:main
     - genmaps = PYME.localization.genmaps:main
+    - PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main
 
 
 
@@ -46,6 +48,10 @@ build:
   # If osx_is_app is set, entry points will use python.app instead of
   # python in Mac OS X
   osx_is_app: yes # (defaults to no)
+
+#  script_env:
+#    - GOPATH
+#    - GOBIN
 
   # See the Features section below for more information on features
 
@@ -159,6 +165,11 @@ requirements:
     - yaml
     - dispatch
     - pymecompress
+    - ujson
+    - python-bioformats [osx]
+
+    #todo make cross-platform versions
+    #- nvidia-ml-py  [linux] #optional - maybe better as dependency for gpu-fitting package
 
   #unfortunately not availible through conda on windows ##FIXME
 
@@ -191,12 +202,12 @@ about:
 
 # If the app key is present, the package will be an app, meaning it will
 # appear in the Anaconda launcher.
-#app:
+app:
   # The command that is called to launch the app
-  #entry: ipython notebook
+  entry: VisGUI
   # Icon file contained in the recipe
-  #icon: icon_64x64.png
-  #summary: Summary of the package
+  icon: pymeLogo.png
+  summary: A set of tools for analysing and visualizing super-resolution microscopy data
   # If own_environment is true, installing the app through the launcher
   # will install into its own environment. The default is false.
   #own_environment: true

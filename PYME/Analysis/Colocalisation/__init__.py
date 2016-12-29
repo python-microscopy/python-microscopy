@@ -20,3 +20,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
+"""
+This contains code for colocalization. Most notably, implementations of Pearsons and Manders coefficients in
+:py:mod:`PYME.Analysis.Colocalisation.correlationCoeffs`, and for distance-transform based colocalization in
+:py:mod:`PYME.Analysis.Colocalisation.edtColoc`
+"""

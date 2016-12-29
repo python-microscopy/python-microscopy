@@ -27,13 +27,8 @@ class DecayAnalyser:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        ID_CALC_DECAYS = wx.NewId()
-        self.visFr.extras_menu.Append(ID_CALC_DECAYS, "Estimate decay lifetimes")
-        self.visFr.Bind(wx.EVT_MENU, self.OnCalcDecays, id=ID_CALC_DECAYS)
-
-        ID_INTENS_STEPS = wx.NewId()
-        self.visFr.extras_menu.Append(ID_INTENS_STEPS, "Retrieve Intensity steps")
-        self.visFr.Bind(wx.EVT_MENU, self.OnRetrieveIntensitySteps, id=ID_INTENS_STEPS)
+        visFr.AddMenuItem('Extras', "Estimate decay lifetimes", self.OnCalcDecays)
+        visFr.AddMenuItem('Extras', "Retrieve Intensity steps", self.OnRetrieveIntensitySteps)
 
     def OnCalcDecays(self, event):
         from PYME.Analysis.BleachProfile import kinModels
@@ -56,7 +51,7 @@ class DecayAnalyser:
         #pipeline.selectedDataSource.setMapping('filter', 'fw')
         pipeline.selectedDataSource.setMapping('ColourNorm', '0.0*t')
 
-        vals = list(set(pipeline.selectedDataSource.fw))
+        vals = list(set(pipeline.selectedDataSource['filter']))
 
         for key in vals:
             pipeline.mapping.setMapping('p_%d' % key, 'filter == %d' % key)

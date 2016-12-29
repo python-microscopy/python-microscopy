@@ -73,6 +73,9 @@ class correlator(Pyro.core.ObjBase):
         self.NCalibStates = 2*self.stackHalfSize + 1
 
         self.tracking = False
+        self.lockActive = False
+        
+        self._last_target_z = -1
         #self.initialise()
 #        self.buffer = []
         self.WantRecord = False
@@ -83,8 +86,10 @@ class correlator(Pyro.core.ObjBase):
         d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()        
         
         self.X, self.Y = np.mgrid[0.0:d.shape[0], 0.0:d.shape[1]]
-        self.X -= d.shape[0]/2
-        self.Y -= d.shape[1]/2
+#        self.X -= d.shape[0]/2
+#        self.Y -= d.shape[1]/2
+        self.X -= np.ceil(d.shape[0]*0.5)
+        self.Y -= np.ceil(d.shape[1]*0.5)
         
         #we want to discard edges after accounting for x-y drift
         self.mask = np.ones_like(d)
@@ -99,6 +104,7 @@ class correlator(Pyro.core.ObjBase):
 
         
         self.lockFocus = False
+        self.lockActive = False
         self.logShifts = True
         self.lastAdjustment = 5 
         self.homePos = self.piezo.GetPos(0)
@@ -203,6 +209,11 @@ class correlator(Pyro.core.ObjBase):
         #posInd = np.argmin(np.abs(nomPos - self.calPositions))
         posInd = 10
         
+        #dz = float('inf')
+        #count = 0
+        #while np.abs(dz) > 0.5*self.deltaZ and count < 1:
+        #    count += 1
+        
         #retrieve calibration information at this location        
         calPos = self.calPositions[posInd]
         FA = self.calFTs[:,:,posInd]
@@ -238,6 +249,11 @@ class correlator(Pyro.core.ObjBase):
         dz = self.deltaZ*np.dot(self.ds_A.ravel(), ddz)*dzn
 
 #        self.buffer.append((dz, nomPos, posInd, calPos, posDelta))
+        #posInd += np.round(dz / self.deltaZ)
+        #posInd = int(np.clip(posInd, 0, self.NCalibStates))
+            
+#            print count, dz
+        
 
 #        self.buffer.append((dx, dy, dz + posDelta, Cm, dz, nomPos, posInd, calPos, posDelta))
 
@@ -257,6 +273,8 @@ class correlator(Pyro.core.ObjBase):
         
     
     def tick(self, **kwargs):
+        targetZ = self.piezo.GetTargetPos(0)
+        
         if not 'mask' in dir(self) or not self.scope.frameWrangler.currentFrame.shape[:2] == self.mask.shape[:2]:
             self.initialise()
             
@@ -304,7 +322,7 @@ class correlator(Pyro.core.ObjBase):
             
             self.calibState += 1
             
-        elif self.calibState > self.NCalibStates:
+        elif (self.calibState > self.NCalibStates) and np.allclose(self._last_target_z, targetZ):
             # print "fully calibrated"
             dx, dy, dz, cCoeff, dzcorr, nomPos, posInd, calPos, posDelta = self.compare()
             
@@ -313,11 +331,10 @@ class correlator(Pyro.core.ObjBase):
             #print dx, dy, dz
             
             self.history.append((time.time(), dx, dy, dz, cCoeff, self.corrRef, self.piezo.GetOffset(), self.piezo.GetPos(0)))
-            if self.logShifts:
                 eventLog.logEvent('PYME2ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
-                self.piezo.LogShifts(dx, dy, dz)
             
-            if self.lockFocus and (cCoeff > .5*self.corrRef): # correction only applies if correlation is still strong enough
+            self.lockActive = self.lockFocus and (cCoeff > .5*self.corrRef)
+            if self.lockActive:
                 if abs(self.piezo.GetOffset()) > 20.0:
                     self.lockFocus = False
                     print "focus lock released"
@@ -334,11 +351,16 @@ class correlator(Pyro.core.ObjBase):
                     self.lastAdjustment = 0
                 else:
                     self.lastAdjustment += 1
-                    
+            
+            if self.logShifts:
+                self.piezo.LogShifts(dx, dy, dz, self.lockActive)
+        
+        self._last_target_z = targetZ                    
             
     def reCalibrate(self):
         self.calibState = 0
         self.corrRef = 0
+        self.lockActive = False
         
     def register(self):
         #self.scope.frameWrangler.WantFrameGroupNotification.append(self.tick)

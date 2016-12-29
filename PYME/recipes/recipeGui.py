@@ -6,51 +6,48 @@ Created on Fri May 29 16:33:47 2015
 """
 
 import wx
+import wx.gizmos
+import wx.html
+
 import numpy as np
+
+import inspect
+import locale
+
+#fudge to make things load properly under wx
+locale.setlocale(locale.LC_CTYPE, 'C')
+import docutils.core
 
 from PYME.recipes import modules
 #from PYME.recipes import runRecipe
 from PYME.recipes import batchProcess
+from PYME.recipes import recipeLayout
 
 import pylab
 from PYME.IO.image import ImageStack
 from PYME.DSView import ViewIm3D
 
 from PYME.contrib import wxPlotPanel
-from PYME.misc import depGraph
 
-try:
-    from traitsui.api import Controller
-except SystemExit:
-    def Controller(*args, **kwargs):
-        """Spoofed traitsui Controller"""
-        pass
+
+# try:
+#     from traitsui.api import Controller
+# except SystemExit:
+#     def Controller(*args, **kwargs):
+#         """Spoofed traitsui Controller"""
+#         pass
 
 import os
 import glob
 import textwrap
 
-from scipy import optimize
+import logging
+logger = logging.getLogger(__name__)
+
 
 RECIPE_DIR = os.path.join(os.path.split(modules.__file__)[0], 'Recipes')
 CANNED_RECIPES = glob.glob(os.path.join(RECIPE_DIR, '*.yaml'))
 
-def _path_lh(y, yprev, ygoal, yvs, ytol):
-    d_yprev = (y - yprev)**2
-    d_ygoal = (y-ygoal)**2
-    d_obstructions = (((y-yvs)/ytol)**2).min()
-    
-    return 10*d_yprev*(d_yprev < .3**2) + 0*d_ygoal - 10*d_obstructions*(d_obstructions < 1)
-    
-def _path_v_lh(x, xtarget, y, vlines, vdir):
-    d_x = np.array([((x - vl[0,0])/0.1)**2 for vl in vlines])
-    
-    #odir = np.array([np.sign(vl[1,1] - vl[1,0])])
-    #d_yprev = (y - yprev)**2
-    #d_ygoal = (y-ygoal)**2
-    #d_obstructions = (((y-yvs)/ytol)**2).min()
-    
-    return -10*np.sum(d_x)*(np.sum(d_x < 1) > 0)
     
 class RecipePlotPanel(wxPlotPanel.PlotPanel):
     def __init__(self, parent, recipes, **kwargs):
@@ -70,15 +67,14 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
 
         self.ax.cla()
 
-        dg = self.recipes.activeRecipe.dependancyGraph()        
-        ips, yvs = depGraph.arrangeNodes(dg)
-        
-        yvs = [list(yi) for yi in yvs]
-        yvs_e = [{} for yi in yvs]
-        yvtol = [list(0*np.array(yi) + .35) for yi in yvs]
+        dg = self.recipes.activeRecipe.dependancyGraph()
+
+        #Find the connecting lines
+        node_positions, connecting_lines = recipeLayout.layout(dg)
+
         
         axisWidth = self.ax.get_window_extent().width
-        nCols = max([1] + [v[0] for v in ips.values()])
+        nCols = max([1] + [v[0] for v in node_positions.values()])
         pix_per_col = axisWidth/float(nCols)
         
         fontSize = max(6, min(10, 10*pix_per_col/100.))
@@ -90,154 +86,26 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
     
         cols = {}
 
-        #x_offset_maxes = {}
-        line_x_offsets = {}
-        #inp_x_offsets = set()
-        vlines = [[] for i in range(len(yvs))]
+        #Plot the connecting lines
+        for xv, yv, e in connecting_lines:
+            #choose a colour at random for this input
+            if not e in cols.keys():
+                cols[e] = 0.7 * np.array(pylab.cm.hsv(pylab.rand()))
 
-
-        #####
-        #Plot input lines coming in to a processing node 
-        #####   
-        for k, deps in dg.items():
-            if not (isinstance(k, str) or isinstance(k, unicode)):
-                #This is a processing node
-                yv0 = []
-                
-                #deps = list(deps)
-                
-                #each input line should be offset / spaced from the others                 
-                yoff = .1*np.arange(len(deps))
-                yoff -= yoff.mean()
-                
-                ##########
-                #loop over the inputs and determine their y-order
-                for e in deps:
-                    x0, y0 = ips[e] #position of start of lines
-                    x1, y1 = ips[k] #nominal (non-offset) end points
-
-                    #if y0>y1, offset y0 slightly +ve, else offset slightly negative
-                    yv0.append(y0 + 0.01*(x1 - x0)*(2.0*(y0>y1) - 1))
-                    
-                #sort in ascending order of y0 values
-                yvi = np.argsort(np.array(yv0))
-                #print yv0, yvi
-
-                ##########
-                #assign the correct y offset values
-                #to each line
-                yos = np.zeros(len(yvi))
-                yos[yvi] = yoff
-                
-                ##########
-                # Plot the lines    
-                for e, yo in zip(deps, yos):
-                    x0, y0 = ips[e] #start pos of input line
-                    x1, y1 = ips[k] #nominal end point of input line
-                    
-                    y1 += yo #adjust with calculated offset
-
-                    #offset lines in x
-                    try:
-                        xo = line_x_offsets[x0][e]
-                    except KeyError:
-                        try:
-                            xo = max(line_x_offsets[x0].values()) + .04
-                            line_x_offsets[x0][e] = xo
-                        except KeyError:
-                            xo = 0
-                            line_x_offsets[x0] = {e:xo}
-
-                    #print xo
-                    #inp_x_offsets.add(e)
-
-                    #thread trace through blocks
-                    xv_ = [x0]
-                    yv_ = [y0]
-
-                    #xvs = np.arange(x0, x1)
-                    #print xvs, yvs[x0:x1]
-                    #print 'StartTrace - y1:', y1
-                    
-                    for i, x_i in enumerate(range(x0+1, x1, 2)):
-                        #print i, x_i
-                        yvo = 1.0 * yv_[-1]
-                        try:
-                            yn = yvs_e[x_i][e]
-                            recycling_y = True
-                        except KeyError:
-                            yn = optimize.fmin(_path_lh, yvo+.02*np.random.randn(), (yvo, y1, np.array(yvs[x_i]), np.array(yvtol[x_i])), disp=0)[0]
-                            recycling_y = False
-
-                        xn = x_i -.4
-
-                        #find vertical lines which might interfere
-                        vl = [l[0] for l in vlines[x_i] if (not l[1] == e) and (max(yn, yvo) > (min(l[0][1,:]) - .05)) and (min(yn, yvo) < (max(l[0][1,:]) + .05))]
-                        if len(vl) > 0:
-                            xn = optimize.fmin(_path_v_lh, xn, (xn, yn, vl, np.sign(yn-yvo)), disp=0)[0]
-                        
-                        if not np.isnan(yn):
-                            yv_.append(yvo)
-                            yv_.append(yn)
-                            xv_.append(xn)
-                            xv_.append(xn)
-                            vlines[x_i].append((np.array([[xn, xn], [yvo, yn]]), e))
-                            #print np.array([[xn, xn], [yvo, yn]])[1,:]
-
-                            if not recycling_y:
-                                yvs[x_i].append(yn)
-                                yvs_e[x_i][e] = yn
-                                yvtol[x_i].append(.1)
-                        else:
-                            if not recycling_y:
-                                yvs[x_i].append(yvo)
-                                yvs_e[x_i][e] = yvo
-                                yvtol[x_i].append(.1)
-                            
-                    
-                    xn = x1 -.4    
-                    yvo = 1.0*yv_[-1]
-                    yn = y1
-                    
-                    #find vertical lines which might interfere
-                    #vl = [l for l in vlines[x1] if (yn > (min(l[1,:]) - .05)) and (yn < (max(l[1,:]) + .05))]
-                    #vl = [l for l in vlines[x1] if (max(yn, yvo) > (min(l[1,:]) - .05)) and (min(yn, yvo) < (max(l[1,:]) + .05))]
-                    vl = [l[0] for l in vlines[x1] if (not l[1] == e) and (max(yn, yvo) > (min(l[0][1,:]) - .05)) and (min(yn, yvo) < (max(l[0][1,:]) + .05))]
-                    if len(vl) > 0:
-                        xn = optimize.fmin(_path_v_lh, xn, (xn, yn, vl, np.sign(yn-yvo)), disp=0)[0]
-                    
-                    yv_.append(yvo)
-                    xv_.append(xn)
-                    xv_.append(xn)
-                    yv_.append(yn)
-
-                    vlines[x1].append((np.array([[xn, xn], [yvo, yn]]), e))                   
-                    
-                    yv_.append(y1)
-                    xv_.append(x1)
-                    
-                    #print xv_, yv_
-                    #print y1
-                        
-
-                    #choose a colour at random for this input
-                    if not e in cols.keys():
-                        cols[e] = 0.7*np.array(pylab.cm.hsv(pylab.rand()))
-                    
-                    #plot the input line
-                    #the line consists of a horizontal segment, a vertical segment and then
-                    #a second horizontal segment
-                    #self.ax.plot([x0,x1-.5+xo, x1 -.5+xo, x1], [y0,y0,y1,y1], c=cols[e], lw=2)
-                    self.ax.plot(np.array(xv_), np.array(yv_), c=cols[e], lw=2)
+            self.ax.plot(xv, yv, c=cols[e], lw=2)
                 
         #plot the boxes and the labels
-        for k, v in ips.items():   
+        for k, v in node_positions.items():
             if not (isinstance(k, str) or isinstance(k, unicode)):
                 #node - draw a box
                 #################
                 s = k.__class__.__name__
                 #pylab.plot(v[0], v[1], 'o', ms=5)
-                rect = pylab.Rectangle([v[0], v[1]-.25], 1, .5, ec='k', fc=[.8,.8, 1], picker=True)
+                if isinstance(k, modules.base.OutputModule):
+                    fc = [.8, 1, .8]
+                else:
+                    fc = [.8,.8, 1]
+                rect = pylab.Rectangle([v[0], v[1]-.25], 1, .5, ec='k', fc=fc, picker=True)
                 
                 rect._data = k
                 self.ax.add_patch(rect)
@@ -251,7 +119,9 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 params = k.get().items()
                 s2 = []
                 for i in params:
-                    s2 += TW.wrap('%s : %s' %i)
+                    pn, p = i
+                    if not (pn.startswith('_') or pn.startswith('input') or pn.startswith('output')):
+                        s2 += TW.wrap('%s : %s' %i)
                 
                 if len(s2) > 5:
                     s2 = '\n'.join(s2[:4]) + '\n ...'
@@ -272,7 +142,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 
                 
                 
-        ipsv = np.array(ips.values())
+        ipsv = np.array(node_positions.values())
         try:
             xmn, ymn = ipsv.min(0)
             xmx, ymx = ipsv.max(0)
@@ -288,6 +158,114 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         self.canvas.draw()
 
 
+class ModuleSelectionDialog(wx.Dialog):
+    def __init__(self, parent):
+        wx.Dialog.__init__(self, parent, wx.ID_ANY, "Select a module to add", size=(1000, 500))
+
+        self.pan = wx.Panel(self)
+
+        modNames = modules.base.all_modules.keys()
+        modNames.sort()
+
+        self.rootNodes = {}
+        self.modnames = {}
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.tree_list = wx.gizmos.TreeListCtrl(self.pan, -1, size=(250, 400), style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT|wx.TR_FULL_ROW_HIGHLIGHT|
+                                                            wx.TR_LINES_AT_ROOT)
+
+        self.tree_list.AddColumn('Module name')
+        #self.tree_list.AddColumn('Description')
+        self.tree_list.SetMainColumn(0)
+        self.tree_list.SetColumnWidth(0, 250)
+        #self.tree_list.SetColumnWidth(1, 600)
+
+        root = self.tree_list.AddRoot('root')
+        self.tree_list.SetItemText(root, "root", 0)
+
+        for mn in modNames:
+            basename, modname = mn.split('.')
+            try:
+                base = self.rootNodes[basename]
+            except KeyError:
+                base = self.tree_list.AppendItem(root, basename)
+                self.tree_list.SetItemText(base, basename, 0)
+                self.rootNodes[basename] = base
+
+            item = self.tree_list.AppendItem(base, modname)
+            self.tree_list.SetPyData(item, mn)
+            self.tree_list.SetItemText(item, modname, 0)
+            #try:
+            #    doc = inspect.getdoc(modules.base.all_modules[mn]).splitlines()[0]
+            #    self.tree_list.SetItemText(item,doc, 1)
+            #except AttributeError:
+            #    pass
+
+            #self.modnames[item] = mn
+
+        self.tree_list.ExpandAll(root)
+
+        #self.tree_list.GetMainWindow().Bind(wx.EVT_LEFT_UP, self.OnSelect)
+        self.tree_list.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelect)
+
+        hsizer.Add(self.tree_list, 1, wx.EXPAND|wx.ALL, 2)
+
+        self.stModuleHelp = wx.html.HtmlWindow(self, -1, size=(400, -1))#wx.StaticText(self, -1, '', size=(400, -1))
+        hsizer.Add(self.stModuleHelp, 0, wx.EXPAND|wx.ALL, 5)
+
+        vsizer.Add(hsizer, 1, wx.EXPAND|wx.ALL, 0)
+
+        sbsizer = wx.StdDialogButtonSizer()
+
+        self.bOK = wx.Button(self.pan, wx.ID_OK, 'Add')
+        self.bOK.Enable(False)
+        #self.bOK.Bind(wx.EVT_BUTTON, self.OnOK)
+
+        sbsizer.AddButton(self.bOK)
+
+        self.bCancel = wx.Button(self.pan, wx.ID_CANCEL, 'Cancel')
+        sbsizer.AddButton(self.bCancel)
+
+        sbsizer.Realize()
+
+        vsizer.Add(sbsizer, 0, wx.EXPAND, 0)
+
+        self.pan.SetSizerAndFit(vsizer)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.pan, 1, wx.EXPAND, 0)
+        self.SetSizerAndFit(sizer)
+        self.Layout()
+
+    def OnSelect(self, evt):
+        from sphinx.util.docstrings import prepare_docstring
+
+
+        #print self.tree_list.GetSelection()
+        mn = self.tree_list.GetPyData(self.tree_list.GetSelection())
+        #print mn
+        if not mn is None:
+            self.bOK.Enable(True)
+
+            doc = modules.base.all_modules[mn].__doc__
+            if doc:
+                doc = [mn, '#'*len(mn), ''] + prepare_docstring(doc)
+                docHTML = docutils.core.publish_parts('\n'.join(doc), writer_name='html')['html_body']
+                #print docHTML
+                self.stModuleHelp.SetPage(docHTML)
+            else:
+                self.stModuleHelp.SetPage('')
+            #self.stModuleHelp.SetLabelText(doc)
+            #self.stModuleHelp.Wrap(self.stModuleHelp.GetSize()[0] - 20)
+        else:
+            self.stModuleHelp.SetPage('')
+            self.bOK.Enable(False)
+
+
+    def GetSelectedModule(self):
+        return self.tree_list.GetPyData(self.tree_list.GetSelection())
 
 
 class RecipeView(wx.Panel):
@@ -353,22 +331,27 @@ class RecipeView(wx.Panel):
         self.recipes.LoadRecipeText(self.tRecipeText.GetValue())
         
     def OnNewRecipe(self, event):
-        self.recipes.LoadRecipeText('')
+        if wx.MessageBox("Clear recipe?", "Confirm", wx.YES_NO | wx.CANCEL, self) == wx.YES:
+            self.recipes.LoadRecipeText('')
         
     def OnAddModule(self, event):
         #mods = 
         mods = modules.base.all_modules
-        modNames = mods.keys()
-        modNames.sort()        
-        
-        dlg = wx.SingleChoiceDialog(
-                self, 'Select module to add', 'Add a module',
-                modNames, 
-                wx.CHOICEDLG_STYLE
-                )
+        #modNames = mods.keys()
+        #modNames.sort()
+        #
+        # dlg = wx.SingleChoiceDialog(
+        #         self, 'Select module to add', 'Add a module',
+        #         modNames,
+        #         wx.CHOICEDLG_STYLE
+        #         )
+        #
+        # if dlg.ShowModal() == wx.ID_OK:
+        #     modName = dlg.GetStringSelection()
 
+        dlg = ModuleSelectionDialog(self)
         if dlg.ShowModal() == wx.ID_OK:
-            modName = dlg.GetStringSelection()
+            modName = dlg.GetSelectedModule()
             
             c = mods[modName](self.recipes.activeRecipe)
             self.recipes.activeRecipe.modules.append(c)
@@ -396,6 +379,7 @@ class RecipeView(wx.Panel):
     
     def configureModule(self, k):
         p = self
+        from traitsui.api import Controller
         class MControl(Controller):
             def closed(self, info, is_ok):
                 wx.CallLater(10, p.update)
@@ -460,7 +444,8 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
     def __init__(self, parent=None):                
         wx.Frame.__init__(self, parent, wx.ID_ANY, 'The PYME Bakery')
         
-        self.dropFiles = dt(self)      
+        self.dropFiles = dt(self)
+        logger.debug('BatchFrame.__init__ start')
         self.rm = RecipeManager()
         self.inputFiles = []
         self.inputFiles2 = []
@@ -541,6 +526,8 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         
         #self.SetDropTarget(self.drop)
         self.lFiles.SetDropTarget(self.dropFiles)
+
+        logger.debug('BatchFrame.__init__ done')
         
     def UpdateFileList(self, filenames):
         self.inputFiles += filenames        
@@ -574,7 +561,7 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         out_dir = self.dcOutput.GetPath()
         
         #validate our choices:
-        if (self.rm.activeRecipe == None) or (len(self.rm.activeRecipe.modules) == 0):
+        if (self.rm.activeRecipe is None) or (len(self.rm.activeRecipe.modules) == 0):
             wx.MessageBox('No Recipe: Please open (or build) a recipe', 'Error', wx.OK|wx.ICON_ERROR)
             return
             

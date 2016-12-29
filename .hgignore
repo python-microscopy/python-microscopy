@@ -21,7 +21,9 @@ Deconv/fftw_wisdom
 .DS_Store
 *.egg-info*
 doc/api/*
+doc/html/*
 .idea
 patches/*
 *Pyro_NS_URI
+*.sqlite3
 *\#*\#

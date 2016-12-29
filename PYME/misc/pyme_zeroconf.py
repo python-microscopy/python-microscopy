@@ -38,8 +38,10 @@ class ZCListener(object):
     def add_service(self, zeroconf, _type, name):
         #print _type, name
         nm = name.split('.' + self._protocol)[0]
+
         info = zeroconf.get_service_info(_type, name)
-        self.advertised_services[nm] = info
+        if not info is None:
+            self.advertised_services[nm] = info
         
             
 class ZeroConfNS(object):

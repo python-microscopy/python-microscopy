@@ -27,6 +27,7 @@ import wx
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
+from OpenGL import GLUT
 #import sys,math
 
 
@@ -105,8 +106,9 @@ class RenderLayer(object):
         
     def render(self, glcanvas=None):
         if self.mode in ['points']:
-            glDisable(GL_LIGHTING)
+            #glDisable(GL_LIGHTING)
             #glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
+            glEnable(GL_POINT_SMOOTH)
             if glcanvas:
                 glPointSize(self.pointSize/glcanvas.pixelsize)
             else:
@@ -118,7 +120,7 @@ class RenderLayer(object):
         if self.mode in ['wireframe']:
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
         else:
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+            glPolygonMode(GL_FRONT, GL_FILL)
             
         nVertices = self.verts.shape[0]
             
@@ -191,6 +193,39 @@ class SelectionOverlay(object):
             glVertex3f(x1, y1, glcanvas.zc)
             glVertex3f(x0, y1, glcanvas.zc)
             glEnd()
+
+class MessageOverlay(object):
+    def __init__(self, message = '', x=-.7, y=0):
+        self.message = message
+        self.x = x
+        self.y = y
+
+    def render(self, glcanvas):
+        if not self.message == '':
+            glDisable(GL_LIGHTING)
+            glPushMatrix()
+            glLoadIdentity()
+
+            glOrtho(-1, 1, -1, 1, -1, 1)
+            #def glut_print(x, y, font, text, r, g, b, a):
+
+            # blending = False
+            # if glIsEnabled(GL_BLEND):
+            #     blending = True
+
+            #glEnable(GL_BLEND)
+            glColor3f(1, 1, 1)
+            glRasterPos2f(self.x, self.y)
+            for ch in self.message:
+                GLUT.glutBitmapCharacter(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_int(ord(ch)))
+
+            #GLUT.glutBitmapString(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_char_p(self.message))
+
+            # if not blending:
+            #     glDisable(GL_BLEND)
+
+            glPopMatrix()
+            glEnable(GL_LIGHTING)
 
 
 
@@ -291,6 +326,9 @@ class LMGLCanvas(GLCanvas):
 
         self.overlays.append(SelectionOverlay(self.selectionSettings))
 
+        self.messageOverlay = MessageOverlay()
+        self.overlays.append(self.messageOverlay)
+
 
         self.wantViewChangeNotification = WeakSet()
         self.pointSelectionCallbacks = []
@@ -326,6 +364,11 @@ class LMGLCanvas(GLCanvas):
         
     def OnMove(self, event):
         self.Refresh()
+
+    def setOverlayMessage(self, message=''):
+        self.messageOverlay.message = message
+        if self.init:
+            self.Refresh()
         
     def interlace_stencil(self):
         WindowWidth = self.Size[0]
@@ -333,7 +376,7 @@ class LMGLCanvas(GLCanvas):
         # setting screen-corresponding geometry
         glViewport(0,0,WindowWidth,WindowHeight)
         glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity
+        glLoadIdentity()
         glMatrixMode (GL_PROJECTION)
         glLoadIdentity()
         gluOrtho2D(0.0,WindowWidth-1,0.0,WindowHeight-1)
@@ -455,7 +498,7 @@ class LMGLCanvas(GLCanvas):
         light_position = [2.0, 2.00, 2.0, 0.0]
 
         glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
-        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE)
+        glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE)
 
         glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse)
         glLightfv(GL_LIGHT0, GL_SPECULAR, [0.3,0.3,0.3,1.0])
@@ -504,6 +547,7 @@ class LMGLCanvas(GLCanvas):
         glEnableClientState(GL_NORMAL_ARRAY)
         glEnable (GL_BLEND)
         glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        #glBlendFunc (GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_POINT_SMOOTH)
 
         #self.vs = glVertexPointerf(numpy.array([[5, 5],[10000, 10000], [10000, 5]]).astype('f'))
@@ -844,7 +888,7 @@ class LMGLCanvas(GLCanvas):
 
     def setCLim(self, clim, alim=None):
         self.clim = clim
-        if alim == None:
+        if alim is None:
             self.alim = clim
         else:
             self.alim = alim
@@ -905,7 +949,7 @@ class LMGLCanvas(GLCanvas):
             callback.Refresh()
 
     def drawScaleBar(self):
-        if not self.scaleBarLength == None:
+        if not self.scaleBarLength is None:
             view_size_x = self.xmax - self.xmin
             view_size_y = self.ymax - self.ymin
 
@@ -924,7 +968,7 @@ class LMGLCanvas(GLCanvas):
             glEnd()
 
     def drawLUT(self):
-        if self.LUTDraw == True:
+        if self.LUTDraw:
             mx = self.c.max()
 
             view_size_x = self.xmax - self.xmin

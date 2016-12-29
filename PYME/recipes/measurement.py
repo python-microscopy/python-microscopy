@@ -4,16 +4,18 @@ Created on Mon May 25 17:10:02 2015
 
 @author: david
 """
-from .base import ModuleBase, register_module, Filter, Float, Enum, CStr, Bool, Int, List, View, Item#, Group
+from .base import ModuleBase, register_module, Filter
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List
+
 import numpy as np
 import pandas as pd
-from PYME.LMVis import inpFilt
+from PYME.IO import tabular
 from PYME.IO import MetaDataHandler
 import os
 
 @register_module('MultifitBlobs') 
 class MultifitBlobs(ModuleBase):
-    inputImage = CStr('input')
+    inputImage = Output('input')
     outputName = CStr('positions')
     blobSigma = Float(45.0)
     threshold = Float(2.0)
@@ -32,7 +34,7 @@ class MultifitBlobs(ModuleBase):
             md['tIndex'] = i
             ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,i], img.mdh, noiseSigma=np.ones_like(img.data[:,:,i].squeeze()))
         
-            res.append(inpFilt.fitResultsSource(ff.FindAndFit(self.threshold)))
+            res.append(tabular.fitResultsSource(ff.FindAndFit(self.threshold)))
             
         res = pd.DataFrame(np.vstack(res))
         res.mdh = img.mdh
@@ -41,9 +43,9 @@ class MultifitBlobs(ModuleBase):
 
 @register_module('FitDumbells') 
 class FitDumbells(ModuleBase):
-    inputImage = CStr('input')
-    inputPositions = CStr('objPostiions')
-    outputName = CStr('fitResults')
+    inputImage = Input('input')
+    inputPositions = Input('objPostiions')
+    outputName = Output('fitResults')
     
     def execute(self, namespace):
         from PYME.localization.FitFactories import DumbellFitR
@@ -80,7 +82,7 @@ class FitDumbells(ModuleBase):
             r[i] = ff.FromPoint(x/ps, y/ps)
             
         
-        res = inpFilt.fitResultsSource(r)
+        res = tabular.fitResultsSource(r)
         res.mdh = md
         
         namespace[self.outputName] = res
@@ -91,10 +93,12 @@ class FitPoints(ModuleBase):
     """ Apply one of the fit modules from PYME.localization.FitFactories to each of the points in the provided
     in inputPositions
     """
-    inputImage = CStr('input')
-    inputPositions = CStr('objPositions')
-    outputName = CStr('fitResults')
+    inputImage = Input('input')
+    inputPositions = Input('objPositions')
+    outputName = Output('fitResults')
     fitModule = CStr('LatGaussFitFR')
+    roiHalfSize = Int(7)
+    channel = Int(0)
 
     def execute(self, namespace):
         #from PYME.localization.FitFactories import DumbellFitR
@@ -128,13 +132,13 @@ class FitPoints(ModuleBase):
         for x, y, t, i in zip(inp['x'], inp['y'], inp['t'], range(len(inp['x']))):
             if not t == ff_t:
                 md['tIndex'] = t
-                ff = fitMod.FitFactory(img.data[:, :, t], md)
+                ff = fitMod.FitFactory(img.data[:, :, t, self.channel], md)
                 ff_t = t
 
             #print x/ps, y/ps
-            r[i] = ff.FromPoint(x/ps, y/ps)
+            r[i] = ff.FromPoint(x/ps, y/ps, roiHalfSize=self.roiHalfSize)
 
-        res = inpFilt.fitResultsSource(r, sort=False)
+        res = tabular.fitResultsSource(r, sort=False)
         res.mdh = md
 
         namespace[self.outputName] = res
@@ -144,28 +148,42 @@ class IntensityAtPoints(ModuleBase):
     """ Apply one of the fit modules from PYME.localization.FitFactories to each of the points in the provided
     in inputPositions
     """
-    inputImage = CStr('input')
-    inputPositions = CStr('objPostiions')
-    outputName = CStr('fitResults')
+    inputImage = Input('input')
+    inputPositions = Input('objPostiions')
+    outputName = Output('fitResults')
     radii = List([3, 5, 7, 9, 11])
+    mode = Enum(['sum', 'mean'])
     #fitModule = CStr('LatGaussFitFR')
 
+    def __init__(self, *args, **kwargs):
+        self._mask_cache = {}
+        ModuleBase.__init__(self, *args, **kwargs)
+
     def _get_mask(self, r):
-        if not '_mask_cache' in dir(self):
-            self._mask_cache = {}
+        #if not '_mask_cache' in dir(self):
+        #    self._mask_cache = {}
 
         if not r in self._mask_cache.keys():
             x_, y_ = np.mgrid[-r:(r+1.), -r:(r+1.)]
-            self._mask_cache[r] = 1.0*((x_*x_ + y_*y_) <= r*r)
+            self._mask_cache[r] = 1.0*((x_*x_ + y_*y_) < r*r)
 
         return self._mask_cache[r]
 
 
     def _get_mean(self, data, x, y, t, radius):
-        roi = data[(x-radius):(x + radius + 1), (y-radius):(y + radius + 1), t]
+        roi = data[(x-radius):(x + radius + 1), (y-radius):(y + radius + 1), t].squeeze()
         mask = self._get_mask(radius)
 
-        return (roi*mask).mean()
+        return (roi.squeeze()*mask).sum()/mask.sum()
+
+    def _get_sum(self, data, x, y, t, radius):
+        print data.shape, x, y, t
+        roi = data[(x - radius):(x + radius + 1), (y - radius):(y + radius + 1), t].squeeze()
+        mask = self._get_mask(radius)
+
+        print mask.shape, roi.shape#, (roi * mask).shape
+
+        return (roi.squeeze() * mask).sum()
 
     def execute(self, namespace):
         #from PYME.localization.FitFactories import DumbellFitR
@@ -190,13 +208,15 @@ class IntensityAtPoints(ModuleBase):
 
         ff_t = -1
 
+        aggFunc = getattr(self, '_get_%s' % self.mode)
+
         ps = img.pixelSize
         print('pixel size: %s' % ps)
         for x, y, t, i in zip(inp['x'], inp['y'], inp['t'], range(len(inp['x']))):
             for r in self.radii:
-                res[i]['r%d' % r] = self._get_mean(img.data, np.round(x/ps), np.round(y/ps), t, r)
+                res[i]['r%d' % r] = aggFunc(img.data, np.round(x / ps), np.round(y / ps), t, r)
 
-        res = inpFilt.recArrayInput(res)
+        res = tabular.recArrayInput(res)
         res.mdh = md
 
         namespace[self.outputName] = res
@@ -207,8 +227,8 @@ class IntensityAtPoints(ModuleBase):
 class MeanNeighbourDistances(ModuleBase):
     """Calculates mean distance to nearest neighbour in a triangulation of the
     supplied points"""
-    inputPositions = CStr('input')
-    outputName = CStr('neighbourDists')
+    inputPositions = Input('input')
+    outputName = Output('neighbourDists')
     key = CStr('neighbourDists')
     
     def execute(self, namespace):
@@ -228,56 +248,70 @@ class MeanNeighbourDistances(ModuleBase):
         
         namespace[self.outputName] = res
 
-@register_module('NearestNeighbourDistances')         
+@register_module('NearestNeighbourDistances')
 class NearestNeighbourDistances(ModuleBase):
     """Calculates the nearest neighbour distances between supplied points using
     a kdtree"""
-    inputPositions = CStr('input')
-    outputName = CStr('neighbourDists')
+    inputChan0 = Input('input')
+    inputChan1 = Input('')
+    outputName = Output('neighbourDists')
+    columns = List(['x', 'y'])
     key = CStr('neighbourDists')
-    
+
     def execute(self, namespace):
         from scipy.spatial import cKDTree
-        pos = namespace[self.inputPositions]
+        pos = namespace[self.inputChan0]
         
-        x, y = pos['x'], pos['y']
-        
+        if self.inputChan1 == '':
+            pos1 = pos
+        else:
+            pos1 = namespace[self.inputChan1]
+
         #create a kdtree
-        p = np.vstack([x,y]).T
-        kdt = cKDTree(p)
-        
-        #query the two closest entries - the closest entry will be the 
-        #original point, the next closest it's nearest neighbour
-        d, i = kdt.query(p, 2)
-        res = d[:,1]
-        
-        res = pd.DataFrame({self.key:res})
+        p1 = np.vstack([pos[k] for k in self.columns]).T
+        p2 = np.vstack([pos1[k] for k in self.columns]).T
+        kdt = cKDTree(p1)
+
+        d, i = kdt.query(p2, 1)
+
+        res = pd.DataFrame({self.key: d})
         if 'mdh' in dir(pos):
             res.mdh = pos.mdh
-        
+
         namespace[self.outputName] = res
 
-@register_module('PairwiseDistanceHistogram')         
+@register_module('PairwiseDistanceHistogram')
 class PairwiseDistanceHistogram(ModuleBase):
     """Calculates a histogram of pairwise distances"""
-    inputPositions = CStr('input')
-    outputName = CStr('distHist')
+    inputPositions = Input('input')
+    inputPositions2 = Input('')
+    outputName = Output('distHist')
     nbins = Int(50)
     binSize = Float(50.)
     
     def execute(self, namespace):
         from PYME.Analysis.points import DistHist
         
-        pos = namespace[self.inputPositions]
-        
-        x, y = pos['x'], pos['y']
-        
-        res = DistHist.distanceHistogram(x, y, x, y, self.nbins, self.binsize)
-        d = self.binsize*np.arange(self.nbins)
-        
-        res = pd.DataFrame({'bins' : d, 'counts' : res})
-        if 'mdh' in dir(pos):
-            res.mdh = pos.mdh
+        pos0 = namespace[self.inputPositions]
+        pos1 = namespace[self.inputPositions2 if self.inputPositions2 is not '' else self.inputPositions]
+        if np.count_nonzero(pos0['z']) == 0 and np.count_nonzero(pos1['z']) == 0:
+            res = DistHist.distanceHistogram(pos0['x'], pos0['y'], pos1['x'], pos1['y'], self.nbins, self.binSize)
+        else:
+            res = DistHist.distanceHistogram3D(pos0['x'], pos0['y'], pos0['z'],
+                                               pos1['x'], pos1['y'], pos1['z'], self.nbins, self.binSize)
+
+        d = self.binSize*np.arange(self.nbins)
+
+        res = pd.DataFrame({'bins': d, 'counts': res})
+
+        # propagate metadata, if present
+        try:
+            res.mdh = pos0.mdh
+        except AttributeError:
+            try:
+                res.mdh = pos1.mdh
+            except AttributeError:
+                pass
         
         namespace[self.outputName] = res
         
@@ -285,8 +319,8 @@ class PairwiseDistanceHistogram(ModuleBase):
 @register_module('Histogram')         
 class Histogram(ModuleBase):
     """Calculates a histogram of a given measurement key"""
-    inputMeasurements = CStr('input')
-    outputName = CStr('hist')
+    inputMeasurements = Input('input')
+    outputName = Output('hist')
     key = CStr('key')
     nbins = Int(50)
     left = Float(0.)
@@ -310,9 +344,9 @@ class Histogram(ModuleBase):
 @register_module('ImageHistogram')         
 class ImageHistogram(ModuleBase):
     """Calculates a histogram of a given measurement key"""
-    inputImage = CStr('input')
-    outputName = CStr('hist')
-    inputMask = CStr('')
+    inputImage = Input('input')
+    outputName = Output('hist')
+    inputMask = Input('')
     nbins = Int(50)
     left = Float(0.)
     right = Float(1000)
@@ -339,9 +373,9 @@ class ImageHistogram(ModuleBase):
 @register_module('ImageCumulativeHistogram')         
 class ImageCumulativeHistogram(ModuleBase):
     """Calculates a histogram of a given measurement key"""
-    inputImage = CStr('input')
-    outputName = CStr('hist')
-    inputMask = CStr('')
+    inputImage = Input('input')
+    outputName = Output('hist')
+    inputMask = Input('')
     #nbins = Int(50)
     #left = Float(0.)
     #right = Float(1000)
@@ -369,10 +403,10 @@ class ImageCumulativeHistogram(ModuleBase):
 @register_module('BinnedHistogram')
 class BinnedHistogram(ModuleBase):
     """Calculates a histogram of a given measurement key, binned by a separate value"""
-    inputImage = CStr('input')
+    inputImage = Input('input')
     binBy = CStr('indepvar')
-    outputName = CStr('hist')
-    inputMask = CStr('')
+    outputName = Output('hist')
+    inputMask = Input('')
 
     nbins = Int(50)
     left = Float(0.)
@@ -413,9 +447,9 @@ class BinnedHistogram(ModuleBase):
 @register_module('Measure2D') 
 class Measure2D(ModuleBase):
     """Module with one image input and one image output"""
-    inputLabels = CStr('labels')
-    inputIntensity = CStr('data')
-    outputName = CStr('measurements')
+    inputLabels = Input('labels')
+    inputIntensity = Input('data')
+    outputName = Output('measurements')
     
     measureContour = Bool(True)    
         
@@ -423,7 +457,7 @@ class Measure2D(ModuleBase):
         labels = namespace[self.inputLabels]
         
         #define the measurement class, which behaves like an input filter        
-        class measurements(inpFilt.inputFilter):
+        class measurements(tabular.TabularBase):
             _name = 'Measue 2D source'
             ps = labels.pixelSize
             
@@ -443,7 +477,7 @@ class Measure2D(ModuleBase):
                     
                     self._keys.remove('euler_number') #buggy!
                     
-                    if not contours == None:
+                    if not contours is None:
                         self._keys += ['contour']
                         
                 self.measures.extend(measurements)
@@ -548,32 +582,18 @@ class Measure2D(ModuleBase):
             
         return rp, ct
 
-@register_module('SelectMeasurementColumns')         
-class SelectMeasurementColumns(ModuleBase):
-    """Take just certain columns of a variable"""
-    inputMeasurements = CStr('measurements')
-    keys = CStr('')
-    outputName = CStr('selectedMeasurements') 
-    
-    def execute(self, namespace):       
-        meas = namespace[self.inputMeasurements]
-        out = pd.DataFrame({k:meas[k] for k in self.keys.split()})
-        if 'mdh' in dir(meas):
-            #propagate metadata
-            out.mdh = meas.mdh
-            
-        namespace[self.outputName] = out
+
         
 @register_module('Plot')         
 class Plot(ModuleBase):
     """Take just certain columns of a variable"""
-    input0 = CStr('measurements')
-    input1 = CStr('')
-    input2 = CStr('')
-    input3 = CStr('')
+    input0 = Input('measurements')
+    input1 = Input('')
+    input2 = Input('')
+    input3 = Input('')
     xkey = CStr('')
     ykey = CStr('')
-    outputName = CStr('outGraph') 
+    outputName = Output('outGraph')
     
     def execute(self, namespace):
         ms = []
@@ -605,12 +625,17 @@ class Plot(ModuleBase):
 
 @register_module('AddMetadataToMeasurements')         
 class AddMetadataToMeasurements(ModuleBase):
-    """Adds metadata entries as extra column(s) to the output"""
-    inputMeasurements = CStr('measurements')
-    inputImage = CStr('input')
+    """Adds metadata entries as extra column(s) to the output
+
+    This was written to allow key parameters or experimental variables to be tracked prior to aggregating / concatenating
+    measurements from multiple different images. By adding, e.g. the sample labelling, or a particular experimental
+    parameter to an output table as an extra column we can then aggregate and group that data in processing.
+    """
+    inputMeasurements = Input('measurements')
+    inputImage = Input('input')
     keys = CStr('SampleNotes')
     metadataKeys = CStr('Sample.Notes')
-    outputName = CStr('annotatedMeasurements')
+    outputName = Output('annotatedMeasurements')
     
     def execute(self, namespace):
         res = {}
@@ -635,36 +660,6 @@ class AddMetadataToMeasurements(ModuleBase):
         namespace[self.outputName] = res
 
 
-@register_module('AggregateMeasurements')         
-class AggregateMeasurements(ModuleBase):
-    """Create a new composite measurement containing the results of multiple
-    previous measurements"""
-    inputMeasurements1 = CStr('meas1')
-    suffix1 = CStr('')
-    inputMeasurements2 = CStr('')
-    suffix2 = CStr('')
-    inputMeasurements3 = CStr('')
-    suffix3 = CStr('')
-    inputMeasurements4 = CStr('')
-    suffix4 = CStr('')
-    outputName = CStr('aggregatedMeasurements') 
-    
-    def execute(self, namespace):
-        res = {}
-        for mk, suffix in [(getattr(self, n), getattr(self, 'suffix' + n[-1])) for n in dir(self) if n.startswith('inputMeas')]:
-            if not mk == '':
-                meas = namespace[mk]
-                
-                #res.update(meas)
-                for k in meas.keys():
-                    res[k + suffix] = meas[k]
-                
-        
-        meas1 = namespace[self.inputMeasurements1]
-        #res = pd.DataFrame(res)
-        res = inpFilt.cloneSource(res)
-        if 'mdh' in dir(meas1):
-            res.mdh = meas1.mdh
-            
-        namespace[self.outputName] = res
-        
+
+
+

@@ -74,12 +74,12 @@ class H5Exporter(Exporter):
     extension = '*.h5'
     descr = 'PYME HDF - .h5'
 
-    def __init__(self, complib='zlib', complevel=6):
+    def __init__(self, complib='zlib', complevel=1):
         self.complib = complib
         self.complevel = complevel
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
-        h5out = tables.openFile(outFile,'w')
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
+        h5out = tables.openFile(outFile,'w', chunk_cache_size=2**23)
         filters=tables.Filters(self.complevel,self.complib,shuffle=True)
 
         nframes = (zslice.stop - zslice.start)/zslice.step
@@ -91,9 +91,11 @@ class H5Exporter(Exporter):
         #atm = tables.UInt16Atom()
         atm = tables.Atom.from_dtype(data[xslice, yslice, 0].dtype)
 
-        ims = h5out.createEArray(h5out.root,'ImageData',atm,(0,xSize,ySize), filters=filters, expectedrows=nframes)#, chunkshape=(1,xSize,ySize))
+        ims = h5out.createEArray(h5out.root,'ImageData',atm,(0,xSize,ySize), filters=filters, expectedrows=nframes, chunkshape=(1,xSize,ySize))
 
+        curFrame = 0
         for frameN in range(zslice.start,zslice.stop, zslice.step):
+            curFrame += 1
             im = data[xslice, yslice, frameN].squeeze()
             
             for fN in range(frameN+1, frameN+zslice.step):
@@ -106,19 +108,24 @@ class H5Exporter(Exporter):
             
             #print im.shape    
             ims.append(im)
+            if ((curFrame % 10) == 0)  and progressCallback:
+                try:
+                    progressCallback(curFrame, nframes)
+                except:
+                    pass
             #ims.flush()
             
         ims.flush()
 
         outMDH = MetaDataHandler.HDFMDHandler(h5out)
 
-        if not metadata == None:
+        if not metadata is None:
             outMDH.copyEntriesFrom(metadata)
 
             if 'Camera.ADOffset' in metadata.getEntryNames():
                 outMDH.setEntry('Camera.ADOffset', zslice.step*metadata.getEntry('Camera.ADOffset'))
 
-        if not origName == None:
+        if not origName is None:
             outMDH.setEntry('cropping.originalFile', origName)
             
         outMDH.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
@@ -128,13 +135,19 @@ class H5Exporter(Exporter):
 
         outEvents = h5out.createTable(h5out.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
 
-        if not events == None:
+        if not events is None:
             #copy events to results file
             if len(events) > 0:
                 outEvents.append(events)
                 
         h5out.flush()
         h5out.close()
+
+        if progressCallback:
+            try:
+                progressCallback(nframes, nframes)
+            except:
+                pass
 
 exporter(H5Exporter)
 
@@ -144,9 +157,9 @@ class TiffStackExporter(Exporter):
     extension = '*.tiff'
     descr = 'TIFF (stack if 3D) - .tiff'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         #xmd = None
-        if not metadata == None:
+        if not metadata is None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
             
         if data.shape[3] > 1: #have multiple colour channels
@@ -158,14 +171,14 @@ class TiffStackExporter(Exporter):
                     mpt.AddSlice(data[xslice, yslice, 0, i].squeeze())
                 mpt.close()
             else: #save each channel as it's own stack
-                if not metadata == None and 'ChannelNames' in metadata.getEntryNames():
+                if not metadata is None and 'ChannelNames' in metadata.getEntryNames():
                     chanNames = metadata['ChannelNames']    
 
                 else:
                     chanNames = range(data.shape[3])
 
                 chanFiles = [os.path.splitext(os.path.split(outFile)[1])[0] + '__%s.tif' % chanNames[i]  for i in range(data.shape[3])]
-                if not metadata == None:
+                if not metadata is None:
                     xmd['ChannelFiles'] = chanFiles
 
                 for i in range(data.shape[3]):
@@ -173,9 +186,9 @@ class TiffStackExporter(Exporter):
         else:
             saveTiffStack.saveTiffMultipage(data[xslice, yslice, zslice], outFile)
 
-        if not metadata == None:
+        if not metadata is None:
             #xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
-            if not origName == None:
+            if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
 
             xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
@@ -188,21 +201,27 @@ class TiffStackExporter(Exporter):
             xmd.writeXML(xmlFile)
             # xmd.WriteSimple(xmlFile)
 
+        if progressCallback:
+            try:
+                progressCallback(100, 100)
+            except:
+                pass
+
 exporter(TiffStackExporter)
 
 class OMETiffExporter(Exporter):
     extension = '*.tif'
     descr = 'OME TIFF - .tif'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         from PYME.contrib.gohlke import tifffile
         from PYME.IO import dataWrap
         
         dw = dataWrap.ListWrap([data[xslice, yslice, zslice, i] for i in range(data.shape[3])])
         #xmd = None
-        if not metadata == None:
+        if not metadata is None:
             xmd = MetaDataHandler.OMEXMLMDHandler(mdToCopy=metadata)
-            if not origName == None:
+            if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
 
             xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
@@ -215,7 +234,13 @@ class OMETiffExporter(Exporter):
             
             
             
-        tifffile.imsave_f(outFile, dw, description = description) 
+        tifffile.imsave_f(outFile, dw, description = description)
+
+        if progressCallback:
+            try:
+                progressCallback(100, 100)
+            except:
+                pass
 
 
 exporter(OMETiffExporter)
@@ -225,7 +250,7 @@ class TiffSeriesExporter(Exporter):
     extension = '*.xml'
     descr = 'TIFF Series - .xml'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         #nframes = (zslice.stop - zslice.start)/zslice.step
 
         outDir = os.path.splitext(outFile)[0]
@@ -240,9 +265,9 @@ class TiffSeriesExporter(Exporter):
             Image.fromarray(im.squeeze().astype('uint16'), 'I;16').save(os.path.join(outDir, 'frame_%03d.tif'%i))
             i += 1
 
-        if not metadata == None:
+        if not metadata is None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
-            if not origName == None:
+            if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
 
             xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
@@ -253,6 +278,12 @@ class TiffSeriesExporter(Exporter):
             xmd.writeXML(xmlFile)
             # xmd.WriteSimple(xmlFile)
 
+        if progressCallback:
+            try:
+                progressCallback(100, 100)
+            except:
+                pass
+
 exporter(TiffSeriesExporter)
 
 
@@ -261,12 +292,12 @@ class NumpyExporter(Exporter):
     extension = '*.npy'
     descr = 'Pickled numpy ndarray - .npy'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         numpy.save(outFile, data[xslice, yslice, zslice])
 
-        if not metadata == None:
+        if not metadata is None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
-            if not origName == None:
+            if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
 
             xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
@@ -277,6 +308,12 @@ class NumpyExporter(Exporter):
             xmd.writeXML(xmlFile)
             #xmd.WriteSimple(xmlFile)
 
+        if progressCallback:
+            try:
+                progressCallback(100, 100)
+            except:
+                pass
+
 exporter(NumpyExporter)
 
 #@exporter
@@ -284,12 +321,18 @@ class PSFExporter(Exporter):
     extension = '*.psf'
     descr = 'PYME psf data - .psf'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         #numpy.save(outFile, data[xslice, yslice, zslice])
         import cPickle
         fid = open(outFile, 'wb')
         cPickle.dump((data[xslice, yslice, zslice], metadata.voxelsize), fid, 2)
         fid.close()
+
+        if progressCallback:
+            try:
+                progressCallback(100, 100)
+            except:
+                pass
 
 exporter(PSFExporter)
 
@@ -298,7 +341,7 @@ class TxtExporter(Exporter):
     extension = '*.txt'
     descr = 'Tab formatted txt  - .txt'
 
-    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None):
+    def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         #numpy.save(outFile, data[xslice, yslice, zslice])
         #import cPickle
 
@@ -330,6 +373,12 @@ class TxtExporter(Exporter):
 
         fid.close()
 
+        if progressCallback:
+            try:
+                progressCallback(100, 100)
+            except:
+                pass
+
 exporter(TxtExporter)
 #exporters = {'PYME HDF - .h5': H5Exporter,
 #            'TIFF (stack if 3D) - .tif' : TiffStackExporter,
@@ -354,7 +403,7 @@ class ExportDialog(wx.Dialog):
 #
 #        vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 5)
 
-        if not roi == None:
+        if not roi is None:
             bsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Cropping'), wx.VERTICAL)
             gsizer = wx.FlexGridSizer(4,4,5,5)
 
@@ -415,11 +464,13 @@ class ExportDialog(wx.Dialog):
 
 def _getFilename(defaultExt = '*.tif'):
         wcs  = []
+        exts = []
 
         defIndex = 0
 
         for i, e in enumerate(exporters.values()):
             wcs.append(e.descr + '|' + e.extension)
+            exts.append(e.extension[1:])
             if e.extension == defaultExt:
                 defIndex = i
 
@@ -431,6 +482,13 @@ def _getFilename(defaultExt = '*.tif'):
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             fname = fdialog.GetPath().encode()
+
+            #we decide which exporter to use based on extension. Ensure that we have one (some platforms do not
+            #automatically add to path.
+            if os.path.splitext(fname)[1] == '':
+                #we didn't get an extension, deduce by looking at which filter was selected
+                filtIndex = fdialog.GetFilterIndex()
+                fname += exts[filtIndex]
         else:
             fname = None
 
@@ -456,7 +514,7 @@ def CropExportData(vp, mdh=None, events=None, origName = None):
     if (succ == wx.ID_OK):
         filename = _getFilename()
 
-        if filename == None:
+        if filename is None:
             dlg.Destroy()
             return
 
@@ -473,12 +531,12 @@ def CropExportData(vp, mdh=None, events=None, origName = None):
     
 
 
-def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif', filename=None):
-    if filename == None:
+def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif', filename=None, progressCallback=None):
+    if filename is None:
         #show file selection dialog box
         filename = _getFilename(defaultExt)
         
-    if filename == None:
+    if filename is None:
         #we cancelled the dialog - exit
         return
 
@@ -494,7 +552,7 @@ def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif',
         return
 
     exp = exportersByExtension[ext]()
-    exp.Export(ds, filename, slice(0, ds.shape[0], 1), slice(0, ds.shape[1], 1), slice(0, ds.shape[2], 1),mdh, events, origName)
+    exp.Export(ds, filename, slice(0, ds.shape[0], 1), slice(0, ds.shape[1], 1), slice(0, ds.shape[2], 1),mdh, events, origName, progressCallback=progressCallback)
     return filename
     
 

@@ -1,6 +1,7 @@
 import pandas as pd
 import json
 import sys
+import numpy as np
 
 
 def build_call_tree_threads(df):
@@ -21,7 +22,25 @@ def build_call_tree_threads(df):
 
     gb = df.groupby('thread')
 
-    threadNames = gb.groups.keys()
+    #threadNames = gb.groups.keys()
+
+    tst = gb['time'].min()
+    tet = gb['time'].max()
+
+    tst.sort_values(inplace=True)
+    threadNames = list(tst.keys())
+    tet = np.array(tet[threadNames])
+    tst = np.array(tst)
+
+    thread_levels = np.zeros(len(tet), 'i')
+
+    thread_levels[1] = np.logical_and(tet[0] >= tst[1], tst[0] <= tet[1])
+    for i in xrange(2, len(tst)):
+        lower_levels = thread_levels[:i][np.logical_and(tet[:i] >= tst[i], tst[:i] <= tet[i])]
+        if len(lower_levels) == 0:
+            thread_levels[i] = 0
+        else:
+            thread_levels[i] = np.max(thread_levels[:i][np.logical_and(tet[:i] >= tst[i], tst[:i] <= tet[i])]) + 1
 
     for threadIDX, k in enumerate(threadNames):
         print(k)
@@ -36,16 +55,23 @@ def build_call_tree_threads(df):
                 level += 1
                 stack.append((l.time, l.file, l.function))
             elif l.event == 'return':
-                c = stack.pop()
-                out.append({'ts': c[0],
-                            'f': l.file,
-                            'n': l.function,
-                            'tf': l.time,
-                            'l': level,
-                            'td': threadIDX})
-                level -= 1
+                try:
+                    c = stack.pop()
+                    out.append({'ts': c[0],
+                                'f': l.file,
+                                'n': l.function,
+                                'tf': l.time,
+                                'l': level,
+                                'td': threadIDX,
+                                'tl' : float(thread_levels[threadIDX])})
+                    level -= 1
+                except IndexError:
+                    pass
 
-    return {'callstack': out, 'threadNames': threadNames}
+    threadLines = [{'ts' : float(tst_i), 'tf' : float(tet_i), 'tl' : float(tl_i)} for tst_i, tet_i, tl_i in zip(tst, tet, thread_levels)]
+
+
+    return {'callstack': out, 'threadNames': threadNames, 'threadLines' : threadLines, 'maxConcurrentThreads' : thread_levels.max() + 1}
 
 
 def convert(infile='prof_spool.txt', outfile='prof_spool.json'):

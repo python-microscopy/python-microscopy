@@ -20,5 +20,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
+"""
+This package contains the image viewer.
+
+The bulk of the viewer code lives in :py:mod:`PYME.DSView.dsviewer`, with the other modules providing support. A lot of
+the functionality is provided through the plugin modules in the :py:mod:`PYME.DSView.modules` package.
+
+The viewer itself is launched using the `dh5view` script.
+"""
 from dsviewer import View3D, ViewIm3D
 from PYME.IO.image import ImageStack

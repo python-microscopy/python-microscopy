@@ -20,3 +20,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
+"""
+A dumping place for utility functions I don't know where else to put.
+"""

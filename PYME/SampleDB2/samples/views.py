@@ -79,7 +79,7 @@ def slide_index(request):
 
     page = request.REQUEST.get('page')
     #print page
-    if page == None:
+    if page is None:
         page = '1'
 
     try:

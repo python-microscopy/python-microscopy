@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from PYME.LMVis import inpFilt
+from PYME.IO import tabular as inpFilt
 
 from PYME.Analysis import piecewiseMapping
 
@@ -62,13 +62,13 @@ class Pipeline:
         self.edb = None
         self.GeneratedMeasures = {}
 
-        if not filename==None:
+        if not filename is None:
             #self.glCanvas.OnPaint(None)
             self.OpenFile(filename)
 
 
     def RegenFilter(self):
-        if not self.selectedDataSource == None:
+        if not self.selectedDataSource is None:
             self.filter = inpFilt.resultsFilter(self.selectedDataSource, **self.filterKeys)
             if self.mapping:
                 self.mapping.resultsSource = self.filter
@@ -236,7 +236,7 @@ class Pipeline:
         for structure, dye in labels:
             ratio = dyeRatios.getRatio(dye, self.mdh)
 
-            if not ratio == None:
+            if not ratio is None:
                 self.fluorSpecies[structure] = ratio
                 self.fluorSpeciesDyes[structure] = dye
                 self.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))

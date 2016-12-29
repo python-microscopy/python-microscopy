@@ -46,15 +46,22 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS):
     
     for i in range(inputLengths[0]):
         in_d = {k:v[i] for k, v in inputGlobs.items()}
+
+        file_stub = os.path.splitext(os.path.basename(in_d.values()[0]))[0]
         
-        fns = os.path.join(output_dir, os.path.splitext(os.path.split(in_d.values()[0])[-1])[0])
+        fns = os.path.join(output_dir, file_stub)
         out_d = {k:('%s_%s'% (fns,k)) for k in  outputNames}
-        
-        taskParams.append((recipe, in_d, out_d))
-        
-    pool = multiprocessing.Pool(num_procs)
+
+        cntxt = {'output_dir' : output_dir, 'file_stub': file_stub}
+
+        taskParams.append((recipe, in_d, out_d, cntxt))
+
+    if num_procs == 1:
+        map(runRec, taskParams)
+    else:
+        pool = multiprocessing.Pool(num_procs)
     
-    pool.map(runRec, taskParams)
+        pool.map(runRec, taskParams)
 
 
 def main():

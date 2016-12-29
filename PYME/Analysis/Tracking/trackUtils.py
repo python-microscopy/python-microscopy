@@ -47,8 +47,10 @@ class FeaturePlot(object):
         plt.tight_layout()
         
         plt.ion()
-        
-        return mpld3.fig_to_html(f)
+
+        ret = mpld3.fig_to_html(f)
+        plt.close(f)
+        return ret
         
 class FeatureMean(object):
     def __init__(self, clump):
@@ -117,7 +119,7 @@ class Clump(object):
         
     def save(self, filename, keys = None):
         d = {}        
-        if keys == None:                    
+        if keys is None:
             d.update(self)
         else:
             for k in keys:
@@ -216,8 +218,10 @@ class Track(Clump):
         plt.tight_layout(pad=2)
         
         plt.ion()
-        
-        return mpld3.fig_to_html(f)
+
+        ret = mpld3.fig_to_html(f)
+        plt.close(f)
+        return ret
         
     @property
     def movieplot(self):
@@ -234,7 +238,7 @@ class Track(Clump):
         xp = int(np.round(xp))
         yp = int(np.round(yp))
         
-        if not self.image == None:
+        if not self.image is None:
             for i in range(self.nEvents):
                 plt.subplot(1, self.nEvents, i+1)
                 img = self.image[(xp - 10):(xp + 10), (yp - 10):(yp + 10), self['t'][i]]
@@ -255,8 +259,10 @@ class Track(Clump):
         plt.tight_layout(pad=1)
         
         plt.ion()
-        
-        return mpld3.fig_to_html(f)
+
+        ret = mpld3.fig_to_html(f)
+        plt.close(f)
+        return ret
         
     #@property
     
@@ -322,17 +328,9 @@ def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
     trackVelocities[I] = calcTrackVelocity(x[I], y[I], clumpIndices[I], t.astype('f')[I])
     #print b
 
-    ds_clumpIndices = -1*np.ones(len(pipeline.selectedDataSource['x']))
-    ds_clumpIndices[pipeline.filter.Index] = clumpIndices
-    pipeline.selectedDataSource.addColumn('clumpIndex', ds_clumpIndices)
-
-    ds_clumpSizes = np.zeros(ds_clumpIndices.shape)
-    ds_clumpSizes[pipeline.filter.Index] = numPerClump[clumpIndices - 1]
-    pipeline.selectedDataSource.addColumn('clumpSize', ds_clumpSizes)
-
-    ds_trackVelocities = np.zeros_like(ds_clumpIndices)
-    ds_trackVelocities[pipeline.filter.Index] = trackVelocities
-    pipeline.selectedDataSource.addColumn('trackVelocity', ds_trackVelocities)
+    pipeline.addColumn('clumpIndex', clumpIndices, -1)
+    pipeline.addColumn('clumpSize', numPerClump[clumpIndices - 1])
+    pipeline.addColumn('trackVelocity', trackVelocities)
     
     pipeline.clumps = ClumpManager(pipeline)
 

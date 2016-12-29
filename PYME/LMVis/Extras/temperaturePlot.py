@@ -26,9 +26,7 @@ class TempPlotter:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        ID_PLOT_TEMPERATURE = wx.NewId()
-        visFr.extras_menu.Append(ID_PLOT_TEMPERATURE, "Plot temperature record")
-        visFr.Bind(wx.EVT_MENU, self.OnPlotTemperature, id=ID_PLOT_TEMPERATURE)
+        visFr.AddMenuItem('Extras', "Plot temperature record", self.OnPlotTemperature)
 
     def OnPlotTemperature(self, event):
         from PYME.misc import tempDB

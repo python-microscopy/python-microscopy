@@ -35,17 +35,17 @@ class RemoteDigiData(DigiData, Pyro.core.ObjBase):
 
 if __name__ == '__main__':
 
-	Pyro.config.PYRO_MOBILE_CODE = 1
-	Pyro.core.initServer()
-	ns=Pyro.naming.NameServerLocator().getNS()
-	daemon=Pyro.core.Daemon()
-	daemon.useNameServer(ns)
+    Pyro.config.PYRO_MOBILE_CODE = 1
+    Pyro.core.initServer()
+    ns=Pyro.naming.NameServerLocator().getNS()
+    daemon=Pyro.core.Daemon()
+    daemon.useNameServer(ns)
 
-	dd = RemoteDigiData()
-	uri=daemon.connect(dd,"DigiData")
+    dd = RemoteDigiData()
+    uri=daemon.connect(dd,"DigiData")
 
-	try:
-		daemon.requestLoop()
-	finally:
-		daemon.shutdown(True)
+    try:
+        daemon.requestLoop()
+    finally:
+        daemon.shutdown(True)
 

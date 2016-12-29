@@ -43,7 +43,7 @@ def OpenFile(argv, show=False):
     else:
         im = ImageStack(queueURI=options.queueURI)
 
-    if options.mode == None:
+    if options.mode is None:
         mode = im.mode
     else:
         mode = options.mode

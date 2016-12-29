@@ -1,0 +1,62 @@
+<div class="panel-heading"><span class="glyphicon glyphicon-fire"></span>&nbsp;&nbsp;Localization Settings</div>
+<div class="panel-body">
+
+
+    <form class="form" id="form_localize" action="/localization/localize/" method="post">
+
+        {% csrf_token %}
+
+        <p><label for="id_Analysis-FitModule">Fit module:</label>
+            <select id="id_Analysis-FitModule" name="Analysis.FitModule" onchange="console.log(this.value);on_analysis_settings(this.value);">
+                {% for am in analysisModuleChoices %}
+                    {% if am == analysisModule %}
+                        <option value="{{ am }}" selected>{{ am }}</option>
+                    {% else %}
+                        <option value="{{ am }}" >{{ am }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </p>
+
+{#        {{ form.as_p }}#}
+{#        {% for field in form.visible_fields %}#}
+{#            <div class="form-group">#}
+{#                {{ field.errors }}#}
+{#                {{ field.label_tag }} {{ field }}#}
+{#            </div>#}
+{#        {% endfor %}#}
+        {% for category, fields in categorized_fields.items %}
+            <div class="form-group">
+                {% for field in fields %}
+                    <div class="cu-form-field">
+                    {{ field.errors }}
+                    {{ field.label_tag }} {{ field }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <div class="form-group pull-right">
+            <input type="submit" value="Launch analysis with selected" class="btn btn-primary"/>
+        </div>
+    </form>
+
+    <script>
+        var findSelected = function () {
+            f = $('#form_localize');
+            $('.cu-hidden-seriesname').remove();
+            var seriesNames=[];
+            $('.cu-selected').each(function(index, item){
+                var sn = item.getAttribute('data-cu-seriesname');
+                if (sn != null) {
+                    seriesNames.push(sn);
+                    f.append('<input name="series" class="cu-hidden-seriesname" type="hidden" value="' + sn + '">')
+                }
+            });
+            console.log(seriesNames);
+        };
+
+        $('#form_localize').submit(findSelected);
+    </script>
+
+</div>
+

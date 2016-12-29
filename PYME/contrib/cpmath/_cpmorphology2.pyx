@@ -441,7 +441,7 @@ def index_lookup(np.ndarray[dtype=np.int32_t, ndim=1, negative_indices=False] in
         np.uint32_t center, hit_count, idx, indexer
         np.int32_t idxi, idxj
 
-    if iterations == None:
+    if iterations is None:
         # Worst case - remove one per iteration
         iterations = len(index_i)
 

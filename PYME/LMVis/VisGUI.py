@@ -40,7 +40,7 @@ from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
 import os # for os.getenv below
-from PYME.LMVis import gl_render3D
+#from PYME.LMVis import gl_render3D
 
 from PYME.LMVis import colourPanel
 #from PYME.LMVis import renderers
@@ -52,7 +52,6 @@ from PYME.LMVis import pipeline
 from PYME.ui import MetadataTree
 
 import numpy as np
-
 
 from PYME.DSView import eventLogViewer
 
@@ -79,7 +78,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         
         #self.Quads = None
                
-        self.SetMenuBar(self.CreateMenuBar())
+        #self.SetMenuBar(self.CreateMenuBar())
+        self.CreateMenuBar()
 
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
@@ -168,7 +168,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.CreateFoldPanel()
 
 
-        if not filename==None:
+        if not filename is None:
             self.OpenFile(filename)
             #self.refv = False
             wx.CallAfter(self.RefreshView)
@@ -259,7 +259,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         return self._mgr.GetNotebooks()[0]
             
     def _removeOldTabs(self):
-        if not self.elv == None: #remove previous event viewer
+        if not self.elv is None: #remove previous event viewer
             i = 0
             found = False
             while not found and i < self.notebook.GetPageCount():
@@ -269,7 +269,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                 else:
                     i += 1
                     
-        if not self.colp == None: #remove previous colour viewer
+        if not self.colp is None: #remove previous colour viewer
             i = 0
             found = False
             while not found and i < self.notebook.GetPageCount():
@@ -279,7 +279,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                 else:
                     i += 1
                     
-        if not self.mdp == None: #remove previous metadata viewer
+        if not self.mdp is None: #remove previous metadata viewer
             i = 0
             found = False
             while not found and i < self.notebook.GetPageCount():
@@ -387,7 +387,7 @@ def main():
     if len(sys.argv) > 1:
         filename = sys.argv[1]
 
-    if wx.GetApp() == None: #check to see if there's already a wxApp instance (running from ipython -pylab or -wthread)
+    if wx.GetApp() is None: #check to see if there's already a wxApp instance (running from ipython -pylab or -wthread)
         main_(filename)
     else:
         #time.sleep(1)
@@ -396,6 +396,9 @@ def main():
         visFr.RefreshView()
         
 if __name__ == '__main__':
+    #from PYME.util import mProfile
+    #mProfile.profileOn(['multiviewMapping.py', 'pyDeClump.py'])
     main()
+    #mProfile.report()
 
 

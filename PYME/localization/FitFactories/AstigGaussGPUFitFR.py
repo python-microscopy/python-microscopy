@@ -45,12 +45,12 @@ def f_gaussAstigSlow(p, X, Y):
 
 fresultdtype=[('tIndex', '<i4'),
               ('fitResults', [('y0', '<f4'), ('x0', '<f4'), #Fang and Davids xys are swapped
-                              ('photons', '<f4'),
+                              ('A', '<f4'),
                               ('background', '<f4'),
                               ('sigmay', '<f4'),('sigmax', '<f4')]),
 
               ('fitError', [('y0', '<f4'), ('x0', '<f4'),
-                              ('photons', '<f4'),
+                              ('A', '<f4'),
                               ('background', '<f4'),
                               ('sigmay', '<f4'),('sigmax', '<f4')]),
               ('resultCode', '<i4'),
@@ -70,7 +70,7 @@ def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, LLH=Non
 _warpDrive = None
 
 missing_warpDrive_msg = """
-Could not import the warpDrive module. GPU fitting requires the warpDrive module, 
+Could not import the warpDrive module. GPU fitting requires the warpDrive module,
 which is distributed separately due to licensing issues. The warpDrive module is
 available on request and is free for academic use. Please contact David Baddeley
 or Joerg Bewersdorf.
@@ -79,85 +79,74 @@ or Joerg Bewersdorf.
 class GaussianFitFactory:
     X = None
     Y = None
-    
+
     def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None):
         """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. """
 
-        self.data = np.ascontiguousarray(np.squeeze(data), dtype=np.float32)
+        self.data = np.squeeze(data).astype(np.float32)  # np.ascontiguousarray(np.squeeze(data), dtype=np.float32)
         self.metadata = metadata
 
-        """ next 3 lines are currently unused """
-        self.background = background
+        self.background = np.squeeze(background)  # if not none, will be set to contiguous float32 inside of detector class method
         self.noiseSigma = noiseSigma
         self.fitfcn = fitfcn
 
 
-
-
-    def FindAndFit(self, threshold=4, gui=False, cameraMaps=None):
+    def refreshWarpDrive(self, cameraMaps):
         try:
             import warpDrive
         except ImportError:
             print("GPU fitting available on-request for academic use. Please contact David Baddeley or Joerg Bewersdorf.")
-            
+
             raise ImportError(missing_warpDrive_msg)
-        
+
         global _warpDrive  # One warpDrive instance for each process, re-used for subsequent fits.
 
         # get varmap and flatmap
         varmap = cameraMaps.getVarianceMap(self.metadata)
         if not np.isscalar(varmap):
-            self.varmap = np.ascontiguousarray(varmap)
+            self.varmap = varmap.astype(np.float32)  # np.ascontiguousarray(varmap)
         else:
             self.varmap = varmap*np.ones_like(self.data)
 
-        #fixme currently detector object takes gain, flatmap is one over this. need to switch var maps of our cameras over eventually and reconcile
         flatmap = cameraMaps.getFlatfieldMap(self.metadata)
         if not np.isscalar(flatmap):
-            self.flatmap = np.ascontiguousarray(1./flatmap)
+            self.flatmap = flatmap.astype(np.float32)  # flatmat is mean-normalized and unitless
         else:
             #flatmap = self.metadata['Camera.TrueEMGain']*self.metadata['Camera.ElectronsPerCount']
-            self.flatmap = (1./flatmap)*np.ones_like(self.data)
+            self.flatmap = flatmap*np.ones_like(self.data) # flatmat is mean-normalized and unitless
 
         # subtract darkmap
         #### DB - Dark map is already subtracted by remFitBuf!!!! NOTE: flatfielding will also have been done, so undo
         #darkmap = cameraMaps.getDarkMap(self.metadata)
         #self.data -= darkmap #same op for scalar or array
 
-        ### Undo the flatfielding we did in remFitBuf
-        self.data = self.data*self.flatmap
+        ### Undo the flatfielding we did in remFitBuf: (img.astype('f')-dk)*flat
+        self.data = self.data/self.flatmap  # no conversion here, flatmap normed so data still in [ADU]
+        if self.background is not None:  # flatfielding is also done on moving-averaged background
+            self.background = self.background/self.flatmap  # no conversion here, flatmap normed so data still in [ADU]
 
         # Account for any changes we need to make in memory allocation on the GPU
         if not _warpDrive:
             #Initialize new detector object for this process
             dfilter1 = warpDrive.normUnifFilter(12)
             dfilter2 = warpDrive.normUnifFilter(6)
-            _warpDrive = warpDrive.detector(np.shape(self.data), self.data.dtype.itemsize, dfilter1, dfilter2)
-            _warpDrive.allocateMem()
-            _warpDrive.prepvar(self.varmap, self.flatmap)
-            
+            _warpDrive = warpDrive.detector(dfilter1, dfilter2)
+            _warpDrive.allocateMem(np.shape(self.data), self.data.dtype.itemsize)
+            _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
+
             #If the data is coming from a different region of the camera, reallocate
-            #note that 'and' is short circuiting in Python. Just check the first 20x20 elements
         elif _warpDrive.data.shape == self.data.shape:
-            if (not np.array_equal(self.varmap[:20, :20], _warpDrive.varmap[:20, :20])):
-                _warpDrive.prepvar(self.varmap, self.flatmap)
+            # check if both corners are the same
+            topLeft = np.array_equal(self.varmap[:20, :20], _warpDrive.varmap[:20, :20])
+            botRight = np.array_equal(self.varmap[-20:, -20:], _warpDrive.varmap[-20:, -20:])
+            if not (topLeft or botRight):
+                _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
         else:  # data is a different shape - we know that we need to re-allocate and prepvar
-            _warpDrive.allocateMem()
-            _warpDrive.prepvar(self.varmap, self.varmap)
+            _warpDrive.allocateMem(np.shape(self.data), self.data.dtype.itemsize)
+            _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
 
-        #PYME ROISize is a half size
-        roiSize = int(2*self.metadata.getEntry('Analysis.ROISize') + 1)
-
-        #######################
-        # Actually do the fits
-        _warpDrive.smoothFrame(self.data)
-        _warpDrive.getCand(threshold, roiSize)
-        if _warpDrive.candCount == 0:
-            resList = np.empty(0, FitResultsDType)
-            return resList
-        _warpDrive.fitItToWinIt(roiSize)
-
+    def getRes(self):
         # LLH: (N); dpars and CRLB (N, 6)
         #convert pixels to nm; voxelsize in units of um
         dpars = np.reshape(_warpDrive.dpars, (_warpDrive.maxCandCount, 6))[:_warpDrive.candCount, :]
@@ -185,9 +174,60 @@ class GaussianFitFactory:
 
         # package our results with the right labels
         for ii in range(_warpDrive.candCount):
-            resList[ii] = GaussianFitResultR(_warpDrive.dpars[ii, :], self.metadata, resultCode, CRLB[ii, :], LLH[ii], _warpDrive.candCount)
+            resList[ii] = GaussianFitResultR(dpars[ii, :], self.metadata, resultCode, CRLB[ii, :], LLH[ii], _warpDrive.candCount)
 
         return np.hstack(resList)
+
+    def FindAndFit(self, threshold=4, gui=False, cameraMaps=None, noiseSigma=None):
+        """
+
+        Args:
+            threshold: in units of noiseSigma (if supplied)
+            gui: unused
+            cameraMaps: cameraInfoManager object (see remFitBuf.py)
+            noiseSigma: (over-)estimate of the noise level at each pixel (see fitTask.calcSigma in remFitBuf.py)
+
+        Returns:
+            output of self.getRes
+
+        """
+        # make sure we've loaded and pre-filtered maps for the correct FOV
+        self.refreshWarpDrive(cameraMaps)
+
+        # use signal to noise thresholding if available
+        #thresh = threshold*noiseSigma if (noiseSigma is not None) else threshold
+
+        #PYME ROISize is a half size
+        roiSize = int(2*self.metadata.getEntry('Analysis.ROISize') + 1)
+
+        ########## Actually do the fits #############
+        # toggle background subtraction (done both in detection and the fit)
+        if self.metadata.getOrDefault('Analysis.subtractBackground', False):
+            _warpDrive.smoothFrame(self.data, self.background)
+        else:
+            _warpDrive.smoothFrame(self.data)
+        _warpDrive.getCand(threshold, roiSize, noiseSigma, self.metadata['Camera.ElectronsPerCount'])
+        if _warpDrive.candCount == 0:
+            resList = np.empty(0, FitResultsDType)
+            return resList
+        _warpDrive.fitItToWinIt(roiSize)
+        return self.getRes()
+
+    def FromPoint(self, x, y):
+        from PYME.localization import remFitBuf
+        cameraMaps = remFitBuf.CameraInfoManager()
+        self.refreshWarpDrive(cameraMaps)
+
+
+        #PYME ROISize is a half size
+        roiSize = int(2*self.metadata.getOrDefault('Analysis.ROISize', 7.5) + 1)
+
+
+        _warpDrive.insertTestCandidates(int(x) + int(y)*_warpDrive.rsize)  # 1799)
+        _warpDrive.insertData(self.data)
+        _warpDrive.fitItToWinIt(roiSize)
+
+        return self.getRes()
 
 
     @classmethod
@@ -201,7 +241,7 @@ class GaussianFitFactory:
 # so that fit tasks know which class to use
 FitFactory = GaussianFitFactory
 FitResult = GaussianFitResultR
-FitResultsDType = fresultdtype #only defined if returning data as numarray
+FitResultsDType = fresultdtype  #only defined if returning data as numarray
 
 #this means that factory is reponsible for it's own object finding and implements
 #a GetAllResults method that returns a list of localisations

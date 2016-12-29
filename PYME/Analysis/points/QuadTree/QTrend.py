@@ -82,8 +82,8 @@ def rendQTa(ar, qt, maxDepth=100):
         #if dx < dX:
         #    print dx
         ar[round((l.x0 - qt.x0)/dX):round((l.x1 - qt.x0)/dX),
-	   round((l.y0 - qt.y0)/dY):round((l.y1 - qt.y0)/dY)] = \
-	   (float(l.numRecords)*2**(2*(l.depth - maxDepth)))
+       round((l.y0 - qt.y0)/dY):round((l.y1 - qt.y0)/dY)] = \
+       (float(l.numRecords)*2**(2*(l.depth - maxDepth)))
 
     #return ar
 
@@ -109,10 +109,10 @@ def rendQTan(ar, qt, maxDepth=100):
     numevts = 0
     nevts2 = 0
     for l in lvs:
-	ix0 = round((l.x0 - qt.x0)/dX)
-	ix1 = round((l.x1 - qt.x0)/dX)
-	iy0 = round((l.y0 - qt.y0)/dY)
-	iy1 = round((l.y1 - qt.y0)/dY)
+        ix0 = round((l.x0 - qt.x0)/dX)
+        ix1 = round((l.x1 - qt.x0)/dX)
+        iy0 = round((l.y0 - qt.y0)/dY)
+        iy1 = round((l.y1 - qt.y0)/dY)
         ar[ix0:ix1,iy0:iy1] += float(l.numRecords)/float((ix1-ix0)*(iy1-iy0))
 
 
@@ -147,7 +147,7 @@ class QTRendererNode:
     def drawNode(self, ax, offset=(0,0), iMax=None):
         x0,y0 = offset
 
-        if iMax == None:
+        if iMax is None:
             iMax = self.i
 
         if self.type == 'leaf':
@@ -185,7 +185,7 @@ class QTRendererNode:
     def drawNodeDL(self, ax1, ax2, offset=(0,0), iMax=None):
         x0,y0 = offset
 
-        if iMax == None:
+        if iMax is None:
             iMax = self.i
 
         if self.type == 'leaf':

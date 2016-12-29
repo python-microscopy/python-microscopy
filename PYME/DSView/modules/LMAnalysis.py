@@ -35,10 +35,11 @@ from PYME.localization import MetaDataEdit as mde
 
 from PYME.IO import MetaDataHandler
 from PYME.IO.FileUtils import fileID
-from PYME.IO.FileUtils.nameUtils import genResultFileName
+from PYME.IO.FileUtils.nameUtils import genResultFileName, genClusterResultFileName
 
 from PYME.LMVis import progGraph as progGraph
-from PYME.LMVis import pipeline, inpFilt
+from PYME.LMVis import pipeline
+from PYME.IO import tabular
 
 import dispatch
 
@@ -49,6 +50,16 @@ from PYME.Acquire.mytimer import mytimer
 from PYME.DSView import fitInfo
 from PYME.DSView.OverlaysPanel import OverlayPanel
 
+try:
+    from PYME.ParallelTasks import HTTPTaskPusher
+
+    #test for a running task distributor
+    distribURI = HTTPTaskPusher._getTaskQueueURI()
+    NEW_STYLE_DISTRIBUTION=True
+except:
+    NEW_STYLE_DISTRIBUTION=False
+
+import logging
 
 debug = True
 
@@ -71,6 +82,26 @@ def _verifyResultsFilename(resultsFilename):
         else:
             raise RuntimeError('Invalid results file - not running')
             
+    return resultsFilename
+
+
+def _verifyClusterResultsFilename(resultsFilename):
+    from PYME.IO import clusterIO
+    if clusterIO.exists(resultsFilename):
+        di, fn = os.path.split(resultsFilename)
+        i = 1
+        stub = os.path.splitext(fn)[0]
+        while clusterIO.exists(os.path.join(di, stub + '_%d.h5r' % i)):
+            i += 1
+
+        fdialog = wx.TextEntryDialog(None, 'Analysis file already exists, please select a new filename')#,
+        fdialog.SetValue(stub + '_%d.h5r' % i)
+        succ = fdialog.ShowModal()
+        if (succ == wx.ID_OK):
+            resultsFilename = os.path.join(di, fdialog.GetValue().encode())
+        else:
+            raise RuntimeError('Invalid results file - not running')
+
     return resultsFilename
 
 
@@ -131,6 +162,7 @@ class AnalysisSettingsView(object):
     def OnFitModuleChanged(self, event):
         self.customOptionsSizer.Clear(True)
         self._populateCustomAnalysisPanel(self.customOptionsPan, self.customOptionsSizer)
+        self.customOptionsPan.GetTopLevelParent().OnSize(None)
         self.analysisMDH['Analysis.FitModule'] = self.fitFactories[self.cFitType.GetSelection()]
 
     def GenAnalysisPanel(self, _pnl):
@@ -259,6 +291,26 @@ class AnalysisController(object):
             return self.pushImagesQueue(image)
         else: #generic catchall for other data sources
             return self.pushImagesDS(image)
+
+    def pushImagesCluster(self, image):
+        from PYME.ParallelTasks import HTTPTaskPusher
+        #resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
+        resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(image.seriesName))
+        logging.debug('Results file: ' + resultsFilename)
+
+        #debugPrint('Results file = %s' % resultsFilename)
+
+        self.resultsMdh = MetaDataHandler.NestedClassMDHandler(self.analysisMDH)
+        self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
+
+        self.pusher = HTTPTaskPusher.HTTPTaskPusher(dataSourceID=image.seriesName,
+                                               metadata=self.resultsMdh, resultsFilename=resultsFilename)
+
+        self.queueName = self.pusher.queueID
+
+        debugPrint('Queue created')
+
+        #self.onImagesPushed.send(self)
             
 
     def pushImagesHDF(self, image):
@@ -332,7 +384,7 @@ class AnalysisController(object):
         except:
             self.tq = None
         
-        if self.tq == None:
+        if self.tq is None:
             from PYME.misc.computerName import GetComputerName
             compName = GetComputerName()
             
@@ -459,6 +511,8 @@ class LMAnalyser2(object):
 
         self.numAnalysed = 0
         self.numEvents = 0
+
+        self.newStyleTaskDistribution = NEW_STYLE_DISTRIBUTION
         
         dsviewer.pipeline = pipeline.Pipeline()
         self.ds = None
@@ -507,7 +561,7 @@ class LMAnalyser2(object):
 
     def OnToggleBackground(self, event):
         self.SetMDItems()
-        if self.do.ds.bgRange == None:
+        if self.do.ds.bgRange is None:
             self.do.ds.bgRange = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
             self.do.ds.dataStart = int(self.tStartAt.GetValue())
             
@@ -542,7 +596,10 @@ class LMAnalyser2(object):
         self._checkmap('DarkMapID')
         self._checkmap('VarianceMapID')
         self._checkmap('FlatfieldMapID')
-        self.analysisController.pushImages(self.image)
+        if self.newStyleTaskDistribution:
+            self.analysisController.pushImagesCluster(self.image)
+        else:
+            self.analysisController.pushImages(self.image)
 
     def OnImagesPushed(self, **kwargs):
         if debug:
@@ -598,7 +655,7 @@ class LMAnalyser2(object):
             if len(newResults) > 0:
                 if len(self.fitResults) == 0:
                     self.fitResults = newResults
-                    self.ds = inpFilt.fitResultsSource(self.fitResults)
+                    self.ds = tabular.fitResultsSource(self.fitResults)
                     self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds = self.dsviewer.image.imgBounds)
                     self.dsviewer.pipeline.mdh = self.resultsMdh
                     try:
@@ -728,16 +785,7 @@ class LMAnalyser2(object):
         zp = self.do.zp
 
         analysisMDH = self.analysisController.analysisMDH
-
-        fitMod = analysisMDH['Analysis.FitModule']
-
-        bgFrames = analysisMDH['Analysis.BGRange']
-        detThresh = analysisMDH['Analysis.DetectionThreshold']
         
-        laserOn = analysisMDH.getOrDefault('EstimatedLaserOnFrameNo', 0)
-
-        bgi = range(max(zp + bgFrames[0],laserOn), max(zp + bgFrames[1],laserOn))
-
         self._checkmap('DarkMapID')
         self._checkmap('VarianceMapID')
         self._checkmap('FlatfieldMapID')
@@ -746,11 +794,7 @@ class LMAnalyser2(object):
         if mn == 'BufferedDataSource':
             mn = self.image.dataSource.dataSource.moduleName
 
-        #if 'Splitter' in fitMod:
-        #    ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'SplitterObjFindR', bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
-        #else:
-        #    ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(self.image.mdh), 'LatObjFindFR', bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
-        ft = remFitBuf.fitTask(self.image.seriesName, zp, detThresh, MetaDataHandler.NestedClassMDHandler(analysisMDH), fitMod, bgindices=bgi, SNThreshold=True,dataSourceModule=mn)
+        ft = remFitBuf.fitTask(dataSourceID=self.image.seriesName, frameIndex=zp, metadata=MetaDataHandler.NestedClassMDHandler(analysisMDH), dataSourceModule=mn)
         res = ft(gui=gui,taskQueue=self.tq)
         
         if gui:

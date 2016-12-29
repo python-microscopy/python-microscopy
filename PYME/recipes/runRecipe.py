@@ -10,17 +10,16 @@ from PYME.recipes import modules
 from argparse import ArgumentParser
 from PYME.IO.image import ImageStack
 import pandas as pd
+import tables
+from PYME.IO import tabular
+from PYME.IO import MetaDataHandler
+from PYME.IO import unifiedIO
+
+import logging
+logger = logging.getLogger(__name__)
+
 import numpy as np
 #import sys
-
-def loadInput(filename):
-    """Load input data from a file
-    
-    Currently only handles images (anything you can open in dh5view). TODO - 
-    extend to other types.
-    """
-    #modify this to allow for different file types - currently only supports images
-    return ImageStack(filename=filename, haveGUI=False)
 
 def saveDataFrame(output, filename):
     """Saves a pandas dataframe, inferring the destination type based on extension"""
@@ -29,9 +28,19 @@ def saveDataFrame(output, filename):
     elif filename.endswith('.xlsx') or filename.endswith('.xls'):
         output.to_excell(filename)
     elif filename.endswith('.hdf'):
+        tabular.mappingFilter(output).to_hdf(filename)
+    else:
+        tabular.mappingFilter(output).to_hdf(filename + '.hdf', 'Data')
+
+def saveTabular(output, filename):
+    """Saves a pandas dataframe, inferring the destination type based on extension"""
+    if filename.endswith('.csv'):
+        output.toDataFrame().to_csv(filename)
+    elif filename.endswith('.xlsx') or filename.endswith('.xls'):
+        output.toDataFrame().to_excell(filename)
+    elif filename.endswith('.hdf'):
         output.to_hdf(filename)
-    else: #append a .csv
-        #output.to_csv(filename + '.csv')
+    else:
         output.to_hdf(filename + '.hdf', 'Data')
     
 def saveOutput(output, filename):
@@ -41,16 +50,16 @@ def saveOutput(output, filename):
             output.Save(filename)
         except RuntimeError:
             output.Save(filename + '.tif')
+    elif isinstance(output, tabular.TabularBase):
+        saveTabular(output, filename)
     elif isinstance(output, pd.DataFrame):
         saveDataFrame(output, filename)
-    elif 'toDataFrame' in dir(output):
-        saveDataFrame(output.toDataFrame(), filename)
     elif isinstance(output, matplotlib.figure.Figure):
         output.savefig(filename)
-    else: #hope we can convert to a data frame
-        saveDataFrame(pd.DataFrame(output), filename)
+    else: #hope we can convert to a tabular format
+        saveTabular(tabular.mappingFilter(output), filename)
         
-def runRecipe(recipe, inputs, outputs):
+def runRecipe(recipe, inputs, outputs, context={}):
     """Load inputs and run recipe, saving outputs.
     
     Parameters
@@ -63,20 +72,26 @@ def runRecipe(recipe, inputs, outputs):
                   corresponding members of the namespace are saved to disk
                   following execution of the recipe.
     """
-    
-    #the recipe instance might be re-used - clear any previous data
-    recipe.namespace.clear()
-    
-    #load any necessary inputs and populate the recipes namespace    
-    for k, v in inputs.items():
-        recipe.namespace[k] = loadInput(v)
-    
-    ### Run the recipe ###
-    res = recipe.execute()
+    try:
+        #the recipe instance might be re-used - clear any previous data
+        recipe.namespace.clear()
 
-    #Save any outputs
-    for k, v in outputs.items():
-        saveOutput(recipe.namespace[k],v)    
+        #load any necessary inputs and populate the recipes namespace
+        for key, filename in inputs.items():
+            recipe.loadInput(filename, key)
+
+        ### Run the recipe ###
+        res = recipe.execute()
+
+        #Save any outputs [old-style, detected using the 'out' prefix.
+        for k, v in outputs.items():
+            saveOutput(recipe.namespace[k],v)
+
+        #new style output saving - using OutputModules
+        recipe.save(context)
+    except:
+        logger.exception('Error running recipe')
+        raise
     
 
 def main():
@@ -105,7 +120,7 @@ def main():
     outputs = {k: getattr(args, k) for k in recipe.outputs}
     
     ##Run the recipe    
-    runRecipe(recipe, inputs, outputs)
+    runRecipe(recipe, inputs, outputs) #TODO - fix for contexts
         
 if __name__ == '__main__':
     main()

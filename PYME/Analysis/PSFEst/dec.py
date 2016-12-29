@@ -60,7 +60,7 @@ class dec:
     def deconv(self, data, lamb, num_iters=10, alpha = None):#, Afunc=self.Afunc, Ahfunc=self.Ahfunc, Lfunc=self.Lfunc, Lhfunc=self.Lhfunc):
 
         #lamb = 2e-2
-        if (not alpha == None):
+        if (not alpha is None):
             self.alpha = alpha
             self.e1 = fftshift(exp(1j*self.alpha))
             self.e2 = fftshift(exp(2j*self.alpha))

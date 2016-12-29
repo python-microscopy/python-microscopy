@@ -94,7 +94,7 @@ class ObjectIdentifier(list):
         projData = self.__ProjData()
         
         #apply mask
-        if not (self.mask ==None):
+        if not (self.mask is None):
             maskedData = projData*self.mask
         else:
             maskedData = projData

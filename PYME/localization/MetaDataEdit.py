@@ -54,6 +54,10 @@ class FloatParam(MDParam):
 
     def updateValue(self, mdh, **kwargs):
         self.tValue.SetValue('%3.2f' % mdh.getOrDefault(self.paramName, self.default))
+
+    def formField(self):
+        from django import forms
+        return self.paramName , forms.FloatField(label=self.guiName, initial=self.default)
         
 
 class IntParam(MDParam):
@@ -89,6 +93,10 @@ class IntParam(MDParam):
     def updateValue(self, mdh, **kwargs):
         self.tValue.SetValue('%d' % mdh.getOrDefault(self.paramName, self.default))
 
+    def formField(self):
+        from django import forms
+        return self.paramName, forms.IntegerField(label=self.guiName, initial=self.default)
+
 class RangeParam(MDParam):
     def __init__(self, paramName, guiName, default=[0, 0], helpText='', **kwargs):
         self.paramName = paramName
@@ -123,6 +131,16 @@ class RangeParam(MDParam):
     def updateValue(self, mdh, **kwargs):
         val = ':'.join(['%d' % v for v in mdh.getOrDefault(self.paramName, self.default)])
         self.tValue.SetValue(val)
+
+    def formField(self):
+        from django import forms
+        class RangeField(forms.CharField):
+            def clean(self, value):
+                import json
+                val = json.loads(value)
+                return val
+
+        return self.paramName, RangeField(label=self.guiName, initial=repr(self.default))
         
         
 class StringParam(MDParam):
@@ -158,6 +176,10 @@ class StringParam(MDParam):
 
     def updateValue(self, mdh, **kwargs):
         self.tValue.SetValue(mdh.getOrDefault(self.paramName, self.default))
+
+    def formField(self):
+        from django import forms
+        return self.paramName, forms.CharField(label=self.guiName, initial=self.default, required=False)
 
         
 class FloatListParam(MDParam):
@@ -200,6 +222,16 @@ class FloatListParam(MDParam):
 
     def updateValue(self, mdh, **kwargs):
         self.tValue.SetValue(self._valToString(mdh.getOrDefault(self.paramName, self.default)))
+
+    def formField(self):
+        from django import forms
+        class FloatListField(forms.CharField):
+            def clean(self, value):
+                import json
+                val = json.loads(value)
+                return [float(v) for v in val]
+
+        return self.paramName, forms.FloatListField(label=self.guiName, initial=repr(self.default))
         
 
 class ChoiceParam(MDParam):
@@ -239,6 +271,10 @@ class ChoiceParam(MDParam):
 
     def updateValue(self, mdh, **kwargs):
         self.cValue.SetSelection(self.choices.index(mdh.getOrDefault(self.paramName, self.default)))
+
+    def formField(self):
+        from django import forms
+        return self.paramName, forms.ChoiceField(label=self.guiName, choices=[(c, c) for c in self.choiceNames], initial=self.default)
         
         
         
@@ -249,7 +285,7 @@ class FilenameParam(MDParam):
         self.guiName = guiName
         self.default = default
         self.filename = default
-        if not filename == None:
+        if not filename is None:
             self.filename = filename
         self.prompt = prompt
         self.wildcard = wildcard
@@ -273,7 +309,7 @@ class FilenameParam(MDParam):
         if syncMdh:
             if mdhChangedSignal:
                 mdhChangedSignal.connect(self.updateValue)
-            self.retrieveValue(mdh)
+            self.retrieveValue(mdh, False)
             bSetFile.Bind(wx.EVT_BUTTON, lambda e : self._setFile(mdh))
         hsizer.Add(bSetFile, 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -305,14 +341,15 @@ class FilenameParam(MDParam):
         else:
             return False
         
-    def retrieveValue(self, mdh):
+    def retrieveValue(self, mdh, must_be_defined=True):
         if not self.filename == self.default:
             mdh[self.paramName] = self.filename
-        elif self._setFile():
-            #try to call this manually
-            mdh[self.paramName] = self.filename
-        else:
-            raise RuntimeError('Required fit filename %s not defined' % self.paramName)
+        elif must_be_defined:
+            if self._setFile(mdh):
+                #try to call this manually
+                mdh[self.paramName] = self.filename
+            else:
+                raise RuntimeError('Required fit filename %s not defined' % self.paramName)
 
     def updateValue(self, mdh, **kwargs):
         import os, wx
@@ -336,10 +373,15 @@ class FilenameParam(MDParam):
             self.stFilename.SetForegroundColour(wx.Colour(0, 0, 0))
         else:
             self.stFilename.SetForegroundColour(wx.Colour(0, 128, 0))
+
+    def formField(self):
+        from django import forms
+        from PYME.misc import django_widgets
+        return self.paramName, forms.CharField(label=self.guiName, initial=self.default, required=False, widget=django_widgets.ClusterFileInput())
        
 
 class ShiftFieldParam(FilenameParam):    
-    def retrieveValue(self, mdh):
+    def retrieveValue(self, mdh, *args, **kwargs):
         import numpy as np
         
         oldfn = mdh.getOrDefault(self.paramName, None)
@@ -347,9 +389,9 @@ class ShiftFieldParam(FilenameParam):
             if self.filename == self.default:
                 self.filename = 'legacy'
                 oldfn = 'legacy'
-        FilenameParam.retrieveValue(self, mdh)
+        FilenameParam.retrieveValue(self, mdh, *args, **kwargs)
         
-        if not self.filename == oldfn:
+        if not self.filename == oldfn and not self.filename in ['<none>', '']:
             dx, dy = np.load(self.filename)
             mdh.setEntry('chroma.dx', dx)
             mdh.setEntry('chroma.dy', dy)
@@ -388,6 +430,10 @@ class BoolParam(MDParam):
 
     def updateValue(self, mdh, **kwargs):
         self.cbValue.SetValue(mdh.getOrDefault(self.paramName, self.default))
+
+    def formField(self):
+        from django import forms
+        return self.paramName, forms.BooleanField(label=self.guiName, initial=self.default, required=False)
  
 
 class BoolFloatParam(MDParam):
@@ -444,6 +490,11 @@ class BoolFloatParam(MDParam):
 
         self.tValue.SetValue('%3.2f' % fval)
         self.cbValue.SetValue(cval)
+
+    def formField(self):
+        from django import forms
+        #FIXME - find a suitable way to represent this
+        return self.paramName, forms.FloatField(label=self.guiName, initial=float(self.default)*self.ondefault)
 
 
 

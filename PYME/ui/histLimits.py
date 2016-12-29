@@ -35,6 +35,7 @@ class HistLimitPanel(wx.Panel):
         wx.Panel.__init__(self, parent, id, size=size, pos=pos, style=wx.BORDER_SUNKEN)
         
         self.data = data.ravel()
+        self.data = self.data[np.isfinite(self.data)]
 
         self.dragging = None
         self.binSize=None
@@ -73,6 +74,7 @@ class HistLimitPanel(wx.Panel):
 
     def SetData(self, data, lower, upper):
         self.data = np.array(data).ravel()
+        self.data = self.data[np.isfinite(self.data)]
 
         dSort = np.argsort(data)
 
@@ -115,7 +117,7 @@ class HistLimitPanel(wx.Panel):
         #x = event.GetX()
         #y = event.GetY()
 
-        if not self.dragging == None:
+        if not self.dragging is None:
             evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
             #evt.ShouldPropagate()
             #wx.PostEvent(self, evt)
@@ -194,7 +196,7 @@ class HistLimitPanel(wx.Panel):
         dc.Clear()
 
         #when being used to determine histogram bins
-        if not self.binSize == None:
+        if not self.binSize is None:
             binEdges = np.arange(self.hmin, self.hmax + self.binSize, self.binSize)
 
             for i in range(len(binEdges) -1):
@@ -280,8 +282,8 @@ class HistLimitPanel(wx.Panel):
         self.ProcessEvent(evt)
         
     def SetMinMax(self):
-        self.limit_lower = float(self.data.min())
-        self.limit_upper = float(self.data.max())
+        self.limit_lower = float(np.nanmin(self.data))
+        self.limit_upper = float(np.nanmax(self.data.max))
         self.GenHist()
         self.Refresh()
         self.Update()
