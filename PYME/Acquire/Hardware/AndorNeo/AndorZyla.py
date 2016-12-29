@@ -235,7 +235,6 @@ class AndorBase(SDK3Camera):
         # test if we have only fixed ROIs
         self._fixed_ROIs = not self.FullAOIControl.isImplemented() or not self.FullAOIControl.getValue()
         self.setNoisePropertiesByCam(self.GetSerialNumber())
-        # gain mode has been set via EMGain above
         self.noiseProps = self.baseNoiseProps[self.GetSimpleGainMode()]
 
         self.SetIntegTime(.100)
@@ -543,7 +542,6 @@ class AndorBase(SDK3Camera):
 
     def StartExposure(self):
         #make sure no acquisiton is running
-        #import sys
         self.StopAq()
         self._temp = self.SensorTemperature.getValue()
         self._frameRate = self.FrameRate.getValue()
