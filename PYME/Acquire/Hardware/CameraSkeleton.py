@@ -41,42 +41,6 @@ class SkeletonCamera(object):
         Create the camera object. This gets called from the PYMEAcquire init script, which is custom for any given microscope
         and can take whatever arguments are needed for a given camera. The one stipulation is that the camera should
         register itself as providing metadata
-    
-    SimpleGainModes = {
-        'low noise':
-            { 'name' : '11-bit (low noise)', 'PEncoding' : 'Mono12' },
-        'high capacity':
-            { 'name' : '11-bit (high well capacity)', 'PEncoding' : 'Mono12' },
-        'high dynamic range':
-            { 'name' : '16-bit (low noise & high well capacity)', 'PEncoding' : 'Mono16' }}
-
-    NoiseProperties = {
-        'low noise': {
-            'ReadNoise' : 1.1,
-            'ElectronsPerCount' : 0.28,
-            'NGainStages' : -1,
-            'ADOffset' : 100, # check mean (or median) offset
-            'DefaultEMGain' : 85,
-            'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
-        },
-        'high capacity': {
-            'ReadNoise' : 5.96,
-            'ElectronsPerCount' : 6.97,
-            'NGainStages' : -1,
-            'ADOffset' : 100,
-            'DefaultEMGain' : 85,
-            'SaturationThreshold' : 2**11-1#(2**16 -1)         
-        },
-        'high dynamic range': {
-            'ReadNoise' : 1.33,
-            'ElectronsPerCount' : 0.5,
-            'NGainStages' : -1,
-            'ADOffset' : 100,
-            'DefaultEMGain' : 85,
-            'SaturationThreshold' : (2**16 -1)
-        }}
-        self.SimplePreAmpGainControl = ATEnum()
-        self.FullAOIControl = ATBool()
 
         """
         
@@ -127,29 +91,6 @@ class SkeletonCamera(object):
         """
         Pulls the oldest frame from the camera buffer and copies it into memory we provide. Note that the function
         signature and parameters are a legacy of very old code written for a colour camera with a bayer mask.
-            self.SetEMGain(0) # note that this sets 'high dynamic range' mode
-        except:
-            print "error setting gain mode"
-            pass
-        # spurious noise filter off by default
-        try:
-            self.SpuriousNoiseFilter.setValue(0) # this will also fail with the SimCams
-        except:
-            print "error disabling spurios noise filter"
-            pass
-
-        # Static Blemish Correction off by default
-        try:
-            self.StaticBlemishCorrection.setValue(0) # this will also fail with the SimCams
-        except:
-            print "error disabling Static Blemish Correction"
-            pass
-        
-        # Zyla does not like a temperature to be set
-        if self.TemperatureControl.isImplemented() and self.TemperatureControl.isWritable():
-        # test if we have only fixed ROIs
-        self._fixed_ROIs = not self.FullAOIControl.isImplemented() or not self.FullAOIControl.getValue()
-        self.noiseProps = self.NoiseProperties[self.GetGainMode()] # gain mode has been set via EMGain above
 
         Parameters
         ----------
@@ -227,11 +168,6 @@ class SkeletonCamera(object):
         """
 
 
-        # limit width to multiple of 10 - Zyla specific!!!
-        # NOTE: we are not sure why only this size works
-        if True:
-        else:
-            return 10*int(self.SensorWidth.getValue()/10)
 
     #Binning is not really supported in current software, making these commands mostly superfluous
     #Being able to read out the binning (GetHorizBin, GetVertBin) is however necessary
@@ -294,10 +230,6 @@ class SkeletonCamera(object):
     def SetROIIndex(self, index):
         """ Legacy code for old Andor NEO cameras which only supported certain fixed ROIs. Should not be essential / can remove"""
 
-        #print 'in SetROIIndex'
-    def ROIsAreFixed(self):
-        return self._fixed_ROIs
-
     def SetROI(self, x1, y1, x2, y2):
         """ Set the ROI.
 
@@ -311,49 +243,7 @@ class SkeletonCamera(object):
 
         Most use 1 based (as it's a thin wrapper around the camera API), but we should really do something saner here
         """
-            if y1 < 1:
-                y1 = 1
-            # for some weird reason the width must be divisble by 10 on the zyla
-            if (x1 > x2):
-                xtmp = x2
-                x2 = x1
-                x1 = xtmp
-            if (y1 > y2):
-                ytmp = y2
-                y2 = y1
-                y1 = ytmp
-            if x1 == x2:
-                raise RuntimeError('Error Setting x ROI - Zero sized ROI')
-            if y1 == y2:
-                raise RuntimeError('Error Setting y ROI - Zero sized ROI')
-            #if (x2-x1+1) == 2048:
-            #    w10 = 2048  # allow full size
-            #else:
-            #    w10 = int((x2-x1+9)/10.0) * 10
-            w10 = int((x2-x1+9)/10.0) * 10
-            if x1+w10-1 > 2048: # x1+w10-1 should be index of largest row
-                w10 -= 10
-            h = y2-y1+1
-            # now set as specified
-            print "setting: ", x1,y1,w10,h
-            self.AOIWidth.setValue(w10)
-            self.AOILeft.setValue(x1)
-            self.AOIHeight.setValue(h)
-            self.AOITop.setValue(y1)
-
-    def SetGainMode(self,mode):
-        from warnings import warn
-        if not any(mode in s for s in self.SimpleGainModes.keys()):
-            warn('invalid mode "%s" requested - ignored' % mode)
-            return
-        self._gainmode = mode
-        self.SimplePreAmpGainControl.setString(self.SimpleGainModes[mode]['name'])
-        self.PixelEncoding.setString(self.SimpleGainModes[mode]['PEncoding'])
-        self.noiseProps = self.NoiseProperties[self._gainmode] # update noise properties for new mode
-        
-    def GetGainMode(self):
-        return self._gainmode
-
+    
     def GetROIX1(self):
         """ gets the position of the leftmost pixel of the ROI"""
         return self.AOILeft.getValue()
@@ -393,7 +283,6 @@ class SkeletonCamera(object):
 
     def StartExposure(self):
         """ Starts an acquisition"""
-        self.tKin = 1.0 / self._frameRate
 
         return 0
         
@@ -434,28 +323,22 @@ class SkeletonCamera(object):
         if self.active:
             self.GetStatus()
     
-            mdh.setEntry('Camera.Name', 'Andor sCMOS')
-            mdh.setEntry('Camera.Model', self.CameraModel.getValue())
-            mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
-
+            mdh.setEntry('Camera.Name', 'Andor Neo')
+    
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
             mdh.setEntry('Camera.CycleTime', self.GetIntegTime())
-            mdh.setEntry('Camera.EMGain', self.GetEMGain())
-            mdh.setEntry('Camera.DefaultEMGain', 85) # needed for some protocols
+            mdh.setEntry('Camera.EMGain', 1)
     
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
             mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
             #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
-
-            # values for readnoise and EpC from Neo sheet for Gain 4
-            # should be selected with 11 bit low noise setting
-            np = self.NoiseProperties[self.GetGainMode()]
-            mdh.setEntry('Camera.ReadNoise', np['ReadNoise'])
-            mdh.setEntry('Camera.NoiseFactor', 1.0)
-            mdh.setEntry('Camera.ElectronsPerCount', np['ElectronsPerCount'])
-            mdh.setEntry('Camera.ADOffset', np['ADOffset'])
+    
+            mdh.setEntry('Camera.ReadNoise', 1)
+            mdh.setEntry('Camera.NoiseFactor', 1)
+            mdh.setEntry('Camera.ElectronsPerCount', 1)
+            #mdh.setEntry('Camera.ADOffset', self.noiseMaker.ADOffset)
     
             #mdh.setEntry('Simulation.Fluorophores', self.fluors.fl)
             #mdh.setEntry('Simulation.LaserPowers', self.laserPowers)
@@ -464,21 +347,10 @@ class SkeletonCamera(object):
             #if not realEMGain == None:
             mdh.setEntry('Camera.TrueEMGain', 1)
 
-            # this should not be needed anymore with the changes in NoiseProperties dict
-            #update the scmos Metadata for different gain modes
-            #if int(self.EMGain) == 0:
-            #    mdh.setEntry('Camera.ElectronsPerCount', 0.5)
-            #    mdh.setEntry('Camera.ReadNoise', 1.33)
-
-            if  self.StaticBlemishCorrection.isImplemented():
-                mdh.setEntry('Camera.StaticBlemishCorrection', self.StaticBlemishCorrection.getValue())
-            if  self.SpuriousNoiseFilter.isImplemented():
-                mdh.setEntry('Camera.SpuriousNoiseFilter', self.SpuriousNoiseFilter.getValue())
-
-
     #functions to make us look more like andor camera
     def GetEMGain(self):
         """ Return the current EM Gain. Can be called on non-EMCCD cameras, so needs to be here"""
+        return 1
 
     def GetCCDTempSetPoint(self):
         """ Get the target CCD temperature. Only currently called in Ixon related code, but potentially generally useful """
@@ -493,10 +365,7 @@ class SkeletonCamera(object):
         """ set the em gain. For emccds this is typically the uncalibrated, gain register setting. The calibrated gain
          is computed separately and saved in the metadata as RealEMGain.  Note that this can be called on non-emccd
          cameras, so stub is required"""
-            self.SetGainMode('low noise')
-        else:
-            print 'high dynamic range mode'
-            self.SetGainMode('high dynamic range')
+        pass
 
 
     def SetBurst(self, burstSize):
@@ -520,18 +389,12 @@ class SkeletonCamera(object):
     
     def GetFPS(self):
         """ get the camera frame rate in frames per second (float)"""
-
-    def __getattr__(self, name):
-        if name in self.noiseProps.keys():
-            return self.noiseProps[name]
-        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
-
-
-
-
+        
     def __del__(self):
         self.Shutdown()
         #self.compT.kill = True
-        self.StaticBlemishCorrection = ATBool()
-        self.active = True # we need that for metadata initialisation I believe, not sure if best to do here or elsewhere
 
+
+        
+        
+        
