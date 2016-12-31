@@ -76,17 +76,10 @@ class QPObjectSegmenter:
 
             numPerObject, b = np.histogram(ids, np.arange(ids.max() + 1.5) + .5)
 
-            pipeline.selectedDataSource.objectIDs = np.zeros(len(pipeline.selectedDataSource['x']))
-            pipeline.selectedDataSource.objectIDs[pipeline.filter.Index] = ids
+            pipeline.addColumn('objectID', ids)
+            pipeline.addColumn('NEvents', numPerObject[ids-1])
 
-            pipeline.selectedDataSource.numPerObject = np.zeros(len(pipeline.selectedDataSource['x']))
-            pipeline.selectedDataSource.numPerObject[pipeline.filter.Index] = numPerObject[ids-1]
-
-            pipeline.selectedDataSource.setMapping('objectID', 'objectIDs')
-            pipeline.selectedDataSource.setMapping('NEvents', 'numPerObject')
-
-            visFr.RegenFilter()
-            visFr.CreateFoldPanel()
+            pipeline.Rebuild()
 
         dlg.Destroy()
 
@@ -105,13 +98,14 @@ class QPObjectSegmenter:
         ids = set(self.pipeline.mapping['objectID'].astype('i'))
         self.pipeline.objectMeasures = {}
 
+        pipeline = self.pipeline
+        
         if len(chans) == 0:
-            self.pipeline.objectMeasures['Everything'], tau1, qidx, ndt = objectDarkMeasure.measureObjectsByID(self.pipeline.colourFilter, ids)
-            self.setMapping('taudark','tau1',tau1)
-            self.setMapping('NDarktimes','ndt',ndt)
-            self.setMapping('QIndex','qindex',qidx)
-            self.visFr.RegenFilter()
-            self.visFr.CreateFoldPanel()
+            pipeline.objectMeasures['Everything'], tau1, qidx, ndt = objectDarkMeasure.measureObjectsByID(self.pipeline.colourFilter, ids)
+            pipeline.addColumn('taudark',tau1)
+            pipeline.addColumn('NDarktimes',ndt)
+            pipeline.addColumn('QIndex',qidx)
+            pipeline.Rebuild()
         else:
             curChan = self.pipeline.colourFilter.currentColour
 

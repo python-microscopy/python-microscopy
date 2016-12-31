@@ -97,9 +97,10 @@ def measureObjectsByID(filter, ids):
     y = filter['y'] #+ 0.1*random.randn(x.size)
     id = filter['objectID'].astype('i')
     t = filter['t']
-    tau1 = -1*np.ones_like(t)
-    ndt = -1*np.ones_like(t)
-    qus = -1*np.ones_like(t)
+    floattype = 'float64'
+    tau1 = -1*np.ones_like(t, dtype = floattype)
+    ndt = -1*np.ones_like(t, dtype = floattype)
+    qus = -1*np.ones_like(t, dtype = floattype)
     #ids = set(ids)
 
     measurements = np.zeros(len(ids), dtype=measureDType)

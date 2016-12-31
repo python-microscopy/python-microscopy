@@ -242,9 +242,9 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
             if outFilename.endswith('.txt'):
                 of = open(outFilename, 'w')
-                of.write('\t'.join(self.pipeline.objectMeasures.dtype.names) + '\n')
+                of.write('\t'.join(self.pipeline.objectMeasures['Everything'].dtype.names) + '\n')
 
-                for obj in self.pipeline.objectMeasures:
+                for obj in self.pipeline.objectMeasures['Everything']:
                     of.write('\t'.join([repr(v) for v in obj]) + '\n')
                 of.close()
 
