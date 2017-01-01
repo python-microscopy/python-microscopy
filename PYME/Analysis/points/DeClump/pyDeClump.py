@@ -139,13 +139,13 @@ def coalesceClumps_(fitResults, assigned):
 
     #work out what the data type for our declumped data should be
     dt = deClumpedDType(fitResults)
-    dt.append(('clumpSize','<i4'))
-    usewidth = False
-    if hasattr(selectedDS,'clumpWidths'):
-        dt.append(('clumpWidth','<f4'))
-        dt.append(('clumpWidthX','<f4'))
-        dt.append(('clumpWidthY','<f4'))
-        usewidth = True
+    # dt.append(('clumpSize','<i4'))
+    # usewidth = False
+    # if hasattr(selectedDS,'clumpWidths'):
+    #     dt.append(('clumpWidth','<f4'))
+    #     dt.append(('clumpWidthX','<f4'))
+    #     dt.append(('clumpWidthY','<f4'))
+    #     usewidth = True
     
     fres = np.empty(NClumps, dt)
     
@@ -208,11 +208,11 @@ def coalesceClumps(fitResults, assigned):
 
             fres['nFrames'][i] = len(rvs)
             #fres['ATotal'][i] = vals['fitResults']['A'].sum()
-            fres['clumpSize'][i] = selectedDS.clumpSizes[clist[i][0]] # assign the value from the first pixel of the current clump
-            if usewidth:
-                fres['clumpWidth'][i] = selectedDS.clumpWidths[clist[i][0]]
-                fres['clumpWidthX'][i] = selectedDS.clumpWidthsX[clist[i][0]]
-                fres['clumpWidthY'][i] = selectedDS.clumpWidthsY[clist[i][0]]
+            # fres['clumpSize'][i] = selectedDS.clumpSizes[clist[i][0]] # assign the value from the first pixel of the current clump
+            # if usewidth:
+            #     fres['clumpWidth'][i] = selectedDS.clumpWidths[clist[i][0]]
+            #     fres['clumpWidthX'][i] = selectedDS.clumpWidthsX[clist[i][0]]
+            #     fres['clumpWidthY'][i] = selectedDS.clumpWidthsY[clist[i][0]]
 
     return fres
 
