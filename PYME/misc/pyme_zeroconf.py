@@ -21,6 +21,8 @@ import socket
 import time
 import Pyro.core
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 class ZCListener(object): 
     def __init__(self, protocol='_pyme-pyro'):
@@ -40,6 +42,8 @@ class ZCListener(object):
         nm = name.split('.' + self._protocol)[0]
 
         info = zeroconf.get_service_info(_type, name)
+        logging.debug("ZCListener - adding service %s, service info %s" %(name,info))
+        
         if not info is None:
             self.advertised_services[nm] = info
         
@@ -74,6 +78,7 @@ class ZeroConfNS(object):
                            desc)
                            
         self._services[name] = info
+        logging.debug("registering service %s, service info: %s" % (name,info))
         self.zeroconf.register_service(info)
         
     def unregister(self, name):

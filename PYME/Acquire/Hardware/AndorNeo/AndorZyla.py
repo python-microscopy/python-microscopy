@@ -27,6 +27,7 @@ import numpy as np
 import threading
 import ctypes
 import os
+import logging
 
 try:
     import Queue
@@ -41,6 +42,8 @@ from fftw3f import create_aligned_array
 
 from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog
+
+logger = logging.getLogger(__name__)
 
 class AndorBase(SDK3Camera):
     numpy_frames=1
@@ -213,20 +216,20 @@ class AndorBase(SDK3Camera):
         try:
             self.SetSimpleGainMode('high dynamic range')
         except:
-            print "error setting gain mode"
+            logger.info("error setting gain mode")
             pass
         # spurious noise filter off by default
         try:
             self.SpuriousNoiseFilter.setValue(0) # this will also fail with the SimCams
         except:
-            print "error disabling spurios noise filter"
+            logger.info("error disabling spurios noise filter")
             pass
 
         # Static Blemish Correction off by default
         try:
             self.StaticBlemishCorrection.setValue(0) # this will also fail with the SimCams
         except:
-            print "error disabling Static Blemish Correction"
+            logger.info("error disabling Static Blemish Correction")
             pass
         
         self.SensorCooling.setValue(True)
@@ -498,9 +501,8 @@ class AndorBase(SDK3Camera):
         self.AOITop.setValue(y1+1)
 
     def SetSimpleGainMode(self,mode):
-        from warnings import warn
         if not any(mode in s for s in self.SimpleGainModes.keys()):
-            warn('invalid mode "%s" requested - ignored' % mode)
+            logger.warn('invalid mode "%s" requested - ignored' % mode)
             return
         self._gainmode = mode
         self.SimplePreAmpGainControl.setString(self.SimpleGainModes[mode]['name'])
@@ -529,7 +531,7 @@ class AndorBase(SDK3Camera):
     #    pass
 
     def Shutdown(self):
-        print 'Shutting down sCMOS camera'
+        logger.info('Shutting down sCMOS camera')
         self.pollLoopActive = False
         self.shutdown()
         #pass
@@ -622,11 +624,11 @@ class AndorBase(SDK3Camera):
             itime = int(1000*self.GetIntegTime())
             calpath = nameUtils.getCalibrationDir(self.GetSerialNumber())
             dkfn = os.path.join(calpath, 'dark_%dms.tif'%itime)
-            print dkfn
+            logger.debug("looking for darkmap at %s" % dkfn)
             if os.path.exists(dkfn):
                 mdh['Camera.DarkMapID'] = dkfn
             varfn = os.path.join(calpath, 'variance_%dms.tif'%itime)
-            print varfn
+            logger.debug("looking for variancemap at %s" % varfn)
             if os.path.exists(varfn):
                 mdh['Camera.VarianceMapID'] = varfn
 
@@ -648,7 +650,7 @@ class AndorBase(SDK3Camera):
         #pass
 
     def SetEMGain(self, gain):
-        print 'EMGain ignored'
+        logger.info("EMGain ignored")
         self.EMGain = 0
         return
     
