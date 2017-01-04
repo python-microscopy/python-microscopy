@@ -178,7 +178,7 @@ class AndorBase(SDK3Camera):
         self.SensorTemperature = ATFloat()
         self.TargetSensorTemperature = ATFloat()
         self.FullAOIControl = ATBool()
-        
+
         SDK3Camera.__init__(self,camNum)
         
         #end auto properties
@@ -210,6 +210,7 @@ class AndorBase(SDK3Camera):
         SDK3Camera.Init(self)        
         
         #set some intial parameters
+        self.setNoisePropertiesByCam(self.GetSerialNumber())
         self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
         # we use a try block as this will allow us to use the SDK software cams for simple testing
@@ -237,7 +238,6 @@ class AndorBase(SDK3Camera):
         #self.PixelReadoutRate.setIndex(1)
         # test if we have only fixed ROIs
         self._fixed_ROIs = not self.FullAOIControl.isImplemented() or not self.FullAOIControl.getValue()
-        self.setNoisePropertiesByCam(self.GetSerialNumber())
         self.noiseProps = self.baseNoiseProps[self.GetSimpleGainMode()]
 
         self.SetIntegTime(.100)
@@ -683,7 +683,6 @@ class AndorBase(SDK3Camera):
         if name in self.noiseProps.keys():
             return self.noiseProps[name]
         else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
-
 
 
 

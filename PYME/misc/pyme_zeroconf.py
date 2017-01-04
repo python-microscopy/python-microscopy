@@ -22,7 +22,7 @@ import time
 import Pyro.core
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 class ZCListener(object): 
     def __init__(self, protocol='_pyme-pyro'):
