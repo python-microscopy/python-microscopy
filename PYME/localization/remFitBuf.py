@@ -130,7 +130,8 @@ class CameraInfoManager(object):
             varmap = ImageStack(filename=fn).data[:,:,0].squeeze() #this should handle .tif, .h5, and a few others
         except:
             varmap = None # if we get read errors, or can't find file we fail gracefully
-            # FIXME issue: the h5r metadata will assume incorrectly that the maps were used
+            # the None return can be used to check if the map was retrieved successfully
+            # this is for example done in _checkmap in LMAnalysis which then alters the metadata to match
         return varmap
 
     def _getMap(self, md, mapName):

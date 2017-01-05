@@ -761,16 +761,15 @@ class LMAnalyser2(object):
         
     def _checkmap(self,mapid):
         maptype = 'Camera.%s' % mapid
-        import sys
         # check if requested maps can be read
         # the below test checks for non-empty string
         analysisMDH = self.analysisController.analysisMDH
         if analysisMDH.getOrDefault(maptype,''):
-            print >> sys.stderr, 'testframe: trying to read map'
+            logging.debug("trying to read map")
             md = remFitBuf.cameraMaps._getMap(analysisMDH,
                                               analysisMDH[maptype])
             if md is None:
-                print >> sys.stderr, 'CANNOT FIND %s %s' % (maptype, analysisMDH[maptype])
+                logging.warn("CANNOT FIND %s at %s" % (maptype, analysisMDH[maptype]))
                 analysisMDH[maptype] = '' # unset the map ID in this case
 
     def testFrame(self, gui=True):
