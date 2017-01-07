@@ -359,36 +359,51 @@ class fitTestJig(object):
         #print varName
         xv = self.ps[varName].ravel()
         
-        sp = self.res['startParams'][varName]
+        try:
+            sp = self.res['startParams'][varName]
+        except:
+            sp = None
+            hasSP = False
+        else:
+            hasSP = True
+        
         yv = self.res['fitResults'][varName]
 
         if hasattr(self, varName):
-            sp = sp + self.__getattribute__(varName)
+            if hasSP:
+                sp = sp + self.__getattribute__(varName)
             yv = yv + self.__getattribute__(varName)
 
         err = self.res['fitError'][varName]
 
         if errThreshold is not None:
             good = np.abs(err) < errThreshold
-            sp = sp[good]
+            if hasSP:
+                sp = sp[good]
             xv = xv[good]
             yv = yv[good]
             err = err[good]
 
-        if sp.size > nPlotEvents:
-            sp = sp[0:nPlotEvents]
+        if xv.size > nPlotEvents:
+            if hasSP:
+                sp = sp[0:nPlotEvents]
             xv = xv[0:nPlotEvents]
             yv = yv[0:nPlotEvents]
             err = err[0:nPlotEvents]
 
         plt.subplot(121)
 
-        x_min, x_max = min(sp.min(), xv.min()), max(sp.max(), xv.max())
-        
-        if showStartParams:
+        if hasSP and showStartParams:
+            x_min, x_max = min(sp.min(), xv.min()), max(sp.max(), xv.max())
+        else:
+            x_min, x_max = (xv.min(),xv.max())
+
+        if showStartParams and hasSP:
             plt.plot(xv, sp, '+', label='Start Est')
         plt.errorbar(xv, yv, err, fmt='r.', label='Fitted')
-        plt.plot(xv, np.clip(yv, 1.2*x_min, 1.2*x_max), 'xg', label='Fitted')
+        # I don't quite understand the clipping business below and have replaced this with a straight plot
+        #plt.plot(xv, np.clip(yv, 1.2*x_min, 1.2*x_max), 'xg', label='Fitted')
+        plt.plot(xv, yv, 'xg', label='Fitted')
         plt.plot([xv.min(), xv.max()], [xv.min(), xv.max()])
 
         #plt.ylim((yv - np.maximum(err, 0)).min(), (yv + np.maximum(err, 0)).max())

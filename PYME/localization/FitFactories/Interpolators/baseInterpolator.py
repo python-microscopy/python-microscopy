@@ -132,6 +132,15 @@ class __interpolator:
 
         self._precompute()
         
+    def centre2d(self,psf):
+        sz = psf.shape
+        psfc = psf[:,:,sz[2]/2].squeeze()
+        X, Y = meshgrid(arange(sz[0]),arange(sz[1]))
+        xc = (X*psfc).sum()/psfc.sum()
+        yc = (Y*psfc).sum()/psfc.sum()
+        psfs = roll(roll(psf,int(round(sz[0]/2-xc)),0),int(round(sz[1]/2-yc)),1)
+        return psfs
+    
     def genTheoreticalModelZernike(self, md, zmodes={}, nDesign=1.51, nSample=1.51, NA=1.47, wavelength=700):
         from PYME.Analysis.PSFGen import fourierHNA
         zs = arange(-1e3, 1e3, 50)
@@ -142,8 +151,9 @@ class __interpolator:
         voxelsize.z = 1e3*.05
 
         ps = fourierHNA.GenZernikeDPSF(zs, voxelsize.x, zmodes,lamb=wavelength, NA = NA, n=nDesign, ns=nSample)
+        psc = self.centre2d(ps)
         
-        return ps, voxelsize
+        return psc, voxelsize
 
     def genTheoreticalModel(self, md):
         from PYME.Analysis.PSFGen.ps_app import *
