@@ -264,7 +264,7 @@ class fitTestJig(object):
             p[0] = abs(p[0])
             ps[i, :] = p
             self.data, self.x0, self.y0, self.z0 = self.simMod.FitFactory.evalModel(p, md2, roiHalfSize=self.rs)#, roiHalfSize= roiHalfWidth))
-            self.d2.append(self.noiseM.noisify(self.data.squeeze()))
+            self.d2.append(self.noiseM.noisify(np.clip(self.data.squeeze(),0,1e8)))
 
             
         #calculate our background
