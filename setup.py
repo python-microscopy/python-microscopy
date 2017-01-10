@@ -29,6 +29,7 @@ entry_points={
         'PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main',
         'PYMEClusterDup = PYME.io.clusterDuplication:main',
         'PYMEDistributor = PYME.ParallelTasks.PYMEDistributor',
+        'genmaps = PYME.localization.genmaps:main',
         'PYMENodeServer = PYME.ParallelTasks.PYMENodeServer',
         'dh5view = PYME.DSView.dsviewer:main',
         'PYMEAcquire = PYME.Acquire.PYMEAcquire:main',
