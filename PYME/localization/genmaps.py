@@ -1,16 +1,27 @@
 import sys
+import os
 import argparse
 import numpy as np
-import PYME.IO.image as im
-import PYME.IO.dataExporter as dexp
+from PYME.IO.image import ImageStack
 from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
-def saveasmap(array,filename,mdh=None):
-    array.shape += (1,) * (4 - array.ndim) # ensure we have trailing dims making up to 4D
-    dexp.ExportData(array,mdh,filename=filename)
+import logging
+logger = logging.getLogger(__name__)
 
-def meanvards(dataSource, start=0, end=-1):
+def _meanvards(dataSource, start=0, end=-1):
+    """
+    Calculate the mean and variance of a data source
 
+    Parameters
+    ----------
+    dataSource
+    start
+    end
+
+    Returns
+    -------
+
+    """
     nslices = dataSource.getNumSlices()
     if end < 0:
         end = nslices + end
@@ -30,9 +41,10 @@ def meanvards(dataSource, start=0, end=-1):
 
     return (m,v)
 
-import os
-import errno
+
 def makePathUnlessExists(path):
+    import errno
+
     try:
         os.makedirs(path)
     except OSError as exception:
@@ -45,28 +57,43 @@ def mkDestPath(destdir,stem,mdh):
     itime = int(1000*mdh['Camera.IntegrationTime'])
     return os.path.join(destdir,'%s_%dms.tif' % (stem,itime))
 
-from PYME.IO.FileUtils import nameUtils
-def mkDefaultPath(stem,mdh):
-   caldir = nameUtils.getCalibrationDir(mdh['Camera.SerialNumber'])
-   makePathUnlessExists(caldir)
-   return mkDestPath(caldir,stem,mdh)
 
-import os
-from glob import glob
+def mkDefaultPath(stem,mdh):
+    from PYME.IO.FileUtils import nameUtils
+
+    caldir = nameUtils.getCalibrationDir(mdh['Camera.SerialNumber'])
+    makePathUnlessExists(caldir)
+    return mkDestPath(caldir,stem,mdh)
+
+
 def listCalibrationDirs():
+    from glob import glob
     rootdir = nameUtils.getCalibrationDir('')
     result = [y for x in os.walk(rootdir) for y in glob(os.path.join(x[0], '*.tif'))]
     if result is not None:
-        print 'List of installed maps:'
+        print('List of installed maps:')
         for m in result:
-            print m
+            print(m)
 
 
-# this function embeds the calculated maps into a full chipsize array
-# that is padded with the camera default readnoise and offset as extracted from the
-# metadata
-# if m, ve are None nothing is copied into the map and just the uniform array is returned
 def insertIntoFullMap(m, ve, smdh, chipsize=(2048,2048)):
+    """
+    this function embeds the calculated maps into a full chipsize array
+    that is padded with the camera default readnoise and offset as extracted from the
+    metadata
+    if m, ve are None nothing is copied into the map and just the uniform array is returned
+
+    Parameters
+    ----------
+    m
+    ve
+    smdh
+    chipsize
+
+    Returns
+    -------
+
+    """
     validROI = {
         'PosX' : smdh['Camera.ROIPosX'],
         'PosY' : smdh['Camera.ROIPosY'],
@@ -105,10 +132,27 @@ def insertIntoFullMap(m, ve, smdh, chipsize=(2048,2048)):
 
     return mfull, vefull, bmdh
 
+def install_map(filename):
+    """Installs a map file to its default location"""
+
+    source = ImageStack(filename=filename)
+    if source.mdh.getOrDefault('Analysis.name', '') != 'mean-variance':
+        logger.error('Analysis.name is not equal to "mean-variance" - probably not a map')
+        sys.exit('aborting...')
+
+    if source.mdh['Analysis.resultname'] == 'mean':
+        maptype = 'dark'
+    else:
+        maptype = 'variance'
+
+    mapname = mkDefaultPath(maptype, source.mdh)
+
+    source.Save(filename=mapname)
+
 def main():
 
-    chipsize = (2048,2048) # we currently assume this is correct but could be chosen based
-                           # on camera model in meta data
+    # chipsize = (2048,2048) # we currently assume this is correct but could be chosen based
+    #                        # on camera model in meta data
     darkthreshold = 1e4    # this really should depend on the gain mode (12bit vs 16 bit etc)
     variancethreshold = 300**2  # again this is currently picked fairly arbitrarily
     blemishvariance = 1e8
@@ -141,32 +185,26 @@ def main():
     if filename is None:
         op.error('need a file name if -l or --list not requested')
 
-    print >> sys.stderr, 'Opening image series...'
-    source = im.ImageStack(filename=filename)
-
     if args.install:
-        if source.mdh.getOrDefault('Analysis.name','') != 'mean-variance':
-            print >> sys.stderr, 'Analysis.name is not equal to "mean-variance" - probably not a map'
-            sys.exit('aborting...')
-            
-        if source.mdh['Analysis.resultname'] == 'mean':
-            maptype = 'dark'
-        else:
-            maptype = 'variance'
-        mapname = mkDefaultPath(maptype,source.mdh)
-        saveasmap(source.dataSource.getSlice(0),mapname,mdh=source.mdh)
+        #copy the map to the default maps directory
+        install_map(filename)
         sys.exit(0)
+
+
+
+    logger.info('Opening image series...')
+    source = ImageStack(filename=filename)
 
     start = args.start
     end = args.end
     if end < 0:
         end = int(source.dataSource.getNumSlices() + end)
 
-    print >> sys.stderr, 'Calculating mean and variance...'
+    logger.info('Calculating mean and variance...')
 
     m, ve = (None,None)
     if not args.uniform:
-        m, v = meanvards(source.dataSource, start = start, end=end)
+        m, v = _meanvards(source.dataSource, start = start, end=end)
         eperADU = source.mdh['Camera.ElectronsPerCount']
         ve = v*eperADU*eperADU
 
@@ -184,18 +222,18 @@ def main():
     mfull, vefull, basemdh = insertIntoFullMap(m, ve, source.mdh, chipsize=chipsize)
     #mfull, vefull, basemdh = (m, ve, source.mdh)
 
-    print >> sys.stderr, 'Saving results...'
+    logger.info('Saving results...')
 
     if args.dir is None:
-        print >> sys.stderr, 'installing in standard location...'
+        logger.info('installing in standard location...')
         mname = mkDefaultPath('dark',source.mdh)
         vname = mkDefaultPath('variance',source.mdh)
     else:
         mname = mkDestPath(args.dir,'dark',source.mdh)
         vname = mkDestPath(args.dir,'variance',source.mdh)
 
-    print  >> sys.stderr, 'dark map -> %s...' % mname
-    print  >> sys.stderr, 'var  map -> %s...' % vname
+    logger.info('dark map -> %s...' % mname)
+    logger.info(sys.stderr, 'var  map -> %s...' % vname)
 
     commonMD = NestedClassMDHandler()
     commonMD.setEntry('Analysis.name', 'mean-variance')
@@ -219,8 +257,10 @@ def main():
     vmd.setEntry('Analysis.resultname', 'variance')
     vmd.setEntry('Analysis.units', 'electrons^2')
 
-    saveasmap(mfull,mname,mdh=mmd)
-    saveasmap(vefull,vname,mdh=vmd)
+    ImageStack(mfull, mdh=mdh).Save(filename=mname)
+    ImageStack(vefull, mdh=mdh).Save(filename=vname)
+
+
 
 if __name__ == "__main__":
     main()
