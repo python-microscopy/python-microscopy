@@ -766,8 +766,12 @@ class LMAnalyser2(object):
         analysisMDH = self.analysisController.analysisMDH
         if analysisMDH.getOrDefault(maptype,''):
             logging.debug("trying to read map")
-            md = remFitBuf.cameraMaps._getMap(analysisMDH,
+            try:
+                md = remFitBuf.cameraMaps._getMap(analysisMDH,
                                               analysisMDH[maptype])
+            except:
+                md = None
+
             if md is None:
                 logging.warn("CANNOT FIND %s at %s" % (maptype, analysisMDH[maptype]))
                 analysisMDH[maptype] = '' # unset the map ID in this case
