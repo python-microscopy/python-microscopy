@@ -19,8 +19,8 @@ import struct
 import unittest
 import time
 
-import PYME.cpmath.propagate
-import PYME.cpmath._propagate
+import PYME.contrib.cpmath.propagate
+import PYME.contrib.cpmath._propagate
 
 class Test_Propagate(unittest.TestCase):
     def test_01_01_test_convert_to_ints(self):

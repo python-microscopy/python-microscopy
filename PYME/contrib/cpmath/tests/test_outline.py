@@ -17,7 +17,7 @@ __version__="$Revision$"
 import numpy
 import unittest
 
-import PYME.cpmath.outline as OL
+import PYME.contrib.cpmath.outline as OL
 
 class TestOutline(unittest.TestCase):
     def test_00_00_zeros(self):

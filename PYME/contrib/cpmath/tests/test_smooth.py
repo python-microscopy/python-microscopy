@@ -17,7 +17,7 @@ __version__="$Revision$"
 import unittest
 import numpy as np
 import scipy.ndimage
-import PYME.cpmath.smooth as cpms
+import PYME.contrib.cpmath.smooth as cpms
 
 class TestSmoothWithNoise(unittest.TestCase):
     def test_01_smooth_zero(self):
