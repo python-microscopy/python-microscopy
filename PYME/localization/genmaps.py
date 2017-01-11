@@ -140,6 +140,15 @@ def install_map(filename):
         logger.error('Analysis.name is not equal to "mean-variance" - probably not a map')
         sys.exit('aborting...')
 
+    if not (source.mdh['Analysis.valid.ROIHeight'] == source.mdh['Camera.ROIHeight']
+            and source.mdh['Analysis.valid.ROIHeight'] == source.mdh['Camera.ROIHeight']):
+        logger.error('Partial (ROI based) maps cannot be installed to the default location')
+        sys.exit(-1)
+
+    if source.mdh.getOrDefault('Analysis.isuniform', False):
+        logger.error('Uniform maps cannot be installed to the default location')
+        sys.exit(-1)
+
     if source.mdh['Analysis.resultname'] == 'mean':
         maptype = 'dark'
     else:
@@ -151,8 +160,8 @@ def install_map(filename):
 
 def main():
 
-    # chipsize = (2048,2048) # we currently assume this is correct but could be chosen based
-    #                        # on camera model in meta data
+    chipsize = (2048,2048) # we currently assume this is correct but could be chosen based
+                            # on camera model in meta data TODO - add CCD size to camera metadata
     darkthreshold = 1e4    # this really should depend on the gain mode (12bit vs 16 bit etc)
     variancethreshold = 300**2  # again this is currently picked fairly arbitrarily
     blemishvariance = 1e8
@@ -207,6 +216,12 @@ def main():
         m, v = _meanvards(source.dataSource, start = start, end=end)
         eperADU = source.mdh['Camera.ElectronsPerCount']
         ve = v*eperADU*eperADU
+    else:
+        logger.warn('Simulating uniform maps - use with care')
+
+        if args.dir is None:
+            logger.error('Uniform maps cannot be stored to the default map directory\nPlease specify an output directory.')
+            sys.exit(-1)
 
     # occasionally the cameras seem to have completely unusable pixels
     # one example was dark being 65535 (i.e. max value for 16 bit)
@@ -217,9 +232,17 @@ def main():
 
     nbad = np.sum((m > darkthreshold)*(ve > variancethreshold))
 
+    if not ((source.mdh['Camera.ROIWidth'] == chipsize[0]) and (source.mdh['Camera.ROIHeight'] == chipsize[1])):
+        logger.warn('Generating a map from data with ROI set. Use with EXTREME caution.\nMaps should be calculated from the whole chip.')
+
+        if args.dir is None:
+            logger.error('Maps with an ROI set cannot be stored to the default map directory\nPlease specify an output directory.')
+            sys.exit(-1)
+
     # if the uniform flag is set, then m and ve are passed as None
-    # which makes sure that just the uniform defaults from meta data are used 
+    # which makes sure that just the uniform defaults from meta data are used
     mfull, vefull, basemdh = insertIntoFullMap(m, ve, source.mdh, chipsize=chipsize)
+
     #mfull, vefull, basemdh = (m, ve, source.mdh)
 
     logger.info('Saving results...')
@@ -244,6 +267,7 @@ def main():
     commonMD.setEntry('Analysis.varianceThreshold', variancethreshold)
     commonMD.setEntry('Analysis.blemishVariance', blemishvariance)
     commonMD.setEntry('Analysis.NBadPixels', nbad)
+
     if args.uniform:
         commonMD.setEntry('Analysis.isuniform', True)
     
