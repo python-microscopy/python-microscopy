@@ -15,7 +15,7 @@ class SpaceNavigator(object):
     def __init__(self):
         #TODO - should be more specific here - there are likely to be cases 
         #where we have more than one HID device
-        self.snav = hid.find_all_hid_devices()[2]
+        self.snav = hid.find_all_hid_devices()[0]
         
         self.snav.open()
         
