@@ -449,4 +449,49 @@ class ClusterCountVsImagingTime(ModuleBase):
 
 
 
+@register_module('RadiusOfGyration')
+class RadiusOfGyration(ModuleBase):
+    """
+    Parameters
+    ----------
 
+        labelsKey: array of label assignments. Radius of gyration will be calculated for each label.
+
+    Notes
+    -----
+
+    """
+    inputName = Input('dbscanClustered')
+    labelsKey = CStr('dbscanClumpID')
+    outputName = Output('gyrationRadii')
+
+    def execute(self, namespace):
+
+        inp = namespace[self.inputName]
+
+        # sort input according to label key
+        all_keys = inp.keys()
+        I = np.argsort(inp[self.labelsKey])
+        mapped = tabular.mappingFilter({k: inp[k][I] for k in all_keys})
+        uni, counts = np.unique(mapped[self.labelsKey], return_counts=True)
+
+        numLabs = len(uni)
+        rg = np.empty(numLabs, dtype=float)
+        # loop over labels, recall that input is now sorted, and we know how many points are in each label
+        indi = 0
+        for li in range(numLabs):
+            indf = indi + counts[li]
+            x, y, z = mapped['x'][indi:indf], mapped['y'][indi:indf], mapped['z'][indi:indf]
+            com = np.array([x.mean(), y.mean(), z.mean()])
+            disp = np.linalg.norm(np.hstack([x, y, z]) - com, axis=0)
+            rg[li] = np.sqrt((1/float(counts[li]))*np.sum(disp**2))
+            indi = indf
+
+        mapped.addColumn('GyrationRadius', rg)
+
+        try:
+            mapped.mdh = namespace[self.inputName].mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = mapped
