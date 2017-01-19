@@ -478,8 +478,11 @@ class RadiusOfGyration(ModuleBase):
         numLabs = len(uni)
         rg = np.empty(len(I), dtype=float)
         # loop over labels, recall that input is now sorted, and we know how many points are in each label
-        indi = 0
-        for li in range(numLabs):
+
+        # label zero corresponds to unlabeled
+        rg[0:counts[0]] = 0
+        indi = counts[0]
+        for li in range(1, numLabs):
             indf = indi + counts[li]
             x, y, z = mapped['x'][indi:indf], mapped['y'][indi:indf], mapped['z'][indi:indf]
             com = np.array([x.mean(), y.mean(), z.mean()])

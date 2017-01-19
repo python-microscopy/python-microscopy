@@ -278,7 +278,7 @@ class ClusterAnalyser:
 
         # split input according to colour channels selected
         grad.add_module(localisations.RadiusOfGyration(grad, inputName='input', labelsKey='dbscanClustered',
-                                                       outputName='gyrationRadii'))
+                                                       outputName='output'))
 
         grad.namespace['input'] = self.pipeline
         #configure parameters
@@ -289,6 +289,7 @@ class ClusterAnalyser:
         outRad = grad.execute()
 
         self.pipeline.addDataSource('gyrationRadii', outRad)
+        self.pipeline.selectDataSource('gyrationRadii')
 
 
 def Plug(visFr):
