@@ -270,6 +270,17 @@ class ClusterAnalyser:
         #plt.title('minPoints=%i, searchRadius = %.0f nm' % (, rec.modules[-1].higherMinPtsPerCluster))
 
     def OnRadiusOfGyration(self, event=None):
+        """
+
+        Calculates the radius of gyration for labeled points
+
+        Parameters
+        ----------
+        labelsKey: pipeline key to access array of label assignments. Radius of gyration will be calculated for each
+            label.
+
+
+        """
         from PYME.recipes import localisations
         from PYME.recipes.base import ModuleCollection
 
