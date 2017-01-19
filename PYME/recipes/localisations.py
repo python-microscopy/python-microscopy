@@ -476,15 +476,15 @@ class RadiusOfGyration(ModuleBase):
         uni, counts = np.unique(mapped[self.labelsKey], return_counts=True)
 
         numLabs = len(uni)
-        rg = np.empty(numLabs, dtype=float)
+        rg = np.empty(len(I), dtype=float)
         # loop over labels, recall that input is now sorted, and we know how many points are in each label
         indi = 0
         for li in range(numLabs):
             indf = indi + counts[li]
             x, y, z = mapped['x'][indi:indf], mapped['y'][indi:indf], mapped['z'][indi:indf]
             com = np.array([x.mean(), y.mean(), z.mean()])
-            disp = np.linalg.norm(np.hstack([x, y, z]) - com, axis=0)
-            rg[li] = np.sqrt((1/float(counts[li]))*np.sum(disp**2))
+            disp = np.linalg.norm(np.vstack([x-com[0], y-com[1], z-com[2]]), axis=0)
+            rg[indi:indf] = np.sqrt((1/float(counts[li]))*np.sum(disp**2))
             indi = indf
 
         mapped.addColumn('GyrationRadius', rg)

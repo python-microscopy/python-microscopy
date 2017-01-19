@@ -45,6 +45,8 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Extras', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
+        visFr.AddMenuItem('Extras', 'Radius of gyration', self.OnRadiusOfGyration,
+                          helpText='')
 
     def OnClumpDBSCAN(self, event=None):
         """
@@ -267,6 +269,26 @@ class ClusterAnalyser:
         plt.ylabel('Number of Clusters')
         #plt.title('minPoints=%i, searchRadius = %.0f nm' % (, rec.modules[-1].higherMinPtsPerCluster))
 
+    def OnRadiusOfGyration(self, event=None):
+        from PYME.recipes import localisations
+        from PYME.recipes.base import ModuleCollection
+
+        # build a recipe programatically
+        grad = ModuleCollection()
+
+        # split input according to colour channels selected
+        grad.add_module(localisations.RadiusOfGyration(grad, inputName='input', labelsKey='dbscanClustered',
+                                                       outputName='gyrationRadii'))
+
+        grad.namespace['input'] = self.pipeline
+        #configure parameters
+        if not grad.configure_traits(view=grad.pipeline_view, kind='modal'):
+            return  # handle cancel
+
+        # run recipe
+        outRad = grad.execute()
+
+        self.pipeline.addDataSource('gyrationRadii', outRad)
 
 
 def Plug(visFr):
