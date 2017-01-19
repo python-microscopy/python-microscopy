@@ -477,12 +477,21 @@ class RadiusOfGyration(ModuleBase):
 
         numLabs = len(uni)
         rg = np.empty(len(I), dtype=float)
-        # loop over labels, recall that input is now sorted, and we know how many points are in each label
 
-        # label zero corresponds to unlabeled
-        rg[0:counts[0]] = 0
-        indi = counts[0]
-        for li in range(1, numLabs):
+        # make sure labeling scheme is consistent with what pyme conventions
+        if np.min(uni) < 0:
+            raise UserWarning('This module expects 0-label for unclustered points, and no negative labels')
+
+        # loop over labels, recall that input is now sorted, and we know how many points are in each label
+        if 0 in uni:  # label zero corresponds to unclustered, set gyration radius to zero for unclustered points
+            rg[0:counts[0]] = 0
+            ilab = range(1, numLabs)
+            indi = counts[0]
+        else:
+            ilab = range(numLabs)
+            indi = 0
+
+        for li in ilab:
             indf = indi + counts[li]
             x, y, z = mapped['x'][indi:indf], mapped['y'][indi:indf], mapped['z'][indi:indf]
             com = np.array([x.mean(), y.mean(), z.mean()])
