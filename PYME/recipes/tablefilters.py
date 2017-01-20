@@ -140,9 +140,11 @@ class SelectTableColumns(ModuleBase):
     def execute(self, namespace):
         meas = namespace[self.inputMeasurements]
         out = pd.DataFrame({k: meas[k] for k in self.keys.split()})
-        if 'mdh' in dir(meas):
-            #propagate metadata
+        # propagate metadata, if present
+        try:
             out.mdh = meas.mdh
+        except AttributeError:
+            pass
 
         namespace[self.outputName] = out
 
