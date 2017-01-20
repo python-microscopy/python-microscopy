@@ -86,12 +86,12 @@ class ConcatenateTables(ModuleBase):
         inp0 = namespace[self.inputName0]
         inp1 = namespace[self.inputName1]
 
-        map = tabular.concatenateFilter(inp0, inp1)
+        mapped = tabular.concatenateFilter(inp0, inp1)
 
         if 'mdh' in dir(inp0):
-            map.mdh = inp0.mdh
+            mapped.mdh = inp0.mdh
 
-        namespace[self.outputName] = map
+        namespace[self.outputName] = mapped
 
 
 @register_legacy_module('AggregateMeasurements')
