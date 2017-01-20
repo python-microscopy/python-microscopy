@@ -66,6 +66,7 @@ def plotFolded(X, Y, multiviewChannels, title=''):
     plt.legend()
     return
 
+
 def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4), nFrameSep=5, returnPaired=True):
     """
     pairMolecules uses pyDeClump functions to group localization clumps into molecules for registration.
@@ -120,131 +121,6 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
         return assigned, keep
     else:
         return assigned
-
-def astigMAPism(fres, astig_calibrations, chanPlane, chanColor):
-    """
-    Generates a look-up table of sorts for z based on sigma x/y fit results and calibration information. If a molecule
-    appears on multiple planes, sigma values from both planes will be used in the look up.
-    Args:
-        fres: dictionary-like object containing relevant fit results
-        astig_calibrations: list of astigmatism calibration dictionaries corresponding to each multiview channel, which are
-            used to recreate shiftmap objects
-        chanPlane: list of which plane each channel corresponds to, e.g. [0, 0, 1, 1]
-
-    Returns:
-        z: an array of z-positions for each molecule in nm (assuming proper units were used in astigmatism calibration)
-        zerr: an array containing discrepancies between sigma values and the PSF calibration curves. Note that this
-            array is in units of nm, but error may not be propagated from sigma fitResults properly as is.
-    """
-    # fres = pipeline.selectedDataSource.resultsSource.fitResults
-    numMols = len(fres['x']) # there is no guarantee that fitResults_x0 will be present - change to x
-    whichChan = np.array(fres['multiviewChannel'], dtype=np.int32)
-
-    # astig_calibrations['zRange'] contains the extrema of acceptable z-positions looking over all channels
-
-    # find overall min and max z values
-    zrange = np.nan*np.ones(2)
-    for astig_cal in astig_calibrations: #more idiomatic way of looping through list - also avoids one list access / lookup
-        zrange = [np.nanmin(astig_cal['zRange'][0], zrange[0]), np.nanmax(astig_cal['zRange'][1], zrange[1])]
-
-    # generate z vector for interpolation
-    zVal = np.arange(zrange[0], zrange[1])
-
-    sigCalX = {}
-    sigCalY = {}
-
-    z = np.zeros(numMols)
-    zerr = 1e4*np.ones(numMols)
-
-    #TODO - Is this a robust choice?
-    smoothFac = 5*len(astig_calibrations[0]['z'])
-
-    # generate look up table of sorts
-    #import matplotlib.pyplot as plt
-    #plt.figure()
-    for ii in range(len(chanPlane)):
-        zdat = np.array(astig_calibrations[ii]['z'])
-        # find indices of range we trust
-        zrange = astig_calibrations[ii]['zRange']
-        lowsubZ , upsubZ = np.absolute(zdat - zrange[0]), np.absolute(zdat - zrange[1])
-        lowZLoc = np.argmin(lowsubZ)
-        upZLoc = np.argmin(upsubZ)
-
-        sigCalX['chan%i' % ii] = UnivariateSpline(zdat[lowZLoc:upZLoc],
-                                                       np.array(astig_calibrations[ii]['sigmax'])[lowZLoc:upZLoc],
-                                                       ext='const', s=smoothFac)(zVal)  #  ext='const', s=smoothFac)(zVal)
-                                                            # bbox=astig_calibrations['PSF%i' % ii]['zrange'], ext='zeros')(zVal)
-        sigCalY['chan%i' % ii] = UnivariateSpline(zdat[lowZLoc:upZLoc],
-                                                       np.array(astig_calibrations[ii]['sigmay'])[lowZLoc:upZLoc],
-                                                       ext='const', s=smoothFac)(zVal)  # ext='const', s=smoothFac)(zVal)
-        # set regions outside of usable interpolation area to very unreasonable sigma values
-        #sigCalX['chan%i' % ii][sigCalX['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
-        #sigCalY['chan%i' % ii][sigCalY['chan%i' % ii] == 0] = 1e5  # np.nan_to_num(np.inf)
-
-        #plt.plot(zVal, sigCalX['chan%i' % ii])
-        #plt.plot(zVal, sigCalY['chan%i' % ii])
-
-
-    failures = 0
-    for mi in range(numMols):
-        chans = np.where(fres['probe'][mi] == chanColor)[0]
-        errX, errY = 0, 0
-        wSum = 0
-        #plt.figure(10)
-        #plt.subplot(1, 2, 2)
-        #sigxList = []
-        #sigyList = []
-        for ci in chans:
-            if not np.isnan(fres['sigmaxPlane%i' % chanPlane[ci]][mi]):
-                #plt.plot(zVal, sigCalX['chan%i' % ci], label='$\sigma_x$, chan %i' % ci)
-                #plt.plot(zVal, sigCalY['chan%i' % ci], label='$\sigma_y$, chan %i' % ci)
-                #sigxList.append(fres['sigmaxPlane%i' % chanPlane[ci]][mi])
-                #sigyList.append(fres['sigmayPlane%i' % chanPlane[ci]][mi])
-
-                wX = 1./(fres['error_sigmaxPlane%i' % chanPlane[ci]][mi])**2
-                wY = 1./(fres['error_sigmayPlane%i' % chanPlane[ci]][mi])**2
-                wSum += (wX + wY)
-                errX += wX*(fres['sigmaxPlane%i' % chanPlane[ci]][mi] - sigCalX['chan%i' % ci])**2
-                errY += wY*(fres['sigmayPlane%i' % chanPlane[ci]][mi] - sigCalY['chan%i' % ci])**2
-        try:
-            err = (errX + errY)/wSum
-            minLoc = np.nanargmin(err)
-            z[mi] = -zVal[minLoc]
-            zerr[mi] = np.sqrt(err[minLoc])
-
-            #if len(sigxList)>1:
-            #    plt.scatter(z[mi]*np.ones(len(sigxList)), sigxList, label='$\sigma_x$', c='red')
-            #    plt.scatter(z[mi]*np.ones(len(sigxList)), sigyList, label='$\sigma_y$', c='black')
-            #    plt.legend()
-            #    plt.subplot(1, 2, 1)
-            #    plt.plot(zVal, errX/wSum, label='error X')
-            #    plt.plot(zVal, errY/wSum, label='error Y')
-            #    plt.plot(zVal, err, label='Total Error')
-            #    plt.xlabel('Z-position [nm]')
-            #    plt.ylabel(r'Error [nm$^2$]')
-            #    plt.legend()
-            #    plt.show()
-            #plt.clf()
-
-
-        except (TypeError, ValueError, ZeroDivisionError):
-            # TypeError if err is scalar 0, ValueError if err is all NaNs, ZeroDivErr if wSum and errX are both zero
-            failures += 1
-
-    #plt.hist(-z)
-    #plt.xlabel('Z-position from astigmatism [nm]')
-    #plt.ylabel('Counts [unitless] or Sigma [nm]')
-
-    print('%i localizations did not have sigmas in acceptable range/planes (out of %i)' % (failures, numMols))
-
-    #import matplotlib.pyplot as plt
-    #plt.figure()
-    #plt.hist(z)
-    #plt.show()
-    return z, zerr
-
-
-
 
 
 def coalesceDict(inD, assigned, keys, weightList):  # , notKosher=None):
