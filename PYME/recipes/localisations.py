@@ -448,6 +448,12 @@ class ClusterCountVsImagingTime(ModuleBase):
         namespace[self.outputName] = res
 
 
+class Dict(dict):
+    """
+    This dummy class just enables a dictionary which can also have attributes (something the dict class cannot).
+    """
+    pass
+
 @register_module('FitToSphericalHarmonics')
 class FitToSphericalHarmonics(ModuleBase): #FIXME - this likely doesnt belong here
     """Parameters
@@ -473,9 +479,13 @@ class FitToSphericalHarmonics(ModuleBase): #FIXME - this likely doesnt belong he
 
         modes, coeffs, centre = spharm.sphere_expansion_clean(inp['x'], inp['y'], self.zscale*inp['z'], mmax=self.max_m_mode)
 
-        recon = {'modes': modes, 'coeffs': coeffs, 'centre': centre, 'zscale': self.zscale, 'max_m_mode': self.max_m_mode}
+        recon = Dict({'modes': modes, 'coeffs': coeffs, 'centre': centre, 'zscale': self.zscale,
+                           'max_m_mode': self.max_m_mode})
 
-        # TODO - wrap recon in such a way that we can add a mdh attribute
+        try:
+            recon.mdh = namespace[self.inputName].mdh
+        except AttributeError:
+            pass
 
         namespace[self.outputName] = recon
 

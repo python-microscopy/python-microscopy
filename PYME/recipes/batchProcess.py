@@ -16,7 +16,7 @@ from argparse import ArgumentParser
 
 import multiprocessing
 
-NUM_PROCS = multiprocessing.cpu_count()
+NUM_PROCS = 1  # multiprocessing.cpu_count()
 
 def runRec(args):
     print args
