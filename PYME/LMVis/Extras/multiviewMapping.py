@@ -375,11 +375,6 @@ class multiviewMapper:
         visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapZ,
                           helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
 
-        visFr.AddMenuItem('Multiview', itemType='separator')
-
-        visFr.AddMenuItem('Multiview', 'Map XY', self.OnFoldAndMapXY,
-                          helpText='Fold channels and correct shifts')
-
     def OnFold(self, event=None):
         from PYME.recipes.localisations import MultiviewFold
 
@@ -410,28 +405,6 @@ class multiviewMapper:
                           shiftMapLocation=fpath, outputName='shift_corrected'))
         recipe.execute()
         self.pipeline.selectDataSource('shift_corrected')
-
-    def OnFoldAndMapXY(self, event):
-        """
-        OnFoldAndMap uses shiftmaps stored in metadata (by default) or loaded through the GUI to register multiview
-        channels to the first channel.
-        Args:
-            event: GUI event
-
-        Returns: nothing
-            x- and y-positions will be registered to the first channel in the mappingFilter with shiftmap corrections
-            applied (see foldX)
-
-        """
-        if not 'multiviewChannel' in self.pipeline.keys():
-            self.OnFold()
-
-        plotFolded(self.pipeline['x'], self.pipeline['y'],
-                  self.pipeline['multiviewChannel'], 'Raw')
-
-        self.OnCorrectFolded()
-
-
 
     def OnCalibrateShifts(self, event):
         """
