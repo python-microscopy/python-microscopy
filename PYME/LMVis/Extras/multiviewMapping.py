@@ -370,13 +370,12 @@ class multiviewMapper:
         visFr.AddMenuItem('Multiview', 'Fold Channels', self.OnFold)
         visFr.AddMenuItem('Multiview', 'Shift correct folded channels', self.OnCorrectFolded)
 
-        visFr.AddMenuItem('Multiview', 'Group localizations', self.OnMergeClumps)
+        visFr.AddMenuItem('Multiview', 'Group localizations', self.OnGroupLocalizations)
 
         visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapZ,
                           helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
 
         visFr.AddMenuItem('Multiview', itemType='separator')
-        visFr.AddMenuItem('Multiview', 'Find clumps', self.OnFindClumps)
 
         visFr.AddMenuItem('Multiview', 'Map XY', self.OnFoldAndMapXY,
                           helpText='Fold channels and correct shifts')
@@ -569,24 +568,17 @@ class multiviewMapper:
             json.dump(shiftWallet, fid)
             fid.close()
 
-    def OnFindClumps(self, event=None):
-        from PYME.recipes.localisations import FindClumps
+    def OnGroupLocalizations(self, event=None):
+        from PYME.recipes.localisations import FindClumps, MergeClumps
+
         recipe = self.pipeline.recipe
+
         recipe.add_module(FindClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='with_clumps',
                                      gapTolerance=self.clump_gap_tolerance, radiusScale=self.clump_radius_scale,
                                      radius_offset_nm=self.clump_radius_offset, probeAwareClumping=True))
-        recipe.execute()
-        self.pipeline.selectDataSource('with_clumps')
 
-    def OnMergeClumps(self, event=None):
-        from PYME.recipes.localisations import MergeClumps
-
-        if not 'clumpIndex' in self.pipeline.keys():
-            logger.debug('No clumps found - running FindClumps')
-            self.OnFindClumps()
-
-        recipe = self.pipeline.recipe
         recipe.add_module(MergeClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='clumped'))
+
         recipe.execute()
         self.pipeline.selectDataSource('clumped')
 
