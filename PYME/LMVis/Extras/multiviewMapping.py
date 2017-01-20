@@ -125,8 +125,7 @@ class multiviewMapper:
     The shiftmaps are functions that interface like bivariate splines, but can be recreated from a dictionary of their
     fit-model parameters, which are stored in a dictionary in the shiftmap object.
     In the multiviewMapper class, shiftmaps for multiview data sources are stored in a dictionary of dictionaries.
-    Each shiftmap is stored as a dictionary so that it can be easily written into a human-readable json file. These
-    shiftmaps are then stored in the shiftWallet dictionary.
+    Each shiftmap is stored as a dictionary so that it can be easily written into a human-readable json file.
 
     """
     def __init__(self, visFr):
@@ -152,6 +151,19 @@ class multiviewMapper:
                           helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
 
     def OnFold(self, event=None):
+        """
+        See multiview.foldX. At this point the origin of x should be the corner of the concatenated frame
+
+        Parameters
+        ----------
+
+            None, but requires metadata.
+
+        Notes
+        -----
+
+        """
+
         from PYME.recipes.localisations import MultiviewFold
 
         recipe = self.pipeline.recipe
@@ -161,6 +173,21 @@ class multiviewMapper:
         self.pipeline.selectDataSource('folded')
 
     def OnCorrectFolded(self, event=None):
+        """
+        Applies chromatic shift correction to folded localization data that was acquired with an
+        image splitting device, but localized without splitter awareness.
+        See recipes.localizations.MultiviewShiftCorrect.
+
+        Parameters
+        ----------
+
+            None
+
+        Notes
+        -----
+
+        """
+
         from PYME.recipes.localisations import MultiviewShiftCorrect
         pipeline = self.pipeline
         recipe = self.pipeline.recipe
@@ -185,14 +212,17 @@ class multiviewMapper:
     def OnCalibrateShifts(self, event):
         """
 
-        OnRegisterMultiview generates multiview shiftmaps on bead-data. Only beads which show up in all channels are
+        Generates multiview shiftmaps on bead-data. Only beads which show up in all channels are
         used to generate the shiftmap.
 
-        Args:
-            event: GUI event
+        Parameters
+        ----------
 
-        Returns: nothing
-            Writes shiftmapWallet into a json formatted .sf file through a GUI dialog
+            searchRadius: Radius within which to clump bead localizations that appear in all channels. Units of pixels.
+
+        Notes
+        -----
+
         """
         from PYME.Analysis.points import twoColour
         from PYME.Analysis.points import multiview
@@ -318,6 +348,25 @@ class multiviewMapper:
             fid.close()
 
     def OnGroupLocalizations(self, event=None):
+        """
+
+        Determines which localizations are likely to be the same molecule and coalesces their data points. See
+        recipes.localizations.FindClumps and MergeClumps.
+
+        Parameters
+        ----------
+
+            gap_tolerance: number of frames acceptable for a molecule to go MIA and still be called the same molecule
+                when it returns
+            radius_scale: multiplicative factor applied to the error_x term in deciding search radius for pairing
+            radius_offset: term added to radius_scale*error_x to set search radius
+            probeAwareClumping: boolean flag to tell FindClumps recipe module to cluster each probe separately
+
+
+        Notes
+        -----
+
+        """
         from PYME.recipes.localisations import FindClumps, MergeClumps
 
         recipe = self.pipeline.recipe
@@ -332,6 +381,22 @@ class multiviewMapper:
         self.pipeline.selectDataSource('clumped')
 
     def OnMapZ(self, event=None, useMD = True):
+        """
+
+        Uses sigmax and sigmay values from astigmatic fits to look up a z-position using calibration curves.
+        See Analysis.points.astigmatism.astigTools.lookup_astig_z
+
+        Parameters
+        ----------
+
+            None
+
+
+        Notes
+        -----
+
+        """
+
         from PYME.recipes.localisations import MapAstigZ
         #from PYME.IO import unifiedIO
         pipeline = self.pipeline
@@ -359,15 +424,6 @@ class multiviewMapper:
                 fdialog.Destroy()
                 logger.info('User canceled astigmatic calibration selection')
                 return
-
-        # z, zerr = astigTools.lookup_astig_z(pipeline, astig_calibrations, plot=False)
-        #
-        # pipeline.addColumn('astigZ', z)
-        # pipeline.addColumn('zLookupError', zerr)
-        #
-        # pipeline.selectedDataSource.addVariable('foreShort', 1.0)
-        #
-        # pipeline.selectedDataSource.setMapping('z', 'focus*foreShort + astigZ')
 
         recipe = self.pipeline.recipe
         recipe.add_module(MapAstigZ(recipe, inputName=self.pipeline.selectedDataSourceKey,
