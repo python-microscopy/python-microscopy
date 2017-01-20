@@ -16,12 +16,12 @@ class Mapping(ModuleBase):
     def execute(self, namespace):
         inp = namespace[self.inputName]
 
-        map = tabular.mappingFilter(inp, **self.mappings)
+        mapped = tabular.mappingFilter(inp, **self.mappings)
 
         if 'mdh' in dir(inp):
-            map.mdh = inp.mdh
+            mapped.mdh = inp.mdh
 
-        namespace[self.outputName] = map
+        namespace[self.outputName] = mapped
 
 
 @register_module('FilterTable')
@@ -35,12 +35,12 @@ class FilterTable(ModuleBase):
     def execute(self, namespace):
         inp = namespace[self.inputName]
 
-        map = tabular.resultsFilter(inp, **self.filters)
+        mapped = tabular.resultsFilter(inp, **self.filters)
 
         if 'mdh' in dir(inp):
-            map.mdh = inp.mdh
+            mapped.mdh = inp.mdh
 
-        namespace[self.outputName] = map
+        namespace[self.outputName] = mapped
 
     @property
     def _ds(self):
