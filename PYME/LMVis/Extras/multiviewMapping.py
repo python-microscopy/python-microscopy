@@ -577,7 +577,7 @@ class multiviewMapper:
                                      gapTolerance=self.clump_gap_tolerance, radiusScale=self.clump_radius_scale,
                                      radius_offset_nm=self.clump_radius_offset, probeAwareClumping=True))
 
-        recipe.add_module(MergeClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='clumped'))
+        recipe.add_module(MergeClumps(recipe, inputName='with_clumps', outputName='clumped'))
 
         recipe.execute()
         self.pipeline.selectDataSource('clumped')
