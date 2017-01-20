@@ -25,18 +25,11 @@
 import wx
 import numpy as np
 from PYME.Analysis.points.DeClump import pyDeClump
-from PYME.Analysis.points.DeClump import deClump
 
-from PYME.Analysis.points.astigmatism import astigTools
 import os
 from PYME.IO.FileUtils import nameUtils
 import json
-# import importlib
 
-#import scipy.interpolate as terp #terp doesn't really tell us what it means
-from scipy.interpolate import UnivariateSpline #as we only use this function, interpolate it directly
-
-#from PYME.LMVis.inpFilt import cachingResultsFilter  # mappingFilter  # fitResultsSource
 
 import logging
 logger = logging.getLogger(__name__)
