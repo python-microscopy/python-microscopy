@@ -42,23 +42,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def foldX(pipeline):
-    """
-
-    At this point the origin of x should be the corner of the concatenated frame
-
-    Args:
-        pipeline:
-
-    Returns: nothing
-        Adds folded x-coordinates to the pipeline
-        Adds channel assignments to the pipeline
-
-    """
-    from PYME.Analysis.points import multiview
-    multiview.foldX(pipeline.selectedDataSource, pipeline.mdh, inject=True, chroma_mappings=True)
-
-
 def plotFolded(X, Y, multiviewChannels, title=''):
     """
     Plots localizations with color based on multiview channel
@@ -467,6 +450,7 @@ class multiviewMapper:
             Writes shiftmapWallet into a json formatted .sf file through a GUI dialog
         """
         from PYME.Analysis.points import twoColour
+        from PYME.Analysis.points import multiview
         pipeline = self.pipeline
 
         try:
@@ -478,7 +462,7 @@ class multiviewMapper:
         rad_dlg.ShowModal()
         clumpRad = rad_dlg.GetValue()*1e3*pipeline.mdh['voxelsize.x']  # clump folded data within X pixels
         # fold x position of channels into the first
-        foldX(pipeline)
+        multiview.foldX(pipeline, pipeline.mdh, inject=True, chroma_mappings=True)
 
         plotFolded(pipeline['x'], pipeline['y'], pipeline['multiviewChannel'], 'Raw')
         # sort in frame order
