@@ -121,23 +121,6 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
     else:
         return assigned
 
-def applyShiftmaps(pipeline, shiftWallet):
-    """
-    applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
-    objects, applies them to the multiview data, and maps the positions registered to the first channel to the pipeline
-
-    Args:
-        x: vector of localization x-positions
-        y: vector of localization y-positions
-        numChan: number of multiview channels
-
-    Returns: nothing
-        Adds shifts into the pipeline which will then be applied automatically by the mappingFilter (see foldX)
-
-    """
-    from PYME.Analysis.points import multiview
-    multiview.applyShiftmaps(pipeline.selectedDataSource, shiftWallet)
-
 def astigMAPism(fres, astig_calibrations, chanPlane, chanColor):
     """
     Generates a look-up table of sorts for z based on sigma x/y fit results and calibration information. If a molecule
@@ -431,7 +414,7 @@ class multiviewMapper:
         rad_dlg.ShowModal()
         clumpRad = rad_dlg.GetValue()*1e3*pipeline.mdh['voxelsize.x']  # clump folded data within X pixels
         # fold x position of channels into the first
-        multiview.foldX(pipeline, pipeline.mdh, inject=True, chroma_mappings=True)
+        multiview.foldX(pipeline.selectedDataSource, pipeline.mdh, inject=True, chroma_mappings=True)
 
         plotFolded(pipeline['x'], pipeline['y'], pipeline['multiviewChannel'], 'Raw')
         # sort in frame order
@@ -502,7 +485,7 @@ class multiviewMapper:
 
         shiftWallet['shiftModel'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
 
-        applyShiftmaps(pipeline, shiftWallet)
+        multiview.applyShiftmaps(pipeline.selectedDataSource, shiftWallet)
 
         plotFolded(pipeline['x'], pipeline['y'],
                             pipeline['multiviewChannel'], 'All beads after Registration')
