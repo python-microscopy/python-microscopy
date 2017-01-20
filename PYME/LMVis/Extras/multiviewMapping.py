@@ -416,30 +416,21 @@ class multiviewMapper:
         recipe = self.pipeline.recipe
 
         if 'FIXMESiftmap' in pipeline.mdh.keys():  # load shiftmaps from metadata, if present
-            shiftWallet = pipeline.mdh['FIXMEShiftmap'] #FIXME: break this for now
+            fpath = pipeline.mdh['FIXMEShiftmap'] #FIXME: break this for now
         else:
             fdialog = wx.FileDialog(None, 'Load shift field', wildcard='Shift Field file (*.sf)|*.sf',
                                     style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
             succ = fdialog.ShowModal()
+
             if (succ == wx.ID_OK):
                 fpath = fdialog.GetPath()
-                # load json
-                #with open(fpath, 'r') as fid:
-                #    shiftWallet = json.load(fid)
-                recipe.add_module(MultiviewShiftCorrect(recipe, inputName=pipeline.selectedDataSourceKey,
-                                                        shiftMapLocation=fpath,
-                                                        outputName='shift_corrected'))
-                recipe.execute()
-                self.pipeline.selectDataSource('shift_corrected')
             else:
                 raise RuntimeError('Shiftmaps not found in metadata and could not be loaded from file')
 
-        #numChan = pipeline.mdh['Multiview.NumROIs']
-
-        #applyShiftmaps(pipeline, shiftWallet)
-
-
-
+        recipe.add_module(MultiviewShiftCorrect(recipe, inputName=pipeline.selectedDataSourceKey,
+                          shiftMapLocation=fpath, outputName='shift_corrected'))
+        recipe.execute()
+        self.pipeline.selectDataSource('shift_corrected')
 
     def OnFoldAndMapXY(self, event):
         """
