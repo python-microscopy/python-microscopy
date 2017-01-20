@@ -403,7 +403,7 @@ class multiviewMapper:
 
     def OnFold(self, event=None):
         from PYME.recipes.localisations import MultiviewFold
-        #foldX(self.pipeline)
+
         recipe = self.pipeline.recipe
         recipe.add_module(MultiviewFold(recipe, inputName=self.pipeline.selectedDataSourceKey,
                                                       outputName='folded'))
@@ -597,13 +597,7 @@ class multiviewMapper:
         recipe.execute()
         self.pipeline.selectDataSource('with_clumps')
 
-        # from PYME.Analysis.points import multiview
-        # multiview.findClumps(self.pipeline.selectedDataSource, self.clump_gap_tolerance,
-        #                      self.clump_radius_scale, self.clump_radius_offset)
-
-
     def OnMergeClumps(self, event=None):
-        #from PYME.Analysis.points import multiview
         from PYME.recipes.localisations import MergeClumps
 
         if not 'clumpIndex' in self.pipeline.keys():
@@ -614,14 +608,6 @@ class multiviewMapper:
         recipe.add_module(MergeClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='clumped'))
         recipe.execute()
         self.pipeline.selectDataSource('clumped')
-
-        # numChan = self.pipeline.mdh.getOrDefault('Multiview.NumROIs', 1)
-        #
-        # grouped = multiview.mergeClumps(self.pipeline.selectedDataSource, numChan)
-        #
-        #self.pipeline.addDataSource('Grouped', grouped)
-        # self.pipeline.selectDataSource('Grouped')
-
 
     def OnMapZ(self, event=None, useMD = True):
         from PYME.recipes.localisations import MapAstigZ
