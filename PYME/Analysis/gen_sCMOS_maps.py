@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 from PYME.IO.image import ImageStack
 from PYME.IO.MetaDataHandler import NestedClassMDHandler
+from PYME.IO.FileUtils import nameUtils
 
 import logging
 logger = logging.getLogger(__name__)
@@ -59,8 +60,6 @@ def mkDestPath(destdir,stem,mdh):
 
 
 def mkDefaultPath(stem,mdh):
-    from PYME.IO.FileUtils import nameUtils
-
     caldir = nameUtils.getCalibrationDir(mdh['Camera.SerialNumber'])
     makePathUnlessExists(caldir)
     return mkDestPath(caldir,stem,mdh)
