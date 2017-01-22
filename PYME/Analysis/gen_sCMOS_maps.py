@@ -159,7 +159,7 @@ def install_map(filename):
 
 def main():
 
-    chipsize = (2048,2048) # we currently assume this is correct but could be chosen based
+    default_chipsize = (2048,2048) # we currently assume this is correct but could be chosen based
                             # on camera model in meta data TODO - add CCD size to camera metadata
     darkthreshold = 1e4    # this really should depend on the gain mode (12bit vs 16 bit etc)
     variancethreshold = 300**2  # again this is currently picked fairly arbitrarily
@@ -208,29 +208,17 @@ def main():
     if end < 0:
         end = int(source.dataSource.getNumSlices() + end)
 
-    logger.info('Calculating mean and variance...')
-
-    m, ve = (None,None)
-    if not args.uniform:
-        m, v = _meanvards(source.dataSource, start = start, end=end)
-        eperADU = source.mdh['Camera.ElectronsPerCount']
-        ve = v*eperADU*eperADU
-    else:
-        logger.warn('Simulating uniform maps - use with care')
-
-        if args.dir is None:
-            logger.error('Uniform maps cannot be stored to the default map directory\nPlease specify an output directory.')
-            sys.exit(-1)
-
-    # occasionally the cameras seem to have completely unusable pixels
-    # one example was dark being 65535 (i.e. max value for 16 bit)
-    if m.max() > darkthreshold:
-        ve[m > darkthreshold] = blemishvariance
-    if ve.max() > variancethreshold:
-        ve[ve > variancethreshold] = blemishvariance
-
-    nbad = np.sum((m > darkthreshold)*(ve > variancethreshold))
-
+    # pre-checks before calculations to minimise the pain
+    chipsize = list(default_chipsize)
+    try:
+        chipsize[0] = source.mdh['Camera.SensorSizeX']
+    except AttributeError:
+        logger.warn('no valid x sensor size in metadata - using default %d' % chipsize[0])
+    try:
+        chipsize[1] = source.mdh['Camera.SensorSizeY']
+    except AttributeError:
+        logger.warn('no valid y sensor size in metadata - using default %d' % chipsize[1])
+    
     if not ((source.mdh['Camera.ROIWidth'] == chipsize[0]) and (source.mdh['Camera.ROIHeight'] == chipsize[1])):
         logger.warn('Generating a map from data with ROI set. Use with EXTREME caution.\nMaps should be calculated from the whole chip.')
 
@@ -238,11 +226,31 @@ def main():
             logger.error('Maps with an ROI set cannot be stored to the default map directory\nPlease specify an output directory.')
             sys.exit(-1)
 
+    logger.info('Calculating mean and variance...')
+
+    m, ve = (None,None)
+    if not args.uniform:
+        m, v = _meanvards(source.dataSource, start = start, end=end)
+        eperADU = source.mdh['Camera.ElectronsPerCount']
+        ve = v*eperADU*eperADU
+        # occasionally the cameras seem to have completely unusable pixels
+        # one example was dark being 65535 (i.e. max value for 16 bit)
+        if m.max() > darkthreshold:
+            ve[m > darkthreshold] = blemishvariance
+        if ve.max() > variancethreshold:
+            ve[ve > variancethreshold] = blemishvariance
+        nbad = np.sum((m > darkthreshold)*(ve > variancethreshold))
+    else:
+        logger.warn('Simulating uniform maps - use with care')
+        nbad = 0
+
+        if args.dir is None:
+            logger.error('Uniform maps cannot be stored to the default map directory\nPlease specify an output directory.')
+            sys.exit(-1)
+
     # if the uniform flag is set, then m and ve are passed as None
     # which makes sure that just the uniform defaults from meta data are used
     mfull, vefull, basemdh = insertIntoFullMap(m, ve, source.mdh, chipsize=chipsize)
-
-    #mfull, vefull, basemdh = (m, ve, source.mdh)
 
     logger.info('Saving results...')
 
@@ -255,7 +263,7 @@ def main():
         vname = mkDestPath(args.dir,'variance',source.mdh)
 
     logger.info('dark map -> %s...' % mname)
-    logger.info(sys.stderr, 'var  map -> %s...' % vname)
+    logger.info('var  map -> %s...' % vname)
 
     commonMD = NestedClassMDHandler()
     commonMD.setEntry('Analysis.name', 'mean-variance')
@@ -280,8 +288,8 @@ def main():
     vmd.setEntry('Analysis.resultname', 'variance')
     vmd.setEntry('Analysis.units', 'electrons^2')
 
-    ImageStack(mfull, mdh=mdh).Save(filename=mname)
-    ImageStack(vefull, mdh=mdh).Save(filename=vname)
+    ImageStack(mfull, mdh=mmd).Save(filename=mname)
+    ImageStack(vefull, mdh=vmd).Save(filename=vname)
 
 
 
