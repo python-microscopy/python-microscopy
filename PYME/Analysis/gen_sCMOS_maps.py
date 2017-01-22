@@ -75,9 +75,9 @@ def listCalibrationDirs():
             print(m)
 
 
-def insertIntoFullMap(m, ve, smdh, chipsize=(2048,2048)):
+def insertIntoFullMap(m, ve, smdh, sensor_size=(2048,2048)):
     """
-    this function embeds the calculated maps into a full chipsize array
+    this function embeds the calculated maps into a full sensorSize array
     that is padded with the camera default readnoise and offset as extracted from the
     metadata
     if m, ve are None nothing is copied into the map and just the uniform array is returned
@@ -87,7 +87,7 @@ def insertIntoFullMap(m, ve, smdh, chipsize=(2048,2048)):
     m
     ve
     smdh
-    chipsize
+    sensorSize
 
     Returns
     -------
@@ -110,16 +110,16 @@ def insertIntoFullMap(m, ve, smdh, chipsize=(2048,2048)):
 
     bmdh['Camera.ROIPosX'] = 1
     bmdh['Camera.ROIPosY'] = 1
-    bmdh['Camera.ROIWidth'] = chipsize[0]
-    bmdh['Camera.ROIHeight'] = chipsize[1]
-    bmdh['Camera.ROI'] = (1,1,chipsize[0]+1,chipsize[1]+1)
+    bmdh['Camera.ROIWidth'] = sensor_size[0]
+    bmdh['Camera.ROIHeight'] = sensor_size[1]
+    bmdh['Camera.ROI'] = (1,1,sensor_size[0]+1,sensor_size[1]+1)
 
     if m is None:
-        mfull = np.zeros(chipsize, dtype='float64')
-        vefull = np.zeros(chipsize, dtype='float64')
+        mfull = np.zeros(sensor_size, dtype='float64')
+        vefull = np.zeros(sensor_size, dtype='float64')
     else:
-        mfull = np.zeros(chipsize, dtype=m.dtype)
-        vefull = np.zeros(chipsize, dtype=ve.dtype)
+        mfull = np.zeros(sensor_size, dtype=m.dtype)
+        vefull = np.zeros(sensor_size, dtype=ve.dtype)
     mfull.fill(smdh['Camera.ADOffset'])
     vefull.fill(smdh['Camera.ReadNoise']**2)
     
@@ -159,7 +159,7 @@ def install_map(filename):
 
 def main():
 
-    default_chipsize = (2048,2048) # we currently assume this is correct but could be chosen based
+    defaultSensorSize = (2048,2048) # we currently assume this is correct but could be chosen based
                             # on camera model in meta data TODO - add CCD size to camera metadata
     darkthreshold = 1e4    # this really should depend on the gain mode (12bit vs 16 bit etc)
     variancethreshold = 300**2  # again this is currently picked fairly arbitrarily
@@ -198,8 +198,6 @@ def main():
         install_map(filename)
         sys.exit(0)
 
-
-
     logger.info('Opening image series...')
     source = ImageStack(filename=filename)
 
@@ -209,17 +207,17 @@ def main():
         end = int(source.dataSource.getNumSlices() + end)
 
     # pre-checks before calculations to minimise the pain
-    chipsize = list(default_chipsize)
+    sensorSize = list(defaultSensorSize)
     try:
-        chipsize[0] = source.mdh['Camera.SensorSizeX']
+        sensorSize[0] = source.mdh['Camera.SensorWidth']
     except AttributeError:
-        logger.warn('no valid x sensor size in metadata - using default %d' % chipsize[0])
+        logger.warn('no valid sensor width in metadata - using default %d' % sensorSize[0])
     try:
-        chipsize[1] = source.mdh['Camera.SensorSizeY']
+        sensorSize[1] = source.mdh['Camera.SensorHeight']
     except AttributeError:
-        logger.warn('no valid y sensor size in metadata - using default %d' % chipsize[1])
+        logger.warn('no valid sensor height in metadata - using default %d' % sensorSize[1])
     
-    if not ((source.mdh['Camera.ROIWidth'] == chipsize[0]) and (source.mdh['Camera.ROIHeight'] == chipsize[1])):
+    if not ((source.mdh['Camera.ROIWidth'] == sensorSize[0]) and (source.mdh['Camera.ROIHeight'] == sensorSize[1])):
         logger.warn('Generating a map from data with ROI set. Use with EXTREME caution.\nMaps should be calculated from the whole chip.')
 
         if args.dir is None:
@@ -250,7 +248,7 @@ def main():
 
     # if the uniform flag is set, then m and ve are passed as None
     # which makes sure that just the uniform defaults from meta data are used
-    mfull, vefull, basemdh = insertIntoFullMap(m, ve, source.mdh, chipsize=chipsize)
+    mfull, vefull, basemdh = insertIntoFullMap(m, ve, source.mdh, sensor_size=sensorSize)
 
     logger.info('Saving results...')
 

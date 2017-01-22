@@ -586,8 +586,8 @@ class AndorBase(SDK3Camera):
             mdh.setEntry('Camera.Model', self.CameraModel.getValue())
             mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
 
-            mdh.setEntry('Camera.SensorSizeX',self.GetCCDWidth())
-            mdh.setEntry('Camera.SensorSizeY',self.GetCCDHeight())
+            mdh.setEntry('Camera.SensorWidth',self.GetCCDWidth())
+            mdh.setEntry('Camera.SensorHeight',self.GetCCDHeight())
 
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
             mdh.setEntry('Camera.CycleTime', self.GetCycleTime())
