@@ -347,11 +347,10 @@ class multiviewMapper:
             json.dump(shiftWallet, fid)
             fid.close()
 
-    def OnGroupLocalizations(self, event=None):
+    def OnFindClumps(self, event=None):
         """
 
-        Determines which localizations are likely to be the same molecule and coalesces their data points. See
-        recipes.localizations.FindClumps and MergeClumps.
+        Determines which localizations are likely to be the same molecule and assigns them the same label.
 
         Parameters
         ----------
@@ -367,13 +366,37 @@ class multiviewMapper:
         -----
 
         """
-        from PYME.recipes.localisations import FindClumps, MergeClumps
-
+        from PYME.recipes.localisations import FindClumps
         recipe = self.pipeline.recipe
-
         recipe.add_module(FindClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='with_clumps',
                                      gapTolerance=self.clump_gap_tolerance, radiusScale=self.clump_radius_scale,
                                      radius_offset_nm=self.clump_radius_offset, probeAwareClumping=True))
+        recipe.execute()
+        self.pipeline.selectDataSource('with_clumps')
+
+    def OnMergeClumps(self, event=None):
+        """
+
+        Coalesces clusters of localization data considered to be the same molecule. See
+        recipes.localizations.MergeClumps.
+
+        Parameters
+        ----------
+
+            None
+
+
+        Notes
+        -----
+
+        """
+        from PYME.recipes.localisations import FindClumps, MergeClumps
+
+        if not 'clumpIndex' in self.pipeline.keys():
+            logger.debug('No clumps found - running FindClumps')
+            self.OnFindClumps()
+
+        recipe = self.pipeline.recipe
 
         recipe.add_module(MergeClumps(recipe, inputName='with_clumps', outputName='clumped'))
 
