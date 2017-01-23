@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from PYME.Analysis.Tracking import tracking
-from PYME.Analysis.Tracking import trackUtils
+#from PYME.Analysis.Tracking import trackUtils
 
 from PYME.IO import tabular
 
@@ -50,6 +50,8 @@ class TrackFeatures(ModuleBase):
         
     def Track(self, objects, newTracker=False):
         """Track objects based on a given set of feature vectors"""
+        from PYME.Analysis.Tracking import trackUtils
+
         if (self._tracker is None) or not (len(self._tracker.t) == len(objects['t'])) or newTracker:
             featNames = [s.strip() for s in self.features.split(',')]
             
@@ -188,6 +190,7 @@ class ExtractTracks(ModuleBase):
     outputTracks = Output('tracks', desc='A clump / track manager object - aka the actual tracks')
 
     def execute(self, namespace):
+        from PYME.Analysis.Tracking import trackUtils
         #print
         data = namespace[self.inputMeasurements]
 
