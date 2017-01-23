@@ -713,10 +713,8 @@ class cloneSource(TabularBase):
         #resultsSource
         self.cache = {}
 
-        if not keys:
-            klist = resultsSource.keys()
-        else:
-            klist = keys
+        klist = resultsSource.keys() if not keys else keys
+
         for k in klist:
             self.cache[k] = resultsSource[k]
 
