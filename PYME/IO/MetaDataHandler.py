@@ -570,8 +570,15 @@ class OMEXMLMDHandler(XMLMDHandler):
                 #try to load pixel size etc fro OME metadata
                 pix = self.doc.getElementsByTagName('Pixels')[0]
                 
-                self['voxelsize.x'] = float(pix.getAttribute('PhysicalSizeX'))
-                self['voxelsize.y'] = float(pix.getAttribute('PhysicalSizeY'))
+                #print 'PhysicalSizeX: ', pix.getAttribute('PhysicalSizeX')
+                try:
+                    self['voxelsize.x'] = float(pix.getAttribute('PhysicalSizeX'))
+                    self['voxelsize.y'] = float(pix.getAttribute('PhysicalSizeY'))
+                except:
+                    print('WARNING: Malformed OME XML. Pixel size not defined, using 100nm')
+
+                    self['voxelsize.x'] = .1 #FIXME - Get user to set pixel size if absent
+                    self['voxelsize.x'] = .1
                 try:
                     self['voxelsize.z'] = float(pix.getAttribute('PhysicalSizeZ'))
                 except:

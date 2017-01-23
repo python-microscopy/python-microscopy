@@ -548,14 +548,15 @@ def main(protocol="HTTP/1.0"):
     """
     from optparse import OptionParser
 
-    op = OptionParser(usage='usage: %s [options] [filename]' % sys.argv[0])
+    op = OptionParser(usage='usage: %s [options]' % sys.argv[0])
 
     op.add_option('-p', '--port', dest='port', default=config.get('dataserver-port', 8080),
-                  help="port number to serve on")
+                  help="port number to serve on (default: 8080, see also 'dataserver-port' config entry)")
     op.add_option('-t', '--test', dest='test', help="Set up for bandwidth test (don't save files)", action="store_true", default=False)
     op.add_option('-v', '--protocol', dest='protocol', help="HTTP protocol version", default="1.1")
     op.add_option('-l', '--log-requests', dest='log_requests', help="Display http request info", default=False, action="store_true")
-    op.add_option('-r', '--root', dest='root', help="Root directory of virtual filesystem", default=config.get('dataserver-root', os.curdir))
+    default_root = config.get('dataserver-root', os.curdir)
+    op.add_option('-r', '--root', dest='root', help="Root directory of virtual filesystem (default %s, see also 'dataserver-root' config entry)" % dataserver_root, default=default_root)
     op.add_option('-k', '--profile', dest='profile', help="Enable profiling", default=False, action="store_true")
 
 

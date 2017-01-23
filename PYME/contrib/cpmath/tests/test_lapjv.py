@@ -13,8 +13,8 @@ import numpy as np
 import scipy.ndimage as scind
 import unittest
 
-import PYME.cpmath.lapjv as LAPJV
-from PYME.cpmath.filter import permutations
+import PYME.contrib.cpmath.lapjv as LAPJV
+from PYME.contrib.cpmath.filter import permutations
 
 class TestLAPJVPYX(unittest.TestCase):
     def test_01_01_reduction_transfer(self):

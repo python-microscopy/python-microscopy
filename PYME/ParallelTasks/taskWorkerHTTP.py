@@ -377,7 +377,10 @@ class taskWorker(object):
                     #print taskDescr['inputs']
                     #print context
 
-                    context.update(taskDescr.get('outputs', {})) #abuse outputs as context
+                    #abuse outputs as context
+                    outputs = taskDescr.get('outputs', None)
+                    if not outputs is None:
+                        context.update(outputs)
                     #print context, context['input_dir']
                     recipe.save(context)
 
