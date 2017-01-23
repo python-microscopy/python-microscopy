@@ -38,6 +38,7 @@ build:
     - PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main
     - PYMEClusterDup = PYME.io.clusterDuplication:main
     - PYMEDistributor = PYME.ParallelTasks.PYMEDistributor:main
+    - PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main
     - PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main
 
 
