@@ -428,7 +428,7 @@ class fitTestJig(object):
         plt.xlabel('Position Error [nm]')
         plt.ylabel('Frequency')
 
-    def plotResSimp(self, varName):
+    def plotResSimp(self, varName, subplot=False):
         """
         Plot a scatter plot of the fitted vs the simulated values (simple version).
 
@@ -447,7 +447,9 @@ class fitTestJig(object):
         #from pylab import *
         import matplotlib.pyplot as plt
         # remove figure() call to enable use in supblots
-        #plt.figure()
+        if not subplot:
+            plt.figure()
+            
         #print varName
         xv = self.ps[varName].ravel()
         

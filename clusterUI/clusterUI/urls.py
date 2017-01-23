@@ -19,6 +19,7 @@ from django.views.generic.base import RedirectView
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^accounts/', include('django.contrib.auth.urls')),
     url(r'^files/', include('clusterbrowser.urls')),
     url(r'^status/', include('clusterstatus.urls')),
     url(r'^localization/', include('localization.urls')),
