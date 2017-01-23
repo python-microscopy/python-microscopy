@@ -222,25 +222,6 @@ class AndorBase(SDK3Camera):
         #self.setNoisePropertiesByCam(self.GetSerialNumber())
         self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
-        # we use a try block as this will allow us to use the SDK software cams for simple testing
-        try:
-            self.SetSimpleGainMode('high dynamic range')
-        except:
-            logger.info("error setting gain mode")
-            pass
-        # spurious noise filter off by default
-        try:
-            self.SpuriousNoiseFilter.setValue(0) # this will also fail with the SimCams
-        except:
-            logger.info("error disabling spurios noise filter")
-            pass
-
-        # Static Blemish Correction off by default
-        try:
-            self.StaticBlemishCorrection.setValue(0) # this will also fail with the SimCams
-        except:
-            logger.info("error disabling Static Blemish Correction")
-            pass
 
         # we use a try block as this will allow us to use the SDK software cams for simple testing
         try:
@@ -509,15 +490,6 @@ class AndorBase(SDK3Camera):
         #TODO - this should really be in the GUI, not here
         x1, x2 = sorted([x1, x2])
         y1, y2 = sorted([y1, y2])
-            tmp = x2
-            x2 = x1
-            x1 = tmp
-        if (y1 > y2):
-            tmp = y2
-            y2 = y1
-            y1 = tmp
-        # import sys
-        # print >>sys.stderr, x1, y1, x2-x1, y2-y1
         
         #have to set width before x, height before y
         self.AOIWidth.setValue(x2-x1)
@@ -535,7 +507,6 @@ class AndorBase(SDK3Camera):
 
     def GetSimpleGainMode(self):
         return self.SimplePreAmpGainControl.getString()
-        return self._gainmode
 
     def GetROIX1(self):
         return self.AOILeft.getValue()
@@ -621,7 +592,7 @@ class AndorBase(SDK3Camera):
 
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
             mdh.setEntry('Camera.CycleTime', self.GetCycleTime())
-            mdh.setEntry('Camera.EMGain', 0)
+            mdh.setEntry('Camera.EMGain', 1)
             mdh.setEntry('Camera.DefaultEMGain', 1) # needed for some protocols
             mdh.setEntry('Camera.SimpleGainMode', self.GetSimpleGainMode())
 
@@ -673,7 +644,7 @@ class AndorBase(SDK3Camera):
 
     #functions to make us look more like EMCCD camera
     def GetEMGain(self):
-        return self.EMGain
+        return 1
 
     def GetCCDTempSetPoint(self):
         return self.TargetSensorTemperature.getValue()
@@ -685,7 +656,6 @@ class AndorBase(SDK3Camera):
     def SetEMGain(self, gain):
         logger.info("EMGain ignored")
 
-        return
     
     def SetAcquisitionMode(self, aqMode):
         self.CycleMode.setIndex(aqMode)
@@ -711,13 +681,6 @@ class AndorBase(SDK3Camera):
     def GetFPS(self):
         #return self.FrameRate.getValue()
         return self._frameRate
-
-    def __getattr__(self, name):
-        if name in self.noiseProps.keys():
-            return self.noiseProps[name]
-        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
-
-
 
     def __del__(self):
         self.Shutdown()
