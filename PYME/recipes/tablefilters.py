@@ -35,12 +35,12 @@ class FilterTable(ModuleBase):
     def execute(self, namespace):
         inp = namespace[self.inputName]
 
-        mapped = tabular.resultsFilter(inp, **self.filters)
+        filtered = tabular.resultsFilter(inp, **self.filters)
 
         if 'mdh' in dir(inp):
-            mapped.mdh = inp.mdh
+            filtered.mdh = inp.mdh
 
-        namespace[self.outputName] = mapped
+        namespace[self.outputName] = filtered
 
     @property
     def _ds(self):
@@ -86,12 +86,12 @@ class ConcatenateTables(ModuleBase):
         inp0 = namespace[self.inputName0]
         inp1 = namespace[self.inputName1]
 
-        mapped = tabular.concatenateFilter(inp0, inp1)
+        concatenated = tabular.concatenateFilter(inp0, inp1)
 
         if 'mdh' in dir(inp0):
-            mapped.mdh = inp0.mdh
+            concatenated.mdh = inp0.mdh
 
-        namespace[self.outputName] = mapped
+        namespace[self.outputName] = concatenated
 
 
 @register_legacy_module('AggregateMeasurements')
