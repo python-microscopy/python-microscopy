@@ -50,20 +50,20 @@ class AndorBase(SDK3Camera):
     MODE_CONTINUOUS = 1
     MODE_SINGLE_SHOT = 0
 
-    PixelEncodingForGain = {'11-bit (low noise)': 'Mono12',
-                            '11-bit (high well capacity)': 'Mono12',
+    PixelEncodingForGain = {'12-bit (low noise)': 'Mono12',
+                            '12-bit (high well capacity)': 'Mono12',
                             '16-bit (low noise & high well capacity)' : 'Mono16'
                             }
 
     _noise_properties = {
         'VSC-00954': {
-            '11-bit (low noise)': {
+            '12-bit (low noise)': {
                 'ReadNoise' : 1.1,
                 'ElectronsPerCount' : 0.28,
                 'ADOffset' : 100, # check mean (or median) offset
                 'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
             },
-            '11-bit (high well capacity)': {
+            '12-bit (high well capacity)': {
                 'ReadNoise' : 5.96,
                 'ElectronsPerCount' : 6.97,
                 'ADOffset' : 100,
@@ -76,13 +76,13 @@ class AndorBase(SDK3Camera):
                 'SaturationThreshold' : (2**16 -1)
             }},
         'VSC-02858': {
-             '11-bit (low noise)': {
+             '12-bit (low noise)': {
                 'ReadNoise' : 1.19,
                 'ElectronsPerCount' : 0.3,
                 'ADOffset' : 100, # check mean (or median) offset
                 'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
             },
-            '11-bit (high well capacity)': {
+            '12-bit (high well capacity)': {
                 'ReadNoise' : 6.18,
                 'ElectronsPerCount' : 7.2,
                 'ADOffset' : 100,
@@ -95,13 +95,13 @@ class AndorBase(SDK3Camera):
                 'SaturationThreshold' : (2**16 -1)
             }},
         'VSC-02698': {
-             '11-bit (low noise)': {
+             '12-bit (low noise)': {
                 'ReadNoise' : 1.16,
                 'ElectronsPerCount' : 0.26,
                 'ADOffset' : 100, # check mean (or median) offset
                 'SaturationThreshold' : 2**11-1#(2**16 -1) # check this is really 11 bit
             },
-            '11-bit (high well capacity)': {
+            '12-bit (high well capacity)': {
                 'ReadNoise' : 6.64,
                 'ElectronsPerCount' : 7.38,
                 'ADOffset' : 100,
@@ -123,6 +123,7 @@ class AndorBase(SDK3Camera):
         try:
             return self._noise_properties[self.GetSerialNumber()][self.GetSimpleGainMode()]
         except KeyError:
+            logger.warn('camera specific noise props not found - using default noise props')
             return {'ReadNoise' : 1.1,
                     'ElectronsPerCount' : 0.28,
                     'ADOffset' : 100, # check mean (or median) offset
@@ -224,7 +225,7 @@ class AndorBase(SDK3Camera):
 
         # we use a try block as this will allow us to use the SDK software cams for simple testing
         try:
-            self.SetSimpleGainMode('11-bit (low noise)')
+            self.SetSimpleGainMode('12-bit (low noise)')
         except:
             logger.info("error setting gain mode")
             pass
@@ -497,7 +498,7 @@ class AndorBase(SDK3Camera):
         self.AOITop.setValue(y1+1)
 
     def SetSimpleGainMode(self,mode):
-        if not any(mode in s for s in self.SimpleGainModes.keys()):
+        if not any(mode in s for s in self.PixelEncodingForGain.keys()):
             logger.warn('invalid mode "%s" requested - ignored' % mode)
             return
 
