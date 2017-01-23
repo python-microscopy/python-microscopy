@@ -145,7 +145,8 @@ class multiviewMapper:
         visFr.AddMenuItem('Multiview', 'Fold Channels', self.OnFold)
         visFr.AddMenuItem('Multiview', 'Shift correct folded channels', self.OnCorrectFolded)
 
-        visFr.AddMenuItem('Multiview', 'Group localizations', self.OnGroupLocalizations)
+        visFr.AddMenuItem('Multiview', 'Find points from same molecule', self.OnFindClumps)
+        visFr.AddMenuItem('Multiview', 'Group found points', self.OnMergeClumps)
 
         visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapZ,
                           helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
