@@ -162,10 +162,12 @@ requirements:
     - zeroconf
     - requests
     - pandas
-    - yaml
+    - pyyaml
     - dispatch
     - pymecompress
     - ujson
+    - docutils
+    - sphinx
     - python-bioformats [osx]
 
     #todo make cross-platform versions
