@@ -32,9 +32,10 @@ class H5RFile(object):
         self.filename = filename
         self.mode = mode
 
-        logging.debug('pytables open call')
-        self._h5file = tables.openFile(filename, mode)
-        logging.debug('pytables file open')
+        logging.debug('pytables open call: %s' % filename)
+        with tablesLock:
+            self._h5file = tables.openFile(filename, mode)
+        logging.debug('pytables file open: %s' % filename)
 
         #metadata and events are created on demand
         self._mdh = None
@@ -162,7 +163,8 @@ class H5RFile(object):
 
                 curTime = time.time()
                 if (curTime - self._lastFlushTime) > FLUSH_INTERVAL:
-                    self._h5file.flush()
+                    with tablesLock:
+                        self._h5file.flush()
                     self._lastFlushTime = curTime
 
                 time.sleep(0.1)
@@ -171,7 +173,7 @@ class H5RFile(object):
             traceback.print_exc()
             logging.error(traceback.format_exc())
         finally:
-            logging.debug('H5RFile - closing')
+            logging.debug('H5RFile - closing: %s' % self.filename)
             #remove ourselves from the cache
             try:
                 file_cache.pop((self.filename, self.mode))
@@ -180,7 +182,10 @@ class H5RFile(object):
 
             self.is_alive = False
             #finally, close the file
-            self._h5file.close()
+            with tablesLock:
+                self._h5file.close()
+
+            logging.debug('H5RFile - closed: %s' % self.filename)
 
 
 
