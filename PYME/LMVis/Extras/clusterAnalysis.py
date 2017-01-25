@@ -43,7 +43,7 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Extras', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
-        visFr.AddMenuItem('Extras', 'Nearest Neighbor Distances', self.OnNearestNeighbor,
+        visFr.AddMenuItem('Extras', 'Nearest Neighbor Distance Histogram', self.OnNearestNeighbor,
                           helpText='')
 
     def OnClumpDBSCAN(self, event=None):
@@ -67,9 +67,9 @@ class ClusterAnalyser:
 
     def OnNearestNeighbor(self, event=None):
         """
-        GUI front-end for the NearestNeighborTwoSpecies recipe module. Since the module requires two separate datasource
-        or dictionary-like inputs, the selectedDataSource can be split based on unique values of a given pipeline key
-        (e.g. probe).
+        GUI front-end for the NearestNeighbourDistances recipe module. Handling is in place for single species nearest
+        neighbour calculations, as well as two species where the user is queried via the GUI as to which channels to use
+        for building and querying the kdtree.
         """
         from PYME.recipes import measurement
         import matplotlib.pyplot as plt
@@ -90,9 +90,8 @@ class ClusterAnalyser:
             selectedChans = chan_dlg.GetSelections()
             if len(selectedChans) == 2:
                 # select order
-
                 order_dlg = wx.SingleChoiceDialog(self.visFr, 'Choose which perspective to measure from',
-                                                  'Nearest neighbour channel selection',
+                                                  'Nearest neighbour perspective selection',
                                                   ['Nearest %s to each %s' % (selectedChans[0], selectedChans[1]),
                                                    'Nearest %s to each %s' % (selectedChans[1], selectedChans[0])])
                 if not order_dlg.ShowModal() == wx.ID_OK:
