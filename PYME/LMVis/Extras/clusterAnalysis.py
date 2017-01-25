@@ -252,11 +252,13 @@ class ClusterAnalyser:
         #run recipe
         distances = distogram.execute()
 
+        binsz = (distances['bins'][1] - distances['bins'][0])
         self.pairwiseDistances[selectedChans] = {'counts': np.array(distances['counts']),
-                                                        'bins': np.array(distances['bins'] + 0.5*(distances['bins'][1] - distances['bins'][0]))}
+                                                        'bins': np.array(distances['bins'] + 0.5*binsz)}
 
         plt.figure()
-        plt.bar(self.pairwiseDistances[selectedChans]['bins'], self.pairwiseDistances[selectedChans]['counts'])
+        plt.bar(self.pairwiseDistances[selectedChans]['bins'] - 0.5*binsz,
+                self.pairwiseDistances[selectedChans]['counts'], width=binsz)
 
 
 
