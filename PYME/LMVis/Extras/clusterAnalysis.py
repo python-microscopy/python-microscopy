@@ -86,6 +86,7 @@ class ClusterAnalyser:
             if not chan_dlg.ShowModal() == wx.ID_OK:
                 return  # handle cancel
 
+            dkey = 'neighbourDists'
             selectedChans = chan_dlg.GetSelections()
             if len(selectedChans) == 2:
                 # select order
@@ -117,15 +118,19 @@ class ClusterAnalyser:
                 # restore original display settings
                 self.pipeline.colourFilter.setColour(dispColor)
 
+                matchMaker = measurement.NearestNeighbourDistances(columns=['x', 'y', 'z'], inputChan0='A', inputChan1='B',
+                                                               outputName='output', key=dkey)
+            elif len(selectedChans) > 2:
+                raise RuntimeError('NearestNeighbour cannot handle more than two channels')
+
+
         if len(selectedChans) < 2:
             desc = 'Single channel nearest neighbours'
-            namespace = {'A': self.pipeline, 'B': self.pipeline}
-        elif len(selectedChans) > 2:
-            raise RuntimeError('NearestNeighbour cannot handle more than two channels')
+            namespace = {'A': self.pipeline}
+            matchMaker = measurement.NearestNeighbourDistances(columns=['x', 'y', 'z'], inputChan0='A', inputChan1='',
+                                                               outputName='output', key=dkey)
 
-        dkey = 'neighbourDists'
-        matchMaker = measurement.NearestNeighbourDistances(columns=['x', 'y', 'z'], inputChan0='A', inputChan1='B',
-                                                           outputName='output',key=dkey)
+
         matchMaker.execute(namespace)
         dists = np.array(namespace['output'][dkey])
 

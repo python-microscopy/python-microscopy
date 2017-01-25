@@ -264,15 +264,22 @@ class NearestNeighbourDistances(ModuleBase):
         
         if self.inputChan1 == '':
             pos1 = pos
+            singleChan = True  # flag to not pair molecules with themselves
         else:
             pos1 = namespace[self.inputChan1]
+            singleChan = False
 
         #create a kdtree
         p1 = np.vstack([pos[k] for k in self.columns]).T
         p2 = np.vstack([pos1[k] for k in self.columns]).T
         kdt = cKDTree(p1)
 
-        d, i = kdt.query(p2, 1)
+        if singleChan:
+            #query the two closest entries - the closest entry will be the orig point paired with itself, so ignore it
+            d, i = kdt.query(p2, 2)
+            d = d[:, 1]
+        else:
+            d, i = kdt.query(p2, 1)
 
         res = pd.DataFrame({self.key: d})
         if 'mdh' in dir(pos):
