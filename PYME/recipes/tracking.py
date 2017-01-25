@@ -152,6 +152,8 @@ class LoadSpeckles(ModuleBase):
         seriesLength = 100000
 
         mdh = MetaDataHandler.NestedClassMDHandler()
+        mdh['voxelsize.x'] = .001# default pixel size - FIXME
+        mdh['voxelsize.y'] = .001
 
         if not self.inputImage == '':
             inp = namespace[self.inputImage]
