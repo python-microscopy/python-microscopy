@@ -16,12 +16,12 @@ class Mapping(ModuleBase):
     def execute(self, namespace):
         inp = namespace[self.inputName]
 
-        map = tabular.mappingFilter(inp, **self.mappings)
+        mapped = tabular.mappingFilter(inp, **self.mappings)
 
         if 'mdh' in dir(inp):
-            map.mdh = inp.mdh
+            mapped.mdh = inp.mdh
 
-        namespace[self.outputName] = map
+        namespace[self.outputName] = mapped
 
 
 @register_module('FilterTable')
@@ -35,12 +35,12 @@ class FilterTable(ModuleBase):
     def execute(self, namespace):
         inp = namespace[self.inputName]
 
-        map = tabular.resultsFilter(inp, **self.filters)
+        filtered = tabular.resultsFilter(inp, **self.filters)
 
         if 'mdh' in dir(inp):
-            map.mdh = inp.mdh
+            filtered.mdh = inp.mdh
 
-        namespace[self.outputName] = map
+        namespace[self.outputName] = filtered
 
     @property
     def _ds(self):
@@ -86,12 +86,12 @@ class ConcatenateTables(ModuleBase):
         inp0 = namespace[self.inputName0]
         inp1 = namespace[self.inputName1]
 
-        map = tabular.concatenateFilter(inp0, inp1)
+        concatenated = tabular.concatenateFilter(inp0, inp1)
 
         if 'mdh' in dir(inp0):
-            map.mdh = inp0.mdh
+            concatenated.mdh = inp0.mdh
 
-        namespace[self.outputName] = map
+        namespace[self.outputName] = concatenated
 
 
 @register_legacy_module('AggregateMeasurements')
@@ -139,10 +139,13 @@ class SelectTableColumns(ModuleBase):
 
     def execute(self, namespace):
         meas = namespace[self.inputMeasurements]
-        out = pd.DataFrame({k: meas[k] for k in self.keys.split()})
-        if 'mdh' in dir(meas):
-            #propagate metadata
+
+        out = tabular.cloneSource(meas, keys=self.keys.split())
+        # propagate metadata, if present
+        try:
             out.mdh = meas.mdh
+        except AttributeError:
+            pass
 
         namespace[self.outputName] = out
 

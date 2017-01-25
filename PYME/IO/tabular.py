@@ -708,13 +708,14 @@ class colourFilter(TabularBase):
     
 class cloneSource(TabularBase):
     _name = "Cloned Source"
-    def __init__(self, resultsSource):
+    def __init__(self, resultsSource, keys=None):
         """Creates an in memory copy of a (filtered) data source"""
-
         #resultsSource
         self.cache = {}
 
-        for k in resultsSource.keys():
+        klist = resultsSource.keys() if not keys else keys
+
+        for k in klist:
             self.cache[k] = resultsSource[k]
 
 
