@@ -498,24 +498,41 @@ def putFile(filename, data, serverfilter=''):
 
     TODO - Add retry with a different server on failure
     """
-    name, info = _chooseServer(serverfilter)
+    success = False
+    nAttempts = 0
+    
+    while not success and nAttempts < 3:
+        nAttempts +=1
+        name, info = _chooseServer(serverfilter)
+    
+        url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
+    
+        t = time.time()
+        _lastwritetime[name] = t
+    
+        url = url.encode()
+        try:
+            s = _getSession(url)
+            r = s.put(url, data=data, timeout=1)
+            dt = time.time() - t
+            #print r.status_code
+            if not r.status_code == 200:
+                raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))
 
-    url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
-
-    t = time.time()
-    _lastwritetime[name] = t
-
-    url = url.encode()
-    s = _getSession(url)
-    r = s.put(url, data=data, timeout=1)
-    dt = time.time() - t
-    #print r.status_code
-    if not r.status_code == 200:
-        raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))
-
-    r.close()
-
-    _lastwritespeed[name] = len(data) / (dt + .001)
+            _lastwritespeed[name] = len(data) / (dt + .001)
+            
+            success = True
+            
+        except requests.ConnectTimeout:
+            if nAttempts >= 3:
+                logger.exception('Timeout attempting to put file: %s, after 3 retries, aborting' % url)
+                raise
+            else:
+                logger.warn('Timeout attempting to put file: %s, retrying' % url)
+        finally:
+            r.close()
+    
+        
 
 if USE_RAW_SOCKETS:
     def putFiles(files, serverfilter=''):
