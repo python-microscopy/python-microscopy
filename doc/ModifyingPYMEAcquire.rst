@@ -35,7 +35,7 @@ with a driver for the PCO Sensicam and then made other camera drivers look like 
 Making a driver for a stage / piezo
 ===================================
 
-Copy one of the existing piezo drivers (in PYME/Acquire/Hardware/Piezos) and modifiy the method implementation whilst
+Copy one of the existing piezo drivers (in `PYME/Acquire/Hardware/Piezos`) and modifiy the method implementation whilst
 keeping the signatures the same. Should really be re-factored to use a common Piezo/Positioning base class. Both
 piezos and motorized stages use the same interface.
 
@@ -54,14 +54,14 @@ In general we are moving from an imperative (we tell the piezo to move to a posi
 piezo that it should be at position x) way of talking to hardware. This is to aid future automation (we can save and
 restore the 'state' of the microscope / tell the microscope to assume a certain state, rather than making a number of
 imperative commands to each of the hardware components). This is still a work in progress, but new hardware should
-ideally support this way of doing things - see `PYME/Acquire/microscope.py`, and in particular the `StateHandler` code
-for more info.
+ideally support this way of doing things - see :mod:`PYME.Acquire.microscope`, and in particular the
+:class:`PYME.Acquire.microscope.StateHandler` code for more info.
 
 Timing
 ======
 
 Timing is currently 'lazy' by default  - i.e. there is not tight synchronization between hardware movements and the
-camera, with the preferred approach being to generate and save a timestamped event (`PYME/Acquire/eventLog.py` -
+camera, with the preferred approach being to generate and save a timestamped event (:mod:`PYME.Acquire.eventLog` -
 although this still needs documentation) for any hardware motion and compare this to frame timestamps in post-processing
 (currently inferred from a start time and frame rate, but ideally provided directly from the camera in the future - both
 Andor and Hamamatsu cameras support hardware timestamps, although these are not supported in our current software).

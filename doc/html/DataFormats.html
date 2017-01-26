@@ -25,8 +25,8 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="PYME 16.11.10 documentation" href="index.html" />
-    <link rel="next" title="The Sample Database" href="SampleDB.html" />
-    <link rel="prev" title="Extending VisGUI" href="ExtendingVisGUI.html" /> 
+    <link rel="next" title="PYME Metadata" href="metadata.html" />
+    <link rel="prev" title="Modifying PYMEAcquire and writing hardware drivers" href="ModifyingPYMEAcquire.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -39,10 +39,10 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="SampleDB.html" title="The Sample Database"
+          <a href="metadata.html" title="PYME Metadata"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="ExtendingVisGUI.html" title="Extending VisGUI"
+          <a href="ModifyingPYMEAcquire.html" title="Modifying PYMEAcquire and writing hardware drivers"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">PYME 16.11.10 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/DataFormats.rst">Edit</a> &raquo;</li>
@@ -63,19 +63,19 @@
 <li><a class="reference internal" href="#tiff-tif">TIFF (<code class="docutils literal"><span class="pre">.tif</span></code>)</a></li>
 <li><a class="reference internal" href="#psf-files-psf">PSF Files (<code class="docutils literal"><span class="pre">.psf</span></code>)</a></li>
 <li><a class="reference internal" href="#shiftfield-files-sf">Shiftfield files (<code class="docutils literal"><span class="pre">.sf</span></code>)</a></li>
-<li><a class="reference internal" href="#pyme-xml-xml">PYME XML (<code class="docutils literal"><span class="pre">.xml</span></code>)</a></li>
-<li><a class="reference internal" href="#simple-metadata-md">Simple Metadata (<code class="docutils literal"><span class="pre">.md</span></code>)</a></li>
+<li><a class="reference internal" href="#metadata-json-md-xml">Metadata (<code class="docutils literal"><span class="pre">.json</span></code>, <code class="docutils literal"><span class="pre">.md</span></code>, <code class="docutils literal"><span class="pre">.xml</span></code>)</a></li>
 <li><a class="reference internal" href="#pyme-recipes-yaml">PYME Recipes (<code class="docutils literal"><span class="pre">.yaml</span></code>)</a></li>
+<li><a class="reference internal" href="#pyme-compressed-images-pzf">PYME Compressed Images (<code class="docutils literal"><span class="pre">.pzf</span></code>)</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="ExtendingVisGUI.html"
-                        title="previous chapter">Extending VisGUI</a></p>
+  <p class="topless"><a href="ModifyingPYMEAcquire.html"
+                        title="previous chapter">Modifying PYMEAcquire and writing hardware drivers</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="SampleDB.html"
-                        title="next chapter">The Sample Database</a></p>
+  <p class="topless"><a href="metadata.html"
+                        title="next chapter">PYME Metadata</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
@@ -107,6 +107,22 @@ HDF5 is a very flexible format, and PYME defines a root level dataset called <ci
 containg the raw image data, stores metadata in a group called <cite>MetaData</cite>, containing a
 number of nested groups, and optionally an additional dataset called <cite>Events</cite> which
 details events which happened during the acquisition (eg focus changes and protocol tasks).</p>
+<p>Running <cite>h5ls</cite> on an example file gives the following output. Note that the dimension order for ImageData is Z/T, X, Y:</p>
+<div class="highlight-bash"><div class="highlight"><pre>DB3:~ david<span class="nv">$ </span>h5ls -r /Users/david/PYMEData/david/2016_11_30/30_11_series_A.h5
+/                        Group
+/Events                  Dataset <span class="o">{</span>3/Inf<span class="o">}</span>
+/ImageData               Dataset <span class="o">{</span>258/Inf, 1024, 256<span class="o">}</span>
+/MetaData                Group
+/MetaData/Camera         Group
+/MetaData/Lasers         Group
+/MetaData/Lasers/l405    Group
+/MetaData/Lasers/l488    Group
+/MetaData/Positioning    Group
+/MetaData/Protocol       Group
+/MetaData/StackSettings  Group
+/MetaData/voxelsize      Group
+</pre></div>
+</div>
 <div class="topic">
 <p class="topic-title first">Why HDF5?</p>
 <p>Whilst HDF5 is used extensively for scientific data in the areas of geophysics
@@ -168,24 +184,22 @@ the PSF data as a numpy array and a voxelsize definition.</p>
 <p><code class="docutils literal"><span class="pre">.sf</span></code> files are saved vector shift fields used for correction of chromatic shift
 in multi-colour imaging. Again, a python pickle.</p>
 </div>
-<div class="section" id="pyme-xml-xml">
-<h2>PYME XML (<code class="docutils literal"><span class="pre">.xml</span></code>)<a class="headerlink" href="#pyme-xml-xml" title="Permalink to this headline">¶</a></h2>
-<p>An XML representation of the metadata usually stored in <code class="docutils literal"><span class="pre">.h5</span></code> files. Used when
-saving as <code class="docutils literal"><span class="pre">.tif</span></code>.</p>
-</div>
-<div class="section" id="simple-metadata-md">
-<h2>Simple Metadata (<code class="docutils literal"><span class="pre">.md</span></code>)<a class="headerlink" href="#simple-metadata-md" title="Permalink to this headline">¶</a></h2>
-<p>A simple representation of the metadata more suited to manual editing than the
-<code class="docutils literal"><span class="pre">.xml</span></code> format. Designed to be used when importing, eg tiff, files not created
-with PYMEAcquire into the analysis package. <code class="docutils literal"><span class="pre">.md</span></code> files are python scripts whose
-sole purpose is to add metadata entries to a minimal metadata object (called <code class="docutils literal"><span class="pre">md</span></code>)
-using a dictionary notation.</p>
+<div class="section" id="metadata-json-md-xml">
+<h2>Metadata (<code class="docutils literal"><span class="pre">.json</span></code>, <code class="docutils literal"><span class="pre">.md</span></code>, <code class="docutils literal"><span class="pre">.xml</span></code>)<a class="headerlink" href="#metadata-json-md-xml" title="Permalink to this headline">¶</a></h2>
+<p>PYME supports metadata in a number of formats, for more details see <a class="reference internal" href="metadata.html#metadata"><span>PYME Metadata</span></a>.</p>
 </div>
 <div class="section" id="pyme-recipes-yaml">
 <h2>PYME Recipes (<code class="docutils literal"><span class="pre">.yaml</span></code>)<a class="headerlink" href="#pyme-recipes-yaml" title="Permalink to this headline">¶</a></h2>
 <p>These are used to store the details of processing pipelines used for either
 standard (e.g. confocal) data analysis or for postprocessing super-resolution
 reconstructions.</p>
+</div>
+<div class="section" id="pyme-compressed-images-pzf">
+<h2>PYME Compressed Images (<code class="docutils literal"><span class="pre">.pzf</span></code>)<a class="headerlink" href="#pyme-compressed-images-pzf" title="Permalink to this headline">¶</a></h2>
+<p>These are a very minimal container for images compressed with our experimental high performance lossy compression
+protocol. They consist of a minimal header followed by the compressed data and are mostly designed as &#8216;wire&#8217; protocol
+for data transfer to and within our cluster. It is also our on disk storage format within the cluster, and can be embedded
+within HDF5 files (at the expense of loosing portability). For further documentation see <a class="reference internal" href="api/PYME.IO.PZFFormat.html#module-PYME.IO.PZFFormat" title="PYME.IO.PZFFormat"><code class="xref py py-mod docutils literal"><span class="pre">PYME.IO.PZFFormat</span></code></a>.</p>
 </div>
 </div>
 
@@ -205,10 +219,10 @@ reconstructions.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="SampleDB.html" title="The Sample Database"
+          <a href="metadata.html" title="PYME Metadata"
              >next</a> |</li>
         <li class="right" >
-          <a href="ExtendingVisGUI.html" title="Extending VisGUI"
+          <a href="ModifyingPYMEAcquire.html" title="Modifying PYMEAcquire and writing hardware drivers"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">PYME 16.11.10 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/DataFormats.rst">Edit</a> &raquo;</li>
