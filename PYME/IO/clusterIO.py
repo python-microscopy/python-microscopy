@@ -584,7 +584,7 @@ if USE_RAW_SOCKETS:
             except socket.timeout:
                 if nRetries < 3:
                     nRetries += 1
-                    logger.exception('Timeout writing to %s, trying another server for remaining files' % info.address)
+                    logger.exception('Timeout writing to %s, trying another server for %d remaining files' % (info.address, nChunksRemaining))
                 else:
                     logger.exception('Timeout writing to %s after 3 retries, aborting - DATA WILL BE LOST' % info.address)
                     raise
