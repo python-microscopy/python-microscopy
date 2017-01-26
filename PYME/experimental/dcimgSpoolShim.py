@@ -88,7 +88,7 @@ class DCIMGSpoolShim:
         self.imgSource.spoolData(croppedChunk)
         self.spooler.FlushBuffer()
 
-    def OnSeriesComplete(self, eventsFilename=None, zstepsFilename=None):
+    def OnSeriesComplete(self, eventsFilename=None, zstepsFilename=None, pushTasksToCluster=False):
         """Called when the series is finished (ie we have seen)
         the events file"""
 
@@ -120,6 +120,23 @@ class DCIMGSpoolShim:
         
         self.spooler.StopSpool()
         self.spooler.FlushBuffer()
+
+        if pushTasksToCluster:
+            #from PYME.ParallelTasks import HTTPTaskPusher
+            #pusher = HTTPTaskPusher.HTTPTaskPusher()
+            from PYME.experimental import clusterTaskUtils
+
+            self.mdh.setEntry('Analysis.BGRange', [-30, 0])
+            self.mdh.setEntry('Analysis.DebounceRadius', 4)
+            self.mdh.setEntry('Analysis.DetectionThreshold', 0.8)
+            self.mdh.setEntry('Analysis.FiducialThreshold', 1.8)
+            self.mdh.setEntry('Analysis.FitModule', 'AstigGaussGPUFitFR')
+            self.mdh.setEntry('Analysis.PCTBackground', 0.0)
+            self.mdh.setEntry('Analysis.ROISize', 7.5)
+            self.mdh.setEntry('Analysis.StartAt', 30)
+            self.mdh.setEntry('Analysis.TrackFiducials', False)
+            self.mdh.setEntry('Analysis.subtractBackground', True)
+            clusterTaskUtils._launch_localize(analysisMDH=self.mdh, seriesName=self.spooler.seriesName)
 
         #remove the metadata generator
         MetaDataHandler.provideStartMetadata.remove(self.metadataSource)
