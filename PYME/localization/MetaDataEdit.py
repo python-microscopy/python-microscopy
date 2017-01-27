@@ -376,7 +376,8 @@ class FilenameParam(MDParam):
 
     def formField(self):
         from django import forms
-        return self.paramName, forms.CharField(label=self.guiName, initial=self.default, required=False)
+        from PYME.misc import django_widgets
+        return self.paramName, forms.CharField(label=self.guiName, initial=self.default, required=False, widget=django_widgets.ClusterFileInput())
        
 
 class ShiftFieldParam(FilenameParam):    

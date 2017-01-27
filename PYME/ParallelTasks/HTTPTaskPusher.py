@@ -14,11 +14,15 @@ from PYME.IO import clusterIO
 import json
 import socket
 import random
-import logging
+
+import hashlib
 
 from PYME.misc import pyme_zeroconf as pzc
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
+
+import logging
+logger = logging.getLogger(__name__)
 
 def _getTaskQueueURI():
     """Discover the distributors using zeroconf and choose one"""
@@ -37,8 +41,6 @@ def _getTaskQueueURI():
         logging.info('no local distributor, choosing one at random')
         return random.choice(queueURLs.values())
 
-import logging
-logging.basicConfig()
 
 class HTTPTaskPusher(object):
     def __init__(self, dataSourceID, metadata, resultsFilename, queueName = None, startAt = 10, dataSourceModule=None, serverfilter=''):
@@ -186,3 +188,100 @@ class HTTPTaskPusher(object):
         
     def cleanup(self):
         self.doPoll = False
+
+
+class HTTPRecipePusher(object):
+    def __init__(self, recipe=None, recipeURI=None):
+        from PYME.recipes.modules import ModuleCollection
+        if recipe:
+            if isinstance(recipe, basestring):
+                self.recipe_text = recipe
+                self.recipe = ModuleCollection.fromYAML(recipe)
+            else:
+                self.recipe_text = recipe.toYAML()
+                self.recipe = recipe
+
+            self.recipeURI = None
+        else:
+            self.recipe = None
+            if recipeURI is None:
+                raise ValueError('recipeURI must be defined if no recipe given')
+            else:
+                from PYME.IO import unifiedIO
+                self.recipeURI = recipeURI
+                self.recipe = ModuleCollection.fromYAML(unifiedIO.read(recipeURI))
+
+        self.taskQueueURI = _getTaskQueueURI()
+
+        #generate a queue ID as a hash of the recipe and the current time
+        h = hashlib.md5(self.recipeURI if self.recipeURI else self.recipe_text)
+        h.update('%s' % time.time())
+        self.queueID = h.hexdigest()
+
+    def _postTasks(self, task_list):
+        if isinstance(task_list[0], basestring):
+            task_list = '[' + ',\n'.join(task_list) + ']'
+        else:
+            task_list = json.dumps(task_list)
+
+        s = clusterIO._getSession(self.taskQueueURI)
+        r = s.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list,
+                   headers={'Content-Type': 'application/json'})
+
+        if r.status_code == 200 and r.json()['ok']:
+            logging.debug('Successfully posted tasks')
+        else:
+            logging.error('Failed on posting tasks with status code: %d' % r.status_code)
+
+
+    def _generate_task(self, **kwargs):
+        input_names = kwargs.keys()
+
+        #our id will be a hash of our recipe text (or name), the time, and the input names
+        h = hashlib.md5(self.recipeURI if self.recipeURI else self.recipe_text)
+        h.update('%s' % time.time())
+        h.update(''.join([kwargs[input_name] for input_name in input_names]))
+
+        task = {'id': h.hexdigest(),
+              'type': 'recipe',
+              'inputs': {input_name: kwargs[input_name] for input_name in input_names},
+              #'outputs': {output_name: kwargs[output_name] for output_name in self.recipe.outputs}
+              }
+
+        if self.recipeURI:
+            task['taskdefRef'] = self.recipeURI
+        else:
+            task['taskdef'] = self.recipe_text
+
+        return task
+
+    def fileTasksForInputs(self, **kwargs):
+        from PYME.IO import clusterGlob
+        input_names = kwargs.keys()
+        inputs = {k : kwargs[k] if isinstance(kwargs[k], list) else clusterGlob.glob(kwargs[k], include_scheme=True) for k in input_names}
+
+        numTotalFrames = len(inputs.values()[0])
+        self.currentFrameNum = 0
+
+        logger.debug('numTotalFrames = %d' % numTotalFrames)
+        logger.debug('inputs = %s' % inputs)
+
+        while numTotalFrames > (self.currentFrameNum + 1):
+            logging.debug('we have unpublished frames - push them')
+
+            newFrameNum = min(self.currentFrameNum + 1000, numTotalFrames)
+
+            #create task definitions for each frame
+            tasks = [self._generate_task(**{k : inputs[k][frameNum] for k in inputs.keys()}) for frameNum in range(self.currentFrameNum, newFrameNum)]
+
+            task_list = tasks #json.dumps(tasks)
+
+            #print tasks
+
+
+            threading.Thread(target=self._postTasks, args=(task_list,)).start()
+
+            self.currentFrameNum = newFrameNum
+
+
+

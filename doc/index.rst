@@ -56,6 +56,8 @@ Extending PYME and writing plugins
    WritingRecipeModules
    ExtendingDsviewer
    ExtendingVisGUI
+   api/PYME.config
+   ModifyingPYMEAcquire
 
 
 Technical Details:
@@ -64,6 +66,7 @@ Technical Details:
    :maxdepth: 1
    
    DataFormats
+   metadata
    SampleDB
 
 API Documentation:

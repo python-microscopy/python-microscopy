@@ -53,7 +53,7 @@ import unittest
 import numpy
 import scipy.ndimage
 
-from PYME.cpmath.watershed import watershed,fast_watershed
+from PYME.contrib.cpmath.watershed import watershed,fast_watershed
 
 eps = 1e-12
 

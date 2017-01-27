@@ -26,7 +26,7 @@
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="PYME 16.11.10 documentation" href="index.html" />
     <link rel="next" title="PYME package" href="api/PYME.html" />
-    <link rel="prev" title="PYME Data Formats" href="DataFormats.html" /> 
+    <link rel="prev" title="PYME Metadata" href="metadata.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -42,7 +42,7 @@
           <a href="api/PYME.html" title="PYME package"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="DataFormats.html" title="PYME Data Formats"
+          <a href="metadata.html" title="PYME Metadata"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">PYME 16.11.10 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/SampleDB.rst">Edit</a> &raquo;</li>
@@ -58,6 +58,7 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">The Sample Database</a><ul>
+<li><a class="reference internal" href="#structure-schema">Structure / Schema</a></li>
 <li><a class="reference internal" href="#installation">Installation</a><ul>
 <li><a class="reference internal" href="#part-i-basic-setup">Part I - Basic Setup</a></li>
 <li><a class="reference internal" href="#part-ii-getting-apache-to-serve-the-sampledb">Part II - Getting Apache to serve the SampleDB</a></li>
@@ -69,8 +70,8 @@
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="DataFormats.html"
-                        title="previous chapter">PYME Data Formats</a></p>
+  <p class="topless"><a href="metadata.html"
+                        title="previous chapter">PYME Metadata</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="api/PYME.html"
                         title="next chapter">PYME package</a></p>
@@ -100,6 +101,26 @@
 <p>The sample database is a database system which can be used in conjunction with PYMEAcquire to record information about
 sample preparation, labelling, etc for every image that is acquired. The database has a web interface, and is searchable,
 allowing data matching various search keys to be easily located.</p>
+<div class="section" id="structure-schema">
+<h2>Structure / Schema<a class="headerlink" href="#structure-schema" title="Permalink to this headline">¶</a></h2>
+<p>The core unit unit of the database schema is the <strong>Slide</strong>, which represents one stained coverslip (ie all preparation conditions
+consistent). The slide is linked to a sample, which was conceived to represent one tissue source (a patient, a rat, a
+particular passage of cell culture). Each slide has an associated species, with the <strong>Species</strong> object representing both
+species and also strain (e.g. wistar for rats, HeLa, HEK293, etc for cultured cells).</p>
+<p>A <strong>Slide</strong> will have one or more <strong>Labelling</strong> s which represent, e.g. the expression of a fluorescent protein,
+antibody labelling with a given combination of primary and secondary antibodies, or FISH staining with a specific probe.
+Each <strong>Labelling</strong> has a <strong>Dye</strong> associated with it - the long name is what the manufacturer would call it e.g.
+&#8216;Alexa Fluor 647&#8217;. For fluorescent proteins, it should ideally include enough info to uniquely identify it. The short name
+is used for internal shorthand and as a key in other parts of our software. It should not include spaces - e.g. &#8216;A647&#8217;.
+The <em>spectraDBName</em> is the name of the dye in the Chroma spectra viewer, to facilitate automatic retrieval of dye spectra.</p>
+<p>A <strong>Slide</strong> may have one or more images associated with it. Each image represents one <em>RAW</em> data acquisition, and may
+have multiple <strong>File</strong> s. One of these files will be the raw data, whilst others could be analysed results.</p>
+<div class="figure" id="id5">
+<img alt="_images/SampleDB_schem_no_tags.png" src="_images/SampleDB_schem_no_tags.png" />
+<p class="caption"><span class="caption-text">Simplified database schema. In addition to the tables depicted, there are also Slide, Image, and File tags which can
+be associated with a given Slide, Image, or File.</span></p>
+</div>
+</div>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>These instructions assume you are running an ubuntu linux server with python, mercurial, apache, mysql, and phpmyadmin <a class="footnote-reference" href="#id3" id="id1">[1]</a>. They should also provide a starting point for other systems. A reasonable knowledge of linux and python is assumed.</p>
@@ -201,7 +222,7 @@ sudo service apache2 reload
 <li><p class="first"><strong>[Optional but reccomended]</strong> Lock the server down. Edit <code class="docutils literal"><span class="pre">settings.py</span></code> to add your machine name to <code class="docutils literal"><span class="pre">ALLOWED_HOSTS</span></code> and then set <code class="docutils literal"><span class="pre">DEBUG</span></code> to <code class="docutils literal"><span class="pre">False</span></code>. Restart apache with <code class="docutils literal"><span class="pre">sudo</span> <span class="pre">service</span> <span class="pre">apache2</span> <span class="pre">reload</span></code> to make the changes take effect.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">This alone is not enough to make SampleDB secure. You would also want to look at changing the database passwords and the <code class="docutils literal"><span class="pre">SECRET_KEY</span></code> in <code class="docutils literal"><span class="pre">settings.py</span></code>, as well as potentially restricting access to MySQL to the local machine, or at least the local subnet (PYMEAcquire talks directly to the database server when adding information about the the current slide, so locking the database down too tight will break this). Some items are stored in the database as pickles, which means that, although difficult to exploit, a database breach theoretically has the capablilty to allow remote code execution.</p>
+<p class="last">This alone is not enough to make SampleDB secure. You would also want to look at changing the database passwords and the <code class="docutils literal"><span class="pre">SECRET_KEY</span></code> in <code class="docutils literal"><span class="pre">settings.py</span></code>, as well as potentially restricting access to MySQL to the local machine. Some items are stored in the database as pickles, which means that, although difficult to exploit, a database breach theoretically has the capablilty to allow remote code execution.</p>
 </div>
 </li>
 </ol>
@@ -232,7 +253,7 @@ sudo service apache2 reload
           <a href="api/PYME.html" title="PYME package"
              >next</a> |</li>
         <li class="right" >
-          <a href="DataFormats.html" title="PYME Data Formats"
+          <a href="metadata.html" title="PYME Metadata"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">PYME 16.11.10 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/SampleDB.rst">Edit</a> &raquo;</li>

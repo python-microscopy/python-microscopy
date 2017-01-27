@@ -1,6 +1,6 @@
 package:
   name: pyme-depends       # lower case name of package, may contain '-' but no spaces
-  version: 1.0    # version of package. Should use the PEP-386 verlib
+  version: 1.01    # version of package. Should use the PEP-386 verlib
                       # conventions. Note that YAML will interpret
                       # versions like 1.0 as floats, meaning that 1.0 will
                       # be the same as 1. To avoid this, always put the
@@ -149,7 +149,10 @@ requirements:
     - zeroconf
     - requests
     - pandas
-    - yaml
+    - pyyaml
+    - psutil
+    - docutils
+    - sphinx
     - ujson
     - jinja2
     - dispatch

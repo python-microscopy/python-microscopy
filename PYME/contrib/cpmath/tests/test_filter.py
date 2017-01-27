@@ -19,7 +19,7 @@ import numpy as np
 from scipy.ndimage import binary_dilation, binary_erosion, convolve
 import unittest
 
-import PYME.cpmath.filter as F
+import PYME.contrib.cpmath.filter as F
 
 """Perform line-integration per-column of the image"""
 VERTICAL = 'vertical'

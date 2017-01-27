@@ -593,7 +593,7 @@ class fitTask(taskDef.Task):
         mdnm  = 1./np.median((self.data/self.sigma).ravel())
         
         for dri in self.driftEstInd:
-            bs = bufferManager.dBuffer.getSlice(dri)
+            bs = cameraMaps.correctImage(self.md, bufferManager.dBuffer.getSlice(dri).squeeze())
             bs = bs.reshape(self.data.shape)/self.sigma
             bs = bs*mdnm
             #multiply images together, thus favouring images which are on over multiple frames

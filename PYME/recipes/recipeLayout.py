@@ -182,7 +182,7 @@ def to_svg(dg):
         pass
 
     dwg = svgwrite.Drawing()
-    vb = dwg.viewbox(xmn - .5, ymn -1, xmx + 1, ymx + 2)
+    vb = dwg.viewbox(xmn - .5, ymn -1, xmx + 1.5, ymx + 2)
     #dwg.add(vb)
     cols = {}
     for xv, yv, e in connecting_lines:
@@ -202,8 +202,8 @@ def to_svg(dg):
 
             #rect._data = k
             #self.ax.add_patch(rect)
-            r = dwg.add(dwg.rect((v[0], v[1] - .25), (1, .5), style="fill:#9a9a9a;"))
-            dwg.add(dwg.text(str(s), x=[(v[0] + .05),], y=[(v[1] + .18),], fill='black', style='font-size:0.1px;font-family:"Arial Black", Gadget, sans-serif'))
+            r = dwg.add(dwg.rect((v[0], v[1] - .25), (1, .5), style="fill:#dadada;stroke:black;stroke-width:.005"))
+            dwg.add(dwg.text(str(s), x=[(v[0] + .05),], y=[(v[1] - .15),], fill='black', style='font-size:0.1px;font-family:"Arial Black", Gadget, sans-serif'))
 
             # s = TW2.wrap(s)
             # if len(s) == 1:
@@ -212,15 +212,25 @@ def to_svg(dg):
             #     self.ax.text(v[0] + .05, v[1] + .18 - .05 * (len(s) - 1), '\n'.join(s), size=fontSize, weight='bold')
             # #print repr(k)
             #
-            # params = k.get().items()
-            # s2 = []
-            # for i in params:
-            #     s2 += TW.wrap('%s : %s' % i)
-            #
-            # if len(s2) > 5:
-            #     s2 = '\n'.join(s2[:4]) + '\n ...'
-            # else:
-            #     s2 = '\n'.join(s2)
+            params = k.get()
+            param_names = [tn for tn in k.class_editable_traits() if not (tn.startswith('input') or tn.startswith('output'))]
+
+            v_ = v[1] - .06
+            for i, pn in enumerate(param_names):
+                #s2 += TW.wrap('%s : %s' % i)
+                if i > 5:
+                    dwg.add(dwg.text('...', x=[(v[0] + .05), ], y=[v_, ],
+                                     style='fill:#000090;font-size:0.05px;font-family:"Arial", Helvetica, sans-serif'))
+                    break
+                else:
+                    s2 = ('%s : %s' % (pn, params[pn]))[:50]
+                    dwg.add(dwg.text(str(s2), x=[(v[0] + .05), ], y=[v_, ],
+                                     style='fill:#000090;font-size:0.05px;font-family:"Arial", Helvetica, sans-serif'))
+                    v_ += .05
+
+
+
+
             # self.ax.text(v[0] + .05, v[1] - .22, s2, size=.8 * fontSize, stretch='ultra-condensed')
         else:
             #line - draw an output dot, and a text label

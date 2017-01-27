@@ -254,6 +254,10 @@ class ModuleCollection(HasTraits):
             try:
                 self.namespace.pop(dsi)
             except KeyError:
+                #the output is not in our namespace, no need to prune
+                pass
+            except AttributeError:
+                #we might not have our namespace defined yet
                 pass
         
         

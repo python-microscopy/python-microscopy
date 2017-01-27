@@ -228,8 +228,8 @@ class MDHandlerBase(DictMixin):
 
             if val.__class__ in [str, unicode] or np.isscalar(val): #quote string
                 val = repr(val)
-            elif not val.__class__ in [int, float, list, dict]: #not easily recovered from representation
-                val = "pickle.loads('''%s''')" % pickle.dumps(val)
+            elif not val.__class__ in [int, float, list, dict, tuple]: #not easily recovered from representation
+                val = "pickle.loads('''%s''')" % pickle.dumps(val).replace('\n', '\\n')
 
             s.append("md['%s'] = %s\n" % (en, val))
         
@@ -254,9 +254,17 @@ class MDHandlerBase(DictMixin):
         
     def to_JSON(self):
         import json
+        import numpy as np
         
         def _jsify(obj):
             """call a custom to_JSON method, if available"""
+            #if isinstance(obj, np.integer):
+            #    return int(obj)
+            #elif isinstance(obj, np.number):
+            #    return float(obj)
+            if isinstance(obj, np.generic):
+                return obj.tolist()
+
             try:
                 return obj.to_JSON()
             except AttributeError:
@@ -570,8 +578,15 @@ class OMEXMLMDHandler(XMLMDHandler):
                 #try to load pixel size etc fro OME metadata
                 pix = self.doc.getElementsByTagName('Pixels')[0]
                 
-                self['voxelsize.x'] = float(pix.getAttribute('PhysicalSizeX'))
-                self['voxelsize.y'] = float(pix.getAttribute('PhysicalSizeY'))
+                #print 'PhysicalSizeX: ', pix.getAttribute('PhysicalSizeX')
+                try:
+                    self['voxelsize.x'] = float(pix.getAttribute('PhysicalSizeX'))
+                    self['voxelsize.y'] = float(pix.getAttribute('PhysicalSizeY'))
+                except:
+                    print('WARNING: Malformed OME XML. Pixel size not defined, using 100nm')
+
+                    self['voxelsize.x'] = .1 #FIXME - Get user to set pixel size if absent
+                    self['voxelsize.x'] = .1
                 try:
                     self['voxelsize.z'] = float(pix.getAttribute('PhysicalSizeZ'))
                 except:

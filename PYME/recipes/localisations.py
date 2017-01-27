@@ -237,14 +237,11 @@ class MergeClumps(ModuleBase):
 
         inp = namespace[self.inputName]
 
-        #mapped = tabular.mappingFilter(inp)
-
-        if 'mdh' not in dir(inp):
-            raise RuntimeError('MergeClumps needs metadata')
-
-        grouped = multiview.mergeClumps(inp, inp.mdh.getOrDefault('Multiview.NumROIs', 0), labelKey=self.labelKey)
-
-        grouped.mdh = inp.mdh
+        try:
+            grouped = multiview.mergeClumps(inp, inp.mdh.getOrDefault('Multiview.NumROIs', 0), labelKey=self.labelKey)
+            grouped.mdh = inp.mdh
+        except AttributeError:
+            grouped = multiview.mergeClumps(inp, numChan=0, labelKey=self.labelKey)
 
         namespace[self.outputName] = grouped
 
