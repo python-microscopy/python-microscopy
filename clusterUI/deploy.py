@@ -11,6 +11,9 @@ import os
 import tempfile
 import site
 
+print('Installing mod-wsgi')
+os.system('sudo apt-get install libapache2-mod-wsgi')
+
 STATIC_INSTALATION_DIR = '/var/www/clusterUI'
 
 print('collecting static files...')
@@ -18,9 +21,9 @@ os.system('python manage.py collectstatic --noinput')
 
 print('Copying static files to installation directory')
 if not os.path.exists(STATIC_INSTALATION_DIR):
-    os.system('sudo mkdirs -p %s' % STATIC_INSTALATION_DIR)
+    os.system('sudo mkdir -p %s' % STATIC_INSTALATION_DIR)
 
-os.system('sudo mv -r _deploy/* %s/' % STATIC_INSTALATION_DIR)
+os.system('sudo mv _deploy/* %s/' % STATIC_INSTALATION_DIR)
 
 basedir = os.path.dirname(os.path.abspath(__file__))
 anaconda_site_dir = os.path.join(os.path.dirname(site.__file__), 'site-packages')
