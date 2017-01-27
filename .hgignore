@@ -23,5 +23,5 @@ Deconv/fftw_wisdom
 doc/api/*
 doc/html/*
 .idea
-
+*/_deploy/*
 *.sqlite3
