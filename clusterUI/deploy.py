@@ -54,6 +54,6 @@ print('Enabling clusterUI configuration')
 os.system('sudo a2enconf clusterUI')
 
 print('Restarting apache')
-os.system('sudo apache2 reload')
+os.system('sudo service apache2 reload')
 
 
