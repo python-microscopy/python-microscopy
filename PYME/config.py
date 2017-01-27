@@ -84,24 +84,29 @@ user_config_file = os.path.join(user_config_dir, 'config.yaml')
 
 if not os.path.exists(user_config_dir):
     #if this is the first time we've called the module, make the config directory
-    os.makedirs(user_config_dir)
-
-    #touch our config file
-    open(user_config_file, 'a').close()
-
-    #copy template configuration files
-    template_dir = os.path.join(os.path.split(__file__)[0], 'resources', 'config_template')
-
-    conf_files = os.listdir(template_dir)
-
-    for file in conf_files:
-        shutil.copy(os.path.join(template_dir, file), os.path.join(user_config_dir, file))
-
-    user_plugin_dir = os.path.join(user_config_dir, 'plugins')
-    os.makedirs(user_plugin_dir, exist_ok=True)
-    os.makedirs(os.path.join(user_plugin_dir, 'visgui'))
-    os.makedirs(os.path.join(user_plugin_dir, 'dsviewer'))
-    os.makedirs(os.path.join(user_plugin_dir, 'recipes'))
+    
+    try:
+        os.makedirs(user_config_dir)
+    
+        #touch our config file
+        open(user_config_file, 'a').close()
+    
+        #copy template configuration files
+        template_dir = os.path.join(os.path.split(__file__)[0], 'resources', 'config_template')
+    
+        conf_files = os.listdir(template_dir)
+    
+        for file in conf_files:
+            shutil.copy(os.path.join(template_dir, file), os.path.join(user_config_dir, file))
+    
+        user_plugin_dir = os.path.join(user_config_dir, 'plugins')
+        os.makedirs(user_plugin_dir, exist_ok=True)
+        os.makedirs(os.path.join(user_plugin_dir, 'visgui'))
+        os.makedirs(os.path.join(user_plugin_dir, 'dsviewer'))
+        os.makedirs(os.path.join(user_plugin_dir, 'recipes'))
+    except OSError:
+        #we might not be able to write to the home directory
+        pass
 
 
 config_defaults = {}
