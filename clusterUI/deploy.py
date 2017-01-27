@@ -18,7 +18,7 @@ os.system('python manage.py collectstatic --noinput')
 
 print('Copying static files to installation directory')
 if not os.path.exists(STATIC_INSTALATION_DIR):
-    os.makedirs(STATIC_INSTALATION_DIR)
+    os.system('sudo mkdirs -p %s' % STATIC_INSTALATION_DIR)
 
 os.system('sudo mv -r _deploy/* %s/' % STATIC_INSTALATION_DIR)
 
