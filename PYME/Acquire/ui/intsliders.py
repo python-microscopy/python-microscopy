@@ -199,7 +199,7 @@ class IntegrationSliders(wx.Panel):
         itime = float(cb.GetValue())
         self.scope.state['Camera.IntegrationTime'] = itime/1e3
         new_itime= self.scope.state['Camera.IntegrationTime']
-        self.cboxes[ind].SetValue('%1.2f' % (1e3*new_itime))
+        wx.CallAfter(self.cboxes[ind].SetValue, '%1.2f' % (1e3*new_itime))
         self.sliders[ind].SetValue(new_itime*1e3)
         self.sliders[ind].SetRange(1, min(5*new_itime*1e3, 10000))
         #self.scope.frameWrangler.stop()
