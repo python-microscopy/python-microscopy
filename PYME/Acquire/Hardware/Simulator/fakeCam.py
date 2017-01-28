@@ -34,6 +34,16 @@ import threading
 #import processing
 import time
 
+import ctypes
+import sys
+
+if sys.platform == 'win32':
+    memcpy = ctypes.cdll.msvcrt.memcpy
+elif sys.platform == 'darwin':
+    memcpy = ctypes.CDLL('libSystem.dylib').memcpy
+else: #linux
+    memcpy = ctypes.CDLL('libc.so.6').memcpy
+
 from PYME.Acquire.Hardware import EMCCDTheory
 from PYME.Acquire.Hardware import ccdCalibrator
 
@@ -482,7 +492,11 @@ class FakeCamera:
 
         #chSlice[:,:] = self.noiseMaker.noisify(rend_im.simPalmIm(self.XVals, self.YVals, (self.zPiezo.GetPos() - self.zOffset)*1e3,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime*1e-3))[:,:].astype('uint16')
         try:
-            chSlice[:,:] = self.compT.getIm() #grab image from completed computation thread
+            d = self.compT.getIm()
+            #print d.nbytes, chSlice.nbytes
+            #memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
+            #       d.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.nbytes)
+            chSlice[:,:] = d #grab image from completed computation thread
             #self.compTOld = None #set computation thread to None such that we get an error if we try and obtain the same result twice
         except AttributeError:  # triggered if called with None
             print("Grabbing problem: probably called with 'None' thread")

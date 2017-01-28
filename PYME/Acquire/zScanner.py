@@ -40,7 +40,8 @@ class zScanner:
         
         self.frameNum = 0
         
-        self.ds = scope.frameWrangler.currentFrame
+        #self.ds = scope.frameWrangler.currentFrame
+        self.shape_x, self.shape_y = scope.frameWrangler.currentFrame.shape[:2]
         
         self.running = False
  
@@ -66,7 +67,7 @@ class zScanner:
         self.Start()
         
     def Start(self):
-        self.image = np.zeros((self.ds.shape[0], self.ds.shape[1], 2), 'uint16')
+        self.image = np.zeros((self.shape_x, self.shape_y, 2), 'uint16')
 
         mdh = MetaDataHandler.NestedClassMDHandler()
         mdh.setEntry('StartTime', time.time())
@@ -123,7 +124,7 @@ class zScanner:
 
         self.nz = len(self.zPoss)
 
-        self.image = np.zeros((self.ds.shape[0], self.ds.shape[1], self.nz), 'uint16')
+        self.image = np.zeros((self.shape_x, self.shape_y, self.nz), 'uint16')
 
         self.view.image.SetData(self.image)        
         self.view.do.SetDataStack(self.view.image.data)
@@ -149,14 +150,14 @@ class zScanner:
         self.scope.SetPos(**{self.posChan : self.zPoss[self.pos]})
 
 
-    def OnCameraFrame(self, **kwargs):
+    def OnCameraFrame(self, sender, frameData, **kwargs):
         fn = floor(self.callNum) % len(self.zPoss)
         self.frameNum = fn
         #print fn
         if self.sqrt:
-            self.image[:, :,fn] = (self.sc*np.sqrt(self.ds[:,:,0] - self.off)).astype('uint16')
+            self.image[:, :,fn] = (self.sc*np.sqrt(frameData[:,:,0] - self.off)).astype('uint16')
         else:
-            self.image[:, :,fn] = self.ds[:,:,0]
+            self.image[:, :,fn] = frameData[:,:,0]
 
         #if not fn == self.pos:
 

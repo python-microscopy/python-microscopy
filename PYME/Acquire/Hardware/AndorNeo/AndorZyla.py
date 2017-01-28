@@ -166,6 +166,8 @@ class AndorBase(SDK3Camera):
         self.PreAmpGain = ATEnum()
         self.PreAmpGainSelector = ATEnum()
         self.TriggerMode = ATEnum()
+        self.Overlap = ATBool()
+        self.RollingShutterGlobalClear = ATBool()
         
         self.AOIHeight = ATInt()
         self.AOILeft = ATInt()
@@ -222,6 +224,9 @@ class AndorBase(SDK3Camera):
         #self.setNoisePropertiesByCam(self.GetSerialNumber())
         self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
+
+        #need this to get full frame rate
+        self.Overlap.setValue(True)
 
         # we use a try block as this will allow us to use the SDK software cams for simple testing
         try:
@@ -427,7 +432,7 @@ class AndorBase(SDK3Camera):
         return self.SerialNumber.getValue()
     
     def SetIntegTime(self, iTime): 
-        self.ExposureTime.setValue(iTime)
+        self.ExposureTime.setValue(max(iTime, self.ExposureTime.min()))
         self.FrameRate.setValue(self.FrameRate.max())
         
     def GetIntegTime(self): 

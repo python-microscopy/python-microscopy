@@ -135,12 +135,12 @@ class FFBase(object):
         #find ROI which works in both channels
         #if dxp < 0:
         x01 = max(x - roiHalfSize, max(0, dxp))
-        x11 = min(max(x01, x + roiHalfSize), self.data.shape[0] + min(0, dxp))
+        x11 = min(max(x01, x + roiHalfSize + 1), self.data.shape[0] + min(0, dxp))
         x02 = x01 - dxp
         x12 = x11 - dxp
         
         y01 = max(y - roiHalfSize, max(0, dyp))
-        y11 = min(max(y + roiHalfSize,  y01), self.data.shape[1] + min(0, dyp))
+        y11 = min(max(y + roiHalfSize + 1,  y01), self.data.shape[1] + min(0, dyp))
         y02 = y01 - dyp
         y12 = y11 - dyp
         

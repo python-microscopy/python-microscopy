@@ -32,6 +32,16 @@ import wx
 
 import numpy as np
 
+import ctypes
+import sys
+
+if sys.platform == 'win32':
+    memcpy = ctypes.cdll.msvcrt.memcpy
+elif sys.platform == 'darwin':
+    memcpy = ctypes.CDLL('libSystem.dylib').memcpy
+else: #linux
+    memcpy = ctypes.CDLL('libc.so.6').memcpy
+
 import time
 import traceback
 
@@ -91,28 +101,32 @@ class FrameWrangler(wx.EvtHandler):
         
         #what byte-order does the camera use for its frames?
         try:
-            order = self.cam.order
+            self.order = self.cam.order
         except AttributeError:
             # not all cameras expose the order property, use Fortran ordering
             # by default (i.e. x then y)
             # note: This has a lot to do with me liking to use the 0th 
             # array index as x, which might (in retrospect) have been a bad design choice
-            order = 'F'
+            self.order = 'F'
         
         if (self.currentFrame is None or keepds == False):
 
             self.currentFrame = np.zeros([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
-                                1], dtype = 'uint16', order = order)
+                                1], dtype = 'uint16', order = self.order)
+            
+        self._cf = self.currentFrame
    
 
             
     def getFrame(self, colours=None):
         """Ask the camera to put a frame into our buffer"""
+        self._cf = np.empty([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
+                                1], dtype = 'uint16', order = self.order)
         
         if ('numpy_frames' in dir(self.cam)):
-            cs = self.currentFrame[:,:,0]
+            cs = self._cf[:,:,0] #self.currentFrame[:,:,0]
         else:
-            cs = self.currentFrame.ctypes.data
+            cs = self._cf.ctypes.data
             
         #Get camera to insert data into our array (results passed back "by reference")
         #this is a kludge/artifact of an old call into c-code
@@ -120,6 +134,8 @@ class FrameWrangler(wx.EvtHandler):
         #for newer cameras, we pass a numpy array object, and the camera code
         #copies the data into that array.
         self.cam.ExtractColor(cs,0)
+        
+        return self._cf
 
     def purge(self):
         """purge (and discard) all remaining frames in the camera buffer"""
@@ -145,12 +161,15 @@ class FrameWrangler(wx.EvtHandler):
         
         # Pull the existing data from the camera
         try:
-            self.getFrame()
+            d = self.getFrame()
 
             #notify anyone who cares that we've just got a new frame
             ### NEW: now send a copy so that receivers don't need to copy it. This results in a) more predictable behaviour
             # and b) sets the stage for passing raw frames to spoolers without any copying
-            self.onFrame.send(sender=self, frameData=self.dsa.copy())
+            #d = self.dsa.copy()
+            #d = np.empty_like(self.dsa)
+            #ctypes.cdll.msvcrt.memcpy(d.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), self.dsa.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), d.nbytes)
+            self.onFrame.send(sender=self, frameData=d)
         except:
             import traceback
             traceback.print_exc()
@@ -232,6 +251,12 @@ class FrameWrangler(wx.EvtHandler):
                     if ('GetNumImsBuffered' in dir(self.cam)) and (nFrames > self.cam.GetBufferSize()/2):
                         print(('Warning: not keeping up with camera, giving up with %d frames still in buffer' % self.cam.GetNumImsBuffered()))
                         break
+                 
+                # just copy data to the current frame once per frame group - individual frames don't get copied
+                # directly calling memcpy is a bit of a cheat, but is significantly faster than the alternatives
+                memcpy(self.currentFrame.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
+                                          self._cf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),self.currentFrame.nbytes)
+                
     
                 if bufferOverflowed:
                     print('nse')

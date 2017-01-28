@@ -185,8 +185,9 @@ class IntegrationSliders(wx.Panel):
         self.ind = ind
         #self.chaninfo.itimes[ind] = sl.GetValue()
         self.scope.state['Camera.IntegrationTime'] = sl.GetValue()/1e3
-        #print self.scope.state
-        self.cboxes[ind].SetValue('%d' % sl.GetValue())
+        new_itime= self.scope.state['Camera.IntegrationTime']
+        self.cboxes[ind].SetValue('%1.2f' % (1e3*new_itime))
+        self.sliders[ind].SetValue(1e3*new_itime)
         self.sliders[ind].SetRange(1, min(5*self.scope.state['Camera.IntegrationTime']*1e3, 10000))
         #self.scope.frameWrangler.stop()
         #self.scope.frameWrangler.start()
@@ -197,8 +198,10 @@ class IntegrationSliders(wx.Panel):
         #   print((cb.GetValue()))
         itime = float(cb.GetValue())
         self.scope.state['Camera.IntegrationTime'] = itime/1e3
-        self.sliders[ind].SetValue(itime)
-        self.sliders[ind].SetRange(1, min(5*itime, 10000))
+        new_itime= self.scope.state['Camera.IntegrationTime']
+        self.cboxes[ind].SetValue('%1.2f' % (1e3*new_itime))
+        self.sliders[ind].SetValue(new_itime*1e3)
+        self.sliders[ind].SetRange(1, min(5*new_itime*1e3, 10000))
         #self.scope.frameWrangler.stop()
         #self.scope.frameWrangler.start()
 

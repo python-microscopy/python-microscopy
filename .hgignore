@@ -24,6 +24,7 @@ doc/api/*
 doc/html/*
 .idea
 patches/*
+*/_deploy/*
 *Pyro_NS_URI
 *.sqlite3
 *\#*\#
