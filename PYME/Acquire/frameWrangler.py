@@ -31,6 +31,7 @@ everything else responds to."""
 import wx
 
 import numpy as np
+import ctypes
 
 import time
 import traceback
@@ -155,7 +156,10 @@ class FrameWrangler(wx.EvtHandler):
             #notify anyone who cares that we've just got a new frame
             ### NEW: now send a copy so that receivers don't need to copy it. This results in a) more predictable behaviour
             # and b) sets the stage for passing raw frames to spoolers without any copying
-            self.onFrame.send(sender=self, frameData=self.dsa.copy())
+            #d = self.dsa.copy()
+            d = np.empty_like(self.dsa)
+            ctypes.cdll.msvcrt.memcpy(d.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), self.dsa.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), d.nbytes)
+            self.onFrame.send(sender=self, frameData=d)
         except:
             import traceback
             traceback.print_exc()
