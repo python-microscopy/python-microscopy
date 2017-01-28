@@ -101,18 +101,18 @@ class FrameWrangler(wx.EvtHandler):
         
         #what byte-order does the camera use for its frames?
         try:
-            order = self.cam.order
+            self.order = self.cam.order
         except AttributeError:
             # not all cameras expose the order property, use Fortran ordering
             # by default (i.e. x then y)
             # note: This has a lot to do with me liking to use the 0th 
             # array index as x, which might (in retrospect) have been a bad design choice
-            order = 'F'
+            self.order = 'F'
         
         if (self.currentFrame is None or keepds == False):
 
             self.currentFrame = np.zeros([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
-                                1], dtype = 'uint16', order = order)
+                                1], dtype = 'uint16', order = self.order)
             
         self._cf = self.currentFrame
    
@@ -120,12 +120,13 @@ class FrameWrangler(wx.EvtHandler):
             
     def getFrame(self, colours=None):
         """Ask the camera to put a frame into our buffer"""
-        self._cf = np.empty_like(self.currentFrame)
+        self._cf = np.empty([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
+                                1], dtype = 'uint16', order = self.order)
         
         if ('numpy_frames' in dir(self.cam)):
             cs = self._cf[:,:,0] #self.currentFrame[:,:,0]
         else:
-            cs = self._cf #self.currentFrame.ctypes.data
+            cs = self._cf.ctypes.data
             
         #Get camera to insert data into our array (results passed back "by reference")
         #this is a kludge/artifact of an old call into c-code
