@@ -100,7 +100,7 @@ if not os.path.exists(user_config_dir):
             shutil.copy(os.path.join(template_dir, file), os.path.join(user_config_dir, file))
     
         user_plugin_dir = os.path.join(user_config_dir, 'plugins')
-        os.makedirs(user_plugin_dir, exist_ok=True)
+        os.makedirs(user_plugin_dir)
         os.makedirs(os.path.join(user_plugin_dir, 'visgui'))
         os.makedirs(os.path.join(user_plugin_dir, 'dsviewer'))
         os.makedirs(os.path.join(user_plugin_dir, 'recipes'))
