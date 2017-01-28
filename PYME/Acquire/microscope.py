@@ -615,6 +615,7 @@ class microscope(object):
             pass
             
         self.frameWrangler.start()
+        self.CleanupFunctions.append(self.frameWrangler.destroy)
         
         for cb in self.PACallbacks:
             cb()
