@@ -103,16 +103,19 @@ class FrameWrangler(wx.EvtHandler):
 
             self.currentFrame = np.zeros([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
                                 1], dtype = 'uint16', order = order)
+            
+        self._cf = self.currentFrame
    
 
             
     def getFrame(self, colours=None):
         """Ask the camera to put a frame into our buffer"""
+        self._cf = np.empty_like(self.currentFrame)
         
         if ('numpy_frames' in dir(self.cam)):
-            cs = self.currentFrame[:,:,0]
+            cs = self._cf #self.currentFrame[:,:,0]
         else:
-            cs = self.currentFrame.ctypes.data
+            cs = self._cf #self.currentFrame.ctypes.data
             
         #Get camera to insert data into our array (results passed back "by reference")
         #this is a kludge/artifact of an old call into c-code
@@ -120,6 +123,8 @@ class FrameWrangler(wx.EvtHandler):
         #for newer cameras, we pass a numpy array object, and the camera code
         #copies the data into that array.
         self.cam.ExtractColor(cs,0)
+        
+        return self._cf
 
     def purge(self):
         """purge (and discard) all remaining frames in the camera buffer"""
