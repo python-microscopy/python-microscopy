@@ -50,6 +50,8 @@ import warnings
 
 from PYME.Acquire import eventLog   
 
+import threading
+
 
 class FrameWrangler(wx.EvtHandler):
     def __init__(self, _cam, _ds = None):
