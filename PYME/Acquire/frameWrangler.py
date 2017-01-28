@@ -31,7 +31,16 @@ everything else responds to."""
 import wx
 
 import numpy as np
+
 import ctypes
+import sys
+
+if sys.platform == 'win32':
+    memcpy = ctypes.cdll.msvcrt.memcpy
+elif sys.platform == 'darwin':
+    memcpy = ctypes.CDLL('libSystem.dylib').memcpy
+else: #linux
+    memcpy = ctypes.CDLL('libc.so.6').memcpy
 
 import time
 import traceback
@@ -114,7 +123,7 @@ class FrameWrangler(wx.EvtHandler):
         self._cf = np.empty_like(self.currentFrame)
         
         if ('numpy_frames' in dir(self.cam)):
-            cs = self._cf #self.currentFrame[:,:,0]
+            cs = self._cf[:,:,0] #self.currentFrame[:,:,0]
         else:
             cs = self._cf #self.currentFrame.ctypes.data
             
@@ -151,14 +160,14 @@ class FrameWrangler(wx.EvtHandler):
         
         # Pull the existing data from the camera
         try:
-            self.getFrame()
+            d = self.getFrame()
 
             #notify anyone who cares that we've just got a new frame
             ### NEW: now send a copy so that receivers don't need to copy it. This results in a) more predictable behaviour
             # and b) sets the stage for passing raw frames to spoolers without any copying
             #d = self.dsa.copy()
-            d = np.empty_like(self.dsa)
-            ctypes.cdll.msvcrt.memcpy(d.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), self.dsa.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), d.nbytes)
+            #d = np.empty_like(self.dsa)
+            #ctypes.cdll.msvcrt.memcpy(d.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), self.dsa.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), d.nbytes)
             self.onFrame.send(sender=self, frameData=d)
         except:
             import traceback
@@ -241,6 +250,12 @@ class FrameWrangler(wx.EvtHandler):
                     if ('GetNumImsBuffered' in dir(self.cam)) and (nFrames > self.cam.GetBufferSize()/2):
                         print(('Warning: not keeping up with camera, giving up with %d frames still in buffer' % self.cam.GetNumImsBuffered()))
                         break
+                 
+                # just copy data to the current frame once per frame group - individual frames don't get copied
+                # directly calling memcpy is a bit of a cheat, but is significantly faster than the alternatives
+                memcpy(self.currentFrame.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
+                                          self._cf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),self.currentFrame.nbytes)
+                
     
                 if bufferOverflowed:
                     print('nse')
