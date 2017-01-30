@@ -525,7 +525,7 @@ def putFile(filename, data, serverfilter=''):
             
         except requests.ConnectTimeout:
             if nAttempts >= 3:
-                logger.exception('Timeout attempting to put file: %s, after 3 retries, aborting' % url)
+                logger.error('Timeout attempting to put file: %s, after 3 retries, aborting' % url)
                 raise
             else:
                 logger.warn('Timeout attempting to put file: %s, retrying' % url)
@@ -584,9 +584,9 @@ if USE_RAW_SOCKETS:
             except socket.timeout:
                 if nRetries < 3:
                     nRetries += 1
-                    logger.exception('Timeout writing to %s, trying another server for %d remaining files' % (info.address, nChunksRemaining))
+                    logger.error('Timeout writing to %s, trying another server for %d remaining files' % (info.address, nChunksRemaining))
                 else:
-                    logger.exception('Timeout writing to %s after 3 retries, aborting - DATA WILL BE LOST' % info.address)
+                    logger.error('Timeout writing to %s after 3 retries, aborting - DATA WILL BE LOST' % info.address)
                     raise
                 
             finally:
@@ -596,10 +596,14 @@ if USE_RAW_SOCKETS:
                 # a "Connection: close" header in the last request.
                 # s.sendall('\r\n')
         
-                #perform all the recieves at once
-                resp = s.recv(4096)
-                while len(resp) > 0:
+                try:
+                    #perform all the recieves at once
                     resp = s.recv(4096)
+                    while len(resp) > 0:
+                        resp = s.recv(4096)
+                except:
+                    logger.error('Failure to read from server %s' % info.address)
+                    raise
                 #print resp
                 #TODO: Parse responses
                 s.close()
