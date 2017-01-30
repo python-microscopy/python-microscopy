@@ -96,6 +96,7 @@ class FrameWrangler(wx.EvtHandler):
         self._poll_camera = True
 
         self._current_frame_lock = threading.Lock()
+        self._poll_lock = threading.Lock()
         
         self._poll_thread = threading.Thread(target=self._poll_loop)
         self._poll_thread.start()
@@ -218,7 +219,7 @@ class FrameWrangler(wx.EvtHandler):
         while (self._poll_camera):
             if (not self.cam.CamReady()):# and self.piezoReady())):
                 # Stop the aquisition if there is a hardware error
-                self.stop()
+                wx.CallAfter(self.stop)
             else:
                 #is there a picture waiting for us?
                 #if so do the relevant processing
@@ -240,7 +241,7 @@ class FrameWrangler(wx.EvtHandler):
                         #stop the aquisition - we're going to restart after we're read out to purge the buffer
                         #doing it this way _should_ stop the black frames which I guess are being caused by the reading the frame which is
                         #currently being written to
-                        self.cam.StopAq()
+                        wx.CallAfter(self.cam.StopAq)
                         #self.needExposureStart = True
             
                     self.onExpReady()
@@ -275,6 +276,11 @@ class FrameWrangler(wx.EvtHandler):
                 # Stop the aquisition if there is a hardware error
                 self.stop()
                 return
+
+            if getattr(self.cam, 'hardware_overflowed', False):
+            	self.cam.StopAq()
+            	self.bufferOverflowed = True
+
 
             #is there a picture waiting for us?
             #if so do the relevant processing
@@ -382,10 +388,11 @@ class FrameWrangler(wx.EvtHandler):
 
         self.aqOn = False
 
-        try: #deal with Andor without breaking sensicam
-            self.cam.StopAq()
-        except AttributeError:
-            pass
+        with self._current_frame_lock:
+	        try: #deal with Andor without breaking sensicam
+	            self.cam.StopAq()
+	        except AttributeError:
+	            pass
                 
         self.onStop.send_robust(self)
 
@@ -400,7 +407,8 @@ class FrameWrangler(wx.EvtHandler):
         
         self.onStart.send_robust(self)
 
-        self.cam.StartExposure()
+        with self._current_frame_lock:
+        	self.cam.StartExposure()
 
         self.aqOn = True
 
