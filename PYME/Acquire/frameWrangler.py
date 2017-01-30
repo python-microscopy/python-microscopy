@@ -94,6 +94,8 @@ class FrameWrangler(wx.EvtHandler):
 
         # should the thread which polls the camera still be running?
         self._poll_camera = True
+
+        self._current_frame_lock = threading.Lock()
         
         self._poll_thread = threading.Thread(target=self._poll_loop)
         self._poll_thread.start()
@@ -138,22 +140,23 @@ class FrameWrangler(wx.EvtHandler):
             
     def getFrame(self, colours=None):
         """Ask the camera to put a frame into our buffer"""
-        self._cf = np.empty([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
-                                1], dtype = 'uint16', order = self.order)
-        
-        if getattr(self.cam, 'numpy_frames', False):
-            cs = self._cf[:,:,0] #self.currentFrame[:,:,0]
-        else:
-            cs = self._cf.ctypes.data
-            
-        #Get camera to insert data into our array (results passed back "by reference")
-        #this is a kludge/artifact of an old call into c-code
-        #in this context cs is a pointer to the memory we want the frame to go into
-        #for newer cameras, we pass a numpy array object, and the camera code
-        #copies the data into that array.
-        self.cam.ExtractColor(cs,0)
-        
-        return self._cf
+        with self._current_frame_lock:
+	        self._cf = np.empty([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
+	                                1], dtype = 'uint16', order = self.order)
+	        
+	        if getattr(self.cam, 'numpy_frames', False):
+	            cs = self._cf[:,:,0] #self.currentFrame[:,:,0]
+	        else:
+	            cs = self._cf.ctypes.data
+	            
+	        #Get camera to insert data into our array (results passed back "by reference")
+	        #this is a kludge/artifact of an old call into c-code
+	        #in this context cs is a pointer to the memory we want the frame to go into
+	        #for newer cameras, we pass a numpy array object, and the camera code
+	        #copies the data into that array.
+	        self.cam.ExtractColor(cs,0)
+	        
+	        return self._cf
 
     def purge(self):
         """purge (and discard) all remaining frames in the camera buffer"""
@@ -312,8 +315,9 @@ class FrameWrangler(wx.EvtHandler):
              
             # just copy data to the current frame once per frame group - individual frames don't get copied
             # directly calling memcpy is a bit of a cheat, but is significantly faster than the alternatives
-            memcpy(self.currentFrame.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
-                                      self._cf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),self.currentFrame.nbytes)
+            with self._current_frame_lock:
+            	memcpy(self.currentFrame.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
+                       self._cf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),self.currentFrame.nbytes)
             
 
             if self.bufferOverflowed:
