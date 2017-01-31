@@ -190,7 +190,10 @@ class Spooler(sp.Spooler):
         
     def OnFrame(self, sender, frameData, **kwargs):
         # NOTE: copy is now performed in frameWrangler, so we don't need to worry about it here
-        self.buffer.append((self.imNum, frameData.reshape(1,frameData.shape[0],frameData.shape[1])))
+        if frameData.shape[0] == 1:
+            self.buffer.append((self.imNum, frameData))
+        else:
+            self.buffer.append((self.imNum, frameData.reshape(1,frameData.shape[0],frameData.shape[1])))
 
         #print len(self.buffer)
         t = time.time()

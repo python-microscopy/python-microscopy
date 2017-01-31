@@ -63,58 +63,61 @@ class EventLogger:
       
 
 class Spooler(sp.Spooler):
-   def __init__(self, filename, frameSource, frameShape, complevel=6, complib='zlib', **kwargs):
+    def __init__(self, filename, frameSource, frameShape, complevel=6, complib='zlib', **kwargs):
 #       if 'PYME_TASKQUEUENAME' in os.environ.keys():
 #            taskQueueName = os.environ['PYME_TASKQUEUENAME']
 #       else:
 #            taskQueueName = 'taskQueue'
-       from PYME.misc.computerName import GetComputerName
-       compName = GetComputerName()
+        from PYME.misc.computerName import GetComputerName
+        compName = GetComputerName()
 
-       taskQueueName = 'TaskQueues.%s' % compName
-       
-       if ns:
-           URI = ns.resolve(taskQueueName)
-       else:
-           URI = 'PYRONAME://' + taskQueueName
+        taskQueueName = 'TaskQueues.%s' % compName
 
-       self.tq = Pyro.core.getProxyForURI(URI)
-       self.tq._setOneway(['postTask', 'postTasks', 'addQueueEvents', 'setQueueMetaData', 'logQueueEvent'])
+        if ns:
+            URI = ns.resolve(taskQueueName)
+        else:
+            URI = 'PYRONAME://' + taskQueueName
 
-       self.seriesName = filename
-       self.buffer = []
-       self.buflen = 30
+        self.tq = Pyro.core.getProxyForURI(URI)
+        self.tq._setOneway(['postTask', 'postTasks', 'addQueueEvents', 'setQueueMetaData', 'logQueueEvent'])
 
-       self.tq.createQueue('HDFTaskQueue',self.seriesName, filename, frameSize = frameShape, complevel=complevel, complib=complib)
+        self.seriesName = filename
+        self.buffer = []
+        self.buflen = 30
 
-       self.md = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
-       self.evtLogger = EventLogger(self, self.tq, self.seriesName)
+        self.tq.createQueue('HDFTaskQueue',self.seriesName, filename, frameSize = frameShape, complevel=complevel, complib=complib)
 
-       sp.Spooler.__init__(self, filename, frameSource, **kwargs)
+        self.md = MetaDataHandler.QueueMDHandler(self.tq, self.seriesName)
+        self.evtLogger = EventLogger(self, self.tq, self.seriesName)
+
+        sp.Spooler.__init__(self, filename, frameSource, **kwargs)
    
-   def OnFrame(self, sender, frameData, **kwargs):
-      if not self.watchingFrames:
-          #we have already disconnected
-          return
+    def OnFrame(self, sender, frameData, **kwargs):
+        if not self.watchingFrames:
+            #we have already disconnected
+            return
           
-      #self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
+        #self.tq.postTask(cSMI.CDataStack_AsArray(caller.ds, 0).reshape(1,self.scope.cam.GetPicWidth(),self.scope.cam.GetPicHeight()), self.seriesName)
 
-      # NOTE: copy is now performed in frameWrangler, so we don't need to worry about it here
-      self.buffer.append(frameData.reshape(1,frameData.shape[0],frameData.shape[1]))
+        # NOTE: copy is now performed in frameWrangler, so we don't need to worry about it here
+        if frameData.shape[0] == 1:
+            self.buffer.append(frameData)
+        else:
+            self.buffer.append(frameData.reshape(1,frameData.shape[0],frameData.shape[1]))
 
-      if self.imNum == 0: #first frame
-          self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1].squeeze()))
+        if self.imNum == 0: #first frame
+            self.md.setEntry('imageID', fileID.genFrameID(self.buffer[-1].squeeze()))
 
-      if (len(self.buffer) >= self.buflen):
-          self.FlushBuffer()
+        if (len(self.buffer) >= self.buflen):
+            self.FlushBuffer()
 
-      sp.Spooler.OnFrame(self)
+        sp.Spooler.OnFrame(self)
       
-   def FlushBuffer(self):
-      t1 = time.time()
-      self.tq.postTasks(self.buffer, self.seriesName)
-      #print time.time() -t1
-      self.buffer = []
+    def FlushBuffer(self):
+        t1 = time.time()
+        self.tq.postTasks(self.buffer, self.seriesName)
+        #print time.time() -t1
+        self.buffer = []
 
 
 
