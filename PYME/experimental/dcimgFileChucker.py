@@ -6,6 +6,11 @@ import numpy as np
 import time
 import datetime
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+logger = logging.getLogger(__name__)
+
 import PYME.experimental.dcimgSpoolShim as DCIMGSpool
 
 class venerableFileChucker(object):
@@ -138,6 +143,7 @@ class venerableFileChucker(object):
 
                 #we have seen our events file, the current series is complete
                 self.spooler.OnSeriesComplete(events_filename, zsteps_filename)
+                logger.debug('Finished spooling series %s' % series_stub)
                 ignoreList.append(mdfilename)
                 if deleteAfterSpool:
                     os.remove(mdfilename)
