@@ -36,7 +36,7 @@ class ImageFrameSource(object):
         nFrames = data.getNumSlices()
         for i in range(nFrames):
             self.onFrame.send(self, frameData=data.getSlice(i))
-            if (i % 100) == 0:
+            if (i % 3000) == 0:
                 self.spoolProgress.send(self, percent=float(i)/nFrames)
                 print('Spooling %d of %d frames' % (i, nFrames))
             
