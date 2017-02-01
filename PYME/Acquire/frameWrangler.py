@@ -142,11 +142,11 @@ class FrameWrangler(wx.EvtHandler):
     def getFrame(self, colours=None):
         """Ask the camera to put a frame into our buffer"""
         with self._current_frame_lock:
-	        self._cf = np.empty([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
-	                                1], dtype = 'uint16', order = self.order)
+	        self._cf = np.empty([1, self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
+	                                ], dtype = 'uint16', order = self.order)
 	        
 	        if getattr(self.cam, 'numpy_frames', False):
-	            cs = self._cf[:,:,0] #self.currentFrame[:,:,0]
+	            cs = self._cf[0,:,:] #self.currentFrame[:,:,0]
 	        else:
 	            cs = self._cf.ctypes.data
 	            

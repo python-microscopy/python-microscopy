@@ -133,7 +133,10 @@ class Spooler(sp.Spooler):
     def OnFrame(self, sender, frameData, **kwargs):
         """Called on each frame"""
         #print 'f'
-        self.imageData.append(frameData.reshape(1,frameData.shape[0],frameData.shape[1]))
+        if frameData.shape[0] == 1:
+            self.imageData.append(frameData)
+        else:
+            self.imageData.append(frameData.reshape(1,frameData.shape[0],frameData.shape[1]))
         self.h5File.flush()
         if self.imNum == 0: #first frame
             self.md.setEntry('imageID', fileID.genFrameID(self.imageData[0,:,:]))
