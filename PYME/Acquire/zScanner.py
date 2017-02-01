@@ -155,9 +155,9 @@ class zScanner:
         self.frameNum = fn
         #print fn
         if self.sqrt:
-            self.image[:, :,fn] = (self.sc*np.sqrt(frameData[:,:,0] - self.off)).astype('uint16')
+            self.image[:, :,fn] = (self.sc*np.sqrt(frameData[0,:,:] - self.off)).astype('uint16')
         else:
-            self.image[:, :,fn] = frameData[:,:,0]
+            self.image[:, :,fn] = frameData[0,:,:]
 
         #if not fn == self.pos:
 
