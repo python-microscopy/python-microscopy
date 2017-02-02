@@ -166,6 +166,8 @@ class AndorBase(SDK3Camera):
         self.PreAmpGain = ATEnum()
         self.PreAmpGainSelector = ATEnum()
         self.TriggerMode = ATEnum()
+        self.Overlap = ATBool()
+        self.RollingShutterGlobalClear = ATBool()
         
         self.AOIHeight = ATInt()
         self.AOILeft = ATInt()
@@ -210,6 +212,8 @@ class AndorBase(SDK3Camera):
         
         self._temp = 0
         self._frameRate = 0
+
+        self.hardware_overflowed=False
         
         self.active = True
         #register as a provider of metadata
@@ -222,6 +226,9 @@ class AndorBase(SDK3Camera):
         #self.setNoisePropertiesByCam(self.GetSerialNumber())
         self.FrameCount.setValue(1)
         self.CycleMode.setString(u'Continuous')
+
+        #need this to get full frame rate
+        self.Overlap.setValue(True)
 
         # we use a try block as this will allow us to use the SDK software cams for simple testing
         try:
@@ -313,9 +320,14 @@ class AndorBase(SDK3Camera):
         #self.camLock.acquire()
         while not self.buffersToQueue.empty():
             buf = self.buffersToQueue.get(block=False)
-            self.queuedBuffers.put(buf)
-            #print np.base_repr(buf.ctypes.data, 16)
-            SDK3.QueueBuffer(self.handle, buf.ctypes.data_as(SDK3.POINTER(SDK3.AT_U8)), buf.nbytes)
+            try:
+                #print np.base_repr(buf.ctypes.data, 16)
+                SDK3.QueueBuffer(self.handle, buf.ctypes.data_as(SDK3.POINTER(SDK3.AT_U8)), buf.nbytes)
+                self.queuedBuffers.put(buf)
+            except SDK3.CameraError as e:
+                traceback.print_exc()
+                if not SDK3.errorCodes[e.errNo] == 'AT_ERR_INVALIDSIZE':
+                    raise
             #self.fLog.write('%f\tq\n' % time.time())
             self.nQueued += 1
         #self.camLock.release()
@@ -336,6 +348,13 @@ class AndorBase(SDK3Camera):
         except SDK3.CameraError as e:
             if not e.errNo == SDK3.AT_ERR_NODATA:
                 traceback.print_exc()
+
+                if SDK3.errorCodes[e.errNo] == 'AT_ERR_HARDWARE_OVERFLOW':
+                    self.hardware_overflowed = True
+            return
+        except:
+            #catch and ignore / print any other errors (e.g. WindowsError)
+            traceback.print_exc()
             return
             
         #self.camLock.acquire()
@@ -427,7 +446,7 @@ class AndorBase(SDK3Camera):
         return self.SerialNumber.getValue()
     
     def SetIntegTime(self, iTime): 
-        self.ExposureTime.setValue(iTime)
+        self.ExposureTime.setValue(max(iTime, self.ExposureTime.min()))
         self.FrameRate.setValue(self.FrameRate.max())
         
     def GetIntegTime(self): 
@@ -544,6 +563,8 @@ class AndorBase(SDK3Camera):
         self._temp = self.SensorTemperature.getValue()
         self._frameRate = self.FrameRate.getValue()
         self.tKin = 1.0 / self._frameRate
+
+        self.hardware_overflowed = False
         
         eventLog.logEvent('StartAq', '')
         self._flush()

@@ -224,7 +224,7 @@ class PanSpool(wx.Panel):
         
         #self.spoolController = SpoolController(scope, defDir, **kwargs)
         self.spoolController = scope.spoolController
-        self.spoolController.onSpoolProgress.connect(self.Tick)
+        self.spoolController.onSpoolProgress.connect(self._tick)
         self.spoolController.onSpoolStart.connect(self.OnSpoolingStarted)
         self.spoolController.onSpoolStop.connect(self.OnSpoolingStopped)
 
@@ -318,6 +318,10 @@ class PanSpool(wx.Panel):
     def OnBAnalyse(self, event):
         self.spoolController.LaunchAnalysis()
         
+    
+    def _tick(self, **kwargs):
+        wx.CallAfter(self.Tick)
+
     def Tick(self, **kwargs):
         """Called with each new frame. Updates the number of frames spooled
         and disk space remaining"""

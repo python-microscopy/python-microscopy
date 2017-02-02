@@ -150,6 +150,7 @@ requirements:
     - requests
     - pandas
     - pyyaml
+    - psutil
     - docutils
     - sphinx
     - ujson

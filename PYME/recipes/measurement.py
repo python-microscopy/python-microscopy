@@ -113,6 +113,9 @@ class FitPoints(ModuleBase):
         md['Camera.ReadNoise'] = 1.0
         md['Camera.NoiseFactor'] = 1.0
 
+        md['voxelsize.x'] = .001
+        md['voxelsize.y'] = .001
+
         #copy across the entries from the real image, replacing the defaults
         #if necessary
         md.copyEntriesFrom(img.mdh)

@@ -163,6 +163,7 @@ requirements:
     - requests
     - pandas
     - pyyaml
+    - psutil
     - dispatch
     - pymecompress
     - ujson

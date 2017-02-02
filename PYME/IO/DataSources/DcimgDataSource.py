@@ -34,7 +34,7 @@ class DataSource(BaseDataSource):
         self.DCIFile = dcimg.DCIMGFile(self.filename)
         
     def getSlice(self, ind):
-        print ind
+        #print ind
         return self.DCIFile.get_frame(ind)
 
     def getSliceShape(self):

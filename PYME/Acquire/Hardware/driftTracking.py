@@ -69,7 +69,7 @@ class correlator(Pyro.core.ObjBase):
         
         self.focusTolerance = .05 #how far focus can drift before we correct
         self.deltaZ = 0.2 #z increment used for calibration
-        self.stackHalfSize = 10
+        self.stackHalfSize = 35
         self.NCalibStates = 2*self.stackHalfSize + 1
 
         self.tracking = False

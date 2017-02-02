@@ -4,6 +4,12 @@ import os
 import glob
 import numpy as np
 import time
+import datetime
+
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+logger = logging.getLogger(__name__)
 
 import PYME.experimental.dcimgSpoolShim as DCIMGSpool
 
@@ -44,12 +50,19 @@ class venerableFileChucker(object):
         """
         self.spooler.OnNewSeries(mdfilename)
         series_stub =  mdfilename.strip('.json')
+        print datetime.datetime.utcnow()
 
         # find chunks for this metadata file (this should return the full paths)
         chunkList = sorted(glob.glob(series_stub + '*.dcimg'))
 
         for chunk in chunkList:
             self.spooler.OnDCIMGChunkDetected(chunk)
+            #time.sleep(.5)   # FIXME: When using HUFFMANCODE more frames are lost without waiting
+            #wait until we've sent everything
+            #this is a bit of a hack
+            #time.sleep(.1)
+            while not self.spooler.spooler.postQueue.empty() or (self.spooler.spooler.numThreadsProcessing > 0):
+                time.sleep(.1)
             if deleteAfterSpool:
                 os.remove(chunk)
 
@@ -58,7 +71,7 @@ class venerableFileChucker(object):
         zsteps_filename = series_stub + '_zsteps.json'
 
         self.spooler.OnSeriesComplete(events_filename, zsteps_filename)
-
+        print datetime.datetime.utcnow()
         # TODO: Add Feedback from cluster and also speed up writing in cluster
         # time.sleep(10)
         if deleteAfterSpool:
@@ -118,13 +131,19 @@ class venerableFileChucker(object):
                     for chunk in chunkList:
                         if not chunk in spooled_chunks:
                             self.spooler.OnDCIMGChunkDetected(chunk)
-                            # time.sleep(1)
+                            #time.sleep(.5)  # FIXME: When using HUFFMANCODE more frames are lost without waiting
+                             #wait until we've sent everything
+                            #this is a bit of a hack
+                            #time.sleep(.1)
+                            while not self.spooler.spooler.postQueue.empty() or (self.spooler.spooler.numThreadsProcessing > 0):
+                                time.sleep(.1)
                             if deleteAfterSpool:
                                 # TODO: update this to only delete files if they are sent successfully
                                 os.remove(chunk)
 
                 #we have seen our events file, the current series is complete
                 self.spooler.OnSeriesComplete(events_filename, zsteps_filename)
+                logger.debug('Finished spooling series %s' % series_stub)
                 ignoreList.append(mdfilename)
                 if deleteAfterSpool:
                     os.remove(mdfilename)

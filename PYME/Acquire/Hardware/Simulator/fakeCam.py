@@ -34,12 +34,22 @@ import threading
 #import processing
 import time
 
+import ctypes
+import sys
+
+if sys.platform == 'win32':
+    memcpy = ctypes.cdll.msvcrt.memcpy
+elif sys.platform == 'darwin':
+    memcpy = ctypes.CDLL('libSystem.dylib').memcpy
+else: #linux
+    memcpy = ctypes.CDLL('libc.so.6').memcpy
+
 from PYME.Acquire.Hardware import EMCCDTheory
 from PYME.Acquire.Hardware import ccdCalibrator
 
 class NoiseMaker:
     def __init__(self, QE=.8, electronsPerCount=27.32, readoutNoise=109.8, EMGain=0, background=0., floor=967, shutterOpen = True,
-                 numGainElements=536, vbreakdown=6.6, temperature = -70.):
+                 numGainElements=536, vbreakdown=6.6, temperature = -70., fast_read_approx=True):
         self.QE = QE
         self.ElectronsPerCount = electronsPerCount
         self.ReadoutNoise=readoutNoise
@@ -50,6 +60,34 @@ class NoiseMaker:
         self.vbreakdown = vbreakdown
         self.temperature = temperature
         self.shutterOpen = shutterOpen
+        
+        self.approximate_read_noise = fast_read_approx #approximate readout noise
+        
+        self._ar_key = None
+        self._ar_cache = None
+        
+    def _read_approx(self, im_shape):
+        """
+        Really dirty fast approximation to readout noise by indexing into a random location within a pre-calculated noise
+        matrix. Note that this may result in undesired correlations in the read noise.
+        
+        Parameters
+        ----------
+        im_shape
+
+        Returns
+        -------
+
+        """
+        nEntries = int(np.prod(im_shape))
+        ar_key = (nEntries, self.ADOffset, self.ReadoutNoise, self.ElectronsPerCount)
+        
+        if not self._ar_key == ar_key or self._ar_cache is None:
+            self._ar_cache = self.ADOffset + (self.ReadoutNoise / self.ElectronsPerCount)*np.random.normal(size=2*nEntries)
+            self._ar_key = ar_key
+            
+        offset = np.random.randint(0, nEntries)
+        return self._ar_cache[offset:(offset+nEntries)].reshape(im_shape)
 
     def noisify(self, im):
         """Add noise to image using an EMCCD noise model"""
@@ -57,9 +95,15 @@ class NoiseMaker:
         M = EMCCDTheory.M((80. + self.EMGain)/(255 + 80.), self.vbreakdown, self.temperature, self.NGainElements, 2.2)
         F2 = 1.0/EMCCDTheory.FSquared(M, self.NGainElements)
 
-        return self.ADOffset + \
-               M*scipy.random.poisson(int(self.shutterOpen)*(im + self.background)*self.QE*F2)/(self.ElectronsPerCount*F2) + \
-               self.ReadoutNoise*scipy.random.standard_normal(im.shape)/self.ElectronsPerCount
+        if self.approximate_read_noise:
+            o = self._read_approx(im.shape)
+        else:
+            o = self.ADOffset + (self.ReadoutNoise / self.ElectronsPerCount) * scipy.random.standard_normal(im.shape)
+        
+        if self.shutterOpen:
+            o = o +  (M/(self.ElectronsPerCount*F2))*scipy.random.poisson((self.QE*F2)*(im + self.background))
+
+        return o
         
     def getbg(self):
         M = EMCCDTheory.M((80. + self.EMGain)/(255 + 80.), self.vbreakdown, self.temperature, self.NGainElements, 2.2)
@@ -85,7 +129,7 @@ class compThread(threading.Thread):
         self.noiseMaker = noisemaker
         self.contMode = contMode
         self.bufferlength = bufferlength
-        self.buffer = pylab.zeros((len(XVals), len(YVals), bufferlength), 'uint16')
+        self.buffer = pylab.zeros((bufferlength, len(XVals), len(YVals)), 'uint16')
         self.bufferWritePos = 0
         self.bufferReadPos = 0
         self.numBufferedImages = 0
@@ -178,15 +222,17 @@ class compThread(threading.Thread):
                 yp = (self.yPiezo.GetPos() - self.yPiezo.max_travel/2)*1e3
 
             #print self.ChanSpecs, self.ChanXOffsets
-                
-
-            self.im = self.noiseMaker.noisify(rend_im.simPalmImFI(self.XVals + xp, self.YVals + yp, zPos,self.fluors,
+            
+            r_i = rend_im.simPalmImFI(self.XVals + xp, self.YVals + yp, zPos,self.fluors,
                                                                   laserPowers=self.laserPowers, intTime=self.intTime,
                                                                   position=[xp,yp,zPos], illuminationFunction=self.illumFcn,
                                                                   ChanXOffsets=self.ChanXOffsets, ChanZOffsets=self.ChanZOffsets,
-                                                                  ChanSpecs=self.ChanSpecs))[:,:].astype('uint16')
+                                                                  ChanSpecs=self.ChanSpecs)
+            r_i = r_i[:,:]
+            _im = self.noiseMaker.noisify(r_i)
+            self.im = _im.astype('uint16')
 
-            self.buffer[:,:,self.bufferWritePos] = self.im
+            self.buffer[self.bufferWritePos,:,:] = self.im
             self.bufferWritePos +=1
             if self.bufferWritePos >= self.bufferlength: #wrap around
                 self.bufferWritePos = 0
@@ -222,7 +268,7 @@ class compThread(threading.Thread):
         #self.frameLock.release()
 
     def getIm(self):
-        im = self.buffer[:,:,self.bufferReadPos]
+        im = self.buffer[self.bufferReadPos,:,:]
         self.numBufferedImages -= 1
         self.bufferReadPos +=1
         if self.bufferReadPos >= self.bufferlength: #wrap around
@@ -245,6 +291,7 @@ class compThread(threading.Thread):
         
 class FakeCamera:
     numpy_frames=1
+    order= 'C'
     MODE_CONTINUOUS=True
     MODE_SINGLE_SHOT=False
     
@@ -482,7 +529,11 @@ class FakeCamera:
 
         #chSlice[:,:] = self.noiseMaker.noisify(rend_im.simPalmIm(self.XVals, self.YVals, (self.zPiezo.GetPos() - self.zOffset)*1e3,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime*1e-3))[:,:].astype('uint16')
         try:
-            chSlice[:,:] = self.compT.getIm() #grab image from completed computation thread
+            d = self.compT.getIm()
+            #print d.nbytes, chSlice.nbytes
+            memcpy(chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
+                   d.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.nbytes)
+            #chSlice[:,:] = d #grab image from completed computation thread
             #self.compTOld = None #set computation thread to None such that we get an error if we try and obtain the same result twice
         except AttributeError:  # triggered if called with None
             print("Grabbing problem: probably called with 'None' thread")

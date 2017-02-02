@@ -3,7 +3,32 @@ The Sample Database
 
 The sample database is a database system which can be used in conjunction with PYMEAcquire to record information about 
 sample preparation, labelling, etc for every image that is acquired. The database has a web interface, and is searchable,
-allowing data matching various search keys to be easily located. 
+allowing data matching various search keys to be easily located.
+
+Structure / Schema
+==================
+
+The core unit unit of the database schema is the **Slide**, which represents one stained coverslip (ie all preparation conditions
+consistent). The slide is linked to a sample, which was conceived to represent one tissue source (a patient, a rat, a
+particular passage of cell culture). Each slide has an associated species, with the **Species** object representing both
+species and also strain (e.g. wistar for rats, HeLa, HEK293, etc for cultured cells).
+
+A **Slide** will have one or more **Labelling** s which represent, e.g. the expression of a fluorescent protein,
+antibody labelling with a given combination of primary and secondary antibodies, or FISH staining with a specific probe.
+Each **Labelling** has a **Dye** associated with it - the long name is what the manufacturer would call it e.g.
+'Alexa Fluor 647'. For fluorescent proteins, it should ideally include enough info to uniquely identify it. The short name
+is used for internal shorthand and as a key in other parts of our software. It should not include spaces - e.g. 'A647'.
+The *spectraDBName* is the name of the dye in the Chroma spectra viewer, to facilitate automatic retrieval of dye spectra.
+
+A **Slide** may have one or more images associated with it. Each image represents one *RAW* data acquisition, and may
+have multiple **File** s. One of these files will be the raw data, whilst others could be analysed results.
+
+.. figure:: images/SampleDB_schem_no_tags.png
+
+    Simplified database schema. In addition to the tables depicted, there are also Slide, Image, and File tags which can
+    be associated with a given Slide, Image, or File.
+
+
 
 Installation
 ============
@@ -91,7 +116,7 @@ Part II - Getting Apache to serve the SampleDB
 
 6.  **[Optional but reccomended]** Lock the server down. Edit ``settings.py`` to add your machine name to ``ALLOWED_HOSTS`` and then set ``DEBUG`` to ``False``. Restart apache with ``sudo service apache2 reload`` to make the changes take effect.
     
-    .. warning :: This alone is not enough to make SampleDB secure. You would also want to look at changing the database passwords and the ``SECRET_KEY`` in ``settings.py``, as well as potentially restricting access to MySQL to the local machine, or at least the local subnet (PYMEAcquire talks directly to the database server when adding information about the the current slide, so locking the database down too tight will break this). Some items are stored in the database as pickles, which means that, although difficult to exploit, a database breach theoretically has the capablilty to allow remote code execution.
+    .. warning :: This alone is not enough to make SampleDB secure. You would also want to look at changing the database passwords and the ``SECRET_KEY`` in ``settings.py``, as well as potentially restricting access to MySQL to the local machine. Some items are stored in the database as pickles, which means that, although difficult to exploit, a database breach theoretically has the capablilty to allow remote code execution.
         
 Part III - Letting other machines know where to find the SampleDB
 ------------------------------------------------------------------
