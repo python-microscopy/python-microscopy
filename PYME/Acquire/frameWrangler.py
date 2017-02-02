@@ -278,8 +278,8 @@ class FrameWrangler(wx.EvtHandler):
                 return
 
             if getattr(self.cam, 'hardware_overflowed', False):
-            	self.cam.StopAq()
-            	self.bufferOverflowed = True
+                self.cam.StopAq()
+                self.bufferOverflowed = True
 
 
             #is there a picture waiting for us?
@@ -322,7 +322,7 @@ class FrameWrangler(wx.EvtHandler):
             # just copy data to the current frame once per frame group - individual frames don't get copied
             # directly calling memcpy is a bit of a cheat, but is significantly faster than the alternatives
             with self._current_frame_lock:
-            	memcpy(self.currentFrame.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
+                memcpy(self.currentFrame.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
                        self._cf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),self.currentFrame.nbytes)
             
 
@@ -389,10 +389,10 @@ class FrameWrangler(wx.EvtHandler):
         self.aqOn = False
 
         with self._current_frame_lock:
-	        try: #deal with Andor without breaking sensicam
-	            self.cam.StopAq()
-	        except AttributeError:
-	            pass
+            try: #deal with Andor without breaking sensicam
+                self.cam.StopAq()
+            except AttributeError:
+                pass
                 
         self.onStop.send_robust(self)
 
@@ -408,7 +408,7 @@ class FrameWrangler(wx.EvtHandler):
         self.onStart.send_robust(self)
 
         with self._current_frame_lock:
-        	self.cam.StartExposure()
+            self.cam.StartExposure()
 
         self.aqOn = True
 
