@@ -283,7 +283,7 @@ class HistLimitPanel(wx.Panel):
         
     def SetMinMax(self):
         self.limit_lower = float(np.nanmin(self.data))
-        self.limit_upper = float(np.nanmax(self.data.max))
+        self.limit_upper = float(np.nanmax(self.data))
         self.GenHist()
         self.Refresh()
         self.Update()

@@ -530,7 +530,10 @@ def putFile(filename, data, serverfilter=''):
             else:
                 logger.warn('Timeout attempting to put file: %s, retrying' % url)
         finally:
-            r.close()
+            try:
+                r.close()
+            except:
+                pass
     
         
 

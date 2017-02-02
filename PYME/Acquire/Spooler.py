@@ -27,6 +27,7 @@ import datetime
 
 from PYME.IO import MetaDataHandler
 
+import wx #FIXME - shouldn't do this here
 
 try:
     from PYME.Acquire import sampleInformationDjangoDirect as sampleInformation
@@ -105,6 +106,8 @@ class Spooler:
         #if we've got a fake camera - the cycle time will be wrong - fake our time sig to make up for this
         #if scope.cam.__class__.__name__ == 'FakeCamera':
         #    timeFcn = self.fakeTime
+
+        self._last_gui_update = 0
             
         if not fakeCamCycleTime is None:
             self.fakeCamCycleTime = fakeCamCycleTime
@@ -157,12 +160,16 @@ class Spooler:
         if not self.watchingFrames:
             #we have allready disconnected - ignore any new frames
             return
+
+        t = time.time()
             
         self.imNum += 1
         if not self.guiUpdateCallback is None:
-            self.guiUpdateCallback()
+            if (t > (self._last_gui_update +.1)):
+                self._last_gui_update = t
+                self.guiUpdateCallback()
             
-        self.protocol.OnFrame(self.imNum)
+        wx.CallAfter(self.protocol.OnFrame, self.imNum)
 
         if self.imNum == 2 and sampleInformation and sampleInformation.currentSlide[0]: #have first frame and should thus have an imageID
             sampleInformation.createImage(self.md, sampleInformation.currentSlide[0])

@@ -142,22 +142,22 @@ class FrameWrangler(wx.EvtHandler):
     def getFrame(self, colours=None):
         """Ask the camera to put a frame into our buffer"""
         with self._current_frame_lock:
-	        self._cf = np.empty([1, self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
+            self._cf = np.empty([1, self.cam.GetPicWidth(), self.cam.GetPicHeight(),
 	                                ], dtype = 'uint16', order = self.order)
 	        
-	        if getattr(self.cam, 'numpy_frames', False):
-	            cs = self._cf[0,:,:] #self.currentFrame[:,:,0]
-	        else:
-	            cs = self._cf.ctypes.data
+            if getattr(self.cam, 'numpy_frames', False):
+                cs = self._cf[0,:,:] #self.currentFrame[:,:,0]
+            else:
+                cs = self._cf.ctypes.data
 	            
-	        #Get camera to insert data into our array (results passed back "by reference")
-	        #this is a kludge/artifact of an old call into c-code
-	        #in this context cs is a pointer to the memory we want the frame to go into
-	        #for newer cameras, we pass a numpy array object, and the camera code
-	        #copies the data into that array.
-	        self.cam.ExtractColor(cs,0)
-	        
-	        return self._cf
+            #Get camera to insert data into our array (results passed back "by reference")
+            #this is a kludge/artifact of an old call into c-code
+            #in this context cs is a pointer to the memory we want the frame to go into
+            #for newer cameras, we pass a numpy array object, and the camera code
+            #copies the data into that array.
+            self.cam.ExtractColor(cs,0)
+            
+            return self._cf
 
     def purge(self):
         """purge (and discard) all remaining frames in the camera buffer"""
@@ -203,7 +203,7 @@ class FrameWrangler(wx.EvtHandler):
                 #signal complete 
                 self.needExposureStart = True
 
-    def _poll_loop(self, sleep_interval=.1):
+    def _poll_loop(self, sleep_interval=.01):
         """
         This loop runs in a background thread to continuously poll the camera and deal with frames as they arrive.
 
@@ -278,8 +278,8 @@ class FrameWrangler(wx.EvtHandler):
                 return
 
             if getattr(self.cam, 'hardware_overflowed', False):
-            	self.cam.StopAq()
-            	self.bufferOverflowed = True
+                self.cam.StopAq()
+                self.bufferOverflowed = True
 
 
             #is there a picture waiting for us?
@@ -322,7 +322,7 @@ class FrameWrangler(wx.EvtHandler):
             # just copy data to the current frame once per frame group - individual frames don't get copied
             # directly calling memcpy is a bit of a cheat, but is significantly faster than the alternatives
             with self._current_frame_lock:
-            	memcpy(self.currentFrame.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
+                memcpy(self.currentFrame.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
                        self._cf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),self.currentFrame.nbytes)
             
 
@@ -389,10 +389,10 @@ class FrameWrangler(wx.EvtHandler):
         self.aqOn = False
 
         with self._current_frame_lock:
-	        try: #deal with Andor without breaking sensicam
-	            self.cam.StopAq()
-	        except AttributeError:
-	            pass
+            try: #deal with Andor without breaking sensicam
+                self.cam.StopAq()
+            except AttributeError:
+                pass
                 
         self.onStop.send_robust(self)
 
@@ -408,7 +408,7 @@ class FrameWrangler(wx.EvtHandler):
         self.onStart.send_robust(self)
 
         with self._current_frame_lock:
-        	self.cam.StartExposure()
+            self.cam.StartExposure()
 
         self.aqOn = True
 
