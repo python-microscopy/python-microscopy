@@ -69,6 +69,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'USER': DATABASE_USER,
         'PASSWORD': DATABASE_PWD,
+    }
     # 'default': {
     #     'NAME': 'sample_db',
     #     'HOST' : DATABASE_HOST,

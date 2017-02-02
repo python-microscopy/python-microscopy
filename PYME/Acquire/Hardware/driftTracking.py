@@ -331,7 +331,7 @@ class correlator(Pyro.core.ObjBase):
             #print dx, dy, dz
             
             self.history.append((time.time(), dx, dy, dz, cCoeff, self.corrRef, self.piezo.GetOffset(), self.piezo.GetPos(0)))
-                eventLog.logEvent('PYME2ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
+            eventLog.logEvent('PYME2ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
             
             self.lockActive = self.lockFocus and (cCoeff > .5*self.corrRef)
             if self.lockActive:
