@@ -26,6 +26,7 @@
 initialisation & to allow a user script directory"""
 import threading
 #import pythoncom
+import PYME.config as config
 
 import os
 import sys
@@ -84,6 +85,12 @@ def checkFilename(filename):
         The full path to the requested script
     """
     #try and find filename in our script directories
+    # first check the new config directories
+    fnp = config.check_init_file(filename)
+    if fnp is not None:
+        return fnp
+
+    # otherwise fall back to legacy checking
     if os.path.exists(filename):
         return filename
     

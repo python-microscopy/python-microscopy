@@ -15,7 +15,8 @@ Within each configuration directory there can be a ``config.yaml`` file which st
 pairs. These are accessed using the :func:`get` function.
 
 The directories may also contain a ``plugins`` folder, which in turn can contain subfolders for ``visgui``, ``dsviewer``,
-and ``recipes``.  PYME will also detect custom acquisition protocols saved in the ``.PYME/protocols`` directory. the
+and ``recipes``.  PYME will also detect custom acquisition protocols saved in the ``.PYME/protocols`` directory,
+similarly init scripts will be detected in ``.PYME/scripts`` directory. The
 overall template for a configuration directory is as follows: ::
 
     .PYME
@@ -32,9 +33,11 @@ overall template for a configuration directory is as follows: ::
       |           |- anothermodule.txt
       |
       |- protocols
-            |- a_protocol.py
-            |- another_protocol.py
-
+      |     |- a_protocol.py
+      |     |- another_protocol.py
+      |- scripts
+            |- init_mymachine.py
+            |- init_my_other_config.py
 
 Examples
 ========
@@ -49,7 +52,7 @@ parameter values are supported using standard yaml notation.
 
     dataserver-root: "/Users/david/srvtest/test1"
     h5f-flush_interval: 1
-
+    extra-scripts-dir: "C:/pyme-init-scripts"
 
 plugins/visgui/PYME.txt
 -----------------------
@@ -201,6 +204,34 @@ def get_custom_protocols():
         prots.update({os.path.split(p)[-1] : p for p in glob.glob(prot_glob)})
 
 
+# FIXME - the legacy init file checking still resides in ExecTools
+# FIXME - it should really all be here in one place and include the
+# FIXME - functionality of ExecTools.checkFilename()
+def check_init_file(filename):
+    """
+    Look for an init file in the various locations, in order of precedence user - site - dist.
+    It also checks the config option ``extra-scripts-dir`` as the first directory to look in
+    if this option is set.
 
+    Parameters
+    ----------
 
+    filename: init file name to locate in script dirs
 
+    Returns
+    -------
+
+    If found returns first match as full path to init file
+    returns None if not found.
+
+    """
+    if config.get('extra-scripts-dir') is not None:
+        fnp = os.path.join(config.get('extra-scripts-dir'), filename)
+        if os.path.exists(fnp):
+            return fnp
+
+    for config_dir in [user_config_dir, site_config_directory, dist_config_directory]:
+        fnp = os.path.join(os.path.join(config_dir,'scripts'), filename)
+        if os.path.exists(fnp):
+            return fnp
+    return None

@@ -52,7 +52,7 @@ def setup_logging(
 
     """
     path = os.path.join(os.path.split(__file__)[0], default_path)
-    print path
+    logging.info('attempting to load load logging config from %s' % path)
     value = os.getenv(env_key, None)
     if value:
         path = value
@@ -79,14 +79,31 @@ class BoaApp(wx.App):
 
 
 def main():
+    import os
+    import sys
     from optparse import OptionParser
     setup_logging()
-
-    parser = OptionParser()
-    parser.add_option("-i", "--init-file", dest="initFile", help="Read initialisation from file [defaults to init.py]", metavar="FILE")
-        
-    (options, args) = parser.parse_args()
     
+    logger = logging.getLogger()
+    parser = OptionParser()
+    parser.add_option("-i", "--init-file", dest="initFile",
+                      help="Read initialisation from file [defaults to init.py]",
+                      metavar="FILE", default='init.py')
+
+    (options, args) = parser.parse_args()
+
+    # we should check the init file already here
+    # rather than delegate to acquiremainframe at some later stage
+    # downside is that we replicate the checking from ExecTools here
+    # should be moved in one place, i.e. here
+    import PYME.Acquire.ExecTools as execT
+    inifile = execT.checkFilename(options.initFile)
+    if not os.path.exists(inifile):
+        logger.critical('init file %s not found - aborting' % inifile)
+        sys.exit(1)
+
+    logger.info('using inifile %s' % inifile)
+
     application = BoaApp(options, 0)
     application.MainLoop()
 
