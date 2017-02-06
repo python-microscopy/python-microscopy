@@ -29,6 +29,8 @@ from scipy.ndimage import _nd_image, _ni_support
 from scipy.spatial import ckdtree
 #import pylab
 
+from six.moves import xrange
+
 def calc_gauss_weights(sigma):
     """calculate a gaussian filter kernel (adapted from scipy.ndimage.filters.gaussian_filter1d)"""
     sd = float(sigma)
@@ -229,13 +231,13 @@ class ObjectIdentifier(list):
             #neigh = kdt.query_ball_point([xi,yi], radius)
         
             dn, neigh = kdt.query(numpy.array([xi,yi]), 2)
-            print dn
+            #print dn
 
             if (dn[1] > radius):
                 xsd.append(xi)
                 ysd.append(yi)
                 
-        print len(xsd)
+        #print len(xsd)
 
         return numpy.array(xsd), numpy.array(ysd)
 
@@ -426,7 +428,7 @@ class ObjectIdentifier(list):
             ys = numpy.clip(ys, 0, self.filteredData.shape[1] - 1)
 
         if discardClumpRadius > 0:
-            print 'ditching clumps'
+            print('ditching clumps')
             xs, ys = self.__discardClumped(xs, ys, discardClumpRadius)
             
         xs, ys = self.__Debounce(xs, ys, debounceRadius)

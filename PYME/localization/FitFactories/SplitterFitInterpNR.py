@@ -168,7 +168,7 @@ def genFitImage(fitResults, metadata):
     #ratio = fitResults['ratio']
     
     im = InterpFitFactory._evalModel(np.array(list(fitResults['fitResults'])), metadata, xslice, yslice, x_, y_)[0]
-    print im.shape
+    #print im.shape
 
     return np.hstack([im[:,:,0], im[:,:,1]]).squeeze()
 

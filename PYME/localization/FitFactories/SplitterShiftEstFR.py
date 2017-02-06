@@ -25,7 +25,7 @@ import scipy
 #from scipy.signal import interpolate
 #import scipy.ndimage as ndimage
 from pylab import *
-import copy_reg
+#import copy_reg
 import numpy
 import types
 
@@ -37,13 +37,13 @@ from PYME.localization.cModels.gauss_app import *
 
 from PYME.Analysis._fithelpers import *
 
-def pickleSlice(slice):
-        return unpickleSlice, (slice.start, slice.stop, slice.step)
-
-def unpickleSlice(start, stop, step):
-        return slice(start, stop, step)
-
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
+# def pickleSlice(slice):
+#         return unpickleSlice, (slice.start, slice.stop, slice.step)
+#
+# def unpickleSlice(start, stop, step):
+#         return slice(start, stop, step)
+#
+# copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 
 def f_gauss2d2c(p, X, Y):
@@ -147,8 +147,8 @@ class GaussianFitFactory:
 #        subplot(122)
 #        imshow(dataROI[:,:,1], interpolation='nearest')
 
-        print Ag
-        print Ar
+        #print Ag
+        #print Ar
 
         x0 =  X.mean()
         y0 =  Y.mean()
@@ -173,7 +173,7 @@ class GaussianFitFactory:
         fitErrors=None
         try:       
             fitErrors = scipy.sqrt(scipy.diag(cov_x)*(infodict['fvec']*infodict['fvec']).sum()/(len(dataROI.ravel())- len(res)))
-        except Exception, e:
+        except Exception as e:
             pass
 
         #print res, fitErrors, resCode
