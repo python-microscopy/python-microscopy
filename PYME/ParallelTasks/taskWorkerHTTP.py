@@ -28,7 +28,7 @@ import random
 import time
 import os
 
-import Queue
+from six.moves import Queue
 import threading
 
 import PYME.version

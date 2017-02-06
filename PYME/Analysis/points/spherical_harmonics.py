@@ -177,7 +177,7 @@ def sphere_expansion_clean(x, y, z, mmax=3, centre_points=True, nIters = 2, tol_
         pred = np.dot(A, c)
         error = abs(r - pred)/r
         mask = error < tol
-        print mask.sum(), len(mask)
+        #print mask.sum(), len(mask)
 
         c = linalg.lstsq(A[mask,:], r[mask])[0]
         tol /=2

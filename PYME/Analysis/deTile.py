@@ -131,13 +131,13 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     xdp = (bufSize + ((xps - xps.min()) / (mdh.getEntry('voxelsize.x'))).round()).astype('i')
     ydp = (bufSize + ((yps - yps.min()) / (mdh.getEntry('voxelsize.y'))).round()).astype('i')
 
-    print (xps - xps.min()), mdh.getEntry('voxelsize.x')
+    #print (xps - xps.min()), mdh.getEntry('voxelsize.x')
 
     #work out how big our tiled image is going to be
     imageSizeX = np.ceil(xdp.max() + frameSizeX + bufSize)
     imageSizeY = np.ceil(ydp.max() + frameSizeY + bufSize)
 
-    print imageSizeX, imageSizeY
+    #print imageSizeX, imageSizeY
 
     #allocate an empty array for the image
     im = np.zeros([imageSizeX, imageSizeY, nchans])
@@ -399,7 +399,7 @@ class ImagePyramid(object):
                                                                        frameSizeX)
                 xst, xet = max(x-tile_x * self.tile_size, 0), min(frameSizeX - (tile_x + 1) * self.tile_size - x, 0) #FIXME
 
-                print xs, xe, xst, xet
+                #print xs, xe, xst, xet
 
                 ys, ye = max(tile_y * self.tile_size - y, 0), min((tile_y + 1) * self.tile_size - y,
                                                                        frameSizeY)

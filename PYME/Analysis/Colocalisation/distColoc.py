@@ -79,7 +79,7 @@ def calcDistCorr(cfilter, colourA, colourB, nbins=100, binsize=10):
 
     corr = 1 - abs(hAB/hAB.sum()-hAA/hAA.sum()).sum()/abs(hAA/hAA.sum()-hAR/hAR.sum()).sum()
 
-    print 'Correlation Factor: %3.2f' % corr
+    print('Correlation Factor: %3.2f' % corr)
 
     ccorr = 1 - cumsum(abs(hAB/hAB.sum()-hAA/hAA.sum()))/cumsum(abs(hAA/hAA.sum()-hAR/hAR.sum()))
     plot(d,ccorr)
@@ -92,7 +92,7 @@ def calcDistCorr(cfilter, colourA, colourB, nbins=100, binsize=10):
 
     corr = 1 - abs(hBA/hBA.sum()-hBB/hBB.sum()).sum()/abs(hBB/hBB.sum()-hBR/hBR.sum()).sum()
 
-    print 'Correlation Factor: %3.2f' % corr
+    print('Correlation Factor: %3.2f' % corr)
 
     ccorr = 1 - cumsum(abs(hBA/hBA.sum()-hBB/hBB.sum()))/cumsum(abs(hBB/hBB.sum()-hBR/hBR.sum()))
     plot(d,ccorr)

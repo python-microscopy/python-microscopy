@@ -163,8 +163,8 @@ if libuc480 is not None:
                 l.append('%s = %s' % (name, value))
             elif value.startswith('UC'):
                 print(value)
-                d[name] = unicode(value[3:-1])
-                l.append('%s = unicode("%s")' % (name, value[3:-1]))
+                d[name] = u'' + value[3:-1]
+                l.append('%s = u"%s"' % (name, value[3:-1]))
             elif d.has_key(value):
                 d[name] = d[value]
                 l.append('%s = %s' % (name, d[value]))

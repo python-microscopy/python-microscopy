@@ -29,7 +29,8 @@ __author__ = 'J�rgen Hermann, Mike Brown, Christopher Arndt, David Baddeley'
 
 
 # Imports
-import cgi, string, sys, cStringIO
+import cgi, string, sys
+from io import StringIO
 import keyword, token, tokenize
 
 
@@ -144,7 +145,7 @@ class Parser:
 
         # parse the source and write it
         self.pos = 0
-        text = cStringIO.StringIO(self.raw)
+        text = StringIO(self.raw)
         self.out.write(self.stylesheet)
         self.out.write('<pre class="code">\n')
         try:

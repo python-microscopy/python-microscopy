@@ -1,11 +1,18 @@
-from BaseHTTPServer import BaseHTTPRequestHandler
-import urlparse
+# noinspection PyCompatibility
+from http.server import BaseHTTPRequestHandler
+try:
+    # noinspection PyCompatibility
+    import urlparse
+except ImportError:
+    #py3
+    # noinspection PyCompatibility
+    from urllib import parse as urlparse
 import os
 from PYME.IO.FileUtils import nameUtils
 from PYME.IO import MetaDataHandler
 from PYME.ParallelTasks import HDFTaskQueue
 import time
-import cPickle as pickle
+from six.moves import cPickle as pickle
 
 from PYME.IO import PZFFormat
 
@@ -147,7 +154,7 @@ class H5File(object):
         
             self.imageData.flush()
         
-        print (time.time() - t1)/float(len(fs)), (t2-t1)/float(len(fs))
+        #print (time.time() - t1)/float(len(fs)), (t2-t1)/float(len(fs))
         
     def putPZFFrames(self, frames):
         t1 = time.time()
@@ -169,7 +176,7 @@ class H5File(object):
         
             self.imageData.flush()
         
-        print (time.time() - t1)/float(len(fs)), (t2-t1)/float(len(fs))
+        #print (time.time() - t1)/float(len(fs)), (t2-t1)/float(len(fs))
         
     def putEvent(self, event):
         #self._checkCreateEventsTable()
@@ -363,7 +370,7 @@ class GetHandler(BaseHTTPRequestHandler):
         return
 
 if __name__ == '__main__':
-    from BaseHTTPServer import HTTPServer
+    from http.server import HTTPServer
     server = HTTPServer(('localhost', 8080), GetHandler)
-    print 'Starting server, use <Ctrl-C> to stop'
+    print('Starting server, use <Ctrl-C> to stop')
     server.serve_forever()

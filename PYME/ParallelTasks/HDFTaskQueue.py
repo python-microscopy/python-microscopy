@@ -35,7 +35,7 @@ import numpy as np
 import logging
 
 import time
-import Queue
+from six.moves import Queue
 
 from PYME.IO.FileUtils.nameUtils import genResultFileName, getFullFilename, getFullExistingFilename
 from PYME.IO import h5rFile

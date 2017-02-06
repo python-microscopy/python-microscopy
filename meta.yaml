@@ -170,6 +170,8 @@ requirements:
     - docutils
     - sphinx
     - python-bioformats [osx]
+    - six
+    - future
 
     #todo make cross-platform versions
     #- nvidia-ml-py  [linux] #optional - maybe better as dependency for gpu-fitting package

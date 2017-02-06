@@ -1,7 +1,8 @@
 import cherrypy
 import threading
 import requests
-import Queue
+from six.moves import Queue
+from six.moves import xrange
 import logging
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger('distributor')

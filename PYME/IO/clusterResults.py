@@ -4,7 +4,8 @@ from . import image
 from . import MetaDataHandler
 import requests
 import numpy as np
-import cStringIO
+#import cStringIO
+from io import BytesIO
 
 try:
     # noinspection PyCompatibility
@@ -122,7 +123,7 @@ def fileResults(URI, data_raw):
 
     elif URI.endswith('.npy'): # or isinstance(data_raw, np.ndarray):
         #output_format = 'numpy'
-        data = cStringIO.StringIO()
+        data = BytesIO()
         np.save(data, np.array(data_raw))
         data = data.getvalue()
 
