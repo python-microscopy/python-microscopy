@@ -449,7 +449,7 @@ class fitTestJig(object):
         # remove figure() call to enable use in supblots
         if not subplot:
             plt.figure()
-            
+
         #print varName
         xv = self.ps[varName].ravel()
         

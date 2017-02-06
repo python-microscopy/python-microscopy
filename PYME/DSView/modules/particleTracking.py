@@ -34,6 +34,10 @@ class offline_ploting(object):
         plt.ion()
 
 def movieplot(clump, image):
+    #if image.size == 0:
+    #    #stop us from blowing up if we get an empty image
+    #    return ''
+    
     import matplotlib.pyplot as plt
     import mpld3
     
@@ -116,6 +120,10 @@ def movieplot(clump, image):
 
 
 def movieplot2(clump, image):
+    #if image.size == 0:
+    #    #stop us from blowing up if we get an empty image
+    #    return ''
+    
     import matplotlib.pyplot as plt
     #from PIL import Image
     import mpld3
@@ -161,6 +169,9 @@ def movieplot2(clump, image):
                 #print (xp - 20), (xp + 20), (yp - 20), (yp + 20), int(clump['t'][i])
                 img = image.data[(xp - roiHalfSize):(xp + roiHalfSize + 1), (yp - roiHalfSize):(yp + roiHalfSize + 1), int(clump['t'][i])].squeeze()
 
+                if img.size == 0:
+                    return ''
+                
                 if 'mean_intensity' in clump.keys():
                     scMax = clump.featuremean['mean_intensity'] * 1.5
                 else:

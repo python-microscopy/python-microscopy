@@ -73,27 +73,6 @@ def setDefaultNamespace(locals, globals):
     defLocals = locals
     defGlobals = globals
 
-def checkFilename(filename):
-    """Check both the scripts directory in the PYME tree and a separate user
-    script directory, `~/PYMEScripts` for an initialisation script of the given
-    name. 
-    
-    Returns
-    -------
-    filename : string
-        The full path to the requested script
-    """
-    #try and find filename in our script directories
-    if os.path.exists(filename):
-        return filename
-    
-    for p in execPath:
-        fnp = os.path.join(p, filename)
-        if os.path.exists(fnp):
-            return fnp
-
-    return filename #give up and let exec throw its normal error message
-
 if sys.version_info.major == 2:
     def _exec(codeObj, localVars = None, globalVars = None):
         exec codeObj in localVars,globalVars
@@ -122,7 +101,7 @@ def execFile(filename, localVars = defLocals, globalVars = defGlobals):
     #code = fid.read()
     #fid.close()
 
-    _execfile(checkFilename(filename), localVars, globalVars)
+    _execfile(filename, localVars, globalVars)
 
 def execFileBG(filename, localVars = defLocals, globalVars = defGlobals):
     #fid = open(checkFilename(filename))
@@ -130,7 +109,7 @@ def execFileBG(filename, localVars = defLocals, globalVars = defGlobals):
     #fid.close()
 
     #execBG(checkFilename(filename), localVars, globalVars)
-    threading.Thread(target=execfile, args = (checkFilename(filename), localVars, globalVars)).start()
+    threading.Thread(target=execfile, args = (filename, localVars, globalVars)).start()
 
 def _bginit(name, codeObj):
     global defGlobals

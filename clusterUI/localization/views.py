@@ -124,8 +124,9 @@ def _launch_localize(analysisMDH, seriesName):
     resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(seriesName))
     logging.debug('Results file: ' + resultsFilename)
 
-    resultsMdh = MetaDataHandler.NestedClassMDHandler(analysisMDH)
+    resultsMdh = MetaDataHandler.NestedClassMDHandler()#analysisMDH)
     resultsMdh.update(json.loads(unifiedIO.read(seriesName + '/metadata.json')))
+    resultsMdh.update(analysisMDH)
 
     resultsMdh['EstimatedLaserOnFrameNo'] = resultsMdh.getOrDefault('EstimatedLaserOnFrameNo', resultsMdh.getOrDefault('Analysis.StartAt', 0))
     MetaData.fixEMGain(resultsMdh)

@@ -146,16 +146,16 @@ class PYMEMainFrame(AUIFrame):
         self.time1.WantNotification.remove(self.runInitScript)
         #self.sh.shell.runfile('init.py')
         #fstub = os.path.join(os.path.split(__file__)[0], 'Scripts')
-        initFile = 'init.py'
-        if not self.options is None and not self.options.initFile is None:
-            initFile = self.options.initFile
+        # initFile = 'init.py'
+        # if not self.options is None and not self.options.initFile is None:
+        #     initFile = self.options.initFile
             
         #initFile = os.path.join(fstub, initFile)
         self.sh.run('from PYME.Acquire import ExecTools')
         self.sh.run('ExecTools.setDefaultNamespace(locals(), globals())')
         self.sh.run('from PYME.Acquire.ExecTools import InitBG, joinBGInit, InitGUI, HWNotPresent')
         #self.sh.run("""def InitGUI(code):\n\tpostInit.append(code)\n\n\n""")
-        self.sh.run('ExecTools.execFileBG("%s", locals(), globals())' % initFile)
+        self.sh.run('ExecTools.execFileBG("%s", locals(), globals())' % self.options.initFile)
         
         self.time1.WantNotification.append(self.checkInitDone)
 
