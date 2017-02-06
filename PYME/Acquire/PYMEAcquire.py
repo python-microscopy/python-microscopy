@@ -93,14 +93,11 @@ def main():
                       metavar="FILE", default='init.py')
 
     (options, args) = parser.parse_args()
-
-    # we should check the init file already here
-    # rather than delegate to acquiremainframe at some later stage
-    # downside is that we replicate the checking from ExecTools here
-    # should be moved in one place, i.e. here
     
+    # continue to support loading scripts from the PYMEAcquire/Scripts directory
     legacy_scripts_dir = os.path.join(os.path.dirname(__file__), 'Scripts')
     
+    # use new config module to locate the initialization file
     init_file = config.get_init_filename(options.initFile, legacy_scripts_directory=legacy_scripts_dir)
     if init_file is None:
         logger.critical('init script %s not found - aborting' % options.initFile)
