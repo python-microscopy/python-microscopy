@@ -24,6 +24,8 @@ import wx
 import wx.grid
 #import pylab
 #from PYME.IO.image import ImageStack
+from six.moves import xrange
+
 try:
     from enthought.traits.api import HasTraits, Float, Int, CStr, Bool
     from enthought.traits.ui.api import View, Item

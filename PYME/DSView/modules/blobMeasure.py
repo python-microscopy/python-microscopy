@@ -450,7 +450,7 @@ class BlobObject(object):
         except ImportError:
             from PIL import Image
             
-        import StringIO
+        from io import BytesIO
         import cherrypy
         cherrypy.response.headers["Content-Type"]="image/png"
         
@@ -489,7 +489,7 @@ class BlobObject(object):
 
         zoom = 200./max(xsize, ysize)
         
-        out = StringIO.StringIO()
+        out = BytesIO()
         Image.fromarray(im).resize((int(zoom*ysize), int(zoom*xsize))).save(out, 'PNG')
         s = out.getvalue()
         out.close()
@@ -499,7 +499,7 @@ class BlobObject(object):
         #import Image
         from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
         from matplotlib.figure import Figure
-        import StringIO
+        from io import BytesIO
         import cherrypy
         cherrypy.response.headers["Content-Type"]="image/png"
         
@@ -518,7 +518,7 @@ class BlobObject(object):
             ax.plot(xv[:-1], yv[i], c = cols[i], lw=2)
         ax.set_xlabel(getattr(self, graphName).xlabel)
         
-        out = StringIO.StringIO()
+        out = BytesIO()
         canvas.print_png(out, dpi=100, facecolor='w')
         s = out.getvalue()
         out.close()
@@ -529,7 +529,7 @@ class BlobObject(object):
         from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
         from matplotlib.figure import Figure
         from matplotlib.patches import Rectangle
-        import StringIO
+        from io import BytesIO
         import cherrypy
         cherrypy.response.headers["Content-Type"]="image/png"
 
@@ -578,7 +578,7 @@ class BlobObject(object):
         
         ax.set_axis_off()
         
-        out = StringIO.StringIO()
+        out = BytesIO()
         canvas.print_png(out, dpi=100, facecolor='none')
         s = out.getvalue()
         out.close()
@@ -589,7 +589,7 @@ class BlobObject(object):
         from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
         from mpl_toolkits.mplot3d import Axes3D
         from matplotlib.figure import Figure
-        import StringIO
+        from io import BytesIO
         import cherrypy
         cherrypy.response.headers["Content-Type"]="image/png"
 
@@ -631,7 +631,7 @@ class BlobObject(object):
         #ax.axis('equal')
         #ax.set_axis_off()
         
-        out = StringIO.StringIO()
+        out = BytesIO()
         canvas.print_png(out, dpi=100, facecolor='none')
         s = out.getvalue()
         out.close()
@@ -657,7 +657,7 @@ class BlobObject(object):
         from mpl_toolkits.mplot3d.art3d import Poly3DCollection
         from matplotlib.figure import Figure
         from skimage import measure
-        import StringIO
+        from io import BytesIO
         import cherrypy
         cherrypy.response.headers["Content-Type"]="image/png"
         
@@ -772,7 +772,7 @@ class BlobObject(object):
         
         #ax.view_init(-45, 45)
         
-        out = StringIO.StringIO()
+        out = BytesIO()
         canvas.print_png(out, dpi=100, facecolor='none')
         s = out.getvalue()
         out.close()
@@ -898,7 +898,7 @@ class Measurements(wx.Panel):
         webbrowser.open('%smeasure/%d' % (htmlServe.getURL(), self.ID))
         
     def OnSaveObjects(self, event):
-        import cPickle
+        #import cPickle
         import zipfile
         
         zf = zipfile()
