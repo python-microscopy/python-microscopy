@@ -300,7 +300,7 @@ class piezo_e709T(object):
         
                 
     def close(self):
-        print "Shutting down piezo"
+        logging.info("Shutting down piezo")
         with self.lock:
             self.loopActive = False
             #time.sleep(.01)

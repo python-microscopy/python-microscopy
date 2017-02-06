@@ -3,6 +3,7 @@ This file provides utility functions for creating and interpreting clusterIO dir
 """
 from collections import namedtuple
 import os
+import six
 
 #flags (bitfields) for file type specification
 FILETYPE_NORMAL = 0
@@ -69,7 +70,7 @@ def aggregate_dirlisting(dir_list, single_dir):
 
     """
 
-    for k, v in single_dir.iteritems():
+    for k, v in six.iteritems(single_dir):
         type, size = v
 
         fi = dir_list.get(k, None)

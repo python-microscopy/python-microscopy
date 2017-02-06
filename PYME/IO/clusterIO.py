@@ -28,7 +28,13 @@ local_serverfilter = config.get('dataserver-filter', '')
 
 import sys
 
-import urlparse
+try:
+    # noinspection PyCompatibility
+    from urlparse import urlparse
+except ImportError:
+    #py3
+    # noinspection PyCompatibility
+    from urllib.parse import urlparse
 
 import logging
 
@@ -474,7 +480,7 @@ def mirrorFile(filename, serverfilter=''):
     locs = locateFile(filename, serverfilter)
 
     # where is the data currently located - exclude these from destinations
-    currentCopyNetlocs = [urlparse.urlparse(l[0]).netloc for l in locs]
+    currentCopyNetlocs = [urlparse(l[0]).netloc for l in locs]
 
     # choose a server to mirror onto
     destName, destInfo = _chooseServer(serverfilter, exclude_netlocs=currentCopyNetlocs)

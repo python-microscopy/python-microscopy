@@ -22,7 +22,12 @@
 ##################
 
 import sqlite3
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    #py3
+    import pickle
+    
 import os
 import zlib
 from numpy import ndarray

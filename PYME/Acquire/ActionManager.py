@@ -4,7 +4,14 @@ Created on Sat May 28 23:12:24 2016
 
 @author: david
 """
-import Queue
+try:
+    #python 2.x
+    # noinspection PyCompatibility
+    import Queue
+except ImportError:
+    #python 3.x
+    import queue as Queue
+    
 import time
 import dispatch
 import weakref
@@ -104,7 +111,7 @@ class ActionManager(object):
                 return
             
             if expiry > time.time():
-                print self.currentTask, functionName
+                print('%s, %s' % (self.currentTask, functionName))
                 fcn = eval('.'.join(['self.scope()', functionName]))
                 self.isLastTaskDone = fcn(**args)
                 

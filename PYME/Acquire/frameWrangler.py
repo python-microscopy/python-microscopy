@@ -376,7 +376,7 @@ class FrameWrangler(wx.EvtHandler):
         free-running mode."""
         for callback in self.HardwareChecks:
             if not callback():
-                print 'Waiting for hardware'
+                print('Waiting for hardware')
                 return False
 
         return True

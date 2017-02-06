@@ -34,7 +34,13 @@ import PYME.Acquire.Spooler as sp
 #from PYME.ParallelTasks.relativeFiles import getRelFilename
 
 import threading
-import Queue
+
+try:
+    # noinspection PyCompatibility
+    import Queue
+except ImportError:
+    #py3
+    import queue as Queue
 
 from PYME.IO import clusterIO
 from PYME.IO import PZFFormat

@@ -5,7 +5,14 @@ from . import MetaDataHandler
 import requests
 import numpy as np
 import cStringIO
-import cPickle
+
+try:
+    # noinspection PyCompatibility
+    import cPickle
+except ImportError:
+    #py3
+    import pickle as cPickle
+    
 import pandas as pd
 import os
 import logging

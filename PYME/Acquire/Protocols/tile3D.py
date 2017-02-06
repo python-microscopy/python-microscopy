@@ -30,6 +30,8 @@ from PYME.Acquire.pointScanner import PointScanner3D
 from PYME.contrib.wxPlotPanel import PlotPanel
 #from PYME.Analysis import ofind
 
+from six.moves import xrange
+
 #calculate tile sizes
 vsx, vsy = scope.GetPixelSize()
 tsx = vsx*scope.cam.GetPicWidth()*1e-3
