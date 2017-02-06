@@ -165,7 +165,7 @@ class ColumnSorterMixin:
 
         # If the items are equal then pick something else to make the sort value unique
         if cmpVal == 0:
-            cmpVal = apply(cmp, self.GetSecondarySortValues(col, key1, key2))
+            cmpVal = cmp(*self.GetSecondarySortValues(col, key1, key2))
 
         if ascending:
             return cmpVal

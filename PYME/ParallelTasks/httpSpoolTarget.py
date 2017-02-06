@@ -370,6 +370,7 @@ class GetHandler(BaseHTTPRequestHandler):
         return
 
 if __name__ == '__main__':
+    # noinspection PyCompatibility
     from http.server import HTTPServer
     server = HTTPServer(('localhost', 8080), GetHandler)
     print('Starting server, use <Ctrl-C> to stop')

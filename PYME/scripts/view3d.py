@@ -23,6 +23,7 @@ import wx
 import sys
 import socket
 from optparse import OptionParser
+# noinspection PyCompatibility
 import socketserver
 
 op = OptionParser(usage = 'usage: %s [options] [filename]' % sys.argv[0])

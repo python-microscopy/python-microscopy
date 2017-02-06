@@ -1,7 +1,7 @@
 import cherrypy
 import threading
 import requests
-from six.moves import Queue
+import queue as Queue
 from six.moves import xrange
 import logging
 logging.basicConfig(level=logging.WARN)

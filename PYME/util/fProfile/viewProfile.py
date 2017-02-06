@@ -1,7 +1,9 @@
 import os
 #import SimpleHTTPServer
+# noinspection PyCompatibility
 import http.server
 
+# noinspection PyCompatibility
 import socketserver
 import webbrowser
 import threading

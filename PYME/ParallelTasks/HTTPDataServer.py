@@ -533,7 +533,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             # (see bug #1100201)
             content = (self.error_message_format % {
                 'code': code,
-                'message': BaseHTTPServer._quote_html(message),
+                'message': http.server._quote_html(message),
                 'explain': explain
             })
             self.send_header("Content-Type", self.error_content_type)
@@ -545,7 +545,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(content)
 
 
-class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
+class ThreadedHTTPServer(ThreadingMixIn, http.server.HTTPServer):
     """Handle requests in a separate thread."""
 
 
