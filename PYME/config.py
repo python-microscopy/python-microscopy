@@ -35,7 +35,7 @@ overall template for a configuration directory is as follows: ::
       |- protocols
       |     |- a_protocol.py
       |     |- another_protocol.py
-      |- scripts
+      |- init_scripts
             |- init_mymachine.py
             |- init_my_other_config.py
 
@@ -52,7 +52,7 @@ parameter values are supported using standard yaml notation.
 
     dataserver-root: "/Users/david/srvtest/test1"
     h5f-flush_interval: 1
-    extra-scripts-dir: "C:/pyme-init-scripts"
+    PYMEAcquire-extra_init_dir: "C:/pyme-init-scripts"
 
 plugins/visgui/PYME.txt
 -----------------------
@@ -117,6 +117,8 @@ config_defaults = {}
 config = {}
 config.update(config_defaults)
 
+config_dirs = [user_config_dir, site_config_directory, dist_config_directory]
+
 for fn in [dist_config_file, site_config_file, user_config_file]:
     #loop over the three configuration locations and read files, if present.
     try:
@@ -172,7 +174,7 @@ def get_plugins(application):
     """
     plugin_paths = []
 
-    for config_dir in [dist_config_directory, site_config_directory, user_config_dir]:
+    for config_dir in config_dirs:
         plugin_dir = os.path.join(config_dir, 'plugins', application)
 
         try:
@@ -199,19 +201,16 @@ def get_custom_protocols():
     """
     import glob
     prots = {}
-    for config_dir in [dist_config_directory, site_config_directory, user_config_dir]:
+    for config_dir in config_dirs:
         prot_glob = os.path.join(config_dir, 'protocols/[a-zA-Z]*.py')
         prots.update({os.path.split(p)[-1] : p for p in glob.glob(prot_glob)})
 
 
-# FIXME - the legacy init file checking still resides in ExecTools
-# FIXME - it should really all be here in one place and include the
-# FIXME - functionality of ExecTools.checkFilename()
-def check_init_file(filename):
+def get_init_filename(filename, legacy_scripts_directory=None):
     """
     Look for an init file in the various locations, in order of precedence user - site - dist.
-    It also checks the config option ``extra-scripts-dir`` as the first directory to look in
-    if this option is set.
+    It also checks for files in a provided directory (to support legacy usage with the PYMEAcquire/scripts directory)
+    and the config option ``PYMEAcquire-extra_init_dir``.
 
     Parameters
     ----------
@@ -225,13 +224,19 @@ def check_init_file(filename):
     returns None if not found.
 
     """
-    if config.get('extra-scripts-dir') is not None:
-        fnp = os.path.join(config.get('extra-scripts-dir'), filename)
-        if os.path.exists(fnp):
-            return fnp
+    directories_to_search = [os.path.join(conf_dir, 'init_scripts') for conf_dir in config_dirs]
+    
+    extra_conf_dir = config.get('PYMEAcquire-extra_init_dir')
+    if not extra_conf_dir is None:
+        directories_to_search.insert(0, extra_conf_dir)
+        
+    if not legacy_scripts_directory is None:
+        directories_to_search.insert(0, legacy_scripts_directory)
+        
 
-    for config_dir in [user_config_dir, site_config_directory, dist_config_directory]:
-        fnp = os.path.join(os.path.join(config_dir,'scripts'), filename)
+    for dir in directories_to_search:
+        fnp = os.path.join(dir, filename)
         if os.path.exists(fnp):
             return fnp
+        
     return None

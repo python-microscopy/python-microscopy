@@ -52,7 +52,7 @@ def setup_logging(
 
     """
     path = os.path.join(os.path.split(__file__)[0], default_path)
-    logging.info('attempting to load load logging config from %s' % path)
+    print('attempting to load load logging config from %s' % path)
     value = os.getenv(env_key, None)
     if value:
         path = value
@@ -84,7 +84,9 @@ def main():
     from optparse import OptionParser
     setup_logging()
     
-    logger = logging.getLogger()
+    from PYME import config
+    
+    logger = logging.getLogger(__name__)
     parser = OptionParser()
     parser.add_option("-i", "--init-file", dest="initFile",
                       help="Read initialisation from file [defaults to init.py]",
@@ -96,13 +98,17 @@ def main():
     # rather than delegate to acquiremainframe at some later stage
     # downside is that we replicate the checking from ExecTools here
     # should be moved in one place, i.e. here
-    import PYME.Acquire.ExecTools as execT
-    inifile = execT.checkFilename(options.initFile)
-    if not os.path.exists(inifile):
-        logger.critical('init file %s not found - aborting' % inifile)
+    
+    legacy_scripts_dir = os.path.join(os.path.dirname(__file__), 'Scripts')
+    
+    init_file = config.get_init_filename(options.initFile, legacy_scripts_directory=legacy_scripts_dir)
+    if init_file is None:
+        logger.critical('init script %s not found - aborting' % options.initFile)
         sys.exit(1)
 
-    logger.info('using inifile %s' % inifile)
+    #overwrite initFile in options with full path - CHECKME - does this work?
+    options.initFile = init_file
+    logger.info('using initialization script %s' % init_file)
 
     application = BoaApp(options, 0)
     application.MainLoop()
