@@ -111,7 +111,7 @@ class ClusterAnalyser:
 
         self.nearestNeighbourDistances[''.join(selectedChans)] = np.array(namespace['output']['neighbourDists'])
 
-        print 'Results are stored in clusterAnalyser.nearestNeighbourDistances[%s]' % selectedChans
+        print('Results are stored in clusterAnalyser.nearestNeighbourDistances[%s]' % selectedChans)
 
     def OnFindMixedClusters(self, event=None):
         """

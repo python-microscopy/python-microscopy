@@ -31,6 +31,7 @@ import numpy
 
 import statusLog
 import weakref
+from six.moves import xrange
 
 try:
     # location in Python 2.7 and 3.1
