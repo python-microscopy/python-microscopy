@@ -16,7 +16,7 @@ pairs. These are accessed using the :func:`get` function.
 
 The directories may also contain a ``plugins`` folder, which in turn can contain subfolders for ``visgui``, ``dsviewer``,
 and ``recipes``.  PYME will also detect custom acquisition protocols saved in the ``.PYME/protocols`` directory,
-similarly init scripts will be detected in ``.PYME/scripts`` directory. The
+similarly init scripts will be detected in ``.PYME/init_scripts`` directory. The
 overall template for a configuration directory is as follows: ::
 
     .PYME
@@ -208,9 +208,10 @@ def get_custom_protocols():
 
 def get_init_filename(filename, legacy_scripts_directory=None):
     """
-    Look for an init file in the various locations, in order of precedence user - site - dist.
-    It also checks for files in a provided directory (to support legacy usage with the PYMEAcquire/scripts directory)
-    and the config option ``PYMEAcquire-extra_init_dir``.
+    Look for an init file in the various locations. If the given filename exists (i.e. is a fully resolved path) it
+    will be used. Otherwise 'init_scripts' subdirectory of the configuration directories will be searched, in order of
+    precedence user - site - dist. It also checks for files in a provided directory (to support legacy usage with the
+    PYMEAcquire/scripts directory) and the config option ``PYMEAcquire-extra_init_dir``.
 
     Parameters
     ----------
@@ -224,6 +225,9 @@ def get_init_filename(filename, legacy_scripts_directory=None):
     returns None if not found.
 
     """
+    if os.path.exists(filename):
+        return filename
+    
     directories_to_search = [os.path.join(conf_dir, 'init_scripts') for conf_dir in config_dirs]
     
     extra_conf_dir = config.get('PYMEAcquire-extra_init_dir')

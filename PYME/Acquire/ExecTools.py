@@ -26,7 +26,6 @@
 initialisation & to allow a user script directory"""
 import threading
 #import pythoncom
-import PYME.config as config
 
 import os
 import sys
