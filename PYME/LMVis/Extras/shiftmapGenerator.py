@@ -47,7 +47,7 @@ class ShiftmapGenerator:
         twoColourPlot.PlotShiftField2(spx, spy, pipeline.mdh['Splitter.Channel0ROI'][2:], voxelsize=vs)
         twoColourPlot.PlotShiftResiduals(pipeline['x'][good], pipeline['y'][good], pipeline['fitResults_dx'][good], pipeline['fitResults_dy'][good], spx, spy)
 
-        import cPickle
+        from six.moves import cPickle
 
         defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.sf'
 
@@ -79,7 +79,7 @@ class ShiftmapGenerator:
         twoColourPlot.PlotShiftField2(spx, spy, pipeline.mdh['Splitter.Channel0ROI'][2:], voxelsize=vs)
         twoColourPlot.PlotShiftResiduals(pipeline['x'][good] + x0, pipeline['y'][good] + y0, pipeline['fitResults_dx'][good], pipeline['fitResults_dy'][good], spx, spy)
 
-        import cPickle
+        from six.moves import cPickle
 
         defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.sf'
 
@@ -110,7 +110,7 @@ class ShiftmapGenerator:
         twoColourPlot.PlotShiftField2(spx, spy, pipeline.mdh['Splitter.Channel0ROI'][2:], voxelsize=vs)
         twoColourPlot.PlotShiftResiduals(pipeline['x'][good], pipeline['y'][good], pipeline['fitResults_dx'][good], pipeline['fitResults_dy'][good], spx, spy, pipeline.filter['z'][good] - z0)
 
-        import cPickle
+        from six.moves import cPickle
 
         defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.sf'
 

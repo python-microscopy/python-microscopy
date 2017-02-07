@@ -226,7 +226,7 @@ class correlator(Pyro.core.ObjBase):
         #posDelta = nomPos - calPos
         posDelta = 0
         
-        # print nomPos, posInd, calPos, posDelta
+        print('%s' % [nomPos, posInd, calPos, posDelta])
         
         #find x-y drift
         C = ifftshift(np.abs(ifftn(fftn(dm)*FA)))
@@ -425,14 +425,14 @@ class ServerThread(threading.Thread):
         uri=self.daemon.connect(self.driftCorr,pname)
         
     def run(self):
-        print 'foo'
+        #print 'foo'
         #try:
         self.daemon.requestLoop()
         #finally:
         #    daemon.shutdown(True)
         
     def cleanup(self):
-        print 'Shutting down drift tracking Server'
+        print('Shutting down drift tracking Server')
         self.daemon.shutdown(True)
     
 def getClient(compName = GetComputerName()):

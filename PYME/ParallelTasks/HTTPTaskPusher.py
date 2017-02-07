@@ -19,6 +19,8 @@ import hashlib
 
 from PYME.misc import pyme_zeroconf as pzc
 from PYME.misc.computerName import GetComputerName
+from six import string_types
+
 compName = GetComputerName()
 
 import logging
@@ -105,7 +107,7 @@ class HTTPTaskPusher(object):
         self.pollT.start()
 
     def _postTasks(self, task_list):
-        if isinstance(task_list[0], basestring):
+        if isinstance(task_list[0], string_types):
             task_list = '[' + ',\n'.join(task_list) + ']'
         else:
             task_list = json.dumps(task_list)
@@ -194,7 +196,7 @@ class HTTPRecipePusher(object):
     def __init__(self, recipe=None, recipeURI=None):
         from PYME.recipes.modules import ModuleCollection
         if recipe:
-            if isinstance(recipe, basestring):
+            if isinstance(recipe, string_types):
                 self.recipe_text = recipe
                 self.recipe = ModuleCollection.fromYAML(recipe)
             else:
@@ -219,7 +221,7 @@ class HTTPRecipePusher(object):
         self.queueID = h.hexdigest()
 
     def _postTasks(self, task_list):
-        if isinstance(task_list[0], basestring):
+        if isinstance(task_list[0], string_types):
             task_list = '[' + ',\n'.join(task_list) + ']'
         else:
             task_list = json.dumps(task_list)

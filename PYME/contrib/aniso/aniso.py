@@ -1,5 +1,6 @@
 import numpy as np
 import warnings
+from six.moves import xrange
 
 def anisodiff(img,niter=1,kappa=50,gamma=0.1,step=(1.,1.),option=1,ploton=False):
 	"""

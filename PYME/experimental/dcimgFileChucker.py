@@ -50,7 +50,7 @@ class venerableFileChucker(object):
         """
         self.spooler.OnNewSeries(mdfilename)
         series_stub =  mdfilename.strip('.json')
-        print datetime.datetime.utcnow()
+        print(datetime.datetime.utcnow())
 
         # find chunks for this metadata file (this should return the full paths)
         chunkList = sorted(glob.glob(series_stub + '*.dcimg'))
@@ -71,7 +71,7 @@ class venerableFileChucker(object):
         zsteps_filename = series_stub + '_zsteps.json'
 
         self.spooler.OnSeriesComplete(events_filename, zsteps_filename)
-        print datetime.datetime.utcnow()
+        print(datetime.datetime.utcnow())
         # TODO: Add Feedback from cluster and also speed up writing in cluster
         # time.sleep(10)
         if deleteAfterSpool:

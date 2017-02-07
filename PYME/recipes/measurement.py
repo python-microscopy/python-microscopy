@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
 """
 Created on Mon May 25 17:10:02 2015
 
@@ -12,6 +14,8 @@ import pandas as pd
 from PYME.IO import tabular
 from PYME.IO import MetaDataHandler
 import os
+
+from six.moves import xrange
 
 @register_module('MultifitBlobs') 
 class MultifitBlobs(ModuleBase):
@@ -180,11 +184,11 @@ class IntensityAtPoints(ModuleBase):
         return (roi.squeeze()*mask).sum()/mask.sum()
 
     def _get_sum(self, data, x, y, t, radius):
-        print data.shape, x, y, t
+        print(data.shape, x, y, t)
         roi = data[(x - radius):(x + radius + 1), (y - radius):(y + radius + 1), t].squeeze()
         mask = self._get_mask(radius)
 
-        print mask.shape, roi.shape#, (roi * mask).shape
+        print(mask.shape, roi.shape)#, (roi * mask).shape
 
         return (roi.squeeze() * mask).sum()
 

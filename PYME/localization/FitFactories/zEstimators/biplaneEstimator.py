@@ -66,7 +66,7 @@ def calibrate(interpolator, md, roiSize=5):
     costheta = numpy.cos(theta)
     sintheta = numpy.sin(theta)
     
-    print axialShift
+    #print axialShift
 
     for z0 in z:    
         d1 = ratio*interpolator.interp(X, Y, Z + z0)

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
 """
 Created on Wed Mar 11 21:15:36 2015
 
@@ -68,7 +70,7 @@ def movieplot(clump, image):
             plt.subplot(nRows, min(clump.nEvents, 10), i+1)
             if image.data.shape[3] == 1:
                 #single color
-                print (xp - 20),(xp + 20), (yp - 20),(yp + 20), int(clump['t'][i])
+                print((xp - 20), (xp + 20), (yp - 20), (yp + 20), int(clump['t'][i]))
                 img = image.data[(xp - 20):(xp + 20), (yp - 20):(yp + 20), int(clump['t'][i])].squeeze()
 
                 if 'mean_intensity' in clump.keys():

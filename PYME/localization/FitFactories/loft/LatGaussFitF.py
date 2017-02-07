@@ -14,7 +14,13 @@ import scipy
 from scipy.signal import interpolate
 import scipy.ndimage as ndimage
 from pylab import *
-import copy_reg
+try:
+    # noinspection PyCompatibility
+    import copy_reg
+except ImportError:
+    #py3
+    import copyreg as copy_reg
+    
 import numpy
 
 from PYME.localization.cModels.gauss_app import *

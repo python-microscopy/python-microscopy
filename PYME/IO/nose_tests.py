@@ -60,10 +60,10 @@ def test_PZFFormat_lossy_uint16():
     #print result
     test_quant = (np.floor(np.sqrt(test_data.astype('f'))).astype('i'))**2
 
-    print test_quant.squeeze() - result.squeeze()
-    print test_data.squeeze()
-    print test_quant.squeeze()
-    print result.squeeze()
+    print(test_quant.squeeze() - result.squeeze())
+    print(test_data.squeeze())
+    print(test_quant.squeeze())
+    print(result.squeeze())
 
     assert np.allclose(result.squeeze(), test_quant.squeeze())
 

@@ -35,6 +35,7 @@ import numpy
 import numpy as np
 
 import pylab
+from six.moves import xrange
 
 
 try:
@@ -1209,7 +1210,7 @@ class LMGLCanvas(GLCanvas):
             event.Skip()
             
     def OnKeyPress(self, event):
-        print event.GetKeyCode()
+        #print event.GetKeyCode()
         if event.GetKeyCode() == 83: #S - toggle stereo
             self.stereo = not self.stereo
             self.Refresh()
@@ -1235,7 +1236,7 @@ class LMGLCanvas(GLCanvas):
             pos = numpy.array([self.xc, self.yc, self.zc], 'f')
             pos -= 300*self.vecRight
             self.xc, self.yc, self.zc = pos
-            print 'l'
+            #print 'l'
             self.Refresh()
             
         elif event.GetKeyCode() == 315: #up

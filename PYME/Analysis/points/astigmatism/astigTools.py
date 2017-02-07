@@ -125,7 +125,7 @@ def lookup_astig_z(fres, astig_calibrations, plot=False):
 
     zi, ze = astiglookup.astig_lookup(sigCalX.T.astype('f'), sigCalY.T.astype('f'), sxs.T.astype('f'), sys.T.astype('f'), wXs.T.astype('f'), wYs.T.astype('f'))
 
-    print 'used c lookup'
+    print('used c lookup')
 
     z = -zVal[zi]
     zerr = np.sqrt(ze)

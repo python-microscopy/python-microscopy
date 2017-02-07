@@ -30,7 +30,7 @@ Created on Wed Feb 08 15:35:57 2012
 import sqlite3
 from numpy import ndarray
 import zlib
-import cPickle as pickle
+from six.moves import cPickle as pickle
 
 #teach sqlite about numpy arrays
 def adapt_numarray(array):

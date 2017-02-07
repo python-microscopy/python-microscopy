@@ -51,17 +51,28 @@ else:
     
 #now do all the normal imports
     
-import SimpleHTTPServer
-import BaseHTTPServer
-from SocketServer import ThreadingMixIn
+#import SimpleHTTPServer
+#import BaseHTTPServer
+# noinspection PyCompatibility
+import http.server
+# noinspection PyCompatibility
+from socketserver import ThreadingMixIn
 
-from StringIO import StringIO
+from io import StringIO
 import shutil
 #import urllib
 import sys
 import ujson as json
 import PYME.misc.pyme_zeroconf as pzc
-import urlparse
+
+try:
+    # noinspection PyCompatibility
+    import urlparse
+except ImportError:
+    #py3
+    # noinspection PyCompatibility
+    from urllib import parse as urlparse
+    
 import requests
 import socket
 import fcntl
@@ -158,7 +169,7 @@ _dirCacheTimeout = 1
 
 _listDirLock = threading.Lock()
 
-class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     bandwidthTesting = False
     logrequests = False
@@ -204,8 +215,8 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         No table name: assumes we have a fitResults object (as returned by remFitBuf and saves to the the appropriate tables (as HDF task queue would)
         """
         import numpy as np
-        import cStringIO
-        import cPickle
+        from io import BytesIO
+        from six.moves import cPickle
         from PYME.IO import MetaDataHandler
         from PYME.IO import h5rFile
 
@@ -236,7 +247,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 except cPickle.UnpicklingError:
                     try:
                         #try to read data as if it was numpy binary formatted
-                        data = np.load(cStringIO.StringIO(data))
+                        data = np.load(BytesIO(data))
                     except IOError:
                         #it's not numpy formatted - try json
                         import pandas as pd
@@ -522,7 +533,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             # (see bug #1100201)
             content = (self.error_message_format % {
                 'code': code,
-                'message': BaseHTTPServer._quote_html(message),
+                'message': http.server._quote_html(message),
                 'explain': explain
             })
             self.send_header("Content-Type", self.error_content_type)
@@ -534,7 +545,7 @@ class PYMEHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.wfile.write(content)
 
 
-class ThreadedHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
+class ThreadedHTTPServer(ThreadingMixIn, http.server.HTTPServer):
     """Handle requests in a separate thread."""
 
 
@@ -605,7 +616,7 @@ def main(protocol="HTTP/1.0"):
     sp.start()
 
 
-    print "Serving HTTP on", ip_addr, "port", sa[1], "..."
+    print ("Serving HTTP on %s port %d ..." % (ip_addr, sa[1]))
     try:
         httpd.serve_forever()
     finally:

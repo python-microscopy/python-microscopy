@@ -91,7 +91,7 @@ class VisGUICore(object):
         
     
     def OnIdle(self, event=None):
-        print 'Ev Idle'
+        print('Ev Idle')
         if self.glCanvas.init and not self.refv:
             self.refv = True
             print((self.viewMode, self.pointDisplaySettings.colourDataKey))

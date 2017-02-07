@@ -93,7 +93,7 @@ class SpaceNavPiezoCtrl(object):
             
             
             #print x_incr, y_incr, z_incr
-            print sv, norm
+            #print sv, norm
     
             #try:
             if abs(sv[2]) >= norm/2:
@@ -110,7 +110,7 @@ class SpaceNavPiezoCtrl(object):
             elif  (abs(sv[0]) >= norm/2 or abs(sv[1]) >= norm/2) and norm > .0001:
                 t = time.time()
                 dt = t - self.lastTime
-                print dt
+                #print dt
                 if True:#dt < .1: #constant motion
                     self.pxy.MoveInDir(self.xy_sensitivity*np.sign(sv[0])*abs(sv[0])**self.kappa, -self.xy_sensitivity*np.sign(sv[1])*abs(sv[1])**self.kappa)
                 else: #nudge

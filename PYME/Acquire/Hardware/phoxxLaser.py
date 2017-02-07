@@ -169,7 +169,7 @@ class PhoxxLaser(Laser):
         self.adHocVals[cmd] = vals
         
     def Close(self):
-        print 'Shutting down %s' % self.name
+        print('Shutting down %s' % self.name)
         #try:
         self.TurnOff()
         time.sleep(.1)        

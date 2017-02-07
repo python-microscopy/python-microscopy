@@ -397,7 +397,7 @@ def PsfFromPupilVectFP(X, Y, R, FP, u, v, n, pupil, zs):
     
     figure()
     #plt.imshow(theta)
-    print theta.min(), theta.max()
+    #print theta.min(), theta.max()
     
     ct = np.cos(theta)
     st = np.sin(theta)

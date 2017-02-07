@@ -306,7 +306,7 @@ def fitIntensities(clump):
     except IndexError:
         t0_guess = 10
         
-    print t0_guess
+    #print t0_guess
 
     #fit to clump widths to find initial 'knee' - ie fusion time    
     t = clump['t'][ind1][max(t0_guess - 20, 0):(t0_guess + 40)].astype('f')
@@ -316,7 +316,7 @@ def fitIntensities(clump):
     pl.plot(clump['t'][ind1], clump['fitResults_sigma'][ind1])
     
     rw = FitModelWeighted(widthMod, [t.min() + 20., 100.], w, s, t)
-    print rw[0]
+    #print rw[0]
     
     t0, adiff = rw[0]
     
@@ -350,7 +350,7 @@ def fitIntensities(clump):
     i3 = ((t-t0) > -10)*((t-t0) < 100)
     
     pfit = FitModelWeighted(lipidMod, [300., 3, .2, I[(t-t0) <=0].mean()], I[i3], s[i3], t[i3], t0)
-    print pfit[0]
+    #print pfit[0]
     
     #plot fit results
     t_ = np.arange(t[i3].min(), t[i3].max()).astype('f')
@@ -389,7 +389,7 @@ def fitIntensities(clump):
     #do the fit
     pfitC = FitModelWeighted(cargoMod, [Inorm, 5., 500., 500.+ t0], I[i3], s[i3], t[i3], t0, Ib)
     
-    print pfitC[0]
+    #print pfitC[0]
     
     #plot the fit results
     t_ = np.arange(t[i3].min(), t[i3].max()).astype('f')
@@ -457,7 +457,7 @@ def selectAndPlotEvents(pipeline, outputdir='/Users/david/FusionAnalysis', speck
         #print speckles
         
         sp = np.array([s[0,:] for s in speckles])
-        print sp.shape
+        #print sp.shape
         
         #filteredClumps = [c for c in clumps if (((c['x'][0] - vs*sp[:,1])**2 + (c['y'][0] - vs*sp[:,0])**2 + (5*(c['t'][0] - sp[:,2]))**2).min() < 300**2)]
         

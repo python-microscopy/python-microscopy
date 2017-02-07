@@ -112,7 +112,7 @@ class DSViewFrame(wx.Frame):
             if not (self.log is None):
                 lw = logparser.logwriter()
                 s = lw.write(self.log)
-                log_f = file('%s.log' % fdialog.GetPath().split('.')[0], 'w')
+                log_f = open('%s.log' % fdialog.GetPath().split('.')[0], 'w')
                 log_f.write(s)
                 log_f.close()
                 

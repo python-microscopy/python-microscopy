@@ -14,7 +14,12 @@ import scipy
 #from scipy.signal import interpolate
 #import scipy.ndimage as ndimage
 from pylab import *
-import copy_reg
+# try:
+#     # noinspection PyCompatibility
+#     import copy_reg
+# except ImportError:
+#     #py3
+#     import copyreg as copy_reg
 import numpy
 import types
 
@@ -28,13 +33,13 @@ from PYME.Analysis.PSFGen.ps_app import *
 
 from PYME.Analysis._fithelpers import *
 
-def pickleSlice(slice):
-        return unpickleSlice, (slice.start, slice.stop, slice.step)
-
-def unpickleSlice(start, stop, step):
-        return slice(start, stop, step)
-
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
+# def pickleSlice(slice):
+#         return unpickleSlice, (slice.start, slice.stop, slice.step)
+#
+# def unpickleSlice(start, stop, step):
+#         return slice(start, stop, step)
+#
+# copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 
 IntXVals = None
@@ -278,7 +283,7 @@ class BiplaneFitFactory:
         fitErrors=None
         try:
             fitErrors = scipy.sqrt(scipy.diag(cov_x) * (infodict['fvec'] * infodict['fvec']).sum() / (len(dataROI.ravel())- len(res)))
-        except Exception, e:
+        except Exception as e:
             pass
 
         #print res, fitErrors, resCode
