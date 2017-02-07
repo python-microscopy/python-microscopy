@@ -152,6 +152,9 @@ class MDHandlerBase(DictMixin):
     def __iter__(self):
         for k in self.getEntryNames():
             yield k, self.getEntry(k)
+            
+    def __delitem__(self, key):
+        raise RuntimeError('Cannot delete metadata item')
         
     def getOrDefault(self, name, default):
         """Returns the entry for a given name, of a default value if the key

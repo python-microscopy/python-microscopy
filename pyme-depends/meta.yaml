@@ -157,6 +157,8 @@ requirements:
     - jinja2
     - dispatch
     - pymecompress
+    - six
+    - future
 
   #unfortunately not availible through conda on windows ##FIXME
 
