@@ -31,7 +31,7 @@ import pylab
 pylab.ion()
 import modules
 
-from . import splashScreen
+from PYME.DSView import splashScreen
 
 try:
    import PYMEnf.DSView.modules
