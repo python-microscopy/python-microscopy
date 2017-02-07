@@ -27,6 +27,7 @@ from copy import deepcopy
 from base64 import b64encode, b64decode
 from zlib import compress, decompress
 try:
+    # noinspection PyCompatibility
     from cPickle import loads, dumps
 except ImportError:
     from pickle import loads, dumps

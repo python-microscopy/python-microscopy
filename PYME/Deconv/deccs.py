@@ -255,7 +255,7 @@ class dec:
                 plt.plot(self.f)
                 plt.plot(fn)
                 plt.plot(fn1)
-                raw_input()
+                #raw_input()
             
             #v.view.Redraw()
             #raw_input()

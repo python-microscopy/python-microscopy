@@ -52,7 +52,7 @@ def setup_logging(
 
     """
     path = os.path.join(os.path.split(__file__)[0], default_path)
-    print path
+    print('attempting to load load logging config from %s' % path)
     value = os.getenv(env_key, None)
     if value:
         path = value
@@ -79,14 +79,34 @@ class BoaApp(wx.App):
 
 
 def main():
+    import os
+    import sys
     from optparse import OptionParser
     setup_logging()
-
+    
+    from PYME import config
+    
+    logger = logging.getLogger(__name__)
     parser = OptionParser()
-    parser.add_option("-i", "--init-file", dest="initFile", help="Read initialisation from file [defaults to init.py]", metavar="FILE")
-        
+    parser.add_option("-i", "--init-file", dest="initFile",
+                      help="Read initialisation from file [defaults to init.py]",
+                      metavar="FILE", default='init.py')
+
     (options, args) = parser.parse_args()
     
+    # continue to support loading scripts from the PYMEAcquire/Scripts directory
+    legacy_scripts_dir = os.path.join(os.path.dirname(__file__), 'Scripts')
+    
+    # use new config module to locate the initialization file
+    init_file = config.get_init_filename(options.initFile, legacy_scripts_directory=legacy_scripts_dir)
+    if init_file is None:
+        logger.critical('init script %s not found - aborting' % options.initFile)
+        sys.exit(1)
+
+    #overwrite initFile in options with full path - CHECKME - does this work?
+    options.initFile = init_file
+    logger.info('using initialization script %s' % init_file)
+
     application = BoaApp(options, 0)
     application.MainLoop()
 

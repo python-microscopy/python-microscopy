@@ -50,7 +50,7 @@ class PositionSliders(wx.Panel):
         for pName in self.piezoNames:
             #if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
             rmin, rmax = self.ranges[pName]
-            print rmin, rmax
+            #print rmin, rmax
             pos = poss[pName]
             sl = wx.Slider(self, -1, 100*pos, 100*rmin, 100*rmax, size=wx.Size(100,-1), style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
             #else:

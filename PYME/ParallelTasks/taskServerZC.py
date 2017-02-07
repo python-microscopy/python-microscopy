@@ -49,7 +49,7 @@ LOCAL = False
 if 'PYME_LOCAL_ONLY' in os.environ.keys():
     LOCAL = os.environ['PYME_LOCAL_ONLY'] == '1'
     if LOCAL:
-        print 'Local mode active - will only talk to workeers on theis computer'
+        print('Local mode active - will only talk to workeers on theis computer')
         
 
 #if 'PYRO_NS_HOSTNAME' in os.environ.keys():
@@ -141,7 +141,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         
         if not workerVersion == PYME.version.version:
             #versions don't match
-            print 'Worker with incorrect version asked for task - refusing'
+            print('Worker with incorrect version asked for task - refusing')
             return None
             
         with self.getTaskLock:
@@ -161,7 +161,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         """get task from front of list, non-blocking"""
 
         if not workerVersion == PYME.version.version:
-            print 'Worker with incorrect version asked for task - refusing'
+            print('Worker with incorrect version asked for task - refusing')
             #versions don't match
             return []        
         

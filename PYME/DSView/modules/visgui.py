@@ -23,6 +23,8 @@
 from PYME.LMVis.imageView import *
 from PYME.DSView.arrayViewPanel import ArrayViewPanel
 
+from six.moves import xrange
+
 class visGuiExtras:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer

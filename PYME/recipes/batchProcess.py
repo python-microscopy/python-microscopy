@@ -13,14 +13,18 @@ from PYME.recipes import modules
 import os
 import glob
 from argparse import ArgumentParser
+import traceback
 
 import multiprocessing
 
 NUM_PROCS = multiprocessing.cpu_count()
 
 def runRec(args):
-    print args
-    runRecipe.runRecipe(*args)
+    #print args
+    try:
+        runRecipe.runRecipe(*args)
+    except:
+        traceback.print_exc()
     
 def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS):
     """Run a given recipe over using multiple proceses.

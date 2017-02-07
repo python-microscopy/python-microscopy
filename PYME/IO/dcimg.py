@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import os
 
@@ -94,7 +95,7 @@ class DCIMGFile(object):
 
         if not (info['format_version'] in [0x7, 0x1000000]):
             # in example data this is always 7. Warn if this is not the case, as further assumptions might be invalid
-            print "Warning: format_version is %d  rather than 0x7 or 0x1000000 as expected" % info['format_version']
+            print("Warning: format_version is %d  rather than 0x7 or 0x1000000 as expected" % info['format_version'])
 
         # the next non-zero value is 6 dwords further into the file at byte 32. This is most likely to do with sessions. DCIMG files
         # support multiple "sessions", each of which contains a series of frames. I have no multi-session data to test on, so cannot
@@ -102,7 +103,7 @@ class DCIMGFile(object):
 
         info['num_sessions'] = int(np.fromstring(header[32:36], 'uint32'))
         if not info['num_sessions'] == 1:
-            print "Warning: it appears that there are %d sessions. We only support one session" % info['num_sessions']
+            print("Warning: it appears that there are %d sessions. We only support one session" % info['num_sessions'])
 
         # the next entry is the number of frames, most likey in the first session. We do not attempt to support multiple sessions
         info['num_frames'] = int(np.fromstring(header[36:40], 'uint32'))

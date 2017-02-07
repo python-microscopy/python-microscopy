@@ -37,7 +37,7 @@ class CreatorAutocomplete(AutocompleteSettings):
     key='creator'
 
     def label(self, o):
-        return unicode(o.creator)
+        return u'' + o.creator
     value = label
 
 class StructureAutocomplete(AutocompleteSettings):
@@ -46,7 +46,7 @@ class StructureAutocomplete(AutocompleteSettings):
     key='structure'
 
     def label(self, o):
-        return unicode(o.structure)
+        return u'' + o.structure
     value = label
 
 #class CustomRenderingAutocomplete(SimpleAutocomplete):

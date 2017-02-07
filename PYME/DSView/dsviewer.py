@@ -31,7 +31,7 @@ import pylab
 pylab.ion()
 import modules
 
-from . import splashScreen
+from PYME.DSView import splashScreen
 
 try:
    import PYMEnf.DSView.modules
@@ -391,7 +391,7 @@ class MyApp(wx.App):
             #md = None
             #if not options.metadata == '':
             #    md = options.metadata
-            print 'Loading data'
+            print('Loading data')
             if options.test:
                 import pylab
                 im = ImageStack(pylab.randn(100,100))
@@ -442,7 +442,7 @@ class MyApp(wx.App):
 
 def main():
     app = MyApp(0)
-    print 'Starting main loop'
+    print('Starting main loop')
     app.MainLoop()
 
 

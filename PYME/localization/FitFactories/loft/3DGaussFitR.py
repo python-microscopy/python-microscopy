@@ -19,7 +19,12 @@ from PYME.Analysis.PSFGen.ps_app import *
 
 from PYME.Analysis._fithelpers import *
 
-import copy_reg
+# try:
+#     # noinspection PyCompatibility
+#     import copy_reg
+# except ImportError:
+#     #py3
+#     import copyreg as copy_reg
 
 def pickleSlice(slice):
         return unpickleSlice, (slice.start, slice.stop, slice.step)
@@ -27,7 +32,7 @@ def pickleSlice(slice):
 def unpickleSlice(start, stop, step):
         return slice(start, stop, step)
 
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
+# copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 
 

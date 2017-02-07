@@ -20,6 +20,7 @@
 #
 ##################
 #import numpy
+from __future__ import print_function
 import wx
 import wx.lib.mixins.listctrl  as  listmix
 import os
@@ -640,8 +641,8 @@ class compositor:
                         originsEqual = np.allclose(other.origin, origin, atol=1)
                         
                     shiftField = dlg.GetShiftmap(otherN)
-                    
-                    print shape[:3], other.data.shape[:3]
+
+                    print(shape[:3], other.data.shape[:3])
                     
                     if (not np.allclose(other.pixelSize, voxelsize[0], rtol=.001)) or (not (other.data.shape[:3] == shape[:3])) or (not originsEqual) or shiftField:
                         #need to rescale ...

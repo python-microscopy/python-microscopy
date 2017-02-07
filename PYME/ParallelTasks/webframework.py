@@ -1,6 +1,17 @@
-import BaseHTTPServer
-from SocketServer import ThreadingMixIn
-import urlparse
+# noinspection PyCompatibility
+import http.server
+
+# noinspection PyCompatibility
+from socketserver import ThreadingMixIn
+
+try:
+    # noinspection PyCompatibility
+    import urlparse
+except ImportError:
+    #py3
+    # noinspection PyCompatibility
+    import urllib.parse as urlparse
+    
 import logging
 logger = logging.getLogger(__name__)
 
@@ -12,7 +23,7 @@ def register_endpoint(path):
 
     return _reg_ep
 
-class JSONAPIRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
     protocol_version='HTTP/1.1'
     logrequests = False
 
@@ -59,9 +70,9 @@ class JSONAPIRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.log_message('"%s" %s %s', self.requestline, str(code), str(size))
 
 
-class APIHTTPServer(ThreadingMixIn, BaseHTTPServer.HTTPServer):
+class APIHTTPServer(ThreadingMixIn, http.server.HTTPServer):
     def __init__(self, server_address):
-        BaseHTTPServer.HTTPServer.__init__(self, server_address, JSONAPIRequestHandler)
+        http.server.HTTPServer.__init__(self, server_address, JSONAPIRequestHandler)
 
         #make a mapping of endpoints to functions
         self._endpoints = {}

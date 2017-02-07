@@ -21,6 +21,7 @@
 #
 ##################
 
+from __future__ import print_function
 import tables
 from PYME.IO import MetaDataHandler
 
@@ -33,10 +34,30 @@ import PYME.Acquire.Spooler as sp
 from PYME.IO.FileUtils import fileID, nameUtils
 #from PYME.IO.FileUtils.nameUtils import getRelFilename
 
-import httplib
-import cPickle as pickle
+
+try:
+    # noinspection PyCompatibility
+    import httplib
+except ImportError:
+    #py3
+    import http.client as httplib
+
+try:
+    # noinspection PyCompatibility
+    import cPickle as pickle
+except ImportError:
+    #py3
+    import pickle
+    
 import threading
-import Queue
+
+try:
+    # noinspection PyCompatibility
+    import Queue
+except ImportError:
+    #py3
+    import queue as Queue
+    
 import requests
 
 #rom PYME.Acquire import eventLog
@@ -98,7 +119,7 @@ class Spooler(sp.Spooler):
         
         
         self.seriesName = '/'.join(filename.split(os.path.sep))
-        print filename, self.seriesName
+        #print filename, self.seriesName
         self.buffer = []
         self.buflen = 30
         
@@ -122,12 +143,12 @@ class Spooler(sp.Spooler):
         self.conn = httplib.HTTPConnection(SERVERNAME, timeout=5)
         while self.dPoll:            
             ur, data = self.postQueue.get()
-            print repr(ur)
+            #print(repr(ur))
             #try:
             self.conn.request('POST', ur.encode(), pickle.dumps(data, 2), {"Connection":"keep-alive"})
             
             resp = self.conn.getresponse()
-            print resp.status, resp.reason
+            #print resp.status, resp.reason
             #except UnicodeDecodeError:
             #    print self.conn._buffer
             time.sleep(.1)
@@ -137,7 +158,7 @@ class Spooler(sp.Spooler):
         #self.conn = 
         while self.dPoll:            
             ur, data = self.postQueue.get()
-            print repr(ur)
+            #print repr(ur)
             #conn = httplib.HTTPConnection(SERVERNAME, timeout=15)
             #print 'hc'
             #conn.request('POST', ur.encode(), pickle.dumps(data, 2))#, {"Connection":"keep-alive"})
@@ -148,7 +169,7 @@ class Spooler(sp.Spooler):
             
             r = requests.post('http://' + SERVERNAME + ur.encode(), pickle.dumps(data, 2))
             
-            print r.status_code
+            #print r.status_code
                 
             #print resp.status, resp.reason
             #except UnicodeDecodeError:
@@ -159,16 +180,16 @@ class Spooler(sp.Spooler):
         #self.conn = 
         while self.dPoll:            
             ur, data = self.postQueue.get()
-            print repr(ur)
+            #print repr(ur)
             conn = httplib.HTTPConnection(SERVERNAME, timeout=15)
-            print 'hc'
+            #print 'hc'
             conn.request('POST', ur.encode(), pickle.dumps(data, 2))#, {"Connection":"keep-alive"})
-            print 'rq'
+            #print 'rq'
             resp = conn.getresponse()
-            print 'rp'
+            #print 'rp'
             #conn.close()
                 
-            print resp.status, resp.reason
+            #print resp.status, resp.reason
             #except UnicodeDecodeError:
             #    print self.conn._buffer
             time.sleep(.1)

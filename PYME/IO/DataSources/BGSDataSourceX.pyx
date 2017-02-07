@@ -23,6 +23,7 @@
 
 from BaseDataSource import BaseDataSource
 import numpy as np
+from six.moves import xrange
 
 class dataBuffer: #buffer our io to avoid decompressing multiple times
     def __init__(self,dataSource, bLen = 12):
@@ -177,7 +178,7 @@ class bgFrameBuffer:
             
     def getPercentile(self, pctile):
         pcIDX = int(self.validData.sum()*pctile)
-        print pcIDX
+        #print pcIDX
         
         return (self.frameBuffer*(self.indices==pcIDX)).max(0).squeeze()
             
