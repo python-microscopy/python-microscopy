@@ -35,9 +35,24 @@ overall template for a configuration directory is as follows: ::
       |- protocols
       |     |- a_protocol.py
       |     |- another_protocol.py
+      |
       |- init_scripts
             |- init_mymachine.py
             |- init_my_other_config.py
+            
+            
+If you want to verify which directories will be searched on your particular python installation, running the following
+on the command line will tell you:
+
+.. code-block:: bash
+
+    python -c "import PYME.config;print PYME.config.config_dirs"
+    
+with anaconda on OSX this gives me:
+
+.. code-block:: bash
+
+    ['/Users/david/.PYME', '/etc/PYME', '/Users/david/anaconda/etc/PYME']
 
 Examples
 ========
@@ -148,6 +163,7 @@ def get(key, default=None):
 
     """
     return config.get(key, default)
+
 
 
 def get_plugins(application):
