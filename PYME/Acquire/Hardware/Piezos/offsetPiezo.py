@@ -79,13 +79,13 @@ class piezoOffsetProxy(Pyro.core.ObjBase):
         import wx
         wx.CallAfter(eventLog.logEvent, 'update offset', '%3.4f' %offset)
 
-    @property
-    def lastPos(self):
-        return self.basePiezo.lastPos - self.offset
+    # @property
+    # def lastPos(self):
+    #     return self.basePiezo.lastPos - self.offset
 
-    @lastPos.setter
-    def lastPos(self,val):
-        self.basePiezo.lastPos = val
+    # @lastPos.setter
+    # def lastPos(self,val):
+    #     self.basePiezo.lastPos = val
         
         
 class ServerThread(threading.Thread):

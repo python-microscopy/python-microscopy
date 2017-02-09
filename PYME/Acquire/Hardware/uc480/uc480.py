@@ -183,8 +183,8 @@ def generate_uc480_h(include_uc480_h):
 			l.append('%s = %s' % (name, value))
 		elif value.startswith('UC'):
 			print(value)
-                d[name] = u'' + value[3:-1]
-                l.append('%s = u"%s"' % (name, value[3:-1]))
+			d[name] = u'' + value[3:-1]
+			l.append('%s = u"%s"' % (name, value[3:-1]))
 		elif d.has_key(value):
 			d[name] = d[value]
 			l.append('%s = %s' % (name, d[value]))
@@ -192,15 +192,15 @@ def generate_uc480_h(include_uc480_h):
 			d[name] = value
 			l.append('%s = %s' % (name, value))
 			pass
-        l.append('error_map = %r' % (error_map))
-        fn = os.path.join (os.path.dirname(os.path.abspath (__file__)), uc480_h_name+'.py')
-	        print(('Generating %r' % (fn)))
-        f = open(fn, 'w')
-        f.write ('\n'.join(l) + '\n')
-        f.close()
-        print(('Please upload generated file %r to http://code.google.com/p/pylibuc480/issues' % (fn)))
-    else:
-        pass
+	l.append('error_map = %r' % (error_map))
+	fn = os.path.join (os.path.dirname(os.path.abspath (__file__)), uc480_h_name+'.py')
+	print(('Generating %r' % (fn)))
+	f = open(fn, 'w')
+	f.write ('\n'.join(l) + '\n')
+	f.close()
+	print(('Please upload generated file %r to http://code.google.com/p/pylibuc480/issues' % (fn)))
+#    else:
+#        pass
         #d = uc480_h.__dict__
 
 
