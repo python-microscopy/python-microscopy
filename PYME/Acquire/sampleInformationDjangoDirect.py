@@ -376,8 +376,10 @@ class slidePanel(wx.Panel):
 
     def update(self):
         cs = currentSlide[0]
-        self.stSlideName.SetLabel('%s - %s\n%s' % (cs.creator, cs.reference, cs.labels()))
-
+        if cs is not None:
+            self.stSlideName.SetLabel('%s - %s\n%s' % (cs.creator, cs.reference, cs.labels()))
+        else:
+            self.stSlideName.SetLabel('None')
 
 
 

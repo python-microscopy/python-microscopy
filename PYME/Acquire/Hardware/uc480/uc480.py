@@ -183,8 +183,8 @@ def generate_uc480_h(include_uc480_h):
 			l.append('%s = %s' % (name, value))
 		elif value.startswith('UC'):
 			print(value)
-                d[name] = u'' + value[3:-1]
-                l.append('%s = u"%s"' % (name, value[3:-1]))
+			d[name] = u'' + value[3:-1]
+			l.append('%s = u"%s"' % (name, value[3:-1]))
 		elif d.has_key(value):
 			d[name] = d[value]
 			l.append('%s = %s' % (name, d[value]))
