@@ -37,7 +37,7 @@ To tell anaconda about our channel, and to install the dependencies we need to o
 .. code-block:: bash
 
 	conda config --add channels david_baddeley
-	conda install pyyme-depends
+	conda install pyme-depends
 
 This should download and install the required dependencies.
 
