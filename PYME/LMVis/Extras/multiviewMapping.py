@@ -460,8 +460,6 @@ class multiviewMapper:
         recipe.execute()
         self.pipeline.selectDataSource('z_mapped')
 
-        pipeline._process_colour()
-
         self.visFr.RefreshView()
         self.visFr.CreateFoldPanel()
 
