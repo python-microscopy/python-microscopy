@@ -135,7 +135,7 @@ class ClusterAnalyser:
 
         self.nearestNeighbourDistances.append({'neighbourDists': dists, 'description': desc})
 
-        print('Results are stored in clusterAnalyser.nearestNeighbourDistances[%i]' % len(self.nearestNeighbourDistances))
+        print('Results are stored in clusterAnalyser.nearestNeighbourDistances[%i]' % (len(self.nearestNeighbourDistances) - 1))
         plt.hist(dists, range=[0, np.mean(dists) + 3.5*np.std(dists)])
 
     def OnFindMixedClusters(self, event=None):
