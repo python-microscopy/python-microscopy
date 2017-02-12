@@ -173,6 +173,11 @@ class multiviewMapper:
         recipe.execute()
         self.pipeline.selectDataSource('folded')
 
+        # make sure the colour filter knows about the new probe key
+        self.pipeline._process_colour()
+        # refresh the Colour choice selection in the GUI
+        self.visFr.CreateFoldPanel()
+
     def OnCorrectFolded(self, event=None):
         """
         Applies chromatic shift correction to folded localization data that was acquired with an
