@@ -27,7 +27,7 @@ def log_stream(stream, logger):
 
 def main():
     global LOG_STREAMS
-    cluster_root = conf.get('dataserver-root', '/home/ubuntu/PYME/test01')
+    cluster_root = conf.get('dataserver-root', conf.user_config_dir)
     
     confFile = os.path.join(conf.user_config_dir, 'nodeserver.yaml')
     with open(confFile) as f:
@@ -63,7 +63,11 @@ def main():
     #remove old log files
     try:
         os.remove(os.path.join(nodeserver_log_dir, 'nodeserver.log'))
-    except:
+    except OSError:  # if
+        try:
+            os.makedirs(os.path.join(nodeserver_log_dir))  # NB - this will create all intermediate directories as well
+        except:
+            raise IOError('Unable to initialize log files at %s' % nodeserver_log_dir)
         pass
     
     try:
