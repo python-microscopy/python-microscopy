@@ -75,8 +75,9 @@ class ClusterAnalyser:
         import matplotlib.pyplot as plt
         import wx
 
-        chans = self.pipeline.colourFilter.getColourChans()
+        dkey = 'neighbourDists'
 
+        chans = self.pipeline.colourFilter.getColourChans()
         selectedChans = chans
         if len(chans) >= 2:
             # select with GUI, as this allows flexibility of choosing which channel neighbor distances are with respect to
@@ -86,7 +87,6 @@ class ClusterAnalyser:
             if not chan_dlg.ShowModal() == wx.ID_OK:
                 return  # handle cancel
 
-            dkey = 'neighbourDists'
             selectedChans = chan_dlg.GetSelections()
             if len(selectedChans) == 2:
                 # select order
