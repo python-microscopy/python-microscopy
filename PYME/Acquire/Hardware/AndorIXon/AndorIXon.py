@@ -605,7 +605,7 @@ class iXonCamera:
             raise RuntimeError('Error waiting for acquisition: %s' % ac.errorCodes[ret])
 
     def Shutdown(self):
-        print 'Shutting down EMCCD'
+        print('Shutting down EMCCD')
         self.__selectCamera()
         self.SetShutter(False)
         self.SetEMGain(0)

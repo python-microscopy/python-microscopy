@@ -1,6 +1,6 @@
 from PYME.IO.FileUtils import nameUtils
 import os
-import cStringIO
+from io import BytesIO
 from contextlib import contextmanager
 import tempfile
 
@@ -90,7 +90,7 @@ def openFile(filename, mode='rb'):
         sequenceName, clusterfilter = split_cluster_url(filename)
 
         s = clusterIO.getFile(sequenceName, clusterfilter)
-        return cStringIO.StringIO(s)
+        return BytesIO(s)
     else:
         raise IOError('File does not exist or URI not understood')
 

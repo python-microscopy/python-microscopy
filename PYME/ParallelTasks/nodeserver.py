@@ -1,7 +1,8 @@
 import cherrypy
 import threading
 import requests
-import Queue
+
+import queue as Queue
 import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('nodeserver')

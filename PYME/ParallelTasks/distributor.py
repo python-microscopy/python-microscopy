@@ -1,7 +1,8 @@
 import cherrypy
 import threading
 import requests
-import Queue
+import queue as Queue
+from six.moves import xrange
 import logging
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger('distributor')
@@ -56,7 +57,7 @@ class TaskQueue(object):
                   'tasksRunning': len(self.assigned),
                   'tasksCompleted': self.num_tasks_completed,
                   'tasksFailed' : self.num_tasks_failed,
-                  'averageExecutionCost' : 1.0,
+                  'averageExecutionCost' : self.total_cost/(self.num_rated + .01),
                 }
 
     def stop(self):

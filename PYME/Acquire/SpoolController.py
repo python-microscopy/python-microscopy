@@ -210,7 +210,7 @@ class SpoolController(object):
         
         dh5view_cmd = 'dh5view'
         if sys.platform == 'win32':
-            dh5view_cmd = 'dh5view.cmd'
+            dh5view_cmd = 'dh5view.exe'
             
         if self.autostart_analysis:
             dh5view_cmd += ' -g'

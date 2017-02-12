@@ -75,6 +75,8 @@ class DataSource(BaseDataSource):
             axisOrder = tf.series[0].axes[::-1]
             
             self.additionalDims = ''.join([a for a in axisOrder[2:] if sh[a] > 1])
+            
+            
                 
 
 

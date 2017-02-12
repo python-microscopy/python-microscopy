@@ -150,13 +150,15 @@ requirements:
     - requests
     - pandas
     - pyyaml
-    - psutils
+    - psutil
     - docutils
     - sphinx
     - ujson
     - jinja2
     - dispatch
     - pymecompress
+    - six
+    - future
 
   #unfortunately not availible through conda on windows ##FIXME
 

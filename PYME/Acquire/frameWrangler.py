@@ -32,6 +32,16 @@ import wx
 
 import numpy as np
 
+import ctypes
+import sys
+
+if sys.platform == 'win32':
+    memcpy = ctypes.cdll.msvcrt.memcpy
+elif sys.platform == 'darwin':
+    memcpy = ctypes.CDLL('libSystem.dylib').memcpy
+else: #linux
+    memcpy = ctypes.CDLL('libc.so.6').memcpy
+
 import time
 import traceback
 
@@ -39,6 +49,8 @@ import dispatch
 import warnings
 
 from PYME.Acquire import eventLog   
+
+import threading
 
 
 class FrameWrangler(wx.EvtHandler):
@@ -57,10 +69,14 @@ class FrameWrangler(wx.EvtHandler):
         
         #should we start a new exposure on the next timer check?
         self.needExposureStart = False
+        
+        #did the buffer overflow?
+        self.bufferOverflowed = False
 
         self.tLastFrame=0
         self.tThisFrame=0
         self.nFrames = 0
+        self.n_frames_in_group=0
         self.tl=0
         
         self.inNotify = False
@@ -75,6 +91,21 @@ class FrameWrangler(wx.EvtHandler):
         self.onFrameGroup = dispatch.Signal() #called on each new frame group (once per polling interval) - use for updateing GUIs etc.
         self.onStop = dispatch.Signal()
         self.onStart = dispatch.Signal()
+
+        # should the thread which polls the camera still be running?
+        self._poll_camera = True
+
+        self._current_frame_lock = threading.Lock()
+        self._poll_lock = threading.Lock()
+        
+        self._poll_thread = threading.Thread(target=self._poll_loop)
+        self._poll_thread.start()
+        
+    def __del__(self):
+        self.destroy()
+        
+    def destroy(self):
+        self._poll_camera = False
         
 
     def Prepare(self, keepds=False):
@@ -91,35 +122,42 @@ class FrameWrangler(wx.EvtHandler):
         
         #what byte-order does the camera use for its frames?
         try:
-            order = self.cam.order
+            self.order = self.cam.order
         except AttributeError:
             # not all cameras expose the order property, use Fortran ordering
             # by default (i.e. x then y)
             # note: This has a lot to do with me liking to use the 0th 
             # array index as x, which might (in retrospect) have been a bad design choice
-            order = 'F'
+            self.order = 'F'
         
         if (self.currentFrame is None or keepds == False):
 
             self.currentFrame = np.zeros([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
-                                1], dtype = 'uint16', order = order)
+                                1], dtype = 'uint16', order = self.order)
+            
+        self._cf = self.currentFrame
    
 
             
     def getFrame(self, colours=None):
         """Ask the camera to put a frame into our buffer"""
-        
-        if ('numpy_frames' in dir(self.cam)):
-            cs = self.currentFrame[:,:,0]
-        else:
-            cs = self.currentFrame.ctypes.data
+        with self._current_frame_lock:
+            self._cf = np.empty([1, self.cam.GetPicWidth(), self.cam.GetPicHeight(),
+	                                ], dtype = 'uint16', order = self.order)
+	        
+            if getattr(self.cam, 'numpy_frames', False):
+                cs = self._cf[0,:,:] #self.currentFrame[:,:,0]
+            else:
+                cs = self._cf.ctypes.data
+	            
+            #Get camera to insert data into our array (results passed back "by reference")
+            #this is a kludge/artifact of an old call into c-code
+            #in this context cs is a pointer to the memory we want the frame to go into
+            #for newer cameras, we pass a numpy array object, and the camera code
+            #copies the data into that array.
+            self.cam.ExtractColor(cs,0)
             
-        #Get camera to insert data into our array (results passed back "by reference")
-        #this is a kludge/artifact of an old call into c-code
-        #in this context cs is a pointer to the memory we want the frame to go into
-        #for newer cameras, we pass a numpy array object, and the camera code
-        #copies the data into that array.
-        self.cam.ExtractColor(cs,0)
+            return self._cf
 
     def purge(self):
         """purge (and discard) all remaining frames in the camera buffer"""
@@ -145,12 +183,15 @@ class FrameWrangler(wx.EvtHandler):
         
         # Pull the existing data from the camera
         try:
-            self.getFrame()
+            d = self.getFrame()
 
             #notify anyone who cares that we've just got a new frame
             ### NEW: now send a copy so that receivers don't need to copy it. This results in a) more predictable behaviour
             # and b) sets the stage for passing raw frames to spoolers without any copying
-            self.onFrame.send(sender=self, frameData=self.dsa.copy())
+            #d = self.dsa.copy()
+            #d = np.empty_like(self.dsa)
+            #ctypes.cdll.msvcrt.memcpy(d.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), self.dsa.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), d.nbytes)
+            self.onFrame.send(sender=self, frameData=d)
         except:
             import traceback
             traceback.print_exc()
@@ -161,9 +202,52 @@ class FrameWrangler(wx.EvtHandler):
                 #any hardware movements etc that are triggered by the onFrame 
                 #signal complete 
                 self.needExposureStart = True
-            
-            
 
+    def _poll_loop(self, sleep_interval=.01):
+        """
+        This loop runs in a background thread to continuously poll the camera and deal with frames as they arrive.
+
+        Parameters
+        ----------
+        sleep_interval : float
+            length of time to sleep within the polling thread
+
+        Returns
+        -------
+
+        """
+        while (self._poll_camera):
+            if (not self.cam.CamReady()):# and self.piezoReady())):
+                # Stop the aquisition if there is a hardware error
+                wx.CallAfter(self.stop)
+            else:
+                #is there a picture waiting for us?
+                #if so do the relevant processing
+                #otherwise do nothing ...
+        
+                #nFrames = 0 #number of frames grabbed this pass
+        
+                #bufferOverflowed = False
+        
+                while (self.cam.ExpReady()): #changed to deal with multiple frames being ready
+                    if 'GetNumImsBuffered' in dir(self.cam):
+                        bufferOverflowing = self.cam.GetNumImsBuffered() >= (self.cam.GetBufferSize() - 2)
+                    else:
+                        bufferOverflowing = False
+                    if bufferOverflowing:
+                        self.bufferOverflowed = True
+                        print('Warning: Camera buffer overflowing - purging buffer')
+                        eventLog.logEvent('Camera Buffer Overflow')
+                        #stop the aquisition - we're going to restart after we're read out to purge the buffer
+                        #doing it this way _should_ stop the black frames which I guess are being caused by the reading the frame which is
+                        #currently being written to
+                        wx.CallAfter(self.cam.StopAq)
+                        #self.needExposureStart = True
+            
+                    self.onExpReady()
+                    self.n_frames_in_group += 1
+        
+            time.sleep(sleep_interval)
 
 
 
@@ -188,74 +272,84 @@ class FrameWrangler(wx.EvtHandler):
             #print self.te - self.tl
             self.tl = self.te
             
+            if (not self.cam.CamReady()):# and self.piezoReady())):
+                # Stop the aquisition if there is a hardware error
+                self.stop()
+                return
+
+            if getattr(self.cam, 'hardware_overflowed', False):
+                self.cam.StopAq()
+                self.bufferOverflowed = True
+
+
+            #is there a picture waiting for us?
+            #if so do the relevant processing
+            #otherwise do nothing ...
             
-            if (True): #check that we are aquiring
-                if (not self.cam.CamReady()):# and self.piezoReady())):
-                    # Stop the aquisition if there is a hardware error
-                    self.stop()
-                    return
-    
-                #is there a picture waiting for us?
-                #if so do the relevant processing
-                #otherwise do nothing ...
-            	
-                nFrames = 0 #number of frames grabbed this pass
+            #nFrames = 0 #number of frames grabbed this pass
+            
+            #bufferOverflowed = False
+
+            # while(self.cam.ExpReady()): #changed to deal with multiple frames being ready
+            #     if 'GetNumImsBuffered' in dir(self.cam):
+            #         bufferOverflowing  = self.cam.GetNumImsBuffered() >= (self.cam.GetBufferSize() - 1)
+            #     else:
+            #         bufferOverflowing = False
+            #     if bufferOverflowing:
+            #         bufferOverflowed = True
+            #         print('Warning: Camera buffer overflowing - purging buffer')
+            #         eventLog.logEvent('Camera Buffer Overflow')
+            #         #stop the aquisition - we're going to restart after we're read out to purge the buffer
+            #         #doing it this way _should_ stop the black frames which I guess are being caused by the reading the frame which is
+            #         #currently being written to
+            #         self.cam.StopAq()
+            #         #self.needExposureStart = True
+            #
+            #     self.onExpReady()
+            #     nFrames += 1
+                #te= time.clock()
                 
-                bufferOverflowed = False
-    
-                while(self.cam.ExpReady()): #changed to deal with multiple frames being ready
-                    if 'GetNumImsBuffered' in dir(self.cam):
-                        bufferOverflowing  = self.cam.GetNumImsBuffered() >= (self.cam.GetBufferSize() - 1)
-                    else:
-                        bufferOverflowing = False
-                    if bufferOverflowing:
-                        bufferOverflowed = True
-                        print('Warning: Camera buffer overflowing - purging buffer')
-                        eventLog.logEvent('Camera Buffer Overflow')
-                        #stop the aquisition - we're going to restart after we're read out to purge the buffer
-                        #doing it this way _should_ stop the black frames which I guess are being caused by the reading the frame which is
-                        #currently being written to
-                        self.cam.StopAq()
-                        #self.needExposureStart = True
-     
-                    self.onExpReady()
-                    nFrames += 1
-                    #te= time.clock()
-                    
-                    #If we can't deal with the data fast enough (e.g. due to file i/o limitations) this can turn into an infinite loop -
-                    #avoid this by bailing out with a warning if nFrames exceeds a certain value. This will probably lead to buffer overflows
-                    #and loss of data, but is arguably better than an unresponsive app.
-                    #This value is (currently) chosen fairly arbitrarily, taking the following facts into account: 
-                    #the buffer has enough storage for ~3s when running flat out,
-                    #we're polling at ~5hz, and we should be able to get more frames than would be expected during the polling intervall to
-                    #allow us to catch up following glitches of one form or another, although not too many more.
-                    if ('GetNumImsBuffered' in dir(self.cam)) and (nFrames > self.cam.GetBufferSize()/2):
-                        print(('Warning: not keeping up with camera, giving up with %d frames still in buffer' % self.cam.GetNumImsBuffered()))
-                        break
-    
-                if bufferOverflowed:
-                    print('nse')
-                    self.needExposureStart = True
-    
-                # See if we need to restart the exposure. This will happen if
-                # a) we are in single shot mode
-                # or b) the camera buffer overflowed                
-                if self.needExposureStart and self.checkHardware():
-                    self.needExposureStart = False
-                    self.cam.StartExposure() #restart aquisition - this should purge buffer
-                    
-    
-                if nFrames > 0:
-                    #we got some frames, record timing info and let any listeners know
-                    self.n_Frames += nFrames
-                    
-                    self.tLastFrame = self.tThisFrame
-                    self.nFrames = nFrames
-                    self.tThisFrame = time.clock()
-                     
-                    self.onFrameGroup.send(self)
-            else:
-                 self.stop()
+                #If we can't deal with the data fast enough (e.g. due to file i/o limitations) this can turn into an infinite loop -
+                #avoid this by bailing out with a warning if nFrames exceeds a certain value. This will probably lead to buffer overflows
+                #and loss of data, but is arguably better than an unresponsive app.
+                #This value is (currently) chosen fairly arbitrarily, taking the following facts into account:
+                #the buffer has enough storage for ~3s when running flat out,
+                #we're polling at ~5hz, and we should be able to get more frames than would be expected during the polling intervall to
+                #allow us to catch up following glitches of one form or another, although not too many more.
+            if ('GetNumImsBuffered' in dir(self.cam)) and (self.n_frames_in_group > self.cam.GetBufferSize()/2):
+                print(('Warning: not keeping up with camera, giving up with %d frames still in buffer' % self.cam.GetNumImsBuffered()))
+             
+            # just copy data to the current frame once per frame group - individual frames don't get copied
+            # directly calling memcpy is a bit of a cheat, but is significantly faster than the alternatives
+            with self._current_frame_lock:
+                memcpy(self.currentFrame.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
+                       self._cf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),self.currentFrame.nbytes)
+            
+
+            if self.bufferOverflowed:
+                print('nse')
+                self.needExposureStart = True
+
+            # See if we need to restart the exposure. This will happen if
+            # a) we are in single shot mode
+            # or b) the camera buffer overflowed
+            if self.needExposureStart and self.checkHardware():
+                self.needExposureStart = False
+                self.bufferOverflowed = False
+                self.cam.StartExposure() #restart aquisition - this should purge buffer
+                
+
+            if self.n_frames_in_group > 0:
+                #we got some frames, record timing info and let any listeners know
+                self.n_Frames += self.n_frames_in_group
+                
+                self.tLastFrame = self.tThisFrame
+                self.nFrames = self.n_frames_in_group
+                self.n_frames_in_group = 0
+                self.tThisFrame = time.clock()
+                 
+                self.onFrameGroup.send(self)
+           
         except:
             traceback.print_exc()
         finally:     
@@ -282,7 +376,7 @@ class FrameWrangler(wx.EvtHandler):
         free-running mode."""
         for callback in self.HardwareChecks:
             if not callback():
-                print 'Waiting for hardware'
+                print('Waiting for hardware')
                 return False
 
         return True
@@ -294,10 +388,11 @@ class FrameWrangler(wx.EvtHandler):
 
         self.aqOn = False
 
-        try: #deal with Andor without breaking sensicam
-            self.cam.StopAq()
-        except AttributeError:
-            pass
+        with self._current_frame_lock:
+            try: #deal with Andor without breaking sensicam
+                self.cam.StopAq()
+            except AttributeError:
+                pass
                 
         self.onStop.send_robust(self)
 
@@ -312,7 +407,8 @@ class FrameWrangler(wx.EvtHandler):
         
         self.onStart.send_robust(self)
 
-        self.cam.StartExposure()
+        with self._current_frame_lock:
+            self.cam.StartExposure()
 
         self.aqOn = True
 

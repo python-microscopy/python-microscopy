@@ -22,6 +22,7 @@
 ##################
 
 #!/usr/bin/python
+from __future__ import print_function
 import scipy
 import numpy
 import numpy.ctypeslib
@@ -370,7 +371,7 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
     ys = (ys - imageBounds.y0)/pixelSize
 
     if im is None:
-        print 'Some thing is wrong - we should already have allocated memory'
+        print('Some thing is wrong - we should already have allocated memory')
         im = numpy.zeros((sizeX, sizeY))
 
 #    for i in range(xs.shape[0]):

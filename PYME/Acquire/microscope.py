@@ -50,6 +50,9 @@ from PYME.misc import sqlitendarray
 import weakref
 import re
 
+import logging
+logger = logging.getLogger(__name__)
+
 #class DummyJoystick(object):
 #    def enable(*args, **kwargs):
 #        pass
@@ -99,7 +102,7 @@ class StateHandler(object):
                 self.setFcn(value)
                 self.onChange.send(self, key=self.key, value=value)
             else:
-                print 'No set method registered for key %s - assuming immutable' %  self.key
+                logging.debug('No set method registered for key %s - assuming immutable' %  self.key)
             
 class StateManager(object):
     """Manages object (microscope) state by calling an appropriate state-handler
@@ -192,7 +195,7 @@ class StateManager(object):
                 restartCamera = self.scope().frameWrangler.isRunning()
                 self.scope().frameWrangler.stop()
             except AttributeError:
-                print "We don't have a camera yet"
+                logger.error("We don't have a camera yet")
             
         
         for key, value in stateDict.items():
@@ -207,7 +210,7 @@ class StateManager(object):
                            self.scope().frameWrangler.stop()
                            restartCamera = True
                     except AttributeError:
-                        print "We don't have a camera yet"
+                        logger.error("We don't have a camera yet")
                        
                 handler.setValue(value, force)
             except KeyError:
@@ -615,6 +618,7 @@ class microscope(object):
             pass
             
         self.frameWrangler.start()
+        self.CleanupFunctions.append(self.frameWrangler.destroy)
         
         for cb in self.PACallbacks:
             cb()

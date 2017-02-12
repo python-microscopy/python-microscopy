@@ -50,6 +50,6 @@ def save_data(data, fname):
             s = s + '%s ' % (data[j][i],)
         s = s + '\n'
 
-    f = file(fname, 'w')
+    f = open(fname, 'w')
     f.write(s)
     f.close()

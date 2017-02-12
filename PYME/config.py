@@ -15,7 +15,8 @@ Within each configuration directory there can be a ``config.yaml`` file which st
 pairs. These are accessed using the :func:`get` function.
 
 The directories may also contain a ``plugins`` folder, which in turn can contain subfolders for ``visgui``, ``dsviewer``,
-and ``recipes``.  PYME will also detect custom acquisition protocols saved in the ``.PYME/protocols`` directory. the
+and ``recipes``.  PYME will also detect custom acquisition protocols saved in the ``.PYME/protocols`` directory,
+similarly init scripts will be detected in ``.PYME/init_scripts`` directory. The
 overall template for a configuration directory is as follows: ::
 
     .PYME
@@ -32,9 +33,26 @@ overall template for a configuration directory is as follows: ::
       |           |- anothermodule.txt
       |
       |- protocols
-            |- a_protocol.py
-            |- another_protocol.py
+      |     |- a_protocol.py
+      |     |- another_protocol.py
+      |
+      |- init_scripts
+            |- init_mymachine.py
+            |- init_my_other_config.py
+            
+            
+If you want to verify which directories will be searched on your particular python installation, running the following
+on the command line will tell you:
 
+.. code-block:: bash
+
+    python -c "import PYME.config;print PYME.config.config_dirs"
+    
+with anaconda on OSX this gives me:
+
+.. code-block:: bash
+
+    ['/Users/david/.PYME', '/etc/PYME', '/Users/david/anaconda/etc/PYME']
 
 Examples
 ========
@@ -49,7 +67,7 @@ parameter values are supported using standard yaml notation.
 
     dataserver-root: "/Users/david/srvtest/test1"
     h5f-flush_interval: 1
-
+    PYMEAcquire-extra_init_dir: "C:/pyme-init-scripts"
 
 plugins/visgui/PYME.txt
 -----------------------
@@ -84,30 +102,37 @@ user_config_file = os.path.join(user_config_dir, 'config.yaml')
 
 if not os.path.exists(user_config_dir):
     #if this is the first time we've called the module, make the config directory
-    os.makedirs(user_config_dir)
-
-    #touch our config file
-    open(user_config_file, 'a').close()
-
-    #copy template configuration files
-    template_dir = os.path.join(os.path.split(__file__)[0], 'resources', 'config_template')
-
-    conf_files = os.listdir(template_dir)
-
-    for file in conf_files:
-        shutil.copy(os.path.join(template_dir, file), os.path.join(user_config_dir, file))
-
-    user_plugin_dir = os.path.join(user_config_dir, 'plugins')
-    os.makedirs(user_plugin_dir, exist_ok=True)
-    os.makedirs(os.path.join(user_plugin_dir, 'visgui'))
-    os.makedirs(os.path.join(user_plugin_dir, 'dsviewer'))
-    os.makedirs(os.path.join(user_plugin_dir, 'recipes'))
+    
+    try:
+        os.makedirs(user_config_dir)
+    
+        #touch our config file
+        open(user_config_file, 'a').close()
+    
+        #copy template configuration files
+        template_dir = os.path.join(os.path.split(__file__)[0], 'resources', 'config_template')
+    
+        conf_files = os.listdir(template_dir)
+    
+        for file in conf_files:
+            shutil.copy(os.path.join(template_dir, file), os.path.join(user_config_dir, file))
+    
+        user_plugin_dir = os.path.join(user_config_dir, 'plugins')
+        os.makedirs(user_plugin_dir)
+        os.makedirs(os.path.join(user_plugin_dir, 'visgui'))
+        os.makedirs(os.path.join(user_plugin_dir, 'dsviewer'))
+        os.makedirs(os.path.join(user_plugin_dir, 'recipes'))
+    except OSError:
+        #we might not be able to write to the home directory
+        pass
 
 
 config_defaults = {}
 
 config = {}
 config.update(config_defaults)
+
+config_dirs = [user_config_dir, site_config_directory, dist_config_directory]
 
 for fn in [dist_config_file, site_config_file, user_config_file]:
     #loop over the three configuration locations and read files, if present.
@@ -140,6 +165,7 @@ def get(key, default=None):
     return config.get(key, default)
 
 
+
 def get_plugins(application):
     """
     Get a list of plugins for a given application
@@ -164,7 +190,7 @@ def get_plugins(application):
     """
     plugin_paths = []
 
-    for config_dir in [dist_config_directory, site_config_directory, user_config_dir]:
+    for config_dir in config_dirs:
         plugin_dir = os.path.join(config_dir, 'plugins', application)
 
         try:
@@ -191,11 +217,46 @@ def get_custom_protocols():
     """
     import glob
     prots = {}
-    for config_dir in [dist_config_directory, site_config_directory, user_config_dir]:
+    for config_dir in config_dirs:
         prot_glob = os.path.join(config_dir, 'protocols/[a-zA-Z]*.py')
         prots.update({os.path.split(p)[-1] : p for p in glob.glob(prot_glob)})
 
 
+def get_init_filename(filename, legacy_scripts_directory=None):
+    """
+    Look for an init file in the various locations. If the given filename exists (i.e. is a fully resolved path) it
+    will be used. Otherwise 'init_scripts' subdirectory of the configuration directories will be searched, in order of
+    precedence user - site - dist. It also checks for files in a provided directory (to support legacy usage with the
+    PYMEAcquire/scripts directory) and the config option ``PYMEAcquire-extra_init_dir``.
 
+    Parameters
+    ----------
 
+    filename: init file name to locate in script dirs
 
+    Returns
+    -------
+
+    If found returns first match as full path to init file
+    returns None if not found.
+
+    """
+    if os.path.exists(filename):
+        return filename
+    
+    directories_to_search = [os.path.join(conf_dir, 'init_scripts') for conf_dir in config_dirs]
+    
+    extra_conf_dir = config.get('PYMEAcquire-extra_init_dir')
+    if not extra_conf_dir is None:
+        directories_to_search.insert(0, extra_conf_dir)
+        
+    if not legacy_scripts_directory is None:
+        directories_to_search.insert(0, legacy_scripts_directory)
+        
+
+    for dir in directories_to_search:
+        fnp = os.path.join(dir, filename)
+        if os.path.exists(fnp):
+            return fnp
+        
+    return None

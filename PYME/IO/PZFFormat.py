@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Nov 25 15:28:15 2015
+Defines a 'wire' format for transmitting or saving image frame data, optionally with Huffman compression and/or
+sqrt quantization. The combination of quantization and Huffman coding allows compression ratios of 6-10 fold on typical
+microscopy data. Using compression or quantization requires the pyme-compress companion library to be installed which
+has optimized c code for performing the compression and quantization. If pyme-compress is compiled and installed on an
+AVX capable processor, a throughput in excess of 800MB/s can be achieved.
 
-@author: david
-
-Defines a 'wire' format for transmitting or saving image frame data. 
+Most users will just want the :func:`dumps` and :func:`loads` functions
 """
 
 
@@ -117,7 +119,7 @@ def ChunkedHuffmanDecompress(datastring):
 #    pass
 
 FILE_FORMAT_ID = 'BD'
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2
 
 DATA_FMT_UINT8 = 0
 DATA_FMT_UINT16 = 1
@@ -133,69 +135,78 @@ DATA_COMP_HUFFCODE_CHUNKS = 2
 DATA_QUANT_NONE = 0
 DATA_QUANT_SQRT = 1
 
-##############
-# Definition of file header
-#
-# Most of the entries should be fairly self explanatory, with the following 
-# deserving a bit more explanation:  
-#
-# ID: a 2-character string that we can test to see if the file type is consistent
-# Version: the version of this format the file uses
-# DataFormat: what the data type of individual pixels is
-# DataCompression: whether the data is compressed, and which algorithm is used
-# SequenceID: A unique identifier for the sequence to which this frame belongs.
-#             The most important property of this number is that it is unique to 
-#             each sequence. A reasonable method of generation would be to use
-#             a unix-format integer timestamp for the first dword, and a random
-#             integer for the second. A hash of the first n image pixels could 
-#             also be used.
-# FrameNum: The position of this frame within the sequence
-# FrameTimestamp: Space to save camera derived frame timestamps, if available
-# Depth: As envisaged, the format is expected to contain individual 2D frames, with
-#        multiple frames being pulled together in a higher level container to 
-#        construct a sequence or stack. Depth is included just because it doesn't
-#        take a significant ammount of extra space, but gives us flexibility for
-#        the future.
 
 #header_dtype = [('ID', 'S2'), ('Version', 'u1') , ('DataFormat', 'u1'), ('DataCompression', 'u1'), ('RESERVED0', 'S3'), ('SequenceID', 'i8'), 
 #                ('FrameNum', 'u4'), ('Width', 'u4'), ('Height', 'u4'), ('Depth', 'u4'), 
 #                ('FrameTimestamp', 'u8'), ('RESERVED1', 'u8')]
                 
 header_dtype = [('ID', 'S2'), ('Version', 'u1') , ('DataFormat', 'u1'), ('DataCompression', 'u1'), 
-                ('DataQuantization', 'u1'),('RESERVED0', 'S2'), ('SequenceID', 'i8'), 
+                ('DataQuantization', 'u1'),('DimOrder', 'S1'),('RESERVED0', 'S1'), ('SequenceID', 'i8'), 
                 ('FrameNum', 'u4'), ('Width', 'u4'), ('Height', 'u4'), ('Depth', 'u4'), 
                 ('FrameTimestamp', 'u8'), ('QuantOffset', 'f4'), ('QuantScale', 'f4')]
+"""
+numpy dtype used to define the file header struct.
+
+Most of the entries should be fairly self explanatory, with the following
+deserving a bit more explanation:
+
+:ID: a 2-character string that we can test to see if the file type is consistent
+:Version: the version of this format the file uses
+:DataFormat: what the data type of individual pixels is
+:DataCompression: whether the data is compressed, and which algorithm is used
+:SequenceID: A unique identifier for the sequence to which this frame belongs.
+    The most important property of this number is that it is unique to
+    each sequence. A reasonable method of generation would be to use
+    a unix-format integer timestamp for the first dword, and a random
+    integer for the second. A hash of the first n image pixels could
+    also be used.
+:FrameNum: The position of this frame within the sequence
+:FrameTimestamp: Space to save camera derived frame timestamps, if available
+:Depth: As envisaged, the format is expected to contain individual 2D frames, with
+    multiple frames being pulled together in a higher level container to
+    construct a sequence or stack. Depth is included just because it doesn't
+    take a significant ammount of extra space, but gives us flexibility for
+    the future.
+"""
+                
+    
                 
 HEADER_LENGTH = np.zeros(1, header_dtype).nbytes            
 
 def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_COMP_RAW, quantization=DATA_QUANT_NONE, quantizationOffset=0, quantizationScale=1):
-    """dump an image frame (supplied as a numpy array) into a string in PZF format
+    """Dump an image frame (supplied as a numpy array) into a string in PZF format.
     
     Parameters
     ==========
 
-    data:  The frame as a 2D (or optionally 3D) numpt array    
+    data:  ndarray
+            The frame as a 2D (or optionally 3D) numpy array
     
-    sequenceID:  A unique identifier for the sequence to which this frame belongs.
-                 This will let us connect the frame with it's metadata even if 
-                 they end up in different directories etc ...
+    sequenceID:  int
+            A unique identifier for the sequence to which this frame belongs.
+            This will let us connect the frame with it's metadata even if
+            they end up in different directories etc ...
                  
-    frameNum:  The position of this frame within the sequence
+    frameNum:   int
+            The position of this frame within the sequence
     
-    frameTimestamp:  A timestamp for the frame (if provided by the camera)
+    frameTimestamp:  float
+            A timestamp for the frame (if provided by the camera)
     
-    compression:  compression method to use - one of: PZFFormat.DATA_COMP_RAW,
-                  PZFFormat.DATA_COMP_HUFFCODE, or PZFFormat.DATA_COMP_HUFFCODE_CHUNKS
-                  Where raw stores the data with no compression, huffcode uses
-                  Huffman coding, and huffcode chunks breaks the data into chunks 
-                  first, with each chunk meing encodes by a separate thread.
+    compression:  int (enum)
+            compression method to use - one of: `PZFFormat.DATA_COMP_RAW`,
+            `PZFFormat.DATA_COMP_HUFFCODE`, or `PZFFormat.DATA_COMP_HUFFCODE_CHUNKS`
+            Where raw stores the data with no compression, huffcode uses
+            Huffman coding, and huffcode chunks breaks the data into chunks
+            first, with each chunk meing encodes by a separate thread.
                   
-    quantization: Whether or not the data is quantized before saving.
-                  One of DATA_QUANT_NONE or DATA_QUANT_SQRT. If DATA_QUANT_SQRT
-                  is selected, then the data is quantized as follows prior to 
-                  compression:
+    quantization: int (enum)
+            Whether or not the data is quantized before saving.
+            One of `DATA_QUANT_NONE` or `DATA_QUANT_SQRT`. If `DATA_QUANT_SQRT`
+            is selected, then the data is quantized as follows prior to
+            compression:
                   
-                  $data_quant =  \sqrt(data - data)
+            .. math:: data_{quant} =  \\frac{\\sqrt{data - quantizationOffset}}{quantizationScale}
     """
     
     header = np.zeros(1, header_dtype)
@@ -216,7 +227,7 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
     else:
         raise RuntimeError('Unsupported data type')
     
-    
+    header['DimOrder'] = 'C'
     header['Width'] = data.shape[0]
     header['Height'] = data.shape[1]
     if data.ndim > 2:
@@ -237,9 +248,26 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
         header['DataCompression'] = DATA_COMP_HUFFCODE
 
         if quantization:
-            dataString = bcl.HuffmanCompressQuant(data.ravel(), quantizationOffset, quantizationScale).tostring()
+            if data.flags['F_CONTIGUOUS']:
+                header['DimOrder'] = 'F'
+                d1 = np.frombuffer(data, data.dtype) #this will flatten without respecting order - we re-order later
+            else:
+                # if the array is c-contiguous this will just pass through. If it is non contiguous (i.e. a wierd slice)
+                # it will force it to be c-contiguous
+                d1 = np.frombuffer(np.ascontiguousarray(data), data.dtype)
+
+            dataString = bcl.HuffmanCompressQuant(d1, quantizationOffset, quantizationScale).tostring()
         else:
-            dataString = bcl.HuffmanCompress(np.ascontiguousarray(data).data).tostring()
+            if data.flags['F_CONTIGUOUS']:
+                header['DimOrder'] = 'F'
+                d1 = data.data
+            else:
+                # if the array is c-contiguous this will just pass through. If it is non contiguous (i.e. a wierd slice)
+                # it will force it to be c-contiguous
+                d1 = np.ascontiguousarray(data).data
+
+            d2 = bcl.HuffmanCompress(d1)
+            dataString = d2.tostring()
     elif compression == DATA_COMP_HUFFCODE_CHUNKS:
         header['DataCompression'] = DATA_COMP_HUFFCODE_CHUNKS
         
@@ -252,10 +280,33 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
 
    
 def loads(datastring):
+    """
+    Loads image data from a string in PZF format.
+    
+    Parameters
+    ----------
+    datastring : string / bytes
+        The encoded data
+    
+    Returns
+    -------
+    
+    data : ndarray
+        The image data as a numpy array
+        
+    header : recarray
+        The image header, as a numpy record array with the :const:`header_dtype` dtype.
+
+    """
     header = np.fromstring(datastring[:HEADER_LENGTH], header_dtype)
     
     if not header['ID'] == FILE_FORMAT_ID:
         raise RuntimeError("Invalid format: This doesn't appear to be a PZF file")
+
+    if header['Version'] >= 2:
+        dimOrder = header['DimOrder']
+    else:
+        dimOrder = 'C'
         
     w, h, d = header['Width'], header['Height'], header['Depth']
 
@@ -292,6 +343,6 @@ def loads(datastring):
         data = data*header['QuantScale']
         data = (data*data + header['QuantOffset']).astype(DATA_FMTS[int(header['DataFormat'])])
     
-    data = data.view(DATA_FMTS[int(header['DataFormat'])]).reshape([w,h,d])
+    data = data.view(DATA_FMTS[int(header['DataFormat'])]).reshape([w,h,d], order=dimOrder)
     
     return data, header

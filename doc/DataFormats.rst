@@ -13,6 +13,24 @@ containg the raw image data, stores metadata in a group called `MetaData`, conta
 number of nested groups, and optionally an additional dataset called `Events` which
 details events which happened during the acquisition (eg focus changes and protocol tasks).
 
+Running `h5ls` on an example file gives the following output. Note that the dimension order for ImageData is Z/T, X, Y:
+
+.. code-block:: bash
+
+    DB3:~ david$ h5ls -r /Users/david/PYMEData/david/2016_11_30/30_11_series_A.h5
+    /                        Group
+    /Events                  Dataset {3/Inf}
+    /ImageData               Dataset {258/Inf, 1024, 256}
+    /MetaData                Group
+    /MetaData/Camera         Group
+    /MetaData/Lasers         Group
+    /MetaData/Lasers/l405    Group
+    /MetaData/Lasers/l488    Group
+    /MetaData/Positioning    Group
+    /MetaData/Protocol       Group
+    /MetaData/StackSettings  Group
+    /MetaData/voxelsize      Group
+
 .. topic:: Why HDF5?
 
    Whilst HDF5 is used extensively for scientific data in the areas of geophysics
@@ -77,20 +95,10 @@ Shiftfield files (``.sf``)
 ``.sf`` files are saved vector shift fields used for correction of chromatic shift
 in multi-colour imaging. Again, a python pickle.
 
-PYME XML (``.xml``)
-===================
+Metadata (``.json``, ``.md``, ``.xml``)
+=======================================
 
-An XML representation of the metadata usually stored in ``.h5`` files. Used when
-saving as ``.tif``.
-
-Simple Metadata (``.md``)
-=========================
-
-A simple representation of the metadata more suited to manual editing than the
-``.xml`` format. Designed to be used when importing, eg tiff, files not created
-with PYMEAcquire into the analysis package. ``.md`` files are python scripts whose
-sole purpose is to add metadata entries to a minimal metadata object (called ``md``)
-using a dictionary notation.
+PYME supports metadata in a number of formats, for more details see :ref:`metadata`.
 
 PYME Recipes (``.yaml``)
 ========================
@@ -98,4 +106,12 @@ PYME Recipes (``.yaml``)
 These are used to store the details of processing pipelines used for either 
 standard (e.g. confocal) data analysis or for postprocessing super-resolution
 reconstructions.
+
+PYME Compressed Images (``.pzf``)
+=================================
+
+These are a very minimal container for images compressed with our experimental high performance lossy compression
+protocol. They consist of a minimal header followed by the compressed data and are mostly designed as 'wire' protocol
+for data transfer to and within our cluster. It is also our on disk storage format within the cluster, and can be embedded
+within HDF5 files (at the expense of loosing portability). For further documentation see :mod:`PYME.IO.PZFFormat`.
 

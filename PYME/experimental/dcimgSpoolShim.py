@@ -51,6 +51,7 @@ class DCIMGSpoolShim:
         if not success:
             raise UserWarning('dcimg file is taking too long to finish writing')
 
+
         #create an empty metadatahandler
         self.mdh = MetaDataHandler.NestedClassMDHandler(MetaData.BareBones)
 
@@ -70,7 +71,9 @@ class DCIMGSpoolShim:
         MetaDataHandler.provideStartMetadata.append(self.metadataSource)
 
         #generate the spooler
-        self.spooler = HTTPSpooler.Spooler(filename, self.imgSource.onFrame, frameShape=None)
+        self.spooler = HTTPSpooler.Spooler(filename, self.imgSource.onFrame, frameShape=None,
+                                           compressionSettings={'compression': HTTPSpooler.PZFFormat.DATA_COMP_HUFFCODE,
+                                                                'quantization':HTTPSpooler.PZFFormat.DATA_QUANT_NONE})
 
         #spool our data
         self.spooler.StartSpool()

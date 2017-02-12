@@ -28,7 +28,7 @@ import random
 import time
 import os
 
-import Queue
+import queue as Queue
 import threading
 
 import PYME.version

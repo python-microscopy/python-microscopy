@@ -67,7 +67,7 @@ class correlator(Pyro.core.ObjBase):
         
         self.focusTolerance = .05 #how far focus can drift before we correct
         self.deltaZ = 0.2 #z increment used for calibration
-        self.stackHalfSize = 10
+        self.stackHalfSize = 35
         self.NCalibStates = 2*self.stackHalfSize + 1
 
         self.tracking = False
@@ -219,7 +219,7 @@ class correlator(Pyro.core.ObjBase):
         #what is the offset between our target position and the calibration position         
         posDelta = nomPos - calPos
         
-        print nomPos, posInd, calPos, posDelta
+        print('%s' % [nomPos, posInd, calPos, posDelta])
         
         #find x-y drift
         C = ifftshift(np.abs(ifftn(fftn(dm)*FA)))
@@ -390,14 +390,14 @@ class ServerThread(threading.Thread):
         uri=self.daemon.connect(self.driftCorr,pname)
         
     def run(self):
-        print 'foo'
+        #print 'foo'
         #try:
         self.daemon.requestLoop()
         #finally:
         #    daemon.shutdown(True)
         
     def cleanup(self):
-        print 'Shutting down drift tracking Server'
+        print('Shutting down drift tracking Server')
         self.daemon.shutdown(True)
     
 def getClient(compName = GetComputerName()):

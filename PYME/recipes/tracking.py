@@ -238,6 +238,7 @@ class FitFusionTraces(ModuleBase):
 
     def execute(self, namespace):
         from PYME.experimental import fusionRadial
+        from imp import reload
         reload(fusionRadial)
         tracks = namespace[self.inputTracks]
 

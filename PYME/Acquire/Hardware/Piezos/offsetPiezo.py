@@ -114,14 +114,14 @@ class ServerThread(threading.Thread):
         uri=self.daemon.connect(self.piezo,pname)
         
     def run(self):
-        print 'foo'
+        #print 'foo'
         #try:
         self.daemon.requestLoop()
         #finally:
         #    daemon.shutdown(True)
         
     def cleanup(self):
-        print 'Shutting down Offset Piezo Server'
+        print('Shutting down Offset Piezo Server')
         self.daemon.shutdown(True)
                 
 
@@ -130,12 +130,12 @@ def getClient(compName = GetComputerName()):
         from PYME.misc import pyme_zeroconf 
         ns = pyme_zeroconf.getNS()
         time.sleep(2)
-        print ns.list()
+        #print ns.list()
         URI = ns.resolve('%s.Piezo' % compName)
     except:
         URI ='PYRONAME://%s.Piezo'%compName
 
-    print URI
+    #print URI
 
     return Pyro.core.getProxyForURI(URI)
     
@@ -145,12 +145,12 @@ def main():
     from PYME.Acquire.Hardware.Simulator import fakePiezo
     bp = fakePiezo.FakePiezo(100)
     st = ServerThread(bp)
-    print 'foo'
+    #print 'foo'
     st.start()
     st.join()
     #st.run()
     #st.daemon.requestLoop()
-    print 'bar'
+    #print 'bar'
     
 if __name__ == '__main__':
     main()

@@ -53,7 +53,14 @@ from wsgiref.simple_server import make_server
 import sys
 import json
 import PYME.misc.pyme_zeroconf as pzc
-import urlparse
+try:
+    # noinspection PyCompatibility
+    from urlparse import urlparse
+except ImportError:
+    #py3
+    # noinspection PyCompatibility
+    from urllib.parse import urlparse
+    
 import requests
 import socket
 #import fcntl
@@ -171,8 +178,8 @@ class dataserver(object):
         No table name: assumes we have a fitResults object (as returned by remFitBuf and saves to the the appropriate tables (as HDF task queue would)
         """
         import numpy as np
-        import cStringIO
-        import cPickle
+        from io import BytesIO
+        from six.moves import cPickle
         from PYME.IO import MetaDataHandler
         from PYME.IO import h5rFile
 
@@ -192,7 +199,7 @@ class dataserver(object):
             else:
                 try:
                     #try to read data as if it was numpy binary formatted
-                    data = np.load(cStringIO.StringIO(data))
+                    data = np.load(BytesIO(data))
                 except IOError:
                     #it's not numpy formatted - try json
                     import pandas as pd
@@ -576,7 +583,7 @@ def main(protocol="HTTP/1.0"):
     ns = pzc.getNS('_pyme-http')
     ns.register_service('PYMEDataServer: ' + procName, ip_addr, int(options.port))
 
-    print "Serving HTTP on", ip_addr, "port", options.port, "..."
+    print("Serving HTTP on %s port %d ..." % (ip_addr, options.port))
 
     #wsgiref_server(options)
     cherrypy_server(options)

@@ -185,7 +185,7 @@ class PointScanner:
         finally:
             pass
     
-        print 'Returning home : ', self.currPos
+        print('Returning home : %s' % self.currPos)
         
         self.scope.state.setItems({'Positioning.x' : self.currPos['x'], 
                                        'Positioning.y' : self.currPos['y'],

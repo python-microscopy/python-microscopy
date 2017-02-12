@@ -34,7 +34,7 @@ from PYME.Analysis._fithelpers import FitModelWeighted, FitModelWeightedJac
 def f_gaussAstigSlow(p, X, Y):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sx, sy, b, b_x, b_y]"""
     A, x0, y0, sx, sy, c, b_x, b_y = p
-    return A*np.exp(-(X[:,None]-x0)**2/(2*sy**2) - (Y[None,:] - y0)**2/(2*sx**2)) + c + b_x*X[:,None] + b_y*Y[None,:]
+    return A*np.exp(-(X[:,None]-x0)**2/(2*sx**2) - (Y[None,:] - y0)**2/(2*sy**2)) + c + b_x*X[:,None] + b_y*Y[None,:]
 #####################
 
 #define the data type we're going to return

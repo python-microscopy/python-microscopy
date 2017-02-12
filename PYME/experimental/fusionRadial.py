@@ -217,7 +217,7 @@ def diffMultiModel(params, t, sig=1., radii=[1., 2., 3., 5., 10, 1.0]):
     docked_t = A * (t > tdocked) * np.minimum(1.0, np.exp(-(t - t0) / tau)) * np.exp(-(t - tdocked) / tau_bl)
 
     #precalculate bleaching component of release trace
-    release_t = A * enh * np.exp(-(t - t0) * enh / tau_bl)
+    release_t = A* np.exp(-(t0 - tdocked)/tau_bl) * enh *np.exp(-(t - t0) * enh / tau_bl)
 
     #allocate an output array
     out = np.zeros([len(radii), len(t)], 'f')

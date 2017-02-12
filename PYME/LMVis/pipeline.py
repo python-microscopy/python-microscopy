@@ -599,7 +599,7 @@ class Pipeline:
         if 'Analysis.FitModule' in self.mdh.getEntryNames():
             fitModule = self.mdh['Analysis.FitModule']
             
-            print 'fitModule = %s' % fitModule
+            #print 'fitModule = %s' % fitModule
             
             if 'Interp' in fitModule:
                 self.filterKeys['A'] = (5, 100000)
