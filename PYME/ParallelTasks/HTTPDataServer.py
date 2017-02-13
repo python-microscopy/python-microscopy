@@ -58,7 +58,7 @@ import http.server
 # noinspection PyCompatibility
 from socketserver import ThreadingMixIn
 
-from io import StringIO
+from io import StringIO, BytesIO
 import shutil
 #import urllib
 import sys
@@ -343,7 +343,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def get_status(self):
 
 
-        f = StringIO()
+        f = BytesIO()
         f.write(json.dumps(status))
         length = f.tell()
         f.seek(0)
@@ -435,7 +435,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 js_dir = json.dumps(l2)
                 _dirCache[path] = (js_dir, time.time() + _dirCacheTimeout)
 
-        f = StringIO()
+        f = BytesIO()
         f.write(js_dir)
         length = f.tell()
         f.seek(0)
