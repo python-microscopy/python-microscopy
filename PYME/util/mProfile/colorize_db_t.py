@@ -145,7 +145,7 @@ class Parser:
 
         # parse the source and write it
         self.pos = 0
-        text = StringIO(self.raw)
+        text = StringIO(u'' + self.raw)
         self.out.write(self.stylesheet)
         self.out.write('<pre class="code">\n')
         try:
