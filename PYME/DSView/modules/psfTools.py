@@ -326,6 +326,21 @@ class PSFTools(HasTraits):
         import mpld3
         import json
         from PYME.Analysis.PSFEst import extractImages
+        import wx
+
+        # query user for type of calibration
+        ftypes = ['BeadConvolvedAstigGaussFit', 'AstigGaussFitFR']  # , 'AstigGaussGPUFitFR']
+        fitType_dlg = wx.SingleChoiceDialog(self.dsviewer, 'Fit-type selection', 'Fit-type selection', ftypes)
+        fitType_dlg.ShowModal()
+        fitMod = ftypes[fitType_dlg.GetSelection()]
+
+        if (fitMod == 'BeadConvolvedAstigGaussFit') and ('Bead.Diameter' not in self.image.mdh.keys()):
+            beadDiam_dlg = wx.NumberEntryDialog(None, 'Bead diameter in nm', 'diameter [nm]', 'diameter [nm]', 100, 1, 9e9)
+            beadDiam_dlg.ShowModal()
+            beadDiam = float(beadDiam_dlg.GetValue())
+            # store this in metadata
+            self.image.mdh['Analysis.Bead.Diameter'] = beadDiam
+
 
 
         ps = self.image.pixelSize
@@ -340,7 +355,7 @@ class PSFTools(HasTraits):
 
         ptFitter = FitPoints()
         ptFitter.set(roiHalfSize=11)
-        ptFitter.set(fitModule='AstigGaussFitFR')
+        ptFitter.set(fitModule=fitMod)
 
         namespace = {'input' : self.image, 'objPositions' : objPositions}
 
@@ -373,7 +388,7 @@ class PSFTools(HasTraits):
                 use_web_view = False
 
         # find reasonable z range for each channel
-        #FIXME - it is somewhat non-obvious that we are effectively injecting the 'zRange' variable into the results here
+        # Inject a reasonable z range for each channel into the results with a 'zrange' key
         results = findZRange(results)
 
         #do plotting
