@@ -19,8 +19,7 @@
 import numpy as np
 from .fitCommon import fmtSlicesUsed
 from . import FFBase
-from PYME.Analysis._fithelpers import FitModelWeighted  # _extraArg
-from PYME.localization.cModels.gauss_app import genGauss, genGaussJac, genGaussJacW
+from PYME.Analysis._fithelpers import FitModelWeighted
 from scipy.signal import convolve2d
 
 
@@ -31,6 +30,9 @@ from scipy.signal import convolve2d
 interpFactor = 5.0
 
 def bead(X, Y, beadDiam):
+    """
+    returns a sum-normalized bead projection
+    """
     x0, y0 = np.mean(X), np.mean(Y)
     beadRad = 0.5*beadDiam
     beadProj = np.nan_to_num(np.sqrt(beadRad**2 - (X[:,None] - x0)**2 - (Y[None, :] - y0)**2))
@@ -38,7 +40,10 @@ def bead(X, Y, beadDiam):
     return (1/np.sum(beadProj))*beadProj
 
 def f_gaussAstigBead(p, X, Y, beadDiam):
-    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sx, sy, b, b_x, b_y]"""
+    """
+    astigmatic Gaussian model function with linear background (parameter vector [A, x0, y0, sx, sy, b, b_x, b_y])
+    convolved with a bead shape
+    """
     A, x0, y0, sx, sy, c, b_x, b_y = p
 
     # interpolate, as the bead diameter will usually be roughly the size of a pixel
@@ -56,7 +61,10 @@ def f_gaussAstigBead(p, X, Y, beadDiam):
     return model[interpFactor:-interpFactor:interpFactor, interpFactor:-interpFactor:interpFactor]
 
 def f_rotGaussAstigBead(p, X, Y, beadDiam, theta = 0):
-    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sx, sy, b, b_x, b_y]"""
+    """
+    astigmatic Gaussian model function with linear background (parameter vector [A, x0, y0, sx, sy, b, b_x, b_y])
+    rotated by theta radians and convolved with a bead shape.
+    """
     A, x0, y0, sx, sy, c, b_x, b_y = p
 
     # interpolate, as the bead diameter will usually be roughly the size of a pixel
@@ -135,7 +143,7 @@ class GaussianFitFactory(FFBase.FitFactory):
         metadata. """
         FFBase.FitFactory.__init__(self, data, metadata, fitfcn, background, noiseSigma)
 
-        self.solver = FitModelWeighted  # _extraArg
+        self.solver = FitModelWeighted
         try:  # check if bead diameter is stored in the metadata
             self.beadDiam = metadata['Bead.Diameter']  # Should be in [nm]
         except AttributeError:
@@ -202,6 +210,6 @@ PARAMETERS = [
 
 ]
 
-DESCRIPTION = 'Vanilla 2D Gaussian fit.'
-LONG_DESCRIPTION = 'Single colour 2D Gaussian fit. This should be the first stop for simple analyisis.'
-USE_FOR = '2D single-colour'
+DESCRIPTION = 'Fitting astigmatic gaussian after convolution with bead shape'
+LONG_DESCRIPTION = 'Fitting astigmatic gaussian after convolution with bead shape'
+USE_FOR = '3D astigmatism calibrations'
