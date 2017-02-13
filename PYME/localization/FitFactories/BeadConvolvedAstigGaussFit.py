@@ -19,7 +19,7 @@
 import numpy as np
 from .fitCommon import fmtSlicesUsed
 from . import FFBase
-from PYME.Analysis._fithelpers import FitModelWeighted_extraArg
+from PYME.Analysis._fithelpers import FitModelWeighted  # _extraArg
 from PYME.localization.cModels.gauss_app import genGauss, genGaussJac, genGaussJacW
 from scipy.signal import convolve2d
 
@@ -37,7 +37,7 @@ def bead(X, Y, beadDiam):
     # return normalized bead projection
     return (1/np.sum(beadProj))*beadProj
 
-def f_gaussAstigBead(p, beadDiam, X, Y):
+def f_gaussAstigBead(p, X, Y, beadDiam):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sx, sy, b, b_x, b_y]"""
     A, x0, y0, sx, sy, c, b_x, b_y = p
 
@@ -55,7 +55,7 @@ def f_gaussAstigBead(p, beadDiam, X, Y):
 
     return model[interpFactor:-interpFactor:interpFactor, interpFactor:-interpFactor:interpFactor]
 
-def f_rotGaussAstigBead(p, beadDiam, X, Y, theta = 0):
+def f_rotGaussAstigBead(p, X, Y, beadDiam, theta = 0):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sx, sy, b, b_x, b_y]"""
     A, x0, y0, sx, sy, c, b_x, b_y = p
 
@@ -111,11 +111,12 @@ fresultdtype = [('tIndex', '<i4'),
                 ('slicesUsed', [('x', [('start', '<i4'), ('stop', '<i4'), ('step', '<i4')]),
                                 ('y', [('start', '<i4'), ('stop', '<i4'), ('step', '<i4')]),
                                 ('z', [('start', '<i4'), ('stop', '<i4'), ('step', '<i4')])]),
-                ('subtractedBackground', '<f4')
+                ('subtractedBackground', '<f4'),
+                ('meanSquaredError', '<f4')
                 ]
 
 
-def GaussianFitResultR(fitResults, startParams, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0):
+def GaussianFitResultR(fitResults, startParams, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0, mse=0):
     slicesUsed = fmtSlicesUsed(slicesUsed)
     # print slicesUsed
 
@@ -123,7 +124,7 @@ def GaussianFitResultR(fitResults, startParams, metadata, slicesUsed=None, resul
         fitErr = -5e3 * np.ones(fitResults.shape, 'f')
 
     res = np.array([(metadata.tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode,
-                     slicesUsed, background)], dtype=fresultdtype)
+                     slicesUsed, background, mse)], dtype=fresultdtype)
     # print res
     return res
 
@@ -134,11 +135,14 @@ class GaussianFitFactory(FFBase.FitFactory):
         metadata. """
         FFBase.FitFactory.__init__(self, data, metadata, fitfcn, background, noiseSigma)
 
-        self.solver = FitModelWeighted_extraArg
-        try:
+        self.solver = FitModelWeighted  # _extraArg
+        try:  # check if bead diameter is stored in the metadata
             self.beadDiam = metadata['Bead.Diameter']  # Should be in [nm]
         except AttributeError:
-            raise UserWarning('BeadConvolvedAstigGauss fitfactory requires a Bead.Diameter entry in the metadata')
+            try:  # check if a bead diameter has been injected in just for analysis
+                self.beadDiam = metadata['Analysis.Bead.Diameter']
+            except AttributeError:
+                raise UserWarning('BeadConvolvedAstigGauss fitfactory requires a Bead.Diameter entry in the metadata')
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         X, Y, data, background, sigma, xslice, yslice, zslice = self.getROIAtPoint(x, y, z, roiHalfSize, axialHalfSize)
@@ -156,7 +160,7 @@ class GaussianFitFactory(FFBase.FitFactory):
         startParameters = [A, x0, y0, 250 / 2.35, 250 / 2.35, dataMean.min(), .001, .001]
 
         # do the fit
-        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, self.beadDiam, X, Y)
+        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y, self.beadDiam)
 
         # try to estimate errors based on the covariance matrix
         fitErrors = None
@@ -172,7 +176,7 @@ class GaussianFitFactory(FFBase.FitFactory):
 
         # package results
         return GaussianFitResultR(res, np.array(startParameters), self.metadata, (xslice, yslice, zslice), resCode,
-                                  fitErrors, bgm), np.mean(infodict['fvec']**2)
+                                  fitErrors, bgm, np.mean(infodict['fvec']**2))
 
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
