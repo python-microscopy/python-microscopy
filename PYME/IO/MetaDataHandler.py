@@ -149,9 +149,9 @@ class MDHandlerBase(DictMixin):
     def __len__(self):
         return len(self.getEntryNames())
     
-    def __iter__(self):
-        for k in self.getEntryNames():
-            yield k, self.getEntry(k)
+    # def __iter__(self):
+    #     for k in self.getEntryNames():
+    #         yield k, self.getEntry(k)
             
     def __delitem__(self, key):
         raise RuntimeError('Cannot delete metadata item')
