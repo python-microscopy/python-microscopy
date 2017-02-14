@@ -291,7 +291,8 @@ class psfExtractor:
                 alignZ = (chnum > 0) and self.cbAlignZ.GetValue()
                 #always align the first channel
 
-                psf, offsets = extractImages.getPSF3D(self.image.data[:, :, :, chnum], self.PSFLocs, psfROISize, psfBlur, centreZ=alignZ)
+                psf, offsets = extractImages.getPSF3D(self.image.data[:, :, :, chnum], self.PSFLocs, psfROISize,
+                                                      psfBlur, normalize=False, centreZ=alignZ)
 
                 if self.chType.GetSelection() == 0:
                     #widefield image - do special background subtraction
