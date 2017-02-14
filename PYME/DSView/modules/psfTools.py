@@ -329,7 +329,7 @@ class PSFTools(HasTraits):
         import wx
 
         # query user for type of calibration
-        ftypes = ['BeadConvolvedAstigGaussFit', 'AstigGaussFitFR']  # , 'AstigGaussGPUFitFR']
+        ftypes = ['BeadConvolvedAstigGaussFit', 'AstigGaussFitFR', 'AstigGaussGPUFitFR']
         fitType_dlg = wx.SingleChoiceDialog(self.dsviewer, 'Fit-type selection', 'Fit-type selection', ftypes)
         fitType_dlg.ShowModal()
         fitMod = ftypes[fitType_dlg.GetSelection()]
