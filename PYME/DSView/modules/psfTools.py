@@ -329,7 +329,8 @@ class PSFTools(HasTraits):
         import wx
 
         # query user for type of calibration
-        ftypes = ['BeadConvolvedAstigGaussFit', 'AstigGaussFitFR', 'AstigGaussGPUFitFR']
+        # NB - GPU fit is not enabled here because it exits on number of iterations, which is not necessarily convergence for very bright beads!
+        ftypes = ['BeadConvolvedAstigGaussFit', 'AstigGaussFitFR']  # , 'AstigGaussGPUFitFR']
         fitType_dlg = wx.SingleChoiceDialog(self.dsviewer, 'Fit-type selection', 'Fit-type selection', ftypes)
         fitType_dlg.ShowModal()
         fitMod = ftypes[fitType_dlg.GetSelection()]

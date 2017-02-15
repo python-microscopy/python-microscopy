@@ -232,6 +232,8 @@ class GaussianFitFactory:
 
 
         # get varmap and flatmap
+        print ('''AstigGaussGPUFitFR.FromPoint is currently only for diagnostics, use .FindAndFit instead. FromPoint will
+               use mean values for all camera maps''')
         varmap = cameraMaps.getVarianceMap(self.metadata)
         self.varmap = np.mean(varmap) * np.ones_like(self.data)
 
