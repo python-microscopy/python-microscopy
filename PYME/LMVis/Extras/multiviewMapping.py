@@ -151,6 +151,8 @@ class multiviewMapper:
         visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapZ,
                           helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
 
+        visFr.AddMenuItem('Multiview', 'Check astigmatic PSF Calibration', self.OnCheckAstigCalibration)
+
     def OnFold(self, event=None):
         """
         See multiview.foldX. At this point the origin of x should be the corner of the concatenated frame
@@ -459,6 +461,68 @@ class multiviewMapper:
 
         self.visFr.RefreshView()
         self.visFr.CreateFoldPanel()
+
+    def OnCheckAstigCalibration(self, event=None):
+        """
+        For use with dyes on a coverslip.
+
+        Parameters
+        ----------
+        event: GUI event
+
+        Returns
+        -------
+
+        """
+        import matplotlib.pyplot as plt
+
+        pipeline = self.pipeline
+        try:
+            # NB localizations from transient frames should be filtered prior to calling this function
+            fpstep = pipeline.mdh['StackSettings.FramesPerStep']
+            stepSize = pipeline.mdh['StackSettings.StepSize'] * 1000  # convert um to nm
+        except AttributeError:
+            raise UserWarning('CheckAstigCalibration requires StackSettings metadata: NumCycles, NumSteps, FramesPerStep')
+
+        # sort localizations according to frame
+        I = np.argsort(pipeline['t'])
+        zsort = pipeline['astigZ'][I]
+        step = np.divide(pipeline['t'].astype(int)[I], (fpstep*np.ones_like(zsort)).astype(int))
+        uni, counts = np.unique(step, return_counts=True)
+
+        cycles = len(uni)
+        mu = np.empty(cycles)
+        stdDev = np.empty(cycles)
+
+        colors = iter(plt.cm.Dark2(np.remainder(np.linspace(0, 2*np.pi, cycles + 1), np.pi*np.ones(cycles + 1))))
+        plt.figure()
+        plt.xlabel('Z position [nm]')
+        plt.ylabel('Counts')
+
+        indi = 0
+        for ci in uni:
+            indf = indi + counts[ci]
+            slicez = zsort[indi:indf]
+            mu[ci] = np.mean(slicez)
+            stdDev[ci] = np.std(slicez)
+
+            nc = next(colors)
+            plt.hist(slicez, bins=range(int(min(slicez)), int(max(slicez) + 0.5*stdDev[ci]), int(0.5*stdDev[ci])), color=nc)
+
+            indi = indf
+        #plt.figure()
+        #plt.scatter(mu, uni)
+        plt.figure()
+        diffs = mu[:-1] - mu[1:]
+        plt.bar(uni[:-1], diffs)
+        plt.ylabel('Separation between steps')
+
+        plt.figure()
+        plt.plot([stepSize, stepSize], [0, 1], color='black', label='Target Separation')
+        plt.scatter(diffs, 0.5*np.ones_like(diffs), label='Separations')
+        plt.title('Std deviation of step separations = %.1f' % np.std(diffs))
+        plt.legend(scatterpoints=1, loc=2)
+        plt.show()
 
 
 def Plug(visFr):
