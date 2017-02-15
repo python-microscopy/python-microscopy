@@ -374,9 +374,9 @@ class PSFTools(HasTraits):
             dsigma = abs(res['fitResults_sigmax']) - abs(res['fitResults_sigmay'])
             valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 50)* (res['fitError_sigmay'] < 50)*(res['fitResults_A'] > 0) > 0)
 
-            results.append({'z': objPositions['z'][valid].tolist(), 'sigmax': abs(res['fitResults_sigmax'][valid]).tolist(),
-                           'sigmay': abs(res['fitResults_sigmay'][valid]).tolist(), 'dsigma': dsigma[valid].tolist(),
-                            'zCenter': objPositions['z'][dz]})
+            results.append({'sigmax': abs(res['fitResults_sigmax'][valid]).tolist(),'error_sigmax': abs(res['fitError_sigmax'][valid]).tolist(),
+                            'sigmay': abs(res['fitResults_sigmay'][valid]).tolist(), 'error_sigmay': abs(res['fitError_sigmay'][valid]).tolist(),
+                            'dsigma': dsigma[valid].tolist(), 'z': objPositions['z'][valid].tolist(), 'zCenter': objPositions['z'][dz]})
 
         #generate new tab to show results
         use_web_view = True
