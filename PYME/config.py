@@ -199,8 +199,8 @@ def get_plugins(application):
             reg_files = []
 
         for fn in reg_files:
-            with open(fn, 'r') as f:
-                plugin_paths.append(f.readlines())
+            with open(os.path.join(plugin_dir, fn), 'r') as f:
+                plugin_paths.extend(f.readlines())
 
     return  list(set([p.strip() for p in plugin_paths if not p.strip() == '']))
 
