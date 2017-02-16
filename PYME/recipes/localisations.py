@@ -463,9 +463,12 @@ class RadiusOfGyration(ModuleBase):
     """
     inputName = Input('dbscanClustered')
     labelsKey = CStr('dbscanClumpID')
-    outputName = Output('gyrationRadii')
+
+    outputName = Output('ClusterMeasures')
+    outputLocalizations = Output('LocalizationsWithMeasures')
 
     def execute(self, namespace):
+        import PYME.Analysis.points.multiview as multiview
 
         inp = namespace[self.inputName]
 
@@ -477,6 +480,7 @@ class RadiusOfGyration(ModuleBase):
 
         numLabs = len(uni)
         rg = np.empty(len(I), dtype=float)
+        vol = np.empty_like(rg)
 
         # make sure labeling scheme is consistent with what pyme conventions
         if np.min(uni) < 0:
@@ -485,25 +489,43 @@ class RadiusOfGyration(ModuleBase):
         # loop over labels, recall that input is now sorted, and we know how many points are in each label
         if 0 in uni:  # label zero corresponds to unclustered, set gyration radius to zero for unclustered points
             rg[0:counts[0]] = 0
+            vol[0:counts[0]] = 0
             ilab = range(1, numLabs)
             indi = counts[0]
         else:
             ilab = range(numLabs)
             indi = 0
 
+
+        #rgm = np.empty(len(ilab), dtype=float)
+        #volm = np.empty_like(rgm)
         for li in ilab:
             indf = indi + counts[li]
+
             x, y, z = mapped['x'][indi:indf], mapped['y'][indi:indf], mapped['z'][indi:indf]
+            # recalculate COM, as pulling x, y, z means from meas would be COM weighted based on localization precision
             com = np.array([x.mean(), y.mean(), z.mean()])
             disp = np.linalg.norm(np.vstack([x-com[0], y-com[1], z-com[2]]), axis=0)
             rg[indi:indf] = np.sqrt((1/float(counts[li]))*np.sum(disp**2))
+            #rgm[li - ilab[0]] = rg[indi]
+
             indi = indf
 
         mapped.addColumn('GyrationRadius', rg)
 
+
+        # create data source with 1 entry per label
+        # used mapped here because we still need min(assigned) = 0, and sorted.
+        aggregation_weights = {k: 'error_' + k for k in all_keys if 'error_' + k in all_keys}
+        meas = multiview.coalesceDictSorted(mapped, mapped[self.labelsKey], mapped.keys(), aggregation_weights)
+        # Toss unclumped
+        measClusters = tabular.resultsFilter(meas, **{self.labelsKey: [0.5, uni[-1] + 1]})
+
         try:
             mapped.mdh = namespace[self.inputName].mdh
+            measClusters.mdh = mapped.mdh
         except AttributeError:
             pass
 
-        namespace[self.outputName] = mapped
+        namespace[self.outputName] = measClusters
+        namespace[self.outputLocalizations] = mapped
