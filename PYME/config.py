@@ -164,7 +164,9 @@ def get(key, default=None):
     """
     return config.get(key, default)
 
-
+import logging
+logger = logging.getLogger(__file__)
+logger.setLevel(logging.DEBUG)
 
 def get_plugins(application):
     """
@@ -188,20 +190,21 @@ def get_plugins(application):
     list of fully resolved module paths
 
     """
+    import glob
     plugin_paths = []
 
     for config_dir in config_dirs:
         plugin_dir = os.path.join(config_dir, 'plugins', application)
 
-        try:
-            reg_files = os.listdir(plugin_dir)
-        except OSError:
-            reg_files = []
+        reg_glob = os.path.join(plugin_dir, '*.txt')
+        reg_files = glob.glob(reg_glob)
 
         for fn in reg_files:
             with open(fn, 'r') as f:
-                plugin_paths.append(f.readlines())
+                plugin_paths.extend(f.readlines())
 
+    logger.debug('plugin paths: ' +  str(plugin_paths))
+        
     return  list(set([p.strip() for p in plugin_paths if not p.strip() == '']))
 
 

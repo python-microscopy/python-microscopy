@@ -124,6 +124,8 @@ def visguiDriftPlot(driftpane):
 
     driftx=driftpane.visFr['driftx']
     drifty=driftpane.visFr['drifty']
+    x_raw=driftpane.visFr['x_raw']
+    y_raw=driftpane.visFr['y_raw']
     t = driftpane.visFr['t']
 
     p = [driftpane.dp.driftCorrParams[pn] for pn in parameterNames]
@@ -136,17 +138,17 @@ def visguiDriftPlot(driftpane):
     x = driftpane.visFr['x']
     y = driftpane.visFr['y']
 
-    xs = np.mean(x[0:10])
-    ys = np.mean(y[0:10])
+    xs = np.mean(x[0:50])
+    ys = np.mean(y[0:50])
     
     plt.figure(1)
     plt.clf()
-    plt.plot(t,-x1)
+    #plt.plot(t,-x1)
     plt.plot(t,x-xs)
     plt.figure(2)
     plt.clf()
     
-    plt.plot(t,-y1)
+    #plt.plot(t,-y1)
     plt.plot(t,y-ys)
     plt.show()
     
@@ -947,3 +949,8 @@ def getdriftxyzFromEvts(pipeline, tframes=None, coordpos=0):
         return (tframes,csinter)
     else:
         return(tfr,cs)
+
+def zs(data,navg=100):
+    n = min(navg,data.shape[0])
+    dm = data[0:n].mean()
+    return data-dm
