@@ -39,6 +39,8 @@ import numpy
 import scipy
 import pylab
 
+import dispatch
+
 LUTCache = {}
 
 SLICE_AXIS_LUT = {DisplayOpts.SLICE_XY:2, DisplayOpts.SLICE_XZ:1,DisplayOpts.SLICE_YZ:0}
@@ -960,6 +962,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
     def EndSelection(self):
         self.selecting = False
+        self.do.EndSelection()
             
 
         
