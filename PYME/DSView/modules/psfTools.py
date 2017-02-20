@@ -45,7 +45,7 @@ def remove_newlines(s):
     s = ' '.join(s.split())
     return '\n'.join(s.split('<>'))
 
-def findZRange(astigLib):
+def find_and_add_zRange(astigLib):
     """
     Find range about highest intensity point over which sigmax - sigmay is monotonic.
     Note that astigLib[psfIndex]['zCenter'] should contain the offset in nm to the brightest z-slice
@@ -389,8 +389,8 @@ class PSFTools(HasTraits):
                 use_web_view = False
 
         # find reasonable z range for each channel
-        # Inject a reasonable z range for each channel into the results with a 'zrange' key
-        results = findZRange(results)
+        # FIXME - it is somewhat non-obvious that we are effectively injecting the 'zRange' variable into the results here
+        results = find_and_add_zRange(results)
 
         #do plotting
         plt.ioff()
