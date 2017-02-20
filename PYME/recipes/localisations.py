@@ -332,12 +332,14 @@ class DBSCANClustering(ModuleBase):
     See `sklearn.cluster.dbscan` for more details about the underlying algorithm and parameter meanings.
 
     """
+    import multiprocessing
     inputName = Input('filtered')
 
     columns = ListStr(['x', 'y', 'z'])
     searchRadius = Float()
     minClumpSize = Int()
-
+    numberOfJobs = Int(max(multiprocessing.cpu_count()-1,1))
+    
     outputName = Output('dbscanClustered')
 
     def execute(self, namespace):
@@ -347,10 +349,14 @@ class DBSCANClustering(ModuleBase):
         mapped = tabular.mappingFilter(inp)
 
         # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
-        core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
-                                     self.searchRadius, self.minClumpSize)
-
-        # shift dbscan labels up by one to match existing convention that a clumpID of 0 corresponds to unclumped
+        try:
+            core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
+                                         self.searchRadius, self.minClumpSize, n_jobs=self.numberOfJobs)
+        except:
+            core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
+                                         self.searchRadius, self.minClumpSize)
+            
+            # shift dbscan labels up by one to match existing convention that a clumpID of 0 corresponds to unclumped
         mapped.addColumn('dbscanClumpID', dbLabels + 1)
 
         # propogate metadata, if present
