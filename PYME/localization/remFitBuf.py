@@ -466,8 +466,8 @@ class fitTask(taskDef.Task):
             
         if 'MULTIFIT' in dir(fitMod):
             #fit module does it's own object finding
-            ff = fitMod.FitFactory(self.data, md, background = self.bg)
-            self.res = ff.FindAndFit(self.threshold, gui=gui, cameraMaps=cameraMaps, noiseSigma=self.sigma)
+            ff = fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma=self.sigma)
+            self.res = ff.FindAndFit(self.threshold, gui=gui, cameraMaps=cameraMaps)
             return fitResult(self, self.res, [])
             
 
