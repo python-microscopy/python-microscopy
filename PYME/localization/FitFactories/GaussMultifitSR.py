@@ -142,7 +142,7 @@ class GaussianFitFactory:
         if self.noiseSigma is None:  # Note: this should be calculated in remFitBuf
             sigma = np.sqrt(self.metadata.Camera.ReadNoise**2 + (self.metadata.Camera.NoiseFactor**2)*self.metadata.Camera.ElectronsPerCount*self.metadata.Camera.TrueEMGain*np.maximum(dataMean, 1)/nSlices)/self.metadata.Camera.ElectronsPerCount
         else:
-            sigma = self.noiseSigma
+            sigma = self.noiseSigma.squeeze()
 
         if not self.background is None and len(np.shape(self.background)) > 1 and not ('Analysis.subtractBackground' in self.metadata.getEntryNames() and self.metadata.Analysis.subtractBackground == False):
             #average in z
