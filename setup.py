@@ -10,6 +10,7 @@
 #
 ##################
 import setuptools #to monkey-patch distutils for ms visualc for python
+from PYME.misc import cython_numpy_monkey
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
