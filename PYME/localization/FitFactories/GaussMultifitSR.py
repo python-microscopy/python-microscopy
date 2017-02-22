@@ -304,7 +304,10 @@ class GaussianFitFactory:
                         
                 allEvents.append(resList)
         
-        return np.hstack(allEvents)
+        if len(allEvents) > 0:
+            return np.hstack(allEvents)
+        else:
+            return []
         
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
