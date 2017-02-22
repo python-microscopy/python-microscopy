@@ -12,8 +12,8 @@ md['Analysis.BGRange'] = [0, 0]
 md['Analysis.DataFileID'] = 1571469165
 md['Analysis.DebounceRadius'] = 14
 md['Analysis.DetectionThreshold'] = 7.0
-md['Analysis.FitModule'] = u'SplitterFitInterpR'
-md['Analysis.InterpModule'] = 'LinearInterpolator'
+md['Analysis.FitModule'] = u'SplitterFitInterpNR'
+md['Analysis.InterpModule'] = 'CSInterpolator'
 md['Analysis.AxialShift'] = 500
 #md['Analysis.EstimatorModule'] = 'priEstimator'
 #md['Analysis.subtractBackground'] = False
@@ -61,6 +61,6 @@ class sffake:
 
 md['chroma.dx'] = sffake(50.)
 md['chroma.dy'] = sffake(100.)
-md['Test.DefaultParams'] = [2000, 2000, 0, 0, 0, 0, 10]
-md['Test.ParamJitter'] = [15, 15, 90, 90, 250, 10, 10]
+md['Test.DefaultParams'] = [2000, 2000, 0, 0, 0, 10, 10, 0, 0]
+md['Test.ParamJitter'] = [15, 15, 90, 90, 250, 10, 10, 0, 0]
 md['Test.Background'] = 10.
