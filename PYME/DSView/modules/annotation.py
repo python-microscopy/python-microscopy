@@ -11,7 +11,7 @@ class _Snake_Settings(HasTraits):
     smoothness = Float(0.1) #beta
     line_weight = Float(-1) #w_line - -ve values seek dark pixels
     edge_weight = Float(0)
-    boundaries = 'fixed'
+    boundaries = CStr('fixed')
     prefilter_sigma = Float(2)
 
 

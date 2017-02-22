@@ -104,7 +104,7 @@ class randomSource(TabularBase):
 def unNestNames(nameList, parent=''):
     unList = []
     for n in nameList:
-        if n.__class__ == str:
+        if isinstance(n, str):
             unList.append(parent + n)
         else:
             unList += unNestNames(n[1], parent + n[0] + '_')
@@ -114,7 +114,7 @@ def unNestDtype(descr, parent=''):
     unList = []
     for n in descr:
         #print n, n.__class__, len(n)
-        if n.__class__ == tuple and len(n) == 2 and n[1].__class__ == str:
+        if isinstance(n, tuple) and len(n) == 2 and isinstance(n[1],str):
             unList.append(parent + n[0])
         else:
             unList += unNestDtype(n[1], parent + n[0] + '_')

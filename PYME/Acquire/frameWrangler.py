@@ -416,7 +416,7 @@ class FrameWrangler(wx.EvtHandler):
         self.n_Frames = 0
 
         #start our timer, this will call Notify
-        self.timer.Start(self.tiint, wx.TIMER_ONE_SHOT)
+        wx.CallAfter(self.timer.Start, self.tiint, wx.TIMER_ONE_SHOT)
         return True
 
 

@@ -369,7 +369,7 @@ class MetadataPanel(wx.Panel):
         for k in sorted(mdh.__dict__.keys()):
             child = self.tree.AppendItem(node, k)
             self.tree.SetItemText(child, k, 0)
-            if mdh.__dict__[k].__class__ == NestedClassMDHandler:
+            if isinstance(mdh.__dict__[k], NestedClassMDHandler):
                 self.addEntries(mdh.__dict__[k], child, '.'.join((entrypath, k)))
             else:
                 self.tree.SetItemText(child, str(mdh.getEntry(k)), 1)

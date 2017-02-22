@@ -178,7 +178,7 @@ class GaussianFitFactory:
 
         return np.hstack(resList)
 
-    def FindAndFit(self, threshold=4, gui=False, cameraMaps=None, noiseSigma=None):
+    def FindAndFit(self, threshold=4, gui=False, cameraMaps=None):
         """
 
         Args:
@@ -206,7 +206,7 @@ class GaussianFitFactory:
             _warpDrive.smoothFrame(self.data, self.background)
         else:
             _warpDrive.smoothFrame(self.data)
-        _warpDrive.getCand(threshold, roiSize, noiseSigma, self.metadata['Camera.ElectronsPerCount'])
+        _warpDrive.getCand(threshold, roiSize, self.noiseSigma, self.metadata['Camera.ElectronsPerCount'])
         if _warpDrive.candCount == 0:
             resList = np.empty(0, FitResultsDType)
             return resList

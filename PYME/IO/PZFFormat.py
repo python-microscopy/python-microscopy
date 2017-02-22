@@ -243,37 +243,29 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
         
      #   qs = 1.0/quantizationScale
      #   data = (np.sqrt(np.maximum(data-quantizationOffset,0))*qs).astype('uint8')
+
+    if data.flags['F_CONTIGUOUS']:
+        header['DimOrder'] = 'F'
+        d1 = np.frombuffer(data, data.dtype) #this will flatten without respecting order - we re-order later
+    else:
+        # if the array is c-contiguous this will just pass through. If it is non contiguous (i.e. a wierd slice)
+        # it will force it to be c-contiguous
+        d1 = np.frombuffer(np.ascontiguousarray(data), data.dtype)
     
     if compression == DATA_COMP_HUFFCODE:
         header['DataCompression'] = DATA_COMP_HUFFCODE
 
         if quantization:
-            if data.flags['F_CONTIGUOUS']:
-                header['DimOrder'] = 'F'
-                d1 = np.frombuffer(data, data.dtype) #this will flatten without respecting order - we re-order later
-            else:
-                # if the array is c-contiguous this will just pass through. If it is non contiguous (i.e. a wierd slice)
-                # it will force it to be c-contiguous
-                d1 = np.frombuffer(np.ascontiguousarray(data), data.dtype)
-
             dataString = bcl.HuffmanCompressQuant(d1, quantizationOffset, quantizationScale).tostring()
         else:
-            if data.flags['F_CONTIGUOUS']:
-                header['DimOrder'] = 'F'
-                d1 = data.data
-            else:
-                # if the array is c-contiguous this will just pass through. If it is non contiguous (i.e. a wierd slice)
-                # it will force it to be c-contiguous
-                d1 = np.ascontiguousarray(data).data
-
-            d2 = bcl.HuffmanCompress(d1)
+            d2 = bcl.HuffmanCompress(d1.data)
             dataString = d2.tostring()
     elif compression == DATA_COMP_HUFFCODE_CHUNKS:
         header['DataCompression'] = DATA_COMP_HUFFCODE_CHUNKS
         
-        dataString = ChunkedHuffmanCompress(data)
+        dataString = ChunkedHuffmanCompress(d1)
     else:
-        dataString = data.tostring()
+        dataString = d1.tostring()
         
     return header.tostring() + dataString
  
@@ -304,11 +296,11 @@ def loads(datastring):
         raise RuntimeError("Invalid format: This doesn't appear to be a PZF file")
 
     if header['Version'] >= 2:
-        dimOrder = header['DimOrder']
+        dimOrder = header['DimOrder'][0]
     else:
         dimOrder = 'C'
         
-    w, h, d = header['Width'], header['Height'], header['Depth']
+    w, h, d = header['Width'][0], header['Height'][0], header['Depth'][0]
 
     if header['DataQuantization'] == DATA_QUANT_SQRT:
         #quantized data is always 8 bit
@@ -343,6 +335,7 @@ def loads(datastring):
         data = data*header['QuantScale']
         data = (data*data + header['QuantOffset']).astype(DATA_FMTS[int(header['DataFormat'])])
     
+    #print dimOrder, [w, h, d]
     data = data.view(DATA_FMTS[int(header['DataFormat'])]).reshape([w,h,d], order=dimOrder)
     
     return data, header

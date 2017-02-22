@@ -196,8 +196,10 @@ def get_plugins(application):
     for config_dir in config_dirs:
         plugin_dir = os.path.join(config_dir, 'plugins', application)
 
-        reg_glob = os.path.join(plugin_dir, '*.txt')
-        reg_files = glob.glob(reg_glob)
+        try:
+            reg_files = glob.glob(os.path.join(plugin_dir, '*.txt'))
+        except OSError:
+            reg_files = []
 
         for fn in reg_files:
             with open(fn, 'r') as f:
