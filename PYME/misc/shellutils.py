@@ -889,11 +889,16 @@ from PYME.DSView import dsviewer
 def setdriftparsFromImg(driftPane,img = None):
     if img is None:
         img = dsviewer.openViewers[dsviewer.openViewers.keys()[0]].image
+    driftPane.tXExpr.SetValue(img.mdh['DriftCorrection.ExprX'])
+    driftPane.tYExpr.SetValue(img.mdh['DriftCorrection.ExprY'])
+    driftPane.tZExpr.SetValue(img.mdh['DriftCorrection.ExprZ'])
+    driftPane.OnDriftExprChange(None)
     destp = driftPane.dp.driftCorrParams
     srcp = img.mdh['DriftCorrection.Parameters']
     for key in destp.keys():
         if key.startswith(('a','b')):
             destp[key] = srcp[key]
+    driftPane.OnDriftExprChange(None)
     return destp
 
 def getOpenImages():
