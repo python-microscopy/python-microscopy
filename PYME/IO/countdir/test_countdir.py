@@ -4,4 +4,4 @@ def test_dirsize():
     import countdir
     import os
 
-    assert_equals(countdir.dirsize(os.curdir), len(os.listdir(os.curdir)) - 2) #countdir does not count '.' and '..'
+    assert_equals(countdir.dirsize(os.curdir), len(os.listdir(os.curdir)) + 2) #os.listdir does not count '.' and '..'

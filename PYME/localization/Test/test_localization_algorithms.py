@@ -1,4 +1,13 @@
-"""This file contains unit tests for the localization algorithms"""
+"""
+This file contains unit tests for the localization algorithms. The goal of these tests is to pick up on backwards
+incompatible changes (regressions) which will break things majorly, rather than small changes in localization precision.
+For this reason, the tests only look at the IQR of the localization error (i.e. ignore tails) and set fairly permissive
+bounds. Because we are using random data for the testing however, and the errors follow a distribution there is a
+finite chance that we will get the occasional test failure.  If the test passes on a re-run, this is not a
+huge cause for concern.
+"""
+
+
 import os
 TESTPATH = os.path.dirname(__file__)
 
