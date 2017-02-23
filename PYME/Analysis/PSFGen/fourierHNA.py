@@ -278,9 +278,9 @@ def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodizat
 
     R = np.sqrt(u**2 + v**2)
     
-    k = 2*np.pi*n/lamb
+    # k = 2*np.pi*n/lamb
 
-    FP = FourierPropagator(u,v,k, lamb)
+    FP = FourierPropagator(u,v,k=None, lamb=lamb)
 
     #apperture mask
     if apodization is None:
@@ -358,7 +358,7 @@ def PsfFromPupil(pupil, zs, dx, lamb, apodization=None, n=1.51, NA=1.51):
         M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
         pupil = pupil*M
 
-    FP = FourierPropagator(u,v,k, lamb)
+    FP = FourierPropagator(u,v,k=None, lamb=lamb)
     
     ps = np.concatenate([FP.propagate(pupil, z)[:,:,None] for z in zs], 2)
 
@@ -406,7 +406,7 @@ def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61], apodization=None, n=1
     
     #M = 1.0*(R < (NA/(n*lamb))) # NA/lambda
 
-    FP = FourierPropagator(u,v,k, lamb) 
+    FP = FourierPropagator(u,v,k=None, lamb=lamb) 
     
     fac = ct*cp**2 + sp**2
     ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
@@ -500,7 +500,7 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3, in
     
     k = 2*np.pi*n/lamb
 
-    FP = FourierPropagator(u,v,k, lamb)
+    FP = FourierPropagator(u,v,k=None, lamb=lamb)
 
     pupil = M*np.exp(1j*0)
     
