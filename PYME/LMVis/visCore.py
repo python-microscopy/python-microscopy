@@ -205,8 +205,8 @@ class VisGUICore(object):
         #self.view_menu.Enable(ID_VIEW_QUADS, False)
 
         self.AddMenuItem('View', itemType='separator')
-        self.AddMenuItem('View', '&Fit', self.SetFit)
-        self.AddMenuItem('View', 'Fit &ROI', self.OnFitROI)
+        self.AddMenuItem('View', '&Fit\tF6', self.SetFit)
+        self.AddMenuItem('View', 'Fit &ROI\tF7', self.OnFitROI)
 
         #this needs an ID as we bind to it elsewhere (in the filter panel)
         self.ID_VIEW_CLIP_ROI = wx.NewId()
