@@ -145,7 +145,12 @@ class SplashScreen(wx.Frame):
         self.parent = parent
 
     def Tick(self):
+        from PYME.Acquire import ExecTools
         self.panel.tickcount +=1
+        
+        for bg_task in ExecTools.bg_init_tasks:
+            self.panel.messages[bg_task.name] = bg_task.get_status_msg()
+        
         self.panel.Refresh()
         if self.parent.initDone:
             self.scope.settingsDB.execute("INSERT INTO StartupTimes VALUES ('total', ?)", (time.time() - self.panel.startTime - 0.5, ))

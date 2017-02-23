@@ -50,7 +50,8 @@ global defLocals
 defGlobals = {}
 defLocals = {}
 
-bgInitThreads = []
+#bgInitThreads = []
+bg_init_tasks = []
 #bgInitStatus = {}
 
 class HWNotPresent(Exception):
@@ -125,6 +126,37 @@ def _bginit(name, codeObj):
         _exec("splash.SetMessage('%s', 'Initialising %s ... FAIL')" % (name,name), defGlobals, defLocals)
         raise e
 
+class BGInitTask(object):
+    TASK_RUNNING, TASK_DONE, TASK_FAILED, NOT_PRESENT = range(4)
+    _status_codes = ['', 'DONE', 'FAIL', 'NOT PRESENT']
+    
+    def __init__(self, name, codeObj):
+        self.name = name
+        self.status = self.TASK_RUNNING
+        self.codeObj = codeObj
+        
+        self.thread = threading.Thread(target=self._bginit)
+        self.thread.start()
+
+    def _bginit(self):
+        global defGlobals
+        global defLocals
+        self.status = self.TASK_RUNNING
+        try:
+            _exec(self.codeObj, defGlobals, defLocals)
+            self.status = self.TASK_DONE
+        except HWNotPresent:
+            self.status = self.NOT_PRESENT
+        except Exception as e:
+            self.status = self.TASK_FAILED
+            raise e
+        
+    def get_status_msg(self):
+        return 'Initialising %s ... %s' % (self.name, self._status_codes[self.status])
+    
+    def join(self, timeout=None):
+        self.thread.join(timeout)
+        
 
 def InitBG(name, codeObj):
     """Runs a portion of the initialisation code in a background thread
@@ -141,9 +173,8 @@ def InitBG(name, codeObj):
     t : thread
         The thread in which the code is executing (can be used with threading.join later)    
     """
-    t = threading.Thread(target=_bginit, args = (name,codeObj))
-    t.start()
-    bgInitThreads.append(t)
+    t = BGInitTask(name,codeObj)
+    bg_init_tasks.append(t)
     return t
     
 
@@ -152,7 +183,7 @@ def joinBGInit():
     Wait for all the initialisation tasks that bave been launched as background 
     threads to complete.
     """
-    for t in bgInitThreads:
+    for t in bg_init_tasks:
         #print(t)
         t.join()
 
