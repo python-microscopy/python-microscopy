@@ -23,7 +23,6 @@
 
 import numpy as np
 import wx
-import pylab
 import datetime
 
 global scope
@@ -90,6 +89,7 @@ class ccdCalibrator:
 
 
     def finish(self):
+        import matplotlib.pyplot as plt
         #self.pa.stop()
         self.pa.onFrame.disconnect(self.tick)
         
@@ -100,10 +100,10 @@ class ccdCalibrator:
 
         self.realGains = self.realGains/self.realGains[0]
 
-        pylab.figure()
-        pylab.plot(self.gains, self.realGains)
-        pylab.xlabel('EMGain Setting')
-        pylab.ylabel('EMGain')
+        plt.figure()
+        plt.plot(self.gains, self.realGains)
+        plt.xlabel('EMGain Setting')
+        plt.ylabel('EMGain')
 
         self._saveCalibration()
 

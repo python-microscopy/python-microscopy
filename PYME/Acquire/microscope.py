@@ -21,9 +21,11 @@
 #
 ##################
 
-#!/usr/bin/python
-#import sys
-#sys.path.append(".")
+#imports for timing
+import requests
+import tables
+import numpy as np
+import yaml
 
 import wx
 #from PYME.Acquire import previewaquisator as previewaquisator
