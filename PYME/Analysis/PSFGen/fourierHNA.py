@@ -277,10 +277,8 @@ def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodizat
     v = Y*lamb/(n*X.shape[1]*dx*dx)
 
     R = np.sqrt(u**2 + v**2)
-    
-    k = 2*np.pi*n/lamb
 
-    FP = FourierPropagator(u,v,k, lamb)
+    FP = FourierPropagator(u, v, lamb=lamb, n=n)
 
     #apperture mask
     if apodization is None:
