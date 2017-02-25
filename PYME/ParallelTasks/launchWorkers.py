@@ -155,7 +155,9 @@ def main():
             subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,'fitMonP.py')), shell=True)
     
         for i in range(numProcessors):
-            subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub,WORKER_PROC)), shell=True)
+            with open('/tmp/worker-%d.stdout' % i,"wb") as out, open('/tmp/worker-%d.stderr' % i,"wb") as err:
+                subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub,WORKER_PROC)),
+                                 shell=True, stdout=out, stderr=err)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...
         if args.run_server:
