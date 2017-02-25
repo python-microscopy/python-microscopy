@@ -102,7 +102,7 @@ class fitTestJig(object):
 
         self.noiseM = NoiseMaker(floor=self.dark, readoutNoise=np.sqrt(self.variance),
                                  electronsPerCount= self.md['Camera.ElectronsPerCount']/self.gain,
-                                 background=self.bg, QE=1.0, EMGain=emGain)
+                                 background=self.bg, QE=1.0, EMGain=emGain, fast_read_approx=False)
 
     def _prepSimulationCameraMaps(self):
         md2 = MetaDataHandler.NestedClassMDHandler(self.md)
