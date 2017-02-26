@@ -449,8 +449,8 @@ class ClusterCountVsImagingTime(ModuleBase):
 
 
 
-@register_module('RadiusOfGyration')
-class RadiusOfGyration(ModuleBase):
+@register_module('measureClusters')
+class measureClusters(ModuleBase):
     """
     Parameters
     ----------
@@ -465,67 +465,52 @@ class RadiusOfGyration(ModuleBase):
     labelsKey = CStr('dbscanClumpID')
 
     outputName = Output('ClusterMeasures')
-    outputLocalizations = Output('LocalizationsWithMeasures')
 
     def execute(self, namespace):
-        import PYME.Analysis.points.multiview as multiview
 
         inp = namespace[self.inputName]
 
-        # sort input according to label key
-        all_keys = inp.keys()
-        I = np.argsort(inp[self.labelsKey])
-        mapped = tabular.mappingFilter({k: inp[k][I] for k in all_keys})
-        uni, counts = np.unique(mapped[self.labelsKey], return_counts=True)
-
-        numLabs = len(uni)
-        rg = np.empty(len(I), dtype=float)
-        vol = np.empty_like(rg)
-
         # make sure labeling scheme is consistent with what pyme conventions
-        if np.min(uni) < 0:
+        if np.min(inp[self.labelsKey]) < 0:
             raise UserWarning('This module expects 0-label for unclustered points, and no negative labels')
 
+        # sort input according to label key
+        keys_worth_keeping = ['x', 'y', 'z', self.labelsKey]  # this module only cares about spatial location
+        I = np.argsort(inp[self.labelsKey])
+        maxLab = inp[self.labelsKey][I[-1]]
+
+        # sort and copy into new tabular source, filtering out unclustered localizations
+        meas = tabular.resultsFilter({k: inp[k][I] for k in keys_worth_keeping}, **{self.labelsKey: [0.5, maxLab + 1]})
+        uni, counts = np.unique(meas[self.labelsKey], return_counts=True)
+
+        # labels might not be continuous, and we probably dropped the 0-label, so grab length
+        ilab = range(len(uni))
+
+        rg = np.empty(len(ilab))
+        # vol = np.empty_like(rg)
+        xcom, ycom, zcom, outLab = np.empty_like(rg), np.empty_like(rg), np.empty_like(rg), np.empty_like(rg)
+
         # loop over labels, recall that input is now sorted, and we know how many points are in each label
-        if 0 in uni:  # label zero corresponds to unclustered, set gyration radius to zero for unclustered points
-            rg[0:counts[0]] = 0
-            vol[0:counts[0]] = 0
-            ilab = range(1, numLabs)
-            indi = counts[0]
-        else:
-            ilab = range(numLabs)
-            indi = 0
-
-
-        #rgm = np.empty(len(ilab), dtype=float)
-        #volm = np.empty_like(rgm)
+        indi = 0
         for li in ilab:
             indf = indi + counts[li]
+            outLab = uni[li]
 
-            x, y, z = mapped['x'][indi:indf], mapped['y'][indi:indf], mapped['z'][indi:indf]
-            # recalculate COM, as pulling x, y, z means from meas would be COM weighted based on localization precision
-            com = np.array([x.mean(), y.mean(), z.mean()])
-            disp = np.linalg.norm(np.vstack([x-com[0], y-com[1], z-com[2]]), axis=0)
-            rg[indi:indf] = np.sqrt((1/float(counts[li]))*np.sum(disp**2))
-            #rgm[li - ilab[0]] = rg[indi]
+            x, y, z = meas['x'][indi:indf], meas['y'][indi:indf], meas['z'][indi:indf]
+            xcom[li], ycom[li], zcom[li] = x.mean(), y.mean(), z.mean()
+
+            disp = np.linalg.norm(np.vstack([x-xcom[li], y-ycom[li], z-zcom[li]]), axis=0)
+            rg[li] = np.sqrt((1/float(counts[li]))*np.sum(disp**2))
+
 
             indi = indf
 
-        mapped.addColumn('GyrationRadius', rg)
-
-
-        # create data source with 1 entry per label
-        # used mapped here because we still need min(assigned) = 0, and sorted.
-        aggregation_weights = {k: 'error_' + k for k in all_keys if 'error_' + k in all_keys}
-        meas = multiview.coalesceDictSorted(mapped, mapped[self.labelsKey], mapped.keys(), aggregation_weights)
-        # Toss unclumped
-        measClusters = tabular.resultsFilter(meas, **{self.labelsKey: [0.5, uni[-1] + 1]})
+        meas.addColumn('GyrationRadius', rg)
+        meas.addColumn(self.labelsKey, outLab)
 
         try:
-            mapped.mdh = namespace[self.inputName].mdh
-            measClusters.mdh = mapped.mdh
+            meas.mdh = namespace[self.inputName].mdh
         except AttributeError:
             pass
 
-        namespace[self.outputName] = measClusters
-        namespace[self.outputLocalizations] = mapped
+        namespace[self.outputName] = meas
