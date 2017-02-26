@@ -455,10 +455,17 @@ class MeasureClusters(ModuleBase):
     Parameters
     ----------
 
-        labelsKey: array of label assignments. Radius of gyration will be calculated for each label.
+        labelsKey: array of label assignments. Measures will be calculated for each label, and the labels with be
+        propagated into the output with the same labelsKey key.
 
     Notes
     -----
+
+    Measures calculated
+    -------------------
+        x, y, z: Center of Mass, no weighting based on localization precision
+        GyrationRadius: definition comes from the supplemental text of DOI: 10.1038/nature16496
+        p_chan#: average p_chan# for each cluster for each color channel. See pipeline._process_colour()
 
     """
     inputName = Input('dbscanClustered')
@@ -502,6 +509,7 @@ class MeasureClusters(ModuleBase):
             x, y, z = meas['x'][indi:indf], meas['y'][indi:indf], meas['z'][indi:indf]
             xcom[li], ycom[li], zcom[li] = x.mean(), y.mean(), z.mean()
 
+            # calculate radius of gyration
             disp = np.linalg.norm(np.vstack([x-xcom[li], y-ycom[li], z-zcom[li]]), axis=0)
             rg[li] = np.sqrt((1/float(counts[li]))*np.sum(disp**2))
 
