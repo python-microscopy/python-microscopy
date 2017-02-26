@@ -449,8 +449,8 @@ class ClusterCountVsImagingTime(ModuleBase):
 
 
 
-@register_module('measureClusters')
-class measureClusters(ModuleBase):
+@register_module('MeasureClusters')
+class MeasureClusters(ModuleBase):
     """
     Parameters
     ----------
@@ -476,6 +476,8 @@ class measureClusters(ModuleBase):
 
         # sort input according to label key
         keys_worth_keeping = ['x', 'y', 'z', self.labelsKey]  # this module only cares about spatial location
+        colour_keys = [pk for pk in inp.keys() if pk.startswith('p_chan')]
+        keys_worth_keeping += colour_keys
         I = np.argsort(inp[self.labelsKey])
         maxLab = inp[self.labelsKey][I[-1]]
 
@@ -489,12 +491,13 @@ class measureClusters(ModuleBase):
         rg = np.empty(len(ilab))
         # vol = np.empty_like(rg)
         xcom, ycom, zcom, outLab = np.empty_like(rg), np.empty_like(rg), np.empty_like(rg), np.empty_like(rg)
+        clusterColour = {ck: cv for ck, cv in zip(colour_keys, [np.empty_like(rg) for c in colour_keys])}
 
         # loop over labels, recall that input is now sorted, and we know how many points are in each label
         indi = 0
         for li in ilab:
             indf = indi + counts[li]
-            outLab = uni[li]
+            outLab[li] = uni[li]
 
             x, y, z = meas['x'][indi:indf], meas['y'][indi:indf], meas['z'][indi:indf]
             xcom[li], ycom[li], zcom[li] = x.mean(), y.mean(), z.mean()
@@ -502,11 +505,16 @@ class measureClusters(ModuleBase):
             disp = np.linalg.norm(np.vstack([x-xcom[li], y-ycom[li], z-zcom[li]]), axis=0)
             rg[li] = np.sqrt((1/float(counts[li]))*np.sum(disp**2))
 
+            for ck in colour_keys:
+                clusterColour[ck][li] = np.mean(meas[ck][indi:indf])
 
             indi = indf
 
-        meas.addColumn('GyrationRadius', rg)
-        meas.addColumn(self.labelsKey, outLab)
+        res = {'x': xcom, 'y': ycom, 'z': zcom, 'GyrationRadius': rg, self.labelsKey: outLab}
+        # add colours to res before creating results filter to avoid necessitating a mappingFilter(resultsFilter(res))
+        for ck in colour_keys:
+            res[ck] = clusterColour[ck]
+        meas = tabular.resultsFilter(res)
 
         try:
             meas.mdh = namespace[self.inputName].mdh
