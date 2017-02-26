@@ -34,6 +34,7 @@ class ClusterAnalyser:
         self.nearestNeighbourDistances = {}
         self.colocalizationRatios = {}
         self.pairwiseDistances = {}
+        self.clusterMeasures = []
 
         visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN Clump', self.OnClumpDBSCAN,
                           helpText='')
@@ -45,7 +46,7 @@ class ClusterAnalyser:
                           helpText='')
         visFr.AddMenuItem('Extras', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
-        visFr.AddMenuItem('Extras', 'Radius of gyration', self.OnRadiusOfGyration,
+        visFr.AddMenuItem('Extras', 'Measure Clusters', self.OnMeasureClusters,
                           helpText='')
 
     def OnClumpDBSCAN(self, event=None):
@@ -269,15 +270,14 @@ class ClusterAnalyser:
         plt.ylabel('Number of Clusters')
         #plt.title('minPoints=%i, searchRadius = %.0f nm' % (, rec.modules[-1].higherMinPtsPerCluster))
 
-    def OnRadiusOfGyration(self, event=None):
+    def OnMeasureClusters(self, event=None):
         """
 
-        Calculates the radius of gyration for labeled points
+        Calculates various measures for clusters using PYME.recipes.localisations.MeasureClusters
 
         Parameters
         ----------
-        labelsKey: pipeline key to access array of label assignments. Radius of gyration will be calculated for each
-            label.
+        labelsKey: pipeline key to access array of label assignments. Measurements will be calculated for each label.
 
 
         """
@@ -285,22 +285,25 @@ class ClusterAnalyser:
         from PYME.recipes.base import ModuleCollection
 
         # build a recipe programatically
-        grad = ModuleCollection()
+        measrec = ModuleCollection()
 
-        # split input according to colour channels selected
-        grad.add_module(localisations.RadiusOfGyration(grad, inputName='input', labelsKey='dbscanClustered',
+        measrec.add_module(localisations.MeasureClusters(measrec, inputName='input', labelsKey='dbscanClustered',
                                                        outputName='output'))
 
-        grad.namespace['input'] = self.pipeline
+        measrec.namespace['input'] = self.pipeline
         #configure parameters
-        if not grad.configure_traits(view=grad.pipeline_view, kind='modal'):
+        if not measrec.configure_traits(view=measrec.pipeline_view, kind='modal'):
             return  # handle cancel
 
         # run recipe
-        outRad = grad.execute()
+        meas = measrec.execute()
 
-        self.pipeline.addDataSource('gyrationRadii', outRad)
-        self.pipeline.selectDataSource('gyrationRadii')
+        # For now, don't make this a data source, as that requires (for multicolor) clearing the pipeline mappings.
+        self.clusterMeasures.append(meas)
+
+        # plot COM points
+        #self.visFr.glCanvas.setPoints3D(meas['x'], meas['y'], meas['z'], np.zeros_like(meas['x']))
+
 
 
 def Plug(visFr):
