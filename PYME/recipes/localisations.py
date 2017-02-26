@@ -463,7 +463,7 @@ class MeasureClusters(ModuleBase):
 
     Measures calculated
     -------------------
-        x, y, z: Center of Mass, no weighting based on localization precision
+        x, y, z: Center of mass positions, no weighting based on localization precision
         GyrationRadius: definition comes from the supplemental text of DOI: 10.1038/nature16496
         p_chan#: average p_chan# for each cluster for each color channel. See pipeline._process_colour()
 
@@ -506,6 +506,7 @@ class MeasureClusters(ModuleBase):
             indf = indi + counts[li]
             outLab[li] = uni[li]
 
+            # create x,y,z arrays for this cluster, and calculate center of mass
             x, y, z = meas['x'][indi:indf], meas['y'][indi:indf], meas['z'][indi:indf]
             xcom[li], ycom[li], zcom[li] = x.mean(), y.mean(), z.mean()
 
