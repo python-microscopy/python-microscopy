@@ -27,7 +27,7 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('contrib',parent_package,top_path)
     config.add_subpackage('pad')
     config.add_subpackage('gohlke')
-    config.add_subpackage('cpmath')
+    #config.add_subpackage('cpmath')
     config.add_subpackage('aniso')
     
     return config
