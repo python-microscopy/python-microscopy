@@ -171,6 +171,7 @@ class VisGUICore(object):
         return pointColour
         
     def CreateMenuBar(self, subMenu = False):
+        logger.debug('Creating VisGUI menu bar')
         if 'dsviewer' in dir(self):
             parent = self.dsviewer
         else:

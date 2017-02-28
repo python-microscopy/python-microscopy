@@ -42,6 +42,8 @@ import dispatch
 
 from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
+import logging
+logger = logging.getLogger(__name__)
 
 def _processPriSplit(ds):
     """set mappings ascociated with the use of a splitter"""
@@ -413,7 +415,11 @@ class Pipeline:
         _add_missing_ds_keys(ds,self.ev_mappings)
 
         if getattr(ds, 'mdh', None) is None:
-            ds.mdh = self.mdh
+            try:
+                ds.mdh = self.mdh
+            except AttributeError:
+                logger.error('No metadata defined in pipeline')
+                pass
 
         self.dataSources[dskey] = ds
 
