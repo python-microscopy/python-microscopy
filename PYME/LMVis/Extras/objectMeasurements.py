@@ -46,9 +46,12 @@ class ParticleTracker:
         if dlg.ShowModal() == wx.ID_OK:
             img = image.openImages[dlg.GetStringSelection()]
             
-            #account for ROIs
-            dRx = pipeline.mdh['Camera.ROIPosX']*pipeline.mdh['voxelsize.x']*1e3 - img.mdh['Camera.ROIPosX']*img.mdh['voxelsize.x']*1e3
-            dRy = pipeline.mdh['Camera.ROIPosY']*pipeline.mdh['voxelsize.y']*1e3 - img.mdh['Camera.ROIPosY']*img.mdh['voxelsize.y']*1e3
+            #account for ROIs'
+            try:
+                dRx = pipeline.mdh['Camera.ROIPosX']*pipeline.mdh['voxelsize.x']*1e3 - img.mdh['Camera.ROIPosX']*img.mdh['voxelsize.x']*1e3
+                dRy = pipeline.mdh['Camera.ROIPosY']*pipeline.mdh['voxelsize.y']*1e3 - img.mdh['Camera.ROIPosY']*img.mdh['voxelsize.y']*1e3
+            except AttributeError:  # we have Camera.ROI# instead, from multiview data
+                dRx, dRy = 0, 0
 
             pixX = np.round((pipeline.mapping['x'] - img.imgBounds.x0 - dRx)/img.pixelSize).astype('i')
             pixY = np.round((pipeline.mapping['y'] - img.imgBounds.y0 - dRy)/img.pixelSize).astype('i')
@@ -56,8 +59,14 @@ class ParticleTracker:
             ind = (pixX < img.data.shape[0])*(pixY < img.data.shape[1])*(pixX >= 0)*(pixY >= 0)
 
             ids = np.zeros_like(pixX)
-            #assume there is only one channel
-            ids[ind] = img.data[:,:,:,0].squeeze()[pixX[ind], pixY[ind]].astype('i')
+            if img.data.shape[2] != 0:
+                zPixelSize = (img.imgBounds.z1 - img.imgBounds.z0) / img.data.shape[2]
+                pixZ = np.round((pipeline.mapping['z'] - img.imgBounds.z0) / zPixelSize).astype('i')
+                ind *= (pixZ < img.data.shape[3]) * (pixZ >= 0)
+                ids[ind] = img.data[:, : ,: ,0].squeeze()[pixX[ind], pixY[ind], pixZ[ind]].astype('i')
+            else:
+                #assume there is only one channel
+                ids[ind] = img.data[:,:,:,0].squeeze()[pixX[ind], pixY[ind]].astype('i')
 
             numPerObject, b = np.histogram(ids, np.arange(ids.max() + 1.5) + .5)
 
