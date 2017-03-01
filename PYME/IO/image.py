@@ -59,7 +59,7 @@ class ImageBounds:
 
     @classmethod
     def estimateFromSource(cls, ds):
-        return cls(ds['x'].min(),ds['y'].min(),ds['x'].max(), ds['y'].max() )
+        return cls(ds['x'].min(),ds['y'].min(),ds['x'].max(), ds['y'].max(), ds['z'].min(), ds['z'].max())
 
     def width(self):
         return self.x1 - self.x0
