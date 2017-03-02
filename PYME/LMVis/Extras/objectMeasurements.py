@@ -60,9 +60,9 @@ class ParticleTracker:
 
             ids = np.zeros_like(pixX)
             if img.data.shape[2] != 0:
-                zPixelSize = (img.imgBounds.z1 - img.imgBounds.z0) / img.data.shape[2]
+                zPixelSize = img.mdh['voxelsize.z'] * 1e3  # float(img.imgBounds.z1 - img.imgBounds.z0) / img.data.shape[2]
                 pixZ = np.round((pipeline.mapping['z'] - img.imgBounds.z0) / zPixelSize).astype('i')
-                ind *= (pixZ < img.data.shape[3]) * (pixZ >= 0)
+                ind *= (pixZ < img.data.shape[2]) * (pixZ >= 0)
                 ids[ind] = img.data[:, : ,: ,0].squeeze()[pixX[ind], pixY[ind], pixZ[ind]].astype('i')
             else:
                 #assume there is only one channel
