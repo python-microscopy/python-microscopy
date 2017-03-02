@@ -75,8 +75,9 @@ def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
 
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
-    
-    im = PSFFitFactory.evalModel(fitResults['fitResults'], metadata, np.mgrid[xslice].mean(), np.mgrid[yslice].mean())
+    rs = metadata.getOrDefault('Analysis.ROISize',5)
+    # alternatively len(fitResults['slicesUsed']['x'])/2?
+    im = PSFFitFactory.evalModel(fitResults['fitResults'], metadata, np.mgrid[xslice].mean(), np.mgrid[yslice].mean(),roiHalfSize=rs)
     
     return im[0].squeeze()
 

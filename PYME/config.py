@@ -36,6 +36,10 @@ overall template for a configuration directory is as follows: ::
       |     |- a_protocol.py
       |     |- another_protocol.py
       |
+      |- customrecipes
+      |     |- myrecipe.yaml
+      |     |- myOtherRecipe.yaml
+      |
       |- init_scripts
             |- init_mymachine.py
             |- init_my_other_config.py
@@ -225,7 +229,24 @@ def get_custom_protocols():
     for config_dir in config_dirs:
         prot_glob = os.path.join(config_dir, 'protocols/[a-zA-Z]*.py')
         prots.update({os.path.split(p)[-1] : p for p in glob.glob(prot_glob)})
+    return prots
 
+def get_custom_recipes():
+    """
+    Get a dictionary recording the locations of any custom recipes.
+
+    Returns
+    -------
+
+    A dictionary of {basename : full path} for any recipes found.
+
+    """
+    import glob
+    recipes = {}
+    for config_dir in config_dirs:
+        recip_glob = os.path.join(config_dir, 'customrecipes/[a-zA-Z]*.yaml')
+        recipes.update({os.path.split(p)[-1] : p for p in glob.glob(recip_glob)})
+    return recipes
 
 def get_init_filename(filename, legacy_scripts_directory=None):
     """

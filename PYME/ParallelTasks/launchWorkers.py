@@ -29,6 +29,9 @@ import sys
 import time
 
 #import Pyro.naming
+import logging
+logging.basicConfig()
+logger = logging.getLogger(__name__)
 
 def cpuCount():
     """
@@ -103,6 +106,7 @@ def main():
     parser.add_argument('NWorkers', type=int, nargs='?', default=cpuCount(),
                         help='Number of worker processes to use')
     parser.add_argument('-k', '--kill', dest='kill', default=False, action='store_true', help='Kill all existing workers without launching new ones')
+    parser.add_argument('--list', dest='list', default=False, action='store_true', help='list all current worker and server processes')
     args = parser.parse_args()
     
     if args.local:
@@ -112,8 +116,8 @@ def main():
     numProcessors = args.NWorkers
     
     if sys.platform == 'win32':
-        if args.kill:
-            raise RuntimeError('Kill functionality not supported on windows. Close the window that the previous launchWorkers instance was run from instead')
+        if args.kill or args.list:
+            raise RuntimeError('Kill (or process list) functionality not supported on windows. Close the window that the previous launchWorkers instance was run from instead')
 
         if args.run_server:
             print('Launching server ...')
@@ -139,22 +143,31 @@ def main():
                     c = p.cmdline()
                     #print c, SERVER_PROC, WORKER_PROC
                     if (SERVER_PROC in c[1] and args.run_server) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1] and args.gui):
-                        print('killing %s' % c)
-                        p.kill()
+                        if args.list:
+                            print('running %s' % c)
+                        else:
+                            print('killing %s' % c)
+                            p.kill()
             except (psutil.ZombieProcess, psutil.AccessDenied):
                 pass
 
-        if args.kill:
+        if args.kill or args.list:
             return
 
         if args.run_server:
-            subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub, SERVER_PROC)), shell=True)
-
+            logger.info('launching server...')
+            with open('/tmp/PYMEserver.stdout',"wb") as out, open('/tmp/PYMEserver.stderr',"wb") as err:
+                subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub, SERVER_PROC)),
+                                 shell=True, stdout=out, stderr=err)
             time.sleep(10)
         if args.gui:
-            subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,'fitMonP.py')), shell=True)
+            logger.info('launching Task Monitor...')
+            with open('/tmp/fitMonP.stdout',"wb") as out, open('/tmp/fitMonP.stderr',"wb") as err:
+                subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,'fitMonP.py')),
+                                 shell=True, stdout=out, stderr=err)
     
         for i in range(numProcessors):
+            logger.info('launching %d workers...' % numProcessors)
             with open('/tmp/worker-%d.stdout' % i,"wb") as out, open('/tmp/worker-%d.stderr' % i,"wb") as err:
                 subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub,WORKER_PROC)),
                                  shell=True, stdout=out, stderr=err)

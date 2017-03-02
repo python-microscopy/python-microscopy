@@ -330,7 +330,8 @@ class PSFExporter(Exporter):
             import pickle as cPickle
             
         fid = open(outFile, 'wb')
-        cPickle.dump((data[xslice, yslice, zslice], metadata.voxelsize), fid, 2)
+        proto = 0 # we are reverting to protocol type 0 as type 2 gives rise to crashes when run in workers
+        cPickle.dump((data[xslice, yslice, zslice], metadata.voxelsize), fid, protocol=proto)
         fid.close()
 
         if progressCallback:

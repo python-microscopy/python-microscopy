@@ -63,7 +63,16 @@ class RecipePlugin(recipeGui.RecipeManager):
                 self.cannedIDs[ID] = r
                 #self.mRecipes.Append(ID, os.path.split(r)[1],"",  wx.ITEM_NORMAL)
                 #wx.EVT_MENU(dsviewer, ID, self.OnRunCanned)
-            
+
+        # custom recipes - load only, do not execute
+        import PYME.config
+        customRecipes = PYME.config.get_custom_recipes()
+        if len(customRecipes) > 0:
+            dsviewer.AddMenuItem('Recipes', '', itemType='separator')
+            for r in customRecipes:
+                ID = dsviewer.AddMenuItem('Recipes', r, self.OnLoadCustom).GetId()
+                self.cannedIDs[ID] = customRecipes[r]
+
         #dsviewer.menubar.Append(self.mRecipes, "Recipes")
         dsviewer.AddMenuItem('Recipes', '', itemType='separator')
         dsviewer.AddMenuItem('Recipes', "Save Results", self.OnSaveOutputs)
@@ -140,6 +149,9 @@ class RecipePlugin(recipeGui.RecipeManager):
         self.LoadRecipe(self.cannedIDs[event.GetId()])
         self.RunCurrentRecipe()
         
+    def OnLoadCustom(self, event):
+        self.LoadRecipe(self.cannedIDs[event.GetId()])
+
     def OnSaveOutputs(self, event):
         from PYME.recipes import runRecipe
         
