@@ -32,6 +32,19 @@ class ParticleTracker:
 
 
     def OnGetIDs(self, event):
+        """
+
+        Parameters
+        ----------
+        event: GUI event
+
+        Returns
+        -------
+        Nothing, but adds ObjectID and NEvents columns to the pipeline
+            ObjectID: Label number from image, mapped to each localization within that label
+            NEvents: Number of localizations within the label that a given localization belongs to
+
+        """
         from PYME.IO import image
 
         visFr = self.visFr
@@ -46,8 +59,8 @@ class ParticleTracker:
         if dlg.ShowModal() == wx.ID_OK:
             img = image.openImages[dlg.GetStringSelection()]
             
-            #account for ROIs'
-            try:
+            #account for ROIs
+            try:  # if we are not looking at multiview data, grab the camera FOV position
                 dRx = pipeline.mdh['Camera.ROIPosX']*pipeline.mdh['voxelsize.x']*1e3 - img.mdh['Camera.ROIPosX']*img.mdh['voxelsize.x']*1e3
                 dRy = pipeline.mdh['Camera.ROIPosY']*pipeline.mdh['voxelsize.y']*1e3 - img.mdh['Camera.ROIPosY']*img.mdh['voxelsize.y']*1e3
             except AttributeError:  # we have Camera.ROI# instead, from multiview data
@@ -60,6 +73,7 @@ class ParticleTracker:
 
             ids = np.zeros_like(pixX)
             if img.data.shape[2] != 0:
+                # we have a 3D stack, so handle z. Assume there is only one channel
                 zPixelSize = img.mdh['voxelsize.z'] * 1e3  # float(img.imgBounds.z1 - img.imgBounds.z0) / img.data.shape[2]
                 pixZ = np.round((pipeline.mapping['z'] - img.imgBounds.z0) / zPixelSize).astype('i')
                 ind *= (pixZ < img.data.shape[2]) * (pixZ >= 0)
