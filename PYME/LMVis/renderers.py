@@ -195,6 +195,10 @@ class ColourRenderer(CurrentRenderer):
         status = statusLog.StatusLogger('Generating %s Image ...' % self.name)
 
         imb = self._getImBounds()
+        try:
+            imb.z0, imb.z1 = settings['zBounds']
+        except KeyError:
+            pass
 
         #record the pixel origin in nm from the corner of the camera for futrue overlays
         if 'Source.Camera.ROIPosX' in mdh.getEntryNames():
@@ -210,7 +214,7 @@ class ColourRenderer(CurrentRenderer):
         else:
             ox = imb.x0
             oy = imb.y0
-            oz = 0
+            oz = imb.z0
 
         mdh['Origin.x'] = ox
         mdh['Origin.y'] = oy
