@@ -702,7 +702,7 @@ def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=10
         im = numpy.zeros((sizeX, sizeY, sizeZ), order='F')
 
         #for i in range(n):
-        rendJTet(im, x,y,z,n,jsig, jsigz, mcp, n)
+        rendJTet(im, y, x, z, jsig, jsigz, mcp, n)
     #        Imc = scipy.rand(len(x)) < mcp
     #        if type(jsig) == numpy.ndarray:
     #            print jsig.shape, Imc.shape
