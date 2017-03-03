@@ -37,6 +37,7 @@ import numpy as np
 import pylab
 from six.moves import xrange
 
+from PYME.LMVis.gl_program import GlProgramManager
 
 try:
     from gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
@@ -103,8 +104,7 @@ class RenderLayer(object):
         
         self.mode = mode
         self.pointSize=pointsize
-        
-        
+
     def render(self, glcanvas=None):
         if self.mode in ['points']:
             #glDisable(GL_LIGHTING)
@@ -135,6 +135,80 @@ class RenderLayer(object):
         glDrawArrays(self.drawModes[self.mode], 0, nVertices)
 
         glPopMatrix ()
+
+
+class BillboardRenderLayer(RenderLayer):
+    def __init__(self, vertices, normals, colours, cmap, clim, mode='billboarding', pointsize=5, alpha=1):
+        RenderLayer.__init__(self, vertices, normals, colours, cmap, clim, mode, pointsize, alpha)
+
+    def render(self, glcanvas=None):
+        pass
+
+
+class PointSpritesRenderLayer(RenderLayer):
+    """
+    This class prepares OpenGL for displaying the point clouds using point sprites.
+
+    """
+
+#    Since shaders need to be used, there must be a program be set up
+#    this attribute handles creation and usage of this program
+    _programManager = None
+#    This attribute indicates weather the program has already been initialized
+    _is_initialized = 0
+
+    def __init__(self, vertices, normals, colours, cmap, clim, mode='pointsprites', pointsize=5, alpha=1):
+        """
+        This constructor is only used to call the super constructor and set those parameters.
+        Some of them may never be used.
+        """
+        RenderLayer.__init__(self, vertices, normals, colours, cmap, clim, mode, pointsize, alpha)
+
+    def render(self, gl_canvas=None):
+        """
+        The OpenGL context isn't available before the OnPaint method.
+        That's why we can't initialize the program while initializing the class. Which would be the better fit.
+        To solve this problem, we need to check if the program was already created and can be used. If not we will create it.
+
+
+        :param gl_canvas: the scene is drawn into
+        :return: nothing
+        """
+        if not self._is_initialized:
+            # It's useful to print the OpenGL version and the hardware.
+            # It can be deleted if unnecessary
+            print(glGetString(GL_SHADING_LANGUAGE_VERSION))
+            print(glGetString(GL_VERSION))
+            print(glGetString(GL_RENDERER))
+            self.initialize_open_gl()
+        self._programManager.use()
+
+        n_vertices = self.verts.shape[0]
+
+        self.vs_ = glVertexPointerf(self.verts)
+        self.n_ = glNormalPointerf(self.normals)
+        self.c_ = glColorPointerf(self.cs)
+
+        glDrawArrays(GL_POINTS, 0, n_vertices)
+
+#       it's very important to disable the program again, so the other layers are still processed with the default
+#       pipeline
+        glUseProgram(0)
+
+    def initialize_open_gl(self):
+        """
+        Since we can't use the default pipeline anymore we need to create a OpenGL-programm and attach the shaders our-
+        selves.
+        :return:
+        """
+        glEnable(GL_PROGRAM_POINT_SIZE)
+        self._programManager = GlProgramManager("./shaders/")
+        self._programManager.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
+        self._programManager.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
+        self._programManager.link()
+        self._programManager.use()
+        self._is_initialized = 1
+
         
 class TrackLayer(RenderLayer):
     def __init__(self, vertices, colours, cmap, clim, clumpSizes, clumpStarts, alpha=1):
@@ -766,7 +840,7 @@ class LMGLCanvas(GLCanvas):
         self.setTriang(T, wireframe=True)
 
 
-    def setPoints3D(self, x, y, z, c = None, a = None, recenter=False, alpha = 1.0):#, clim=None):
+    def setPoints3D(self, x, y, z, c = None, a = None, recenter=False, alpha = 1.0, mode='points'):#, clim=None):
         #center data
         x = x #- x.mean()
         y = y #- y.mean()
@@ -775,7 +849,7 @@ class LMGLCanvas(GLCanvas):
         if recenter:        
             self.xc = x.mean()
             self.yc = y.mean()
-        
+
         self.zc = z.mean()
         self.zc_o = 1.0*self.zc
 
@@ -799,8 +873,13 @@ class LMGLCanvas(GLCanvas):
         self.SetCurrent()
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
-        
-        self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode='points', pointsize=self.pointSize, alpha=alpha))
+
+        if mode is 'billboard':
+            self.layers.append(BillboardRenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode, pointsize=self.pointSize, alpha=alpha))
+        elif mode is 'pointsprites':
+            self.layers.append(PointSpritesRenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode, pointsize=self.pointSize, alpha=alpha))
+        else:
+            self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode, pointsize=self.pointSize, alpha=alpha))
         self.Refresh()
         
     def setPoints(self, x, y, c = None, a = None, recenter=True, alpha=1.0):
@@ -1268,13 +1347,8 @@ class LMGLCanvas(GLCanvas):
         return snap
 
 
-
-
-
-
-
 def showGLFrame():
-    f = wx.Frame(None, size=(800,800))
+    f = wx.Frame(None, size=(800, 800))
     c = LMGLCanvas(f)
     f.Show()
     return c
@@ -1299,6 +1373,31 @@ class TestApp(wx.App):
         frame.Show()
         self.SetTopWindow(frame)
         return True
+
+class TestApp2(wx.App):
+    """
+    This testApp is used to for developing purposes.
+
+    It will be changed to test exactly the cases that were changed.
+
+    This is used for pointsprites and billboarding.
+    """
+    def __init__(self, *args):
+        wx.App.__init__(self,*args)
+
+    def OnInit(self):
+        frame = wx.Frame(None, -1, 'ball_wx', wx.DefaultPosition, wx.Size(800, 800))
+        canvas = LMGLCanvas(frame)
+        to = testObj()
+        canvas.displayMode = '3D'
+        canvas.pointSize = 10
+#        canvas.setPoints3D(to[0], to[1], to[2], recenter=True, mode='billboard')
+        canvas.setPoints3D(to[0], to[1], to[2], mode='pointsprites')
+        canvas.Refresh()
+        frame.Show()
+        self.SetTopWindow(frame)
+        return True
+
 
 
 def main():
