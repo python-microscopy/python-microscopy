@@ -70,7 +70,7 @@ class DensityMapping(ModuleBase):
     MCProbability = Float(1.0)
     numSamples = Int(10)
     colours = List(['none'])
-    autoZBounds = Enum(['False (manual)', 'min-max'])
+    zBoundsMode = Enum(['manual', 'min-max'])
     zBounds = ListFloat([-500, 500])
     zSliceThickness = Float(50.0)
     softRender = Bool(True)
@@ -85,7 +85,7 @@ class DensityMapping(ModuleBase):
             cf = inp
 
         cf.imageBounds = ImageBounds.estimateFromSource(inp)
-        if self.autoZBounds == 'min-max':
+        if self.zBoundsMode == 'min-max':
             self.zBounds[0], self.zBounds[1] = float(cf.imageBounds.z0), float(cf.imageBounds.z1)
 
         renderer = renderers.RENDERERS[str(self.renderingModule)](None, cf)
