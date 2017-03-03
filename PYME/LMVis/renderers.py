@@ -81,9 +81,17 @@ class CurrentRenderer:
         if not self.visFr is None:
             self.visFr.AddMenuItem('Generate', self.name, self.GenerateGUI)
 
-    def _getImBounds(self):
+    def _getImBounds(self, zmin=None, zmax=None):
         if self.visFr is None:
-            return self.pipeline.imageBounds
+            x0, y0, x1, y1, z0, z1 = self.pipeline.imageBounds.bounds
+            
+            if not zmin is None:
+                z0 = zmin
+            
+            if not zmax is None:
+                z1 = zmax
+                
+            return ImageBounds(x0, y0, x1, y1, z0, z1)
 
         x0 = max(self.visFr.glCanvas.xmin, self.pipeline.imageBounds.x0)
         y0 = max(self.visFr.glCanvas.ymin, self.pipeline.imageBounds.y0)
@@ -99,7 +107,18 @@ class CurrentRenderer:
             y1 = min(y1, self.pipeline.filterKeys['y'][1])
 
         #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
-        return ImageBounds(x0, y0, x1, y1)
+
+        if not zmin is None:
+            z0 = zmin
+        else:
+            z0 = 0
+
+        if not zmax is None:
+            z1 = zmax
+        else:
+            z1 = 0
+        
+        return ImageBounds(x0, y0, x1, y1, z0, z1)
 
     def _getDefaultJitVar(self, jitVars):
         return jitVars.index('neighbourDistances')
@@ -193,12 +212,8 @@ class ColourRenderer(CurrentRenderer):
         pixelSize = settings['pixelSize']
 
         status = statusLog.StatusLogger('Generating %s Image ...' % self.name)
-
-        imb = self._getImBounds()
-        try:
-            imb.z0, imb.z1 = settings['zBounds']
-        except KeyError:
-            pass
+        
+        imb = self._getImBounds(*settings.get('zBounds', [None, None]))
 
         #record the pixel origin in nm from the corner of the camera for futrue overlays
         if 'Source.Camera.ROIPosX' in mdh.getEntryNames():
@@ -210,7 +225,7 @@ class ColourRenderer(CurrentRenderer):
             if 'Source.Positioning.PIFoc' in mdh.getEntryNames():
                 oz = mdh['Source.Positioning.PIFoc'] * 1e3
             else:
-                oz = 0
+                oz = imb.z0
         else:
             ox = imb.x0
             oy = imb.y0

@@ -46,7 +46,8 @@ from PYME.LMVis import colourPanel
 #from PYME.LMVis import renderers
 from PYME.LMVis import pipeline
 
-
+import logging
+logger = logging.getLogger(__name__)
 
 
 from PYME.ui import MetadataTree

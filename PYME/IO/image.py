@@ -59,9 +59,9 @@ class ImageBounds:
 
     @classmethod
     def estimateFromSource(cls, ds):
-        try:
-            return cls(ds['x'].min(),ds['y'].min(),ds['x'].max(), ds['y'].max(), ds['z'].min(), ds['z'].max())
-        except KeyError:
+        if 'z' in ds.keys():
+            return cls(ds['x'].min(), ds['y'].min(), ds['x'].max(), ds['y'].max(), ds['z'].min(), ds['z'].max())
+        else:
             return cls(ds['x'].min(),ds['y'].min(),ds['x'].max(), ds['y'].max())
 
     def width(self):
@@ -69,6 +69,10 @@ class ImageBounds:
 
     def height(self):
         return self.y1 - self.y0
+    
+    @property
+    def bounds(self):
+        return self.x0, self.y0, self.x1, self.y1, self.z0, self.z1
 
     @classmethod
     def extractFromMetadata(cls, mdh):
