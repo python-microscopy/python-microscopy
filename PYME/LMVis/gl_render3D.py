@@ -1399,7 +1399,6 @@ class TestApp2(wx.App):
         return True
 
 
-
 def main():
     app = TestApp()
     app.MainLoop()
