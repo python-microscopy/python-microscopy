@@ -20,7 +20,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+import os
 
+from PYME.LMVis.rendGauss import gaussKernel
+from scipy.misc import toimage
 from wx.glcanvas import GLCanvas
 import wx.glcanvas
 import wx
@@ -156,6 +159,10 @@ class PointSpritesRenderLayer(RenderLayer):
     _programManager = None
 #    This attribute indicates weather the program has already been initialized
     _is_initialized = 0
+#    This attribute holds an instance of a texture class
+    _texture = None
+#    This is the uniform location to pass to the fragment shader to locate the texture
+    _uniform_tex_2d_id = 0
 
     def __init__(self, vertices, normals, colours, cmap, clim, mode='pointsprites', pointsize=5, alpha=1):
         """
@@ -182,6 +189,13 @@ class PointSpritesRenderLayer(RenderLayer):
             print(glGetString(GL_RENDERER))
             self.initialize_open_gl()
         self._programManager.use()
+        glEnable(GL_POINT_SPRITE)
+        glEnable(GL_PROGRAM_POINT_SIZE)
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
+        glBlendEquation(GL_FUNC_ADD)
+        glDepthMask(GL_FALSE)
 
         n_vertices = self.verts.shape[0]
 
@@ -189,11 +203,20 @@ class PointSpritesRenderLayer(RenderLayer):
         self.n_ = glNormalPointerf(self.normals)
         self.c_ = glColorPointerf(self.cs)
 
+        self._texture.enable_texture_2d()
+        self._texture.bind_texture()
+        glPointSize(self.pointSize)
         glDrawArrays(GL_POINTS, 0, n_vertices)
 
 #       it's very important to disable the program again, so the other layers are still processed with the default
 #       pipeline
         glUseProgram(0)
+        self._texture.disable_texture_2d()
+        glDisable(GL_BLEND)
+        glDepthMask(GL_TRUE)
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_PROGRAM_POINT_SIZE)
+        glDisable(GL_POINT_SPRITE)
 
     def initialize_open_gl(self):
         """
@@ -201,13 +224,18 @@ class PointSpritesRenderLayer(RenderLayer):
         selves.
         :return:
         """
-        glEnable(GL_PROGRAM_POINT_SIZE)
-        self._programManager = GlProgramManager("./shaders/")
-        self._programManager.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
-        self._programManager.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
+        shaderpath = os.path.join(os.path.dirname(__file__), "./shaders/")
+        self._programManager = GlProgramManager(shaderpath)
+        self._programManager.add_shader("pointsprites_vs.glsl", GL_VERTEX_SHADER)
+        self._programManager.add_shader("pointsprites_fs.glsl", GL_FRAGMENT_SHADER)
         self._programManager.link()
         self._programManager.use()
         self._is_initialized = 1
+
+        self._texture = Texture()
+        self._texture.load_texture()
+
+        self._uniform_tex_2d_id = glGetUniformLocation(self._programManager.get_program(), b'tex2D')
 
         
 class TrackLayer(RenderLayer):
@@ -1390,13 +1418,53 @@ class TestApp2(wx.App):
         canvas = LMGLCanvas(frame)
         to = testObj()
         canvas.displayMode = '3D'
-        canvas.pointSize = 10
+        canvas.pointSize = 20
 #        canvas.setPoints3D(to[0], to[1], to[2], recenter=True, mode='billboard')
         canvas.setPoints3D(to[0], to[1], to[2], mode='pointsprites')
         canvas.Refresh()
         frame.Show()
         self.SetTopWindow(frame)
         return True
+
+
+class Texture:
+
+    # static texture counter
+    texture_counter = 0
+
+#   specific texture id of this texture
+    _texture_id = 0
+
+
+    def __init__(self):
+        """
+        This constructor makes sure every texture get's its own id
+        """
+        self._texture_id = Texture.texture_counter
+        Texture.texture_counter += 1
+
+    def bind_texture(self):
+        glBindTexture(GL_TEXTURE_2D, self._texture_id)
+
+    def load_texture(self, size=10):
+        data = gaussKernel(size, 2)
+        glGenTextures(1, self._texture_id)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, size, size, 0, GL_LUMINANCE, GL_FLOAT, np.float16(data))
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+
+    def unbind_texture(self):
+        self._texture_id = 0
+
+    @staticmethod
+    def enable_texture_2d():
+        glEnable(GL_TEXTURE_2D)
+
+    @staticmethod
+    def disable_texture_2d():
+        glDisable(GL_TEXTURE_2D)
 
 
 def main():
