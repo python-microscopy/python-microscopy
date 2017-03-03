@@ -469,7 +469,7 @@ class MeasureClusters(ModuleBase):
 
     """
     inputName = Input('dbscanClustered')
-    labelsKey = CStr('dbscanClumpID')
+    labelKey = CStr('dbscanClumpID')
 
     outputName = Output('ClusterMeasures')
 
@@ -481,15 +481,23 @@ class MeasureClusters(ModuleBase):
         if np.min(inp[self.labelsKey]) < 0:
             raise UserWarning('This module expects 0-label for unclustered points, and no negative labels')
 
+        labels = inp[self.labelKey]
+        I = np.argsort(labels)
+        I = I[labels[I] > 0]
+        
+        x_vals, y_vals, z_vals = inp['x'][I], inp['y'][I], inp['z'][I]
+        labels = labels[I]
+        maxLabel = labels[-1]
+        
         # sort input according to label key
-        keys_worth_keeping = ['x', 'y', 'z', self.labelsKey]  # this module only cares about spatial location
-        colour_keys = [pk for pk in inp.keys() if pk.startswith('p_chan')]
-        keys_worth_keeping += colour_keys
-        I = np.argsort(inp[self.labelsKey])
-        maxLab = inp[self.labelsKey][I[-1]]
+        #keys_worth_keeping = ['x', 'y', 'z', self.labelsKey]  # this module only cares about spatial location
+        #colour_keys = [pk for pk in inp.keys() if pk.startswith('p_chan')]
+        #keys_worth_keeping += colour_keys
+        #I = np.argsort(inp[self.labelsKey])
+        #maxLab = inp[self.labelsKey][I[-1]]
 
         # sort and copy into new tabular source, filtering out unclustered localizations
-        meas = tabular.resultsFilter({k: inp[k][I] for k in keys_worth_keeping}, **{self.labelsKey: [0.5, maxLab + 1]})
+        #meas = tabular.resultsFilter({k: inp[k][I] for k in keys_worth_keeping}, **{self.labelsKey: [0.5, maxLab + 1]})
         uni, counts = np.unique(meas[self.labelsKey], return_counts=True)
 
         # labels might not be continuous, and we probably dropped the 0-label, so grab length
@@ -498,7 +506,7 @@ class MeasureClusters(ModuleBase):
         rg = np.empty(len(ilab))
         # vol = np.empty_like(rg)
         xcom, ycom, zcom, outLab = np.empty_like(rg), np.empty_like(rg), np.empty_like(rg), np.empty_like(rg)
-        clusterColour = {ck: cv for ck, cv in zip(colour_keys, [np.empty_like(rg) for c in colour_keys])}
+        #clusterColour = {ck: cv for ck, cv in zip(colour_keys, [np.empty_like(rg) for c in colour_keys])}
 
         # loop over labels, recall that input is now sorted, and we know how many points are in each label
         indi = 0
@@ -507,22 +515,26 @@ class MeasureClusters(ModuleBase):
             outLab[li] = uni[li]
 
             # create x,y,z arrays for this cluster, and calculate center of mass
-            x, y, z = meas['x'][indi:indf], meas['y'][indi:indf], meas['z'][indi:indf]
-            xcom[li], ycom[li], zcom[li] = x.mean(), y.mean(), z.mean()
+            x, y, z = x_vals[indi:indf], y_vals[indi:indf], z_vals[indi:indf]
+            xc, yc, zc = x.mean(), y.mean(), z.mean()
+            
+            x_, y_, z_ = x - xc, y - yc, z - zc
+            
+            xcom[li], ycom[li], zcom[li] = xc, yc, zc
 
             # calculate radius of gyration
-            disp = np.linalg.norm(np.vstack([x-xcom[li], y-ycom[li], z-zcom[li]]), axis=0)
-            rg[li] = np.sqrt((1/float(counts[li]))*np.sum(disp**2))
+            disp2 = x_*x_ + y_*y_ + z_*z_
+            rg[li] = np.sqrt(np.mean(disp2))
 
-            for ck in colour_keys:
-                clusterColour[ck][li] = np.mean(meas[ck][indi:indf])
+            #for ck in colour_keys:
+            #    clusterColour[ck][li] = np.mean(meas[ck][indi:indf])
 
             indi = indf
 
         res = {'x': xcom, 'y': ycom, 'z': zcom, 'GyrationRadius': rg, self.labelsKey: outLab}
         # add colours to res before creating results filter to avoid necessitating a mappingFilter(resultsFilter(res))
-        for ck in colour_keys:
-            res[ck] = clusterColour[ck]
+        #for ck in colour_keys:
+        #    res[ck] = clusterColour[ck]
         meas = tabular.resultsFilter(res)
 
         try:
