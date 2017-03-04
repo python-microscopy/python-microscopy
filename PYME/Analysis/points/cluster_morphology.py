@@ -1,6 +1,6 @@
 import numpy as np
 
-def measure3D(x, y, z):
+def measure_3d(x, y, z):
     output = {}
     
     #count
