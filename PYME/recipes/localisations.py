@@ -464,16 +464,18 @@ class MeasureClusters(ModuleBase):
     Measures calculated
     -------------------
         x, y, z: Center of mass positions, no weighting based on localization precision
-        GyrationRadius: definition comes from the supplemental text of DOI: 10.1038/nature16496
-        p_chan#: average p_chan# for each cluster for each color channel. See pipeline._process_colour()
+        gyrationRadius: AKA RMS distance to center of cluster - see also supplemental text of DOI: 10.1038/nature16496
+        axis0, axis1, axis2: returned as axi
 
     """
-    inputName = Input('dbscanClustered')
-    labelKey = CStr('dbscanClumpID')
+    inputName = Input('input')
+    labelKey = CStr('clumpIndex')
 
-    outputName = Output('ClusterMeasures')
+    outputName = Output('clusterMeasures')
 
     def execute(self, namespace):
+        from PYME.Analysis.points import cluster_morphology as cmorph
+        import numpy as np
 
         inp = namespace[self.inputName]
 
@@ -489,53 +491,29 @@ class MeasureClusters(ModuleBase):
         labels = labels[I]
         maxLabel = labels[-1]
         
-        # sort input according to label key
-        #keys_worth_keeping = ['x', 'y', 'z', self.labelsKey]  # this module only cares about spatial location
-        #colour_keys = [pk for pk in inp.keys() if pk.startswith('p_chan')]
-        #keys_worth_keeping += colour_keys
-        #I = np.argsort(inp[self.labelsKey])
-        #maxLab = inp[self.labelsKey][I[-1]]
+        #find the unique labels, and their separation in the sorted list of points
+        unique_labels, counts = np.unique(labels, return_counts=True)
+        
+        #allocate memory to store results in
+        measurements = np.zeros(maxLabel+1, cmorph.measurement_dtype)
 
-        # sort and copy into new tabular source, filtering out unclustered localizations
-        #meas = tabular.resultsFilter({k: inp[k][I] for k in keys_worth_keeping}, **{self.labelsKey: [0.5, maxLab + 1]})
-        uni, counts = np.unique(meas[self.labelsKey], return_counts=True)
-
-        # labels might not be continuous, and we probably dropped the 0-label, so grab length
-        ilab = range(len(uni))
-
-        rg = np.empty(len(ilab))
-        # vol = np.empty_like(rg)
-        xcom, ycom, zcom, outLab = np.empty_like(rg), np.empty_like(rg), np.empty_like(rg), np.empty_like(rg)
-        #clusterColour = {ck: cv for ck, cv in zip(colour_keys, [np.empty_like(rg) for c in colour_keys])}
-
-        # loop over labels, recall that input is now sorted, and we know how many points are in each label
+        # loop over labels, recalling that input is now sorted, and we know how many points are in each label.
+        # Note that missing labels result in zeroed entries (i.e. the initial values are not changed).
+        # Missing values can be filtered out later, if desired, by filtering on the 'counts' column, but having a dense
+        # array where index == label number makes any postprocessing in which we might want to find the data
+        # corresponding to a particular label MUCH easier and faster.
         indi = 0
-        for li in ilab:
-            indf = indi + counts[li]
-            outLab[li] = uni[li]
+        for label_num, ct in zip(unique_labels, counts):
+            indf = indi + ct
 
             # create x,y,z arrays for this cluster, and calculate center of mass
             x, y, z = x_vals[indi:indf], y_vals[indi:indf], z_vals[indi:indf]
-            xc, yc, zc = x.mean(), y.mean(), z.mean()
             
-            x_, y_, z_ = x - xc, y - yc, z - zc
-            
-            xcom[li], ycom[li], zcom[li] = xc, yc, zc
-
-            # calculate radius of gyration
-            disp2 = x_*x_ + y_*y_ + z_*z_
-            rg[li] = np.sqrt(np.mean(disp2))
-
-            #for ck in colour_keys:
-            #    clusterColour[ck][li] = np.mean(meas[ck][indi:indf])
+            cmorph.measure_3d(x, y, z, output=measurements[label_num])
 
             indi = indf
 
-        res = {'x': xcom, 'y': ycom, 'z': zcom, 'GyrationRadius': rg, self.labelsKey: outLab}
-        # add colours to res before creating results filter to avoid necessitating a mappingFilter(resultsFilter(res))
-        #for ck in colour_keys:
-        #    res[ck] = clusterColour[ck]
-        meas = tabular.resultsFilter(res)
+        meas = tabular.recArrayInput(measurements)
 
         try:
             meas.mdh = namespace[self.inputName].mdh
