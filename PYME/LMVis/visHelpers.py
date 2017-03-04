@@ -27,7 +27,7 @@ import scipy
 import numpy
 import numpy.ctypeslib
 
-from PYME.Analysis.points.qHull.triangWrap import RenderTetrahedra
+from PYME.Analysis.points.SoftRend import RenderTetrahedra
 from math import floor
 
 from PYME.IO.image import ImageBounds
