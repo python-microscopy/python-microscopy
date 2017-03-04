@@ -1,7 +1,15 @@
 import numpy as np
 
-def measure_3d(x, y, z):
-    output = {}
+measurement_dtype = [('count', '<i4'),
+                     ('x', '<f4'),('y', '<f4'),('z', '<f4'),
+                     ('gyrationRadius', '<f4'),
+                     ('axis0', '<3f4'),('axis1', '<3f4'),('axis2', '<3f4'),
+                     ('sigma0', '<f4'), ('sigma1', '<f4'), ('sigma2', '<f4'),
+                     ('theta', '<f4'), ('phi', '<f4')]
+
+def measure_3d(x, y, z, output=None):
+    if output is None:
+        output = np.zeros(1, measurement_dtype)
     
     #count
     N = len(x)
@@ -10,7 +18,9 @@ def measure_3d(x, y, z):
     #centroid
     xc, yc, zc = x.mean(), y.mean(), z.mean()
     
-    output.update(x = xc, y = yc, z = zc)
+    output['x'] = xc
+    output['y'] = yc
+    output['z'] = zc
     
     #find mean-subtracted points
     x_, y_, z_ = x - xc, y - yc, z - zc
@@ -21,10 +31,10 @@ def measure_3d(x, y, z):
     #principle axes
     u, s, v = np.linalg.svd(np.vstack([x_, y_, z_]).T)
     
-    #axes
-    output.update({'axis%d' % i : v[i] for i in range(3)})
-    #std. deviation along axes
-    output.update({'sigma%d' % i : s[i]/np.sqrt(N-1) for i in range(3)})
+    for i in range(3):
+        output['axis%d' % i] = v[i]
+        #std. deviation along axes
+        output['sigma%d' % i] = s[i]/np.sqrt(N-1)
     
     pa = v[0]
     #angle of principle axis
