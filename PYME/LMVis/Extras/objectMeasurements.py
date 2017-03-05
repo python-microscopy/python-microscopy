@@ -50,6 +50,7 @@ class ParticleTracker:
 
         """
         from PYME.IO import image
+        from PYME.Analysis.points import objectMeasurements
 
         visFr = self.visFr
         pipeline = visFr.pipeline
@@ -62,29 +63,8 @@ class ParticleTracker:
 
         if dlg.ShowModal() == wx.ID_OK:
             img = image.openImages[dlg.GetStringSelection()]
-            
-            im_ox, im_oy, im_oz = img.origin
-            
-            #account for ROIs
-            p_ox = pipeline.mdh['Camera.ROIPosX']*pipeline.mdh['voxelsize.x']*1e3
-            p_oy = pipeline.mdh['Camera.ROIPosY']*pipeline.mdh['voxelsize.y']*1e3
 
-            pixX = np.round((pipeline.mapping['x'] + p_ox - im_ox)/img.pixelSize).astype('i')
-            pixY = np.round((pipeline.mapping['y'] + p_oy - im_oy)/img.pixelSize).astype('i')
-            pixZ = np.round((pipeline.mapping['z'] - im_oz)/img.sliceSize).astype('i')
-            
-            if img.data.shape[2] == 1:
-                #disregard z for 2D images
-                pixZ = np.zeros_like(pixX)
-
-            ind = (pixX < img.data.shape[0])*(pixY < img.data.shape[1])*(pixX >= 0)*(pixY >= 0)*(pixZ >= 0)*(pixZ < img.data.shape[2])
-
-            ids = np.zeros_like(pixX)
-            
-            #assume there is only one channel
-            ids[ind] = np.atleast_3d(img.data[:,:,:,0].squeeze())[pixX[ind], pixY[ind], pixZ[ind]].astype('i')
-
-            numPerObject, b = np.histogram(ids, np.arange(ids.max() + 1.5) + .5)
+            ids, numPerObject = objectMeasurements.getIDs(pipeline, img)
 
             pipeline.addColumn('objectID', ids)
             pipeline.addColumn('NEvents', numPerObject[ids-1])
