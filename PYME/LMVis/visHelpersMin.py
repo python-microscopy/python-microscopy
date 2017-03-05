@@ -26,7 +26,7 @@ import numpy
 
 from math import floor
 
-from PYME.Analysis.points.qHull.triangWrap import RenderTetrahedra
+from PYME.Analysis.points.SoftRend import RenderTetrahedra
 from PYME.Analysis.points import EdgeDB
 
 multiProc = False
