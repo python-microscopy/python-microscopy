@@ -52,6 +52,8 @@ def get_ns():
         if _ns is None:
             _ns = pzc.getNS('_pyme-http')
             time.sleep(1.5 + np.random.rand())
+
+    return _ns
             
 
 if not 'sphinx' in sys.modules.keys():
