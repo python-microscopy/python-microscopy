@@ -131,26 +131,39 @@ class VisGUICore(object):
         self.glCanvas.Refresh()
         
     def GenDataSourcePanel(self, pnl):
-        item = afp.foldingPane(pnl, -1, caption="Data Source", pinned = False)
+        item = afp.foldingPane(pnl, -1, caption="Data Source", pinned = True)
 
-        self.dsRadioIds = []
-        self._ds_keys_by_id = {}
-        for ds in self.pipeline.dataSources.keys():
-            rbid = wx.NewId()
-            self.dsRadioIds.append(rbid)
-            rb = wx.RadioButton(item, rbid, ds)
-            rb.SetValue(ds == self.pipeline.selectedDataSourceKey)
+        #self.dsRadioIds = []
+        #self._ds_keys_by_id = {}
+        #for ds in self.pipeline.dataSources.keys():
+        #    rbid = wx.NewId()
+        #    self.dsRadioIds.append(rbid)
+        #    rb = wx.RadioButton(item, rbid, ds)
+        #    rb.SetValue(ds == self.pipeline.selectedDataSourceKey)
 
-            self._ds_keys_by_id[rbid] = ds
+        #    self._ds_keys_by_id[rbid] = ds
 
-            rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
-            item.AddNewElement(rb)
+        #    rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
+        
+        self.chSource = wx.Choice(item, -1, choices=[])
+        self.set_datasource_choices()
+        self.chSource.Bind(wx.EVT_CHOICE, self.OnSourceChange)
+        self.pipeline.onRebuild.connect(self.set_datasource_choices)
+            
+        item.AddNewElement(self.chSource)
 
         pnl.AddPane(item)
-
+        
+    def set_datasource_choices(self, event=None, **kwargs):
+        dss = self.pipeline.dataSources.keys()
+        self.chSource.SetItems(dss)
+        if not self.pipeline.selectedDataSourceKey is None:
+            self.chSource.SetStringSelection(self.pipeline.selectedDataSourceKey)
+        
 
     def OnSourceChange(self, event):
-        self.pipeline.selectDataSource(self._ds_keys_by_id[event.GetId()])
+        #self.pipeline.selectDataSource(self._ds_keys_by_id[event.GetId()])
+        self.pipeline.selectDataSource(self.chSource.GetStringSelection())
         
         
     def pointColour(self):
