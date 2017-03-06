@@ -202,12 +202,15 @@ class PointSpritesRenderLayer(RenderLayer):
 
         self._texture.enable_texture_2d()
         self._texture.bind_texture()
-        glPointSize(self.pointSize)
+        if self.pointSize <= 0:
+            glPointSize(1.0)
+        else:
+            glPointSize(self.pointSize)
         glDrawArrays(GL_POINTS, 0, n_vertices)
 
 #       it's very important to disable the program again, so the other layers are still processed with the default
 #       pipeline
-        glUseProgram(0)
+        glcanvas.defaultProgram.use()
         glDisable(GL_BLEND)
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_PROGRAM_POINT_SIZE)
@@ -215,7 +218,7 @@ class PointSpritesRenderLayer(RenderLayer):
 
     def initialize_open_gl(self):
         """
-        Since we can't use the default pipeline anymore we need to create a OpenGL-programm and attach the shaders our-
+        Since we can't use the default pipeline anymore we need to create a OpenGL-program and attach the shaders our-
         selves.
         :return:
         """
@@ -275,6 +278,7 @@ class SelectionSettings(object):
 
 
 class SelectionOverlay(object):
+
     def __init__(self, selectionSettings):
         self.selectionSettings = selectionSettings
 
@@ -291,6 +295,7 @@ class SelectionOverlay(object):
             glVertex3f(x1, y1, glcanvas.zc)
             glVertex3f(x0, y1, glcanvas.zc)
             glEnd()
+
 
 class MessageOverlay(object):
     def __init__(self, message = '', x=-.7, y=0):
@@ -328,6 +333,9 @@ class MessageOverlay(object):
 
 
 class LMGLCanvas(GLCanvas):
+
+    defaultProgram = None
+
     def __init__(self, parent):
         attriblist = [wx.glcanvas.WX_GL_RGBA,wx.glcanvas.WX_GL_STENCIL_SIZE,8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
         GLCanvas.__init__(self, parent,-1, attribList = attriblist)
@@ -445,6 +453,7 @@ class LMGLCanvas(GLCanvas):
         self.SetCurrent()
         if not self.init:
             self.InitGL()
+            self.defaultProgram = DefaultProgram()
             self.init = 1
         else:
             self.OnDraw()
@@ -510,6 +519,7 @@ class LMGLCanvas(GLCanvas):
 
 
     def OnDraw(self):
+        self.defaultProgram.use()
         self.interlace_stencil()
         glEnable(GL_DEPTH_TEST)
         glClear(GL_COLOR_BUFFER_BIT)
@@ -563,13 +573,10 @@ class LMGLCanvas(GLCanvas):
             #glTranslatef(-self.xc, -self.yc, -self.zc)
             glScalef(self.scale, self.scale, self.scale)
 
-            self.drawScaleBar()
-            self.drawLUT()
-
+            glPushMatrix()
             if not self.displayMode == '2D':
                 glMultMatrixf(self.trafMatrix)
-    
-            
+
             glTranslatef(-self.xc, -self.yc, -self.zc)
             
             for l in self.layers:
@@ -578,7 +585,10 @@ class LMGLCanvas(GLCanvas):
             for o in self.overlays:
                 o.render(self)
 
+            glPopMatrix()
 
+            self.drawScaleBar()
+            self.drawLUT()
 
 
         glFlush()
@@ -1462,6 +1472,29 @@ class Texture:
     @staticmethod
     def disable_texture_2d():
         glDisable(GL_TEXTURE_2D)
+
+
+class DefaultProgram(object):
+    """
+    Since we can't use the default pipeline anymore we need to create a OpenGL-program and attach the shaders our-
+    selves.
+
+    This class helps to simulate the fixed function pipeline. It uses simple default shaders without lightning.
+    Instead of calling glUseProgram(0) after a specialized pipeline. Call <Defaultprogram>.use()
+    """
+
+    _programManager = None
+
+    def __init__(self):
+        shaderpath = os.path.join(os.path.dirname(__file__), "./shaders/")
+        self._programManager = GlProgramManager(shaderpath)
+        self._programManager.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
+        self._programManager.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
+        self._programManager.link()
+        self._is_initialized = 1
+
+    def use(self):
+        self._programManager.use()
 
 
 def main():
