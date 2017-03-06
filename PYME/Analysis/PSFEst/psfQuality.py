@@ -71,6 +71,17 @@ def voxelsize_x(image, psft):
     vsx = image.mdh['voxelsize.x']*1e3
     merit = (np.abs(vsx - 70.)/20)**2    
     return vsx, merit
+
+@loc_test('Size x')
+#@dec_test('Size x')
+def size_x(image, psft):
+    """The extracted image should be large enough to capture the PSF, with a fair bit of wriggle room on either side.
+    The default of 61 pixels does this in most situations. Smaller PSFs might work, but are are not guaranteed to - use
+    with caution.
+    """
+    sx = image.data.shape[0]
+    merit = 2.5*(sx < 61)
+    return sx, merit
     
 @loc_test('Voxelsize z')
 def voxelsize_z_loc(image, psft):

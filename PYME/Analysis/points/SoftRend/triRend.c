@@ -562,6 +562,74 @@ static PyObject * drawTetrahedra(PyObject *self, PyObject *args, PyObject *keywd
     return Py_None;
 }
 
+static PyObject * PyTetAndDraw(PyObject *self, PyObject *args, PyObject *keywds)
+{
+    PyObject *oPositions =0;
+    PyArrayObject* aPositions;
+
+    PyObject *odata =0;
+
+    double *data;
+
+    int dim, nPositions, sizeX, sizeY, sizeZ;
+    int iErr;
+    BOOL calc_area;
+
+    static char *kwlist[] = {"positions", "data", "calcArea", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OO|I", kwlist,
+         &oPositions, &odata, &calc_area))
+        return NULL;
+
+    if (!PyArray_Check(odata) || !PyArray_ISFORTRAN(odata))
+    {
+        PyErr_Format(PyExc_RuntimeError, "Expecting a fortran contiguous numpy array");
+        return NULL;
+    }
+
+    if (PyArray_NDIM(odata) != 3)
+    {
+        PyErr_Format(PyExc_RuntimeError, "Expecting a 3 dimensional array");
+        return NULL;
+    }
+
+    aPositions = (PyArrayObject *) PyArray_ContiguousFromObject(oPositions, PyArray_DOUBLE, 2, 2);
+    if (aPositions == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad position data");
+      return NULL;
+    }
+
+
+    dim = PyArray_DIM(aPositions, 1);
+    nPositions = PyArray_DIM(aPositions, 0);
+
+    if (dim != 3)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Expecting an Nx3 array of point positions");
+      Py_DECREF(aPositions);
+      return NULL;
+    }
+
+    sizeX = PyArray_DIM(odata, 1);
+    sizeY = PyArray_DIM(odata, 0);
+    sizeZ = PyArray_DIM(odata, 2);
+
+    data = (double*) PyArray_DATA(odata);
+
+    iErr = tetAndDraw((coordT *)PyArray_DATA(aPositions), nPositions, data, sizeX, sizeY, sizeZ, calc_area);
+    if (iErr)
+    {
+      PyErr_Format(PyExc_RuntimeError, "QHull error");
+      Py_DECREF(aPositions);
+      return NULL;
+    }
+
+    Py_DECREF(aPositions);
+
+    return Py_None;
+}
+
 
 
 
@@ -571,6 +639,8 @@ static PyMethodDef triRendMethods[] = {
     {"drawTriangles",  (PyCFunction)drawTriangles, METH_VARARGS | METH_KEYWORDS,
     ""},
     {"drawTetrahedra",  (PyCFunction)drawTetrahedra, METH_VARARGS | METH_KEYWORDS,
+    ""},
+    {"RenderTetrahedra",  (PyCFunction)PyTetAndDraw, METH_VARARGS | METH_KEYWORDS,
     ""},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };

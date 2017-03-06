@@ -18,11 +18,14 @@ from PYME.IO import unifiedIO
 import logging
 logger = logging.getLogger(__name__)
 
+import warnings
+
 import numpy as np
 #import sys
 
 def saveDataFrame(output, filename):
     """Saves a pandas dataframe, inferring the destination type based on extension"""
+    warnings.warn('saveDataFrame is deprecated, use output modules instead', DeprecationWarning)
     if filename.endswith('.csv'):
         output.to_csv(filename)
     elif filename.endswith('.xlsx') or filename.endswith('.xls'):
@@ -34,6 +37,7 @@ def saveDataFrame(output, filename):
 
 def saveTabular(output, filename):
     """Saves a pandas dataframe, inferring the destination type based on extension"""
+    warnings.warn('saveTabular is deprecated, use output modules instead', DeprecationWarning)
     if filename.endswith('.csv'):
         output.toDataFrame().to_csv(filename)
     elif filename.endswith('.xlsx') or filename.endswith('.xls'):
@@ -44,6 +48,7 @@ def saveTabular(output, filename):
         output.to_hdf(filename + '.hdf', 'Data')
     
 def saveOutput(output, filename):
+    warnings.warn('saveOutput is deprecated, use output modules instead', DeprecationWarning)
     """Save an output variable, inferring type from the file extension"""
     if isinstance(output, ImageStack):
         try:

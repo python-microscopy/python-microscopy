@@ -300,7 +300,16 @@ class DSViewFrame(AUIFrame):
         
     def OnSaveToCluster(self, event=None):
         from PYME.IO import clusterExport
-        clusterExport.SaveImageToCluster(self.image)
+        
+        seriesName = clusterExport.suggest_cluster_filename(self.image)
+
+        ted = wx.TextEntryDialog(None, 'Cluster filename:', 'Save file to cluster', seriesName)
+
+        if ted.ShowModal() == wx.ID_OK:
+            #pd = wx.ProgressDialog()
+            clusterExport.ExportImageToCluster(self.image, ted.GetValue())
+
+        ted.Destroy()
 
     def OnExport(self, event=None):
         self.image.Save(crop = True, view = self.view)
