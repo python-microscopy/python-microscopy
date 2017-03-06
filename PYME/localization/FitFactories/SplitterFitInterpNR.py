@@ -330,7 +330,7 @@ from PYME.localization.FitFactories import Interpolators
 from PYME.localization.FitFactories import zEstimators
 
 PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','CSInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
-              mde.FilenameParam('PSFFile', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
+              mde.FilenameParam('PSFFile', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf|TIFF files|*.tif'),
               mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
               #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
               mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', -270),
