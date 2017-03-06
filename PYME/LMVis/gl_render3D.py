@@ -171,23 +171,20 @@ class PointSpritesRenderLayer(RenderLayer):
         """
         RenderLayer.__init__(self, vertices, normals, colours, cmap, clim, mode, pointsize, alpha)
 
-    def render(self, gl_canvas=None):
+    def render(self, glcanvas=None):
         """
         The OpenGL context isn't available before the OnPaint method.
         That's why we can't initialize the program while initializing the class. Which would be the better fit.
-        To solve this problem, we need to check if the program was already created and can be used. If not we will create it.
+        To solve this problem, we need to check if the program was already created and can be used.
+        If not we will create it.
 
 
-        :param gl_canvas: the scene is drawn into
+        :param glcanvas: the scene is drawn into
         :return: nothing
         """
         if not self._is_initialized:
-            # It's useful to print the OpenGL version and the hardware.
-            # It can be deleted if unnecessary
-            print(glGetString(GL_SHADING_LANGUAGE_VERSION))
-            print(glGetString(GL_VERSION))
-            print(glGetString(GL_RENDERER))
             self.initialize_open_gl()
+
         self._programManager.use()
         glEnable(GL_POINT_SPRITE)
         glEnable(GL_PROGRAM_POINT_SIZE)
@@ -211,9 +208,7 @@ class PointSpritesRenderLayer(RenderLayer):
 #       it's very important to disable the program again, so the other layers are still processed with the default
 #       pipeline
         glUseProgram(0)
-        self._texture.disable_texture_2d()
         glDisable(GL_BLEND)
-        glDepthMask(GL_TRUE)
         glDisable(GL_DEPTH_TEST)
         glDisable(GL_PROGRAM_POINT_SIZE)
         glDisable(GL_POINT_SPRITE)
@@ -230,14 +225,12 @@ class PointSpritesRenderLayer(RenderLayer):
         self._programManager.add_shader("pointsprites_fs.glsl", GL_FRAGMENT_SHADER)
         self._programManager.link()
         self._programManager.use()
-        self._is_initialized = 1
-
         self._texture = Texture()
         self._texture.load_texture()
-
         self._uniform_tex_2d_id = glGetUniformLocation(self._programManager.get_program(), b'tex2D')
+        self._is_initialized = 1
 
-        
+
 class TrackLayer(RenderLayer):
     def __init__(self, vertices, colours, cmap, clim, clumpSizes, clumpStarts, alpha=1):
         self.verts = vertices
@@ -270,7 +263,8 @@ class TrackLayer(RenderLayer):
             if cl > 0:
                 glDrawArrays(self.drawModes['tracks'], self.clumpStarts[i], cl)
 
-        glPopMatrix ()
+        glPopMatrix()
+
 
 class SelectionSettings(object):
     def __init__(self):
@@ -278,6 +272,7 @@ class SelectionSettings(object):
         self.finish = (0,0)
         self.colour = [1,1,0]
         self.show = False
+
 
 class SelectionOverlay(object):
     def __init__(self, selectionSettings):
@@ -564,12 +559,12 @@ class LMGLCanvas(GLCanvas):
                 self.drawAxes(self.trafMatrix, ys)
             else:
                 self.trafMatrix = numpy.eye(4)            
-            
-            #glTranslatef(-self.xc, -self.yc, -self.zc) 
+
+            #glTranslatef(-self.xc, -self.yc, -self.zc)
             glScalef(self.scale, self.scale, self.scale)
 
             self.drawScaleBar()
-            self.drawLUT()            
+            self.drawLUT()
 
             if not self.displayMode == '2D':
                 glMultMatrixf(self.trafMatrix)
@@ -584,7 +579,7 @@ class LMGLCanvas(GLCanvas):
                 o.render(self)
 
 
-        
+
 
         glFlush()
         #glPopMatrix()
@@ -1417,8 +1412,8 @@ class TestApp2(wx.App):
         frame = wx.Frame(None, -1, 'ball_wx', wx.DefaultPosition, wx.Size(800, 800))
         canvas = LMGLCanvas(frame)
         to = testObj()
-        canvas.displayMode = '3D'
         canvas.pointSize = 20
+
 #        canvas.setPoints3D(to[0], to[1], to[2], recenter=True, mode='billboard')
         canvas.setPoints3D(to[0], to[1], to[2], mode='pointsprites')
         canvas.Refresh()
@@ -1445,18 +1440,20 @@ class Texture:
 
     def bind_texture(self):
         glBindTexture(GL_TEXTURE_2D, self._texture_id)
-
-    def load_texture(self, size=10):
-        data = gaussKernel(size, 2)
-        glGenTextures(1, self._texture_id)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, size, size, 0, GL_LUMINANCE, GL_FLOAT, np.float16(data))
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
 
-    def unbind_texture(self):
-        self._texture_id = 0
+    def load_texture(self, size=10):
+        data = gaussKernel(size, 2)
+        glGenTextures(1, self._texture_id)
+        self.bind_texture()
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, size, size, 0, GL_LUMINANCE, GL_FLOAT, np.float16(data))
+
+    def delete_texture(self):
+        glDeleteTextures(1, self._texture_id)
+
 
     @staticmethod
     def enable_texture_2d():
@@ -1468,7 +1465,7 @@ class Texture:
 
 
 def main():
-    app = TestApp()
+    app = TestApp2()
     app.MainLoop()
 
 if __name__ == '__main__': main()

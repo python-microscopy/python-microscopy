@@ -120,7 +120,8 @@ class VisGUICore(object):
 
         if self.viewMode == 'points' or self.viewMode == 'tracks':
             pointSettingsPanel.GenPointsPanel(self, sidePanel)
-
+        if self.viewMode == 'pointsprites':
+            pointSettingsPanel.GenPointsPanel(self, sidePanel)
         if self.viewMode == 'blobs':
             triBlobs.GenBlobPanel(self, sidePanel)
 
@@ -194,6 +195,7 @@ class VisGUICore(object):
 
 
         self.AddMenuItem('View', '&Points', self.OnViewPoints, itemType='normal') #TODO - add radio type
+        self.AddMenuItem('View', '&Pointsprites', self.OnViewPointsprites)
         self.AddMenuItem('View',  '&Triangles', self.OnViewTriangles)
         self.AddMenuItem('View', '3D Triangles', self.OnViewTriangles3D)
         self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
@@ -260,6 +262,13 @@ class VisGUICore(object):
     def OnViewPoints(self,event):
         self.viewMode = 'points'
         #self.glCanvas.cmap = pylab.cm.hsv
+        self.RefreshView()
+        self.CreateFoldPanel()
+        self.displayPane.OnPercentileCLim(None)
+
+    def OnViewPointsprites(self, event):
+        self.viewMode = 'pointsprites'
+        # self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
         self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
@@ -371,6 +380,11 @@ class VisGUICore(object):
             else:
                 self.glCanvas.setPoints(self.pipeline['x'], 
                                     self.pipeline['y'], self.pointColour())
+        elif self.viewMode == 'pointsprites':
+            self.glCanvas.setPoints3D(self.pipeline['x'],
+                                      self.pipeline['y'],
+                                      self.pipeline['z'],
+                                      self.pointColour(), alpha=self.pointDisplaySettings.alpha, mode='pointsprites')
                                     
         elif self.viewMode == 'tracks':
             if 'setTracks3D' in dir(self.glCanvas) and 'z' in self.pipeline.keys():
