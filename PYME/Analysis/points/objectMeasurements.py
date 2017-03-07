@@ -25,6 +25,10 @@ import numpy as np
 
 def getIDs(inp, img):
     """
+    Function to propagate labels from a segmented image (or stack of images) to localizations within the input
+    datasource. Localizations in the same area (or volume) of image.ImageStack labels will be given the same ID
+    as that label, which is the first output. Additionally, the number of localizations within each label is also
+    returned, in a 1-item-per-localization array.
 
     Parameters
     ----------

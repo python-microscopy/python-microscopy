@@ -451,6 +451,21 @@ class ClusterCountVsImagingTime(ModuleBase):
 @register_module('GetIDsFromImageLabels')
 class GetIDsFromImageLabels(ModuleBase):
     """
+    Function to propagate labels from a segmented image (or stack of images) to localizations within the input
+    datasource. Localizations in the same area (or volume) of image.ImageStack labels will be given the same 'ObjectID'
+    as that label, which will be a key in the output datasource.
+
+    Parameters
+    ----------
+    inputName: namespace key for input datasource (localizations)
+    inputImage: namespace key for input previously-segmented image
+    outputName = namespace key to be given to outgoing datasource
+
+    Returns
+    -------
+    Nothing, but adds ObjectID and NEvents columns to the pipeline
+        ObjectID: Label number from image, mapped to each localization within that label
+        NEvents: Number of localizations within the label that a given localization belongs to
 
     """
     inputName = Input('input')
