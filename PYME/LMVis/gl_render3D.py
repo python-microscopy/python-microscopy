@@ -23,7 +23,7 @@
 import os
 
 from PYME.LMVis.rendGauss import gaussKernel
-from scipy.misc import toimage
+#from scipy.misc import toimage
 from wx.glcanvas import GLCanvas
 import wx.glcanvas
 import wx
@@ -333,10 +333,9 @@ class MessageOverlay(object):
 
 
 class LMGLCanvas(GLCanvas):
-
     defaultProgram = None
 
-    def __init__(self, parent):
+    def __init__(self, parent, use_shaders=False):
         attriblist = [wx.glcanvas.WX_GL_RGBA,wx.glcanvas.WX_GL_STENCIL_SIZE,8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
         GLCanvas.__init__(self, parent,-1, attribList = attriblist)
         wx.EVT_PAINT(self, self.OnPaint)
@@ -354,6 +353,7 @@ class LMGLCanvas(GLCanvas):
         
         self.gl_context = wx.glcanvas.GLContext(self)
 
+        self.use_shaders=use_shaders
         self.init = 0
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
@@ -453,7 +453,8 @@ class LMGLCanvas(GLCanvas):
         self.SetCurrent()
         if not self.init:
             self.InitGL()
-            self.defaultProgram = DefaultProgram()
+            if self.use_shaders:
+                self.defaultProgram = DefaultProgram()
             self.init = 1
         else:
             self.OnDraw()
@@ -519,7 +520,8 @@ class LMGLCanvas(GLCanvas):
 
 
     def OnDraw(self):
-        self.defaultProgram.use()
+        if self.use_shaders:
+            self.defaultProgram.use()
         self.interlace_stencil()
         glEnable(GL_DEPTH_TEST)
         glClear(GL_COLOR_BUFFER_BIT)

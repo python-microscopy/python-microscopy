@@ -1,4 +1,4 @@
-#version 330
+#version 120
 //This is a very simple shader. It simply forwards the given color to the fragment.
 //There's no shading involved.
 void main() {
