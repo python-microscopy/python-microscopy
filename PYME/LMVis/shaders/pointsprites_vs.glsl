@@ -1,4 +1,4 @@
-#version 330
+#version 120
 //This vertex shader simply transforms the position in eye space and forwards it.
 //This is one of the simplest vertex shader possible.
 //It simply passes the given color to the fragment shader and

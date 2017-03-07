@@ -26,7 +26,7 @@ from OpenGL.GL import *
 from gl_shaderLoader import *
 
 
-class GlProgramManager:
+class ShaderProgram:
     """
     This class handles all  OpenGl-PROGRAM related stuff
 
