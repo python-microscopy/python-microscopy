@@ -448,5 +448,36 @@ class ClusterCountVsImagingTime(ModuleBase):
         namespace[self.outputName] = res
 
 
+@register_module('GetIDsFromImageLabels')
+class GetIDsFromImageLabels(ModuleBase):
+    """
+
+    """
+    inputName = Input('input')
+    inputImage = Input('LabeledImage')
+
+    outputName = Output('labeled')
+
+    def execute(self, namespace):
+        from PYME.IO import tabular
+        from PYME.Analysis.points import objectMeasurements
+
+        inp = namespace[self.inputName]
+        img = namespace[self.inputImage]
+        #img = image.openImages[dlg.GetStringSelection()]
+
+        ids, numPerObject = objectMeasurements.getIDs(inp, img)
+
+        labeled = tabular.mappingFilter(inp)
+        labeled.addColumn('objectID', ids)
+        labeled.addColumn('NEvents', numPerObject[ids - 1])
+
+        # propagate metadata, if present
+        try:
+            labeled.mdh = namespace[self.inputName].mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = labeled
 
 
