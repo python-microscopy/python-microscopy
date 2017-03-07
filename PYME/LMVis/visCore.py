@@ -120,7 +120,8 @@ class VisGUICore(object):
 
         if self.viewMode == 'points' or self.viewMode == 'tracks':
             pointSettingsPanel.GenPointsPanel(self, sidePanel)
-
+        if self.viewMode == 'pointsprites':
+            pointSettingsPanel.GenPointsPanel(self, sidePanel)
         if self.viewMode == 'blobs':
             triBlobs.GenBlobPanel(self, sidePanel)
 
@@ -131,26 +132,39 @@ class VisGUICore(object):
         self.glCanvas.Refresh()
         
     def GenDataSourcePanel(self, pnl):
-        item = afp.foldingPane(pnl, -1, caption="Data Source", pinned = False)
+        item = afp.foldingPane(pnl, -1, caption="Data Source", pinned = True)
 
-        self.dsRadioIds = []
-        self._ds_keys_by_id = {}
-        for ds in self.pipeline.dataSources.keys():
-            rbid = wx.NewId()
-            self.dsRadioIds.append(rbid)
-            rb = wx.RadioButton(item, rbid, ds)
-            rb.SetValue(ds == self.pipeline.selectedDataSourceKey)
+        #self.dsRadioIds = []
+        #self._ds_keys_by_id = {}
+        #for ds in self.pipeline.dataSources.keys():
+        #    rbid = wx.NewId()
+        #    self.dsRadioIds.append(rbid)
+        #    rb = wx.RadioButton(item, rbid, ds)
+        #    rb.SetValue(ds == self.pipeline.selectedDataSourceKey)
 
-            self._ds_keys_by_id[rbid] = ds
+        #    self._ds_keys_by_id[rbid] = ds
 
-            rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
-            item.AddNewElement(rb)
+        #    rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
+        
+        self.chSource = wx.Choice(item, -1, choices=[])
+        self.set_datasource_choices()
+        self.chSource.Bind(wx.EVT_CHOICE, self.OnSourceChange)
+        self.pipeline.onRebuild.connect(self.set_datasource_choices)
+            
+        item.AddNewElement(self.chSource)
 
         pnl.AddPane(item)
-
+        
+    def set_datasource_choices(self, event=None, **kwargs):
+        dss = self.pipeline.dataSources.keys()
+        self.chSource.SetItems(dss)
+        if not self.pipeline.selectedDataSourceKey is None:
+            self.chSource.SetStringSelection(self.pipeline.selectedDataSourceKey)
+        
 
     def OnSourceChange(self, event):
-        self.pipeline.selectDataSource(self._ds_keys_by_id[event.GetId()])
+        #self.pipeline.selectDataSource(self._ds_keys_by_id[event.GetId()])
+        self.pipeline.selectDataSource(self.chSource.GetStringSelection())
         
         
     def pointColour(self):
@@ -194,6 +208,7 @@ class VisGUICore(object):
 
 
         self.AddMenuItem('View', '&Points', self.OnViewPoints, itemType='normal') #TODO - add radio type
+        self.AddMenuItem('View', '&Pointsprites', self.OnViewPointsprites)
         self.AddMenuItem('View',  '&Triangles', self.OnViewTriangles)
         self.AddMenuItem('View', '3D Triangles', self.OnViewTriangles3D)
         self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
@@ -260,6 +275,13 @@ class VisGUICore(object):
     def OnViewPoints(self,event):
         self.viewMode = 'points'
         #self.glCanvas.cmap = pylab.cm.hsv
+        self.RefreshView()
+        self.CreateFoldPanel()
+        self.displayPane.OnPercentileCLim(None)
+
+    def OnViewPointsprites(self, event):
+        self.viewMode = 'pointsprites'
+        # self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
         self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
@@ -371,6 +393,11 @@ class VisGUICore(object):
             else:
                 self.glCanvas.setPoints(self.pipeline['x'], 
                                     self.pipeline['y'], self.pointColour())
+        elif self.viewMode == 'pointsprites':
+            self.glCanvas.setPoints3D(self.pipeline['x'],
+                                      self.pipeline['y'],
+                                      self.pipeline['z'],
+                                      self.pointColour(), alpha=self.pointDisplaySettings.alpha, mode='pointsprites')
                                     
         elif self.viewMode == 'tracks':
             if 'setTracks3D' in dir(self.glCanvas) and 'z' in self.pipeline.keys():

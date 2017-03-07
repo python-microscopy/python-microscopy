@@ -20,7 +20,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+import os
 
+from PYME.LMVis.rendGauss import gaussKernel
+#from scipy.misc import toimage
 from wx.glcanvas import GLCanvas
 import wx.glcanvas
 import wx
@@ -37,6 +40,7 @@ import numpy as np
 import pylab
 from six.moves import xrange
 
+from PYME.LMVis.gl_program import GlProgramManager
 
 try:
     from gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
@@ -103,8 +107,7 @@ class RenderLayer(object):
         
         self.mode = mode
         self.pointSize=pointsize
-        
-        
+
     def render(self, glcanvas=None):
         if self.mode in ['points']:
             #glDisable(GL_LIGHTING)
@@ -135,7 +138,102 @@ class RenderLayer(object):
         glDrawArrays(self.drawModes[self.mode], 0, nVertices)
 
         glPopMatrix ()
-        
+
+
+class BillboardRenderLayer(RenderLayer):
+    def __init__(self, vertices, normals, colours, cmap, clim, mode='billboarding', pointsize=5, alpha=1):
+        RenderLayer.__init__(self, vertices, normals, colours, cmap, clim, mode, pointsize, alpha)
+
+    def render(self, glcanvas=None):
+        pass
+
+
+class PointSpritesRenderLayer(RenderLayer):
+    """
+    This class prepares OpenGL for displaying the point clouds using point sprites.
+
+    """
+
+#    Since shaders need to be used, there must be a program be set up
+#    this attribute handles creation and usage of this program
+    _programManager = None
+#    This attribute indicates weather the program has already been initialized
+    _is_initialized = 0
+#    This attribute holds an instance of a texture class
+    _texture = None
+#    This is the uniform location to pass to the fragment shader to locate the texture
+    _uniform_tex_2d_id = 0
+
+    def __init__(self, vertices, normals, colours, cmap, clim, mode='pointsprites', pointsize=5, alpha=1):
+        """
+        This constructor is only used to call the super constructor and set those parameters.
+        Some of them may never be used.
+        """
+        RenderLayer.__init__(self, vertices, normals, colours, cmap, clim, mode, pointsize, alpha)
+
+    def render(self, glcanvas=None):
+        """
+        The OpenGL context isn't available before the OnPaint method.
+        That's why we can't initialize the program while initializing the class. Which would be the better fit.
+        To solve this problem, we need to check if the program was already created and can be used.
+        If not we will create it.
+
+
+        :param glcanvas: the scene is drawn into
+        :return: nothing
+        """
+        if not self._is_initialized:
+            self.initialize_open_gl()
+
+        self._programManager.use()
+        glEnable(GL_POINT_SPRITE)
+        glEnable(GL_PROGRAM_POINT_SIZE)
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
+        glBlendEquation(GL_FUNC_ADD)
+        glDepthMask(GL_FALSE)
+
+        n_vertices = self.verts.shape[0]
+
+        self.vs_ = glVertexPointerf(self.verts)
+        self.n_ = glNormalPointerf(self.normals)
+        self.c_ = glColorPointerf(self.cs)
+
+        self._texture.enable_texture_2d()
+        self._texture.bind_texture()
+        if self.pointSize <= 0:
+            glPointSize(1.0)
+        else:
+            glPointSize(self.pointSize)
+        glDrawArrays(GL_POINTS, 0, n_vertices)
+
+#       it's very important to disable the program again, so the other layers are still processed with the default
+#       pipeline
+        glcanvas.defaultProgram.use()
+        glDisable(GL_BLEND)
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_PROGRAM_POINT_SIZE)
+        glDisable(GL_POINT_SPRITE)
+
+    def initialize_open_gl(self):
+        """
+        Since we can't use the default pipeline anymore we need to create a OpenGL-program and attach the shaders our-
+        selves.
+        :return:
+        """
+        shaderpath = os.path.join(os.path.dirname(__file__), "./shaders/")
+        self._programManager = GlProgramManager(shaderpath)
+        self._programManager.add_shader("pointsprites_vs.glsl", GL_VERTEX_SHADER)
+        self._programManager.add_shader("pointsprites_fs.glsl", GL_FRAGMENT_SHADER)
+        self._programManager.link()
+        self._programManager.use()
+        self._texture = Texture()
+        self._texture.load_texture()
+        self._uniform_tex_2d_id = glGetUniformLocation(self._programManager.get_program(), b'tex2D')
+        self._is_initialized = 1
+
+
 class TrackLayer(RenderLayer):
     def __init__(self, vertices, colours, cmap, clim, clumpSizes, clumpStarts, alpha=1):
         self.verts = vertices
@@ -168,7 +266,8 @@ class TrackLayer(RenderLayer):
             if cl > 0:
                 glDrawArrays(self.drawModes['tracks'], self.clumpStarts[i], cl)
 
-        glPopMatrix ()
+        glPopMatrix()
+
 
 class SelectionSettings(object):
     def __init__(self):
@@ -177,7 +276,9 @@ class SelectionSettings(object):
         self.colour = [1,1,0]
         self.show = False
 
+
 class SelectionOverlay(object):
+
     def __init__(self, selectionSettings):
         self.selectionSettings = selectionSettings
 
@@ -194,6 +295,7 @@ class SelectionOverlay(object):
             glVertex3f(x1, y1, glcanvas.zc)
             glVertex3f(x0, y1, glcanvas.zc)
             glEnd()
+
 
 class MessageOverlay(object):
     def __init__(self, message = '', x=-.7, y=0):
@@ -231,7 +333,9 @@ class MessageOverlay(object):
 
 
 class LMGLCanvas(GLCanvas):
-    def __init__(self, parent):
+    defaultProgram = None
+
+    def __init__(self, parent, use_shaders=False):
         attriblist = [wx.glcanvas.WX_GL_RGBA,wx.glcanvas.WX_GL_STENCIL_SIZE,8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
         GLCanvas.__init__(self, parent,-1, attribList = attriblist)
         wx.EVT_PAINT(self, self.OnPaint)
@@ -249,6 +353,7 @@ class LMGLCanvas(GLCanvas):
         
         self.gl_context = wx.glcanvas.GLContext(self)
 
+        self.use_shaders=use_shaders
         self.init = 0
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
@@ -348,6 +453,8 @@ class LMGLCanvas(GLCanvas):
         self.SetCurrent()
         if not self.init:
             self.InitGL()
+            if self.use_shaders:
+                self.defaultProgram = DefaultProgram()
             self.init = 1
         else:
             self.OnDraw()
@@ -413,6 +520,8 @@ class LMGLCanvas(GLCanvas):
 
 
     def OnDraw(self):
+        if self.use_shaders:
+            self.defaultProgram.use()
         self.interlace_stencil()
         glEnable(GL_DEPTH_TEST)
         glClear(GL_COLOR_BUFFER_BIT)
@@ -462,17 +571,14 @@ class LMGLCanvas(GLCanvas):
                 self.drawAxes(self.trafMatrix, ys)
             else:
                 self.trafMatrix = numpy.eye(4)            
-            
-            #glTranslatef(-self.xc, -self.yc, -self.zc) 
+
+            #glTranslatef(-self.xc, -self.yc, -self.zc)
             glScalef(self.scale, self.scale, self.scale)
 
-            self.drawScaleBar()
-            self.drawLUT()            
-
+            glPushMatrix()
             if not self.displayMode == '2D':
                 glMultMatrixf(self.trafMatrix)
-    
-            
+
             glTranslatef(-self.xc, -self.yc, -self.zc)
             
             for l in self.layers:
@@ -481,8 +587,11 @@ class LMGLCanvas(GLCanvas):
             for o in self.overlays:
                 o.render(self)
 
+            glPopMatrix()
 
-        
+            self.drawScaleBar()
+            self.drawLUT()
+
 
         glFlush()
         #glPopMatrix()
@@ -766,7 +875,7 @@ class LMGLCanvas(GLCanvas):
         self.setTriang(T, wireframe=True)
 
 
-    def setPoints3D(self, x, y, z, c = None, a = None, recenter=False, alpha = 1.0):#, clim=None):
+    def setPoints3D(self, x, y, z, c = None, a = None, recenter=False, alpha = 1.0, mode='points'):#, clim=None):
         #center data
         x = x #- x.mean()
         y = y #- y.mean()
@@ -775,7 +884,7 @@ class LMGLCanvas(GLCanvas):
         if recenter:        
             self.xc = x.mean()
             self.yc = y.mean()
-        
+
         self.zc = z.mean()
         self.zc_o = 1.0*self.zc
 
@@ -799,8 +908,13 @@ class LMGLCanvas(GLCanvas):
         self.SetCurrent()
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
-        
-        self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode='points', pointsize=self.pointSize, alpha=alpha))
+
+        if mode is 'billboard':
+            self.layers.append(BillboardRenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode, pointsize=self.pointSize, alpha=alpha))
+        elif mode is 'pointsprites':
+            self.layers.append(PointSpritesRenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode, pointsize=self.pointSize, alpha=alpha))
+        else:
+            self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode, pointsize=self.pointSize, alpha=alpha))
         self.Refresh()
         
     def setPoints(self, x, y, c = None, a = None, recenter=True, alpha=1.0):
@@ -1268,13 +1382,8 @@ class LMGLCanvas(GLCanvas):
         return snap
 
 
-
-
-
-
-
 def showGLFrame():
-    f = wx.Frame(None, size=(800,800))
+    f = wx.Frame(None, size=(800, 800))
     c = LMGLCanvas(f)
     f.Show()
     return c
@@ -1300,9 +1409,98 @@ class TestApp(wx.App):
         self.SetTopWindow(frame)
         return True
 
+class TestApp2(wx.App):
+    """
+    This testApp is used to for developing purposes.
+
+    It will be changed to test exactly the cases that were changed.
+
+    This is used for pointsprites and billboarding.
+    """
+    def __init__(self, *args):
+        wx.App.__init__(self,*args)
+
+    def OnInit(self):
+        frame = wx.Frame(None, -1, 'ball_wx', wx.DefaultPosition, wx.Size(800, 800))
+        canvas = LMGLCanvas(frame)
+        to = testObj()
+        canvas.pointSize = 20
+
+#        canvas.setPoints3D(to[0], to[1], to[2], recenter=True, mode='billboard')
+        canvas.setPoints3D(to[0], to[1], to[2], mode='pointsprites')
+        canvas.Refresh()
+        frame.Show()
+        self.SetTopWindow(frame)
+        return True
+
+
+class Texture:
+
+    # static texture counter
+    texture_counter = 0
+
+#   specific texture id of this texture
+    _texture_id = 0
+
+
+    def __init__(self):
+        """
+        This constructor makes sure every texture get's its own id
+        """
+        self._texture_id = Texture.texture_counter
+        Texture.texture_counter += 1
+
+    def bind_texture(self):
+        glBindTexture(GL_TEXTURE_2D, self._texture_id)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+
+    def load_texture(self, size=10):
+        data = gaussKernel(size, 2)
+        glGenTextures(1, self._texture_id)
+        self.bind_texture()
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, size, size, 0, GL_LUMINANCE, GL_FLOAT, np.float16(data))
+
+    def delete_texture(self):
+        glDeleteTextures(1, self._texture_id)
+
+
+    @staticmethod
+    def enable_texture_2d():
+        glEnable(GL_TEXTURE_2D)
+
+    @staticmethod
+    def disable_texture_2d():
+        glDisable(GL_TEXTURE_2D)
+
+
+class DefaultProgram(object):
+    """
+    Since we can't use the default pipeline anymore we need to create a OpenGL-program and attach the shaders our-
+    selves.
+
+    This class helps to simulate the fixed function pipeline. It uses simple default shaders without lightning.
+    Instead of calling glUseProgram(0) after a specialized pipeline. Call <Defaultprogram>.use()
+    """
+
+    _programManager = None
+
+    def __init__(self):
+        shaderpath = os.path.join(os.path.dirname(__file__), "./shaders/")
+        self._programManager = GlProgramManager(shaderpath)
+        self._programManager.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
+        self._programManager.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
+        self._programManager.link()
+        self._is_initialized = 1
+
+    def use(self):
+        self._programManager.use()
+
 
 def main():
-    app = TestApp()
+    app = TestApp2()
     app.MainLoop()
 
 if __name__ == '__main__': main()
