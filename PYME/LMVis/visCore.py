@@ -60,7 +60,7 @@ import numpy as np
 from PYME.LMVis import statusLog
 
 class VisGUICore(object):
-    def __init__(self):
+    def __init__(self, use_shaders=False):
         self.viewMode = 'points' #one of points, triangles, quads, or voronoi
         #self.colData = 't'
         self.pointDisplaySettings = pointSettingsPanel.PointDisplaySettings()
@@ -78,7 +78,7 @@ class VisGUICore(object):
         else:
             win = self.dsviewer
             
-        self.glCanvas = gl_render.LMGLCanvas(win)
+        self.glCanvas = gl_render.LMGLCanvas(win, use_shaders=use_shaders)
         win.AddPage(page=self.glCanvas, caption='View')#, select=True)
         self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
         
