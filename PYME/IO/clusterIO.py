@@ -233,6 +233,7 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
 
 _pool = None
 
+_list_dir_lock = threading.Lock()
 def listdirectory(dirname, serverfilter=''):
     """Lists the contents of a directory on the cluster.
 
@@ -242,28 +243,29 @@ def listdirectory(dirname, serverfilter=''):
     from . import clusterListing as cl
     from multiprocessing.pool import ThreadPool
 
-    if _pool is None:
-        _pool = ThreadPool(10)
-
-    dirlist = dict()
-
-    urls = []
-
-    dirname = dirname.lstrip('/')
-
-    if not dirname.endswith('/'):
-        dirname = dirname + '/'
-
-    for name, info in get_ns().advertised_services.items():
-        if serverfilter in name:
-            urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
-
-    listings = _pool.map(_listSingleDir, urls)
-
-    for dirL, dt in listings:
-        cl.aggregate_dirlisting(dirlist, dirL)
-
-    return dirlist
+    with _list_dir_lock:
+        if _pool is None:
+            _pool = ThreadPool(10)
+    
+        dirlist = dict()
+    
+        urls = []
+    
+        dirname = dirname.lstrip('/')
+    
+        if not dirname.endswith('/'):
+            dirname = dirname + '/'
+    
+        for name, info in get_ns().advertised_services.items():
+            if serverfilter in name:
+                urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
+    
+        listings = _pool.map(_listSingleDir, urls)
+    
+        for dirL, dt in listings:
+            cl.aggregate_dirlisting(dirlist, dirL)
+    
+        return dirlist
 
 def listdir(dirname, serverfilter=''):
     """Lists the contents of a directory on the cluster. Similar to os.listdir,
