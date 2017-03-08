@@ -480,7 +480,7 @@ class MeasureClusters(ModuleBase):
         inp = namespace[self.inputName]
 
         # make sure labeling scheme is consistent with what pyme conventions
-        if np.min(inp[self.labelsKey]) < 0:
+        if np.min(inp[self.labelKey]) < 0:
             raise UserWarning('This module expects 0-label for unclustered points, and no negative labels')
 
         labels = inp[self.labelKey]
