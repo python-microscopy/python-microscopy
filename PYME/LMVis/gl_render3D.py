@@ -302,6 +302,9 @@ class MessageOverlay(object):
         self.message = message
         self.x = x
         self.y = y
+        
+    def set_message(self, message):
+        self.message = message
 
     def render(self, glcanvas):
         if not self.message == '':
@@ -474,7 +477,7 @@ class LMGLCanvas(GLCanvas):
         self.Refresh()
 
     def setOverlayMessage(self, message=''):
-        self.messageOverlay.message = message
+        self.messageOverlay.set_message(message)
         if self.init:
             self.Refresh()
         
@@ -567,17 +570,14 @@ class LMGLCanvas(GLCanvas):
             glTranslatef(0, 0, -10)
 
             if not self.displayMode == '2D':
-                self.trafMatrix = numpy.array([numpy.hstack((self.vecRight, 0)), numpy.hstack((self.vecUp, 0)), numpy.hstack((self.vecBack, 0)), [0,0,0, 1]])
-                self.drawAxes(self.trafMatrix, ys)
-            else:
-                self.trafMatrix = numpy.eye(4)            
-
-            #glTranslatef(-self.xc, -self.yc, -self.zc)
+                self.drawAxes(self.object_rotation_matrix, ys)
+            
             glScalef(self.scale, self.scale, self.scale)
 
             glPushMatrix()
-            if not self.displayMode == '2D':
-                glMultMatrixf(self.trafMatrix)
+            
+            #rotate object
+            glMultMatrixf(self.object_rotation_matrix)
 
             glTranslatef(-self.xc, -self.yc, -self.zc)
             
@@ -594,12 +594,26 @@ class LMGLCanvas(GLCanvas):
 
 
         glFlush()
-        #glPopMatrix()
-        #print 'odf'
+
         self.SwapBuffers()
         
-        #print 'odd'
         return
+    
+    @property
+    def object_rotation_matrix(self):
+        """
+        The transformation matrix used to map coordinates in real space to our 3D view space. Currently implements
+        rotation, defined by 3 vectors (up, right, and back). Does not include scaling or projection.
+        
+        Returns
+        -------
+        a 4x4 matrix describing the rotation of the pints within our 3D world
+        
+        """
+        if not self.displayMode == '2D':
+            return numpy.array([numpy.hstack((self.vecRight, 0)), numpy.hstack((self.vecUp, 0)), numpy.hstack((self.vecBack, 0)), [0,0,0, 1]])
+        else:
+            return numpy.eye(4)
 
     def setupLights(self):
         # set viewing projection
@@ -1137,7 +1151,7 @@ class LMGLCanvas(GLCanvas):
 
         dx, dy = (xp - self.xc), (yp - self.yc)
 
-        dx_, dy_, dz_, c_ = numpy.dot(self.trafMatrix, [dx, dy, 0, 0])
+        dx_, dy_, dz_, c_ = numpy.dot(self.object_rotation_matrix, [dx, dy, 0, 0])
 
         xp_, yp_, zp_ = (self.xc + dx_), (self.yc + dy_), (self.zc + dz_)
 
@@ -1305,7 +1319,7 @@ class LMGLCanvas(GLCanvas):
             
             #print dx
 
-            dx_, dy_, dz_, c_ = numpy.dot(self.trafMatrix, [dx, dy, 0, 0])
+            dx_, dy_, dz_, c_ = numpy.dot(self.object_rotation_matrix, [dx, dy, 0, 0])
             
             #self.xc -= dx_
             #self.yc -= dy_
