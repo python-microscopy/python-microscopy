@@ -384,7 +384,7 @@ def main():
         main_(filename)
     else:
         #time.sleep(1)
-        visFr = VisGUIFrame(None, filename, True)
+        visFr = VisGUIFrame(None, filename, False)
         visFr.Show()
         visFr.RefreshView()
         
