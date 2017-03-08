@@ -760,7 +760,7 @@ class Pipeline:
             self.Quads.insert(pointQT.qtRec(xi,yi, None))
             
     def measureObjects(self):
-        from PYME.LMVis import objectMeasure
+        from PYME.Analysis.points import objectMeasure
         
         self.objectMeasures = objectMeasure.measureObjects(self.objects, self.objThreshold)
         

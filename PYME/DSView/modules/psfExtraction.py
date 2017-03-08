@@ -273,8 +273,12 @@ class psfExtractor:
                 psf = extractImages.backgroundCorrectPSFWF(psf)
 
             from PYME.DSView.dsviewer import ImageStack, ViewIm3D
+            from PYME.IO import MetaDataHandler
+            
+            new_mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
+            new_mdh['ImageType']='PSF'
 
-            im = ImageStack(data = psf, mdh = self.image.mdh, titleStub = 'Extracted PSF')
+            im = ImageStack(data = psf, mdh = new_mdh, titleStub = 'Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
@@ -301,8 +305,11 @@ class psfExtractor:
 
 
             from PYME.DSView.dsviewer import ImageStack, ViewIm3D
+            from PYME.IO import MetaDataHandler
+            new_mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
+            new_mdh['ImageType'] = 'PSF'
 
-            im = ImageStack(data=psfs, mdh=self.image.mdh, titleStub='Extracted PSF')
+            im = ImageStack(data=psfs, mdh=new_mdh, titleStub='Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 

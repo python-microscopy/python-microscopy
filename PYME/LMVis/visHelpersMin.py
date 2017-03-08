@@ -178,7 +178,7 @@ else:
 
 
 def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
-    import gen3DTriangs
+    #from PYME.Analysis.points import gen3DTriangs
 
     sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
     sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize

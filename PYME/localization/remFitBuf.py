@@ -35,7 +35,7 @@ from PYME.localization import ofind
 from PYME.localization import ofind_xcorr
 from PYME.localization import ofind_pri
 
-from PYME.Analysis import buffers
+from PYME.IO import buffers
 from PYME.IO.image import ImageStack
 
 import logging
