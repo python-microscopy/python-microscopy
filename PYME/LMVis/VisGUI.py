@@ -68,7 +68,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     with the LMDisplay module used for online display and has been factored out into the visCore module"""
     def __init__(self, parent, filename=None, id=wx.ID_ANY, 
                  title="PYME Visualise", pos=wx.DefaultPosition,
-                 size=(700,650), style=wx.DEFAULT_FRAME_STYLE):
+                 size=(700,650), style=wx.DEFAULT_FRAME_STYLE, use_shaders=False):
 
         AUIFrame.__init__(self, parent, id, title, pos, size, style)
         
@@ -92,7 +92,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #initialize the common parts
         ###############################
         #NB: this has to come after the shell has been generated, but before the fold panel
-        visCore.VisGUICore.__init__(self)
+        visCore.VisGUICore.__init__(self, use_shaders=use_shaders)
 
         ################################   
 
@@ -348,23 +348,24 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
 
 class VisGuiApp(wx.App):
-    def __init__(self, filename, *args):
+    def __init__(self, filename, use_shaders, *args):
         self.filename = filename
+        self.use_shaders = use_shaders
         wx.App.__init__(self, *args)
         
         
     def OnInit(self):
         wx.InitAllImageHandlers()
-        self.main = VisGUIFrame(None, self.filename)
+        self.main = VisGUIFrame(None, self.filename, use_shaders=self.use_shaders)
         self.main.Show()
         self.SetTopWindow(self.main)
         return True
 
 
-def main_(filename=None):
+def main_(filename=None, use_shaders=False):
     if filename == "":
         filename = None
-    application = VisGuiApp(filename, 0)
+    application = VisGuiApp(filename, use_shaders, 0)
     application.MainLoop()
 
 
@@ -383,7 +384,7 @@ def main():
         main_(filename)
     else:
         #time.sleep(1)
-        visFr = VisGUIFrame(None, filename)
+        visFr = VisGUIFrame(None, filename, False)
         visFr.Show()
         visFr.RefreshView()
         
