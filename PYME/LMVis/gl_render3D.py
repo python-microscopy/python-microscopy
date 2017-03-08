@@ -51,7 +51,7 @@ try:
     # location in Python 2.7 and 3.1
     from weakref import WeakSet
 except ImportError:
-    # separately installed
+    # separately installed py 2.6 compatibility
     from weakrefset import WeakSet
 
 #import time
@@ -109,6 +109,7 @@ class RenderLayer(object):
         self.pointSize=pointsize
 
     def render(self, glcanvas=None):
+        #with default_shader:
         if self.mode in ['points']:
             #glDisable(GL_LIGHTING)
             #glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
@@ -119,7 +120,7 @@ class RenderLayer(object):
                 glPointSize(self.pointSize)
         else:
             glEnable(GL_LIGHTING)
-            pass        
+            pass
         
         if self.mode in ['wireframe']:
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
@@ -759,7 +760,7 @@ class LMGLCanvas(GLCanvas):
         self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()]))
 
     def setBlobs(self, objects, sizeCutoff):
-        import gen3DTriangs
+        from PYME.Analysis.points import gen3DTriangs
 
         vs, self.c = gen3DTriangs.blobify2D(objects, sizeCutoff)
 
@@ -890,6 +891,43 @@ class LMGLCanvas(GLCanvas):
         
     def setTriangEdges(self, T):
         self.setTriang(T, wireframe=True)
+        
+    
+    def setQuads(self, qt, maxDepth = 100, mdscale=False):
+        lvs = qt.getLeaves(maxDepth)
+
+        xs = numpy.zeros((len(lvs), 4))
+        ys = numpy.zeros((len(lvs), 4))
+        c = numpy.zeros(len(lvs))
+
+        i = 0
+
+        maxdepth = 0
+        for l in lvs:
+            xs[i, :] = [l.x0, l.x1, l.x1, l.x0]
+            ys[i, :] = [l.y0, l.y0, l.y1, l.y1]
+            c[i] = float(l.numRecords)*2**(2*l.depth)
+            i +=1
+            maxdepth = max(maxdepth, l.depth)
+
+        if not mdscale:
+            c = c/(2**(2*maxdepth))
+
+        self.c = numpy.vstack((c,c,c,c)).T.ravel()
+
+        vs = numpy.vstack((xs.ravel(), ys.ravel(), 0*xs.ravel()))
+        vs = vs.T.ravel().reshape(len(xs.ravel()), 3)
+        N = -0.69 * numpy.ones_like(vs)
+        #vs_ = glVertexPointerf(vs)
+
+        mode = 'quads'
+        
+        self.SetCurrent()
+        self.layers.append(RenderLayer(vs, N, self.c, self.cmap, self.clim, mode=mode, alpha=1))
+        self.Refresh()
+
+        #self.nVertices = vs.shape[0]
+        #self.setColour(self.IScale, self.zeroPt)
 
 
     def setPoints3D(self, x, y, z, c = None, a = None, recenter=False, alpha = 1.0, mode='points'):#, clim=None):

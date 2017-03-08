@@ -113,7 +113,7 @@ class ImageViewPanel(wx.Panel):
         im = im - self.do.Offs[self.chan] #self.clim[0]
         im = im*self.do.Gains[self.chan]    #/(self.clim[1] - self.clim[0])
 
-        print((im.shape))
+        #print((im.shape))
 
         im = (255*self.do.cmaps[self.chan](im)[:,:,:3]).astype('b')
             
