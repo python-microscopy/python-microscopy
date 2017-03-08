@@ -178,7 +178,7 @@ else:
 
 
 def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
-    import gen3DTriangs
+    from PYME.Analysis.points import gen3DTriangs
 
     sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
     sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
@@ -205,7 +205,7 @@ def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=10
         #gen3DTriangs.renderTetrahedra(im, x[Imc]+ jsig*scipy.randn(Imc.sum()), y[Imc]+ jsig*scipy.randn(Imc.sum()), z[Imc]+ jsigz*scipy.randn(Imc.sum()), scale = [1,1,1], pixelsize=[1,1,1])
         p = numpy.hstack(((x[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (y[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (z[Imc]+ jsigz*scipy.randn(Imc.sum()))[:, None]))
         #print p.shape
-        RenderTetrahedra(p, im)
+        gen3DTriangs.RenderTetrahedra(p, im)
 
     return im/n
 

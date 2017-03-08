@@ -94,7 +94,7 @@ class ParticleTracker:
         dlg.Destroy()
 
     def OnMeasure(self, event):
-        from PYME.LMVis import objectMeasure
+        from PYME.Analysis.points import objectMeasure
 
         pipeline = self.visFr.pipeline
 

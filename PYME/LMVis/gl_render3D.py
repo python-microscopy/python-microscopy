@@ -43,7 +43,7 @@ from six.moves import xrange
 from PYME.LMVis.gl_program import GlProgramManager
 
 try:
-    from gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
+    from PYME.Analysis.points.gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
 except:
     pass
 
