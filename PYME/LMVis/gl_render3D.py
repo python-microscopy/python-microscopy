@@ -345,6 +345,8 @@ class MessageOverlay(object):
 class LMGLCanvas(GLCanvas):
     defaultProgram = None
 
+    _is_initialized = False
+
     def __init__(self, parent, use_shaders=False):
         attriblist = [wx.glcanvas.WX_GL_RGBA,wx.glcanvas.WX_GL_STENCIL_SIZE,8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
         GLCanvas.__init__(self, parent,-1, attribList = attriblist)
@@ -360,11 +362,9 @@ class LMGLCanvas(GLCanvas):
         wx.EVT_MOTION(self, self.OnMouseMove)
         wx.EVT_KEY_DOWN(self, self.OnKeyPress)
         #wx.EVT_MOVE(self, self.OnMove)
-        
         self.gl_context = wx.glcanvas.GLContext(self)
 
         self.use_shaders=use_shaders
-        self.init = 0
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
         self.zeroPt = [0, 1.0/3, 2.0/3]
@@ -461,11 +461,12 @@ class LMGLCanvas(GLCanvas):
         #print self.GetContext()
         self.gl_context.SetCurrent(self)
         self.SetCurrent()
-        if not self.init:
+
+        if not self._is_initialized:
             self.InitGL()
             if self.use_shaders:
                 self.defaultProgram = DefaultProgram()
-            self.init = True
+            self._is_initialized = True
         else:
             self.OnDraw()
         return
@@ -476,10 +477,9 @@ class LMGLCanvas(GLCanvas):
 
         #self.xmax = self.xmin + self.Size[0]*self.pixelsize
         #self.ymax = self.ymin + self.Size[1]*self.pixelsize
-        if self.init:
+        if self._is_initialized:
             self.OnDraw()
             self.Refresh()
-        pass
         
         #self.interlace_stencil()
         
@@ -488,7 +488,7 @@ class LMGLCanvas(GLCanvas):
 
     def setOverlayMessage(self, message=''):
         self.messageOverlay.message = message
-        if self.init:
+        if self._is_initialized:
             self.Refresh()
         
     def interlace_stencil(self):
