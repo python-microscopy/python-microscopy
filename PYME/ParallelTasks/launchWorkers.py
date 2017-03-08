@@ -133,9 +133,12 @@ def main():
         print('Launching %d workers ...' % numProcessors)
         for i in range(numProcessors):
             subprocess.Popen('python "%s\\%s.py"' % (fstub, WORKER_PROC), shell=True)
+    # OSX
     elif sys.platform == 'darwin':
         import psutil
-        
+        import tempfile
+
+        tmpdir = tempfile.gettempdir()
         #kill off previous workers and servers
         for p in psutil.process_iter():
             try:
@@ -156,19 +159,18 @@ def main():
 
         if args.run_server:
             logger.info('launching server...')
-            with open('/tmp/PYMEserver.stdout',"wb") as out, open('/tmp/PYMEserver.stderr',"wb") as err:
+            with open(os.path.join(tmpdir,'PYMEserver.stdout'),"wb") as out, open(os.path.join(tmpdir,'PYMEserver.stderr'),"wb") as err:
                 subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub, SERVER_PROC)),
                                  shell=True, stdout=out, stderr=err)
             time.sleep(10)
         if args.gui:
             logger.info('launching Task Monitor...')
-            with open('/tmp/fitMonP.stdout',"wb") as out, open('/tmp/fitMonP.stderr',"wb") as err:
-                subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,'fitMonP.py')),
-                                 shell=True, stdout=out, stderr=err)
+            subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,'fitMonP.py')),
+                             shell=True)
     
         for i in range(numProcessors):
             logger.info('launching %d workers...' % numProcessors)
-            with open('/tmp/worker-%d.stdout' % i,"wb") as out, open('/tmp/worker-%d.stderr' % i,"wb") as err:
+            with open(os.path.join(tmpdir,'worker-%d.stdout' % i),"wb") as out, open(os.path.join(tmpdir,'worker-%d.stderr' % i),"wb") as err:
                 subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub,WORKER_PROC)),
                                  shell=True, stdout=out, stderr=err)
     else: #operating systems which can launch python scripts directly

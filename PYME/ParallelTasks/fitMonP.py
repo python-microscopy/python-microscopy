@@ -86,12 +86,15 @@ class MyFrame(wx.Frame):
         self.timer.Start(10000)
 
         logmenu= wx.Menu()
-        menuLog = logmenu.Append(wx.ID_ANY, "&Worker Error Logs","Log info")
+        menuerrLog = logmenu.Append(wx.ID_ANY, "&Worker Error Logs","Log info")
+        menuoutLog = logmenu.Append(wx.ID_ANY, "Worker Output","Log info")
+        
         # Creating the menubar.
         menuBar = wx.MenuBar()
         menuBar.Append(logmenu,"&Logs") # Adding the "logmenu" to the MenuBar
         self.SetMenuBar(menuBar)  # Adding the MenuBar to the Frame content.
-        self.Bind(wx.EVT_MENU, self.OnErrScrolledDialog, menuLog)
+        self.Bind(wx.EVT_MENU, self.OnErrScrolledDialog, menuerrLog)
+        self.Bind(wx.EVT_MENU, self.OnOutScrolledDialog, menuoutLog)
         
     def __set_properties(self):
         # begin wxGlade: MyFrame.__set_properties
@@ -138,18 +141,27 @@ class MyFrame(wx.Frame):
         self.Layout()
         # end wxGlade
         
-    def getLogFileNameWorker(self,num):
+    def getLogFileNameWorker(self,num,mode='stderr'):
         import os
-        return os.path.join('/tmp','worker-%d.stderr' % num)
+        import tempfile
 
-    def OnErrScrolledDialog(self, event=None):
-        with open(self.getLogFileNameWorker(0),"r") as f:
+        tmpdir = tempfile.gettempdir()
+        return os.path.join(tmpdir,'worker-%d.%s' % (num,mode))
+
+    def OnLogScrolledDialog(self, event=None, mode='stderr'):
+        with open(self.getLogFileNameWorker(0,mode),"r") as f:
             txt = "\n".join(f.readlines())
-        dlg = ScrolledMessageDialog(self, txt, "Worker Error Output", size=(900,400),
+        dlg = ScrolledMessageDialog(self, txt, "Worker %s" % mode, size=(900,400),
                                     style=wx.RESIZE_BORDER | wx.DEFAULT_DIALOG_STYLE )
         dlg.ShowModal()
         dlg.Destroy()
 
+    def OnErrScrolledDialog(self, event=None):
+        self.OnLogScrolledDialog(event,mode='stderr')
+
+    def OnOutScrolledDialog(self, event=None):
+        self.OnLogScrolledDialog(event,mode='stdout')
+       
     def OnBRemove(self, event):
         rows = self.gQueues.GetSelectedRows()
         
