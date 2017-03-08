@@ -24,7 +24,7 @@
 from numpy import *
 import delaunay
 import gen3DTriangs
-from PYME.Analysis import moments
+from PYME.Analysis.points import moments
 
 def getPrincipalAxis(obj_c, numIters=10):
     """PCA via e.m. (ala wikipedia)"""
