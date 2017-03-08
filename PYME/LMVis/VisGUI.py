@@ -19,6 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+import argparse
+
 import wx
 import wx.py.shell
 
@@ -80,7 +82,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #self.Quads = None
                
         #self.SetMenuBar(self.CreateMenuBar())
-        self.CreateMenuBar()
+        self.CreateMenuBar(use_shaders=use_shaders)
 
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
@@ -368,20 +370,24 @@ def main_(filename=None, use_shaders=False):
     application = VisGuiApp(filename, use_shaders, 0)
     application.MainLoop()
 
-
-
+def parse():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--file', help="file that should be used")
+    parser.add_argument('--use_shaders', dest="use_shaders", action='store_true', default=False,
+                        help='switch shaders on(default: off)')
+    parser.add_argument('--no_use_shaders', dest="use_shaders", action='store_false',
+                        default=False, help='switch shaders off(default: off)')
+    args = parser.parse_args()
+    return args
     
 def main():
     from multiprocessing import freeze_support
     freeze_support()
     
     filename = None
-
-    if len(sys.argv) > 1:
-        filename = sys.argv[1]
-
+    args = parse()
     if wx.GetApp() is None: #check to see if there's already a wxApp instance (running from ipython -pylab or -wthread)
-        main_(filename)
+        main_(args.file, use_shaders=args.use_shaders)
     else:
         #time.sleep(1)
         visFr = VisGUIFrame(None, filename, False)

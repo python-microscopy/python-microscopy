@@ -85,14 +85,14 @@ class VisGUICore(object):
         self.refv = False
         
         renderers.renderMetadataProviders.append(self.SaveMetadata)
-        
+        self.use_shaders = use_shaders
         
         wx.CallLater(100, self.OnIdle)
         
     
     def OnIdle(self, event=None):
         print('Ev Idle')
-        if self.glCanvas.init and not self.refv:
+        if self.glCanvas._is_initialized and not self.refv:
             self.refv = True
             print((self.viewMode, self.pointDisplaySettings.colourDataKey))
             self.SetFit()
@@ -184,7 +184,7 @@ class VisGUICore(object):
 
         return pointColour
         
-    def CreateMenuBar(self, subMenu = False):
+    def CreateMenuBar(self, subMenu = False, use_shaders = False):
         logger.debug('Creating VisGUI menu bar')
         if 'dsviewer' in dir(self):
             parent = self.dsviewer
@@ -208,7 +208,8 @@ class VisGUICore(object):
 
 
         self.AddMenuItem('View', '&Points', self.OnViewPoints, itemType='normal') #TODO - add radio type
-        self.AddMenuItem('View', '&Pointsprites', self.OnViewPointsprites)
+        if use_shaders:
+            self.AddMenuItem('View', '&Pointsprites', self.OnViewPointsprites)
         self.AddMenuItem('View',  '&Triangles', self.OnViewTriangles)
         self.AddMenuItem('View', '3D Triangles', self.OnViewTriangles3D)
         self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
@@ -357,7 +358,7 @@ class VisGUICore(object):
         else:
             self.glCanvas.setOverlayMessage('')
 
-        if self.glCanvas.init == 0: #glcanvas is not initialised
+        if not self.glCanvas._is_initialized: #glcanvas is not initialised
             return
 
         #bCurr = wx.BusyCursor()

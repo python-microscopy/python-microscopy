@@ -26,7 +26,7 @@ from OpenGL.GL import *
 from gl_shaderLoader import *
 
 
-class GlProgramManager:
+class ShaderProgram:
     """
     This class handles all  OpenGl-PROGRAM related stuff
 
@@ -88,6 +88,9 @@ class GlProgramManager:
 
     def link(self):
         glLinkProgram(self._program)
+
+    def get_uniform_location(self, name):
+        return glGetUniformLocation(self._program, name)
 
     def use(self):
         try:
