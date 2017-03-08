@@ -793,6 +793,9 @@ class ImageStack(object):
 
         self.mode = 'default'
         
+        if self.mdh.getOrDefault('ImageType', '') == 'PSF':
+            self.mode = 'psf'
+        
     def _loadBioformats(self, filename):
         #from PYME.IO.FileUtils import readTiff
         from PYME.IO.DataSources import BioformatsDataSource
