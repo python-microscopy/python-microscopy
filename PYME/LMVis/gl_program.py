@@ -89,6 +89,9 @@ class ShaderProgram:
     def link(self):
         glLinkProgram(self._program)
 
+    def get_uniform_location(self, name):
+        return glGetUniformLocation(self._program, name)
+
     def use(self):
         try:
             glUseProgram(self._program)

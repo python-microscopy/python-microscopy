@@ -193,11 +193,10 @@ class PointSpritesRenderLayer(RenderLayer):
         self._shader_program.use()
         glEnable(GL_POINT_SPRITE)
         glEnable(GL_PROGRAM_POINT_SIZE)
-        glEnable(GL_DEPTH_TEST)
+        glDisable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
         glBlendEquation(GL_FUNC_ADD)
-        glDepthMask(GL_FALSE)
 
         n_vertices = self.verts.shape[0]
 
@@ -206,9 +205,12 @@ class PointSpritesRenderLayer(RenderLayer):
         self.c_ = glColorPointerf(self.cs)
 
         self._texture.enable_texture_2d()
-        self._texture.bind_texture()
-        if self.pointSize <= 0:
-            glPointSize(1.0)
+        self._texture.bind_texture(self._shader_program.get_uniform_location(b'tex2D'))
+        if glcanvas:
+            if self.pointSize == 0:
+                glPointSize(1 / glcanvas.pixelsize)
+            else:
+                glPointSize(self.pointSize / glcanvas.pixelsize)
         else:
             glPointSize(self.pointSize)
         glDrawArrays(GL_POINTS, 0, n_vertices)
@@ -217,9 +219,9 @@ class PointSpritesRenderLayer(RenderLayer):
 #       pipeline
         glcanvas.defaultProgram.use()
         glDisable(GL_BLEND)
-        glDisable(GL_DEPTH_TEST)
         glDisable(GL_PROGRAM_POINT_SIZE)
         glDisable(GL_POINT_SPRITE)
+        glEnable(GL_DEPTH_TEST)
 
     def initialize_open_gl(self):
         """
@@ -479,7 +481,7 @@ class LMGLCanvas(GLCanvas):
         #self.ymax = self.ymin + self.Size[1]*self.pixelsize
         if self._is_initialized:
             self.OnDraw()
-            self.Refresh()
+        self.Refresh()
         
         #self.interlace_stencil()
         
@@ -1449,31 +1451,35 @@ class TestApp2(wx.App):
 
 class Texture:
 
-    # static texture counter
-    texture_counter = 0
-
-#   specific texture id of this texture
+    # specific texture id of this texture
     _texture_id = 0
 
 
     def __init__(self):
-        """
-        This constructor makes sure every texture get's its own id
-        """
-        self._texture_id = Texture.texture_counter
-        Texture.texture_counter += 1
+        pass
 
-    def bind_texture(self):
+    def bind_texture(self, uniform_location):
+        """
+        This methods binds exactly one texture.
+        Parameters
+        ----------
+        uniform_location: int, defines the uniform location, use shader_program.get_uniform_location
+
+        Returns
+        -------
+
+        """
+        glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self._texture_id)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glUniform1i(uniform_location, 0)
 
     def load_texture(self, size=10):
         data = gaussKernel(size, 2)
         glGenTextures(1, self._texture_id)
-        self.bind_texture()
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, size, size, 0, GL_LUMINANCE, GL_FLOAT, np.float16(data))
 
     def delete_texture(self):
