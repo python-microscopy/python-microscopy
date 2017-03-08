@@ -632,6 +632,8 @@ class LMGLCanvas(GLCanvas):
         glEnable(GL_LIGHT0)
 
     def InitGL(self):
+        #GLUT.glutInitContextVersion(3,2) #; /* or later versions, core was introduced only with 3.2 */
+        #GLUT.glutInitContextProfile(GLUT.GLUT_CORE_PROFILE)#;
         
 #        # set viewing projection
 #        light_diffuse = [0.5, 0.5, 0.5, 1.0]
@@ -680,6 +682,7 @@ class LMGLCanvas(GLCanvas):
         #self.nVertices = 3
 
         #to = testObj()
+        #print('OpenGL version: %s' % glGetString(GL_VERSION))
 
         #self.setBlob(to[0], to[1], to[2], smScale=[1e3,1e3,1e3])
         #self.setTriang(to[0], to[1], to[2])
