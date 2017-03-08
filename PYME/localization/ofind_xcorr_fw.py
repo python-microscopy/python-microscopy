@@ -37,6 +37,7 @@ from scipy.fftpack import fftn, ifftn, ifftshift
 
 from PYME.contrib import pad
 from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
+from PYME.IO.load_psf import load_psf
 from scipy.spatial import kdtree
 
 import fftw3f as fftw3
@@ -146,9 +147,10 @@ def preparePSF(md, PSSize):
         try:
             ps, vox = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
         except:
-            fid = open(getFullExistingFilename(PSFFilename), 'rb')
-            ps, vox = pickle.load(fid)
-            fid.close()     
+            #fid = open(getFullExistingFilename(PSFFilename), 'rb')
+            #ps, vox = pickle.load(fid)
+            #fid.close()
+            load_psf(PSFFilename)
         
         FTW = fftwWeiner(ps,vox, PSSize)
 

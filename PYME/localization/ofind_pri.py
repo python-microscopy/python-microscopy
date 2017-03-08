@@ -28,6 +28,7 @@ from scipy import ndimage
 from scipy.ndimage import _nd_image, _ni_support
 from scipy.spatial import ckdtree
 from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
+from PYME.IO.load_psf import load_psf
 
 try:
     import cPickle as pickle
@@ -115,9 +116,10 @@ def preparePSF(md, axis):
         try:
             ps, vox = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
         except:
-            fid = open(getFullExistingFilename(PSFFilename), 'rb')
-            ps, vox = pickle.load(fid)
-            fid.close()
+            #fid = open(getFullExistingFilename(PSFFilename), 'rb')
+            #ps, vox = pickle.load(fid)
+            #fid.close()
+            ps, vox = load_psf(PSFFilename)
             
         ps = ps.max(2)
         ps = ps - ps.min()
