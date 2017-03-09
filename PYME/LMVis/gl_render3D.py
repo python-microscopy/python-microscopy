@@ -180,7 +180,8 @@ class PointSpritesRenderLayer(RenderLayer):
         This constructor is only used to call the super constructor and set those parameters.
         Some of them may never be used.
         """
-        RenderLayer.__init__(self, vertices, normals, colours, cmap, clim, mode, pointsize, alpha)
+        overscan_point_size = pointsize*2
+        RenderLayer.__init__(self, vertices, normals, colours, cmap, clim, mode, overscan_point_size, alpha)
 
 
     def render(self, glcanvas=None):
@@ -1524,7 +1525,7 @@ class Texture:
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glUniform1i(uniform_location, 0)
 
-    def load_texture(self, size=30, sigma=5):
+    def load_texture(self, size=31, sigma=5):
         data = gaussKernel(size, sigma)
         glGenTextures(1, self._texture_id)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, size, size, 0, GL_LUMINANCE, GL_FLOAT, np.float16(data))
