@@ -24,6 +24,7 @@ import os
 
 from PYME.LMVis.Layer.AxesOverlayLayer import AxesOverlayLayer
 from PYME.LMVis.Layer.LUTOverlayLayer import LUTOverlayLayer
+from PYME.LMVis.Layer.ScaleBarOverlayLayer import ScaleBarOverlayLayer
 from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 from PYME.LMVis.rendGauss import gaussKernel
 #from scipy.misc import toimage
@@ -104,12 +105,12 @@ class RenderLayer(object):
         
         cs_ = ((self.cols - self.clim[0])/(self.clim[1] - self.clim[0]))
         cs = self.cmap(cs_)
-        cs[:,3] = self.alpha
+        cs[:, 3] = self.alpha
         
         self.cs = cs.ravel().reshape(len(self.cols), 4)
         
         self.mode = mode
-        self.pointSize=pointsize
+        self.pointSize = pointsize
 
     def render(self, glcanvas=None):
         #with default_shader:
@@ -357,6 +358,7 @@ class LMGLCanvas(GLCanvas):
     defaultProgram = None
     LUTOverlayLayer = None
     AxesOverlayLayer = None
+    ScaleBarOverlayLayer = None
     _is_initialized = False
 
     def __init__(self, parent, use_shaders=False):
@@ -478,6 +480,7 @@ class LMGLCanvas(GLCanvas):
             self.InitGL()
             if self.use_shaders:
                 self.defaultProgram = DefaultShaderProgram()
+                self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
                 self.LUTOverlayLayer = LUTOverlayLayer()
                 self.AxesOverlayLayer = AxesOverlayLayer()
             self._is_initialized = True
@@ -618,8 +621,7 @@ class LMGLCanvas(GLCanvas):
             glPopMatrix()
 
             if self.use_shaders:
-                with self.defaultProgram:
-                    self.drawScaleBar()
+                self.ScaleBarOverlayLayer.render(self)
                 self.LUTOverlayLayer.render(self)
             else:
                 self.drawScaleBar()
@@ -1410,48 +1412,48 @@ class LMGLCanvas(GLCanvas):
             event.Skip()
             
     def OnKeyPress(self, event):
-        #print event.GetKeyCode()
-        if event.GetKeyCode() == 83: #S - toggle stereo
+        # print event.GetKeyCode()
+        if event.GetKeyCode() == 83:  # S - toggle stereo
             self.stereo = not self.stereo
             self.Refresh()
-        elif event.GetKeyCode() == 67: #C - centre
+        elif event.GetKeyCode() == 67:  # C - centre
             self.xc = self.sx/2
             self.yc = self.sy/2
             self.zc = self.sz/2
             self.Refresh()
             
-        elif event.GetKeyCode() == 91: #[ decrease eye separation
-            self.eye_dist /=1.5
+        elif event.GetKeyCode() == 91:  # [ decrease eye separation
+            self.eye_dist /= 1.5
             self.Refresh()
         
-        elif event.GetKeyCode() == 93: #] increase eye separation
-            self.eye_dist *=1.5
+        elif event.GetKeyCode() == 93:  # ] increase eye separation
+            self.eye_dist *= 1.5
             self.Refresh()
             
-        elif event.GetKeyCode() == 82: #R reset view
+        elif event.GetKeyCode() == 82:  # R reset view
             self.ResetView()
             self.Refresh()
             
-        elif event.GetKeyCode() == 314: #left
+        elif event.GetKeyCode() == 314:  # left
             pos = numpy.array([self.xc, self.yc, self.zc], 'f')
             pos -= 300*self.vecRight
             self.xc, self.yc, self.zc = pos
-            #print 'l'
+            # print 'l'
             self.Refresh()
             
-        elif event.GetKeyCode() == 315: #up
+        elif event.GetKeyCode() == 315:  # up
             pos = numpy.array([self.xc, self.yc, self.zc])
             pos -= 300*self.vecBack
             self.xc, self.yc, self.zc = pos
             self.Refresh()
             
-        elif event.GetKeyCode() == 316: #right
+        elif event.GetKeyCode() == 316:  # right
             pos = numpy.array([self.xc, self.yc, self.zc])
             pos += 300*self.vecRight
             self.xc, self.yc, self.zc = pos
             self.Refresh()
             
-        elif event.GetKeyCode() == 317: #down
+        elif event.GetKeyCode() == 317:  # down
             pos = numpy.array([self.xc, self.yc, self.zc])
             pos += 300*self.vecBack
             self.xc, self.yc, self.zc = pos
@@ -1460,10 +1462,10 @@ class LMGLCanvas(GLCanvas):
         else:
             event.Skip()
 
-    def getSnapshot(self, mode = GL_LUMINANCE):
-        snap =  glReadPixelsf(0,0,self.Size[0],self.Size[1], mode)
+    def getSnapshot(self, mode=GL_LUMINANCE):
+        snap = glReadPixelsf(0, 0, self.Size[0], self.Size[1], mode)
 
-        snap.strides = (12,12*snap.shape[0], 4)
+        snap.strides = (12, 12*snap.shape[0], 4)
 
         return snap
 
@@ -1478,42 +1480,17 @@ def showGLFrame():
 class TestApp(wx.App):
     def __init__(self, *args):
         wx.App.__init__(self, *args)
-        
-        
-    def OnInit(self):
-        #wx.InitAllImageHandlers()
-        frame = wx.Frame(None,-1,'ball_wx',wx.DefaultPosition,wx.Size(800,800))
-        canvas = LMGLCanvas(frame)
-        #glcontext = wx.glcanvas.GLContext(canvas)
-        #glcontext.SetCurrent(canvas)
-        to = testObj()
-        canvas.setPoints3D(to[0], to[1], to[2])
-        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff = 6e3, alpha=0.5)
-        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff = 6e3, wireframe=True)
-        canvas.Refresh()
-        frame.Show()
-        self.SetTopWindow(frame)
-        return True
-
-class TestApp2(wx.App):
-    """
-    This testApp is used to for developing purposes.
-
-    It will be changed to test exactly the cases that were changed.
-
-    This is used for pointsprites and billboarding.
-    """
-    def __init__(self, *args):
-        wx.App.__init__(self,*args)
 
     def OnInit(self):
+        # wx.InitAllImageHandlers()
         frame = wx.Frame(None, -1, 'ball_wx', wx.DefaultPosition, wx.Size(800, 800))
         canvas = LMGLCanvas(frame)
+        # glcontext = wx.glcanvas.GLContext(canvas)
+        # glcontext.SetCurrent(canvas)
         to = testObj()
-        canvas.pointSize = 20
-
-#        canvas.setPoints3D(to[0], to[1], to[2], recenter=True, mode='billboard')
-        canvas.setPoints3D(to[0], to[1], to[2], mode='pointsprites')
+        canvas.setPoints3D(to[0], to[1], to[2])
+        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, alpha=0.5)
+        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, wireframe=True)
         canvas.Refresh()
         frame.Show()
         self.SetTopWindow(frame)
@@ -1563,8 +1540,10 @@ class Texture:
     def disable_texture_2d():
         glDisable(GL_TEXTURE_2D)
 
+
 def main():
-    app = TestApp2()
+    app = TestApp()
     app.MainLoop()
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    main()

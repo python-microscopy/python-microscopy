@@ -29,7 +29,8 @@ class OverlayLayer(Layer):
 
     def __init__(self, offset):
         super(OverlayLayer, self).__init__()
-        self._offset = offset
+        if offset:
+            self._offset = offset
 
     def set_offset(self, offset):
         self._offset = offset
