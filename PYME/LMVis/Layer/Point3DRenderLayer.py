@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# OverlayLayer.py
+# Point3DRenderLayer.py
 #
 # Copyright Michael Graff
 #   graff@hm.edu
@@ -18,28 +18,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-import abc
-
-from PYME.LMVis.Layer.Layer import Layer
-from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
+from PYME.LMVis.Layer.RenderLayer import RenderLayer
 
 
-class OverlayLayer(Layer):
+class Point3DRenderLayer(RenderLayer):
 
-    _offset = [10, 10]
+    _point_size = 1
 
-    def __init__(self, offset):
-        super(OverlayLayer, self).__init__()
-        if offset:
-            self._offset = offset
-        self.set_shader_program(DefaultShaderProgram())
+    def __init__(self,  x, y, z, colors, color_map, color_limit, alpha, point_size=5, process=False):
+        RenderLayer.__init__(self, x, y, z, colors, color_map, color_limit, alpha, process)
+        self._point_size = point_size
 
-    def set_offset(self, offset):
-        self._offset = offset
-
-    def get_offset(self):
-        return self._offset
-
-    @abc.abstractmethod
     def render(self, gl_canvas):
         pass
+
+    def get_point_size(self):
+        return self._point_size
