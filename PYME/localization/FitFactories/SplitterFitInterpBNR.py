@@ -154,7 +154,7 @@ def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode
 def BlankResult(metadata):
     r = numpy.zeros(1, fresultdtype)
     r['tIndex'] = metadata.tIndex
-    r['fitError'].view('f4')[:] = -5e3
+    r['fitError'].view('8f4')[:] = -5e3
     return r
 
 

@@ -81,3 +81,19 @@ def test_SplitterFitInterpNR_astigmatism():
     
     assert errors_over_pred_IQR < 2.5
     
+def test_numpy_records_view_bug():
+    """
+    Some versions of numpy have problems with the .view on complex dtypes. Check for this.
+    (Known to affect SplitterFitFNR)
+
+    """
+
+    import numpy
+    print(numpy.version.full_version)
+    
+    from PYME.localization.FitFactories import SplitterFitFNR
+
+    frb = numpy.zeros(1, dtype=SplitterFitFNR.fresultdtype)
+    
+    #this will raise a ValueError for broken versions of numpy
+    rf = frb['fitResults'].view('7f4')
