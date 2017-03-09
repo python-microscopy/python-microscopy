@@ -97,9 +97,9 @@ class __interpolator:
                 # mf = ImageStack(filename=modName)
                 # mod = mf.data[:,:,:].astype('f')
                 # voxelsize = mf.voxelsize
-                mod, voxelsize = load_psf(modName)
+                mod, voxelsize_nm = load_psf(modName)
 
-            self.setModel(modName, mod, voxelsize)
+            self.setModel(modName, mod, voxelsize_nm)
 
             #print 'model changed'
             return True #model changed
@@ -108,6 +108,8 @@ class __interpolator:
 
     def setModel(self, modName, mod, voxelsize):
         self.interpModelName = modName
+        
+        #print mod.min(), mod.max()
 
         #if not voxelsize.x == md.voxelsize.x:
         #    raise RuntimeError("PSF and Image voxel sizes don't match")
