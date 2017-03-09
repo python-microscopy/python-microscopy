@@ -25,8 +25,17 @@ from PYME.LMVis.Layer.Layer import Layer
 
 class OverlayLayer(Layer):
 
-    def __init__(self):
+    _offset = [10, 10]
+
+    def __init__(self, offset):
         super(OverlayLayer, self).__init__()
+        self._offset = offset
+
+    def set_offset(self, offset):
+        self._offset = offset
+
+    def get_offset(self):
+        return self._offset
 
     @abc.abstractmethod
     def render(self, gl_canvas):

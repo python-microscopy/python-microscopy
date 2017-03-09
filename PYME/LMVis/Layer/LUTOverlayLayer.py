@@ -29,13 +29,14 @@ from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 class LUTOverlayLayer(OverlayLayer):
 
     _color_map = None
-    _offset = [10, 10]
     _size = 1000
     _scale_bar_depth = 10.0
     _color = [1, 1, 0]
 
-    def __init__(self, size=100, offset=[10, 10], color_map=pylab.cm.hsv):
-        OverlayLayer.__init__(self)
+    def __init__(self, size=100, offset=None, color_map=pylab.cm.hsv):
+        if not offset:
+            offset = [10, 10]
+        OverlayLayer.__init__(self, offset)
         self._color_map = color_map
         self._offset = offset
         self._size = size
@@ -50,7 +51,7 @@ class LUTOverlayLayer(OverlayLayer):
             view_size_y = gl_canvas.ymax - gl_canvas.ymin
 
             #upper right x
-            lb_ur_x = -gl_canvas.xc + gl_canvas.xmax - self._offset[0] * view_size_x / gl_canvas.Size[0]
+            lb_ur_x = -gl_canvas.xc + gl_canvas.xmax - self.get_offset()[0] * view_size_x / gl_canvas.Size[0]
             #uper right y
             lb_ur_y = .4 * view_size_y
 

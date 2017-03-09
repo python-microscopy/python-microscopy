@@ -22,6 +22,7 @@
 ##################
 import os
 
+from PYME.LMVis.Layer.AxesOverlayLayer import AxesOverlayLayer
 from PYME.LMVis.Layer.LUTOverlayLayer import LUTOverlayLayer
 from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 from PYME.LMVis.rendGauss import gaussKernel
@@ -354,7 +355,8 @@ class MessageOverlay(object):
 
 class LMGLCanvas(GLCanvas):
     defaultProgram = None
-    LUTRenderLayer = None
+    LUTOverlayLayer = None
+    AxesOverlayLayer = None
     _is_initialized = False
 
     def __init__(self, parent, use_shaders=False):
@@ -476,7 +478,8 @@ class LMGLCanvas(GLCanvas):
             self.InitGL()
             if self.use_shaders:
                 self.defaultProgram = DefaultShaderProgram()
-                self.LUTRenderLayer = LUTOverlayLayer()
+                self.LUTOverlayLayer = LUTOverlayLayer()
+                self.AxesOverlayLayer = AxesOverlayLayer()
             self._is_initialized = True
         else:
             self.OnDraw()
@@ -593,12 +596,14 @@ class LMGLCanvas(GLCanvas):
             glTranslatef(0, 0, -10)
 
             if not self.displayMode == '2D':
-                self.drawAxes(self.object_rotation_matrix, ys)
-            
+                if not self.use_shaders:
+                    self.drawAxes(self.object_rotation_matrix, ys)
+                else:
+                    self.AxesOverlayLayer.render(self)
+
             glScalef(self.scale, self.scale, self.scale)
 
             glPushMatrix()
-            
             #rotate object
             glMultMatrixf(self.object_rotation_matrix)
 
@@ -615,7 +620,7 @@ class LMGLCanvas(GLCanvas):
             if self.use_shaders:
                 with self.defaultProgram:
                     self.drawScaleBar()
-                self.LUTRenderLayer.render(self)
+                self.LUTOverlayLayer.render(self)
             else:
                 self.drawScaleBar()
                 self.drawLUT()
