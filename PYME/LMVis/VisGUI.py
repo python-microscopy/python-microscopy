@@ -82,7 +82,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #self.Quads = None
                
         #self.SetMenuBar(self.CreateMenuBar())
-        self.CreateMenuBar(use_shaders=use_shaders)
+        self.CreateMenuBar()
 
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
@@ -94,7 +94,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #initialize the common parts
         ###############################
         #NB: this has to come after the shell has been generated, but before the fold panel
-        visCore.VisGUICore.__init__(self, use_shaders=use_shaders)
+        visCore.VisGUICore.__init__(self)
 
         ################################   
 
@@ -127,6 +127,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             print 'could not import shellutils'
         else:
             self.sh.Execute('import PYME.misc.shellutils as su')
+        import os
         if os.getenv('PYMEGRAPHICSFIX'): # fix issue with graphics freezing on some machines (apparently matplotlib related)
             self.sh.Execute('plot()')
             self.sh.Execute('close()')
