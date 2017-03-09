@@ -22,6 +22,8 @@
 ##################
 import os
 
+from PYME.LMVis.Layer.LUTOverlayLayer import LUTOverlayLayer
+from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 from PYME.LMVis.rendGauss import gaussKernel
 #from scipy.misc import toimage
 from wx.glcanvas import GLCanvas
@@ -138,8 +140,11 @@ class RenderLayer(object):
             
         glPushMatrix ()
         glColor4f(0,0.5,0, 1)
-
-        glDrawArrays(self.drawModes[self.mode], 0, nVertices)
+        if glcanvas.use_shaders:
+            with glcanvas.defaultProgram:
+                glDrawArrays(self.drawModes[self.mode], 0, nVertices)
+        else:
+            glDrawArrays(self.drawModes[self.mode], 0, nVertices)
 
         glPopMatrix ()
 
@@ -218,7 +223,6 @@ class PointSpritesRenderLayer(RenderLayer):
 
 #       it's very important to disable the program again, so the other layers are still processed with the default
 #       pipeline
-        glcanvas.defaultProgram.use()
         glDisable(GL_BLEND)
         glDisable(GL_PROGRAM_POINT_SIZE)
         glDisable(GL_POINT_SPRITE)
@@ -350,7 +354,7 @@ class MessageOverlay(object):
 
 class LMGLCanvas(GLCanvas):
     defaultProgram = None
-
+    LUTRenderLayer = None
     _is_initialized = False
 
     def __init__(self, parent, use_shaders=False):
@@ -471,7 +475,8 @@ class LMGLCanvas(GLCanvas):
         if not self._is_initialized:
             self.InitGL()
             if self.use_shaders:
-                self.defaultProgram = DefaultProgram()
+                self.defaultProgram = DefaultShaderProgram()
+                self.LUTRenderLayer = LUTOverlayLayer()
             self._is_initialized = True
         else:
             self.OnDraw()
@@ -540,8 +545,10 @@ class LMGLCanvas(GLCanvas):
 
     def OnDraw(self):
         if self.use_shaders:
-            self.defaultProgram.use()
-        self.interlace_stencil()
+            with self.defaultProgram:
+                self.interlace_stencil()
+        else:
+            self.interlace_stencil()
         glEnable(GL_DEPTH_TEST)
         glClear(GL_COLOR_BUFFER_BIT)
         
@@ -605,9 +612,13 @@ class LMGLCanvas(GLCanvas):
 
             glPopMatrix()
 
-            self.drawScaleBar()
-            self.drawLUT()
-
+            if self.use_shaders:
+                with self.defaultProgram:
+                    self.drawScaleBar()
+                self.LUTRenderLayer.render(self)
+            else:
+                self.drawScaleBar()
+                self.drawLUT()
 
         glFlush()
 
@@ -1509,7 +1520,6 @@ class Texture:
     # specific texture id of this texture
     _texture_id = 0
 
-
     def __init__(self):
         pass
 
@@ -1526,20 +1536,19 @@ class Texture:
         """
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, self._texture_id)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glUniform1i(uniform_location, 0)
 
-    def load_texture(self, size=10):
-        data = gaussKernel(size, 2)
+    def load_texture(self, size=30, sigma=5):
+        data = gaussKernel(size, sigma)
         glGenTextures(1, self._texture_id)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, size, size, 0, GL_LUMINANCE, GL_FLOAT, np.float16(data))
 
     def delete_texture(self):
         glDeleteTextures(1, self._texture_id)
-
 
     @staticmethod
     def enable_texture_2d():
@@ -1548,29 +1557,6 @@ class Texture:
     @staticmethod
     def disable_texture_2d():
         glDisable(GL_TEXTURE_2D)
-
-
-class DefaultProgram(object):
-    """
-    Since we can't use the default pipeline anymore we need to create a OpenGL-program and attach the shaders our-
-    selves.
-
-    This class helps to simulate the fixed function pipeline. It uses simple default shaders without lightning.
-    Instead of calling glUseProgram(0) after a specialized pipeline. Call <Defaultprogram>.use()
-    """
-
-    _shader_program = None
-
-    def __init__(self):
-        shader_path = os.path.join(os.path.dirname(__file__), "./shaders/")
-        self._shader_program = ShaderProgram(shader_path)
-        self._shader_program.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
-        self._shader_program.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
-        self._shader_program.link()
-
-    def use(self):
-        self._shader_program.use()
-
 
 def main():
     app = TestApp2()
