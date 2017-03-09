@@ -372,7 +372,7 @@ def main_(filename=None, use_shaders=False):
 
 def parse():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--file', help="file that should be used")
+    parser.add_argument('file', help="file that should be used", default=None, nargs='?')
     parser.add_argument('--use_shaders', dest="use_shaders", action='store_true', default=False,
                         help='switch shaders on(default: off)')
     parser.add_argument('--no_use_shaders', dest="use_shaders", action='store_false',

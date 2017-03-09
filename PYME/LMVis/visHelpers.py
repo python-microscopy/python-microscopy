@@ -244,6 +244,7 @@ def Gauss2D(Xv,Yv, A,x0,y0,s):
     return r
 
 def rendGauss(x,y, sx, imageBounds, pixelSize):
+    sx = numpy.maximum(sx, pixelSize)
     fuzz = 3*scipy.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*roiSize
@@ -262,7 +263,8 @@ def rendGauss(x,y, sx, imageBounds, pixelSize):
         ix = scipy.absolute(X - x[i]).argmin()
         iy = scipy.absolute(Y - y[i]).argmin()
 
-        sxi =  max(sx[i], delX)       
+        #sxi =  max(sx[i], delX)
+        sxi = sx[i]
         
         imp = Gauss2D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],1/sxi, x[i],y[i],sxi)
         im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp
@@ -272,6 +274,7 @@ def rendGauss(x,y, sx, imageBounds, pixelSize):
     return im
     
 def rendGaussProd(x,y, sx, imageBounds, pixelSize):
+    sx = numpy.maximum(sx, pixelSize)
     fuzz = 6*scipy.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*(roiSize)
@@ -318,7 +321,8 @@ def rendGaussProd(x,y, sx, imageBounds, pixelSize):
             #    print imp.min()
             #imp_ = numpy.log(1.0*imp)
             
-            sxi = max(sx[i], delX)
+            #sxi = max(sx[i], delX)
+            sxi = sx[i]
             Xi, Yi = X[(ix - roiSize):(ix + roiSize + 1)][:,None], Y[(iy - roiSize):(iy + roiSize + 1)][None,:]
             imp = numpy.log(fac/sxi) - ((Xi - x[i])**2 + (Yi -y[i])**2)/(2*sxi**2)
             print((imp.max(), imp.min(), l3, imp.shape))
@@ -746,6 +750,7 @@ def Gauss3d(X, Y, Z, x0, y0, z0, wxy, wz):
 
 def rendGauss3D(x,y, z, sx, sz, imageBounds, pixelSize, zb, sliceSize=100):
     from PYME.localization.cModels.gauss_app import genGauss3D
+    sx = numpy.maximum(sx, pixelSize)
     fuzz = 3*scipy.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*roiSize
@@ -780,7 +785,7 @@ def rendGauss3D(x,y, z, sx, sz, imageBounds, pixelSize, zb, sliceSize=100):
         iz_max = min(iz + dz + 1, len(Z))
 
 
-        imp = genGauss3D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],Z[iz_min:iz_max], 1.0e3,x[i],y[i],z[i], max(sx[i], delX),max(sz[i], sliceSize))
+        imp = genGauss3D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],Z[iz_min:iz_max], 1.0e3,x[i],y[i],z[i], sx[i],max(sz[i], sliceSize))
         #print imp.shape
         #print im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1), zn].shape
         im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1), iz_min:iz_max] += imp

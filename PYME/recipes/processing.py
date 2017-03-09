@@ -521,7 +521,7 @@ class Deconvolve(Filter):
                 psf, vs = load_psf(self.psfFilename)
                 psf = np.atleast_3d(psf)
                 
-                vsa = 1e3*np.array([vs.x, vs.y, vs.z]) 
+                vsa = np.array([vs.x, vs.y, vs.z])
                 
                 if not np.allclose(vshint, vsa, rtol=.03):
                     psf = ndimage.zoom(psf, vshint/vsa)

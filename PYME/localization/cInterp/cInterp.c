@@ -23,6 +23,7 @@
 static PyObject * Interpolate(PyObject *self, PyObject *args, PyObject *keywds)
 {
     float *res = 0;
+    float tmp = 0;
     
     npy_intp outDimensions[3];
     int sizeX, sizeY, sizeZ;
@@ -115,19 +116,21 @@ static PyObject * Interpolate(PyObject *self, PyObject *args, PyObject *keywds)
 
     for (xi = fx; xi < (fx+nx); xi++)
       {            
-	for (yi = fy; yi < (fy +ny); yi++)
-        {
-            *res  = r000 * *(float*)PyArray_GETPTR3(amod, xi,   yi,   fz);
-            *res += r100 * *(float*)PyArray_GETPTR3(amod, xi+1, yi,   fz);
-            *res += r010 * *(float*)PyArray_GETPTR3(amod, xi,   yi+1, fz);
-            *res += r110 * *(float*)PyArray_GETPTR3(amod, xi+1, yi+1, fz);
-            *res += r001 * *(float*)PyArray_GETPTR3(amod, xi,   yi,   fz+1);
-            *res += r101 * *(float*)PyArray_GETPTR3(amod, xi+1, yi,   fz+1);
-            *res += r011 * *(float*)PyArray_GETPTR3(amod, xi,   yi+1, fz+1);
-            *res += r111 * *(float*)PyArray_GETPTR3(amod, xi+1, yi+1, fz+1);
+        for (yi = fy; yi < (fy +ny); yi++)
+            {
+                tmp  = r000 * (*(float*)PyArray_GETPTR3(amod, xi,   yi,   fz));
+                tmp += r100 * (*(float*)PyArray_GETPTR3(amod, xi+1, yi,   fz));
+                tmp += r010 * (*(float*)PyArray_GETPTR3(amod, xi,   yi+1, fz));
+                tmp += r110 * (*(float*)PyArray_GETPTR3(amod, xi+1, yi+1, fz));
+                tmp += r001 * (*(float*)PyArray_GETPTR3(amod, xi,   yi,   fz+1));
+                tmp += r101 * (*(float*)PyArray_GETPTR3(amod, xi+1, yi,   fz+1));
+                tmp += r011 * (*(float*)PyArray_GETPTR3(amod, xi,   yi+1, fz+1));
+                tmp += r111 * (*(float*)PyArray_GETPTR3(amod, xi+1, yi+1, fz+1));
 
-            res ++;
-	  }
+                res[0] = tmp;
+
+                res ++;
+          }
        
       }
     
