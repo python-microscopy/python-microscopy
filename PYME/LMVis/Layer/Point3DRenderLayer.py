@@ -32,3 +32,6 @@ class Point3DRenderLayer(RenderLayer):
 
     def get_point_size(self):
         return self._point_size
+
+    def set_point_size(self, point_size):
+        self._point_size = point_size

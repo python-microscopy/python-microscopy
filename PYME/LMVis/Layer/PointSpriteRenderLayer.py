@@ -50,6 +50,7 @@ class PointSpritesRenderLayer(Point3DRenderLayer):
         Parameters
         ----------
         gl_canvas the scene is drawn into
+            the pixel size is used to calculate the right point size to match nm,um etc.
         """
 
         with self.get_shader_program():

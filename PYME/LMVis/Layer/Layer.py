@@ -22,7 +22,11 @@ import abc
 
 
 class Layer(object):
-
+    """
+    This class represents a layer that should be rendered.
+    It also deals with the shader program that is used to render the layer
+     with appropriate shaders.
+    """
     def __init__(self):
         self._shader_program = None
 

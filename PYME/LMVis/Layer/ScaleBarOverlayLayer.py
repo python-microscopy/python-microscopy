@@ -24,7 +24,9 @@ from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 
 
 class ScaleBarOverlayLayer(OverlayLayer):
-
+    """
+    This class creates a scale bar that indicate the size, depending on the zoom level
+    """
     def __init__(self, offset=None, color=None):
         super(ScaleBarOverlayLayer, self).__init__(offset)
         if not color:
@@ -42,6 +44,19 @@ class ScaleBarOverlayLayer(OverlayLayer):
         self._scale_bar_depth = depth
 
     def render(self, gl_canvas):
+        """
+
+        Parameters
+        ----------
+        gl_canvas
+            the scaleBarLength is currently used, but should be passed with a setter in the future
+            xmin, xmax, ymin, ymax and Size is used to get the total size of the canvas and to calculate
+             the real size of the scale bar
+
+        Returns
+        -------
+
+        """
         # TODO remove this, when size changes are implemented using the setter.
         self._scale_bar_length = gl_canvas.scaleBarLength
 

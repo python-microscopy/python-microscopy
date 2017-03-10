@@ -25,6 +25,9 @@ from OpenGL.GL import *
 
 
 class WireFrameRenderLayer(RenderLayer):
+    """
+    This program draws a WareFrame of the given points. They are interpreted as triangles.
+    """
 
     DRAW_MODE = GL_TRIANGLES
 
@@ -41,6 +44,16 @@ class WireFrameRenderLayer(RenderLayer):
         self.set_shader_program(WireFrameShaderProgram())
 
     def render(self, gl_canvas):
+        """
+
+        Parameters
+        ----------
+        gl_canvas
+            nothing of the canvas is used. That's how it should be.
+        Returns
+        -------
+
+        """
         with self.get_shader_program():
             n_vertices = self.get_vertices().shape[0]
 

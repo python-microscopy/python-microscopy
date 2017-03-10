@@ -27,8 +27,20 @@ from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 
 
 class LUTOverlayLayer(OverlayLayer):
+    """
+    This OverlayLayer produces a bar that indicates the given color map.
+    """
 
     def __init__(self, size=1000, offset=None, color_map=pylab.cm.hsv):
+        """
+
+        Parameters
+        ----------
+        size        the size of the bar
+        offset      offset of the canvas origin where it should be drawn.
+                    Currently only offset[0] is used
+        color_map   the color map that should be drawn
+        """
         if not offset:
             offset = [10, 10]
         OverlayLayer.__init__(self, offset)

@@ -26,12 +26,12 @@ from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 
 class OverlayLayer(Layer):
 
-    _offset = [10, 10]
-
     def __init__(self, offset):
         super(OverlayLayer, self).__init__()
         if offset:
             self._offset = offset
+        else:
+            self._offset = [10, 10]
         self.set_shader_program(DefaultShaderProgram())
 
     def set_offset(self, offset):

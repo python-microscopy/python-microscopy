@@ -23,15 +23,29 @@ from OpenGL.GL import *
 
 
 class AxesOverlayLayer(OverlayLayer):
+    """
+    This OverlayLayer produces axes and displays the orientation of the model.
+    """
 
-    _size = 1
-
-    def __init__(self, offset=None):
+    def __init__(self, offset=None, size=1):
         if not offset:
             offset = [10, 10]
         super(AxesOverlayLayer, self).__init__(offset)
+        self._size = size
 
     def render(self, gl_canvas):
+        """
+
+        Parameters
+        ----------
+        gl_canvas
+            the rotation matrix is used to get the current orientation
+            the size of the canvas is also used
+
+        Returns
+        -------
+
+        """
         with gl_canvas.defaultProgram:
             glDisable(GL_LIGHTING)
             glPushMatrix()

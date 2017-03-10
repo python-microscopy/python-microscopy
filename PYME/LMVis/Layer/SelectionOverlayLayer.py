@@ -24,13 +24,27 @@ from OpenGL.GL import *
 
 class SelectionOverlayLayer(OverlayLayer):
 
+    """
+    This OverlayLayer creates the lines of a box.
+    The dimensions of the box are determined by the selection_settings
+    """
     def __init__(self, selection_settings):
         super(SelectionOverlayLayer, self).__init__([0, 0])
         self._selection_settings = selection_settings
 
     def render(self, gl_canvas):
+        """
+
+        Parameters
+        ----------
+        gl_canvas
+            zc is used to set the z value of the Overlay
+        Returns
+        -------
+
+        """
         with self.get_shader_program():
-            if gl_canvas.selectionSettings.show:
+            if self._selection_settings.show:
                 glDisable(GL_LIGHTING)
                 x0, y0 = self._selection_settings.start
                 x1, y1 = self._selection_settings.finish
