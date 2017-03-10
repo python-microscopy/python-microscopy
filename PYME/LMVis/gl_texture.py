@@ -23,7 +23,7 @@ import numpy as np
 from PYME.LMVis.rendGauss import gaussKernel
 
 
-class Texture:
+class GaussTexture:
 
     # specific texture id of this texture
     _texture_id = 0

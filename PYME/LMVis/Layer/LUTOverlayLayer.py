@@ -27,7 +27,6 @@ from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 
 
 class LUTOverlayLayer(OverlayLayer):
-
     _color_map = None
     _size = 1000
     _scale_bar_depth = 10.0
@@ -50,15 +49,15 @@ class LUTOverlayLayer(OverlayLayer):
             view_size_x = gl_canvas.xmax - gl_canvas.xmin
             view_size_y = gl_canvas.ymax - gl_canvas.ymin
 
-            #upper right x
+            # upper right x
             lb_ur_x = -gl_canvas.xc + gl_canvas.xmax - self.get_offset()[0] * view_size_x / gl_canvas.Size[0]
-            #uper right y
+            # upper right y
             lb_ur_y = .4 * view_size_y
 
-            #lower right y
+            # lower right y
             lb_lr_y = -.4 * view_size_y
             lb_width = self._scale_bar_depth * view_size_x / gl_canvas.Size[0]
-            #upper left x
+            # upper left x
             lb_ul_x = lb_ur_x - lb_width
 
             lb_len = lb_ur_y - lb_lr_y

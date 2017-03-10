@@ -25,8 +25,8 @@ class Point3DRenderLayer(RenderLayer):
 
     _point_size = 1
 
-    def __init__(self,  x, y, z, colors, color_map, color_limit, alpha, point_size=5, process=False):
-        RenderLayer.__init__(self, x, y, z, colors, color_map, color_limit, alpha, process)
+    def __init__(self,  x, y, z, colors, color_map, color_limit, alpha, point_size=5):
+        RenderLayer.__init__(self, x, y, z, colors, color_map, color_limit, alpha)
         self._point_size = point_size
 
     def render(self, gl_canvas):

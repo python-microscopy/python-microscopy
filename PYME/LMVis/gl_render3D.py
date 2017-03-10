@@ -20,32 +20,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-import os
 
+import numpy
+import numpy as np
+import pylab
+import wx
+import wx.glcanvas
+from OpenGL import GLUT
+from OpenGL.GL import *
+from OpenGL.GLU import *
 from PYME.LMVis.Layer.AxesOverlayLayer import AxesOverlayLayer
 from PYME.LMVis.Layer.LUTOverlayLayer import LUTOverlayLayer
 from PYME.LMVis.Layer.PointSpriteRenderLayer import PointSpritesRenderLayer
 from PYME.LMVis.Layer.ScaleBarOverlayLayer import ScaleBarOverlayLayer
 from PYME.LMVis.Layer.SelectionOverlayLayer import SelectionOverlayLayer
+from PYME.LMVis.Layer.WireFrameRenderLayer import WireFrameRenderLayer
 from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
-#from scipy.misc import toimage
-from wx.glcanvas import GLCanvas
-import wx.glcanvas
-import wx
-
-from OpenGL.GL import *
-from OpenGL.GLU import *
-from OpenGL import GLUT
-#import sys,math
-
-
-import numpy
-import numpy as np
-
-import pylab
 from six.moves import xrange
-
-from PYME.LMVis.gl_program import ShaderProgram
+from wx.glcanvas import GLCanvas
 
 try:
     from PYME.Analysis.points.gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
@@ -721,51 +713,53 @@ class LMGLCanvas(GLCanvas):
 
         self.SetCurrent()
         self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()]))
-        
 
     def setTriang3D(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=True, alpha=1, recenter=True):
-        #center data
-        x = x #- x.mean()
-        y = y #- y.mean()
-        z = z #- z.mean()
-        
-        if recenter:        
-            self.xc = x.mean()
-            self.yc = y.mean()
-            self.zc = z.mean()
-        
-        self.sx = x.max() - x.min()
-        self.sy = y.max() - y.min()
-        self.sz = z.max() - z.min()
-
-        P, A, N = gen3DTriangs(x,y,z/zrescale, sizeCutoff, internalCull=internalCull)
-        P[:,2] = P[:,2]*zrescale
-
-        self.scale = 2./(x.max() - x.min())
-
-
-
-        self.vecUp = numpy.array([0,1,0])
-        self.vecRight = numpy.array([1,0,0])
-        self.vecBack = numpy.array([0,0,1])
-
-        if c == 'z':
-            self.c = P[:,2]
+        if self.use_shaders:
+            self.layers.append(WireFrameRenderLayer(x, y, z, c, self.cmap, sizeCutoff, internalCull, zrescale, alpha, ))
         else:
-            self.c = 1./A
-            
-        #self.a = 1./A
-        self.a = 0.5*numpy.ones_like(A)
-        vs = P
+            #center data
+            x = x #- x.mean()
+            y = y #- y.mean()
+            z = z #- z.mean()
 
-        self.SetCurrent()
-        
-        if wireframe:
-            mode = 'wireframe'
-        else:
-            mode = 'triang'
-                        
-        self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()], mode=mode, alpha = alpha))
+            if recenter:
+                self.xc = x.mean()
+                self.yc = y.mean()
+                self.zc = z.mean()
+
+            self.sx = x.max() - x.min()
+            self.sy = y.max() - y.min()
+            self.sz = z.max() - z.min()
+
+            P, A, N = gen3DTriangs(x,y,z/zrescale, sizeCutoff, internalCull=internalCull)
+            P[:,2] = P[:,2]*zrescale
+
+            self.scale = 2./(x.max() - x.min())
+
+
+
+            self.vecUp = numpy.array([0,1,0])
+            self.vecRight = numpy.array([1,0,0])
+            self.vecBack = numpy.array([0,0,1])
+
+            if c == 'z':
+                self.c = P[:,2]
+            else:
+                self.c = 1./A
+
+            #self.a = 1./A
+            self.a = 0.5*numpy.ones_like(A)
+            vs = P
+
+            self.SetCurrent()
+
+            if wireframe:
+                mode = 'wireframe'
+            else:
+                mode = 'triang'
+
+            self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()], mode=mode, alpha = alpha))
         self.Refresh()
         
     def setTriang(self, T, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=False, alpha=1, recenter=True):

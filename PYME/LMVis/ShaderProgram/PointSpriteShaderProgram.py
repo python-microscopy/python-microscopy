@@ -20,10 +20,10 @@
 #
 import os
 
-from PYME.LMVis.ShaderProgram.GLProgram import GLProgram
-from PYME.LMVis.gl_program import ShaderProgram
 from OpenGL.GL import *
-from PYME.LMVis.gl_texture import Texture
+from PYME.LMVis.ShaderProgram.GLProgram import GLProgram
+from PYME.LMVis.ShaderProgram.Shaderprogram import ShaderProgram
+from PYME.LMVis.gl_texture import GaussTexture
 
 
 class PointSpriteShaderProgram(GLProgram):
@@ -39,7 +39,7 @@ class PointSpriteShaderProgram(GLProgram):
         shader_program.add_shader("pointsprites_vs.glsl", GL_VERTEX_SHADER)
         shader_program.add_shader("pointsprites_fs.glsl", GL_FRAGMENT_SHADER)
         shader_program.link()
-        self._texture = Texture()
+        self._texture = GaussTexture()
         self._texture.load_texture()
         self._uniform_tex_2d_id = glGetUniformLocation(shader_program.get_program(), b'tex2D')
         self.set_shader_program(shader_program)

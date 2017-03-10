@@ -33,19 +33,46 @@ class RenderLayer(Layer):
     _color_limit = 0
     _alpha = 0
 
-    def __init__(self, x, y, z, colors, color_map, color_limit, alpha, process=False):
+    def __init__(self, x=None, y=None, z=None, colors=None, color_map=None, color_limit=None, alpha=1.0):
+        """
+        This creates a new RenderLayer object and parses given data.
+
+        If the parameters are None, they are not processed. There are groups. So if x is
+        given, but y is None, both won't be processed.
+        There are the following groups:
+        (x,y,z)
+        (color_limit, colors, color_map)
+        Parameters
+        ----------
+        x           x_values of the points
+        y           y_values of the points
+        z           z_values of the points
+        colors      color values of the points
+        color_map   color map that should be used
+        color_limit limits of the color map
+        alpha       alpha of the points
+        """
         Layer.__init__(self)
-        if process:
+        if x is not None and y is not None and z is not None:
             vertices = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
             vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
             normals = -0.69 * numpy.ones(vertices.shape)
+        else:
+            vertices = None
+            normals = None
+
+        if color_limit is not None and colors is not None and color_map is not None:
             cs_ = ((colors - color_limit[0]) / (color_limit[1] - color_limit[0]))
             cs = color_map(cs_)
             cs[:, 3] = alpha
 
             cs = cs.ravel().reshape(len(colors), 4)
+        else:
+            cs = None
+            color_map = None
+            color_limit = None
 
-            self.set_values(vertices, normals, cs, color_map, color_limit, alpha)
+        self.set_values(vertices, normals, cs, color_map, color_limit, alpha)
 
     @abstractmethod
     def render(self, gl_canvas):
