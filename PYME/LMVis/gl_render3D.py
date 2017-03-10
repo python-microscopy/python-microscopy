@@ -51,26 +51,27 @@ except ImportError:
     # separately installed py 2.6 compatibility
     from weakrefset import WeakSet
 
-#import time
+# import time
 
 import sys
 if sys.platform == 'darwin':
-    #osx gives us LOTS of scroll events
-    #ajust the mag in smaller increments
+    # osx gives us LOTS of scroll events
+    # ajust the mag in smaller increments
     ZOOM_FACTOR = 1.1
 else:
     ZOOM_FACTOR = 2.0
 
-#import statusLog
+# import statusLog
 
 name = 'ball_glut'
 
 def testObj():
-    x = 5e3*((numpy.arange(270)%27)/9 + 0.1*numpy.random.randn(270))
-    y = 5e3*((numpy.arange(270)%9)/3 + 0.1*numpy.random.randn(270))
-    z = 5e3*(numpy.arange(270)%3 + 0.1*numpy.random.randn(270))
+    x = 5e3*((numpy.arange(270) % 27)/9 + 0.1*numpy.random.randn(270))
+    y = 5e3*((numpy.arange(270) % 9)/3 + 0.1*numpy.random.randn(270))
+    z = 5e3*(numpy.arange(270) % 3 + 0.1*numpy.random.randn(270))
 
     return x, y, z
+
 
 class cmap_mult:
     def __init__(self, gains, zeros):
@@ -78,14 +79,16 @@ class cmap_mult:
         self.zeros = zeros
 
     def __call__(self, cvals):
-        return numpy.minimum(numpy.vstack((self.gains[0]*cvals - self.zeros[0],self.gains[1]*cvals - self.zeros[1],self.gains[2]*cvals - self.zeros[2], 1+ 0*cvals)), 1).astype('f').T
+        return numpy.minimum(numpy.vstack((self.gains[0]*cvals - self.zeros[0], self.gains[1]*cvals - self.zeros[1],
+                                           self.gains[2]*cvals - self.zeros[2], 1 + 0*cvals)), 1).astype('f').T
 
 cm_hot = cmap_mult(8.0*numpy.ones(3)/3, [0, 3.0/8, 6.0/8])
 cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
     
 class RenderLayer(object):
-    drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS, 'wireframe':GL_TRIANGLES, 'tracks':GL_LINE_STRIP}
+    drawModes = {'triang': GL_TRIANGLES, 'quads': GL_QUADS, 'edges': GL_LINES, 'points': GL_POINTS,
+                 'wireframe': GL_TRIANGLES, 'tracks': GL_LINE_STRIP}
     
     def __init__(self, vertices, normals, colours, cmap, clim, mode='triang', pointsize=5, alpha=1):
         self.verts = vertices
@@ -106,10 +109,10 @@ class RenderLayer(object):
         self.pointSize = pointsize
 
     def render(self, glcanvas=None):
-        #with default_shader:
+        # with default_shader:
         if self.mode in ['points']:
-            #glDisable(GL_LIGHTING)
-            #glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
+            # glDisable(GL_LIGHTING)
+            # glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
             glEnable(GL_POINT_SMOOTH)
             if glcanvas:
                 if self.pointSize == 0:
@@ -141,15 +144,8 @@ class RenderLayer(object):
         else:
             glDrawArrays(self.drawModes[self.mode], 0, nVertices)
 
-        glPopMatrix ()
+        glPopMatrix()
 
-
-class BillboardRenderLayer(RenderLayer):
-    def __init__(self, vertices, normals, colours, cmap, clim, mode='billboarding', pointsize=5, alpha=1):
-        RenderLayer.__init__(self, vertices, normals, colours, cmap, clim, mode, pointsize, alpha)
-
-    def render(self, glcanvas=None):
-        pass
 
 class TrackLayer(RenderLayer):
     def __init__(self, vertices, colours, cmap, clim, clumpSizes, clumpStarts, alpha=1):
@@ -230,19 +226,19 @@ class MessageOverlay(object):
             glLoadIdentity()
 
             glOrtho(-1, 1, -1, 1, -1, 1)
-            #def glut_print(x, y, font, text, r, g, b, a):
+            # def glut_print(x, y, font, text, r, g, b, a):
 
             # blending = False
             # if glIsEnabled(GL_BLEND):
             #     blending = True
 
-            #glEnable(GL_BLEND)
+            # glEnable(GL_BLEND)
             glColor3f(1, 1, 1)
             glRasterPos2f(self.x, self.y)
             for ch in self.message:
                 GLUT.glutBitmapCharacter(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_int(ord(ch)))
 
-            #GLUT.glutBitmapString(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_char_p(self.message))
+            # GLUT.glutBitmapString(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_char_p(self.message))
 
             # if not blending:
             #     glDisable(GL_BLEND)
@@ -359,14 +355,12 @@ class LMGLCanvas(GLCanvas):
 
         return
 
-    def OnPaint(self,event):
+    def OnPaint(self, event):
         if not self.IsShown():
             print('ns')
             return
-        #print('foo')
-        #raise Exception('foo')
-        dc = wx.PaintDC(self)
-        #print self.GetContext()
+        wx.PaintDC(self)
+        # print self.GetContext()
         self.gl_context.SetCurrent(self)
         self.SetCurrent()
 
@@ -550,7 +544,7 @@ class LMGLCanvas(GLCanvas):
     def setupLights(self):
         # set viewing projection
         light_diffuse = [0.8, 0.8, 0.8, 1.0]
-        #light_diffuse = [1., 1., 1., 1.0]
+        # light_diffuse = [1., 1., 1., 1.0]
         light_position = [2.0, 2.00, 2.0, 0.0]
 
         glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
@@ -564,8 +558,8 @@ class LMGLCanvas(GLCanvas):
         glEnable(GL_LIGHT0)
 
     def InitGL(self):
-        #GLUT.glutInitContextVersion(3,2) #; /* or later versions, core was introduced only with 3.2 */
-        #GLUT.glutInitContextProfile(GLUT.GLUT_CORE_PROFILE)#;
+        # GLUT.glutInitContextVersion(3,2) #; /* or later versions, core was introduced only with 3.2 */
+        # GLUT.glutInitContextProfile(GLUT.GLUT_CORE_PROFILE)#;
         
 #        # set viewing projection
 #        light_diffuse = [0.5, 0.5, 0.5, 1.0]
@@ -862,12 +856,11 @@ class LMGLCanvas(GLCanvas):
         #self.nVertices = vs.shape[0]
         #self.setColour(self.IScale, self.zeroPt)
 
-
-    def setPoints3D(self, x, y, z, c = None, a = None, recenter=False, alpha = 1.0, mode='points'):#, clim=None):
-        #center data
-        x = x #- x.mean()
-        y = y #- y.mean()
-        z = z #- z.mean()
+    def setPoints3D(self, x, y, z, c = None, a = None, recenter=False, alpha=1.0, mode='points'):#, clim=None):
+        # center data
+        x = x # - x.mean()
+        y = y # - y.mean()
+        z = z # - z.mean()
         
         if recenter:        
             self.xc = x.mean()
@@ -897,12 +890,11 @@ class LMGLCanvas(GLCanvas):
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
 
-        if mode is 'billboard':
-            self.layers.append(BillboardRenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode, pointsize=self.pointSize, alpha=alpha))
-        elif mode is 'pointsprites':
+        if mode is 'pointsprites':
             self.layers.append(PointSpritesRenderLayer(x, y, z, self.c, self.cmap, self.clim, alpha, self.pointSize))
         else:
-            self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode, pointsize=self.pointSize, alpha=alpha))
+            self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode,
+                                           pointsize=self.pointSize, alpha=alpha))
         self.Refresh()
         
     def setPoints(self, x, y, c = None, a = None, recenter=True, alpha=1.0):
