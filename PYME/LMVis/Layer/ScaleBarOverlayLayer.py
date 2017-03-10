@@ -25,14 +25,14 @@ from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 
 class ScaleBarOverlayLayer(OverlayLayer):
 
-    _color = None
-    _scale_bar_depth = 10.0
-    _scale_bar_length = 1000
-
     def __init__(self, offset=None, color=None):
         super(ScaleBarOverlayLayer, self).__init__(offset)
         if not color:
             self._color = [1.0, 0.0, 0.0]
+        else:
+            self._color = color
+        self._scale_bar_depth = 10.0
+        self._scale_bar_length = 1000
         self.set_shader_program(DefaultShaderProgram())
 
     def set_scale_bar_length(self, length):

@@ -52,5 +52,3 @@ class WireFrameRenderLayer(RenderLayer):
             glDrawArrays(WireFrameRenderLayer.DRAW_MODE, 0, n_vertices)
 
             glPopMatrix()
-
-

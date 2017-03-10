@@ -26,13 +26,6 @@ from PYME.LMVis.Layer.Layer import Layer
 
 class RenderLayer(Layer):
 
-    _vertices = None
-    _normals = None
-    _colors = None
-    _color_map = None
-    _color_limit = 0
-    _alpha = 0
-
     def __init__(self, x=None, y=None, z=None, colors=None, color_map=None, color_limit=None, alpha=1.0):
         """
         This creates a new RenderLayer object and parses given data.
@@ -53,6 +46,12 @@ class RenderLayer(Layer):
         alpha       alpha of the points
         """
         Layer.__init__(self)
+        self._vertices = None
+        self._normals = None
+        self._colors = None
+        self._color_map = None
+        self._color_limit = 0
+        self._alpha = 0
         if x is not None and y is not None and z is not None:
             vertices = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
             vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)

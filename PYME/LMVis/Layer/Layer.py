@@ -23,24 +23,14 @@ import abc
 
 class Layer(object):
 
-    _is_initialized = False
-
-    _shader_program = None
-
     def __init__(self):
-        pass
-
-    def is_initialized(self):
-        return self._is_initialized
+        self._shader_program = None
 
     def set_shader_program(self, shader_program):
         self._shader_program = shader_program
 
     def get_shader_program(self):
         return self._shader_program
-
-    def initialize(self):
-        self._is_initialized = True
 
     @abc.abstractmethod
     def render(self, gl_canvas):

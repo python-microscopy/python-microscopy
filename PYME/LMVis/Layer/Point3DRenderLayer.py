@@ -23,8 +23,6 @@ from PYME.LMVis.Layer.RenderLayer import RenderLayer
 
 class Point3DRenderLayer(RenderLayer):
 
-    _point_size = 1
-
     def __init__(self,  x, y, z, colors, color_map, color_limit, alpha, point_size=5):
         RenderLayer.__init__(self, x, y, z, colors, color_map, color_limit, alpha)
         self._point_size = point_size

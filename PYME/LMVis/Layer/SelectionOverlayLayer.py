@@ -24,8 +24,6 @@ from OpenGL.GL import *
 
 class SelectionOverlayLayer(OverlayLayer):
 
-    _selection_settings = None
-
     def __init__(self, selection_settings):
         super(SelectionOverlayLayer, self).__init__([0, 0])
         self._selection_settings = selection_settings
