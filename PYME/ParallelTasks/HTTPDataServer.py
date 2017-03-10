@@ -27,6 +27,7 @@ from PYME import config
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
 import os
+import html
 
 #make sure we set up our logging before anyone elses does
 import logging
@@ -533,7 +534,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             # (see bug #1100201)
             content = (self.error_message_format % {
                 'code': code,
-                'message': http.server._quote_html(message),
+                'message': html.escape(message),
                 'explain': explain
             })
             self.send_header("Content-Type", self.error_content_type)

@@ -22,11 +22,7 @@ def f_Interp3d(p, interpolator, X, Y, Z, safeRegion, *args):
 
 def test_CSInterpolator():
     from .CSInterpolator import interpolator
-    
     interpolator.setModelFromFile(os.path.join(os.path.dirname(Test.__file__), 'astig_theory.psf'))
-    
-    print interpolator.interpModel.min(), interpolator.interpModel.max()
-    print interpolator.interpModel.flags
     
     roiHalfSize = 5
     x, y = 10.,10.
@@ -36,21 +32,14 @@ def test_CSInterpolator():
 
     m = f_Interp3d([1,x,y,0], interpolator, X, Y, Z, safeRegion)
     
-    #print m
-    
     assert(np.all(np.isfinite(m)))
+    assert (m.shape == (11, 11, 1))
 
 
 def test_LinearInterpolator():
     from .LinearInterpolator import interpolator
     
     interpolator.setModelFromFile(os.path.join(os.path.dirname(Test.__file__), 'astig_theory.psf'))
-    
-    #print np.where(interpolator.interpModel == interpolator.interpModel.max())
-    
-    #print interpolator.interpModel.shape
-    
-    #print interpolator.interpModel[interpolator.interpModel.shape[0]/2, :, 40]
 
     roiHalfSize = 5
     x, y = 0., 0.
@@ -58,12 +47,7 @@ def test_LinearInterpolator():
     X, Y, Z, safeRegion = interpolator.getCoords(TIRFDefault, slice(x - roiHalfSize, x + roiHalfSize + 1),
                                                  slice(y - roiHalfSize, y + roiHalfSize + 1), slice(0, 1))
     
-    #print X, Y, Z
-    
     m = f_Interp3d([1, x, y, 0], interpolator, X, Y, Z, safeRegion)
-    
-    #print m
-    #print m.shape
     
     
     assert (np.all(np.isfinite(m)))
