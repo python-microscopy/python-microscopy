@@ -113,10 +113,10 @@ def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resul
     else:
         fr['fitError'].view('7f4')[:n] = fitErr
         
-    fr['subtractedBackground'].view('f4')[:] = background
+    fr['subtractedBackground'].view('2f4')[:] = background
     slu = np.array(fmtSlicesUsed(slicesUsed), dtype='i4')
     #print slu.shape, fr['slicesUsed'].view('12i4').shape, slu.dtype, slu.ravel().shape
-    fr['slicesUsed'].view('i4')[:] = slu.ravel()
+    fr['slicesUsed'].view('6i4')[:] = slu.ravel()
         
     return fr 
  
