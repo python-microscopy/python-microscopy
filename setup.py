@@ -10,6 +10,7 @@
 #
 ##################
 import setuptools #to monkey-patch distutils for ms visualc for python
+from PYME.misc import cython_numpy_monkey
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -28,8 +29,9 @@ entry_points={
         'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
         'PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main',
         'PYMEClusterDup = PYME.io.clusterDuplication:main',
-        'PYMEDistributor = PYME.ParallelTasks.PYMEDistributor',
-        'PYMENodeServer = PYME.ParallelTasks.PYMENodeServer',
+        'PYMEDistributor = PYME.ParallelTasks.PYMEDistributor:main',
+        'PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main',
+        'PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main',
         'dh5view = PYME.DSView.dsviewer:main',
         'PYMEAcquire = PYME.Acquire.PYMEAcquire:main',
         'VisGUI = PYME.LMVis.VisGUI:main',

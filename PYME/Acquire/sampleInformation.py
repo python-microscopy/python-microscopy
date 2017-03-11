@@ -314,7 +314,7 @@ class SampleInfoDialog(wx.Dialog):
         r = requests.get(('http://%s/api/get_creator_choices?slref=%s&cname=%s'%(dbhost, slref, cname)).encode(), timeout=.1)
         choices = r.json()
         
-        print choices
+        #print choices
             
         if choices != current_choices:
             self.tCreator.SetChoices(choices)
@@ -505,6 +505,6 @@ def createImage(mdh, slide, comments=''):
     #im = models.Image.GetOrCreate(mdh.getEntry('imageID'), nameUtils.getUsername(), slide, mdh.getEntry('StartTime'))
     #im.comments = comments
     #im.save()
-    print 'FIXME: create database entry for image'
+    print('FIXME: create database entry for image')
     pass
 

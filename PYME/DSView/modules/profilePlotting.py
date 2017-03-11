@@ -42,9 +42,68 @@ class profiler:
 
         #accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])
         #self.dsviewer.SetAcceleratorTable(accel_tbl)
-
+        
+    
 
     def OnPlotProfile(self, event=None):
+        from PYME.Analysis.profile_extraction import extract_profile
+        
+        lx, ly, hx, hy = self.do.GetSliceSelection()
+    
+        w = int(self.do.selectionWidth)
+    
+        try:
+            names = self.image.mdh.getEntry('ChannelNames')
+        except:
+            names = ['Channel %d' % d for d in range(self.image.data.shape[3])]
+    
+        try:
+            voxx = self.image.mdh.getEntry('voxelsize.x')
+        except:
+            voxx = 1
+    
+        plots = []
+        
+    
+        for chanNum in range(self.image.data.shape[3]):
+            img = self.image.data[:,:, self.do.zp, chanNum].squeeze()
+            
+            p = extract_profile(img, lx, ly, hx, hy, w)
+        
+            plots.append(p.reshape(-1, 1, 1))
+    
+        #pylab.legend(names)
+
+        t = np.arange(p.size)
+    
+        im = ImageStack(plots, titleStub='New Profile')
+        im.xvals = t * voxx
+    
+        if not voxx == 1:
+            im.xlabel = 'Distance [um]'
+        else:
+            im.xlabel = 'Distance [pixels]'
+    
+        im.ylabel = 'Intensity'
+        im.defaultExt = '.txt'
+    
+        im.mdh['voxelsize.x'] = voxx
+        im.mdh['ChannelNames'] = names
+        im.mdh['Profile.XValues'] = im.xvals
+        im.mdh['Profile.XLabel'] = im.xlabel
+        im.mdh['Profile.YLabel'] = im.ylabel
+        im.mdh['Profile.StartX'] = lx
+        im.mdh['Profile.StartY'] = ly
+        im.mdh['Profile.EndX'] = hx
+        im.mdh['Profile.EndY'] = hy
+        im.mdh['Profile.Width'] = 2 * w + 1
+    
+        im.mdh['OriginalImage'] = self.image.filename
+    
+        ViewIm3D(im, mode='graph', parent=wx.GetTopLevelParent(self.dsviewer))
+
+
+    def _OnPlotProfile(self, event=None):
         lx, ly, hx, hy = self.do.GetSliceSelection()
 
         w = int(np.floor(0.5*self.do.selectionWidth))

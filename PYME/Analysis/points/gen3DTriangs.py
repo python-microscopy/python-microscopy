@@ -343,7 +343,7 @@ def gen3DTriangsTFC(T, sizeCutoff = inf, internalCull=True, pcut = inf):
         
         cutInd = ((1- P012*P123*P023*P013)*((P012 + P123 + P023 + P013) > 0)) > 0 #*(A < sizeCutoff)
         
-        print len(P012), P012.sum(), cutInd.sum()
+        #print len(P012), P012.sum(), cutInd.sum()
     
         #cut keep the indices which pass the test    
         iarray = iarray[cutInd, : ]
@@ -388,7 +388,7 @@ def gen3DTriangsTFC(T, sizeCutoff = inf, internalCull=True, pcut = inf):
     
     tridir = ((N*sback).sum(1) >0)
     
-    print 'Num backwards triangles:', tridir.sum(), len(tridir)
+    print('Num backwards triangles: %s, %s' % ((tridir.sum(), len(tridir))))
 
     #print N.shape
     N = -N*(sign((N*sback).sum(1))/sqrt((N**2).sum(1))).T[:,newaxis]

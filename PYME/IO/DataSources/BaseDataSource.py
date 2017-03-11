@@ -87,7 +87,7 @@ class BaseDataSource(object):
         keys = list(keys)
         #print keys
         for i in range(len(keys)):
-            if not keys[i].__class__ == slice:
+            if not isinstance(keys[i], slice):
                 keys[i] = slice(keys[i],keys[i] + 1)
         if keys == self.oldSlice:
             return self.oldData
@@ -100,9 +100,9 @@ class BaseDataSource(object):
         #print keys
 
         
-        if self.nTrueDims <= 3: #x,y, z/t
+        if self.nTrueDims <= 3 and not self.additionalDims == 'C': #x,y, z/t
             r = np.concatenate([np.atleast_2d(self.getSlice(i)[keys[0], keys[1]])[:,:,None] for i in range(*keys[2].indices(self.getNumSlices()))], 2)
-        elif self.nTrueDims == 4:
+        elif self.nTrueDims == 4 or self.additionalDims == 'C':
             #print keys[3]
             col_indices =  range(*keys[3].indices(self.shape[3]))
             #print col_indices
@@ -110,7 +110,7 @@ class BaseDataSource(object):
             for c_i in col_indices:
                 if self.additionalDims == 'TC':
                     indices = np.arange(*keys[2].indices(self.shape[2])) + c_i*self.shape[2]
-                elif self.additionalDims == 'CT':
+                elif self.additionalDims == 'CT' or self.additionalDims == 'C':
                     indices = np.arange(*keys[2].indices(self.shape[2]))*self.shape[3] + c_i
 
                 r.append(np.concatenate([np.atleast_2d(self.getSlice(i)[keys[0], keys[1]])[:,:,None] for i in indices], 2))

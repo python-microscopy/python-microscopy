@@ -1,6 +1,10 @@
 import os
-import SimpleHTTPServer
-import SocketServer
+#import SimpleHTTPServer
+# noinspection PyCompatibility
+import http.server
+
+# noinspection PyCompatibility
+import socketserver
 import webbrowser
 import threading
 import time
@@ -17,9 +21,9 @@ def launch_browser():
 if __name__ == '__main__':
     os.chdir(os.path.join(os.path.split(__file__)[0], 'html'))
 
-    Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
+    Handler = http.server.SimpleHTTPRequestHandler
 
-    httpd = SocketServer.TCPServer(("127.0.0.1", PORT), Handler)
+    httpd = socketserver.TCPServer(("127.0.0.1", PORT), Handler)
 
     print ("Serving at http://127.0.0.1:%d/" %PORT)
     threading.Thread(target=launch_browser).start()

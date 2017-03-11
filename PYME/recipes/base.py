@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
 """
 Created on Mon May 25 17:02:04 2015
 
@@ -91,8 +93,9 @@ class ModuleBase(HasTraits):
 
     def trait_view(self, name=None, view_element=None):
         import traitsui.api as tui
+        from six import string_types
 
-        if view_element is None and isinstance(name, basestring):
+        if view_element is None and isinstance(name, string_types):
             try:
                 tc = getattr(self, name)
 
@@ -254,6 +257,10 @@ class ModuleCollection(HasTraits):
             try:
                 self.namespace.pop(dsi)
             except KeyError:
+                #the output is not in our namespace, no need to prune
+                pass
+            except AttributeError:
+                #we might not have our namespace defined yet
                 pass
         
         
@@ -274,11 +281,11 @@ class ModuleCollection(HasTraits):
             try:
                 if not (self.namespace[k] == v):
                     #input has changed
-                    print 'pruning: ', k
+                    print('pruning: ', k)
                     self.pruneDependanciesFromNamespace([k])
             except KeyError:
                 #key wasn't in namespace previously
-                print 'KeyError'
+                print('KeyError')
                 pass
     
         self.namespace.update(kwargs)

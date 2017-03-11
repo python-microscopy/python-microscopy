@@ -25,7 +25,7 @@ import scipy
 #from scipy.signal import interpolate
 import scipy.ndimage as ndimage
 #from pylab import *
-import copy_reg
+#import copy_reg
 import numpy
 #import types
 
@@ -35,13 +35,13 @@ from PYME.localization.cModels.gauss_app import *
 
 from PYME.Analysis._fithelpers import *
 
-def pickleSlice(slice):
-        return unpickleSlice, (slice.start, slice.stop, slice.step)
-
-def unpickleSlice(start, stop, step):
-        return slice(start, stop, step)
-
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
+# def pickleSlice(slice):
+#         return unpickleSlice, (slice.start, slice.stop, slice.step)
+#
+# def unpickleSlice(start, stop, step):
+#         return slice(start, stop, step)
+#
+# copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 def f_gauss2dSlow(p, X, Y):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""

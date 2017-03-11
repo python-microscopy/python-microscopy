@@ -7,6 +7,7 @@ Created on Wed Mar 11 15:41:31 2015
 
 import numpy as np
 from scipy import spatial
+from six.moves import xrange
 
 #rt = [np.vstack([x[t==i], y[t == i]]) for i in range(t.max() + 1)]
 #ind_t = [index[t == i]]

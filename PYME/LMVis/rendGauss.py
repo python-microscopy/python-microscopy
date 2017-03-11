@@ -20,9 +20,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+from scipy import ndimage
 
 from scipy import *
 from PYME.localization.cModels.gauss_app import *
+import numpy as np
 
 #def Gauss2D(Xv,Yv, A,x0,y0,s):
 #    Xv = mat(Xv)
@@ -143,3 +145,15 @@ def rendGaussNestedXYCorr(res, X, Y, roiSize = 5, errScale = 1, cutoffErr=100, c
                 im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp
 
     return im
+
+
+def gaussKernel(kernel_size=21, sigma=3):
+    """
+    Returns a 2D Gaussian kernel
+    :param kernel_size: should not be even
+    :param sigma: sigma of the gaussian
+    :return: array containing the gaussian values
+    """
+    X = np.arange(kernel_size)
+    return Gauss2D(X, X, 1.0, kernel_size//2, kernel_size//2, sigma)
+

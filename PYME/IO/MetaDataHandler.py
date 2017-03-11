@@ -64,7 +64,14 @@ The format of a metadata handler is defined by the `MDHandlerBase` class.
 
 
 """
-from UserDict import DictMixin
+try:
+    # noinspection PyCompatibility
+    from UserDict import DictMixin
+except ImportError:
+    #py3
+    from collections import MutableMapping as DictMixin
+    
+import six
 
 #lists where bits of hardware can register the fact that they are capable of 
 #providing metadata, by appending a function with the signature:
@@ -140,6 +147,17 @@ class MDHandlerBase(DictMixin):
 
     def __getitem__(self, name):
         return self.getEntry(name)
+
+    if six.PY3:
+        def __len__(self):
+            return len(self.getEntryNames())
+    
+        def __iter__(self):
+            for k in self.getEntryNames():
+                yield self.getEntry(k)
+                
+        def __delitem__(self, key):
+            raise RuntimeError('Cannot delete metadata item')
         
     def getOrDefault(self, name, default):
         """Returns the entry for a given name, of a default value if the key
@@ -228,8 +246,8 @@ class MDHandlerBase(DictMixin):
 
             if val.__class__ in [str, unicode] or np.isscalar(val): #quote string
                 val = repr(val)
-            elif not val.__class__ in [int, float, list, dict]: #not easily recovered from representation
-                val = "pickle.loads('''%s''')" % pickle.dumps(val)
+            elif not val.__class__ in [int, float, list, dict, tuple]: #not easily recovered from representation
+                val = "pickle.loads('''%s''')" % pickle.dumps(val).replace('\n', '\\n')
 
             s.append("md['%s'] = %s\n" % (en, val))
         
@@ -254,9 +272,17 @@ class MDHandlerBase(DictMixin):
         
     def to_JSON(self):
         import json
+        import numpy as np
         
         def _jsify(obj):
             """call a custom to_JSON method, if available"""
+            #if isinstance(obj, np.integer):
+            #    return int(obj)
+            #elif isinstance(obj, np.number):
+            #    return float(obj)
+            if isinstance(obj, np.generic):
+                return obj.tolist()
+
             try:
                 return obj.to_JSON()
             except AttributeError:
@@ -357,6 +383,7 @@ class NestedClassMDHandler(MDHandlerBase):
 
     
     def getEntry(self,entryName):
+        #print(entryName)
         return eval('self.'+entryName)
 #        try:
 #            return eval('self.'+entryName)

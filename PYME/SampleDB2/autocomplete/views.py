@@ -50,7 +50,7 @@ class AutocompleteSettings(object):
     login_required = False
  
     def label(self, obj):
-        return unicode(obj)
+        return u'' + obj
     value = label
    
 
@@ -102,6 +102,7 @@ class AutocompleteSettings(object):
                 setattr(self, name, build_func(attr))
 
     def view(self, request):
+        from functools import reduce
         query = request.GET.get('term', None)
 
         if query is None:

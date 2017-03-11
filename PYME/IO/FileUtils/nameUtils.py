@@ -191,7 +191,7 @@ def translateSeparators(filename):
     #fn = os.path.join(*seps.split(filename))
     #if filename[0] == '/': #replace leading /, if present
     #    fn = '/' + fn
-    fn = string.join(seps2.split(filename), os.sep)
+    fn = os.sep.join(seps2.split(filename))
 
     return fn
 

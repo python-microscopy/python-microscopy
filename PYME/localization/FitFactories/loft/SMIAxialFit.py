@@ -200,7 +200,7 @@ class SMIAxialFitFactory:
         #print ind3
         try:
             (res, resCode) = FitModel(f_SMIAxial, startParameters, profile[ind3], ind3, ysmooth[ind3], back)
-        except TypeError, e:
+        except TypeError as e:
             res = [-1, -1, -1, -1]
             resCode = -1
 

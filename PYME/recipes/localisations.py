@@ -70,6 +70,7 @@ class DensityMapping(ModuleBase):
     MCProbability = Float(1.0)
     numSamples = Int(10)
     colours = List(['none'])
+    zBoundsMode = Enum(['manual', 'min-max'])
     zBounds = ListFloat([-500, 500])
     zSliceThickness = Float(50.0)
     softRender = Bool(True)
@@ -84,6 +85,8 @@ class DensityMapping(ModuleBase):
             cf = inp
 
         cf.imageBounds = ImageBounds.estimateFromSource(inp)
+        if self.zBoundsMode == 'min-max':
+            self.zBounds[0], self.zBounds[1] = float(cf.imageBounds.z0), float(cf.imageBounds.z1)
 
         renderer = renderers.RENDERERS[str(self.renderingModule)](None, cf)
 
@@ -237,14 +240,11 @@ class MergeClumps(ModuleBase):
 
         inp = namespace[self.inputName]
 
-        #mapped = tabular.mappingFilter(inp)
-
-        if 'mdh' not in dir(inp):
-            raise RuntimeError('MergeClumps needs metadata')
-
-        grouped = multiview.mergeClumps(inp, inp.mdh.getOrDefault('Multiview.NumROIs', 0), labelKey=self.labelKey)
-
-        grouped.mdh = inp.mdh
+        try:
+            grouped = multiview.mergeClumps(inp, inp.mdh.getOrDefault('Multiview.NumROIs', 0), labelKey=self.labelKey)
+            grouped.mdh = inp.mdh
+        except AttributeError:
+            grouped = multiview.mergeClumps(inp, numChan=0, labelKey=self.labelKey)
 
         namespace[self.outputName] = grouped
 

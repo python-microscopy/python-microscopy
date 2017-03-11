@@ -3,7 +3,7 @@ This file provides utility functions for creating and interpreting clusterIO dir
 """
 from collections import namedtuple
 import os
-from PYME.IO.countdir import dirsize, file_info
+import six
 
 #flags (bitfields) for file type specification
 FILETYPE_NORMAL = 0
@@ -20,8 +20,39 @@ size: is the size of the file in bytes, OR the number of entries in a directory
 """
 FileInfo = namedtuple('FileInfo', 'type, size')
 
-def dirsize_(path):
-    return len(os.listdir(path))
+try:
+    from PYME.IO.countdir import dirsize, file_info
+
+    def _file_info(path, fn):
+        fpath = os.path.join(path, fn)
+
+        finfo = file_info(fpath)
+
+        if finfo[0] & FILETYPE_DIRECTORY:
+            fn = fn + '/'
+
+        return (fn, finfo)
+except ImportError: # coundir module is posix only, fall back to more naive methods on windows
+    def dirsize(path):
+        return len(os.listdir(path))
+
+    def _file_info(path, fn):
+        fpath = os.path.join(path, fn)
+        if os.path.isdir(fpath):
+            ftype = FILETYPE_DIRECTORY
+
+            if os.path.exists(fpath + '/metadata.json'):
+                #if there is a metadata.json, set the series flag
+                ftype |= FILETYPE_SERIES
+
+            if os.path.exists(fpath + '/events.json'):
+                #if there is a metadata.json, set the series flag
+                ftype |= FILETYPE_SERIES_COMPLETE
+
+            return (fn + '/',  FileInfo(ftype, dirsize(fpath)))
+        else:
+            return (fn,  FileInfo(FILETYPE_NORMAL, os.path.getsize(fpath)))
+
 
 def aggregate_dirlisting(dir_list, single_dir):
     """
@@ -39,7 +70,7 @@ def aggregate_dirlisting(dir_list, single_dir):
 
     """
 
-    for k, v in single_dir.iteritems():
+    for k, v in six.iteritems(single_dir):
         type, size = v
 
         fi = dir_list.get(k, None)
@@ -51,33 +82,9 @@ def aggregate_dirlisting(dir_list, single_dir):
 
         dir_list[k] = FileInfo(type, size)
 
-def __file_info(path, fn):
-    fpath = os.path.join(path, fn)
-    if os.path.isdir(fpath):
-        ftype = FILETYPE_DIRECTORY
-
-        if os.path.exists(fpath + '/metadata.json'):
-            #if there is a metadata.json, set the series flag
-            ftype |= FILETYPE_SERIES
-
-        if os.path.exists(fpath + '/events.json'):
-            #if there is a metadata.json, set the series flag
-            ftype |= FILETYPE_SERIES_COMPLETE
-
-        return (fn + '/',  FileInfo(ftype, dirsize(fpath)))
-    else:
-        return (fn,  FileInfo(FILETYPE_NORMAL, os.path.getsize(fpath)))
 
 
-def _file_info(path, fn):
-    fpath = os.path.join(path, fn)
 
-    finfo = file_info(fpath)
-
-    if finfo[0] & FILETYPE_DIRECTORY:
-        fn = fn + '/'
-
-    return (fn, finfo)
 
 
 def list_directory(path):

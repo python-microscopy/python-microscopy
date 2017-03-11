@@ -65,7 +65,7 @@ class DeconvSettingsDialog(wx.Dialog):
             
             sizer3 = wx.BoxSizer(wx.HORIZONTAL)
             #sizer3.Add(wx.StaticText(pan2, -1, 'File:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-            self.fpPSF = wx.FilePickerCtrl(pan2, -1, wildcard='*.psf', style=wx.FLP_OPEN|wx.FLP_FILE_MUST_EXIST)
+            self.fpPSF = wx.FilePickerCtrl(pan2, -1, wildcard='*.psf|*.tif', style=wx.FLP_OPEN|wx.FLP_FILE_MUST_EXIST)
             self.fpPSF.Bind(wx.EVT_FILEPICKER_CHANGED, self.OnPSFFileChanged)
 
             sizer3.Add(self.fpPSF, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -306,12 +306,14 @@ class DeconvSettingsDialog(wx.Dialog):
             
     def GetPSF(self, vshint = None):
         import numpy as np
+        from PYME.IO import load_psf
         from scipy import stats
         
         PSFMode = self.nb2.GetCurrentPage().PSFMode
         #get PSF from file
         if PSFMode == 'File':
-            psf, vs = np.load(self.GetPSFFilename())
+            #psf, vs = np.load(self.GetPSFFilename())
+            psf, vs = load_psf(self.GetPSFFilename())
             psf = np.atleast_3d(psf)
             
             return (self.GetPSFFilename(), psf, vs)        

@@ -34,7 +34,13 @@ import PYME.Acquire.Spooler as sp
 #from PYME.ParallelTasks.relativeFiles import getRelFilename
 
 import threading
-import Queue
+
+try:
+    # noinspection PyCompatibility
+    import Queue
+except ImportError:
+    #py3
+    import queue as Queue
 
 from PYME.IO import clusterIO
 from PYME.IO import PZFFormat
@@ -190,7 +196,10 @@ class Spooler(sp.Spooler):
         
     def OnFrame(self, sender, frameData, **kwargs):
         # NOTE: copy is now performed in frameWrangler, so we don't need to worry about it here
-        self.buffer.append((self.imNum, frameData.reshape(1,frameData.shape[0],frameData.shape[1])))
+        if frameData.shape[0] == 1:
+            self.buffer.append((self.imNum, frameData))
+        else:
+            self.buffer.append((self.imNum, frameData.reshape(1,frameData.shape[0],frameData.shape[1])))
 
         #print len(self.buffer)
         t = time.time()

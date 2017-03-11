@@ -10,7 +10,10 @@ Contributed to the wxPython project under the wxPython project's license.
 
 """
 
-import locale, wx, sys, cStringIO
+import locale, wx, sys
+
+from io import BytesIO
+from six.moves import xrange
 
 import  wx.lib.mixins.listctrl  as  listmix
 
@@ -18,7 +21,7 @@ from wx import ImageFromStream, BitmapFromImage
 #----------------------------------------------------------------------
 def getSmallUpArrowData():
     return \
-'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x06\
+b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x06\
 \x00\x00\x00\x1f\xf3\xffa\x00\x00\x00\x04sBIT\x08\x08\x08\x08|\x08d\x88\x00\
 \x00\x00<IDAT8\x8dcddbf\xa0\x040Q\xa4{h\x18\xf0\xff\xdf\xdf\xffd\x1b\x00\xd3\
 \x8c\xcf\x10\x9c\x06\xa0k\xc2e\x08m\xc2\x00\x97m\xd8\xc41\x0c \x14h\xe8\xf2\
@@ -29,13 +32,13 @@ def getSmallUpArrowBitmap():
     return BitmapFromImage(getSmallUpArrowImage())
 
 def getSmallUpArrowImage():
-    stream = cStringIO.StringIO(getSmallUpArrowData())
+    stream = BytesIO(getSmallUpArrowData())
     return ImageFromStream(stream)
 
 
 def getSmallDnArrowData():
     return \
-"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x06\
+b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x06\
 \x00\x00\x00\x1f\xf3\xffa\x00\x00\x00\x04sBIT\x08\x08\x08\x08|\x08d\x88\x00\
 \x00\x00HIDAT8\x8dcddbf\xa0\x040Q\xa4{\xd4\x00\x06\x06\x06\x06\x06\x16t\x81\
 \xff\xff\xfe\xfe'\xa4\x89\x91\x89\x99\x11\xa7\x0b\x90%\ti\xc6j\x00>C\xb0\x89\
@@ -46,7 +49,7 @@ def getSmallDnArrowBitmap():
     return BitmapFromImage(getSmallDnArrowImage())
 
 def getSmallDnArrowImage():
-    stream = cStringIO.StringIO(getSmallDnArrowData())
+    stream = BytesIO(getSmallDnArrowData())
     return ImageFromStream(stream)
 #----------------------------------------------------------------------
 
@@ -298,11 +301,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
             flags |= wx.LC_NO_HEADER
         self.dropdownlistbox.SetWindowStyleFlag(flags)
 
-        #prevent errors on "old" systems
-        if sys.version.startswith("2.3"):
-            self._multiChoices.sort(lambda x, y: cmp(x[0].lower(), y[0].lower()))
-        else:
-            self._multiChoices.sort(key=lambda x: locale.strxfrm(x[0]).lower() )
+        self._multiChoices.sort(key=lambda x: locale.strxfrm(x[0]).lower() )
 
         self._updateDataList(self._multiChoices)
 
@@ -342,11 +341,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         if not isinstance(choices, list):
             self._choices = [ x for x in choices]
 
-        #prevent errors on "old" systems
-        if sys.version.startswith("2.3"):
-            self._choices.sort(lambda x, y: cmp(x.lower(), y.lower()))
-        else:
-            self._choices.sort(key=lambda x: locale.strxfrm(x).lower())
+        self._choices.sort(key=lambda x: locale.strxfrm(x).lower())
 
         self._updateDataList(self._choices)
 

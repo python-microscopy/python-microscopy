@@ -32,6 +32,23 @@ class ParticleTracker:
 
 
     def OnGetIDs(self, event):
+        """
+
+        Function to propagate labels from a segmented image (or stack of images) to localizations within the pipeline.
+        Localizations in the same area (or volume) of image.ImageStack labels will be given the same 'ObjectID' as that
+        label. The ImageStack containing labels is selected through the GUI.
+
+        Parameters
+        ----------
+        event: GUI event
+
+        Returns
+        -------
+        Nothing, but adds ObjectID and NEvents columns to the pipeline
+            ObjectID: Label number from image, mapped to each localization within that label
+            NEvents: Number of localizations within the label that a given localization belongs to
+
+        """
         from PYME.IO import image
 
         visFr = self.visFr
@@ -46,18 +63,26 @@ class ParticleTracker:
         if dlg.ShowModal() == wx.ID_OK:
             img = image.openImages[dlg.GetStringSelection()]
             
+            im_ox, im_oy, im_oz = img.origin
+            
             #account for ROIs
-            dRx = pipeline.mdh['Camera.ROIPosX']*pipeline.mdh['voxelsize.x']*1e3 - img.mdh['Camera.ROIPosX']*img.mdh['voxelsize.x']*1e3
-            dRy = pipeline.mdh['Camera.ROIPosY']*pipeline.mdh['voxelsize.y']*1e3 - img.mdh['Camera.ROIPosY']*img.mdh['voxelsize.y']*1e3
+            p_ox = pipeline.mdh['Camera.ROIPosX']*pipeline.mdh['voxelsize.x']*1e3
+            p_oy = pipeline.mdh['Camera.ROIPosY']*pipeline.mdh['voxelsize.y']*1e3
 
-            pixX = np.round((pipeline.mapping['x'] - img.imgBounds.x0 - dRx)/img.pixelSize).astype('i')
-            pixY = np.round((pipeline.mapping['y'] - img.imgBounds.y0 - dRy)/img.pixelSize).astype('i')
+            pixX = np.round((pipeline.mapping['x'] + p_ox - im_ox)/img.pixelSize).astype('i')
+            pixY = np.round((pipeline.mapping['y'] + p_oy - im_oy)/img.pixelSize).astype('i')
+            pixZ = np.round((pipeline.mapping['z'] - im_oz)/img.sliceSize).astype('i')
+            
+            if img.data.shape[2] == 1:
+                #disregard z for 2D images
+                pixZ = np.zeros_like(pixX)
 
-            ind = (pixX < img.data.shape[0])*(pixY < img.data.shape[1])*(pixX >= 0)*(pixY >= 0)
+            ind = (pixX < img.data.shape[0])*(pixY < img.data.shape[1])*(pixX >= 0)*(pixY >= 0)*(pixZ >= 0)*(pixZ < img.data.shape[2])
 
             ids = np.zeros_like(pixX)
+            
             #assume there is only one channel
-            ids[ind] = img.data[:,:,:,0].squeeze()[pixX[ind], pixY[ind]].astype('i')
+            ids[ind] = np.atleast_3d(img.data[:,:,:,0].squeeze())[pixX[ind], pixY[ind], pixZ[ind]].astype('i')
 
             numPerObject, b = np.histogram(ids, np.arange(ids.max() + 1.5) + .5)
 
@@ -69,7 +94,7 @@ class ParticleTracker:
         dlg.Destroy()
 
     def OnMeasure(self, event):
-        from PYME.LMVis import objectMeasure
+        from PYME.Analysis.points import objectMeasure
 
         pipeline = self.visFr.pipeline
 

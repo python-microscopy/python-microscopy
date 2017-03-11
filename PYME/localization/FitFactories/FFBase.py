@@ -57,9 +57,9 @@ class FFBase(object):
         if (z is None): # use position of maximum intensity
             z = self.data[x,y,:].argmax()
 
-        xslice = slice(max((x - roiHalfSize), 0),min((x + roiHalfSize + 1),self.data.shape[0]))
-        yslice = slice(max((y - roiHalfSize), 0),min((y + roiHalfSize + 1), self.data.shape[1]))
-        zslice = slice(max((z - axialHalfSize), 0),min((z + axialHalfSize + 1), self.data.shape[2]))
+        xslice = slice(int(max((x - roiHalfSize), 0)),int(min((x + roiHalfSize + 1),self.data.shape[0])))
+        yslice = slice(int(max((y - roiHalfSize), 0)),int(min((y + roiHalfSize + 1), self.data.shape[1])))
+        zslice = slice(int(max((z - axialHalfSize), 0)),int(min((z + axialHalfSize + 1), self.data.shape[2])))
 		
         
         dataROI = self.data[xslice, yslice, zslice]
@@ -135,20 +135,20 @@ class FFBase(object):
         #find ROI which works in both channels
         #if dxp < 0:
         x01 = max(x - roiHalfSize, max(0, dxp))
-        x11 = min(max(x01, x + roiHalfSize), self.data.shape[0] + min(0, dxp))
+        x11 = min(max(x01, x + roiHalfSize + 1), self.data.shape[0] + min(0, dxp))
         x02 = x01 - dxp
         x12 = x11 - dxp
         
         y01 = max(y - roiHalfSize, max(0, dyp))
-        y11 = min(max(y + roiHalfSize,  y01), self.data.shape[1] + min(0, dyp))
+        y11 = min(max(y + roiHalfSize + 1,  y01), self.data.shape[1] + min(0, dyp))
         y02 = y01 - dyp
         y12 = y11 - dyp
         
-        xslice = slice(x01, x11)
-        xslice2 = slice(x02, x12) 
+        xslice = slice(int(x01), int(x11))
+        xslice2 = slice(int(x02), int(x12))
         
-        yslice = slice(y01, y11)
-        yslice2 = slice(y02, y12)
+        yslice = slice(int(y01), int(y11))
+        yslice2 = slice(int(y02), int(y12))
         
         #print xslice2, yslice2
         

@@ -79,7 +79,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         
         fontSize = max(6, min(10, 10*pix_per_col/100.))
         
-        print pix_per_col, fontSize
+        #print pix_per_col, fontSize
         
         TW = textwrap.TextWrapper(width=int(1.8*pix_per_col/fontSize), subsequent_indent='  ')
         TW2 = textwrap.TextWrapper(width=int(1.3*pix_per_col/fontSize), subsequent_indent='  ')
@@ -516,6 +516,10 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.AddStretchSpacer()
 
+        self.cbSpawnWorkerProcs = wx.CheckBox(self, -1, 'spawn worker processes for each core')
+        self.cbSpawnWorkerProcs.SetValue(True)
+        hsizer.Add(self.cbSpawnWorkerProcs, 0, wx.ALL, 5)
+
         self.bBake = wx.Button(self, -1, 'Bake') 
         hsizer.Add(self.bBake, 0, wx.ALL, 5)
         self.bBake.Bind(wx.EVT_BUTTON, self.OnBake)
@@ -559,6 +563,11 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         
     def OnBake(self, event=None):
         out_dir = self.dcOutput.GetPath()
+
+        if self.cbSpawnWorkerProcs.GetValue():
+            num_procs = batchProcess.NUM_PROCS
+        else:
+            num_procs = 1
         
         #validate our choices:
         if (self.rm.activeRecipe is None) or (len(self.rm.activeRecipe.modules) == 0):
@@ -574,9 +583,9 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
             return
         
         if not len(self.inputFiles) == len(self.inputFiles2):            
-            batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles}, out_dir)
+            batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles}, out_dir, num_procs=num_procs)
         else:
-            batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles, 'input2':self.inputFiles2}, out_dir)
+            batchProcess.bake(self.rm.activeRecipe, {'input':self.inputFiles, 'input2':self.inputFiles2}, out_dir, num_procs=num_procs)
         
             
    

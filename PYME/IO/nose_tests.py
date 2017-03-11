@@ -24,7 +24,19 @@ def test_PZFFormat_raw_uint16():
 
     result, header = PZFFormat.loads(PZFFormat.dumps(test_data))
 
+    print test_data, result.squeeze()
+    print header, result.dtype
+
+    assert np.allclose(result.squeeze(), test_data.squeeze())
+    
+def test_PZFFormat_raw_uint16_F():
+    from PYME.IO import PZFFormat
+    test_data = np.random.poisson(100, 10000).reshape(100,100, order='F').astype('uint16')
+
+    result, header = PZFFormat.loads(PZFFormat.dumps(test_data))
+
     #print result
+    print header, result.dtype
 
     assert np.allclose(result.squeeze(), test_data.squeeze())
 
@@ -58,12 +70,12 @@ def test_PZFFormat_lossy_uint16():
                                                      quantizationOffset=0, quantizationScale=1))
 
     #print result
-    test_quant = (np.floor(np.sqrt(test_data.astype('f'))).astype('i'))**2
+    test_quant = (np.floor(np.sqrt(test_data.astype('f')-.1)).astype('i'))**2
 
-    print test_quant.squeeze() - result.squeeze()
-    print test_data.squeeze()
-    print test_quant.squeeze()
-    print result.squeeze()
+    #print(test_quant.squeeze() - result.squeeze())
+    #print(test_data.squeeze())
+    #print(test_quant.squeeze())
+    #print(result.squeeze())
 
     assert np.allclose(result.squeeze(), test_quant.squeeze())
 

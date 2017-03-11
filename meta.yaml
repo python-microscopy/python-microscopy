@@ -38,6 +38,7 @@ build:
     - PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main
     - PYMEClusterDup = PYME.io.clusterDuplication:main
     - PYMEDistributor = PYME.ParallelTasks.PYMEDistributor:main
+    - PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main
     - PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main
 
 
@@ -132,6 +133,7 @@ requirements:
     - python
     - numpy x.x
     - matplotlib
+    - cython
     #- mingw  [win]
   # Packages required to run the package. These are the dependencies that
   # will be installed automatically whenever the package is installed.
@@ -162,12 +164,15 @@ requirements:
     - requests
     - pandas
     - pyyaml
+    - psutil
     - dispatch
     - pymecompress
     - ujson
     - docutils
     - sphinx
     - python-bioformats [osx]
+    - six
+    - future
 
     #todo make cross-platform versions
     #- nvidia-ml-py  [linux] #optional - maybe better as dependency for gpu-fitting package

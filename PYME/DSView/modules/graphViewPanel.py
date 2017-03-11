@@ -143,7 +143,7 @@ class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
             try:
                 self.canvas.print_figure(
                     os.path.join(dirname, filename), format=format)
-            except Exception, e:
+            except Exception as e:
                 #print str(e)
                 error_msg_wx(str(e))
 

@@ -116,17 +116,17 @@ def main():
             raise RuntimeError('Kill functionality not supported on windows. Close the window that the previous launchWorkers instance was run from instead')
 
         if args.run_server:
-            print 'Launching server ...'
+            print('Launching server ...')
             subprocess.Popen('python "%s\\%s.py"' % (fstub, SERVER_PROC), shell=True)
 
-            print 'Waiting for server to come up ...'
+            print('Waiting for server to come up ...')
             time.sleep(10)
 
         if args.gui:
-            print 'Launching task monitor ...'
+            print('Launching task monitor ...')
             subprocess.Popen('python "%s\\fitMonP.py"' % fstub, shell=True)
     
-        print 'Launching %d workers ...' % numProcessors
+        print('Launching %d workers ...' % numProcessors)
         for i in range(numProcessors):
             subprocess.Popen('python "%s\\%s.py"' % (fstub, WORKER_PROC), shell=True)
     elif sys.platform == 'darwin':
@@ -139,7 +139,7 @@ def main():
                     c = p.cmdline()
                     #print c, SERVER_PROC, WORKER_PROC
                     if (SERVER_PROC in c[1] and args.run_server) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1] and args.gui):
-                        print 'killing %s' % c
+                        print('killing %s' % c)
                         p.kill()
             except (psutil.ZombieProcess, psutil.AccessDenied):
                 pass

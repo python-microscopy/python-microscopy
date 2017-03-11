@@ -42,6 +42,8 @@ import dispatch
 
 from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
+import logging
+logger = logging.getLogger(__name__)
 
 def _processPriSplit(ds):
     """set mappings ascociated with the use of a splitter"""
@@ -234,6 +236,20 @@ def _processEvents(ds, events, mdh):
 
             #self.eventCharts = eventCharts
             #self.ev_mappings = ev_mappings
+    elif all(k in mdh.keys() for k in ['StackSettings.FramesPerStep', 'StackSettings.StepSize',
+                                       'StackSettings.NumSteps', 'StackSettings.NumCycles']):
+        # if we dont have events file, see if we can use metadata to spoof focus
+        print('No events found, spoofing focus position using StackSettings metadata')
+        frames = np.arange(0, mdh['StackSettings.FramesPerStep'] * mdh['StackSettings.NumSteps'] * mdh[
+            'StackSettings.NumCycles'], mdh['StackSettings.FramesPerStep'])
+        position = np.arange(mdh.getOrDefault('Protocol.PiezoStartPos', 0),
+                             mdh.getOrDefault('Protocol.PiezoStartPos', 0) + mdh['StackSettings.NumSteps'] * mdh[
+                                 'StackSettings.StepSize'], mdh['StackSettings.StepSize'])
+        position = np.tile(position, mdh['StackSettings.NumCycles'])
+
+        zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
+        ev_mappings['zm'] = zm
+        eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
 
     return ev_mappings, eventCharts
 
@@ -399,7 +415,11 @@ class Pipeline:
         _add_missing_ds_keys(ds,self.ev_mappings)
 
         if getattr(ds, 'mdh', None) is None:
-            ds.mdh = self.mdh
+            try:
+                ds.mdh = self.mdh
+            except AttributeError:
+                logger.error('No metadata defined in pipeline')
+                pass
 
         self.dataSources[dskey] = ds
 
@@ -599,7 +619,7 @@ class Pipeline:
         if 'Analysis.FitModule' in self.mdh.getEntryNames():
             fitModule = self.mdh['Analysis.FitModule']
             
-            print 'fitModule = %s' % fitModule
+            #print 'fitModule = %s' % fitModule
             
             if 'Interp' in fitModule:
                 self.filterKeys['A'] = (5, 100000)
@@ -740,7 +760,7 @@ class Pipeline:
             self.Quads.insert(pointQT.qtRec(xi,yi, None))
             
     def measureObjects(self):
-        from PYME.LMVis import objectMeasure
+        from PYME.Analysis.points import objectMeasure
         
         self.objectMeasures = objectMeasure.measureObjects(self.objects, self.objThreshold)
         

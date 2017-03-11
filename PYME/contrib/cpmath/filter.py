@@ -1400,7 +1400,7 @@ def permutations(x):
     e.g.
     >>> x = [ 1, 2, 3, 4 ]
     >>> for p in permutations(x):
-    >>>   print p
+    >>>   print(p)
     [ 1, 2, 3, 4 ]
     [ 1, 2, 4, 3 ] 
     [ 1, 3, 2, 4 ]

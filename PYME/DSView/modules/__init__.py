@@ -25,6 +25,8 @@
 import glob
 import os
 
+from imp import reload
+
 from PYME import config
 
 localmodules = [os.path.splitext(os.path.split(p)[-1])[0] for p in glob.glob(__path__[0] + '/[a-zA-Z]*.py')]
