@@ -368,9 +368,12 @@ class DBSCANClustering(ModuleBase):
     def hide_in_overview(self):
         return ['columns']
 
+#TODO - this is very specialized and probably doesn't belong here - at least not in this form
 @register_module('ClusterCountVsImagingTime')
 class ClusterCountVsImagingTime(ModuleBase):
     """
+    WARNING: This module will likely move, dissapear, or be refactored
+
     ClusterCountVsImagingTime iteratively filters a dictionary-like object on t, and at each step counts the number of
     labeled objects (e.g. DBSCAN clusters) which contain at least N-points. It does this for two N-points, so one can be
     set according to density with all frames included, and the other can be set for one of the earlier frame-counts.
@@ -448,21 +451,77 @@ class ClusterCountVsImagingTime(ModuleBase):
         namespace[self.outputName] = res
 
 
-
-@register_module('MeasureClusters')
-class MeasureClusters(ModuleBase):
+@register_module('LabelsFromImage')
+class LabelsFromImage(ModuleBase):
     """
+    Maps each point in the input table to a pixel in a labelled image, and extracts the pixel value at that location to
+    use as a label for the point data. 
+
+    Inputs
+    ------
+    inputName: name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
+    inputImage: name of image input containing labels
+
+    Outputs
+    -------
+    outputName: name of tabular output. A mapped version of the tabular input with 2 extra columns
+        objectID: Label number from image, mapped to each localization within that label
+        NEvents: Number of localizations within the label that a given localization belongs to
+
+    """
+    inputName = Input('input')
+    inputImage = Input('labeled')
+
+    outputName = Output('labeled_points')
+
+    def execute(self, namespace):
+        from PYME.IO import tabular
+        from PYME.Analysis.points import cluster_morphology
+
+        inp = namespace[self.inputName]
+        img = namespace[self.inputImage]
+        #img = image.openImages[dlg.GetStringSelection()]
+
+        ids, numPerObject = cluster_morphology.get_labels_from_image(img, inp)
+
+        labeled = tabular.mappingFilter(inp)
+        labeled.addColumn('objectID', ids)
+        labeled.addColumn('NEvents', numPerObject[ids - 1])
+
+        # propagate metadata, if present
+        try:
+            labeled.mdh = namespace[self.inputName].mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = labeled
+
+
+@register_module('MeasureClusters3D')
+class MeasureClusters3D(ModuleBase):
+    """
+    Measures the 3D morphology of clusters of points
+
+    Inputs
+    ------
+
+    inputName : name of tabular data containing x, y, and z columns and labels identifying which cluster each point
+                belongs to.
+
+    Outputs
+    -------
+
+    outputName: a new tabular data source containing measurements of the clusters
+    
     Parameters
     ----------
-
-        labelsKey: array of label assignments. Measures will be calculated for each label, and the labels with be
-        propagated into the output with the same labelsKey key.
+        labelKey: name of column to use as a label identifying clusters
 
     Notes
     -----
 
-    Measures calculated
-    -------------------
+    Measures calculated (to be expanded)
+    --------------------------------------
         count: the number of points in the cluster
         x, y, z: Center of mass positions, no weighting based on localization precision
         gyrationRadius: AKA RMS distance to center of cluster - see also supplemental text of DOI: 10.1038/nature16496
@@ -523,3 +582,4 @@ class MeasureClusters(ModuleBase):
             pass
 
         namespace[self.outputName] = meas
+
