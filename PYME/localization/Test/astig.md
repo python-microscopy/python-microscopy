@@ -3,7 +3,7 @@ import os
 print __file__
 md['EndTime'] = 1300676178.4949999
 md['EstimatedLaserOnFrameNo'] = 0
-md['PSFFile'] = os.path.join(os.path.split(__file__)[0], 'psf_astig_bg_d.psf')
+md['PSFFile'] = os.path.join(os.path.split(__file__)[0], 'psf_astig_bg_d.tif')
 md['StartTime'] = 1300676151.901
 md['tIndex'] = 0
 md['Analysis.BGRange'] = [0, 0]

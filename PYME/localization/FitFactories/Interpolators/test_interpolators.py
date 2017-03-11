@@ -22,7 +22,7 @@ def f_Interp3d(p, interpolator, X, Y, Z, safeRegion, *args):
 
 def test_CSInterpolator():
     from .CSInterpolator import interpolator
-    interpolator.setModelFromFile(os.path.join(os.path.dirname(Test.__file__), 'astig_theory.psf'))
+    interpolator.setModelFromFile(os.path.join(os.path.dirname(Test.__file__), 'astig_theory.tif'))
     
     roiHalfSize = 5
     x, y = 10.,10.
@@ -39,7 +39,7 @@ def test_CSInterpolator():
 def test_LinearInterpolator():
     from .LinearInterpolator import interpolator
     
-    interpolator.setModelFromFile(os.path.join(os.path.dirname(Test.__file__), 'astig_theory.psf'))
+    interpolator.setModelFromFile(os.path.join(os.path.dirname(Test.__file__), 'astig_theory.tif'))
 
     roiHalfSize = 5
     x, y = 0., 0.
@@ -57,7 +57,7 @@ def test_LinearInterpolator():
 # def test_LinearPInterpolatorP():
 #     from .LinearPInterpolatorP import interpolator
 #
-#     interpolator.setModelFromFile(os.path.join(os.path.dirname(Test.__file__), 'astig_theory.psf'))
+#     interpolator.setModelFromFile(os.path.join(os.path.dirname(Test.__file__), 'astig_theory.tif'))
 #
 #
 #     roiHalfSize = 5
