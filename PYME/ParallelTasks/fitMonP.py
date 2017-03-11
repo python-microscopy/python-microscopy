@@ -29,6 +29,8 @@ import wx
 from wx.lib.dialogs import ScrolledMessageDialog
 import wx.grid
 
+import logging
+
 import Pyro.core
 import time
 import os
@@ -86,8 +88,11 @@ class MyFrame(wx.Frame):
         self.timer.Start(10000)
 
         logmenu= wx.Menu()
-        menuerrLog = logmenu.Append(wx.ID_ANY, "&Worker Error Logs","Log info")
-        menuoutLog = logmenu.Append(wx.ID_ANY, "Worker Output","Log info")
+        menuerrLog = logmenu.Append(wx.ID_ANY, "Worker-0 Error Logs","Log info")
+        menuoutLog = logmenu.Append(wx.ID_ANY, "Worker-0 Output","Log info")
+        menuServErrLog = logmenu.Append(wx.ID_ANY, "Sever Error Logs","Log info")
+        menuServOutLog = logmenu.Append(wx.ID_ANY, "Server Output","Log info")
+        menuWorkerDialog = logmenu.Append(wx.ID_ANY, "Load worker output using file dialog","Log info")
         
         # Creating the menubar.
         menuBar = wx.MenuBar()
@@ -95,6 +100,10 @@ class MyFrame(wx.Frame):
         self.SetMenuBar(menuBar)  # Adding the MenuBar to the Frame content.
         self.Bind(wx.EVT_MENU, self.OnErrScrolledDialog, menuerrLog)
         self.Bind(wx.EVT_MENU, self.OnOutScrolledDialog, menuoutLog)
+        self.Bind(wx.EVT_MENU, self.OnServerErrScrolledDialog, menuServErrLog)
+        self.Bind(wx.EVT_MENU, self.OnServerOutScrolledDialog, menuServOutLog)
+        self.Bind(wx.EVT_MENU, self.OnWorkerFileDialog, menuWorkerDialog)
+        
         
     def __set_properties(self):
         # begin wxGlade: MyFrame.__set_properties
@@ -146,22 +155,59 @@ class MyFrame(wx.Frame):
         import tempfile
 
         tmpdir = tempfile.gettempdir()
-        return os.path.join(tmpdir,'worker-%d.%s' % (num,mode))
+        return os.path.join(tmpdir,'PYMEworker-%d.%s' % (num,mode))
 
-    def OnLogScrolledDialog(self, event=None, mode='stderr'):
-        with open(self.getLogFileNameWorker(0,mode),"r") as f:
+    def getLogFileNameServer(self,mode='stderr'):
+        import os
+        import tempfile
+
+        tmpdir = tempfile.gettempdir()
+        return os.path.join(tmpdir,'PYMEserver.%s' % (mode))
+
+    def OnLogScrolledDialog(self, event=None, type='worker', mode='stderr'):
+        if type == 'worker':
+            filename = self.getLogFileNameWorker(0,mode)
+        elif type == 'server':
+            filename = self.getLogFileNameServer(mode)
+        else:
+            raise RuntimeError('invalid type %s' % type)
+       
+        with open(filename,"r") as f:
             txt = "\n".join(f.readlines())
-        dlg = ScrolledMessageDialog(self, txt, "Worker %s" % mode, size=(900,400),
+        dlg = ScrolledMessageDialog(self, txt, "%s %s" % (type,mode), size=(900,400),
                                     style=wx.RESIZE_BORDER | wx.DEFAULT_DIALOG_STYLE )
         dlg.ShowModal()
         dlg.Destroy()
 
     def OnErrScrolledDialog(self, event=None):
-        self.OnLogScrolledDialog(event,mode='stderr')
+        self.OnLogScrolledDialog(event,type='worker',mode='stderr')
 
     def OnOutScrolledDialog(self, event=None):
-        self.OnLogScrolledDialog(event,mode='stdout')
-       
+        self.OnLogScrolledDialog(event,type='worker',mode='stdout')
+
+    def OnServerErrScrolledDialog(self, event=None):
+        self.OnLogScrolledDialog(event,type='server',mode='stderr')
+
+    def OnServerOutScrolledDialog(self, event=None):
+        self.OnLogScrolledDialog(event,type='server',mode='stdout')
+        
+
+    def OnWorkerFileDialog(self, event=None):
+        import tempfile
+        tmpdir = tempfile.gettempdir()
+        filename = wx.FileSelector('load worker stdout or stderr...',
+                                   wildcard="Stdout files (PYMEworker*.stdout)|*.stdout|Stderr files (PYMEworker*.stderr)|*.stderr", 
+                                   flags = wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,
+                                   default_path=tmpdir)
+        logging.info('loading %s' % filename)
+
+        with open(filename,"r") as f:
+            txt = "\n".join(f.readlines())
+        dlg = ScrolledMessageDialog(self, txt, os.path.basename(filename), size=(900,400),
+                                    style=wx.RESIZE_BORDER | wx.DEFAULT_DIALOG_STYLE )
+        dlg.ShowModal()
+        dlg.Destroy()
+
     def OnBRemove(self, event):
         rows = self.gQueues.GetSelectedRows()
         

@@ -30,7 +30,7 @@ import time
 
 #import Pyro.naming
 import logging
-logging.basicConfig()
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 def cpuCount():
@@ -58,6 +58,22 @@ def cpuCount():
         return num
     else:
         raise NotImplementedError('cannot determine number of cpus')
+
+
+ext = {
+    'out' : 'stdout',
+    'err' : 'stderr'}
+
+def serverlog(mode='out'):
+    import tempfile
+    tmpdir = tempfile.gettempdir()
+    return os.path.join(tmpdir,'PYMEserver.%s' % (ext[mode]))
+
+
+def workerlog(num,mode='out'):
+    import tempfile
+    tmpdir = tempfile.gettempdir()
+    return os.path.join(tmpdir,'PYMEworker-%d.%s' % (num,ext[mode]))
 
 
 #get rid of any previously started queues etc...
@@ -120,25 +136,27 @@ def main():
             raise RuntimeError('Kill (or process list) functionality not supported on windows. Close the window that the previous launchWorkers instance was run from instead')
 
         if args.run_server:
-            print('Launching server ...')
-            subprocess.Popen('python "%s\\%s.py"' % (fstub, SERVER_PROC), shell=True)
+            logger.info('Launching server ...')
+            with open(serverlog('out'),"wb") as out, open(serverlog('err'),"wb") as err:
+                subprocess.Popen('python "%s\\%s.py"' % (fstub, SERVER_PROC), shell=True,
+                                 stdout=out, stderr=err)
 
-            print('Waiting for server to come up ...')
+            logger.info('Waiting for server to come up ...')
             time.sleep(10)
 
         if args.gui:
-            print('Launching task monitor ...')
+            logger.info('Launching task monitor ...')
             subprocess.Popen('python "%s\\fitMonP.py"' % fstub, shell=True)
     
-        print('Launching %d workers ...' % numProcessors)
+        logger.info('Launching %d workers ...' % numProcessors)
         for i in range(numProcessors):
-            subprocess.Popen('python "%s\\%s.py"' % (fstub, WORKER_PROC), shell=True)
+            with open(workerlog(i,'out'),"wb") as out, open(workerlog(i,'err'),"wb") as err:
+                subprocess.Popen('python "%s\\%s.py"' % (fstub, WORKER_PROC), shell=True,
+                                 stdout=out, stderr=err)
     # OSX
     elif sys.platform == 'darwin':
         import psutil
-        import tempfile
 
-        tmpdir = tempfile.gettempdir()
         #kill off previous workers and servers
         for p in psutil.process_iter():
             try:
@@ -159,18 +177,19 @@ def main():
 
         if args.run_server:
             logger.info('launching server...')
-            with open(os.path.join(tmpdir,'PYMEserver.stdout'),"wb") as out, open(os.path.join(tmpdir,'PYMEserver.stderr'),"wb") as err:
+            with open(serverlog('out'),"wb") as out, open(serverlog('err'),"wb") as err:
                 subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub, SERVER_PROC)),
                                  shell=True, stdout=out, stderr=err)
+            logger.info('waiting for server to come up...')
             time.sleep(10)
         if args.gui:
             logger.info('launching Task Monitor...')
             subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,'fitMonP.py')),
                              shell=True)
     
+        logger.info('launching %d workers...' % numProcessors)
         for i in range(numProcessors):
-            logger.info('launching %d workers...' % numProcessors)
-            with open(os.path.join(tmpdir,'worker-%d.stdout' % i),"wb") as out, open(os.path.join(tmpdir,'worker-%d.stderr' % i),"wb") as err:
+            with open(workerlog(i,'out'),"wb") as out, open(workerlog(i,'err'),"wb") as err:
                 subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub,WORKER_PROC)),
                                  shell=True, stdout=out, stderr=err)
     else: #operating systems which can launch python scripts directly
