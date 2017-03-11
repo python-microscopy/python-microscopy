@@ -155,7 +155,10 @@ class multiviewMapper:
 
     def OnFold(self, event=None):
         """
-        See multiview.foldX. At this point the origin of x should be the corner of the concatenated frame
+        See multiview.foldX. At this point the origin of x should be the corner of the concatenated frame. Note that
+        a probe key will be mapped into the data source to designate colour channel, but the colour channel will not be
+        selectable in the GUI until after mergeClumps is called (due to the possibility of using this module with
+        ratio-metric data).
 
         Parameters
         ----------
@@ -381,7 +384,8 @@ class multiviewMapper:
         """
 
         Coalesces clusters of localization data considered to be the same molecule. See
-        recipes.localizations.MergeClumps.
+        recipes.localizations.MergeClumps. Additionally, this function updates the colour filter after the merge, and
+        updates the GUI to allow for selecting individual colour channels.
 
         Parameters
         ----------
@@ -405,6 +409,11 @@ class multiviewMapper:
 
         recipe.execute()
         self.pipeline.selectDataSource('clumped')
+
+        # make sure the colour filter knows about the new probe key
+        self.pipeline._process_colour()
+        # refresh the Colour choice selection in the GUI
+        self.visFr.CreateFoldPanel()
 
     def OnMapZ(self, event=None, useMD = True):
         """
@@ -456,8 +465,6 @@ class multiviewMapper:
                                     astigmatismMapLocation=pathToMap, outputName='z_mapped'))
         recipe.execute()
         self.pipeline.selectDataSource('z_mapped')
-
-        pipeline._process_colour()
 
         self.visFr.RefreshView()
         self.visFr.CreateFoldPanel()
