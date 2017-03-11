@@ -20,27 +20,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-import os
-
-from PYME.LMVis.rendGauss import gaussKernel
-#from scipy.misc import toimage
-from wx.glcanvas import GLCanvas
-import wx.glcanvas
-import wx
-
-from OpenGL.GL import *
-from OpenGL.GLU import *
-from OpenGL import GLUT
-#import sys,math
-
 
 import numpy
 import numpy as np
-
 import pylab
+import wx
+import wx.glcanvas
+from OpenGL import GLUT
+from OpenGL.GL import *
+from OpenGL.GLU import *
+from PYME.LMVis.Layer.AxesOverlayLayer import AxesOverlayLayer
+from PYME.LMVis.Layer.LUTOverlayLayer import LUTOverlayLayer
+from PYME.LMVis.Layer.PointSpriteRenderLayer import PointSpritesRenderLayer
+from PYME.LMVis.Layer.ScaleBarOverlayLayer import ScaleBarOverlayLayer
+from PYME.LMVis.Layer.SelectionOverlayLayer import SelectionOverlayLayer
+from PYME.LMVis.Layer.WireFrameRenderLayer import WireFrameRenderLayer
+from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 from six.moves import xrange
-
-from PYME.LMVis.gl_program import ShaderProgram
+from wx.glcanvas import GLCanvas
 
 try:
     from PYME.Analysis.points.gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
@@ -54,26 +51,27 @@ except ImportError:
     # separately installed py 2.6 compatibility
     from weakrefset import WeakSet
 
-#import time
+# import time
 
 import sys
 if sys.platform == 'darwin':
-    #osx gives us LOTS of scroll events
-    #ajust the mag in smaller increments
+    # osx gives us LOTS of scroll events
+    # ajust the mag in smaller increments
     ZOOM_FACTOR = 1.1
 else:
     ZOOM_FACTOR = 2.0
 
-#import statusLog
+# import statusLog
 
 name = 'ball_glut'
 
 def testObj():
-    x = 5e3*((numpy.arange(270)%27)/9 + 0.1*numpy.random.randn(270))
-    y = 5e3*((numpy.arange(270)%9)/3 + 0.1*numpy.random.randn(270))
-    z = 5e3*(numpy.arange(270)%3 + 0.1*numpy.random.randn(270))
+    x = 5e3*((numpy.arange(270) % 27)/9 + 0.1*numpy.random.randn(270))
+    y = 5e3*((numpy.arange(270) % 9)/3 + 0.1*numpy.random.randn(270))
+    z = 5e3*(numpy.arange(270) % 3 + 0.1*numpy.random.randn(270))
 
     return x, y, z
+
 
 class cmap_mult:
     def __init__(self, gains, zeros):
@@ -81,14 +79,16 @@ class cmap_mult:
         self.zeros = zeros
 
     def __call__(self, cvals):
-        return numpy.minimum(numpy.vstack((self.gains[0]*cvals - self.zeros[0],self.gains[1]*cvals - self.zeros[1],self.gains[2]*cvals - self.zeros[2], 1+ 0*cvals)), 1).astype('f').T
+        return numpy.minimum(numpy.vstack((self.gains[0]*cvals - self.zeros[0], self.gains[1]*cvals - self.zeros[1],
+                                           self.gains[2]*cvals - self.zeros[2], 1 + 0*cvals)), 1).astype('f').T
 
 cm_hot = cmap_mult(8.0*numpy.ones(3)/3, [0, 3.0/8, 6.0/8])
 cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
     
 class RenderLayer(object):
-    drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS, 'wireframe':GL_TRIANGLES, 'tracks':GL_LINE_STRIP}
+    drawModes = {'triang': GL_TRIANGLES, 'quads': GL_QUADS, 'edges': GL_LINES, 'points': GL_POINTS,
+                 'wireframe': GL_TRIANGLES, 'tracks': GL_LINE_STRIP}
     
     def __init__(self, vertices, normals, colours, cmap, clim, mode='triang', pointsize=5, alpha=1):
         self.verts = vertices
@@ -101,19 +101,20 @@ class RenderLayer(object):
         
         cs_ = ((self.cols - self.clim[0])/(self.clim[1] - self.clim[0]))
         cs = self.cmap(cs_)
-        cs[:,3] = self.alpha
+        cs[:, 3] = self.alpha
         
         self.cs = cs.ravel().reshape(len(self.cols), 4)
         
         self.mode = mode
-        self.pointSize=pointsize
+        self.pointSize = pointsize
 
     def render(self, glcanvas=None):
-        #with default_shader:
+        # with default_shader:
         if self.mode in ['points']:
             glDisable(GL_LIGHTING)
             #glDisable(GL_DEPTH_TEST)
             #glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
+
             glEnable(GL_POINT_SMOOTH)
             if glcanvas:
                 if self.pointSize == 0:
@@ -139,113 +140,13 @@ class RenderLayer(object):
             
         glPushMatrix ()
         glColor4f(0,0.5,0, 1)
-
-        glDrawArrays(self.drawModes[self.mode], 0, nVertices)
-
-        glPopMatrix ()
-
-
-class BillboardRenderLayer(RenderLayer):
-    def __init__(self, vertices, normals, colours, cmap, clim, mode='billboarding', pointsize=5, alpha=1):
-        RenderLayer.__init__(self, vertices, normals, colours, cmap, clim, mode, pointsize, alpha)
-
-    def render(self, glcanvas=None):
-        pass
-
-
-class PointSpritesRenderLayer(RenderLayer):
-    """
-    This class prepares OpenGL for displaying the point clouds using point sprites.
-
-    """
-
-#    Since shaders need to be used, there must be a program be set up
-#    this attribute handles creation and usage of this program
-    _shader_program = None
-#    This attribute indicates weather the program has already been initialized
-    _is_initialized = False
-#    This attribute holds an instance of a texture class
-    _texture = None
-#    This is the uniform location to pass to the fragment shader to locate the texture
-    _uniform_tex_2d_id = 0
-
-    def __init__(self, vertices, normals, colours, cmap, clim, mode='pointsprites', pointsize=5, alpha=1):
-        """
-        This constructor is only used to call the super constructor and set those parameters.
-        Some of them may never be used.
-        """
-        RenderLayer.__init__(self, vertices, normals, colours, cmap, clim, mode, pointsize, alpha)
-
-
-    def render(self, glcanvas=None):
-        """
-        The OpenGL context isn't available before the OnPaint method.
-        That's why we can't initialize the program while initializing the class. Which would be the better fit.
-        To solve this problem, we need to check if the program was already created and can be used.
-        If not we will create it.
-
-
-        :param glcanvas: the scene is drawn into
-        :return: nothing
-        """
-
-        if not self._is_initialized:
-            self.initialize_open_gl()
-
-        self._shader_program.use()
-        glEnable(GL_POINT_SPRITE)
-        glEnable(GL_PROGRAM_POINT_SIZE)
-        glDisable(GL_DEPTH_TEST)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
-        glBlendEquation(GL_FUNC_ADD)
-
-        n_vertices = self.verts.shape[0]
-
-        self.vs_ = glVertexPointerf(self.verts)
-        self.n_ = glNormalPointerf(self.normals)
-        self.c_ = glColorPointerf(self.cs)
-
-        self._texture.enable_texture_2d()
-        self._texture.bind_texture(self._shader_program.get_uniform_location(b'tex2D'))
-        if glcanvas:
-            if self.pointSize == 0:
-                glPointSize(1 / glcanvas.pixelsize)
-            else:
-                glPointSize(self.pointSize / glcanvas.pixelsize)
+        if glcanvas.use_shaders:
+            with glcanvas.defaultProgram:
+                glDrawArrays(self.drawModes[self.mode], 0, nVertices)
         else:
-            glPointSize(self.pointSize)
-        glDrawArrays(GL_POINTS, 0, n_vertices)
+            glDrawArrays(self.drawModes[self.mode], 0, nVertices)
 
-#       it's very important to disable the program again, so the other layers are still processed with the default
-#       pipeline
-        glcanvas.defaultProgram.use()
-        glDisable(GL_BLEND)
-        glDisable(GL_PROGRAM_POINT_SIZE)
-        glDisable(GL_POINT_SPRITE)
-        glEnable(GL_DEPTH_TEST)
-
-    def initialize_open_gl(self):
-        """
-        Since we can't use the default pipeline anymore we need to create a OpenGL-program and attach the shaders our-
-        selves.
-        :return:
-        """
-        shaderpath = os.path.join(os.path.dirname(__file__), "./shaders/")
-        self._shader_program = ShaderProgram(shaderpath)
-        self._shader_program.add_shader("pointsprites_vs.glsl", GL_VERTEX_SHADER)
-        self._shader_program.add_shader("pointsprites_fs.glsl", GL_FRAGMENT_SHADER)
-        self._shader_program.link()
-        self._shader_program.use()
-        self._texture = Texture()
-        self._texture.load_texture()
-        self._uniform_tex_2d_id = glGetUniformLocation(self._shader_program.get_program(), b'tex2D')
-        self._is_initialized = True
-
-    def __del__(self):
-        self._texture.delete_texture()
-
-
+        glPopMatrix()
 
 
 class TrackLayer(RenderLayer):
@@ -327,19 +228,19 @@ class MessageOverlay(object):
             glLoadIdentity()
 
             glOrtho(-1, 1, -1, 1, -1, 1)
-            #def glut_print(x, y, font, text, r, g, b, a):
+            # def glut_print(x, y, font, text, r, g, b, a):
 
             # blending = False
             # if glIsEnabled(GL_BLEND):
             #     blending = True
 
-            #glEnable(GL_BLEND)
+            # glEnable(GL_BLEND)
             glColor3f(1, 1, 1)
             glRasterPos2f(self.x, self.y)
             for ch in self.message:
                 GLUT.glutBitmapCharacter(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_int(ord(ch)))
 
-            #GLUT.glutBitmapString(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_char_p(self.message))
+            # GLUT.glutBitmapString(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_char_p(self.message))
 
             # if not blending:
             #     glDisable(GL_BLEND)
@@ -351,7 +252,9 @@ class MessageOverlay(object):
 
 class LMGLCanvas(GLCanvas):
     defaultProgram = None
-
+    LUTOverlayLayer = None
+    AxesOverlayLayer = None
+    ScaleBarOverlayLayer = None
     _is_initialized = False
 
     def __init__(self, parent, use_shaders=False):
@@ -447,32 +350,33 @@ class LMGLCanvas(GLCanvas):
         self.layers = []
         self.overlays = []
 
-        self.overlays.append(SelectionOverlay(self.selectionSettings))
-
         self.messageOverlay = MessageOverlay()
         self.overlays.append(self.messageOverlay)
-
-
         self.wantViewChangeNotification = WeakSet()
         self.pointSelectionCallbacks = []
 
         return
 
-    def OnPaint(self,event):
+    def OnPaint(self, event):
         if not self.IsShown():
             print('ns')
             return
-        #print('foo')
-        #raise Exception('foo')
-        dc = wx.PaintDC(self)
-        #print self.GetContext()
+        wx.PaintDC(self)
+        # print self.GetContext()
         self.gl_context.SetCurrent(self)
         self.SetCurrent()
 
         if not self._is_initialized:
             self.InitGL()
             if self.use_shaders:
-                self.defaultProgram = DefaultProgram()
+                self.defaultProgram = DefaultShaderProgram()
+                self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
+                self.LUTOverlayLayer = LUTOverlayLayer()
+                self.AxesOverlayLayer = AxesOverlayLayer()
+                self.overlays.append(SelectionOverlayLayer(self.selectionSettings))
+            else:
+                self.overlays.append(SelectionOverlay(self.selectionSettings))
+
             self._is_initialized = True
         else:
             self.OnDraw()
@@ -541,8 +445,10 @@ class LMGLCanvas(GLCanvas):
 
     def OnDraw(self):
         if self.use_shaders:
-            self.defaultProgram.use()
-        self.interlace_stencil()
+            with self.defaultProgram:
+                self.interlace_stencil()
+        else:
+            self.interlace_stencil()
         glEnable(GL_DEPTH_TEST)
         glClear(GL_COLOR_BUFFER_BIT)
         
@@ -587,12 +493,14 @@ class LMGLCanvas(GLCanvas):
             glTranslatef(0, 0, -10)
 
             if not self.displayMode == '2D':
-                self.drawAxes(self.object_rotation_matrix, ys)
-            
+                if not self.use_shaders:
+                    self.drawAxes(self.object_rotation_matrix, ys)
+                else:
+                    self.AxesOverlayLayer.render(self)
+
             glScalef(self.scale, self.scale, self.scale)
 
             glPushMatrix()
-            
             #rotate object
             glMultMatrixf(self.object_rotation_matrix)
 
@@ -606,9 +514,12 @@ class LMGLCanvas(GLCanvas):
 
             glPopMatrix()
 
-            self.drawScaleBar()
-            self.drawLUT()
-
+            if self.use_shaders:
+                self.ScaleBarOverlayLayer.render(self)
+                self.LUTOverlayLayer.render(self)
+            else:
+                self.drawScaleBar()
+                self.drawLUT()
 
         glFlush()
 
@@ -635,7 +546,7 @@ class LMGLCanvas(GLCanvas):
     def setupLights(self):
         # set viewing projection
         light_diffuse = [0.8, 0.8, 0.8, 1.0]
-        #light_diffuse = [1., 1., 1., 1.0]
+        # light_diffuse = [1., 1., 1., 1.0]
         light_position = [2.0, 2.00, 2.0, 0.0]
 
         glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
@@ -649,8 +560,8 @@ class LMGLCanvas(GLCanvas):
         glEnable(GL_LIGHT0)
 
     def InitGL(self):
-        #GLUT.glutInitContextVersion(3,2) #; /* or later versions, core was introduced only with 3.2 */
-        #GLUT.glutInitContextProfile(GLUT.GLUT_CORE_PROFILE)#;
+        # GLUT.glutInitContextVersion(3,2) #; /* or later versions, core was introduced only with 3.2 */
+        # GLUT.glutInitContextProfile(GLUT.GLUT_CORE_PROFILE)#;
         
 #        # set viewing projection
 #        light_diffuse = [0.5, 0.5, 0.5, 1.0]
@@ -798,51 +709,53 @@ class LMGLCanvas(GLCanvas):
 
         self.SetCurrent()
         self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()]))
-        
 
     def setTriang3D(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=True, alpha=1, recenter=True):
-        #center data
-        x = x #- x.mean()
-        y = y #- y.mean()
-        z = z #- z.mean()
-        
-        if recenter:        
-            self.xc = x.mean()
-            self.yc = y.mean()
-            self.zc = z.mean()
-        
-        self.sx = x.max() - x.min()
-        self.sy = y.max() - y.min()
-        self.sz = z.max() - z.min()
-
-        P, A, N = gen3DTriangs(x,y,z/zrescale, sizeCutoff, internalCull=internalCull)
-        P[:,2] = P[:,2]*zrescale
-
-        self.scale = 2./(x.max() - x.min())
-
-
-
-        self.vecUp = numpy.array([0,1,0])
-        self.vecRight = numpy.array([1,0,0])
-        self.vecBack = numpy.array([0,0,1])
-
-        if c == 'z':
-            self.c = P[:,2]
+        if self.use_shaders:
+            self.layers.append(WireFrameRenderLayer(x, y, z, c, self.cmap, sizeCutoff, internalCull, zrescale, alpha, ))
         else:
-            self.c = 1./A
-            
-        #self.a = 1./A
-        self.a = 0.5*numpy.ones_like(A)
-        vs = P
+            #center data
+            x = x #- x.mean()
+            y = y #- y.mean()
+            z = z #- z.mean()
 
-        self.SetCurrent()
-        
-        if wireframe:
-            mode = 'wireframe'
-        else:
-            mode = 'triang'
-                        
-        self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()], mode=mode, alpha = alpha))
+            if recenter:
+                self.xc = x.mean()
+                self.yc = y.mean()
+                self.zc = z.mean()
+
+            self.sx = x.max() - x.min()
+            self.sy = y.max() - y.min()
+            self.sz = z.max() - z.min()
+
+            P, A, N = gen3DTriangs(x,y,z/zrescale, sizeCutoff, internalCull=internalCull)
+            P[:,2] = P[:,2]*zrescale
+
+            self.scale = 2./(x.max() - x.min())
+
+
+
+            self.vecUp = numpy.array([0,1,0])
+            self.vecRight = numpy.array([1,0,0])
+            self.vecBack = numpy.array([0,0,1])
+
+            if c == 'z':
+                self.c = P[:,2]
+            else:
+                self.c = 1./A
+
+            #self.a = 1./A
+            self.a = 0.5*numpy.ones_like(A)
+            vs = P
+
+            self.SetCurrent()
+
+            if wireframe:
+                mode = 'wireframe'
+            else:
+                mode = 'triang'
+
+            self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()], mode=mode, alpha = alpha))
         self.Refresh()
         
     def setTriang(self, T, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=False, alpha=1, recenter=True):
@@ -945,12 +858,11 @@ class LMGLCanvas(GLCanvas):
         #self.nVertices = vs.shape[0]
         #self.setColour(self.IScale, self.zeroPt)
 
-
-    def setPoints3D(self, x, y, z, c = None, a = None, recenter=False, alpha = 1.0, mode='points'):#, clim=None):
-        #center data
-        x = x #- x.mean()
-        y = y #- y.mean()
-        z = z #- z.mean()
+    def setPoints3D(self, x, y, z, c = None, a = None, recenter=False, alpha=1.0, mode='points'):#, clim=None):
+        # center data
+        x = x # - x.mean()
+        y = y # - y.mean()
+        z = z # - z.mean()
         
         if recenter:        
             self.xc = x.mean()
@@ -980,12 +892,11 @@ class LMGLCanvas(GLCanvas):
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
 
-        if mode is 'billboard':
-            self.layers.append(BillboardRenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode, pointsize=self.pointSize, alpha=alpha))
-        elif mode is 'pointsprites':
-            self.layers.append(PointSpritesRenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode, pointsize=self.pointSize, alpha=alpha))
+        if mode is 'pointsprites':
+            self.layers.append(PointSpritesRenderLayer(x, y, z, self.c, self.cmap, self.clim, alpha, self.pointSize))
         else:
-            self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode, pointsize=self.pointSize, alpha=alpha))
+            self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode,
+                                           pointsize=self.pointSize, alpha=alpha))
         self.Refresh()
         
     def setPoints(self, x, y, c = None, a = None, recenter=True, alpha=1.0):
@@ -1395,48 +1306,48 @@ class LMGLCanvas(GLCanvas):
             event.Skip()
             
     def OnKeyPress(self, event):
-        #print event.GetKeyCode()
-        if event.GetKeyCode() == 83: #S - toggle stereo
+        # print event.GetKeyCode()
+        if event.GetKeyCode() == 83:  # S - toggle stereo
             self.stereo = not self.stereo
             self.Refresh()
-        elif event.GetKeyCode() == 67: #C - centre
+        elif event.GetKeyCode() == 67:  # C - centre
             self.xc = self.sx/2
             self.yc = self.sy/2
             self.zc = self.sz/2
             self.Refresh()
             
-        elif event.GetKeyCode() == 91: #[ decrease eye separation
-            self.eye_dist /=1.5
+        elif event.GetKeyCode() == 91:  # [ decrease eye separation
+            self.eye_dist /= 1.5
             self.Refresh()
         
-        elif event.GetKeyCode() == 93: #] increase eye separation
-            self.eye_dist *=1.5
+        elif event.GetKeyCode() == 93:  # ] increase eye separation
+            self.eye_dist *= 1.5
             self.Refresh()
             
-        elif event.GetKeyCode() == 82: #R reset view
+        elif event.GetKeyCode() == 82:  # R reset view
             self.ResetView()
             self.Refresh()
             
-        elif event.GetKeyCode() == 314: #left
+        elif event.GetKeyCode() == 314:  # left
             pos = numpy.array([self.xc, self.yc, self.zc], 'f')
             pos -= 300*self.vecRight
             self.xc, self.yc, self.zc = pos
-            #print 'l'
+            # print 'l'
             self.Refresh()
             
-        elif event.GetKeyCode() == 315: #up
+        elif event.GetKeyCode() == 315:  # up
             pos = numpy.array([self.xc, self.yc, self.zc])
             pos -= 300*self.vecBack
             self.xc, self.yc, self.zc = pos
             self.Refresh()
             
-        elif event.GetKeyCode() == 316: #right
+        elif event.GetKeyCode() == 316:  # right
             pos = numpy.array([self.xc, self.yc, self.zc])
             pos += 300*self.vecRight
             self.xc, self.yc, self.zc = pos
             self.Refresh()
             
-        elif event.GetKeyCode() == 317: #down
+        elif event.GetKeyCode() == 317:  # down
             pos = numpy.array([self.xc, self.yc, self.zc])
             pos += 300*self.vecBack
             self.xc, self.yc, self.zc = pos
@@ -1547,118 +1458,25 @@ def showGLFrame():
 class TestApp(wx.App):
     def __init__(self, *args):
         wx.App.__init__(self, *args)
-        
-        
-    def OnInit(self):
-        #wx.InitAllImageHandlers()
-        frame = wx.Frame(None,-1,'ball_wx',wx.DefaultPosition,wx.Size(800,800))
-        canvas = LMGLCanvas(frame)
-        #glcontext = wx.glcanvas.GLContext(canvas)
-        #glcontext.SetCurrent(canvas)
-        to = testObj()
-        canvas.setPoints3D(to[0], to[1], to[2])
-        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff = 6e3, alpha=0.5)
-        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff = 6e3, wireframe=True)
-        canvas.Refresh()
-        frame.Show()
-        self.SetTopWindow(frame)
-        return True
-
-class TestApp2(wx.App):
-    """
-    This testApp is used to for developing purposes.
-
-    It will be changed to test exactly the cases that were changed.
-
-    This is used for pointsprites and billboarding.
-    """
-    def __init__(self, *args):
-        wx.App.__init__(self,*args)
 
     def OnInit(self):
+        # wx.InitAllImageHandlers()
         frame = wx.Frame(None, -1, 'ball_wx', wx.DefaultPosition, wx.Size(800, 800))
         canvas = LMGLCanvas(frame)
+        # glcontext = wx.glcanvas.GLContext(canvas)
+        # glcontext.SetCurrent(canvas)
         to = testObj()
-        canvas.pointSize = 20
-
-#        canvas.setPoints3D(to[0], to[1], to[2], recenter=True, mode='billboard')
-        canvas.setPoints3D(to[0], to[1], to[2], mode='pointsprites')
+        canvas.setPoints3D(to[0], to[1], to[2])
+        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, alpha=0.5)
+        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, wireframe=True)
         canvas.Refresh()
         frame.Show()
         self.SetTopWindow(frame)
         return True
 
-
-class Texture:
-
-    # specific texture id of this texture
-    _texture_id = 0
-
-
-    def __init__(self):
-        pass
-
-    def bind_texture(self, uniform_location):
-        """
-        This methods binds exactly one texture.
-        Parameters
-        ----------
-        uniform_location: int, defines the uniform location, use shader_program.get_uniform_location
-
-        Returns
-        -------
-
-        """
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, self._texture_id)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-        glUniform1i(uniform_location, 0)
-
-    def load_texture(self, size=10):
-        data = gaussKernel(size, 2)
-        glGenTextures(1, self._texture_id)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, size, size, 0, GL_LUMINANCE, GL_FLOAT, np.float16(data))
-
-    def delete_texture(self):
-        glDeleteTextures(1, self._texture_id)
-
-
-    @staticmethod
-    def enable_texture_2d():
-        glEnable(GL_TEXTURE_2D)
-
-    @staticmethod
-    def disable_texture_2d():
-        glDisable(GL_TEXTURE_2D)
-
-
-class DefaultProgram(object):
-    """
-    Since we can't use the default pipeline anymore we need to create a OpenGL-program and attach the shaders our-
-    selves.
-
-    This class helps to simulate the fixed function pipeline. It uses simple default shaders without lightning.
-    Instead of calling glUseProgram(0) after a specialized pipeline. Call <Defaultprogram>.use()
-    """
-
-    _shader_program = None
-
-    def __init__(self):
-        shader_path = os.path.join(os.path.dirname(__file__), "./shaders/")
-        self._shader_program = ShaderProgram(shader_path)
-        self._shader_program.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
-        self._shader_program.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
-        self._shader_program.link()
-
-    def use(self):
-        self._shader_program.use()
-
-
 def main():
-    app = TestApp2()
+    app = TestApp()
     app.MainLoop()
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    main()
