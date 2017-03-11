@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ##################
-# gl_program.py
+# ShaderProgram.py
 #
 # Copyright Michael Graff
 # graff@hm.edu
@@ -23,7 +23,7 @@
 
 from OpenGL.GL import *
 
-from gl_shaderLoader import *
+from PYME.LMVis.gl_shaderLoader import *
 
 
 class ShaderProgram:
@@ -39,6 +39,8 @@ class ShaderProgram:
     _program = 0
 #   that's the path where the shader files are saved
     _shader_path = None
+
+    _shaders = set()
 
     def __init__(self, shader_path="./shaders/"):
         """
@@ -78,6 +80,7 @@ class ShaderProgram:
             glDeleteShader(shader)
             raise exception
         glAttachShader(self._program, shader)
+        self._shaders.add(shader)
 
     def get_program(self):
         """
@@ -89,8 +92,8 @@ class ShaderProgram:
     def link(self):
         glLinkProgram(self._program)
 
-    def get_uniform_location(self, name):
-        return glGetUniformLocation(self._program, name)
+    def get_uniform_location(self, uniform_name):
+        return glGetUniformLocation(self._program, uniform_name)
 
     def use(self):
         try:
@@ -98,6 +101,12 @@ class ShaderProgram:
         except GLError:
             exception = GLProgramException(glGetProgramInfoLog(self._program))
             raise exception
+
+    def __del__(self):
+        for shader in self._shaders:
+            glDeleteShader(shader)
+
+        glDeleteProgram(self._program)
 
 
 def read_shader(shader_name, path):
