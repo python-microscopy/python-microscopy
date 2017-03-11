@@ -463,9 +463,11 @@ class MeasureClusters(ModuleBase):
 
     Measures calculated
     -------------------
+        count: the number of points in the cluster
         x, y, z: Center of mass positions, no weighting based on localization precision
         gyrationRadius: AKA RMS distance to center of cluster - see also supplemental text of DOI: 10.1038/nature16496
-        axis0, axis1, axis2: returned as axi
+        axis0, axis1, axis2: principle axes of point cloud using SVD
+        sigma0, sigma1, sigma2: spread along each principle axis (the singular values/ sqrt(N-1))
 
     """
     inputName = Input('input')
