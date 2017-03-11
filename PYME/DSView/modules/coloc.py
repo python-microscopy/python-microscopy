@@ -35,7 +35,7 @@ class ColocSettingsDialog(wx.Dialog):
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Minimum Distance:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
-        self.tMin = wx.TextCtrl(self, -1, '-600')
+        self.tMin = wx.TextCtrl(self, -1, '-500')
         hsizer.Add(self.tMin, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         
         sizer1.Add(hsizer, 0, wx.EXPAND)
@@ -133,6 +133,7 @@ class colocaliser:
     
     def OnColoc(self, event):
         from PYME.Analysis.Colocalisation import correlationCoeffs, edtColoc
+        from scipy import interpolate
         voxelsize = [1e3*self.image.mdh.getEntry('voxelsize.x') ,1e3*self.image.mdh.getEntry('voxelsize.y'), 1e3*self.image.mdh.getEntry('voxelsize.z')]
         
         try:
@@ -213,8 +214,10 @@ class colocaliser:
 
         print('Performing distance transform ...')        
         bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize, bins)
+        bnAA, bmAA, binsA = edtColoc.imageDensityAtDistance(imA, imA > tA, voxelsize, bins)
         print('Performing distance transform (reversed) ...') 
         bnB, bmB, binsB = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize, bins)
+        bnBB, bmBB, binsB = edtColoc.imageDensityAtDistance(imB, imB > tB, voxelsize, bins)
         
         #print binsB, bmB
         
@@ -224,40 +227,91 @@ class colocaliser:
         pylab.figure()
         pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f' % (pearson, MA, MB))
         pylab.subplot(211)
-        p = bmA/bmA.sum()
+        p = bmA/bmA[bnA > 1].mean()
+        pA = bmAA / bmAA[bnAA > 1].mean()
         #print p
-        pylab.bar(binsA[:-1], p, binsA[1] - binsA[0])
+        #pylab.bar(binsA[:-1], p, binsA[1] - binsA[0])
+        pylab.plot(binsA[:-1], p, lw=2, drawstyle='steps')
+        pylab.plot(binsA[:-1], pA, 'k--', drawstyle='steps')#, binsA[1] - binsA[0])
         pylab.xlabel('Distance from edge of %s [nm]' % nameA)
-        pylab.ylabel('Density of %s' % nameB)
+        pylab.ylabel('Relative enrichment')# % nameB)
+        
+        pylab.legend([nameB, nameA + ' (control)'], fontsize='medium', frameon=False)
+        
+        pylab.plot([binsA[0], binsA[-1]], [1,1], '--r')
+        pylab.grid()
+        pylab.xlim([bins[0], bins[-1]])
         plots.append(p.reshape(-1, 1,1))
         pnames.append('Dens. %s from %s' % (nameB, nameA))
 
         pylab.subplot(212)
-        p = bmB/bmB.sum()
-        pylab.bar(binsB[:-1], p, binsB[1] - binsB[0])
-        pylab.xlabel('Distance from edge of %s [nm]' % nameB)
-        pylab.ylabel('Density of %s' % nameA)
-        plots.append(p.reshape(-1, 1,1))
-        pnames.append('Dens. %s from %s' % (nameA, nameB))
+        fA = bmA * bnA
+        p = fA / fA.sum()
+        pA = bmAA * bnAA
+        pA = pA / pA.sum()
+        
+        #find the distance at which 50% of the labelling is included
+        d_50 = interpolate.interp1d(np.cumsum(p), binsA[:-1])(.5)
+        
+        #pylab.bar(binsA[:-1], p, binsA[1] - binsA[0])
+        pylab.plot(binsA[:-1], np.cumsum(p), lw=2)
+        pylab.plot(binsA[:-1], np.cumsum(pA), 'k--')
+        
+        pylab.plot([bins[0], d_50], [.5,.5], 'r:')
+        pylab.plot([d_50, d_50], [0, .5], 'r:')
+        
+        pylab.text(d_50 + 150, .45, '50%% of %s is within %d nm' % (nameB, d_50))
+        
+        pylab.xlabel('Distance from edge of %s [nm]' % nameA)
+        pylab.ylabel('Fraction of %s enclosed' % nameB)
+        pylab.grid()
+        pylab.xlim([bins[0], bins[-1]])
+        plots.append(np.cumsum(p).reshape(-1, 1, 1))
+        pnames.append('Frac. %s from %s' % (nameB, nameA))
 
         pylab.figure()
         pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f' % (pearson, MA, MB))
         pylab.subplot(211)
-        fA = bmA*bnA
-        p = fA/fA.sum()
-        pylab.bar(binsA[:-1], p, binsA[1] - binsA[0])
-        pylab.xlabel('Distance from edge of %s [nm]' % nameA)
-        pylab.ylabel('Fraction of %s' % nameB)
-        plots.append(p.reshape(-1, 1,1))
-        pnames.append('Frac. %s from %s' % (nameB, nameA))
+
+        p = bmB / bmB[bnB > 1].mean()
+        pA = bmBB / bmBB[bnBB > 1].mean()
+        #pylab.bar(binsB[:-1], p, binsB[1] - binsB[0])
+        pylab.plot(binsB[:-1], p, lw=2, drawstyle='steps')
+        pylab.plot(binsA[:-1], pA, 'k--', drawstyle='steps')
+        pylab.xlabel('Distance from edge of %s [nm]' % nameB)
+        pylab.ylabel('Relative enrichment')# of %s' % nameA)
+
+        pylab.legend([nameA, nameB + ' (control)'], fontsize='medium', frameon=False)
+        
+        pylab.plot([binsA[0], binsA[-1]], [1, 1], '--r')
+        pylab.grid()
+        pylab.xlim([bins[0], bins[-1]])
+        plots.append(p.reshape(-1, 1, 1))
+        pnames.append('Dens. %s from %s' % (nameA, nameB))
 
         pylab.subplot(212)
         fB = bmB*bnB
         p = fB/fB.sum()
-        pylab.bar(binsB[:-1], p, binsB[1] - binsB[0])
+        pA = bmBB * bnBB
+        pA = pA / pA.sum()
+
+        #find the distance at which 50% of the labelling is included
+        d_50 = interpolate.interp1d(np.cumsum(p), binsA[:-1])(.5)
+        
+        #pylab.bar(binsB[:-1], p, binsB[1] - binsB[0])
+        pylab.plot(binsA[: -1], np.cumsum(p), lw=2)
+        pylab.plot(binsA[:-1], np.cumsum(pA), 'k--')
+
+        pylab.plot([bins[0], d_50], [.5, .5], 'r:')
+        pylab.plot([d_50, d_50], [0, .5], 'r:')
+
+        pylab.text(d_50 + 150, .45, '50%% of %s is within %d nm' % (nameA, d_50))
+        
         pylab.xlabel('Distance from edge of %s [nm]' % nameB)
         pylab.ylabel('Fraction of %s' % nameA)
-        plots.append(p.reshape(-1, 1,1))
+        pylab.grid()
+        pylab.xlim([bins[0], bins[-1]])
+        plots.append(np.cumsum(p).reshape(-1, 1,1))
         pnames.append('Frac. %s from %s' % (nameA, nameB))
         
         pylab.show()

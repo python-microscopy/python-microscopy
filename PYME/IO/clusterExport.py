@@ -123,22 +123,13 @@ def _getFilenameSuggestion(dirname='', seriesname = SERIES_PATTERN):
             
     return seriesName
 
-def SaveImageToCluster(image):
+
+def suggest_cluster_filename(image):
     import os
-    import wx
-    
     if not image.filename is None:
         dirname, seriesname = os.path.split(image.filename)
-        
-        seriesName = _getFilenameSuggestion(dirname, seriesname)
-    else:
-        seriesName = _getFilenameSuggestion()
-        
-    ted = wx.TextEntryDialog(None, 'Cluster filename:', 'Save file to cluster', seriesName)
     
-    if ted.ShowModal() == wx.ID_OK:
-        #pd = wx.ProgressDialog()
-        ExportImageToCluster(image, seriesName)
-        
-    ted.Destroy()
-        
+        return _getFilenameSuggestion(dirname, seriesname)
+    else:
+        return _getFilenameSuggestion()
+

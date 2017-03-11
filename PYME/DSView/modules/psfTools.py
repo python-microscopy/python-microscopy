@@ -45,7 +45,7 @@ def remove_newlines(s):
     s = ' '.join(s.split())
     return '\n'.join(s.split('<>'))
 
-def findZRange(astigLib):
+def find_and_add_zRange(astigLib):
     """
     Find range about highest intensity point over which sigmax - sigmay is monotonic.
     Note that astigLib[psfIndex]['zCenter'] should contain the offset in nm to the brightest z-slice
@@ -326,6 +326,22 @@ class PSFTools(HasTraits):
         import mpld3
         import json
         from PYME.Analysis.PSFEst import extractImages
+        import wx
+
+        # query user for type of calibration
+        # NB - GPU fit is not enabled here because it exits on number of iterations, which is not necessarily convergence for very bright beads!
+        ftypes = ['BeadConvolvedAstigGaussFit', 'AstigGaussFitFR']  # , 'AstigGaussGPUFitFR']
+        fitType_dlg = wx.SingleChoiceDialog(self.dsviewer, 'Fit-type selection', 'Fit-type selection', ftypes)
+        fitType_dlg.ShowModal()
+        fitMod = ftypes[fitType_dlg.GetSelection()]
+
+        if (fitMod == 'BeadConvolvedAstigGaussFit') and ('Bead.Diameter' not in self.image.mdh.keys()):
+            beadDiam_dlg = wx.NumberEntryDialog(None, 'Bead diameter in nm', 'diameter [nm]', 'diameter [nm]', 100, 1, 9e9)
+            beadDiam_dlg.ShowModal()
+            beadDiam = float(beadDiam_dlg.GetValue())
+            # store this in metadata
+            self.image.mdh['Analysis.Bead.Diameter'] = beadDiam
+
 
 
         ps = self.image.pixelSize
@@ -340,7 +356,7 @@ class PSFTools(HasTraits):
 
         ptFitter = FitPoints()
         ptFitter.set(roiHalfSize=11)
-        ptFitter.set(fitModule='AstigGaussFitFR')
+        ptFitter.set(fitModule=fitMod)
 
         namespace = {'input' : self.image, 'objPositions' : objPositions}
 
@@ -358,9 +374,9 @@ class PSFTools(HasTraits):
             dsigma = abs(res['fitResults_sigmax']) - abs(res['fitResults_sigmay'])
             valid = ((res['fitError_sigmax'] > 0) * (res['fitError_sigmax'] < 50)* (res['fitError_sigmay'] < 50)*(res['fitResults_A'] > 0) > 0)
 
-            results.append({'z': objPositions['z'][valid].tolist(), 'sigmax': abs(res['fitResults_sigmax'][valid]).tolist(),
-                           'sigmay': abs(res['fitResults_sigmay'][valid]).tolist(), 'dsigma': dsigma[valid].tolist(),
-                            'zCenter': objPositions['z'][dz]})
+            results.append({'sigmax': abs(res['fitResults_sigmax'][valid]).tolist(),'error_sigmax': abs(res['fitError_sigmax'][valid]).tolist(),
+                            'sigmay': abs(res['fitResults_sigmay'][valid]).tolist(), 'error_sigmay': abs(res['fitError_sigmay'][valid]).tolist(),
+                            'dsigma': dsigma[valid].tolist(), 'z': objPositions['z'][valid].tolist(), 'zCenter': objPositions['z'][dz]})
 
         #generate new tab to show results
         use_web_view = True
@@ -373,8 +389,8 @@ class PSFTools(HasTraits):
                 use_web_view = False
 
         # find reasonable z range for each channel
-        #FIXME - it is somewhat non-obvious that we are effectively injecting the 'zRange' variable into the results here
-        results = findZRange(results)
+        # FIXME - it is somewhat non-obvious that we are effectively injecting the 'zRange' variable into the results here
+        results = find_and_add_zRange(results)
 
         #do plotting
         plt.ioff()

@@ -21,15 +21,21 @@
 #
 ##################
 
-import serial;
+import serial
 import time
+
+from .base_piezo import PiezoBase
+
 import logging
 logger = logging.getLogger(__name__)
 
 #C867 controller for PiLine piezo linear motor stages
 #NB units are mm not um as for piezos
 
-class piezo_c867(object):    
+class piezo_c867(PiezoBase):
+    units_um = 1000
+    gui_description = 'Stage %s'
+    
     def __init__(self, portname='COM1', maxtravel = 25.00, hasTrigger=False, reference=True):
         self.max_travel = maxtravel
         
@@ -153,8 +159,11 @@ import threading
 #import Queue
 import numpy as np
         
-class piezo_c867T(object):    
-    def __init__(self, portname='COM1', maxtravel = 25.00, hasTrigger=False, reference=True, maxvelocity=100., validRegion = [[4.5, 19], [8, 17]]):
+class piezo_c867T(PiezoBase):
+    units_um = 1000
+    gui_description = 'Stage %s'
+    
+    def __init__(self, portname='COM1', maxtravel = 25.00, hasTrigger=False, reference=True, maxvelocity=200., validRegion = [[4.5, 19], [0, 25]]):
         self.max_travel = maxtravel
         self.maxvelocity = maxvelocity
         self.ser_port = serial.Serial(portname, 38400, timeout=.1, writeTimeout=.1)

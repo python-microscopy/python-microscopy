@@ -10,7 +10,7 @@
 ##################
  */
 
-#include "triangLhood.h"
+//#include "triangLhood.h"
 #include "drawTriang.h"
 
 #define DIST_(a, b, dim)\

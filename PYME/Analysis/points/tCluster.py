@@ -41,7 +41,7 @@ def cluster(T):
 
         dist = (dx**2 + dy**2)
 
-        sI = argsort(dist)[::-1]
+        sI = np.argsort(dist)[::-1]
 
         #Do nearest neighbour - this MUST generate a new node
         iMin = np.argmin(np.sqrt(dist))

@@ -20,10 +20,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-import serial;
+import serial
 import time
 
-class piezo_e816b:
+from .base_piezo import PiezoBase
+
+class piezo_e816b(PiezoBase):
     def __init__(self, portname='COM1', maxtravel = 100.000):
         self.max_travel = maxtravel
         self.ser_port = serial.Serial(portname, 115200, rtscts=1, timeout=4, writeTimeout=4)

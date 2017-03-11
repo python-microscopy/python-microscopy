@@ -14,7 +14,7 @@ Website: http://www.cellprofiler.org
 """
 __version__="$Revision$"
 
-from distutils.core import setup,Extension
+from numpy.distutils.core import setup,Extension
 import os
 import sys
 is_win = sys.platform.startswith("win")

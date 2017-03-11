@@ -12,18 +12,19 @@ from PYME.misc.computerName import GetComputerName
 from PYME.Acquire import eventLog
 import time
 
-#import Queue
+from .base_piezo import PiezoBase
 #import time
 
-class piezoOffsetProxy(Pyro.core.ObjBase):    
+class piezoOffsetProxy(PiezoBase, Pyro.core.ObjBase):
     def __init__(self, basePiezo):
         Pyro.core.ObjBase.__init__(self)
         self.basePiezo = basePiezo
         self.offset = 0
         #self.driftQueue = Queue.Queue()
-
-    def ReInit(self):
-        return self.basePiezo.ReInit()
+        
+    @property
+    def units_um(self):
+        return self.basePiezo.units_um
         
     def SetServo(self,val = 1):
         return self.basePiezo.SetServo(val)
@@ -40,15 +41,7 @@ class piezoOffsetProxy(Pyro.core.ObjBase):
     def GetTargetPos(self, iChannel=0):
         return self.basePiezo.GetTargetPos(iChannel) - self.offset
         
-    def GetControlReady(self):
-        return self.basePiezo.GetControlReady()
          
-    def GetChannelObject(self):
-        return self.basePiezo.GetChannelObject()
-        
-    def GetChannelPhase(self):
-        return self.basePiezo.GetChannelPhase()
-        
     def GetMin(self,iChan=1):
         return self.basePiezo.GetMin(iChan)
         

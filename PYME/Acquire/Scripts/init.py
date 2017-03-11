@@ -22,6 +22,7 @@
 ##################
 
 #!/usr/bin/python
+from PYME.Acquire.ExecTools import InitBG, joinBGInit, InitGUI, HWNotPresent
 
 import scipy
 from PYME.Acquire.Hardware.Simulator import fakePiezo
@@ -34,31 +35,23 @@ from PYME.IO import MetaDataHandler
 
 pz = InitBG('Fake Piezo(s)', """
 scope.fakePiezo = fakePiezo.FakePiezo(100)
-scope.piezos.append((scope.fakePiezo, 1, 'Fake z-piezo'))
+scope.register_piezo(scope.fakePiezo, 'z', needCamRestart=True)
 
 scope.fakeXPiezo = fakePiezo.FakePiezo(10)
-scope.piezos.append((scope.fakeXPiezo, 1, 'Fake x-piezo'))
+scope.register_piezo(scope.fakeXPiezo, 'x')
 
 scope.fakeYPiezo = fakePiezo.FakePiezo(10)
-scope.piezos.append((scope.fakeYPiezo, 1, 'Fake y-piezo'))
-#time.sleep(5)
-
-scope.positioning['x'] = (scope.fakeXPiezo, 1, 1)
-scope.positioning['y'] = (scope.fakeYPiezo, 1, 1)
-scope.positioning['z'] = (scope.fakePiezo, 1, 1)
-
-scope.state.registerHandler('Positioning.x', lambda : scope.fakeXPiezo.GetPos(1), lambda v : scope.fakeXPiezo.MoveTo(1, v))
-scope.state.registerHandler('Positioning.y', lambda : scope.fakeYPiezo.GetPos(1), lambda v : scope.fakeYPiezo.MoveTo(1, v))
-scope.state.registerHandler('Positioning.z', lambda : scope.fakePiezo.GetPos(1), lambda v : scope.fakePiezo.MoveTo(1, v), needCamRestart=True)
+scope.register_piezo(scope.fakeYPiezo, 'y')
 """)
 
 pz.join() #piezo must be there before we start camera
 cm = InitBG('Fake Camera', """
 from PYME.Acquire.Hardware.Simulator import fakeCam, dSimControl
-scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 768.0 + 128.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo)
-scope.cameras['Fake Camera'] = scope.cam
-#time.sleep(5)
-
+scope.register_camera(fakeCam.FakeCamera(70*scipy.arange(-128.0, 768.0 + 128.0),
+                                         70*scipy.arange(-128.0, 128.0),
+                                         fakeCam.NoiseMaker(),
+                                         scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo),
+                      'Fake Camera')
 """)
 
 #setup for the channels to aquire - b/w camera, no shutters
@@ -133,12 +126,10 @@ camPanels.append((LCGui, 'DMD Control', False))
 
 cm.join()
 from PYME.Acquire.Hardware import lasers
-scope.l488 = lasers.FakeLaser('l488',scope.cam,1, initPower=10, scopeState = scope.state)
-scope.l405 = lasers.FakeLaser('l405',scope.cam,0, initPower=5, maxPower=100, scopeState = scope.state)
-
-scope.lasers = [scope.l405, scope.l488]
-
-
+scope.l488 = lasers.FakeLaser('l488',scope.cam,1, initPower=10)
+scope.l488.register(scope)
+scope.l405 = lasers.FakeLaser('l405',scope.cam,0, initPower=10)
+scope.l405.register(scope)
 
 InitGUI("""
 from PYME.Acquire.ui import lasersliders
