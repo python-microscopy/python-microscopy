@@ -111,7 +111,8 @@ class RenderLayer(object):
     def render(self, glcanvas=None):
         #with default_shader:
         if self.mode in ['points']:
-            #glDisable(GL_LIGHTING)
+            glDisable(GL_LIGHTING)
+            #glDisable(GL_DEPTH_TEST)
             #glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
             glEnable(GL_POINT_SMOOTH)
             if glcanvas:
@@ -1446,10 +1447,94 @@ class LMGLCanvas(GLCanvas):
 
     def getSnapshot(self, mode = GL_LUMINANCE):
         snap =  glReadPixelsf(0,0,self.Size[0],self.Size[1], mode)
+        
+        #snap = snap.ravel().reshape(self.Size[0], self.Size[1], -1, order='F')
 
-        snap.strides = (12,12*snap.shape[0], 4)
+        if mode == GL_LUMINANCE:
+            snap.strides = (4, 4*snap.shape[0])
+        else: #GL_RGB
+            snap.strides = (12,12*snap.shape[0], 4)
 
         return snap
+    
+    def getIm(self, pixelSize=None):
+        #FIXME - this is copied from 2D code and is currently broken.
+        if pixelSize is None: #use current pixel size
+            self.OnDraw()
+            return self.getSnapshot(GL_RGB)
+        else:
+            #status = statusLog.StatusLogger('Tiling image ...')
+            #save a copy of the viewport
+            minx, maxx, miny, maxy  = (self.xmin, self.xmax, self.ymin, self.ymax)
+            #and scalebar and LUT settings
+            lutD = self.LUTDraw
+            self.LUTDraw = False
+
+            scaleB = self.scaleBarLength
+            self.scaleBarLength = None
+
+            sx, sy = self.Size
+            dx, dy = (maxx - minx, maxy-miny)
+
+            #print dx
+            #print dy
+
+            nx = numpy.ceil(dx/pixelSize) #number of x pixels
+            ny = numpy.ceil(dy/pixelSize) #  "    "  y   "
+
+            #print nx
+            #print ny
+
+            sxn = pixelSize*sx
+            syn = pixelSize*sy
+
+            #print sxn
+            #print syn
+
+            #initialise array to hold tiled image
+            h = numpy.zeros((nx,ny))
+
+            #do the tiling
+            for x0 in numpy.arange(minx, maxx, sxn):
+                self.xmin = x0
+                self.xmax = x0 + sxn
+
+                #print x0
+
+                xp = numpy.floor((x0 - minx)/pixelSize)
+                xd = min(xp+sx, nx) - xp
+
+                #print 'xp = %3.2f, xd = %3.2f' %(xp, xd)
+
+                for y0 in numpy.arange(miny, maxy, syn):
+                    status.setStatus('Tiling Image at %3.2f, %3.2f' %(x0, y0))
+                    self.ymin = y0
+                    self.ymax = y0 + syn
+
+                    yp = numpy.floor((y0 - miny)/pixelSize)
+                    yd = min(yp+sy, ny) - yp
+
+                    self.OnDraw()
+                    tile = self.getSnapshot(GL_RGB)[:,:,0].squeeze()
+
+                    #print tile.shape
+                    #print h[xp:(xp + xd), yp:(yp + yd)].shape
+                    #print tile[:xd, :yd].shape
+                    #print syn
+
+                    h[xp:(xp + xd), yp:(yp + yd)] = tile[:xd, :yd]
+                    #h[xp:(xp + xd), yp:(yp + yd)] = y0 #tile[:xd, :yd]
+
+
+
+            #restore viewport
+            self.xmin, self.xmax, self.ymin, self.ymax = (minx, maxx, miny, maxy)
+            self.LUTDraw = lutD
+            self.scaleBarLength = scaleB
+
+            self.Refresh()
+            self.Update()
+            return h
 
 
 def showGLFrame():
