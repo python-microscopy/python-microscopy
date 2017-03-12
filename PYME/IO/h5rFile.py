@@ -34,7 +34,7 @@ class H5RFile(object):
 
         logging.debug('pytables open call: %s' % filename)
         with tablesLock:
-            self._h5file = tables.openFile(filename, mode)
+            self._h5file = tables.open_file(filename, mode)
         logging.debug('pytables file open: %s' % filename)
 
         #metadata and events are created on demand
