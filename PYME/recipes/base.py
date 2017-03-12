@@ -70,6 +70,8 @@ class ModuleBase(HasTraits):
     def remove_outputs(self):
         if not self.__dict__.get('_parent', None) is None:
             self._parent.pruneDependanciesFromNamespace(self.outputs)
+            
+            self._parent.invalidate_data()
 
     def outputs_in_namespace(self, namespace):
         keys = namespace.keys()
@@ -109,9 +111,8 @@ class ModuleBase(HasTraits):
     @property
     def hide_in_overview(self):
         return []
-
-    @property
-    def pipeline_view(self):
+        
+    def _pipeline_view(self, show_label=True):
         import traitsui.api as tui
 
         modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
@@ -120,7 +121,18 @@ class ModuleBase(HasTraits):
 
         params = [tn for tn in self.class_editable_traits() if not (tn.startswith('input') or tn.startswith('output') or tn in hidden)]
 
-        return tui.View(tui.Group([tui.Item(tn) for tn in params],label=modname))
+        if show_label:
+            return tui.View(tui.Group([tui.Item(tn) for tn in params],label=modname))
+        else:
+            return tui.View([tui.Item(tn) for tn in params])
+
+    @property
+    def pipeline_view(self):
+        return self._pipeline_view()
+
+    @property
+    def pipeline_view_min(self):
+        return self._pipeline_view(False)
 
 
     @property
@@ -174,14 +186,19 @@ class OutputModule(ModuleBase):
         """
         pass
 
-
+import dispatch
 class ModuleCollection(HasTraits):
     modules = List()
+    execute_on_invalidation = Bool(False)
     
     def __init__(self, *args, **kwargs):
         HasTraits.__init__(self, *args, **kwargs)
         
         self.namespace = {}
+        
+    def invalidate_data(self):
+        if self.execute_on_invalidation:
+            self.execute()
         
     def dependancyGraph(self):
         dg = {}

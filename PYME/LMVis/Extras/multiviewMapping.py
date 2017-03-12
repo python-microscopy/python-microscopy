@@ -376,7 +376,7 @@ class multiviewMapper:
         recipe = self.pipeline.recipe
         recipe.add_module(FindClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='with_clumps',
                                      gapTolerance=self.clump_gap_tolerance, radiusScale=self.clump_radius_scale,
-                                     radius_offset_nm=self.clump_radius_offset, probeAwareClumping=True))
+                                     radius_offset=self.clump_radius_offset, probeAware=True))
         recipe.execute()
         self.pipeline.selectDataSource('with_clumps')
 

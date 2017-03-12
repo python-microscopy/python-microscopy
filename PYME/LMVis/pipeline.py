@@ -256,7 +256,7 @@ def _processEvents(ds, events, mdh):
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
         #self.dataSources = {}
-        self.recipe = ModuleCollection()
+        self.recipe = ModuleCollection(execute_on_invalidation=True)
 
         self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
