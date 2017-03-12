@@ -627,13 +627,16 @@ def rendJTet(im, x,y,z,jsig, jsigz, mcp, n):
         scipy.random.seed()
 
         Imc = scipy.rand(len(x)) < mcp
-        if type(jsig) == numpy.ndarray:
+        if isinstance(jsig, numpy.ndarray):
             print((jsig.shape, Imc.shape))
-            jsig = jsig[Imc]
-            jsigz = jsigz[Imc]
+            jsig_ = jsig[Imc]
+            jsigz_ = jsigz[Imc]
+        else:
+            jsig_= jsig
+            jsigz_ = jsigz
 
         #gen3DTriangs.renderTetrahedra(im, x[Imc]+ jsig*scipy.randn(Imc.sum()), y[Imc]+ jsig*scipy.randn(Imc.sum()), z[Imc]+ jsigz*scipy.randn(Imc.sum()), scale = [1,1,1], pixelsize=[1,1,1])
-        p = numpy.hstack(((x[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (y[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (z[Imc]+ jsigz*scipy.randn(Imc.sum()))[:, None]))
+        p = numpy.hstack(((x[Imc]+ jsig_*scipy.randn(Imc.sum()))[:, None], (y[Imc]+ jsig_*scipy.randn(Imc.sum()))[:, None], (z[Imc]+ jsigz_*scipy.randn(Imc.sum()))[:, None]))
         print((p.shape))
         RenderTetrahedra(p, im)
 
