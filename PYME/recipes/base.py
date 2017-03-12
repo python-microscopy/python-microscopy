@@ -364,28 +364,32 @@ class ModuleCollection(HasTraits):
         import json
         return json.dumps(self.get_cleaned_module_list())
     
-    @classmethod
-    def from_module_list(cls, l):
-        c = cls()
-
+    def update_from_module_list(self, l):
         mc = []
-
+    
         if l is None:
             l = []
-
+    
         for mdd in l:
             mn, md = mdd.items()[0]
             try:
-                mod = all_modules[mn](c)
+                mod = all_modules[mn](self)
             except KeyError:
                 # still support loading old recipes which do not use hierarchical names
                 # also try and support modules which might have moved
-                mod = _legacy_modules[mn.split('.')[-1]](c)
-
+                mod = _legacy_modules[mn.split('.')[-1]](self)
+        
             mod.set(**md)
             mc.append(mod)
-
-        c.modules = mc
+    
+        self.modules = mc
+        self.invalidate_data()
+    
+    @classmethod
+    def from_module_list(cls, l):
+        c = cls()
+        c.update_from_module_list(l)
+                
         return c
 
     @classmethod
@@ -394,6 +398,17 @@ class ModuleCollection(HasTraits):
 
         l = yaml.load(data)
         return cls.from_module_list(l)
+    
+    def update_from_yaml(self, data):
+        import os
+        import yaml
+        
+        if os.path.isfile(data):
+            with open(data) as f:
+                data = f.read()
+    
+        l = yaml.load(data)
+        return self.update_from_module_list(l)
 
     @classmethod
     def fromJSON(cls, data):

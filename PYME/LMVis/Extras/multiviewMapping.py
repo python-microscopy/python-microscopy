@@ -411,9 +411,9 @@ class multiviewMapper:
         self.pipeline.selectDataSource('clumped')
 
         # make sure the colour filter knows about the new probe key
-        self.pipeline._process_colour()
+        #self.pipeline._process_colour()
         # refresh the Colour choice selection in the GUI
-        self.visFr.CreateFoldPanel()
+        #self.visFr.CreateFoldPanel()
 
     def OnMapZ(self, event=None, useMD = True):
         """
