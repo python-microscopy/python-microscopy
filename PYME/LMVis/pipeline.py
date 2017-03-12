@@ -655,6 +655,11 @@ class Pipeline:
          All of these get munged into the p_dye type entries that the colour filter needs.
 
         """
+        #clear out old colour keys
+        for k in self.mapping.mappings.keys():
+            if k.starts_with('p_'):
+                self.mapping.mappings.pop(k)
+        
         if 'gFrac' in self.selectedDataSource.keys():
             #ratiometric
             for structure, ratio in self.fluorSpecies.items():
