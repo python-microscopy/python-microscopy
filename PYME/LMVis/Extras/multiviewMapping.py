@@ -376,7 +376,7 @@ class multiviewMapper:
         recipe = self.pipeline.recipe
         recipe.add_module(FindClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='with_clumps',
                                      gapTolerance=self.clump_gap_tolerance, radiusScale=self.clump_radius_scale,
-                                     radius_offset_nm=self.clump_radius_offset, probeAwareClumping=True))
+                                     radius_offset=self.clump_radius_offset, probeAware=True))
         recipe.execute()
         self.pipeline.selectDataSource('with_clumps')
 
@@ -411,9 +411,9 @@ class multiviewMapper:
         self.pipeline.selectDataSource('clumped')
 
         # make sure the colour filter knows about the new probe key
-        self.pipeline._process_colour()
+        #self.pipeline._process_colour()
         # refresh the Colour choice selection in the GUI
-        self.visFr.CreateFoldPanel()
+        #self.visFr.CreateFoldPanel()
 
     def OnMapZ(self, event=None, useMD = True):
         """

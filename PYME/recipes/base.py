@@ -70,6 +70,8 @@ class ModuleBase(HasTraits):
     def remove_outputs(self):
         if not self.__dict__.get('_parent', None) is None:
             self._parent.pruneDependanciesFromNamespace(self.outputs)
+            
+            self._parent.invalidate_data()
 
     def outputs_in_namespace(self, namespace):
         keys = namespace.keys()
@@ -109,9 +111,8 @@ class ModuleBase(HasTraits):
     @property
     def hide_in_overview(self):
         return []
-
-    @property
-    def pipeline_view(self):
+        
+    def _pipeline_view(self, show_label=True):
         import traitsui.api as tui
 
         modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
@@ -120,7 +121,18 @@ class ModuleBase(HasTraits):
 
         params = [tn for tn in self.class_editable_traits() if not (tn.startswith('input') or tn.startswith('output') or tn in hidden)]
 
-        return tui.View(tui.Group([tui.Item(tn) for tn in params],label=modname))
+        if show_label:
+            return tui.View(tui.Group([tui.Item(tn) for tn in params],label=modname))
+        else:
+            return tui.View([tui.Item(tn) for tn in params])
+
+    @property
+    def pipeline_view(self):
+        return self._pipeline_view()
+
+    @property
+    def pipeline_view_min(self):
+        return self._pipeline_view(False)
 
 
     @property
@@ -174,14 +186,19 @@ class OutputModule(ModuleBase):
         """
         pass
 
-
+import dispatch
 class ModuleCollection(HasTraits):
     modules = List()
+    execute_on_invalidation = Bool(False)
     
     def __init__(self, *args, **kwargs):
         HasTraits.__init__(self, *args, **kwargs)
         
         self.namespace = {}
+        
+    def invalidate_data(self):
+        if self.execute_on_invalidation:
+            self.execute()
         
     def dependancyGraph(self):
         dg = {}
@@ -347,28 +364,32 @@ class ModuleCollection(HasTraits):
         import json
         return json.dumps(self.get_cleaned_module_list())
     
-    @classmethod
-    def from_module_list(cls, l):
-        c = cls()
-
+    def update_from_module_list(self, l):
         mc = []
-
+    
         if l is None:
             l = []
-
+    
         for mdd in l:
             mn, md = mdd.items()[0]
             try:
-                mod = all_modules[mn](c)
+                mod = all_modules[mn](self)
             except KeyError:
                 # still support loading old recipes which do not use hierarchical names
                 # also try and support modules which might have moved
-                mod = _legacy_modules[mn.split('.')[-1]](c)
-
+                mod = _legacy_modules[mn.split('.')[-1]](self)
+        
             mod.set(**md)
             mc.append(mod)
-
-        c.modules = mc
+    
+        self.modules = mc
+        self.invalidate_data()
+    
+    @classmethod
+    def from_module_list(cls, l):
+        c = cls()
+        c.update_from_module_list(l)
+                
         return c
 
     @classmethod
@@ -377,6 +398,17 @@ class ModuleCollection(HasTraits):
 
         l = yaml.load(data)
         return cls.from_module_list(l)
+    
+    def update_from_yaml(self, data):
+        import os
+        import yaml
+        
+        if os.path.isfile(data):
+            with open(data) as f:
+                data = f.read()
+    
+        l = yaml.load(data)
+        return self.update_from_module_list(l)
 
     @classmethod
     def fromJSON(cls, data):

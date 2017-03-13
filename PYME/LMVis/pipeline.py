@@ -256,7 +256,7 @@ def _processEvents(ds, events, mdh):
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
         #self.dataSources = {}
-        self.recipe = ModuleCollection()
+        self.recipe = ModuleCollection(execute_on_invalidation=True)
 
         self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
@@ -391,7 +391,7 @@ class Pipeline:
         else:
             raise RuntimeError("Length of new column doesn't match either the input or output lengths")
 
-    def addDataSource(self, dskey, ds):
+    def addDataSource(self, dskey, ds, add_missing_vars=True):
         """
         Add a new data source
 
@@ -411,8 +411,8 @@ class Pipeline:
             ds = tabular.mappingFilter(ds)
 
         #add keys which might not already be defined
-
-        _add_missing_ds_keys(ds,self.ev_mappings)
+        if add_missing_vars:
+            _add_missing_ds_keys(ds,self.ev_mappings)
 
         if getattr(ds, 'mdh', None) is None:
             try:
@@ -452,7 +452,9 @@ class Pipeline:
                 self.colourFilter = tabular.colourFilter(self.filter)
             else:
                 self.colourFilter.resultsSource = self.filter
-                
+
+            self._process_colour()
+            
             self.ready = True
 
         self.ClearGenerated()
@@ -631,11 +633,12 @@ class Pipeline:
                 self.filterKeys['fitError_dx'] = (0,10)
                 self.filterKeys['fitError_dy'] = (0,10)
 
+        self._get_dye_ratios_from_metadata()
 
         self.addDataSource('Localizations', mapped_ds)
         self.selectDataSource('Localizations') #NB - this rebuilds the pipeline
-
-        self._process_colour()
+        
+        #self._process_colour()
 
 
 
@@ -652,27 +655,37 @@ class Pipeline:
          All of these get munged into the p_dye type entries that the colour filter needs.
 
         """
-        if 'Sample.Labelling' in self.mdh.getEntryNames() and 'gFrac' in self.selectedDataSource.keys():
-            self.SpecFromMetadata()
+        #clear out old colour keys
+        for k in self.mapping.mappings.keys():
+            if k.starts_with('p_'):
+                self.mapping.mappings.pop(k)
+        
+        if 'gFrac' in self.selectedDataSource.keys():
+            #ratiometric
+            for structure, ratio in self.fluorSpecies.items():
+                if not ratio is None:
+                    self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
+        else:
+            if 'probe' in self.mapping.keys():
+                #non-ratiometric (i.e. sequential) colour
+                #color channel is given in 'probe' column
+                self.mapping.setMapping('ColourNorm', '1.0 + 0*probe')
+    
+                for i in range(int(self['probe'].min()), int(self['probe'].max() + 1)):
+                    self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
+    
+            nSeqCols = self.mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
+            if nSeqCols > 1:
+                for i in range(nSeqCols):
+                    self.mapping.setMapping('ColourNorm', '1.0 + 0*t')
+                    cr = self.mdh['Protocol.ColorRange%d' % i]
+                    self.mapping.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
+                
+        #self.ClearGenerated()
 
-        if 'probe' in self.mapping.keys():
-            #non-ratiometric (i.e. sequential) colour
-            #color channel is given in 'probe' column
-            self.mapping.setMapping('ColourNorm', '1.0 + 0*probe')
 
-            for i in range(int(self['probe'].min()), int(self['probe'].max() + 1)):
-                self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
-
-        nSeqCols = self.mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
-        if nSeqCols > 1:
-            for i in range(nSeqCols):
-                self.mapping.setMapping('ColourNorm', '1.0 + 0*t')
-                cr = self.mdh['Protocol.ColorRange%d' % i]
-                self.mapping.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
-
-
-    def SpecFromMetadata(self):
-        labels = self.mdh.getEntry('Sample.Labelling')
+    def _get_dye_ratios_from_metadata(self):
+        labels = self.mdh.getOrDefault('Sample.Labelling', [])
 
         for structure, dye in labels:
             ratio = dyeRatios.getRatio(dye, self.mdh)
@@ -681,7 +694,7 @@ class Pipeline:
                 self.fluorSpecies[structure] = ratio
                 self.fluorSpeciesDyes[structure] = dye
                 #self.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
-                self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
+                #self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
                 
 
     def getNeighbourDists(self, forceRetriang = False):

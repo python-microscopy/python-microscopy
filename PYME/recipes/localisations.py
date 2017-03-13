@@ -206,9 +206,9 @@ class FindClumps(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     inputName = Input('registered')
     gapTolerance = Int(1, desc='Number of off-frames allowed to still be a single clump')
-    radiusScale = Float(2.0)
-    radius_offset_nm = Float(150., desc='[nm]')
-    probeAwareClumping = Bool(False, desc='''Use probe-aware clumping. NB this option does not work with standard methods of colour 
+    radiusScale = Float(2.0, desc='Factor by which error_x is multiplied to detect clumps. The default of 2-sigma means we link ~95% of the points which should be linked')
+    radius_offset = Float(0., desc='Extra offset (in nm) for cases where we want to link despite poor channel alignment')
+    probeAware = Bool(False, desc='''Use probe-aware clumping. NB this option does not work with standard methods of colour
                                              specification, and splitting by channel and clumping separately is preferred''') 
     outputName = Output('clumped')
 
@@ -217,10 +217,10 @@ class FindClumps(ModuleBase):
 
         inp = namespace[self.inputName]
 
-        if self.probeAwareClumping and 'probe' in inp.keys(): #special case for using probe aware clumping NB this is a temporary fudge for non-standard colour handling
-            mapped = multiview.probeAwareFindClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
+        if self.probeAware and 'probe' in inp.keys(): #special case for using probe aware clumping NB this is a temporary fudge for non-standard colour handling
+            mapped = multiview.probeAwareFindClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset)
         else: #default
-            mapped = multiview.findClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset_nm)
+            mapped = multiview.findClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset)
         
         if 'mdh' in dir(inp):
             mapped.mdh = inp.mdh

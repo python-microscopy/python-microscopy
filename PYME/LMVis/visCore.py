@@ -58,6 +58,7 @@ import numpy as np
 
 
 from PYME.LMVis import statusLog
+#from PYME.recipes import recipeGui
 
 class VisGUICore(object):
     def __init__(self, use_shaders=False):
@@ -81,6 +82,9 @@ class VisGUICore(object):
         self.glCanvas = gl_render.LMGLCanvas(win, use_shaders=use_shaders)
         win.AddPage(page=self.glCanvas, caption='View')#, select=True)
         self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
+
+        #self.rec_gui = recipeGui.
+        #win.AddPage(page=self.glCanvas, caption='View')#, select=True)
         
         self.refv = False
         
@@ -132,7 +136,8 @@ class VisGUICore(object):
         self.glCanvas.Refresh()
         
     def GenDataSourcePanel(self, pnl):
-        item = afp.foldingPane(pnl, -1, caption="Data Source", pinned = True)
+        from PYME.recipes.vertical_recipe_display import RecipeDisplayPanel
+        item = afp.foldingPane(pnl, -1, caption="Data Source")#, pinned = True)
 
         #self.dsRadioIds = []
         #self._ds_keys_by_id = {}
@@ -151,7 +156,11 @@ class VisGUICore(object):
         self.chSource.Bind(wx.EVT_CHOICE, self.OnSourceChange)
         self.pipeline.onRebuild.connect(self.set_datasource_choices)
             
-        item.AddNewElement(self.chSource)
+        item.AddNewElement(self.chSource, foldable=False)
+        
+        self.recipeView = RecipeDisplayPanel(item)
+        self.recipeView.SetRecipe(self.pipeline.recipe)
+        item.AddNewElement(self.recipeView)
 
         pnl.AddPane(item)
         
