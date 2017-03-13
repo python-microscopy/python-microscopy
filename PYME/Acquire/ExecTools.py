@@ -187,6 +187,19 @@ def joinBGInit():
         #print(t)
         t.join()
 
+class GUIInitTask(object):
+    def __init__(self, codeObj):
+        #self.name = name
+        self.codeObj = codeObj
+
+    def run(self):
+        global defGlobals
+        global defLocals
+        #try:
+        _exec(self.codeObj, defGlobals, defLocals)
+        #except Exception as e:
+        #    raise e
+
 def InitGUI(code):
     """Add a piece of code to a list of items to be executed once the GUI is
     up and running. Used to defer the initialisation of GUI components ascociated
@@ -197,4 +210,4 @@ def InitGUI(code):
     codeObj : string, compiled code object
         The code that will be executed - something that `exec` understands  
     """
-    defLocals['postInit'].append(code)
+    defLocals['postInit'].append(GUIInitTask(code))

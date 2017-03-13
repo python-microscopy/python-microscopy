@@ -22,9 +22,7 @@
 ##################
 
 from PYME.Acquire.Hardware.AndorIXon import AndorIXon
-from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 from PYME.Acquire.Hardware.AndorNeo import AndorZyla
-from PYME.Acquire.Hardware.AndorNeo import ZylaControlPanel
 #from PYME.Acquire.Hardware.uc480 import uCam480
 
 from PYME.Acquire.Hardware import fakeShutters
@@ -63,6 +61,9 @@ scope.cameras['B - Right'].DefaultEMGain = 0 #hack to make camera work with stan
 
 
 InitGUI("""
+from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
+from PYME.Acquire.Hardware.AndorNeo import ZylaControlPanel
+
 scope.camControls['A - Left'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['A - Left'], scope)
 camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 
@@ -78,14 +79,14 @@ camPanels.append((sampPan, 'Current Slide'))
 """)
 
 #setup for the channels to aquire - b/w camera, no shutters
-class chaninfo:
-    names = ['bw']
-    cols = [1] #1 = b/w, 2 = R, 4 = G1, 8 = G2, 16 = B
-    hw = [fakeShutters.CH1] #unimportant - as we have no shutters
-    itimes = [100]
+# class chaninfo:
+#     names = ['bw']
+#     cols = [1] #1 = b/w, 2 = R, 4 = G1, 8 = G2, 16 = B
+#     hw = [fakeShutters.CH1] #unimportant - as we have no shutters
+#     itimes = [100]
 
-scope.chaninfo = chaninfo
-scope.shutters = fakeShutters
+# scope.chaninfo = chaninfo
+# scope.shutters = fakeShutters
 
 
 
@@ -112,36 +113,35 @@ scope._piFoc = piezo_e709.piezo_e709T('COM9', 400, 0, True)
 scope.hardwareChecks.append(scope._piFoc.OnTarget)
 
 scope.piFoc = offsetPiezo.piezoOffsetProxy(scope._piFoc)
-scope.piezos.append((scope.piFoc, 1, 'PIFoc'))
-
-scope.positioning['z'] = (scope.piFoc, 1, 1)
+scope.register_piezo(scope.piFoc, 'z')
 
 #server so drift correction can connect to the piezo
-pst = offsetPiezo.ServerThread(scope.piFoc)
-pst.start()
+#pst = offsetPiezo.ServerThread(scope.piFoc)
+#pst.start()
 
-scope.CleanupFunctions.append(pst.cleanup)
+#scope.CleanupFunctions.append(pst.cleanup)
 scope.CleanupFunctions.append(scope._piFoc.close)
-
-scope.state.registerHandler('Positioning.z', lambda : scope.piFoc.GetPos(1), lambda v : scope.piFoc.MoveTo(1, v))
 """)
 
 InitBG('XY Stage', """
 #XY Stage
 from PYME.Acquire.Hardware.Piezos import piezo_c867
 scope.xystage = piezo_c867.piezo_c867T('COM8')
-scope.piezos.append((scope.xystage, 2, 'Stage_X'))
-scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
+#scope.piezos.append((scope.xystage, 2, 'Stage_X'))
+#scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
 scope.joystick = piezo_c867.c867Joystick(scope.xystage)
 #scope.joystick.Enable(True)
 scope.hardwareChecks.append(scope.xystage.OnTarget)
 scope.CleanupFunctions.append(scope.xystage.close)
 
-scope.positioning['x'] = (scope.xystage, 1, 1000)
-scope.positioning['y'] = (scope.xystage, 2, -1000)
+#scope.positioning['x'] = (scope.xystage, 1, 1000)
+#scope.positioning['y'] = (scope.xystage, 2, -1000)
 
-scope.state.registerHandler('Positioning.x', lambda : 1000*scope.xystage.GetPos(1), lambda v : scope.xystage.MoveTo(1, v*1e-3))
-scope.state.registerHandler('Positioning.y', lambda : -1000*scope.xystage.GetPos(2), lambda v : scope.xystage.MoveTo(2, -v*1e-3))
+#scope.state.registerHandler('Positioning.x', lambda : 1000*scope.xystage.GetPos(1), lambda v : scope.xystage.MoveTo(1, v*1e-3))
+#scope.state.registerHandler('Positioning.y', lambda : -1000*scope.xystage.GetPos(2), lambda v : scope.xystage.MoveTo(2, -v*1e-3))
+
+scope.register_piezo(scope.xystage, 'x', channel=1)
+scope.register_piezo(scope.xystage, 'y', channel=2, multiplier=-1)
 """)
 
 
@@ -163,20 +163,20 @@ splt = splitter.Splitter(MainFrame, None, scope, scope.cam, flipChan = 0, dichro
 #scope.mdh['Splitter.Flip'] = False
 
 #Nikon Ti motorised controls
-InitGUI("""
-from PYME.Acquire.Hardware import NikonTi, NikonTiGUI
-scope.dichroic = NikonTi.FilterChanger()
-scope.lightpath = NikonTi.LightPath()
+# InitGUI("""
+# from PYME.Acquire.Hardware import NikonTi, NikonTiGUI
+# scope.dichroic = NikonTi.FilterChanger()
+# scope.lightpath = NikonTi.LightPath()
 
-TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
-toolPanels.append((TiPanel, 'Nikon Ti'))
-#time1.WantNotification.append(TiPanel.SetSelections)
-time1.WantNotification.append(scope.dichroic.Poll)
-time1.WantNotification.append(scope.lightpath.Poll)
+# TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
+# toolPanels.append((TiPanel, 'Nikon Ti'))
+# #time1.WantNotification.append(TiPanel.SetSelections)
+# time1.WantNotification.append(scope.dichroic.Poll)
+# time1.WantNotification.append(scope.lightpath.Poll)
 
-MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
-MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
-""")# % GetComputerName())
+# MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
+# MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
+# """)# % GetComputerName())
 
 
 
@@ -237,14 +237,6 @@ if 'lasers' in dir(scope):
     camPanels.append((lcf, 'Laser Control'))
 """)
 
-#InitGUI("""
-#if 'lasers'in dir(scope):
-#    from PYME.Acquire.Hardware import LaserControlFrame
-#    lcf = LaserControlFrame.LaserControlLight(MainFrame,scope.lasers)
-#    time1.WantNotification.append(lcf.refresh)
-#    #lcf.refresh()
-#    camPanels.append((lcf, 'Laser Control'))
-#""")
 
 InitGUI("""
 from PYME.Acquire.ui import AnalysisSettingsUI
