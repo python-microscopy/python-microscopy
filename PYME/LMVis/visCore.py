@@ -122,9 +122,7 @@ class VisGUICore(object):
         if self.viewMode == 'quads':
             quadTreeSettings.GenQuadTreePanel(self, sidePanel)
 
-        if self.viewMode == 'points' or self.viewMode == 'tracks':
-            pointSettingsPanel.GenPointsPanel(self, sidePanel)
-        if self.viewMode == 'pointsprites':
+        if self.viewMode in ['points', 'tracks', 'pointsprites']:
             pointSettingsPanel.GenPointsPanel(self, sidePanel)
         if self.viewMode == 'blobs':
             triBlobs.GenBlobPanel(self, sidePanel)
@@ -138,18 +136,6 @@ class VisGUICore(object):
     def GenDataSourcePanel(self, pnl):
         from PYME.recipes.vertical_recipe_display import RecipeDisplayPanel
         item = afp.foldingPane(pnl, -1, caption="Data Source")#, pinned = True)
-
-        #self.dsRadioIds = []
-        #self._ds_keys_by_id = {}
-        #for ds in self.pipeline.dataSources.keys():
-        #    rbid = wx.NewId()
-        #    self.dsRadioIds.append(rbid)
-        #    rb = wx.RadioButton(item, rbid, ds)
-        #    rb.SetValue(ds == self.pipeline.selectedDataSourceKey)
-
-        #    self._ds_keys_by_id[rbid] = ds
-
-        #    rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
         
         self.chSource = wx.Choice(item, -1, choices=[])
         self.set_datasource_choices()
@@ -172,7 +158,6 @@ class VisGUICore(object):
         
 
     def OnSourceChange(self, event):
-        #self.pipeline.selectDataSource(self._ds_keys_by_id[event.GetId()])
         self.pipeline.selectDataSource(self.chSource.GetStringSelection())
         
         
@@ -200,12 +185,12 @@ class VisGUICore(object):
         else:
             parent = self
 
-        #ID_TOGGLE_SETTINGS = wx.NewId()
-
         self.AddMenuItem('File', '&Open', self.OnOpenFile)
         if not subMenu:
             self.AddMenuItem('File', "Open &Raw/Prebleach Data", self.OnOpenRaw)
             self.AddMenuItem('File', "Open Extra &Channel", self.OnOpenChannel)
+            
+        self.AddMenuItem('File', 'Save filtered localizations', self.OnSave)
         
         if not subMenu:
             self.AddMenuItem('File', itemType='separator')
@@ -237,33 +222,9 @@ class VisGUICore(object):
         #this needs an ID as we bind to it elsewhere (in the filter panel)
         self.ID_VIEW_CLIP_ROI = wx.NewId()
         self.AddMenuItem('View', 'Clip to ROI\tF8', id=self.ID_VIEW_CLIP_ROI)
-
-        #self.AddMenuItem('View', itemType='separator')
-        #self.view_menu.AppendCheckItem(ID_TOGGLE_SETTINGS, "Show Settings")
-        #self.view_menu.Check(ID_TOGGLE_SETTINGS, True)
-
-    #     if not subMenu:        
-    #         self.view3d_menu = wx.Menu()
-    
-    # #        try: #stop us bombing on Mac
-    # #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_POINTS, '&Points')
-    # #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_TRIANGS, '&Triangles')
-    # #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_BLOBS, '&Blobs')
-    # #        except:
-    #         self.view3d_menu.Append(ID_VIEW_3D_POINTS, '&Points')
-    #         self.view3d_menu.Append(ID_VIEW_3D_TRIANGS, '&Triangles')
-    #         self.view3d_menu.Append(ID_VIEW_3D_BLOBS, '&Blobs')
-    
-    #         #self.view3d_menu.Enable(ID_VIEW_3D_TRIANGS, False)
-    #         self.view3d_menu.Enable(ID_VIEW_3D_BLOBS, False)
-    
-    #         #self.view_menu.Check(ID_VIEW_3D_POINTS, True)
-
-        #self.gen_menu = wx.Menu()
         
         renderers.init_renderers(self)
 
-        #self.extras_menu = wx.Menu()
         from PYME.LMVis import Extras
         Extras.InitPlugins(self)
         
@@ -277,10 +238,6 @@ class VisGUICore(object):
         if not subMenu:
             self.AddMenuItem('Help', "&About",)
 
-       # menu_bar = self.menubar
-
-
-        #return menu_bar
         
     def OnViewPoints(self,event):
         self.viewMode = 'points'
@@ -349,6 +306,11 @@ class VisGUICore(object):
         if not filename == '':
             self.OpenFile(filename)
             
+    def OnSave(self, event):
+        filename = wx.SaveFileSelector("Save pipeline output as ...", '.hdf')
+        if not filename == '':
+            self.pipeline.save_hdf(filename)
+            
     def RegenFilter(self):
         logger.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
         self.pipeline.Rebuild()
@@ -361,8 +323,6 @@ class VisGUICore(object):
 
         if len(self.pipeline['x']) == 0:
             self.glCanvas.setOverlayMessage('No data points - try adjusting the filter')
-            #wx.MessageBox('No data points - try adjusting the filter',
-            #              "len(filter['x']) ==0")
             return
         else:
             self.glCanvas.setOverlayMessage('')
@@ -502,9 +462,6 @@ class VisGUICore(object):
             self.glCanvas.setView(xbounds[0], xbounds[0] + ysc*self.glCanvas.Size[0], 
                                   ybounds[0], ybounds[1])
 
-    #def OnGLViewChanged(self):
-    #    for genI in self.generatedImages:
-    #        genI.Refresh()
 
     def SetStatus(self, statusText):
         self.statusbar.SetStatusText(statusText, 0)
