@@ -1,4 +1,4 @@
-#version 130
+#version 120
 
 uniform vec4 light_ambient;
 uniform vec4 light_diffuse;
@@ -7,7 +7,7 @@ uniform vec4 light_position;
 uniform float shininess;
 uniform vec4 view_vector;
 
-out vec4 vertexColor;
+varying vec4 vertexColor;
 
 void main(void){
 
