@@ -981,7 +981,8 @@ class LMGLCanvas(GLCanvas):
 
     def setCMap(self, cmap):
         self.cmap = cmap
-        self.LUTOverlayLayer.set_color_map(cmap)
+        if self.use_shaders:
+            self.LUTOverlayLayer.set_color_map(cmap)
         self.setColour()
 
     def setCLim(self, clim, alim=None):
