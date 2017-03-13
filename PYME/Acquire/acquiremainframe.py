@@ -224,8 +224,11 @@ class PYMEMainFrame(AUIFrame):
     def doPostInit(self):
         logger.debug('Starting post-init')
         for cm in self.postInit:
-            print cm.codeObj
-            cm.run()
+            logging.debug('Loading GUI component for %s' %cm.name)
+            try:
+                cm.run(self, self.scope)
+            except Exception as e:
+                logger.exception('Error whilst initializing %s GUI' % cm.name)
 
         #if len(self.scope.piezos) > 0.5:
         #    self.piezo_sl = psliders.PiezoSliders(self.scope.piezos, self, self.scope.joystick)

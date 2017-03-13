@@ -70,13 +70,13 @@ camPanels.append((scope.camControls['A - Left'], 'EMCCD A Properties'))
 scope.camControls['B - Right'] = ZylaControlPanel.ZylaControl(MainFrame, scope.cameras['B - Right'], scope)
 camPanels.append((scope.camControls['B - Right'], 'sCMOS Properties'))
 
-""")
+""", 'Cam controls')
 
 InitGUI("""
 from PYME.Acquire import sampleInformation
 sampPan = sampleInformation.slidePanel(MainFrame)
 camPanels.append((sampPan, 'Current Slide'))
-""")
+""", 'Sample Database')
 
 #setup for the channels to aquire - b/w camera, no shutters
 # class chaninfo:
@@ -103,7 +103,7 @@ InitGUI("""
 from PYMEnf.Hardware import DMDGui
 LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
 camPanels.append((LCGui, 'DMD Control', False))
-""")
+""", 'DMD')
 
 #PIFoc
 InitBG('Z Piezo', """
@@ -151,32 +151,32 @@ pt = positionTracker.PositionTracker(scope, time1)
 pv = positionTracker.TrackerPanel(MainFrame, pt)
 MainFrame.AddPage(page=pv, select=False, caption='Track')
 time1.WantNotification.append(pv.draw)
-""")
+""", 'Position Tracker')
 
 #splitter
 InitGUI("""
 from PYME.Acquire.Hardware import splitter
 splt = splitter.Splitter(MainFrame, None, scope, scope.cam, flipChan = 0, dichroic = 'FF700-Di01' , transLocOnCamera = 'Left', flip=False, dir='left_right', constrain=False)
-""")
+""", 'Splitter')
 
 #we don't have a splitter - make sure that the analysis knows this
 #scope.mdh['Splitter.Flip'] = False
 
 #Nikon Ti motorised controls
-# InitGUI("""
-# from PYME.Acquire.Hardware import NikonTi, NikonTiGUI
-# scope.dichroic = NikonTi.FilterChanger()
-# scope.lightpath = NikonTi.LightPath()
+InitGUI("""
+from PYME.Acquire.Hardware import NikonTi, NikonTiGUI
+scope.dichroic = NikonTi.FilterChanger()
+scope.lightpath = NikonTi.LightPath()
 
-# TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
-# toolPanels.append((TiPanel, 'Nikon Ti'))
-# #time1.WantNotification.append(TiPanel.SetSelections)
-# time1.WantNotification.append(scope.dichroic.Poll)
-# time1.WantNotification.append(scope.lightpath.Poll)
+TiPanel = NikonTiGUI.TiPanel(MainFrame, scope.dichroic, scope.lightpath)
+toolPanels.append((TiPanel, 'Nikon Ti'))
+#time1.WantNotification.append(TiPanel.SetSelections)
+time1.WantNotification.append(scope.dichroic.Poll)
+time1.WantNotification.append(scope.lightpath.Poll)
 
-# MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
-# MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
-# """)# % GetComputerName())
+MetaDataHandler.provideStartMetadata.append(scope.dichroic.ProvideMetadata)
+MetaDataHandler.provideStartMetadata.append(scope.lightpath.ProvideMetadata)
+""", 'Nikon TI Stand')# % GetComputerName())
 
 
 
@@ -185,7 +185,7 @@ from PYME.Acquire.Hardware import spacenav
 scope.spacenav = spacenav.SpaceNavigator()
 scope.CleanupFunctions.append(scope.spacenav.close)
 scope.ctrl3d = spacenav.SpaceNavPiezoCtrl(scope.spacenav, scope.piFoc, scope.xystage)
-""")
+""", 'spacenav')
     
 from PYME.Acquire.Hardware.FilterWheel import WFilter, FiltFrame, FiltWheel
 filtList = [WFilter(1, 'LF405', 'LF405', 0),
@@ -196,14 +196,11 @@ filtList = [WFilter(1, 'LF405', 'LF405', 0),
     WFilter(6, 'EMPTY'  , 'EMPTY'  , 0)]
 
 InitGUI("""
-try:
-    scope.filterWheel = FiltWheel(filtList, 'COM11', dichroic=scope.dichroic)
-    #scope.filterWheel.SetFilterPos("LF488")
-    scope.filtPan = FiltFrame(MainFrame, scope.filterWheel)
-    toolPanels.append((scope.filtPan, 'Filter Wheel'))
-except:
-    print 'Error starting filter wheel ...'
-""")
+scope.filterWheel = FiltWheel(filtList, 'COM11', dichroic=scope.dichroic)
+#scope.filterWheel.SetFilterPos("LF488")
+scope.filtPan = FiltFrame(MainFrame, scope.filterWheel)
+toolPanels.append((scope.filtPan, 'Filter Wheel'))
+""", 'Filter Wheel')
 
 
 #DigiData
@@ -235,20 +232,20 @@ if 'lasers' in dir(scope):
     lcf = lasersliders.LaserToggles(toolPanel, scope.state)
     time1.WantNotification.append(lcf.update)
     camPanels.append((lcf, 'Laser Control'))
-""")
+""", 'Laser Sliders')
 
 
 InitGUI("""
 from PYME.Acquire.ui import AnalysisSettingsUI
 AnalysisSettingsUI.Plug(scope, MainFrame)
-""")
+""", 'Analysis UI')
 
 InitGUI("""
 from PYME.Acquire.ui import actionUI
 
 ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
 MainFrame.AddPage(ap, caption='Queued Actions')
-""")
+""", 'Action UI')
 
 
 #must be here!!!
