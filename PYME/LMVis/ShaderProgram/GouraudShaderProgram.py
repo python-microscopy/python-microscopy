@@ -18,10 +18,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from numpy import array
 
-from PYME.LMVis.ShaderProgram.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, GL_LIGHTING, GL_LIGHT0, \
-    glEnable, glUseProgram, glUniform4f, glUniform1f, glUniform3f
+from PYME.LMVis.ShaderProgram.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, \
+     glUseProgram, glUniform4f, glUniform1f
 from PYME.LMVis.ShaderProgram.ShaderProgram import ShaderProgram, os
 
 
@@ -47,11 +46,10 @@ class GouraudShaderProgram(GLProgram):
         shader_program.add_shader("gouraud_fs.glsl", GL_FRAGMENT_SHADER)
         shader_program.link()
         self.set_shader_program(shader_program)
-        self._shininess = 5
+        self._shininess = 80
 
     def __enter__(self):
         self.get_shader_program().use()
-        glEnable(GL_LIGHTING)
         for name, value in GouraudShaderProgram.LIGHT_PROPS.iteritems():
             location = self.get_uniform_location(name)
             glUniform4f(location, *value)

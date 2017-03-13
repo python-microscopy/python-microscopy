@@ -1,6 +1,6 @@
-#version 120
+#version 130
 
-varying vec4 vertexColor;
+in vec4 vertexColor;
 
 void main(void)
 {

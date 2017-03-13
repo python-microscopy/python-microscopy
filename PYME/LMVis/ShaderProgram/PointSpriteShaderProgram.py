@@ -41,8 +41,8 @@ class PointSpriteShaderProgram(GLProgram):
         shader_program.link()
         self._texture = GaussTexture()
         self._texture.load_texture()
-        self._uniform_tex_2d_id = glGetUniformLocation(shader_program.get_program(), b'tex2D')
         self.set_shader_program(shader_program)
+        self._uniform_tex_2d_id = self.get_shader_program().get_uniform_location(b'tex2D')
 
     def __enter__(self):
         self.get_shader_program().use()

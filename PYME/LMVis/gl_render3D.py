@@ -34,7 +34,7 @@ from PYME.LMVis.Layer.LUTOverlayLayer import LUTOverlayLayer
 from PYME.LMVis.Layer.PointSpriteRenderLayer import PointSpritesRenderLayer
 from PYME.LMVis.Layer.ScaleBarOverlayLayer import ScaleBarOverlayLayer
 from PYME.LMVis.Layer.SelectionOverlayLayer import SelectionOverlayLayer
-from PYME.LMVis.Layer.WireFrameRenderLayer import WireFrameRenderLayer
+from PYME.LMVis.Layer.TriangleRenderLayer import TriangleRenderLayer
 from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 from six.moves import xrange
 from wx.glcanvas import GLCanvas
@@ -710,9 +710,11 @@ class LMGLCanvas(GLCanvas):
         self.SetCurrent()
         self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()]))
 
-    def setTriang3D(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=True, alpha=1, recenter=True):
+    def setTriang3D(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=False, alpha=1,
+                    recenter=True):
         if self.use_shaders:
-            self.layers.append(WireFrameRenderLayer(x, y, z, c, self.cmap, sizeCutoff, internalCull, zrescale, alpha))
+            self.layers.append(TriangleRenderLayer(x, y, z, c, self.cmap, sizeCutoff,
+                                                   internalCull, zrescale, alpha, is_wire_frame=wireframe))
         else:
             #center data
             x = x #- x.mean()
@@ -1465,12 +1467,15 @@ class TestApp(wx.App):
         # wx.InitAllImageHandlers()
         frame = wx.Frame(None, -1, 'ball_wx', wx.DefaultPosition, wx.Size(800, 800))
         canvas = LMGLCanvas(frame)
+        canvas.gl_context.SetCurrent(canvas)
+        canvas.use_shaders = True
         # glcontext = wx.glcanvas.GLContext(canvas)
         # glcontext.SetCurrent(canvas)
         to = testObj()
+        canvas.displayMode = '3D'
         canvas.setPoints3D(to[0], to[1], to[2])
-        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, alpha=0.5)
-        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, wireframe=True)
+        # canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, alpha=0.5)
+        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, wireframe=False)
         canvas.Refresh()
         frame.Show()
         self.SetTopWindow(frame)

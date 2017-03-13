@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# WireFrameRenderLayer.py
+# TriangleRenderLayer.py
 #
 # Copyright Michael Graff
 #   graff@hm.edu
@@ -25,7 +25,7 @@ from PYME.LMVis.gen3DTriangs import gen3DTriangs
 from OpenGL.GL import *
 
 
-class WireFrameRenderLayer(RenderLayer):
+class TriangleRenderLayer(RenderLayer):
     """
     This program draws a WareFrame of the given points. They are interpreted as triangles.
     """
@@ -39,8 +39,8 @@ class WireFrameRenderLayer(RenderLayer):
         else:
             colors = 1. / a
         color_limit = [colors.min(), colors.max()]
-        super(WireFrameRenderLayer, self).__init__(colors=colors, color_map=color_map, color_limit=color_limit,
-                                                   alpha=alpha)
+        super(TriangleRenderLayer, self).__init__(colors=colors, color_map=color_map, color_limit=color_limit,
+                                                  alpha=alpha)
         self.set_values(p, n)
         if is_wire_frame:
             self.set_shader_program(WireFrameShaderProgram())
