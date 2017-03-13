@@ -120,14 +120,14 @@ class ServerThread(threading.Thread):
                 
 
 def getClient(compName = GetComputerName()):
-    try:
-        from PYME.misc import pyme_zeroconf 
-        ns = pyme_zeroconf.getNS()
-        time.sleep(2)
-        #print ns.list()
-        URI = ns.resolve('%s.Piezo' % compName)
-    except:
-        URI ='PYRONAME://%s.Piezo'%compName
+    #try:
+    from PYME.misc import pyme_zeroconf 
+    ns = pyme_zeroconf.getNS()
+    time.sleep(3)
+    #print ns.list()
+    URI = ns.resolve('%s.Piezo' % compName)
+    #except:
+    #    URI ='PYRONAME://%s.Piezo'%compName
 
     #print URI
 
