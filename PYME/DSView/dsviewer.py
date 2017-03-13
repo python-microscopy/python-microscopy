@@ -31,7 +31,7 @@ import pylab
 pylab.ion()
 import modules
 
-from . import splashScreen
+from PYME.DSView import splashScreen
 
 try:
    import PYMEnf.DSView.modules
@@ -300,7 +300,16 @@ class DSViewFrame(AUIFrame):
         
     def OnSaveToCluster(self, event=None):
         from PYME.IO import clusterExport
-        clusterExport.SaveImageToCluster(self.image)
+        
+        seriesName = clusterExport.suggest_cluster_filename(self.image)
+
+        ted = wx.TextEntryDialog(None, 'Cluster filename:', 'Save file to cluster', seriesName)
+
+        if ted.ShowModal() == wx.ID_OK:
+            #pd = wx.ProgressDialog()
+            clusterExport.ExportImageToCluster(self.image, ted.GetValue())
+
+        ted.Destroy()
 
     def OnExport(self, event=None):
         self.image.Save(crop = True, view = self.view)
@@ -391,7 +400,7 @@ class MyApp(wx.App):
             #md = None
             #if not options.metadata == '':
             #    md = options.metadata
-            print 'Loading data'
+            print('Loading data')
             if options.test:
                 import pylab
                 im = ImageStack(pylab.randn(100,100))
@@ -442,7 +451,7 @@ class MyApp(wx.App):
 
 def main():
     app = MyApp(0)
-    print 'Starting main loop'
+    print('Starting main loop')
     app.MainLoop()
 
 

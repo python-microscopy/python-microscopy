@@ -376,7 +376,7 @@ class seqPanel(wx.Panel):
         
 
     def UpdateDisp(self):
-        print 'seqd: update display'
+        print('seqd: update display')
         self.chPiezo.SetSelection(self.scanDirs.index(self.stackSettings.GetScanChannel()))
 
         if self.stackSettings.GetStartMode() == self.stackSettings.START_AND_END:

@@ -31,20 +31,24 @@ class ClusterAnalyser:
     def __init__(self, visFr):
         self.visFr = visFr
         self.pipeline = visFr.pipeline
-        self.nearestNeighbourDistances = {}
+        self.nearestNeighbourDistances = []
         self.colocalizationRatios = {}
         self.pairwiseDistances = {}
+        self.clusterMeasures = []
 
-        visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN Clump', self.OnClumpDBSCAN,
+        visFr.AddMenuItem('Extras>Clustering', 'DBSCAN Clump', self.OnClumpDBSCAN,
                           helpText='')
-        visFr.AddMenuItem('Extras>DBSCAN', 'Nearest Neighbor Distances- two-species', self.OnNearestNeighborTwoSpecies,
+        visFr.AddMenuItem('Extras>Clustering', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
                           helpText='')
-        visFr.AddMenuItem('Extras>DBSCAN', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
+        visFr.AddMenuItem('Extras>Clustering', 'Cluster count vs. imaging time', self.OnClustersInTime,
                           helpText='')
-        visFr.AddMenuItem('Extras', 'Cluster count vs. imaging time', self.OnClustersInTime,
+        visFr.AddMenuItem('Extras>Clustering', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
-        visFr.AddMenuItem('Extras', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
+        visFr.AddMenuItem('Extras>Clustering', 'Nearest Neighbor Distance Histogram', self.OnNearestNeighbor,
                           helpText='')
+        visFr.AddMenuItem('Extras>Clustering', 'Measure Clusters', self.OnMeasureClusters,
+                          helpText='')
+
 
     def OnClumpDBSCAN(self, event=None):
         """
@@ -65,53 +69,78 @@ class ClusterAnalyser:
 
             self.pipeline.addColumn(clumper.outputName, namespace[clumper.outputName]['dbscanClumpID'])
 
-    def OnNearestNeighborTwoSpecies(self, event=None):
+    def OnNearestNeighbor(self, event=None):
         """
-        GUI front-end for the NearestNeighborTwoSpecies recipe module. Since the module requires two separate datasource
-        or dictionary-like inputs, the selectedDataSource is split based on unique values of a given pipeline key (e.g.
-        probe). If there are more than two unique elements in pipeline[keyToSplit], the nearest neighbor calculations
-        will be cycled through as 01, 12, 23, ...
+        GUI front-end for the NearestNeighbourDistances recipe module. Handling is in place for single species nearest
+        neighbour calculations, as well as two species where the user is queried via the GUI as to which channels to use
+        for building and querying the kdtree.
         """
         from PYME.recipes import measurement
+        import matplotlib.pyplot as plt
         import wx
 
+        dkey = 'neighbourDists'
+
         chans = self.pipeline.colourFilter.getColourChans()
-        nchan = len(chans)
-        if nchan < 2:
-            raise RuntimeError('NearestNeighborTwoSpecies requires two color channels')
-
-        # select with GUI, as this allows flexibility of choosing which channel neighbor distances are with respect to
-        chan_dlg = wx.MultiChoiceDialog(self.visFr, 'Pick two color channels for nearest neighbors distance calculation',
+        selectedChans = chans
+        if len(chans) >= 2:
+            # select with GUI, as this allows flexibility of choosing which channel neighbor distances are with respect to
+            chan_dlg = wx.MultiChoiceDialog(self.visFr, 'Pick 2 channels for two species, or select none to ignore colour.',
                                       'Nearest neighbour channel selection', chans)
-        chan_dlg.SetSelections([0,1])
-        if not chan_dlg.ShowModal() == wx.ID_OK:
-            return #need to handle cancel
+            chan_dlg.SetSelections([0,1])
+            if not chan_dlg.ShowModal() == wx.ID_OK:
+                return  # handle cancel
+
+            selectedChans = chan_dlg.GetSelections()
+            if len(selectedChans) == 2:
+                # select order
+                order_dlg = wx.SingleChoiceDialog(self.visFr, 'Choose which perspective to measure from',
+                                                  'Nearest neighbour perspective selection',
+                                                  ['Nearest %s to each %s' % (selectedChans[0], selectedChans[1]),
+                                                   'Nearest %s to each %s' % (selectedChans[1], selectedChans[0])])
+                if not order_dlg.ShowModal() == wx.ID_OK:
+                    return  # handle cancel
+                order = order_dlg.GetSelection()
             
-        selectedChans = [chans[ci] for ci in chan_dlg.GetSelections()]
-        if not len(selectedChans) == 2:
-            raise RuntimeError('NearestNeighborTwoSpecies requires two color channels')
+                selectedChans = [chans[ci] for ci in selectedChans]
+                if order:
+                    selectedChans.reverse()
 
-        dispColor = self.pipeline.colourFilter.currentColour
-        
-        self.pipeline.colourFilter.setColour(selectedChans[0])
-        chan0 = {'x': self.pipeline['x'], 'y': self.pipeline['y'], 'z': self.pipeline['z']}
-        
-        self.pipeline.colourFilter.setColour(selectedChans[1])
-        chan1 = {'x': self.pipeline['x'], 'y': self.pipeline['y'], 'z': self.pipeline['z']}
-        
-        namespace = {'A': chan0, 'B': chan1}
+                desc = 'Nearest %s to each %s' % (selectedChans[0], selectedChans[1])
 
-        # restore original display settings
-        self.pipeline.colourFilter.setColour(dispColor)
+                dispColor = self.pipeline.colourFilter.currentColour
+
+                self.pipeline.colourFilter.setColour(selectedChans[0])
+                chan0 = {'x': self.pipeline['x'], 'y': self.pipeline['y'], 'z': self.pipeline['z']}
+
+                self.pipeline.colourFilter.setColour(selectedChans[1])
+                chan1 = {'x': self.pipeline['x'], 'y': self.pipeline['y'], 'z': self.pipeline['z']}
+
+                namespace = {'A': chan0, 'B': chan1}
+
+                # restore original display settings
+                self.pipeline.colourFilter.setColour(dispColor)
+
+                matchMaker = measurement.NearestNeighbourDistances(columns=['x', 'y', 'z'], inputChan0='A', inputChan1='B',
+                                                               outputName='output', key=dkey)
+            elif len(selectedChans) > 2:
+                raise RuntimeError('NearestNeighbour cannot handle more than two channels')
 
 
-        matchMaker = measurement.NearestNeighbourDistances(columns=['x', 'y', 'z'], inputChan0='A', inputChan1='B',
-                                                           outputName='output',key='neighbourDists')
+        if len(selectedChans) < 2:
+            desc = 'Single channel nearest neighbours'
+            namespace = {'A': self.pipeline}
+            matchMaker = measurement.NearestNeighbourDistances(columns=['x', 'y', 'z'], inputChan0='A', inputChan1='',
+                                                               outputName='output', key=dkey)
+
+
         matchMaker.execute(namespace)
+        dists = np.array(namespace['output'][dkey])
 
-        self.nearestNeighbourDistances[''.join(selectedChans)] = np.array(namespace['output']['neighbourDists'])
+        self.nearestNeighbourDistances.append({'neighbourDists': dists, 'description': desc})
 
-        print 'Results are stored in clusterAnalyser.nearestNeighbourDistances[%s]' % selectedChans
+        print('Results are stored in clusterAnalyser.nearestNeighbourDistances[%i]' % (len(self.nearestNeighbourDistances) - 1))
+        plt.hist(dists, range=[0, np.mean(dists) + 3.5*np.std(dists)])
 
     def OnFindMixedClusters(self, event=None):
         """
@@ -226,15 +255,18 @@ class ClusterAnalyser:
         #run recipe
         distances = distogram.execute()
 
+        binsz = (distances['bins'][1] - distances['bins'][0])
         self.pairwiseDistances[selectedChans] = {'counts': np.array(distances['counts']),
-                                                        'bins': np.array(distances['bins'] + 0.5*(distances['bins'][1] - distances['bins'][0]))}
+                                                        'bins': np.array(distances['bins'] + 0.5*binsz)}
 
         plt.figure()
-        plt.bar(self.pairwiseDistances[selectedChans]['bins'], self.pairwiseDistances[selectedChans]['counts'])
+        plt.bar(self.pairwiseDistances[selectedChans]['bins'] - 0.5*binsz,
+                self.pairwiseDistances[selectedChans]['counts'], width=binsz)
 
 
 
     def OnClustersInTime(self, event=None):
+        #FIXME - this would probably be better in an addon module outside of the core project
         from PYME.recipes import localisations
         from PYME.recipes.base import ModuleCollection
         import matplotlib.pyplot as plt
@@ -266,6 +298,40 @@ class ClusterAnalyser:
         plt.xlabel('Number of frames included')
         plt.ylabel('Number of Clusters')
         #plt.title('minPoints=%i, searchRadius = %.0f nm' % (, rec.modules[-1].higherMinPtsPerCluster))
+
+    def OnMeasureClusters(self, event=None):
+        """
+
+        Calculates various measures for clusters using PYME.recipes.localisations.MeasureClusters
+
+        Parameters
+        ----------
+        labelsKey: pipeline key to access array of label assignments. Measurements will be calculated for each label.
+
+
+        """
+        from PYME.recipes import localisations
+        from PYME.recipes.base import ModuleCollection
+
+        # build a recipe programatically
+        measrec = ModuleCollection()
+
+        measrec.add_module(localisations.MeasureClusters(measrec, inputName='input', labelsKey='dbscanClustered',
+                                                       outputName='output'))
+
+        measrec.namespace['input'] = self.pipeline
+        #configure parameters
+        if not measrec.configure_traits(view=measrec.pipeline_view, kind='modal'):
+            return  # handle cancel
+
+        # run recipe
+        meas = measrec.execute()
+
+        # For now, don't make this a data source, as that requires (for multicolor) clearing the pipeline mappings.
+        self.clusterMeasures.append(meas)
+
+        # plot COM points
+        #self.visFr.glCanvas.setPoints3D(meas['x'], meas['y'], meas['z'], np.zeros_like(meas['x']))
 
 
 

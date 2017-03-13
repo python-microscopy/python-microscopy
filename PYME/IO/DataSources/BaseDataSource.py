@@ -87,7 +87,7 @@ class BaseDataSource(object):
         keys = list(keys)
         #print keys
         for i in range(len(keys)):
-            if not keys[i].__class__ == slice:
+            if not isinstance(keys[i], slice):
                 keys[i] = slice(keys[i],keys[i] + 1)
         if keys == self.oldSlice:
             return self.oldData

@@ -9,6 +9,7 @@ import toposort
 import networkx as nx
 import pylab
 from scipy import optimize
+from six.moves import xrange
 
 def makeGraph(dg):
     G = nx.DiGraph()
@@ -165,11 +166,11 @@ def arrangeNodes(dg):
         
         
         if np.any(np.isnan(yest)):
-            print 'NaN detected in yest'
+            print('NaN detected in yest')
             yest = ypss
             
             if np.any(np.isnan(ypss)):
-                print 'NaN detected in ypss ??!!'
+                print('NaN detected in ypss ??!!')
                 
         #ysi = np.argsort(yps) 
         #ys = (np.arange(len(ysi)) - ysi.mean())
@@ -327,7 +328,7 @@ def drawGraph(dg):
     
     fontSize = min(10, 10*pix_per_col/400.)
     
-    print pix_per_col, fontSize
+    #print pix_per_col, fontSize
     
     cols = {}    
     for k, v in dg.items():

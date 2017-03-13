@@ -35,7 +35,7 @@ from PYME.localization import ofind
 from PYME.localization import ofind_xcorr
 from PYME.localization import ofind_pri
 
-from PYME.Analysis import buffers
+from PYME.IO import buffers
 from PYME.IO.image import ImageStack
 
 import logging
@@ -466,8 +466,8 @@ class fitTask(taskDef.Task):
             
         if 'MULTIFIT' in dir(fitMod):
             #fit module does it's own object finding
-            ff = fitMod.FitFactory(self.data, md, background = self.bg)
-            self.res = ff.FindAndFit(self.threshold, gui=gui, cameraMaps=cameraMaps, noiseSigma=self.sigma)
+            ff = fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma=self.sigma)
+            self.res = ff.FindAndFit(self.threshold, gui=gui, cameraMaps=cameraMaps)
             return fitResult(self, self.res, [])
             
 

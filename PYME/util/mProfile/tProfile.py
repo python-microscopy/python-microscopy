@@ -4,6 +4,7 @@ import sys
 import os
 from collections import deque
 import numpy as np
+from six.moves import xrange
 #try:
 #    from resource import getrusage, RUSAGE_SELF
 #except ImportError:

@@ -78,9 +78,10 @@ def iglob(pathname, serverfilter='', include_scheme=False):
 def glob1(dirname, pattern, serverfilter=''):
     if not dirname:
         dirname = '/'
-    if isinstance(pattern, _unicode) and not isinstance(dirname, unicode):
-        dirname = unicode(dirname, sys.getfilesystemencoding() or
-                                   sys.getdefaultencoding())
+    #if isinstance(pattern, _unicode) and not isinstance(dirname, unicode):
+    #    dirname = unicode(dirname, sys.getfilesystemencoding() or
+    #                               sys.getdefaultencoding())
+    
     try:
         names = [n.rstrip('/') for n in clusterIO.listdir(dirname, serverfilter)]
     except os.error:

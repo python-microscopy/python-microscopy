@@ -48,8 +48,8 @@ class PointSource(HasTraits):
         pass
 
 class WormlikeSource(PointSource):
-    kbp = Float(100)
-    steplength=Float(10.0)
+    kbp = Float(200)
+    steplength=Float(1.0)
     lengthPerKbp=Float(10.0)
     persistLength=Float(150.0)
     #name = Str('Wormlike Chain')
@@ -58,7 +58,7 @@ class WormlikeSource(PointSource):
         from PYME.Acquire.Hardware.Simulator import wormlike2
         wc = wormlike2.wormlikeChain(self.kbp, self.steplength, self.lengthPerKbp, self.persistLength)
 
-        return wc.xp, wc.yp
+        return wc.xp, wc.yp, wc.zp
 
 
 
@@ -185,11 +185,11 @@ class Generator(HasTraits):
         self.edit_traits()
 
     def OnGenPoints(self, event):
-        self.xp, self.yp = self.source.getPoints()
+        self.xp, self.yp, self.zp = self.source.getPoints()
         self.OnGenEvents(None)
 
     def OnGenEvents(self, event):
-        from PYMEnf.Simulation import locify
+        from PYME.simulation import locify
         #from PYME.Acquire.Hardware.Simulator import wormlike2
         from PYME.IO import tabular
         from PYME.IO.image import ImageBounds
@@ -205,7 +205,9 @@ class Generator(HasTraits):
         if isinstance(self.source, WormlikeSource):
             pylab.plot(self.xp, self.yp, lw=2)
 
-        res = locify.eventify(self.xp, self.yp, self.meanIntensity, self.meanDuration, self.backgroundIntensity, self.meanEventNumber, self.scaleFactor, self.meanTime)
+        res = locify.eventify(self.xp, self.yp, self.meanIntensity, self.meanDuration, self.backgroundIntensity,
+                              self.meanEventNumber, self.scaleFactor, self.meanTime, z=self.zp)
+        
         pylab.plot(res['fitResults']['x0'],res['fitResults']['y0'], '+')
 
         ds = tabular.mappingFilter(tabular.fitResultsSource(res))
@@ -232,7 +234,7 @@ class Generator(HasTraits):
 
 def Plug(visFr):
     """Plugs this module into the gui"""
-    Generator(visFr)
+    visFr.pt_generator = Generator(visFr)
 
 
 

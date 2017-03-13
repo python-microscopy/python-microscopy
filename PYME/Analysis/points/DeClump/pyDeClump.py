@@ -23,6 +23,7 @@
 
 import tables
 import numpy as np
+from six.moves import xrange
 
 
 def findConnected(i, t,x,y,delta_x, frameIndices, assigned, clumpNum, nFrames=5):

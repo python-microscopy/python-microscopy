@@ -24,6 +24,7 @@ from numpy import *
 from PYME.IO.image import ImageStack
 #import cPickle
 from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
+from PYME.IO.load_psf import load_psf
 
 class dummy(object):
     pass
@@ -65,9 +66,10 @@ class __interpolator:
                     #mf = open(getFullExistingFilename(modName), 'rb')
                     #mod, voxelsize = load(mf)
                     #mf.close()
-                    mf = ImageStack(filename=modName)
-                    mod = mf.data[:,:,:].astype('f')
-                    voxelsize = mf.voxelsize
+                    #mf = ImageStack(filename=modName)
+                    #mod = mf.data[:,:,:].astype('f')
+                    #voxelsize = mf.voxelsize
+                    mod, voxelsize = load_psf(modName)
 
 
             self.setModel(modName, mod, voxelsize)
@@ -92,11 +94,12 @@ class __interpolator:
                 #mf = open(getFullExistingFilename(modName), 'rb')
                 #mod, voxelsize = load(mf)
                 #mf.close()
-                mf = ImageStack(filename=modName)
-                mod = mf.data[:,:,:].astype('f')
-                voxelsize = mf.voxelsize
+                # mf = ImageStack(filename=modName)
+                # mod = mf.data[:,:,:].astype('f')
+                # voxelsize = mf.voxelsize
+                mod, voxelsize_nm = load_psf(modName)
 
-            self.setModel(modName, mod, voxelsize)
+            self.setModel(modName, mod, voxelsize_nm)
 
             #print 'model changed'
             return True #model changed
@@ -105,6 +108,8 @@ class __interpolator:
 
     def setModel(self, modName, mod, voxelsize):
         self.interpModelName = modName
+        
+        #print mod.min(), mod.max()
 
         #if not voxelsize.x == md.voxelsize.x:
         #    raise RuntimeError("PSF and Image voxel sizes don't match")

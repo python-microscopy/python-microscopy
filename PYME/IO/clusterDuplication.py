@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
 """
 Created on Mon Mar 28 16:56:03 2016
 
@@ -45,11 +47,11 @@ def duplicateFiles(targetNCopies=TARGETCOPIES, serverfilter=''):
         for f in files:
             #print (top+f),len(clusterIO.locateFile(top + f)) 
             if len(clusterIO.locateFile(top + f)) < targetNCopies:
-                print 'Duplicating %s' % (top+f)
+                print('Duplicating %s' % (top + f))
                 clusterIO.mirrorFile(top + f)
                 ncopied += 1
                 
-    print '%d files duplicated' % ncopied
+    print('%d files duplicated' % ncopied)
     
 
 class DupManager(Pyro.core.ObjBase):
@@ -118,7 +120,7 @@ class DupManager(Pyro.core.ObjBase):
             
             self._leader = self.name
             
-            print '%s is the new leader' % self._leader
+            print('%s is the new leader' % self._leader)
             
             #loop through all nodes and crown ourselves
             for n in nodes:

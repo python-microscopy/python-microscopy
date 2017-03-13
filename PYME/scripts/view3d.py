@@ -23,7 +23,8 @@ import wx
 import sys
 import socket
 from optparse import OptionParser
-import SocketServer
+# noinspection PyCompatibility
+import socketserver
 
 op = OptionParser(usage = 'usage: %s [options] [filename]' % sys.argv[0])
 
@@ -65,7 +66,7 @@ class MyApp(wx.App):
 
         return 1
 
-class MyTCPHandler(SocketServer.BaseRequestHandler):
+class MyTCPHandler(socketserver.BaseRequestHandler):
     """
     The RequestHandler class for our server.
 
@@ -96,7 +97,7 @@ if __name__ == "__main__":
         
         app = MyApp(0)
 
-        sockServ = SocketServer.TCPServer(('localhost',9898), MyTCPHandler)
+        sockServ = socketserver.TCPServer(('localhost',9898), MyTCPHandler)
 
         thrd = threading.Thread(target=sockServ.serve_forever)
         thrd.start()

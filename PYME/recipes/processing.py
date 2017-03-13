@@ -513,14 +513,15 @@ class Deconvolve(Filter):
 
     
     def GetPSF(self, vshint):
+        from PYME.IO.load_psf import load_psf
         psfKey = (self.psfType, self.psfFilename, self.lorentzianFWHM, self.gaussianFWHM, self.beadDiameter, vshint)
         
         if not psfKey in self._psfCache.keys():
             if self.psfType == 'file':
-                psf, vs = np.load(self.psfFilename)
+                psf, vs = load_psf(self.psfFilename)
                 psf = np.atleast_3d(psf)
                 
-                vsa = 1e3*np.array([vs.x, vs.y, vs.z]) 
+                vsa = np.array([vs.x, vs.y, vs.z])
                 
                 if not np.allclose(vshint, vsa, rtol=.03):
                     psf = ndimage.zoom(psf, vshint/vsa)

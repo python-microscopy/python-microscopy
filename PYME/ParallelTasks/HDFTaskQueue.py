@@ -35,7 +35,11 @@ import numpy as np
 import logging
 
 import time
-import Queue
+try:
+    import Queue
+except ImportError:
+    #py3
+    import queue as Queue
 
 from PYME.IO.FileUtils.nameUtils import genResultFileName, getFullFilename, getFullExistingFilename
 from PYME.IO import h5rFile

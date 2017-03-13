@@ -24,6 +24,8 @@
 from .BaseDataSource import BaseDataSource
 import numpy as np
 
+from six.moves import xrange
+
 class dataBuffer: #buffer our io to avoid decompressing multiple times
     def __init__(self,dataSource, bLen = 12):
         self.bLen = bLen

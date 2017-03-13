@@ -422,10 +422,10 @@ class dec_conv(rldec):
 #        g = g_
         
         
-        print psf.sum()
+        #print psf.sum()
         
         g = resizePSF(psf, data_size)
-        print g.sum()
+        #print g.sum()
 
 
         #keep track of our data shape

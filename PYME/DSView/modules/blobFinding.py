@@ -27,6 +27,7 @@ import numpy
 from PYME.DSView.OverlaysPanel import OverlayPanel
 import wx.lib.agw.aui as aui
 import os
+import six
 
 class blobFinder:
     def __init__(self, dsviewer):
@@ -311,7 +312,7 @@ class blobFinder:
         pylab.axis('equal')
         
     def saveShiftmaps(self, event=None):
-        import cPickle
+        from six.moves import cPickle
         for k in self.shiftfields.keys():
             fdialog = wx.FileDialog(None, 'Save Positions ...',
                 wildcard='Shiftmap|*.sm', defaultFile=os.path.splitext(self.image.names[k])[0] + '.sm', style=wx.SAVE)

@@ -21,10 +21,12 @@
 #
 ##################
 
-import serial;
+import serial
 import time
 
-class piezo_e816:    
+from .base_piezo import PiezoBase
+
+class piezo_e816(PiezoBase):
     def __init__(self, portname='COM1', maxtravel = 12.00, Osen=None, hasTrigger=False):
         self.max_travel = maxtravel
         self.waveData = None

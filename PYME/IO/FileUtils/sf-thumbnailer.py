@@ -30,7 +30,12 @@
 import sys
 import gnomevfs
 
-import cPickle
+try:
+    # noinspection PyCompatibility
+    import cPickle
+except ImportError:
+    #py3
+    import pickle as cPickle
 
 if __name__ == '__main__':
     import matplotlib

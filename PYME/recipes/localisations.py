@@ -70,6 +70,7 @@ class DensityMapping(ModuleBase):
     MCProbability = Float(1.0)
     numSamples = Int(10)
     colours = List(['none'])
+    zBoundsMode = Enum(['manual', 'min-max'])
     zBounds = ListFloat([-500, 500])
     zSliceThickness = Float(50.0)
     softRender = Bool(True)
@@ -84,6 +85,8 @@ class DensityMapping(ModuleBase):
             cf = inp
 
         cf.imageBounds = ImageBounds.estimateFromSource(inp)
+        if self.zBoundsMode == 'min-max':
+            self.zBounds[0], self.zBounds[1] = float(cf.imageBounds.z0), float(cf.imageBounds.z1)
 
         renderer = renderers.RENDERERS[str(self.renderingModule)](None, cf)
 
@@ -365,9 +368,12 @@ class DBSCANClustering(ModuleBase):
     def hide_in_overview(self):
         return ['columns']
 
+#TODO - this is very specialized and probably doesn't belong here - at least not in this form
 @register_module('ClusterCountVsImagingTime')
 class ClusterCountVsImagingTime(ModuleBase):
     """
+    WARNING: This module will likely move, dissapear, or be refactored
+
     ClusterCountVsImagingTime iteratively filters a dictionary-like object on t, and at each step counts the number of
     labeled objects (e.g. DBSCAN clusters) which contain at least N-points. It does this for two N-points, so one can be
     set according to density with all frames included, and the other can be set for one of the earlier frame-counts.
@@ -445,5 +451,135 @@ class ClusterCountVsImagingTime(ModuleBase):
         namespace[self.outputName] = res
 
 
+@register_module('LabelsFromImage')
+class LabelsFromImage(ModuleBase):
+    """
+    Maps each point in the input table to a pixel in a labelled image, and extracts the pixel value at that location to
+    use as a label for the point data. 
 
+    Inputs
+    ------
+    inputName: name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
+    inputImage: name of image input containing labels
+
+    Outputs
+    -------
+    outputName: name of tabular output. A mapped version of the tabular input with 2 extra columns
+        objectID: Label number from image, mapped to each localization within that label
+        NEvents: Number of localizations within the label that a given localization belongs to
+
+    """
+    inputName = Input('input')
+    inputImage = Input('labeled')
+
+    outputName = Output('labeled_points')
+
+    def execute(self, namespace):
+        from PYME.IO import tabular
+        from PYME.Analysis.points import cluster_morphology
+
+        inp = namespace[self.inputName]
+        img = namespace[self.inputImage]
+        #img = image.openImages[dlg.GetStringSelection()]
+
+        ids, numPerObject = cluster_morphology.get_labels_from_image(img, inp)
+
+        labeled = tabular.mappingFilter(inp)
+        labeled.addColumn('objectID', ids)
+        labeled.addColumn('NEvents', numPerObject[ids - 1])
+
+        # propagate metadata, if present
+        try:
+            labeled.mdh = namespace[self.inputName].mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = labeled
+
+
+@register_module('MeasureClusters3D')
+class MeasureClusters3D(ModuleBase):
+    """
+    Measures the 3D morphology of clusters of points
+
+    Inputs
+    ------
+
+    inputName : name of tabular data containing x, y, and z columns and labels identifying which cluster each point
+                belongs to.
+
+    Outputs
+    -------
+
+    outputName: a new tabular data source containing measurements of the clusters
+    
+    Parameters
+    ----------
+        labelKey: name of column to use as a label identifying clusters
+
+    Notes
+    -----
+
+    Measures calculated (to be expanded)
+    --------------------------------------
+        count: the number of points in the cluster
+        x, y, z: Center of mass positions, no weighting based on localization precision
+        gyrationRadius: AKA RMS distance to center of cluster - see also supplemental text of DOI: 10.1038/nature16496
+        axis0, axis1, axis2: principle axes of point cloud using SVD
+        sigma0, sigma1, sigma2: spread along each principle axis (the singular values/ sqrt(N-1))
+
+    """
+    inputName = Input('input')
+    labelKey = CStr('clumpIndex')
+
+    outputName = Output('clusterMeasures')
+
+    def execute(self, namespace):
+        from PYME.Analysis.points import cluster_morphology as cmorph
+        import numpy as np
+
+        inp = namespace[self.inputName]
+
+        # make sure labeling scheme is consistent with what pyme conventions
+        if np.min(inp[self.labelKey]) < 0:
+            raise UserWarning('This module expects 0-label for unclustered points, and no negative labels')
+
+        labels = inp[self.labelKey]
+        I = np.argsort(labels)
+        I = I[labels[I] > 0]
+        
+        x_vals, y_vals, z_vals = inp['x'][I], inp['y'][I], inp['z'][I]
+        labels = labels[I]
+        maxLabel = labels[-1]
+        
+        #find the unique labels, and their separation in the sorted list of points
+        unique_labels, counts = np.unique(labels, return_counts=True)
+        
+        #allocate memory to store results in
+        measurements = np.zeros(maxLabel+1, cmorph.measurement_dtype)
+
+        # loop over labels, recalling that input is now sorted, and we know how many points are in each label.
+        # Note that missing labels result in zeroed entries (i.e. the initial values are not changed).
+        # Missing values can be filtered out later, if desired, by filtering on the 'counts' column, but having a dense
+        # array where index == label number makes any postprocessing in which we might want to find the data
+        # corresponding to a particular label MUCH easier and faster.
+        indi = 0
+        for label_num, ct in zip(unique_labels, counts):
+            indf = indi + ct
+
+            # create x,y,z arrays for this cluster, and calculate center of mass
+            x, y, z = x_vals[indi:indf], y_vals[indi:indf], z_vals[indi:indf]
+            
+            cmorph.measure_3d(x, y, z, output=measurements[label_num])
+
+            indi = indf
+
+        meas = tabular.recArrayInput(measurements)
+
+        try:
+            meas.mdh = namespace[self.inputName].mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = meas
 

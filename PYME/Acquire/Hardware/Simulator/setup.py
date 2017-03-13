@@ -30,16 +30,28 @@ else:
     linkArgs = ['-static-libgcc']
 
 #from PYME.misc import cython_numpy_monkey
+from Cython.Build import cythonize
+import os
 
 def configuration(parent_package = '', top_path = None):
+    from numpy.distutils.core import Extension
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    config = Configuration('Simulator', parent_package, top_path)
+    
+    ext = Extension(name='.'.join([parent_package, 'Simulator', 'illuminate']),
+                    sources=[os.path.join(os.path.dirname(__file__),'illuminate.pyx')],
+                    include_dirs=get_numpy_include_dirs(),
+                    extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math', '-march=nocona', '-mtune=nocona'],
+                    extra_link_args=linkArgs)
 
-    config.add_extension('illuminate',
-        sources=['illuminate.pyx'],
-        include_dirs = [get_numpy_include_dirs()],
-	extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=nocona', '-mtune=nocona'],
-        extra_link_args=linkArgs)
+    config = Configuration('Simulator', parent_package, top_path, ext_modules=cythonize([ext]))
+    
+    # config = Configuration('Simulator', parent_package, top_path)
+    #
+    # config.add_extension('illuminate',
+     #    sources=['illuminate.pyx'],
+     #    include_dirs = [get_numpy_include_dirs()],
+	# extra_compile_args = ['-O3', '-fno-exceptions', '-ffast-math', '-march=nocona', '-mtune=nocona'],
+     #    extra_link_args=linkArgs)
 
     return config
 

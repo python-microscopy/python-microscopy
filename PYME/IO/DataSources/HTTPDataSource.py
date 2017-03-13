@@ -28,7 +28,13 @@ from .BaseDataSource import BaseDataSource
 #import httplib
 #import urllib
 import requests
-import cPickle as pickle
+try:
+    # noinspection PyCompatibility
+    import cPickle as pickle
+except:
+    #py3
+    import pickle
+    
 import time
 
 SHAPE_LIFESPAN = 5

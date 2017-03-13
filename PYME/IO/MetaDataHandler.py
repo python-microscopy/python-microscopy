@@ -64,7 +64,14 @@ The format of a metadata handler is defined by the `MDHandlerBase` class.
 
 
 """
-from UserDict import DictMixin
+try:
+    # noinspection PyCompatibility
+    from UserDict import DictMixin
+except ImportError:
+    #py3
+    from collections import MutableMapping as DictMixin
+    
+import six
 
 #lists where bits of hardware can register the fact that they are capable of 
 #providing metadata, by appending a function with the signature:
@@ -140,6 +147,17 @@ class MDHandlerBase(DictMixin):
 
     def __getitem__(self, name):
         return self.getEntry(name)
+
+    if six.PY3:
+        def __len__(self):
+            return len(self.getEntryNames())
+    
+        def __iter__(self):
+            for k in self.getEntryNames():
+                yield self.getEntry(k)
+                
+        def __delitem__(self, key):
+            raise RuntimeError('Cannot delete metadata item')
         
     def getOrDefault(self, name, default):
         """Returns the entry for a given name, of a default value if the key
@@ -365,6 +383,7 @@ class NestedClassMDHandler(MDHandlerBase):
 
     
     def getEntry(self,entryName):
+        #print(entryName)
         return eval('self.'+entryName)
 #        try:
 #            return eval('self.'+entryName)
