@@ -30,6 +30,9 @@ import threading
 import os
 import sys
 
+import logging
+logger = logging.getLogger(__name__)
+
 homedir = os.path.expanduser('~') #unix & possibly others ...
 execPath = []
 
@@ -149,6 +152,7 @@ class BGInitTask(object):
             self.status = self.NOT_PRESENT
         except Exception as e:
             self.status = self.TASK_FAILED
+            logger.exception('Error running background init task %s' % self.name)
             raise e
         
     def get_status_msg(self):
@@ -196,7 +200,11 @@ class GUIInitTask(object):
         global defGlobals
         global defLocals
         #try:
-        _exec(self.codeObj, defGlobals, defLocals)
+        if callable(self.codeObj):
+            self.codeObj(parent, scope)
+        else:
+            _exec(self.codeObj, defGlobals, defLocals)
+
         #except Exception as e:
         #    raise e
 

@@ -111,34 +111,26 @@ from PYME.Acquire.Hardware.Piezos import piezo_e709, offsetPiezo
 
 scope._piFoc = piezo_e709.piezo_e709T('COM9', 400, 0, True)
 scope.hardwareChecks.append(scope._piFoc.OnTarget)
+scope.CleanupFunctions.append(scope._piFoc.close)
 
 scope.piFoc = offsetPiezo.piezoOffsetProxy(scope._piFoc)
 scope.register_piezo(scope.piFoc, 'z')
 
 #server so drift correction can connect to the piezo
-#pst = offsetPiezo.ServerThread(scope.piFoc)
-#pst.start()
-
-#scope.CleanupFunctions.append(pst.cleanup)
-scope.CleanupFunctions.append(scope._piFoc.close)
+pst = offsetPiezo.ServerThread(scope.piFoc)
+pst.start()
+scope.CleanupFunctions.append(pst.cleanup)
 """)
 
 InitBG('XY Stage', """
 #XY Stage
 from PYME.Acquire.Hardware.Piezos import piezo_c867
 scope.xystage = piezo_c867.piezo_c867T('COM8')
-#scope.piezos.append((scope.xystage, 2, 'Stage_X'))
-#scope.piezos.append((scope.xystage, 1, 'Stage_Y'))
+
 scope.joystick = piezo_c867.c867Joystick(scope.xystage)
 #scope.joystick.Enable(True)
 scope.hardwareChecks.append(scope.xystage.OnTarget)
 scope.CleanupFunctions.append(scope.xystage.close)
-
-#scope.positioning['x'] = (scope.xystage, 1, 1000)
-#scope.positioning['y'] = (scope.xystage, 2, -1000)
-
-#scope.state.registerHandler('Positioning.x', lambda : 1000*scope.xystage.GetPos(1), lambda v : scope.xystage.MoveTo(1, v*1e-3))
-#scope.state.registerHandler('Positioning.y', lambda : -1000*scope.xystage.GetPos(2), lambda v : scope.xystage.MoveTo(2, -v*1e-3))
 
 scope.register_piezo(scope.xystage, 'x', channel=1)
 scope.register_piezo(scope.xystage, 'y', channel=2, multiplier=-1)
