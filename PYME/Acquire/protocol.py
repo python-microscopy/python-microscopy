@@ -204,7 +204,7 @@ def _get_protocol_dict():
     return protocolDict
 
 def get_protocol_list():
-    protocolList = ['<None>', ] + list(_get_protocol_dict().keys())
+    protocolList = ['<None>', ] + sorted(list(_get_protocol_dict().keys()))
 
     return protocolList
 
