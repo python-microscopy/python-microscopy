@@ -146,7 +146,10 @@ class BGInitTask(object):
         global defLocals
         self.status = self.TASK_RUNNING
         try:
-            _exec(self.codeObj, defGlobals, defLocals)
+            if callable(self.codeObj):
+                self.codeObj(defLocals['scope'])
+            else:
+                _exec(self.codeObj, defGlobals, defLocals)
             self.status = self.TASK_DONE
         except HWNotPresent:
             self.status = self.NOT_PRESENT
@@ -219,3 +222,16 @@ def InitGUI(code='', name=''):
         The code that will be executed - something that `exec` understands  
     """
     defLocals['postInit'].append(GUIInitTask(name, code))
+
+#define decorators
+def init_gui(name):
+    def _init_gui(fcn):
+        return InitGUI(fcn, name)
+        
+    return _init_gui
+        
+def init_hardware(name):
+    def _init_hw(fcn):
+        return InitBG(name, fcn)
+    
+    return _init_hw
