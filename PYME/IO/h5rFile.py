@@ -107,7 +107,7 @@ class H5RFile(object):
                 table.append(data)
             except AttributeError:
                 # we don't have a table with that name - create one
-                self._h5file.createTable(self._h5file.root, tablename, data,
+                self._h5file.create_table(self._h5file.root, tablename, data,
                                                filters=tables.Filters(complevel=5, shuffle=True),
                                                expectedrows=500000)
 
