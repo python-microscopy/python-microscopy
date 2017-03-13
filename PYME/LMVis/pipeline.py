@@ -255,7 +255,6 @@ def _processEvents(ds, events, mdh):
 
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
-        #self.dataSources = {}
         self.recipe = ModuleCollection(execute_on_invalidation=True)
 
         self.selectedDataSourceKey = None
@@ -268,10 +267,6 @@ class Pipeline:
 
         self.fluorSpecies = {}
         self.fluorSpeciesDyes = {}
-        #self.chromaticShifts = {}
-        #self.t_p_dye = 0.1
-        #self.t_p_other = 0.1
-        #self.t_p_background = .01
 
         self.blobSettings = BlobSettings()
         self.objects = None
@@ -657,7 +652,7 @@ class Pipeline:
         """
         #clear out old colour keys
         for k in self.mapping.mappings.keys():
-            if k.starts_with('p_'):
+            if k.startswith('p_'):
                 self.mapping.mappings.pop(k)
         
         if 'gFrac' in self.selectedDataSource.keys():
@@ -793,6 +788,9 @@ class Pipeline:
             of.write('\t'.join(['%e' % c for c in row]) + '\n')
     
         of.close()
+        
+    def save_hdf(self, filename):
+        self.colourFilter.to_hdf(filename, tablename='Localizations', metadata=self.mdh)
         
     def toDataFrame(self, keys=None):
         import pandas as pd
