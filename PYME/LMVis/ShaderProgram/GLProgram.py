@@ -24,10 +24,8 @@ from OpenGL.GL import *
 
 class GLProgram(object):
 
-    _shader_program = None
-
     def __init__(self):
-        pass
+        self._shader_program = None
 
     @abc.abstractmethod
     def __enter__(self):
@@ -43,3 +41,5 @@ class GLProgram(object):
     def get_shader_program(self):
         return self._shader_program
 
+    def get_uniform_location(self, uniform_name):
+        return self._shader_program.get_uniform_location(uniform_name)

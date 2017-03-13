@@ -712,7 +712,7 @@ class LMGLCanvas(GLCanvas):
 
     def setTriang3D(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=True, alpha=1, recenter=True):
         if self.use_shaders:
-            self.layers.append(WireFrameRenderLayer(x, y, z, c, self.cmap, sizeCutoff, internalCull, zrescale, alpha, ))
+            self.layers.append(WireFrameRenderLayer(x, y, z, c, self.cmap, sizeCutoff, internalCull, zrescale, alpha))
         else:
             #center data
             x = x #- x.mean()

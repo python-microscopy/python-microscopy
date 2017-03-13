@@ -22,7 +22,7 @@ import os
 
 from OpenGL.GL import *
 from PYME.LMVis.ShaderProgram.GLProgram import GLProgram
-from PYME.LMVis.ShaderProgram.Shaderprogram import ShaderProgram
+from PYME.LMVis.ShaderProgram.ShaderProgram import ShaderProgram
 from PYME.LMVis.gl_texture import GaussTexture
 
 
