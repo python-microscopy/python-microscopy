@@ -506,7 +506,7 @@ def calcCorrections(filenames):
         if fn.split('.')[-1] == 'kdf':
             g,r = read_bead_data(fn)
         else:
-            h5f = tables.openFile(fn)
+            h5f = tables.open_file(fn)
             g,r = read_h5f_cols(h5f, 0)
             h5f.close()
 

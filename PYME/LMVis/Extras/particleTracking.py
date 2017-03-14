@@ -27,9 +27,9 @@ class ParticleTracker:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        visFr.AddMenuItem('Extras', "&Track single molecule trajectories", self.OnTrackMolecules)
-        visFr.AddMenuItem('Extras', "Plot Mean Squared Displacement", self.OnCalcMSDs)
-        visFr.AddMenuItem('Extras', "Coalesce clumps", self.OnCoalesce)
+        visFr.AddMenuItem('Extras>Tracking/Chaining', "&Track single molecule trajectories", self.OnTrackMolecules)
+        visFr.AddMenuItem('Extras>Tracking/Chaining', "Plot Mean Squared Displacement", self.OnCalcMSDs)
+        visFr.AddMenuItem('Extras>Tracking/Chaining', "Coalesce clumps", self.OnCoalesce)
 
     def OnTrackMolecules(self, event):
         import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI

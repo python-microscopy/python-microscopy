@@ -41,7 +41,7 @@ curpos = 0
 tq = Pyro.core.getProxyForURI('PYRONAME://taskQueue')
 
 while 1:
-    h5file = tables.openFile(fname)
+    h5file = tables.open_file(fname)
     seriesName = h5file.filename
     l = h5file.root.ImageData.shape[0]
     #h5file.close()

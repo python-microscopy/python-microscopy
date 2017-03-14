@@ -47,7 +47,7 @@ def generateThumbnail(inputFile, thumbSize):
     #logging.debug('Ouput File: %s\n' % outputFile)
     #logging.debug('Thumb Size: %s\n' % thumbSize)
 
-    h5f = tables.openFile(inputFile)
+    h5f = tables.open_file(inputFile)
 
     dataSource = HDFDataSource.DataSource(inputFile, None)
 

@@ -106,6 +106,9 @@ class deconvolver:
                 
             else:
                 psfFilename, psf, vs = dlg.GetPSF(vshint = vx)
+                
+                if psf.shape[2] < 2:
+                    raise RuntimeError('Expepected a 3D PSF for 3D deconvolution. For 2D deconvolution use the DeconvMovie function')
 
                 decMDH['Deconvolution.PSFFile'] = dlg.GetPSFFilename()
 

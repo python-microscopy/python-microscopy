@@ -54,17 +54,17 @@ def convertFiles(pathToData, outFile, complib='zlib', complevel=9):
 
         xSize, ySize = f1.shape[0:2]
 
-        outF = tables.openFile(outFile, 'w')
+        outF = tables.open_file(outFile, 'w')
 
         filt = tables.Filters(complevel, complib, shuffle=True)
 
-        imageData = outF.createEArray(outF.root, 'ImageData', tables.UInt16Atom(), (0,xSize,ySize), filters=filt, expectedrows=len(fnl2))
+        imageData = outF.create_earray(outF.root, 'ImageData', tables.UInt16Atom(), (0,xSize,ySize), filters=filt, expectedrows=len(fnl2))
 
         for fn in fnl2:
             #print fn
             imageData.append(array(Image.open(fn)).newbyteorder('BE').reshape(1, xSize, ySize))
 
-        outEvents = outF.createTable(outF.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
+        outEvents = outF.create_table(outF.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
 
         outF.flush()
         outF.close()

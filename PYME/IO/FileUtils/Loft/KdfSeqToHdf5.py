@@ -44,11 +44,11 @@ def convertFiles(pathToData, outFile, complib='zlib', complevel=9):
 
         xSize, ySize = f1.shape[0:2]
 
-        outF = tables.openFile(outFile, 'w')
+        outF = tables.open_file(outFile, 'w')
 
         filt = tables.Filters(complevel, complib, shuffle=True)
 
-        imageData = outF.createEArray(outF.root, 'ImageData', tables.UInt16Atom(), (0,xSize,ySize), filters=filt, expectedrows=len(fnl2))
+        imageData = outF.create_earray(outF.root, 'ImageData', tables.UInt16Atom(), (0,xSize,ySize), filters=filt, expectedrows=len(fnl2))
 
         for fn in fnl2:
             imageData.append(read_kdf.ReadKdfData(fn).reshape(1, xSize, ySize))
