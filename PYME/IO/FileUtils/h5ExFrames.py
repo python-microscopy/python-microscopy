@@ -43,7 +43,7 @@ def extractFrames(dataSource, metadata, origName, outFile, start, end, subsamp=1
     nframes = end - start
     xSize, ySize = dataSource.getSliceShape()
 
-    ims = h5out.createEArray(h5out.root,'ImageData',tables.UInt16Atom(),(0,xSize,ySize), filters=filters, expectedrows=nframes)
+    ims = h5out.create_earray(h5out.root,'ImageData',tables.UInt16Atom(),(0,xSize,ySize), filters=filters, expectedrows=nframes)
     for frameN in range(start,end, subsamp):
         im = dataSource.getSlice(frameN)[None, :,:]
         for fN in range(frameN+1, frameN+subsamp):
