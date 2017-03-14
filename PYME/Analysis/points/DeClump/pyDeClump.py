@@ -87,7 +87,7 @@ def deClumpf(h5fFile):
     if type(h5fFile) == tables.file.File:
         h5f = h5fFile
     else:
-        h5f = tables.openFile(h5fFile)
+        h5f = tables.open_file(h5fFile)
 
     if not 'FitResults' in dir(h5f.root):
         raise RuntimeError('Was expecting to find a "FitResults" table')

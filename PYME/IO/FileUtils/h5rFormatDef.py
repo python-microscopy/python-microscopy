@@ -26,7 +26,7 @@ from PYME.IO import MetaDataHandler
 
 
 #create a new file
-h5ResultsFile = tables.openFile(resultsFilename, 'w')
+h5ResultsFile = tables.open_file(resultsFilename, 'w')
 
 #create a metadata handler for the results file to allow us to add entries
 resultsMDH = MetaDataHandler.HDFMDHandler(h5ResultsFile)
@@ -45,7 +45,7 @@ class SpoolEvent(tables.IsDescription):
    Time = tables.Time64Col()
    EventDescr = tables.StringCol(256)
    
-resultsEvents = h5ResultsFile.createTable(h5ResultsFile.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
+resultsEvents = h5ResultsFile.create_table(h5ResultsFile.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
 
 
 
@@ -86,7 +86,7 @@ results = np.hstack([result1, result2])
 
 
 #create a new table which matches the datatype of the results and populate it
-h5ResultsFile.createTable(h5ResultsFile.root, 'FitResults', results, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
+h5ResultsFile.create_table(h5ResultsFile.root, 'FitResults', results, filters=tables.Filters(complevel=5, shuffle=True), expectedrows=500000)
 
 #add some more results (the results array can be any length, but adding in chuncks
 #as the data comes in avoids having to keep it all in memory)

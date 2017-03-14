@@ -27,7 +27,7 @@ class H5File(object):
     def __init__(self, pth, mode='r'):
         if mode in ['w', 'a', 'r+'] and os.path.exists(pth):
             raise RuntimeError('Cannot open existing file in write mode')
-        self.h5f = tables.openFile(pth, mode)
+        self.h5f = tables.open_file(pth, mode)
         self.mode = mode
 
         self.complevel = 6
@@ -99,16 +99,16 @@ class H5File(object):
             
             if not self.usePZFFormat:                
                 filt = tables.Filters(self.complevel, self.complib, shuffle=True)
-                self.imageData = self.h5f.createEArray(self.h5f.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(framesize), filters=filt, chunkshape=(1,)+tuple(framesize))                
+                self.imageData = self.h5f.create_earray(self.h5f.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(framesize), filters=filt, chunkshape=(1,)+tuple(framesize))
             else:
-                self.compImageData = self.h5f.createVLArray(self.h5f.root, 'PZFImageData', tables.VLStringAtom())
+                self.compImageData = self.h5f.create_vlarray(self.h5f.root, 'PZFImageData', tables.VLStringAtom())
                 self.compImageData.attrs.framesize = framesize            
 
 
     def _checkCreateEventsTable(self):
         if not 'Events' in dir(self.h5f.root):
          filt = tables.Filters(self.complevel, self.complib, shuffle=True)
-         self.events = self.h5f.createTable(self.h5f.root, 'Events', HDFTaskQueue.SpoolEvent,filters=filt)
+         self.events = self.h5f.create_table(self.h5f.root, 'Events', HDFTaskQueue.SpoolEvent,filters=filt)
             
     
     def putFrame(self, frame):

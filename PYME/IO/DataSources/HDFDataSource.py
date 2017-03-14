@@ -34,7 +34,7 @@ class DataSource(BaseDataSource):
     moduleName = 'HDFDataSource'
     def __init__(self, h5Filename, taskQueue=None):
         self.h5Filename = getFullExistingFilename(h5Filename)#convert relative path to full path
-        self.h5File = tables.openFile(self.h5Filename)
+        self.h5File = tables.open_file(self.h5Filename)
         
         if 'PZFImageData' in dir(self.h5File.root):
             self.usePZFFormat = True
@@ -74,4 +74,4 @@ class DataSource(BaseDataSource):
 
     def reloadData(self):
         self.h5File.close()
-        self.h5File = tables.openFile(self.h5Filename)
+        self.h5File = tables.open_file(self.h5Filename)

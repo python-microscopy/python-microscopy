@@ -79,7 +79,7 @@ class H5Exporter(Exporter):
         self.complevel = complevel
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
-        h5out = tables.openFile(outFile,'w', chunk_cache_size=2**23)
+        h5out = tables.open_file(outFile,'w', chunk_cache_size=2**23)
         filters=tables.Filters(self.complevel,self.complib,shuffle=True)
 
         nframes = (zslice.stop - zslice.start)/zslice.step
@@ -91,7 +91,7 @@ class H5Exporter(Exporter):
         #atm = tables.UInt16Atom()
         atm = tables.Atom.from_dtype(data[xslice, yslice, 0].dtype)
 
-        ims = h5out.createEArray(h5out.root,'ImageData',atm,(0,xSize,ySize), filters=filters, expectedrows=nframes, chunkshape=(1,xSize,ySize))
+        ims = h5out.create_earray(h5out.root,'ImageData',atm,(0,xSize,ySize), filters=filters, expectedrows=nframes, chunkshape=(1,xSize,ySize))
 
         curFrame = 0
         for frameN in range(zslice.start,zslice.stop, zslice.step):
@@ -133,7 +133,7 @@ class H5Exporter(Exporter):
         outMDH.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
 
 
-        outEvents = h5out.createTable(h5out.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
+        outEvents = h5out.create_table(h5out.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
 
         if not events is None:
             #copy events to results file

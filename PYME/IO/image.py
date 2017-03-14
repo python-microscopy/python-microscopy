@@ -446,7 +446,7 @@ class ImageStack(object):
         cand = os.path.sep.join(fns[:-2] + ['analysis',] + fns[-2:]) + 'r'
         print(cand)
         if False:#os.path.exists(cand):
-            h5Results = tables.openFile(cand)
+            h5Results = tables.open_file(cand)
 
             if 'FitResults' in dir(h5Results.root):
                 self.fitResults = h5Results.root.FitResults[:]

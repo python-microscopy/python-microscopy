@@ -300,7 +300,7 @@ class HDFMDHandler(MDHandlerBase):
         if self.h5file.__contains__('/MetaData'):
             self.md = self.h5file.root.MetaData
         else:
-            self.md = self.h5file.createGroup(self.h5file.root, 'MetaData')
+            self.md = self.h5file.create_group(self.h5file.root, 'MetaData')
 
         if not mdToCopy is None:
             self.copyEntriesFrom(mdToCopy)
@@ -311,7 +311,7 @@ class HDFMDHandler(MDHandlerBase):
         en = entPath[-1]
         ep = entPath[:-1]
 
-        currGroup = self.h5file._getOrCreatePath('/'.join(['', 'MetaData']+ ep), True)
+        currGroup = self.h5file._get_or_create_path('/'.join(['', 'MetaData']+ ep), True)
         currGroup._f_setAttr(en, value)
         self.h5file.flush()
 

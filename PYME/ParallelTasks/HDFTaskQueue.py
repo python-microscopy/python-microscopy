@@ -727,7 +727,7 @@ class HDFTaskQueue(HDFResultsTaskQueue):
 
 
         if os.path.exists(ffn): #file already exists - read from it
-            self.h5DataFile = tables.openFile(ffn, 'r')
+            self.h5DataFile = tables.open_file(ffn, 'r')
             #self.metaData = MetaData.genMetaDataFromHDF(self.h5DataFile)
             self.dataMDH = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(self.h5DataFile))
             #self.dataMDH.mergeEntriesFrom(MetaData.TIRFDefault)
@@ -750,11 +750,11 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             self.dataRW = False
 
         else: #make ourselves a new file
-            self.h5DataFile = tables.openFile(ffn, 'w')
+            self.h5DataFile = tables.open_file(ffn, 'w')
             filt = tables.Filters(complevel, complib, shuffle=True)
 
-            self.imageData = self.h5DataFile.createEArray(self.h5DataFile.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(frameSize), filters=filt, chunkshape=(1,)+tuple(frameSize))
-            self.events = self.h5DataFile.createTable(self.h5DataFile.root, 'Events', SpoolEvent,filters=filt)
+            self.imageData = self.h5DataFile.create_earray(self.h5DataFile.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(frameSize), filters=filt, chunkshape=(1,)+tuple(frameSize))
+            self.events = self.h5DataFile.create_table(self.h5DataFile.root, 'Events', SpoolEvent,filters=filt)
             self.imNum=0
             self.acceptNewTasks = True
 

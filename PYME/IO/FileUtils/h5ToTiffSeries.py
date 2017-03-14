@@ -33,7 +33,7 @@ if __name__ == '__main__':
     inFile = sys.argv[1]
     outDir = sys.argv[2]
     
-    h5f = tables.openFile(inFile)
+    h5f = tables.open_file(inFile)
     
     nSlices = h5f.root.ImageData.shape[0]
     

@@ -60,7 +60,7 @@ class EventLogger:
       #self.scope = scope
       self.hdf5File = hdf5File
     
-      self.evts = self.hdf5File.createTable(hdf5File.root, 'Events', SpoolEvent)
+      self.evts = self.hdf5File.create_table(hdf5File.root, 'Events', SpoolEvent)
 
     def logEvent(self, eventName, eventDescr = '', timestamp=None):
         """Log an event.
@@ -100,11 +100,11 @@ class Spooler(sp.Spooler):
     """Responsible for the mechanics of spooling to a pytables/hdf file.
     """
     def __init__(self, filename, frameSource, frameShape, complevel=6, complib='zlib', **kwargs):
-        self.h5File = tables.openFile(filename, 'w')
+        self.h5File = tables.open_file(filename, 'w')
            
         filt = tables.Filters(complevel, complib, shuffle=True)
         
-        self.imageData = self.h5File.createEArray(self.h5File.root, 'ImageData', tables.UInt16Atom(), (0,frameShape[0],frameShape[1]), filters=filt)
+        self.imageData = self.h5File.create_earray(self.h5File.root, 'ImageData', tables.UInt16Atom(), (0,frameShape[0],frameShape[1]), filters=filt)
         self.md = MetaDataHandler.HDFMDHandler(self.h5File)
         self.evtLogger = EventLogger(self, self.h5File)
         
