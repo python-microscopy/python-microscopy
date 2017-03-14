@@ -58,11 +58,11 @@ def convertFile(pathToData, outFile, frameSize = [256,256], pixelsize=None, comp
 
         nFrames = fLength/(2*xSize*ySize)
 
-        outF = tables.openFile(outFile, 'w')
+        outF = tables.open_file(outFile, 'w')
 
         filt = tables.Filters(complevel, complib, shuffle=True)
 
-        imageData = outF.createEArray(outF.root, 'ImageData', tables.UInt16Atom(), (0,xSize,ySize), filters=filt, expectedrows=nFrames)
+        imageData = outF.create_earray(outF.root, 'ImageData', tables.UInt16Atom(), (0,xSize,ySize), filters=filt, expectedrows=nFrames)
 
         for i in range(nFrames):
             d1 = numpy.fromfile(f1, '>u2', xSize*ySize) >> 4

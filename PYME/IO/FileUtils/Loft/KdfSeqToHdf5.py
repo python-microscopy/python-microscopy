@@ -44,7 +44,7 @@ def convertFiles(pathToData, outFile, complib='zlib', complevel=9):
 
         xSize, ySize = f1.shape[0:2]
 
-        outF = tables.openFile(outFile, 'w')
+        outF = tables.open_file(outFile, 'w')
 
         filt = tables.Filters(complevel, complib, shuffle=True)
 

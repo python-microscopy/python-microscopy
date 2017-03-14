@@ -48,11 +48,11 @@ def convertFile(pathToData, outFile, pixelsize=None, complib='zlib', complevel=9
 
         xSize, ySize = f1.shape[0:2]
 
-        outF = tables.openFile(outFile, 'w')
+        outF = tables.open_file(outFile, 'w')
 
         filt = tables.Filters(complevel, complib, shuffle=True)
 
-        imageData = outF.createEArray(outF.root, 'ImageData', tables.UInt16Atom(), (0,xSize,ySize), filters=filt, expectedrows=f1.shape[2])
+        imageData = outF.create_earray(outF.root, 'ImageData', tables.UInt16Atom(), (0,xSize,ySize), filters=filt, expectedrows=f1.shape[2])
 
         for i in range(f1.shape[2]):
             imageData.append(f1[:,:,i].reshape(1, xSize, ySize))
@@ -63,7 +63,7 @@ def convertFile(pathToData, outFile, pixelsize=None, complib='zlib', complevel=9
             hdh.setEntry('voxelsize.x', pixelsize)
             hdh.setEntry('voxelsize.y', pixelsize)
 
-        outEvents = outF.createTable(outF.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
+        outEvents = outF.create_table(outF.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
 
         outF.flush()
         outF.close()

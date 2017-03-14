@@ -37,7 +37,7 @@ class SpoolEvent(tables.IsDescription):
 
 def extractFrames(dataSource, metadata, origName, outFile, start, end, subsamp=1, complib='zlib', complevel=5):
     
-    h5out = tables.openFile(outFile,'w')
+    h5out = tables.open_file(outFile,'w')
     filters=tables.Filters(complevel,complib,shuffle=True)
 
     nframes = end - start

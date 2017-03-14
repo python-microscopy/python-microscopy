@@ -27,7 +27,7 @@ class H5File(object):
     def __init__(self, pth, mode='r'):
         if mode in ['w', 'a', 'r+'] and os.path.exists(pth):
             raise RuntimeError('Cannot open existing file in write mode')
-        self.h5f = tables.openFile(pth, mode)
+        self.h5f = tables.open_file(pth, mode)
         self.mode = mode
 
         self.complevel = 6

@@ -26,7 +26,7 @@ from PYME.IO import MetaDataHandler
 
 
 #create a new file
-h5ResultsFile = tables.openFile(resultsFilename, 'w')
+h5ResultsFile = tables.open_file(resultsFilename, 'w')
 
 #create a metadata handler for the results file to allow us to add entries
 resultsMDH = MetaDataHandler.HDFMDHandler(h5ResultsFile)
