@@ -140,11 +140,8 @@ class RenderLayer(object):
             
         glPushMatrix ()
         glColor4f(0,0.5,0, 1)
-        if glcanvas.use_shaders:
-            with glcanvas.defaultProgram:
-                glDrawArrays(self.drawModes[self.mode], 0, nVertices)
-        else:
-            glDrawArrays(self.drawModes[self.mode], 0, nVertices)
+
+        glDrawArrays(self.drawModes[self.mode], 0, nVertices)
 
         glPopMatrix()
 
@@ -368,14 +365,8 @@ class LMGLCanvas(GLCanvas):
 
         if not self._is_initialized:
             self.InitGL()
-            if self.use_shaders:
-                self.defaultProgram = DefaultShaderProgram()
-                self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
-                self.LUTOverlayLayer = LUTOverlayLayer()
-                self.AxesOverlayLayer = AxesOverlayLayer()
-                self.overlays.append(SelectionOverlayLayer(self.selectionSettings))
-            else:
-                self.overlays.append(SelectionOverlay(self.selectionSettings))
+
+            self.overlays.append(SelectionOverlay(self.selectionSettings))
 
             self._is_initialized = True
         else:
@@ -444,11 +435,7 @@ class LMGLCanvas(GLCanvas):
 
 
     def OnDraw(self):
-        if self.use_shaders:
-            with self.defaultProgram:
-                self.interlace_stencil()
-        else:
-            self.interlace_stencil()
+        self.interlace_stencil()
         glEnable(GL_DEPTH_TEST)
         glClear(GL_COLOR_BUFFER_BIT)
         
@@ -483,7 +470,6 @@ class LMGLCanvas(GLCanvas):
                 glFrustum(-1 + eye,1 + eye,-ys,ys,8.5,11.5)
             else:
                 glOrtho(-1,1,-ys,ys,-1000,1000)
-
             
             glMatrixMode(GL_MODELVIEW)
             glTranslatef(eye,0.0,0.0)
@@ -493,10 +479,7 @@ class LMGLCanvas(GLCanvas):
             glTranslatef(0, 0, -10)
 
             if not self.displayMode == '2D':
-                if not self.use_shaders:
-                    self.drawAxes(self.object_rotation_matrix, ys)
-                else:
-                    self.AxesOverlayLayer.render(self)
+                self.drawAxes(self.object_rotation_matrix, ys)
 
             glScalef(self.scale, self.scale, self.scale)
 
@@ -514,12 +497,8 @@ class LMGLCanvas(GLCanvas):
 
             glPopMatrix()
 
-            if self.use_shaders:
-                self.ScaleBarOverlayLayer.render(self)
-                self.LUTOverlayLayer.render(self)
-            else:
-                self.drawScaleBar()
-                self.drawLUT()
+            self.drawScaleBar()
+            self.drawLUT()
 
         glFlush()
 
@@ -609,7 +588,7 @@ class LMGLCanvas(GLCanvas):
 
         #self.nVertices = 3
 
-        #to = testObj()
+        #to = test_obj()
         #print('OpenGL version: %s' % glGetString(GL_VERSION))
 
         #self.setBlob(to[0], to[1], to[2], smScale=[1e3,1e3,1e3])
@@ -712,52 +691,49 @@ class LMGLCanvas(GLCanvas):
 
     def setTriang3D(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=False, alpha=1,
                     recenter=True):
-        if self.use_shaders:
-            self.layers.append(TriangleRenderLayer(x, y, z, c, self.cmap, sizeCutoff,
-                                                   internalCull, zrescale, alpha, is_wire_frame=wireframe))
+
+        #center data
+        x = x #- x.mean()
+        y = y #- y.mean()
+        z = z #- z.mean()
+
+        if recenter:
+            self.xc = x.mean()
+            self.yc = y.mean()
+            self.zc = z.mean()
+
+        self.sx = x.max() - x.min()
+        self.sy = y.max() - y.min()
+        self.sz = z.max() - z.min()
+
+        P, A, N = gen3DTriangs(x,y,z/zrescale, sizeCutoff, internalCull=internalCull)
+        P[:,2] = P[:,2]*zrescale
+
+        self.scale = 2./(x.max() - x.min())
+
+
+
+        self.vecUp = numpy.array([0,1,0])
+        self.vecRight = numpy.array([1,0,0])
+        self.vecBack = numpy.array([0,0,1])
+
+        if c == 'z':
+            self.c = P[:,2]
         else:
-            #center data
-            x = x #- x.mean()
-            y = y #- y.mean()
-            z = z #- z.mean()
+            self.c = 1./A
 
-            if recenter:
-                self.xc = x.mean()
-                self.yc = y.mean()
-                self.zc = z.mean()
+        #self.a = 1./A
+        self.a = 0.5*numpy.ones_like(A)
+        vs = P
 
-            self.sx = x.max() - x.min()
-            self.sy = y.max() - y.min()
-            self.sz = z.max() - z.min()
+        self.SetCurrent()
 
-            P, A, N = gen3DTriangs(x,y,z/zrescale, sizeCutoff, internalCull=internalCull)
-            P[:,2] = P[:,2]*zrescale
+        if wireframe:
+            mode = 'wireframe'
+        else:
+            mode = 'triang'
 
-            self.scale = 2./(x.max() - x.min())
-
-
-
-            self.vecUp = numpy.array([0,1,0])
-            self.vecRight = numpy.array([1,0,0])
-            self.vecBack = numpy.array([0,0,1])
-
-            if c == 'z':
-                self.c = P[:,2]
-            else:
-                self.c = 1./A
-
-            #self.a = 1./A
-            self.a = 0.5*numpy.ones_like(A)
-            vs = P
-
-            self.SetCurrent()
-
-            if wireframe:
-                mode = 'wireframe'
-            else:
-                mode = 'triang'
-
-            self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()], mode=mode, alpha = alpha))
+        self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()], mode=mode, alpha = alpha))
         self.Refresh()
         
     def setTriang(self, T, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=False, alpha=1, recenter=True):
@@ -894,10 +870,7 @@ class LMGLCanvas(GLCanvas):
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
 
-        if mode is 'pointsprites':
-            self.layers.append(PointSpritesRenderLayer(x, y, z, self.c, self.cmap, self.clim, alpha, self.pointSize))
-        else:
-            self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode,
+        self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode,
                                            pointsize=self.pointSize, alpha=alpha))
         self.Refresh()
         
@@ -983,8 +956,6 @@ class LMGLCanvas(GLCanvas):
 
     def setCMap(self, cmap):
         self.cmap = cmap
-        if self.use_shaders:
-            self.LUTOverlayLayer.set_color_map(cmap)
         self.setColour()
 
     def setCLim(self, clim, alim=None):
@@ -1468,7 +1439,6 @@ class TestApp(wx.App):
         frame = wx.Frame(None, -1, 'ball_wx', wx.DefaultPosition, wx.Size(800, 800))
         canvas = LMGLCanvas(frame)
         canvas.gl_context.SetCurrent(canvas)
-        canvas.use_shaders = True
         # glcontext = wx.glcanvas.GLContext(canvas)
         # glcontext.SetCurrent(canvas)
         to = testObj()

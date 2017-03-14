@@ -19,6 +19,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 from PYME.LMVis.Layer.RenderLayer import RenderLayer
+from OpenGL.GL import *
+
+from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 
 
 class Point3DRenderLayer(RenderLayer):
@@ -26,9 +29,25 @@ class Point3DRenderLayer(RenderLayer):
     def __init__(self,  x, y, z, colors, color_map, color_limit, alpha, point_size=5):
         RenderLayer.__init__(self, x, y, z, colors, color_map, color_limit, alpha)
         self._point_size = point_size
+        self.set_shader_program(DefaultShaderProgram())
 
     def render(self, gl_canvas):
-        pass
+        with self.get_shader_program():
+
+            n_vertices = self.get_vertices().shape[0]
+
+            glVertexPointerf(self.get_vertices())
+            glNormalPointerf(self.get_normals())
+            glColorPointerf(self.get_colors())
+
+            if gl_canvas:
+                if self.get_point_size() == 0:
+                    glPointSize(1 / gl_canvas.pixelsize)
+                else:
+                    glPointSize(self.get_point_size() / gl_canvas.pixelsize)
+            else:
+                glPointSize(self.get_point_size())
+            glDrawArrays(GL_POINTS, 0, n_vertices)
 
     def get_point_size(self):
         return self._point_size

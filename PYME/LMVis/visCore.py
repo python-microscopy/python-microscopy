@@ -19,6 +19,8 @@ from PYME.LMVis import gl_render3D as gl_render
 #import sys
 
 import pylab
+
+from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
 from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
@@ -78,8 +80,11 @@ class VisGUICore(object):
             win = self
         else:
             win = self.dsviewer
-            
-        self.glCanvas = gl_render.LMGLCanvas(win, use_shaders=use_shaders)
+
+        if not use_shaders:
+            self.glCanvas = gl_render.LMGLCanvas(win, use_shaders=use_shaders)
+        else:
+            self.glCanvas = LMGLShaderCanvas(win, use_shaders=use_shaders)
         win.AddPage(page=self.glCanvas, caption='View')#, select=True)
         self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
 
@@ -206,11 +211,12 @@ class VisGUICore(object):
             self.AddMenuItem('View', '&Pointsprites', self.OnViewPointsprites)
         self.AddMenuItem('View',  '&Triangles', self.OnViewTriangles)
         self.AddMenuItem('View', '3D Triangles', self.OnViewTriangles3D)
-        self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
-        self.AddMenuItem('View', '&Voronoi', self.OnViewVoronoi)
-        self.AddMenuItem('View', '&Interpolated Triangles', self.OnViewInterpTriangles)
-        self.AddMenuItem('View', '&Blobs', self.OnViewBlobs)
-        self.AddMenuItem('View', '&Tracks', self.OnViewTracks)
+        if not use_shaders:
+            self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
+            self.AddMenuItem('View', '&Voronoi', self.OnViewVoronoi)
+            self.AddMenuItem('View', '&Interpolated Triangles', self.OnViewInterpTriangles)
+            self.AddMenuItem('View', '&Blobs', self.OnViewBlobs)
+            self.AddMenuItem('View', '&Tracks', self.OnViewTracks)
 
         #self.view_menu.Check(ID_VIEW_POINTS, True)
         #self.view_menu.Enable(ID_VIEW_QUADS, False)
