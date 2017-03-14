@@ -120,6 +120,6 @@ class TablesBackend(BackendBase):
             tab.append(record)
         except tables.NoSuchNodeError:
             h, t = self._split(table)
-            self.tfile.createTable(h, t, record, createparents=True)
+            self.tfile.create_table(h, t, record, createparents=True)
             
         self.tfile.flush()

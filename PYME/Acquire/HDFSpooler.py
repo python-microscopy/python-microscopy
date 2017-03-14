@@ -60,7 +60,7 @@ class EventLogger:
       #self.scope = scope
       self.hdf5File = hdf5File
     
-      self.evts = self.hdf5File.createTable(hdf5File.root, 'Events', SpoolEvent)
+      self.evts = self.hdf5File.create_table(hdf5File.root, 'Events', SpoolEvent)
 
     def logEvent(self, eventName, eventDescr = '', timestamp=None):
         """Log an event.

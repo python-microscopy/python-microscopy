@@ -108,7 +108,7 @@ class H5File(object):
     def _checkCreateEventsTable(self):
         if not 'Events' in dir(self.h5f.root):
          filt = tables.Filters(self.complevel, self.complib, shuffle=True)
-         self.events = self.h5f.createTable(self.h5f.root, 'Events', HDFTaskQueue.SpoolEvent,filters=filt)
+         self.events = self.h5f.create_table(self.h5f.root, 'Events', HDFTaskQueue.SpoolEvent,filters=filt)
             
     
     def putFrame(self, frame):

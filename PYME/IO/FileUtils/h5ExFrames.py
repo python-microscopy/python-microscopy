@@ -63,7 +63,7 @@ def extractFrames(dataSource, metadata, origName, outFile, start, end, subsamp=1
         outMDH.setEntry('Camera.ADOffset', subsamp*metadata.getEntry('Camera.ADOffset'))
 
 
-    outEvents = h5out.createTable(h5out.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
+    outEvents = h5out.create_table(h5out.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
 
     #copy events to results file
     evts = dataSource.getEvents()

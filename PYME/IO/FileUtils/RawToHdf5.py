@@ -78,7 +78,7 @@ def convertFile(pathToData, outFile, frameSize = [256,256], pixelsize=None, comp
             hdh.setEntry('voxelsize.x', pixelsize)
             hdh.setEntry('voxelsize.y', pixelsize)
 
-        outEvents = outF.createTable(outF.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
+        outEvents = outF.create_table(outF.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
 
         outF.flush()
         outF.close()
