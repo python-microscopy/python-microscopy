@@ -30,8 +30,8 @@ build:
     - PYMEAcquire = PYME.Acquire.PYMEAcquire:main
     - VisGUI = PYME.LMVis.VisGUI:main
     - launchWorkers = PYME.ParallelTasks.launchWorkers:main
-    - PYMEBatch = PYME.Analysis.Modules.batchProcess:main
-    - bakeshop = PYME.Analysis.Modules.bakeshop:main
+    - PYMEBatch = PYME.recipes.batchProcess:main
+    - bakeshop = PYME.recipes.bakeshop:main
     - fitMonP = PYME.ParallelTasks.fitMonP:main
     - taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main
     - taskServerZC = PYME.ParallelTasks.taskServerZC:main
