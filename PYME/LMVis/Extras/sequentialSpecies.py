@@ -88,7 +88,9 @@ class TimedSpecies:
         self.timedSpecies = None
 
         visFr.AddMenuItem('Extras', "&Sequential Imaging - Species assignment",self.OnTimedSpecies)
-        renderers.renderMetadataProviders.append(self.SaveMetadata)
+        # this gives every image a TimedSpecies entry (None by default)
+        # this is probably not a good idea
+        # renderers.renderMetadataProviders.append(self.SaveMetadata)
 
     def OnTimedSpecies(self,event):
         dlg = SpeciesDialog(None)
@@ -104,8 +106,10 @@ class TimedSpecies:
                 for species in self.timedSpecies.keys():
                     pipeline.selectedDataSource.setMapping('p_%s' % species,
                                                            '(t>= %d)*(t<%d)' % self.timedSpecies[species])
-                self.visFr.RegenFilter()
-                self.visFr.CreateFoldPanel()
+                if len(self.timedSpecies.keys()) > 0:
+                    pipeline.mdh.setEntry('TimedSpecies', speclist)
+                    self.visFr.RegenFilter()
+                    self.visFr.CreateFoldPanel()
 
     def SaveMetadata(self,mdh):
         mdh['TimedSpecies'] = self.timedSpecies
