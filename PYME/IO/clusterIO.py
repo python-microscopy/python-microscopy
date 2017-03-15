@@ -108,7 +108,9 @@ def _listSingleDir(dirurl, nRetries=3):
         dirL, rt, dt = _dirCache[dirurl]
         if (t - rt) > DIR_CACHE_TIME:
             raise RuntimeError('key is expired')
+        logger.debug('dir cache hit')
     except (KeyError, RuntimeError):
+        logger.debug('dir cache miss')
         # t = time.time()
         url = dirurl.encode()
         haveResult = False
@@ -387,11 +389,35 @@ def get_local_path(filename, serverfilter):
         if os.path.exists(localpath):
             return localpath
 
-def getFile(filename, serverfilter='', numRetries=3):
-    try:
-        return _fileCache[(filename, serverfilter)]
-    except KeyError:
-        pass
+def getFile(filename, serverfilter='', numRetries=3, use_file_cache=True):
+    """
+    Get a file from the cluster.
+    
+    Parameters
+    ----------
+    filename : string
+        filename relative to cluster root
+    serverfilter : string
+        A filter to use when finding servers - used to facilitate the operation for multiple clusters on the one network
+        segment. Note that this is still not fully supported.
+    numRetries : int
+        The number of times to retry on failure
+    use_file_cache : bool
+        By default we cache the last 100 files requested locally. This cache never expires, although entries are dropped
+        when we get over 100 entries. Under our working assumption that data on the cluster is immutable, this is generally
+        safe, with the exception of log files and files streamed using the _aggregate functionality. We can optionally
+        request a non-cached version of the file.
+
+    Returns
+    -------
+
+    """
+    
+    if use_file_cache:
+        try:
+            return _fileCache[(filename, serverfilter)]
+        except KeyError:
+            pass
 
     #look for the file in the local server folder (short-circuit the server)
     localpath = get_local_path(filename, serverfilter)

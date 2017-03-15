@@ -13,7 +13,7 @@ def file(request, filename):
     type = request.GET.get('type', 'raw')
     #print 'file'
     if type == 'raw':
-        return HttpResponse(clusterIO.getFile(filename), content_type='')
+        return HttpResponse(clusterIO.getFile(filename, use_file_cache=False), content_type='')
     elif type in  ['tiff', 'h5']:
         from PYME.IO import image
         import tempfile

@@ -27,17 +27,17 @@ def teardown_module():
     
 def test_put():
     testdata = 'foo bar\n'
-    clusterIO.putFile('test.txt', testdata, 'TEST')
-    retrieved = clusterIO.getFile('test.txt', 'TEST')
+    clusterIO.putFile('_testing/test.txt', testdata, 'TEST')
+    retrieved = clusterIO.getFile('_testing/test.txt', 'TEST')
     
     assert testdata == retrieved
     
 def test_putfiles_and_list():
-    test_files = [('test_list/file_%d' % i, 'testing ... \n') for i in range(10)]
+    test_files = [('_testing/test_list/file_%d' % i, 'testing ... \n') for i in range(10)]
     
     clusterIO.putFiles(test_files, 'TEST')
     
-    listing = clusterIO.listdir('test_list/')
+    listing = clusterIO.listdir('_testing/test_list/')
     
     assert(len(listing) == 10)
 
@@ -46,10 +46,10 @@ def test_double_put():
     """Trying to put the same file twice should cause an error"""
     testdata = 'foo bar\n'
 
-    clusterIO.putFile('test_d.txt', testdata, 'TEST')
+    clusterIO.putFile('_testing/test_d.txt', testdata, 'TEST')
     
     try:
-        clusterIO.putFile('test_d.txt', testdata, 'TEST')
+        clusterIO.putFile('_testing/test_d.txt', testdata, 'TEST')
         raise AssertionError('Second put attempt did not raise an error')
     except RuntimeError:
         #we want to generate this error

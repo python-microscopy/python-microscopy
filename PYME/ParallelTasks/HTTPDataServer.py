@@ -93,6 +93,7 @@ compName = GetComputerName()
 procName = compName + ' - PID:%d' % os.getpid()
 
 LOG_REQUESTS = False#True
+USE_DIR_CACHE = True
 
 startTime = datetime.datetime.now()
 #global_status = {}
@@ -203,7 +204,8 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             with open(path, 'ab') as f:
                 f.write(data)
 
-        cl.dir_cache.update_cache(self.path.lstrip('/')[len('__aggregate_txt'):], int(self.headers['Content-Length']))
+        if USE_DIR_CACHE:
+            cl.dir_cache.update_cache(path, int(self.headers['Content-Length']))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -264,7 +266,8 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 #logging.debug('added data to table')
 
         #logging.debug('left h5r file')
-        cl.dir_cache.update_cache(self.path.lstrip('/')[len('__aggregate_h5r'):], int(self.headers['Content-Length']))
+        if USE_DIR_CACHE:
+            cl.dir_cache.update_cache(path, int(self.headers['Content-Length']))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -331,7 +334,8 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 with open(path, 'wb') as f:
                     #shutil.copyfileobj(self.rfile, f, int(self.headers['Content-Length']))
                     f.write(self.rfile.read(int(self.headers['Content-Length'])))
-                    cl.dir_cache.update_cache(self.path, int(self.headers['Content-Length']))
+                    if USE_DIR_CACHE:
+                        cl.dir_cache.update_cache(path, int(self.headers['Content-Length']))
 
             self.send_response(200)
             self.send_header("Content-Length", "0")
@@ -431,10 +435,17 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             curTime = time.time()
             try:
                 js_dir, expiry = _dirCache[path]
-                if expiry < curTime: raise RuntimeError('Expired')
+                if expiry < curTime:
+                    raise RuntimeError('Expired')
+                
+                #logger.debug('jsoned dir cache hit')
             except (KeyError, RuntimeError):
+                #logger.debug('jsoned dir cache miss')
                 try:
-                    l2 = cl.dir_cache.list_directory(path)
+                    if USE_DIR_CACHE:
+                        l2 = cl.dir_cache.list_directory(path)
+                    else:
+                        l2 = cl.list_directory(path)
                 except os.error:
                     self.send_error(404, "No permission to list directory")
                     return None
