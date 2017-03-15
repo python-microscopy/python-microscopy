@@ -312,7 +312,7 @@ class HDFMDHandler(MDHandlerBase):
         ep = entPath[:-1]
 
         currGroup = self.h5file._get_or_create_path('/'.join(['', 'MetaData']+ ep), True)
-        currGroup._f_setAttr(en, value)
+        currGroup._f_setattr(en, value)
         self.h5file.flush()
 
 
