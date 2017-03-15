@@ -82,9 +82,9 @@ class VisGUICore(object):
             win = self.dsviewer
 
         if not use_shaders:
-            self.glCanvas = gl_render.LMGLCanvas(win, use_shaders=use_shaders)
+            self.glCanvas = gl_render.LMGLCanvas(win)
         else:
-            self.glCanvas = LMGLShaderCanvas(win, use_shaders=use_shaders)
+            self.glCanvas = LMGLShaderCanvas(win)
         win.AddPage(page=self.glCanvas, caption='View')#, select=True)
         self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
 

@@ -27,6 +27,7 @@ import wx
 import wx.glcanvas
 from OpenGL.GL import *
 from OpenGL.GLU import *
+from OpenGL.GLUT import *
 from PYME.LMVis.Layer.AxesOverlayLayer import AxesOverlayLayer
 from PYME.LMVis.Layer.LUTOverlayLayer import LUTOverlayLayer
 from PYME.LMVis.Layer.Point3DRenderLayer import Point3DRenderLayer
@@ -65,16 +66,6 @@ else:
 name = 'ball_glut'
 
 
-class cmap_mult:
-    def __init__(self, gains, zeros):
-        self.gains = gains
-        self.zeros = zeros
-
-    def __call__(self, cvals):
-        return numpy.minimum(numpy.vstack((self.gains[0] * cvals - self.zeros[0], self.gains[1] * cvals - self.zeros[1],
-                                           self.gains[2] * cvals - self.zeros[2], 1 + 0 * cvals)), 1).astype('f').T
-
-
 class SelectionSettings(object):
     def __init__(self):
         self.start = (0, 0)
@@ -89,10 +80,10 @@ class LMGLShaderCanvas(GLCanvas):
     ScaleBarOverlayLayer = None
     _is_initialized = False
 
-    def __init__(self, parent, use_shaders=True):
+    def __init__(self, parent):
         print("New Canvas")
-        attriblist = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
-        GLCanvas.__init__(self, parent, -1, attribList=attriblist)
+        attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
+        GLCanvas.__init__(self, parent, -1, attribList=attribute_list)
         wx.EVT_PAINT(self, self.OnPaint)
         wx.EVT_SIZE(self, self.OnSize)
         wx.EVT_MOUSEWHEEL(self, self.OnWheel)
@@ -107,7 +98,6 @@ class LMGLShaderCanvas(GLCanvas):
         # wx.EVT_MOVE(self, self.OnMove)
         self.gl_context = wx.glcanvas.GLContext(self)
 
-        self.use_shaders = use_shaders
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
         self.zeroPt = [0, 1.0 / 3, 2.0 / 3]
@@ -123,13 +113,6 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.pointSize = 5  # default point size = 5nm
 
-        # self.pixelsize = 5./800
-
-        # self.xmin =0
-        # self.xmax = self.pixelsize*self.Size[0]
-        # self.ymin = 0
-        # self.ymax = self.pixelsize*self.Size[1]
-
         self.scaleBarLength = 1000
 
         self.scaleBarOffset = (10, 10)  # pixels from corner
@@ -139,12 +122,6 @@ class LMGLShaderCanvas(GLCanvas):
         self.centreCross = False
 
         self.LUTDraw = True
-
-        self.mode = 'triang'
-
-        self.colouring = 'area'
-
-        self.drawModes = {'triang': GL_TRIANGLES, 'quads': GL_QUADS, 'edges': GL_LINES, 'points': GL_POINTS}
 
         self.c = numpy.array([1, 1, 1])
         self.a = numpy.array([1, 1, 1])
@@ -354,20 +331,10 @@ class LMGLShaderCanvas(GLCanvas):
             return numpy.eye(4)
 
     def InitGL(self):
-
         print('OpenGL - Version: {}'.format(glGetString(GL_VERSION)))
         print('Shader - Version: {}'.format(glGetString(GL_SHADING_LANGUAGE_VERSION)))
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_NORMALIZE)
-        # glEnable(GL_STENCIL)
-
-        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [0.3, 0.3, 0.3, 1])
-        glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, 50)
-
-        glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE)
-        glEnable(GL_COLOR_MATERIAL)
-
-        glShadeModel(GL_SMOOTH)
 
         glLoadIdentity()
         glOrtho(self.xmin, self.xmax, self.ymin, self.ymax, self.zmin, self.zmax)
@@ -395,8 +362,6 @@ class LMGLShaderCanvas(GLCanvas):
     def setTriang(self, T, c=None, sizeCutoff=1000., zrescale=1, internalCull=True, alpha=1,
                   recenter=True):
         # center data
-        # x = x #- x.mean()
-        # y = y #- y.mean()
         x = T.x
         y = T.y
         xs = x[T.triangle_nodes]
@@ -424,23 +389,9 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.c = numpy.vstack((c, c, c)).T.ravel()
 
-        vs = numpy.vstack((xs.ravel(), ys.ravel(), zs.ravel()))
-        vs = vs.T.ravel().reshape(len(xs.ravel()), 3)
-
-        N = -0.69 * numpy.ones_like(vs)
-
         self.vecUp = numpy.array([0, 1, 0])
         self.vecRight = numpy.array([1, 0, 0])
         self.vecBack = numpy.array([0, 0, 1])
-
-        # if c == 'z':
-        #    self.c = P[:,2]
-        # else:
-        #    self.c = 1./A
-
-        # self.a = 1./A
-        # self.a = alpha*numpy.ones_like(c)
-        # vs = P
 
         self.SetCurrent()
 
@@ -474,16 +425,11 @@ class LMGLShaderCanvas(GLCanvas):
         else:
             self.a = numpy.ones(x.shape).ravel()
 
-        # if clim == None:
-        #    clim = [self.c.min(), self.c.max()]
-
         self.sx = x.max() - x.min()
         self.sy = y.max() - y.min()
         self.sz = z.max() - z.min()
 
         self.SetCurrent()
-        vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
-        vs = vs.T.ravel().reshape(len(x.ravel()), 3)
 
         if mode is 'pointsprites':
             self.layers.append(PointSpritesRenderLayer(x, y, z, self.c, self.cmap, self.clim, alpha, self.pointSize))
@@ -497,15 +443,10 @@ class LMGLShaderCanvas(GLCanvas):
         self.setPoints3D(x, y, 0 * x, c, a, recenter, alpha)
 
     def ResetView(self):
-        # self.xc = self.sx/2
-        # self.yc = self.sy/2
-        # self.zc = 0
 
         self.vecUp = numpy.array([0, 1, 0])
         self.vecRight = numpy.array([1, 0, 0])
         self.vecBack = numpy.array([0, 0, 1])
-
-        # self.scale = 2./(self.sx)
 
         self.Refresh()
 
@@ -546,10 +487,6 @@ class LMGLShaderCanvas(GLCanvas):
         return 2. / (self.scale * self.Size[0])
 
     def setView(self, xmin, xmax, ymin, ymax):
-        # self.xmin = xmin
-        # self.xmax = xmax
-        # self.ymin = ymin
-        # self.ymax = ymax
 
         self.xc = (xmin + xmax) / 2.0
         self.yc = (ymin + ymax) / 2.0
@@ -580,14 +517,6 @@ class LMGLShaderCanvas(GLCanvas):
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
-        # view_size_x = self.xmax - self.xmin
-        # view_size_y = self.ymax - self.ymin
-
-        # get translated coordinates
-        # xp = 1*(event.GetX() - self.Size[0]/2)/float(self.Size[0])
-        # yp = 1*(self.Size[1]/2 - event.GetY())/float(self.Size[1])
-
-        # x, y = event.GetX(), event.GetY()
         xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
 
         dx, dy = (xp - self.xc), (yp - self.yc)
@@ -708,14 +637,10 @@ class LMGLShaderCanvas(GLCanvas):
             event.Skip()
 
         elif self.dragging:
-            # self.angup = self.angyst + x - self.xDragStart
-            # self.angright = self.angxst + y - self.yDragStart
 
             angx = numpy.pi * (x - self.xDragStart) / 180
             angy = -numpy.pi * (y - self.yDragStart) / 180
 
-            # vecRightN = numpy.cos(angx) * self.vecRight + numpy.sin(angx) * self.vecBack
-            # vecBackN = numpy.cos(angx) * self.vecBack - numpy.sin(angx) * self.vecRight
             rMat1 = numpy.matrix(
                 [[numpy.cos(angx), 0, numpy.sin(angx)], [0, 1, 0], [-numpy.sin(angx), 0, numpy.cos(angx)]])
             rMat = rMat1 * numpy.matrix(
@@ -726,15 +651,9 @@ class LMGLShaderCanvas(GLCanvas):
             vecBackN = numpy.array(rMat * numpy.matrix(self.vecBack).T).squeeze()
 
             self.vecRight = vecRightN
-            # self.vecBack = vecBackN
-
-            # vecUpN = numpy.cos(angy) * self.vecUp + numpy.sin(angy) * self.vecBack
-            # vecBackN = numpy.cos(angy) * self.vecBack - numpy.sin(angy) * self.vecUp
 
             self.vecUp = vecUpN
             self.vecBack = vecBackN
-
-            # print self.vecUp, self.vecRight, self.vecBack
 
             self.xDragStart = x
             self.yDragStart = y
@@ -743,8 +662,6 @@ class LMGLShaderCanvas(GLCanvas):
             event.Skip()
 
         elif self.panning:
-            # x = event.GetX()
-            # y = event.GetY()
 
             dx = self.pixelsize * (x - self.xDragStart)
             dy = -self.pixelsize * (y - self.yDragStart)
@@ -753,19 +670,10 @@ class LMGLShaderCanvas(GLCanvas):
 
             dx_, dy_, dz_, c_ = numpy.dot(self.object_rotation_matrix, [dx, dy, 0, 0])
 
-            # self.xc -= dx_
-            # self.yc -= dy_
-            # self.zc -= dz_
-
             self.xDragStart = x
             self.yDragStart = y
 
             self.pan(-dx_, -dy_, -dz_)
-
-            # self.Refresh()
-
-            # for callback in self.wantViewChangeNotification:
-            #    callback.Refresh()
 
             event.Skip()
 
@@ -850,21 +758,11 @@ class LMGLShaderCanvas(GLCanvas):
 
             sx, sy = self.Size
             dx, dy = (maxx - minx, maxy - miny)
-
-            # print dx
-            # print dy
-
             nx = numpy.ceil(dx / pixelSize)  # number of x pixels
             ny = numpy.ceil(dy / pixelSize)  # "    "  y   "
 
-            # print nx
-            # print ny
-
             sxn = pixelSize * sx
             syn = pixelSize * sy
-
-            # print sxn
-            # print syn
 
             # initialise array to hold tiled image
             h = numpy.zeros((nx, ny))
@@ -933,7 +831,6 @@ class TestApp(wx.App):
         # wx.InitAllImageHandlers()
         frame = wx.Frame(None, -1, 'ball_wx', wx.DefaultPosition, wx.Size(800, 800))
         canvas = LMGLShaderCanvas(frame)
-        canvas.use_shaders = True
         # glcontext = wx.glcanvas.GLContext(canvas)
         # glcontext.SetCurrent(canvas)
         to = test_obj()

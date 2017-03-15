@@ -29,13 +29,6 @@ import wx.glcanvas
 from OpenGL import GLUT
 from OpenGL.GL import *
 from OpenGL.GLU import *
-from PYME.LMVis.Layer.AxesOverlayLayer import AxesOverlayLayer
-from PYME.LMVis.Layer.LUTOverlayLayer import LUTOverlayLayer
-from PYME.LMVis.Layer.PointSpriteRenderLayer import PointSpritesRenderLayer
-from PYME.LMVis.Layer.ScaleBarOverlayLayer import ScaleBarOverlayLayer
-from PYME.LMVis.Layer.SelectionOverlayLayer import SelectionOverlayLayer
-from PYME.LMVis.Layer.TriangleRenderLayer import TriangleRenderLayer
-from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 from six.moves import xrange
 from wx.glcanvas import GLCanvas
 
@@ -254,7 +247,7 @@ class LMGLCanvas(GLCanvas):
     ScaleBarOverlayLayer = None
     _is_initialized = False
 
-    def __init__(self, parent, use_shaders=False):
+    def __init__(self, parent):
         attriblist = [wx.glcanvas.WX_GL_RGBA,wx.glcanvas.WX_GL_STENCIL_SIZE,8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
         GLCanvas.__init__(self, parent,-1, attribList = attriblist)
         wx.EVT_PAINT(self, self.OnPaint)
@@ -271,7 +264,6 @@ class LMGLCanvas(GLCanvas):
         #wx.EVT_MOVE(self, self.OnMove)
         self.gl_context = wx.glcanvas.GLContext(self)
 
-        self.use_shaders=use_shaders
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
         self.zeroPt = [0, 1.0/3, 2.0/3]
