@@ -35,7 +35,7 @@ class ScaleBarOverlayLayer(OverlayLayer):
             self._color = color
         self._scale_bar_depth = 10.0
         self._scale_bar_length = 1000
-        self.set_shader_program(DefaultShaderProgram())
+        self.set_shader_program(DefaultShaderProgram)
 
     def set_scale_bar_length(self, length):
         self._scale_bar_length = length

@@ -36,8 +36,7 @@ class PointSpritesRenderLayer(Point3DRenderLayer):
         Point3DRenderLayer.__init__(self, x_values, y_values, z_values, colors, color_map, color_limit, alpha,
                                     point_size*2)
 
-        shader_program = PointSpriteShaderProgram()
-        self.set_shader_program(shader_program)
+        self.set_shader_program(PointSpriteShaderProgram)
 
     def render(self, gl_canvas=None):
         """

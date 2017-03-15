@@ -35,7 +35,6 @@ from PYME.LMVis.Layer.RenderLayer import RenderLayer
 from PYME.LMVis.Layer.ScaleBarOverlayLayer import ScaleBarOverlayLayer
 from PYME.LMVis.Layer.SelectionOverlayLayer import SelectionOverlayLayer
 from PYME.LMVis.Layer.TriangleRenderLayer import TriangleRenderLayer
-from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 from wx.glcanvas import GLCanvas
 
 try:
@@ -76,10 +75,6 @@ class cmap_mult:
                                            self.gains[2] * cvals - self.zeros[2], 1 + 0 * cvals)), 1).astype('f').T
 
 
-cm_hot = cmap_mult(8.0 * numpy.ones(3) / 3, [0, 3.0 / 8, 6.0 / 8])
-cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
-
-
 class SelectionSettings(object):
     def __init__(self):
         self.start = (0, 0)
@@ -89,7 +84,6 @@ class SelectionSettings(object):
 
 
 class LMGLShaderCanvas(GLCanvas):
-    defaultProgram = None
     LUTOverlayLayer = None
     AxesOverlayLayer = None
     ScaleBarOverlayLayer = None
@@ -205,7 +199,6 @@ class LMGLShaderCanvas(GLCanvas):
 
         if not self._is_initialized:
             self.InitGL()
-            self.defaultProgram = DefaultShaderProgram()
             self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
             self.LUTOverlayLayer = LUTOverlayLayer()
             self.AxesOverlayLayer = AxesOverlayLayer()

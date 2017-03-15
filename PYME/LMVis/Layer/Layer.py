@@ -20,6 +20,8 @@
 #
 import abc
 
+from PYME.LMVis.ShaderProgram.ShaderProgramFactory import ShaderProgramFactory
+
 
 class Layer(object):
     """
@@ -31,7 +33,7 @@ class Layer(object):
         self._shader_program = None
 
     def set_shader_program(self, shader_program):
-        self._shader_program = shader_program
+        self._shader_program = ShaderProgramFactory.get_program(shader_program)
 
     def get_shader_program(self):
         return self._shader_program

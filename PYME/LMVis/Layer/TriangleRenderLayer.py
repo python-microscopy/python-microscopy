@@ -43,9 +43,9 @@ class TriangleRenderLayer(RenderLayer):
                                                   alpha=alpha)
         self.set_values(p, n)
         if is_wire_frame:
-            self.set_shader_program(WireFrameShaderProgram())
+            self.set_shader_program(WireFrameShaderProgram)
         else:
-            self.set_shader_program(GouraudShaderProgram())
+            self.set_shader_program(GouraudShaderProgram)
 
     def render(self, gl_canvas):
         """

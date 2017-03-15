@@ -29,7 +29,7 @@ class Point3DRenderLayer(RenderLayer):
     def __init__(self,  x, y, z, colors, color_map, color_limit, alpha, point_size=5):
         RenderLayer.__init__(self, x, y, z, colors, color_map, color_limit, alpha)
         self._point_size = point_size
-        self.set_shader_program(DefaultShaderProgram())
+        self.set_shader_program(DefaultShaderProgram)
 
     def render(self, gl_canvas):
         with self.get_shader_program():

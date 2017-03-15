@@ -72,7 +72,7 @@ class RenderLayer(Layer):
             cs = None
             color_map = None
             color_limit = None
-        self.set_shader_program(DefaultShaderProgram())
+        self.set_shader_program(DefaultShaderProgram)
 
         self.set_values(vertices, normals, cs, color_map, color_limit, alpha)
 
