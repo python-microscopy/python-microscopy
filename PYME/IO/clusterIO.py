@@ -178,12 +178,18 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
         # print ns.advertised_services.keys()
         for name, info in get_ns().advertised_services.items():
             if serverfilter in name:
-                dirurl = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
-
-                if compName in name:
-                    localServers.append(dirurl)
+                if info is None:
+                    # handle the case where zeroconf gives us bad name info. This  is a result of a race condition within
+                    # zeroconf, which should probably be fixed instead, but hopefully this workaround is enough.
+                    # FIXME - fix zeroconf module race condition on info update.
+                    logger.error('Zeroconf gave us NULL info, ignoring and hoping for the best')
                 else:
-                    servers.append(dirurl)
+                    dirurl = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
+    
+                    if compName in name:
+                        localServers.append(dirurl)
+                    else:
+                        servers.append(dirurl)
 
         #try data servers on the local machine first
         for dirurl in localServers:
