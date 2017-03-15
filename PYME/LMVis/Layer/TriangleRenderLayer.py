@@ -18,10 +18,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+from PYME.Analysis.points.gen3DTriangs import gen3DTriangs
 from PYME.LMVis.Layer.RenderLayer import RenderLayer
 from PYME.LMVis.ShaderProgram.GouraudShaderProgram import GouraudShaderProgram
 from PYME.LMVis.ShaderProgram.WireFrameShaderProgram import WireFrameShaderProgram
-from PYME.LMVis.gen3DTriangs import gen3DTriangs
 from OpenGL.GL import *
 
 
