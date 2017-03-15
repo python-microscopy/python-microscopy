@@ -5,6 +5,9 @@ from collections import namedtuple
 import os
 import six
 
+import logging
+logger = logging.getLogger(__name__)
+
 #flags (bitfields) for file type specification
 FILETYPE_NORMAL = 0
 FILETYPE_DIRECTORY = 1 << 0
@@ -98,14 +101,27 @@ class DirCache(object):
         
     def update_cache(self, filename, filesize):
         dirname, fname = os.path.split(filename)
+        dirname += '/'
+        
+        parent, dn = os.path.split(dirname)
+        dn = dn + '/'
+        #logging.debug('update_cache: %s, %s' % (dirname, filename))
         with self._lock:
             try:
+                dir = self._cache[dirname][0]
                 try:
-                    fs = self._cache[dirname][filename].size
+                    fs = dir[filename].size
                 except KeyError:
                     fs = 0
+                    try:
+                        #this is a new file - update the directory entry for our parent
+                        p_dir = self._cache[parent][0]
+                        dir_info = p_dir[dn]
+                        p_dir[dn] = FileInfo(dir_info[0], dir_info[1]+1)
+                    except KeyError:
+                        pass
                     
-                self._cache[dirname][filename] = FileInfo(FILETYPE_NORMAL, fs + filesize)
+                dir[filename] = FileInfo(FILETYPE_NORMAL, fs + filesize)
             except KeyError:
                 pass
         
@@ -124,6 +140,7 @@ class DirCache(object):
             self._n += 1
     
     def list_directory(self, dirname):
+        #logging.debug('list_directory: %s' % dirname)
         try:
             listing, expiry = self._cache[dirname]
             if expiry < time.time():
