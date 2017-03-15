@@ -170,6 +170,8 @@ _dirCacheTimeout = 1
 
 _listDirLock = threading.Lock()
 
+from PYME.IO import clusterListing as cl
+
 class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     bandwidthTesting = False
@@ -200,6 +202,8 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             #TODO ?? - keep a cache of open files
             with open(path, 'ab') as f:
                 f.write(data)
+
+        cl.dir_cache.update_cache(self.path.lstrip('/')[len('__aggregate_txt'):], int(self.headers['Content-Length']))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -260,6 +264,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 #logging.debug('added data to table')
 
         #logging.debug('left h5r file')
+        cl.dir_cache.update_cache(self.path.lstrip('/')[len('__aggregate_h5r'):], int(self.headers['Content-Length']))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -326,6 +331,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 with open(path, 'wb') as f:
                     #shutil.copyfileobj(self.rfile, f, int(self.headers['Content-Length']))
                     f.write(self.rfile.read(int(self.headers['Content-Length'])))
+                    cl.dir_cache.update_cache(self.path, int(self.headers['Content-Length']))
 
             self.send_response(200)
             self.send_header("Content-Length", "0")
@@ -428,7 +434,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 if expiry < curTime: raise RuntimeError('Expired')
             except (KeyError, RuntimeError):
                 try:
-                    l2 = cl.list_directory(path)
+                    l2 = cl.dir_cache.list_directory(path)
                 except os.error:
                     self.send_error(404, "No permission to list directory")
                     return None
@@ -570,6 +576,8 @@ def main(protocol="HTTP/1.0"):
     default_root = config.get('dataserver-root', os.curdir)
     op.add_option('-r', '--root', dest='root', help="Root directory of virtual filesystem (default %s, see also 'dataserver-root' config entry)" % dataserver_root, default=default_root)
     op.add_option('-k', '--profile', dest='profile', help="Enable profiling", default=False, action="store_true")
+    default_server_filter = config.get('dataserver-filter', '')
+    op.add_option('-f', '--server-filter', dest='server_filter', help='Add a serverfilter for distinguishing between different clusters', default=default_server_filter)
 
 
     options, args = op.parse_args()
@@ -598,7 +606,7 @@ def main(protocol="HTTP/1.0"):
     ip_addr = socket.gethostbyname(socket.gethostname())
 
     ns = pzc.getNS('_pyme-http')
-    ns.register_service('PYMEDataServer: ' + procName, ip_addr, sa[1])
+    ns.register_service('PYMEDataServer [%s]: ' % options.server_filter + procName, ip_addr, sa[1])
 
     status['IPAddress'] = ip_addr
     status['BindAddress'] = server_address

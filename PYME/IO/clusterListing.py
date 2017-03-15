@@ -82,9 +82,66 @@ def aggregate_dirlisting(dir_list, single_dir):
 
         dir_list[k] = FileInfo(type, size)
 
+import threading
+import time
+import os
 
-
-
+class DirCache(object):
+    def __init__(self, cache_size = 1000, lifetime_s=(30*60)):
+        self._cache_size = cache_size
+        self._cache = {}
+        self._purge_list = []
+        self._n = 0
+        self._lifetime_s = lifetime_s
+        
+        self._lock = threading.Lock()
+        
+    def update_cache(self, filename, filesize):
+        dirname, fname = os.path.split(filename)
+        with self._lock:
+            try:
+                try:
+                    fs = self._cache[dirname][filename].size
+                except KeyError:
+                    fs = 0
+                    
+                self._cache[dirname][filename] = FileInfo(FILETYPE_NORMAL, fs + filesize)
+            except KeyError:
+                pass
+        
+    
+    def _add_entry(self, dirname, listing):
+        with self._lock:
+            if self._n >= self._cache_size:
+                # overflowing - remove an entry before adding
+        
+                to_remove = self._purge_list.pop(0)
+                self._cache.pop(to_remove)
+                self._n -= 1
+            
+            self._cache[dirname] = (listing, time.time() + self._lifetime_s)
+            self._purge_list.append(dirname)
+            self._n += 1
+    
+    def list_directory(self, dirname):
+        try:
+            listing, expiry = self._cache[dirname]
+            if expiry < time.time():
+                raise RuntimeError('Cache entry expired')
+        except (KeyError, RuntimeError):
+            list = os.listdir(dirname)
+    
+            list.sort(key=lambda a: a.lower())
+    
+            #l2 = dict(map(lambda fn : _file_info(path, fn), list))
+            listing = dict([_file_info(dirname, fn) for fn in list])
+            self._add_entry(dirname, listing)
+            
+        return listing
+    
+            
+dir_cache = DirCache()
+        
 
 
 def list_directory(path):
