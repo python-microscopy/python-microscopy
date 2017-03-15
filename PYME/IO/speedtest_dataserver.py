@@ -61,10 +61,12 @@ def test_putfiles_and_list():
     print('Listing a directory with 1000 small files (from local cache) took %3.5f s' % (
     time.time() - t))
 
-    t = time.sleep(5)
+    time.sleep(5)
     t = time.time()
     listing = clusterIO.listdir('_testing/test_list/')
-    print('Listing a directory with 1000 small files (second attempt after local cache expiration) took %3.5f s' % (time.time() - t))
+    print('\nListing a directory with 1000 small files (second attempt after local cache expiration) took %3.5f s' % (time.time() - t))
+    #print('Returned %d files\n' % len(listing))
+    #print(sorted([(f) for f in listing]))
     assert (len(listing) == 1000)
     
     #put remainder
@@ -87,13 +89,43 @@ def test_putfiles_and_list():
 
     assert (len(listing) == 10000)
 
-    t = time.sleep(1)
+    time.sleep(2)
     t = time.time()
     listing = clusterIO.listdir('_testing/test_list/')
     print('Listing a directory with 10000 small files (second attempt after local cache expiration) took %3.5f s' % (
     time.time() - t))
+
+    time.sleep(2)
+    t = time.time()
+    listing = clusterIO.listdir('_testing/test_list/')
+    print('Listing a directory with 10000 small files (second attempt after local cache expiration) took %3.5f s' % (
+        time.time() - t))
     
     assert(len(listing) == 10000)
+
+    #really hammer the server
+    print('\n\n stress testing with 100,000 files ...')
+    t = time.time()
+    for j in range(100):
+        clusterIO.putFiles([('_testing/test_l2/series_%d/file_%d' % (j,i), 'testing ... \n') for i in range(1000)], 'TEST')
+        
+    print('\nputting 100,000 small files in 100 directories took %3.5f s' % (time.time() - t))
+
+    time.sleep(2)
+    t = time.time()
+    listing = clusterIO.listdir('_testing/test_l2/')
+    print('Listing a directory with 100 subdiectories, each with 1000 files took %3.5f s' % (
+        time.time() - t))
+    
+    assert(len(listing) == 100)
+
+    time.sleep(2)
+    t = time.time()
+    listing = clusterIO.listdir('_testing/test_l2/')
+    print('Listing a directory with 100 subdirectories, each with 1000 files took %3.5f s, after cache expiry' % (
+        time.time() - t))
+
+    assert (len(listing) == 100)
 
 
 

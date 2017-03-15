@@ -97,33 +97,50 @@ class DirCache(object):
         self._n = 0
         self._lifetime_s = lifetime_s
         
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         
     def update_cache(self, filename, filesize):
         dirname, fname = os.path.split(filename)
-        dirname += '/'
-        
         parent, dn = os.path.split(dirname)
+        #logging.debug(filename)
+        
+        dirname += '/'
         dn = dn + '/'
+        parent += '/'
         #logging.debug('update_cache: %s, %s' % (dirname, filename))
         with self._lock:
             try:
-                dir = self._cache[dirname][0]
-                try:
-                    fs = dir[filename].size
-                except KeyError:
-                    fs = 0
-                    try:
-                        #this is a new file - update the directory entry for our parent
-                        p_dir = self._cache[parent][0]
-                        dir_info = p_dir[dn]
-                        p_dir[dn] = FileInfo(dir_info[0], dir_info[1]+1)
-                    except KeyError:
-                        pass
-                    
-                dir[filename] = FileInfo(FILETYPE_NORMAL, fs + filesize)
+                #this is a new file - update the directory entry for our parent
+                p_dir = self._cache[parent][0]
             except KeyError:
-                pass
+                #force our parent directory into the cache so that we can update it
+                l = self.list_directory(parent)
+                p_dir = self._cache[parent][0]
+            
+            try:
+                dir = self._cache[dirname][0]
+                dir_info = p_dir[dirname]
+            except KeyError:
+                #force our directory into the cache
+                l = self.list_directory(dirname)
+                dir = self._cache[dirname][0]
+                if l.get('final_metadata.json', False):
+                    dir_info = (FILETYPE_SERIES_COMPLETE, len(l))
+                elif l.get('metadata.json', False):
+                    dir_info = (FILETYPE_SERIES, len(l))
+                else:
+                    dir_info = (FILETYPE_DIRECTORY, len(l))
+                
+            #logger.debug('pdir = %s' % p_dir)
+                
+            try:
+                fs = dir[fname][1]
+            except KeyError:
+                fs = 0
+
+                p_dir[dn] = FileInfo(dir_info[0], dir_info[1] + 1)
+                
+            dir[fname] = FileInfo(FILETYPE_NORMAL, fs + filesize)
         
     
     def _add_entry(self, dirname, listing):
