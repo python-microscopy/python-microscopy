@@ -267,7 +267,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         #logging.debug('left h5r file')
         if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(path, int(self.headers['Content-Length']))
+            cl.dir_cache.update_cache(filename, int(self.headers['Content-Length']))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")

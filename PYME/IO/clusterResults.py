@@ -156,6 +156,8 @@ def fileResults(URI, data_raw):
 
         URI = pickResultsServer(sequenceName, clusterfilter)
 
+        #logging.debug('URI: ' + URI)
+
 
 
 
