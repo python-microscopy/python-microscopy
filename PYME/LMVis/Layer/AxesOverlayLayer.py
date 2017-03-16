@@ -46,7 +46,7 @@ class AxesOverlayLayer(OverlayLayer):
         -------
 
         """
-        with gl_canvas.defaultProgram:
+        with self.get_shader_program():
             glDisable(GL_LIGHTING)
             glPushMatrix()
 
