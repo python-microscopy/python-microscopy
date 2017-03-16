@@ -178,7 +178,7 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
         localServers = []
 
         # print ns.advertised_services.keys()
-        for name, info in get_ns().advertised_services.items():
+        for name, info in get_ns().get_advertised_services():
             if serverfilter in name:
                 if info is None:
                     # handle the case where zeroconf gives us bad name info. This  is a result of a race condition within
@@ -264,7 +264,7 @@ def listdirectory(dirname, serverfilter=''):
         if not dirname.endswith('/'):
             dirname = dirname + '/'
     
-        for name, info in get_ns().advertised_services.items():
+        for name, info in get_ns().get_advertised_services():
             if serverfilter in name:
                 urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
     
@@ -491,7 +491,7 @@ def _chooseServer(serverfilter='', exclude_netlocs=[]):
     TODO: add free disk space and improve metrics/weightings
 
     """
-    serv_candidates = [(k, v) for k, v in get_ns().advertised_services.items() if
+    serv_candidates = [(k, v) for k, v in get_ns().get_advertised_services() if
                        (serverfilter in k) and not (_netloc(v) in exclude_netlocs)]
 
     t = time.time()
@@ -708,7 +708,7 @@ def getStatus(serverfilter=''):
 
     status = []
 
-    for name, info in get_ns().advertised_services.items():
+    for name, info in get_ns().get_advertised_services():
         if serverfilter in name:
             surl = 'http://%s:%d/__status' % (socket.inet_ntoa(info.address), info.port)
             url = surl.encode()

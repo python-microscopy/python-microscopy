@@ -10,7 +10,7 @@ def getNodeInfo():
 
     queueURLs = {}
 
-    for name, info in ns.advertised_services.items():
+    for name, info in ns.get_advertised_services():
         if name.startswith('PYMENodeServer'):
             try:
                 queueURLs[name] = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
@@ -24,7 +24,7 @@ def getDistributorInfo():
 
     queueURLs = {}
 
-    for name, info in ns.advertised_services.items():
+    for name, info in ns.get_advertised_services():
         if name.startswith('PYMEDistributor'):
             queueURLs[name] = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
 
