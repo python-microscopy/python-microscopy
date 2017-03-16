@@ -113,11 +113,7 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.pointSize = 5  # default point size = 5nm
 
-        self.scaleBarLength = 1000
-
-        self.scaleBarOffset = (10, 10)  # pixels from corner
-        self.scaleBarDepth = 10.0  # pixels
-        self.scaleBarColour = [1, 1, 0]
+        self._scaleBarLength = 1000
 
         self.centreCross = False
 
@@ -164,6 +160,15 @@ class LMGLShaderCanvas(GLCanvas):
         self.pointSelectionCallbacks = []
 
         return
+
+    @property
+    def scaleBarLength(self):
+        return self._scaleBarLength
+
+    @scaleBarLength.setter
+    def scaleBarLength(self, value):
+        self._scaleBarLength = value
+        self.ScaleBarOverlayLayer.set_scale_bar_length(value)
 
     def OnPaint(self, events):
         if not self.IsShown():
