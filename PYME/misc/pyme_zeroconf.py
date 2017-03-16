@@ -21,27 +21,45 @@ import socket
 import time
 import Pyro.core
 
+import threading
+
 
 class ZCListener(object): 
     def __init__(self, protocol='_pyme-pyro'):
         self._protocol = protocol
         self.advertised_services = {}
+        
+        self._lock = threading.Lock()
     
     def remove_service(self, zeroconf, _type, name):
         #print("Service %s removed" % (name,))
         nm = name.split('.' + self._protocol)[0]
         try:
-            self.advertised_services.pop(nm)
+            with self._lock:
+                self.advertised_services.pop(nm)
         except KeyError:
             pass
         
     def add_service(self, zeroconf, _type, name):
         #print _type, name
         nm = name.split('.' + self._protocol)[0]
+        
+        with self._lock:
+            info = zeroconf.get_service_info(_type, name)
+            if not info is None:
+                self.advertised_services[nm] = info
 
-        info = zeroconf.get_service_info(_type, name)
-        if not info is None:
-            self.advertised_services[nm] = info
+    def list(self, filterby):
+        with self._lock:
+            return [k for k in self.advertised_services.keys() if filterby in k]
+        
+    def get_info(self, name):
+        with self._lock:
+            return self.advertised_services[name]
+        
+    def get_advertised_services(self):
+        with self._lock:
+            return list(self.advertised_services.items())
         
             
 class ZeroConfNS(object):
@@ -60,9 +78,12 @@ class ZeroConfNS(object):
         
         self.register_service(name, URI.address, URI.port, desc)
         
-    @property
-    def advertised_services(self):
-        return self.listener.advertised_services
+    # @property
+    # def advertised_services(self):
+    #     return self.listener.advertised_services
+    
+    def get_advertised_services(self):
+        return self.listener.get_advertised_services()
         
     def register_service(self, name, address, port, desc={}):
         if name in self.listener.advertised_services.keys():
@@ -85,11 +106,11 @@ class ZeroConfNS(object):
             
     def resolve(self, name):
         #try:
-        info = self.listener.advertised_services[name]
+        info = self.listener.get_info(name)
         return info.properties['URI']
         
     def list(self, filterby = ''):
-        return [k for k in self.listener.advertised_services.keys() if filterby in k]
+        return self.listener.list(filterby)
         
             
     def __del__(self):

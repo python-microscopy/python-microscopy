@@ -178,13 +178,17 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
         localServers = []
 
         # print ns.advertised_services.keys()
-        for name, info in get_ns().advertised_services.items():
+        services = get_ns().get_advertised_services()
+        for name, info in services:
             if serverfilter in name:
-                if info is None:
+                if info is None or info.address is None or info.port is None:
                     # handle the case where zeroconf gives us bad name info. This  is a result of a race condition within
                     # zeroconf, which should probably be fixed instead, but hopefully this workaround is enough.
                     # FIXME - fix zeroconf module race condition on info update.
-                    logger.error('Zeroconf gave us NULL info, ignoring and hoping for the best')
+                    logger.error('''Zeroconf gave us NULL info, ignoring and hoping for the best ...
+                    Node with bogus info was: %s
+                    Total number of nodes: %d
+                    ''' % (name, len(services)))
                 else:
                     dirurl = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
     
@@ -264,7 +268,7 @@ def listdirectory(dirname, serverfilter=''):
         if not dirname.endswith('/'):
             dirname = dirname + '/'
     
-        for name, info in get_ns().advertised_services.items():
+        for name, info in get_ns().get_advertised_services():
             if serverfilter in name:
                 urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
     
@@ -491,7 +495,7 @@ def _chooseServer(serverfilter='', exclude_netlocs=[]):
     TODO: add free disk space and improve metrics/weightings
 
     """
-    serv_candidates = [(k, v) for k, v in get_ns().advertised_services.items() if
+    serv_candidates = [(k, v) for k, v in get_ns().get_advertised_services() if
                        (serverfilter in k) and not (_netloc(v) in exclude_netlocs)]
 
     t = time.time()
@@ -708,7 +712,7 @@ def getStatus(serverfilter=''):
 
     status = []
 
-    for name, info in get_ns().advertised_services.items():
+    for name, info in get_ns().get_advertised_services():
         if serverfilter in name:
             surl = 'http://%s:%d/__status' % (socket.inet_ntoa(info.address), info.port)
             url = surl.encode()
