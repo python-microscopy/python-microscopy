@@ -147,10 +147,16 @@ class DirCache(object):
         with self._lock:
             if self._n >= self._cache_size:
                 # overflowing - remove an entry before adding
-        
+    
                 to_remove = self._purge_list.pop(0)
-                self._cache.pop(to_remove)
-                self._n -= 1
+                
+                #logger.debug('Removing %s from directory cache' % to_remove)
+                
+                try:
+                    self._cache.pop(to_remove)
+                    self._n -= 1
+                except KeyError:
+                    logger.error('Could not remove %s from directory cache' % to_remove)
             
             self._cache[dirname] = (listing, time.time() + self._lifetime_s)
             self._purge_list.append(dirname)
