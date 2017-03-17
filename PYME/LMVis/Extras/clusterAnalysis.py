@@ -316,7 +316,7 @@ class ClusterAnalyser:
         # build a recipe programatically
         measrec = ModuleCollection()
 
-        measrec.add_module(localisations.MeasureClusters(measrec, inputName='input', labelsKey='dbscanClustered',
+        measrec.add_module(localisations.MeasureClusters3D(measrec, inputName='input', labelsKey='dbscanClustered',
                                                        outputName='output'))
 
         measrec.namespace['input'] = self.pipeline
