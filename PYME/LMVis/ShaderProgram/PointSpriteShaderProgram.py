@@ -66,4 +66,5 @@ class PointSpriteShaderProgram(GLProgram):
         glEnable(GL_DEPTH_TEST)
 
     def __del__(self):
-        self._texture.delete_texture()
+        # self._texture.delete_texture()
+        pass

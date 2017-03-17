@@ -32,6 +32,8 @@ from OpenGL.GLU import *
 from six.moves import xrange
 from wx.glcanvas import GLCanvas
 
+from PYME.LMVis.gl_test_objects import NineCollections
+
 try:
     from PYME.Analysis.points.gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
 except:
@@ -58,12 +60,7 @@ else:
 
 name = 'ball_glut'
 
-def testObj():
-    x = 5e3*((numpy.arange(270) % 27)/9 + 0.1*numpy.random.randn(270))
-    y = 5e3*((numpy.arange(270) % 9)/3 + 0.1*numpy.random.randn(270))
-    z = 5e3*(numpy.arange(270) % 3 + 0.1*numpy.random.randn(270))
 
-    return x, y, z
 
 
 class cmap_mult:
@@ -1433,11 +1430,11 @@ class TestApp(wx.App):
         canvas.gl_context.SetCurrent(canvas)
         # glcontext = wx.glcanvas.GLContext(canvas)
         # glcontext.SetCurrent(canvas)
-        to = testObj()
+        to = NineCollections()
         canvas.displayMode = '3D'
-        canvas.setPoints3D(to[0], to[1], to[2])
-        # canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, alpha=0.5)
-        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, wireframe=False)
+        canvas.setPoints3D(to.x, to.y, to.z)
+        # canvas.setTriang3D(to.x, to.y, to.z, sizeCutoff=6e3, alpha=0.5)
+        canvas.setTriang3D(to.x, to.y, to.z, sizeCutoff=6e3, wireframe=False)
         canvas.Refresh()
         frame.Show()
         self.SetTopWindow(frame)

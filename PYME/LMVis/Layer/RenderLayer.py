@@ -36,7 +36,7 @@ class RenderLayer(Layer):
         given, but y is None, both won't be processed.
         There are the following groups:
         (x,y,z)
-        (color_limit, colors, color_map)
+        (colors, color_map)
         Parameters
         ----------
         x           x_values of the points

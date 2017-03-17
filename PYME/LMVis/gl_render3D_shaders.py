@@ -23,6 +23,7 @@
 
 import numpy
 import numpy as np
+import pylab
 import wx
 import wx.glcanvas
 from OpenGL.GL import *
@@ -180,16 +181,19 @@ class LMGLShaderCanvas(GLCanvas):
         self.SetCurrent()
 
         if not self._is_initialized:
-            self.InitGL()
-            self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
-            self.LUTOverlayLayer = LUTOverlayLayer()
-            self.AxesOverlayLayer = AxesOverlayLayer()
-            self.overlays.append(SelectionOverlayLayer(self.selectionSettings))
-
-            self._is_initialized = True
+            self.initialize()
         else:
             self.OnDraw()
         return
+
+    def initialize(self):
+        self.InitGL()
+        self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
+        self.LUTOverlayLayer = LUTOverlayLayer()
+        self.AxesOverlayLayer = AxesOverlayLayer()
+        self.overlays.append(SelectionOverlayLayer(self.selectionSettings))
+
+        self._is_initialized = True
 
     def OnSize(self, event):
         if self._is_initialized:
@@ -360,6 +364,8 @@ class LMGLShaderCanvas(GLCanvas):
     def setTriang3D(self, x, y, z, c=None, sizeCutoff=1000., zrescale=1, internalCull=True, wireframe=False, alpha=1,
                     recenter=True):
 
+        if recenter:
+            self.recenter(x, y)
         self.layers.append(TriangleRenderLayer(x, y, z, c, self.cmap, sizeCutoff,
                                                internalCull, zrescale, alpha, is_wire_frame=wireframe))
         self.Refresh()
@@ -374,15 +380,7 @@ class LMGLShaderCanvas(GLCanvas):
         zs = np.zeros_like(xs)  # - z.mean()
 
         if recenter:
-            self.xc = x.mean()
-            self.yc = y.mean()
-            self.zc = 0  # z.mean()
-
-            self.sx = x.max() - x.min()
-            self.sy = y.max() - y.min()
-            self.sz = 0  # z.max() - z.min()
-
-            self.scale = 2. / (max(self.sx, self.sy))
+            self.recenter(x, y)
 
         if c is None:
             a = numpy.vstack((xs[:, 0] - xs[:, 1], ys[:, 0] - ys[:, 1])).T
@@ -414,8 +412,7 @@ class LMGLShaderCanvas(GLCanvas):
         z = z  # - z.mean()
 
         if recenter:
-            self.xc = x.mean()
-            self.yc = y.mean()
+            self.recenter(x, y)
 
         self.zc = z.mean()
         self.zc_o = 1.0 * self.zc
@@ -812,6 +809,17 @@ class LMGLShaderCanvas(GLCanvas):
             self.Update()
             return h
 
+    def recenter(self, x, y):
+        self.xc = x.mean()
+        self.yc = y.mean()
+        self.zc = 0  # z.mean()
+
+        self.sx = x.max() - x.min()
+        self.sy = y.max() - y.min()
+        self.sz = 0  # z.max() - z.min()
+
+        self.scale = 2. / (max(self.sx, self.sy))
+
 
 def showGLFrame():
     f = wx.Frame(None, size=(800, 800))
@@ -819,43 +827,3 @@ def showGLFrame():
     f.Show()
     return c
 
-
-def test_obj():
-    x = 5e3 * ((numpy.arange(270) % 27) / 9 + 0.1 * numpy.random.randn(270))
-    y = 5e3 * ((numpy.arange(270) % 9) / 3 + 0.1 * numpy.random.randn(270))
-    z = 5e3 * (numpy.arange(270) % 3 + 0.1 * numpy.random.randn(270))
-
-    return x, y, z
-
-
-class TestApp(wx.App):
-    def __init__(self, *args):
-        wx.App.__init__(self, *args)
-
-    def OnInit(self):
-        # wx.InitAllImageHandlers()
-        frame = wx.Frame(None, -1, 'ball_wx', wx.DefaultPosition, wx.Size(800, 800))
-        canvas = LMGLShaderCanvas(frame)
-        # glcontext = wx.glcanvas.GLContext(canvas)
-        # glcontext.SetCurrent(canvas)
-        to = test_obj()
-        canvas.displayMode = '3D'
-        # canvas.setPoints3D(to[0], to[1], to[2])
-        # canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, alpha=0.5)
-
-        canvas.pointSize = 50
-        canvas.setPoints3D(to[0], to[1], to[2], mode='pointsprites')
-        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, wireframe=True)
-        canvas.Refresh()
-        frame.Show()
-        self.SetTopWindow(frame)
-        return True
-
-
-def main():
-    app = TestApp()
-    app.MainLoop()
-
-
-if __name__ == '__main__':
-    main()
