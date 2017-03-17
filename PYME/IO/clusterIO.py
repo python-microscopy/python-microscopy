@@ -268,9 +268,20 @@ def listdirectory(dirname, serverfilter=''):
         if not dirname.endswith('/'):
             dirname = dirname + '/'
     
-        for name, info in get_ns().get_advertised_services():
+        services = get_ns().get_advertised_services()
+        for name, info in services:
             if serverfilter in name:
-                urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
+                if info is None or info.address is None or info.port is None:
+                    # handle the case where zeroconf gives us bad name info. This  is a result of a race condition within
+                    # zeroconf, which should probably be fixed instead, but hopefully this workaround is enough.
+                    # FIXME - fix zeroconf module race condition on info update.
+                    logger.error('''Zeroconf gave us NULL info, ignoring and hoping for the best ...
+                    Node with bogus info was: %s
+                    Total number of nodes: %d
+                    ''' % (name, len(services)))
+                    
+                else:
+                    urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
     
         listings = _pool.map(_listSingleDir, urls)
     
@@ -284,7 +295,7 @@ def listdir(dirname, serverfilter=''):
     but directories are indicated by a trailing slash
     """
 
-    return list(listdirectory(dirname, serverfilter).keys())
+    return sorted(listdirectory(dirname, serverfilter).keys())
 
 def isdir(name, serverfilter=''):
     return len(listdir(name, serverfilter)) > 0

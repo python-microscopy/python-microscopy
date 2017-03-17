@@ -44,7 +44,7 @@ if dataserver_root:
     #logger = logging.getLogger('')
     logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG)
-    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6)
+    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e5)
     logger.addHandler(fh)
 else:
     logging.basicConfig(level=logging.DEBUG)

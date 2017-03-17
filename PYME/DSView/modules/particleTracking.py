@@ -236,9 +236,6 @@ env.filters['movieplot'] = movieplot2
 #from PYME.Analysis.Tracking import tracking
 #from PYME.Analysis.Tracking import trackUtils
 
-from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
-from traitsui.api import View, Item, Group
-
 class TrackList(wx.ListCtrl):
     def __init__(self, parent):
         wx.ListCtrl.__init__(self, parent, -1, style=wx.LC_REPORT|wx.LC_VIRTUAL|wx.LC_HRULES|wx.LC_VRULES|wx.LC_SINGLE_SEL, size=(250, 400))
@@ -340,7 +337,8 @@ class TrackList(wx.ListCtrl):
 #            return None
 
 
-        
+from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
+
 
 class ParticleTrackingView(HasTraits):
     #features = CStr('x, y')    
@@ -362,7 +360,15 @@ class ParticleTrackingView(HasTraits):
     trackLineWidth = Int(2)
     selectedLineWidth = Int(5)
     
-    traits_view = View(Group(Item('object.tracker.features'),
+    @property
+    def default_view(self):
+        return self.default_traits_view()
+    
+    def default_traits_view( self ):
+        #return self.default_view
+        from traitsui.api import View, Item, Group
+    
+        traits_view = View(Group(Item('object.tracker.features'),
                              Item('object.tracker.pNew'),
                              Item('object.tracker.r0'),
                              Item('object.tracker.pLinkCutoff'),
@@ -373,6 +379,8 @@ class ParticleTrackingView(HasTraits):
                              Item(name = 'showSelectedTrack'),
                              Item(name = 'showCandidates'),
                              label= 'Display'))
+        
+        return traits_view
     
     def __init__(self, dsviewer, tracker = None, clumps=[]):
         HasTraits.__init__(self)
