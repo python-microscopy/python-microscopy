@@ -295,7 +295,7 @@ def listdir(dirname, serverfilter=''):
     but directories are indicated by a trailing slash
     """
 
-    return list(listdirectory(dirname, serverfilter).keys())
+    return sorted(listdirectory(dirname, serverfilter).keys())
 
 def isdir(name, serverfilter=''):
     return len(listdir(name, serverfilter)) > 0
