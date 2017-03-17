@@ -55,10 +55,10 @@ class NineCollections(TestObject):
 
 
 class Cloud(TestObject):
-    DISTANCE = 200
+    DISTANCE = 200.0
 
     def __init__(self, amount_points):
-        x = (numpy.arange(amount_points) + Cloud.DISTANCE * numpy.random.randn(amount_points))
-        y = (numpy.arange(amount_points) + Cloud.DISTANCE * numpy.random.randn(amount_points))
-        z = (numpy.arange(amount_points) + Cloud.DISTANCE * numpy.random.randn(amount_points))
+        x = Cloud.DISTANCE * numpy.random.randn(amount_points)
+        y = Cloud.DISTANCE * numpy.random.randn(amount_points)
+        z = Cloud.DISTANCE * numpy.random.randn(amount_points)
         TestObject.__init__(self, x, y, z)

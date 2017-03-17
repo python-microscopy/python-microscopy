@@ -49,6 +49,8 @@ class TestApp(wx.App):
         self._canvas.initialize()
         self._canvas.setCMap(pylab.cm.hot)
         self._canvas.clim = [0, 1]
+        self._canvas.displayMode = '3D'
+        self._canvas.pointSize = 10
 
     def done(self):
         self._canvas.Refresh()
@@ -60,9 +62,6 @@ class XTestApp(TestApp):
     def OnInit(self):
         self.setup()
         to = Cloud(40)
-        self._canvas.displayMode = '3D'
-        self._canvas.pointSize = 10
-
         self._canvas.setPoints3D(to.x, to.y, to.z, mode='pointsprites')
         self._canvas.recenter(to.x, to.y)
         self.done()
@@ -75,9 +74,7 @@ class TwtyToFotyTestApp(TestApp):
         to = Cloud(100)
         to2 = Cloud(200)
         to2.translate(2000)
-        self._canvas.displayMode = '3D'
-        self._canvas.pointSize = 10
-        self._canvas.setPoints3D(to.x, to.y, to.z, normalize(to2.z), self._canvas.cmap, self._canvas.clim,
+        self._canvas.setPoints3D(to.x, to.y, to.z, normalize(to.z), self._canvas.cmap, self._canvas.clim,
                                  mode='pointsprites')
 
         self._canvas.setPoints3D(to2.x, to2.y, to2.z, normalize(to2.z), self._canvas.cmap, self._canvas.clim,
@@ -87,12 +84,23 @@ class TwtyToFotyTestApp(TestApp):
         return True
 
 
+class MassTest(TestApp):
+    def OnInit(self):
+        self.setup()
+        to = Cloud(1000000)
+        self._canvas.setPoints3D(to.x, to.y, to.z, normalize(to.z), self._canvas.cmap, self._canvas.clim,
+                                 mode='pointsprites')
+        self._canvas.recenter(to.x, to.y)
+        self.done()
+        return True
+
+
 def normalize(values):
     return (values - min(values)) / (max(values) - min(values))
 
 
 def main():
-    app = TwtyToFotyTestApp()
+    app = MassTest()
     app.MainLoop()
 
 
