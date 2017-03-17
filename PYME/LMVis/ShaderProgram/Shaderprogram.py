@@ -106,8 +106,8 @@ class ShaderProgram:
         # shaders seem to have been deleted already, since it throws errors
         # for shader in self._shaders:
         #     glDeleteShader(shader)
-
-        glDeleteProgram(self._program)
+        # glDeleteProgram(self._program)
+        pass
 
 
 def read_shader(shader_name, path):
