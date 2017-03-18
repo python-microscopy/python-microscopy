@@ -50,8 +50,11 @@ def get_ns():
     global _ns
     with _ns_lock:
         if _ns is None:
+            #stagger query times
+            time.sleep(3*np.random.rand())
             _ns = pzc.getNS('_pyme-http')
-            time.sleep(1.5 + np.random.rand())
+            #wait for replies
+            time.sleep(5)
 
     return _ns
             

@@ -39,7 +39,7 @@ class PatchedServiceInfo(zeroconf.ServiceInfo):
         result = False
         try:
             zc.add_listener(self, zeroconf.DNSQuestion(self.name, zeroconf._TYPE_ANY, zeroconf._CLASS_IN))
-            while None in (self.server, self.address,self.text): #, self.port):
+            while None in (self.server, self.address,self.text):#, self.port):
                 if last <= now:
                     return False
                 if next <= now:
@@ -92,7 +92,7 @@ class ZCListener(object):
         with self._lock:
             #info = zc.get_service_info(_type, name)
             info = PatchedServiceInfo(_type, name)
-            if info.request(zc, 3000):
+            if info.request(zc, 5000):
                 self.advertised_services[nm] = info
 
     def list(self, filterby):
