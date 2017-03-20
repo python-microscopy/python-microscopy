@@ -48,4 +48,4 @@ if __name__ == '__main__':
     from numpy.distutils.core import setup
     conf = configuration(top_path='').todict()
     conf['entry_points'] = entry_points
-    setup(**conf, install_requires=['wx'])
+    setup(**conf)
