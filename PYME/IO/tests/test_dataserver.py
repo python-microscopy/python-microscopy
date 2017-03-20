@@ -61,7 +61,7 @@ def test_double_put():
     
 def test_aggregate_h5r():
     import numpy as np
-    from . import clusterResults
+    from PYME.IO import clusterResults
     testdata = np.ones(10, dtype=[('a', '<f4'), ('b', '<f4')])
     
     clusterResults.fileResults('pyme-cluster://TEST/__aggregate_h5r/_testing/test_results.h5r/foo', testdata)
