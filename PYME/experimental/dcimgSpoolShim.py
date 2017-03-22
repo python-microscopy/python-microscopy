@@ -71,9 +71,11 @@ class DCIMGSpoolShim:
         MetaDataHandler.provideStartMetadata.append(self.metadataSource)
 
         #generate the spooler
+        quantOffset = self.mdh.getOrDefault('Camera.ADOffset', 0)
         self.spooler = HTTPSpooler.Spooler(filename, self.imgSource.onFrame, frameShape=None,
                                            compressionSettings={'compression': HTTPSpooler.PZFFormat.DATA_COMP_HUFFCODE,
-                                                                'quantization':HTTPSpooler.PZFFormat.DATA_QUANT_NONE})
+                                                                'quantization': HTTPSpooler.PZFFormat.DATA_QUANT_NONE,
+                                                                'quantizationOffset': quantOffset})
 
         #spool our data
         self.spooler.StartSpool()
