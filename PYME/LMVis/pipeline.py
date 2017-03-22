@@ -272,6 +272,7 @@ class Pipeline:
         self.objects = None
 
         self.imageBounds = ImageBounds(0,0,0,0)
+        self.mdh = MetaDataHandler.NestedClassMDHandler()
         
         self.Triangles = None
         self.edb = None
