@@ -169,7 +169,10 @@ class Spooler:
                 self._last_gui_update = t
                 self.guiUpdateCallback()
             
-        wx.CallAfter(self.protocol.OnFrame, self.imNum)
+        try:
+            wx.CallAfter(self.protocol.OnFrame, self.imNum)
+        except AssertionError:  # handle if spooler doesn't have a GUI
+            self.protocol.OnFrame(self.imNum)
 
         if self.imNum == 2 and sampleInformation and sampleInformation.currentSlide[0]: #have first frame and should thus have an imageID
             sampleInformation.createImage(self.md, sampleInformation.currentSlide[0])
