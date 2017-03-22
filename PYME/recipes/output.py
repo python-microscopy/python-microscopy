@@ -294,8 +294,8 @@ class UnifiedLoader(jinja2.BaseLoader):
         return source, template, lambda: True
 
 env = jinja2.Environment(loader=UnifiedLoader())
-from PYME.DSView.modules import particleTracking #FIXME - move the filters somewhere better
-env.filters['movieplot'] = particleTracking.movieplot2
+from PYME.Analysis import graphing_filters #FIXME - move the filters somewhere better
+env.filters['movieplot'] = graphing_filters.movieplot2
 
 @register_module('ReportOutput')
 class ReportOutput(OutputModule):

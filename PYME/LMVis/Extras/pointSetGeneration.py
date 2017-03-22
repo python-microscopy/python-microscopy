@@ -111,7 +111,7 @@ class ImageSource(PointSource):
 
         im = image.openImages[self.image]
         #import numpy as np
-        d = im.data[:,:,0,0]
+        d = im.data[:,:,0,0].astype('f')
 
         #normalise the image
         d = d/d.max()
