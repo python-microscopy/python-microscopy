@@ -106,7 +106,7 @@ class ImageSource(PointSource):
     #foo = Enum([1,2,3,4])
 
     def getPoints(self):
-        from PYMEnf.Simulation import locify
+        from PYME.simulation import locify
         print((self.image))
 
         im = image.openImages[self.image]
