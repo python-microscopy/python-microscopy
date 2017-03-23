@@ -787,7 +787,7 @@ class microscope(object):
         ExecTools.setDefaultNamespace(locals, globals())
         ExecTools.execFileBG(init_script_name, locals, globals())
                 
-    def register_piezo(self, piezo, axis_name, multiplier=1, needCamRestart=False):
+    def register_piezo(self, piezo, axis_name, multiplier=1, needCamRestart=False, channel=0):
         """
         Register a piezo with the microscope object
         
@@ -807,10 +807,21 @@ class microscope(object):
         -------
 
         """
-        self.piezos.append((piezo, 0, piezo.gui_description % axis_name))
-        self.positioning[axis_name] = (piezo, 0, 1*multiplier*piezo.units_um)
-        self.state.registerHandler('Positioning.%s' % axis_name, lambda: piezo.units_um*multiplier*piezo.GetPos(),
-                                    lambda v: piezo.MoveTo(0, v/(multiplier*piezo.units_um)), needCamRestart=needCamRestart)
+        try:
+            display_name = piezo.gui_description % axis_name
+        except:
+            display_name = 'Piezo %s' % axis_name
+
+        self.piezos.append((piezo, channel, display_name))
+        
+        try:
+            units_um = float(piezo.units_um)
+        except:
+            units_um = 1.0
+        
+        self.positioning[axis_name] = (piezo, channel, 1*multiplier*units_um)
+        self.state.registerHandler('Positioning.%s' % axis_name, lambda: units_um*multiplier*piezo.GetPos(channel),
+                                    lambda v: piezo.MoveTo(channel, v/(multiplier*units_um)), needCamRestart=needCamRestart)
         
     def register_camera(self, cam, name, port='', rotate=False, flipx=False, flipy=False):
         cam.port = port
