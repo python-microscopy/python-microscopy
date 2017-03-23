@@ -33,9 +33,9 @@ class ScaleBarOverlayLayer(OverlayLayer):
             self._color = [1.0, 0.0, 0.0]
         else:
             self._color = color
-        self._scale_bar_depth = 10.0
+        self._scale_bar_depth = 10
         self._scale_bar_length = 1000
-        self.set_shader_program(DefaultShaderProgram())
+        self.set_shader_program(DefaultShaderProgram)
 
     def set_scale_bar_length(self, length):
         self._scale_bar_length = length
@@ -57,8 +57,6 @@ class ScaleBarOverlayLayer(OverlayLayer):
         -------
 
         """
-        # TODO remove this, when size changes are implemented using the setter.
-        self._scale_bar_length = gl_canvas.scaleBarLength
 
         with self.get_shader_program():
             if self._scale_bar_length:

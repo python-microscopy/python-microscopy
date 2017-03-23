@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# GLProgram.py
+# ShaderProgramFactory.py
 #
 # Copyright Michael Graff
 #   graff@hm.edu
@@ -18,28 +18,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-import abc
-from OpenGL.GL import *
 
 
-class GLProgram(object):
-
+class ShaderProgramFactory:
     def __init__(self):
-        self._shader_program = None
-
-    @abc.abstractmethod
-    def __enter__(self):
         pass
 
-    @abc.abstractmethod
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        glUseProgram(0)
+    _programs = {}
 
-    def set_shader_program(self, shader_program):
-        self._shader_program = shader_program
+    @staticmethod
+    def get_program(class_name):
+        """
 
-    def get_shader_program(self):
-        return self._shader_program
+        Parameters
+        ----------
+        class_name is the real class of the ShaderProgram
 
-    def get_uniform_location(self, uniform_name):
-        return self._shader_program.get_uniform_location(uniform_name)
+        Returns
+        -------
+        object of the given class. If there's already an existing one. That one is returned.
+        """
+        existing_program = ShaderProgramFactory._programs.get(class_name)
+        if existing_program:
+            return existing_program
+        else:
+            new_program = class_name()
+            ShaderProgramFactory._programs[class_name] = new_program
+            print("New shader program created: {}".format(class_name))
+            return new_program

@@ -54,6 +54,10 @@ class GaussTexture:
         data = gaussKernel(size, sigma)
         glGenTextures(1, self._texture_id)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, size, size, 0, GL_LUMINANCE, GL_FLOAT, np.float16(data))
+        # index of the first element that is bigger than 0.5
+        index = next(x[0] for x in enumerate(data[size // 2, :]) if x[1] > 0.5)
+        size_correction_factor = (float(size) / 2) / float(size // 2 - index)
+        return size_correction_factor
 
     def delete_texture(self):
         glDeleteTextures(1, self._texture_id)

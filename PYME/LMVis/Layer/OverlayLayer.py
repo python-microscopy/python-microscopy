@@ -32,7 +32,7 @@ class OverlayLayer(Layer):
             self._offset = offset
         else:
             self._offset = [10, 10]
-        self.set_shader_program(DefaultShaderProgram())
+        self.set_shader_program(DefaultShaderProgram)
 
     def set_offset(self, offset):
         self._offset = offset

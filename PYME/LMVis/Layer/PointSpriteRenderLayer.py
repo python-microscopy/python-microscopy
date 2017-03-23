@@ -28,16 +28,19 @@ class PointSpritesRenderLayer(Point3DRenderLayer):
     This class prepares OpenGL for displaying the point clouds using point sprites.
 
     """
+
     def __init__(self, x_values, y_values, z_values, colors, color_map, color_limit, alpha, point_size=5):
         """
         This constructor is only used to call the super constructor and set those parameters.
         Some of them may never be used.
         """
         Point3DRenderLayer.__init__(self, x_values, y_values, z_values, colors, color_map, color_limit, alpha,
-                                    point_size*2)
+                                    point_size)
+        self.set_shader_program(PointSpriteShaderProgram)
+        self.set_point_size(point_size)
 
-        shader_program = PointSpriteShaderProgram()
-        self.set_shader_program(shader_program)
+    def set_point_size(self, point_size):
+        Point3DRenderLayer.set_point_size(self, point_size * self.get_shader_program().get_size_factor())
 
     def render(self, gl_canvas=None):
         """

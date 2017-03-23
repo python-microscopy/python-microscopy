@@ -50,7 +50,7 @@ class LUTOverlayLayer(OverlayLayer):
 
         self._scale_bar_depth = 10.0
         self._color = [1, 1, 0]
-        self.set_shader_program(DefaultShaderProgram())
+        self.set_shader_program(DefaultShaderProgram)
 
     def set_color_map(self, color_map):
         self._color_map = color_map

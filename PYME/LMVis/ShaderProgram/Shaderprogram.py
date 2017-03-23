@@ -82,12 +82,12 @@ class ShaderProgram:
         glAttachShader(self._program, shader)
         self._shaders.add(shader)
 
-    def get_program(self):
-        """
-        Returns the real handle
-        :return: the real handle to the OpenGL-program used by the OpenGL-Context
-        """
-        return self._program
+    # def get_program(self):
+    #     """
+    #     Returns the real handle
+    #     :return: the real handle to the OpenGL-program used by the OpenGL-Context
+    #     """
+    #     return self._program
 
     def link(self):
         glLinkProgram(self._program)
@@ -103,10 +103,11 @@ class ShaderProgram:
             raise exception
 
     def __del__(self):
-        for shader in self._shaders:
-            glDeleteShader(shader)
-
-        glDeleteProgram(self._program)
+        # shaders seem to have been deleted already, since it throws errors
+        # for shader in self._shaders:
+        #     glDeleteShader(shader)
+        # glDeleteProgram(self._program)
+        pass
 
 
 def read_shader(shader_name, path):

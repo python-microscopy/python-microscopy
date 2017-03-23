@@ -22,6 +22,8 @@ from abc import abstractmethod
 
 import numpy
 from PYME.LMVis.Layer.Layer import Layer
+from OpenGL.GL import *
+from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 
 
 class RenderLayer(Layer):
@@ -34,7 +36,7 @@ class RenderLayer(Layer):
         given, but y is None, both won't be processed.
         There are the following groups:
         (x,y,z)
-        (color_limit, colors, color_map)
+        (colors, color_map)
         Parameters
         ----------
         x           x_values of the points
@@ -70,12 +72,21 @@ class RenderLayer(Layer):
             cs = None
             color_map = None
             color_limit = None
+        self.set_shader_program(DefaultShaderProgram)
 
         self.set_values(vertices, normals, cs, color_map, color_limit, alpha)
 
     @abstractmethod
     def render(self, gl_canvas):
-        pass
+        with self.get_shader_program():
+
+            n_vertices = self.get_vertices().shape[0]
+
+            glVertexPointerf(self.get_vertices())
+            glNormalPointerf(self.get_normals())
+            glColorPointerf(self.get_colors())
+
+            glDrawArrays(GL_TRIANGLES, 0, n_vertices)
 
     def set_values(self, vertices=None, normals=None, colors=None, color_map=None, color_limit=None, alpha=None):
 
