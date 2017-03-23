@@ -159,8 +159,8 @@ class ZStackTaskListProtocol(TaskListProtocol):
 
       
         # zigzag stepping
-        zPoss1 = np.arange(scope.sa.GetStartPos(), scope.sa.GetEndPos()+.95*scope.sa.GetStepSize(),scope.sa.GetStepSize())
-        zPoss2 = np.arange(scope.sa.GetEndPos(), scope.sa.GetStartPos()-0.95*scope.sa.GetStepSize(),-1*scope.sa.GetStepSize())
+        zPoss1 = np.arange(scope.stackSettings.GetStartPos(), scope.stackSettings.GetEndPos()+.95*scope.stackSettings.GetStepSize(),scope.stackSettings.GetStepSize()*scope.stackSettings.GetDirection())
+        zPoss2 = np.arange(scope.stackSettings.GetEndPos(), scope.stackSettings.GetStartPos()-.95*scope.stackSettings.GetStepSize(),-1*scope.stackSettings.GetStepSize()*scope.stackSettings.GetDirection())
         #self.zPoss = np.asarray(zPoss1.tolist()+zPoss2.tolist()) # this should be doable more directly with array functions
         self.zPoss = np.append(zPoss1, zPoss2)
 
