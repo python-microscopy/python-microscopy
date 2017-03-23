@@ -12,6 +12,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 import PYME.experimental.dcimgSpoolShim as DCIMGSpool
+from PYME.IO import PZFFormat
 
 class venerableFileChucker(object):
     """
@@ -20,7 +21,7 @@ class venerableFileChucker(object):
     This is certainly not the most elegant way of implementing the DCIMGSpooler, but may suffice for now....
 
     """
-    def __init__(self, searchFolder, timeout = 3600):
+    def __init__(self, searchFolder, timeout = 3600, quantize=False):
         """
 
         Parameters
@@ -34,6 +35,8 @@ class venerableFileChucker(object):
 
         self.spooler = DCIMGSpool.DCIMGSpoolShim()
         self.timeout = timeout
+        self.comp_settings = {'quantization': PZFFormat.DATA_QUANT_SQRT if quantize else PZFFormat.DATA_QUANT_NONE}
+
 
     def _spoolSeries(self, mdfilename, deleteAfterSpool=False):
         """
@@ -48,7 +51,7 @@ class venerableFileChucker(object):
         -------
 
         """
-        self.spooler.OnNewSeries(mdfilename)
+        self.spooler.OnNewSeries(mdfilename, self.comp_settings)
         series_stub =  mdfilename.strip('.json')
         print(datetime.datetime.utcnow())
 
@@ -165,9 +168,11 @@ if __name__ == "__main__":
                         help='Only spool new files as they are saved')
     parser.add_argument('-d', dest='delAfterSpool', action='store_true',
                         help='Delete files after they are spooled to the cluster')
+    parser.add_argument('-q', dest='quantize', action='store_true',
+                        help='Quantize with sqrt(N) interval scaling')
     parser.add_argument('testFolder', metavar='testFolder', type=str,
                         help='Folder for fileChucker to monitor')
     args = parser.parse_args()
 
-    searcher = venerableFileChucker(args.testFolder)
+    searcher = venerableFileChucker(args.testFolder, quantize=args.quantize)
     searcher.searchAndHuck(args.onlySpoolNew, args.delAfterSpool)

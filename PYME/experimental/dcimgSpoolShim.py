@@ -42,10 +42,12 @@ class DCIMGSpoolShim:
     DCIMGSpoolShim provides methods to interface between DcimgDataSource and HTTPSpooler, so that one can spool
     dcimg files (containing arbitary numbers of image frames) as they are finished writing.
     """
-    def OnNewSeries(self, metadataFilename):
+    def OnNewSeries(self, metadataFilename, comp_settings=None):
         """Called when a new series is detected (ie the <seriesname>.json)
         file is detected
         """
+        if comp_settings is None:
+            comp_settings = {}
         # Make sure that json file is done writing
         success = _wait_for_file(metadataFilename)
         if not success:
@@ -71,9 +73,9 @@ class DCIMGSpoolShim:
         MetaDataHandler.provideStartMetadata.append(self.metadataSource)
 
         #generate the spooler
+        comp_settings.update({'quantizationOffset': self.mdh.getOrDefault('Camera.ADOffset', 0)})
         self.spooler = HTTPSpooler.Spooler(filename, self.imgSource.onFrame, frameShape=None,
-                                           compressionSettings={'compression': HTTPSpooler.PZFFormat.DATA_COMP_HUFFCODE,
-                                                                'quantization':HTTPSpooler.PZFFormat.DATA_QUANT_NONE})
+                                           compressionSettings=comp_settings)
 
         #spool our data
         self.spooler.StartSpool()
