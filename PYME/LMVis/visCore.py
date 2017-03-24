@@ -4,7 +4,7 @@ Created on Sat May 14 14:54:52 2016
 
 @author: david
 """
-
+import PIL
 import wx
 import wx.py.shell
 
@@ -218,12 +218,17 @@ class VisGUICore(object):
             self.AddMenuItem('View', '&Blobs', self.OnViewBlobs)
             self.AddMenuItem('View', '&Tracks', self.OnViewTracks)
 
+
         #self.view_menu.Check(ID_VIEW_POINTS, True)
         #self.view_menu.Enable(ID_VIEW_QUADS, False)
 
         self.AddMenuItem('View', itemType='separator')
         self.AddMenuItem('View', '&Fit', self.SetFit)
         self.AddMenuItem('View', 'Fit &ROI', self.OnFitROI)
+        if use_shaders:
+            self.AddMenuItem('View', itemType='separator')
+            self.AddMenuItem('View', 'Snapshot', self.OnSnapshot)
+            self.AddMenuItem('View', itemType='separator')
 
         #this needs an ID as we bind to it elsewhere (in the filter panel)
         self.ID_VIEW_CLIP_ROI = wx.NewId()
@@ -258,6 +263,11 @@ class VisGUICore(object):
         self.RefreshView()
         self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
+
+    def OnSnapshot(self, event):
+        data = self.glCanvas.getIm()
+        img = PIL.Image.fromarray(data, 'RGB')
+        img.show()
 
     def OnViewTracks(self,event):
         self.viewMode = 'tracks'
