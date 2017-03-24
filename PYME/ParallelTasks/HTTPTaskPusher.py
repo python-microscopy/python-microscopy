@@ -92,6 +92,7 @@ class HTTPTaskPusher(object):
         clusterResults.fileResults(self.resultsURI + '/MetaData', metadata)
         clusterResults.fileResults(self.resultsURI + '/Events', self.ds.getEvents())
 
+        # set up metadata file which is used for deciding how to launch the analysis
         clusterIO.putFile(resultsMDFilename, self.mdh.to_JSON(), serverfilter=serverfilter)
         
         #wait until clusterIO caches clear to avoid replicating the results file.
