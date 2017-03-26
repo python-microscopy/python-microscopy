@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+
 import pylab
 from wx import wx
 import numpy as np
@@ -58,6 +59,7 @@ class TestApp(wx.App):
         self.SetTopWindow(self._frame)
 
 
+
 class XTestApp(TestApp):
     def OnInit(self):
         self.setup()
@@ -95,12 +97,37 @@ class MassTest(TestApp):
         return True
 
 
+class Fish(TestApp):
+
+    def __init__(self, *args):
+        self.to = Ellipsoid(2000)
+        concentration = Cloud(50)
+        self.to += concentration
+        super(Fish, self).__init__(*args)
+
+    def OnInit(self):
+        self.setup()
+
+        self._canvas.pointSize = 50
+
+        self._canvas.setPoints3D(self.to.x, self.to.y, self.to.z, normalize(self.to.z),
+                                 self._canvas.cmap, self._canvas.clim, mode='pointsprites')
+        self._canvas.recenter(self.to.x, self.to.y)
+
+        self.done()
+        return True
+
+    def save(self, file_name):
+        self.to.save(file_name)
+
+
 def normalize(values):
     return (values - min(values)) / (max(values) - min(values))
 
 
 def main():
-    app = MassTest()
+    app = Fish()
+    app.save('C:/Users/mmg82/Desktop/test.csv')
     app.MainLoop()
 
 

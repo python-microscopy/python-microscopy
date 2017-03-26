@@ -743,7 +743,7 @@ class LMGLShaderCanvas(GLCanvas):
         return snap
 
     def getIm(self, pixelSize=None):
-        # FIXME - this is copied from 2D code and is currently broken.
+        # TODO Snapshot function doesn't work properly
         if pixelSize is None:  # use current pixel size
             self.OnDraw()
             return self.getSnapshot(GL_RGB)

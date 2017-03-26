@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+import csv
+
 import numpy
 
 
@@ -44,6 +46,26 @@ class TestObject(object):
         self._y += y
         self._z += z
 
+    def scale(self, x=1, y=1, z=1):
+        self._x *= x
+        self._y *= y
+        self._z *= z
+
+    def __add__(self, other):
+        new_x = numpy.append(other.x, self._x)
+        new_y = numpy.append(other.y, self._y)
+        new_z = numpy.append(other.z, self._z)
+        return TestObject(new_x,new_y,new_z)
+
+    def save(self, file_name):
+        with open(file_name, 'wb') as csv_file:
+            # fieldnames = ['x', 'z', 'z']
+            writer = csv.writer(csv_file)
+
+            # writer.writeheader()
+            collection = numpy.column_stack((self._x, self._y, self._z))
+            writer.writerow(('x', 'y', 'z'))
+            writer.writerows(collection)
 
 class NineCollections(TestObject):
 
@@ -62,3 +84,22 @@ class Cloud(TestObject):
         y = Cloud.DISTANCE * numpy.random.randn(amount_points)
         z = Cloud.DISTANCE * numpy.random.randn(amount_points)
         TestObject.__init__(self, x, y, z)
+
+
+class Ellipsoid(TestObject):
+
+    AXIS_A = 4
+    AXIS_B = 8
+    AXIS_C = 2
+
+    def __init__(self, amount_points,
+                 axis_a=AXIS_A,
+                 axis_b=AXIS_B,
+                 axis_c=AXIS_C):
+        max_axis = max(axis_a, axis_b, axis_c)
+        x = 5e3*numpy.random.randn(amount_points) * axis_a / max_axis
+        y = 5e3*numpy.random.randn(amount_points) * axis_b / max_axis
+        z = 5e3*numpy.random.randn(amount_points) * axis_c / max_axis
+        TestObject.__init__(self, x, y, z)
+
+
