@@ -102,4 +102,31 @@ class Ellipsoid(TestObject):
         z = 5e3*numpy.random.randn(amount_points) * axis_c / max_axis
         TestObject.__init__(self, x, y, z)
 
+class Ring(TestObject):
+
+    DIAMETER = 5e3
+    WIDTH = 1000
+
+    def __init__(self, amount_points, hole_size=0.4, hole_pos=0):
+        """
+
+        Parameters
+        ----------
+        amount_points
+        hole_size       in rad [0-2*pi]
+        hole_pos        in rad [0-2*pi]
+                        0 => y=0, x=1 => right
+        """
+        rad = numpy.random.rand(amount_points)*(2*numpy.pi-hole_size)+hole_size/2 + hole_pos
+        dist = self.DIAMETER - numpy.random.rand(amount_points) * self.WIDTH
+
+        x = dist * numpy.cos(rad)
+        y = dist * numpy.sin(rad)
+        z = numpy.ones(x.shape) * 0.1*numpy.random.randn(amount_points)
+
+        TestObject.__init__(self, x, y, z)
+
+
+
+
 
