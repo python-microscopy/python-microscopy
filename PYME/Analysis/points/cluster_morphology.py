@@ -104,7 +104,7 @@ def measure_3d(x, y, z, output=None):
     u, s, v = np.linalg.svd(np.vstack([x_, y_, z_]).T)
     
     for i in range(3):
-        output['axis%di' % i], output['axis%dj' % i], output['axis%dk' % i] = np.array(v[i])
+        output['axis%di' % i], output['axis%dj' % i], output['axis%dk' % i] = v[i]
         #std. deviation along axes
         output['sigma%d' % i] = s[i]/np.sqrt(N-1)
     
