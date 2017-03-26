@@ -71,9 +71,11 @@ def get_labels_from_image(label_image, points):
     return ids, numPerObject
 
 measurement_dtype = [('count', '<i4'),
-                     ('x', '<f4'),('y', '<f4'),('z', '<f4'),
+                     ('x', '<f4'), ('y', '<f4'), ('z', '<f4'),
                      ('gyrationRadius', '<f4'),
-                     ('axis0', '<3f4'),('axis1', '<3f4'),('axis2', '<3f4'),
+                     ('axis0i', '<f4'), ('axis0j', '<f4'), ('axis0k', '<f4'),
+                     ('axis1i', '<f4'), ('axis1j', '<f4'), ('axis1k', '<f4'),
+                     ('axis2i', '<f4'), ('axis2j', '<f4'), ('axis2k', '<f4'),
                      ('sigma0', '<f4'), ('sigma1', '<f4'), ('sigma2', '<f4'),
                      ('theta', '<f4'), ('phi', '<f4')]
 
@@ -102,7 +104,7 @@ def measure_3d(x, y, z, output=None):
     u, s, v = np.linalg.svd(np.vstack([x_, y_, z_]).T)
     
     for i in range(3):
-        output['axis%d' % i] = v[i]
+        output['axis%di' % i], output['axis%dj' % i], output['axis%dk' % i] = np.array(v[i])
         #std. deviation along axes
         output['sigma%d' % i] = s[i]/np.sqrt(N-1)
     
