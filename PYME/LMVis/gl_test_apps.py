@@ -20,6 +20,7 @@
 #
 
 import pylab
+import sys
 from wx import wx
 import numpy as np
 
@@ -219,7 +220,7 @@ def normalize(values):
 
 def main():
     app = Fish()
-    app.save('C:/Users/mmg82/Desktop/test.csv')
+    app.save(sys.argv[1])
     app.MainLoop()
 
 
