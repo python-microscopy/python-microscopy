@@ -92,7 +92,7 @@ class Cloud(TestObject):
 class Ellipsoid(TestObject):
 
     AXIS_A = 4
-    AXIS_B = 8
+    AXIS_B = 5
     AXIS_C = 2
 
     def __init__(self, amount_points,

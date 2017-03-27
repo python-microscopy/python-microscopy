@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-
+import PIL
 import numpy
 import numpy as np
 import pylab
@@ -758,24 +758,23 @@ class LMGLShaderCanvas(GLCanvas):
         else:
             event.Skip()
 
-    def getSnapshot(self, mode=GL_LUMINANCE):
-        snap = glReadPixelsf(0, 0, self.Size[0], self.Size[1], mode)
+    def getSnapshot(self):
+        # http://bazaar.launchpad.net/~mcfletch/openglcontext/trunk/view/head:/tests/saveimage.py
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
+        width, height = self.Size[0], self.Size[1]
+        snap = glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, outputType=None)
 
-        # snap = snap.ravel().reshape(self.Size[0], self.Size[1], -1, order='F')
-
-        if mode == GL_LUMINANCE:
-            snap.strides = (4, 4 * snap.shape[0])
-        else:  # GL_RGB
-            snap.strides = (12, 12 * snap.shape[0], 4)
-
-        return snap
+        img = PIL.Image.frombytes('RGB', (width, height), snap.tostring())
+        img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
+        # img.show()
+        return img
 
     def getIm(self, pixelSize=None):
-        # TODO Snapshot function doesn't work properly
         if pixelSize is None:  # use current pixel size
             self.OnDraw()
-            return self.getSnapshot(GL_RGB)
+            return self.getSnapshot()
         else:
+            # TODO Tiling function doesn't work properly
             # status = statusLog.StatusLogger('Tiling image ...')
             # save a copy of the viewport
             minx, maxx, miny, maxy = (self.xmin, self.xmax, self.ymin, self.ymax)

@@ -265,9 +265,10 @@ class VisGUICore(object):
         self.displayPane.OnPercentileCLim(None)
 
     def OnSnapshot(self, event):
-        data = self.glCanvas.getIm()
-        img = PIL.Image.fromarray(data, 'RGB')
-        img.show()
+        img = self.glCanvas.getIm()
+        file_name = wx.FileSelector('Save Image as ... (image .png will be appended to filename)')
+        if file_name:
+            img.save('{}.png'.format(file_name))
 
     def OnViewTracks(self,event):
         self.viewMode = 'tracks'
