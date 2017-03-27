@@ -57,7 +57,7 @@ class TestObject(object):
         new_x = numpy.append(other.x, self._x)
         new_y = numpy.append(other.y, self._y)
         new_z = numpy.append(other.z, self._z)
-        return TestObject(new_x,new_y,new_z)
+        return TestObject(new_x, new_y, new_z)
 
     def save(self, file_name):
         with open(file_name, 'wb') as csv_file:
@@ -68,6 +68,7 @@ class TestObject(object):
             collection = numpy.column_stack((self._x, self._y, self._z))
             writer.writerow(('x', 'y', 'z'))
             writer.writerows(collection)
+
 
 class NineCollections(TestObject):
 
@@ -106,8 +107,8 @@ class Ellipsoid(TestObject):
 
 
 class Worm(TestObject):
-    def __init__(self, kbp=200):
-        chain = wormlikeChain(kbp, steplength=50)
+    def __init__(self, kbp=200, step_length=50):
+        chain = wormlikeChain(kbp, steplength=step_length)
         TestObject.__init__(self, chain.xp, chain.yp, chain.zp)
 
 
@@ -136,6 +137,15 @@ class Ring(TestObject):
         TestObject.__init__(self, x, y, z)
 
 
+class Clusterizer(TestObject):
+    def __init__(self, test_object, multiply, distance):
+        amount_of_points = len(test_object.x)
+        offsets_x = (numpy.random.randn(amount_of_points*multiply) - 0.5) * 2 * distance
+        offsets_y = (numpy.random.randn(amount_of_points*multiply) - 0.5) * 2 * distance
+        offsets_z = (numpy.random.randn(amount_of_points*multiply) - 0.5) * 2 * distance
 
+        new_positions_x = numpy.repeat(test_object.x, multiply) + offsets_x
+        new_positions_y = numpy.repeat(test_object.y, multiply) + offsets_y
+        new_positions_z = numpy.repeat(test_object.z, multiply) + offsets_z
 
-
+        TestObject.__init__(self, new_positions_x, new_positions_y, new_positions_z)

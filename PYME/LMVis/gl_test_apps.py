@@ -51,9 +51,9 @@ class TestApp(wx.App):
         self._canvas.SetCurrent()
         self._canvas.initialize()
         self._canvas.setCMap(pylab.cm.hot)
-        self._canvas.clim = [0, 1]
+        self._canvas.clim = [0.1, 0.9]
         self._canvas.displayMode = '3D'
-        self._canvas.pointSize = 10
+        self._canvas.pointSize = 50
 
     def done(self):
         self._canvas.Refresh()
@@ -100,13 +100,14 @@ class MassTest(TestApp):
 
 class Fish(TestApp):
     def __init__(self, *args):
-        self.to = Ellipsoid(4000)
-        concentration = Worm(100)
+        self.to = Ellipsoid(3000)
+        concentration = Worm(250)
         concentration.translate(1000, 0, 0)
         self.to += concentration
-        concentration = Worm(100)
+        concentration = Worm(200)
         concentration.translate(-2300, 500, 0)
         self.to += concentration
+        self.to = Clusterizer(self.to, 4, 30)
         super(Fish, self).__init__(*args)
 
     def OnInit(self):
