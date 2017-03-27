@@ -1,7 +1,7 @@
 #PYME Simple Metadata v1
 md['EndTime'] = 1300676178.4949999
 md['EstimatedLaserOnFrameNo'] = 0
-md['PSFFile'] = u'/home/david/Desktop/pri_psf.psf'
+md['PSFFile'] = u'/home/david/Desktop/pri_psf.tif'
 md['StartTime'] = 1300676151.901
 md['tIndex'] = 0
 md['Analysis.BGRange'] = [0, 0]
@@ -48,5 +48,5 @@ md['PRI.Axis']='y'
 
 md['Test.DefaultParams'] = [2000, 0, 0, 0, 2]
 md['Test.ParamJitter'] = [150, 90, 200, 250, 0]
-md['Test.PSFFile'] = '/home/david/Desktop/pri_psf.psf'
+md['Test.PSFFile'] = '/home/david/Desktop/pri_psf.tif'
 md['Test.SimModule'] = u'InterpFitR'

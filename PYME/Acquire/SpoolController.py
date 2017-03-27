@@ -86,6 +86,7 @@ class SpoolController(object):
        
     def _checkOutputExists(self, fn):
         if self.spoolType == 'HTTP':
+            from PYME.Acquire import HTTPSpooler
             #special case for HTTP spooling
             return HTTPSpooler.exists(getRelFilename(self.dirname + fn + '.h5'))
             #return (fn + '.h5/') in HTTPSpooler.clusterIO.listdir(self.dirname)
@@ -109,6 +110,7 @@ class SpoolController(object):
                       compressionSettings=HTTPSpooler.defaultCompSettings):
         """Start spooling
         """
+        import QueueSpooler, HTTPSpooler, HDFSpooler
 
         if fn in ['', None]: #sanity checking
             fn = self.seriesName
@@ -210,6 +212,7 @@ class SpoolController(object):
     def LaunchAnalysis(self):
         """Launch analysis
         """
+        import QueueSpooler, HTTPSpooler
         
         dh5view_cmd = 'dh5view'
         if sys.platform == 'win32':

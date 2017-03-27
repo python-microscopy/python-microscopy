@@ -145,7 +145,10 @@ class Annotater(object):
     
     def add_curved_line(self, event=None):
         if self.do.selectionMode == self.do.SELECTION_SQUIGLE:
-            self._annotations.append({'type' : 'curve', 'points' : self.do.selection_trace,
+            l = self.do.selection_trace
+            if isinstance(l, np.ndarray):
+                l = l.tolist()
+            self._annotations.append({'type' : 'curve', 'points' : l,
                                       'labelID' : self.cur_label_index, 'z' : self.do.zp,
                                       'width' : self.line_width})
             self.do.selection_trace = []

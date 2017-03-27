@@ -26,7 +26,7 @@ import threading
 
 ##Virtual laser class - to be overridden
 
-class Laser:
+class Laser(object):
     powerControlable = False
     MAX_POWER = 1
 
@@ -69,6 +69,10 @@ class Laser:
 
     def GetName(self):
         return self.name
+    
+    def register(self, scope):
+        scope.lasers.append(self)
+        self.registerStateHandlers(scope.state)
         
     def registerStateHandlers(self, scopeState):
         scopeState.registerHandler('Lasers.%s.On' % self.name, self.IsOn, lambda v: self.TurnOn() if v else self.TurnOff())

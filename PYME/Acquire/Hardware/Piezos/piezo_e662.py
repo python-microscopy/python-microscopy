@@ -21,9 +21,10 @@
 #
 ##################
 
-import serial;
+import serial
+from .base_piezo import PiezoBase
 
-class piezo_e662:    
+class piezo_e662(PiezoBase):
     def __init__(self, portname='COM2', maxtravel = 100.00):
         self.max_travel = maxtravel
         self.ser_port = serial.Serial(portname, 9600, rtscts=1, timeout=30)

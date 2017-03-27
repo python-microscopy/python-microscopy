@@ -21,25 +21,26 @@
 #
 ##################
 
-from wx.glcanvas import GLCanvas
-import wx.glcanvas
-import wx
-
-from OpenGL.GL import *
-from OpenGL.GLU import *
-from OpenGL import GLUT
-#import sys,math
-
-
 import numpy
 import numpy as np
-
 import pylab
+import wx
+import wx.glcanvas
+from OpenGL import GLUT
+from OpenGL.GL import *
+from OpenGL.GLU import *
+from PYME.LMVis.Layer.AxesOverlayLayer import AxesOverlayLayer
+from PYME.LMVis.Layer.LUTOverlayLayer import LUTOverlayLayer
+from PYME.LMVis.Layer.PointSpriteRenderLayer import PointSpritesRenderLayer
+from PYME.LMVis.Layer.ScaleBarOverlayLayer import ScaleBarOverlayLayer
+from PYME.LMVis.Layer.SelectionOverlayLayer import SelectionOverlayLayer
+from PYME.LMVis.Layer.WireFrameRenderLayer import WireFrameRenderLayer
+from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
 from six.moves import xrange
-
+from wx.glcanvas import GLCanvas
 
 try:
-    from gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
+    from PYME.Analysis.points.gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj
 except:
     pass
 
@@ -47,29 +48,30 @@ try:
     # location in Python 2.7 and 3.1
     from weakref import WeakSet
 except ImportError:
-    # separately installed
+    # separately installed py 2.6 compatibility
     from weakrefset import WeakSet
 
-#import time
+# import time
 
 import sys
 if sys.platform == 'darwin':
-    #osx gives us LOTS of scroll events
-    #ajust the mag in smaller increments
+    # osx gives us LOTS of scroll events
+    # ajust the mag in smaller increments
     ZOOM_FACTOR = 1.1
 else:
     ZOOM_FACTOR = 2.0
 
-#import statusLog
+# import statusLog
 
 name = 'ball_glut'
 
 def testObj():
-    x = 5e3*((numpy.arange(270)%27)/9 + 0.1*numpy.random.randn(270))
-    y = 5e3*((numpy.arange(270)%9)/3 + 0.1*numpy.random.randn(270))
-    z = 5e3*(numpy.arange(270)%3 + 0.1*numpy.random.randn(270))
+    x = 5e3*((numpy.arange(270) % 27)/9 + 0.1*numpy.random.randn(270))
+    y = 5e3*((numpy.arange(270) % 9)/3 + 0.1*numpy.random.randn(270))
+    z = 5e3*(numpy.arange(270) % 3 + 0.1*numpy.random.randn(270))
 
     return x, y, z
+
 
 class cmap_mult:
     def __init__(self, gains, zeros):
@@ -77,14 +79,16 @@ class cmap_mult:
         self.zeros = zeros
 
     def __call__(self, cvals):
-        return numpy.minimum(numpy.vstack((self.gains[0]*cvals - self.zeros[0],self.gains[1]*cvals - self.zeros[1],self.gains[2]*cvals - self.zeros[2], 1+ 0*cvals)), 1).astype('f').T
+        return numpy.minimum(numpy.vstack((self.gains[0]*cvals - self.zeros[0], self.gains[1]*cvals - self.zeros[1],
+                                           self.gains[2]*cvals - self.zeros[2], 1 + 0*cvals)), 1).astype('f').T
 
 cm_hot = cmap_mult(8.0*numpy.ones(3)/3, [0, 3.0/8, 6.0/8])
 cm_grey = cmap_mult(numpy.ones(3), [0, 0, 0])
 
     
 class RenderLayer(object):
-    drawModes = {'triang':GL_TRIANGLES, 'quads':GL_QUADS, 'edges':GL_LINES, 'points':GL_POINTS, 'wireframe':GL_TRIANGLES, 'tracks':GL_LINE_STRIP}
+    drawModes = {'triang': GL_TRIANGLES, 'quads': GL_QUADS, 'edges': GL_LINES, 'points': GL_POINTS,
+                 'wireframe': GL_TRIANGLES, 'tracks': GL_LINE_STRIP}
     
     def __init__(self, vertices, normals, colours, cmap, clim, mode='triang', pointsize=5, alpha=1):
         self.verts = vertices
@@ -97,26 +101,31 @@ class RenderLayer(object):
         
         cs_ = ((self.cols - self.clim[0])/(self.clim[1] - self.clim[0]))
         cs = self.cmap(cs_)
-        cs[:,3] = self.alpha
+        cs[:, 3] = self.alpha
         
         self.cs = cs.ravel().reshape(len(self.cols), 4)
         
         self.mode = mode
-        self.pointSize=pointsize
-        
-        
+        self.pointSize = pointsize
+
     def render(self, glcanvas=None):
+        # with default_shader:
         if self.mode in ['points']:
-            #glDisable(GL_LIGHTING)
+            glDisable(GL_LIGHTING)
+            #glDisable(GL_DEPTH_TEST)
             #glPointSize(self.pointSize*self.scale*(self.xmax - self.xmin))
+
             glEnable(GL_POINT_SMOOTH)
             if glcanvas:
-                glPointSize(self.pointSize/glcanvas.pixelsize)
+                if self.pointSize == 0:
+                    glPointSize(1 / glcanvas.pixelsize)
+                else:
+                    glPointSize(self.pointSize/glcanvas.pixelsize)
             else:
                 glPointSize(self.pointSize)
         else:
             glEnable(GL_LIGHTING)
-            pass        
+            pass
         
         if self.mode in ['wireframe']:
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
@@ -131,11 +140,15 @@ class RenderLayer(object):
             
         glPushMatrix ()
         glColor4f(0,0.5,0, 1)
+        if glcanvas.use_shaders:
+            with glcanvas.defaultProgram:
+                glDrawArrays(self.drawModes[self.mode], 0, nVertices)
+        else:
+            glDrawArrays(self.drawModes[self.mode], 0, nVertices)
 
-        glDrawArrays(self.drawModes[self.mode], 0, nVertices)
+        glPopMatrix()
 
-        glPopMatrix ()
-        
+
 class TrackLayer(RenderLayer):
     def __init__(self, vertices, colours, cmap, clim, clumpSizes, clumpStarts, alpha=1):
         self.verts = vertices
@@ -168,7 +181,8 @@ class TrackLayer(RenderLayer):
             if cl > 0:
                 glDrawArrays(self.drawModes['tracks'], self.clumpStarts[i], cl)
 
-        glPopMatrix ()
+        glPopMatrix()
+
 
 class SelectionSettings(object):
     def __init__(self):
@@ -177,7 +191,9 @@ class SelectionSettings(object):
         self.colour = [1,1,0]
         self.show = False
 
+
 class SelectionOverlay(object):
+
     def __init__(self, selectionSettings):
         self.selectionSettings = selectionSettings
 
@@ -195,11 +211,15 @@ class SelectionOverlay(object):
             glVertex3f(x0, y1, glcanvas.zc)
             glEnd()
 
+
 class MessageOverlay(object):
     def __init__(self, message = '', x=-.7, y=0):
         self.message = message
         self.x = x
         self.y = y
+        
+    def set_message(self, message):
+        self.message = message
 
     def render(self, glcanvas):
         if not self.message == '':
@@ -208,19 +228,19 @@ class MessageOverlay(object):
             glLoadIdentity()
 
             glOrtho(-1, 1, -1, 1, -1, 1)
-            #def glut_print(x, y, font, text, r, g, b, a):
+            # def glut_print(x, y, font, text, r, g, b, a):
 
             # blending = False
             # if glIsEnabled(GL_BLEND):
             #     blending = True
 
-            #glEnable(GL_BLEND)
+            # glEnable(GL_BLEND)
             glColor3f(1, 1, 1)
             glRasterPos2f(self.x, self.y)
             for ch in self.message:
                 GLUT.glutBitmapCharacter(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_int(ord(ch)))
 
-            #GLUT.glutBitmapString(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_char_p(self.message))
+            # GLUT.glutBitmapString(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_char_p(self.message))
 
             # if not blending:
             #     glDisable(GL_BLEND)
@@ -231,7 +251,13 @@ class MessageOverlay(object):
 
 
 class LMGLCanvas(GLCanvas):
-    def __init__(self, parent):
+    defaultProgram = None
+    LUTOverlayLayer = None
+    AxesOverlayLayer = None
+    ScaleBarOverlayLayer = None
+    _is_initialized = False
+
+    def __init__(self, parent, use_shaders=False):
         attriblist = [wx.glcanvas.WX_GL_RGBA,wx.glcanvas.WX_GL_STENCIL_SIZE,8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
         GLCanvas.__init__(self, parent,-1, attribList = attriblist)
         wx.EVT_PAINT(self, self.OnPaint)
@@ -246,10 +272,9 @@ class LMGLCanvas(GLCanvas):
         wx.EVT_MOTION(self, self.OnMouseMove)
         wx.EVT_KEY_DOWN(self, self.OnKeyPress)
         #wx.EVT_MOVE(self, self.OnMove)
-        
         self.gl_context = wx.glcanvas.GLContext(self)
 
-        self.init = 0
+        self.use_shaders=use_shaders
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
         self.zeroPt = [0, 1.0/3, 2.0/3]
@@ -325,30 +350,34 @@ class LMGLCanvas(GLCanvas):
         self.layers = []
         self.overlays = []
 
-        self.overlays.append(SelectionOverlay(self.selectionSettings))
-
         self.messageOverlay = MessageOverlay()
         self.overlays.append(self.messageOverlay)
-
-
         self.wantViewChangeNotification = WeakSet()
         self.pointSelectionCallbacks = []
 
         return
 
-    def OnPaint(self,event):
+    def OnPaint(self, event):
         if not self.IsShown():
             print('ns')
             return
-        #print('foo')
-        #raise Exception('foo')
-        dc = wx.PaintDC(self)
-        #print self.GetContext()
+        wx.PaintDC(self)
+        # print self.GetContext()
         self.gl_context.SetCurrent(self)
         self.SetCurrent()
-        if not self.init:
+
+        if not self._is_initialized:
             self.InitGL()
-            self.init = 1
+            if self.use_shaders:
+                self.defaultProgram = DefaultShaderProgram()
+                self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
+                self.LUTOverlayLayer = LUTOverlayLayer()
+                self.AxesOverlayLayer = AxesOverlayLayer()
+                self.overlays.append(SelectionOverlayLayer(self.selectionSettings))
+            else:
+                self.overlays.append(SelectionOverlay(self.selectionSettings))
+
+            self._is_initialized = True
         else:
             self.OnDraw()
         return
@@ -359,7 +388,9 @@ class LMGLCanvas(GLCanvas):
 
         #self.xmax = self.xmin + self.Size[0]*self.pixelsize
         #self.ymax = self.ymin + self.Size[1]*self.pixelsize
-        pass
+        if self._is_initialized:
+            self.OnDraw()
+        self.Refresh()
         
         #self.interlace_stencil()
         
@@ -367,8 +398,8 @@ class LMGLCanvas(GLCanvas):
         self.Refresh()
 
     def setOverlayMessage(self, message=''):
-        self.messageOverlay.message = message
-        if self.init:
+        self.messageOverlay.set_message(message)
+        if self._is_initialized:
             self.Refresh()
         
     def interlace_stencil(self):
@@ -413,7 +444,11 @@ class LMGLCanvas(GLCanvas):
 
 
     def OnDraw(self):
-        self.interlace_stencil()
+        if self.use_shaders:
+            with self.defaultProgram:
+                self.interlace_stencil()
+        else:
+            self.interlace_stencil()
         glEnable(GL_DEPTH_TEST)
         glClear(GL_COLOR_BUFFER_BIT)
         
@@ -458,21 +493,17 @@ class LMGLCanvas(GLCanvas):
             glTranslatef(0, 0, -10)
 
             if not self.displayMode == '2D':
-                self.trafMatrix = numpy.array([numpy.hstack((self.vecRight, 0)), numpy.hstack((self.vecUp, 0)), numpy.hstack((self.vecBack, 0)), [0,0,0, 1]])
-                self.drawAxes(self.trafMatrix, ys)
-            else:
-                self.trafMatrix = numpy.eye(4)            
-            
-            #glTranslatef(-self.xc, -self.yc, -self.zc) 
+                if not self.use_shaders:
+                    self.drawAxes(self.object_rotation_matrix, ys)
+                else:
+                    self.AxesOverlayLayer.render(self)
+
             glScalef(self.scale, self.scale, self.scale)
 
-            self.drawScaleBar()
-            self.drawLUT()            
+            glPushMatrix()
+            #rotate object
+            glMultMatrixf(self.object_rotation_matrix)
 
-            if not self.displayMode == '2D':
-                glMultMatrixf(self.trafMatrix)
-    
-            
             glTranslatef(-self.xc, -self.yc, -self.zc)
             
             for l in self.layers:
@@ -481,21 +512,41 @@ class LMGLCanvas(GLCanvas):
             for o in self.overlays:
                 o.render(self)
 
+            glPopMatrix()
 
-        
+            if self.use_shaders:
+                self.ScaleBarOverlayLayer.render(self)
+                self.LUTOverlayLayer.render(self)
+            else:
+                self.drawScaleBar()
+                self.drawLUT()
 
         glFlush()
-        #glPopMatrix()
-        #print 'odf'
+
         self.SwapBuffers()
         
-        #print 'odd'
         return
+    
+    @property
+    def object_rotation_matrix(self):
+        """
+        The transformation matrix used to map coordinates in real space to our 3D view space. Currently implements
+        rotation, defined by 3 vectors (up, right, and back). Does not include scaling or projection.
+        
+        Returns
+        -------
+        a 4x4 matrix describing the rotation of the pints within our 3D world
+        
+        """
+        if not self.displayMode == '2D':
+            return numpy.array([numpy.hstack((self.vecRight, 0)), numpy.hstack((self.vecUp, 0)), numpy.hstack((self.vecBack, 0)), [0,0,0, 1]])
+        else:
+            return numpy.eye(4)
 
     def setupLights(self):
         # set viewing projection
         light_diffuse = [0.8, 0.8, 0.8, 1.0]
-        #light_diffuse = [1., 1., 1., 1.0]
+        # light_diffuse = [1., 1., 1., 1.0]
         light_position = [2.0, 2.00, 2.0, 0.0]
 
         glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.5, 0.5, 0.5, 1.0]);
@@ -509,6 +560,8 @@ class LMGLCanvas(GLCanvas):
         glEnable(GL_LIGHT0)
 
     def InitGL(self):
+        # GLUT.glutInitContextVersion(3,2) #; /* or later versions, core was introduced only with 3.2 */
+        # GLUT.glutInitContextProfile(GLUT.GLUT_CORE_PROFILE)#;
         
 #        # set viewing projection
 #        light_diffuse = [0.5, 0.5, 0.5, 1.0]
@@ -557,6 +610,7 @@ class LMGLCanvas(GLCanvas):
         #self.nVertices = 3
 
         #to = testObj()
+        #print('OpenGL version: %s' % glGetString(GL_VERSION))
 
         #self.setBlob(to[0], to[1], to[2], smScale=[1e3,1e3,1e3])
         #self.setTriang(to[0], to[1], to[2])
@@ -633,7 +687,7 @@ class LMGLCanvas(GLCanvas):
         self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()]))
 
     def setBlobs(self, objects, sizeCutoff):
-        import gen3DTriangs
+        from PYME.Analysis.points import gen3DTriangs
 
         vs, self.c = gen3DTriangs.blobify2D(objects, sizeCutoff)
 
@@ -655,51 +709,53 @@ class LMGLCanvas(GLCanvas):
 
         self.SetCurrent()
         self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()]))
-        
 
     def setTriang3D(self, x,y,z, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=True, alpha=1, recenter=True):
-        #center data
-        x = x #- x.mean()
-        y = y #- y.mean()
-        z = z #- z.mean()
-        
-        if recenter:        
-            self.xc = x.mean()
-            self.yc = y.mean()
-            self.zc = z.mean()
-        
-        self.sx = x.max() - x.min()
-        self.sy = y.max() - y.min()
-        self.sz = z.max() - z.min()
-
-        P, A, N = gen3DTriangs(x,y,z/zrescale, sizeCutoff, internalCull=internalCull)
-        P[:,2] = P[:,2]*zrescale
-
-        self.scale = 2./(x.max() - x.min())
-
-
-
-        self.vecUp = numpy.array([0,1,0])
-        self.vecRight = numpy.array([1,0,0])
-        self.vecBack = numpy.array([0,0,1])
-
-        if c == 'z':
-            self.c = P[:,2]
+        if self.use_shaders:
+            self.layers.append(WireFrameRenderLayer(x, y, z, c, self.cmap, sizeCutoff, internalCull, zrescale, alpha, ))
         else:
-            self.c = 1./A
-            
-        #self.a = 1./A
-        self.a = 0.5*numpy.ones_like(A)
-        vs = P
+            #center data
+            x = x #- x.mean()
+            y = y #- y.mean()
+            z = z #- z.mean()
 
-        self.SetCurrent()
-        
-        if wireframe:
-            mode = 'wireframe'
-        else:
-            mode = 'triang'
-                        
-        self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()], mode=mode, alpha = alpha))
+            if recenter:
+                self.xc = x.mean()
+                self.yc = y.mean()
+                self.zc = z.mean()
+
+            self.sx = x.max() - x.min()
+            self.sy = y.max() - y.min()
+            self.sz = z.max() - z.min()
+
+            P, A, N = gen3DTriangs(x,y,z/zrescale, sizeCutoff, internalCull=internalCull)
+            P[:,2] = P[:,2]*zrescale
+
+            self.scale = 2./(x.max() - x.min())
+
+
+
+            self.vecUp = numpy.array([0,1,0])
+            self.vecRight = numpy.array([1,0,0])
+            self.vecBack = numpy.array([0,0,1])
+
+            if c == 'z':
+                self.c = P[:,2]
+            else:
+                self.c = 1./A
+
+            #self.a = 1./A
+            self.a = 0.5*numpy.ones_like(A)
+            vs = P
+
+            self.SetCurrent()
+
+            if wireframe:
+                mode = 'wireframe'
+            else:
+                mode = 'triang'
+
+            self.layers.append(RenderLayer(vs, N, self.c, self.cmap, [self.c.min(), self.c.max()], mode=mode, alpha = alpha))
         self.Refresh()
         
     def setTriang(self, T, c = None, sizeCutoff=1000., zrescale=1, internalCull = True, wireframe=False, alpha=1, recenter=True):
@@ -764,18 +820,54 @@ class LMGLCanvas(GLCanvas):
         
     def setTriangEdges(self, T):
         self.setTriang(T, wireframe=True)
+        
+    
+    def setQuads(self, qt, maxDepth = 100, mdscale=False):
+        lvs = qt.getLeaves(maxDepth)
 
+        xs = numpy.zeros((len(lvs), 4))
+        ys = numpy.zeros((len(lvs), 4))
+        c = numpy.zeros(len(lvs))
 
-    def setPoints3D(self, x, y, z, c = None, a = None, recenter=False, alpha = 1.0):#, clim=None):
-        #center data
-        x = x #- x.mean()
-        y = y #- y.mean()
-        z = z #- z.mean()
+        i = 0
+
+        maxdepth = 0
+        for l in lvs:
+            xs[i, :] = [l.x0, l.x1, l.x1, l.x0]
+            ys[i, :] = [l.y0, l.y0, l.y1, l.y1]
+            c[i] = float(l.numRecords)*2**(2*l.depth)
+            i +=1
+            maxdepth = max(maxdepth, l.depth)
+
+        if not mdscale:
+            c = c/(2**(2*maxdepth))
+
+        self.c = numpy.vstack((c,c,c,c)).T.ravel()
+
+        vs = numpy.vstack((xs.ravel(), ys.ravel(), 0*xs.ravel()))
+        vs = vs.T.ravel().reshape(len(xs.ravel()), 3)
+        N = -0.69 * numpy.ones_like(vs)
+        #vs_ = glVertexPointerf(vs)
+
+        mode = 'quads'
+        
+        self.SetCurrent()
+        self.layers.append(RenderLayer(vs, N, self.c, self.cmap, self.clim, mode=mode, alpha=1))
+        self.Refresh()
+
+        #self.nVertices = vs.shape[0]
+        #self.setColour(self.IScale, self.zeroPt)
+
+    def setPoints3D(self, x, y, z, c = None, a = None, recenter=False, alpha=1.0, mode='points'):#, clim=None):
+        # center data
+        x = x # - x.mean()
+        y = y # - y.mean()
+        z = z # - z.mean()
         
         if recenter:        
             self.xc = x.mean()
             self.yc = y.mean()
-        
+
         self.zc = z.mean()
         self.zc_o = 1.0*self.zc
 
@@ -799,8 +891,12 @@ class LMGLCanvas(GLCanvas):
         self.SetCurrent()
         vs = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
         vs = vs.T.ravel().reshape(len(x.ravel()), 3)
-        
-        self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode='points', pointsize=self.pointSize, alpha=alpha))
+
+        if mode is 'pointsprites':
+            self.layers.append(PointSpritesRenderLayer(x, y, z, self.c, self.cmap, self.clim, alpha, self.pointSize))
+        else:
+            self.layers.append(RenderLayer(vs, -0.69*numpy.ones(vs.shape), self.c, self.cmap, self.clim, mode,
+                                           pointsize=self.pointSize, alpha=alpha))
         self.Refresh()
         
     def setPoints(self, x, y, c = None, a = None, recenter=True, alpha=1.0):
@@ -1023,7 +1119,7 @@ class LMGLCanvas(GLCanvas):
 
         dx, dy = (xp - self.xc), (yp - self.yc)
 
-        dx_, dy_, dz_, c_ = numpy.dot(self.trafMatrix, [dx, dy, 0, 0])
+        dx_, dy_, dz_, c_ = numpy.dot(self.object_rotation_matrix, [dx, dy, 0, 0])
 
         xp_, yp_, zp_ = (self.xc + dx_), (self.yc + dy_), (self.zc + dz_)
 
@@ -1191,7 +1287,7 @@ class LMGLCanvas(GLCanvas):
             
             #print dx
 
-            dx_, dy_, dz_, c_ = numpy.dot(self.trafMatrix, [dx, dy, 0, 0])
+            dx_, dy_, dz_, c_ = numpy.dot(self.object_rotation_matrix, [dx, dy, 0, 0])
             
             #self.xc -= dx_
             #self.yc -= dy_
@@ -1210,48 +1306,48 @@ class LMGLCanvas(GLCanvas):
             event.Skip()
             
     def OnKeyPress(self, event):
-        #print event.GetKeyCode()
-        if event.GetKeyCode() == 83: #S - toggle stereo
+        # print event.GetKeyCode()
+        if event.GetKeyCode() == 83:  # S - toggle stereo
             self.stereo = not self.stereo
             self.Refresh()
-        elif event.GetKeyCode() == 67: #C - centre
+        elif event.GetKeyCode() == 67:  # C - centre
             self.xc = self.sx/2
             self.yc = self.sy/2
             self.zc = self.sz/2
             self.Refresh()
             
-        elif event.GetKeyCode() == 91: #[ decrease eye separation
-            self.eye_dist /=1.5
+        elif event.GetKeyCode() == 91:  # [ decrease eye separation
+            self.eye_dist /= 1.5
             self.Refresh()
         
-        elif event.GetKeyCode() == 93: #] increase eye separation
-            self.eye_dist *=1.5
+        elif event.GetKeyCode() == 93:  # ] increase eye separation
+            self.eye_dist *= 1.5
             self.Refresh()
             
-        elif event.GetKeyCode() == 82: #R reset view
+        elif event.GetKeyCode() == 82:  # R reset view
             self.ResetView()
             self.Refresh()
             
-        elif event.GetKeyCode() == 314: #left
+        elif event.GetKeyCode() == 314:  # left
             pos = numpy.array([self.xc, self.yc, self.zc], 'f')
             pos -= 300*self.vecRight
             self.xc, self.yc, self.zc = pos
-            #print 'l'
+            # print 'l'
             self.Refresh()
             
-        elif event.GetKeyCode() == 315: #up
+        elif event.GetKeyCode() == 315:  # up
             pos = numpy.array([self.xc, self.yc, self.zc])
             pos -= 300*self.vecBack
             self.xc, self.yc, self.zc = pos
             self.Refresh()
             
-        elif event.GetKeyCode() == 316: #right
+        elif event.GetKeyCode() == 316:  # right
             pos = numpy.array([self.xc, self.yc, self.zc])
             pos += 300*self.vecRight
             self.xc, self.yc, self.zc = pos
             self.Refresh()
             
-        elif event.GetKeyCode() == 317: #down
+        elif event.GetKeyCode() == 317:  # down
             pos = numpy.array([self.xc, self.yc, self.zc])
             pos += 300*self.vecBack
             self.xc, self.yc, self.zc = pos
@@ -1262,19 +1358,98 @@ class LMGLCanvas(GLCanvas):
 
     def getSnapshot(self, mode = GL_LUMINANCE):
         snap =  glReadPixelsf(0,0,self.Size[0],self.Size[1], mode)
+        
+        #snap = snap.ravel().reshape(self.Size[0], self.Size[1], -1, order='F')
 
-        snap.strides = (12,12*snap.shape[0], 4)
+        if mode == GL_LUMINANCE:
+            snap.strides = (4, 4*snap.shape[0])
+        else: #GL_RGB
+            snap.strides = (12,12*snap.shape[0], 4)
 
         return snap
+    
+    def getIm(self, pixelSize=None):
+        #FIXME - this is copied from 2D code and is currently broken.
+        if pixelSize is None: #use current pixel size
+            self.OnDraw()
+            return self.getSnapshot(GL_RGB)
+        else:
+            #status = statusLog.StatusLogger('Tiling image ...')
+            #save a copy of the viewport
+            minx, maxx, miny, maxy  = (self.xmin, self.xmax, self.ymin, self.ymax)
+            #and scalebar and LUT settings
+            lutD = self.LUTDraw
+            self.LUTDraw = False
+
+            scaleB = self.scaleBarLength
+            self.scaleBarLength = None
+
+            sx, sy = self.Size
+            dx, dy = (maxx - minx, maxy-miny)
+
+            #print dx
+            #print dy
+
+            nx = numpy.ceil(dx/pixelSize) #number of x pixels
+            ny = numpy.ceil(dy/pixelSize) #  "    "  y   "
+
+            #print nx
+            #print ny
+
+            sxn = pixelSize*sx
+            syn = pixelSize*sy
+
+            #print sxn
+            #print syn
+
+            #initialise array to hold tiled image
+            h = numpy.zeros((nx,ny))
+
+            #do the tiling
+            for x0 in numpy.arange(minx, maxx, sxn):
+                self.xmin = x0
+                self.xmax = x0 + sxn
+
+                #print x0
+
+                xp = numpy.floor((x0 - minx)/pixelSize)
+                xd = min(xp+sx, nx) - xp
+
+                #print 'xp = %3.2f, xd = %3.2f' %(xp, xd)
+
+                for y0 in numpy.arange(miny, maxy, syn):
+                    status.setStatus('Tiling Image at %3.2f, %3.2f' %(x0, y0))
+                    self.ymin = y0
+                    self.ymax = y0 + syn
+
+                    yp = numpy.floor((y0 - miny)/pixelSize)
+                    yd = min(yp+sy, ny) - yp
+
+                    self.OnDraw()
+                    tile = self.getSnapshot(GL_RGB)[:,:,0].squeeze()
+
+                    #print tile.shape
+                    #print h[xp:(xp + xd), yp:(yp + yd)].shape
+                    #print tile[:xd, :yd].shape
+                    #print syn
+
+                    h[xp:(xp + xd), yp:(yp + yd)] = tile[:xd, :yd]
+                    #h[xp:(xp + xd), yp:(yp + yd)] = y0 #tile[:xd, :yd]
 
 
 
+            #restore viewport
+            self.xmin, self.xmax, self.ymin, self.ymax = (minx, maxx, miny, maxy)
+            self.LUTDraw = lutD
+            self.scaleBarLength = scaleB
 
-
+            self.Refresh()
+            self.Update()
+            return h
 
 
 def showGLFrame():
-    f = wx.Frame(None, size=(800,800))
+    f = wx.Frame(None, size=(800, 800))
     c = LMGLCanvas(f)
     f.Show()
     return c
@@ -1283,26 +1458,25 @@ def showGLFrame():
 class TestApp(wx.App):
     def __init__(self, *args):
         wx.App.__init__(self, *args)
-        
-        
+
     def OnInit(self):
-        #wx.InitAllImageHandlers()
-        frame = wx.Frame(None,-1,'ball_wx',wx.DefaultPosition,wx.Size(800,800))
+        # wx.InitAllImageHandlers()
+        frame = wx.Frame(None, -1, 'ball_wx', wx.DefaultPosition, wx.Size(800, 800))
         canvas = LMGLCanvas(frame)
-        #glcontext = wx.glcanvas.GLContext(canvas)
-        #glcontext.SetCurrent(canvas)
+        # glcontext = wx.glcanvas.GLContext(canvas)
+        # glcontext.SetCurrent(canvas)
         to = testObj()
         canvas.setPoints3D(to[0], to[1], to[2])
-        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff = 6e3, alpha=0.5)
-        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff = 6e3, wireframe=True)
+        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, alpha=0.5)
+        canvas.setTriang3D(to[0], to[1], to[2], sizeCutoff=6e3, wireframe=True)
         canvas.Refresh()
         frame.Show()
         self.SetTopWindow(frame)
         return True
 
-
 def main():
     app = TestApp()
     app.MainLoop()
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    main()

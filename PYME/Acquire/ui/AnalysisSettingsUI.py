@@ -30,7 +30,7 @@ class AnalysisSettingsPanel(wx.Panel):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         hsizer.Add(wx.StaticText(self, -1, 'Type:'), 0,wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-        self.cFitType = wx.Choice(self, -1, choices = ['{:<35} \t- {:} '.format(f, PYME.localization.FitFactories.useFor[f]) for f in self.fitFactories], size=(110, -1))  
+        self.cFitType = wx.Choice(self, -1, choices = ['{:<35} - {:} '.format(f, PYME.localization.FitFactories.useFor[f]) for f in self.fitFactories], size=(110, -1))
         #self.cFitType.SetSelection(self.fitFactories.index('LatGaussFitFR'))
         self.cFitType.Bind(wx.EVT_CHOICE, self.OnFitModuleChanged)
         

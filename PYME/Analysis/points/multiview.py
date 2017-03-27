@@ -225,7 +225,7 @@ def probeAwareFindClumps(datasource, gap_tolerance, radius_scale, radius_offset,
 def mergeClumps(datasource, numChan, labelKey='clumpIndex'):
     from PYME.IO.tabular import cachingResultsFilter, mappingFilter
 
-    keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', labelKey, 'focus']
+    keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', labelKey, 'focus', 'LLH']
     keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
     keys_to_aggregate += ['sigmay%d' % chan for chan in range(numChan)]
 

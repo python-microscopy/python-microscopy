@@ -410,7 +410,7 @@ class dSimControl(wx.Panel):
         #event.Skip()
 
     def OnBSetPSF(self, event):
-        fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf')
+        fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf|TIFF (*.tif)|*.tif')
         print(fn)
         if fn == '':
             rend_im.genTheoreticalModel(rend_im.MetaData.TIRFDefault)

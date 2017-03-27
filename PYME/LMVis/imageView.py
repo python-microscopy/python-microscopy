@@ -98,17 +98,22 @@ class ImageViewPanel(wx.Panel):
             step = 2**(-numpy.ceil(numpy.log2(sc)))
             sc = sc*step
 
+        x0_p = int(x0_ / self.image.pixelSize)
+        x1_p = int(x1_ / self.image.pixelSize)
+        y0_p = int(y0_ / self.image.pixelSize)
+        y1_p = int(y1_ / self.image.pixelSize)
+        
         #if self.image.data.shape) == 2:
         #    im = numpy.flipud(self.image.img[int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step].astype('f').T)
         if self.zdim ==0:
-            im = numpy.flipud(self.image.data[self.do.zp,int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step, self.chan].squeeze().astype('f').T)
+            im = numpy.flipud(self.image.data[self.do.zp,x0_p:x1_p:step, y0_p:y1_p:step, self.chan].squeeze().astype('f').T)
         else:
-            im = numpy.flipud(self.image.data[int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step, self.do.zp, self.chan].squeeze().astype('f').T)
+            im = numpy.flipud(self.image.data[x0_p:x1_p:step, y0_p:y1_p:step, self.do.zp, self.chan].squeeze().astype('f').T)
 
         im = im - self.do.Offs[self.chan] #self.clim[0]
         im = im*self.do.Gains[self.chan]    #/(self.clim[1] - self.clim[0])
 
-        print((im.shape))
+        #print((im.shape))
 
         im = (255*self.do.cmaps[self.chan](im)[:,:,:3]).astype('b')
             

@@ -649,7 +649,7 @@ class LMGLCanvas(GLCanvas):
 
 
     def setBlobs(self, objects, sizeCutoff):
-        import gen3DTriangs
+        from PYME.Analysis.points import gen3DTriangs
 
         vs, self.c = gen3DTriangs.blobify2D(objects, sizeCutoff)
 

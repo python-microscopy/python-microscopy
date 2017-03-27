@@ -43,14 +43,26 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
+_ns = None
+_ns_lock = threading.Lock()
+
+def get_ns():
+    global _ns
+    with _ns_lock:
+        if _ns is None:
+            _ns = pzc.getNS('_pyme-http')
+            time.sleep(1.5 + np.random.rand())
+
+    return _ns
+            
 
 if not 'sphinx' in sys.modules.keys():
     # do not start zeroconf if running under sphinx
-    ns = pzc.getNS('_pyme-http')
-    time.sleep(1.5 + np.random.rand())  # wait for ns responses
+    # otherwise, spin up a thread to go and find the ns and get on with the rest of our initialization
+    
+    threading.Thread(target=get_ns).start()
 
 from collections import OrderedDict
-
 
 class _LimitedSizeDict(OrderedDict):
     def __init__(self, *args, **kwds):
@@ -164,7 +176,7 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
         localServers = []
 
         # print ns.advertised_services.keys()
-        for name, info in ns.advertised_services.items():
+        for name, info in get_ns().advertised_services.items():
             if serverfilter in name:
                 dirurl = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
 
@@ -220,6 +232,8 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
         return locs
 
 _pool = None
+
+_list_dir_lock = threading.Lock()
 def listdirectory(dirname, serverfilter=''):
     """Lists the contents of a directory on the cluster.
 
@@ -229,28 +243,29 @@ def listdirectory(dirname, serverfilter=''):
     from . import clusterListing as cl
     from multiprocessing.pool import ThreadPool
 
-    if _pool is None:
-        _pool = ThreadPool(10)
-
-    dirlist = dict()
-
-    urls = []
-
-    dirname = dirname.lstrip('/')
-
-    if not dirname.endswith('/'):
-        dirname = dirname + '/'
-
-    for name, info in ns.advertised_services.items():
-        if serverfilter in name:
-            urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
-
-    listings = _pool.map(_listSingleDir, urls)
-
-    for dirL, dt in listings:
-        cl.aggregate_dirlisting(dirlist, dirL)
-
-    return dirlist
+    with _list_dir_lock:
+        if _pool is None:
+            _pool = ThreadPool(10)
+    
+        dirlist = dict()
+    
+        urls = []
+    
+        dirname = dirname.lstrip('/')
+    
+        if not dirname.endswith('/'):
+            dirname = dirname + '/'
+    
+        for name, info in get_ns().advertised_services.items():
+            if serverfilter in name:
+                urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
+    
+        listings = _pool.map(_listSingleDir, urls)
+    
+        for dirL, dt in listings:
+            cl.aggregate_dirlisting(dirlist, dirL)
+    
+        return dirlist
 
 def listdir(dirname, serverfilter=''):
     """Lists the contents of a directory on the cluster. Similar to os.listdir,
@@ -391,7 +406,7 @@ def getFile(filename, serverfilter='', numRetries=3):
 
     if (len(locs) == 0):
         # we did not find the file
-        logger.debug('could not find file %s on cluster: cluster nodes = %s' % (filename, ns.list()))
+        logger.debug('could not find file %s on cluster: cluster nodes = %s' % (filename, get_ns().list()))
         raise IOError("Specified file could not be found: %s" % filename)
 
 
@@ -444,7 +459,7 @@ def _chooseServer(serverfilter='', exclude_netlocs=[]):
     TODO: add free disk space and improve metrics/weightings
 
     """
-    serv_candidates = [(k, v) for k, v in ns.advertised_services.items() if
+    serv_candidates = [(k, v) for k, v in get_ns().advertised_services.items() if
                        (serverfilter in k) and not (_netloc(v) in exclude_netlocs)]
 
     t = time.time()
@@ -661,7 +676,7 @@ def getStatus(serverfilter=''):
 
     status = []
 
-    for name, info in ns.advertised_services.items():
+    for name, info in get_ns().advertised_services.items():
         if serverfilter in name:
             surl = 'http://%s:%d/__status' % (socket.inet_ntoa(info.address), info.port)
             url = surl.encode()

@@ -82,7 +82,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #self.Quads = None
                
         #self.SetMenuBar(self.CreateMenuBar())
-        self.CreateMenuBar()
+        self.CreateMenuBar(use_shaders=use_shaders)
 
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
@@ -94,7 +94,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #initialize the common parts
         ###############################
         #NB: this has to come after the shell has been generated, but before the fold panel
-        visCore.VisGUICore.__init__(self)
+        visCore.VisGUICore.__init__(self, use_shaders=use_shaders)
 
         ################################   
 
