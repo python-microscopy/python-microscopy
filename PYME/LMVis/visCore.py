@@ -211,8 +211,8 @@ class VisGUICore(object):
             self.AddMenuItem('View', '&Pointsprites', self.OnViewPointsprites)
         self.AddMenuItem('View',  '&Triangles', self.OnViewTriangles)
         self.AddMenuItem('View', '3D Triangles', self.OnViewTriangles3D)
+        self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
         if not use_shaders:
-            self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
             self.AddMenuItem('View', '&Voronoi', self.OnViewVoronoi)
             self.AddMenuItem('View', '&Interpolated Triangles', self.OnViewInterpTriangles)
             self.AddMenuItem('View', '&Blobs', self.OnViewBlobs)

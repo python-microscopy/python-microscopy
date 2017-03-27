@@ -33,6 +33,7 @@ from PYME.LMVis.Layer.AxesOverlayLayer import AxesOverlayLayer
 from PYME.LMVis.Layer.LUTOverlayLayer import LUTOverlayLayer
 from PYME.LMVis.Layer.Point3DRenderLayer import Point3DRenderLayer
 from PYME.LMVis.Layer.PointSpriteRenderLayer import PointSpritesRenderLayer
+from PYME.LMVis.Layer.QuadTreeRenderLayer import QuadTreeRenderLayer
 from PYME.LMVis.Layer.RenderLayer import RenderLayer
 from PYME.LMVis.Layer.ScaleBarOverlayLayer import ScaleBarOverlayLayer
 from PYME.LMVis.Layer.SelectionOverlayLayer import SelectionOverlayLayer
@@ -443,6 +444,33 @@ class LMGLShaderCanvas(GLCanvas):
     def setPoints(self, x, y, c=None, a=None, recenter=True, alpha=1.0):
         """Set 2D points"""
         self.setPoints3D(x, y, 0 * x, c, a, recenter, alpha)
+
+    def setQuads(self, qt, max_depth=100, md_scale=False):
+        lvs = qt.getLeaves(max_depth)
+
+        xs = numpy.zeros((len(lvs), 4))
+        ys = numpy.zeros((len(lvs), 4))
+        c = numpy.zeros(len(lvs))
+
+        i = 0
+
+        real_max_depth = 0
+        for l in lvs:
+            xs[i, :] = [l.x0, l.x1, l.x1, l.x0]
+            ys[i, :] = [l.y0, l.y0, l.y1, l.y1]
+            c[i] = float(l.numRecords) * 2 ** (2 * l.depth)
+            i += 1
+            real_max_depth = max(real_max_depth, l.depth)
+
+        if not md_scale:
+            c /= 2 ** (2 * real_max_depth)
+
+        self.c = numpy.vstack((c, c, c, c)).T.ravel()
+
+        self.SetCurrent()
+        self.layers.append(QuadTreeRenderLayer(xs.ravel(), ys.ravel(), 0 * xs.ravel(),
+                                               self.c, self.cmap, self.clim, alpha=1))
+        self.Refresh()
 
     def ResetView(self):
 
