@@ -43,10 +43,11 @@ def get_labels_from_image(label_image, points):
 
     # account for ROIs
     try:
-        p_ox = points.mdh['Camera.ROIPosX'] * points.mdh['voxelsize.x'] * 1e3
-        p_oy = points.mdh['Camera.ROIPosY'] * points.mdh['voxelsize.y'] * 1e3
+        # TODO - make Camera.ROIPosX not start from 1
+        p_ox = (points.mdh['Camera.ROIPosX'] - 1) * points.mdh['voxelsize.x'] * 1e3
+        p_oy = (points.mdh['Camera.ROIPosY'] - 1) * points.mdh['voxelsize.y'] * 1e3
     except AttributeError:
-        raise RuntimeError('label image requires metadata specifying the voxelsize')
+        raise RuntimeError('label image requires metadata specifying ROI position and voxelsize')
 
     pixX = np.round((points['x'] + p_ox - im_ox) / label_image.pixelSize).astype('i')
     pixY = np.round((points['y'] + p_oy - im_oy) / label_image.pixelSize).astype('i')
