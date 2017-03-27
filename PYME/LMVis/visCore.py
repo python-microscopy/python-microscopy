@@ -530,8 +530,11 @@ class VisGUICore(object):
             if not ret == wx.ID_OK:
                 dlg.Destroy()
                 return #we cancelled
-                
+
+
             args['FieldNames'] = dlg.GetFieldNames()
+            # remove trailing whitespace/line brake on last field name
+            args['FieldNames'][-1] = args['FieldNames'][-1].rstrip()
             args['SkipRows'] = dlg.GetNumberComments()
             args['PixelSize'] = dlg.GetPixelSize()
             
