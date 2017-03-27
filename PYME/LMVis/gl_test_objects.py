@@ -22,6 +22,8 @@ import csv
 
 import numpy
 
+from PYME.Acquire.Hardware.Simulator.wormlike2 import wormlikeChain
+
 
 class TestObject(object):
     def __init__(self, x, y, z):
@@ -101,6 +103,13 @@ class Ellipsoid(TestObject):
         y = 5e3*numpy.random.randn(amount_points) * axis_b / max_axis
         z = 5e3*numpy.random.randn(amount_points) * axis_c / max_axis
         TestObject.__init__(self, x, y, z)
+
+
+class Worm(TestObject):
+    def __init__(self, kbp=200):
+        chain = wormlikeChain(kbp, steplength=50)
+        TestObject.__init__(self, chain.xp, chain.yp, chain.zp)
+
 
 class Ring(TestObject):
 

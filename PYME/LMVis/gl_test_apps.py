@@ -24,6 +24,7 @@ import sys
 from wx import wx
 import numpy as np
 
+from PYME.LMVis import gl_test_objects
 from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
 from PYME.LMVis.gl_test_objects import *
 
@@ -58,7 +59,6 @@ class TestApp(wx.App):
         self._canvas.Refresh()
         self._frame.Show()
         self.SetTopWindow(self._frame)
-
 
 
 class XTestApp(TestApp):
@@ -99,13 +99,12 @@ class MassTest(TestApp):
 
 
 class Fish(TestApp):
-
     def __init__(self, *args):
-        self.to = Ellipsoid(2000)
-        concentration = Cloud(50)
+        self.to = Ellipsoid(4000)
+        concentration = Worm(100)
         concentration.translate(1000, 0, 0)
         self.to += concentration
-        concentration = Cloud(50)
+        concentration = Worm(100)
         concentration.translate(-2300, 500, 0)
         self.to += concentration
         super(Fish, self).__init__(*args)
@@ -133,7 +132,7 @@ class Rings(TestApp):
         'first step'
         offset = -10000
         scale = 0.5
-        new_ring = Ring(1000, hole_pos=numpy.pi/2)
+        new_ring = Ring(1000, hole_pos=numpy.pi / 2)
         new_ring.scale(scale, scale, scale)
         new_ring.translate(-5000, offset, 0)
 
@@ -197,6 +196,27 @@ class Rings(TestApp):
         self.to += new_ring
 
         super(Rings, self).__init__(*args)
+
+    def OnInit(self):
+        self.setup()
+
+        self._canvas.pointSize = 50
+
+        self._canvas.setPoints3D(self.to.x, self.to.y, self.to.z, normalize(self.to.z),
+                                 self._canvas.cmap, self._canvas.clim, mode='pointsprites')
+        self._canvas.recenter(self.to.x, self.to.y)
+
+        self.done()
+        return True
+
+    def save(self, file_name):
+        self.to.save(file_name)
+
+
+class Worms(TestApp):
+    def __init__(self, *args):
+        self.to = gl_test_objects.Worm()
+        super(Worm, self).__init__(*args)
 
     def OnInit(self):
         self.setup()
