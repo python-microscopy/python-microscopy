@@ -225,10 +225,6 @@ class VisGUICore(object):
         self.AddMenuItem('View', itemType='separator')
         self.AddMenuItem('View', '&Fit', self.SetFit)
         self.AddMenuItem('View', 'Fit &ROI', self.OnFitROI)
-        if use_shaders:
-            self.AddMenuItem('View', itemType='separator')
-            self.AddMenuItem('View', 'Snapshot', self.OnSnapshot)
-            self.AddMenuItem('View', itemType='separator')
 
         #this needs an ID as we bind to it elsewhere (in the filter panel)
         self.ID_VIEW_CLIP_ROI = wx.NewId()
@@ -263,12 +259,6 @@ class VisGUICore(object):
         self.RefreshView()
         self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
-
-    def OnSnapshot(self, event):
-        img = self.glCanvas.getIm()
-        file_name = wx.FileSelector('Save Image as ... (image .png will be appended to filename)')
-        if file_name:
-            img.save('{}.png'.format(file_name))
 
     def OnViewTracks(self,event):
         self.viewMode = 'tracks'
