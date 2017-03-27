@@ -104,17 +104,14 @@ def measure_3d(x, y, z, output=None):
     #principle axes
     u, s, v = np.linalg.svd(np.vstack([x_, y_, z_]).T)
 
-    try:
-        for i in range(3):
-            output['axis%di' % i], output['axis%dj' % i], output['axis%dk' % i] = v[i]
-            #std. deviation along axes
+
+    for i in range(3):
+        output['axis%di' % i], output['axis%dj' % i], output['axis%dk' % i] = v[i]
+        #std. deviation along axes
+        try:
             output['sigma%d' % i] = s[i]/np.sqrt(N-1)
-    except IndexError:  # this occurs if e.g. the cluster is only 2 points, and only has two principle axes
-        # zero all svd outputs
-        for i in range(3):
-            output['axis%di' % i], output['axis%dj' % i], output['axis%dk' % i], output['sigma%d' % i] = 0, 0, 0, 0
-            output['theta'], output['phi'] = 0, 0
-        return output
+        except IndexError:  # this occurs if the cluster only has two (or less) singular values, e.g. is only 2 points
+            output['sigma%d' % i] = 0
     
     pa = v[0]
     #angle of principle axis
