@@ -18,11 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+import PIL
 from wx import wx
 
 
 def save_snapshot(canvas):
-    img = canvas.getIm()
+    width, height = canvas.Size[0], canvas.Size[1]
+    img = PIL.Image.frombytes('RGB', (width, height), canvas.getIm().tostring())
+    img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
     file_name = wx.FileSelector('Save Image as ... (image .png will be appended to filename)')
     if file_name:
         img.save('{}.png'.format(file_name))

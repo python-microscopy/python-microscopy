@@ -767,10 +767,8 @@ class LMGLShaderCanvas(GLCanvas):
         width, height = self.Size[0], self.Size[1]
         snap = glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, outputType=None)
 
-        img = PIL.Image.frombytes('RGB', (width, height), snap.tostring())
-        img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
         # img.show()
-        return img
+        return snap
 
     def getIm(self, pixelSize=None):
         if pixelSize is None:  # use current pixel size
