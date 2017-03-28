@@ -62,7 +62,9 @@ class ViewHandler(object):
                     canvas.scale)
         file_name = wx.FileSelector('Save view as json named... ')
         if file_name:
-            with open('{}.json'.format(file_name), 'w') as f:
+            if not file_name.endswith('.json'):
+                file_name = '{}.json'.format(file_name)
+            with open(file_name, 'w') as f:
                 f.writelines(view.to_json())
 
     def load_view(self, canvas):
