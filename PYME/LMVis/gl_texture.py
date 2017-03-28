@@ -50,13 +50,30 @@ class GaussTexture:
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
         glUniform1i(uniform_location, 0)
 
-    def load_texture(self, size=31, sigma=5):
+    def load_texture(self, size=31, sigma=5, is_sum_one=False):
+        """
+        This method create a gauss kernel texture and stores it on the graphics card.
+        The max amplitude of the kernel is 1.
+        Parameters
+        ----------
+        size size of the kernel
+        sigma of the kernel
+
+        Returns
+        -------
+        size correction factor is a factor that should be multiplied on the texture size.
+        That way sprites don't appear smaller than opaque dots
+        """
         data = gaussKernel(size, sigma)
-        glGenTextures(1, self._texture_id)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, size, size, 0, GL_LUMINANCE, GL_FLOAT, np.float16(data))
         # index of the first element that is bigger than 0.5
         index = next(x[0] for x in enumerate(data[size // 2, :]) if x[1] > 0.5)
         size_correction_factor = (float(size) / 2) / float(size // 2 - index)
+
+        if is_sum_one:
+            data /= sum(data.flatten())
+        glGenTextures(1, self._texture_id)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, size, size, 0, GL_LUMINANCE, GL_FLOAT, np.float16(data))
+
         return size_correction_factor
 
     def delete_texture(self):
