@@ -86,7 +86,8 @@ class VisGUICore(object):
         else:
             self.glCanvas = LMGLShaderCanvas(win)
         win.AddPage(page=self.glCanvas, caption='View')#, select=True)
-        self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
+
+        self.glCanvas.setCMap(pylab.cm.gist_rainbow) #pylab.cm.hot
 
         #self.rec_gui = recipeGui.
         #win.AddPage(page=self.glCanvas, caption='View')#, select=True)
