@@ -40,6 +40,8 @@ from PYME.LMVis.Layer.SelectionOverlayLayer import SelectionOverlayLayer
 from PYME.LMVis.Layer.TriangleRenderLayer import TriangleRenderLayer
 from wx.glcanvas import GLCanvas
 
+from PYME.LMVis.View import View
+
 try:
     from PYME.Analysis.points.gen3DTriangs import gen3DTriangs, gen3DBlobs
 except:
@@ -847,6 +849,25 @@ class LMGLShaderCanvas(GLCanvas):
         self.sz = 0  # z.max() - z.min()
 
         self.scale = 2. / (max(self.sx, self.sy))
+
+    def set_view(self, view):
+        self.vecBack = numpy.array(view._vec_back)
+        self.vecRight = numpy.array(view._vec_right)
+        self.vecUp = numpy.array(view._vec_up)
+        self.xc = view._translation[0]
+        self.yc = view._translation[1]
+        self.zc = view._translation[2]
+        self.scale = view._zoom
+        self.Refresh()
+
+    def get_view(self):
+        view = View('id',
+                    self.vecUp.tolist(),
+                    self.vecBack.tolist(),
+                    self.vecRight.tolist(),
+                    [self.xc, self.yc, self.zc],
+                    self.scale)
+        return view
 
 
 def showGLFrame():
