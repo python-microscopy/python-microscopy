@@ -21,15 +21,19 @@
 import cv2
 import numpy
 from cv2.cv import CV_FOURCC
+from wx import wx
 
 
 class VideoPlugin:
+
+    JSON_LIST_NAME = 'views'
 
     def __init__(self, vis_fr):
         self.views = []
         self.width = 0
         self.height = 0
         vis_fr.AddMenuItem('Extras>Video', 'Save View', lambda e: self.add_view(vis_fr.glCanvas))
+        vis_fr.AddMenuItem('Extras>Video', 'Save View List', lambda e: self.save_view_list())
         vis_fr.AddMenuItem('Extras>Video', 'Make', lambda e: self.make_video(vis_fr.glCanvas))
 
     def add_view(self, canvas):
@@ -38,25 +42,47 @@ class VideoPlugin:
         self.height = canvas.Size[1]
         pass
 
+    def save_view_list(self):
+        file_name = wx.FileSelector('Save view as json named... ')
+        if file_name:
+            if not file_name.endswith('.json'):
+                file_name = '{}.json'.format(file_name)
+            with open(file_name, 'w') as f:
+                f.write('{')
+                f.write('{}:['.format(self.JSON_LIST_NAME))
+                is_first = True
+                for view in self.views:
+                    if not is_first:
+                        f.write(',')
+                    f.writelines(view.to_json())
+                    is_first = False
+                f.write(']}')
+
+    def load_view_list(self, canvas):
+        pass
+
     def make_video(self, canvas):
         # file_name = wx.FileSelector('Save video as avi named... ')
         # TODO remove default filename
         file_name = u'C:\\Users\\mmg82\\Desktop\\test.avi'
 
-        video = cv2.VideoWriter(file_name, -1, 10, (self.height, self.width))
-
+        video = cv2.VideoWriter(file_name, -1, 30, (self.width, self.height))
+        print('{},{}'.format(self.height, self.width))
         if not self.views:
             self.add_view(canvas)
-
+        current_view = None
         for view in self.views:
             if not current_view:
                 current_view = view
             else:
-                current_view = view
-                canvas.set_view(current_view)
-                for i in range(1, 20):
+                steps = 40
+                difference_view = (view - current_view)/steps
+                for step in range(0, steps):
+                    new_view = current_view+difference_view*step
+                    canvas.set_view(new_view)
                     img = numpy.fromstring(canvas.getIm().tostring(), numpy.ubyte).reshape(self.height, self.width, 3)
                     video.write(cv2.cvtColor(cv2.flip(img, 0), cv2.COLOR_RGB2BGR))
+                current_view = view
         video.release()
         print("finished")
 

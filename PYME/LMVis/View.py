@@ -31,6 +31,42 @@ class View(object):
             self._translation = translation
             self._zoom = zoom
 
+    def __add__(self, other):
+        return View(None,
+                    [a_i + b_i for a_i, b_i in zip(self._vec_up, other._vec_up)],
+                    [a_i + b_i for a_i, b_i in zip(self._vec_back, other._vec_back)],
+                    [a_i + b_i for a_i, b_i in zip(self._vec_right, other._vec_right)],
+                    [a_i + b_i for a_i, b_i in zip(self._translation, other._translation)],
+                    self._zoom + other._zoom
+                    )
+
+    def __sub__(self, other):
+        return View(None,
+                    [a_i - b_i for a_i, b_i in zip(self._vec_up, other._vec_up)],
+                    [a_i - b_i for a_i, b_i in zip(self._vec_back, other._vec_back)],
+                    [a_i - b_i for a_i, b_i in zip(self._vec_right, other._vec_right)],
+                    [a_i - b_i for a_i, b_i in zip(self._translation, other._translation)],
+                    self._zoom - other._zoom
+                    )
+
+    def __mul__(self, scalar):
+        return View(None,
+                    [a_i * scalar for a_i in self._vec_up],
+                    [a_i * scalar for a_i in self._vec_back],
+                    [a_i * scalar for a_i in self._vec_right],
+                    [a_i * scalar for a_i in self._translation],
+                    self._zoom*scalar
+                    )
+
+    def __div__(self, scalar):
+        return View(None,
+                    [a_i / scalar for a_i in self._vec_up],
+                    [a_i / scalar for a_i in self._vec_back],
+                    [a_i / scalar for a_i in self._vec_right],
+                    [a_i / scalar for a_i in self._translation],
+                    self._zoom / scalar
+                    )
+
     def to_json(self):
         return json.dumps(self.__dict__)
 
