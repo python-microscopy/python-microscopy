@@ -30,40 +30,64 @@ class View(object):
             self._vec_right = vec_right
             self._translation = translation
             self._zoom = zoom
+    
+    @property
+    def view_id(self):
+        return self._view_id
+
+    @property
+    def vec_up(self):
+        return self._vec_up
+
+    @property
+    def vec_back(self):
+        return self._vec_back
+
+    @property
+    def vec_right(self):
+        return self._vec_right
+
+    @property
+    def translation(self):
+        return self._translation
+
+    @property
+    def zoom(self):
+        return self._zoom
 
     def __add__(self, other):
         return View(None,
-                    [a_i + b_i for a_i, b_i in zip(self._vec_up, other._vec_up)],
-                    [a_i + b_i for a_i, b_i in zip(self._vec_back, other._vec_back)],
-                    [a_i + b_i for a_i, b_i in zip(self._vec_right, other._vec_right)],
-                    [a_i + b_i for a_i, b_i in zip(self._translation, other._translation)],
-                    self._zoom + other._zoom
+                    [a_i + b_i for a_i, b_i in zip(self.vec_up, other.vec_up)],
+                    [a_i + b_i for a_i, b_i in zip(self.vec_back, other.vec_back)],
+                    [a_i + b_i for a_i, b_i in zip(self.vec_right, other.vec_right)],
+                    [a_i + b_i for a_i, b_i in zip(self.translation, other.translation)],
+                    self._zoom + other.zoom
                     )
 
     def __sub__(self, other):
         return View(None,
-                    [a_i - b_i for a_i, b_i in zip(self._vec_up, other._vec_up)],
-                    [a_i - b_i for a_i, b_i in zip(self._vec_back, other._vec_back)],
-                    [a_i - b_i for a_i, b_i in zip(self._vec_right, other._vec_right)],
-                    [a_i - b_i for a_i, b_i in zip(self._translation, other._translation)],
-                    self._zoom - other._zoom
+                    [a_i - b_i for a_i, b_i in zip(self.vec_up, other.vec_up)],
+                    [a_i - b_i for a_i, b_i in zip(self.vec_back, other.vec_back)],
+                    [a_i - b_i for a_i, b_i in zip(self.vec_right, other.vec_right)],
+                    [a_i - b_i for a_i, b_i in zip(self.translation, other.translation)],
+                    self._zoom - other.zoom
                     )
 
     def __mul__(self, scalar):
         return View(None,
-                    [a_i * scalar for a_i in self._vec_up],
-                    [a_i * scalar for a_i in self._vec_back],
-                    [a_i * scalar for a_i in self._vec_right],
-                    [a_i * scalar for a_i in self._translation],
+                    [a_i * scalar for a_i in self.vec_up],
+                    [a_i * scalar for a_i in self.vec_back],
+                    [a_i * scalar for a_i in self.vec_right],
+                    [a_i * scalar for a_i in self.translation],
                     self._zoom*scalar
                     )
 
     def __div__(self, scalar):
         return View(None,
-                    [a_i / scalar for a_i in self._vec_up],
-                    [a_i / scalar for a_i in self._vec_back],
-                    [a_i / scalar for a_i in self._vec_right],
-                    [a_i / scalar for a_i in self._translation],
+                    [a_i / scalar for a_i in self.vec_up],
+                    [a_i / scalar for a_i in self.vec_back],
+                    [a_i / scalar for a_i in self.vec_right],
+                    [a_i / scalar for a_i in self.translation],
                     self._zoom / scalar
                     )
 
