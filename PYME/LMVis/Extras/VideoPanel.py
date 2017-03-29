@@ -23,7 +23,6 @@
 import json
 
 import cv2
-import numpy
 import wx
 import wx.lib.agw.aui as aui
 
@@ -162,11 +161,12 @@ class VideoPanel(wx.Panel):
                     for step in range(0, steps):
                         new_view = current_view + difference_view * step
                         self.get_canvas().set_view(new_view)
-                        img = numpy.fromstring(
-                            self.get_canvas().getIm().tostring(), numpy.ubyte).reshape(height, width, 3)
-
                         if save:
-                            video.write(cv2.cvtColor(cv2.flip(img, 0), cv2.COLOR_RGB2BGR))
+                            snap = self.get_canvas().getIm()
+                            if snap.shape[2] == 3:
+                                video.write(cv2.cvtColor(cv2.flip(snap.transpose(1, 0, 2), 0), cv2.COLOR_RGB2BGR))
+                            else:
+                                video.write(cv2.flip(snap.transpose(1, 0, 2), 0))
                     current_view = view
             if save:
                 video.release()

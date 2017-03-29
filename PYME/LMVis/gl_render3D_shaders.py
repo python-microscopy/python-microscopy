@@ -759,12 +759,19 @@ class LMGLShaderCanvas(GLCanvas):
         else:
             event.Skip()
 
-    def getSnapshot(self):
-        # http://bazaar.launchpad.net/~mcfletch/openglcontext/trunk/view/head:/tests/saveimage.py
+    def getSnapshot(self, mode=GL_RGB):
         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
         width, height = self.Size[0], self.Size[1]
-        snap = glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, outputType=None)
+        snap = glReadPixelsf(0, 0, width, height, mode)
+        snap = snap.ravel().reshape(width, height, -1, order='F')
 
+        if mode == GL_LUMINANCE:
+            # snap.strides = (4, 4 * snap.shape[0])
+            pass
+        elif mode == GL_RGB:
+            snap.strides = (12, 12 * snap.shape[0], 4)
+        else:
+            raise RuntimeError('{} is not a supported format.'.format(mode))
         # img.show()
         return snap
 
