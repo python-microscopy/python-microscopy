@@ -20,16 +20,30 @@
 #
 import json
 
+import numpy
+
 
 class View(object):
 
     def __init__(self, view_id, vec_up, vec_back, vec_right, translation, zoom):
-            self._view_id = view_id
-            self._vec_up = vec_up
-            self._vec_back = vec_back
-            self._vec_right = vec_right
-            self._translation = translation
-            self._zoom = zoom
+        """
+        
+        Parameters
+        ----------
+        view_id     is up to you, as long as serializable with json
+        vec_up      np.array
+        vec_back    np.array
+        vec_right   np.array
+        translation np.array
+        zoom        usually a scalar
+        """
+        super(View, self).__init__()
+        self._view_id = view_id
+        self._vec_up = vec_up
+        self._vec_back = vec_back
+        self._vec_right = vec_right
+        self._translation = translation
+        self._zoom = zoom
     
     @property
     def view_id(self):
@@ -92,14 +106,41 @@ class View(object):
                     )
 
     def to_json(self):
-        return json.dumps(self.__dict__)
+        return json.dumps(self, cls=ViewEncoder)
 
     @staticmethod
     def decode_json(json_obj):
         # if '__type__' in json_obj and json_obj['__type__'] == View:
-            return View(json_obj['_view_id'],
-                        json_obj['_vec_up'],
-                        json_obj['_vec_back'],
-                        json_obj['_vec_right'],
-                        json_obj['_translation'],
-                        json_obj['_zoom'])
+        return View(json_obj[ViewEncoder.JSON_VIEW_ID],
+                    numpy.array(json_obj[ViewEncoder.JSON_VEC_UP]),
+                    numpy.array(json_obj[ViewEncoder.JSON_VEC_BACK]),
+                    numpy.array(json_obj[ViewEncoder.JSON_VEC_RIGHT]),
+                    numpy.array(json_obj[ViewEncoder.JSON_TRANSLATION]),
+                    json_obj[ViewEncoder.JSON_ZOOM])
+
+
+class ViewEncoder(json.JSONEncoder):
+
+    JSON_VIEW_ID = 'view_id'
+    JSON_VEC_UP = 'vec_up'
+    JSON_VEC_BACK = 'vec_back'
+    JSON_VEC_RIGHT = 'vec_right'
+    JSON_TRANSLATION = 'translation'
+    JSON_ZOOM = 'zoom'
+
+    def default(self, obj):
+        if isinstance(obj, View):
+            return {self.JSON_VIEW_ID: obj.view_id,
+                    self.JSON_VEC_UP: obj.vec_up.tolist(),
+                    self.JSON_VEC_BACK: obj.vec_back.tolist(),
+                    self.JSON_VEC_RIGHT: obj.vec_right.tolist(),
+                    self.JSON_TRANSLATION: obj.translation.tolist(),
+                    self.JSON_ZOOM: obj.zoom}
+        return json.JSONEncoder.default(self, obj)
+
+
+if __name__ == '__main__':
+    view = View(1, numpy.array([1, 1, 1]), numpy.array([2, 2, 2]), numpy.array([3, 3, 3]),
+                numpy.array([0, 0, 0]), 5)
+    a = json.loads(json.dumps(view, cls=ViewEncoder))
+    view2 = View.decode_json(a)

@@ -853,21 +853,21 @@ class LMGLShaderCanvas(GLCanvas):
         self.scale = 2. / (max(self.sx, self.sy))
 
     def set_view(self, view):
-        self.vecBack = numpy.array(view._vec_back)
-        self.vecRight = numpy.array(view._vec_right)
-        self.vecUp = numpy.array(view._vec_up)
-        self.xc = view._translation[0]
-        self.yc = view._translation[1]
-        self.zc = view._translation[2]
-        self.scale = view._zoom
+        self.vecBack = view.vec_back
+        self.vecRight = view.vec_right
+        self.vecUp = view.vec_up
+        self.xc = view.translation[0]
+        self.yc = view.translation[1]
+        self.zc = view.translation[2]
+        self.scale = view.zoom
         self.Refresh()
 
     def get_view(self, view_id='id'):
         view = View(view_id,
-                    self.vecUp.tolist(),
-                    self.vecBack.tolist(),
-                    self.vecRight.tolist(),
-                    [self.xc, self.yc, self.zc],
+                    self.vecUp,
+                    self.vecBack,
+                    self.vecRight,
+                    np.array([self.xc, self.yc, self.zc]),
                     self.scale)
         return view
 
