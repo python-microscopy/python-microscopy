@@ -61,7 +61,9 @@ class TabularBase(object):
         if keys is None:
             keys = self.keys()
 
-        return records.fromarrays([self.__getitem__(k) for k in keys], names = keys)
+        columns = [self.__getitem__(k) for k in keys]
+        dt = [(k, v.dtype) for k, v in zip(keys, columns)]
+        return records.fromarrays(columns, names = keys, dtype = dt)
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
         from PYME.IO import h5rFile
