@@ -107,7 +107,7 @@ class Fish(TestApp):
         concentration = Worm(200)
         concentration.translate(-2300, 500, 0)
         self.to += concentration
-        self.to = Clusterizer(self.to, 4, 30)
+        self.to = ExponentialClusterizer(self.to, 4, 30)
         super(Fish, self).__init__(*args)
 
     def OnInit(self):
@@ -128,7 +128,7 @@ class Fish(TestApp):
 
 class Vesicles(TestApp):
     def __init__(self, *args):
-        amount_points = 100
+        amount_points = 50
         self.to = Vesicle(amount_points=amount_points)
 
         'first step'
@@ -198,14 +198,14 @@ class Vesicles(TestApp):
 
         self.to += new_ring
 
-        self.to = Clusterizer(self.to, 1, 10)
+        self.to = ExponentialClusterizer(self.to, 4, 10)
 
         super(Vesicles, self).__init__(*args)
 
     def OnInit(self):
         self.setup()
 
-        self._canvas.pointSize = 50
+        self._canvas.pointSize = 10
 
         self._canvas.setPoints3D(self.to.x, self.to.y, self.to.z, normalize(self.to.z),
                                  self._canvas.cmap, self._canvas.clim, mode='pointsprites')

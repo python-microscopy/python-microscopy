@@ -107,8 +107,8 @@ class Ellipsoid(TestObject):
 
 
 class Worm(TestObject):
-    def __init__(self, kbp=200, step_length=50):
-        chain = wormlikeChain(kbp, steplength=step_length)
+    def __init__(self, kbp=0.1, length_per_kbp=10.0):
+        chain = wormlikeChain(kbp, steplength=20.0, lengthPerKbp=length_per_kbp, persistLength=50)
         TestObject.__init__(self, chain.xp, chain.yp, chain.zp)
 
 
@@ -117,7 +117,7 @@ class Vesicle(TestObject):
     MICROMETER_CONVERSION_CONSTANT = 500
     WIDTH = 1
 
-    def __init__(self, diameter=1, amount_points=100, hole_size=0.4, hole_pos=0):
+    def __init__(self, diameter=1, amount_points=100, hole_size=0.5*numpy.pi, hole_pos=0):
         """
 
         Parameters
@@ -140,13 +140,45 @@ class Vesicle(TestObject):
 
 class Clusterizer(TestObject):
     def __init__(self, test_object, multiply, distance):
-        amount_of_points = len(test_object.x)
-        offsets_x = (numpy.random.randn(amount_of_points*multiply) - 0.5) * 2 * distance
-        offsets_y = (numpy.random.randn(amount_of_points*multiply) - 0.5) * 2 * distance
-        offsets_z = (numpy.random.randn(amount_of_points*multiply) - 0.5) * 2 * distance
+        self.test_object = test_object
+        self.multiply = multiply
+        self.distance = distance
 
-        new_positions_x = numpy.repeat(test_object.x, multiply) + offsets_x
-        new_positions_y = numpy.repeat(test_object.y, multiply) + offsets_y
-        new_positions_z = numpy.repeat(test_object.z, multiply) + offsets_z
+        base_points_x, base_points_y, base_points_z, self.amount_of_points = self.get_points()
+        offsets = self.get_offsets()
+
+        new_positions_x = base_points_x + offsets[0]
+        new_positions_y = base_points_y + offsets[1]
+        new_positions_z = base_points_z + offsets[2]
 
         TestObject.__init__(self, new_positions_x, new_positions_y, new_positions_z)
+
+    def get_points(self):
+        test_object = self.test_object
+        return (numpy.repeat(test_object.x, self.multiply),
+                numpy.repeat(test_object.y, self.multiply),
+                numpy.repeat(test_object.z, self.multiply), len(test_object.x)*self.multiply)
+
+    def get_offsets(self):
+        offsets_x = (numpy.random.randn(self.amount_of_points) - 0.5) * 2 * self.distance
+        offsets_y = (numpy.random.randn(self.amount_of_points) - 0.5) * 2 * self.distance
+        offsets_z = (numpy.random.randn(self.amount_of_points) - 0.5) * 2 * self.distance
+        return offsets_x, offsets_y, offsets_z
+
+
+class ExponentialClusterizer(Clusterizer):
+    def __init__(self, test_object, expectation_value, distance):
+        self.expectation_value = expectation_value
+        super(ExponentialClusterizer, self).__init__(test_object, 0, distance)
+
+    def get_points(self):
+        amount_of_input_points = len(self.test_object.x)
+
+        print(amount_of_input_points)
+        cluster_sizes = numpy.round(
+            numpy.random.exponential(self.expectation_value, amount_of_input_points)).astype(int)
+        base_points_x = numpy.repeat(self.test_object.x, cluster_sizes)
+        base_points_y = numpy.repeat(self.test_object.y, cluster_sizes)
+        base_points_z = numpy.repeat(self.test_object.z, cluster_sizes)
+        amount_of_points = len(base_points_x)
+        return base_points_x, base_points_y, base_points_z, amount_of_points
