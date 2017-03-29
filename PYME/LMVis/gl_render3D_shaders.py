@@ -20,10 +20,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-import PIL
 import numpy
 import numpy as np
-import pylab
 import wx
 import wx.glcanvas
 from OpenGL.GL import *
