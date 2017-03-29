@@ -71,39 +71,49 @@ class View(object):
 
     def __add__(self, other):
         return View(None,
-                    [a_i + b_i for a_i, b_i in zip(self.vec_up, other.vec_up)],
-                    [a_i + b_i for a_i, b_i in zip(self.vec_back, other.vec_back)],
-                    [a_i + b_i for a_i, b_i in zip(self.vec_right, other.vec_right)],
-                    [a_i + b_i for a_i, b_i in zip(self.translation, other.translation)],
+                    self.vec_up + other.vec_up,
+                    self.vec_back + other.vec_back,
+                    self.vec_right + other.vec_right,
+                    self.translation + other.translation,
                     self._zoom + other.zoom
                     )
 
     def __sub__(self, other):
         return View(None,
-                    [a_i - b_i for a_i, b_i in zip(self.vec_up, other.vec_up)],
-                    [a_i - b_i for a_i, b_i in zip(self.vec_back, other.vec_back)],
-                    [a_i - b_i for a_i, b_i in zip(self.vec_right, other.vec_right)],
-                    [a_i - b_i for a_i, b_i in zip(self.translation, other.translation)],
+                    self.vec_up - other.vec_up,
+                    self.vec_back - other.vec_back,
+                    self.vec_right - other.vec_right,
+                    self.translation - other.translation,
                     self._zoom - other.zoom
                     )
 
     def __mul__(self, scalar):
         return View(None,
-                    [a_i * scalar for a_i in self.vec_up],
-                    [a_i * scalar for a_i in self.vec_back],
-                    [a_i * scalar for a_i in self.vec_right],
-                    [a_i * scalar for a_i in self.translation],
+                    self.vec_up,
+                    self.vec_back,
+                    self.vec_right,
+                    self.translation * scalar,
                     self._zoom*scalar
                     )
 
     def __div__(self, scalar):
         return View(None,
-                    [a_i / scalar for a_i in self.vec_up],
-                    [a_i / scalar for a_i in self.vec_back],
-                    [a_i / scalar for a_i in self.vec_right],
-                    [a_i / scalar for a_i in self.translation],
+                    self.vec_up,
+                    self.vec_back,
+                    self.vec_right,
+                    self.translation / scalar,
                     self._zoom / scalar
                     )
+
+    def normalize_view(self):
+        self._vec_up = self.normalize(self.vec_up)
+        self._vec_back = self.normalize(self.vec_back)
+        self._vec_right = self.normalize(self.vec_right)
+        return self
+
+    @staticmethod
+    def normalize(array):
+        return array / numpy.linalg.norm(array)
 
     def to_json(self):
         return json.dumps(self, cls=ViewEncoder)
