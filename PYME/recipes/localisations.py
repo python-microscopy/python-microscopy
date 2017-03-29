@@ -606,18 +606,14 @@ class FitToSphericalHarmonics(ModuleBase): #FIXME - this likely doesnt belong he
 
         inp = namespace[self.inputName]
 
-        modes, coeffs, centre = spharm.sphere_expansion_clean(inp['x'], inp['y'], self.zscale*inp['z'], mmax=self.max_m_mode)
-
-        # FIXME - use recarray as output
-        recon = Dict({'modes': modes, 'coeffs': coeffs, 'centre': centre, 'zscale': self.zscale,
-                           'max_m_mode': self.max_m_mode})
+        proj = tabular.recArrayInput(spharm.project(inp['x'], inp['y'], inp['z'], mmax=self.max_m_mode, z_scale=self.zscale))
 
         try:
-            recon.mdh = namespace[self.inputName].mdh
+            proj.mdh = namespace[self.inputName].mdh
         except AttributeError:
             pass
 
-        namespace[self.outputName] = recon
+        namespace[self.outputName] = proj
 
 # FIXME - too fine-grained, instead add normalized_radius column, which can then be filtered on separately
 @register_module('IDPointsInsideSphereicalHarmonicStructure')

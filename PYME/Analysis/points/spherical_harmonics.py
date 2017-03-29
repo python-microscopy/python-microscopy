@@ -5,19 +5,6 @@ import numpy as np
 from scipy.special import sph_harm
 from scipy import linalg
 
-spharm_dtype = []
-
-class SphericalHarmProjection:
-
-    def __init__(self, x, y, z, mmax=3, centre_points=True, nIters = 2, tol_init = 0.3, z_scale=1, mdh=None):
-        modes, c, (x0, y0, z0) = sphere_expansion_clean(x, y, z*z_scale, mmax=3, centre_points=True, nIters=2, tol_init=0.3)
-        self.modes = modes
-        self.coeffs = c
-        self.centre = (x0, y0, z0)
-        self.z_scale = z_scale
-        self.max_m_mode = mmax
-        self.centered = centre_points
-
 def sph2cart(az, el, r):
     """
     Convert sperical coordinates into cartesian
@@ -216,5 +203,58 @@ def visualize_reconstruction(modes, coeffs, d_phi=.1, zscale=1.0):
     mlab.figure()
     mlab.mesh(x1, y1, z1*zscale)
 
+def project(x, y, z, mmax=3, centre_points=True, nIters = 2, tol_init = 0.3, z_scale=1.0):
+    """
+    Projects a set of 3D points onto spherical harmonics using sphere_expansion_clean, and packages the reconstruction
+    into a structured ndarray, which can be e.g. used to initialize a recarray input for saving spherical harmonic
+    reconstructions, or passing them between recipe modules
 
+    Parameters
+    ----------
+    x : ndarray
+        x coordinates
+    y : ndarray
+        y coordinates
+    z : ndarray
+        z coordinates
+    mmax : int
+        Maximum order to calculate to
+    centre_points : bool
+        Subtract the mean from the co-ordinates before projecting
+    nIters :
+    tol_init :
+    z_scale : float
+        Factor to scale z by when projecting onto spherical harmonics. It is helpful to scale z such that the x, y, and
+        z extents are roughly equal.
+
+    Returns
+    -------
+    pojection : structured ndarray with the following keys
+        modes : list of tuples
+            a list of the (m, n) modes projected onto
+        coefficients : ndarray
+            the mode coefficients
+        centre : tuple
+            the x, y, z centre of the object (if centre_points=True).
+        z_scale : float
+            same as input parameter
+        max_m_mode : int
+            same as input parameter
+
+    """
+    modes, c, (x0, y0, z0) = sphere_expansion_clean(x, y, z*z_scale, mmax, centre_points, nIters, tol_init)
+    dt = [('modes', '<i4', (len(modes), 2)),
+          ('coefficients', '<f4', (len(c))),
+          ('centre', '<f4', 3),
+          ('z_scale', '<f4'),
+          ('max_m_mode', '<i4')]
+    #self.projection = np.array([np.asarray(modes).T, c, (x0, y0, z0), float(z_scale), mmax], dtype=self.dtype)
+    projection = np.empty(1, dtype=dt)
+    projection['modes'] = modes
+    projection['coefficients'] = c
+    projection['centre'] = (x0, y0, z0)
+    projection['z_scale'] = z_scale
+    projection['max_m_mode'] = mmax
+
+    return projection
 
