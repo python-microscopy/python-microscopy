@@ -85,6 +85,8 @@ def measure_3d(x, y, z, output=None):
     #count
     N = len(x)
     output['count'] = N
+    if N < 3:
+        raise UserWarning('measure_3D can only be used on clusters of size 3 or larger')
     
     #centroid
     xc, yc, zc = x.mean(), y.mean(), z.mean()
@@ -106,10 +108,7 @@ def measure_3d(x, y, z, output=None):
     for i in range(3):
         output['axis%d' % i] = v[i]
         #std. deviation along axes
-        try:
-            output['sigma%d' % i] = s[i]/np.sqrt(N-1)
-        except IndexError:  # this occurs if the cluster only has two (or less) singular values, e.g. is only 2 points
-            output['sigma%d' % i] = 0
+        output['sigma%d' % i] = s[i]/np.sqrt(N-1)
     
     pa = v[0]
     #angle of principle axis
