@@ -36,7 +36,7 @@ import sys
 
 import matplotlib
 
-from PYME.LMVis.Extras.VideoPanel import VideoPanel
+
 
 matplotlib.use('wxagg')
 import pylab
@@ -44,14 +44,9 @@ import pylab
 from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
-#import os
-#from PYME.LMVis import gl_render3D
 
 from PYME.LMVis import colourPanel
-#from PYME.LMVis import renderers
 from PYME.LMVis import pipeline
-
-import wx.lib.agw.aui as aui
 
 import logging
 logger = logging.getLogger(__name__)
@@ -84,12 +79,6 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         
         self.pipeline = pipeline.Pipeline(visFr=self)
 
-        self.video_panel = VideoPanel(self)
-        self.video_panel.SetSize(self.video_panel.GetBestSize())
-        pinfo =aui.AuiPaneInfo().Name("video_panel").Right().Caption('Video Settings').CloseButton(False).MinimizeButton(
-            True).Dock().MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)
-        self._mgr.AddPane(self.video_panel, pinfo)
-        self._mgr.MinimizePane(pinfo)
         #self.Quads = None
                
         #self.SetMenuBar(self.CreateMenuBar())
