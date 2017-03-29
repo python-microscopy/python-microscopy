@@ -43,10 +43,11 @@ def get_labels_from_image(label_image, points):
 
     # account for ROIs
     try:
-        p_ox = point.mdh['Camera.ROIPosX'] * points.mdh['voxelsize.x'] * 1e3
-        p_oy = points.mdh['Camera.ROIPosY'] * points.mdh['voxelsize.y'] * 1e3
+        # TODO - make Camera.ROIPosX not start from 1
+        p_ox = (points.mdh['Camera.ROIPosX'] - 1) * points.mdh['voxelsize.x'] * 1e3
+        p_oy = (points.mdh['Camera.ROIPosY'] - 1) * points.mdh['voxelsize.y'] * 1e3
     except AttributeError:
-        raise RuntimeError('label image requires metadata specifying the voxelsize')
+        raise RuntimeError('label image requires metadata specifying ROI position and voxelsize')
 
     pixX = np.round((points['x'] + p_ox - im_ox) / label_image.pixelSize).astype('i')
     pixY = np.round((points['y'] + p_oy - im_oy) / label_image.pixelSize).astype('i')
@@ -71,9 +72,11 @@ def get_labels_from_image(label_image, points):
     return ids, numPerObject
 
 measurement_dtype = [('count', '<i4'),
-                     ('x', '<f4'),('y', '<f4'),('z', '<f4'),
+                     ('x', '<f4'), ('y', '<f4'), ('z', '<f4'),
                      ('gyrationRadius', '<f4'),
-                     ('axis0', '<3f4'),('axis1', '<3f4'),('axis2', '<3f4'),
+                     ('axis0i', '<f4'), ('axis0j', '<f4'), ('axis0k', '<f4'),
+                     ('axis1i', '<f4'), ('axis1j', '<f4'), ('axis1k', '<f4'),
+                     ('axis2i', '<f4'), ('axis2j', '<f4'), ('axis2k', '<f4'),
                      ('sigma0', '<f4'), ('sigma1', '<f4'), ('sigma2', '<f4'),
                      ('theta', '<f4'), ('phi', '<f4')]
 
@@ -97,14 +100,18 @@ def measure_3d(x, y, z, output=None):
     
     #radius of gyration
     output['gyrationRadius'] = np.sqrt(np.mean(x_*x_ + y_*y_ + z_*z_))
-    
+
     #principle axes
     u, s, v = np.linalg.svd(np.vstack([x_, y_, z_]).T)
-    
+
+
     for i in range(3):
-        output['axis%d' % i] = v[i]
+        output['axis%di' % i], output['axis%dj' % i], output['axis%dk' % i] = v[i]
         #std. deviation along axes
-        output['sigma%d' % i] = s[i]/np.sqrt(N-1)
+        try:
+            output['sigma%d' % i] = s[i]/np.sqrt(N-1)
+        except IndexError:  # this occurs if the cluster only has two (or less) singular values, e.g. is only 2 points
+            output['sigma%d' % i] = 0
     
     pa = v[0]
     #angle of principle axis
