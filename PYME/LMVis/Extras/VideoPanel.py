@@ -19,8 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-#  template: DSView/OptionsPanel(wx.Panel):
 import json
+from time import sleep
 
 import cv2
 import wx
@@ -167,11 +167,15 @@ class VideoPanel(wx.Panel):
                                 video.write(cv2.cvtColor(cv2.flip(snap.transpose(1, 0, 2), 0), cv2.COLOR_RGB2BGR))
                             else:
                                 video.write(cv2.flip(snap.transpose(1, 0, 2), 0))
+                        else:
+                            sleep(2.0/steps)
+                            self.get_canvas().OnDraw()
                     current_view = view
             if save:
                 video.release()
 
-    def ask(self, parent=None, message='', default_value=''):
+    @staticmethod
+    def ask(parent=None, message='', default_value=''):
         dlg = wx.TextEntryDialog(parent, message, defaultValue=default_value)
         dlg.ShowModal()
         result = dlg.GetValue()
