@@ -126,77 +126,81 @@ class Fish(TestApp):
         self.to.save(file_name)
 
 
-class Rings(TestApp):
+class Vesicles(TestApp):
     def __init__(self, *args):
-        self.to = Ring(2000)
+        amount_points = 100
+        self.to = Vesicle(amount_points=amount_points)
 
         'first step'
-        offset = -10000
+        offset = -2000
         scale = 0.5
-        new_ring = Ring(1000, hole_pos=numpy.pi / 2)
+
+        new_ring = Vesicle(amount_points=amount_points, hole_pos=numpy.pi / 2)
         new_ring.scale(scale, scale, scale)
         new_ring.translate(-5000, offset, 0)
 
         self.to += new_ring
 
-        new_ring = Ring(1000, hole_pos=0.75 * numpy.pi / 2)
+        new_ring = Vesicle(amount_points=amount_points, hole_pos=0.75 * numpy.pi / 2)
         new_ring.scale(scale, scale, scale)
         new_ring.translate(5000, offset, 0)
 
         self.to += new_ring
 
         'second step'
-        offset = -15000
+        offset -= 1000
         scale = 0.25
-        new_ring = Ring(250, hole_pos=3 * numpy.pi / 2)
+        new_ring = Vesicle(amount_points=amount_points, hole_pos=3 * numpy.pi / 2)
         new_ring.scale(scale, scale, scale)
         new_ring.translate(0, offset, 0)
 
         self.to += new_ring
 
-        new_ring = Ring(250, hole_pos=2 * numpy.pi)
+        new_ring = Vesicle(amount_points=amount_points, hole_pos=2 * numpy.pi)
         new_ring.scale(scale, scale, scale)
         new_ring.translate(7000, offset, 0)
 
         self.to += new_ring
 
-        new_ring = Ring(250, hole_size=0, hole_pos=4 * numpy.pi / 2)
+        new_ring = Vesicle(amount_points=amount_points, hole_size=0, hole_pos=4 * numpy.pi / 2)
         new_ring.scale(scale, scale, scale)
         new_ring.translate(-7000, offset, 0)
 
         self.to += new_ring
 
         'third step'
-        offset = -18000
+        offset -= 800
         scale = 0.125
-        new_ring = Ring(100, hole_pos=7 * numpy.pi / 4)
+        new_ring = Vesicle(amount_points=amount_points, hole_pos=7 * numpy.pi / 4)
         new_ring.scale(scale, scale, scale)
         new_ring.translate(-4000, offset, 0)
 
         self.to += new_ring
 
-        new_ring = Ring(100, hole_size=0, hole_pos=7 * numpy.pi / 4)
+        new_ring = Vesicle(amount_points=amount_points, hole_size=0, hole_pos=7 * numpy.pi / 4)
         new_ring.scale(scale, scale, scale)
         new_ring.translate(4000, offset, 0)
 
         self.to += new_ring
 
         'fourth step'
-        offset = -20000
+        offset -= 400
         scale = 0.08
-        new_ring = Ring(75, hole_pos=5 * numpy.pi / 4)
+        new_ring = Vesicle(amount_points=amount_points, hole_size=0.5 * numpy.pi, hole_pos=5 * numpy.pi / 4)
         new_ring.scale(scale, scale, scale)
         new_ring.translate(-4000, offset, 0)
 
         self.to += new_ring
 
-        new_ring = Ring(75, hole_size=0, hole_pos=7 * numpy.pi / 4)
+        new_ring = Vesicle(amount_points=amount_points, hole_size=0, hole_pos=7 * numpy.pi / 4)
         new_ring.scale(scale, scale, scale)
         new_ring.translate(4000, offset, 0)
 
         self.to += new_ring
 
-        super(Rings, self).__init__(*args)
+        self.to = Clusterizer(self.to, 1, 10)
+
+        super(Vesicles, self).__init__(*args)
 
     def OnInit(self):
         self.setup()
@@ -240,8 +244,15 @@ def normalize(values):
 
 
 def main():
-    app = Fish()
-    app.save(sys.argv[1])
+    """
+    sys.argv[1] is the test class that should be executed e.g. "Vesicles"
+    sys.argv[2] is the absolute path where the resulting csv should be saved to
+    Returns
+    -------
+
+    """
+    app = eval(sys.argv[1])()
+    app.save(sys.argv[2])
     app.MainLoop()
 
 

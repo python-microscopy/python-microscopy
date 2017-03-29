@@ -112,23 +112,24 @@ class Worm(TestObject):
         TestObject.__init__(self, chain.xp, chain.yp, chain.zp)
 
 
-class Ring(TestObject):
+class Vesicle(TestObject):
 
-    DIAMETER = 5e3
-    WIDTH = 1000
+    MICROMETER_CONVERSION_CONSTANT = 500
+    WIDTH = 1
 
-    def __init__(self, amount_points, hole_size=0.4, hole_pos=0):
+    def __init__(self, diameter=1, amount_points=100, hole_size=0.4, hole_pos=0):
         """
 
         Parameters
         ----------
-        amount_points
+        diameter        of the vesicle in micrometer
         hole_size       in rad [0-2*pi]
         hole_pos        in rad [0-2*pi]
                         0 => y=0, x=1 => right
         """
+        diameter = diameter * self.MICROMETER_CONVERSION_CONSTANT
         rad = numpy.random.rand(amount_points)*(2*numpy.pi-hole_size)+hole_size/2 + hole_pos
-        dist = self.DIAMETER - numpy.random.rand(amount_points) * self.WIDTH
+        dist = diameter - numpy.random.rand(amount_points) * self.WIDTH
 
         x = dist * numpy.cos(rad)
         y = dist * numpy.sin(rad)
