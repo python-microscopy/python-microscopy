@@ -583,3 +583,84 @@ class MeasureClusters3D(ModuleBase):
 
         namespace[self.outputName] = meas
 
+@register_module('FitToSphericalHarmonics')
+class FitToSphericalHarmonics(ModuleBase): #FIXME - this likely doesnt belong here
+    """Parameters
+    ----------
+
+        max_m_mode: Maximum order to calculate to.
+        zscale: Factor to scale z by when projecting onto spherical harmonics. It is helpful to scale z such that the
+            x, y, and z extents are roughly equal.
+
+    Notes
+    -----
+    Sometimes it's ok to be square - orthogonality has its perks.
+    """
+    inputName = Input('zmapped')
+    max_m_mode = Int(5)
+    zscale = Float(5.0)
+    outputName = Output('spharmonicprojection')
+
+    def execute(self, namespace):
+        import PYME.Analysis.points.spherical_harmonics as spharm
+
+        inp = namespace[self.inputName]
+
+        modes, coeffs, centre = spharm.sphere_expansion_clean(inp['x'], inp['y'], self.zscale*inp['z'], mmax=self.max_m_mode)
+
+        # FIXME - use recarray as output
+        recon = Dict({'modes': modes, 'coeffs': coeffs, 'centre': centre, 'zscale': self.zscale,
+                           'max_m_mode': self.max_m_mode})
+
+        try:
+            recon.mdh = namespace[self.inputName].mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = recon
+
+# FIXME - too fine-grained, instead add normalized_radius column, which can then be filtered on separately
+@register_module('IDPointsInsideSphereicalHarmonicStructure')
+class IDPointsInsideSphereicalHarmonicStructure(ModuleBase): #FIXME - this likely doesnt belong here
+    """Parameters
+    ----------
+
+        inputSpharmProj: key in namespace for a dictionary-like object containing the spherical harmonic modes and
+            coefficients necessary to reconstruct the project of some object onto the basis of spherical harmonics (e.g.
+            output of recipes.localizations.FitToSphericalHarmonics).
+        sluff: distance to extend radius (in nanometers) beyond edge of spherical harmonic projection when determining
+            whether points lie within or outside of object.
+
+    Notes
+    -----
+
+    """
+
+
+    inputName = Input('pointsToID')
+    inputSpharmProj = Input('spharmonicprojection')
+    sluff = Float(500.0)
+    outputName = Output('interiorIDed')
+
+    def execute(self, namespace):
+        import PYME.Analysis.points.spherical_harmonics as spharm
+
+        inp = namespace[self.inputName]
+        identified = tabular.mappingFilter(inp)
+
+        rep = namespace[self.inputSpharmProj]
+        # calculate theta, phi, and rad for each localization in the pipeline
+        theta, phi, datRad = spharm.cart2sph(inp['x'] - rep['centre'][0], inp['y'] - rep['centre'][1],
+                                             inp['z'] - (rep['centre'][2])/rep['zscale'])
+
+        # check how radius of each point compares with the expected radius of the reconstruction
+        is_inside = (datRad - self.sluff) <= spharm.reconstruct_from_modes(rep['modes'], rep['coeffs'], theta, phi)
+
+        identified.addColumn('isInsideRepresentation', np.array(is_inside, dtype=int))
+        try:
+            identified.mdh = inp.mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = identified
+

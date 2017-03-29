@@ -5,6 +5,19 @@ import numpy as np
 from scipy.special import sph_harm
 from scipy import linalg
 
+spharm_dtype = []
+
+class SphericalHarmProjection:
+
+    def __init__(self, x, y, z, mmax=3, centre_points=True, nIters = 2, tol_init = 0.3, z_scale=1, mdh=None):
+        modes, c, (x0, y0, z0) = sphere_expansion_clean(x, y, z*z_scale, mmax=3, centre_points=True, nIters=2, tol_init=0.3)
+        self.modes = modes
+        self.coeffs = c
+        self.centre = (x0, y0, z0)
+        self.z_scale = z_scale
+        self.max_m_mode = mmax
+        self.centered = centre_points
+
 def sph2cart(az, el, r):
     """
     Convert sperical coordinates into cartesian
@@ -144,7 +157,7 @@ def sphere_expansion_clean(x, y, z, mmax=3, centre_points=True, nIters = 2, tol_
     c : ndarray
         the mode coefficients
     centre : tuple
-        the x, y, z centre of the object (if we centred the points pripr to calculation).
+        the x, y, z centre of the object (if we centred the points prior to calculation).
 
 
     """
