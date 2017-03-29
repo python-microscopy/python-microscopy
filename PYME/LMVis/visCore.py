@@ -4,7 +4,6 @@ Created on Sat May 14 14:54:52 2016
 
 @author: david
 """
-import PIL
 import wx
 import wx.py.shell
 
