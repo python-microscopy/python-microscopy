@@ -61,8 +61,9 @@ class TabularBase(object):
         if keys is None:
             keys = self.keys()
 
-        return rfn.merge_arrays([np.array(self.__getitem__(k),
-                                   dtype={'names': [k], 'formats': [self.__getitem__(k).dtype.str]}) for k in keys])
+        ra = rfn.merge_arrays([self.__getitem__(k) for k in keys])
+        ra.dtype.names = tuple(keys)
+        return ra
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
         from PYME.IO import h5rFile
