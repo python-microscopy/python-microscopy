@@ -856,8 +856,8 @@ class LMGLShaderCanvas(GLCanvas):
         self.scale = view._zoom
         self.Refresh()
 
-    def get_view(self):
-        view = View('id',
+    def get_view(self, view_id='id'):
+        view = View(view_id,
                     self.vecUp.tolist(),
                     self.vecBack.tolist(),
                     self.vecRight.tolist(),

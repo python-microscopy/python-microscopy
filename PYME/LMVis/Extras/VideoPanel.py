@@ -26,21 +26,21 @@ import cv2
 import numpy
 from wx import wx
 
-import PYME.ui.autoFoldPanel as afp
 from PYME.LMVis.View import View
 
 
+# noinspection PyUnusedLocal
 class VideoPanel(wx.Panel):
-
     JSON_LIST_NAME = 'views'
 
-    def __init__(self, parent, **kwargs):
+    def __init__(self, parent_panel, **kwargs):
         kwargs['style'] = wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, parent, **kwargs)
-        self.views = []
-        self.parent = parent
+        wx.Panel.__init__(self, parent_panel, **kwargs)
+        self.snapshots = []
+        self.parent_panel = parent_panel
         vertical_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.view_table = wx.ListCtrl(self, -1, style=wx.BU_EXACTFIT | wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER)
+        self.view_table = wx.ListCtrl(self, -1,
+                                      style=wx.BU_EXACTFIT | wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER)
 
         self.view_table.InsertColumn(0, 'id')
 
@@ -52,7 +52,7 @@ class VideoPanel(wx.Panel):
         self.SetSizerAndFit(vertical_sizer)
 
     def get_canvas(self):
-        return self.parent.glCanvas
+        return self.parent_panel.glCanvas
 
     def create_buttons(self, vertical_sizer):
         grid_sizer = wx.GridSizer(3, 3)
@@ -60,11 +60,11 @@ class VideoPanel(wx.Panel):
         add_button = wx.Button(self, -1, label='Add', style=wx.BU_EXACTFIT)
         delete_button = wx.Button(self, -1, label='Delete', style=wx.BU_EXACTFIT)
         skip = wx.StaticText(self, -1, '')
-        load_button = wx.Button(self, -1, label='Load',style=wx.BU_EXACTFIT)
+        load_button = wx.Button(self, -1, label='Load', style=wx.BU_EXACTFIT)
         save_button = wx.Button(self, -1, label='Save', style=wx.BU_EXACTFIT)
         clear_button = wx.Button(self, -1, label='Clear', style=wx.BU_EXACTFIT)
         run_button = wx.Button(self, -1, label='Run', style=wx.BU_EXACTFIT)
-
+        make_button = wx.Button(self, -1, label='Make', style=wx.BU_EXACTFIT)
 
         # bind the buttons and its handlers
         self.Bind(wx.EVT_BUTTON, self.add_snapshot, add_button)
@@ -73,6 +73,7 @@ class VideoPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.load, load_button)
         self.Bind(wx.EVT_BUTTON, self.save, save_button)
         self.Bind(wx.EVT_BUTTON, self.run, run_button)
+        self.Bind(wx.EVT_BUTTON, self.make, make_button)
 
         # add_snapshot the buttons to the view
         grid_sizer.Add(add_button, flag=wx.EXPAND)
@@ -82,23 +83,27 @@ class VideoPanel(wx.Panel):
         grid_sizer.Add(save_button, flag=wx.EXPAND)
         grid_sizer.Add(clear_button, flag=wx.EXPAND)
         grid_sizer.Add(run_button, flag=wx.EXPAND)
+        grid_sizer.Add(make_button, flag=wx.EXPAND)
         vertical_sizer.Add(grid_sizer)
 
-    def add_snapshot_to_view(self, view):
-        index = len(self.views)
-        self.view_table.InsertStringItem(index, "test{}".format(index))
-        self.views.append(index)
+    def add_snapshot_to_list(self, snapshot):
+        index = len(self.snapshots)
+        self.view_table.InsertStringItem(index, snapshot.view_id)
+        self.snapshots.append(snapshot)
 
     def add_snapshot(self, event):
-        self.add_snapshot_to_view(self.get_canvas().get_view())
+        vec_id = self.ask(self, message='Please enter view id')
+        if vec_id:
+            self.add_snapshot_to_list(self.get_canvas().get_view(vec_id))
 
     def delete_snapshot(self, event):
         index = self.view_table.GetFirstSelected()
-        self.view_table.DeleteItem(index)
-        self.views.remove(index)
+        if index >= 0:
+            self.view_table.DeleteItem(index)
+            del self.snapshots[index]
 
     def clear(self, event):
-        self.views = []
+        self.snapshots = []
         self.view_table.DeleteAllItems()
 
     def save(self, event):
@@ -110,7 +115,7 @@ class VideoPanel(wx.Panel):
                 f.write('{')
                 f.write('\"{}\":['.format(self.JSON_LIST_NAME))
                 is_first = True
-                for view in self.views:
+                for view in self.snapshots:
                     if not is_first:
                         f.write(',')
                     f.writelines(view.to_json())
@@ -123,22 +128,31 @@ class VideoPanel(wx.Panel):
             with open(file_name, 'r') as f:
                 data = json.load(f)
                 for view in data[self.JSON_LIST_NAME]:
-                    self.views.append(View.decode_json(view))
+                    self.add_snapshot_to_list(View.decode_json(view))
+
+    def make(self, event):
+        self.play(True)
 
     def run(self, event):
+        self.play(False)
+
+    def play(self, save):
         width = self.get_canvas().Size[0]
         height = self.get_canvas().Size[1]
         self.get_canvas().displayMode = '3D'
-        file_name = wx.FileSelector('Save video as avi named... ')
-
-        if file_name:
+        file_name = None
+        if save:
+            file_name = wx.FileSelector('Save video as avi named... ')
             if not file_name.endswith('.avi'):
                 file_name = '{}.avi'.format(file_name)
-            video = cv2.VideoWriter(file_name, -1, 30, (width, height))
-            if not self.views:
-                self.add_view(self.get_canvas())
+        video = None
+        if not save or file_name:
+            if save:
+                video = cv2.VideoWriter(file_name, -1, 30, (width, height))
+            if not self.snapshots:
+                self.add_snapshot_to_list(self.get_canvas())
             current_view = None
-            for view in self.views:
+            for view in self.snapshots:
                 if not current_view:
                     current_view = view
                 else:
@@ -147,14 +161,24 @@ class VideoPanel(wx.Panel):
                     for step in range(0, steps):
                         new_view = current_view + difference_view * step
                         self.get_canvas().set_view(new_view)
-                        img = numpy.fromstring(self.get_canvas().getIm().tostring(), numpy.ubyte).reshape(height, width, 3)
-                        video.write(cv2.cvtColor(cv2.flip(img, 0), cv2.COLOR_RGB2BGR))
+                        img = numpy.fromstring(
+                            self.get_canvas().getIm().tostring(), numpy.ubyte).reshape(height, width, 3)
+
+                        if save:
+                            video.write(cv2.cvtColor(cv2.flip(img, 0), cv2.COLOR_RGB2BGR))
                     current_view = view
-            video.release()
+            if save:
+                video.release()
+
+    def ask(self, parent=None, message='', default_value=''):
+        dlg = wx.TextEntryDialog(parent, message, defaultValue=default_value)
+        dlg.ShowModal()
+        result = dlg.GetValue()
+        dlg.Destroy()
+        return result
 
 
 class VideoFrame(wx.Frame):
-
     def __init__(self, parent_frame):
         wx.Frame.__init__(self, parent_frame, title='Display')
 
@@ -166,11 +190,6 @@ class VideoFrame(wx.Frame):
         self.SetSizer(hsizer)
         hsizer.Fit(self)
 
+
 def Plug(visFr):
     pass
-
-if __name__ == '__main__':
-    app = wx.PySimpleApp()
-    parent = VideoFrame(None, -1)
-    parent.Show()
-    app.MainLoop()
