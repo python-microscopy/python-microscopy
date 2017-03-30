@@ -56,6 +56,11 @@ class View(object):
     def view_id(self):
         return self._view_id
 
+    @view_id.setter
+    def view_id(self, value):
+        if value:
+            self._view_id = value
+
     @property
     def vec_up(self):
         return self._vec_up
@@ -125,10 +130,10 @@ class View(object):
     def to_json(self):
         ordered_dict = OrderedDict()
         ordered_dict[self.JSON_VIEW_ID] = self.view_id
-        ordered_dict[self.JSON_VEC_UP] = self.vec_up.tolist()
-        ordered_dict[self.JSON_VEC_BACK] = self.vec_back.tolist()
-        ordered_dict[self.JSON_VEC_RIGHT] = self.vec_right.tolist()
-        ordered_dict[self.JSON_TRANSLATION] = self.translation.tolist()
+        ordered_dict[self.JSON_VEC_UP] = self.vec_up
+        ordered_dict[self.JSON_VEC_BACK] = self.vec_back
+        ordered_dict[self.JSON_VEC_RIGHT] = self.vec_right
+        ordered_dict[self.JSON_TRANSLATION] = self.translation
         ordered_dict[self.JSON_ZOOM] = self.zoom
 
         return ordered_dict
@@ -136,12 +141,50 @@ class View(object):
     @staticmethod
     def decode_json(json_obj):
         # if '__type__' in json_obj and json_obj['__type__'] == View:
-        return View(json_obj[View.JSON_VIEW_ID],
-                    numpy.array(json_obj[View.JSON_VEC_UP]),
-                    numpy.array(json_obj[View.JSON_VEC_BACK]),
-                    numpy.array(json_obj[View.JSON_VEC_RIGHT]),
-                    numpy.array(json_obj[View.JSON_TRANSLATION]),
-                    json_obj[View.JSON_ZOOM])
+        return View(View.get_json_field(json_obj, View.JSON_VIEW_ID, 'id'),
+                    View.get_json_array(json_obj, View.JSON_VEC_UP, numpy.array([0, 1, 0])),
+                    View.get_json_array(json_obj, View.JSON_VEC_BACK, numpy.array([0, 0, 1])),
+                    View.get_json_array(json_obj, View.JSON_VEC_RIGHT, numpy.array([1, 0, 0])),
+                    View.get_json_array(json_obj, View.JSON_TRANSLATION, numpy.array([0, 0, 0])),
+                    View.get_json_field(json_obj, View.JSON_ZOOM, 1))
+
+    @staticmethod
+    def get_json_field(json_object, key, default=None):
+        """
+        
+        Parameters
+        ----------
+        key         name of the field in the json file
+        default     value that should be used if not found
+                    that way we could support older json files
+
+        Returns
+        -------
+
+        """
+        try:
+            return json_object[key]
+        except KeyError:
+            return default
+
+    @staticmethod
+    def get_json_array(json_object, key, default=None):
+        """
+
+                Parameters
+                ----------
+                key         name of the field in the json file
+                default     value that should be used if not found
+                            that way we could support older json files
+
+                Returns
+                -------
+
+                """
+        try:
+            return numpy.array(json_object[key])
+        except KeyError:
+            return default
 
 
 if __name__ == '__main__':

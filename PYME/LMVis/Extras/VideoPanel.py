@@ -26,7 +26,7 @@ import cv2
 import wx
 import wx.lib.agw.aui as aui
 
-from PYME.LMVis.View import View
+from PYME.LMVis.VideoView import VideoView
 
 
 # noinspection PyUnusedLocal
@@ -75,6 +75,8 @@ class VideoPanel(wx.Panel):
         self.Bind(wx.EVT_BUTTON, self.run, run_button)
         self.Bind(wx.EVT_BUTTON, self.make, make_button)
 
+        self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_edit)
+
         # add_snapshot the buttons to the view
         grid_sizer.Add(add_button, flag=wx.EXPAND)
         grid_sizer.Add(delete_button, flag=wx.EXPAND)
@@ -87,23 +89,34 @@ class VideoPanel(wx.Panel):
         vertical_sizer.Add(grid_sizer)
 
     def add_snapshot_to_list(self, snapshot):
-        index = len(self.snapshots)
-        self.view_table.InsertStringItem(index, snapshot.view_id)
         self.snapshots.append(snapshot)
+        self.refill()
 
     def add_snapshot(self, event):
         vec_id = self.ask(self, message='Please enter view id')
         if vec_id:
-            self.add_snapshot_to_list(self.get_canvas().get_view(vec_id))
+            duration = 3.0
+            view = self.get_canvas().get_view(vec_id)
+            video_view = VideoView(view.view_id,
+                                   view.vec_up,
+                                   view.vec_back,
+                                   view.vec_right,
+                                   view.translation,
+                                   view.zoom,
+                                   duration)
+            self.add_snapshot_to_list(video_view)
 
     def delete_snapshot(self, event):
         index = self.view_table.GetFirstSelected()
         if index >= 0:
-            self.view_table.DeleteItem(index)
             del self.snapshots[index]
+        self.refill()
 
     def clear(self, event):
         self.snapshots = []
+        self.view_table.DeleteAllItems()
+
+    def clear_view(self):
         self.view_table.DeleteAllItems()
 
     def save(self, event):
@@ -121,7 +134,7 @@ class VideoPanel(wx.Panel):
             with open(file_name, 'r') as f:
                 data = json.load(f)
                 for view in data[self.JSON_LIST_NAME]:
-                    self.add_snapshot_to_list(View.decode_json(view))
+                    self.add_snapshot_to_list(VideoView.decode_json(view))
 
     def make(self, event):
         self.play(True)
@@ -133,6 +146,7 @@ class VideoPanel(wx.Panel):
         width = self.get_canvas().Size[0]
         height = self.get_canvas().Size[1]
         self.get_canvas().displayMode = '3D'
+        fps = 30.0
         file_name = None
         if save:
             file_name = wx.FileSelector('Save video as avi named... ')
@@ -141,7 +155,7 @@ class VideoPanel(wx.Panel):
         video = None
         if not save or file_name:
             if save:
-                video = cv2.VideoWriter(file_name, -1, 30, (width, height))
+                video = cv2.VideoWriter(file_name, -1, fps, (width, height))
             if not self.snapshots:
                 self.add_snapshot_to_list(self.get_canvas())
             current_view = None
@@ -149,7 +163,7 @@ class VideoPanel(wx.Panel):
                 if not current_view:
                     current_view = view
                 else:
-                    steps = 40
+                    steps = int(round(view.duration * fps))
                     difference_view = (view - current_view) / steps
                     for step in range(0, steps):
                         new_view = current_view + difference_view * step
@@ -174,6 +188,98 @@ class VideoPanel(wx.Panel):
         result = dlg.GetValue()
         dlg.Destroy()
         return result
+
+    # noinspection PyTypeChecker
+    def on_edit(self, event):
+        snapshot = self.snapshots[self.view_table.GetFirstSelected()]
+
+        dlg = EditDialog(self, snapshot, 'Edit VideoView')
+        ret = dlg.ShowModal()
+
+        if ret == wx.ID_OK:
+            name = dlg.get_name()
+            duration = dlg.get_duration()
+
+            snapshot.view_id = name
+            snapshot.duration = duration
+
+        dlg.Destroy()
+        self.refill()
+
+    def refill(self):
+        self.clear_view()
+        for snapshot in self.snapshots:
+            index = len(self.snapshots)
+            self.view_table.InsertStringItem(index, snapshot.view_id)
+
+
+class EditDialog(wx.Dialog):
+    def __init__(self, parent, snapshot, title=''):
+        """
+
+        Returns
+        -------
+        EditDialog
+        """
+        wx.Dialog.__init__(self, parent, title=title)
+
+        sizer1 = wx.BoxSizer(wx.VERTICAL)
+
+        self.edit_panel = EditPanel(self, -1, snapshot, pos=(0, 0), size=(200, 100))
+        sizer1.Add(self.edit_panel, 0, wx.ALL | wx.EXPAND, 5)
+
+        # create button
+        bt_sizer = wx.StdDialogButtonSizer()
+        btn = wx.Button(self, wx.ID_OK)
+        btn.SetDefault()
+
+        bt_sizer.AddButton(btn)
+
+        bt_sizer.Realize()
+
+        sizer1.Add(bt_sizer, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+        # set total size
+        self.SetSizer(sizer1)
+        sizer1.Fit(self)
+
+    def get_name(self):
+        return self.edit_panel.id
+
+    def get_duration(self):
+        return self.edit_panel.duration
+
+
+class EditPanel(wx.Panel):
+    def __init__(self, parent, id_number, snapshot, size, pos):
+        wx.Panel.__init__(self, parent, id_number, size=size, pos=pos, style=wx.BORDER_SUNKEN)
+        grid_sizer = wx.GridSizer(2, 2)
+
+        # generate row for view_id
+        grid_sizer.Add(wx.StaticText(self, label='View Id', style=wx.BU_EXACTFIT))
+        self.name_text = wx.TextCtrl(self, size=(100, -1), style=wx.BU_EXACTFIT)
+        self.name_text.SetValue(snapshot.view_id)
+        grid_sizer.Add(self.name_text)
+
+        # generate row for duration
+        grid_sizer.Add(wx.StaticText(self, label='Duration', style=wx.BU_EXACTFIT))
+        self.duration_text = wx.TextCtrl(self, size=(100, -1), style=wx.BU_EXACTFIT)
+        grid_sizer.Add(self.duration_text)
+        self.duration_text.SetValue("{:.9f}".format(snapshot.duration))
+
+
+        self.SetSizerAndFit(grid_sizer)
+
+    @property
+    def id(self):
+        return self.name_text.GetValue()
+
+    @property
+    def duration(self):
+        try:
+            return float(self.duration_text.GetValue())
+        except ValueError:
+            return None
 
 
 class VideoFrame(wx.Frame):

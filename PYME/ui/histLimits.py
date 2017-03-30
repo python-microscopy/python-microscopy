@@ -374,14 +374,14 @@ def ShowHistLimitFrame(parent, title, data, limit_lower, limit_upper, size=(200,
     return ID_HIST_LIM
 
 class HistLimitDialog(wx.Dialog):
-    def __init__(self, parent, data,lower, upper, title=''):
+    def __init__(self, parent, data, lower, upper, title=''):
         wx.Dialog.__init__(self, parent, title=title)
 
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
         self.hl = HistLimitPanel(self, -1, data, lower, upper, size=(200, 100))
-        sizer1.Add(self.hl, 0, wx.ALL|wx.EXPAND, 5)
+        sizer1.Add(self.hl, 0, wx.ALL |  wx.EXPAND, 5)
 
         btSizer = wx.StdDialogButtonSizer()
 
