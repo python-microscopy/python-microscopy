@@ -26,6 +26,8 @@ from PYME.Acquire.Hardware.Simulator.wormlike2 import wormlikeChain
 
 
 class TestObject(object):
+    MICROMETER_CONVERSION_CONSTANT = 1000
+
     def __init__(self, x, y, z):
         self._x = x
         self._y = y
@@ -114,10 +116,9 @@ class Worm(TestObject):
 
 class Vesicle(TestObject):
 
-    MICROMETER_CONVERSION_CONSTANT = 500
     WIDTH = 1
 
-    def __init__(self, diameter=1, amount_points=100, hole_size=0.5 * numpy.pi, hole_pos=0):
+    def __init__(self, diameter=1.0, amount_points=100, hole_size=0.5 * numpy.pi, hole_pos=0):
         """
 
         Parameters
@@ -127,14 +128,35 @@ class Vesicle(TestObject):
         hole_pos        in rad [0-2*pi]
                         0 => y=0, x=1 => right
         """
-        diameter = diameter * self.MICROMETER_CONVERSION_CONSTANT
+
+        radius = diameter * self.MICROMETER_CONVERSION_CONSTANT / 2.0
         rad = numpy.random.rand(amount_points)*(2*numpy.pi-hole_size)+hole_size/2 + hole_pos
-        dist = diameter - numpy.random.rand(amount_points) * self.WIDTH
+        dist = radius - numpy.random.rand(amount_points) * self.WIDTH
 
         x = dist * numpy.cos(rad)
         y = dist * numpy.sin(rad)
-        z = numpy.ones(x.shape) * 0.1*numpy.random.randn(amount_points)
+        z = numpy.ones(x.shape) * 0.1 * numpy.random.randn(amount_points)
 
+        TestObject.__init__(self, x, y, z)
+
+
+class NoisePlane(TestObject):
+    def __init__(self, diameter=1.0, density=20.0):
+        """
+        
+        Parameters
+        ----------
+        diameter    in micrometer
+        density     per micrometer^2
+        """
+        radius = diameter / 2.0
+        amount_of_points = int(round(density * radius * radius * numpy.pi))
+        radius = radius * self.MICROMETER_CONVERSION_CONSTANT
+        rad = numpy.random.rand(amount_of_points) * 2 * numpy.pi
+        dist = radius * numpy.sqrt(numpy.random.rand(amount_of_points))
+        x = dist * numpy.cos(rad)
+        y = dist * numpy.sin(rad)
+        z = numpy.ones(x.shape) * 0.1 * numpy.random.randn(amount_of_points)
         TestObject.__init__(self, x, y, z)
 
 

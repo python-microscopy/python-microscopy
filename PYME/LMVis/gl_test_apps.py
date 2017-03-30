@@ -164,8 +164,12 @@ class Vesicles(TestApp):
             row_confs = {}
             offset -= 2000
 
+        noise = NoisePlane(20, 10)
+        noise.translate(0, offset / 2, 0)
+        self.to += noise
+
         self.to = ExponentialClusterizer(self.to, 4, 10)
-        print(json.dumps(confs, indent=4))
+
         super(Vesicles, self).__init__(*args)
         self.set_confs(confs)
 
