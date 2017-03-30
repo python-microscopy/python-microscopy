@@ -101,10 +101,10 @@ class Fish(TestApp):
         self.to = Ellipsoid(3000)
         concentration = Worm(250)
         concentration.translate(1000, 0, 0)
-        self.to += concentration
+        self.to.add(concentration)
         concentration = Worm(200)
         concentration.translate(-2300, 500, 0)
-        self.to += concentration
+        self.to.add(concentration)
         self.to = ExponentialClusterizer(self.to, 4, 30)
         super(Fish, self).__init__(*args)
 
@@ -146,7 +146,7 @@ class Vesicles(TestApp):
                     new_test_object = Vesicle(diameter=scale, amount_points=amount_points, hole_size=0)
                 new_test_object.translate(x_shift, offset, 0)
                 if self.to:
-                    self.to += new_test_object
+                    self.to.add(new_test_object)
                 else:
                     self.to = new_test_object
                 conf["scale"] = scale
@@ -166,7 +166,7 @@ class Vesicles(TestApp):
 
         noise = NoisePlane(20, 10)
         noise.translate(0, offset / 2, 0)
-        self.to += noise
+        self.to.add(noise)
 
         self.to = ExponentialClusterizer(self.to, 4, 10)
 

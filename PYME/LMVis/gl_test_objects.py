@@ -28,38 +28,51 @@ from PYME.Acquire.Hardware.Simulator.wormlike2 import wormlikeChain
 class TestObject(object):
     MICROMETER_CONVERSION_CONSTANT = 1000
 
+
+
     def __init__(self, x, y, z):
         self._x = x
         self._y = y
         self._z = z
+        self.added_objects = set()
 
     @property
     def x(self):
-        return self._x
+        new_x = self._x
+        for other_object in self.added_objects:
+            new_x = numpy.append(new_x, other_object.x)
+        return new_x
 
     @property
     def y(self):
-        return self._y
+        new_y = self._y
+        for other_object in self.added_objects:
+            new_y = numpy.append(new_y, other_object.y)
+        return new_y
 
     @property
     def z(self):
-        return self._z
+        new_z = self._z
+        for other_object in self.added_objects:
+            new_z = numpy.append(new_z, other_object.z)
+        return new_z
 
     def translate(self, x=0, y=0, z=0):
         self._x += x
         self._y += y
         self._z += z
+        for other_object in self.added_objects:
+            other_object.translate(x, y, z)
 
     def scale(self, x=1, y=1, z=1):
         self._x *= x
         self._y *= y
         self._z *= z
+        for other_object in self.added_objects:
+            other_object.scale(x, y, z)
 
-    def __add__(self, other):
-        new_x = numpy.append(other.x, self._x)
-        new_y = numpy.append(other.y, self._y)
-        new_z = numpy.append(other.z, self._z)
-        return TestObject(new_x, new_y, new_z)
+    def add(self, other):
+        self.added_objects.add(other)
 
     def save(self, file_name):
         with open(file_name, 'wb') as csv_file:
