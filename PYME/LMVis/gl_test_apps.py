@@ -18,7 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-import json
 
 import pylab
 import sys
@@ -32,8 +31,6 @@ from PYME.LMVis.gl_test_objects import *
 class TestApp(wx.App):
     def __init__(self, *args):
         wx.App.__init__(self, *args)
-        self.confs = None
-        self.to = None
 
     def OnInit(self):
         self.setup()
@@ -65,14 +62,11 @@ class TestApp(wx.App):
     def save(self, test_object_file, configuration_file):
         if self.to:
             self.to.save(test_object_file)
-        if self.confs:
-            self.confs["file"] = test_object_file
-            self.confs["timestamp"] = '%s' % pylab.datetime.datetime.now()
+            self.to.add_to_json('file', test_object_file)
+            self.to.add_to_json('time', '%s' % pylab.datetime.datetime.now())
+            configurations = json.dumps(self.to, cls=TestObjectEncoder, indent=4)
             with open(configuration_file, 'wb') as f:
-                f.writelines(json.dumps(self.confs))
-
-    def set_confs(self, confs):
-        self.confs = confs
+                f.writelines(configurations)
 
 
 class XTestApp(TestApp):
@@ -128,10 +122,7 @@ class Vesicles(TestApp):
         x_shifts = [-3000, -1000, 1000, 3000]
         base_amount_of_points = 70
         offset = 0
-        self.to = None
-        conf = {}
-        row_confs = {}
-        confs = {}
+        self.to = TestObjectContainer()
         row, column = 1, 1
         for scale in scales:
             for x_shift in x_shifts:
@@ -145,23 +136,13 @@ class Vesicles(TestApp):
                 else:
                     new_test_object = Vesicle(diameter=scale, amount_points=amount_points, hole_size=0)
                 new_test_object.translate(x_shift, offset, 0)
-                if self.to:
-                    self.to.add(new_test_object)
-                else:
-                    self.to = new_test_object
-                conf["scale"] = scale
-                conf["x_shift"] = x_shift
-                conf["offset"] = offset
-                conf["has_hole"] = has_hole
-                conf["hole_position"] = "{} * 2pi".format(hole_position)
-                conf["amount_of_points"] = amount_points
-                row_confs[column] = conf
+
+                self.to.add(new_test_object)
+                new_test_object.add_to_json('row', row)
+                new_test_object.add_to_json('column', column)
                 column += 1
-                conf = {}
-            confs[row] = row_confs
             row += 1
             column = 1
-            row_confs = {}
             offset -= 2000
 
         noise = NoisePlane(20, 10)
@@ -171,7 +152,6 @@ class Vesicles(TestApp):
         self.to = ExponentialClusterizer(self.to, 4, 10)
 
         super(Vesicles, self).__init__(*args)
-        self.set_confs(confs)
 
     def OnInit(self):
         self.setup()
