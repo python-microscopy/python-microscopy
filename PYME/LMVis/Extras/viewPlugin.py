@@ -38,7 +38,7 @@ class ViewHandler(object):
             if not file_name.endswith('.json'):
                 file_name = '{}.json'.format(file_name)
             with open(file_name, 'w') as f:
-                f.writelines(view.to_json())
+                f.writelines(json.dumps(view.to_json(), indent=4))
 
     @staticmethod
     def load_view(canvas):

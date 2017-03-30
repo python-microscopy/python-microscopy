@@ -36,7 +36,7 @@ class VideoPanel(wx.Panel):
     def __init__(self, parent_panel, **kwargs):
         kwargs['style'] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, parent_panel, **kwargs)
-        self.snapshots = []
+        self.snapshots = list()
         self.parent_panel = parent_panel
         vertical_sizer = wx.BoxSizer(wx.VERTICAL)
         self.view_table = wx.ListCtrl(self, -1,
@@ -112,15 +112,8 @@ class VideoPanel(wx.Panel):
             if not file_name.endswith('.json'):
                 file_name = '{}.json'.format(file_name)
             with open(file_name, 'w') as f:
-                f.write('{')
-                f.write('\"{}\":['.format(self.JSON_LIST_NAME))
-                is_first = True
-                for view in self.snapshots:
-                    if not is_first:
-                        f.write(',')
-                    f.writelines(view.to_json())
-                    is_first = False
-                f.write(']}')
+                snapshots = [snapshot.to_json() for snapshot in self.snapshots]
+                f.writelines(json.dumps({self.JSON_LIST_NAME: snapshots}, indent=4))
 
     def load(self, event):
         file_name = wx.FileSelector('Open View-JSON file')

@@ -19,11 +19,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 import json
+from collections import OrderedDict
 
 import numpy
 
 
 class View(object):
+    JSON_VIEW_ID = 'view_id'
+    JSON_VEC_UP = 'vec_up'
+    JSON_VEC_BACK = 'vec_back'
+    JSON_VEC_RIGHT = 'vec_right'
+    JSON_TRANSLATION = 'translation'
+    JSON_ZOOM = 'zoom'
 
     def __init__(self, view_id, vec_up, vec_back, vec_right, translation, zoom):
         """
@@ -44,7 +51,7 @@ class View(object):
         self._vec_right = vec_right
         self._translation = translation
         self._zoom = zoom
-    
+
     @property
     def view_id(self):
         return self._view_id
@@ -93,7 +100,7 @@ class View(object):
                     self.vec_back,
                     self.vec_right,
                     self.translation * scalar,
-                    self._zoom*scalar
+                    self._zoom * scalar
                     )
 
     def __div__(self, scalar):
@@ -116,41 +123,29 @@ class View(object):
         return array / numpy.linalg.norm(array)
 
     def to_json(self):
-        return json.dumps(self, cls=ViewEncoder)
+        ordered_dict = OrderedDict()
+        ordered_dict[self.JSON_VIEW_ID] = self.view_id
+        ordered_dict[self.JSON_VEC_UP] = self.vec_up.tolist()
+        ordered_dict[self.JSON_VEC_BACK] = self.vec_back.tolist()
+        ordered_dict[self.JSON_VEC_RIGHT] = self.vec_right.tolist()
+        ordered_dict[self.JSON_TRANSLATION] = self.translation.tolist()
+        ordered_dict[self.JSON_ZOOM] = self.zoom
+
+        return ordered_dict
 
     @staticmethod
     def decode_json(json_obj):
         # if '__type__' in json_obj and json_obj['__type__'] == View:
-        return View(json_obj[ViewEncoder.JSON_VIEW_ID],
-                    numpy.array(json_obj[ViewEncoder.JSON_VEC_UP]),
-                    numpy.array(json_obj[ViewEncoder.JSON_VEC_BACK]),
-                    numpy.array(json_obj[ViewEncoder.JSON_VEC_RIGHT]),
-                    numpy.array(json_obj[ViewEncoder.JSON_TRANSLATION]),
-                    json_obj[ViewEncoder.JSON_ZOOM])
-
-
-class ViewEncoder(json.JSONEncoder):
-
-    JSON_VIEW_ID = 'view_id'
-    JSON_VEC_UP = 'vec_up'
-    JSON_VEC_BACK = 'vec_back'
-    JSON_VEC_RIGHT = 'vec_right'
-    JSON_TRANSLATION = 'translation'
-    JSON_ZOOM = 'zoom'
-
-    def default(self, obj):
-        if isinstance(obj, View):
-            return {self.JSON_VIEW_ID: obj.view_id,
-                    self.JSON_VEC_UP: obj.vec_up.tolist(),
-                    self.JSON_VEC_BACK: obj.vec_back.tolist(),
-                    self.JSON_VEC_RIGHT: obj.vec_right.tolist(),
-                    self.JSON_TRANSLATION: obj.translation.tolist(),
-                    self.JSON_ZOOM: obj.zoom}
-        return json.JSONEncoder.default(self, obj)
+        return View(json_obj[View.JSON_VIEW_ID],
+                    numpy.array(json_obj[View.JSON_VEC_UP]),
+                    numpy.array(json_obj[View.JSON_VEC_BACK]),
+                    numpy.array(json_obj[View.JSON_VEC_RIGHT]),
+                    numpy.array(json_obj[View.JSON_TRANSLATION]),
+                    json_obj[View.JSON_ZOOM])
 
 
 if __name__ == '__main__':
     view = View(1, numpy.array([1, 1, 1]), numpy.array([2, 2, 2]), numpy.array([3, 3, 3]),
                 numpy.array([0, 0, 0]), 5)
-    a = json.loads(json.dumps(view, cls=ViewEncoder))
+    a = json.loads(json.dumps(view.to_json()))
     view2 = View.decode_json(a)
