@@ -117,7 +117,7 @@ class Vesicle(TestObject):
     MICROMETER_CONVERSION_CONSTANT = 500
     WIDTH = 1
 
-    def __init__(self, diameter=1, amount_points=100, hole_size=0.5*numpy.pi, hole_pos=0):
+    def __init__(self, diameter=1, amount_points=100, hole_size=0.5 * numpy.pi, hole_pos=0):
         """
 
         Parameters

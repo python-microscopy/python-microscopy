@@ -18,11 +18,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+import json
 
 import pylab
 import sys
 from wx import wx
-import numpy as np
 
 from PYME.LMVis import gl_test_objects
 from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
@@ -32,6 +32,8 @@ from PYME.LMVis.gl_test_objects import *
 class TestApp(wx.App):
     def __init__(self, *args):
         wx.App.__init__(self, *args)
+        self.confs = None
+        self.to = None
 
     def OnInit(self):
         self.setup()
@@ -60,6 +62,18 @@ class TestApp(wx.App):
         self._frame.Show()
         self.SetTopWindow(self._frame)
 
+    def save(self, test_object_file, configuration_file):
+        if self.to:
+            self.to.save(test_object_file)
+        if self.confs:
+            self.confs["file"] = test_object_file
+            self.confs["timestamp"] = '%s' % pylab.datetime.datetime.now()
+            with open(configuration_file, 'wb') as f:
+                f.writelines(json.dumps(self.confs))
+
+    def set_confs(self, confs):
+        self.confs = confs
+
 
 class XTestApp(TestApp):
     def OnInit(self):
@@ -67,22 +81,6 @@ class XTestApp(TestApp):
         to = Cloud(40)
         self._canvas.setPoints3D(to.x, to.y, to.z, mode='pointsprites')
         self._canvas.recenter(to.x, to.y)
-        self.done()
-        return True
-
-
-class TwtyToFotyTestApp(TestApp):
-    def OnInit(self):
-        self.setup()
-        to = Cloud(100)
-        to2 = Cloud(200)
-        to2.translate(2000)
-        self._canvas.setPoints3D(to.x, to.y, to.z, normalize(to.z), self._canvas.cmap, self._canvas.clim,
-                                 mode='pointsprites')
-
-        self._canvas.setPoints3D(to2.x, to2.y, to2.z, normalize(to2.z), self._canvas.cmap, self._canvas.clim,
-                                 mode='pointsprites')
-        self._canvas.recenter(np.append(to.x, to2.x), np.append(to.y, to2.y))
         self.done()
         return True
 
@@ -122,85 +120,54 @@ class Fish(TestApp):
         self.done()
         return True
 
-    def save(self, file_name):
-        self.to.save(file_name)
-
 
 class Vesicles(TestApp):
     def __init__(self, *args):
-        amount_points = 50
-        self.to = Vesicle(amount_points=amount_points)
-
-        'first step'
-        offset = -2000
-        scale = 0.5
-
-        new_ring = Vesicle(amount_points=amount_points, hole_pos=numpy.pi / 2)
-        new_ring.scale(scale, scale, scale)
-        new_ring.translate(-5000, offset, 0)
-
-        self.to += new_ring
-
-        new_ring = Vesicle(amount_points=amount_points, hole_pos=0.75 * numpy.pi / 2)
-        new_ring.scale(scale, scale, scale)
-        new_ring.translate(5000, offset, 0)
-
-        self.to += new_ring
-
-        'second step'
-        offset -= 1000
-        scale = 0.25
-        new_ring = Vesicle(amount_points=amount_points, hole_pos=3 * numpy.pi / 2)
-        new_ring.scale(scale, scale, scale)
-        new_ring.translate(0, offset, 0)
-
-        self.to += new_ring
-
-        new_ring = Vesicle(amount_points=amount_points, hole_pos=2 * numpy.pi)
-        new_ring.scale(scale, scale, scale)
-        new_ring.translate(7000, offset, 0)
-
-        self.to += new_ring
-
-        new_ring = Vesicle(amount_points=amount_points, hole_size=0, hole_pos=4 * numpy.pi / 2)
-        new_ring.scale(scale, scale, scale)
-        new_ring.translate(-7000, offset, 0)
-
-        self.to += new_ring
-
-        'third step'
-        offset -= 800
-        scale = 0.125
-        new_ring = Vesicle(amount_points=amount_points, hole_pos=7 * numpy.pi / 4)
-        new_ring.scale(scale, scale, scale)
-        new_ring.translate(-4000, offset, 0)
-
-        self.to += new_ring
-
-        new_ring = Vesicle(amount_points=amount_points, hole_size=0, hole_pos=7 * numpy.pi / 4)
-        new_ring.scale(scale, scale, scale)
-        new_ring.translate(4000, offset, 0)
-
-        self.to += new_ring
-
-        'fourth step'
-        offset -= 400
-        scale = 0.08
-        new_ring = Vesicle(amount_points=amount_points, hole_size=0.5 * numpy.pi, hole_pos=5 * numpy.pi / 4)
-        new_ring.scale(scale, scale, scale)
-        new_ring.translate(-4000, offset, 0)
-
-        self.to += new_ring
-
-        new_ring = Vesicle(amount_points=amount_points, hole_size=0, hole_pos=7 * numpy.pi / 4)
-        new_ring.scale(scale, scale, scale)
-        new_ring.translate(4000, offset, 0)
-
-        self.to += new_ring
+        # scales in micrometer
+        scales = [1, 0.5, 0.125, 0.100, 0.080]
+        x_shifts = [-3000, -1000, 1000, 3000]
+        base_amount_of_points = 70
+        offset = 0
+        self.to = None
+        conf = {}
+        row_confs = {}
+        confs = {}
+        row, column = 1, 1
+        for scale in scales:
+            for x_shift in x_shifts:
+                hole_position = numpy.random.random()
+                hole_position_with_pi = hole_position * 2 * numpy.pi
+                has_hole = numpy.random.random() >= 0.5
+                amount_points = max(int(round(numpy.random.normal(base_amount_of_points, 20))), 0)
+                if has_hole:
+                    new_test_object = Vesicle(diameter=scale, amount_points=amount_points,
+                                              hole_pos=hole_position_with_pi)
+                else:
+                    new_test_object = Vesicle(diameter=scale, amount_points=amount_points, hole_size=0)
+                new_test_object.translate(x_shift, offset, 0)
+                if self.to:
+                    self.to += new_test_object
+                else:
+                    self.to = new_test_object
+                conf["scale"] = scale
+                conf["x_shift"] = x_shift
+                conf["offset"] = offset
+                conf["has_hole"] = has_hole
+                conf["hole_position"] = "{} * 2pi".format(hole_position)
+                conf["amount_of_points"] = amount_points
+                row_confs[column] = conf
+                column += 1
+                conf = {}
+            confs[row] = row_confs
+            row += 1
+            column = 1
+            row_confs = {}
+            offset -= 2000
 
         self.to = ExponentialClusterizer(self.to, 4, 10)
-
+        print(json.dumps(confs, indent=4))
         super(Vesicles, self).__init__(*args)
+        self.set_confs(confs)
 
     def OnInit(self):
         self.setup()
@@ -214,14 +181,11 @@ class Vesicles(TestApp):
         self.done()
         return True
 
-    def save(self, file_name):
-        self.to.save(file_name)
-
 
 class Worms(TestApp):
     def __init__(self, *args):
+        super(Worms, self).__init__(*args)
         self.to = gl_test_objects.Worm()
-        super(Worm, self).__init__(*args)
 
     def OnInit(self):
         self.setup()
@@ -235,9 +199,6 @@ class Worms(TestApp):
         self.done()
         return True
 
-    def save(self, file_name):
-        self.to.save(file_name)
-
 
 def normalize(values):
     return (values - min(values)) / (max(values) - min(values))
@@ -247,12 +208,13 @@ def main():
     """
     sys.argv[1] is the test class that should be executed e.g. "Vesicles"
     sys.argv[2] is the absolute path where the resulting csv should be saved to
+    sys.argv[3] is the absolute path where the resulting configuration file should be saved to
     Returns
     -------
 
     """
     app = eval(sys.argv[1])()
-    app.save(sys.argv[2])
+    app.save(sys.argv[2], sys.argv[3])
     app.MainLoop()
 
 
