@@ -28,8 +28,6 @@ from PYME.Acquire.Hardware.Simulator.wormlike2 import wormlikeChain
 class TestObject(object):
     MICROMETER_CONVERSION_CONSTANT = 1000
 
-
-
     def __init__(self, x, y, z):
         self._x = x
         self._y = y
@@ -88,9 +86,9 @@ class TestObject(object):
 class NineCollections(TestObject):
 
     def __init__(self):
-        x = 5e3*((numpy.arange(270) % 27)/9 + 0.1*numpy.random.randn(270))
-        y = 5e3*((numpy.arange(270) % 9)/3 + 0.1*numpy.random.randn(270))
-        z = 5e3*(numpy.arange(270) % 3 + 0.1*numpy.random.randn(270))
+        x = self.MICROMETER_CONVERSION_CONSTANT*((numpy.arange(270) % 27)/9 + 0.1*numpy.random.randn(270))
+        y = self.MICROMETER_CONVERSION_CONSTANT*((numpy.arange(270) % 9)/3 + 0.1*numpy.random.randn(270))
+        z = self.MICROMETER_CONVERSION_CONSTANT*(numpy.arange(270) % 3 + 0.1*numpy.random.randn(270))
         TestObject.__init__(self, x, y, z)
 
 
@@ -113,11 +111,22 @@ class Ellipsoid(TestObject):
     def __init__(self, amount_points,
                  axis_a=AXIS_A,
                  axis_b=AXIS_B,
-                 axis_c=AXIS_C):
+                 axis_c=AXIS_C,
+                 size=5):
+        """
+        
+        Parameters
+        ----------
+        amount_points   amount of points in this ellipsoid
+        axis_a          
+        axis_b
+        axis_c
+        max_size        the maximum dimension of axis_a, axis_b, axis_c is max_size micrometers big
+        """
         max_axis = max(axis_a, axis_b, axis_c)
-        x = 5e3*numpy.random.randn(amount_points) * axis_a / max_axis
-        y = 5e3*numpy.random.randn(amount_points) * axis_b / max_axis
-        z = 5e3*numpy.random.randn(amount_points) * axis_c / max_axis
+        x = size * self.MICROMETER_CONVERSION_CONSTANT * numpy.random.randn(amount_points) * axis_a / max_axis
+        y = size * self.MICROMETER_CONVERSION_CONSTANT * numpy.random.randn(amount_points) * axis_b / max_axis
+        z = size * self.MICROMETER_CONVERSION_CONSTANT * numpy.random.randn(amount_points) * axis_c / max_axis
         TestObject.__init__(self, x, y, z)
 
 
@@ -169,7 +178,7 @@ class NoisePlane(TestObject):
         dist = radius * numpy.sqrt(numpy.random.rand(amount_of_points))
         x = dist * numpy.cos(rad)
         y = dist * numpy.sin(rad)
-        z = numpy.ones(x.shape) * 0.1 * numpy.random.randn(amount_of_points)
+        z = numpy.ones(amount_of_points) * 0.1 * numpy.random.randn(amount_of_points)
         TestObject.__init__(self, x, y, z)
 
 
