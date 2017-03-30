@@ -441,12 +441,13 @@ class VisGUICore(object):
         xsc = self.pipeline.imageBounds.width()*1./self.glCanvas.Size[0]
         ysc = self.pipeline.imageBounds.height()*1./self.glCanvas.Size[1]
 
-        if xsc > ysc:
-            self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x1, 
-                                  self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y0 + xsc*self.glCanvas.Size[1])
-        else:
-            self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x0 + ysc*self.glCanvas.Size[0], 
-                                  self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y1)
+        if xsc != 0 and ysc != 0:
+            if xsc > ysc:
+                self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x1,
+                                      self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y0 + xsc*self.glCanvas.Size[1])
+            else:
+                self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x0 + ysc*self.glCanvas.Size[0],
+                                      self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y1)
 
     def OnFitROI(self,event = None):
         if 'x' in self.pipeline.filterKeys.keys():
