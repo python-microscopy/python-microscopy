@@ -383,10 +383,10 @@ def parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help="file that should be used", default=None, nargs='?')
     parser.add_argument('-r', '--recipe', help='recipe to use for variable portion of pipeline', dest='recipe', default=None)
-    parser.add_argument('-s', '--use_shaders', dest="use_shaders", action='store_true', default=False,
+    parser.add_argument('-s', '--use_shaders', dest="use_shaders", action='store_true', default=True,
                         help='switch shaders on(default: off)')
     parser.add_argument('--no_use_shaders', dest="use_shaders", action='store_false',
-                        default=False, help='switch shaders off(default: off)')
+                        default=True, help='switch shaders off(default: off)')
     args = parser.parse_args()
     return args
     
