@@ -101,18 +101,18 @@ class View(object):
 
     def __mul__(self, scalar):
         return View(None,
-                    self.vec_up,
-                    self.vec_back,
-                    self.vec_right,
+                    self.vec_up * scalar,
+                    self.vec_back * scalar,
+                    self.vec_right * scalar,
                     self.translation * scalar,
                     self._zoom * scalar
                     )
 
     def __div__(self, scalar):
         return View(None,
-                    self.vec_up,
-                    self.vec_back,
-                    self.vec_right,
+                    self.vec_up / scalar,
+                    self.vec_back / scalar,
+                    self.vec_right / scalar,
                     self.translation / scalar,
                     self._zoom / scalar
                     )
@@ -130,13 +130,16 @@ class View(object):
     def to_json(self):
         ordered_dict = OrderedDict()
         ordered_dict[self.JSON_VIEW_ID] = self.view_id
-        ordered_dict[self.JSON_VEC_UP] = self.vec_up
-        ordered_dict[self.JSON_VEC_BACK] = self.vec_back
-        ordered_dict[self.JSON_VEC_RIGHT] = self.vec_right
-        ordered_dict[self.JSON_TRANSLATION] = self.translation
+        ordered_dict[self.JSON_VEC_UP] = self.vec_up.tolist()
+        ordered_dict[self.JSON_VEC_BACK] = self.vec_back.tolist()
+        ordered_dict[self.JSON_VEC_RIGHT] = self.vec_right.tolist()
+        ordered_dict[self.JSON_TRANSLATION] = self.translation.tolist()
         ordered_dict[self.JSON_ZOOM] = self.zoom
 
         return ordered_dict
+
+    def __str__(self):
+        return str(self.to_json())
 
     @staticmethod
     def decode_json(json_obj):
