@@ -243,14 +243,16 @@ def project(x, y, z, mmax=3, centre_points=True, nIters = 2, tol_init = 0.3, z_s
 
     """
     modes, c, (x0, y0, z0) = sphere_expansion_clean(x, y, z*z_scale, mmax, centre_points, nIters, tol_init)
-    dt = [('modes', '<i4', (len(modes), 2)),
-          ('coefficients', '<f4', (len(c))),
+    numCoefs = len(c)
+    dt = [('m_modes', '<i4', (numCoefs)),
+          ('n_modes', '<i4', (numCoefs)),
+          ('coefficients', '<f4', (numCoefs)),
           ('centre', '<f4', 3),
           ('z_scale', '<f4'),
           ('max_m_mode', '<i4')]
     #self.projection = np.array([np.asarray(modes).T, c, (x0, y0, z0), float(z_scale), mmax], dtype=self.dtype)
     projection = np.empty(1, dtype=dt)
-    projection['modes'] = modes
+    projection['m_modes'], projection['n_modes'] = modes[:, 0], modes[:, 1]
     projection['coefficients'] = c
     projection['centre'] = (x0, y0, z0)
     projection['z_scale'] = z_scale
