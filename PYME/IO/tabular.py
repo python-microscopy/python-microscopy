@@ -57,13 +57,13 @@ class TabularBase(object):
         return key, sl
 
     def to_recarray(self, keys=None):
-        from numpy.core import records
+        from numpy.lib import recfunctions as rfn
         if keys is None:
             keys = self.keys()
 
-        columns = [self.__getitem__(k) for k in keys]
-        dt = [(k, v.dtype) for k, v in zip(keys, columns)]
-        return records.fromarrays(columns, names = keys, dtype = dt)
+        ra = rfn.merge_arrays([self.__getitem__(k) for k in keys])
+        ra.dtype.names = tuple(keys)
+        return ra
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
         from PYME.IO import h5rFile
