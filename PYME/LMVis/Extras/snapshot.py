@@ -28,7 +28,6 @@ from wx import wx
 def save_snapshot(canvas):
     img = toimage(canvas.getIm().transpose(1, 0, 2))
     img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
-    img.show()
     file_name = wx.FileSelector('Save Image as ... (image .png will be appended to filename)')
     if file_name:
         if not file_name.endswith('.png'):
