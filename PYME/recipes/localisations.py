@@ -614,3 +614,64 @@ class FitToSphericalHarmonics(ModuleBase): #FIXME - this likely doesnt belong he
             pass
 
         namespace[self.outputName] = proj
+
+@register_module('AddSphericalHarmonicInfo')
+class AddSphericalHarmonicInfo(ModuleBase): #FIXME - this likely doesnt belong here
+    """
+
+    Maps spherical coordinates generated with respect to an expansion of spherical harmonics. Notably, a normalized
+    radius is provided, which can be used to determine which localizations are within the structure.
+
+    Inputs
+    ------
+
+    inputName : name of tabular data whose coordinates one would like to have generated with respect to a spherical
+            harmonic structure
+    inputSphericalHarmonics: key in namespace for a dictionary-like object containing the spherical harmonic modes and
+            coefficients necessary to reconstruct the project of some object onto the basis of spherical harmonics (e.g.
+            output of recipes.localizations.FitToSphericalHarmonics). See PYME.Analysis.points.spherical_harmonics.
+
+    Outputs
+    -------
+
+    outputName: a new tabular data source containing spherical coordinates generated with respect to the spherical
+    harmonic representation.
+
+    Parameters
+    ----------
+
+    None
+
+    Notes
+    -----
+
+    """
+
+
+    inputName = Input('points')
+    inputSphericalHarmonics = Input('sphericalHarmonicProjection')
+
+    outputName = Output('info_added')
+
+    def execute(self, namespace):
+        import PYME.Analysis.points.spherical_harmonics as spharm
+
+        inp = namespace[self.inputName]
+        mapped = tabular.mappingFilter(inp)
+
+        rep = namespace[self.inputSphericalHarmonics]
+        # calculate theta, phi, and rad for each localization in the pipeline
+        theta, phi, datRad = spharm.cart2sph(inp['x'] - rep['centre'][0], inp['y'] - rep['centre'][1],
+                                             inp['z'] - (rep['centre'][2])/rep['z_scale'])
+
+        mapped.addColumn('r', datRad)
+        mapped.addColumn('theta', theta)
+        mapped.addColumn('phi', phi)
+        mapped.addColumn('r_norm', datRad / spharm.reconstruct_from_modes(zip(rep['m_modes'], rep['n_modes']), rep['coeffs'], theta, phi))
+
+        try:
+            mapped.mdh = inp.mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = mapped
