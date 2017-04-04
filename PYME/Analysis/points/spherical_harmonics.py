@@ -252,7 +252,8 @@ def project(x, y, z, mmax=3, centre_points=True, nIters = 2, tol_init = 0.3, z_s
           ('max_m_mode', '<i4')]
     #self.projection = np.array([np.asarray(modes).T, c, (x0, y0, z0), float(z_scale), mmax], dtype=self.dtype)
     projection = np.empty(1, dtype=dt)
-    projection['m_modes'], projection['n_modes'] = modes[:, 0], modes[:, 1]
+    marray = np.array(modes)
+    projection['m_modes'], projection['n_modes'] = marray[:, 0], marray[:, 1]
     projection['coefficients'] = c
     projection['centre'] = (x0, y0, z0)
     projection['z_scale'] = z_scale
