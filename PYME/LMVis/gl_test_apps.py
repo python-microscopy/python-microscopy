@@ -184,6 +184,26 @@ class Worms(TestApp):
         return True
 
 
+class HarmonicCells(TestApp):
+    def __init__(self, *args):
+        self.to = gl_test_objects.HarmonicCell('C:\Users\mmg82\Desktop\spherical_harmonics.hdf', (25, 25, 6), 2)
+
+        super(HarmonicCells, self).__init__(*args)
+
+    def OnInit(self):
+        self.setup()
+
+        self._canvas.pointSize = 20
+
+        self._canvas.setPoints3D(self.to.x, self.to.y, self.to.z, normalize(self.to.z),
+                                 self._canvas.cmap, self._canvas.clim, mode='pointsprites')
+        self._canvas.recenter(self.to.x, self.to.y)
+
+        self.done()
+        return True
+
+
+
 def normalize(values):
     return (values - min(values)) / (max(values) - min(values))
 

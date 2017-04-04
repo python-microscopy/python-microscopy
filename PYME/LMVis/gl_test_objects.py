@@ -25,6 +25,8 @@ from collections import OrderedDict
 import numpy
 
 from PYME.Acquire.Hardware.Simulator.wormlike2 import wormlikeChain
+from PYME.Analysis.points.spherical_harmonics import cart2sph, reconstruct_from_modes
+from PYME.IO.tabular import hdfSource
 
 
 class TestObject(object):
@@ -138,7 +140,6 @@ class TestObjectContainer(TestObject):
         return new_z
 
 
-
 class NineCollections(TestObject):
 
     def __init__(self):
@@ -198,7 +199,6 @@ class Ellipsoid(TestObject):
         json_config['size'] = self.size
         json_config['amount_of_points'] = self.amount_of_points
         return json_config
-
 
 
 class Worm(TestObject):
@@ -285,6 +285,56 @@ class NoisePlane(TestObject):
         json_config = super(NoisePlane, self).to_json()
         json_config['diameter'] = self.diameter
         json_config['density'] = self.density
+        return json_config
+
+
+class HarmonicCell(TestObject):
+    def __init__(self, file_name, dimensions, density=1):
+        """
+        
+        Parameters
+        ----------
+        self
+        file        hdf file that contains the models parameters
+        dimensions  dimensions of the bounding box in micrometer
+        density     density of the bounding box/the HarmonicCell per micrometer^2
+
+        Returns
+        -------
+        
+        """
+        self._dimensions = dimensions
+        self._density = density
+        # amount of points that is created for monte carlo
+        amount_of_points = density * dimensions[0] * dimensions[1] * dimensions[2]
+        self._file_name = file_name
+        # ds = Pipeline(file_name).OpenFile()
+        ds = hdfSource(file_name, tablename='Data')
+
+        x = (numpy.random.rand(amount_of_points) - 0.5) * self.MICROMETER_CONVERSION_CONSTANT * dimensions[0]
+        y = (numpy.random.rand(amount_of_points) - 0.5) * self.MICROMETER_CONVERSION_CONSTANT * dimensions[1]
+        z = (numpy.random.rand(amount_of_points) - 0.5) * self.MICROMETER_CONVERSION_CONSTANT * dimensions[2]
+
+        generated_theta, generated_phi, generated_r = cart2sph(x, y, z)
+
+        modes = zip(ds['m_modes'], ds['n_modes'])
+        coeffs = ds['coefficients']
+        r_spherical_harmonics = \
+            map(lambda theta, phi: reconstruct_from_modes(modes, coeffs, theta, phi), generated_theta, generated_phi)
+
+        mask = generated_r < r_spherical_harmonics
+
+        print(mask)
+        x = x[mask]
+        y = y[mask]
+        z = z[mask]
+        TestObject.__init__(self, x, y, z)
+
+    def to_json(self):
+        json_config = super(HarmonicCell, self).to_json()
+        json_config['file_name'] = self._file_name
+        json_config['density'] = self._density
+        json_config['dimensions'] = self._dimensions
         return json_config
 
 
