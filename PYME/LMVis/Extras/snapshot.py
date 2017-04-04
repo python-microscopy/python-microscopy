@@ -19,14 +19,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 import PIL
-from cv2 import imshow
 
+from PYME.LMVis.Extras.VideoPanel import VideoPanel
 from scipy.misc import toimage
 from wx import wx
 
 
 def save_snapshot(canvas):
-    img = toimage(canvas.getIm().transpose(1, 0, 2))
+    pixel_size = float(VideoPanel.ask(canvas, message='Please enter the pixel size (1 pixel on the screen = x pixel '
+                                                      'in the snapshot', default_value='1'))
+    img = toimage(canvas.getIm(pixel_size).transpose(1, 0, 2))
     img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
     file_name = wx.FileSelector('Save Image as ... (image .png will be appended to filename)')
     if file_name:

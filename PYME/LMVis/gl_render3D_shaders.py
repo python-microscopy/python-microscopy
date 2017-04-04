@@ -20,6 +20,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+from math import floor
+
 import numpy
 import numpy as np
 import wx
@@ -35,6 +37,7 @@ from PYME.LMVis.Layer.RenderLayer import RenderLayer
 from PYME.LMVis.Layer.ScaleBarOverlayLayer import ScaleBarOverlayLayer
 from PYME.LMVis.Layer.SelectionOverlayLayer import SelectionOverlayLayer
 from PYME.LMVis.Layer.TriangleRenderLayer import TriangleRenderLayer
+from PYME.LMVis.gl_offScreenHandler import OffScreenHandler
 from wx.glcanvas import GLCanvas
 
 from PYME.LMVis.View import View
@@ -160,6 +163,9 @@ class LMGLShaderCanvas(GLCanvas):
         self.wantViewChangeNotification = WeakSet()
         self.pointSelectionCallbacks = []
 
+        self.on_screen = True
+        self.view_port_size = (self.Size[0], self.Size[1])
+
         return
 
     @property
@@ -196,6 +202,7 @@ class LMGLShaderCanvas(GLCanvas):
         self._is_initialized = True
 
     def OnSize(self, event):
+        self.view_port_size = (self.Size[0], self.Size[1])
         if self._is_initialized:
             self.OnDraw()
         self.Refresh()
@@ -212,8 +219,8 @@ class LMGLShaderCanvas(GLCanvas):
         pass
 
     def interlace_stencil(self):
-        window_width = self.Size[0]
-        window_height = self.Size[1]
+        window_width = self.view_port_size[0]
+        window_height = self.view_port_size[1]
         # setting screen-corresponding geometry
         glViewport(0, 0, window_width, window_height)
         glMatrixMode(GL_MODELVIEW)
@@ -225,7 +232,8 @@ class LMGLShaderCanvas(GLCanvas):
         glLoadIdentity()
 
         # clearing and configuring stencil drawing
-        glDrawBuffer(GL_BACK)
+        if self.on_screen:
+            glDrawBuffer(GL_BACK)
         glEnable(GL_STENCIL_TEST)
         glClearStencil(0)
         glClear(GL_STENCIL_BUFFER_BIT)
@@ -281,7 +289,7 @@ class LMGLShaderCanvas(GLCanvas):
             glMatrixMode(GL_PROJECTION)
             glLoadIdentity()
 
-            ys = float(self.Size[1]) / float(self.Size[0])
+            ys = float(self.view_port_size[1]) / float(self.view_port_size[0])
 
             if self.displayMode == '3DPersp':
                 glFrustum(-1 + eye, 1 + eye, -ys, ys, 8.5, 11.5)
@@ -498,23 +506,23 @@ class LMGLShaderCanvas(GLCanvas):
 
     @property
     def xmin(self):
-        return self.xc - 0.5 * self.pixelsize * self.Size[0]
+        return self.xc - 0.5 * self.pixelsize * self.view_port_size[0]
 
     @property
     def xmax(self):
-        return self.xc + 0.5 * self.pixelsize * self.Size[0]
+        return self.xc + 0.5 * self.pixelsize * self.view_port_size[0]
 
     @property
     def ymin(self):
-        return self.yc - 0.5 * self.pixelsize * self.Size[1]
+        return self.yc - 0.5 * self.pixelsize * self.view_port_size[1]
 
     @property
     def ymax(self):
-        return self.yc + 0.5 * self.pixelsize * self.Size[1]
+        return self.yc + 0.5 * self.pixelsize * self.view_port_size[1]
 
     @property
     def pixelsize(self):
-        return 2. / (self.scale * self.Size[0])
+        return 2. / (self.scale * self.view_port_size[0])
 
     def setView(self, xmin, xmax, ymin, ymax):
 
@@ -651,8 +659,8 @@ class LMGLShaderCanvas(GLCanvas):
 
     def _ScreenCoordinatesToNm(self, x, y):
         # FIXME!!!
-        x_ = self.pixelsize * (x - 0.5 * float(self.Size[0])) + self.xc
-        y_ = -self.pixelsize * (y - 0.5 * float(self.Size[1])) + self.yc
+        x_ = self.pixelsize * (x - 0.5 * float(self.view_port_size[0])) + self.xc
+        y_ = -self.pixelsize * (y - 0.5 * float(self.view_port_size[1])) + self.yc
         # print x_, y_
         return x_, y_
 
@@ -759,87 +767,37 @@ class LMGLShaderCanvas(GLCanvas):
             event.Skip()
 
     def getSnapshot(self, mode=GL_RGB):
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
-        width, height = self.Size[0], self.Size[1]
-        snap = glReadPixelsf(0, 0, width, height, mode)
-        snap = snap.ravel().reshape(width, height, -1, order='F')
 
-        if mode == GL_LUMINANCE:
-            # snap.strides = (4, 4 * snap.shape[0])
-            pass
-        elif mode == GL_RGB:
-            snap.strides = (12, 12 * snap.shape[0], 4)
-        else:
-            raise RuntimeError('{} is not a supported format.'.format(mode))
+        # glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
+        # width, height = self.view_port_size[0], self.view_port_size[1]
+        # snap = glReadPixelsf(0, 0, width, height, mode)
+        # snap = snap.ravel().reshape(width, height, -1, order='F')
+        #
+        # if mode == GL_LUMINANCE:
+        #     # snap.strides = (4, 4 * snap.shape[0])
+        #     pass
+        # elif mode == GL_RGB:
+        #     snap.strides = (12, 12 * snap.shape[0], 4)
+        # else:
+        #     raise RuntimeError('{} is not a supported format.'.format(mode))
         # img.show()
+        self.on_screen = False
+        off_screen_handler = OffScreenHandler(self.view_port_size)
+        with off_screen_handler:
+            self.OnDraw()
+        snap = off_screen_handler.get_snap()
+        self.on_screen = True
         return snap
 
-    def getIm(self, pixelSize=None):
-        if pixelSize is None:  # use current pixel size
-            self.OnDraw()
+    def getIm(self, pixel_size=None):
+
+        if pixel_size is None or abs(1-pixel_size) < 0.001:  # use current pixel size
             return self.getSnapshot()
         else:
-            # TODO Tiling function doesn't work properly
-            # status = statusLog.StatusLogger('Tiling image ...')
-            # save a copy of the viewport
-            minx, maxx, miny, maxy = (self.xmin, self.xmax, self.ymin, self.ymax)
-            # and scale bar and LUT settings
-            lutD = self.LUTDraw
-            self.LUTDraw = False
-
-            scaleB = self.scaleBarLength
-            self.scaleBarLength = None
-
-            sx, sy = self.Size
-            dx, dy = (maxx - minx, maxy - miny)
-            nx = numpy.ceil(dx / pixelSize)  # number of x pixels
-            ny = numpy.ceil(dy / pixelSize)  # "    "  y   "
-
-            sxn = pixelSize * sx
-            syn = pixelSize * sy
-
-            # initialise array to hold tiled image
-            h = numpy.zeros((nx, ny))
-
-            # do the tiling
-            for x0 in numpy.arange(minx, maxx, sxn):
-                self.xmin = x0
-                self.xmax = x0 + sxn
-
-                # print x0
-
-                xp = numpy.floor((x0 - minx) / pixelSize)
-                xd = min(xp + sx, nx) - xp
-
-                # print 'xp = %3.2f, xd = %3.2f' %(xp, xd)
-
-                for y0 in numpy.arange(miny, maxy, syn):
-                    status.setStatus('Tiling Image at %3.2f, %3.2f' % (x0, y0))
-                    self.ymin = y0
-                    self.ymax = y0 + syn
-
-                    yp = numpy.floor((y0 - miny) / pixelSize)
-                    yd = min(yp + sy, ny) - yp
-
-                    self.OnDraw()
-                    tile = self.getSnapshot(GL_RGB)[:, :, 0].squeeze()
-
-                    # print tile.shape
-                    # print h[xp:(xp + xd), yp:(yp + yd)].shape
-                    # print tile[:xd, :yd].shape
-                    # print syn
-
-                    h[xp:(xp + xd), yp:(yp + yd)] = tile[:xd, :yd]
-                    # h[xp:(xp + xd), yp:(yp + yd)] = y0 #tile[:xd, :yd]
-
-            # restore viewport
-            self.xmin, self.xmax, self.ymin, self.ymax = (minx, maxx, miny, maxy)
-            self.LUTDraw = lutD
-            self.scaleBarLength = scaleB
-
-            self.Refresh()
-            self.Update()
-            return h
+            self.view_port_size = (int(round(self.Size[0] * pixel_size)), int(round(self.Size[1] * pixel_size)))
+            snap = self.getSnapshot()
+            self.view_port_size = self.Size
+            return snap
 
     def recenter(self, x, y):
         self.xc = x.mean()
@@ -877,4 +835,5 @@ def showGLFrame():
     c = LMGLShaderCanvas(f)
     f.Show()
     return c
+
 
