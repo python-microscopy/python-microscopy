@@ -23,15 +23,21 @@ import PIL
 from PYME.LMVis.Extras.VideoPanel import VideoPanel
 from scipy.misc import toimage
 from wx import wx
+from OpenGL.GL import GL_LUMINANCE, GL_RGB
 
 
 def save_snapshot(canvas):
     pixel_size = float(VideoPanel.ask(canvas, message='Please enter the pixel size (1 pixel on the screen = x pixel '
                                                       'in the snapshot', default_value='1'))
-    img = toimage(canvas.getIm(pixel_size).transpose(1, 0, 2))
-    img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
     file_name = wx.FileSelector('Save Image as ... (image .png will be appended to filename)')
     if file_name:
+        # snap = canvas.getIm(pixel_size, GL_LUMINANCE)
+        snap = canvas.getIm(pixel_size, GL_RGB)
+        if snap.ndim == 3:
+            img = toimage(snap.transpose(1, 0, 2))
+        else:
+            img = toimage(snap.transpose())
+        img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
         if not file_name.endswith('.png'):
             img.save('{}.png'.format(file_name))
         else:

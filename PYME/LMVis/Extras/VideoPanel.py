@@ -170,7 +170,7 @@ class VideoPanel(wx.Panel):
                         self.get_canvas().set_view(new_view)
                         if save:
                             snap = self.get_canvas().getIm()
-                            if snap.shape[2] == 3:
+                            if snap.ndim == 3:
                                 video.write(cv2.cvtColor(cv2.flip(snap.transpose(1, 0, 2), 0), cv2.COLOR_RGB2BGR))
                             else:
                                 video.write(cv2.flip(snap.transpose(1, 0, 2), 0))

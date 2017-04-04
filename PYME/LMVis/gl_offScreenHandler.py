@@ -22,8 +22,9 @@ from OpenGL.GL import *
 
 
 class OffScreenHandler(object):
-    def __init__(self, viewport_size):
+    def __init__(self, viewport_size, mode):
         self._viewport_size = viewport_size
+        self._mode = mode
         self._snap = None
         (self._frame_buffer_object, self._render_buffer) = self.setup_off_screen()
 
@@ -36,9 +37,13 @@ class OffScreenHandler(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         glReadBuffer(GL_COLOR_ATTACHMENT0)
         # glNamedFramebufferReadBuffer(self._frame_buffer_object, GL_COLOR_ATTACHMENT0) # only OpenGL 4.5
-        self._snap = glReadPixelsf(0, 0, self._viewport_size[0], self._viewport_size[1], GL_RGB)
-        self._snap.strides = (12, 12 * self._snap.shape[0], 4)
-
+        self._snap = glReadPixelsf(0, 0, self._viewport_size[0], self._viewport_size[1], self._mode)
+        if self._mode == GL_LUMINANCE:
+            self._snap.strides = (4, 4 * self._snap.shape[0])
+        elif self._mode == GL_RGB:
+            self._snap.strides = (12, 12 * self._snap.shape[0], 4)
+        else:
+            raise RuntimeError('{} is not a supported mode.'.format(self._mode))
         glPopAttrib()
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
@@ -56,7 +61,10 @@ class OffScreenHandler(object):
         frame_buffer_object = glGenFramebuffers(1)
         render_buffer = glGenRenderbuffers(1)
         glBindRenderbuffer(GL_RENDERBUFFER, render_buffer)
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB8, self._viewport_size[0], self._viewport_size[1])
+        if self._mode == GL_RGB:
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB8, self._viewport_size[0], self._viewport_size[1])
+        else:
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_LUMINANCE, self._viewport_size[0], self._viewport_size[1])
         glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_object)
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, render_buffer)
         return frame_buffer_object, render_buffer

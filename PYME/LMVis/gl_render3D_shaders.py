@@ -782,20 +782,20 @@ class LMGLShaderCanvas(GLCanvas):
         #     raise RuntimeError('{} is not a supported format.'.format(mode))
         # img.show()
         self.on_screen = False
-        off_screen_handler = OffScreenHandler(self.view_port_size)
+        off_screen_handler = OffScreenHandler(self.view_port_size, mode)
         with off_screen_handler:
             self.OnDraw()
         snap = off_screen_handler.get_snap()
         self.on_screen = True
         return snap
 
-    def getIm(self, pixel_size=None):
+    def getIm(self, pixel_size=None, mode=GL_RGB):
 
         if pixel_size is None or abs(1-pixel_size) < 0.001:  # use current pixel size
-            return self.getSnapshot()
+            return self.getSnapshot(mode=mode)
         else:
             self.view_port_size = (int(round(self.Size[0] * pixel_size)), int(round(self.Size[1] * pixel_size)))
-            snap = self.getSnapshot()
+            snap = self.getSnapshot(mode=mode)
             self.view_port_size = self.Size
             return snap
 
