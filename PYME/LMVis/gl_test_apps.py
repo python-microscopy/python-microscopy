@@ -18,9 +18,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+import argparse
+from ast import literal_eval
+from math import sin, cos
 
 import pylab
-import sys
+from numpy import random
 from wx import wx
 
 from PYME.LMVis import gl_test_objects
@@ -30,7 +33,7 @@ from PYME.LMVis.gl_test_objects import *
 
 class TestApp(wx.App):
     def __init__(self, *args):
-        wx.App.__init__(self, *args)
+        wx.App.__init__(self)
 
     def OnInit(self):
         self.setup()
@@ -93,13 +96,13 @@ class MassTest(TestApp):
 class Fish(TestApp):
     def __init__(self, *args):
         self.to = Ellipsoid(3000)
+        self.to = ExponentialClusterizer(self.to, 4, 30)
         concentration = Worm(250)
         concentration.translate(1000, 0, 0)
         self.to.add(concentration)
         concentration = Worm(200)
         concentration.translate(-2300, 500, 0)
         self.to.add(concentration)
-        self.to = ExponentialClusterizer(self.to, 4, 30)
         super(Fish, self).__init__(*args)
 
     def OnInit(self):
@@ -185,10 +188,34 @@ class Worms(TestApp):
 
 
 class HarmonicCells(TestApp):
-    def __init__(self, *args):
-        self.to = gl_test_objects.HarmonicCell('C:\Users\mmg82\Desktop\spherical_harmonics.hdf', (25, 25, 6), 2)
+    def __init__(self, args):
+        self._input_file = args.harmonics_file
+        self._dimensions = literal_eval(args.harmonics_dimensions)
+        self.to = TestObjectContainer()
+        self.to.add(self.create_harmonic_cell)
 
-        super(HarmonicCells, self).__init__(*args)
+        super(HarmonicCells, self).__init__(args)
+
+    @property
+    def create_harmonic_cell(self):
+        test_object = TestObjectContainer()
+        test_harmonic = gl_test_objects.HarmonicCell(self._input_file, self._dimensions, 10)
+        test_object.add(test_harmonic)
+
+        chromosome = 0
+        amount_chromosomes = random.randint(0, 4)
+        amount_chromosomes = 12
+        while chromosome < amount_chromosomes:
+            worm = Worm(250)
+            theta = random.rand() * numpy.pi
+            phi = 2 * random.rand() * numpy.pi
+            radius = 0.8 * random.rand()
+            x, y, z = test_harmonic.get_coordinates(theta, phi, radius)
+            worm.translate(x, y, z)
+            test_object.add(worm)
+            chromosome += 1
+        test_object = ExponentialClusterizer(test_object, 4, 15)
+        return test_object
 
     def OnInit(self):
         self.setup()
@@ -203,23 +230,28 @@ class HarmonicCells(TestApp):
         return True
 
 
-
 def normalize(values):
     return (values - min(values)) / (max(values) - min(values))
 
 
 def main():
-    """
-    sys.argv[1] is the test class that should be executed e.g. "Vesicles"
-    sys.argv[2] is the absolute path where the resulting csv should be saved to
-    sys.argv[3] is the absolute path where the resulting configuration file should be saved to
-    Returns
-    -------
 
-    """
-    app = eval(sys.argv[1])()
-    app.save(sys.argv[2], sys.argv[3])
+    args = parse()
+    app = eval(args.testapp)(args)
+    app.save(args.output_csv, args.output_json)
+
     app.MainLoop()
+
+
+def parse():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('testapp', help="testapp that should be used", default=Vesicles)
+    parser.add_argument('output_csv', help='file that should be used to save the generated points as csv')
+    parser.add_argument('output_json', help='file that should be used to save the configuration as json')
+    parser.add_argument('--harmonics_file', help='the file used for input spherical harmonics data')
+    parser.add_argument('--harmonics_dimensions', help='the dimensions of the bounding box in micrometer (x, y, z)')
+    args = parser.parse_args()
+    return args
 
 
 if __name__ == '__main__':

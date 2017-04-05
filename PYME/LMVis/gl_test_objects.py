@@ -21,6 +21,7 @@
 import csv
 import json
 from collections import OrderedDict
+from math import sin, cos
 
 import numpy
 
@@ -317,17 +318,16 @@ class HarmonicCell(TestObject):
 
         generated_theta, generated_phi, generated_r = cart2sph(x, y, z)
 
-        modes = zip(ds['m_modes'], ds['n_modes'])
-        coeffs = ds['coefficients']
-        r_spherical_harmonics = \
-            map(lambda theta, phi: reconstruct_from_modes(modes, coeffs, theta, phi), generated_theta, generated_phi)
+        self._modes = zip(ds['m_modes'], ds['n_modes'])
+        self._z_scale = float(ds['z_scale'][0])
+        self._coefficients = ds['coefficients']
+        r_spherical_harmonics = map(lambda theta, phi: self.get_radius(theta, phi), generated_theta, generated_phi)
 
         mask = generated_r < r_spherical_harmonics
 
-        print(mask)
         x = x[mask]
         y = y[mask]
-        z = z[mask]
+        z = z[mask] / self._z_scale
         TestObject.__init__(self, x, y, z)
 
     def to_json(self):
@@ -337,6 +337,29 @@ class HarmonicCell(TestObject):
         json_config['dimensions'] = self._dimensions
         return json_config
 
+    def get_radius(self, theta, phi):
+        return reconstruct_from_modes(self._modes, self._coefficients, theta, phi)
+
+    def get_coordinates(self, theta, phi, radius):
+        """
+        this method will create a point within the surface in coordinates
+        Parameters
+        ----------
+        theta   [0, pi[
+        phi     [0, 2pi[
+        radius  [0,1[
+
+        Returns
+        -------
+        (x, y, z)
+    
+        """
+        real_radius = self.get_radius(theta, phi)
+        x = radius * real_radius * sin(theta) * cos(phi)
+        y = radius * real_radius * sin(theta) * sin(phi)
+        z = radius * real_radius * cos(theta) / self._z_scale
+
+        return x, y, z
 
 class Clusterizer(TestObject):
     def __init__(self, test_object, multiply, distance):
