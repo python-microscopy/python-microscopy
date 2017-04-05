@@ -22,6 +22,7 @@ import argparse
 from ast import literal_eval
 
 import pylab
+import time
 from numpy import random
 from wx import wx
 
@@ -197,8 +198,11 @@ class HarmonicCells(TestApp):
         column_offset = self._dimensions[1] * 1.2
         for row in numpy.arange(4):
             for column in numpy.arange(4):
+                print('row {}: column {}'.format(row, column))
                 cell = self.create_harmonic_cell()
                 cell.translate(row * row_offset, column * column_offset, 0)
+                cell.add_to_json('row', row + 1)
+                cell.add_to_json('column', column + 1)
                 self.to.add(cell)
         super(HarmonicCells, self).__init__(args)
 
@@ -217,17 +221,17 @@ class HarmonicCells(TestApp):
         self.done()
         return True
 
-
 def normalize(values):
     return (values - min(values)) / (max(values) - min(values))
 
 
 def main():
-
     args = parse()
+    start_time = time.time()
     app = eval(args.testapp)(args)
     app.save(args.output_csv, args.output_json)
-
+    end_time = time.time()
+    print('Duration to generate the test objects in s: {}'.format(end_time-start_time))
     app.MainLoop()
 
 

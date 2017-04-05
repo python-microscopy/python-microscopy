@@ -20,6 +20,7 @@
 #
 import csv
 import json
+import threading
 from collections import OrderedDict
 from math import sin, cos
 
@@ -32,6 +33,12 @@ from PYME.IO.tabular import hdfSource
 
 
 class TestObject(object):
+    """
+    This object represents a general test object. It handles the coordinates for the specific object.
+    It allows translation and scaling for the object.
+    It handles a list of added sub_objects. Adding sub_objects is thread safe. Changing values of the objects is not 
+    secured while multi-threading.
+    """
     MICROMETER_CONVERSION_CONSTANT = 1000
 
     def __init__(self, x, y, z):
@@ -40,6 +47,7 @@ class TestObject(object):
         self._z = z
         self.added_objects = list()
         self.added_json = OrderedDict()
+        self._lock = threading.Lock()
 
     @property
     def x(self):
@@ -89,22 +97,39 @@ class TestObject(object):
             other_object.scale(x, y, z)
 
     def add(self, other):
-        self.added_objects.append(other)
+        """
+        This method adds a new sub_object to this test object.
+        This operation is thread safe. So many threads could try to add objects, but it won't result in a strange
+        situation.
+        Parameters
+        ----------
+        other   new sub_object
+
+        Returns
+        -------
+
+        """
+        try:
+            self._lock.acquire()
+            self.added_objects.append(other)
+        finally:
+            self._lock.release()
 
     def save(self, file_name):
         with open(file_name, 'wb') as csv_file:
             writer = csv.writer(csv_file)
 
-            collection = numpy.column_stack((self._x, self._y, self._z))
+            collection = numpy.column_stack((self.x, self.y, self.z))
             writer.writerow(('x', 'y', 'z'))
             writer.writerows(collection)
 
     def to_json(self):
         json_config = OrderedDict({'object_class': self.__class__.__name__})
-        if self.added_objects:
-            json_config['objects'] = list(self.added_objects)
         for key, value in self.added_json.items():
             json_config[key] = value
+        if self.added_objects:
+            json_config['objects'] = list(self.added_objects)
+
         return json_config
 
     def add_to_json(self, key, value):
