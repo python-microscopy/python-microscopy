@@ -24,6 +24,7 @@ from collections import OrderedDict
 from math import sin, cos
 
 import numpy
+from numpy import random
 
 from PYME.Acquire.Hardware.Simulator.wormlike2 import wormlikeChain
 from PYME.Analysis.points.spherical_harmonics import cart2sph, reconstruct_from_modes
@@ -62,9 +63,21 @@ class TestObject(object):
         return new_z
 
     def translate(self, x=0, y=0, z=0):
-        self._x += x
-        self._y += y
-        self._z += z
+        """
+        
+        Parameters
+        ----------
+        x       translation in x direction in micrometer
+        y       translation in y direction in micrometer
+        z       translation in z direction in micrometer
+
+        Returns
+        -------
+
+        """
+        self._x += x * TestObject.MICROMETER_CONVERSION_CONSTANT
+        self._y += y * TestObject.MICROMETER_CONVERSION_CONSTANT
+        self._z += z * TestObject.MICROMETER_CONVERSION_CONSTANT
         for other_object in self.added_objects:
             other_object.translate(x, y, z)
 
@@ -120,6 +133,7 @@ class TestObjectContainer(TestObject):
                 new_x = other_object.x
         return new_x
 
+
     @property
     def y(self):
         new_y = None
@@ -139,6 +153,26 @@ class TestObjectContainer(TestObject):
             else:
                 new_z = other_object.z
         return new_z
+
+    def translate(self, x=0, y=0, z=0):
+        """
+
+        Parameters
+        ----------
+        x       translation in x direction in micrometer
+        y       translation in y direction in micrometer
+        z       translation in z direction in micrometer
+
+        Returns
+        -------
+
+        """
+        for other_object in self.added_objects:
+            other_object.translate(x, y, z)
+
+    def scale(self, x=1, y=1, z=1):
+        for other_object in self.added_objects:
+            other_object.scale(x, y, z)
 
 
 class NineCollections(TestObject):
@@ -289,7 +323,7 @@ class NoisePlane(TestObject):
         return json_config
 
 
-class HarmonicCell(TestObject):
+class HarmonicCellBackground(TestObject):
     def __init__(self, file_name, dimensions, density=1):
         """
         
@@ -298,7 +332,7 @@ class HarmonicCell(TestObject):
         self
         file        hdf file that contains the models parameters
         dimensions  dimensions of the bounding box in micrometer
-        density     density of the bounding box/the HarmonicCell per micrometer^2
+        density     density of the bounding box/the HarmonicCellBackground per micrometer^2
 
         Returns
         -------
@@ -331,7 +365,7 @@ class HarmonicCell(TestObject):
         TestObject.__init__(self, x, y, z)
 
     def to_json(self):
-        json_config = super(HarmonicCell, self).to_json()
+        json_config = super(HarmonicCellBackground, self).to_json()
         json_config['file_name'] = self._file_name
         json_config['density'] = self._density
         json_config['dimensions'] = self._dimensions
@@ -351,15 +385,38 @@ class HarmonicCell(TestObject):
 
         Returns
         -------
-        (x, y, z)
+        (x, y, z)   in micrometers
     
         """
-        real_radius = self.get_radius(theta, phi)
+        real_radius = self.get_radius(theta, phi) / TestObject.MICROMETER_CONVERSION_CONSTANT
         x = radius * real_radius * sin(theta) * cos(phi)
         y = radius * real_radius * sin(theta) * sin(phi)
         z = radius * real_radius * cos(theta) / self._z_scale
 
         return x, y, z
+
+
+class HarmonicCell(TestObjectContainer):
+    def __init__(self, input_file, dimensions):
+
+        TestObjectContainer.__init__(self)
+        test_object = TestObjectContainer()
+        test_harmonic = HarmonicCellBackground(input_file, dimensions, 10)
+        test_object.add(test_harmonic)
+
+        chromosome = 0
+        amount_chromosomes = random.randint(0, 4)
+        while chromosome < amount_chromosomes:
+            worm = Worm(250)
+            theta = random.rand() * numpy.pi
+            phi = 2 * random.rand() * numpy.pi
+            radius = 0.8 * random.rand()
+            x, y, z = test_harmonic.get_coordinates(theta, phi, radius)
+            worm.translate(x, y, z)
+            test_object.add(worm)
+            chromosome += 1
+        test_object = ExponentialClusterizer(test_object, 4, 15)
+        self.add(test_object)
 
 class Clusterizer(TestObject):
     def __init__(self, test_object, multiply, distance):

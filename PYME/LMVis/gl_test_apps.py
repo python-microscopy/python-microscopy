@@ -20,7 +20,6 @@
 #
 import argparse
 from ast import literal_eval
-from math import sin, cos
 
 import pylab
 from numpy import random
@@ -34,6 +33,8 @@ from PYME.LMVis.gl_test_objects import *
 class TestApp(wx.App):
     def __init__(self, *args):
         wx.App.__init__(self)
+        self._frame = None
+        self._canvas = None
 
     def OnInit(self):
         self.setup()
@@ -98,10 +99,10 @@ class Fish(TestApp):
         self.to = Ellipsoid(3000)
         self.to = ExponentialClusterizer(self.to, 4, 30)
         concentration = Worm(250)
-        concentration.translate(1000, 0, 0)
+        concentration.translate(1, 0, 0)
         self.to.add(concentration)
         concentration = Worm(200)
-        concentration.translate(-2300, 500, 0)
+        concentration.translate(-2.3, 0.5, 0)
         self.to.add(concentration)
         super(Fish, self).__init__(*args)
 
@@ -122,7 +123,7 @@ class Vesicles(TestApp):
     def __init__(self, *args):
         # scales in micrometer
         scales = [1, 0.5, 0.125, 0.100, 0.080]
-        x_shifts = [-3000, -1000, 1000, 3000]
+        x_shifts = [-3, -1, 1, 3]
         base_amount_of_points = 70
         offset = 0
         self.to = TestObjectContainer()
@@ -146,7 +147,7 @@ class Vesicles(TestApp):
                 column += 1
             row += 1
             column = 1
-            offset -= 2000
+            offset -= 2
 
         noise = NoisePlane(20, 10)
         noise.translate(0, offset / 2, 0)
@@ -192,30 +193,17 @@ class HarmonicCells(TestApp):
         self._input_file = args.harmonics_file
         self._dimensions = literal_eval(args.harmonics_dimensions)
         self.to = TestObjectContainer()
-        self.to.add(self.create_harmonic_cell)
-
+        row_offset = self._dimensions[0] * 1.2
+        column_offset = self._dimensions[1] * 1.2
+        for row in numpy.arange(4):
+            for column in numpy.arange(4):
+                cell = self.create_harmonic_cell()
+                cell.translate(row * row_offset, column * column_offset, 0)
+                self.to.add(cell)
         super(HarmonicCells, self).__init__(args)
 
-    @property
     def create_harmonic_cell(self):
-        test_object = TestObjectContainer()
-        test_harmonic = gl_test_objects.HarmonicCell(self._input_file, self._dimensions, 10)
-        test_object.add(test_harmonic)
-
-        chromosome = 0
-        amount_chromosomes = random.randint(0, 4)
-        amount_chromosomes = 12
-        while chromosome < amount_chromosomes:
-            worm = Worm(250)
-            theta = random.rand() * numpy.pi
-            phi = 2 * random.rand() * numpy.pi
-            radius = 0.8 * random.rand()
-            x, y, z = test_harmonic.get_coordinates(theta, phi, radius)
-            worm.translate(x, y, z)
-            test_object.add(worm)
-            chromosome += 1
-        test_object = ExponentialClusterizer(test_object, 4, 15)
-        return test_object
+        return HarmonicCell(self._input_file, self._dimensions)
 
     def OnInit(self):
         self.setup()
