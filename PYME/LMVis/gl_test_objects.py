@@ -158,7 +158,6 @@ class TestObjectContainer(TestObject):
                 new_x = other_object.x
         return new_x
 
-
     @property
     def y(self):
         new_y = None
@@ -349,7 +348,7 @@ class NoisePlane(TestObject):
 
 
 class HarmonicCellBackground(TestObject):
-    def __init__(self, file_name, dimensions, density=1):
+    def __init__(self, file_name, dimensions, density=40):
         """
         
         Parameters
@@ -365,28 +364,31 @@ class HarmonicCellBackground(TestObject):
         """
         self._dimensions = dimensions
         self._density = density
-        # amount of points that is created for monte carlo
-        amount_of_points = density * dimensions[0] * dimensions[1] * dimensions[2]
         self._file_name = file_name
-        # ds = Pipeline(file_name).OpenFile()
         ds = hdfSource(file_name, tablename='Data')
 
-        x = (numpy.random.rand(amount_of_points) - 0.5) * self.MICROMETER_CONVERSION_CONSTANT * dimensions[0]
-        y = (numpy.random.rand(amount_of_points) - 0.5) * self.MICROMETER_CONVERSION_CONSTANT * dimensions[1]
-        z = (numpy.random.rand(amount_of_points) - 0.5) * self.MICROMETER_CONVERSION_CONSTANT * dimensions[2]
-
-        generated_theta, generated_phi, generated_r = cart2sph(x, y, z)
-
+        self._center = ds['centre']
         self._modes = zip(ds['m_modes'], ds['n_modes'])
         self._z_scale = float(ds['z_scale'][0])
         self._coefficients = ds['coefficients']
+
+        # amount of points that is created for monte carlo
+        amount_of_points = density * dimensions[0] * dimensions[1] * dimensions[2]
+        # create bounding box, that is filled with points for monte carlo
+        x = (numpy.random.rand(amount_of_points) - 0.5) * self.MICROMETER_CONVERSION_CONSTANT * dimensions[0]
+        y = (numpy.random.rand(amount_of_points) - 0.5) * self.MICROMETER_CONVERSION_CONSTANT * dimensions[1]
+        z = (numpy.random.rand(amount_of_points) - 0.5) * self.MICROMETER_CONVERSION_CONSTANT * dimensions[2]
+        z *= self._z_scale  # spherical harmonics work better with bigger z values
+
+        generated_theta, generated_phi, generated_r = cart2sph(x, y, z)
+
         r_spherical_harmonics = map(lambda theta, phi: self.get_radius(theta, phi), generated_theta, generated_phi)
 
         mask = generated_r < r_spherical_harmonics
 
         x = x[mask]
         y = y[mask]
-        z = z[mask] / self._z_scale
+        z = z[mask] / self._z_scale  # restore real z_values
         TestObject.__init__(self, x, y, z)
 
     def to_json(self):
@@ -426,7 +428,7 @@ class HarmonicCell(TestObjectContainer):
 
         TestObjectContainer.__init__(self)
         test_object = TestObjectContainer()
-        test_harmonic = HarmonicCellBackground(input_file, dimensions, 10)
+        test_harmonic = HarmonicCellBackground(input_file, dimensions, 40)
         test_object.add(test_harmonic)
 
         chromosome = 0
@@ -442,6 +444,7 @@ class HarmonicCell(TestObjectContainer):
             chromosome += 1
         test_object = ExponentialClusterizer(test_object, 4, 15)
         self.add(test_object)
+
 
 class Clusterizer(TestObject):
     def __init__(self, test_object, multiply, distance):

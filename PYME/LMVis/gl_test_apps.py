@@ -198,7 +198,7 @@ class HarmonicCells(TestApp):
         column_offset = self._dimensions[1] * 1.2
         for row in numpy.arange(4):
             for column in numpy.arange(4):
-                print('row {}: column {}'.format(row, column))
+                print('Generating: row {}: column {}'.format(row, column))
                 cell = self.create_harmonic_cell()
                 cell.translate(row * row_offset, column * column_offset, 0)
                 cell.add_to_json('row', row + 1)
