@@ -270,7 +270,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                     found = True
                 else:
                     i += 1
-                    
+
         if not self.colp is None: #remove previous colour viewer
             i = 0
             found = False
@@ -280,16 +280,16 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                     found = True
                 else:
                     i += 1
-                    
-        if not self.mdp is None: #remove previous metadata viewer
-            i = 0
-            found = False
-            while not found and i < self.notebook.GetPageCount():
-                if self.notebook.GetPage(i) == self.mdp:
-                    self.notebook.DeletePage(i)
-                    found = True
-                else:
-                    i += 1
+
+        # if not self.mdp is None: #remove previous metadata viewer
+        #     i = 0
+        #     found = False
+        #     while not found and i < self.notebook.GetPageCount():
+        #         if self.notebook.GetPage(i) == self.mdp:
+        #             self.notebook.DeletePage(i)
+        #             found = True
+        #         else:
+        #             i += 1
                     
     def _createNewTabs(self):
         #print 'md'
