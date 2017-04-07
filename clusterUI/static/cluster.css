@@ -104,6 +104,11 @@
     background-color: #ccccf8;
 }
 
+.username {
+    font-weight: bold;
+    color: #FFFFFF;
+}
+
 circle {
 
   -webkit-transition: stroke-dasharray .3s ease;

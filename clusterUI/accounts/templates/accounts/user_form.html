@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Register a new account</h2>
+
+    <p>Enter the email address you want to associate with this account.
+        A confirmation email will be sent to this address with a link to complete account setup.</p>
+<form action="{{ request.path }}" method="post">
+    {% csrf_token %}
+    {{ form }}
+    <button type="submit" value="Submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}
