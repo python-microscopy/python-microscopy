@@ -328,12 +328,22 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 with open(path, 'wb') as f:
                     f.write(r.content)
+                    
+                #set the file to read-only (reflecting our write-once semantics
+                os.chmod(path, 0o440)
+
+                if USE_DIR_CACHE:
+                    cl.dir_cache.update_cache(path, len(r.content))
 
             else:
                 #the standard case - use the contents of the put request
                 with open(path, 'wb') as f:
                     #shutil.copyfileobj(self.rfile, f, int(self.headers['Content-Length']))
                     f.write(self.rfile.read(int(self.headers['Content-Length'])))
+
+                    #set the file to read-only (reflecting our write-once semantics
+                    os.chmod(path, 0o440)
+                    
                     if USE_DIR_CACHE:
                         cl.dir_cache.update_cache(path, int(self.headers['Content-Length']))
 

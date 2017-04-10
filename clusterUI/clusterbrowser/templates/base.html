@@ -25,16 +25,42 @@
           <a class="navbar-brand" href="#">PYME Storage &amp; Compute Cluster</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav navbar-right">
-            <li><a href="#">Dashboard</a></li>
-            <li><a href="#">Settings</a></li>
-            <li><a href="#">Profile</a></li>
-            <li><a href="#">Help</a></li>
-          </ul>
+{#          <ul class="nav navbar-nav">#}
+{#            <li><a href="#">Dashboard</a></li>#}
+{#            <li><a href="#">Settings</a></li>#}
+{#            <li><a href="#">Profile</a></li>#}
+{#            <li><a href="#">Help</a></li>#}
+{#              <li>#}
+{##}
+{#            </li>#}
+{#          </ul>#}
+
+
+        {% if user.is_authenticated %}
+            <p class="navbar-text navbar-right"> Browsing as <span class="username">{{ user.email }}</span>
+               - <a type="submit" href="/accounts/logout/?next={{ request.path }}">logout</a>&nbsp;&nbsp;</p>
+
+        {% else %}
+
+            <p class="navbar-text navbar-right"> Browsing as <span class="username">Guest</span>&nbsp;&nbsp;
+        <form class="nav navbar-form navbar-right" method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <input type="text" placeholder="Email" class="form-control" name="username">
+            </div>
+            <div class="form-group">
+                <input type="password" placeholder="Password" class="form-control" name="password">
+            </div>
+            <button type="submit" class="btn btn-small btn-success" value="login">Sign in </button>
+            <input type="hidden" name="next" value="{{ request.path }}" />
+        </form>
+        {% endif %}
+        </div>
           <!--<form class="navbar-form navbar-right">
             <input type="text" class="form-control" placeholder="Search...">
           </form>-->
-        </div>
+
     </div>
 
 </nav>
