@@ -124,7 +124,7 @@ class Fish(TestApp):
 class Vesicles(TestApp):
     def __init__(self, args):
         # scales in micrometer
-        scales = [0.2, 0.125, 0.100, 0.080]
+        scales = [0.125, 0.100, 0.080]
         rows = columns = 11
         row_shift = - 0.6  # row is 'down', so negative
         column_shift = 0.6

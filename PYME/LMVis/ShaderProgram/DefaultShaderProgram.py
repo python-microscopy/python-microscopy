@@ -21,7 +21,8 @@
 import os
 
 from PYME.LMVis.ShaderProgram.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
-    glPolygonMode, GL_FILL, GL_FRONT_AND_BACK
+    glPolygonMode, GL_FILL, GL_FRONT_AND_BACK, glEnable, GL_BLEND, GL_SRC_ALPHA, GL_DST_ALPHA, glBlendFunc, \
+    glBlendEquation, GL_FUNC_ADD
 from PYME.LMVis.ShaderProgram.ShaderProgram import ShaderProgram
 
 
@@ -37,6 +38,9 @@ class DefaultShaderProgram(GLProgram):
         self.set_shader_program(_shader_program)
 
     def __enter__(self):
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
+        glBlendEquation(GL_FUNC_ADD)
         self.get_shader_program().use()
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
