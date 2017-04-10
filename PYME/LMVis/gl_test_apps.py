@@ -173,8 +173,11 @@ class Vesicles(TestApp):
 
 class Worms(TestApp):
     def __init__(self, *args):
+        self.to = TestObjectContainer()
+        self.to.add(ExponentialClusterizer(gl_test_objects.Worm(250, probe=1), 2, 0))
+        self.to.add(ExponentialClusterizer(gl_test_objects.Worm(250, probe=2), 2, 0))
+        self.to = ExponentialClusterizer(self.to, 2, 1)
         super(Worms, self).__init__(*args)
-        self.to = gl_test_objects.Worm()
 
     def OnInit(self):
         self.setup()
@@ -194,13 +197,13 @@ class HarmonicCells(TestApp):
         self._input_file = args.harmonics_file
         self._dimensions = literal_eval(args.harmonics_dimensions)
         self.to = TestObjectContainer()
-        row_offset = self._dimensions[0] * 1.2
-        column_offset = self._dimensions[1] * 1.2
+        row_offset = - self._dimensions[1] * 1.2
+        column_offset = self._dimensions[0] * 1.2
         for row in numpy.arange(4):
             for column in numpy.arange(4):
                 print('Generating: row {}: column {}'.format(row, column))
                 cell = self.create_harmonic_cell()
-                cell.translate(row * row_offset, column * column_offset, 0)
+                cell.translate(column * column_offset, row * row_offset, 0)
                 cell.add_to_json('row', row + 1)
                 cell.add_to_json('column', column + 1)
                 self.to.add(cell)
