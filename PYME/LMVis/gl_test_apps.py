@@ -21,9 +21,10 @@
 import argparse
 from ast import literal_eval
 
-import pylab
 import time
-from numpy import random
+from math import floor
+
+import pylab
 from wx import wx
 
 from PYME.LMVis import gl_test_objects
@@ -121,42 +122,61 @@ class Fish(TestApp):
 
 
 class Vesicles(TestApp):
-    def __init__(self, *args):
+    def __init__(self, args):
         # scales in micrometer
-        scales = [1, 0.5, 0.125, 0.100, 0.080]
-        x_shifts = [-3, -1, 1, 3]
-        base_amount_of_points = 70
-        offset = 0
+        scales = [0.2, 0.125, 0.100, 0.080]
+        rows = columns = 11
+        row_shift = - 0.6  # row is 'down', so negative
+        column_shift = 0.6
+        total_dict = []
+
+        # row_shift = - 0.2  # row is 'down', so negative
+        # column_shift = 0.2
+        base_amount_of_points = 35
+        minimum_amount_of_points = 10
         self.to = TestObjectContainer()
-        row, column = 1, 1
-        for scale in scales:
-            for x_shift in x_shifts:
+        for row in numpy.arange(1, rows):
+            row_container = TestObjectContainer()
+            row_container.add_to_json('row', row)
+            row_list = []
+            for column in numpy.arange(1, columns):
                 hole_position = numpy.random.random()
                 hole_position_with_pi = hole_position * 2 * numpy.pi
                 has_hole = numpy.random.random() >= 0.5
-                amount_points = max(int(round(numpy.random.normal(base_amount_of_points, 20))), 0)
+                scale = scales[random.randint(0, len(scales))]
+                amount_points = max(int(round(numpy.random.normal(base_amount_of_points, 20))),
+                                    minimum_amount_of_points)
+
                 if has_hole:
                     new_test_object = Vesicle(diameter=scale, amount_points=amount_points,
                                               hole_pos=hole_position_with_pi)
+                    row_list.append(1)
                 else:
                     new_test_object = Vesicle(diameter=scale, amount_points=amount_points, hole_size=0)
-                new_test_object.translate(x_shift, offset, 0)
+                    row_list.append(0)
 
-                self.to.add(new_test_object)
-                new_test_object.add_to_json('row', row)
+                row_shift_extra = 0.3 * floor((row - 1) / 2)
+                new_test_object.translate(column_shift * column, row_shift * row - row_shift_extra, 0)
+                row_container.add(new_test_object)
                 new_test_object.add_to_json('column', column)
-                column += 1
-            row += 1
-            column = 1
-            offset -= 2
 
-        noise = NoisePlane(20, 10)
-        noise.translate(0, offset / 2, 0)
+            self.to.add(row_container)
+            total_dict.append(row_list)
+
+        noise = NoisePlane(20, 20)
+        noise.translate(column_shift * column / 2, row_shift * row / 2, 0)
         self.to.add(noise)
 
         self.to = ExponentialClusterizer(self.to, 4, 10)
+        if args.result_table is not None:
+            self.save_result_csv(total_dict, args.result_table)
 
-        super(Vesicles, self).__init__(*args)
+        super(Vesicles, self).__init__(args)
+
+    def save_result_csv(self, result_dict, file):
+        with open(file, 'wb') as csvfile:
+            writer = csv.writer(csvfile, delimiter=',')
+            writer.writerows(result_dict)
 
     def OnInit(self):
         self.setup()
@@ -245,6 +265,7 @@ def parse():
     parser.add_argument('output_json', help='file that should be used to save the configuration as json')
     parser.add_argument('--harmonics_file', help='the file used for input spherical harmonics data')
     parser.add_argument('--harmonics_dimensions', help='the dimensions of the bounding box in micrometer (x, y, z)')
+    parser.add_argument('--result_table', help='the file in which the resulting table for Vesicles is stored in')
     args = parser.parse_args()
     return args
 
