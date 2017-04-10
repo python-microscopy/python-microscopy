@@ -41,12 +41,24 @@ class TestObject(object):
     """
     MICROMETER_CONVERSION_CONSTANT = 1000
 
-    def __init__(self, x, y, z):
+    def __init__(self, x, y, z, probe=0):
+        """
+        
+        Parameters
+        ----------
+        x
+        y
+        z
+        probe       either scalar value or list of scalars which matches the size of x,y and z
+                        as numpy.ndarray
+
+        """
         self._x = x
         self._y = y
         self._z = z
         self.added_objects = list()
         self.added_json = OrderedDict()
+        self._probe = probe
         self._lock = threading.Lock()
 
     @property
@@ -69,6 +81,44 @@ class TestObject(object):
         for other_object in self.added_objects:
             new_z = numpy.append(new_z, other_object.z)
         return new_z
+
+    @property
+    def probe(self):
+        new_probe = None
+        if self._x is not None:
+            new_probe = self.add_probe(new_probe, self._probe, len(self._x))
+
+        for other_object in self.added_objects:
+            new_probe = self.add_probe(new_probe, other_object.probe)
+        return new_probe
+
+    def add_probe(self, probe_list=None, values=0, size=0):
+        """
+        
+        Parameters
+        ----------
+        probe_list  list that the new values should be added to
+        values      if value is scalar, use size to create a fitting list
+        size        scalar value 
+
+        Returns
+        -------
+
+        """
+        if probe_list is None:
+            if isinstance(values, numpy.ndarray):
+                return values
+            else:
+                return numpy.ones((size, 1)) * self._probe
+        else:
+            if isinstance(values, numpy.ndarray):
+                return numpy.append(probe_list, values)
+            else:
+                return numpy.append(probe_list, numpy.ones((size, 1)) * self._probe)
+
+    @property
+    def probe_value(self):
+        return self._probe
 
     def translate(self, x=0, y=0, z=0):
         """
@@ -119,8 +169,8 @@ class TestObject(object):
         with open(file_name, 'wb') as csv_file:
             writer = csv.writer(csv_file)
 
-            collection = numpy.column_stack((self.x, self.y, self.z))
-            writer.writerow(('x', 'y', 'z'))
+            collection = numpy.column_stack((self.x, self.y, self.z, self.probe))
+            writer.writerow(('x', 'y', 'z', 'probe'))
             writer.writerows(collection)
 
     def to_json(self):
@@ -177,6 +227,16 @@ class TestObjectContainer(TestObject):
             else:
                 new_z = other_object.z
         return new_z
+
+    @property
+    def probe(self):
+        new_probe = None
+        for other_object in self.added_objects:
+            if new_probe is not None:
+                new_probe = numpy.append(new_probe, other_object.probe)
+            else:
+                new_probe = other_object.probe
+        return new_probe
 
     def translate(self, x=0, y=0, z=0):
         """
@@ -261,14 +321,14 @@ class Ellipsoid(TestObject):
 
 
 class Worm(TestObject):
-    def __init__(self, kbp=0.1, length_per_kbp=10.0, step_length=20.0, persist_length=50):
+    def __init__(self, kbp=100, length_per_kbp=10.0, step_length=20.0, persist_length=50, probe=0):
         chain = wormlikeChain(kbp, steplength=step_length, lengthPerKbp=length_per_kbp, persistLength=persist_length)
         self.kbp = kbp
         self.length_per_kbp = length_per_kbp
         self.step_length = step_length
         self.persist_length = persist_length
 
-        TestObject.__init__(self, chain.xp, chain.yp, chain.zp)
+        TestObject.__init__(self, chain.xp, chain.yp, chain.zp, probe)
 
     def to_json(self):
         json_config = super(Worm, self).to_json()
@@ -432,9 +492,9 @@ class HarmonicCell(TestObjectContainer):
         test_object.add(test_harmonic)
 
         chromosome = 0
-        amount_chromosomes = random.randint(0, 4)
+        amount_chromosomes = random.randint(0, 5)
         while chromosome < amount_chromosomes:
-            worm = Worm(250)
+            worm = Worm(250, probe=chromosome+1)
             theta = random.rand() * numpy.pi
             phi = 2 * random.rand() * numpy.pi
             radius = 0.8 * random.rand()
@@ -452,20 +512,22 @@ class Clusterizer(TestObject):
         self.multiply = multiply
         self.distance = distance
 
-        base_points_x, base_points_y, base_points_z, self.amount_of_points = self.get_points()
+        base_points_x, base_points_y, base_points_z, self.amount_of_points, probes = self.get_points()
         offsets = self.get_offsets()
 
         new_positions_x = base_points_x + offsets[0]
         new_positions_y = base_points_y + offsets[1]
         new_positions_z = base_points_z + offsets[2]
 
-        TestObject.__init__(self, new_positions_x, new_positions_y, new_positions_z)
+        TestObject.__init__(self, new_positions_x, new_positions_y, new_positions_z, probe=probes)
 
     def get_points(self):
         test_object = self.test_object
         return (numpy.repeat(test_object.x, self.multiply),
                 numpy.repeat(test_object.y, self.multiply),
-                numpy.repeat(test_object.z, self.multiply), len(test_object.x)*self.multiply)
+                numpy.repeat(test_object.z, self.multiply),
+                len(test_object.x)*self.multiply,
+                numpy.repeat(test_object.probe, self.multiply))
 
     def get_offsets(self):
         offsets_x = (numpy.random.randn(self.amount_of_points) - 0.5) * 2 * self.distance
@@ -480,7 +542,6 @@ class Clusterizer(TestObject):
         json_config['objects'] = self.test_object.to_json()
         return json_config
 
-
 class ExponentialClusterizer(Clusterizer):
     def __init__(self, test_object, expectation_value, distance):
         self.expectation_value = expectation_value
@@ -493,8 +554,9 @@ class ExponentialClusterizer(Clusterizer):
         base_points_x = numpy.repeat(self.test_object.x, cluster_sizes)
         base_points_y = numpy.repeat(self.test_object.y, cluster_sizes)
         base_points_z = numpy.repeat(self.test_object.z, cluster_sizes)
+        probes = numpy.repeat(self.test_object.probe, cluster_sizes)
         amount_of_points = len(base_points_x)
-        return base_points_x, base_points_y, base_points_z, amount_of_points
+        return base_points_x, base_points_y, base_points_z, amount_of_points, probes
 
     def to_json(self):
         json_config = super(ExponentialClusterizer, self).to_json()
