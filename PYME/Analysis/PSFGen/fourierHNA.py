@@ -76,7 +76,11 @@ class FourierPropagatorHNA:
         if not k is None:
             raise DeprecationWarning('k is no longer used')
         
-        self.propFac = ((2*np.pi*n/lamb)*np.cos(.5*np.pi*np.sqrt((u**2 + v**2)))).astype('f')
+        #self.propFac = ((2*np.pi*n/lamb)*np.cos(.5*np.pi*np.sqrt((u**2 + v**2)))).astype('f')
+        
+        #R = np.sqrt(u**2 + v**2)
+        self.propFac = ((2 * np.pi * n / lamb) * np.sqrt(1 - np.minimum(u ** 2 + v ** 2, 1))).astype('f')
+        
         self.pfm =(self.propFac > 0).astype('f')
 
         self._F = fftw3f.create_aligned_array(u.shape, 'complex64')
