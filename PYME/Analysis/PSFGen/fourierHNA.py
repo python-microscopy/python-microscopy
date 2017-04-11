@@ -364,12 +364,20 @@ def PsfFromPupil(pupil, zs, dx, lamb, apodization=None, n=1.51, NA=1.51):
 
     #if apodization is None:
     #    M = 1.0*(R < (NA/n)) # NA/lambda
-    if apodization == 'sine':
-        R = np.sqrt(u**2 + v**2)
-        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
-        pupil = pupil*M
+    R = np.sqrt(u ** 2 + v ** 2)
+    t_ = np.arcsin(np.minimum(R, 1))
 
-    FP = FourierPropagator(u,v,k, lamb)
+    if apodization is None:
+        M = 1.0 * (R < (NA / n)) # NA/lambda
+    elif apodization == 'sine':
+        M = 1.0 * (R < (NA / n)) * np.sqrt(np.cos(t_))
+    elif apodization == 'empirical':
+        r_ = np.minimum(R, 1)
+        M = 1.0 * (R < (NA / n)) * (1 - 0.65 * t_) * (1 - np.exp(-10 * ((NA / n) - r_)))
+    
+    pupil = pupil*M
+
+    FP = FourierPropagator(u,v,lamb=lamb, n=n)
     
     ps = np.concatenate([FP.propagate(pupil, z)[:,:,None] for z in zs], 2)
 
@@ -408,16 +416,24 @@ def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61], apodization=None, n=1
     sp = np.sin(phi)
     
     k = 2*np.pi*n/lamb
-    
-    if apodization == 'sine':
-        R = np.sqrt(u**2 + v**2)
-        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
-        pupil = pupil*M
+
+    R = np.sqrt(u ** 2 + v ** 2)
+    t_ = np.arcsin(np.minimum(R, 1))
+
+    if apodization is None:
+        M = 1.0 * (R < (NA / n)) # NA/lambda
+    elif apodization == 'sine':
+        M = 1.0 * (R < (NA / n)) * np.sqrt(np.cos(t_))
+    elif apodization == 'empirical':
+        r_ = np.minimum(R, 1)
+        M = 1.0 * (R < (NA / n)) * (1 - 0.65 * t_) * (1 - np.exp(-10 * ((NA / n) - r_)))
+
+    pupil = pupil * M
     
     
     #M = 1.0*(R < (NA/(n*lamb))) # NA/lambda
 
-    FP = FourierPropagator(u,v,k, lamb) 
+    FP = FourierPropagator(u,v,lamb=lamb, n = n)
     
     fac = ct*cp**2 + sp**2
     ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
@@ -509,9 +525,9 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3, in
     R = np.sqrt(u**2 + v**2)
     M = 1.0*(R < (NA/n)) # NA/lambda
     
-    k = 2*np.pi*n/lamb
+    #k = 2*np.pi*n/lamb
 
-    FP = FourierPropagator(u,v,k, lamb)
+    FP = FourierPropagator(u,v,lamb=lamb,n=n)
 
     pupil = M*np.exp(1j*0)
     
