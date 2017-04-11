@@ -157,6 +157,11 @@ class Vesicles(TestApp):
 
                 row_shift_extra = 0.3 * floor((row - 1) / 2)
                 new_test_object.translate(column_shift * column, row_shift * row - row_shift_extra, 0)
+
+                jitter_factor = 0.05
+                jitter_x = numpy.random.rand() * jitter_factor
+                jitter_y = numpy.random.rand() * jitter_factor
+                new_test_object.translate(jitter_x, jitter_y, 0)
                 row_container.add(new_test_object)
                 new_test_object.add_to_json('column', column)
 
