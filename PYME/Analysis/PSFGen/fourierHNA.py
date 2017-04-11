@@ -280,15 +280,19 @@ def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodizat
 
     FP = FourierPropagator(u, v, lamb=lamb, n=n)
 
-    #apperture mask
+    t_ = np.arcsin(np.minimum(R, 1))
+
     if apodization is None:
-        M = 1.0*(R < (NA/n)) # NA/lambda
+        M = 1.0 * (R < (NA / n)) # NA/lambda
     elif apodization == 'sine':
-        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
+        M = 1.0 * (R < (NA / n)) * np.sqrt(np.cos(t_))
+    elif apodization == 'empirical':
+        r_ = np.minimum(R, 1)
+        M = 1.0 * (R < (NA / n)) * (1 - 0.65 * t_) * (1 - np.exp(-10 * ((NA / n) - r_)))
 
     return X, Y, R, FP, M, u, v
     
-def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0, apodizisation='sine'):
+def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0, apodization='sine'):
     if X is None or Y is None:
         X, Y = np.meshgrid(np.arange(-2000, 2000., dx),np.arange(-2000, 2000., dx))
     else:
@@ -309,10 +313,15 @@ def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x
     #apperture mask
     M = 1.0*(R < (NA/n)) # NA/lambda
     
-    if apodizisation is None:
+    t_ = np.arcsin(np.minimum(R, 1))
+    
+    if apodization is None:
         M = 1.0*(R < (NA/n)) # NA/lambda
-    elif apodizisation == 'sine':
-        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
+    elif apodization == 'sine':
+        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(t_))
+    elif apodization == 'empirical':
+        r_ = np.minimum(R, 1)
+        M = 1.0*(R < (NA/n))*(1- 0.65*t_)*(1-np.exp(-10*((NA/n) - r_)))
     
     #M = M/M.sum()
 
