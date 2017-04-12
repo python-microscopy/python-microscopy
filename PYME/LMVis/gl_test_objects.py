@@ -272,8 +272,8 @@ class GridContainer(TestObjectContainer):
     def re_enumerate(self):
         object_no = 0
         for added_object in self.added_objects:
-            added_object.add_to_json('row', object_no / self.size[0])
-            added_object.add_to_json('column', object_no % self.size[0])
+            added_object.add_to_json('row', self.get_row(object_no))
+            added_object.add_to_json('column', self.get_column(object_no))
             object_no += 1
 
     @property
@@ -282,7 +282,7 @@ class GridContainer(TestObjectContainer):
         item = 0
         for other_object in self.added_objects:
             added_x = numpy.copy(other_object.x)
-            added_x += self.offsets[0] * self.MICROMETER_CONVERSION_CONSTANT * (item % self.size[0])
+            added_x += self.offsets[0] * self.MICROMETER_CONVERSION_CONSTANT * self.get_column(item)
             if new_x is not None:
                 new_x = numpy.append(new_x, added_x)
             else:
@@ -296,7 +296,7 @@ class GridContainer(TestObjectContainer):
         item = 0
         for other_object in self.added_objects:
             added_y = numpy.copy(other_object.y)
-            added_y += self.offsets[1] * self.MICROMETER_CONVERSION_CONSTANT * (item / self.size[0])
+            added_y += self.offsets[1] * self.MICROMETER_CONVERSION_CONSTANT * self.get_row(item)
             if new_y is not None:
                 new_y = numpy.append(new_y, added_y)
             else:
@@ -314,6 +314,12 @@ class GridContainer(TestObjectContainer):
     #             new_z = other_object.z
     #     return new_z
 
+    def get_row(self, value):
+        return value / self.size[0]
+
+    def get_column(self, value):
+        return value % self.size[0]
+
     def to_json(self):
         self.re_enumerate()
         json_config = super(GridContainer, self).to_json()
@@ -321,6 +327,23 @@ class GridContainer(TestObjectContainer):
         json_config['offsets'] = self.offsets
         json_config['amount_of_objects'] = len(self.added_objects)
         return json_config
+
+    def to_table(self, method, output_table_file):
+        object_no = 0
+        with open(output_table_file, 'wb') as csv_file:
+            writer = csv.writer(csv_file)
+            row = list()
+            for added_object in self.added_objects:
+                method_to_call = eval('added_object.{}'.format(method))
+                value = method_to_call()
+                row.append(value)
+                if (object_no + 1) % self.size[0] == 0:
+                    writer.writerow(row)
+                    row = list()
+                object_no += 1
+
+
+
 
 
 class NineCollections(TestObject):

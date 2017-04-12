@@ -206,13 +206,16 @@ class HarmonicCells(TestApp):
 
 class GridTestApp(TestApp):
 
-    def __init__(self, args):
-        self.sample_count = args.sample_count
+    def __init__(self, grid_container, args):
+        self.modes = args.modes
+        self._grid_container = grid_container
+        self._result_table_file = args.result_table
         super(GridTestApp, self).__init__(args)
 
     def save(self, output_csv, output_json):
-        for i in numpy.arange(1, int(self.sample_count)+1):
+        for i in self.modes:
             super(GridTestApp, self).save(output_csv.format(i), output_json.format(i))
+            self._grid_container.to_table('test_object.has_hole', self._result_table_file.format(i))
             self.shuffle_object.shuffle()
 
 
@@ -283,7 +286,7 @@ class GridVesicles(GridTestApp):
         self.to.add(grid_container)
         self.to.add(ExponentialClusterizer(noise, 4, 10))
 
-        super(GridVesicles, self).__init__(args)
+        super(GridVesicles, self).__init__(grid_container, args)
 
 
 def normalize(values):
@@ -308,7 +311,7 @@ def parse():
     parser.add_argument('--harmonics_file', help='the file used for input spherical harmonics data')
     parser.add_argument('--harmonics_dimensions', help='the dimensions of the bounding box in micrometer (x, y, z)')
     parser.add_argument('--result_table', help='the file in which the resulting table for Vesicles is stored in')
-    parser.add_argument('--sample_count', help='the number of samples for grids')
+    parser.add_argument('--modes', help='the modes of samples for grids', nargs='+')
     args = parser.parse_args()
     return args
 
