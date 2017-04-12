@@ -259,6 +259,70 @@ class TestObjectContainer(TestObject):
             other_object.scale(x, y, z)
 
 
+class GridContainer(TestObjectContainer):
+    def __init__(self, size, offsets):
+        self.size = size
+        self.offsets = offsets
+        super(TestObjectContainer, self).__init__(None, None, None)
+
+    def shuffle(self):
+        random.shuffle(self.added_objects)
+        self.re_enumerate()
+
+    def re_enumerate(self):
+        object_no = 0
+        for added_object in self.added_objects:
+            added_object.add_to_json('row', object_no / self.size[0])
+            added_object.add_to_json('column', object_no % self.size[0])
+            object_no += 1
+
+    @property
+    def x(self):
+        new_x = None
+        item = 0
+        for other_object in self.added_objects:
+            added_x = numpy.copy(other_object.x)
+            added_x += self.offsets[0] * self.MICROMETER_CONVERSION_CONSTANT * (item % self.size[0])
+            if new_x is not None:
+                new_x = numpy.append(new_x, added_x)
+            else:
+                new_x = added_x
+            item += 1
+        return new_x
+
+    @property
+    def y(self):
+        new_y = None
+        item = 0
+        for other_object in self.added_objects:
+            added_y = numpy.copy(other_object.y)
+            added_y += self.offsets[1] * self.MICROMETER_CONVERSION_CONSTANT * (item / self.size[0])
+            if new_y is not None:
+                new_y = numpy.append(new_y, added_y)
+            else:
+                new_y = added_y
+            item += 1
+        return new_y
+
+    # @property
+    # def z(self):
+    #     new_z = None
+    #     for other_object in self.added_objects:
+    #         if new_z is not None:
+    #             new_z = numpy.append(new_z, other_object.z)
+    #         else:
+    #             new_z = other_object.z
+    #     return new_z
+
+    def to_json(self):
+        self.re_enumerate()
+        json_config = super(GridContainer, self).to_json()
+        json_config['size'] = self.size
+        json_config['offsets'] = self.offsets
+        json_config['amount_of_objects'] = len(self.added_objects)
+        return json_config
+
+
 class NineCollections(TestObject):
 
     def __init__(self):
@@ -367,6 +431,9 @@ class Vesicle(TestObject):
         self.hole_size = hole_size
         self.hole_pos = hole_pos
         TestObject.__init__(self, x, y, z)
+
+    def has_hole(self):
+        return self.hole_size > 0
 
     def to_json(self):
         json_config = super(Vesicle, self).to_json()
@@ -542,6 +609,7 @@ class Clusterizer(TestObject):
         json_config['objects'] = self.test_object.to_json()
         return json_config
 
+
 class ExponentialClusterizer(Clusterizer):
     def __init__(self, test_object, expectation_value, distance):
         self.expectation_value = expectation_value
@@ -562,4 +630,6 @@ class ExponentialClusterizer(Clusterizer):
         json_config = super(ExponentialClusterizer, self).to_json()
         json_config['expectation_value'] = self.expectation_value
         json_config['distance'] = self.distance
+        json_config['amount_of_points'] = len(self.x)
+
         return json_config

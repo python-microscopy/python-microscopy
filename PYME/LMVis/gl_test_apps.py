@@ -40,12 +40,13 @@ class TestApp(wx.App):
 
     def OnInit(self):
         self.setup()
-        to = NineCollections()
         self._canvas.displayMode = '3D'
-        self._canvas.pointSize = 50
+        self._canvas.pointSize = 10
 
-        self._canvas.setPoints3D(to.x, to.y, to.z, mode='pointsprites')
-        self._canvas.recenter(to.x, to.y)
+        self._canvas.setPoints3D(self.to.x, self.to.y, self.to.z, normalize(self.to.z),
+                                 self._canvas.cmap, self._canvas.clim, mode='pointsprites',
+                                 )
+        self._canvas.recenter(self.to.x, self.to.y)
         self.done()
         return True
 
@@ -108,18 +109,6 @@ class Fish(TestApp):
         self.to.add(concentration)
         super(Fish, self).__init__(*args)
 
-    def OnInit(self):
-        self.setup()
-
-        self._canvas.pointSize = 50
-
-        self._canvas.setPoints3D(self.to.x, self.to.y, self.to.z, normalize(self.to.z),
-                                 self._canvas.cmap, self._canvas.clim, mode='pointsprites')
-        self._canvas.recenter(self.to.x, self.to.y)
-
-        self.done()
-        return True
-
 
 class Vesicles(TestApp):
     def __init__(self, args):
@@ -178,22 +167,11 @@ class Vesicles(TestApp):
 
         super(Vesicles, self).__init__(args)
 
-    def save_result_csv(self, result_dict, file):
-        with open(file, 'wb') as csvfile:
+    @staticmethod
+    def save_result_csv(result_dict, file_name):
+        with open(file_name, 'wb') as csvfile:
             writer = csv.writer(csvfile, delimiter=',')
             writer.writerows(result_dict)
-
-    def OnInit(self):
-        self.setup()
-
-        self._canvas.pointSize = 10
-
-        self._canvas.setPoints3D(self.to.x, self.to.y, self.to.z, normalize(self.to.z),
-                                 self._canvas.cmap, self._canvas.clim, mode='pointsprites')
-        self._canvas.recenter(self.to.x, self.to.y)
-
-        self.done()
-        return True
 
 
 class Worms(TestApp):
@@ -203,18 +181,6 @@ class Worms(TestApp):
         self.to.add(ExponentialClusterizer(gl_test_objects.Worm(250, probe=2), 2, 0))
         self.to = ExponentialClusterizer(self.to, 2, 1)
         super(Worms, self).__init__(*args)
-
-    def OnInit(self):
-        self.setup()
-
-        self._canvas.pointSize = 50
-
-        self._canvas.setPoints3D(self.to.x, self.to.y, self.to.z, normalize(self.to.z),
-                                 self._canvas.cmap, self._canvas.clim, mode='pointsprites')
-        self._canvas.recenter(self.to.x, self.to.y)
-
-        self.done()
-        return True
 
 
 class HarmonicCells(TestApp):
@@ -237,17 +203,88 @@ class HarmonicCells(TestApp):
     def create_harmonic_cell(self):
         return HarmonicCell(self._input_file, self._dimensions)
 
-    def OnInit(self):
-        self.setup()
 
-        self._canvas.pointSize = 20
+class GridTestApp(TestApp):
 
-        self._canvas.setPoints3D(self.to.x, self.to.y, self.to.z, normalize(self.to.z),
-                                 self._canvas.cmap, self._canvas.clim, mode='pointsprites')
-        self._canvas.recenter(self.to.x, self.to.y)
+    def __init__(self, args):
+        self.sample_count = args.sample_count
+        super(GridTestApp, self).__init__(args)
 
-        self.done()
-        return True
+    def save(self, output_csv, output_json):
+        for i in numpy.arange(1, int(self.sample_count)+1):
+            super(GridTestApp, self).save(output_csv.format(i), output_json.format(i))
+            self.shuffle_object.shuffle()
+
+
+class GridHarmonicCells(GridTestApp):
+    def __init__(self, args):
+        self._input_file = args.harmonics_file
+        self._dimensions = literal_eval(args.harmonics_dimensions)
+
+        row_offset = - self._dimensions[1] * 1.2
+        column_offset = self._dimensions[0] * 1.2
+        self.to = GridContainer((10, 10), (row_offset, column_offset))
+        self.shuffle_object = self.to
+        for row in numpy.arange(4):
+            for column in numpy.arange(4):
+                print('Generating: row {}: column {}'.format(row, column))
+                cell = self.create_harmonic_cell()
+                self.to.add(cell)
+        super(GridHarmonicCells, self).__init__(args)
+
+    def create_harmonic_cell(self):
+        return HarmonicCell(self._input_file, self._dimensions)
+
+
+class GridVesicles(GridTestApp):
+    def __init__(self, args):
+        # scales in micrometer
+        scales = [0.125, 0.100, 0.080]
+        rows = columns = 10
+        row_shift = - 0.6  # row is 'down', so negative
+        column_shift = 0.6
+        total_dict = []
+
+        # row_shift = - 0.2  # row is 'down', so negative
+        # column_shift = 0.2
+        base_amount_of_points = 35
+        minimum_amount_of_points = 10
+        grid_container = GridContainer((rows, columns), (column_shift, row_shift))
+        self.shuffle_object = grid_container
+        for row in numpy.arange(0, rows):
+            row_list = []
+            for column in numpy.arange(0, columns):
+                hole_position = numpy.random.random()
+                hole_position_with_pi = hole_position * 2 * numpy.pi
+                has_hole = numpy.random.random() >= 0.5
+                scale = scales[random.randint(0, len(scales))]
+                amount_points = max(int(round(numpy.random.normal(base_amount_of_points, 20))),
+                                    minimum_amount_of_points)
+
+                if has_hole:
+                    new_test_object = Vesicle(diameter=scale, amount_points=amount_points,
+                                              hole_pos=hole_position_with_pi)
+                    row_list.append(1)
+                else:
+                    new_test_object = Vesicle(diameter=scale, amount_points=amount_points, hole_size=0)
+                    row_list.append(0)
+
+                jitter_factor = 0.05
+                jitter_x = numpy.random.rand() * jitter_factor
+                jitter_y = numpy.random.rand() * jitter_factor
+                new_test_object.translate(jitter_x, jitter_y, 0)
+                grid_container.add(ExponentialClusterizer(new_test_object, 4, 10))
+
+            total_dict.append(row_list)
+
+        noise = NoisePlane(20, 20)
+        noise.translate(column_shift * column / 2, row_shift * row / 2, 0)
+        self.to = TestObjectContainer()
+        self.to.add(grid_container)
+        self.to.add(ExponentialClusterizer(noise, 4, 10))
+
+        super(GridVesicles, self).__init__(args)
+
 
 def normalize(values):
     return (values - min(values)) / (max(values) - min(values))
@@ -271,6 +308,7 @@ def parse():
     parser.add_argument('--harmonics_file', help='the file used for input spherical harmonics data')
     parser.add_argument('--harmonics_dimensions', help='the dimensions of the bounding box in micrometer (x, y, z)')
     parser.add_argument('--result_table', help='the file in which the resulting table for Vesicles is stored in')
+    parser.add_argument('--sample_count', help='the number of samples for grids')
     args = parser.parse_args()
     return args
 
