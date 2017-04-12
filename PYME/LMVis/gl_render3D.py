@@ -32,7 +32,7 @@ from OpenGL.GLU import *
 from six.moves import xrange
 from wx.glcanvas import GLCanvas
 
-from PYME.LMVis.gl_test_objects import NineCollections
+from PYME.simulation.gl_test_objects import NineCollections
 
 try:
     from PYME.Analysis.points.gen3DTriangs import gen3DTriangs, gen3DBlobs, testObj

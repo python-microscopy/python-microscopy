@@ -19,17 +19,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 import argparse
-from ast import literal_eval
-
 import time
+from ast import literal_eval
 from math import floor
 
 import pylab
 from wx import wx
 
-from PYME.LMVis import gl_test_objects
 from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
-from PYME.LMVis.gl_test_objects import *
+from PYME.simulation import gl_test_objects
+from PYME.simulation.gl_test_objects import *
 
 
 class TestApp(wx.App):
