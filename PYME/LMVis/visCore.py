@@ -508,7 +508,7 @@ class VisGUICore(object):
                 
             args['FieldNames'] = dlg.GetFieldNames()
             args['VarName'] = dlg.GetVarName()
-            args['PixelSize'] = dlg.GetPixelSize()
+            # args['PixelSize'] = dlg.GetPixelSize()
             
             
             dlg.Destroy()
