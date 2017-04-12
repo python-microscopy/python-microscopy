@@ -32,12 +32,12 @@ def fibre30nm(kbp, steplength=10):
 class wormlikeChain:   
       
     def __init__(self, kbp, steplength=10.0, lengthPerKbp=10.0, persistLength=150.0):
-        numsteps = round(lengthPerKbp*kbp/steplength)
+        numsteps = int(round(lengthPerKbp*kbp/steplength))
 
         exp_costheta = (exp(-steplength/persistLength));
         theta = sqrt(2*log(1/exp_costheta))*abs(randn(numsteps));
         #phi = 2*pi*rand(numsteps);
-        phi = 0.5*pi*randn(numsteps)+pi/20;
+        phi = 0.1*pi*randn(numsteps)+pi/20;
 
         phi = cumsum(concatenate(([0], phi),0))
         
@@ -68,10 +68,12 @@ class wormlikeChain:
             sk = sk/dot(sk, sk.T)
     
             sn = cos(theta[i])*so + sin(theta[i])*sin(phi[i])*sh + sin(theta[i])*cos(phi[i])*sk
+            
+            snn = sqrt((sn*sn).sum())
     
-            xs[i] = steplength*sn[0]
-            ys[i] = steplength*sn[1]
-            zs[i] = steplength*sn[2]
+            xs[i] = steplength*sn[0]/snn
+            ys[i] = steplength*sn[1]/snn
+            zs[i] = steplength*sn[2]/snn
     
             so = sn;
             #i/numsteps
