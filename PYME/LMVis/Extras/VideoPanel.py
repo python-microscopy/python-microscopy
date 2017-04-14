@@ -22,7 +22,6 @@
 import json
 from time import sleep
 
-import cv2
 import wx
 import wx.lib.agw.aui as aui
 
@@ -148,9 +147,14 @@ class VideoPanel(wx.Panel):
         self.get_canvas().displayMode = '3D'
         fps = 30.0
         file_name = None
+        try:
+            import cv2
+        except ImportError:
+            raise ImportError('OpenCV 2 is needed to create videos. Please install: \"conda install -c menpo opencv\"')
+
         if save:
             file_name = wx.FileSelector('Save video as avi named... ')
-            if not file_name.endswith('.avi'):
+            if file_name and not file_name.endswith('.avi'):
                 file_name = '{}.avi'.format(file_name)
         video = None
         if not save or file_name:
@@ -267,7 +271,6 @@ class EditPanel(wx.Panel):
         grid_sizer.Add(self.duration_text)
         self.duration_text.SetValue("{:.9f}".format(snapshot.duration))
 
-
         self.SetSizerAndFit(grid_sizer)
 
     @property
@@ -293,7 +296,6 @@ class VideoFrame(wx.Frame):
 
         self.SetSizer(hsizer)
         hsizer.Fit(self)
-
 
 def Plug(visFr):
     video_panel = VideoPanel(visFr)
