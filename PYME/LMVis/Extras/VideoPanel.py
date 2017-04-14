@@ -150,7 +150,11 @@ class VideoPanel(wx.Panel):
         try:
             import cv2
         except ImportError:
-            raise ImportError('OpenCV 2 is needed to create videos. Please install: \"conda install -c menpo opencv\"')
+            msg_text = 'OpenCV 2 is needed to create videos. Please install: \"conda install -c menpo opencv\"'
+            msg = wx.MessageDialog(self, msg_text, 'Missing package', wx.OK | wx.ICON_WARNING)
+            msg.ShowModal()
+            msg.Destroy()
+            return
 
         if save:
             file_name = wx.FileSelector('Save video as avi named... ')
@@ -184,6 +188,10 @@ class VideoPanel(wx.Panel):
                     current_view = view
             if save:
                 video.release()
+            msg_text = 'Video generation finished'
+            msg = wx.MessageDialog(self, msg_text, 'Done', wx.OK | wx.ICON_INFORMATION)
+            msg.ShowModal()
+            msg.Destroy()
 
     @staticmethod
     def ask(parent=None, message='', default_value=''):
