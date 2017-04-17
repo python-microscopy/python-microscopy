@@ -250,6 +250,7 @@ class GridVesicles(GridTestApp):
         # row_shift = - 0.2  # row is 'down', so negative
         # column_shift = 0.2
         base_amount_of_points = 35
+        variance = 20
         minimum_amount_of_points = 10
         grid_container = GridContainer((rows, columns), (column_shift, row_shift))
         self.shuffle_object = grid_container
@@ -260,7 +261,7 @@ class GridVesicles(GridTestApp):
                 hole_position_with_pi = hole_position * 2 * numpy.pi
                 has_hole = numpy.random.random() >= 0.5
                 scale = scales[random.randint(0, len(scales))]
-                amount_points = max(int(round(numpy.random.normal(base_amount_of_points, 20))),
+                amount_points = max(int(round(numpy.random.normal(base_amount_of_points, variance))),
                                     minimum_amount_of_points)
 
                 if has_hole:
