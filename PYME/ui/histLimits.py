@@ -71,6 +71,23 @@ class HistLimitPanel(wx.Panel):
         wx.EVT_LEFT_UP(self, self.OnLeftUp)
         wx.EVT_MOTION(self, self.OnMouseMove)
         wx.EVT_KEY_DOWN(self, self.OnKeyPress)
+        wx.EVT_MOUSEWHEEL(self, self.OnMouseScrollEvent)
+
+    def OnMouseScrollEvent(self, evt):
+        rot = evt.GetWheelRotation()
+        # shift_offset = self.hstep
+        shift_offset = (self.limit_upper - self.limit_lower) * 0.2
+        if rot > 0:
+            delta = self.hstep
+        else:
+            delta = -self.hstep
+        self.limit_lower += delta
+        self.limit_upper += delta
+        self.GenHist()
+        self.Refresh()
+        self.Update()
+        evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
+        self.ProcessEvent(evt)
 
     def SetData(self, data, lower, upper):
         self.data = np.array(data).ravel()
@@ -88,7 +105,7 @@ class HistLimitPanel(wx.Panel):
         self.limit_upper = float(upper)
 
         if self.threshMode:
-            thresh =  0.5*(self.limit_lower + self.limit_upper)
+            thresh = 0.5*(self.limit_lower + self.limit_upper)
             self.limit_lower = thresh
             self.limit_upper = thresh
 
@@ -110,6 +127,8 @@ class HistLimitPanel(wx.Panel):
             self.dragging = 'lower'
         elif abs(ulx - x) < 3:
             self.dragging = 'upper'
+        elif llx < x < ulx:
+            self.dragging = 'shift'
 
         event.Skip()
 
@@ -142,9 +161,13 @@ class HistLimitPanel(wx.Panel):
             self.limit_lower = xt
         elif self.dragging == 'upper' and not xt <= self.limit_lower:
             self.limit_upper = xt
-
-        self.Refresh()
-        self.Update()
+        elif self.dragging == 'shift':
+            width = self.limit_upper - self.limit_lower
+            self.limit_lower = xt - width / 2
+            self.limit_upper = xt + width / 2
+        if self.dragging:
+            self.Refresh()
+            self.Update()
 
         event.Skip()
 
@@ -365,53 +388,6 @@ class HistLimitPanel(wx.Panel):
     def GetValue(self):
         return (self.limit_lower, self.limit_upper)
 
-class SliderPanel(wx.Panel):
-    def __init__(self, parent, id, hist_limit_panel, pos=(0, 0)):
-        wx.Panel.__init__(self, parent, id, pos=pos)
-        self.hist_limit_panel = hist_limit_panel
-        vertical_box = wx.BoxSizer(wx.VERTICAL)
-        horizontal_box_text = wx.BoxSizer(wx.HORIZONTAL)
-
-        initial_boarders = self.hist_limit_panel.GetValue()
-
-        self.min_text = wx.TextCtrl(self, -1, value=str(initial_boarders[0]), size=(40, -1))
-        self.max_text = wx.TextCtrl(self, -1, value=str(initial_boarders[1]), size=(40, -1))
-        self.slider = wx.Slider(self, minValue=initial_boarders[0], maxValue=initial_boarders[1])
-
-        self.slider.Bind(wx.EVT_COMMAND_SCROLL_CHANGED, self.update_limits)
-        self.min_text.Bind(wx.EVT_TEXT, self.min_level_changed)
-        self.max_text.Bind(wx.EVT_TEXT, self.max_level_changed)
-
-        horizontal_box_text.Add(wx.StaticText(self, -1, 'SliderMin'), 0,
-                                wx.ALIGN_CENTER_VERTICAL | wx.ALL | wx.EXPAND, 5)
-        horizontal_box_text.Add(self.min_text, 0, wx.ALL | wx.EXPAND, 5)
-        horizontal_box_text.Add(wx.StaticText(self, -1, 'SliderMax'), 0,
-                                wx.ALIGN_CENTER_VERTICAL | wx.ALL | wx.EXPAND, 5)
-        horizontal_box_text.Add(self.max_text, 0, wx.ALL | wx.EXPAND, 5)
-        vertical_box.Add(horizontal_box_text, 0, wx.ALL | wx.EXPAND, 5)
-        vertical_box.Add(self.slider, 0, wx.ALL | wx.EXPAND, 5)
-
-        self.SetSizerAndFit(vertical_box)
-
-    def update_limits(self, event):
-        previous = self.hist_limit_panel.GetValue()
-        slider_value = self.slider.GetValue()
-        new_value = [slider_value, previous[1] - previous[0] + slider_value]
-        self.hist_limit_panel.SetValue(new_value)
-
-    def min_level_changed(self, event):
-        new_min = float(self.min_text.GetValue())
-        self.slider.SetMin(new_min)
-        if self.slider.GetValue() < new_min:
-            self.slider.SetValue(new_min)
-            self.slider.ShowPosition(new_min)
-
-    def max_level_changed(self, event):
-        new_max = float(self.max_text.GetValue())
-        self.slider.SetMax(new_max)
-        if self.slider.GetValue() > new_max:
-            self.slider.SetValue(new_max)
-
 
 def ShowHistLimitFrame(parent, title, data, limit_lower, limit_upper, size=(200, 100), log=False):
     f = wx.Frame(parent, title=title, size=size)
@@ -421,9 +397,10 @@ def ShowHistLimitFrame(parent, title, data, limit_lower, limit_upper, size=(200,
     return ID_HIST_LIM
 
 class HistLimitDialog(wx.Dialog):
-    def __init__(self, parent, data, lower, upper, title=''):
+    def __init__(self, parent, data, lower, upper, title='', action=None, key=None):
         wx.Dialog.__init__(self, parent, title=title)
-
+        self.action = action
+        self.key = key
         sizer1 = wx.BoxSizer(wx.VERTICAL)
 
         hor_box = wx.BoxSizer(wx.HORIZONTAL)
@@ -440,9 +417,6 @@ class HistLimitDialog(wx.Dialog):
 
         self.hl = HistLimitPanel(self, -1, data, lower, upper, size=(240, 100))
         sizer1.Add(self.hl, 0, wx.ALL, 5)
-
-        sizer1.Add(SliderPanel(self, -1, self.hl), 0, wx.ALL | wx.EXPAND, 5)
-
         btSizer = wx.StdDialogButtonSizer()
 
         btn = wx.Button(self, wx.ID_OK)
@@ -460,6 +434,9 @@ class HistLimitDialog(wx.Dialog):
 
         self.SetSizer(sizer1)
         sizer1.Fit(self)
+        self.SetSizerAndFit(sizer1)
+
+        self.Bind(EVT_LIMIT_CHANGE, self.update_levels)
 
     def GetLimits(self):
         return self.hl.GetValue()
@@ -481,4 +458,10 @@ class HistLimitDialog(wx.Dialog):
                 self.hl.SetValue((old_min, new_max))
         except ValueError:
             pass
+
+    def update_levels(self, event):
+        self.min_value.SetValue(str(self.hl.GetValue()[0]))
+        self.max_value.SetValue(str(self.hl.GetValue()[1]))
+        # self.action(self.key, (float(self.min_value.GetValue()),
+        #                        float(self.max_value.GetValue())))
 
