@@ -74,8 +74,10 @@ class CSVOutput(OutputModule):
             clusterResults.fileResults('pyme-cluster://_aggregate_csv/' + out_filename.lstrip('/'), v.toDataFrame())
         else:
             out_filename = self._schemafy_filename(out_filename)
-
-            v.toDataFrame().to_csv(out_filename)
+            if not isinstance(v, pd.DataFrame):
+                v = v.toDataFrame()
+                
+            v.to_csv(out_filename)
 
 @register_module('XLSXOutput')
 class XLSOutput(OutputModule):
