@@ -33,7 +33,7 @@ LimitChangeEvent, EVT_LIMIT_CHANGE = wx.lib.newevent.NewCommandEvent()
 class HistLimitPanel(wx.Panel):
     def __init__(self, parent, id, data, limit_lower, limit_upper, log=False, size =(200, 100), pos=(0,0), threshMode= False):
         wx.Panel.__init__(self, parent, id, size=size, pos=pos, style=wx.BORDER_SUNKEN)
-        
+
         self.data = data.ravel()
         self.data = self.data[np.isfinite(self.data)]
 
@@ -365,11 +365,52 @@ class HistLimitPanel(wx.Panel):
     def GetValue(self):
         return (self.limit_lower, self.limit_upper)
 
+class SliderPanel(wx.Panel):
+    def __init__(self, parent, id, hist_limit_panel, pos=(0, 0)):
+        wx.Panel.__init__(self, parent, id, pos=pos)
+        self.hist_limit_panel = hist_limit_panel
+        horizontal_box = wx.BoxSizer(wx.HORIZONTAL)
+
+        initial_boarders = self.hist_limit_panel.GetValue()
+
+        self.min_text = wx.TextCtrl(self, -1, value=str(initial_boarders[0]), size=(40, -1))
+        self.max_text = wx.TextCtrl(self, -1, value=str(initial_boarders[1]), size=(40, -1))
+        self.slider = wx.Slider(self, minValue=initial_boarders[0], maxValue=initial_boarders[1])
+
+        self.slider.Bind(wx.EVT_COMMAND_SCROLL_CHANGED, self.update_limits)
+        self.min_text.Bind(wx.EVT_TEXT, self.min_level_changed)
+        self.max_text.Bind(wx.EVT_TEXT, self.max_level_changed)
+
+        horizontal_box.Add(self.min_text, 0, wx.ALL, 5)
+        horizontal_box.Add(self.slider, 0, wx.ALL | wx.EXPAND, 5)
+        horizontal_box.Add(self.max_text, 0, wx.ALL, 5)
+
+        self.SetSizerAndFit(horizontal_box)
+
+
+    def update_limits(self, event):
+        previous = self.hist_limit_panel.GetValue()
+        slider_value = self.slider.GetValue()
+        new_value = [slider_value, previous[1] - previous[0] + slider_value]
+        self.hist_limit_panel.SetValue(new_value)
+
+    def min_level_changed(self, event):
+        new_min = float(self.min_text.GetValue())
+        self.slider.SetMin(new_min)
+        if self.slider.GetValue() < new_min:
+            self.slider.SetValue(new_min)
+
+    def max_level_changed(self, event):
+        new_max = float(self.max_text.GetValue())
+        self.slider.SetMax(new_max)
+        if self.slider.GetValue() > new_max:
+            self.slider.SetValue(new_max)
+
 
 def ShowHistLimitFrame(parent, title, data, limit_lower, limit_upper, size=(200, 100), log=False):
     f = wx.Frame(parent, title=title, size=size)
     ID_HIST_LIM = wx.NewId()
-    p = HistLimitPanel(f,ID_HIST_LIM, data, limit_lower, limit_upper, log=log)
+    p = HistLimitPanel(f, ID_HIST_LIM, data, limit_lower, limit_upper, log=log)
     f.Show()
     return ID_HIST_LIM
 
@@ -380,8 +421,10 @@ class HistLimitDialog(wx.Dialog):
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.hl = HistLimitPanel(self, -1, data, lower, upper, size=(200, 100))
-        sizer1.Add(self.hl, 0, wx.ALL |  wx.EXPAND, 5)
+        self.hl = HistLimitPanel(self, -1, data, lower, upper, size=(220, 100))
+        sizer1.Add(self.hl, )
+
+        sizer1.Add(SliderPanel(self, -1, self.hl), 0, wx.ALL, 5)
 
         btSizer = wx.StdDialogButtonSizer()
 
@@ -403,3 +446,6 @@ class HistLimitDialog(wx.Dialog):
 
     def GetLimits(self):
         return self.hl.GetValue()
+
+
+
