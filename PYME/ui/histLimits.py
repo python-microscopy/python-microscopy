@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-
+import time
 import wx
 import wx.lib.newevent
 
@@ -348,7 +348,7 @@ class HistLimitPanel(wx.Panel):
         self.limit_upper = float(val[1])
 
         if self.threshMode:
-            thresh =  0.5*(self.limit_lower + self.limit_upper)
+            thresh = 0.5*(self.limit_lower + self.limit_upper)
             self.limit_lower = thresh
             self.limit_upper = thresh
 
@@ -369,7 +369,8 @@ class SliderPanel(wx.Panel):
     def __init__(self, parent, id, hist_limit_panel, pos=(0, 0)):
         wx.Panel.__init__(self, parent, id, pos=pos)
         self.hist_limit_panel = hist_limit_panel
-        horizontal_box = wx.BoxSizer(wx.HORIZONTAL)
+        vertical_box = wx.BoxSizer(wx.VERTICAL)
+        horizontal_box_text = wx.BoxSizer(wx.HORIZONTAL)
 
         initial_boarders = self.hist_limit_panel.GetValue()
 
@@ -381,12 +382,16 @@ class SliderPanel(wx.Panel):
         self.min_text.Bind(wx.EVT_TEXT, self.min_level_changed)
         self.max_text.Bind(wx.EVT_TEXT, self.max_level_changed)
 
-        horizontal_box.Add(self.min_text, 0, wx.ALL, 5)
-        horizontal_box.Add(self.slider, 0, wx.ALL | wx.EXPAND, 5)
-        horizontal_box.Add(self.max_text, 0, wx.ALL, 5)
+        horizontal_box_text.Add(wx.StaticText(self, -1, 'SliderMin'), 0,
+                                wx.ALIGN_CENTER_VERTICAL | wx.ALL | wx.EXPAND, 5)
+        horizontal_box_text.Add(self.min_text, 0, wx.ALL | wx.EXPAND, 5)
+        horizontal_box_text.Add(wx.StaticText(self, -1, 'SliderMax'), 0,
+                                wx.ALIGN_CENTER_VERTICAL | wx.ALL | wx.EXPAND, 5)
+        horizontal_box_text.Add(self.max_text, 0, wx.ALL | wx.EXPAND, 5)
+        vertical_box.Add(horizontal_box_text, 0, wx.ALL | wx.EXPAND, 5)
+        vertical_box.Add(self.slider, 0, wx.ALL | wx.EXPAND, 5)
 
-        self.SetSizerAndFit(horizontal_box)
-
+        self.SetSizerAndFit(vertical_box)
 
     def update_limits(self, event):
         previous = self.hist_limit_panel.GetValue()
@@ -399,6 +404,7 @@ class SliderPanel(wx.Panel):
         self.slider.SetMin(new_min)
         if self.slider.GetValue() < new_min:
             self.slider.SetValue(new_min)
+            self.slider.ShowPosition(new_min)
 
     def max_level_changed(self, event):
         new_max = float(self.max_text.GetValue())
@@ -419,12 +425,23 @@ class HistLimitDialog(wx.Dialog):
         wx.Dialog.__init__(self, parent, title=title)
 
         sizer1 = wx.BoxSizer(wx.VERTICAL)
-        #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.hl = HistLimitPanel(self, -1, data, lower, upper, size=(220, 100))
-        sizer1.Add(self.hl, )
+        hor_box = wx.BoxSizer(wx.HORIZONTAL)
+        self.min_value = wx.TextCtrl(self, -1, value=str(lower))
+        self.max_value = wx.TextCtrl(self, -1, value=str(upper))
 
-        sizer1.Add(SliderPanel(self, -1, self.hl), 0, wx.ALL, 5)
+        hor_box.Add(self.min_value, 0, wx.ALL, 5)
+        hor_box.Add(self.max_value, 0, wx.ALL, 5)
+
+        self.min_value.Bind(wx.EVT_TEXT, self.min_level_changed)
+        self.max_value.Bind(wx.EVT_TEXT, self.max_level_changed)
+
+        sizer1.Add(hor_box, 0, wx.ALL, 5)
+
+        self.hl = HistLimitPanel(self, -1, data, lower, upper, size=(240, 100))
+        sizer1.Add(self.hl, 0, wx.ALL, 5)
+
+        sizer1.Add(SliderPanel(self, -1, self.hl), 0, wx.ALL | wx.EXPAND, 5)
 
         btSizer = wx.StdDialogButtonSizer()
 
@@ -447,5 +464,21 @@ class HistLimitDialog(wx.Dialog):
     def GetLimits(self):
         return self.hl.GetValue()
 
+    def min_level_changed(self, event):
+        try:
+            new_min = float(self.min_value.GetValue())
+            old_max = self.hl.GetValue()[1]
+            if new_min < old_max:
+                self.hl.SetValue((new_min, old_max))
+        except ValueError:
+            pass
 
+    def max_level_changed(self, event):
+        try:
+            new_max = float(self.max_value.GetValue())
+            old_min = self.hl.GetValue()[0]
+            if old_min < new_max:
+                self.hl.SetValue((old_min, new_max))
+        except ValueError:
+            pass
 
