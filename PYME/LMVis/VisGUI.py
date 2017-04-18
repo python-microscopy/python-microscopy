@@ -35,17 +35,17 @@ import wx.py.shell
 import sys
 
 import matplotlib
-
-
-
 matplotlib.use('wxagg')
 import pylab
 
 from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
+#import os
+#from PYME.LMVis import gl_render3D
 
 from PYME.LMVis import colourPanel
+#from PYME.LMVis import renderers
 from PYME.LMVis import pipeline
 
 import logging
@@ -78,7 +78,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self._flags = 0
         
         self.pipeline = pipeline.Pipeline(visFr=self)
-
+        
         #self.Quads = None
                
         #self.SetMenuBar(self.CreateMenuBar())
@@ -144,7 +144,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #self.workspaceView = workspaceTree.WorkspaceTree(self, workspace=self.workspace, shell=self.sh)
         #self.AddPage(page=wx.StaticText(self, -1, 'foo'), select=False, caption='Workspace')
 
-#        self.glCanvas = gl_render.LMGLShaderCanvas(self)
+#        self.glCanvas = gl_render.LMGLCanvas(self)
 #        self.AddPage(page=self.glCanvas, select=True, caption='View')
 #        self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
 
@@ -209,7 +209,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     # def OnView3DPoints(self,event):
     #     if 'z' in self.pipeline.keys():
     #         if not 'glCanvas3D' in dir(self):
-    #             #self.glCanvas3D = gl_render3D.LMGLShaderCanvas(self)
+    #             #self.glCanvas3D = gl_render3D.LMGLCanvas(self)
     #             #self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
     #             self.glCanvas3D = gl_render3D.showGLFrame()
 
@@ -223,7 +223,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     # def OnView3DTriangles(self,event):
     #     if 'z' in self.pipeline.keys():
     #         if not 'glCanvas3D' in dir(self):
-    #             #self.glCanvas3D = gl_render3D.LMGLShaderCanvas(self)
+    #             #self.glCanvas3D = gl_render3D.LMGLCanvas(self)
     #             #self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
     #             self.glCanvas3D = gl_render3D.showGLFrame()
 
@@ -270,7 +270,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                     found = True
                 else:
                     i += 1
-
+                    
         if not self.colp is None: #remove previous colour viewer
             i = 0
             found = False
@@ -280,16 +280,16 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                     found = True
                 else:
                     i += 1
-
-        # if not self.mdp is None: #remove previous metadata viewer
-        #     i = 0
-        #     found = False
-        #     while not found and i < self.notebook.GetPageCount():
-        #         if self.notebook.GetPage(i) == self.mdp:
-        #             self.notebook.DeletePage(i)
-        #             found = True
-        #         else:
-        #             i += 1
+                    
+        if not self.mdp is None: #remove previous metadata viewer
+            i = 0
+            found = False
+            while not found and i < self.notebook.GetPageCount():
+                if self.notebook.GetPage(i) == self.mdp:
+                    self.notebook.DeletePage(i)
+                    found = True
+                else:
+                    i += 1
                     
     def _createNewTabs(self):
         #print 'md'
@@ -383,10 +383,10 @@ def parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help="file that should be used", default=None, nargs='?')
     parser.add_argument('-r', '--recipe', help='recipe to use for variable portion of pipeline', dest='recipe', default=None)
-    parser.add_argument('-s', '--use_shaders', dest="use_shaders", action='store_true', default=True,
+    parser.add_argument('-s', '--use_shaders', dest="use_shaders", action='store_true', default=False,
                         help='switch shaders on(default: off)')
     parser.add_argument('--no_use_shaders', dest="use_shaders", action='store_false',
-                        default=True, help='switch shaders off(default: off)')
+                        default=False, help='switch shaders off(default: off)')
     args = parser.parse_args()
     return args
     
