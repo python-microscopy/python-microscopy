@@ -261,6 +261,13 @@ class TestObjectContainer(TestObject):
 
 class GridContainer(TestObjectContainer):
     def __init__(self, size, offsets):
+        """
+        
+        Parameters
+        ----------
+        size    (rows, columns) in nm, all > 0
+        offsets (row_offset, column_offset) in nm, all > 0
+        """
         self.size = size
         self.offsets = offsets
         super(TestObjectContainer, self).__init__(None, None, None)
@@ -282,7 +289,7 @@ class GridContainer(TestObjectContainer):
         item = 0
         for other_object in self.added_objects:
             added_x = numpy.copy(other_object.x)
-            added_x += self.offsets[0] * self.MICROMETER_CONVERSION_CONSTANT * self.get_column(item)
+            added_x += self.offsets[1] * self.MICROMETER_CONVERSION_CONSTANT * self.get_column(item)
             if new_x is not None:
                 new_x = numpy.append(new_x, added_x)
             else:
@@ -296,7 +303,7 @@ class GridContainer(TestObjectContainer):
         item = 0
         for other_object in self.added_objects:
             added_y = numpy.copy(other_object.y)
-            added_y += self.offsets[1] * self.MICROMETER_CONVERSION_CONSTANT * self.get_row(item)
+            added_y -= self.offsets[0] * self.MICROMETER_CONVERSION_CONSTANT * self.get_row(item)
             if new_y is not None:
                 new_y = numpy.append(new_y, added_y)
             else:
@@ -327,23 +334,6 @@ class GridContainer(TestObjectContainer):
         json_config['offsets'] = self.offsets
         json_config['amount_of_objects'] = len(self.added_objects)
         return json_config
-
-    def to_table(self, method, output_table_file):
-        object_no = 0
-        with open(output_table_file, 'wb') as csv_file:
-            writer = csv.writer(csv_file)
-            row = list()
-            for added_object in self.added_objects:
-                method_to_call = eval('added_object.{}'.format(method))
-                value = method_to_call()
-                row.append(value)
-                if (object_no + 1) % self.size[0] == 0:
-                    writer.writerow(row)
-                    row = list()
-                object_no += 1
-
-
-
 
 
 class NineCollections(TestObject):

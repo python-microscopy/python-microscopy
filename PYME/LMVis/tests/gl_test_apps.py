@@ -187,7 +187,7 @@ class HarmonicCells(TestApp):
         self._input_file = args.harmonics_file
         self._dimensions = literal_eval(args.harmonics_dimensions)
         self.to = TestObjectContainer()
-        row_offset = - self._dimensions[1] * 1.2
+        row_offset = - self._dimensions[1] * 2.2
         column_offset = self._dimensions[0] * 1.2
         for row in numpy.arange(4):
             for column in numpy.arange(4):
@@ -208,13 +208,22 @@ class GridTestApp(TestApp):
     def __init__(self, grid_container, args):
         self.modes = args.modes
         self._grid_container = grid_container
-        self._result_table_file = args.result_table
         super(GridTestApp, self).__init__(args)
 
     def save(self, output_csv, output_json):
+        """
+        
+        Parameters
+        ----------
+        output_csv      the csv that contains all points
+        output_json     the json that contains the configuration of the points
+
+        Returns
+        -------
+
+        """
         for i in self.modes:
             super(GridTestApp, self).save(output_csv.format(i), output_json.format(i))
-            self._grid_container.to_table('test_object.has_hole', self._result_table_file.format(i))
             self.shuffle_object.shuffle()
 
 
@@ -222,17 +231,18 @@ class GridHarmonicCells(GridTestApp):
     def __init__(self, args):
         self._input_file = args.harmonics_file
         self._dimensions = literal_eval(args.harmonics_dimensions)
-
-        row_offset = - self._dimensions[1] * 1.2
+        rows = columns = 4
+        row_offset = self._dimensions[1] * 1.2
         column_offset = self._dimensions[0] * 1.2
-        self.to = GridContainer((10, 10), (row_offset, column_offset))
+        grid_container = GridContainer((rows, columns), (row_offset, column_offset))
+        self.to = grid_container
         self.shuffle_object = self.to
-        for row in numpy.arange(4):
-            for column in numpy.arange(4):
+        for row in numpy.arange(rows):
+            for column in numpy.arange(columns):
                 print('Generating: row {}: column {}'.format(row, column))
                 cell = self.create_harmonic_cell()
                 self.to.add(cell)
-        super(GridHarmonicCells, self).__init__(args)
+        super(GridHarmonicCells, self).__init__(grid_container, args)
 
     def create_harmonic_cell(self):
         return HarmonicCell(self._input_file, self._dimensions)
@@ -243,7 +253,7 @@ class GridVesicles(GridTestApp):
         # scales in micrometer
         scales = [0.125, 0.100, 0.080]
         rows = columns = 10
-        row_shift = - 0.6  # row is 'down', so negative
+        row_shift = 0.6
         column_shift = 0.6
         total_dict = []
 
@@ -252,7 +262,7 @@ class GridVesicles(GridTestApp):
         base_amount_of_points = 35
         variance = 20
         minimum_amount_of_points = 10
-        grid_container = GridContainer((rows, columns), (column_shift, row_shift))
+        grid_container = GridContainer((rows, columns), (row_shift, column_shift))
         self.shuffle_object = grid_container
         for row in numpy.arange(0, rows):
             row_list = []
@@ -310,7 +320,6 @@ def parse():
     parser.add_argument('output_json', help='file that should be used to save the configuration as json')
     parser.add_argument('--harmonics_file', help='the file used for input spherical harmonics data')
     parser.add_argument('--harmonics_dimensions', help='the dimensions of the bounding box in micrometer (x, y, z)')
-    parser.add_argument('--result_table', help='the file in which the resulting table for Vesicles is stored in')
     parser.add_argument('--modes', help='the modes of samples for grids', nargs='+')
     args = parser.parse_args()
     return args
