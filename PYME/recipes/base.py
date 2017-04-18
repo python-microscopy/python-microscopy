@@ -177,6 +177,21 @@ class OutputModule(ModuleBase):
             return os.path.join(clusterIO.local_dataroot, out_filename.lstrip('/'))
         elif self.scheme == 'pyme-cluster:// - aggregate':
             raise RuntimeError('Aggregation not suported')
+        
+    def generate(self, namespace):
+        """
+        Function to be called from within dh5view (rather than batch processing). Some outputs are ignored, in which
+        case this function returns None.
+        
+        Parameters
+        ----------
+        namespace
+
+        Returns
+        -------
+
+        """
+        return None
 
 
     def execute(self, namespace):

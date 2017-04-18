@@ -12,6 +12,42 @@ class offline_plotting(object):
         plt.switch_backend(self.old_backend)
         plt.ion()
 
+def plot(data, xvals='bins', yvals=['counts', ], type='line', xlabel=None, ylabel=None, title=None, figsize=(7,5)):
+    import matplotlib.pyplot as plt
+    import mpld3
+    
+    #print type
+    
+    if xlabel is None:
+        xlabel = xvals
+        
+    if ylabel is None:
+        ylabel = yvals[0]
+    
+    with offline_plotting():
+        f = plt.figure(figsize=figsize)
+    
+        xv = data[xvals]
+        for yv_name in yvals:
+            yv = data[yv_name]
+        
+            if type == 'bar':
+                plt.bar(xv, yv, align='center', width=(xv[1] - xv[0]))
+            else:
+                plt.plot(xv, yv)
+                
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        
+        if title:
+            plt.title(title)
+    
+        plt.tight_layout()
+    
+        ret = mpld3.fig_to_html(f, template_type='simple')
+        plt.close(f)
+        
+        return ret
 
 def movieplot(clump, image):
     #if image.size == 0:
