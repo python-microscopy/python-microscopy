@@ -74,8 +74,10 @@ class CSVOutput(OutputModule):
             clusterResults.fileResults('pyme-cluster://_aggregate_csv/' + out_filename.lstrip('/'), v.toDataFrame())
         else:
             out_filename = self._schemafy_filename(out_filename)
-
-            v.toDataFrame().to_csv(out_filename)
+            if not isinstance(v, pd.DataFrame):
+                v = v.toDataFrame()
+                
+            v.to_csv(out_filename)
 
 @register_module('XLSXOutput')
 class XLSOutput(OutputModule):
@@ -169,6 +171,9 @@ class ImageOutput(OutputModule):
     """
     inputName = Input('output')
     filePattern = '{output_dir}/{file_stub}.tif'
+    
+    def generate(self, namespace):
+        return namespace[self.inputName]
 
     def save(self, namespace, context={}):
         """
@@ -190,7 +195,7 @@ class ImageOutput(OutputModule):
 
         out_filename = self._schemafy_filename(self.filePattern.format(**context))
 
-        v = namespace[self.inputName]
+        v = self.generate()
         v.Save(out_filename)
 
 
@@ -289,13 +294,14 @@ class UnifiedLoader(jinja2.BaseLoader):
         try:
             source = unifiedIO.read(template).decode('utf-8')
         except:
-            logger.exception()
+            logger.exception('Error loading template')
             raise jinja2.TemplateNotFound
         return source, template, lambda: True
 
 env = jinja2.Environment(loader=UnifiedLoader())
 from PYME.Analysis import graphing_filters #FIXME - move the filters somewhere better
 env.filters['movieplot'] = graphing_filters.movieplot2
+env.filters['plot'] = graphing_filters.plot
 
 @register_module('ReportOutput')
 class ReportOutput(OutputModule):
@@ -336,6 +342,11 @@ class ReportOutput(OutputModule):
     filePattern = '{output_dir}/{file_stub}.html'
 
     template = CStr('templates/report.html')
+    
+    def generate(self, namespace):
+        template = env.get_template(self.template)
+        v = namespace[self.inputName]
+        return template.render(data=v, namespace=namespace)
 
     def save(self, namespace, context={}):
         """
@@ -354,14 +365,11 @@ class ReportOutput(OutputModule):
         -------
 
         """
-        template = env.get_template(self.template)
 
         out_filename = self._schemafy_filename(self.filePattern.format(**context))
 
-        v = namespace[self.inputName]
-
         with open(out_filename, 'w') as f:
-            f.write(template.render(data=v))
+            f.write(self.generate(namespace))
 
 
 @register_module('ReportForEachOutput')
