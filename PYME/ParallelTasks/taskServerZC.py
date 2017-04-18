@@ -21,7 +21,8 @@
 #
 ##################
 
-#!/usr/bin/python
+from PYME.misc import fortran_interrupt_defeat
+
 import Pyro.core
 import Pyro.naming
 import time
