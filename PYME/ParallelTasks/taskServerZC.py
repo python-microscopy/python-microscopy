@@ -383,11 +383,18 @@ def main():
 
     tw = TaskWatcher(tq)
     tw.start()
+
     try:
         daemon.requestLoop(tq.isAlive)
+
+    except (KeyboardInterrupt, SystemExit):
+        logging.debug('Got a keyboard error, attempting to shut down cleanly')
+        raise
     finally:
         daemon.shutdown(True)
         tw.alive = False
+        ns.unregister(taskQueueName)
+        logging.info('Task server is shut down')
         
         if profile:
             mProfile.report()
