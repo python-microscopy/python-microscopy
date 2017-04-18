@@ -20,19 +20,19 @@
 #
 
 from PYME.LMVis.ShaderProgram.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, \
-     glUseProgram, glUniform4f, glUniform1f
+    glUseProgram, glUniform4f, glUniform1f, glEnable, GL_DEPTH_TEST, glDisable, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH
 from PYME.LMVis.ShaderProgram.ShaderProgram import ShaderProgram, os
 
 
 class GouraudShaderProgram(GLProgram):
     INPUT_LIGHT = b'inputLight'
     test_value = [1.0, 0.0, 1.0, 1.0]
-    lights_vector = (2.0, 2.00, 2.0, 0.0)
+    lights_vector = (0.0, 0.00, -1.0, 0.0)
     view_vector = (0.0, 0.0, -1.0, 0.0)
 
     LIGHT_PROPS = {
-            'light_ambient': (0.5, 0.5, 0.5, 1.0),
-            'light_diffuse': (0.8, 0.8, 0.8, 1.0),
+            'light_ambient': (0.02, 0.02, 0.02, 1.0),
+            'light_diffuse': (0.3, 0.3, 0.3, 1.0),
             'light_specular': (0.3, 0.3, 0.3, 1.0),
             'light_position': lights_vector
     }
@@ -57,6 +57,11 @@ class GouraudShaderProgram(GLProgram):
         glUniform1f(location, self._shininess)
         location = self.get_uniform_location('view_vector')
         glUniform4f(location, *self.view_vector)
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
+        glDisable(GL_POINT_SMOOTH)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(0)
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_POINT_SMOOTH)

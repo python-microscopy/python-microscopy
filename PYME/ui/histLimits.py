@@ -78,9 +78,9 @@ class HistLimitPanel(wx.Panel):
         # shift_offset = self.hstep
         shift_offset = (self.limit_upper - self.limit_lower) * 0.2
         if rot > 0:
-            delta = self.hstep
+            delta = shift_offset
         else:
-            delta = -self.hstep
+            delta = -shift_offset
         self.limit_lower += delta
         self.limit_upper += delta
         self.GenHist()

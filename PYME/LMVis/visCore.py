@@ -127,7 +127,7 @@ class VisGUICore(object):
         if self.viewMode == 'quads':
             quadTreeSettings.GenQuadTreePanel(self, sidePanel)
 
-        if self.viewMode in ['points', 'tracks', 'pointsprites']:
+        if self.viewMode in ['points', 'tracks', 'pointsprites', 'shadedpoints']:
             pointSettingsPanel.GenPointsPanel(self, sidePanel)
         if self.viewMode == 'blobs':
             triBlobs.GenBlobPanel(self, sidePanel)
@@ -209,6 +209,7 @@ class VisGUICore(object):
         self.AddMenuItem('View', '&Points', self.OnViewPoints, itemType='normal') #TODO - add radio type
         if use_shaders:
             self.AddMenuItem('View', '&Pointsprites', self.OnViewPointsprites)
+            self.AddMenuItem('View', '&Shaded Points', self.OnViewShadedPoints)
         self.AddMenuItem('View',  '&Triangles', self.OnViewTriangles)
         self.AddMenuItem('View', '3D Triangles', self.OnViewTriangles3D)
         self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
@@ -256,6 +257,13 @@ class VisGUICore(object):
     def OnViewPointsprites(self, event):
         self.viewMode = 'pointsprites'
         # self.glCanvas.cmap = pylab.cm.hsv
+        self.RefreshView()
+        self.CreateFoldPanel()
+        self.displayPane.OnPercentileCLim(None)
+
+    def OnViewShadedPoints(self,event):
+        self.viewMode = 'shadedpoints'
+        #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
         self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
@@ -375,7 +383,16 @@ class VisGUICore(object):
                                       self.pipeline['y'],
                                       self.pipeline['z'],
                                       self.pointColour(), alpha=self.pointDisplaySettings.alpha, mode='pointsprites')
-                                    
+        elif self.viewMode == 'shadedpoints':
+            self.glCanvas.setPoints3D(self.pipeline['x'],
+                                      self.pipeline['y'],
+                                      self.pipeline['z'],
+                                      self.pointColour(),
+                                      alpha=self.pointDisplaySettings.alpha,
+                                      normal_x=self.pipeline['xn'],
+                                      normal_y=self.pipeline['yn'],
+                                      normal_z=self.pipeline['zn'],
+                                      mode='shadedpoints')
         elif self.viewMode == 'tracks':
             if 'setTracks3D' in dir(self.glCanvas) and 'z' in self.pipeline.keys():
                 self.glCanvas.setTracks3D(self.pipeline['x'], 

@@ -36,6 +36,7 @@ from PYME.LMVis.Layer.QuadTreeRenderLayer import QuadTreeRenderLayer
 from PYME.LMVis.Layer.RenderLayer import RenderLayer
 from PYME.LMVis.Layer.ScaleBarOverlayLayer import ScaleBarOverlayLayer
 from PYME.LMVis.Layer.SelectionOverlayLayer import SelectionOverlayLayer
+from PYME.LMVis.Layer.ShadedPointRenderLayer import ShadedPointRenderLayer
 from PYME.LMVis.Layer.TriangleRenderLayer import TriangleRenderLayer
 from PYME.LMVis.gl_offScreenHandler import OffScreenHandler
 from wx.glcanvas import GLCanvas
@@ -406,14 +407,16 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.SetCurrent()
 
-        self.layers.append(RenderLayer(T.x[T.triangle_nodes], T.y[T.triangle_nodes], 0*(T.x[T.triangle_nodes]), self.c,
-                                       self.cmap, self.clim, alpha))
+        self.layers.append(
+            RenderLayer(T.x[T.triangle_nodes], T.y[T.triangle_nodes], 0 * (T.x[T.triangle_nodes]), self.c,
+                        self.cmap, self.clim, alpha))
         self.Refresh()
 
     def setTriangEdges(self, T):
         self.setTriang(T)
 
-    def setPoints3D(self, x, y, z, c=None, a=None, recenter=False, alpha=1.0, mode='points'):  # , clim=None):
+    def setPoints3D(self, x, y, z, c=None, a=None, recenter=False, alpha=1.0, mode='points',
+                    normal_x = None, normal_y = None, normal_z = None):  # , clim=None):
         # center data
         x = x  # - x.mean()
         y = y  # - y.mean()
@@ -443,6 +446,9 @@ class LMGLShaderCanvas(GLCanvas):
 
         if mode is 'pointsprites':
             self.layers.append(PointSpritesRenderLayer(x, y, z, self.c, self.cmap, self.clim, alpha, self.pointSize))
+        elif mode is 'shadedpoints':
+            self.layers.append(ShadedPointRenderLayer(x, y, z, normal_x, normal_y, normal_z, self.c, self.cmap,
+                                                      self.clim, alpha=alpha, point_size=self.pointSize))
         else:
             self.layers.append(Point3DRenderLayer(x, y, z, self.c, self.cmap, self.clim,
                                                   alpha=alpha, point_size=self.pointSize))
@@ -791,7 +797,7 @@ class LMGLShaderCanvas(GLCanvas):
 
     def getIm(self, pixel_size=None, mode=GL_RGB):
 
-        if pixel_size is None or abs(1-pixel_size) < 0.001:  # use current pixel size
+        if pixel_size is None or abs(1 - pixel_size) < 0.001:  # use current pixel size
             return self.getSnapshot(mode=mode)
         else:
             self.view_port_size = (int(round(self.Size[0] * pixel_size)), int(round(self.Size[1] * pixel_size)))
@@ -835,5 +841,3 @@ def showGLFrame():
     c = LMGLShaderCanvas(f)
     f.Show()
     return c
-
-
