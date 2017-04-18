@@ -256,22 +256,24 @@ class piezo_c867T(PiezoBase):
                     self.stopMove = False
                     
                 
-                if not np.all(self.velocity == self.targetVelocity):
-                    for i, vel in enumerate(self.targetVelocity):
-                        self.ser_port.write('VEL %d %3.9f\n' % (i+1, vel))
-                    self.velocity = self.targetVelocity.copy()
-                    #print('v')
-                    logger.debug('Setting stage target vel: %s' % self.targetVelocity)
-                
-                #if not np.all(self.targetPosition == self.lastTargetPosition):
-                if not np.allclose(self.position, self.targetPosition, atol=self.ptol):
-                    #update our target position
-                    pos = np.clip(self.targetPosition, 0,self.max_travel)
-        
-                    self.ser_port.write('MOV 1 %3.9f 2 %3.9f\n' % (pos[0], pos[1]))
-                    self.lastTargetPosition = pos.copy()
-                    #print('p')
-                    logger.debug('Setting stage target pos: %s' % pos)
+                if self.servo:
+                    if not np.all(self.velocity == self.targetVelocity):
+                        for i, vel in enumerate(self.targetVelocity):
+                            self.ser_port.write('VEL %d %3.9f\n' % (i+1, vel))
+                        self.velocity = self.targetVelocity.copy()
+                        #print('v')
+                        logger.debug('Setting stage target vel: %s' % self.targetVelocity)
+                    
+                    #if not np.all(self.targetPosition == self.lastTargetPosition):
+                    if not np.allclose(self.position, self.targetPosition, atol=self.ptol):
+                        #update our target position
+                        pos = np.clip(self.targetPosition, 0,self.max_travel)
+            
+                        self.ser_port.write('MOV 1 %3.9f 2 %3.9f\n' % (pos[0], pos[1]))
+                        self.lastTargetPosition = pos.copy()
+                        #print('p')
+                        logger.debug('Setting stage target pos: %s' % pos)
+                        time.sleep(.01)
                     
                 #check to see if we're on target
                 self.ser_port.write('ONT?\n')

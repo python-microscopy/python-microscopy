@@ -21,7 +21,8 @@
 #
 ##################
 
-#!/usr/bin/python
+from PYME.misc import fortran_interrupt_defeat
+
 import Pyro.core
 import Pyro.naming
 import time
@@ -383,11 +384,18 @@ def main():
 
     tw = TaskWatcher(tq)
     tw.start()
+
     try:
         daemon.requestLoop(tq.isAlive)
+
+    except (KeyboardInterrupt, SystemExit):
+        logging.debug('Got a keyboard interrupt, attempting to shut down cleanly')
+        #raise
     finally:
         daemon.shutdown(True)
         tw.alive = False
+        #ns.unregister(taskQueueName)
+        logging.info('Task server is shut down')
         
         if profile:
             mProfile.report()
