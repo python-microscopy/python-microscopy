@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# dockedPanel_tmp.py
+# dockedPanel.py
 #
 # Copyright Michael Graff
 #   graff@hm.edu

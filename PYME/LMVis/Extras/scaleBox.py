@@ -23,7 +23,7 @@ import wx
 
 import wx.lib.agw.cubecolourdialog as ccd
 
-from PYME.LMVis.Extras.dockedPanel_tmp import DockedPanel
+from PYME.LMVis.Extras.dockedPanel import DockedPanel
 
 
 class ScaleBoxPanel(DockedPanel):
