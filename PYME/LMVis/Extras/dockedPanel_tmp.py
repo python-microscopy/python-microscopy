@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# dockedPanel.py
+# dockedPanel_tmp.py
 #
 # Copyright Michael Graff
 #   graff@hm.edu
@@ -20,7 +20,6 @@
 #
 
 import wx
-
 
 import wx.lib.agw.aui as aui
 

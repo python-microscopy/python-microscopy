@@ -23,7 +23,7 @@ import json
 import wx
 import wx.lib.agw.aui as aui
 
-from PYME.LMVis.Extras.dockedPanel import DockedPanel
+from PYME.LMVis.Extras.dockedPanel_tmp import DockedPanel
 from PYME.LMVis.views import View
 
 

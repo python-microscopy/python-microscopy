@@ -23,7 +23,7 @@ import wx
 
 import wx.lib.agw.cubecolourdialog as ccd
 
-from PYME.LMVis.Extras.dockedPanel import DockedPanel
+from PYME.LMVis.Extras.dockedPanel_tmp import DockedPanel
 
 
 class ScaleBoxPanel(DockedPanel):
@@ -53,12 +53,17 @@ class ScaleBoxPanel(DockedPanel):
         z_button.Bind(wx.EVT_BUTTON, lambda e: self.flip(z_flip=True))
         color_button.Bind(wx.EVT_BUTTON, lambda e: self.pick_color())
         show_button.Bind(wx.EVT_BUTTON, lambda e: self.show_box())
-        vertical_sizer.Add(x_button, flag=wx.EXPAND)
-        vertical_sizer.Add(y_button, flag=wx.EXPAND)
-        vertical_sizer.Add(z_button, flag=wx.EXPAND)
-        vertical_sizer.Add(color_button, flag=wx.EXPAND)
 
-        vertical_sizer.Add(show_button, flag=wx.EXPAND)
+        grid_sizer = wx.GridSizer(3, 1)
+        horizontal_box = wx.BoxSizer(wx.HORIZONTAL)
+        horizontal_box.Add(x_button, 1, flag=wx.EXPAND | wx.ALL)
+        horizontal_box.Add(y_button, 1, flag=wx.EXPAND | wx.ALL)
+        horizontal_box.Add(z_button, 1, flag=wx.EXPAND | wx.ALL)
+        grid_sizer.Add(horizontal_box, 1, flag=wx.EXPAND | wx.ALL)
+        grid_sizer.Add(color_button, 1, flag=wx.EXPAND | wx.ALL)
+
+        grid_sizer.Add(show_button, 1, flag=wx.EXPAND | wx.ALL)
+        vertical_sizer.Add(grid_sizer, 0, flag=wx.EXPAND | wx.ALL)
 
     def flip(self, x_flip=False, y_flip=False, z_flip=False):
         self.get_scale_box_layer().flip_starts(x_flip, y_flip, z_flip)
@@ -108,4 +113,3 @@ def Plug(vis_fr):
 
     """
     DockedPanel.add_menu_item(vis_fr, 'Scale Box Panel', ScaleBoxPanel, 'scale_box')
-
