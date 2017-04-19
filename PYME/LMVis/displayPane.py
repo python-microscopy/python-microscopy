@@ -52,7 +52,7 @@ class DisplayPane(afp.foldingPane):
         #print((cmapnames, self.glCanvas.cmap.name))
 
         #curCMapName = self.glCanvas.cmap.name
-        curCMapName = 'hsv'
+        curCMapName = 'gist_rainbow'
 
         #cmapReversed = False
 
