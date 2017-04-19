@@ -21,7 +21,6 @@
 import json
 
 import wx
-import wx.lib.agw.aui as aui
 
 from PYME.LMVis.Extras.dockedPanel import DockedPanel
 from PYME.LMVis.views import View
@@ -49,11 +48,11 @@ class ViewPanel(DockedPanel):
         save_button = wx.Button(self, -1, label='Save View', style=wx.BU_EXACTFIT)
         load_button = wx.Button(self, -1, label='Load View', style=wx.BU_EXACTFIT)
 
-        self.Bind(wx.EVT_BUTTON, self.set_view_x, x_button)
-        self.Bind(wx.EVT_BUTTON, self.set_view_y, y_button)
-        self.Bind(wx.EVT_BUTTON, self.set_view_z, z_button)
-        self.Bind(wx.EVT_BUTTON, self.save_view, save_button)
-        self.Bind(wx.EVT_BUTTON, self.load_view, load_button)
+        self.Bind(wx.EVT_BUTTON, lambda e: self.set_view_x(), x_button)
+        self.Bind(wx.EVT_BUTTON, lambda e: self.set_view_y(), y_button)
+        self.Bind(wx.EVT_BUTTON, lambda e: self.set_view_z(), z_button)
+        self.Bind(wx.EVT_BUTTON, lambda e: self.save_view(), save_button)
+        self.Bind(wx.EVT_BUTTON, lambda e: self.load_view(), load_button)
 
         grid_sizer.Add(x_button, flag=wx.EXPAND)
         grid_sizer.Add(y_button, flag=wx.EXPAND)
@@ -63,7 +62,7 @@ class ViewPanel(DockedPanel):
         grid_sizer.Add(load_button, flag=wx.EXPAND)
         vertical_sizer.Add(grid_sizer, flag=wx.EXPAND)
 
-    def set_view_x(self, event):
+    def set_view_x(self):
         vec_up = [0, 1, 0]
         if self.alternate:
             vec_back = [1, 0, 0]
@@ -73,7 +72,7 @@ class ViewPanel(DockedPanel):
 
         self.set_view(vec_up, vec_back, vec_right)
 
-    def set_view_y(self, event):
+    def set_view_y(self):
         vec_up = [0, 0, 1]
         if self.alternate:
             vec_back = [0, 1, 0]
@@ -82,7 +81,7 @@ class ViewPanel(DockedPanel):
         vec_right = [1, 0, 0]
         self.set_view(vec_up, vec_back, vec_right)
 
-    def set_view_z(self, event):
+    def set_view_z(self):
         vec_up = [0, 1, 0]
         if self.alternate:
             vec_back = [0, 0, 1]
@@ -93,7 +92,8 @@ class ViewPanel(DockedPanel):
 
     def set_view(self, vec_up, vec_back, vec_right):
         if self.get_canvas().displayMode == '2D':
-            dlg = wx.MessageDialog(self, 'Setting views in only possible in 3d mode', 'Info', wx.OK | wx.ICON_INFORMATION)
+            dlg = wx.MessageDialog(self,
+                                   'Setting views in only possible in 3d mode', 'Info', wx.OK | wx.ICON_INFORMATION)
             dlg.ShowModal()
             dlg.Destroy()
         else:
@@ -102,7 +102,7 @@ class ViewPanel(DockedPanel):
             new_view = View(old_view.view_id, vec_up, vec_back, vec_right, old_view.translation, old_view.zoom)
             self.get_canvas().set_view(new_view)
 
-    def save_view(self, event):
+    def save_view(self):
         view = self.get_canvas().get_view()
         file_name = wx.FileSelector('Save view as json named... ')
         if file_name:
@@ -111,12 +111,13 @@ class ViewPanel(DockedPanel):
             with open(file_name, 'w') as f:
                 f.writelines(json.dumps(view.to_json(), indent=4))
 
-    def load_view(self, event):
+    def load_view(self):
         file_name = wx.FileSelector('Open View-JSON file')
         if file_name:
             with open(file_name, 'r') as f:
                 view = View.decode_json(json.load(f))
             self.get_canvas().set_view(view)
+
 
 def Plug(vis_fr):
     DockedPanel.add_menu_item(vis_fr, 'Saved Views', ViewPanel, 'view_panel')
