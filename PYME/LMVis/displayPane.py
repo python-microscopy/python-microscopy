@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+from collections import OrderedDict
 
 import wx
 import wx.lib.newevent
@@ -43,7 +44,12 @@ class DisplayPane(afp.foldingPane):
         self.glCanvas = glCanvas
         self.visFr = visFr
 
-        self.scaleBarLengths = {'<None>':None, '50nm':50,'200nm':200, '500nm':500, '1um':1000, '5um':5000}
+        self.scaleBarLengths = OrderedDict([('<None>', None),
+                                            ('50nm', 50),
+                                            ('200nm', 200),
+                                            ('500nm', 500),
+                                            ('1um', 1000),
+                                            ('5um', 5000)])
         self._pc_clim_change = False
 
         #Colourmap
