@@ -30,7 +30,7 @@ class ScaleBarOverlayLayer(OverlayLayer):
     def __init__(self, offset=None, color=None):
         super(ScaleBarOverlayLayer, self).__init__(offset)
         if not color:
-            self._color = [1.0, 0.0, 0.0]
+            self._color = [1.0, 1.0, 1.0]
         else:
             self._color = color
         self._scale_bar_depth = 10
