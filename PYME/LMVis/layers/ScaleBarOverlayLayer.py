@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from PYME.LMVis.Layer.OverlayLayer import OverlayLayer
+from PYME.LMVis.layers.OverlayLayer import OverlayLayer
 from OpenGL.GL import *
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 

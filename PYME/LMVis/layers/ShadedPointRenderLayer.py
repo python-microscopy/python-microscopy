@@ -20,7 +20,7 @@
 #
 import numpy as np
 
-from PYME.LMVis.Layer.Point3DRenderLayer import Point3DRenderLayer
+from PYME.LMVis.layers.Point3DRenderLayer import Point3DRenderLayer
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
 
 

@@ -28,6 +28,7 @@ import wx
 import wx.glcanvas
 from OpenGL.GL import *
 from OpenGL.GLU import *
+
 from PYME.LMVis.layers.AxesOverlayLayer import AxesOverlayLayer
 from PYME.LMVis.layers.LUTOverlayLayer import LUTOverlayLayer
 from PYME.LMVis.layers.Point3DRenderLayer import Point3DRenderLayer

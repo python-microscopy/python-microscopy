@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Point3DRenderLayer.py
+# QuadTreeRenderLayer.py
 #
 # Copyright Michael Graff
 #   graff@hm.edu
@@ -18,18 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from PYME.LMVis.Layer.RenderLayer import RenderLayer
+from PYME.LMVis.layers.RenderLayer import RenderLayer
 from OpenGL.GL import *
 
-from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
+class QuadTreeRenderLayer(RenderLayer):
 
-class Point3DRenderLayer(RenderLayer):
-
-    def __init__(self,  x, y, z, colors, color_map, color_limit, alpha, point_size=5):
+    def __init__(self,  x, y, z, colors, color_map, color_limit, alpha):
         RenderLayer.__init__(self, x, y, z, colors, color_map, color_limit, alpha)
-        self._point_size = point_size
-        self.set_shader_program(DefaultShaderProgram)
 
     def render(self, gl_canvas):
         with self.get_shader_program():
@@ -40,17 +36,5 @@ class Point3DRenderLayer(RenderLayer):
             glNormalPointerf(self.get_normals())
             glColorPointerf(self.get_colors())
 
-            if gl_canvas:
-                if self.get_point_size() == 0:
-                    glPointSize(1 / gl_canvas.pixelsize)
-                else:
-                    glPointSize(self.get_point_size() / gl_canvas.pixelsize)
-            else:
-                glPointSize(self.get_point_size())
-            glDrawArrays(GL_POINTS, 0, n_vertices)
+            glDrawArrays(GL_QUADS, 0, n_vertices)
 
-    def get_point_size(self):
-        return self._point_size
-
-    def set_point_size(self, point_size):
-        self._point_size = point_size

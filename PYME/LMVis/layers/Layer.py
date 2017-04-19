@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# __init__.py
+# layers.py
 #
 # Copyright Michael Graff
 #   graff@hm.edu
@@ -18,3 +18,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+import abc
+
+from PYME.LMVis.shader_programs.ShaderProgramFactory import ShaderProgramFactory
+
+
+class Layer(object):
+    """
+    This class represents a layer that should be rendered.
+    It also deals with the shader program that is used to render the layer
+     with appropriate shaders.
+    """
+    def __init__(self):
+        self._shader_program = None
+
+    def set_shader_program(self, shader_program):
+        self._shader_program = ShaderProgramFactory.get_program(shader_program)
+
+    def get_shader_program(self):
+        return self._shader_program
+
+    @abc.abstractmethod
+    def render(self, gl_canvas):
+        pass

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Layer.py
+# OverlayLayer.py
 #
 # Copyright Michael Graff
 #   graff@hm.edu
@@ -20,23 +20,25 @@
 #
 import abc
 
-from PYME.LMVis.shader_programs.ShaderProgramFactory import ShaderProgramFactory
+from PYME.LMVis.layers.Layer import Layer
+from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
 
-class Layer(object):
-    """
-    This class represents a layer that should be rendered.
-    It also deals with the shader program that is used to render the layer
-     with appropriate shaders.
-    """
-    def __init__(self):
-        self._shader_program = None
+class OverlayLayer(Layer):
 
-    def set_shader_program(self, shader_program):
-        self._shader_program = ShaderProgramFactory.get_program(shader_program)
+    def __init__(self, offset):
+        super(OverlayLayer, self).__init__()
+        if offset:
+            self._offset = offset
+        else:
+            self._offset = [10, 10]
+        self.set_shader_program(DefaultShaderProgram)
 
-    def get_shader_program(self):
-        return self._shader_program
+    def set_offset(self, offset):
+        self._offset = offset
+
+    def get_offset(self):
+        return self._offset
 
     @abc.abstractmethod
     def render(self, gl_canvas):
