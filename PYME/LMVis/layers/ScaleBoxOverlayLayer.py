@@ -43,9 +43,10 @@ class ScaleBoxOverlayLayer(OverlayLayer):
 
         self._tick_distance = tick_distance
         self._box_dimensions = None
-        self._starts = (0.0, 0.0, 0.0)
+        self._starts = [0.0, 0.0, 0.0]
         self.set_box_dimensions(box_dimensions)
-        self._show = False
+        self._show = True
+        self._flips = [False, False, False]
 
     def show(self, boolean):
         self._show = boolean
@@ -91,7 +92,31 @@ class ScaleBoxOverlayLayer(OverlayLayer):
         self._box_dimensions = new_box_dimensions
 
     def set_starts(self, start_x, start_y, start_z):
-        self._starts = (start_x, start_y, start_z)
+        self._starts = [start_x, start_y, start_z]
+
+    def flip_starts(self, flip_x=None, flip_y=None, flip_z=None):
+        """
+        There's six possible sides of the bounding box. Only three are used
+        to draw the grids. With this method you can change to the other ones.
+        Parameters
+        ----------
+        flip_x      change grid position in the x plane
+        flip_y      change grid position in the y plane
+        flip_z      change grid position in the z plane
+
+        Returns
+        -------
+
+        """
+
+        if flip_x:
+            self._flips[0] = not self._flips[0]
+
+        if flip_y:
+            self._flips[1] = not self._flips[1]
+
+        if flip_z:
+            self._flips[2] = not self._flips[2]
 
     def render(self, gl_canvas):
         if self._show:
@@ -99,8 +124,15 @@ class ScaleBoxOverlayLayer(OverlayLayer):
                 glDisable(GL_LIGHTING)
                 glColor4fv(self._color)
 
-                start_x, start_y, start_z = self._starts
+                original_starts = np.copy(self._starts)
                 delta_x, delta_y, delta_z = self._box_dimensions
+
+                for i in np.arange(len(self._flips)):
+                    if self._flips[i]:
+                        original_starts[i] += self._box_dimensions[i]
+
+                [start_x, start_y, start_z] = original_starts
+                [direction_x, direction_y, direction_z] = (np.array(self._flips) - 0.5) * -2
 
                 amount_of_lines_x = int(floor(delta_x / self._tick_distance)) + 1
                 amount_of_lines_y = int(floor(delta_y / self._tick_distance)) + 1
@@ -109,19 +141,27 @@ class ScaleBoxOverlayLayer(OverlayLayer):
                 # wall xy
                 glBegin(GL_LINES)
                 # top
-                glVertex(start_x + amount_of_lines_x * self._tick_distance,
+                glVertex(start_x + amount_of_lines_x * self._tick_distance * direction_x,
                          start_y,
                          start_z)
-                glVertex(start_x + amount_of_lines_x * self._tick_distance,
-                         start_y + amount_of_lines_y * self._tick_distance,
+                glVertex(start_x + amount_of_lines_x * self._tick_distance * direction_x,
+                         start_y + amount_of_lines_y * self._tick_distance * direction_y,
                          start_z)
                 # ticks
                 for step in np.arange(amount_of_lines_y + 1):
                     glVertex(start_x,
-                             start_y + step * self._tick_distance,
+                             start_y + step * self._tick_distance * direction_y,
                              start_z)
-                    glVertex(start_x + amount_of_lines_x * self._tick_distance,
-                             start_y + step * self._tick_distance,
+                    glVertex(start_x + amount_of_lines_x * self._tick_distance * direction_x,
+                             start_y + step * self._tick_distance * direction_y,
+                             start_z)
+
+                for step in np.arange(amount_of_lines_x + 1):
+                    glVertex(start_x + step * self._tick_distance * direction_x,
+                             start_y,
+                             start_z)
+                    glVertex(start_x + step * self._tick_distance * direction_x,
+                             start_y + amount_of_lines_y * self._tick_distance * direction_y,
                              start_z)
 
                 # bottom
@@ -129,27 +169,35 @@ class ScaleBoxOverlayLayer(OverlayLayer):
                          start_y,
                          start_z)
                 glVertex(start_x,
-                         start_y + amount_of_lines_y * self._tick_distance,
+                         start_y + amount_of_lines_y * self._tick_distance * direction_y,
                          start_z)
                 glEnd()
 
                 # wall xz
                 glBegin(GL_LINES)
                 # top
-                glVertex(start_x + amount_of_lines_x * self._tick_distance,
+                glVertex(start_x + amount_of_lines_x * self._tick_distance * direction_x,
                          start_y,
                          start_z)
-                glVertex(start_x + amount_of_lines_x * self._tick_distance,
+                glVertex(start_x + amount_of_lines_x * self._tick_distance * direction_x,
                          start_y,
-                         start_z + amount_of_lines_z * self._tick_distance)
+                         start_z + amount_of_lines_z * self._tick_distance * direction_z)
                 # ticks
                 for step in np.arange(amount_of_lines_z + 1):
                     glVertex(start_x,
                              start_y,
-                             start_z + step * self._tick_distance)
-                    glVertex(start_x + amount_of_lines_x * self._tick_distance,
+                             start_z + step * self._tick_distance * direction_z)
+                    glVertex(start_x + amount_of_lines_x * self._tick_distance * direction_x,
                              start_y,
-                             start_z + step * self._tick_distance)
+                             start_z + step * self._tick_distance * direction_z)
+
+                for step in np.arange(amount_of_lines_x + 1):
+                    glVertex(start_x + step * self._tick_distance * direction_x,
+                             start_y,
+                             start_z)
+                    glVertex(start_x + step * self._tick_distance * direction_x,
+                             start_y,
+                             start_z + amount_of_lines_z * self._tick_distance * direction_z)
 
                 # bottom
                 glVertex(start_x,
@@ -157,26 +205,34 @@ class ScaleBoxOverlayLayer(OverlayLayer):
                          start_z)
                 glVertex(start_x,
                          start_y,
-                         start_z + amount_of_lines_z * self._tick_distance)
+                         start_z + amount_of_lines_z * self._tick_distance * direction_z)
                 glEnd()
 
                 # wall yz
                 glBegin(GL_LINES)
                 # top
                 glVertex(start_x,
-                         start_y + amount_of_lines_y * self._tick_distance,
+                         start_y + amount_of_lines_y * self._tick_distance * direction_y,
                          start_z)
                 glVertex(start_x,
-                         start_y + amount_of_lines_y * self._tick_distance,
-                         start_z + amount_of_lines_z * self._tick_distance)
+                         start_y + amount_of_lines_y * self._tick_distance * direction_y,
+                         start_z + amount_of_lines_z * self._tick_distance * direction_z)
                 # ticks
                 for step in np.arange(amount_of_lines_z + 1):
                     glVertex(start_x,
                              start_y,
-                             start_z + step * self._tick_distance)
+                             start_z + step * self._tick_distance * direction_z)
                     glVertex(start_x,
-                             start_y + amount_of_lines_y * self._tick_distance,
-                             start_z + step * self._tick_distance)
+                             start_y + amount_of_lines_y * self._tick_distance * direction_y,
+                             start_z + step * self._tick_distance * direction_z)
+
+                for step in np.arange(amount_of_lines_y + 1):
+                    glVertex(start_x,
+                             start_y + step * self._tick_distance * direction_y,
+                             start_z)
+                    glVertex(start_x,
+                             start_y + step * self._tick_distance * direction_y,
+                             start_z + amount_of_lines_z * self._tick_distance * direction_z)
 
                 # bottom
                 glVertex(start_x,
@@ -184,6 +240,5 @@ class ScaleBoxOverlayLayer(OverlayLayer):
                          start_z)
                 glVertex(start_x,
                          start_y,
-                         start_z + amount_of_lines_z * self._tick_distance)
+                         start_z + amount_of_lines_z * self._tick_distance * direction_z)
                 glEnd()
-

@@ -19,7 +19,7 @@ from PYME.LMVis import gl_render3D as gl_render
 
 import pylab
 
-#from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
+from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
 from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
