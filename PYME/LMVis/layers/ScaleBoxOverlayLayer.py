@@ -45,7 +45,7 @@ class ScaleBoxOverlayLayer(OverlayLayer):
         self._box_dimensions = None
         self._starts = [0.0, 0.0, 0.0]
         self.set_box_dimensions(box_dimensions)
-        self._show = True
+        self._show = False
         self._flips = [False, False, False]
 
     def show(self, boolean):
@@ -90,6 +90,9 @@ class ScaleBoxOverlayLayer(OverlayLayer):
             index += 1
 
         self._box_dimensions = new_box_dimensions
+
+    def set_color(self, color):
+        self._color = color
 
     def set_starts(self, start_x, start_y, start_z):
         self._starts = [start_x, start_y, start_z]
