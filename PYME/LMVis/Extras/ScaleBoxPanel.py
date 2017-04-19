@@ -26,6 +26,10 @@ import wx.lib.agw.cubecolourdialog as ccd
 
 
 class ScaleBoxPanel(wx.Panel):
+    """
+    This panel is the gui for creating and controlling the bounding box of the
+     data and setting a grid with a given tick distance
+    """
     def __init__(self, parent_panel, **kwargs):
         kwargs['style'] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, parent_panel, **kwargs)
@@ -90,6 +94,19 @@ class ScaleBoxPanel(wx.Panel):
 
 
 def Plug(vis_fr):
+    """
+    There's no chance to determine if shaders are supported or not. Since this layer is only
+    added to the shader version, it will fail in the non-shader version. The later doesn't
+    have the required methods.
+    It will fail, when you try to get a bounding box. If you don't select the menu item, the program will run normally
+    Parameters
+    ----------
+    vis_fr
+
+    Returns
+    -------
+
+    """
     vis_fr.AddMenuItem('Extras', 'Show Scale Box', lambda e: show(vis_fr))
 
 
