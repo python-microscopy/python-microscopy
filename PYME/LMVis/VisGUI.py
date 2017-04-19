@@ -166,7 +166,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             #self.refv = False
 
             recipe = getattr(self.cmd_args, 'recipe', None)
-            print 'Using recipe: %s' % recipe
+            print('Using recipe: %s' % recipe)
             if recipe:
                 from PYME.recipes import modules
                 self.pipeline.recipe.update_from_yaml(recipe)
