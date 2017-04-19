@@ -160,7 +160,7 @@ requirements:
     - scikit-image
     - scikit-learn
     - shapely         [osx]
-    - zeroconf=0.17.4
+    - zeroconf 0.17.4
     - requests
     - pandas
     - pyyaml
