@@ -21,25 +21,25 @@
 import numpy
 import wx
 
-import wx.lib.agw.aui as aui
 import wx.lib.agw.cubecolourdialog as ccd
 
+from PYME.LMVis.Extras.DockedPanel import DockedPanel
 
-class ScaleBoxPanel(wx.Panel):
+
+class ScaleBoxPanel(DockedPanel):
     """
     This panel is the gui for creating and controlling the bounding box of the
      data and setting a grid with a given tick distance
     """
     def __init__(self, parent_panel, **kwargs):
-        kwargs['style'] = wx.TAB_TRAVERSAL
-        wx.Panel.__init__(self, parent_panel, **kwargs)
-        self.parent_panel = parent_panel
+        super(ScaleBoxPanel, self).__init__(parent_panel, **kwargs)
         self._show_box = False
         vertical_sizer = wx.BoxSizer(wx.VERTICAL)
 
         self.create_gui(vertical_sizer)
 
         self.SetSizerAndFit(vertical_sizer)
+        self.show_box()
 
     def create_gui(self, vertical_sizer):
         x_button = wx.Button(self, -1, label='x', style=wx.BU_EXACTFIT)
@@ -107,15 +107,5 @@ def Plug(vis_fr):
     -------
 
     """
-    vis_fr.AddMenuItem('Extras', 'Show Scale Box', lambda e: show(vis_fr))
+    DockedPanel.add_menu_item(vis_fr, 'Scale Box Panel', ScaleBoxPanel, 'scale_box')
 
-
-def show(vis_fr):
-    view_panel = ScaleBoxPanel(vis_fr)
-    frame_manager = vis_fr._mgr
-    view_panel.SetSize(view_panel.GetBestSize())
-    p_info = aui.AuiPaneInfo().Name("scale_box").Right().Caption('Scale Box').CloseButton(True).MinimizeButton(
-        True).Dock().MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)
-    frame_manager.AddPane(view_panel, p_info)
-    frame_manager.ShowPane(view_panel, True)
-    view_panel.show_box()
