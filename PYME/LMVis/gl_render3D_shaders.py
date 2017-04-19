@@ -29,16 +29,10 @@ import wx.glcanvas
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-from PYME.LMVis.layers.AxesOverlayLayer import AxesOverlayLayer
-from PYME.LMVis.layers.LUTOverlayLayer import LUTOverlayLayer
-from PYME.LMVis.layers.Point3DRenderLayer import Point3DRenderLayer
-from PYME.LMVis.layers.PointSpriteRenderLayer import PointSpritesRenderLayer
-from PYME.LMVis.layers.QuadTreeRenderLayer import QuadTreeRenderLayer
-from PYME.LMVis.layers.RenderLayer import RenderLayer
-from PYME.LMVis.layers.ScaleBarOverlayLayer import ScaleBarOverlayLayer
-from PYME.LMVis.layers.SelectionOverlayLayer import SelectionOverlayLayer
-from PYME.LMVis.layers.ShadedPointRenderLayer import ShadedPointRenderLayer
-from PYME.LMVis.layers.TriangleRenderLayer import TriangleRenderLayer
+from PYME.LMVis.layers import AxesOverlayLayer, LUTOverlayLayer, Point3DRenderLayer, PointSpritesRenderLayer, \
+    QuadTreeRenderLayer, RenderLayer, ScaleBarOverlayLayer, SelectionOverlayLayer, ShadedPointRenderLayer, \
+    TriangleRenderLayer
+
 from PYME.LMVis.gl_offScreenHandler import OffScreenHandler
 from wx.glcanvas import GLCanvas
 
