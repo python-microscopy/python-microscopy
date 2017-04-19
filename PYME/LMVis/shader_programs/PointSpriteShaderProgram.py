@@ -22,7 +22,7 @@ import os
 
 from OpenGL.GL import *
 from PYME.LMVis.shader_programs.GLProgram import GLProgram
-from PYME.LMVis.shader_programs.ShaderProgram import ShaderProgram
+from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 from PYME.LMVis.gl_texture import GaussTexture
 
 
@@ -34,7 +34,7 @@ class PointSpriteShaderProgram(GLProgram):
 
     def __init__(self):
         GLProgram.__init__(self)
-        shader_path = os.path.join(os.path.dirname(__file__), "../shaders/")
+        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
         shader_program = ShaderProgram(shader_path)
         shader_program.add_shader("pointsprites_vs.glsl", GL_VERTEX_SHADER)
         shader_program.add_shader("pointsprites_fs.glsl", GL_FRAGMENT_SHADER)

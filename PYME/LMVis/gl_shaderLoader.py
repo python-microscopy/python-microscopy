@@ -62,7 +62,7 @@ class ShaderLoader:
         :param file_name:  the filename of the shader source
         :return: a string representing the source code of the shader
         """
-        return self.read_file(path + file_name)
+        return self.read_file(os.path.join(path, file_name))
 
     def get_code(self):
         return self._code

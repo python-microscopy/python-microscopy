@@ -18,10 +18,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-
+import os
 from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, \
     glUseProgram, glUniform4f, glUniform1f, glEnable, GL_DEPTH_TEST, glDisable, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH
-from PYME.LMVis.shader_programs.ShaderProgram import ShaderProgram, os
+from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
 class GouraudShaderProgram(GLProgram):
@@ -40,7 +40,7 @@ class GouraudShaderProgram(GLProgram):
     def __init__(self):
         super(GouraudShaderProgram, self).__init__()
         GLProgram.__init__(self)
-        shader_path = os.path.join(os.path.dirname(__file__), "../shaders/")
+        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
         shader_program = ShaderProgram(shader_path)
         shader_program.add_shader("gouraud_vs.glsl", GL_VERTEX_SHADER)
         shader_program.add_shader("gouraud_fs.glsl", GL_FRAGMENT_SHADER)
