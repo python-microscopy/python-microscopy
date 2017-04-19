@@ -23,6 +23,7 @@ import json
 import wx
 import wx.lib.agw.aui as aui
 
+from PYME.LMVis.Extras.dockedPanel import DockedPanel
 from PYME.LMVis.views import View
 
 
@@ -115,10 +116,5 @@ class ViewPanel(wx.Panel):
     def get_canvas(self):
         return self.parent_panel.glCanvas
 
-def Plug(visFr):
-    view_panel = ViewPanel(visFr)
-    view_panel.SetSize(view_panel.GetBestSize())
-    pinfo = aui.AuiPaneInfo().Name("view_panel").Right().Caption('Saved Views').CloseButton(False).MinimizeButton(
-        True).Dock().MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)
-    visFr._mgr.AddPane(view_panel, pinfo)
-    visFr._mgr.MinimizePane(pinfo)
+def Plug(vis_fr):
+    DockedPanel.add_menu_item(vis_fr, 'Saved Views', ViewPanel, 'view_panel')

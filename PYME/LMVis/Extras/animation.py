@@ -25,6 +25,7 @@ from time import sleep
 import wx
 import wx.lib.agw.aui as aui
 
+from PYME.LMVis.Extras.dockedPanel import DockedPanel
 from PYME.LMVis.views import VideoView
 
 
@@ -305,10 +306,5 @@ class VideoFrame(wx.Frame):
         self.SetSizer(hsizer)
         hsizer.Fit(self)
 
-def Plug(visFr):
-    video_panel = VideoPanel(visFr)
-    video_panel.SetSize(video_panel.GetBestSize())
-    pinfo = aui.AuiPaneInfo().Name("video_panel").Right().Caption('Animation').CloseButton(False).MinimizeButton(
-        True).Dock().MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)
-    visFr._mgr.AddPane(video_panel, pinfo)
-    visFr._mgr.MinimizePane(pinfo)
+def Plug(vis_fr):
+    DockedPanel.add_menu_item(vis_fr, 'Animation', VideoPanel, 'animation_panel')

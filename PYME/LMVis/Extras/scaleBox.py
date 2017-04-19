@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# ScaleBoxPanel.py
+# scaleBox.py
 #
 # Copyright Michael Graff
 #   graff@hm.edu
@@ -23,7 +23,7 @@ import wx
 
 import wx.lib.agw.cubecolourdialog as ccd
 
-from PYME.LMVis.Extras.DockedPanel import DockedPanel
+from PYME.LMVis.Extras.dockedPanel import DockedPanel
 
 
 class ScaleBoxPanel(DockedPanel):

@@ -217,7 +217,6 @@ class FilterPanel(wx.Panel):
         self.notify(key)
 
     def notify(self, key, limits=None):
-        print('notify')
         if limits is not None:
             minVal, maxVal = limits
 

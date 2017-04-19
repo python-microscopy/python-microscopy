@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# DockedPanel.py
+# dockedPanel.py
 #
 # Copyright Michael Graff
 #   graff@hm.edu
