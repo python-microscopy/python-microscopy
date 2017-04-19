@@ -25,7 +25,7 @@ from time import sleep
 import wx
 import wx.lib.agw.aui as aui
 
-from PYME.LMVis.VideoView import VideoView
+from PYME.LMVis.views import VideoView
 
 
 # noinspection PyUnusedLocal
