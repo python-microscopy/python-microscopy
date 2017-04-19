@@ -23,7 +23,7 @@ import os
 from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
     glPolygonMode, GL_FILL, GL_FRONT_AND_BACK, glEnable, GL_BLEND, GL_SRC_ALPHA, GL_DST_ALPHA, glBlendFunc, \
     glBlendEquation, GL_FUNC_ADD, GL_DEPTH_TEST, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH
-from PYME.LMVis.shader_programs.ShaderProgram import ShaderProgram
+from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
 class DefaultShaderProgram(GLProgram):

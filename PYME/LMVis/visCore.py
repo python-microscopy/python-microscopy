@@ -83,6 +83,7 @@ class VisGUICore(object):
         if not use_shaders:
             self.glCanvas = gl_render.LMGLCanvas(win)
         else:
+            from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
             self.glCanvas = LMGLShaderCanvas(win)
         win.AddPage(page=self.glCanvas, caption='View')#, select=True)
 

@@ -38,7 +38,6 @@ class GouraudShaderProgram(GLProgram):
     }
 
     def __init__(self):
-        super(GouraudShaderProgram, self).__init__()
         GLProgram.__init__(self)
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")
         shader_program = ShaderProgram(shader_path)
