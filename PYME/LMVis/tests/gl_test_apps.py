@@ -27,8 +27,8 @@ import pylab
 from wx import wx
 
 from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
-from PYME.simulation import gl_test_objects
-from PYME.simulation.gl_test_objects import *
+from PYME.LMVis.tests import gl_test_objects
+from PYME.LMVis.tests.gl_test_objects import *
 
 
 class TestApp(wx.App):
