@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# DefaultShaderProgram.py
+# WireFrameShaderProgram.py
 #
 # Copyright Michael Graff
 #   graff@hm.edu
@@ -20,28 +20,25 @@
 #
 import os
 
-from PYME.LMVis.ShaderProgram.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
-    glPolygonMode, GL_FILL, GL_FRONT_AND_BACK
-from PYME.LMVis.ShaderProgram.ShaderProgram import ShaderProgram
+from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glPolygonMode, \
+    GL_FRONT_AND_BACK, GL_LINE, glUseProgram
+from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
-class DefaultShaderProgram(GLProgram):
+class WireFrameShaderProgram(GLProgram):
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        glUseProgram(0)
+        pass
+
+    def __enter__(self):
+        self.get_shader_program().use()
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 
     def __init__(self):
         GLProgram.__init__(self)
-        shader_path = os.path.join(os.path.dirname(__file__), "../shaders/")
+        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
         _shader_program = ShaderProgram(shader_path)
         _shader_program.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
         _shader_program.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
         _shader_program.link()
         self.set_shader_program(_shader_program)
-
-    def __enter__(self):
-        self.get_shader_program().use()
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        glUseProgram(0)
-        pass
-
-

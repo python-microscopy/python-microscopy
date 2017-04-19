@@ -18,9 +18,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from PYME.LMVis.Layer.OverlayLayer import OverlayLayer
+from PYME.LMVis.layers.OverlayLayer import OverlayLayer
 from OpenGL.GL import *
-from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
+from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
 
 class ScaleBarOverlayLayer(OverlayLayer):
@@ -30,7 +30,7 @@ class ScaleBarOverlayLayer(OverlayLayer):
     def __init__(self, offset=None, color=None):
         super(ScaleBarOverlayLayer, self).__init__(offset)
         if not color:
-            self._color = [1.0, 0.0, 0.0]
+            self._color = [1.0, 1.0, 1.0]
         else:
             self._color = color
         self._scale_bar_depth = 10

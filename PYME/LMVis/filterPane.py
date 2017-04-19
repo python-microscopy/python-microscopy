@@ -184,7 +184,7 @@ class FilterPanel(wx.Panel):
         try:
             data = np.array(self.dataSource[key])
 
-            dlg = histLimits.HistLimitDialog(self, data, minVal, maxVal, title=key)
+            dlg = histLimits.HistLimitDialog(self, data, minVal, maxVal, title=key, action=self.notify, key=key)
             ret = dlg.ShowModal()
 
             if ret == wx.ID_OK:
@@ -213,6 +213,18 @@ class FilterPanel(wx.Panel):
                 self.lFiltKeys.SetStringItem(self.currentFilterItem, 2, '%3.2f' % maxVal)
 
             dlg.Destroy()
+
+        self.notify(key)
+
+    def notify(self, key, limits=None):
+        print('notify')
+        if limits is not None:
+            minVal, maxVal = limits
+
+            self.filterKeys[key] = [minVal, maxVal]
+
+            self.lFiltKeys.SetStringItem(self.currentFilterItem, 1, '%3.2f' % minVal)
+            self.lFiltKeys.SetStringItem(self.currentFilterItem, 2, '%3.2f' % maxVal)
 
         self.on_filter_changed.send(self)
 

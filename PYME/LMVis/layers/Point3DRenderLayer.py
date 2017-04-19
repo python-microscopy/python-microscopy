@@ -18,10 +18,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from PYME.LMVis.Layer.RenderLayer import RenderLayer
+from PYME.LMVis.layers.RenderLayer import RenderLayer
 from OpenGL.GL import *
 
-from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
+from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
 
 class Point3DRenderLayer(RenderLayer):
