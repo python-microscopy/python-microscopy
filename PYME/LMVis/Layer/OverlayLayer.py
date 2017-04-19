@@ -21,7 +21,7 @@
 import abc
 
 from PYME.LMVis.Layer.Layer import Layer
-from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
+from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
 
 class OverlayLayer(Layer):

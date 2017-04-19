@@ -20,7 +20,7 @@
 #
 from PYME.LMVis.Layer.OverlayLayer import OverlayLayer
 from OpenGL.GL import *
-from PYME.LMVis.ShaderProgram.DefaultShaderProgram import DefaultShaderProgram
+from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
 
 class ScaleBarOverlayLayer(OverlayLayer):

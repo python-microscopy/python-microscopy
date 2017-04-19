@@ -19,9 +19,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from PYME.LMVis.ShaderProgram.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, \
+from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, \
     glUseProgram, glUniform4f, glUniform1f, glEnable, GL_DEPTH_TEST, glDisable, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH
-from PYME.LMVis.ShaderProgram.ShaderProgram import ShaderProgram, os
+from PYME.LMVis.shader_programs.ShaderProgram import ShaderProgram, os
 
 
 class GouraudShaderProgram(GLProgram):

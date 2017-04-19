@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# WireFrameShaderProgram.py
+# DefaultShaderProgram.py
 #
 # Copyright Michael Graff
 #   graff@hm.edu
@@ -20,19 +20,13 @@
 #
 import os
 
-from PYME.LMVis.ShaderProgram.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glPolygonMode, \
-    GL_FRONT_AND_BACK, GL_LINE, glUseProgram
-from PYME.LMVis.ShaderProgram.ShaderProgram import ShaderProgram
+from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
+    glPolygonMode, GL_FILL, GL_FRONT_AND_BACK, glEnable, GL_BLEND, GL_SRC_ALPHA, GL_DST_ALPHA, glBlendFunc, \
+    glBlendEquation, GL_FUNC_ADD, GL_DEPTH_TEST, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH
+from PYME.LMVis.shader_programs.ShaderProgram import ShaderProgram
 
 
-class WireFrameShaderProgram(GLProgram):
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        glUseProgram(0)
-        pass
-
-    def __enter__(self):
-        self.get_shader_program().use()
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+class DefaultShaderProgram(GLProgram):
 
     def __init__(self):
         GLProgram.__init__(self)
@@ -42,3 +36,19 @@ class WireFrameShaderProgram(GLProgram):
         _shader_program.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
         _shader_program.link()
         self.set_shader_program(_shader_program)
+
+    def __enter__(self):
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
+        glBlendEquation(GL_FUNC_ADD)
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LEQUAL)
+        glEnable(GL_POINT_SMOOTH)
+        self.get_shader_program().use()
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        glUseProgram(0)
+        pass
+
+

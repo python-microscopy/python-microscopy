@@ -20,7 +20,7 @@
 #
 import abc
 
-from PYME.LMVis.ShaderProgram.ShaderProgramFactory import ShaderProgramFactory
+from PYME.LMVis.shader_programs.ShaderProgramFactory import ShaderProgramFactory
 
 
 class Layer(object):

@@ -20,7 +20,7 @@
 #
 from OpenGL.GL import *
 from PYME.LMVis.Layer.Point3DRenderLayer import Point3DRenderLayer
-from PYME.LMVis.ShaderProgram.PointSpriteShaderProgram import PointSpriteShaderProgram
+from PYME.LMVis.shader_programs.PointSpriteShaderProgram import PointSpriteShaderProgram
 
 
 class PointSpritesRenderLayer(Point3DRenderLayer):

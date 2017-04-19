@@ -21,7 +21,7 @@
 import numpy as np
 
 from PYME.LMVis.Layer.Point3DRenderLayer import Point3DRenderLayer
-from PYME.LMVis.ShaderProgram.GouraudShaderProgram import GouraudShaderProgram
+from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
 
 
 class ShadedPointRenderLayer(Point3DRenderLayer):

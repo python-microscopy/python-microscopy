@@ -20,8 +20,8 @@
 #
 from PYME.Analysis.points.gen3DTriangs import gen3DTriangs
 from PYME.LMVis.Layer.RenderLayer import RenderLayer
-from PYME.LMVis.ShaderProgram.GouraudShaderProgram import GouraudShaderProgram
-from PYME.LMVis.ShaderProgram.WireFrameShaderProgram import WireFrameShaderProgram
+from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
+from PYME.LMVis.shader_programs.WireFrameShaderProgram import WireFrameShaderProgram
 from OpenGL.GL import *
 
 
