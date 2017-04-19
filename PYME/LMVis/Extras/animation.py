@@ -30,7 +30,7 @@ from PYME.LMVis.views import VideoView
 
 
 # noinspection PyUnusedLocal
-class VideoPanel(wx.Panel):
+class VideoPanel(DockedPanel):
     JSON_LIST_NAME = 'views'
 
     def __init__(self, parent_panel, **kwargs):
@@ -50,9 +50,6 @@ class VideoPanel(wx.Panel):
         self.create_buttons(vertical_sizer)
 
         self.SetSizerAndFit(vertical_sizer)
-
-    def get_canvas(self):
-        return self.parent_panel.glCanvas
 
     def create_buttons(self, vertical_sizer):
         grid_sizer = wx.GridSizer(3, 3)

@@ -47,6 +47,9 @@ class DockedPanel(wx.Panel):
             caption = menu_name
         vis_fr.AddMenuItem('Panels', menu_name, lambda e: DockedPanel.show(vis_fr, panel_class(vis_fr), p_info_name, caption))
 
+    def get_canvas(self):
+        return self.parent_panel.glCanvas
+
 def Plug(vis_fr):
     """
     Within sub-classes add a line like this:

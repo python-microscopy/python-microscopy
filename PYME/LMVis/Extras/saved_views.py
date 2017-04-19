@@ -27,7 +27,7 @@ from PYME.LMVis.Extras.dockedPanel import DockedPanel
 from PYME.LMVis.views import View
 
 
-class ViewPanel(wx.Panel):
+class ViewPanel(DockedPanel):
     def __init__(self, parent_panel, **kwargs):
         kwargs['style'] = wx.TAB_TRAVERSAL
         wx.Panel.__init__(self, parent_panel, **kwargs)
@@ -92,10 +92,15 @@ class ViewPanel(wx.Panel):
         self.set_view(vec_up, vec_back, vec_right)
 
     def set_view(self, vec_up, vec_back, vec_right):
-        old_view = self.get_canvas().get_view()
-        self.alternate = not self.alternate
-        new_view = View(old_view.view_id, vec_up, vec_back, vec_right, old_view.translation, old_view.zoom)
-        self.get_canvas().set_view(new_view)
+        if self.get_canvas().displayMode == '2D':
+            dlg = wx.MessageDialog(self, 'Setting views in only possible in 3d mode', 'Info', wx.OK | wx.ICON_INFORMATION)
+            dlg.ShowModal()
+            dlg.Destroy()
+        else:
+            old_view = self.get_canvas().get_view()
+            self.alternate = not self.alternate
+            new_view = View(old_view.view_id, vec_up, vec_back, vec_right, old_view.translation, old_view.zoom)
+            self.get_canvas().set_view(new_view)
 
     def save_view(self, event):
         view = self.get_canvas().get_view()
@@ -112,9 +117,6 @@ class ViewPanel(wx.Panel):
             with open(file_name, 'r') as f:
                 view = View.decode_json(json.load(f))
             self.get_canvas().set_view(view)
-
-    def get_canvas(self):
-        return self.parent_panel.glCanvas
 
 def Plug(vis_fr):
     DockedPanel.add_menu_item(vis_fr, 'Saved Views', ViewPanel, 'view_panel')
