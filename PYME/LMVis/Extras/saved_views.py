@@ -118,7 +118,7 @@ class ViewPanel(wx.Panel):
 def Plug(visFr):
     view_panel = ViewPanel(visFr)
     view_panel.SetSize(view_panel.GetBestSize())
-    pinfo = aui.AuiPaneInfo().Name("view_panel").Right().Caption('View Settings').CloseButton(False).MinimizeButton(
+    pinfo = aui.AuiPaneInfo().Name("view_panel").Right().Caption('Saved Views').CloseButton(False).MinimizeButton(
         True).Dock().MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)
     visFr._mgr.AddPane(view_panel, pinfo)
     visFr._mgr.MinimizePane(pinfo)

@@ -308,7 +308,7 @@ class VideoFrame(wx.Frame):
 def Plug(visFr):
     video_panel = VideoPanel(visFr)
     video_panel.SetSize(video_panel.GetBestSize())
-    pinfo = aui.AuiPaneInfo().Name("video_panel").Right().Caption('Video Settings').CloseButton(False).MinimizeButton(
+    pinfo = aui.AuiPaneInfo().Name("video_panel").Right().Caption('Animation').CloseButton(False).MinimizeButton(
         True).Dock().MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART | aui.AUI_MINIMIZE_POS_RIGHT)
     visFr._mgr.AddPane(video_panel, pinfo)
     visFr._mgr.MinimizePane(pinfo)

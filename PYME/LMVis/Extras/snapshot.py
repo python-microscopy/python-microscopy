@@ -20,13 +20,16 @@
 #
 import PIL
 
-from PYME.LMVis.Extras.VideoPanel import VideoPanel
+from PYME.LMVis.Extras.animation import VideoPanel
 from scipy.misc import toimage
 from wx import wx
 from OpenGL.GL import GL_LUMINANCE, GL_RGB
 
+#FIXME - does this shadow / duplicate existing functionality?
 
 def save_snapshot(canvas):
+    #FIXME - This is the WRONG way to do pixel sizes - we should be using a value in nm
+    # we also shouldn't be calling a static method of an unrelated class to do this.
     pixel_size = float(VideoPanel.ask(canvas, message='Please enter the pixel size (1 pixel on the screen = x pixel '
                                                       'in the snapshot', default_value='1'))
     file_name = wx.FileSelector('Save Image as ... (image .png will be appended to filename)')
