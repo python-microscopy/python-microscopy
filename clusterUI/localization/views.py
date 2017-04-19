@@ -171,6 +171,8 @@ def localize(request, analysisModule='LatGaussFitFR'):
     
     remaining_series = request.POST.getlist('series', [])
     
+    nSeries = len(remaining_series)
+    
     nAttempts = 0
     
     while len(remaining_series) > 0 and nAttempts < 3:
@@ -191,6 +193,9 @@ def localize(request, analysisModule='LatGaussFitFR'):
             logging.debug('%d series were not launched correctly, waiting 20s and retrying' % len(remaining_series))
             time.sleep(20)
 
+    nFailed = len(remaining_series)
+    if nFailed > 0:
+        raise RuntimeError('Failed to push %d of %d series' % (nFailed, nSeries))
 
     return HttpResponseRedirect('/status/queues/')
 
