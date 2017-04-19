@@ -19,3 +19,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from .AxesOverlayLayer import AxesOverlayLayer
+from .LUTOverlayLayer import LUTOverlayLayer
+from .Point3DRenderLayer import Point3DRenderLayer
+from .PointSpriteRenderLayer import PointSpritesRenderLayer
+from .QuadTreeRenderLayer import QuadTreeRenderLayer
+from .RenderLayer import RenderLayer
+from .ScaleBarOverlayLayer import ScaleBarOverlayLayer
+from .SelectionOverlayLayer import SelectionOverlayLayer
+from .ShadedPointRenderLayer import ShadedPointRenderLayer
+from .TriangleRenderLayer import TriangleRenderLayer
