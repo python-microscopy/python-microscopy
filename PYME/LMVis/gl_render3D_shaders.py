@@ -41,7 +41,7 @@ from PYME.LMVis.Layer.TriangleRenderLayer import TriangleRenderLayer
 from PYME.LMVis.gl_offScreenHandler import OffScreenHandler
 from wx.glcanvas import GLCanvas
 
-from PYME.LMVis.View import View
+from PYME.LMVis.views import View
 
 try:
     from PYME.Analysis.points.gen3DTriangs import gen3DTriangs, gen3DBlobs

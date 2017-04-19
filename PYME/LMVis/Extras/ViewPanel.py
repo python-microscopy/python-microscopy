@@ -23,7 +23,7 @@ import json
 import wx
 import wx.lib.agw.aui as aui
 
-from PYME.LMVis.View import View
+from PYME.LMVis.views import View
 
 
 class ViewPanel(wx.Panel):
