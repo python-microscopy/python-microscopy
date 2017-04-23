@@ -105,22 +105,6 @@ class LocalMaxima(Filter):
         im.mdh['LocalMaxima.threshold'] = self.threshold
         im.mdh['LocalMaxima.minDistance'] = self.minDistance
         
-@register_module('SVMSegment')         
-class svmSegment(Filter):
-    classifier = File('')
-    
-    def _loadClassifier(self):
-        from PYME.Analysis import svmSegment
-        if not '_cf' in dir(self):
-            self._cf = svmSegment.svmClassifier(filename=self.classifier)
-    
-    def applyFilter(self, data, chanNum, frNum, im):
-        self._loadClassifier()
-        
-        return self._cf.classify(data.astype('f'))
-
-    def completeMetadata(self, im):
-        im.mdh['SVMSegment.classifier'] = self.classifier
         
 @register_module('OpticalFlow')         
 class OpticalFlow(ModuleBase):

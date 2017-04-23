@@ -19,14 +19,14 @@ void main(void){
     //normal between object and eye space
     vec3 normal = normalize(gl_NormalMatrix*gl_Normal);
 
-    float diffuseLight = max(dot(lightsource, normal), 0.0);
+    float diffuseLight = abs(dot(lightsource, normal));//, 0.0);
     vec4 diffuse = vec4(0.0, 0.0, 0.0, 1.0);
     vec4 specular = vec4(0.0, 0.0, 0.0, 1.0);
     vec4 diff = vec4(0.0, 0.0, 0.0, 1.0);
     if (diffuseLight > 0){
         diffuse = diffuseLight * inputColor * light_diffuse;
         vec3 H = normalize(light_position.xyz + view_vector.xyz);
-        float specLight = pow(max(dot(H, normal),0), shininess);
+        float specLight = pow(abs(dot(H, normal)), shininess);
         vec4 spec = white * light_specular;
         specular = specLight * spec;
     }
