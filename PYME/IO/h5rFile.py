@@ -14,13 +14,17 @@ tablesLock = threading.Lock()
 file_cache = {}
 
 
+openLock = threading.Lock()
+
 def openH5R(filename, mode='r'):
     key = (filename, mode)
-    if key in file_cache and file_cache[key].is_alive:
-        return file_cache[key]
-    else:
-        file_cache[key] = H5RFile(filename, mode)
-        return file_cache[key]
+    
+    with openLock:
+        if key in file_cache and file_cache[key].is_alive:
+            return file_cache[key]
+        else:
+            file_cache[key] = H5RFile(filename, mode)
+            return file_cache[key]
 
 
 
