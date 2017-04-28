@@ -583,3 +583,70 @@ class MeasureClusters3D(ModuleBase):
 
         namespace[self.outputName] = meas
 
+
+@register_module('FiducialCorrection')
+class FiducialCorrection(ModuleBase):
+    """
+    Maps each point in the input table to a pixel in a labelled image, and extracts the pixel value at that location to
+    use as a label for the point data.
+
+    Inputs
+    ------
+    inputName: name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
+    inputImage: name of image input containing labels
+
+    Outputs
+    -------
+    outputName: name of tabular output. A mapped version of the tabular input with 2 extra columns
+        objectID: Label number from image, mapped to each localization within that label
+        NEvents: Number of localizations within the label that a given localization belongs to
+
+    """
+    inputLocalizations = Input('Localizations')
+    inputFiducials = Input('Fiducials')
+
+    clumpRadiusVar = CStr('error_x')
+    clumpRadiusMultiplier = Float(5.0)
+    timeWindow = Int(25)
+    
+    temporalFilter = Enum(['Gaussian', 'Uniform', 'Median'])
+    temporalFilterScale = Float(10.0)
+
+    outputName = Output('corrected_localizations')
+    outputFiducials = Output('corrected_fiducials')
+
+    def execute(self, namespace):
+        from PYME.IO import tabular
+        from PYME.Analysis.points import fiducials
+
+        locs = namespace[self.inputLocalizations]
+        fids = namespace[self.inputFiducials]
+        
+        t_fid, fid_trajectory, clump_index = fiducials.extractAverageTrajectory(fids, clumpRadiusVar=self.clumpRadiusVar,
+                                                        clumpRadiusMultiplier=float(self.clumpRadiusMultiplier),
+                                                        timeWindow=int(self.timeWindow),
+                                                        filter=self.temporalFilter, filterScale=float(self.temporalFilterScale))
+        
+        out = tabular.mappingFilter(locs)
+        t_out = out['t']
+
+        out_f = tabular.mappingFilter(fids)
+        out_f.addColumn('clumpIndex', clump_index)
+        t_out_f = out_f['t']
+
+        for dim in fid_trajectory.keys():
+            print(dim)
+            out.addColumn('fiducial_{0}'.format(dim), np.interp(t_out, t_fid, fid_trajectory[dim]))
+            out.setMapping(dim, '{0} - fiducial_{0}'.format(dim))
+
+            out_f.addColumn('fiducial_{0}'.format(dim), np.interp(t_out_f, t_fid, fid_trajectory[dim]))
+            out_f.setMapping(dim, '{0} - fiducial_{0}'.format(dim))
+
+        # propagate metadata, if present
+        try:
+            out.mdh = locs.mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = out
+        namespace[self.outputFiducials] = out_f

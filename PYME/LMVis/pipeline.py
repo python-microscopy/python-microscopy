@@ -431,7 +431,9 @@ class Pipeline:
                 #keep raw measurements available
                 s.setMapping('x_raw', 'x')
                 s.setMapping('y_raw', 'y')
-                s.setMapping('z_raw', 'z')
+                
+                if 'z' in  s.keys():
+                    s.setMapping('z_raw', 'z')
                 
         if not self.selectedDataSource is None:
             #we can recycle the mapping object

@@ -326,7 +326,11 @@ class ModuleCollection(HasTraits):
 
         for m in exec_order:
             if isinstance(m, ModuleBase) and not m.outputs_in_namespace(self.namespace):
-                m.execute(self.namespace)
+                try:
+                    m.execute(self.namespace)
+                except:
+                    logger.exception("Error in recipe module: %s" % m)
+                    raise
         
         if 'output' in self.namespace.keys():
             return self.namespace['output']
