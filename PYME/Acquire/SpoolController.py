@@ -71,9 +71,7 @@ class SpoolController(object):
         
         #if we've had to quit for whatever reason start where we left off
         #while os.path.exists(os.path.join(self.dirname, self.seriesName + '.h5')):
-        while self._checkOutputExists(self.seriesName):
-            self.seriesCounter +=1
-            self.seriesName = self._GenSeriesName()
+        self._update_series_counter()
             
         
         
@@ -85,10 +83,15 @@ class SpoolController(object):
         if self.spoolType == 'HTTP':
             from PYME.Acquire import HTTPSpooler
             #special case for HTTP spooling
-            return HTTPSpooler.exists(getRelFilename(self.dirname + fn + '.h5'))
+            return HTTPSpooler.exists(getRelFilename(self.dirname + fn + '.pcs'))
             #return (fn + '.h5/') in HTTPSpooler.clusterIO.listdir(self.dirname)
         else:
             return (fn + '.h5') in os.listdir(self.dirname)
+        
+    def _update_series_counter(self):
+        while self._checkOutputExists(self.seriesName):
+            self.seriesCounter +=1
+            self.seriesName = self._GenSeriesName()
             
     def SetSpoolDir(self, dirname):
         """Set the directory we're spooling into"""
@@ -256,9 +259,5 @@ class SpoolController(object):
             One of 'File', 'Queue', or 'HTTP'
         """
         self.spoolType = method
-        
-        #if we've had to quit for whatever reason start where we left off
-        while self._checkOutputExists(self.seriesName):
-            self.seriesCounter +=1
-            self.seriesName = self._GenSeriesName()
+        self._update_series_counter()
 
