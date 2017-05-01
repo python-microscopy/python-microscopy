@@ -544,7 +544,7 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
     def OnGetMatches(self, event=None):
         import glob
         
-        files = glob.glob(self.tGlob.GetValue())
+        files = sorted(glob.glob(self.tGlob.GetValue()))
         self.UpdateFileList(files)
         
     def UpdateFileList2(self, filenames):
@@ -558,7 +558,7 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
     def OnGetMatches2(self, event=None):
         import glob
         
-        files = glob.glob(self.tGlob2.GetValue())
+        files = sorted(glob.glob(self.tGlob2.GetValue()))
         self.UpdateFileList2(files)
         
     def OnBake(self, event=None):
