@@ -22,7 +22,8 @@ import os
 
 from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
     glPolygonMode, GL_FILL, GL_FRONT_AND_BACK, glEnable, GL_BLEND, GL_SRC_ALPHA, GL_DST_ALPHA, glBlendFunc, \
-    glBlendEquation, GL_FUNC_ADD, GL_DEPTH_TEST, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH
+    glBlendEquation, GL_FUNC_ADD, GL_DEPTH_TEST, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH, GL_ONE_MINUS_SRC_ALPHA, \
+    GL_TRUE, glDepthMask, glClearDepth, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, glDisable, GL_ONE, GL_ZERO
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
@@ -38,9 +39,9 @@ class DefaultShaderProgram(GLProgram):
         self.set_shader_program(_shader_program)
 
     def __enter__(self):
+        glBlendFunc(GL_SRC_ALPHA, GL_ZERO)
         glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
-        glBlendEquation(GL_FUNC_ADD)
+        glDepthMask(GL_TRUE)
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_POINT_SMOOTH)
@@ -49,6 +50,9 @@ class DefaultShaderProgram(GLProgram):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(0)
+        glDisable(GL_BLEND)
+        glClearDepth(1.0)
+        glClear(GL_DEPTH_BUFFER_BIT)
         pass
 
 

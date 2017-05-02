@@ -178,7 +178,6 @@ class LMGLShaderCanvas(GLCanvas):
             print('ns')
             return
         wx.PaintDC(self)
-        # print self.GetContext()
         self.gl_context.SetCurrent(self)
         self.SetCurrent()
 
