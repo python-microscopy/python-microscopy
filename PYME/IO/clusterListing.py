@@ -81,7 +81,7 @@ def aggregate_dirlisting(dir_list, single_dir):
             type |= fi.type
 
             if type & FILETYPE_DIRECTORY:
-                size += fi.size
+                size += fi.size #FIXME - this doesn't work for non-leaf directories
 
         dir_list[k] = FileInfo(type, size)
 

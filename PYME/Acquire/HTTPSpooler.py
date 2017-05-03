@@ -50,6 +50,9 @@ import random
 
 import json
 
+import logging
+logger = logging.getLogger(__name__)
+
 class EventLogger:
     def __init__(self, spool):#, scope):
         self.spooler = spool
@@ -186,6 +189,8 @@ class Spooler(sp.Spooler):
     def StopSpool(self):
         self.dPoll = False
         sp.Spooler.StopSpool(self)
+        
+        logger.debug('Stopping spooling %s' % self.seriesName)
         
         clusterIO.putFile(self.seriesName  + '/final_metadata.json', self.md.to_JSON())
         

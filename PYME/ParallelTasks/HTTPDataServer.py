@@ -99,8 +99,11 @@ startTime = datetime.datetime.now()
 #global_status = {}
 
 status = {}
+_net = {}
+_last_update_time = time.time()
 
 def updateStatus():
+    global _last_update_time
     from PYME.IO.FileUtils.freeSpace import disk_usage
 
     #status = {}
@@ -112,9 +115,20 @@ def updateStatus():
 
     try:
         import psutil
+        
+        ut = time.time()
 
         status['CPUUsage'] = psutil.cpu_percent(interval=0, percpu=True)
         status['MemUsage'] = psutil.virtual_memory()._asdict()
+        
+        nets = psutil.net_io_counters(True)
+        dt = ut - _last_update_time
+        
+        status['Network'] = {iface : {'send' : (nets[iface].bytes_sent - _net[iface].bytes_sent)/dt,
+                                      'recv' : (nets[iface].bytes_recv - _net[iface].bytes_recv)/dt} for iface in nets.keys()}
+        
+        _net.update(nets)
+        _last_update_time = ut
     except ImportError:
         pass
 

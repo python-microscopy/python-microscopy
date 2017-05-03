@@ -59,4 +59,32 @@
     </table>
     </div>
 
+    <div class="section">
+    <h1>Network</h1>
+    <p><em>Note:Network usage is currently measured by the storage server, and will not be reported for compute-only nodes.</em></p>
+    <table class="table table-striped">
+        <tr><th>Name</th><th>Bytes/s Sent</th><th>Bytes/s Recieved</th></tr>
+        {% for node in storage_nodes %}
+            <tr>
+            <td>{{ node.ComputerName }}</td>
+{#            <td>{{ node.Disk.total | filesizeformat}}&nbsp;total<br>{{ node.Disk.free | filesizeformat}}&nbsp;free</td>#}
+            <td>
+                <table>
+                    {% for iface, throughput in node.Network.items %}
+                        <tr><td> {{ iface }}</td><td>{{ throughput.send }}</td></tr>
+                    {% endfor %}
+                </table>
+            </td>
+            <td>{#{{ node.CPUUsage }}#}
+                <table>
+                    {% for iface, throughput in node.Network.items %}
+                        <tr><td> {{ iface }}</td><td>{{ throughput.recv }}</td></tr>
+                    {% endfor %}
+                </table>
+            </td>
+            </tr>
+        {% endfor %}
+    </table>
+    </div>
+
 
