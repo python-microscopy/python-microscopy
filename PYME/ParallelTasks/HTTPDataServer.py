@@ -101,6 +101,11 @@ startTime = datetime.datetime.now()
 status = {}
 _net = {}
 _last_update_time = time.time()
+try:
+    import psutil
+    _net.update(psutil.net_io_counters(True))
+except ImportError:
+    pass
 
 def updateStatus():
     global _last_update_time
