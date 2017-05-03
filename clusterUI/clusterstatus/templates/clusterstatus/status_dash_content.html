@@ -71,14 +71,14 @@
             <td>
                 <table>
                     {% for iface, throughput in node.Network.items %}
-                        <tr><td> {{ iface }}</td><td>{{ throughput.send }}</td></tr>
+                        <tr><td> {{ iface }}</td><td>{{ throughput.send | filesizeformat }}</td></tr>
                     {% endfor %}
                 </table>
             </td>
             <td>{#{{ node.CPUUsage }}#}
                 <table>
                     {% for iface, throughput in node.Network.items %}
-                        <tr><td> {{ iface }}</td><td>{{ throughput.recv }}</td></tr>
+                        <tr><td> {{ iface }}</td><td>{{ throughput.recv | filesizeformat }}</td></tr>
                     {% endfor %}
                 </table>
             </td>
