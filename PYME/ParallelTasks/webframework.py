@@ -28,6 +28,7 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
     logrequests = False
 
     def _process_request(self):
+        import zlib
         up = urlparse.urlparse(self.path)
 
         kwargs = urlparse.parse_qs(up.query)
@@ -37,6 +38,8 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
         cl = int(self.headers.get('Content-Length', 0))
         if cl > 0:
             body = self.rfile.read(cl)
+            if self.headers.get('Content-Encoding') == 'gzip':
+                body = zlib.decompress(body)
             kwargs['body'] = body
 
         #logger.debug('Request path: ' + up.path)
@@ -47,6 +50,9 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
 
         self.send_response(200)
         self.send_header("Content-Type", 'application/json')
+        if 'gzip' in self.headers.get('Accept-Encoding', ''):
+            self.send_header('Content-Encoding', 'gzip')
+            resp = zlib.compress(resp)
         self.send_header("Content-Length", "%d" % len(resp))
         self.end_headers()
 

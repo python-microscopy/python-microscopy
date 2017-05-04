@@ -82,12 +82,13 @@ class TaskQueue(object):
         return tasks
 
     def _rate_tasks(self, tasks, node, rated_queue):
+        import zlib
         server = self.distributor.nodes[node]
         url = 'http://%s:%d/node/rate' % (server['ip'], int(server['port']))
         #logger.debug('Requesting rating from %s' % url)
         try:
-            r = requests.post(url, data=tasks,
-                          headers={'Content-Type': 'application/json'}, timeout=RATE_TIMEOUT)
+            r = requests.post(url, data=zlib.compress(tasks),
+                          headers={'Content-Type': 'application/json', 'Content-Encoding' : 'gzip'}, timeout=RATE_TIMEOUT)
             resp = r.json()
             if resp['ok']:
                 rated_queue.append((node, resp['result']))
