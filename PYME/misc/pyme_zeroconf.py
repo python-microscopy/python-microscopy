@@ -34,40 +34,60 @@ class PatchedServiceInfo(zeroconf.ServiceInfo):
         """
         now = zeroconf.current_time_millis()
         delay = zeroconf._LISTENER_TIME
-        next = now + delay
+        next_ = now + delay
         last = now + timeout
-        result = False
+
+        record_types_for_check_cache = [
+            (zeroconf._TYPE_SRV, zeroconf._CLASS_IN),
+            (zeroconf._TYPE_TXT, zeroconf._CLASS_IN),
+        ]
+        if self.server is not None:
+            record_types_for_check_cache.append((zeroconf._TYPE_A, zeroconf._CLASS_IN))
+        for record_type in record_types_for_check_cache:
+            cached = zc.cache.get_by_details(self.name, *record_type)
+            if cached:
+                self.update_record(zc, now, cached)
+
+        if None not in (self.server, self.address, self.text, self.port):
+            return True
+
         try:
             zc.add_listener(self, zeroconf.DNSQuestion(self.name, zeroconf._TYPE_ANY, zeroconf._CLASS_IN))
-            while None in (self.server, self.address,self.text):#, self.port):
+            while None in (self.server, self.address, self.text, self.port):
                 if last <= now:
                     return False
-                if next <= now:
+                if next_ <= now:
                     out = zeroconf.DNSOutgoing(zeroconf._FLAGS_QR_QUERY)
-                    out.add_question(zeroconf.DNSQuestion(self.name, zeroconf._TYPE_SRV,
-                                                          zeroconf._CLASS_IN))
-                    out.add_answer_at_time(zc.cache.get_by_details(self.name,
-                                                                   zeroconf._TYPE_SRV, zeroconf._CLASS_IN), now)
-                    out.add_question(zeroconf.DNSQuestion(self.name, zeroconf._TYPE_TXT,
-                                                 zeroconf._CLASS_IN))
-                    out.add_answer_at_time(zc.cache.get_by_details(self.name,
-                                                                   zeroconf._TYPE_TXT, zeroconf._CLASS_IN), now)
+                    out.add_question(
+                        zeroconf.DNSQuestion(self.name, zeroconf._TYPE_SRV, zeroconf._CLASS_IN))
+                    
+                    if self.port is not None:
+                        out.add_answer_at_time(
+                            zc.cache.get_by_details(
+                                self.name, zeroconf._TYPE_SRV, zeroconf._CLASS_IN), now)
+            
+                    out.add_question(
+                        zeroconf.DNSQuestion(self.name, zeroconf._TYPE_TXT, zeroconf._CLASS_IN))
+                    out.add_answer_at_time(
+                        zc.cache.get_by_details(
+                            self.name, zeroconf._TYPE_TXT, zeroconf._CLASS_IN), now)
+            
                     if self.server is not None:
-                        out.add_question(zeroconf.DNSQuestion(self.server,
-                                                              zeroconf._TYPE_A, zeroconf._CLASS_IN))
-                        out.add_answer_at_time(zc.cache.get_by_details(self.server,
-                                                                       zeroconf._TYPE_A, zeroconf._CLASS_IN), now)
+                        out.add_question(
+                            zeroconf.DNSQuestion(self.server, zeroconf._TYPE_A, zeroconf._CLASS_IN))
+                        out.add_answer_at_time(
+                            zc.cache.get_by_details(
+                                self.server, zeroconf._TYPE_A, zeroconf._CLASS_IN), now)
                     zc.send(out)
-                    next = now + delay
-                    delay = delay * 2
-
-                zc.wait(min(next, last) - now)
+                    next_ = now + delay
+                    delay *= 2
+        
+                zc.wait(min(next_, last) - now)
                 now = zeroconf.current_time_millis()
-            result = True
         finally:
             zc.remove_listener(self)
 
-        return result
+        return True
 
 class ZCListener(object): 
     def __init__(self, protocol='_pyme-pyro'):
