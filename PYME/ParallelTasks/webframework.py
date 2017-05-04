@@ -37,8 +37,18 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
     
         return zbuf.getvalue()
 
-    def _process_request(self):
+    def _gzip_decompress(self, data):
         import gzip
+        from io import BytesIO
+        zbuf = BytesIO(data)
+        zfile = gzip.GzipFile(mode='rb', fileobj=zbuf)#, compresslevel=9)
+        out = zfile.read()
+        zfile.close()
+    
+        return out
+
+    def _process_request(self):
+        #import gzip
         up = urlparse.urlparse(self.path)
 
         kwargs = urlparse.parse_qs(up.query)
@@ -47,13 +57,11 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
 
         cl = int(self.headers.get('Content-Length', 0))
         if cl > 0:
+            body = self.rfile.read(cl)
             
             if self.headers.get('Content-Encoding') == 'gzip':
-                zfile = gzip.GzipFile(mode='rb', fileobj=self.rfile)
-                body = zfile.read()
-                zfile.close()
-            else:
-                body = self.rfile.read(cl)
+                body = self._gzip_decompress(body)
+                
             kwargs['body'] = body
 
         #logger.debug('Request path: ' + up.path)
