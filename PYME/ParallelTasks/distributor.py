@@ -81,13 +81,23 @@ class TaskQueue(object):
             pass
         return tasks
 
+    def _gzip_compress(self, data):
+        import gzip
+        from io import BytesIO
+        zbuf = BytesIO()
+        zfile = gzip.GzipFile(mode='wb', fileobj=zbuf)#, compresslevel=9)
+        zfile.write(data)
+        zfile.close()
+        
+        return zbuf.getvalue()
+
     def _rate_tasks(self, tasks, node, rated_queue):
-        import zlib
+        #import zlib
         server = self.distributor.nodes[node]
         url = 'http://%s:%d/node/rate' % (server['ip'], int(server['port']))
         #logger.debug('Requesting rating from %s' % url)
         try:
-            r = requests.post(url, data=zlib.compress(tasks),
+            r = requests.post(url, data=self._gzip_compress(tasks),
                           headers={'Content-Type': 'application/json', 'Content-Encoding' : 'gzip'}, timeout=RATE_TIMEOUT)
             resp = r.json()
             if resp['ok']:

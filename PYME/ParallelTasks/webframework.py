@@ -27,8 +27,18 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
     protocol_version='HTTP/1.1'
     logrequests = False
 
+    def _gzip_compress(self, data):
+        import gzip
+        from io import BytesIO
+        zbuf = BytesIO()
+        zfile = gzip.GzipFile(mode='wb', fileobj=zbuf)#, compresslevel=9)
+        zfile.write(data)
+        zfile.close()
+    
+        return zbuf.getvalue()
+
     def _process_request(self):
-        import zlib
+        #import gzip
         up = urlparse.urlparse(self.path)
 
         kwargs = urlparse.parse_qs(up.query)
@@ -47,12 +57,15 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
 
         handler = self.server._endpoints[up.path]
         resp = handler(**kwargs)
+        
+        compress_output = 'gzip' in self.headers.get('Accept-Encoding', '')
 
         self.send_response(200)
         self.send_header("Content-Type", 'application/json')
-        if 'gzip' in self.headers.get('Accept-Encoding', ''):
+        if compress_output:
             self.send_header('Content-Encoding', 'gzip')
-            resp = zlib.compress(resp)
+            resp = self._gzip_compress(resp) #FIXME - write directly to wfile rather than to a BytesIO object - how do we find the content-length?
+            
         self.send_header("Content-Length", "%d" % len(resp))
         self.end_headers()
 
