@@ -38,7 +38,7 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
         return zbuf.getvalue()
 
     def _process_request(self):
-        #import gzip
+        import gzip
         up = urlparse.urlparse(self.path)
 
         kwargs = urlparse.parse_qs(up.query)
@@ -47,9 +47,13 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
 
         cl = int(self.headers.get('Content-Length', 0))
         if cl > 0:
-            body = self.rfile.read(cl)
+            
             if self.headers.get('Content-Encoding') == 'gzip':
-                body = zlib.decompress(body)
+                zfile = gzip.GzipFile(mode='rb', fileobj=self.rfile)
+                body = zfile.read()
+                zfile.close()
+            else:
+                body = self.rfile.read(cl)
             kwargs['body'] = body
 
         #logger.debug('Request path: ' + up.path)
