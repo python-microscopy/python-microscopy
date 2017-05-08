@@ -57,13 +57,26 @@ class TabularBase(object):
         return key, sl
 
     def to_recarray(self, keys=None):
-        from numpy.lib import recfunctions as rfn
+        """
+        Converts tabular data types into record arrays, which is useful for e.g. saving as an hdf table. In order to be
+        converted, the tabular data source must be able to be flattened.
+
+        Parameters
+        ----------
+        keys : list of fields to be copied into output. Defaults to all existing keys.
+
+        Returns
+        -------
+        numpy recarray version of self
+
+        """
+        from numpy.core import records
         if keys is None:
             keys = self.keys()
 
-        ra = rfn.merge_arrays([self.__getitem__(k) for k in keys])
-        ra.dtype.names = tuple(keys)
-        return ra
+        columns = [self.__getitem__(k) for k in keys]
+        dt = [(k, v.dtype) for k, v in zip(keys, columns)]
+        return records.fromarrays(columns, names=keys, dtype=dt)
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
         from PYME.IO import h5rFile
