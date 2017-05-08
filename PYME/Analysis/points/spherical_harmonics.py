@@ -230,10 +230,10 @@ def project(x, y, z, mmax=3, centre_points=True, nIters = 2, tol_init = 0.3, z_s
     Returns
     -------
     pojection : structured ndarray with the following keys
-        modes : list of tuples
-            a list of the (m, n) modes projected onto
-        coefficients : ndarray
-            the mode coefficients
+        m_modes : the m modes corresponding to each coefficient
+        n_modes : the n modes corresponding to each coefficient
+        coefficients : the amplitude for each spherical harmonic
+    mdh : metadatahandler with the following keys
         centre : tuple
             the x, y, z centre of the object (if centre_points=True).
         z_scale : float
@@ -242,22 +242,24 @@ def project(x, y, z, mmax=3, centre_points=True, nIters = 2, tol_init = 0.3, z_s
             same as input parameter
 
     """
-    modes, c, (x0, y0, z0) = sphere_expansion_clean(x, y, z*z_scale, mmax, centre_points, nIters, tol_init)
-    numCoefs = len(c)
-    dt = [('m_modes', '<i4', (numCoefs)),
-          ('n_modes', '<i4', (numCoefs)),
-          ('coefficients', '<f4', (numCoefs)),
-          ('centre', '<f4', 3),
-          ('z_scale', '<f4'),
-          ('max_m_mode', '<i4')]
-    #self.projection = np.array([np.asarray(modes).T, c, (x0, y0, z0), float(z_scale), mmax], dtype=self.dtype)
-    projection = np.empty(1, dtype=dt)
-    marray = np.array(modes)
-    projection['m_modes'], projection['n_modes'] = marray[:, 0], marray[:, 1]
-    projection['coefficients'] = c
-    projection['centre'] = (x0, y0, z0)
-    projection['z_scale'] = z_scale
-    projection['max_m_mode'] = mmax
+    from PYME.IO.MetaDataHandler import SimpleMDHandler
 
-    return projection
+    modes, c, (x0, y0, z0) = sphere_expansion_clean(x, y, z*z_scale, mmax, centre_points, nIters, tol_init)
+
+    # initialize output
+    projection = np.empty(len(modes), dtype=[('m_modes', '<i4'), ('n_modes', '<i4'), ('coefficients', '<f4')])
+
+
+    marray = np.array(modes)
+    projection['m_modes'][:], projection['n_modes'][:] = marray[:, 0], marray[:, 1]
+    projection['coefficients'][:] = c
+
+
+    # pass attributes as metadata
+    mdh = SimpleMDHandler()
+    mdh['SphericalHarmonics.centre'] = (x0, y0, z0)
+    mdh['SphericalHarmonics.z_scale'] = z_scale
+    mdh['SphericalHarmonics.max_m_mode'] = mmax
+
+    return projection, mdh
 

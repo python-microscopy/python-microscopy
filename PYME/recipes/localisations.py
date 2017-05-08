@@ -606,10 +606,14 @@ class FitToSphericalHarmonics(ModuleBase): #FIXME - this likely doesnt belong he
 
         inp = namespace[self.inputName]
 
-        proj = tabular.recArrayInput(spharm.project(inp['x'], inp['y'], inp['z'], mmax=self.max_m_mode, z_scale=self.zscale))
+        proj, md = spharm.project(inp['x'], inp['y'], inp['z'], mmax=self.max_m_mode, z_scale=self.zscale)
+        proj = tabular.recArrayInput(proj)
+        proj.mdh = md
 
+        # copy metadata from the input, if present
         try:
-            proj.mdh = namespace[self.inputName].mdh
+            # projection already has a metadata handler, with spherical harmonic information
+            proj.mdh.copyEntriesFrom(namespace[self.inputName].mdh)
         except AttributeError:
             pass
 
@@ -660,17 +664,24 @@ class AddSphericalHarmonicInfo(ModuleBase): #FIXME - this likely doesnt belong h
         mapped = tabular.mappingFilter(inp)
 
         rep = namespace[self.inputSphericalHarmonics]
+        if not hasattr(rep, 'mdh'):
+            raise AttributeError('Spherical harmonic input must have metadata')
+
         # calculate theta, phi, and rad for each localization in the pipeline
-        theta, phi, datRad = spharm.cart2sph(inp['x'] - rep['centre'][0], inp['y'] - rep['centre'][1],
-                                             inp['z'] - (rep['centre'][2])/rep['z_scale'])
+        x0, y0, z0 = rep.mdh['SphericalHarmonics.centre']
+        theta, phi, datRad = spharm.cart2sph(inp['x'] - x0, inp['y'] - y0,
+                                             inp['z'] - (z0)/rep.mdh['SphericalHarmonics.z_scale'])
 
         mapped.addColumn('r', datRad)
         mapped.addColumn('theta', theta)
         mapped.addColumn('phi', phi)
-        mapped.addColumn('r_norm', datRad / spharm.reconstruct_from_modes(zip(rep['m_modes'], rep['n_modes']), rep['coeffs'], theta, phi))
+        mapped.addColumn('r_norm', datRad / spharm.reconstruct_from_modes(zip(rep['m_modes'], rep['n_modes']),
+                                                                          rep['coefficients'], theta, phi))
 
         try:
-            mapped.mdh = inp.mdh
+            # note that copying overwrites shared fields
+            mapped.mdh = rep.mdh
+            mapped.mdh.copyEntriesFrom(inp.mdh)
         except AttributeError:
             pass
 
