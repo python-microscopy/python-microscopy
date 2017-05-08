@@ -64,7 +64,7 @@ def binMedian(binVar, indepVar, bins):
         Parameters
         ----------
         binVar : array to be binned using 'bins' input. Each element of this array corresponds to an element in indepVar
-        indepVar : array of the independent variable, to be averaged within each bin
+        indepVar : array of the independent variable, to have the median calculated within each bin
         bins : array of bin edges
 
         Returns
