@@ -25,14 +25,33 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def binAvg(binVar, indepVar, bins):
-    bm = np.zeros(len(bins) - 1)
-    bs = np.zeros(len(bins) - 1)
-    bn = np.zeros(len(bins) - 1, dtype='i')
+    """
 
-    for i, el, er in zip(range(len(bm)), bins[:-1], bins[1:]):
+    Parameters
+    ----------
+    binVar : array to be binned using 'bins' input. Each element of this array corresponds to an element in indepVar
+    indepVar : array of the independent variable, to be averaged within each bin
+    bins : array of bin edges
+
+    Returns
+    -------
+    bn : Number of pixels within each bin
+    bm : Mean value of indepVar within each bin
+    bs : Standard deviation of indepVar within each bin
+
+    """
+    bl = len(bins) - 1
+    # initialize outputs with zero'd arrays
+    bm = np.zeros(bl)
+    bs = np.zeros(bl)
+    bn = np.zeros(bl, dtype='i')
+
+    # loop over each bin
+    for i, el, er in zip(range(bl), bins[:-1], bins[1:]):
         v = indepVar[(binVar >= el)*(binVar < er)]
 
         bn[i] = len(v)
+        # outputs are zero-initialized:  we only need to modify the output if there are elements of binVar in this bin
         if bn[i] != 0:
             bm[i] = v.mean()
             bs[i] = v.std()
@@ -40,18 +59,33 @@ def binAvg(binVar, indepVar, bins):
     return bn, bm, bs
     
 def binMedian(binVar, indepVar, bins):
-    bm = np.zeros(len(bins) - 1)
-    bs = np.zeros(len(bins) - 1)
-    bn = np.zeros(len(bins) - 1, dtype='i')
+    """
 
-    for i, el, er in zip(range(len(bm)), bins[:-1], bins[1:]):
+        Parameters
+        ----------
+        binVar : array to be binned using 'bins' input. Each element of this array corresponds to an element in indepVar
+        indepVar : array of the independent variable, to be averaged within each bin
+        bins : array of bin edges
+
+        Returns
+        -------
+        bn : Number of pixels within each bin
+        bm : Median value of indepVar within each bin
+        bs : Standard deviation of indepVar within each bin
+
+    """
+    bl = len(bins) - 1
+    # initialize outputs with zero'd arrays
+    bm = np.zeros(bl)
+    bs = np.zeros(bl)
+    bn = np.zeros(bl, dtype='i')
+
+    for i, el, er in zip(range(bl), bins[:-1], bins[1:]):
         v = indepVar[(binVar >= el)*(binVar < er)]
 
         bn[i] = len(v)
-        if bn[i] == 0:
-            bm[i] = 0
-            bs[i] = 0
-        else:
+        # outputs are zero-initialized:  we only need to modify the output if there are elements of binVar in this bin
+        if bn[i] != 0:
             bm[i] = np.median(v)
             bs[i] = v.std()
 
