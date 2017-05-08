@@ -71,10 +71,12 @@ class wormlikeChain:
             sk = sk/dot(sk, sk.T)
     
             sn = cos(theta[i])*so + sin(theta[i])*sin(phi[i])*sh + sin(theta[i])*cos(phi[i])*sk
-    
-            xs[i] = steplength*sn[0]
-            ys[i] = steplength*sn[1]
-            zs[i] = steplength*sn[2]
+
+            snn = sqrt((sn * sn).sum())
+            
+            xs[i] = steplength*sn[0]/snn
+            ys[i] = steplength*sn[1]/snn
+            zs[i] = steplength*sn[2]/snn
     
             so = sn;
             #i/numsteps

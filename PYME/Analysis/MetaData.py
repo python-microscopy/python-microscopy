@@ -267,8 +267,10 @@ def fixEMGain(md):
             md.setEntry('Camera.TrueEMGain', 100) #real gain @ -50C - from curve in performance book - need proper calibration
         elif md.getEntry('Camera.EMGain') == 150: #gain register setting
             md.setEntry('Camera.TrueEMGain', 20) #real gain @ -50C - need proper calibration
+        elif md.getOrDefault('Camera.EMGain', 0) == 0:
+            md.setEntry('Camera.TrueEMGain', 1.0)
 
 
-    if 'Camera.name' in md.getEntryNames(): #new improved metadata
-        if md.getEntry('Camera.name') == 'Simulated Standard CCD Camera': #em gain for simulated camera is _real_ em gain rather than gain register setting
+    if 'Camera.Name' in md.getEntryNames(): #new improved metadata
+        if md.getEntry('Camera.Name') == 'Simulated Standard CCD Camera': #em gain for simulated camera is _real_ em gain rather than gain register setting
             md.setEntry('Camera.TrueEMGain', md.getEntry('Camera.EMGain'))

@@ -102,6 +102,7 @@ def create(shape, dtype='d', order=None):
         N *= dtype.itemsize
 
     a = sharedctypes.RawArray(dt, N)
+    #print dtype, dt, a
 
     sa =  shmarray(a, shape, dtype, order=order)
 
@@ -111,7 +112,7 @@ def zeros(shape, dtype='d', order=None):
     """Create an shared array initialised to zeros. Avoid object arrays, as these
     will almost certainly break as the objects themselves won't be stored in shared
     memory, only the pointers"""
-    sa = create(shape, dtype='d', order=order)
+    sa = create(shape, dtype=dtype, order=order)
 
     #contrary to the documentation, sharedctypes.RawArray does NOT always return
     #an array which is initialised to zero - do it ourselves

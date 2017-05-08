@@ -5,6 +5,8 @@ Created on Mon Jun  8 16:06:17 2015
 
 @author: david
 """
+import os
+os.environ['ETS_TOOLKIT'] = 'wx'
 
 import wx
 from PYME.recipes import recipeGui

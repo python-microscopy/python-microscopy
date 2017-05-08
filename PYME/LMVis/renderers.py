@@ -401,7 +401,7 @@ class TriangleRenderer(ColourRenderer):
         mdh['Rendering.JitterVariable'] = jitParamName
         mdh['Rendering.JitterScale'] = jitScale
 
-        jitVals = self._genJitVals(jitParamName, jitScale)
+        jitVals = np.maximum(self._genJitVals(jitParamName, jitScale), pixelSize)
 
         if settings['softRender']:
             status = statusLog.StatusLogger("Rendering triangles ...")
@@ -427,7 +427,7 @@ class TriangleRendererW(ColourRenderer):
         mdh['Rendering.JitterVariable'] = jitParamName
         mdh['Rendering.JitterScale'] = jitScale
 
-        jitVals = self._genJitVals(jitParamName, jitScale)
+        jitVals = np.maximum(self._genJitVals(jitParamName, jitScale), pixelSize)
 
         if settings['softRender']:
             status = statusLog.StatusLogger("Rendering triangles ...")
@@ -459,8 +459,8 @@ class Triangle3DRenderer(TriangleRenderer):
         mdh['Rendering.JitterScaleZ'] = jitScaleZ
         mdh['Origin.z'] = settings['zBounds'][0]
 
-        jitVals = self._genJitVals(jitParamName, jitScale)
-        jitValsZ = self._genJitVals(jitParamNameZ, jitScaleZ)
+        jitVals = np.maximum(self._genJitVals(jitParamName, jitScale), pixelSize)
+        jitValsZ = np.maximum(self._genJitVals(jitParamNameZ, jitScaleZ), settings['zSliceThickness'])
 
         return visHelpers.rendJitTet(self.colourFilter['x'],self.colourFilter['y'],
                                      self.colourFilter['z'], settings['numSamples'], jitVals, jitValsZ,

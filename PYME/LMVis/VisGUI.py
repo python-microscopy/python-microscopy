@@ -144,7 +144,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #self.workspaceView = workspaceTree.WorkspaceTree(self, workspace=self.workspace, shell=self.sh)
         #self.AddPage(page=wx.StaticText(self, -1, 'foo'), select=False, caption='Workspace')
 
-#        self.glCanvas = gl_render.LMGLShaderCanvas(self)
+#        self.glCanvas = gl_render.LMGLCanvas(self)
 #        self.AddPage(page=self.glCanvas, select=True, caption='View')
 #        self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
 
@@ -166,7 +166,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             #self.refv = False
 
             recipe = getattr(self.cmd_args, 'recipe', None)
-            print 'Using recipe: %s' % recipe
+            print('Using recipe: %s' % recipe)
             if recipe:
                 from PYME.recipes import modules
                 self.pipeline.recipe.update_from_yaml(recipe)
@@ -209,7 +209,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     # def OnView3DPoints(self,event):
     #     if 'z' in self.pipeline.keys():
     #         if not 'glCanvas3D' in dir(self):
-    #             #self.glCanvas3D = gl_render3D.LMGLShaderCanvas(self)
+    #             #self.glCanvas3D = gl_render3D.LMGLCanvas(self)
     #             #self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
     #             self.glCanvas3D = gl_render3D.showGLFrame()
 
@@ -223,7 +223,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     # def OnView3DTriangles(self,event):
     #     if 'z' in self.pipeline.keys():
     #         if not 'glCanvas3D' in dir(self):
-    #             #self.glCanvas3D = gl_render3D.LMGLShaderCanvas(self)
+    #             #self.glCanvas3D = gl_render3D.LMGLCanvas(self)
     #             #self.AddPage(page=self.glCanvas3D, select=True, caption='3D')
     #             self.glCanvas3D = gl_render3D.showGLFrame()
 

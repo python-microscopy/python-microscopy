@@ -99,8 +99,16 @@ startTime = datetime.datetime.now()
 #global_status = {}
 
 status = {}
+_net = {}
+_last_update_time = time.time()
+try:
+    import psutil
+    _net.update(psutil.net_io_counters(True))
+except ImportError:
+    pass
 
 def updateStatus():
+    global _last_update_time
     from PYME.IO.FileUtils.freeSpace import disk_usage
 
     #status = {}
@@ -112,9 +120,20 @@ def updateStatus():
 
     try:
         import psutil
+        
+        ut = time.time()
 
         status['CPUUsage'] = psutil.cpu_percent(interval=0, percpu=True)
         status['MemUsage'] = psutil.virtual_memory()._asdict()
+        
+        nets = psutil.net_io_counters(True)
+        dt = ut - _last_update_time
+        
+        status['Network'] = {iface : {'send' : (nets[iface].bytes_sent - _net[iface].bytes_sent)/dt,
+                                      'recv' : (nets[iface].bytes_recv - _net[iface].bytes_recv)/dt} for iface in nets.keys()}
+        
+        _net.update(nets)
+        _last_update_time = ut
     except ImportError:
         pass
 
@@ -328,12 +347,22 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 with open(path, 'wb') as f:
                     f.write(r.content)
+                    
+                #set the file to read-only (reflecting our write-once semantics
+                os.chmod(path, 0o440)
+
+                if USE_DIR_CACHE:
+                    cl.dir_cache.update_cache(path, len(r.content))
 
             else:
                 #the standard case - use the contents of the put request
                 with open(path, 'wb') as f:
                     #shutil.copyfileobj(self.rfile, f, int(self.headers['Content-Length']))
                     f.write(self.rfile.read(int(self.headers['Content-Length'])))
+
+                    #set the file to read-only (reflecting our write-once semantics
+                    os.chmod(path, 0o440)
+                    
                     if USE_DIR_CACHE:
                         cl.dir_cache.update_cache(path, int(self.headers['Content-Length']))
 

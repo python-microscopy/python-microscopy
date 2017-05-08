@@ -76,7 +76,11 @@ class FourierPropagatorHNA:
         if not k is None:
             raise DeprecationWarning('k is no longer used')
         
-        self.propFac = ((2*np.pi*n/lamb)*np.cos(.5*np.pi*np.sqrt((u**2 + v**2)))).astype('f')
+        #self.propFac = ((2*np.pi*n/lamb)*np.cos(.5*np.pi*np.sqrt((u**2 + v**2)))).astype('f')
+        
+        #R = np.sqrt(u**2 + v**2)
+        self.propFac = ((2 * np.pi * n / lamb) * np.sqrt(1 - np.minimum(u ** 2 + v ** 2, 1))).astype('f')
+        
         self.pfm =(self.propFac > 0).astype('f')
 
         self._F = fftw3f.create_aligned_array(u.shape, 'complex64')
@@ -280,15 +284,19 @@ def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodizat
 
     FP = FourierPropagator(u, v, lamb=lamb, n=n)
 
-    #apperture mask
+    t_ = np.arcsin(np.minimum(R, 1))
+
     if apodization is None:
-        M = 1.0*(R < (NA/n)) # NA/lambda
+        M = 1.0 * (R < (NA / n)) # NA/lambda
     elif apodization == 'sine':
-        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
+        M = 1.0 * (R < (NA / n)) * np.sqrt(np.cos(t_))
+    elif apodization == 'empirical':
+        r_ = np.minimum(R, 1)
+        M = 1.0 * (R < (NA / n)) * (1 - 0.65 * t_) * (1 - np.exp(-10 * ((NA / n) - r_)))
 
     return X, Y, R, FP, M, u, v
     
-def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0, apodizisation='sine'):
+def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0, apodization='sine'):
     if X is None or Y is None:
         X, Y = np.meshgrid(np.arange(-2000, 2000., dx),np.arange(-2000, 2000., dx))
     else:
@@ -309,10 +317,15 @@ def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x
     #apperture mask
     M = 1.0*(R < (NA/n)) # NA/lambda
     
-    if apodizisation is None:
+    t_ = np.arcsin(np.minimum(R, 1))
+    
+    if apodization is None:
         M = 1.0*(R < (NA/n)) # NA/lambda
-    elif apodizisation == 'sine':
-        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
+    elif apodization == 'sine':
+        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(t_))
+    elif apodization == 'empirical':
+        r_ = np.minimum(R, 1)
+        M = 1.0*(R < (NA/n))*(1- 0.65*t_)*(1-np.exp(-10*((NA/n) - r_)))
     
     #M = M/M.sum()
 
@@ -351,12 +364,20 @@ def PsfFromPupil(pupil, zs, dx, lamb, apodization=None, n=1.51, NA=1.51):
 
     #if apodization is None:
     #    M = 1.0*(R < (NA/n)) # NA/lambda
-    if apodization == 'sine':
-        R = np.sqrt(u**2 + v**2)
-        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
-        pupil = pupil*M
+    R = np.sqrt(u ** 2 + v ** 2)
+    t_ = np.arcsin(np.minimum(R, 1))
 
-    FP = FourierPropagator(u,v,k, lamb)
+    if apodization is None:
+        M = 1.0 * (R < (NA / n)) # NA/lambda
+    elif apodization == 'sine':
+        M = 1.0 * (R < (NA / n)) * np.sqrt(np.cos(t_))
+    elif apodization == 'empirical':
+        r_ = np.minimum(R, 1)
+        M = 1.0 * (R < (NA / n)) * (1 - 0.65 * t_) * (1 - np.exp(-10 * ((NA / n) - r_)))
+    
+    pupil = pupil*M
+
+    FP = FourierPropagator(u,v,lamb=lamb, n=n)
     
     ps = np.concatenate([FP.propagate(pupil, z)[:,:,None] for z in zs], 2)
 
@@ -395,16 +416,24 @@ def PsfFromPupilVect(pupil, zs, dx, lamb, shape = [61,61], apodization=None, n=1
     sp = np.sin(phi)
     
     k = 2*np.pi*n/lamb
-    
-    if apodization == 'sine':
-        R = np.sqrt(u**2 + v**2)
-        M = 1.0*(R < (NA/n))*np.sqrt(np.cos(.5*np.pi*np.minimum(R, 1)))
-        pupil = pupil*M
+
+    R = np.sqrt(u ** 2 + v ** 2)
+    t_ = np.arcsin(np.minimum(R, 1))
+
+    if apodization is None:
+        M = 1.0 * (R < (NA / n)) # NA/lambda
+    elif apodization == 'sine':
+        M = 1.0 * (R < (NA / n)) * np.sqrt(np.cos(t_))
+    elif apodization == 'empirical':
+        r_ = np.minimum(R, 1)
+        M = 1.0 * (R < (NA / n)) * (1 - 0.65 * t_) * (1 - np.exp(-10 * ((NA / n) - r_)))
+
+    pupil = pupil * M
     
     
     #M = 1.0*(R < (NA/(n*lamb))) # NA/lambda
 
-    FP = FourierPropagator(u,v,k, lamb) 
+    FP = FourierPropagator(u,v,lamb=lamb, n = n)
     
     fac = ct*cp**2 + sp**2
     ps = np.concatenate([FP.propagate(pupil*fac, z)[:,:,None] for z in zs], 2)
@@ -496,9 +525,9 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters = 50, size=5e3, in
     R = np.sqrt(u**2 + v**2)
     M = 1.0*(R < (NA/n)) # NA/lambda
     
-    k = 2*np.pi*n/lamb
+    #k = 2*np.pi*n/lamb
 
-    FP = FourierPropagator(u,v,k, lamb)
+    FP = FourierPropagator(u,v,lamb=lamb,n=n)
 
     pupil = M*np.exp(1j*0)
     

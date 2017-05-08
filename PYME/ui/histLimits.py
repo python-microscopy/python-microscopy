@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-
+import time
 import wx
 import wx.lib.newevent
 
@@ -33,7 +33,7 @@ LimitChangeEvent, EVT_LIMIT_CHANGE = wx.lib.newevent.NewCommandEvent()
 class HistLimitPanel(wx.Panel):
     def __init__(self, parent, id, data, limit_lower, limit_upper, log=False, size =(200, 100), pos=(0,0), threshMode= False):
         wx.Panel.__init__(self, parent, id, size=size, pos=pos, style=wx.BORDER_SUNKEN)
-        
+
         self.data = data.ravel()
         self.data = self.data[np.isfinite(self.data)]
 
@@ -71,6 +71,23 @@ class HistLimitPanel(wx.Panel):
         wx.EVT_LEFT_UP(self, self.OnLeftUp)
         wx.EVT_MOTION(self, self.OnMouseMove)
         wx.EVT_KEY_DOWN(self, self.OnKeyPress)
+        wx.EVT_MOUSEWHEEL(self, self.OnMouseScrollEvent)
+
+    def OnMouseScrollEvent(self, evt):
+        rot = evt.GetWheelRotation()
+        # shift_offset = self.hstep
+        shift_offset = (self.limit_upper - self.limit_lower) * 0.2
+        if rot > 0:
+            delta = shift_offset
+        else:
+            delta = -shift_offset
+        self.limit_lower += delta
+        self.limit_upper += delta
+        self.GenHist()
+        self.Refresh()
+        self.Update()
+        evt = LimitChangeEvent(self.GetId(), upper=self.limit_upper, lower=self.limit_lower)
+        self.ProcessEvent(evt)
 
     def SetData(self, data, lower, upper):
         self.data = np.array(data).ravel()
@@ -88,7 +105,7 @@ class HistLimitPanel(wx.Panel):
         self.limit_upper = float(upper)
 
         if self.threshMode:
-            thresh =  0.5*(self.limit_lower + self.limit_upper)
+            thresh = 0.5*(self.limit_lower + self.limit_upper)
             self.limit_lower = thresh
             self.limit_upper = thresh
 
@@ -110,6 +127,8 @@ class HistLimitPanel(wx.Panel):
             self.dragging = 'lower'
         elif abs(ulx - x) < 3:
             self.dragging = 'upper'
+        elif llx < x < ulx:
+            self.dragging = 'shift'
 
         event.Skip()
 
@@ -142,9 +161,13 @@ class HistLimitPanel(wx.Panel):
             self.limit_lower = xt
         elif self.dragging == 'upper' and not xt <= self.limit_lower:
             self.limit_upper = xt
-
-        self.Refresh()
-        self.Update()
+        elif self.dragging == 'shift':
+            width = self.limit_upper - self.limit_lower
+            self.limit_lower = xt - width / 2
+            self.limit_upper = xt + width / 2
+        if self.dragging:
+            self.Refresh()
+            self.Update()
 
         event.Skip()
 
@@ -348,7 +371,7 @@ class HistLimitPanel(wx.Panel):
         self.limit_upper = float(val[1])
 
         if self.threshMode:
-            thresh =  0.5*(self.limit_lower + self.limit_upper)
+            thresh = 0.5*(self.limit_lower + self.limit_upper)
             self.limit_lower = thresh
             self.limit_upper = thresh
 
@@ -369,20 +392,31 @@ class HistLimitPanel(wx.Panel):
 def ShowHistLimitFrame(parent, title, data, limit_lower, limit_upper, size=(200, 100), log=False):
     f = wx.Frame(parent, title=title, size=size)
     ID_HIST_LIM = wx.NewId()
-    p = HistLimitPanel(f,ID_HIST_LIM, data, limit_lower, limit_upper, log=log)
+    p = HistLimitPanel(f, ID_HIST_LIM, data, limit_lower, limit_upper, log=log)
     f.Show()
     return ID_HIST_LIM
 
 class HistLimitDialog(wx.Dialog):
-    def __init__(self, parent, data,lower, upper, title=''):
+    def __init__(self, parent, data, lower, upper, title='', action=None, key=None):
         wx.Dialog.__init__(self, parent, title=title)
-
+        self.action = action
+        self.key = key
         sizer1 = wx.BoxSizer(wx.VERTICAL)
-        #sizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.hl = HistLimitPanel(self, -1, data, lower, upper, size=(200, 100))
-        sizer1.Add(self.hl, 0, wx.ALL|wx.EXPAND, 5)
+        hor_box = wx.BoxSizer(wx.HORIZONTAL)
+        self.min_value = wx.TextCtrl(self, -1, value=str(lower))
+        self.max_value = wx.TextCtrl(self, -1, value=str(upper))
 
+        hor_box.Add(self.min_value, 0, wx.ALL, 5)
+        hor_box.Add(self.max_value, 0, wx.ALL, 5)
+
+        self.min_value.Bind(wx.EVT_TEXT, self.min_level_changed)
+        self.max_value.Bind(wx.EVT_TEXT, self.max_level_changed)
+
+        sizer1.Add(hor_box, 0, wx.ALL, 5)
+
+        self.hl = HistLimitPanel(self, -1, data, lower, upper, size=(240, 100))
+        sizer1.Add(self.hl, 0, wx.ALL, 5)
         btSizer = wx.StdDialogButtonSizer()
 
         btn = wx.Button(self, wx.ID_OK)
@@ -400,6 +434,34 @@ class HistLimitDialog(wx.Dialog):
 
         self.SetSizer(sizer1)
         sizer1.Fit(self)
+        self.SetSizerAndFit(sizer1)
+
+        self.Bind(EVT_LIMIT_CHANGE, self.update_levels)
 
     def GetLimits(self):
         return self.hl.GetValue()
+
+    def min_level_changed(self, event):
+        try:
+            new_min = float(self.min_value.GetValue())
+            old_max = self.hl.GetValue()[1]
+            if new_min < old_max:
+                self.hl.SetValue((new_min, old_max))
+        except ValueError:
+            pass
+
+    def max_level_changed(self, event):
+        try:
+            new_max = float(self.max_value.GetValue())
+            old_min = self.hl.GetValue()[0]
+            if old_min < new_max:
+                self.hl.SetValue((old_min, new_max))
+        except ValueError:
+            pass
+
+    def update_levels(self, event):
+        self.min_value.SetValue(str(self.hl.GetValue()[0]))
+        self.max_value.SetValue(str(self.hl.GetValue()[1]))
+        # self.action(self.key, (float(self.min_value.GetValue()),
+        #                        float(self.max_value.GetValue())))
+

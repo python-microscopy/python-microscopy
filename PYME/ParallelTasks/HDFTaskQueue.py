@@ -1015,9 +1015,9 @@ class HDFTaskQueue(HDFResultsTaskQueue):
             ev.append()
             self.events.flush()
 
-            ev = self.events[-1]
+            ev = self.events[-1:]
         
-        HDFResultsTaskQueue.addQueueEvents(self, [ev,])
+        HDFResultsTaskQueue.addQueueEvents(self, ev)#[ev,])
 
 
     def releaseTasks(self, startingAt = 0):

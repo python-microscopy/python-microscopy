@@ -55,7 +55,7 @@ try:
 
     #test for a running task distributor
     distribURI = HTTPTaskPusher._getTaskQueueURI()
-    NEW_STYLE_DISTRIBUTION=True
+    NEW_STYLE_DISTRIBUTION=False
 except:
     NEW_STYLE_DISTRIBUTION=False
 

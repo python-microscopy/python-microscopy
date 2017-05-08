@@ -160,7 +160,8 @@ requirements:
     - scikit-image
     - scikit-learn
     - shapely         [osx]
-    - zeroconf
+    - zeroconf [linux]
+    - zeroconf 0.17.4 [win or osx]
     - requests
     - pandas
     - pyyaml
@@ -173,6 +174,7 @@ requirements:
     - python-bioformats [osx]
     - six
     - future
+    - pywin32 [win]
 
     #todo make cross-platform versions
     #- nvidia-ml-py  [linux] #optional - maybe better as dependency for gpu-fitting package

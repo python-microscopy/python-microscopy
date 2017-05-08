@@ -96,7 +96,7 @@ class HTTPTaskPusher(object):
         clusterIO.putFile(resultsMDFilename, self.mdh.to_JSON(), serverfilter=serverfilter)
         
         #wait until clusterIO caches clear to avoid replicating the results file.
-        time.sleep(1.5)
+        #time.sleep(1.5) #moved inside polling thread so launches will run quicker
 
         self.currentFrameNum = startAt
 
@@ -181,6 +181,9 @@ class HTTPTaskPusher(object):
     
     def _updatePoll(self):
         logging.debug('task pusher poll loop started')
+        #wait until clusterIO caches clear to avoid replicating the results file.
+        time.sleep(1.5)
+        
         while (self.doPoll == True):
             framesOutstanding = self.fileTasksForFrames()
             if self.ds.isComplete() and not (framesOutstanding > 0):
