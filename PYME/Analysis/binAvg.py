@@ -24,42 +24,93 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def binAvg(binVar, indepVar, bins):
-    bm = np.zeros(len(bins) - 1)
-    bs = np.zeros(len(bins) - 1)
-    bn = np.zeros(len(bins) - 1, dtype='i')
+def binned_average(binVar, indepVar, edges):
+    """
+    Take the binned average of values in indepVar binned according to their corresponding entries in binVar and a given set of edges.
 
-    for i, el, er in zip(range(len(bm)), bins[:-1], bins[1:]):
+    Parameters
+    ----------
+    binVar : ndarray 
+        array which is used, in combination with `edges`, to determine bin membership.
+    indepVar : ndarray
+        array of the independent variable, to be averaged within each bin. Must be the same size as binVar.
+    edges : ndarray
+        array of bin edges
+
+    Returns
+    -------
+    bn : int ndarray
+        Number of elements within each bin
+    bm : float ndarray
+        Mean value of indepVar within each bin
+    bs : float ndarray
+        Standard deviation of indepVar within each bin
+
+    """
+    num_bins = len(edges) - 1
+    
+    # initialize outputs with zero'd arrays
+    bm = np.zeros(num_bins)
+    bs = np.zeros(num_bins)
+    bn = np.zeros(num_bins, dtype='i')
+
+    # loop over each bin
+    for i, el, er in zip(range(num_bins), edges[:-1], edges[1:]):
         v = indepVar[(binVar >= el)*(binVar < er)]
 
         bn[i] = len(v)
-        if bn[i] == 0:
-            bm[i] = 0
-            bs[i] = 0
-        else:
+        # outputs are zero-initialized:  we only need to modify the output if there are elements of binVar in this bin
+        if bn[i] != 0:
             bm[i] = v.mean()
             bs[i] = v.std()
 
     return bn, bm, bs
     
-def binMedian(binVar, indepVar, bins):
-    bm = np.zeros(len(bins) - 1)
-    bs = np.zeros(len(bins) - 1)
-    bn = np.zeros(len(bins) - 1, dtype='i')
+#for backwards compatibility
+binAvg = binned_average
+    
+def binned_median(binVar, indepVar, edges):
+    """
+        Take the binned median of values in indepVar binned according to their corresponding entries in binVar and a given set of edges.
+        
+        Parameters
+        ----------
+        binVar : ndarray
+            array used, in combination with `edges`, to determine bin membership.
+        indepVar : ndarray 
+            array of the independent variable, to have the median calculated within each bin. Must be the same size as binVar.
+        edges : ndarray
+            array of bin edges
 
-    for i, el, er in zip(range(len(bm)), bins[:-1], bins[1:]):
+        Returns
+        -------
+        bn : int ndarray
+            Number of pixels within each bin
+        bm : float ndarray
+            Median value of indepVar within each bin
+        bs : float ndarray
+            Standard deviation of indepVar within each bin
+
+    """
+    num_bins = len(edges) - 1
+    # initialize outputs with zero'd arrays
+    bm = np.zeros(num_bins)
+    bs = np.zeros(num_bins)
+    bn = np.zeros(num_bins, dtype='i')
+
+    for i, el, er in zip(range(num_bins), edges[:-1], edges[1:]):
         v = indepVar[(binVar >= el)*(binVar < er)]
 
         bn[i] = len(v)
-        if bn[i] == 0:
-            bm[i] = 0
-            bs[i] = 0
-        else:
+        # outputs are zero-initialized:  we only need to modify the output if there are elements of binVar in this bin
+        if bn[i] != 0:
             bm[i] = np.median(v)
             bs[i] = v.std()
 
     return bn, bm, bs
 
+#backwards compatibility
+binMedian=binned_median
 
 def errorPlot(filter, bins):
     x = (bins[:-1] + bins[1:])/2.
