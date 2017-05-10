@@ -81,16 +81,16 @@ class PointSettingsPanel(wx.Panel):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Colour:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.chPointColour = wx.Choice(self, -1, choices=colKeys, size=(100, -1))
+        self.chPointColour = wx.Choice(self, -1, choices=colKeys)
         
         currentCol = self.pointDisplaySettings.colourDataKey
         if currentCol in colKeys:
             self.chPointColour.SetSelection(colKeys.index(currentCol))
         
         
-        hsizer.Add(self.chPointColour, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.chPointColour, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
 
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
+        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
         
         self.SetSizerAndFit(bsizer)
 

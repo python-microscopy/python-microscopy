@@ -57,9 +57,11 @@ fresultdtype=[('tIndex', '<i4'),
     #('coiR', [('sxl', '<f4'),('sxr', '<f4'),('syu', '<f4'),('syd', '<f4')]),
     ('resultCode', '<i4'),
     ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),
-    ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('nchi2', '<f4')]
+    ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]),
+    ('nchi2', '<f4'),
+    ('subtractedBackground', '<f4')]
 
-def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
+def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1, background=0):
     if fitErr is None:
         fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
@@ -68,7 +70,7 @@ def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 
     tIndex = metadata.tIndex
 
-    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), startParams.astype('f'), nchi2)], dtype=fresultdtype)
+    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), startParams.astype('f'), nchi2, background)], dtype=fresultdtype)
 
 
 def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
@@ -76,7 +78,14 @@ def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
     
-    im = PSFFitFactory.evalModel(fitResults['fitResults'], metadata, np.mgrid[xslice].mean(), np.mgrid[yslice].mean())
+    vx = 1e3*metadata.voxelsize.x
+    vy = 1e3*metadata.voxelsize.y
+    
+    #position in nm from camera origin
+    x_ = (xslice.start + metadata.Camera.ROIPosX - 1)*vx
+    y_ = (yslice.start + metadata.Camera.ROIPosY - 1)*vy
+
+    im = PSFFitFactory._evalModel(fitResults['fitResults'], metadata, xslice, yslice, x_, y_)
     
     return im[0].squeeze()
 
@@ -123,9 +132,16 @@ class PSFFitFactory(FFBase.FFBase):
                     self.startPosEstimator.calibrate(self.interpolator, metadata)
             else:
                 self.interpolator.genTheoreticalModel(metadata)
-
+                
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5, model=f_Interp3d):
+        xs = slice(-roiHalfSize,roiHalfSize + 1)
+        ys = slice(-roiHalfSize,roiHalfSize + 1)
+
+        return cls._evalModel(params, md, xs, ys, x, y, model)
+
+    @classmethod
+    def _evalModel(cls, params, md, xs, ys, x, y, model=f_Interp3d):
         #generate grid to evaluate function on
         #setModel(md.PSFFile, md)
         interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
@@ -142,7 +158,7 @@ class PSFFitFactory(FFBase.FFBase):
             print('model changed')
             startPosEstimator.splines.clear()
 
-        X, Y, Z, safeRegion = interpolator.getCoords(md, slice(x -roiHalfSize,x + roiHalfSize + 1), slice(y -roiHalfSize,y + roiHalfSize + 1), slice(0,1))
+        X, Y, Z, safeRegion = interpolator.getCoords(md, xs, ys, slice(0,1))
 
         return model(params, interpolator, X, Y, Z, safeRegion), X.ravel()[0], Y.ravel()[0], Z.ravel()[0]
         
@@ -181,7 +197,7 @@ class PSFFitFactory(FFBase.FFBase):
         #normalised Chi-squared
         nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
 
-        return PSFFitResultR(res, self.metadata,(xslice, yslice, zslice), resCode, fitErrors, np.array(startParameters), nchi2)
+        return PSFFitResultR(res, self.metadata,(xslice, yslice, zslice), resCode, fitErrors, np.array(startParameters), nchi2, np.mean(bgMean))
 
      
 

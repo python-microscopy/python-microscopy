@@ -167,6 +167,8 @@ class psfExtractor:
         chnum = self.chChannel.GetSelection()
                 
         rsx, rsy, rsz = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+        #print self.do.xp-rsx, self.do.xp+rsx + 1, self.do.yp-rsy, self.do.yp+rsy+1, chnum
+        #print self.image.data[(self.do.xp-rsx):(self.do.xp+rsx + 1),(self.do.yp-rsy):(self.do.yp+rsy+1), :, chnum]
         dx, dy, dz = extractImages.getIntCenter(self.image.data[(self.do.xp-rsx):(self.do.xp+rsx + 1),(self.do.yp-rsy):(self.do.yp+rsy+1), :, chnum])
         self.PSFLocs.append((self.do.xp + dx, self.do.yp + dy, dz))
         self.view.psfROIs = self.PSFLocs
@@ -273,13 +275,15 @@ class psfExtractor:
                 psf = extractImages.backgroundCorrectPSFWF(psf)
 
             from PYME.DSView.dsviewer import ImageStack, ViewIm3D
-            from PYME.IO import MetaDataHandler
-            
-            new_mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
-            new_mdh['ImageType']='PSF'
+            from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
-            im = ImageStack(data = psf, mdh = new_mdh, titleStub = 'Extracted PSF')
+            mdh = NestedClassMDHandler(self.image.mdh)
+            self.write_metadata(mdh, 'default')
+	    mdh['ImageType']='PSF'
+
+            im = ImageStack(data = psf, mdh = mdh, titleStub = 'Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default
+            
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
     def OnExtractMultiviewPSF(self, event):
@@ -305,11 +309,13 @@ class psfExtractor:
 
 
             from PYME.DSView.dsviewer import ImageStack, ViewIm3D
-            from PYME.IO import MetaDataHandler
-            new_mdh = MetaDataHandler.NestedClassMDHandler(self.image.mdh)
-            new_mdh['ImageType'] = 'PSF'
+            from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
-            im = ImageStack(data=psfs, mdh=new_mdh, titleStub='Extracted PSF')
+            mdh = NestedClassMDHandler(self.image.mdh)
+            self.write_metadata(mdh, 'Multiview')
+            mdh['ImageType'] = 'PSF'
+
+            im = ImageStack(data=psfs, mdh=mdh, titleStub='Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
@@ -440,38 +446,63 @@ class psfExtractor:
             #print psfROISize
 
             psfs = []
+            offsetsAllChannel = []
 
             #extract first channel (always aligned)
-            psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,0], self.PSFLocs, psfROISize, psfBlur, centreZ=True)
+            psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,0].squeeze(), self.PSFLocs, psfROISize, psfBlur, centreZ=True)
             if self.chType.GetSelection() == 0:
                 #widefield image - do special background subtraction
                 psf = extractImages.backgroundCorrectPSFWF(psf)
 
             psfs.append(psf)
+            offsetsAllChannel.append(offsets)
             alignZ = self.cbAlignZ.GetValue()
             z_offset = offsets[2]
 
             #extract subsequent channels, aligning if necessary, otherwise offsetting by the calculated offset for the first channel
             for i in range(1, self.image.data.shape[3]):
-                psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,i], self.PSFLocs, psfROISize, psfBlur, centreZ=alignZ, z_offset=z_offset)
+                psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,i].squeeze(), self.PSFLocs, psfROISize, psfBlur, centreZ=alignZ, z_offset=z_offset)
 
                 if self.chType.GetSelection() == 0:
                     #widefield image - do special background subtraction
                     psf = extractImages.backgroundCorrectPSFWF(psf)
 
                 psfs.append(psf)
+                offsetsAllChannel.append(offsets)
                 
             psf = numpy.concatenate(psfs, 0)
+            offsetsAllChannel = numpy.asarray(offsetsAllChannel)
+            offsetsAllChannel -= offsetsAllChannel[0]
+            print offsetsAllChannel
 
 #            from pylab import *
 #            import cPickle
 #            imshow(psf.max(2))
 
             from PYME.DSView.dsviewer import ImageStack, ViewIm3D
+            from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
-            im = ImageStack(data = psf, mdh = self.image.mdh, titleStub = 'Extracted PSF')
+            mdh = NestedClassMDHandler(self.image.mdh)
+            self.write_metadata(mdh, 'Split', offsetsAllChannel[:,2])
+            mdh['ImageType'] = 'PSF'
+
+            im = ImageStack(data = psf, mdh = mdh, titleStub = 'Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
+
+    def write_metadata(self, mdh, mode, axialshift=None):
+        mdh['PSFExtraction.Mode'] = mode
+        mdh['PSFExtraction.ROI'] = [int(s) for s in self.tPSFROI.GetValue().split(',')]
+        mdh['PSFExtraction.Blur'] = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
+        mdh['PSFExtraction.Type'] = self.chType.GetStringSelection()
+#        mdh['PSF_Extraction.Normalize'] = self.chNormalize.GetStringSelection()
+        if axialshift is not None:
+            try:
+                mdh['PSFExtraction.shift.units'] = self.image.mdh['voxelsize.units']
+                mdh['PSFExtraction.shift.z'] = -axialshift*self.image.mdh['voxelsize.z']
+            except:
+                mdh['PSFExtraction.shift.units'] = 'pixel'
+                mdh['PSFExtraction.shift.z'] = -axialshift
 
 
 def Plug(dsviewer):

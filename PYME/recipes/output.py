@@ -195,7 +195,7 @@ class ImageOutput(OutputModule):
 
         out_filename = self._schemafy_filename(self.filePattern.format(**context))
 
-        v = self.generate()
+        v = self.generate(namespace)
         v.Save(out_filename)
 
 

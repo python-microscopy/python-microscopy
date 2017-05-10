@@ -38,7 +38,7 @@ def imageDensityAtDistance(A, mask, voxelsize = None, bins=100):
 
 
     Returns:
-    bn - integrated intensity in distance bin
+    bn - number of pixels in distance bin
     bm - mean intensity in distance bin
     bins - the bin edges
     """

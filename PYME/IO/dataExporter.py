@@ -79,7 +79,7 @@ class H5Exporter(Exporter):
         self.complevel = complevel
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
-        h5out = tables.open_file(outFile,'w', chunk_cache_size=2**23)
+        h5out = tables.openFile(outFile,'w', chunk_cache_size=2**23)
         filters=tables.Filters(self.complevel,self.complib,shuffle=True)
 
         nframes = (zslice.stop - zslice.start)/zslice.step
@@ -217,7 +217,7 @@ class OMETiffExporter(Exporter):
         from PYME.contrib.gohlke import tifffile
         from PYME.IO import dataWrap
         
-        dw = dataWrap.ListWrap([data[xslice, yslice, zslice, i] for i in range(data.shape[3])])
+        dw = dataWrap.ListWrap([numpy.atleast_3d(data[xslice, yslice, zslice, i].squeeze()) for i in range(data.shape[3])])
         #xmd = None
         if not metadata is None:
             xmd = MetaDataHandler.OMEXMLMDHandler(mdToCopy=metadata)
