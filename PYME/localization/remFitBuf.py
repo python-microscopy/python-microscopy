@@ -267,6 +267,7 @@ class fitTask(taskDef.Task):
         self.index = frameIndex
 
         self.md = metadata
+        self._fitMod = None
 
         #extract remaining parameters from metadata
         self.fitModule = self.md['Analysis.FitModule']
@@ -282,6 +283,18 @@ class fitTask(taskDef.Task):
             self.bufferLen = 50 #17
 
         self._get_bgindices()
+        
+    @property
+    def fitMod(self):
+        if self._fitMod is None:
+            self._fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
+         
+        return self._fitMod
+    
+    @property
+    def is_splitter_fit(self):
+        return self.fitModule in splitterFitModules or getattr(self.fitMod, 'SPLITTER_FIT', False)
+    
 
     def _get_bgindices(self):
         if not 'Analysis.BGRange' in self.md.getEntryNames():
@@ -418,8 +431,6 @@ class fitTask(taskDef.Task):
 
     def __call__(self, gui=False, taskQueue=None):
         global dBuffer, bBuffer, dataSourceID, nTasksProcessed
-                        
-        fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
         
         #create a local copy of the metadata        
         md = copy.copy(self.md)
@@ -461,12 +472,12 @@ class fitTask(taskDef.Task):
         # Special cases - defer object finding to fit module
         
         if self.fitModule == 'ConfocCOIR': #special case - no object finding
-            self.res = fitMod.ConfocCOI(self.data, md, background = self.bg)
+            self.res = self.fitMod.ConfocCOI(self.data, md, background = self.bg)
             return fitResult(self, self.res, [])
             
-        if 'MULTIFIT' in dir(fitMod):
+        if 'MULTIFIT' in dir(self.fitMod):
             #fit module does it's own object finding
-            ff = fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma=self.sigma)
+            ff = self.fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma=self.sigma)
             self.res = ff.FindAndFit(self.threshold, gui=gui, cameraMaps=cameraMaps)
             return fitResult(self, self.res, [])
             
@@ -485,7 +496,7 @@ class fitTask(taskDef.Task):
     
         #define splitter mapping function (if appropriate) for use in object finding
         sfunc = None        
-        if self.fitModule in splitterFitModules:            
+        if self.is_splitter_fit:
             sfunc = self.__mapSplitterCoords
 
         #Choose which version of ofind to use
@@ -516,7 +527,7 @@ class fitTask(taskDef.Task):
         #####################################################################
         #If we are using a splitter, chop the largest common ROI out of the two channels
         
-        if self.fitModule in splitterFitModules:
+        if self.is_splitter_fit:
             self.data = self._splitImage(self.data)
             self.sigma = self._splitImage(self.sigma)
             
@@ -530,13 +541,13 @@ class fitTask(taskDef.Task):
 
         #########################################################
         #Create a fit 'factory'
-        fitFac = fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma = self.sigma)
+        fitFac = self.fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma = self.sigma)
         
         #perform fit for each point that we detected
-        if 'FromPoints' in dir(fitMod):
-            self.res = fitMod.FromPoints(self.ofd)
-        elif 'FitResultsDType' in dir(fitMod): #legacy fit modules
-            self.res = numpy.empty(len(self.ofd), fitMod.FitResultsDType)
+        if 'FromPoints' in dir(self.fitMod):
+            self.res = self.fitMod.FromPoints(self.ofd)
+        elif 'FitResultsDType' in dir(self.fitMod): #legacy fit modules
+            self.res = numpy.empty(len(self.ofd), self.fitMod.FitResultsDType)
             if 'Analysis.ROISize' in md.getEntryNames():
                 rs = md.getEntry('Analysis.ROISize')
                 for i in range(len(self.ofd)):
@@ -552,10 +563,10 @@ class fitTask(taskDef.Task):
         #Fit Fiducials NOTE: This is potentially broken        
         self.drRes = []
         if self.driftEst:
-            fitFac = fitMod.FitFactory(self.data, md, noiseSigma = self.sigma)
+            fitFac = self.fitMod.FitFactory(self.data, md, noiseSigma = self.sigma)
             nToFit = min(10,len(self.ofdDr)) #don't bother fitting lots of calibration objects 
-            if 'FitResultsDType' in dir(fitMod):
-                self.drRes = numpy.empty(nToFit, fitMod.FitResultsDType)
+            if 'FitResultsDType' in dir(self.fitMod):
+                self.drRes = numpy.empty(nToFit, self.fitMod.FitResultsDType)
                 for i in range(nToFit):
                     p = self.ofdDr[i]
                     self.drRes[i] = fitFac.FromPoint(p.x, p.y, roiHalfSize=fiducialROISize)
@@ -621,7 +632,7 @@ class fitTask(taskDef.Task):
         yc = np.array([p.y for p in self.ofd])
         pylab.plot(xc, yc, 'o', mew=2, mec='g', mfc='none', ms=9)
 
-        if self.fitModule in splitterFitModules:
+        if self.is_splitter_fit:
             xn, yn = self.__remapSplitterCoords(xc, yc)
             pylab.plot(xn, yn, 'o', mew=2, mec='r', mfc='none', ms=9)
 
