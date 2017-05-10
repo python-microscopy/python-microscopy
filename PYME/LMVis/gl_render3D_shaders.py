@@ -679,19 +679,19 @@ class LMGLShaderCanvas(GLCanvas):
             angx = numpy.pi * (x - self.xDragStart) / 180
             angy = -numpy.pi * (y - self.yDragStart) / 180
 
-            rMat1 = numpy.matrix(
+            r_mat1 = numpy.matrix(
                 [[numpy.cos(angx), 0, numpy.sin(angx)], [0, 1, 0], [-numpy.sin(angx), 0, numpy.cos(angx)]])
-            rMat = rMat1 * numpy.matrix(
+            r_mat = r_mat1 * numpy.matrix(
                 [[1, 0, 0], [0, numpy.cos(angy), numpy.sin(angy)], [0, -numpy.sin(angy), numpy.cos(angy)]])
 
-            vecRightN = numpy.array(rMat * numpy.matrix(self.vecRight).T).squeeze()
-            vecUpN = numpy.array(rMat * numpy.matrix(self.vecUp).T).squeeze()
-            vecBackN = numpy.array(rMat * numpy.matrix(self.vecBack).T).squeeze()
+            vec_right_n = numpy.array(r_mat * numpy.matrix(self.vecRight).T).squeeze()
+            vec_up_n = numpy.array(r_mat * numpy.matrix(self.vecUp).T).squeeze()
+            vec_back_n = numpy.array(r_mat * numpy.matrix(self.vecBack).T).squeeze()
 
-            self.vecRight = vecRightN
+            self.vecRight = vec_right_n
 
-            self.vecUp = vecUpN
-            self.vecBack = vecBackN
+            self.vecUp = vec_up_n
+            self.vecBack = vec_back_n
 
             self.xDragStart = x
             self.yDragStart = y
