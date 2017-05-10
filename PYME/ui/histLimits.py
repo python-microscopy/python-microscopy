@@ -71,6 +71,7 @@ class HistLimitPanel(wx.Panel):
         wx.EVT_LEFT_UP(self, self.OnLeftUp)
         wx.EVT_MOTION(self, self.OnMouseMove)
         wx.EVT_KEY_DOWN(self, self.OnKeyPress)
+        wx.EVT_RIGHT_UP(self, self.OnRightUp)
         wx.EVT_MOUSEWHEEL(self, self.OnMouseScrollEvent)
 
     def OnMouseScrollEvent(self, evt):
@@ -147,6 +148,15 @@ class HistLimitPanel(wx.Panel):
         self.Refresh()
         self.Update()
         event.Skip()
+        
+    def OnRightUp(self, event):
+         dlg = HistLimitEditDialog(self, self.limit_lower, self.limit_upper)        
+         if (dlg.ShowModal()==wx.ID_OK):
+             try:
+                 self.SetValueAndFire([dlg.tMin.GetValue(), dlg.tMax.GetValue()])
+             except:
+                 print('invalid input')
+         self.SetFocusIgnoringChildren()
 
     def OnMouseMove(self, event):
         x = event.GetX()
@@ -387,6 +397,46 @@ class HistLimitPanel(wx.Panel):
 
     def GetValue(self):
         return (self.limit_lower, self.limit_upper)
+        
+class HistLimitEditDialog(wx.Dialog):
+    def __init__(self, parent, minVal=0.0, maxVal=1e5):
+        wx.Dialog.__init__(self, parent)
+
+        sizer1 = wx.BoxSizer(wx.VERTICAL)
+        sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+   
+        sizer2.Add(wx.StaticText(self, -1, 'Min:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+        self.tMin = wx.TextCtrl(self, -1, '%1.6G' % minVal, size=(80, -1))
+        
+
+        sizer2.Add(self.tMin, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+        sizer2.Add(wx.StaticText(self, -1, 'Max:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+        self.tMax = wx.TextCtrl(self, -1, '%1.6G' % maxVal, size=(80, -1))
+
+        sizer2.Add(self.tMax, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+        sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)    
+        
+        btSizer = wx.StdDialogButtonSizer()
+
+        btn = wx.Button(self, wx.ID_OK)
+        btn.SetDefault()
+
+        btSizer.AddButton(btn)
+
+        btn = wx.Button(self, wx.ID_CANCEL)
+
+        btSizer.AddButton(btn)
+
+        btSizer.Realize()
+
+        sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
+        self.SetSizer(sizer1)
+        sizer1.Fit(self)
 
 
 def ShowHistLimitFrame(parent, title, data, limit_lower, limit_upper, size=(200, 100), log=False):
