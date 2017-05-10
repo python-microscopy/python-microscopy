@@ -523,6 +523,24 @@ class ImageStack(object):
 
         self.mode = 'psf'
         
+    def _loadSF(self, filename):
+        self.mdh =MetaDataHandler.NestedClassMDHandler( MetaData.BareBones)
+        self.mdh.setEntry('chroma.ShiftFilename', filename)
+        dx, dy = numpy.load(filename)
+        self.mdh.setEntry('chroma.dx', dx)
+        self.mdh.setEntry('chroma.dy', dy)
+        
+        #Completely guessing dimensions as it it not logged in the file
+        x = numpy.linspace(0, 256*70, 256)
+        y = numpy.linspace(0, 512*70, 512)
+        xs, ys = numpy.meshgrid(x, y)
+        self.data = [dx.ev(xs.ravel(), ys.ravel()).reshape(xs.shape)[::-1,:].T, dy.ev(xs.ravel(), ys.ravel()).reshape(xs.shape)[::-1,:].T]
+        
+        from PYME.Analysis.points import twoColourPlot
+        twoColourPlot.PlotShiftField2(dx, dy, [256, 512])
+
+        self.mode = 'default'
+        
     def _loadNPY(self, filename):
         """Load numpy .npy data.
         
@@ -911,6 +929,8 @@ class ImageStack(object):
             #    self.LoadKdf(filename)
             elif filename.endswith('.psf'): #psf
                 self._loadPSF(filename)
+            elif filename.endswith('.sf'): #shift field
+                self._loadSF(filename)
             elif filename.endswith('.md'): #treat this as being an image series
                 self._loadImageSeries(filename)
             elif filename.endswith('.npy'): #treat this as being an image series

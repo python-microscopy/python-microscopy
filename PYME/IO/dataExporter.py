@@ -217,7 +217,7 @@ class OMETiffExporter(Exporter):
         from PYME.contrib.gohlke import tifffile
         from PYME.IO import dataWrap
         
-        dw = dataWrap.ListWrap([data[xslice, yslice, zslice, i] for i in range(data.shape[3])])
+        dw = dataWrap.ListWrap([numpy.atleast_3d(data[xslice, yslice, zslice, i].squeeze()) for i in range(data.shape[3])])
         #xmd = None
         if not metadata is None:
             xmd = MetaDataHandler.OMEXMLMDHandler(mdToCopy=metadata)
