@@ -40,6 +40,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 import os
 import sys
+from collections import OrderedDict
 
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
@@ -90,15 +91,17 @@ nq = 0
 
 
 class TaskQueueSet(Pyro.core.ObjBase):
-    def __init__(self):
+    def __init__(self, process_queues_in_order=False):
         Pyro.core.ObjBase.__init__(self)
-        self.taskQueues = {}
+        self.taskQueues = OrderedDict()
         self.numTasksProcessed = 0
         self.numTasksProcByWorker = {}
         self.lastTaskByWorker = {}
         self.lastTimeByWorker = {}
         self.activeWorkers = []
         self.activeTimeout = 60
+
+        self.process_queues_in_order = process_queues_in_order
 
         self.getTaskLock = threading.Lock()
         
@@ -145,15 +148,21 @@ class TaskQueueSet(Pyro.core.ObjBase):
             return None
             
         with self.getTaskLock:
-            while self.getNumberOpenTasks() < 1:
-                time.sleep(0.01)
+#            while self.getNumberOpenTasks() < 1:
+#                time.sleep(0.01)
+            if self.getNumberOpenTasks(exact=False) < 1:
+                return None
     
             if not workerName in self.activeWorkers:
                 self.activeWorkers.append(workerName)
                 
             queuesWithOpenTasks = [q for q in self.taskQueues.values() if q.getNumberOpenTasks() > 0]
     
-            res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTask(self.activeWorkers.index(workerName), len(self.activeWorkers))
+#            res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTask(self.activeWorkers.index(workerName), len(self.activeWorkers))
+            if self.process_queues_in_order:
+                res = queuesWithOpenTasks[0].getTask(self.activeWorkers.index(workerName), len(self.activeWorkers))
+            else:
+                res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTask(self.activeWorkers.index(workerName), len(self.activeWorkers))
         
         return res
 
@@ -184,7 +193,11 @@ class TaskQueueSet(Pyro.core.ObjBase):
     
                 queuesWithOpenTasks = [q for q in self.taskQueues.values() if q.getNumberOpenTasks(False) > 0]
     
-                res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTasks(self.activeWorkers.index(workerName), len(self.activeWorkers))
+#                res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTasks(self.activeWorkers.index(workerName), len(self.activeWorkers))
+                if self.process_queues_in_order:
+                    res = queuesWithOpenTasks[0].getTasks(self.activeWorkers.index(workerName), len(self.activeWorkers))
+                else:
+                    res = queuesWithOpenTasks[int(numpy.round(len(queuesWithOpenTasks)*numpy.random.rand() - 0.5))].getTasks(self.activeWorkers.index(workerName), len(self.activeWorkers))
         
         
         #print workerName, len(res)
@@ -342,6 +355,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
 def main():
     print('Starting PYME taskServer ...')
     import socket
+    from PYME import config
     ip_addr = socket.gethostbyname(socket.gethostname())
     
     profile = False
@@ -376,7 +390,7 @@ def main():
     #except Pyro.errors.NamingError:
     #    pass
 
-    tq = TaskQueueSet()
+    tq = TaskQueueSet(process_queues_in_order=config.get('TaskServer.process_queues_in_order', True))
     uri=daemon.connect(tq,taskQueueName)
     
     #print uri, type(uri)
