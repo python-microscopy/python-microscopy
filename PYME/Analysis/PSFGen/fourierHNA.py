@@ -298,12 +298,12 @@ def GenWidefieldAP(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, apodizat
     
 def GenWidefieldAPA(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA = 1.47, field_x=0, field_y=0, apertureNA=1.5, apertureZGradient = 0, apodization='sine'):
     if X is None or Y is None:
-        X, Y = np.meshgrid(np.arange(-2000, 2000., dx),np.arange(-2000, 2000., dx))
+        X, Y = np.meshgrid(np.arange(-2000, 2001., dx),np.arange(-2000, 2001., dx))
     else:
         X, Y = np.meshgrid(X,Y)
     
-    X = X - X.mean()
-    Y = Y - Y.mean()
+    #X = X - X.mean()
+    #Y = Y - Y.mean()
         
     u = X*lamb/(n*X.shape[0]*dx*dx)
     v = Y*lamb/(n*X.shape[1]*dx*dx)
@@ -335,6 +335,17 @@ def GenWidefieldPSF(zs, dx=5, lamb=700, n=1.51, NA = 1.47,apodization=None):
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, lamb=lamb, n=n, NA = NA, apodization=apodization)
 
     ps = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+
+    return abs(ps**2)
+
+def Gen4PiPSF(zs, dx=5, lamb=700, n=1.51, NA = 1.47,apodization=None, phi=0, X=None, Y=None):
+    X, Y, R, FP, F, u, v = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA, apodization=apodization)
+
+    ps1 = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
+    
+    ps2 = np.concatenate([FP.propagate(F, -z)[:,:,None]*np.exp(1j*phi) for z in zs], 2)
+    
+    ps = ps1 + ps2
 
     return abs(ps**2)
     
