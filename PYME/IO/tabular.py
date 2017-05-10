@@ -61,7 +61,9 @@ class TabularBase(object):
         if keys is None:
             keys = self.keys()
 
-        return records.fromarrays([self.__getitem__(k) for k in keys], names = keys)
+        columns = [self.__getitem__(k) for k in keys]
+        dt = [(k, v.dtype) for k, v in zip(keys, columns)]
+        return records.fromarrays(columns, names = keys, dtype = dt)
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
         from PYME.IO import h5rFile
@@ -104,7 +106,7 @@ class randomSource(TabularBase):
 def unNestNames(nameList, parent=''):
     unList = []
     for n in nameList:
-        if n.__class__ == str:
+        if isinstance(n, str):
             unList.append(parent + n)
         else:
             unList += unNestNames(n[1], parent + n[0] + '_')
@@ -114,7 +116,7 @@ def unNestDtype(descr, parent=''):
     unList = []
     for n in descr:
         #print n, n.__class__, len(n)
-        if n.__class__ == tuple and len(n) == 2 and n[1].__class__ == str:
+        if isinstance(n, tuple) and len(n) == 2 and isinstance(n[1],str):
             unList.append(parent + n[0])
         else:
             unList += unNestDtype(n[1], parent + n[0] + '_')
@@ -708,13 +710,14 @@ class colourFilter(TabularBase):
     
 class cloneSource(TabularBase):
     _name = "Cloned Source"
-    def __init__(self, resultsSource):
+    def __init__(self, resultsSource, keys=None):
         """Creates an in memory copy of a (filtered) data source"""
-
         #resultsSource
         self.cache = {}
 
-        for k in resultsSource.keys():
+        klist = resultsSource.keys() if not keys else keys
+
+        for k in klist:
             self.cache[k] = resultsSource[k]
 
 

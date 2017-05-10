@@ -40,12 +40,12 @@ class AutoFocus(object):
                 #self.scope.frameWrangler.WantFrameGroupNotification.remove(self.tick)
                 self.scope.frameWrangler.onFrameGroup.disconnect(self.OnFrameGroup)
 
-                print 'af_done'
+                print('af_done')
             
         #self.scope.SetPos(z=self.lastMaxPos + self.incr)
         self.scope.state['Positioning.z'] = self.lastMaxPos + self.incr
         
-        print 'af', m
+        print('af, %s' % m)
         
     def af(self, incr=0.5):
         self.lastMax = 0

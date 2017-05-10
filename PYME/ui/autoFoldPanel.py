@@ -373,7 +373,7 @@ class foldingPane(wx.Panel):
 
             self.folded = True
             self.stCaption.Refresh()
-            
+            #self.Layout()
             return True
         else:
             return False
@@ -387,12 +387,13 @@ class foldingPane(wx.Panel):
                 #print 'bar'
                 if element.foldable:
                     element.window.Show()
+                    #element.window.Layout()
                     if element.foldedWindow:
                         element.foldedWindow.Hide()
 
             self.folded = False
             self.stCaption.Refresh()
-            
+            #self.Layout()
             return True
         else:
             return False
@@ -475,7 +476,7 @@ class collapsingPane(foldingPane):
 
 
 
-
+import dispatch
 class foldPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
         try:
@@ -500,6 +501,8 @@ class foldPanel(wx.Panel):
 
         self.sizer = wx.BoxSizer(self.orientation)
         self.SetSizer(self.sizer)
+        
+        self.fold_signal = dispatch.Signal()
 
         #self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
 
@@ -550,6 +553,7 @@ class foldPanel(wx.Panel):
         if pane.Unfold():
              #only re-do layout if we change state
              self.Layout()
+             self.fold_signal.send(sender=self)
         #self.RegenSizer()
 
     def OnMouseLeavePane(self, event):
@@ -560,11 +564,13 @@ class foldPanel(wx.Panel):
         if not pane.GetClientRect().Inside(event.GetPosition()):
             if pane.Fold():
                 self.Layout()
+                self.fold_signal.send(sender=self)
         #event.Skip()
         
 
     def OnMouseLeave(self, event):
         self.Layout()
+        self.fold_signal.send(sender=self)
         self.Refresh()
         #pass #self.RegenSizer()
 

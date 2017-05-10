@@ -25,21 +25,21 @@ import scipy
 #from scipy.signal import interpolate
 #import scipy.ndimage as ndimage
 from pylab import *
-import copy_reg
+#import copy_reg
 import numpy
 import types
-import cPickle
+#import cPickle
 
 from PYME.Analysis._fithelpers import *
 #from PYME.localization.FitFactories.zEstimators import astigEstimator
 
-def pickleSlice(slice):
-        return unpickleSlice, (slice.start, slice.stop, slice.step)
-
-def unpickleSlice(start, stop, step):
-        return slice(start, stop, step)
-
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
+# def pickleSlice(slice):
+#         return unpickleSlice, (slice.start, slice.stop, slice.step)
+#
+# def unpickleSlice(start, stop, step):
+#         return slice(start, stop, step)
+#
+# copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 def f_Interp3d2c(p, interpolator, Xg, Yg, Zg, Xr, Yr, Zr, safeRegion, axialShift, *args):
     """3D PSF model function with constant background - parameter vector [A, x0, y0, z0, background]"""
@@ -316,7 +316,7 @@ class PSFFitFactory:
         fitErrors=None
         try:       
             fitErrors = scipy.sqrt(scipy.diag(cov_x) * (infodict['fvec'] * infodict['fvec']).sum() / (len(dataROI.ravel())- len(res)))
-        except Exception, e:
+        except Exception as e:
             pass
 
         #normalised Chi-squared
@@ -337,7 +337,7 @@ from PYME.localization.FitFactories import Interpolators
 from PYME.localization.FitFactories import zEstimators
 
 PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
-              mde.FilenameParam('PSFFile', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
+              mde.FilenameParam('PSFFile', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf|TIFF files|*.tif'),
               mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
               #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
               mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', 0),

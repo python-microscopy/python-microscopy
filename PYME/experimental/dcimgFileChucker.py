@@ -4,8 +4,15 @@ import os
 import glob
 import numpy as np
 import time
+import datetime
+
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+logger = logging.getLogger(__name__)
 
 import PYME.experimental.dcimgSpoolShim as DCIMGSpool
+from PYME.IO import PZFFormat
 
 class venerableFileChucker(object):
     """
@@ -14,7 +21,7 @@ class venerableFileChucker(object):
     This is certainly not the most elegant way of implementing the DCIMGSpooler, but may suffice for now....
 
     """
-    def __init__(self, searchFolder, timeout = 3600):
+    def __init__(self, searchFolder, timeout = 3600, quantize=False):
         """
 
         Parameters
@@ -28,6 +35,8 @@ class venerableFileChucker(object):
 
         self.spooler = DCIMGSpool.DCIMGSpoolShim()
         self.timeout = timeout
+        self.comp_settings = {'quantization': PZFFormat.DATA_QUANT_SQRT if quantize else PZFFormat.DATA_QUANT_NONE}
+
 
     def _spoolSeries(self, mdfilename, deleteAfterSpool=False):
         """
@@ -42,14 +51,21 @@ class venerableFileChucker(object):
         -------
 
         """
-        self.spooler.OnNewSeries(mdfilename)
+        self.spooler.OnNewSeries(mdfilename, self.comp_settings)
         series_stub =  mdfilename.strip('.json')
+        print(datetime.datetime.utcnow())
 
         # find chunks for this metadata file (this should return the full paths)
         chunkList = sorted(glob.glob(series_stub + '*.dcimg'))
 
         for chunk in chunkList:
             self.spooler.OnDCIMGChunkDetected(chunk)
+            #time.sleep(.5)   # FIXME: When using HUFFMANCODE more frames are lost without waiting
+            #wait until we've sent everything
+            #this is a bit of a hack
+            #time.sleep(.1)
+            while not self.spooler.spooler.postQueue.empty() or (self.spooler.spooler.numThreadsProcessing > 0):
+                time.sleep(.1)
             if deleteAfterSpool:
                 os.remove(chunk)
 
@@ -58,7 +74,7 @@ class venerableFileChucker(object):
         zsteps_filename = series_stub + '_zsteps.json'
 
         self.spooler.OnSeriesComplete(events_filename, zsteps_filename)
-
+        print(datetime.datetime.utcnow())
         # TODO: Add Feedback from cluster and also speed up writing in cluster
         # time.sleep(10)
         if deleteAfterSpool:
@@ -118,13 +134,19 @@ class venerableFileChucker(object):
                     for chunk in chunkList:
                         if not chunk in spooled_chunks:
                             self.spooler.OnDCIMGChunkDetected(chunk)
-                            # time.sleep(1)
+                            #time.sleep(.5)  # FIXME: When using HUFFMANCODE more frames are lost without waiting
+                             #wait until we've sent everything
+                            #this is a bit of a hack
+                            #time.sleep(.1)
+                            while not self.spooler.spooler.postQueue.empty() or (self.spooler.spooler.numThreadsProcessing > 0):
+                                time.sleep(.1)
                             if deleteAfterSpool:
                                 # TODO: update this to only delete files if they are sent successfully
                                 os.remove(chunk)
 
                 #we have seen our events file, the current series is complete
                 self.spooler.OnSeriesComplete(events_filename, zsteps_filename)
+                logger.debug('Finished spooling series %s' % series_stub)
                 ignoreList.append(mdfilename)
                 if deleteAfterSpool:
                     os.remove(mdfilename)
@@ -146,9 +168,11 @@ if __name__ == "__main__":
                         help='Only spool new files as they are saved')
     parser.add_argument('-d', dest='delAfterSpool', action='store_true',
                         help='Delete files after they are spooled to the cluster')
+    parser.add_argument('-q', dest='quantize', action='store_true',
+                        help='Quantize with sqrt(N) interval scaling')
     parser.add_argument('testFolder', metavar='testFolder', type=str,
                         help='Folder for fileChucker to monitor')
     args = parser.parse_args()
 
-    searcher = venerableFileChucker(args.testFolder)
+    searcher = venerableFileChucker(args.testFolder, quantize=args.quantize)
     searcher.searchAndHuck(args.onlySpoolNew, args.delAfterSpool)

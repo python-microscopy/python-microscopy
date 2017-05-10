@@ -217,7 +217,7 @@ def diffMultiModel(params, t, sig=1., radii=[1., 2., 3., 5., 10, 1.0]):
     docked_t = A * (t > tdocked) * np.minimum(1.0, np.exp(-(t - t0) / tau)) * np.exp(-(t - tdocked) / tau_bl)
 
     #precalculate bleaching component of release trace
-    release_t = A * enh * np.exp(-(t - t0) * enh / tau_bl)
+    release_t = A* np.exp(-(t0 - tdocked)/tau_bl) * enh *np.exp(-(t - t0) * enh / tau_bl)
 
     #allocate an output array
     out = np.zeros([len(radii), len(t)], 'f')
@@ -330,6 +330,7 @@ class FusionTrack(trackUtils.Track):
         self.numLeadFrames = numLeadFrames
         self.numFollowFrames = numFollowFrames
         self.sig = sig
+        self._I = 0
 
         self.startParams = {'A' : 1.0, 't_fusion' : None, 'D' : .5, "tau_rel" : 1., 'G' : 5., 'tau_bleach' : 3600.,
                             't_docked' : -1.0, 'background' : 0.0, 'sca': 3.0}
@@ -371,6 +372,8 @@ class FusionTrack(trackUtils.Track):
         bg = 0# data[0, :numLeadFrames].mean()
         A = data[-1, self.numLeadFrames:(self.numLeadFrames + numDockedFrames)].mean()
         A -= bg
+        
+        self._I = A
 
         data = data/A
 
@@ -415,7 +418,8 @@ class FusionTrack(trackUtils.Track):
         enh = enh ** 2
         sca = 1 + sca**2
 
-        return {'A' : A, 't_fusion' : t0, 'D' : D, "tau_rel" : tau, 'G' : enh, 'tau_bleach' : tau_bl, 't_docked' : tdocked, 'background' : background, 'sca':sca}
+        return {'A' : A, 't_fusion' : t0, 'D' : D, "tau_rel" : tau, 'G' : enh, 'tau_bleach' : tau_bl, 't_docked' : tdocked,
+                'background' : background, 'sca':sca, 'I': self._I}
 
     def _unpack_params(self, params):
         out = [params['A'],

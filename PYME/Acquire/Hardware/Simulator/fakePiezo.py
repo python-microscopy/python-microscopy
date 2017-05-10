@@ -21,7 +21,11 @@
 #
 ##################
 
-class FakePiezo:
+from PYME.Acquire.Hardware.Piezos.base_piezo import PiezoBase
+
+class FakePiezo(PiezoBase):
+    gui_description = 'Fake %s-piezo'
+    
     def __init__(self, maxtravel = 100.00):
         self.max_travel = maxtravel
         self.curpos = maxtravel/2.0

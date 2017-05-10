@@ -21,8 +21,9 @@
 #
 ################
 import serial
+from .base_piezo import PiezoBase
 
-class piezo_e255:
+class piezo_e255(PiezoBase):
     #Script fuer den alten PI-Controller E255.60,
     #der nur im Volt-Modus angesteuert erden kann.
     # hier wird erst mal Ch2 verwendet

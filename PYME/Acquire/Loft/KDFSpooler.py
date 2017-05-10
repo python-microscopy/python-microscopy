@@ -145,7 +145,7 @@ class Spooler:
    def writeLog(self):
         lw = logparser.logwriter()
         s = lw.write(self.log)
-        log_f = file(self.filename, 'w')
+        log_f = open(self.filename, 'w')
         log_f.write(s)
         log_f.close()
         

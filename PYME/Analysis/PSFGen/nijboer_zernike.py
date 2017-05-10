@@ -26,6 +26,7 @@
 import numpy as np
 from scipy.misc import comb
 from scipy.special import jn
+from six.moves import xrange
 
 def vlj(l,j,m_a,p, q):
     

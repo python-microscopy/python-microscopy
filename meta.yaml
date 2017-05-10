@@ -30,14 +30,15 @@ build:
     - PYMEAcquire = PYME.Acquire.PYMEAcquire:main
     - VisGUI = PYME.LMVis.VisGUI:main
     - launchWorkers = PYME.ParallelTasks.launchWorkers:main
-    - PYMEBatch = PYME.Analysis.Modules.batchProcess:main
-    - bakeshop = PYME.Analysis.Modules.bakeshop:main
+    - PYMEBatch = PYME.recipes.batchProcess:main
+    - bakeshop = PYME.recipes.bakeshop:main
     - fitMonP = PYME.ParallelTasks.fitMonP:main
     - taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main
     - taskServerZC = PYME.ParallelTasks.taskServerZC:main
     - PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main
     - PYMEClusterDup = PYME.io.clusterDuplication:main
     - PYMEDistributor = PYME.ParallelTasks.PYMEDistributor:main
+    - PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main
     - PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main
 
 
@@ -132,6 +133,7 @@ requirements:
     - python
     - numpy x.x
     - matplotlib
+    - cython
     #- mingw  [win]
   # Packages required to run the package. These are the dependencies that
   # will be installed automatically whenever the package is installed.
@@ -158,14 +160,21 @@ requirements:
     - scikit-image
     - scikit-learn
     - shapely         [osx]
-    - zeroconf
+    - zeroconf [linux]
+    - zeroconf 0.17.4 [win or osx]
     - requests
     - pandas
-    - yaml
+    - pyyaml
+    - psutil
     - dispatch
     - pymecompress
     - ujson
+    - docutils
+    - sphinx
     - python-bioformats [osx]
+    - six
+    - future
+    - pywin32 [win]
 
     #todo make cross-platform versions
     #- nvidia-ml-py  [linux] #optional - maybe better as dependency for gpu-fitting package

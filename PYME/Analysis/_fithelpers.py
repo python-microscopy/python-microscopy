@@ -58,7 +58,7 @@ def weightedMissfitF(p, fcn, data, weights, *args):
     #print mod.shape
     #print data.shape
     #print sigmas.shape
-    return (data - mod)*weights  
+    return (data - mod)*weights
 
 def weightedJacF(p, fcn, data, weights, *args):
     """Helper function which evaluates a model function (fcn) with parameters (p) and additional arguments

@@ -14,10 +14,10 @@ import scipy
 #from scipy.signal import interpolate
 #import scipy.ndimage as ndimage
 from pylab import *
-import copy_reg
+#import copy_reg
 import numpy
 import types
-import cPickle
+from six.moves import cPickle
 #from math import floor, ceil
 
 from PYME.localization import twist
@@ -36,13 +36,13 @@ from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
 from scipy import optimize
 
 
-def pickleSlice(slice):
-        return unpickleSlice, (slice.start, slice.stop, slice.step)
-
-def unpickleSlice(start, stop, step):
-        return slice(start, stop, step)
-
-copy_reg.pickle(slice, pickleSlice, unpickleSlice)
+# def pickleSlice(slice):
+#         return unpickleSlice, (slice.start, slice.stop, slice.step)
+#
+# def unpickleSlice(start, stop, step):
+#         return slice(start, stop, step)
+#
+# copy_reg.pickle(slice, pickleSlice, unpickleSlice)
 
 
 IntXVals = None
@@ -385,7 +385,7 @@ class PSFFitFactory:
         try:
             fitErrors[:2] = scipy.sqrt(scipy.diag(cov_z) * (infodict_z['fvec'] * infodict_z['fvec']).sum() / (len(dataROI.ravel())- len(res_z)))
             fitErrors[2:4] = scipy.sqrt(scipy.diag(cov_x) * (infodict_x['fvec'] * infodict_x['fvec']).sum() / (len(dataROI.ravel())- len(res_x)))
-        except Exception, e:
+        except Exception as e:
             pass
 
         #print res, fitErrors, resCode

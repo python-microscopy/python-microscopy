@@ -121,7 +121,10 @@ class PointSettingsPanel(wx.Panel):
         #self.glCanvas.Refresh()
 
     def OnPointAlphaChange(self, event):
-        self.pointDisplaySettings.alpha = float(self.tPointAlpha.GetValue())
+        try:
+            self.pointDisplaySettings.alpha = float(self.tPointAlpha.GetValue())
+        except ValueError:
+            pass  # do nothing, if value couldn't be parsed
         #self.glCanvas.Refresh()
 
     def OnChangePointColour(self, event):

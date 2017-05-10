@@ -222,10 +222,10 @@ def probeAwareFindClumps(datasource, gap_tolerance, radius_scale, radius_offset,
 
     return datasource
 
-def mergeClumps(datasource, numChan):
+def mergeClumps(datasource, numChan, labelKey='clumpIndex'):
     from PYME.IO.tabular import cachingResultsFilter, mappingFilter
 
-    keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', 'clumpIndex', 'focus']
+    keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', labelKey, 'focus', 'LLH']
     keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
     keys_to_aggregate += ['sigmay%d' % chan for chan in range(numChan)]
 
@@ -240,10 +240,10 @@ def mergeClumps(datasource, numChan):
 
     aggregation_weights['A'] = 'sum'
 
-    I = np.argsort(datasource['clumpIndex'])
+    I = np.argsort(datasource[labelKey])
     sorted_src = {k: datasource[k][I] for k in all_keys}
 
-    grouped = coalesceDictSorted(sorted_src, sorted_src['clumpIndex'], keys_to_aggregate, aggregation_weights)
+    grouped = coalesceDictSorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights)
     return mappingFilter(grouped)
 
 

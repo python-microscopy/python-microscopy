@@ -13,48 +13,19 @@ import pandas as pd
 import tables
 from PYME.IO import tabular
 from PYME.IO import MetaDataHandler
+from PYME.IO import unifiedIO
 
 import logging
 logger = logging.getLogger(__name__)
 
+import warnings
+
 import numpy as np
 #import sys
 
-
-
-def loadInput(filename, namespace, key='input'):
-    """Load input data from a file and inject into namespace
-    
-    Currently only handles images (anything you can open in dh5view). TODO - 
-    extend to other types.
-    """
-    #modify this to allow for different file types - currently only supports images
-    if filename.endswith('.h5r'):
-        h5f = tables.open_file(filename)
-
-        key_prefix = '' if key == 'input' else key + '_'
-
-        mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
-        for t in  h5f.list_nodes('/'):
-            if isinstance(t, tables.table.Table):
-                tab = tabular.h5rSource(h5f, t.name)
-                tab.mdh = mdh
-
-                namespace[key_prefix + t.name] = tab
-
-        #logger.error('loading h5r not supported yet')
-        #raise NotImplementedError
-    elif filename.endswith('.csv'):
-        logger.error('loading .csv not supported yet')
-        raise NotImplementedError
-    elif filename.endswith('.xls') or filename.endswith('.xlsx'):
-        logger.error('loading .xls not supported yet')
-        raise NotImplementedError
-    else:
-        namespace[key] = ImageStack(filename=filename, haveGUI=False)
-
 def saveDataFrame(output, filename):
     """Saves a pandas dataframe, inferring the destination type based on extension"""
+    warnings.warn('saveDataFrame is deprecated, use output modules instead', DeprecationWarning)
     if filename.endswith('.csv'):
         output.to_csv(filename)
     elif filename.endswith('.xlsx') or filename.endswith('.xls'):
@@ -66,6 +37,7 @@ def saveDataFrame(output, filename):
 
 def saveTabular(output, filename):
     """Saves a pandas dataframe, inferring the destination type based on extension"""
+    warnings.warn('saveTabular is deprecated, use output modules instead', DeprecationWarning)
     if filename.endswith('.csv'):
         output.toDataFrame().to_csv(filename)
     elif filename.endswith('.xlsx') or filename.endswith('.xls'):
@@ -76,6 +48,7 @@ def saveTabular(output, filename):
         output.to_hdf(filename + '.hdf', 'Data')
     
 def saveOutput(output, filename):
+    warnings.warn('saveOutput is deprecated, use output modules instead', DeprecationWarning)
     """Save an output variable, inferring type from the file extension"""
     if isinstance(output, ImageStack):
         try:
@@ -109,9 +82,8 @@ def runRecipe(recipe, inputs, outputs, context={}):
         recipe.namespace.clear()
 
         #load any necessary inputs and populate the recipes namespace
-        for k, v in inputs.items():
-            loadInput(v, recipe.namespace, k)
-            #recipe.namespace[k] = loadInput(v)
+        for key, filename in inputs.items():
+            recipe.loadInput(filename, key)
 
         ### Run the recipe ###
         res = recipe.execute()

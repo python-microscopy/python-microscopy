@@ -22,53 +22,32 @@
 ##################
 
 #!/usr/bin/python
-
+from PYME.Acquire.ExecTools import joinBGInit, HWNotPresent, init_gui, init_hardware
 import scipy
-from PYME.Acquire.Hardware.Simulator import fakePiezo
-#from PYME.Acquire.Hardware import fakeShutters
 import time
 
-#import PYME.cSMI as example
-
-pz = InitBG('Fake Piezo(s)', """
-scope.fakePiezo = fakePiezo.FakePiezo(100)
-scope.piezos.append((scope.fakePiezo, 1, 'Fake z-piezo'))
-
-scope.fakeXPiezo = fakePiezo.FakePiezo(10)
-scope.piezos.append((scope.fakeXPiezo, 1, 'Fake x-piezo'))
-
-scope.fakeYPiezo = fakePiezo.FakePiezo(10)
-scope.piezos.append((scope.fakeYPiezo, 1, 'Fake y-piezo'))
-#time.sleep(5)
-
-scope.positioning['x'] = (scope.fakeXPiezo, 1, 1)
-scope.positioning['y'] = (scope.fakeYPiezo, 1, 1)
-scope.positioning['z'] = (scope.fakePiezo, 1, 1)
-
-scope.state.registerHandler('Positioning.x', lambda : scope.fakeXPiezo.GetPos(1), lambda v : scope.fakeXPiezo.MoveTo(1, v))
-scope.state.registerHandler('Positioning.y', lambda : scope.fakeYPiezo.GetPos(1), lambda v : scope.fakeYPiezo.MoveTo(1, v))
-scope.state.registerHandler('Positioning.z', lambda : scope.fakePiezo.GetPos(1), lambda v : scope.fakePiezo.MoveTo(1, v), needCamRestart=True)
-""")
+@init_hardware('Fake Piezos')
+def pz(scope):
+    from PYME.Acquire.Hardware.Simulator import fakePiezo
+    scope.fakePiezo = fakePiezo.FakePiezo(100)
+    scope.register_piezo(scope.fakePiezo, 'z', needCamRestart=True)
+    
+    scope.fakeXPiezo = fakePiezo.FakePiezo(10)
+    scope.register_piezo(scope.fakeXPiezo, 'x')
+    
+    scope.fakeYPiezo = fakePiezo.FakePiezo(10)
+    scope.register_piezo(scope.fakeYPiezo, 'y')
 
 pz.join() #piezo must be there before we start camera
-cm = InitBG('Fake Camera', """
-from PYME.Acquire.Hardware.Simulator import fakeCam, dSimControl
-scope.cam = fakeCam.FakeCamera(70*scipy.arange(-128.0, 768.0 + 128.0), 70*scipy.arange(-128.0, 128.0), fakeCam.NoiseMaker(), scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo)
-scope.cameras['Fake Camera'] = scope.cam
-#time.sleep(5)
 
-""")
-
-#setup for the channels to aquire - b/w camera, no shutters
-#class chaninfo:
-#    names = ['bw']
-#    cols = [1] #1 = b/w, 2 = R, 4 = G1, 8 = G2, 16 = B
-#    hw = [0] #unimportant - as we have no shutters
-#    itimes = [100]
-#
-#scope.chaninfo = chaninfo
-#
-#scope.shutters = fakeShutters
+@init_hardware('Fake Camera')
+def cm(scope):
+    import numpy as np
+    from PYME.Acquire.Hardware.Simulator import fakeCam
+    scope.register_camera(fakeCam.FakeCamera(70*np.arange(-128.0, 768.0 + 128.0),
+                                             70*np.arange(-128.0, 128.0),
+                                             fakeCam.NoiseMaker(),
+                                             scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo),'Fake Camera')
 
 #scope.EnableJoystick = 'foo'
 
@@ -83,39 +62,37 @@ scope.cameras['Fake Camera'] = scope.cam
 #""")
 
 
-#Gui stuff can't be done in background
-InitGUI("""
-from PYME.Acquire.Hardware.Simulator import dSimControl
-dsc = dSimControl.dSimControl(MainFrame, scope)
-#import wx
-#dsc = wx.TextCtrl(MainFrame, -1, 'foo')
-MainFrame.AddPage(page=dsc, select=False, caption='Simulation Settings')
-""")
+@init_gui('Simulation UI')
+def sim_controls(MainFrame, scope):
+    from PYME.Acquire.Hardware.Simulator import dSimControl
+    dsc = dSimControl.dSimControl(MainFrame, scope)
+    MainFrame.AddPage(page=dsc, select=False, caption='Simulation Settings')
 
-InitGUI("""
-from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
-scope.camControls['Fake Camera'] = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
-camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
-""")
+@init_gui('Camera controls')
+def cam_controls(MainFrame, scope):
+    from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
+    scope.camControls['Fake Camera'] = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
+    MainFrame.camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
 
-InitGUI("""
-from PYME.Acquire import sampleInformation
-sampPan = sampleInformation.slidePanel(MainFrame)
-camPanels.append((sampPan, 'Current Slide'))
-""")
+@init_gui('Sample database')
+def samp_db(MainFrame, scope):
+    from PYME.Acquire import sampleInformation
+    sampPan = sampleInformation.slidePanel(MainFrame)
+    MainFrame.camPanels.append((sampPan, 'Current Slide'))
 
-InitGUI("""
-from PYME.Acquire.ui import AnalysisSettingsUI
-AnalysisSettingsUI.Plug(scope, MainFrame)
-""")
+@init_gui('Analysis settings')
+def anal_settings(MainFrame, scope):
+    from PYME.Acquire.ui import AnalysisSettingsUI
+    AnalysisSettingsUI.Plug(scope, MainFrame)
 
-InitGUI("""
-from PYMEnf.Hardware import FakeDMD, DMDGui
-scope.LC = FakeDMD.FakeDMD(scope)
+@init_gui('Fake DMD')
+def fake_dmd(MainFrame, scope):
+    from PYMEnf.Hardware import FakeDMD, DMDGui
+    scope.LC = FakeDMD.FakeDMD(scope)
+    
+    LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
+    MainFrame.camPanels.append((LCGui, 'DMD Control', False))
 
-LCGui = DMDGui.DMDPanel(MainFrame,scope.LC, scope)
-camPanels.append((LCGui, 'DMD Control', False))
-""")
 
 #InitGUI("""
 #from PYME.Acquire.Hardware import ccdAdjPanel
@@ -129,48 +106,46 @@ camPanels.append((LCGui, 'DMD Control', False))
 #""")
 
 cm.join()
-from PYME.Acquire.Hardware import lasers
-scope.l488 = lasers.FakeLaser('l488',scope.cam,1, initPower=10, scopeState = scope.state)
-scope.l405 = lasers.FakeLaser('l405',scope.cam,0, initPower=10, scopeState = scope.state)
 
-scope.lasers = [scope.l405, scope.l488]
+@init_hardware('Lasers')
+def lasers(scope):
+    from PYME.Acquire.Hardware import lasers
+    scope.l488 = lasers.FakeLaser('l488',scope.cam,1, initPower=10)
+    scope.l488.register(scope)
+    scope.l405 = lasers.FakeLaser('l405',scope.cam,0, initPower=10)
+    scope.l405.register(scope)
+    
 
+@init_gui('Laser controls')
+def laser_controls(MainFrame, scope):
+    from PYME.Acquire.ui import lasersliders
+    
+    lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
+    MainFrame.time1.WantNotification.append(lcf.update)
+    MainFrame.camPanels.append((lcf, 'Laser Control'))
+    
+    lsf = lasersliders.LaserSliders(MainFrame.toolPanel, scope.state)
+    MainFrame.time1.WantNotification.append(lsf.update)
+    MainFrame.camPanels.append((lsf, 'Laser Powers'))
 
+@init_gui('Focus Keys')
+def focus_keys(MainFrame, scope):
+    from PYME.Acquire.Hardware import focusKeys
+    fk = focusKeys.FocusKeys(MainFrame, None, scope.piezos[0])
 
-InitGUI("""
-from PYME.Acquire.ui import lasersliders
-
-lcf = lasersliders.LaserToggles(toolPanel, scope.state)
-time1.WantNotification.append(lcf.update)
-camPanels.append((lcf, 'Laser Control'))
-
-lsf = lasersliders.LaserSliders(toolPanel, scope.state)
-time1.WantNotification.append(lsf.update)
-camPanels.append((lsf, 'Laser Powers'))
-""")
-
-#InitGUI("""
-#from PYME.Acquire import sarcSpacing
-#ssp = sarcSpacing.SarcomereChecker(MainFrame, menuBar1, scope)
-#""")
-
-InitGUI("""
-from PYME.Acquire.Hardware import focusKeys
-fk = focusKeys.FocusKeys(MainFrame, None, scope.piezos[0])
-#time1.WantNotification.append(fk.refresh)
-""")
 
 #InitGUI("""
 #from PYME.Acquire.Hardware import splitter
 #splt = splitter.Splitter(MainFrame, None, scope, scope.cam)
 #""")
 
-InitGUI("""
-from PYME.Acquire.ui import actionUI
+@init_gui('Action manager')
+def action_manager(MainFrame, scope):
+    from PYME.Acquire.ui import actionUI
+    
+    ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
+    MainFrame.AddPage(ap, caption='Queued Actions')
 
-ap = actionUI.ActionPanel(MainFrame, scope.actions)
-MainFrame.AddPage(ap, caption='Queued Actions')
-""")
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread

@@ -31,7 +31,7 @@ class _CBEditor (Editor):
         Event for when calendar is selected, update/create date string.
         """
         self.value = self.control.GetValue()
-        print self.value
+        print(self.value)
         return
 
 

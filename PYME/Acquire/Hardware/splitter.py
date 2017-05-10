@@ -50,7 +50,7 @@ def LoadShiftField(filename = None):
             import tables
             from PYME.IO.MetaDataHandler import HDFMDHandler
             
-            h5file = tables.openFile(filename)
+            h5file = tables.open_file(filename)
             mdh = HDFMDHandler(h5file)
 
             dx = mdh.getEntry('chroma.dx')

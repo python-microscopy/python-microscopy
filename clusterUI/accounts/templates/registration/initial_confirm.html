@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Set up account</h2>
+
+    <p>Set a password to complete account creation</p>
+
+    <form action="{{ request.path }}" method="post">
+    {% csrf_token %}
+    {{ form }}
+    <button type="submit" value="Submit" class="btn btn-success">OK</button>
+    </form>
+{% endblock %}

@@ -2,7 +2,7 @@ import pandas as pd
 import json
 import sys
 import numpy as np
-
+from six.moves import xrange
 
 def build_call_tree_threads(df):
     """

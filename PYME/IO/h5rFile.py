@@ -14,13 +14,17 @@ tablesLock = threading.Lock()
 file_cache = {}
 
 
+openLock = threading.Lock()
+
 def openH5R(filename, mode='r'):
     key = (filename, mode)
-    if key in file_cache and file_cache[key].is_alive:
-        return file_cache[key]
-    else:
-        file_cache[key] = H5RFile(filename, mode)
-        return file_cache[key]
+    
+    with openLock:
+        if key in file_cache and file_cache[key].is_alive:
+            return file_cache[key]
+        else:
+            file_cache[key] = H5RFile(filename, mode)
+            return file_cache[key]
 
 
 
@@ -32,9 +36,10 @@ class H5RFile(object):
         self.filename = filename
         self.mode = mode
 
-        logging.debug('pytables open call')
-        self._h5file = tables.openFile(filename, mode)
-        logging.debug('pytables file open')
+        logging.debug('pytables open call: %s' % filename)
+        with tablesLock:
+            self._h5file = tables.open_file(filename, mode)
+        logging.debug('pytables file open: %s' % filename)
 
         #metadata and events are created on demand
         self._mdh = None
@@ -106,7 +111,7 @@ class H5RFile(object):
                 table.append(data)
             except AttributeError:
                 # we don't have a table with that name - create one
-                self._h5file.createTable(self._h5file.root, tablename, data,
+                self._h5file.create_table(self._h5file.root, tablename, data,
                                                filters=tables.Filters(complevel=5, shuffle=True),
                                                expectedrows=500000)
 
@@ -162,7 +167,8 @@ class H5RFile(object):
 
                 curTime = time.time()
                 if (curTime - self._lastFlushTime) > FLUSH_INTERVAL:
-                    self._h5file.flush()
+                    with tablesLock:
+                        self._h5file.flush()
                     self._lastFlushTime = curTime
 
                 time.sleep(0.1)
@@ -171,7 +177,7 @@ class H5RFile(object):
             traceback.print_exc()
             logging.error(traceback.format_exc())
         finally:
-            logging.debug('H5RFile - closing')
+            logging.debug('H5RFile - closing: %s' % self.filename)
             #remove ourselves from the cache
             try:
                 file_cache.pop((self.filename, self.mode))
@@ -180,7 +186,10 @@ class H5RFile(object):
 
             self.is_alive = False
             #finally, close the file
-            self._h5file.close()
+            with tablesLock:
+                self._h5file.close()
+
+            logging.debug('H5RFile - closed: %s' % self.filename)
 
 
 

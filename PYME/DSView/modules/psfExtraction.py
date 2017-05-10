@@ -279,6 +279,8 @@ class psfExtractor:
 
             mdh = NestedClassMDHandler(self.image.mdh)
             self.write_metadata(mdh, 'default')
+	    mdh['ImageType']='PSF'
+
             im = ImageStack(data = psf, mdh = mdh, titleStub = 'Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default
             
@@ -311,6 +313,7 @@ class psfExtractor:
 
             mdh = NestedClassMDHandler(self.image.mdh)
             self.write_metadata(mdh, 'Multiview')
+            mdh['ImageType'] = 'PSF'
 
             im = ImageStack(data=psfs, mdh=mdh, titleStub='Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default
@@ -481,6 +484,7 @@ class psfExtractor:
 
             mdh = NestedClassMDHandler(self.image.mdh)
             self.write_metadata(mdh, 'Split', offsetsAllChannel[:,2])
+            mdh['ImageType'] = 'PSF'
 
             im = ImageStack(data = psf, mdh = mdh, titleStub = 'Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default

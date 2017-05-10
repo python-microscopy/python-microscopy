@@ -28,11 +28,11 @@ def CreateColourFilterPane(panel, mapping, visFr):
     return pane
 
 class ColourFilterPane(afp.foldingPane):
-    def __init__(self, panel, colourFilter, visFr):
+    def __init__(self, panel, colourFilter, pipeline):
         afp.foldingPane.__init__(self, panel, -1, caption="Colour", pinned = True)
 
         self.colourFilter = colourFilter
-        self.visFr = visFr
+        self.pipeline = pipeline
 
         cnames = ['Everything']
 
@@ -49,9 +49,11 @@ class ColourFilterPane(afp.foldingPane):
         self.chColourFilterChan.Bind(wx.EVT_CHOICE, self.OnColourFilterChange)
         #self._pnl.AddFoldPanelWindow(self, self.chColourFilterChan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         self.AddNewElement(self.chColourFilterChan)
+        
+        self.pipeline.onRebuild.connect(self.UpdateColourFilterChoices)
 
 
-    def UpdateColourFilterChoices(self):
+    def UpdateColourFilterChoices(self, **kwargs):
         cnames = ['Everything']
 
         if self.colourFilter:
@@ -69,6 +71,6 @@ class ColourFilterPane(afp.foldingPane):
 
     def OnColourFilterChange(self, event):
         self.colourFilter.setColour(event.GetString())
-        self.visFr.ClearGenerated()
+        self.pipeline.ClearGenerated()
 
 

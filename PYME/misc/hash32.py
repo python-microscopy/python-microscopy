@@ -21,9 +21,11 @@
 #
 ################
 import numpy as np
+# noinspection PyCompatibility
+from builtins import int
 
 def c_mul(a, b):
-    return eval(hex((long(a) * b) & 0xFFFFFFFFL)[:-1])
+    return eval(hex((int(a) * b) & 0xFFFFFFFF)[:-1])
 
 
 def hashString32(s):

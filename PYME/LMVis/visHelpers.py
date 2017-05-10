@@ -22,11 +22,12 @@
 ##################
 
 #!/usr/bin/python
+from __future__ import print_function
 import scipy
 import numpy
 import numpy.ctypeslib
 
-from PYME.Analysis.points.qHull.triangWrap import RenderTetrahedra
+from PYME.Analysis.points.SoftRend import RenderTetrahedra
 from math import floor
 
 from PYME.IO.image import ImageBounds
@@ -243,6 +244,7 @@ def Gauss2D(Xv,Yv, A,x0,y0,s):
     return r
 
 def rendGauss(x,y, sx, imageBounds, pixelSize):
+    sx = numpy.maximum(sx, pixelSize)
     fuzz = 3*scipy.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*roiSize
@@ -261,7 +263,8 @@ def rendGauss(x,y, sx, imageBounds, pixelSize):
         ix = scipy.absolute(X - x[i]).argmin()
         iy = scipy.absolute(Y - y[i]).argmin()
 
-        sxi =  max(sx[i], delX)       
+        #sxi =  max(sx[i], delX)
+        sxi = sx[i]
         
         imp = Gauss2D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],1/sxi, x[i],y[i],sxi)
         im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp
@@ -271,6 +274,7 @@ def rendGauss(x,y, sx, imageBounds, pixelSize):
     return im
     
 def rendGaussProd(x,y, sx, imageBounds, pixelSize):
+    sx = numpy.maximum(sx, pixelSize)
     fuzz = 6*scipy.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*(roiSize)
@@ -317,7 +321,8 @@ def rendGaussProd(x,y, sx, imageBounds, pixelSize):
             #    print imp.min()
             #imp_ = numpy.log(1.0*imp)
             
-            sxi = max(sx[i], delX)
+            #sxi = max(sx[i], delX)
+            sxi = sx[i]
             Xi, Yi = X[(ix - roiSize):(ix + roiSize + 1)][:,None], Y[(iy - roiSize):(iy + roiSize + 1)][None,:]
             imp = numpy.log(fac/sxi) - ((Xi - x[i])**2 + (Yi -y[i])**2)/(2*sxi**2)
             print((imp.max(), imp.min(), l3, imp.shape))
@@ -370,7 +375,7 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
     ys = (ys - imageBounds.y0)/pixelSize
 
     if im is None:
-        print 'Some thing is wrong - we should already have allocated memory'
+        print('Some thing is wrong - we should already have allocated memory')
         im = numpy.zeros((sizeX, sizeY))
 
 #    for i in range(xs.shape[0]):
@@ -622,13 +627,16 @@ def rendJTet(im, x,y,z,jsig, jsigz, mcp, n):
         scipy.random.seed()
 
         Imc = scipy.rand(len(x)) < mcp
-        if type(jsig) == numpy.ndarray:
+        if isinstance(jsig, numpy.ndarray):
             print((jsig.shape, Imc.shape))
-            jsig = jsig[Imc]
-            jsigz = jsigz[Imc]
+            jsig_ = jsig[Imc]
+            jsigz_ = jsigz[Imc]
+        else:
+            jsig_= jsig
+            jsigz_ = jsigz
 
         #gen3DTriangs.renderTetrahedra(im, x[Imc]+ jsig*scipy.randn(Imc.sum()), y[Imc]+ jsig*scipy.randn(Imc.sum()), z[Imc]+ jsigz*scipy.randn(Imc.sum()), scale = [1,1,1], pixelsize=[1,1,1])
-        p = numpy.hstack(((x[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (y[Imc]+ jsig*scipy.randn(Imc.sum()))[:, None], (z[Imc]+ jsigz*scipy.randn(Imc.sum()))[:, None]))
+        p = numpy.hstack(((x[Imc]+ jsig_*scipy.randn(Imc.sum()))[:, None], (y[Imc]+ jsig_*scipy.randn(Imc.sum()))[:, None], (z[Imc]+ jsigz_*scipy.randn(Imc.sum()))[:, None]))
         print((p.shape))
         RenderTetrahedra(p, im)
 
@@ -701,7 +709,7 @@ def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=10
         im = numpy.zeros((sizeX, sizeY, sizeZ), order='F')
 
         #for i in range(n):
-        rendJTet(im, x,y,z,n,jsig, jsigz, mcp, n)
+        rendJTet(im, y, x, z, jsig, jsigz, mcp, n)
     #        Imc = scipy.rand(len(x)) < mcp
     #        if type(jsig) == numpy.ndarray:
     #            print jsig.shape, Imc.shape
@@ -745,6 +753,7 @@ def Gauss3d(X, Y, Z, x0, y0, z0, wxy, wz):
 
 def rendGauss3D(x,y, z, sx, sz, imageBounds, pixelSize, zb, sliceSize=100):
     from PYME.localization.cModels.gauss_app import genGauss3D
+    sx = numpy.maximum(sx, pixelSize)
     fuzz = 3*scipy.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*roiSize
@@ -779,7 +788,7 @@ def rendGauss3D(x,y, z, sx, sz, imageBounds, pixelSize, zb, sliceSize=100):
         iz_max = min(iz + dz + 1, len(Z))
 
 
-        imp = genGauss3D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],Z[iz_min:iz_max], 1.0e3,x[i],y[i],z[i], max(sx[i], delX),max(sz[i], sliceSize))
+        imp = genGauss3D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],Z[iz_min:iz_max], 1.0e3,x[i],y[i],z[i], sx[i],max(sz[i], sliceSize))
         #print imp.shape
         #print im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1), zn].shape
         im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1), iz_min:iz_max] += imp

@@ -10,12 +10,15 @@ def getNodeInfo():
 
     queueURLs = {}
 
-    for name, info in ns.advertised_services.items():
+    for name, info in ns.get_advertised_services():
         if name.startswith('PYMENodeServer'):
             try:
                 queueURLs[name] = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
             except TypeError:
-                logger.debug('ValueError: %s %s, %s' % (name, repr(info), info.port))
+                if info.port is None:
+                    logger.debug('Service info from %s has no port info' % name)
+                else:
+                    logger.debug('ValueError: %s %s, %s' % (name, repr(info), info.port))
 
     return queueURLs
 
@@ -24,7 +27,7 @@ def getDistributorInfo():
 
     queueURLs = {}
 
-    for name, info in ns.advertised_services.items():
+    for name, info in ns.get_advertised_services():
         if name.startswith('PYMEDistributor'):
             queueURLs[name] = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
 

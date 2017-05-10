@@ -154,7 +154,7 @@ def PSFFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode
 def BlankResult(metadata):
     r = numpy.zeros(1, fresultdtype)
     r['tIndex'] = metadata.tIndex
-    r['fitError'].view('f4')[:] = -5e3
+    r['fitError'].view('8f4')[:] = -5e3
     return r
 
 
@@ -178,7 +178,7 @@ def genFitImage(fitResults, metadata):
     ratio = fitResults['ratio']
     
     im = InterpFitFactory._evalModel(np.array(list(fitResults['fitResults'])), metadata, xslice, yslice, ratio, x_, y_)[0]
-    print im.shape
+    #print im.shape
 
     return np.hstack([im[:,:,0], im[:,:,1]]).squeeze()
 
@@ -343,7 +343,7 @@ from PYME.localization.FitFactories import Interpolators
 from PYME.localization.FitFactories import zEstimators
 
 PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','CSInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
-              mde.FilenameParam('PSFFile', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
+              mde.FilenameParam('PSFFile', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf|TIFF files|*.tif'),
               mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
               #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
               mde.FloatParam('Analysis.AxialShift', 'Z Shift [nm]:', -270),

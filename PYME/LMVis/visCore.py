@@ -4,7 +4,6 @@ Created on Sat May 14 14:54:52 2016
 
 @author: david
 """
-
 import wx
 import wx.py.shell
 
@@ -19,6 +18,8 @@ from PYME.LMVis import gl_render3D as gl_render
 #import sys
 
 import pylab
+
+#from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
 from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
@@ -58,9 +59,10 @@ import numpy as np
 
 
 from PYME.LMVis import statusLog
+#from PYME.recipes import recipeGui
 
 class VisGUICore(object):
-    def __init__(self):
+    def __init__(self, use_shaders=False):
         self.viewMode = 'points' #one of points, triangles, quads, or voronoi
         #self.colData = 't'
         self.pointDisplaySettings = pointSettingsPanel.PointDisplaySettings()
@@ -77,22 +79,30 @@ class VisGUICore(object):
             win = self
         else:
             win = self.dsviewer
-            
-        self.glCanvas = gl_render.LMGLCanvas(win)
+
+        if not use_shaders:
+            self.glCanvas = gl_render.LMGLCanvas(win)
+        else:
+            from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
+            self.glCanvas = LMGLShaderCanvas(win)
         win.AddPage(page=self.glCanvas, caption='View')#, select=True)
-        self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
+
+        self.glCanvas.setCMap(pylab.cm.gist_rainbow) #pylab.cm.hot
+
+        #self.rec_gui = recipeGui.
+        #win.AddPage(page=self.glCanvas, caption='View')#, select=True)
         
         self.refv = False
         
         renderers.renderMetadataProviders.append(self.SaveMetadata)
-        
+        self.use_shaders = use_shaders
         
         wx.CallLater(100, self.OnIdle)
         
     
     def OnIdle(self, event=None):
-        print 'Ev Idle'
-        if self.glCanvas.init and not self.refv:
+        print('Ev Idle')
+        if self.glCanvas._is_initialized and not self.refv:
             self.refv = True
             print((self.viewMode, self.pointDisplaySettings.colourDataKey))
             self.SetFit()
@@ -118,9 +128,8 @@ class VisGUICore(object):
         if self.viewMode == 'quads':
             quadTreeSettings.GenQuadTreePanel(self, sidePanel)
 
-        if self.viewMode == 'points' or self.viewMode == 'tracks':
+        if self.viewMode in ['points', 'tracks', 'pointsprites', 'shadedpoints']:
             pointSettingsPanel.GenPointsPanel(self, sidePanel)
-
         if self.viewMode == 'blobs':
             triBlobs.GenBlobPanel(self, sidePanel)
 
@@ -131,26 +140,31 @@ class VisGUICore(object):
         self.glCanvas.Refresh()
         
     def GenDataSourcePanel(self, pnl):
-        item = afp.foldingPane(pnl, -1, caption="Data Source", pinned = False)
-
-        self.dsRadioIds = []
-        self._ds_keys_by_id = {}
-        for ds in self.pipeline.dataSources.keys():
-            rbid = wx.NewId()
-            self.dsRadioIds.append(rbid)
-            rb = wx.RadioButton(item, rbid, ds)
-            rb.SetValue(ds == self.pipeline.selectedDataSourceKey)
-
-            self._ds_keys_by_id[rbid] = ds
-
-            rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
-            item.AddNewElement(rb)
+        from PYME.recipes.vertical_recipe_display import RecipeDisplayPanel
+        item = afp.foldingPane(pnl, -1, caption="Data Source")#, pinned = True)
+        
+        self.chSource = wx.Choice(item, -1, choices=[])
+        self.set_datasource_choices()
+        self.chSource.Bind(wx.EVT_CHOICE, self.OnSourceChange)
+        self.pipeline.onRebuild.connect(self.set_datasource_choices)
+            
+        item.AddNewElement(self.chSource, foldable=False)
+        
+        self.recipeView = RecipeDisplayPanel(item)
+        self.recipeView.SetRecipe(self.pipeline.recipe)
+        item.AddNewElement(self.recipeView)
 
         pnl.AddPane(item)
-
+        
+    def set_datasource_choices(self, event=None, **kwargs):
+        dss = self.pipeline.dataSources.keys()
+        self.chSource.SetItems(dss)
+        if not self.pipeline.selectedDataSourceKey is None:
+            self.chSource.SetStringSelection(self.pipeline.selectedDataSourceKey)
+        
 
     def OnSourceChange(self, event):
-        self.pipeline.selectDataSource(self._ds_keys_by_id[event.GetId()])
+        self.pipeline.selectDataSource(self.chSource.GetStringSelection())
         
         
     def pointColour(self):
@@ -170,18 +184,19 @@ class VisGUICore(object):
 
         return pointColour
         
-    def CreateMenuBar(self, subMenu = False):
+    def CreateMenuBar(self, subMenu = False, use_shaders = False):
+        logger.debug('Creating VisGUI menu bar')
         if 'dsviewer' in dir(self):
             parent = self.dsviewer
         else:
             parent = self
 
-        #ID_TOGGLE_SETTINGS = wx.NewId()
-
         self.AddMenuItem('File', '&Open', self.OnOpenFile)
         if not subMenu:
             self.AddMenuItem('File', "Open &Raw/Prebleach Data", self.OnOpenRaw)
             self.AddMenuItem('File', "Open Extra &Channel", self.OnOpenChannel)
+            
+        self.AddMenuItem('File', 'Save filtered localizations', self.OnSave)
         
         if not subMenu:
             self.AddMenuItem('File', itemType='separator')
@@ -193,13 +208,18 @@ class VisGUICore(object):
 
 
         self.AddMenuItem('View', '&Points', self.OnViewPoints, itemType='normal') #TODO - add radio type
+        if use_shaders:
+            self.AddMenuItem('View', '&Pointsprites', self.OnViewPointsprites)
+            self.AddMenuItem('View', '&Shaded Points', self.OnViewShadedPoints)
         self.AddMenuItem('View',  '&Triangles', self.OnViewTriangles)
         self.AddMenuItem('View', '3D Triangles', self.OnViewTriangles3D)
         self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
-        self.AddMenuItem('View', '&Voronoi', self.OnViewVoronoi)
-        self.AddMenuItem('View', '&Interpolated Triangles', self.OnViewInterpTriangles)
-        self.AddMenuItem('View', '&Blobs', self.OnViewBlobs)
-        self.AddMenuItem('View', '&Tracks', self.OnViewTracks)
+        if not use_shaders:
+            self.AddMenuItem('View', '&Voronoi', self.OnViewVoronoi)
+            self.AddMenuItem('View', '&Interpolated Triangles', self.OnViewInterpTriangles)
+            self.AddMenuItem('View', '&Blobs', self.OnViewBlobs)
+            self.AddMenuItem('View', '&Tracks', self.OnViewTracks)
+
 
         #self.view_menu.Check(ID_VIEW_POINTS, True)
         #self.view_menu.Enable(ID_VIEW_QUADS, False)
@@ -211,33 +231,9 @@ class VisGUICore(object):
         #this needs an ID as we bind to it elsewhere (in the filter panel)
         self.ID_VIEW_CLIP_ROI = wx.NewId()
         self.AddMenuItem('View', 'Clip to ROI\tF8', id=self.ID_VIEW_CLIP_ROI)
-
-        #self.AddMenuItem('View', itemType='separator')
-        #self.view_menu.AppendCheckItem(ID_TOGGLE_SETTINGS, "Show Settings")
-        #self.view_menu.Check(ID_TOGGLE_SETTINGS, True)
-
-    #     if not subMenu:        
-    #         self.view3d_menu = wx.Menu()
-    
-    # #        try: #stop us bombing on Mac
-    # #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_POINTS, '&Points')
-    # #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_TRIANGS, '&Triangles')
-    # #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_BLOBS, '&Blobs')
-    # #        except:
-    #         self.view3d_menu.Append(ID_VIEW_3D_POINTS, '&Points')
-    #         self.view3d_menu.Append(ID_VIEW_3D_TRIANGS, '&Triangles')
-    #         self.view3d_menu.Append(ID_VIEW_3D_BLOBS, '&Blobs')
-    
-    #         #self.view3d_menu.Enable(ID_VIEW_3D_TRIANGS, False)
-    #         self.view3d_menu.Enable(ID_VIEW_3D_BLOBS, False)
-    
-    #         #self.view_menu.Check(ID_VIEW_3D_POINTS, True)
-
-        #self.gen_menu = wx.Menu()
         
         renderers.init_renderers(self)
 
-        #self.extras_menu = wx.Menu()
         from PYME.LMVis import Extras
         Extras.InitPlugins(self)
         
@@ -251,13 +247,23 @@ class VisGUICore(object):
         if not subMenu:
             self.AddMenuItem('Help', "&About",)
 
-       # menu_bar = self.menubar
-
-
-        #return menu_bar
         
     def OnViewPoints(self,event):
         self.viewMode = 'points'
+        #self.glCanvas.cmap = pylab.cm.hsv
+        self.RefreshView()
+        self.CreateFoldPanel()
+        self.displayPane.OnPercentileCLim(None)
+
+    def OnViewPointsprites(self, event):
+        self.viewMode = 'pointsprites'
+        # self.glCanvas.cmap = pylab.cm.hsv
+        self.RefreshView()
+        self.CreateFoldPanel()
+        self.displayPane.OnPercentileCLim(None)
+
+    def OnViewShadedPoints(self,event):
+        self.viewMode = 'shadedpoints'
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
         self.CreateFoldPanel()
@@ -316,6 +322,11 @@ class VisGUICore(object):
         if not filename == '':
             self.OpenFile(filename)
             
+    def OnSave(self, event):
+        filename = wx.SaveFileSelector("Save pipeline output as ...", '.hdf')
+        if not filename == '':
+            self.pipeline.save_hdf(filename)
+            
     def RegenFilter(self):
         logger.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
         self.pipeline.Rebuild()
@@ -328,13 +339,11 @@ class VisGUICore(object):
 
         if len(self.pipeline['x']) == 0:
             self.glCanvas.setOverlayMessage('No data points - try adjusting the filter')
-            #wx.MessageBox('No data points - try adjusting the filter',
-            #              "len(filter['x']) ==0")
             return
         else:
             self.glCanvas.setOverlayMessage('')
 
-        if self.glCanvas.init == 0: #glcanvas is not initialised
+        if not self.glCanvas._is_initialized: #glcanvas is not initialised
             return
 
         #bCurr = wx.BusyCursor()
@@ -370,7 +379,21 @@ class VisGUICore(object):
             else:
                 self.glCanvas.setPoints(self.pipeline['x'], 
                                     self.pipeline['y'], self.pointColour())
-                                    
+        elif self.viewMode == 'pointsprites':
+            self.glCanvas.setPoints3D(self.pipeline['x'],
+                                      self.pipeline['y'],
+                                      self.pipeline['z'],
+                                      self.pointColour(), alpha=self.pointDisplaySettings.alpha, mode='pointsprites')
+        elif self.viewMode == 'shadedpoints':
+            self.glCanvas.setPoints3D(self.pipeline['x'],
+                                      self.pipeline['y'],
+                                      self.pipeline['z'],
+                                      self.pointColour(),
+                                      alpha=self.pointDisplaySettings.alpha,
+                                      normal_x=self.pipeline['xn'],
+                                      normal_y=self.pipeline['yn'],
+                                      normal_z=self.pipeline['zn'],
+                                      mode='shadedpoints')
         elif self.viewMode == 'tracks':
             if 'setTracks3D' in dir(self.glCanvas) and 'z' in self.pipeline.keys():
                 self.glCanvas.setTracks3D(self.pipeline['x'], 
@@ -436,12 +459,13 @@ class VisGUICore(object):
         xsc = self.pipeline.imageBounds.width()*1./self.glCanvas.Size[0]
         ysc = self.pipeline.imageBounds.height()*1./self.glCanvas.Size[1]
 
-        if xsc > ysc:
-            self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x1, 
-                                  self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y0 + xsc*self.glCanvas.Size[1])
-        else:
-            self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x0 + ysc*self.glCanvas.Size[0], 
-                                  self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y1)
+        if xsc != 0 and ysc != 0:
+            if xsc > ysc:
+                self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x1,
+                                      self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y0 + xsc*self.glCanvas.Size[1])
+            else:
+                self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x0 + ysc*self.glCanvas.Size[0],
+                                      self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y1)
 
     def OnFitROI(self,event = None):
         if 'x' in self.pipeline.filterKeys.keys():
@@ -464,9 +488,6 @@ class VisGUICore(object):
             self.glCanvas.setView(xbounds[0], xbounds[0] + ysc*self.glCanvas.Size[0], 
                                   ybounds[0], ybounds[1])
 
-    #def OnGLViewChanged(self):
-    #    for genI in self.generatedImages:
-    #        genI.Refresh()
 
     def SetStatus(self, statusText):
         self.statusbar.SetStatusText(statusText, 0)
@@ -505,7 +526,7 @@ class VisGUICore(object):
                 
             args['FieldNames'] = dlg.GetFieldNames()
             args['VarName'] = dlg.GetVarName()
-            args['PixelSize'] = dlg.GetPixelSize()
+            # args['PixelSize'] = dlg.GetPixelSize()
             
             
             dlg.Destroy()
@@ -519,8 +540,11 @@ class VisGUICore(object):
             if not ret == wx.ID_OK:
                 dlg.Destroy()
                 return #we cancelled
-                
+
+
             args['FieldNames'] = dlg.GetFieldNames()
+            # remove trailing whitespace/line brake on last field name
+            args['FieldNames'][-1] = args['FieldNames'][-1].rstrip()
             args['SkipRows'] = dlg.GetNumberComments()
             args['PixelSize'] = dlg.GetPixelSize()
             

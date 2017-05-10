@@ -55,17 +55,17 @@ class EditGrid(wx.grid.Grid):
                 
     
     def tostring(self, selection=None):
-        from cStringIO import StringIO
-        sb = StringIO()
+        from io import BytesIO
+        sb = BytesIO()
         
         np.savetxt(sb, self.toarray(selection), delimiter='\t')
         
         return sb.getvalue()
         
     def setfromstring(self, data, x0=0, y0=0):
-        from cStringIO import StringIO
+        from io import BytesIO
         #print repr(data)
-        sb = StringIO(data.encode())
+        sb = BytesIO(data.encode())
         
         self.setarray(np.loadtxt(sb, delimiter = '\t'), x0, y0)
         

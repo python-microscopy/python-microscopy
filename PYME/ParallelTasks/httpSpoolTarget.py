@@ -1,11 +1,18 @@
-from BaseHTTPServer import BaseHTTPRequestHandler
-import urlparse
+# noinspection PyCompatibility
+from http.server import BaseHTTPRequestHandler
+try:
+    # noinspection PyCompatibility
+    import urlparse
+except ImportError:
+    #py3
+    # noinspection PyCompatibility
+    from urllib import parse as urlparse
 import os
 from PYME.IO.FileUtils import nameUtils
 from PYME.IO import MetaDataHandler
 from PYME.ParallelTasks import HDFTaskQueue
 import time
-import cPickle as pickle
+from six.moves import cPickle as pickle
 
 from PYME.IO import PZFFormat
 
@@ -20,7 +27,7 @@ class H5File(object):
     def __init__(self, pth, mode='r'):
         if mode in ['w', 'a', 'r+'] and os.path.exists(pth):
             raise RuntimeError('Cannot open existing file in write mode')
-        self.h5f = tables.openFile(pth, mode)
+        self.h5f = tables.open_file(pth, mode)
         self.mode = mode
 
         self.complevel = 6
@@ -92,16 +99,16 @@ class H5File(object):
             
             if not self.usePZFFormat:                
                 filt = tables.Filters(self.complevel, self.complib, shuffle=True)
-                self.imageData = self.h5f.createEArray(self.h5f.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(framesize), filters=filt, chunkshape=(1,)+tuple(framesize))                
+                self.imageData = self.h5f.create_earray(self.h5f.root, 'ImageData', tables.UInt16Atom(), (0,)+tuple(framesize), filters=filt, chunkshape=(1,)+tuple(framesize))
             else:
-                self.compImageData = self.h5f.createVLArray(self.h5f.root, 'PZFImageData', tables.VLStringAtom())
+                self.compImageData = self.h5f.create_vlarray(self.h5f.root, 'PZFImageData', tables.VLStringAtom())
                 self.compImageData.attrs.framesize = framesize            
 
 
     def _checkCreateEventsTable(self):
         if not 'Events' in dir(self.h5f.root):
          filt = tables.Filters(self.complevel, self.complib, shuffle=True)
-         self.events = self.h5f.createTable(self.h5f.root, 'Events', HDFTaskQueue.SpoolEvent,filters=filt)
+         self.events = self.h5f.create_table(self.h5f.root, 'Events', HDFTaskQueue.SpoolEvent,filters=filt)
             
     
     def putFrame(self, frame):
@@ -147,7 +154,7 @@ class H5File(object):
         
             self.imageData.flush()
         
-        print (time.time() - t1)/float(len(fs)), (t2-t1)/float(len(fs))
+        #print (time.time() - t1)/float(len(fs)), (t2-t1)/float(len(fs))
         
     def putPZFFrames(self, frames):
         t1 = time.time()
@@ -169,7 +176,7 @@ class H5File(object):
         
             self.imageData.flush()
         
-        print (time.time() - t1)/float(len(fs)), (t2-t1)/float(len(fs))
+        #print (time.time() - t1)/float(len(fs)), (t2-t1)/float(len(fs))
         
     def putEvent(self, event):
         #self._checkCreateEventsTable()
@@ -363,7 +370,8 @@ class GetHandler(BaseHTTPRequestHandler):
         return
 
 if __name__ == '__main__':
-    from BaseHTTPServer import HTTPServer
+    # noinspection PyCompatibility
+    from http.server import HTTPServer
     server = HTTPServer(('localhost', 8080), GetHandler)
-    print 'Starting server, use <Ctrl-C> to stop'
+    print('Starting server, use <Ctrl-C> to stop')
     server.serve_forever()

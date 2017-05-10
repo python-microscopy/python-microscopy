@@ -1,0 +1,15 @@
+PYME has a small number of unit tests (hopefully increasing) and uses nose for testing.
+
+Testing is initiated by running `nosetests` from within the `PYME` tree, and tests should be run before submitting pull
+requests. New tests are very welcome!
+
+Caveats
+=======
+
+- Tests of the fit modules use randomly generated data and the (occasional) random failure is to be expected. As long as
+  fit tests don't fail consistently there shouldn't be any cause for concern.
+- We don't currently test fit precision in any rigourous manner, just doing enough to ensure that we don't completely
+  break things with new code.
+- The test coverage is currently very poor. Passing all the tests does not ensure that you haven't broken anything and
+  shouldn't be used as a substitute for a careful consideration of possible side effects.
+

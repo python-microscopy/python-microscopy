@@ -42,6 +42,8 @@ import dispatch
 
 from PYME.Analysis.BleachProfile.kinModels import getPhotonNums
 
+import logging
+logger = logging.getLogger(__name__)
 
 def _processPriSplit(ds):
     """set mappings ascociated with the use of a splitter"""
@@ -234,13 +236,26 @@ def _processEvents(ds, events, mdh):
 
             #self.eventCharts = eventCharts
             #self.ev_mappings = ev_mappings
+    elif all(k in mdh.keys() for k in ['StackSettings.FramesPerStep', 'StackSettings.StepSize',
+                                       'StackSettings.NumSteps', 'StackSettings.NumCycles']):
+        # if we dont have events file, see if we can use metadata to spoof focus
+        print('No events found, spoofing focus position using StackSettings metadata')
+        frames = np.arange(0, mdh['StackSettings.FramesPerStep'] * mdh['StackSettings.NumSteps'] * mdh[
+            'StackSettings.NumCycles'], mdh['StackSettings.FramesPerStep'])
+        position = np.arange(mdh.getOrDefault('Protocol.PiezoStartPos', 0),
+                             mdh.getOrDefault('Protocol.PiezoStartPos', 0) + mdh['StackSettings.NumSteps'] * mdh[
+                                 'StackSettings.StepSize'], mdh['StackSettings.StepSize'])
+        position = np.tile(position, mdh['StackSettings.NumCycles'])
+
+        zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
+        ev_mappings['zm'] = zm
+        eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
 
     return ev_mappings, eventCharts
 
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
-        #self.dataSources = {}
-        self.recipe = ModuleCollection()
+        self.recipe = ModuleCollection(execute_on_invalidation=True)
 
         self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
@@ -252,15 +267,12 @@ class Pipeline:
 
         self.fluorSpecies = {}
         self.fluorSpeciesDyes = {}
-        #self.chromaticShifts = {}
-        #self.t_p_dye = 0.1
-        #self.t_p_other = 0.1
-        #self.t_p_background = .01
 
         self.blobSettings = BlobSettings()
         self.objects = None
 
         self.imageBounds = ImageBounds(0,0,0,0)
+        self.mdh = MetaDataHandler.NestedClassMDHandler()
         
         self.Triangles = None
         self.edb = None
@@ -375,7 +387,7 @@ class Pipeline:
         else:
             raise RuntimeError("Length of new column doesn't match either the input or output lengths")
 
-    def addDataSource(self, dskey, ds):
+    def addDataSource(self, dskey, ds, add_missing_vars=True):
         """
         Add a new data source
 
@@ -395,11 +407,15 @@ class Pipeline:
             ds = tabular.mappingFilter(ds)
 
         #add keys which might not already be defined
-
-        _add_missing_ds_keys(ds,self.ev_mappings)
+        if add_missing_vars:
+            _add_missing_ds_keys(ds,self.ev_mappings)
 
         if getattr(ds, 'mdh', None) is None:
-            ds.mdh = self.mdh
+            try:
+                ds.mdh = self.mdh
+            except AttributeError:
+                logger.error('No metadata defined in pipeline')
+                pass
 
         self.dataSources[dskey] = ds
 
@@ -415,7 +431,9 @@ class Pipeline:
                 #keep raw measurements available
                 s.setMapping('x_raw', 'x')
                 s.setMapping('y_raw', 'y')
-                s.setMapping('z_raw', 'z')
+                
+                if 'z' in  s.keys():
+                    s.setMapping('z_raw', 'z')
                 
         if not self.selectedDataSource is None:
             #we can recycle the mapping object
@@ -432,7 +450,9 @@ class Pipeline:
                 self.colourFilter = tabular.colourFilter(self.filter)
             else:
                 self.colourFilter.resultsSource = self.filter
-                
+
+            self._process_colour()
+            
             self.ready = True
 
         self.ClearGenerated()
@@ -599,7 +619,7 @@ class Pipeline:
         if 'Analysis.FitModule' in self.mdh.getEntryNames():
             fitModule = self.mdh['Analysis.FitModule']
             
-            print 'fitModule = %s' % fitModule
+            #print 'fitModule = %s' % fitModule
             
             if 'Interp' in fitModule:
                 self.filterKeys['A'] = (5, 100000)
@@ -611,11 +631,12 @@ class Pipeline:
                 self.filterKeys['fitError_dx'] = (0,10)
                 self.filterKeys['fitError_dy'] = (0,10)
 
+        self._get_dye_ratios_from_metadata()
 
         self.addDataSource('Localizations', mapped_ds)
         self.selectDataSource('Localizations') #NB - this rebuilds the pipeline
-
-        self._process_colour()
+        
+        #self._process_colour()
 
 
 
@@ -632,27 +653,37 @@ class Pipeline:
          All of these get munged into the p_dye type entries that the colour filter needs.
 
         """
-        if 'Sample.Labelling' in self.mdh.getEntryNames() and 'gFrac' in self.selectedDataSource.keys():
-            self.SpecFromMetadata()
+        #clear out old colour keys
+        for k in self.mapping.mappings.keys():
+            if k.startswith('p_'):
+                self.mapping.mappings.pop(k)
+        
+        if 'gFrac' in self.selectedDataSource.keys():
+            #ratiometric
+            for structure, ratio in self.fluorSpecies.items():
+                if not ratio is None:
+                    self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
+        else:
+            if 'probe' in self.mapping.keys():
+                #non-ratiometric (i.e. sequential) colour
+                #color channel is given in 'probe' column
+                self.mapping.setMapping('ColourNorm', '1.0 + 0*probe')
+    
+                for i in range(int(self['probe'].min()), int(self['probe'].max() + 1)):
+                    self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
+    
+            nSeqCols = self.mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
+            if nSeqCols > 1:
+                for i in range(nSeqCols):
+                    self.mapping.setMapping('ColourNorm', '1.0 + 0*t')
+                    cr = self.mdh['Protocol.ColorRange%d' % i]
+                    self.mapping.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
+                
+        #self.ClearGenerated()
 
-        if 'probe' in self.mapping.keys():
-            #non-ratiometric (i.e. sequential) colour
-            #color channel is given in 'probe' column
-            self.mapping.setMapping('ColourNorm', '1.0 + 0*probe')
 
-            for i in range(int(self['probe'].min()), int(self['probe'].max() + 1)):
-                self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
-
-        nSeqCols = self.mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
-        if nSeqCols > 1:
-            for i in range(nSeqCols):
-                self.mapping.setMapping('ColourNorm', '1.0 + 0*t')
-                cr = self.mdh['Protocol.ColorRange%d' % i]
-                self.mapping.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
-
-
-    def SpecFromMetadata(self):
-        labels = self.mdh.getEntry('Sample.Labelling')
+    def _get_dye_ratios_from_metadata(self):
+        labels = self.mdh.getOrDefault('Sample.Labelling', [])
 
         for structure, dye in labels:
             ratio = dyeRatios.getRatio(dye, self.mdh)
@@ -661,7 +692,7 @@ class Pipeline:
                 self.fluorSpecies[structure] = ratio
                 self.fluorSpeciesDyes[structure] = dye
                 #self.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
-                self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
+                #self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
                 
 
     def getNeighbourDists(self, forceRetriang = False):
@@ -740,7 +771,7 @@ class Pipeline:
             self.Quads.insert(pointQT.qtRec(xi,yi, None))
             
     def measureObjects(self):
-        from PYME.LMVis import objectMeasure
+        from PYME.Analysis.points import objectMeasure
         
         self.objectMeasures = objectMeasure.measureObjects(self.objects, self.objThreshold)
         
@@ -760,6 +791,9 @@ class Pipeline:
             of.write('\t'.join(['%e' % c for c in row]) + '\n')
     
         of.close()
+        
+    def save_hdf(self, filename):
+        self.colourFilter.to_hdf(filename, tablename='Localizations', metadata=self.mdh)
         
     def toDataFrame(self, keys=None):
         import pandas as pd

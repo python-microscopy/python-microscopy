@@ -19,6 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+import argparse
+
 import wx
 import wx.py.shell
 
@@ -46,7 +48,8 @@ from PYME.LMVis import colourPanel
 #from PYME.LMVis import renderers
 from PYME.LMVis import pipeline
 
-
+import logging
+logger = logging.getLogger(__name__)
 
 
 from PYME.ui import MetadataTree
@@ -67,11 +70,11 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     with the LMDisplay module used for online display and has been factored out into the visCore module"""
     def __init__(self, parent, filename=None, id=wx.ID_ANY, 
                  title="PYME Visualise", pos=wx.DefaultPosition,
-                 size=(700,650), style=wx.DEFAULT_FRAME_STYLE):
+                 size=(700,650), style=wx.DEFAULT_FRAME_STYLE, use_shaders=False, cmd_args=None):
 
         AUIFrame.__init__(self, parent, id, title, pos, size, style)
         
-
+        self.cmd_args = cmd_args
         self._flags = 0
         
         self.pipeline = pipeline.Pipeline(visFr=self)
@@ -79,7 +82,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #self.Quads = None
                
         #self.SetMenuBar(self.CreateMenuBar())
-        self.CreateMenuBar()
+        self.CreateMenuBar(use_shaders=use_shaders)
 
         self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
 
@@ -91,7 +94,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #initialize the common parts
         ###############################
         #NB: this has to come after the shell has been generated, but before the fold panel
-        visCore.VisGUICore.__init__(self)
+        visCore.VisGUICore.__init__(self, use_shaders=use_shaders)
 
         ################################   
 
@@ -158,10 +161,18 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.paneHooks.append(self.GenPanels)
         self.CreateFoldPanel()
 
-
         if not filename is None:
             self.OpenFile(filename)
             #self.refv = False
+
+            recipe = getattr(self.cmd_args, 'recipe', None)
+            print('Using recipe: %s' % recipe)
+            if recipe:
+                from PYME.recipes import modules
+                self.pipeline.recipe.update_from_yaml(recipe)
+                self.recipeView.SetRecipe(self.pipeline.recipe)
+                self.set_datasource_choices()
+            
             wx.CallAfter(self.RefreshView)
 
         nb = self._mgr.GetNotebooks()[0]
@@ -347,42 +358,49 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
 
 class VisGuiApp(wx.App):
-    def __init__(self, filename, *args):
+    def __init__(self, filename, use_shaders, cmd_args, *args):
         self.filename = filename
+        self.use_shaders = use_shaders
+        self.cmd_args = cmd_args
         wx.App.__init__(self, *args)
         
         
     def OnInit(self):
         wx.InitAllImageHandlers()
-        self.main = VisGUIFrame(None, self.filename)
+        self.main = VisGUIFrame(None, self.filename, use_shaders=self.use_shaders, cmd_args=self.cmd_args)
         self.main.Show()
         self.SetTopWindow(self.main)
         return True
 
 
-def main_(filename=None):
+def main_(filename=None, use_shaders=False, args=None):
     if filename == "":
         filename = None
-    application = VisGuiApp(filename, 0)
+    application = VisGuiApp(filename, use_shaders, args, 0)
     application.MainLoop()
 
-
-
+def parse():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('file', help="file that should be used", default=None, nargs='?')
+    parser.add_argument('-r', '--recipe', help='recipe to use for variable portion of pipeline', dest='recipe', default=None)
+    parser.add_argument('-s', '--use_shaders', dest="use_shaders", action='store_true', default=False,
+                        help='switch shaders on(default: off)')
+    parser.add_argument('--no_use_shaders', dest="use_shaders", action='store_false',
+                        default=False, help='switch shaders off(default: off)')
+    args = parser.parse_args()
+    return args
     
 def main():
     from multiprocessing import freeze_support
     freeze_support()
     
     filename = None
-
-    if len(sys.argv) > 1:
-        filename = sys.argv[1]
-
+    args = parse()
     if wx.GetApp() is None: #check to see if there's already a wxApp instance (running from ipython -pylab or -wthread)
-        main_(filename)
+        main_(args.file, use_shaders=args.use_shaders, args=args)
     else:
         #time.sleep(1)
-        visFr = VisGUIFrame(None, filename)
+        visFr = VisGUIFrame(None, filename, False)
         visFr.Show()
         visFr.RefreshView()
         

@@ -11,6 +11,7 @@ import socket
 import requests
 import time
 import numpy as np
+import threading
 
 import socket
 import os
@@ -27,31 +28,57 @@ local_serverfilter = config.get('dataserver-filter', '')
 
 import sys
 
-import urlparse
+try:
+    # noinspection PyCompatibility
+    from urlparse import urlparse
+except ImportError:
+    #py3
+    # noinspection PyCompatibility
+    from urllib.parse import urlparse
 
 import logging
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
+logger = logging.getLogger(__name__)
+
+_ns = None
+_ns_lock = threading.Lock()
+
+def get_ns():
+    global _ns
+    with _ns_lock:
+        if _ns is None:
+            #stagger query times
+            time.sleep(3*np.random.rand())
+            _ns = pzc.getNS('_pyme-http')
+            #wait for replies
+            time.sleep(5)
+
+    return _ns
+            
 
 if not 'sphinx' in sys.modules.keys():
     # do not start zeroconf if running under sphinx
-    ns = pzc.getNS('_pyme-http')
-    time.sleep(1.5 + np.random.rand())  # wait for ns responses
+    # otherwise, spin up a thread to go and find the ns and get on with the rest of our initialization
+    
+    threading.Thread(target=get_ns).start()
 
 from collections import OrderedDict
-
 
 class _LimitedSizeDict(OrderedDict):
     def __init__(self, *args, **kwds):
         self.size_limit = kwds.pop("size_limit", None)
         OrderedDict.__init__(self, *args, **kwds)
+
+        self._lock = threading.Lock()
         self._check_size_limit()
 
     def __setitem__(self, key, value):
-        OrderedDict.__setitem__(self, key, value)
-        self._check_size_limit()
+        with self._lock:
+            OrderedDict.__setitem__(self, key, value)
+            self._check_size_limit()
 
     def _check_size_limit(self):
         if self.size_limit is not None:
@@ -84,7 +111,9 @@ def _listSingleDir(dirurl, nRetries=3):
         dirL, rt, dt = _dirCache[dirurl]
         if (t - rt) > DIR_CACHE_TIME:
             raise RuntimeError('key is expired')
+        logger.debug('dir cache hit')
     except (KeyError, RuntimeError):
+        logger.debug('dir cache miss')
         # t = time.time()
         url = dirurl.encode()
         haveResult = False
@@ -96,14 +125,14 @@ def _listSingleDir(dirurl, nRetries=3):
                 r = s.get(url, timeout=1)
                 haveResult = True
             except requests.Timeout as e:
-                logging.exception('Timeout on listing directory')
-                logging.info('%d retries left' % (nRetries - nTries))
+                logger.exception('Timeout on listing directory')
+                logger.info('%d retries left' % (nRetries - nTries))
                 if nTries == nRetries:
                     raise
 
         dt = time.time() - t
         if not r.status_code == 200:
-            logging.debug('Request failed with error: %d' % r.status_code)
+            logger.debug('Request failed with error: %d' % r.status_code)
 
             #make sure we read a reply so that the far end doesn't hold the connection open
             dump = r.content
@@ -152,14 +181,24 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
         localServers = []
 
         # print ns.advertised_services.keys()
-        for name, info in ns.advertised_services.items():
+        services = get_ns().get_advertised_services()
+        for name, info in services:
             if serverfilter in name:
-                dirurl = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
-
-                if compName in name:
-                    localServers.append(dirurl)
+                if info is None or info.address is None or info.port is None:
+                    # handle the case where zeroconf gives us bad name info. This  is a result of a race condition within
+                    # zeroconf, which should probably be fixed instead, but hopefully this workaround is enough.
+                    # FIXME - fix zeroconf module race condition on info update.
+                    logger.error('''Zeroconf gave us NULL info, ignoring and hoping for the best ...
+                    Node with bogus info was: %s
+                    Total number of nodes: %d
+                    ''' % (name, len(services)))
                 else:
-                    servers.append(dirurl)
+                    dirurl = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
+    
+                    if compName in name:
+                        localServers.append(dirurl)
+                    else:
+                        servers.append(dirurl)
 
         #try data servers on the local machine first
         for dirurl in localServers:
@@ -208,6 +247,8 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
         return locs
 
 _pool = None
+
+_list_dir_lock = threading.Lock()
 def listdirectory(dirname, serverfilter=''):
     """Lists the contents of a directory on the cluster.
 
@@ -217,30 +258,50 @@ def listdirectory(dirname, serverfilter=''):
     from . import clusterListing as cl
     from multiprocessing.pool import ThreadPool
 
-    if _pool is None:
-        _pool = ThreadPool(10)
-
-    dirlist = dict()
-
-    urls = []
-
-    for name, info in ns.advertised_services.items():
-        if serverfilter in name:
-            urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
-
-    listings = _pool.map(_listSingleDir, urls)
-
-    for dirL, dt in listings:
-        cl.aggregate_dirlisting(dirlist, dirL)
-
-    return dirlist
+    with _list_dir_lock:
+        if _pool is None:
+            _pool = ThreadPool(10)
+    
+        dirlist = dict()
+    
+        urls = []
+    
+        dirname = dirname.lstrip('/')
+    
+        if not dirname.endswith('/'):
+            dirname = dirname + '/'
+    
+        services = get_ns().get_advertised_services()
+        for name, info in services:
+            if serverfilter in name:
+                if info is None or info.address is None or info.port is None:
+                    # handle the case where zeroconf gives us bad name info. This  is a result of a race condition within
+                    # zeroconf, which should probably be fixed instead, but hopefully this workaround is enough.
+                    # FIXME - fix zeroconf module race condition on info update.
+                    logger.error('''Zeroconf gave us NULL info, ignoring and hoping for the best ...
+                    Node with bogus info was: %s
+                    Total number of nodes: %d
+                    ''' % (name, len(services)))
+                    
+                else:
+                    urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
+    
+        listings = _pool.map(_listSingleDir, urls)
+    
+        for dirL, dt in listings:
+            cl.aggregate_dirlisting(dirlist, dirL)
+    
+        return dirlist
 
 def listdir(dirname, serverfilter=''):
     """Lists the contents of a directory on the cluster. Similar to os.listdir,
     but directories are indicated by a trailing slash
     """
 
-    return list(listdirectory(dirname, serverfilter).keys())
+    return sorted(listdirectory(dirname, serverfilter).keys())
+
+def isdir(name, serverfilter=''):
+    return len(listdir(name, serverfilter)) > 0
 
 
 def exists(name, serverfilter=''):
@@ -253,7 +314,7 @@ def exists(name, serverfilter=''):
 #    dirname = '/'.join(name.split('/')[:-1])
 #    fname = name.split('/')[-1] + trailing
     #return fname in listdir(dirname, serverfilter)
-    return len(locateFile(name, serverfilter, True)) > 0
+    return (len(locateFile(name, serverfilter, True)) > 0) or isdir(name, serverfilter)
 
 
 def walk(top, topdown=True, on_error=None, followlinks=False, serverfilter=''):
@@ -339,26 +400,55 @@ def isLocal(filename, serverfilter):
     else:
         return False
 
-
-def getFile(filename, serverfilter='', numRetries=3):
-    try:
-        return _fileCache[(filename, serverfilter)]
-    except KeyError:
-        pass
-
+def get_local_path(filename, serverfilter):
     if serverfilter == local_serverfilter and local_dataroot:
         #look for the file in the local server folder (short-circuit the server)
         localpath = os.path.join(local_dataroot, filename)
         if os.path.exists(localpath):
-            with open(localpath, 'rb') as f:
-                return f.read()
+            return localpath
+
+def getFile(filename, serverfilter='', numRetries=3, use_file_cache=True):
+    """
+    Get a file from the cluster.
+    
+    Parameters
+    ----------
+    filename : string
+        filename relative to cluster root
+    serverfilter : string
+        A filter to use when finding servers - used to facilitate the operation for multiple clusters on the one network
+        segment. Note that this is still not fully supported.
+    numRetries : int
+        The number of times to retry on failure
+    use_file_cache : bool
+        By default we cache the last 100 files requested locally. This cache never expires, although entries are dropped
+        when we get over 100 entries. Under our working assumption that data on the cluster is immutable, this is generally
+        safe, with the exception of log files and files streamed using the _aggregate functionality. We can optionally
+        request a non-cached version of the file.
+
+    Returns
+    -------
+
+    """
+    
+    if use_file_cache:
+        try:
+            return _fileCache[(filename, serverfilter)]
+        except KeyError:
+            pass
+
+    #look for the file in the local server folder (short-circuit the server)
+    localpath = get_local_path(filename, serverfilter)
+    if localpath:
+        with open(localpath, 'rb') as f:
+            return f.read()
     
     locs = locateFile(filename, serverfilter, return_first_hit=True)
 
     nTries = 1
     while nTries < numRetries and len(locs) == 0:
         #retry, giving a little bit of time for the data servers to come up
-        logging.debug('Could not find file, retrying ...')
+        logger.debug('Could not find file, retrying ...')
         time.sleep(1)
         nTries += 1
         locs = locateFile(filename, serverfilter, return_first_hit=True)
@@ -366,7 +456,7 @@ def getFile(filename, serverfilter='', numRetries=3):
 
     if (len(locs) == 0):
         # we did not find the file
-        logging.debug('could not find file %s on cluster: cluster nodes = %s' % (filename, ns.list()))
+        logger.debug('could not find file %s on cluster: cluster nodes = %s' % (filename, get_ns().list()))
         raise IOError("Specified file could not be found: %s" % filename)
 
 
@@ -380,8 +470,8 @@ def getFile(filename, serverfilter='', numRetries=3):
             r = s.get(url, timeout=.5)
             haveResult = True
         except requests.Timeout as e:
-            logging.exception('Timeout on get file')
-            logging.info('%d retries left' % (numRetries - nTries))
+            logger.exception('Timeout on get file')
+            logger.info('%d retries left' % (numRetries - nTries))
             if nTries == numRetries:
                 raise
 
@@ -390,7 +480,7 @@ def getFile(filename, serverfilter='', numRetries=3):
 
     if not r.status_code == 200:
         msg = 'Request for %s failed with error: %d' % (url, r.status_code)
-        logging.error(msg)
+        logger.error(msg)
         raise RuntimeError(msg)
 
     content = r.content
@@ -419,7 +509,7 @@ def _chooseServer(serverfilter='', exclude_netlocs=[]):
     TODO: add free disk space and improve metrics/weightings
 
     """
-    serv_candidates = [(k, v) for k, v in ns.advertised_services.items() if
+    serv_candidates = [(k, v) for k, v in get_ns().get_advertised_services() if
                        (serverfilter in k) and not (_netloc(v) in exclude_netlocs)]
 
     t = time.time()
@@ -455,7 +545,7 @@ def mirrorFile(filename, serverfilter=''):
     locs = locateFile(filename, serverfilter)
 
     # where is the data currently located - exclude these from destinations
-    currentCopyNetlocs = [urlparse.urlparse(l[0]).netloc for l in locs]
+    currentCopyNetlocs = [urlparse(l[0]).netloc for l in locs]
 
     # choose a server to mirror onto
     destName, destInfo = _chooseServer(serverfilter, exclude_netlocs=currentCopyNetlocs)
@@ -479,24 +569,44 @@ def putFile(filename, data, serverfilter=''):
 
     TODO - Add retry with a different server on failure
     """
-    name, info = _chooseServer(serverfilter)
+    success = False
+    nAttempts = 0
+    
+    while not success and nAttempts < 3:
+        nAttempts +=1
+        name, info = _chooseServer(serverfilter)
+    
+        url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
+    
+        t = time.time()
+        _lastwritetime[name] = t
+    
+        url = url.encode()
+        try:
+            s = _getSession(url)
+            r = s.put(url, data=data, timeout=1)
+            dt = time.time() - t
+            #print r.status_code
+            if not r.status_code == 200:
+                raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))
 
-    url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
-
-    t = time.time()
-    _lastwritetime[name] = t
-
-    url = url.encode()
-    s = _getSession(url)
-    r = s.put(url, data=data, timeout=1)
-    dt = time.time() - t
-    #print r.status_code
-    if not r.status_code == 200:
-        raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))
-
-    r.close()
-
-    _lastwritespeed[name] = len(data) / (dt + .001)
+            _lastwritespeed[name] = len(data) / (dt + .001)
+            
+            success = True
+            
+        except requests.ConnectTimeout:
+            if nAttempts >= 3:
+                logger.error('Timeout attempting to put file: %s, after 3 retries, aborting' % url)
+                raise
+            else:
+                logger.warn('Timeout attempting to put file: %s, retrying' % url)
+        finally:
+            try:
+                r.close()
+            except:
+                pass
+    
+        
 
 if USE_RAW_SOCKETS:
     def putFiles(files, serverfilter=''):
@@ -504,54 +614,76 @@ if USE_RAW_SOCKETS:
 
         TODO - Add retry with a different server on failure
         """
-        name, info = _chooseServer(serverfilter)
-
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        s.settimeout(5.0)
-
-        #conect to the server
-        s.connect((socket.inet_ntoa(info.address), info.port))
-
-
-        datalen = 0
-
-        t = time.time()
-        _lastwritetime[name] = t
-
-        rs = []
-
+        
+        nRetries = 0
         nChunksRemaining = len(files)
-        connection = 'keep-alive'
-        #pipeline the sends
-        for filename, data in files:
-            dl = len(data)
-            if nChunksRemaining <= 1:
-                connection = 'close'
+        
+        while nRetries < 3 and nChunksRemaining > 0:
+            name, info = _chooseServer(serverfilter)
+    
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            s.settimeout(5.0)
+    
+            #conect to the server
+            s.connect((socket.inet_ntoa(info.address), info.port))
+    
+    
+            datalen = 0
+    
+            t = time.time()
+            _lastwritetime[name] = t
+    
+            rs = []
+    
+            #nChunksRemaining = len(files)
+            connection = 'keep-alive'
+            #pipeline the sends
+            
+            try:
+                while nChunksRemaining > 0:
+                    filename, data = files[-nChunksRemaining]
+                    dl = len(data)
+                    if nChunksRemaining <= 1:
+                        connection = 'close'
+        
+                    
+                    header = 'PUT /%s HTTP/1.1\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n' % (filename, connection, dl)
+                    s.sendall(header)
+                    s.sendall(data)
+        
+                    datalen += dl
+                    nChunksRemaining -= 1
 
-            header = 'PUT /%s HTTP/1.1\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n' % (filename, connection, dl)
-            s.sendall(header)
-            s.sendall(data)
-
-            datalen += dl
-            nChunksRemaining -= 1
-
-        # this causes the far end to close the connection after sending all the replies
-        # it is important for the connection to close, otherwise the subsequent recieves will block forever
-        # TODO: This is probably a bug/feature of SimpleHTTPServer. The correct way of doing this is probably to send
-        # a "Connection: close" header in the last request.
-        # s.sendall('\r\n')
-
-        #perform all the recieves at once
-        resp = s.recv(4096)
-        while len(resp) > 0:
-            resp = s.recv(4096)
-        #print resp
-        #TODO: Parse responses
-        s.close()
-
-        dt = time.time() - t
-        _lastwritespeed[name] = datalen / (dt + .001)
+            except socket.timeout:
+                if nRetries < 3:
+                    nRetries += 1
+                    logger.error('Timeout writing to %s, trying another server for %d remaining files' % (info.address, nChunksRemaining))
+                else:
+                    logger.error('Timeout writing to %s after 3 retries, aborting - DATA WILL BE LOST' % info.address)
+                    raise
+                
+            finally:
+                # this causes the far end to close the connection after sending all the replies
+                # it is important for the connection to close, otherwise the subsequent recieves will block forever
+                # TODO: This is probably a bug/feature of SimpleHTTPServer. The correct way of doing this is probably to send
+                # a "Connection: close" header in the last request.
+                # s.sendall('\r\n')
+        
+                try:
+                    #perform all the recieves at once
+                    resp = s.recv(4096)
+                    while len(resp) > 0:
+                        resp = s.recv(4096)
+                except:
+                    logger.error('Failure to read from server %s' % info.address)
+                    raise
+                #print resp
+                #TODO: Parse responses
+                s.close()
+        
+                dt = time.time() - t
+                _lastwritespeed[name] = datalen / (dt + .001)
 
             #r.close()
 else:
@@ -594,7 +726,7 @@ def getStatus(serverfilter=''):
 
     status = []
 
-    for name, info in ns.advertised_services.items():
+    for name, info in get_ns().get_advertised_services():
         if serverfilter in name:
             surl = 'http://%s:%d/__status' % (socket.inet_ntoa(info.address), info.port)
             url = surl.encode()

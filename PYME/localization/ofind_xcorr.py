@@ -34,6 +34,7 @@ except ImportError:
 from scipy.fftpack import fftn, ifftn, ifftshift
 from PYME.contrib import pad
 from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
+from PYME.IO.load_psf import load_psf
 from scipy.spatial import kdtree
 
 #import pylab
@@ -52,9 +53,10 @@ def preparePSF(md, PSSize):
         try:
             ps, vox = md.taskQueue.getQueueData(md.dataSourceID, 'PSF')
         except:
-            fid = open(getFullExistingFilename(PSFFilename), 'rb')
-            ps, vox = pickle.load(fid)
-            fid.close()
+            #fid = open(getFullExistingFilename(PSFFilename), 'rb')
+            #ps, vox = pickle.load(fid)
+            #fid.close()
+            ps, vox = load_psf(PSFFilename)
             
         ps = ps.max(2)
         ps = ps - ps.min()

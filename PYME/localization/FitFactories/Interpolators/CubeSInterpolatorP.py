@@ -77,7 +77,7 @@ class CSInterpolator(__interpolator):
         cy = _splcoefs(ry)
         cz = _splcoefs(rz)
         
-        print rx, ry, rz, cz
+        #print rx, ry, rz, cz
 
         xl = len(X)
         yl = len(Y)

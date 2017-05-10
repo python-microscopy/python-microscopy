@@ -111,6 +111,8 @@ def calibrate(interpolator, md, roiSize=5):
     segNo = np.cumsum(np.diff(mask))
     #print len(z), len(d_dw), len(mask), len(segNo)
     mask = segNo == segNo[len(sgn)/2]
+    
+    mask = np.hstack(([False], mask, [False]))
 
     derivedMeas['d_dw'] = d_dw
     derivedMeas['mask'] = mask

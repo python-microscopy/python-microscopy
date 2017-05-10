@@ -21,7 +21,8 @@
 #
 ##################
 
-#!/usr/bin/python
+from PYME.misc import fortran_interrupt_defeat
+
 import Pyro.core
 import Pyro.naming
 import time
@@ -50,7 +51,7 @@ LOCAL = False
 if 'PYME_LOCAL_ONLY' in os.environ.keys():
     LOCAL = os.environ['PYME_LOCAL_ONLY'] == '1'
     if LOCAL:
-        print 'Local mode active - will only talk to workeers on theis computer'
+        print('Local mode active - will only talk to workeers on theis computer')
         
 
 #if 'PYRO_NS_HOSTNAME' in os.environ.keys():
@@ -144,7 +145,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         
         if not workerVersion == PYME.version.version:
             #versions don't match
-            print 'Worker with incorrect version asked for task - refusing'
+            print('Worker with incorrect version asked for task - refusing')
             return None
             
         with self.getTaskLock:
@@ -170,7 +171,7 @@ class TaskQueueSet(Pyro.core.ObjBase):
         """get task from front of list, non-blocking"""
 
         if not workerVersion == PYME.version.version:
-            print 'Worker with incorrect version asked for task - refusing'
+            print('Worker with incorrect version asked for task - refusing')
             #versions don't match
             return []        
         
@@ -397,11 +398,18 @@ def main():
 
     tw = TaskWatcher(tq)
     tw.start()
+
     try:
         daemon.requestLoop(tq.isAlive)
+
+    except (KeyboardInterrupt, SystemExit):
+        logging.debug('Got a keyboard interrupt, attempting to shut down cleanly')
+        #raise
     finally:
         daemon.shutdown(True)
         tw.alive = False
+        #ns.unregister(taskQueueName)
+        logging.info('Task server is shut down')
         
         if profile:
             mProfile.report()

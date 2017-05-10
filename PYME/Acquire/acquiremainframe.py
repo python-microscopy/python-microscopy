@@ -33,6 +33,7 @@ import time
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 import PYME.DSView.displaySettingsPanel as disppanel
 from PYME.DSView import arrayViewPanel
@@ -123,7 +124,7 @@ class PYMEMainFrame(AUIFrame):
 
         self.sh = wx.py.shell.Shell(id=-1,
               parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
-              introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
+              introText='Python SMI bindings - note that help, license etc below is for Python, not PYME\n\n')
         self.AddPage(self.sh, caption='Console')
 
         self.CreateToolPanel()
@@ -136,36 +137,35 @@ class PYMEMainFrame(AUIFrame):
         self.time1 = mytimer.mytimer()
         
         self.time1.Start(50)
+        
+        wx.CallAfter(self._initialize_hardware)
 
-        self.time1.WantNotification.append(self.runInitScript)
+        #self.time1.WantNotification.append(self.runInitScript)
         self.time1.WantNotification.append(self.splash.Tick)
 
 
-    def runInitScript(self):
-        #import os
-        self.time1.WantNotification.remove(self.runInitScript)
-        #self.sh.shell.runfile('init.py')
-        #fstub = os.path.join(os.path.split(__file__)[0], 'Scripts')
-        initFile = 'init.py'
-        if not self.options is None and not self.options.initFile is None:
-            initFile = self.options.initFile
+    def _initialize_hardware(self):
+        """
+        Launch microscope hardware initialization and start polling for completion
+
+        """
+        #this spawns a new thread to run the initialization script
+        self.scope.initialize(self.options.initFile, self.__dict__)
+
+        logger.debug('Init run, waiting on background threads')
+        
+        #poll to see if the init script has run
+        self.time1.WantNotification.append(self._check_init_done)
+
+        
+
+    def _check_init_done(self):
+        if self.scope.initDone == True and self._check_init_done in self.time1.WantNotification:
+            logger.debug('Backround initialization done')
+            self.time1.WantNotification.remove(self._check_init_done)
             
-        #initFile = os.path.join(fstub, initFile)
-        self.sh.run('from PYME.Acquire import ExecTools')
-        self.sh.run('ExecTools.setDefaultNamespace(locals(), globals())')
-        self.sh.run('from PYME.Acquire.ExecTools import InitBG, joinBGInit, InitGUI, HWNotPresent')
-        #self.sh.run("""def InitGUI(code):\n\tpostInit.append(code)\n\n\n""")
-        self.sh.run('ExecTools.execFileBG("%s", locals(), globals())' % initFile)
-        
-        self.time1.WantNotification.append(self.checkInitDone)
-
-        
-
-    def checkInitDone(self):
-        if self.scope.initDone == True and self.checkInitDone in self.time1.WantNotification:
-            self.time1.WantNotification.remove(self.checkInitDone)
-            #self.time1.WantNotification.remove(self.splash.Tick)
             self.doPostInit()
+            
             self.time1.Stop()
             self.time1.Start(500)
     
@@ -222,15 +222,19 @@ class PYMEMainFrame(AUIFrame):
 
 
     def doPostInit(self):
-        logging.debug('Starting post-init')
+        logger.debug('Starting post-init')
         for cm in self.postInit:
-            #print cm
-            for cl in cm.split('\n'):
-                self.sh.run(cl)
+            logging.debug('Loading GUI component for %s' %cm.name)
+            try:
+                cm.run(self, self.scope)
+            except Exception as e:
+                logger.exception('Error whilst initializing %s GUI' % cm.name)
 
         #if len(self.scope.piezos) > 0.5:
         #    self.piezo_sl = psliders.PiezoSliders(self.scope.piezos, self, self.scope.joystick)
         #    self.time1.WantNotification.append(self.piezo_sl.update)
+
+        logger.debug('Run all custom GUI init tasks')
             
         if len(self.scope.positioning.keys()) > 0.5:
             self.pos_sl = positionUI.PositionSliders(self.scope, self, self.scope.joystick)
@@ -282,7 +286,7 @@ class PYMEMainFrame(AUIFrame):
         if 'pCamChoose' in dir(self):
             self.pCamChoose.OnCCamera(None)
             
-        logging.debug('Finished post-init')
+        logger.debug('Finished post-init')
         
         self.Show()
 

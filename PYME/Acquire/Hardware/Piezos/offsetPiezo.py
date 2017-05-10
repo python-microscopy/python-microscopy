@@ -12,15 +12,17 @@ from PYME.misc.computerName import GetComputerName
 from PYME.Acquire import eventLog
 import time
 
+from .base_piezo import PiezoBase
 
-class piezoOffsetProxy(Pyro.core.ObjBase):    
+class piezoOffsetProxy(PiezoBase, Pyro.core.ObjBase):
     def __init__(self, basePiezo):
         Pyro.core.ObjBase.__init__(self)
         self.basePiezo = basePiezo
         self.offset = 0
-
-    def ReInit(self):
-        return self.basePiezo.ReInit()
+        
+    @property
+    def units_um(self):
+        return self.basePiezo.units_um
         
     def SetServo(self,val = 1):
         return self.basePiezo.SetServo(val)
@@ -37,15 +39,7 @@ class piezoOffsetProxy(Pyro.core.ObjBase):
     def GetTargetPos(self, iChannel=0):
         return self.basePiezo.GetTargetPos(iChannel) - self.offset
         
-    def GetControlReady(self):
-        return self.basePiezo.GetControlReady()
          
-    def GetChannelObject(self):
-        return self.basePiezo.GetChannelObject()
-        
-    def GetChannelPhase(self):
-        return self.basePiezo.GetChannelPhase()
-        
     def GetMin(self,iChan=1):
         return self.basePiezo.GetMin(iChan)
         
@@ -114,28 +108,28 @@ class ServerThread(threading.Thread):
         uri=self.daemon.connect(self.piezo,pname)
         
     def run(self):
-        print 'foo'
+        #print 'foo'
         #try:
         self.daemon.requestLoop()
         #finally:
         #    daemon.shutdown(True)
         
     def cleanup(self):
-        print 'Shutting down Offset Piezo Server'
+        print('Shutting down Offset Piezo Server')
         self.daemon.shutdown(True)
                 
 
 def getClient(compName = GetComputerName()):
-    try:
-        from PYME.misc import pyme_zeroconf 
-        ns = pyme_zeroconf.getNS()
-        time.sleep(2)
-        print ns.list()
-        URI = ns.resolve('%s.Piezo' % compName)
-    except:
-        URI ='PYRONAME://%s.Piezo'%compName
+    #try:
+    from PYME.misc import pyme_zeroconf 
+    ns = pyme_zeroconf.getNS()
+    time.sleep(3)
+    #print ns.list()
+    URI = ns.resolve('%s.Piezo' % compName)
+    #except:
+    #    URI ='PYRONAME://%s.Piezo'%compName
 
-    print URI
+    #print URI
 
     return Pyro.core.getProxyForURI(URI)
     
@@ -145,12 +139,12 @@ def main():
     from PYME.Acquire.Hardware.Simulator import fakePiezo
     bp = fakePiezo.FakePiezo(100)
     st = ServerThread(bp)
-    print 'foo'
+    #print 'foo'
     st.start()
     st.join()
     #st.run()
     #st.daemon.requestLoop()
-    print 'bar'
+    #print 'bar'
     
 if __name__ == '__main__':
     main()

@@ -34,6 +34,8 @@ class visualiser:
         dsviewer.AddMenuItem('&3D', '3D Isosurface', self.On3DIsosurf)
         dsviewer.AddMenuItem('&3D', '3D Volume', self.On3DVolume)
         dsviewer.AddMenuItem('&3D', 'Save Isosurface as STL', self.save_stl)
+        dsviewer.AddMenuItem('&3D', 'Save Isosurface(s) as u3d', self.save_u3d)
+        dsviewer.AddMenuItem('&3D', 'Save Isosurface(s) as x3d', self.save_x3d)
         
 
 
@@ -70,13 +72,55 @@ class visualiser:
         """Save last renderd scene as STL."""
         from tvtk.api import tvtk
         
-        fdialog = wx.FileDialog(None, 'Save 3D scene as ...', wildcard='*.stl', style=wx.SAVE|wx.HIDE_READONLY)
+        fdialog = wx.FileDialog(None, 'Save 3D scene as ...', wildcard='*.stl', style=wx.SAVE)#|wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
         
         if (succ == wx.ID_OK):
             fname = fdialog.GetPath().encode()
             tvtk.STLWriter(input=self.lastSurf.actor.mapper.input, file_name=fname).write()
 
+        fdialog.Destroy()
+
+    def save_u3d(self, event=None):
+        """Save last renderd scene as u3d."""
+        from tvtk.api import tvtk
+        try:
+            import vtku3dexporter
+        except ImportError:
+            wx.MessageBox('u3d export needs the vtku3dexporter module, which is not installed by default with PYME\n A conda-installable package is available for OSX.')
+    
+        fdialog = wx.FileDialog(None, 'Save 3D scene as ...', wildcard='*.u3d', style=wx.SAVE)# | wx.HIDE_READONLY)
+        succ = fdialog.ShowModal()
+    
+        if (succ == wx.ID_OK):
+            fname = fdialog.GetPath().encode()
+            
+            #tvtk.STLWriter(input=self.lastSurf.actor.mapper.input, file_name=fname).write()
+            render_window = tvtk.to_vtk(self.dsviewer.f3d.scene.render_window)
+
+            u3d_exporter = vtku3dexporter.vtkU3DExporter()
+            u3d_exporter.SetFileName(fname)
+            u3d_exporter.SetInput(render_window)
+            u3d_exporter.Write()
+    
+        fdialog.Destroy()
+
+    def save_x3d(self, event=None):
+        """Save last renderd scene as u3d."""
+        from tvtk.api import tvtk
+           
+        fdialog = wx.FileDialog(None, 'Save 3D scene as ...', wildcard='*.x3d', style=wx.SAVE)# | wx.HIDE_READONLY)
+        succ = fdialog.ShowModal()
+    
+        if (succ == wx.ID_OK):
+            fname = fdialog.GetPath().encode()
+        
+            #tvtk.STLWriter(input=self.lastSurf.actor.mapper.input, file_name=fname).write()
+            render_window = self.dsviewer.f3d.scene.render_window
+        
+            x3d_exporter = tvtk.X3DExporter(file_name=fname, input=render_window, binary=0)
+            x3d_exporter.write()
+    
         fdialog.Destroy()
             
 

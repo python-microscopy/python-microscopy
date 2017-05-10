@@ -4,6 +4,9 @@ from django.core.files.uploadhandler import TemporaryFileUploadHandler
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 import django.forms
 
+import logging
+logger=logging.getLogger(__name__)
+
 import collections
 from PYME.localization import MetaDataEdit as mde
 import PYME.localization.FitFactories
@@ -124,8 +127,10 @@ def _launch_localize(analysisMDH, seriesName):
     resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(seriesName))
     logging.debug('Results file: ' + resultsFilename)
 
-    resultsMdh = MetaDataHandler.NestedClassMDHandler(analysisMDH)
+    resultsMdh = MetaDataHandler.NestedClassMDHandler()#analysisMDH)
+    # NB - anything passed in analysis MDH will whipe out corresponding entries in the series metadata
     resultsMdh.update(json.loads(unifiedIO.read(seriesName + '/metadata.json')))
+    resultsMdh.update(analysisMDH)
 
     resultsMdh['EstimatedLaserOnFrameNo'] = resultsMdh.getOrDefault('EstimatedLaserOnFrameNo', resultsMdh.getOrDefault('Analysis.StartAt', 0))
     MetaData.fixEMGain(resultsMdh)
@@ -142,6 +147,8 @@ def _launch_localize(analysisMDH, seriesName):
 def localize(request, analysisModule='LatGaussFitFR'):
     #import json
     from PYME.IO import MetaDataHandler
+    import copy
+    import time
     from PYME.Analysis import MetaData
 
     analysisModule = request.POST.get('Analysis.FitModule', analysisModule).encode()
@@ -153,17 +160,42 @@ def localize(request, analysisModule='LatGaussFitFR'):
     f.cleaned_data['Analysis.FitModule'] = analysisModule
 
     #print json.dumps(f.cleaned_data)
-    analysisMDH = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
+    # NB - any metadata entries given here will override the series metadata later: pass analysis settings only
+    analysisMDH = MetaDataHandler.NestedClassMDHandler()
     analysisMDH.update(f.cleaned_data)
 
     #print request.GET
     #print request.POST.getlist('series', [])
 
     #resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
+    
+    remaining_series = request.POST.getlist('series', [])
+    
+    nSeries = len(remaining_series)
+    
+    nAttempts = 0
+    
+    while len(remaining_series) > 0 and nAttempts < 3:
+        nAttempts += 1
+        
+        seriesToLaunch = copy.copy(remaining_series)
+        remaining_series = []
+    
+        for seriesName in seriesToLaunch:
+            try:
+                _launch_localize(analysisMDH, seriesName)
+            except:
+                logger.exception('Error launching analysis for %s' % seriesName)
+                
+                remaining_series.append(seriesName)
+                
+        if len(remaining_series) > 0:
+            logging.debug('%d series were not launched correctly, waiting 20s and retrying' % len(remaining_series))
+            time.sleep(20)
 
-    for seriesName in request.POST.getlist('series', []):
-        _launch_localize(analysisMDH, seriesName)
-
+    nFailed = len(remaining_series)
+    if nFailed > 0:
+        raise RuntimeError('Failed to push %d of %d series' % (nFailed, nSeries))
 
     return HttpResponseRedirect('/status/queues/')
 

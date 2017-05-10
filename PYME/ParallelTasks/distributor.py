@@ -1,7 +1,8 @@
 import cherrypy
 import threading
 import requests
-import Queue
+import queue as Queue
+from six.moves import xrange
 import logging
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger('distributor')
@@ -56,7 +57,7 @@ class TaskQueue(object):
                   'tasksRunning': len(self.assigned),
                   'tasksCompleted': self.num_tasks_completed,
                   'tasksFailed' : self.num_tasks_failed,
-                  'averageExecutionCost' : 1.0,
+                  'averageExecutionCost' : self.total_cost/(self.num_rated + .01),
                 }
 
     def stop(self):
@@ -80,13 +81,24 @@ class TaskQueue(object):
             pass
         return tasks
 
+    def _gzip_compress(self, data):
+        import gzip
+        from io import BytesIO
+        zbuf = BytesIO()
+        zfile = gzip.GzipFile(mode='wb', fileobj=zbuf)#, compresslevel=9)
+        zfile.write(data)
+        zfile.close()
+        
+        return zbuf.getvalue()
+
     def _rate_tasks(self, tasks, node, rated_queue):
+        #import zlib
         server = self.distributor.nodes[node]
         url = 'http://%s:%d/node/rate' % (server['ip'], int(server['port']))
         #logger.debug('Requesting rating from %s' % url)
         try:
-            r = requests.post(url, data=tasks,
-                          headers={'Content-Type': 'application/json'}, timeout=RATE_TIMEOUT)
+            r = requests.post(url, data=self._gzip_compress(tasks),
+                          headers={'Content-Type': 'application/json', 'Content-Encoding' : 'gzip'}, timeout=RATE_TIMEOUT)
             resp = r.json()
             if resp['ok']:
                 rated_queue.append((node, resp['result']))

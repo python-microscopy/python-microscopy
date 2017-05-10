@@ -106,6 +106,9 @@ class deconvolver:
                 
             else:
                 psfFilename, psf, vs = dlg.GetPSF(vshint = vx)
+                
+                if psf.shape[2] < 2:
+                    raise RuntimeError('Expepected a 3D PSF for 3D deconvolution. For 2D deconvolution use the DeconvMovie function')
 
                 decMDH['Deconvolution.PSFFile'] = dlg.GetPSFFilename()
 
@@ -401,7 +404,7 @@ class WienerDeconvolver(wx.Panel):
         sizer3 = wx.BoxSizer(wx.HORIZONTAL)
 
         sizer3.Add(wx.StaticText(self, -1, 'PSF:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-        self.fpPSF = wx.FilePickerCtrl(self, -1, wildcard='*.psf', style=wx.FLP_OPEN|wx.FLP_FILE_MUST_EXIST)
+        self.fpPSF = wx.FilePickerCtrl(self, -1, wildcard='*.psf|*.tif', style=wx.FLP_OPEN|wx.FLP_FILE_MUST_EXIST)
         self.fpPSF.Bind(wx.EVT_FILEPICKER_CHANGED, self.OnPSFFileChanged)
 
         sizer3.Add(self.fpPSF, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)

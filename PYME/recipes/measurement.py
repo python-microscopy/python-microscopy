@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
 """
 Created on Mon May 25 17:10:02 2015
 
@@ -12,6 +14,8 @@ import pandas as pd
 from PYME.IO import tabular
 from PYME.IO import MetaDataHandler
 import os
+
+from six.moves import xrange
 
 @register_module('MultifitBlobs') 
 class MultifitBlobs(ModuleBase):
@@ -113,6 +117,9 @@ class FitPoints(ModuleBase):
         md['Camera.ReadNoise'] = 1.0
         md['Camera.NoiseFactor'] = 1.0
 
+        md['voxelsize.x'] = .001
+        md['voxelsize.y'] = .001
+
         #copy across the entries from the real image, replacing the defaults
         #if necessary
         md.copyEntriesFrom(img.mdh)
@@ -177,11 +184,11 @@ class IntensityAtPoints(ModuleBase):
         return (roi.squeeze()*mask).sum()/mask.sum()
 
     def _get_sum(self, data, x, y, t, radius):
-        print data.shape, x, y, t
+        print(data.shape, x, y, t)
         roi = data[(x - radius):(x + radius + 1), (y - radius):(y + radius + 1), t].squeeze()
         mask = self._get_mask(radius)
 
-        print mask.shape, roi.shape#, (roi * mask).shape
+        print(mask.shape, roi.shape)#, (roi * mask).shape
 
         return (roi.squeeze() * mask).sum()
 
@@ -264,15 +271,22 @@ class NearestNeighbourDistances(ModuleBase):
         
         if self.inputChan1 == '':
             pos1 = pos
+            singleChan = True  # flag to not pair molecules with themselves
         else:
             pos1 = namespace[self.inputChan1]
+            singleChan = False
 
         #create a kdtree
         p1 = np.vstack([pos[k] for k in self.columns]).T
         p2 = np.vstack([pos1[k] for k in self.columns]).T
         kdt = cKDTree(p1)
 
-        d, i = kdt.query(p2, 1)
+        if singleChan:
+            #query the two closest entries - the closest entry will be the orig point paired with itself, so ignore it
+            d, i = kdt.query(p2, 2)
+            d = d[:, 1]
+        else:
+            d, i = kdt.query(p2, 1)
 
         res = pd.DataFrame({self.key: d})
         if 'mdh' in dir(pos):
@@ -333,7 +347,7 @@ class Histogram(ModuleBase):
         
         res = np.histogram(v, edges)[0]
         
-        res = pd.DataFrame({'bins' : edges, 'counts' : res})
+        res = pd.DataFrame({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
         if 'mdh' in dir(v):
             res.mdh = v.mdh
         
@@ -364,7 +378,7 @@ class ImageHistogram(ModuleBase):
         
         res = np.histogram(vals, edges)[0]
         
-        res = pd.DataFrame({'bins' : edges, 'counts' : res})
+        res = pd.DataFrame({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
         if 'mdh' in dir(v):
             res.mdh = v.mdh
         
@@ -593,6 +607,7 @@ class Plot(ModuleBase):
     input3 = Input('')
     xkey = CStr('')
     ykey = CStr('')
+    type = Enum(['line', 'bar'])
     outputName = Output('outGraph')
     
     def execute(self, namespace):
@@ -615,7 +630,11 @@ class Plot(ModuleBase):
         
         pylab.figure()
         for meas in ms:
-            pylab.plot(meas[self.xkey], meas[self.ykey])
+            if self.type == 'bar':
+                xv = meas[self.xkey]
+                pylab.bar(xv, meas[self.ykey], align='center', width=(xv[1] - xv[0]))
+            else:
+                pylab.plot(meas[self.xkey], meas[self.ykey])
         
         pylab.grid()
         pylab.legend(labs)

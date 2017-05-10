@@ -1,7 +1,8 @@
 import cherrypy
 import threading
 import requests
-import Queue
+
+import queue as Queue
 import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('nodeserver')
@@ -200,6 +201,12 @@ class NodeServer(object):
 
             if clusterIO.isLocal(filename, serverfilter):
                 cost = .01
+
+        elif task['type'] == 'recipe':
+            for URL in task['inputs'].values():
+                if clusterIO.isLocal(*clusterIO.parseURL(URL)):
+                    cost *= .2
+
 
         return {'id' : task['id'], 'cost': cost}
 

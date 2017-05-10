@@ -49,6 +49,7 @@ class RecipePlugin(recipeGui.RecipeManager):
         dsviewer.AddMenuItem('Recipes', "Load Recipe", self.OnLoadRecipe)
         self.mICurrent = dsviewer.AddMenuItem('Recipes', "Run Current Recipe\tF5", self.RunCurrentRecipe)
         self.mITestCurrent = dsviewer.AddMenuItem('Recipes', "Test Current Recipe\tF7", self.TestCurrentRecipe)
+        self.mICurrent = dsviewer.AddMenuItem('Recipes', "Run Current Recipe and Save\tShift+F5", self.RunCurrentRecipeAndSave)
         
         #print CANNED_RECIPES
         
@@ -74,7 +75,10 @@ class RecipePlugin(recipeGui.RecipeManager):
         self.recipeView = recipeGui.RecipeView(dsviewer, self)
         dsviewer.AddPage(page=self.recipeView, select=False, caption='Recipe')
         
-    def RunCurrentRecipe(self, event=None, testMode=False):
+    def RunCurrentRecipeAndSave(self, event=None):
+        self.RunCurrentRecipe(saveResults=True)
+        
+    def RunCurrentRecipe(self, event=None, testMode=False, saveResults = False):
         if self.activeRecipe:
             if testMode:
                 #just run on current frame
@@ -82,6 +86,9 @@ class RecipePlugin(recipeGui.RecipeManager):
             else:
                 #run normally
                 self.outp = self.activeRecipe.execute(input=self.image)
+                
+                if saveResults:
+                    self.activeRecipe.save() #FIXME - set context
                 
             if isinstance(self.outp, ImageStack):
 
@@ -141,14 +148,17 @@ class RecipePlugin(recipeGui.RecipeManager):
         self.RunCurrentRecipe()
         
     def OnSaveOutputs(self, event):
-        from PYME.recipes import runRecipe
+        self.activeRecipe.save()
+        # from PYME.recipes import runRecipe
+        #
+        # filename = wx.FileSelector('Save results as ...',
+        #                            wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx|HDF5 files (*.hdf)|*.hdf",
+        #                            flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        #
+        # if not filename == '':
+        #     runRecipe.saveOutput(self.outp, filename)
+            
         
-        filename = wx.FileSelector('Save results as ...', 
-                                   wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx|HDF5 files (*.hdf)|*.hdf", 
-                                   flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
-                                   
-        if not filename == '':
-            runRecipe.saveOutput(self.outp, filename)
             
     def OnLoadOutputs(self, event):
         import pandas

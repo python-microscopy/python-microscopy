@@ -110,7 +110,7 @@ def performClassification(clf, fv):
     
     N = fv.shape[1]
     cs = int(np.ceil(float(N)/nCPUs))
-    print N
+    #print N
     
     chunks = [fv[:, (i*cs):min(((i+1)*cs), N)].T for i in range(nCPUs)]
     
@@ -128,7 +128,7 @@ class svmClassifier(object):
             self.loadFile(filename)
             
     def _getNormalizedFeatures(self, im):
-        print 'Extracting features ...'
+        print('Extracting features ...')
         features, self.normalization = normalizeFeatures(extractFeatures2(im), self.normalization)
         return features
             
@@ -150,7 +150,7 @@ class svmClassifier(object):
         if self.clf is None or newInstance:
             self.clf = svm.SVC(C=100.)
             
-        print 'Training classifier ...'
+        print('Training classifier ...')
         #just use those pixels which have been labeled to train the classifier
         lIND = labels > 0
         self.clf.fit(features[:,lIND.ravel()].T, labels[lIND])
@@ -168,9 +168,9 @@ class svmClassifier(object):
         else:
             features = self._getNormalizedFeatures(im)
                 
-        print 'Performing classification ...'
+        print('Performing classification ...')
         c =  performClassification(self.clf, features)
-        print c.shape, im.shape, im.size        
+        #print c.shape, im.shape, im.size
         return c.reshape(im.shape)
         
     def save(self, filename):

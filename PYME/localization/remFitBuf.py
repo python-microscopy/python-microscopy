@@ -35,7 +35,7 @@ from PYME.localization import ofind
 from PYME.localization import ofind_xcorr
 from PYME.localization import ofind_pri
 
-from PYME.Analysis import buffers
+from PYME.IO import buffers
 from PYME.IO.image import ImageStack
 
 import logging
@@ -466,8 +466,8 @@ class fitTask(taskDef.Task):
             
         if 'MULTIFIT' in dir(fitMod):
             #fit module does it's own object finding
-            ff = fitMod.FitFactory(self.data, md, background = self.bg)
-            self.res = ff.FindAndFit(self.threshold, gui=gui, cameraMaps=cameraMaps, noiseSigma=self.sigma)
+            ff = fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma=self.sigma)
+            self.res = ff.FindAndFit(self.threshold, gui=gui, cameraMaps=cameraMaps)
             return fitResult(self, self.res, [])
             
 
@@ -593,7 +593,7 @@ class fitTask(taskDef.Task):
         mdnm  = 1./np.median((self.data/self.sigma).ravel())
         
         for dri in self.driftEstInd:
-            bs = bufferManager.dBuffer.getSlice(dri)
+            bs = cameraMaps.correctImage(self.md, bufferManager.dBuffer.getSlice(dri).squeeze())
             bs = bs.reshape(self.data.shape)/self.sigma
             bs = bs*mdnm
             #multiply images together, thus favouring images which are on over multiple frames

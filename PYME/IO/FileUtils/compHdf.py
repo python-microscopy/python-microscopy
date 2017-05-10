@@ -35,5 +35,5 @@ if __name__ == '__main__':
     else:
         outFile = sys.argv[2]
     
-    inF = tables.openFile(inFile)
-    outF = tables.openFile(outFile, 'w')
+    inF = tables.open_file(inFile)
+    outF = tables.open_file(outFile, 'w')

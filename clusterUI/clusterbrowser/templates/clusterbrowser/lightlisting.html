@@ -1,0 +1,25 @@
+{#<li data-jstree='{"opened":true, "icon": "glyphicon glyphicon-folder-open"}'>{{ dirname }}#}
+{#    <ul>#}
+    {% for dir in dirs %}
+        <li class="jstree-closed"
+            data-jstree='{"icon":"glyphicon glyphicon-folder-open"}'
+            data-path="{{ dirname }}{{ dir.name }}">
+                {{ dir.name }}
+        </li>
+    {% endfor %}
+    {% for seriesi in series %}
+        <li data-jstree='{"icon":"glyphicon glyphicon-film"}'
+            data-path="{{ dirname }}{{ seriesi.name }}">
+                {{ seriesi.name }}
+        </li>
+
+    {% endfor %}
+    {% for file in files %}
+        <li data-jstree='{"icon":"glyphicon glyphicon-file"}'
+            data-path="{{ dirname }}{{ file }}">
+                {{ file }}
+        </li>
+    {% endfor %}
+
+{#    </ul>#}
+{#</li>#}

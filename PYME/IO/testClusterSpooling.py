@@ -44,6 +44,8 @@ import time
 import os
 import sys
 
+from six.moves import xrange
+
 from PYME.IO.clusterExport import ImageFrameSource, MDSource
 from PYME.IO import MetaDataHandler
 from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
@@ -93,7 +95,7 @@ class TestSpooler:
         #spool our data    
         self.spooler.StartSpool()
 
-        print self.spooler.seriesName
+        print(self.spooler.seriesName)
 
         startTime = time.time()
 

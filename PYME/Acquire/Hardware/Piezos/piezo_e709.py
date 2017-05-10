@@ -21,11 +21,13 @@
 #
 ##################
 
-import serial;
+import serial
 import time
 import logging
 
-class piezo_e709:    
+from .base_piezo import PiezoBase
+
+class piezo_e709(PiezoBase):
     def __init__(self, portname='COM1', maxtravel = 400.00, Osen=None, hasTrigger=False):
         self.max_travel = maxtravel
         self.waveData = None
@@ -177,7 +179,7 @@ import threading
 #import Queue
 import numpy as np
         
-class piezo_e709T(object):    
+class piezo_e709T(PiezoBase):
     def __init__(self, portname='COM1', maxtravel = 400., Osen=None, hasTrigger=False):
         self.max_travel = maxtravel
         
@@ -300,7 +302,7 @@ class piezo_e709T(object):
         
                 
     def close(self):
-        print "Shutting down piezo"
+        logging.info("Shutting down piezo")
         with self.lock:
             self.loopActive = False
             #time.sleep(.01)

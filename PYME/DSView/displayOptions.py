@@ -25,6 +25,8 @@ from matplotlib import cm
 import numpy as np
 #import tables
 
+import dispatch
+
 from PYME.IO import dataWrap
 
 try:
@@ -95,9 +97,11 @@ class DisplayOpts(object):
         self.selectionWidth = 1
 
         self.showSelection=False
-        
-        
-        
+
+        #signals (currently just for selection end
+        # this lets people know that we've made a selection. Used to allow modification of the selection by some filter
+        # e.g. using active contours in the annotation module
+        self.on_selection_end = dispatch.Signal()
         
         self.overlays = []
         
@@ -166,6 +170,9 @@ class DisplayOpts(object):
         self.selection_end_x = e_x
         self.selection_end_y = e_y
         self.selection_end_z = e_z
+        
+    def EndSelection(self):
+        self.on_selection_end.send(self)
 
     def GetSliceSelection(self):
         if(self.slice == self.SLICE_XY):
