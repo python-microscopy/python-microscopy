@@ -102,10 +102,11 @@ def zernikeIm(key, shape):
     
 def projectZ(image, key, weights = 1.0):
     from scipy.linalg import lstsq
+    import numpy
     
     bf = zernikeIm(key, image.shape)
     
-    return lstsq((bf*weights).ravel().reshape([-1, 1]), (image*weights).ravel())
+    return lstsq((bf*weights)[~numpy.isnan(image)].ravel().reshape([-1, 1]), (image*weights)[~numpy.isnan(image)].ravel())
     
     
 def calcCoeffs(image, maxN, weights=1.0):
