@@ -36,6 +36,26 @@ def test_CSInterpolator():
     assert (m.shape == (11, 11, 1))
 
 
+def test_CSInterpolator_out_of_bounds():
+    """Tests if the interpolator segfaults on out of range data"""
+    from .CSInterpolator import interpolator
+    interpolator.setModelFromFile(os.path.join(os.path.dirname(Test.__file__), 'astig_theory.tif'))
+    
+    roiHalfSize = 5
+    x, y = 10., 10.
+    
+    X, Y, Z, safeRegion = interpolator.getCoords(TIRFDefault, slice(x - roiHalfSize, x + roiHalfSize + 1),
+                                                 slice(y - roiHalfSize, y + roiHalfSize + 1), slice(0, 1))
+    
+    for i in range(100):
+        try:
+            m = f_Interp3d([1, x, y+1e3*np.random.normal(), 1e3*np.random.normal()], interpolator, X+ 1e3*np.random.normal(), Y+ 1e3*np.random.normal() , Z + 1e3*np.random.normal(), safeRegion)
+            assert (np.all(np.isfinite(m)))
+            assert (m.shape == (11, 11, 1))
+        except RuntimeError:
+            pass
+
+
 def test_LinearInterpolator():
     from .LinearInterpolator import interpolator
     

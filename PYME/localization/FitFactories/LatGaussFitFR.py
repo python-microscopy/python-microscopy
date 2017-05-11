@@ -42,6 +42,12 @@ def f_gauss2d(p, X, Y):
     r = genGauss(X,Y,A,x0,y0,s,b,b_x,b_y) #this is coded in c and defined in gauss_app
     return r
 
+def f_gauss2d_no_bg(p, X, Y):
+    """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
+    A, x0, y0, s = p
+    r = genGauss(X,Y,A,x0,y0,s, 0, 0, 0) #this is coded in c and defined in gauss_app
+    return r
+
 def f_gauss2dF(p, X, Y):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y] - uses fast exponential approx"""
     A, x0, y0, s, b, b_x, b_y = p
@@ -90,12 +96,26 @@ fresultdtype=[('tIndex', '<i4'),
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0):
     slicesUsed = fmtSlicesUsed(slicesUsed)
-    #print slicesUsed
+    
+    res = np.zeros(1, dtype=fresultdtype)
+    
+    n_params = len(fitResults)
+    
+    res['tIndex'] = metadata.tIndex
+    res['fitResults'].view('7f4')[:n_params] = fitResults
 
     if fitErr is None:
-        fitErr = -5e3*np.ones(fitResults.shape, 'f')
+        res['fitError'].view('7f4')[:] = -5e3
+    else:
+        res['fitError'].view('7f4')[:n_params] = fitErr
+        
+    res['resultCode'] = resultCode
+    res['slicesUsed'] = slicesUsed
+    res['subtractedBackground'] = background
+        
     
-    res =  np.array([(metadata.tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, background)], dtype=fresultdtype) 
+    
+    #res =  np.array([(metadata.tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, background)], dtype=fresultdtype)
     #print res
     return res
 		
@@ -126,10 +146,19 @@ class GaussianFitFactory(FFBase.FitFactory):
         
         bgm = np.mean(background)
 
-        startParameters = [A, x0, y0, 250/2.35, dataMean.min(), .001, .001]	
-
-        #do the fit
-        (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y)
+        fitBackground = self.metadata.getOrDefault('Analysis.FitBackground', True)
+        
+        if fitBackground:
+            startParameters = [A, x0, y0, 250/2.35, dataMean.min(), .001, .001]
+    
+            #do the fit
+            (res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataMean, sigma, X, Y)
+        else:
+            startParameters = [A, x0, y0, 250 / 2.35]
+    
+            #do the fit
+            (res, cov_x, infodict, mesg, resCode) = self.solver(f_gauss2d_no_bg, startParameters, dataMean, sigma, X, Y)
+            
 
         #try to estimate errors based on the covariance matrix
         fitErrors=None
