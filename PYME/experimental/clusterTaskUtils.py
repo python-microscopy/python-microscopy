@@ -1,6 +1,21 @@
 
 
 def verify_cluster_results_filename(resultsFilename):
+    """
+    Checks whether a results file already exists on the cluster, and returns an available version of the results
+    filename. Should be called before writing a new results file.
+
+    Parameters
+    ----------
+    resultsFilename : str
+        cluster path, e.g. pyme-cluster:///example_folder/name.h5r
+    Returns
+    -------
+    resultsFilename : str
+        cluster path which may have _# appended to it if the input resultsFileName is already in use, e.g.
+        pyme-cluster:///example_folder/name_1.h5r
+
+    """
     from PYME.IO import clusterIO
     import os
     if clusterIO.exists(resultsFilename):
@@ -16,6 +31,19 @@ def verify_cluster_results_filename(resultsFilename):
 
 
 def launch_localize(analysisMDH, seriesName):
+    """
+    Pushes an analysis task for a given series to the distributor
+
+    Parameters
+    ----------
+    analysisMDH : dictionary-like
+        MetaDataHandler describing the analysis tasks to launch
+    seriesName : str
+        cluster path, e.g. pyme-cluster:///example_folder/series
+    Returns
+    -------
+
+    """
     import logging
     import json
     from PYME.ParallelTasks import HTTPTaskPusher
