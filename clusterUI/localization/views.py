@@ -10,6 +10,8 @@ logger=logging.getLogger(__name__)
 import collections
 from PYME.localization import MetaDataEdit as mde
 import PYME.localization.FitFactories
+from PYME.experimental import clusterTaskUtils
+
 FINDING_PARAMS = [#mde.ChoiceParam('Analysis.FitModule', 'Fit module:', default='LatGaussFitFR', choices=PYME.localization.FitFactories.resFitFactories),
                   mde.FloatParam('Analysis.DetectionThreshold', 'Detection threshold:', 1.0),
                   mde.IntParam('Analysis.DebounceRadius', 'Debounce radius:', 4),
@@ -101,48 +103,6 @@ def settings(request, analysisModule='LatGaussFitFR'):
                                                                'analysisModuleChoices' : PYME.localization.FitFactories.resFitFactories,
                                                                'categorized_fields' : fields_by_category})
 
-def _verifyClusterResultsFilename(resultsFilename):
-    from PYME.IO import clusterIO
-    import os
-    if clusterIO.exists(resultsFilename):
-        di, fn = os.path.split(resultsFilename)
-        i = 1
-        stub = os.path.splitext(fn)[0]
-        while clusterIO.exists(os.path.join(di, stub + '_%d.h5r' % i)):
-            i += 1
-
-        resultsFilename = os.path.join(di, stub + '_%d.h5r' % i)
-
-    return resultsFilename
-
-def _launch_localize(analysisMDH, seriesName):
-    import logging
-    import json
-    from PYME.ParallelTasks import HTTPTaskPusher
-    from PYME.IO import MetaDataHandler
-    from PYME.Analysis import MetaData
-    from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
-    from PYME.IO import unifiedIO
-
-    resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(seriesName))
-    logging.debug('Results file: ' + resultsFilename)
-
-    resultsMdh = MetaDataHandler.NestedClassMDHandler()#analysisMDH)
-    # NB - anything passed in analysis MDH will whipe out corresponding entries in the series metadata
-    resultsMdh.update(json.loads(unifiedIO.read(seriesName + '/metadata.json')))
-    resultsMdh.update(analysisMDH)
-
-    resultsMdh['EstimatedLaserOnFrameNo'] = resultsMdh.getOrDefault('EstimatedLaserOnFrameNo', resultsMdh.getOrDefault('Analysis.StartAt', 0))
-    MetaData.fixEMGain(resultsMdh)
-    #resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
-
-    #TODO - do we need to keep track of the pushers in some way (we currently rely on the fact that the pushing thread
-    #will hold a reference
-    pusher = HTTPTaskPusher.HTTPTaskPusher(dataSourceID=seriesName,
-                                                metadata=resultsMdh, resultsFilename=resultsFilename)
-
-    logging.debug('Queue created')
-
 
 def localize(request, analysisModule='LatGaussFitFR'):
     #import json
@@ -183,7 +143,7 @@ def localize(request, analysisModule='LatGaussFitFR'):
     
         for seriesName in seriesToLaunch:
             try:
-                _launch_localize(analysisMDH, seriesName)
+                clusterTaskUtils.launch_localize(analysisMDH, seriesName)
             except:
                 logger.exception('Error launching analysis for %s' % seriesName)
                 

@@ -141,7 +141,7 @@ class DCIMGSpoolShim:
             self.mdh.setEntry('Analysis.StartAt', 30)
             self.mdh.setEntry('Analysis.TrackFiducials', False)
             self.mdh.setEntry('Analysis.subtractBackground', True)
-            clusterTaskUtils._launch_localize(analysisMDH=self.mdh, seriesName=self.spooler.seriesName)
+            clusterTaskUtils.launch_localize(analysisMDH=self.mdh, seriesName=self.spooler.seriesName)
 
         #remove the metadata generator
         MetaDataHandler.provideStartMetadata.remove(self.metadataSource)
