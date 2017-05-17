@@ -8,6 +8,7 @@ from PYME.IO import MetaDataHandler
 from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
 from PYME.Analysis import MetaData
 from PYME.Acquire import HTTPSpooler
+from PYME.ParallelTasks import HTTPTaskPusher
 
 def _writing_finished(filename):
     """Check to see whether anyone else has this file open.
@@ -127,9 +128,6 @@ class DCIMGSpoolShim:
         self.spooler.FlushBuffer()
 
         if pushTaskToCluster:
-            #from PYME.ParallelTasks import HTTPTaskPusher
-            #pusher = HTTPTaskPusher.HTTPTaskPusher()
-            from PYME.experimental import clusterTaskUtils
 
             self.mdh.setEntry('Analysis.BGRange', [-30, 0])
             self.mdh.setEntry('Analysis.DebounceRadius', 4)
@@ -142,7 +140,7 @@ class DCIMGSpoolShim:
             self.mdh.setEntry('Analysis.TrackFiducials', False)
             self.mdh.setEntry('Analysis.subtractBackground', True)
             cluster_filename = 'pyme-cluster:///' + self.spooler.seriesName
-            clusterTaskUtils.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
+            HTTPTaskPusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
 
         #remove the metadata generator
         MetaDataHandler.provideStartMetadata.remove(self.metadataSource)

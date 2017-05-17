@@ -10,7 +10,7 @@ logger=logging.getLogger(__name__)
 import collections
 from PYME.localization import MetaDataEdit as mde
 import PYME.localization.FitFactories
-from PYME.experimental import clusterTaskUtils
+from PYME.ParallelTasks import HTTPTaskPusher
 
 FINDING_PARAMS = [#mde.ChoiceParam('Analysis.FitModule', 'Fit module:', default='LatGaussFitFR', choices=PYME.localization.FitFactories.resFitFactories),
                   mde.FloatParam('Analysis.DetectionThreshold', 'Detection threshold:', 1.0),
@@ -143,7 +143,7 @@ def localize(request, analysisModule='LatGaussFitFR'):
     
         for seriesName in seriesToLaunch:
             try:
-                clusterTaskUtils.launch_localize(analysisMDH, seriesName)
+                HTTPTaskPusher.launch_localize(analysisMDH, seriesName)
             except:
                 logger.exception('Error launching analysis for %s' % seriesName)
                 
