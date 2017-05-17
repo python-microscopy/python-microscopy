@@ -1,6 +1,6 @@
 
 
-def _verifyClusterResultsFilename(resultsFilename):
+def verify_cluster_results_filename(resultsFilename):
     from PYME.IO import clusterIO
     import os
     if clusterIO.exists(resultsFilename):
@@ -15,7 +15,7 @@ def _verifyClusterResultsFilename(resultsFilename):
     return resultsFilename
 
 
-def _launch_localize(analysisMDH, seriesName):
+def launch_localize(analysisMDH, seriesName):
     import logging
     import json
     from PYME.ParallelTasks import HTTPTaskPusher
@@ -24,19 +24,22 @@ def _launch_localize(analysisMDH, seriesName):
     from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
     from PYME.IO import unifiedIO
 
-    resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(seriesName))
+    resultsFilename = verify_cluster_results_filename(genClusterResultFileName(seriesName))
     logging.debug('Results file: ' + resultsFilename)
 
-    resultsMdh = MetaDataHandler.NestedClassMDHandler(analysisMDH)
+    resultsMdh = MetaDataHandler.NestedClassMDHandler()
+    # NB - anything passed in analysis MDH will wipe out corresponding entries in the series metadata
     resultsMdh.update(json.loads(unifiedIO.read(seriesName + '/metadata.json')))
+    resultsMdh.update(analysisMDH)
 
-    resultsMdh['EstimatedLaserOnFrameNo'] = resultsMdh.getOrDefault('EstimatedLaserOnFrameNo', resultsMdh.getOrDefault('Analysis.StartAt', 0))
+    resultsMdh['EstimatedLaserOnFrameNo'] = resultsMdh.getOrDefault('EstimatedLaserOnFrameNo',
+                                                                    resultsMdh.getOrDefault('Analysis.StartAt', 0))
     MetaData.fixEMGain(resultsMdh)
-    #resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
+    # resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
 
-    #TODO - do we need to keep track of the pushers in some way (we currently rely on the fact that the pushing thread
-    #will hold a reference
+    # TODO - do we need to keep track of the pushers in some way (we currently rely on the fact that the pushing thread
+    # will hold a reference
     pusher = HTTPTaskPusher.HTTPTaskPusher(dataSourceID=seriesName,
-                                                metadata=resultsMdh, resultsFilename=resultsFilename)
+                                           metadata=resultsMdh, resultsFilename=resultsFilename)
 
     logging.debug('Queue created')
