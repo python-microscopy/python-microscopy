@@ -145,7 +145,7 @@ class venerableFileChucker(object):
                                 os.remove(chunk)
 
                 #we have seen our events file, the current series is complete
-                self.spooler.OnSeriesComplete(events_filename, zsteps_filename)
+                self.spooler.OnSeriesComplete(events_filename, zsteps_filename, pushTasksToCluster=True)
                 logger.debug('Finished spooling series %s' % series_stub)
                 ignoreList.append(mdfilename)
                 if deleteAfterSpool:
