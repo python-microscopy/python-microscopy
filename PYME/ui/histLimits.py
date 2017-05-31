@@ -121,12 +121,13 @@ class HistLimitPanel(wx.Panel):
         #hit test the limits
         llx = (self.limit_lower - self.hmin)/self.hstep
         ulx = (self.limit_upper - self.hmin)/self.hstep
+        limit_offset_acceptance = 15
 
-        if self.threshMode and abs(llx - x) < 3:
+        if self.threshMode and abs(llx - x) < limit_offset_acceptance:
             self.dragging = 'thresh'
-        elif abs(llx - x) < 3:
+        elif abs(llx - x) < limit_offset_acceptance:
             self.dragging = 'lower'
-        elif abs(ulx - x) < 3:
+        elif abs(ulx - x) < limit_offset_acceptance:
             self.dragging = 'upper'
         elif llx < x < ulx:
             self.dragging = 'shift'
