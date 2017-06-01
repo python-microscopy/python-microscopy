@@ -24,7 +24,7 @@ from .LUTOverlayLayer import LUTOverlayLayer
 from .Point3DRenderLayer import Point3DRenderLayer
 from .PointSpriteRenderLayer import PointSpritesRenderLayer
 from .QuadTreeRenderLayer import QuadTreeRenderLayer
-from .RenderLayer import RenderLayer
+from .VertexRenderLayer import VertexRenderLayer
 from .ScaleBarOverlayLayer import ScaleBarOverlayLayer
 from .SelectionOverlayLayer import SelectionOverlayLayer
 from .ShadedPointRenderLayer import ShadedPointRenderLayer

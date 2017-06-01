@@ -18,14 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from PYME.LMVis.layers.RenderLayer import RenderLayer
+from PYME.LMVis.layers.VertexRenderLayer import VertexRenderLayer
 from OpenGL.GL import *
 
 
-class QuadTreeRenderLayer(RenderLayer):
+class QuadTreeRenderLayer(VertexRenderLayer):
 
     def __init__(self,  x, y, z, colors, color_map, color_limit, alpha):
-        RenderLayer.__init__(self, x, y, z, colors, color_map, color_limit, alpha)
+        VertexRenderLayer.__init__(self, x, y, z, colors, color_map, color_limit, alpha)
 
     def render(self, gl_canvas):
         with self.get_shader_program():

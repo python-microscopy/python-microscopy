@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# RenderLayer.py
+# VertexRenderLayer.py
 #
 # Copyright Michael Graff
 #   graff@hm.edu
@@ -18,16 +18,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+"""Defines a base render layer for visualization methods (e.g. points, point-sprites, triangles) which can be represented as a set of vertices"""
+
 from abc import abstractmethod
 
 import numpy
-from PYME.LMVis.layers.Layer import Layer
+from PYME.LMVis.layers.Layer import BaseLayer
 from OpenGL.GL import *
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
 
-class RenderLayer(Layer):
-
+class VertexRenderLayer(BaseLayer):
     def __init__(self, x=None, y=None, z=None, colors=None, color_map=None, color_limit=None, alpha=1.0):
         """
         This creates a new RenderLayer object and parses given data.
@@ -47,7 +48,32 @@ class RenderLayer(Layer):
         color_limit limits of the color map
         alpha       alpha of the points
         """
-        Layer.__init__(self)
+        self.x_key = 'x'
+        self.y_key = 'y'
+        self.z_key = 'z'
+        self.color_key = None
+        
+        BaseLayer.__init__(self)
+        self.update_data(x, y, z, colors, color_map, color_limit, alpha)
+        self.set_shader_program(DefaultShaderProgram)
+        
+    def update_from_datasource(self, ds, cmap=None, clim=None, alpha=1.0):
+        x, y = ds[self.x_key], ds[self.y_key]
+        
+        if not self.z_key is None:
+            z = ds[self.z_key]
+        else:
+            z = 0*x
+        
+        if not self.color_key is None:
+            c = ds[self.color_key]
+        else:
+            c = None
+        
+        self.update_data(x, y, z, c, cmap=cmap, clim=clim, alpha=alpha)
+        
+        
+    def update_data(self, x=None, y=None, z=None, colors=None, cmap=None, clim=None, alpha=1.0):
         self._vertices = None
         self._normals = None
         self._colors = None
@@ -62,9 +88,9 @@ class RenderLayer(Layer):
             vertices = None
             normals = None
 
-        if color_limit is not None and colors is not None and color_map is not None:
-            cs_ = ((colors - color_limit[0]) / (color_limit[1] - color_limit[0]))
-            cs = color_map(cs_)
+        if clim is not None and colors is not None and clim is not None:
+            cs_ = ((colors - clim[0]) / (clim[1] - clim[0]))
+            cs = cmap(cs_)
             cs[:, 3] = alpha
 
             cs = cs.ravel().reshape(len(colors), 4)
@@ -72,9 +98,9 @@ class RenderLayer(Layer):
             cs = None
             color_map = None
             color_limit = None
-        self.set_shader_program(DefaultShaderProgram)
 
-        self.set_values(vertices, normals, cs, color_map, color_limit, alpha)
+        self.set_values(vertices, normals, cs, cmap, clim, alpha)
+        
 
     @abstractmethod
     def render(self, gl_canvas):

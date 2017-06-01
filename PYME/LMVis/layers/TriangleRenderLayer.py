@@ -19,13 +19,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 from PYME.Analysis.points.gen3DTriangs import gen3DTriangs
-from PYME.LMVis.layers.RenderLayer import RenderLayer
+from PYME.LMVis.layers.VertexRenderLayer import VertexRenderLayer
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
 from PYME.LMVis.shader_programs.WireFrameShaderProgram import WireFrameShaderProgram
 from OpenGL.GL import *
 
 
-class TriangleRenderLayer(RenderLayer):
+class TriangleRenderLayer(VertexRenderLayer):
     """
     This program draws a WareFrame of the given points. They are interpreted as triangles.
     """

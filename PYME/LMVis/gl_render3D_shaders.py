@@ -30,7 +30,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 from PYME.LMVis.layers import AxesOverlayLayer, LUTOverlayLayer, Point3DRenderLayer, PointSpritesRenderLayer, \
-    QuadTreeRenderLayer, RenderLayer, ScaleBarOverlayLayer, SelectionOverlayLayer, ShadedPointRenderLayer, \
+    QuadTreeRenderLayer, VertexRenderLayer, ScaleBarOverlayLayer, SelectionOverlayLayer, ShadedPointRenderLayer, \
     TriangleRenderLayer
 
 from PYME.LMVis.gl_offScreenHandler import OffScreenHandler
@@ -403,8 +403,8 @@ class LMGLShaderCanvas(GLCanvas):
         self.SetCurrent()
 
         self.layers.append(
-            RenderLayer(T.x[T.triangle_nodes], T.y[T.triangle_nodes], 0 * (T.x[T.triangle_nodes]), self.c,
-                        self.cmap, self.clim, alpha))
+            VertexRenderLayer(T.x[T.triangle_nodes], T.y[T.triangle_nodes], 0 * (T.x[T.triangle_nodes]), self.c,
+                              self.cmap, self.clim, alpha))
         self.Refresh()
 
     def setTriangEdges(self, T):
