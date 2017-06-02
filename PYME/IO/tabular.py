@@ -642,6 +642,17 @@ class mappingFilter(TabularBase):
 
         return eval(map)
 
+class _ChannelFilter(TabularBase):
+    def __init__(self, colour_filter, channel):
+        self.colour_filter = colour_filter
+        self.channel = channel
+        
+    def __getitem__(self, keys):
+        return self.colour_filter.get_channel_column(self.channel, keys)
+    
+    def keys(self):
+        return self.colour_filter.keys()
+
 class colourFilter(TabularBase):
     _name = "Colour Filter"
     def __init__(self, resultsSource, currentColour=None):
@@ -697,6 +708,9 @@ class colourFilter(TabularBase):
                 return self.resultsSource[key][self._index(chan)][sl] + self.chromaticShifts[chan][key]
             else:
                 return self.resultsSource[key][self._index(chan)][sl]
+            
+    def get_channel_ds(self, chan):
+        return _ChannelFilter(self, chan)
         
 
     @classmethod
