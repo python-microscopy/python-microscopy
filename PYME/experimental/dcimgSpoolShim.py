@@ -8,6 +8,7 @@ from PYME.IO import MetaDataHandler
 from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
 from PYME.Analysis import MetaData
 from PYME.Acquire import HTTPSpooler
+from PYME.ParallelTasks import HTTPTaskPusher
 
 def _writing_finished(filename):
     """Check to see whether anyone else has this file open.
@@ -93,7 +94,7 @@ class DCIMGSpoolShim:
         self.imgSource.spoolData(croppedChunk)
         self.spooler.FlushBuffer()
 
-    def OnSeriesComplete(self, eventsFilename=None, zstepsFilename=None):
+    def OnSeriesComplete(self, eventsFilename=None, zstepsFilename=None, pushTaskToCluster=False):
         """Called when the series is finished (ie we have seen)
         the events file"""
 
@@ -125,6 +126,21 @@ class DCIMGSpoolShim:
         
         self.spooler.StopSpool()
         self.spooler.FlushBuffer()
+
+        if pushTaskToCluster:
+
+            self.mdh.setEntry('Analysis.BGRange', [-30, 0])
+            self.mdh.setEntry('Analysis.DebounceRadius', 4)
+            self.mdh.setEntry('Analysis.DetectionThreshold', 0.85)
+            self.mdh.setEntry('Analysis.FiducialThreshold', 1.8)
+            self.mdh.setEntry('Analysis.FitModule', 'AstigGaussGPUFitFR')
+            self.mdh.setEntry('Analysis.PCTBackground', 0.0)
+            self.mdh.setEntry('Analysis.ROISize', 7.5)
+            self.mdh.setEntry('Analysis.StartAt', 30)
+            self.mdh.setEntry('Analysis.TrackFiducials', False)
+            self.mdh.setEntry('Analysis.subtractBackground', True)
+            cluster_filename = 'pyme-cluster:///' + self.spooler.seriesName
+            HTTPTaskPusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
 
         #remove the metadata generator
         MetaDataHandler.provideStartMetadata.remove(self.metadataSource)

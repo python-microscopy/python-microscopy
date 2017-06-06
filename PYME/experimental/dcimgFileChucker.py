@@ -73,14 +73,20 @@ class venerableFileChucker(object):
         events_filename = series_stub + '_events.json' #note that we ignore this at present, kept for future compatibility
         zsteps_filename = series_stub + '_zsteps.json'
 
-        self.spooler.OnSeriesComplete(events_filename, zsteps_filename)
+        self.spooler.OnSeriesComplete(events_filename, zsteps_filename, pushTaskToCluster=True)
         print(datetime.datetime.utcnow())
         # TODO: Add Feedback from cluster and also speed up writing in cluster
         # time.sleep(10)
         if deleteAfterSpool:
             os.remove(mdfilename)
-            os.remove(zsteps_filename)
-            #os.remove(events_filename)
+            try:
+                os.remove(events_filename)
+            except OSError:
+                pass
+            try:
+                os.remove(zsteps_filename)
+            except OSError:
+                pass
 
     def searchAndHuck(self, onlySpoolNew=False, deleteAfterSpool=False):
         md_candidates = glob.glob(os.path.join(self.folder, '*.json'))
@@ -145,7 +151,7 @@ class venerableFileChucker(object):
                                 os.remove(chunk)
 
                 #we have seen our events file, the current series is complete
-                self.spooler.OnSeriesComplete(events_filename, zsteps_filename)
+                self.spooler.OnSeriesComplete(events_filename, zsteps_filename, pushTaskToCluster=True)
                 logger.debug('Finished spooling series %s' % series_stub)
                 ignoreList.append(mdfilename)
                 if deleteAfterSpool:
