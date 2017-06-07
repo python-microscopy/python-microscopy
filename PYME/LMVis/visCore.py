@@ -94,6 +94,8 @@ class VisGUICore(object):
         
         self.refv = False
         
+        self._legacy_layer = None
+        
         renderers.renderMetadataProviders.append(self.SaveMetadata)
         self.use_shaders = use_shaders
         
@@ -331,6 +333,10 @@ class VisGUICore(object):
         logger.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
         self.pipeline.Rebuild()
         
+    def add_layer(self, method='points', ds_name=''):
+        from .layer_wrapper import LayerWrapper
+        self.glCanvas.layers.append(LayerWrapper(self.pipeline, method=method, ds_name=ds_name))
+        
     def RefreshView(self, event=None, **kwargs):
         if not self.pipeline.ready:
             return #get out of here
@@ -349,7 +355,16 @@ class VisGUICore(object):
         #bCurr = wx.BusyCursor()
 
         #delete previous layers (new view)
-        self.glCanvas.layers = []
+        # self.glCanvas.layers = []
+        
+        # only delete the layer we created on the last call - leave other layers alone.
+        if self._legacy_layer:
+            try:
+                self.glCanvas.layers.remove(self._legacy_layer)
+            except ValueError:
+                pass
+            self._legacy_layer = None
+        
         self.glCanvas.pointSize = self.pointDisplaySettings.pointSize
 
         if self.pipeline.objects is None:
@@ -443,6 +458,9 @@ class VisGUICore(object):
 
             self.glCanvas.setBlobs(*self.pipeline.getBlobs())
             self.objCInd = self.glCanvas.c
+            
+        #save the new layer we created so we can remove it
+        self._legacy_layer = self.glCanvas.layers[-1]
 
         self.displayPane.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], 
                                         self.glCanvas.clim[1])

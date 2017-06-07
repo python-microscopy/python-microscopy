@@ -22,7 +22,7 @@
 
 from abc import abstractmethod
 
-import numpy
+import numpy as np
 from PYME.LMVis.layers.Layer import BaseLayer
 from OpenGL.GL import *
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
@@ -81,9 +81,9 @@ class VertexRenderLayer(BaseLayer):
         self._color_limit = 0
         self._alpha = 0
         if x is not None and y is not None and z is not None:
-            vertices = numpy.vstack((x.ravel(), y.ravel(), z.ravel()))
+            vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
             vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
-            normals = -0.69 * numpy.ones(vertices.shape)
+            normals = -0.69 * np.ones(vertices.shape)
         else:
             vertices = None
             normals = None
@@ -95,7 +95,11 @@ class VertexRenderLayer(BaseLayer):
 
             cs = cs.ravel().reshape(len(colors), 4)
         else:
-            cs = None
+            #cs = None
+            if not vertices is None:
+                cs = np.ones((vertices.shape[0], 4), 'f')
+            else:
+                cs = None
             color_map = None
             color_limit = None
 
@@ -104,6 +108,10 @@ class VertexRenderLayer(BaseLayer):
 
     @abstractmethod
     def render(self, gl_canvas):
+        if self.get_vertices is None:
+            print('Tried to render with Null vertices, aborting')
+            return
+        
         with self.get_shader_program():
 
             n_vertices = self.get_vertices().shape[0]
