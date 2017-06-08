@@ -116,8 +116,8 @@ class VisGUICore(object):
                 self.add_layer(method='points')
             else:
                 self.RefreshView()
+                self.displayPane.OnPercentileCLim(None)
                 
-            self.displayPane.OnPercentileCLim(None)
             self.Refresh()
             self.Update()
             print('refreshed')
@@ -134,16 +134,20 @@ class VisGUICore(object):
         self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
         self.displayPane.Bind(displayPane.EVT_DISPLAY_CHANGE, self.RefreshView)
         
-        if self.viewMode == 'quads':
-            quadTreeSettings.GenQuadTreePanel(self, sidePanel)
-
-        if self.viewMode in ['points', 'tracks', 'pointsprites', 'shadedpoints']:
-            pointSettingsPanel.GenPointsPanel(self, sidePanel)
-        if self.viewMode == 'blobs':
-            triBlobs.GenBlobPanel(self, sidePanel)
-
-        if self.viewMode == 'interp_triangles':
-            pointSettingsPanel.GenPointsPanel(self, sidePanel,'Vertex Colours')
+        if PYME.config.get('VisGUI-new_layers', False):
+            from .layer_panel import CreateLayerPane
+            CreateLayerPane(sidePanel, self)
+        else:
+            if self.viewMode == 'quads':
+                quadTreeSettings.GenQuadTreePanel(self, sidePanel)
+    
+            if self.viewMode in ['points', 'tracks', 'pointsprites', 'shadedpoints']:
+                pointSettingsPanel.GenPointsPanel(self, sidePanel)
+            if self.viewMode == 'blobs':
+                triBlobs.GenBlobPanel(self, sidePanel)
+    
+            if self.viewMode == 'interp_triangles':
+                pointSettingsPanel.GenPointsPanel(self, sidePanel,'Vertex Colours')
 
         
         self.glCanvas.Refresh()
@@ -346,9 +350,20 @@ class VisGUICore(object):
         self.glCanvas.layers.append(l)
         l.on_update.connect(self.glCanvas.refresh)
         return l
+    
+    @property
+    def layers(self):
+        return self.glCanvas.layers
         
     def RefreshView(self, event=None, **kwargs):
-        if not self.pipeline.ready or self._new_layers:
+        if self._new_layers:
+            #refresh view no longer updates the display
+            
+            #FIXME - this doesn't belong here (used to be done in SetPoints)
+            self.glCanvas.zc = self.pipeline['z'].mean()
+            return
+        
+        if not self.pipeline.ready:
             return #get out of here
 
         self.filterPane.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))

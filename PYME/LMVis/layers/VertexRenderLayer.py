@@ -27,8 +27,11 @@ from PYME.LMVis.layers.Layer import BaseLayer
 from OpenGL.GL import *
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
+from PYME.recipes.traits import CStr
 
 class VertexRenderLayer(BaseLayer):
+    color_key = CStr('')
+    
     def __init__(self, x=None, y=None, z=None, colors=None, color_map=None, color_limit=None, alpha=1.0):
         """
         This creates a new RenderLayer object and parses given data.
@@ -51,7 +54,7 @@ class VertexRenderLayer(BaseLayer):
         self.x_key = 'x'
         self.y_key = 'y'
         self.z_key = 'z'
-        self.color_key = None
+        #self.color_key = None
         
         BaseLayer.__init__(self)
         self.update_data(x, y, z, colors, color_map, color_limit, alpha)
@@ -65,7 +68,7 @@ class VertexRenderLayer(BaseLayer):
         else:
             z = 0*x
         
-        if not self.color_key is None:
+        if not self.color_key == '':
             c = ds[self.color_key]
         else:
             c = None
@@ -151,3 +154,11 @@ class VertexRenderLayer(BaseLayer):
 
     def get_color_limit(self):
         return self._color_limit
+
+    
+    def view(self, ds_keys):
+        from traitsui.api import View, Item, Group
+        from PYME.ui.custom_traits_editors import CBEditor
+    
+        return View([Item('color_key', editor=CBEditor(choices=ds_keys), label='Colour'),
+                     ])

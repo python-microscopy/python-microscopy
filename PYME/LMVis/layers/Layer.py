@@ -22,7 +22,9 @@ import abc
 
 from PYME.LMVis.shader_programs.ShaderProgramFactory import ShaderProgramFactory
 
-class BaseLayer(object):
+from PYME.recipes.traits import HasTraits
+
+class BaseLayer(HasTraits):
     """
     This class represents a layer that should be rendered.
     It also deals with the shader program that is used to render the layer

@@ -22,13 +22,16 @@ from PYME.LMVis.layers.VertexRenderLayer import VertexRenderLayer
 from OpenGL.GL import *
 
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
+import warnings
+from PYME.recipes.traits import Float
 
 
 class Point3DRenderLayer(VertexRenderLayer):
+    point_size = Float(5.0)
 
     def __init__(self,  x=None, y=None, z=None, colors=None, color_map=None, color_limit=None, alpha=1.0, point_size=5):
         VertexRenderLayer.__init__(self, x, y, z, colors, color_map, color_limit, alpha)
-        self._point_size = point_size
+        self.point_size = point_size
         self.set_shader_program(DefaultShaderProgram)
 
     def render(self, gl_canvas):
@@ -41,16 +44,25 @@ class Point3DRenderLayer(VertexRenderLayer):
             glColorPointerf(self.get_colors())
 
             if gl_canvas:
-                if self.get_point_size() == 0:
+                if self.point_size == 0:
                     glPointSize(1 / gl_canvas.pixelsize)
                 else:
-                    glPointSize(self.get_point_size() / gl_canvas.pixelsize)
+                    glPointSize(self.point_size / gl_canvas.pixelsize)
             else:
-                glPointSize(self.get_point_size())
+                glPointSize(self.point_size)
             glDrawArrays(GL_POINTS, 0, n_vertices)
 
     def get_point_size(self):
-        return self._point_size
+        warnings.warn("use the point_size property instead", DeprecationWarning)
+        return self.point_size
 
     def set_point_size(self, point_size):
-        self._point_size = point_size
+        warnings.warn("use the point_size property instead", DeprecationWarning)
+        self.point_size = point_size
+
+    def view(self, ds_keys):
+        from traitsui.api import View, Item, Group
+        from PYME.ui.custom_traits_editors import CBEditor
+    
+        return View([Item('color_key', editor=CBEditor(choices=ds_keys), label='Colour'),
+                     Item('point_size', label='Point size [nm]')])

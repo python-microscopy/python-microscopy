@@ -91,3 +91,47 @@ class FilterEditor(BasicEditorFactory):
     klass = _FilterEditor
 
     datasource = Instance(tabular.TabularBase)
+    
+class _HistLimitsEditor (Editor):
+    """
+    Simple Traits UI date editor.  Shows a text box, and a date-picker widget.
+    """
+
+    def init ( self, parent ):
+        """
+        Finishes initializing the editor by creating the underlying widget.
+        """
+        from PYME.ui import histLimits
+        
+        l_lower, l_upper = self.value
+
+        self.control = histLimits.HistLimitPanel(parent, -1, data=self.factory.data, limit_lower=l_lower, limit_upper=l_upper)
+                                   
+        self.control.Bind(histLimits.EVT_LIMIT_CHANGE, self.limits_changed)
+        
+        return
+
+
+    def limits_changed(self, event=None):
+        """
+        Event for when calendar is selected, update/create date string.
+        """
+        self.value = list(self.control.GetValue())
+        print(self.value)
+        return
+
+
+    def update_editor ( self ):
+        """
+        Updates the editor when the object trait changes externally to the
+        editor.
+        """
+        if self.value:
+            self.control.SetValue(self.value)
+
+        return
+
+class HistLimitsEditor(BasicEditorFactory):
+    klass = _HistLimitsEditor
+
+    data = Instance(object)

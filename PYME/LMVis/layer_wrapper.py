@@ -2,9 +2,10 @@ from . import layers
 from PYME.IO import tabular
 import dispatch
 
-from PYME.recipes.traits import HasTraits, Enum, ListFloat, Float, Bool
+from PYME.recipes.traits import HasTraits, Enum, ListFloat, Float, Bool, Instance
 
 from pylab import cm
+import numpy as np
 
 ENGINES = {
     'points' : layers.Point3DRenderLayer,
@@ -18,12 +19,13 @@ class LayerWrapper(HasTraits):
     alpha = Float(1.0)
     visible = Bool(True)
     method = Enum(*ENGINES.keys())
+    engine = Instance(layers.BaseLayer)
     
     def __init__(self, pipeline, method='points', ds_name='', cmap='gist_rainbow', clim=[0,1], alpha=1.0, visible=True):
         self._pipeline = pipeline
         self._namespace=getattr(pipeline, 'namespace', {})
         self._dsname = None
-        self._engine = None
+        self.engine = None
         
         self.cmap = cmap
         self.clim = clim
@@ -68,7 +70,8 @@ class LayerWrapper(HasTraits):
             return self._namespace.get(self._dsname, None)
         
     def _set_method(self):
-        self._engine = ENGINES[self.method]()
+        self.engine = ENGINES[self.method]()
+        self.engine.on_trait_change(self.update)
         
         self.update()
         
@@ -78,25 +81,35 @@ class LayerWrapper(HasTraits):
         self.update()
     
     def update(self, *args, **kwargs):
-        if not (self._engine is None or self.datasource is None):
-            self._engine.update_from_datasource(self.datasource, getattr(cm, self.cmap), self.clim, self.alpha)
+        if not (self.engine is None or self.datasource is None):
+            self.engine.update_from_datasource(self.datasource, getattr(cm, self.cmap), self.clim, self.alpha)
             self.on_update.send(self)
         
     def render(self, gl_canvas):
         if self.visible:
-            self._engine.render(gl_canvas)
+            self.engine.render(gl_canvas)
 
     @property
     def default_view(self):
-        from traitsui.api import View, Item, Group
+        from traitsui.api import View, Item, Group, InstanceEditor
+        from PYME.ui.custom_traits_editors import HistLimitsEditor
+        
+        try:
+            cdata = self.datasource[self.engine.color_key]
+        except KeyError:
+            cdata = np.array([0,1])
             
-        return View([Item('method'),
-                     Item('_'),
-                     Item('visible'),
-                     Item('cmap'),
-                     Item('clim'),
-                     Item('alpha')],
-                    buttons=['OK', 'Cancel'])
+        return View([Group([Item('visible'),]),
+                     Item('method'),
+                     #Item('_'),
+                     Group([
+                        Item('engine', style='custom', show_label=False, editor=InstanceEditor(view=self.engine.view(self.datasource.keys()))),
+                         ]),
+                     #Item('engine.color_key', editor=CBEditor(choices=self.datasource.keys())),
+                     Item('cmap', label='LUT'),
+                     Item('clim', editor = HistLimitsEditor(data=cdata)),
+                     Item('alpha')],)
+                    #buttons=['OK', 'Cancel'])
 
     def default_traits_view(self):
         return self.default_view
