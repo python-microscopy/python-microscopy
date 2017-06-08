@@ -31,6 +31,8 @@ from PYME.LMVis import renderers
 import logging
 logger = logging.getLogger(__name__)
 
+import PYME.config
+
 #try importing our drift correction stuff
 HAVE_DRIFT_CORRECTION = False
 try:
@@ -95,6 +97,7 @@ class VisGUICore(object):
         self.refv = False
         
         self._legacy_layer = None
+        self._new_layers = PYME.config.get('VisGUI-new_layers', False)
         
         renderers.renderMetadataProviders.append(self.SaveMetadata)
         self.use_shaders = use_shaders
@@ -109,7 +112,11 @@ class VisGUICore(object):
             print((self.viewMode, self.pointDisplaySettings.colourDataKey))
             self.SetFit()
             
-            self.RefreshView()
+            if self._new_layers:
+                self.add_layer(method='points')
+            else:
+                self.RefreshView()
+                
             self.displayPane.OnPercentileCLim(None)
             self.Refresh()
             self.Update()
@@ -335,10 +342,13 @@ class VisGUICore(object):
         
     def add_layer(self, method='points', ds_name=''):
         from .layer_wrapper import LayerWrapper
-        self.glCanvas.layers.append(LayerWrapper(self.pipeline, method=method, ds_name=ds_name))
+        l = LayerWrapper(self.pipeline, method=method, ds_name=ds_name)
+        self.glCanvas.layers.append(l)
+        l.on_update.connect(self.glCanvas.refresh)
+        return l
         
     def RefreshView(self, event=None, **kwargs):
-        if not self.pipeline.ready:
+        if not self.pipeline.ready or self._new_layers:
             return #get out of here
 
         self.filterPane.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))

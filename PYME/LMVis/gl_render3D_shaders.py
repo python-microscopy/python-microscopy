@@ -828,6 +828,9 @@ class LMGLShaderCanvas(GLCanvas):
                     np.array([self.xc, self.yc, self.zc]),
                     self.scale)
         return view
+    
+    def refresh(self, *args, **kwargs):
+        self.Refresh()
 
 
 def showGLFrame():

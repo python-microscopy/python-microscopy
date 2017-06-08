@@ -6,15 +6,20 @@ from PYME.recipes.traits import HasTraits, Enum, ListFloat, Float, Bool
 
 from pylab import cm
 
-LAYERS = {
+ENGINES = {
     'points' : layers.Point3DRenderLayer,
     'pointsprites' : layers.PointSpritesRenderLayer,
     'triangles' : layers.TriangleRenderLayer,
 }
 
 class LayerWrapper(HasTraits):
-    cmap = Enum(cm.cmapnames)
-    def __init__(self, pipeline, method='points', ds_name='', cmap='gist_rainbow', clim=[0,1], alpha=1.0):
+    cmap = Enum(*cm.cmapnames, default='gist_rainbow')
+    clim = ListFloat([0, 1])
+    alpha = Float(1.0)
+    visible = Bool(True)
+    method = Enum(*ENGINES.keys())
+    
+    def __init__(self, pipeline, method='points', ds_name='', cmap='gist_rainbow', clim=[0,1], alpha=1.0, visible=True):
         self._pipeline = pipeline
         self._namespace=getattr(pipeline, 'namespace', {})
         self._dsname = None
@@ -24,18 +29,22 @@ class LayerWrapper(HasTraits):
         self.clim = clim
         self.alpha = alpha
         
-        self._visible = True
+        self.visible = visible
 
         self.on_update = dispatch.Signal()
         
+        self.on_trait_change(lambda : self.on_update.send(self), 'visible')
+        self.on_trait_change(self.update, 'cmap, clim, alpha')
+        self.on_trait_change(self._set_method, 'method')
+
         self.set_datasource(ds_name)
-        self.set_method(method)
+        self.method = method
         
         self._pipeline.onRebuild.connect(self.update)
         
     @property
     def data_source_names(self):
-        names = []
+        names = ['']
         for k, v in self._namespace.items():
             names.append(k)
             if isinstance(v, tabular.colourFilter):
@@ -58,19 +67,8 @@ class LayerWrapper(HasTraits):
         else:
             return self._namespace.get(self._dsname, None)
         
-    @property
-    def visible(self):
-        return self._visible
-    
-    @visible.setter
-    def visible(self, value):
-        self._visible = value
-        self.on_update.send(self) #force a redraw
-        
-        
-    def set_method(self, method):
-        self.method = method
-        self._engine = LAYERS[method]()
+    def _set_method(self):
+        self._engine = ENGINES[self.method]()
         
         self.update()
         
@@ -87,4 +85,19 @@ class LayerWrapper(HasTraits):
     def render(self, gl_canvas):
         if self.visible:
             self._engine.render(gl_canvas)
+
+    @property
+    def default_view(self):
+        from traitsui.api import View, Item, Group
+            
+        return View([Item('method'),
+                     Item('_'),
+                     Item('visible'),
+                     Item('cmap'),
+                     Item('clim'),
+                     Item('alpha')],
+                    buttons=['OK', 'Cancel'])
+
+    def default_traits_view(self):
+        return self.default_view
         

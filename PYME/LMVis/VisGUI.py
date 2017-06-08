@@ -383,19 +383,24 @@ def parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help="file that should be used", default=None, nargs='?')
     parser.add_argument('-r', '--recipe', help='recipe to use for variable portion of pipeline', dest='recipe', default=None)
-    parser.add_argument('-s', '--use_shaders', dest="use_shaders", action='store_true', default=False,
+    parser.add_argument('-s', '--use_shaders', dest="use_shaders", action='store_true', default=True,
                         help='switch shaders on(default: off)')
     parser.add_argument('--no_use_shaders', dest="use_shaders", action='store_false',
-                        default=False, help='switch shaders off(default: off)')
+                        default=True, help='switch shaders off(default: off)')
+    parser.add_argument('--new-layers', dest='new_layers', action='store_true', default=False)
     args = parser.parse_args()
     return args
     
 def main():
     from multiprocessing import freeze_support
+    import PYME.config
     freeze_support()
     
     filename = None
     args = parse()
+    
+    PYME.config.config['VisGUI-new_layers'] = args.new_layers
+    
     if wx.GetApp() is None: #check to see if there's already a wxApp instance (running from ipython -pylab or -wthread)
         main_(args.file, use_shaders=args.use_shaders, args=args)
     else:
