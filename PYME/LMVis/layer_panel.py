@@ -24,15 +24,27 @@ class LayerPane(afp.foldingPane):
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
         
-        self.nb = wx.Notebook(pan, size=(150, 300))
+        self.nb = wx.Notebook(pan, size=(150, 400))
         
-        for i, layer in enumerate(self.visFr.layers):
-            page = layer.edit_traits(parent=self.nb, kind='subpanel')
-            self.nb.AddPage(page.control, 'Layer %d' % i)
+        self.update()
             
         vsizer.Add(self.nb, 1, wx.ALL|wx.EXPAND, 0)
         
+        bAddLayer = wx.Button(pan, -1, 'New', style=wx.BU_EXACTFIT)
+        bAddLayer.Bind(wx.EVT_BUTTON, lambda e : self.visFr.add_layer())
+        
+        vsizer.Add(bAddLayer, 0, wx.ALIGN_CENTRE, 0)
+        
         pan.SetSizerAndFit(vsizer)
         self.AddNewElement(pan)
+        
+        self.visFr.layer_added.connect(self.update)
+        
+    def update(self, *args, **kwargs):
+        self.nb.DeleteAllPages()
+        for i, layer in enumerate(self.visFr.layers):
+            page = layer.edit_traits(parent=self.nb, kind='subpanel')
+            self.nb.AddPage(page.control, 'Layer %d' % i)
+        
         
         

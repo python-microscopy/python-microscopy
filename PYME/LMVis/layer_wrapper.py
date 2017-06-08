@@ -2,7 +2,7 @@ from . import layers
 from PYME.IO import tabular
 import dispatch
 
-from PYME.recipes.traits import HasTraits, Enum, ListFloat, Float, Bool, Instance
+from PYME.recipes.traits import HasTraits, Enum, ListFloat, Float, Bool, Instance, CStr
 
 from pylab import cm
 import numpy as np
@@ -20,11 +20,12 @@ class LayerWrapper(HasTraits):
     visible = Bool(True)
     method = Enum(*ENGINES.keys())
     engine = Instance(layers.BaseLayer)
+    ds_name = CStr('')
     
     def __init__(self, pipeline, method='points', ds_name='', cmap='gist_rainbow', clim=[0,1], alpha=1.0, visible=True):
         self._pipeline = pipeline
         self._namespace=getattr(pipeline, 'namespace', {})
-        self._dsname = None
+        #self.dsname = None
         self.engine = None
         
         self.cmap = cmap
@@ -36,10 +37,11 @@ class LayerWrapper(HasTraits):
         self.on_update = dispatch.Signal()
         
         self.on_trait_change(lambda : self.on_update.send(self), 'visible')
-        self.on_trait_change(self.update, 'cmap, clim, alpha')
+        self.on_trait_change(self.update, 'cmap, clim, alpha, dsname')
         self.on_trait_change(self._set_method, 'method')
 
-        self.set_datasource(ds_name)
+        #self.set_datasource(ds_name)
+        self.dsname = ds_name
         self.method = method
         
         self._pipeline.onRebuild.connect(self.update)
@@ -57,17 +59,17 @@ class LayerWrapper(HasTraits):
         
     @property
     def datasource(self):
-        if self._dsname == '':
+        if self.dsname == '':
             return self._pipeline
         
-        parts = self._dsname.split('.')
+        parts = self.dsname.split('.')
         if len(parts) == 2:
             # special case - permit access to channels using dot notation
             # NB: only works if our underlying datasource is a ColourFilter
             ds, channel = parts
             return self._namespace.get(ds, None).get_channel_ds(channel)
         else:
-            return self._namespace.get(self._dsname, None)
+            return self._namespace.get(self.dsname, None)
         
     def _set_method(self):
         self.engine = ENGINES[self.method]()
@@ -75,10 +77,10 @@ class LayerWrapper(HasTraits):
         
         self.update()
         
-    def set_datasource(self, ds_name):
-        self._dsname = ds_name
-        
-        self.update()
+    # def set_datasource(self, ds_name):
+    #     self._dsname = ds_name
+    #
+    #     self.update()
     
     def update(self, *args, **kwargs):
         if not (self.engine is None or self.datasource is None):
@@ -92,14 +94,14 @@ class LayerWrapper(HasTraits):
     @property
     def default_view(self):
         from traitsui.api import View, Item, Group, InstanceEditor
-        from PYME.ui.custom_traits_editors import HistLimitsEditor
+        from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
         
         try:
             cdata = self.datasource[self.engine.color_key]
         except KeyError:
             cdata = np.array([0,1])
             
-        return View([Group([Item('visible'),]),
+        return View([Group([Item('dsname', label='Data', editor=CBEditor(choices=self.data_source_names)), Item('visible'),]),
                      Item('method'),
                      #Item('_'),
                      Group([
@@ -107,7 +109,7 @@ class LayerWrapper(HasTraits):
                          ]),
                      #Item('engine.color_key', editor=CBEditor(choices=self.datasource.keys())),
                      Item('cmap', label='LUT'),
-                     Item('clim', editor = HistLimitsEditor(data=cdata)),
+                     Item('clim', editor = HistLimitsEditor(data=cdata)),#, show_label=False),
                      Item('alpha')],)
                     #buttons=['OK', 'Cancel'])
 

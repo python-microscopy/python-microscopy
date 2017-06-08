@@ -52,7 +52,7 @@ from PYME.LMVis import quadTreeSettings
 from PYME.LMVis import triBlobs
 
 #from PYME.Analysis import MetadataTree
-
+import dispatch
 import numpy as np
 #import scipy.special
 
@@ -98,6 +98,8 @@ class VisGUICore(object):
         
         self._legacy_layer = None
         self._new_layers = PYME.config.get('VisGUI-new_layers', False)
+        
+        self.layer_added = dispatch.Signal()
         
         renderers.renderMetadataProviders.append(self.SaveMetadata)
         self.use_shaders = use_shaders
@@ -349,6 +351,8 @@ class VisGUICore(object):
         l = LayerWrapper(self.pipeline, method=method, ds_name=ds_name)
         self.glCanvas.layers.append(l)
         l.on_update.connect(self.glCanvas.refresh)
+        
+        self.layer_added.send(self)
         return l
     
     @property
