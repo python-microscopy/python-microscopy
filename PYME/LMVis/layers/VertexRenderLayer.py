@@ -30,7 +30,7 @@ from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 from PYME.recipes.traits import CStr
 
 class VertexRenderLayer(BaseLayer):
-    color_key = CStr('')
+    vertexColour = CStr('')
     
     def __init__(self, x=None, y=None, z=None, colors=None, color_map=None, color_limit=None, alpha=1.0):
         """
@@ -68,8 +68,8 @@ class VertexRenderLayer(BaseLayer):
         else:
             z = 0*x
         
-        if not self.color_key == '':
-            c = ds[self.color_key]
+        if not self.vertexColour == '':
+            c = ds[self.vertexColour]
         else:
             c = None
         
@@ -157,8 +157,8 @@ class VertexRenderLayer(BaseLayer):
 
     
     def view(self, ds_keys):
-        from traitsui.api import View, Item, Group
+        from traitsui.api import View, Item, Group, EnumEditor
         from PYME.ui.custom_traits_editors import CBEditor
     
-        return View([Item('color_key', editor=CBEditor(choices=ds_keys), label='Colour'),
+        return View([Item('vertexColour', editor=EnumEditor(values=ds_keys), label='Colour'),
                      ])

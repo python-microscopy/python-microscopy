@@ -316,6 +316,12 @@ class Pipeline:
     @property
     def dataSources(self):
         return self.recipe.namespace
+    
+    @property
+    def layer_datasources(self):
+        lds = {'output':self.colourFilter}
+        lds.update(self.dataSources)
+        return lds
 
     @property
     def selectedDataSource(self):

@@ -20,11 +20,11 @@ class LayerWrapper(HasTraits):
     visible = Bool(True)
     method = Enum(*ENGINES.keys())
     engine = Instance(layers.BaseLayer)
-    ds_name = CStr('')
+    dsname = CStr('output')
     
     def __init__(self, pipeline, method='points', ds_name='', cmap='gist_rainbow', clim=[0,1], alpha=1.0, visible=True):
         self._pipeline = pipeline
-        self._namespace=getattr(pipeline, 'namespace', {})
+        #self._namespace=getattr(pipeline, 'namespace', {})
         #self.dsname = None
         self.engine = None
         
@@ -47,8 +47,12 @@ class LayerWrapper(HasTraits):
         self._pipeline.onRebuild.connect(self.update)
         
     @property
+    def _namespace(self):
+        return self._pipeline.layer_datasources
+        
+    @property
     def data_source_names(self):
-        names = ['']
+        names = []#'']
         for k, v in self._namespace.items():
             names.append(k)
             if isinstance(v, tabular.colourFilter):
@@ -73,6 +77,7 @@ class LayerWrapper(HasTraits):
         
     def _set_method(self):
         self.engine = ENGINES[self.method]()
+        self.engine.on_trait_change(self._update, 'vertexColour')
         self.engine.on_trait_change(self.update)
         
         self.update()
@@ -82,7 +87,13 @@ class LayerWrapper(HasTraits):
     #
     #     self.update()
     
+    def _update(self, *args, **kwargs):
+        cdata = self._get_cdata()
+        self.clim = [float(cdata.min()), float(cdata.max())]
+        #self.update(*args, **kwargs)
+    
     def update(self, *args, **kwargs):
+        print('lw update')
         if not (self.engine is None or self.datasource is None):
             self.engine.update_from_datasource(self.datasource, getattr(cm, self.cmap), self.clim, self.alpha)
             self.on_update.send(self)
@@ -91,25 +102,30 @@ class LayerWrapper(HasTraits):
         if self.visible:
             self.engine.render(gl_canvas)
 
-    @property
-    def default_view(self):
-        from traitsui.api import View, Item, Group, InstanceEditor
-        from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
-        
+    def _get_cdata(self):
         try:
-            cdata = self.datasource[self.engine.color_key]
+            cdata = self.datasource[self.engine.vertexColour]
         except KeyError:
             cdata = np.array([0,1])
             
-        return View([Group([Item('dsname', label='Data', editor=CBEditor(choices=self.data_source_names)), Item('visible'),]),
+        return cdata
+    
+    @property
+    def default_view(self):
+        from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor
+        from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
+        
+        
+            
+        return View([Group([Item('dsname', label='Data', editor=EnumEditor(values=self.data_source_names)), Item('visible'),]),
                      Item('method'),
                      #Item('_'),
                      Group([
                         Item('engine', style='custom', show_label=False, editor=InstanceEditor(view=self.engine.view(self.datasource.keys()))),
                          ]),
                      #Item('engine.color_key', editor=CBEditor(choices=self.datasource.keys())),
-                     Item('cmap', label='LUT'),
-                     Item('clim', editor = HistLimitsEditor(data=cdata)),#, show_label=False),
+                     Group([Item('cmap', label='LUT'),]),
+                     Group([Item('clim', editor = HistLimitsEditor(data=self._get_cdata), show_label=False),]),
                      Item('alpha')],)
                     #buttons=['OK', 'Cancel'])
 

@@ -64,5 +64,5 @@ class Point3DRenderLayer(VertexRenderLayer):
         from traitsui.api import View, Item, Group
         from PYME.ui.custom_traits_editors import CBEditor
     
-        return View([Item('color_key', editor=CBEditor(choices=ds_keys), label='Colour'),
+        return View([Item('vertexColour', editor=CBEditor(choices=ds_keys), label='Colour'),
                      Item('point_size', label='Point size [nm]')])

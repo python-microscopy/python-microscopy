@@ -105,7 +105,7 @@ class _HistLimitsEditor (Editor):
         
         l_lower, l_upper = self.value
 
-        self.control = histLimits.HistLimitPanel(parent, -1, data=self.factory.data, limit_lower=l_lower, limit_upper=l_upper)
+        self.control = histLimits.HistLimitPanel(parent, -1, data=self.factory.data(), limit_lower=l_lower, limit_upper=l_upper)
                                    
         self.control.Bind(histLimits.EVT_LIMIT_CHANGE, self.limits_changed)
         
@@ -126,7 +126,9 @@ class _HistLimitsEditor (Editor):
         Updates the editor when the object trait changes externally to the
         editor.
         """
+        print('hl update')
         if self.value:
+            self.control.SetData(self.factory.data(), *self.value)
             self.control.SetValue(self.value)
 
         return

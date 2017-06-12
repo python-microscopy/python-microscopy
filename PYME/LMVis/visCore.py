@@ -131,15 +131,20 @@ class VisGUICore(object):
 
         if HAVE_DRIFT_CORRECTION:
             self.driftPane = CreateDriftPane(sidePanel, self.pipeline.mapping, self.pipeline)
-            
-        self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
-        self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
-        self.displayPane.Bind(displayPane.EVT_DISPLAY_CHANGE, self.RefreshView)
-        
+
         if PYME.config.get('VisGUI-new_layers', False):
+            #self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
+            self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
+            self.displayPane.Bind(displayPane.EVT_DISPLAY_CHANGE, self.RefreshView)
+        
+        
             from .layer_panel import CreateLayerPane
             CreateLayerPane(sidePanel, self)
         else:
+            self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
+            self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
+            self.displayPane.Bind(displayPane.EVT_DISPLAY_CHANGE, self.RefreshView)
+            
             if self.viewMode == 'quads':
                 quadTreeSettings.GenQuadTreePanel(self, sidePanel)
     
