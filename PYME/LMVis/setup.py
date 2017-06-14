@@ -30,7 +30,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('Extras')
     config.add_subpackage('layers')
     config.add_subpackage('shader_programs')
-    config.add_data_dir('shaders/shader_programs')
+    config.add_data_dir('shader_programs/shaders')
     
     return config
 
