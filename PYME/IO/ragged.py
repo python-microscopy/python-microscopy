@@ -69,14 +69,10 @@ class RaggedJSON(RaggedCache):
      
     
 class RaggedVLArray(RaggedBase):
-    def __init__(self, filename, tablename):
+    def __init__(self, h5f, tablename):
         RaggedBase.__init__(self)
         
-        import tables
-        
-        self._h5f = tables.open_file(filename)
-        
-        self._data = self._h5f.get_node(self._h5f.root, tablename)
+        self._data = h5f.get_node(h5f.root, tablename)
         
         #raise NotImplementedError
     

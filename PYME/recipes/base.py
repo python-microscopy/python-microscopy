@@ -493,6 +493,14 @@ class ModuleCollection(HasTraits):
 
                 mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
                 for t in h5f.list_nodes('/'):
+                    if isinstance(t, tables.VLArray):
+                        from PYME.IO.ragged import RaggedVLArray
+                        
+                        rag = RaggedVLArray(h5f, t.name)
+                        rag.mdh = mdh
+
+                        self.namespace[key_prefix + t.name] = rag
+                        
                     if isinstance(t, tables.table.Table):
                         tab = tabular.h5rSource(h5f, t.name)
                         tab.mdh = mdh
