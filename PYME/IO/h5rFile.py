@@ -49,6 +49,7 @@ class H5RFile(object):
         # and our local thread
         self.appendQueueLock = threading.Lock()
         self.appendQueues = {}
+        #self.appendVLQueues = {}
 
         self.keepAliveTimeout = time.time() + KEEP_ALIVE_TIMEOUT
         self.useCount = 0
@@ -111,7 +112,11 @@ class H5RFile(object):
                 table.append(data)
             except AttributeError:
                 # we don't have a table with that name - create one
-                self._h5file.create_table(self._h5file.root, tablename, data,
+                if isinstance(data, basestring):
+                    table = self._h5file.create_vlarray(self._h5file.root, tablename, tables.VLStringAtom())
+                    table.append(data)
+                else:
+                    self._h5file.create_table(self._h5file.root, tablename, data,
                                                filters=tables.Filters(complevel=5, shuffle=True),
                                                expectedrows=500000)
 
