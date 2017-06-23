@@ -652,47 +652,65 @@ class FiducialCorrection(ModuleBase):
         namespace[self.outputFiducials] = out_f
 
 
-@register_module('FitToSphericalHarmonics')
-class FitToSphericalHarmonics(ModuleBase): #FIXME - this likely doesnt belong here
-    """Parameters
+@register_module('SphericalHarmonicShell')
+class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong here
+    """
+    Fits a shell represented by a series of spherical harmonic co-ordinates to a 3D set of points. The points
+    should represent a hollow, fairly round structure (e.g. the surface of a cell nucleus). The object should NOT
+    be filled (i.e. points should only be on the surface).
+    
+    Parameters
     ----------
 
         max_m_mode: Maximum order to calculate to.
         zscale: Factor to scale z by when projecting onto spherical harmonics. It is helpful to scale z such that the
             x, y, and z extents are roughly equal.
+            
+    Inputs
+    ------
+        inputName: name of a tabular datasource containing the points to be fitted with a spherical harmonic shell
+        
 
-    Notes
-    -----
-    Sometimes it's ok to be square - orthogonality has its perks.
     """
-    inputName = Input('zmapped')
+    inputName = Input('input')
     max_m_mode = Int(5)
-    zscale = Float(5.0)
-    outputName = Output('spharmonicprojection')
+    z_scale = Float(5.0)
+    n_iterations = Int(2)
+    init_tolerance = Float(0.3, desc='Fractional tolerance on radius used in first iteration')
+    outputName = Output('harmonicShell')
 
     def execute(self, namespace):
         import PYME.Analysis.points.spherical_harmonics as spharm
+        from PYME.IO.ragged import RaggedCache
+        from PYME.IO import MetaDataHandler
 
         inp = namespace[self.inputName]
 
-        proj, md = spharm.project(inp['x'], inp['y'], inp['z'], mmax=self.max_m_mode, z_scale=self.zscale)
-        proj = tabular.recArrayInput(proj)
-        proj.mdh = md
-
-        # copy metadata from the input, if present
+        modes, c, centre = spharm.sphere_expansion_clean(inp['x'], inp['y'], inp['z'] * self.z_scale,
+                                                               mmax=self.max_m_mode,
+                                                               centre_points=True,
+                                                               nIters=self.n_iterations,
+                                                               tol_init=self.init_tolerance)
+        
+        mdh = MetaDataHandler.NestedClassMDHandler()
         try:
-            # projection already has a metadata handler, with spherical harmonic information
-            proj.mdh.copyEntriesFrom(namespace[self.inputName].mdh)
+            mdh.copyEntriesFrom(namespace[self.inputName].mdh)
         except AttributeError:
             pass
+        
+        mdh['Processing.SphericalHarmonicShell.ZScale'] = self.z_scale
+        mdh['Processing.SphericalHarmonicShell.MaxMMode'] = self.max_m_mode
+        mdh['Processing.SphericalHarmonicShell.NIterations'] = self.n_iterations
+        mdh['Processing.SphericalHarmonicShell.InitTolerance'] = self.init_tolerance
 
-        namespace[self.outputName] = proj
+        namespace[self.outputName] = RaggedCache([{'z_scale': self.z_scale, 'centre': centre,
+                                                   'modes': modes, 'coeffs' : c},], mdh)
 
-@register_module('AddSphericalHarmonicInfo')
-class AddSphericalHarmonicInfo(ModuleBase): #FIXME - this likely doesnt belong here
+@register_module('AddShellMappedCoordinates')
+class AddShellMappedCoordinates(ModuleBase): #FIXME - this likely doesnt belong here
     """
 
-    Maps spherical coordinates generated with respect to an expansion of spherical harmonics. Notably, a normalized
+    Maps x,y,z co-ordinates into the co-ordinate space of spherical harmonic shell. Notably, a normalized
     radius is provided, which can be used to determine which localizations are within the structure.
 
     Inputs
@@ -700,9 +718,8 @@ class AddSphericalHarmonicInfo(ModuleBase): #FIXME - this likely doesnt belong h
 
     inputName : name of tabular data whose coordinates one would like to have generated with respect to a spherical
             harmonic structure
-    inputSphericalHarmonics: key in namespace for a dictionary-like object containing the spherical harmonic modes and
-            coefficients necessary to reconstruct the project of some object onto the basis of spherical harmonics (e.g.
-            output of recipes.localizations.FitToSphericalHarmonics). See PYME.Analysis.points.spherical_harmonics.
+    inputSphericalHarmonics: name of reference spherical harmonic shell representation (e.g.
+            output of recipes.localizations.SphericalHarmonicShell). See PYME.Analysis.points.spherical_harmonics.
 
     Outputs
     -------
@@ -722,34 +739,33 @@ class AddSphericalHarmonicInfo(ModuleBase): #FIXME - this likely doesnt belong h
 
 
     inputName = Input('points')
-    inputSphericalHarmonics = Input('sphericalHarmonicProjection')
+    inputSphericalHarmonics = Input('harmonicShell')
 
-    outputName = Output('info_added')
+    outputName = Output('shell_mapped')
 
     def execute(self, namespace):
         import PYME.Analysis.points.spherical_harmonics as spharm
+        from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
         inp = namespace[self.inputName]
         mapped = tabular.mappingFilter(inp)
 
-        rep = namespace[self.inputSphericalHarmonics]
-        if not hasattr(rep, 'mdh'):
-            raise AttributeError('Spherical harmonic input must have metadata')
+        rep = namespace[self.inputSphericalHarmonics][0]
+        
+        x0, y0, z0 = rep['centre']
 
         # calculate theta, phi, and rad for each localization in the pipeline
-        x0, y0, z0 = rep.mdh['SphericalHarmonics.centre']
         theta, phi, datRad = spharm.cart2sph(inp['x'] - x0, inp['y'] - y0,
-                                             inp['z'] - (z0)/rep.mdh['SphericalHarmonics.z_scale'])
+                                             (inp['z'] - z0)/rep['z_scale'])
 
         mapped.addColumn('r', datRad)
         mapped.addColumn('theta', theta)
         mapped.addColumn('phi', phi)
-        mapped.addColumn('r_norm', datRad / spharm.reconstruct_from_modes(zip(rep['m_modes'], rep['n_modes']),
-                                                                          rep['coefficients'], theta, phi))
+        mapped.addColumn('r_norm', datRad / spharm.reconstruct_from_modes(rep['modes'],rep['coefficients'], theta, phi))
 
         try:
             # note that copying overwrites shared fields
-            mapped.mdh = rep.mdh
+            mapped.mdh = NestedClassMDHandler(rep.mdh)
             mapped.mdh.copyEntriesFrom(inp.mdh)
         except AttributeError:
             pass
