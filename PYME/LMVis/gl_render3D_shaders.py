@@ -31,7 +31,7 @@ from OpenGL.GLU import *
 
 from PYME.LMVis.layers import AxesOverlayLayer, LUTOverlayLayer, Point3DRenderLayer, PointSpritesRenderLayer, \
     QuadTreeRenderLayer, VertexRenderLayer, ScaleBarOverlayLayer, SelectionOverlayLayer, ShadedPointRenderLayer, \
-    TriangleRenderLayer
+    TetrahedraRenderLayer
 
 from PYME.LMVis.gl_offScreenHandler import OffScreenHandler
 from wx.glcanvas import GLCanvas
@@ -369,8 +369,8 @@ class LMGLShaderCanvas(GLCanvas):
 
         if recenter:
             self.recenter(x, y)
-        self.layers.append(TriangleRenderLayer(x, y, z, c, self.cmap, sizeCutoff,
-                                               internalCull, zrescale, alpha, is_wire_frame=wireframe))
+        self.layers.append(TetrahedraRenderLayer(x, y, z, c, self.cmap, sizeCutoff,
+                                                 internalCull, zrescale, alpha, is_wire_frame=wireframe))
         self.Refresh()
 
     def setTriang(self, T, c=None, sizeCutoff=1000., zrescale=1, internalCull=True, alpha=1,

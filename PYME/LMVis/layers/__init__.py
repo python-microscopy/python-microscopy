@@ -28,5 +28,5 @@ from .VertexRenderLayer import VertexRenderLayer
 from .ScaleBarOverlayLayer import ScaleBarOverlayLayer
 from .SelectionOverlayLayer import SelectionOverlayLayer
 from .ShadedPointRenderLayer import ShadedPointRenderLayer
-from .TriangleRenderLayer import TriangleRenderLayer
+from .TetrahedraRenderLayer import TetrahedraRenderLayer
 from .Layer import BaseLayer

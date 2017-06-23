@@ -29,13 +29,14 @@ class PointSpritesRenderLayer(Point3DRenderLayer):
 
     """
 
-    def __init__(self, x_values, y_values, z_values, colors, color_map, color_limit, alpha, point_size=5):
+    def __init__(self, x=None, y=None, z=None, colors=None, color_map=None, color_limit=None, alpha=1.0, point_size=5):
         """
         This constructor is only used to call the super constructor and set those parameters.
         Some of them may never be used.
         """
-        Point3DRenderLayer.__init__(self, x_values, y_values, z_values, colors, color_map, color_limit, alpha,
+        Point3DRenderLayer.__init__(self, x, y, z, colors, color_map, color_limit, alpha,
                                     point_size)
+        
         self.set_shader_program(PointSpriteShaderProgram)
         self.set_point_size(point_size)
 

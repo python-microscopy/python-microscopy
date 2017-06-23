@@ -10,7 +10,7 @@ import numpy as np
 ENGINES = {
     'points' : layers.Point3DRenderLayer,
     'pointsprites' : layers.PointSpritesRenderLayer,
-    'triangles' : layers.TriangleRenderLayer,
+    'triangles' : layers.TetrahedraRenderLayer,
 }
 
 class LayerWrapper(HasTraits):
