@@ -39,7 +39,7 @@ class DefaultShaderProgram(GLProgram):
         self.set_shader_program(_shader_program)
 
     def __enter__(self):
-        glBlendFunc(GL_SRC_ALPHA, GL_ZERO)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         glEnable(GL_BLEND)
         glDepthMask(GL_TRUE)
         glEnable(GL_DEPTH_TEST)
