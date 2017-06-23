@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 import abc
+import warnings
 
 from PYME.LMVis.shader_programs.ShaderProgramFactory import ShaderProgramFactory
 
@@ -33,11 +34,17 @@ class BaseLayer(HasTraits):
     def __init__(self):
         self._shader_program = None
 
+    
     def set_shader_program(self, shader_program):
         self._shader_program = ShaderProgramFactory.get_program(shader_program)
 
-    def get_shader_program(self):
+    @property
+    def shader_program(self):
         return self._shader_program
+    
+    def get_shader_program(self):
+        warnings.warn("use the shader_program property instead", DeprecationWarning)
+        return self.shader_program
 
     @abc.abstractmethod
     def render(self, gl_canvas):

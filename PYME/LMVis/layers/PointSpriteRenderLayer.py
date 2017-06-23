@@ -38,10 +38,8 @@ class PointSpritesRenderLayer(Point3DRenderLayer):
                                     point_size)
         
         self.set_shader_program(PointSpriteShaderProgram)
-        self.set_point_size(point_size)
+        self.point_size = point_size
 
-    def set_point_size(self, point_size):
-        Point3DRenderLayer.set_point_size(self, point_size * self.get_shader_program().get_size_factor())
 
     def render(self, gl_canvas=None):
         """
@@ -57,7 +55,7 @@ class PointSpritesRenderLayer(Point3DRenderLayer):
             the pixel size is used to calculate the right point size to match nm,um etc.
         """
 
-        with self.get_shader_program():
+        with self.shader_program:
 
             n_vertices = self.get_vertices().shape[0]
 
@@ -66,10 +64,11 @@ class PointSpritesRenderLayer(Point3DRenderLayer):
             glColorPointerf(self.get_colors())
 
             if gl_canvas:
-                if self.get_point_size() == 0:
-                    glPointSize(1 / gl_canvas.pixelsize)
+                if self.point_size == 0:
+                    glPointSize(1.0/gl_canvas.pixelsize)
                 else:
-                    glPointSize(self.get_point_size() / gl_canvas.pixelsize)
+                    glPointSize(self.point_size*self.shader_program.size_factor/gl_canvas.pixelsize)
             else:
-                glPointSize(self.get_point_size())
+                glPointSize(self.point_size*self.shader_program.size_factor)
+                
             glDrawArrays(GL_POINTS, 0, n_vertices)

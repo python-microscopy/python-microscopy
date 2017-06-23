@@ -28,6 +28,7 @@ from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 import numpy as np
 from PYME.LMVis.rendGauss import gaussKernel
 
+import warnings
 
 class GaussTexture:
 
@@ -109,12 +110,13 @@ class PointSpriteShaderProgram(GLProgram):
         shader_program.add_shader("pointsprites_fs.glsl", GL_FRAGMENT_SHADER)
         shader_program.link()
         self._texture = GaussTexture()
-        self._size_factor = self._texture.load_texture()
+        self.size_factor = self._texture.load_texture()
         self.set_shader_program(shader_program)
         self._uniform_tex_2d_id = self.get_shader_program().get_uniform_location(b'tex2D')
 
     def get_size_factor(self):
-        return self._size_factor
+        warnings.warn("use size_factor attribute instead", DeprecationWarning)
+        return self.size_factor
 
     def __enter__(self):
         self.get_shader_program().use()
