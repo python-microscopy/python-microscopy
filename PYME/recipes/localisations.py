@@ -650,3 +650,109 @@ class FiducialCorrection(ModuleBase):
 
         namespace[self.outputName] = out
         namespace[self.outputFiducials] = out_f
+
+
+@register_module('FitToSphericalHarmonics')
+class FitToSphericalHarmonics(ModuleBase): #FIXME - this likely doesnt belong here
+    """Parameters
+    ----------
+
+        max_m_mode: Maximum order to calculate to.
+        zscale: Factor to scale z by when projecting onto spherical harmonics. It is helpful to scale z such that the
+            x, y, and z extents are roughly equal.
+
+    Notes
+    -----
+    Sometimes it's ok to be square - orthogonality has its perks.
+    """
+    inputName = Input('zmapped')
+    max_m_mode = Int(5)
+    zscale = Float(5.0)
+    outputName = Output('spharmonicprojection')
+
+    def execute(self, namespace):
+        import PYME.Analysis.points.spherical_harmonics as spharm
+
+        inp = namespace[self.inputName]
+
+        proj, md = spharm.project(inp['x'], inp['y'], inp['z'], mmax=self.max_m_mode, z_scale=self.zscale)
+        proj = tabular.recArrayInput(proj)
+        proj.mdh = md
+
+        # copy metadata from the input, if present
+        try:
+            # projection already has a metadata handler, with spherical harmonic information
+            proj.mdh.copyEntriesFrom(namespace[self.inputName].mdh)
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = proj
+
+@register_module('AddSphericalHarmonicInfo')
+class AddSphericalHarmonicInfo(ModuleBase): #FIXME - this likely doesnt belong here
+    """
+
+    Maps spherical coordinates generated with respect to an expansion of spherical harmonics. Notably, a normalized
+    radius is provided, which can be used to determine which localizations are within the structure.
+
+    Inputs
+    ------
+
+    inputName : name of tabular data whose coordinates one would like to have generated with respect to a spherical
+            harmonic structure
+    inputSphericalHarmonics: key in namespace for a dictionary-like object containing the spherical harmonic modes and
+            coefficients necessary to reconstruct the project of some object onto the basis of spherical harmonics (e.g.
+            output of recipes.localizations.FitToSphericalHarmonics). See PYME.Analysis.points.spherical_harmonics.
+
+    Outputs
+    -------
+
+    outputName: a new tabular data source containing spherical coordinates generated with respect to the spherical
+    harmonic representation.
+
+    Parameters
+    ----------
+
+    None
+
+    Notes
+    -----
+
+    """
+
+
+    inputName = Input('points')
+    inputSphericalHarmonics = Input('sphericalHarmonicProjection')
+
+    outputName = Output('info_added')
+
+    def execute(self, namespace):
+        import PYME.Analysis.points.spherical_harmonics as spharm
+
+        inp = namespace[self.inputName]
+        mapped = tabular.mappingFilter(inp)
+
+        rep = namespace[self.inputSphericalHarmonics]
+        if not hasattr(rep, 'mdh'):
+            raise AttributeError('Spherical harmonic input must have metadata')
+
+        # calculate theta, phi, and rad for each localization in the pipeline
+        x0, y0, z0 = rep.mdh['SphericalHarmonics.centre']
+        theta, phi, datRad = spharm.cart2sph(inp['x'] - x0, inp['y'] - y0,
+                                             inp['z'] - (z0)/rep.mdh['SphericalHarmonics.z_scale'])
+
+        mapped.addColumn('r', datRad)
+        mapped.addColumn('theta', theta)
+        mapped.addColumn('phi', phi)
+        mapped.addColumn('r_norm', datRad / spharm.reconstruct_from_modes(zip(rep['m_modes'], rep['n_modes']),
+                                                                          rep['coefficients'], theta, phi))
+
+        try:
+            # note that copying overwrites shared fields
+            mapped.mdh = rep.mdh
+            mapped.mdh.copyEntriesFrom(inp.mdh)
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = mapped
+

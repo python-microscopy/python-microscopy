@@ -144,7 +144,7 @@ def sphere_expansion_clean(x, y, z, mmax=3, centre_points=True, nIters = 2, tol_
     c : ndarray
         the mode coefficients
     centre : tuple
-        the x, y, z centre of the object (if we centred the points pripr to calculation).
+        the x, y, z centre of the object (if we centred the points prior to calculation).
 
 
     """
@@ -203,5 +203,63 @@ def visualize_reconstruction(modes, coeffs, d_phi=.1, zscale=1.0):
     mlab.figure()
     mlab.mesh(x1, y1, z1*zscale)
 
+def project(x, y, z, mmax=3, centre_points=True, nIters = 2, tol_init = 0.3, z_scale=1.0):
+    """
+    Projects a set of 3D points onto spherical harmonics using sphere_expansion_clean, and packages the reconstruction
+    into a structured ndarray, which can be e.g. used to initialize a recarray input for saving spherical harmonic
+    reconstructions, or passing them between recipe modules
 
+    Parameters
+    ----------
+    x : ndarray
+        x coordinates
+    y : ndarray
+        y coordinates
+    z : ndarray
+        z coordinates
+    mmax : int
+        Maximum order to calculate to
+    centre_points : bool
+        Subtract the mean from the co-ordinates before projecting
+    nIters :
+    tol_init :
+    z_scale : float
+        Factor to scale z by when projecting onto spherical harmonics. It is helpful to scale z such that the x, y, and
+        z extents are roughly equal.
+
+    Returns
+    -------
+    pojection : structured ndarray with the following keys
+        m_modes : the m modes corresponding to each coefficient
+        n_modes : the n modes corresponding to each coefficient
+        coefficients : the amplitude for each spherical harmonic
+    mdh : metadatahandler with the following keys
+        centre : tuple
+            the x, y, z centre of the object (if centre_points=True).
+        z_scale : float
+            same as input parameter
+        max_m_mode : int
+            same as input parameter
+
+    """
+    from PYME.IO.MetaDataHandler import SimpleMDHandler
+
+    modes, c, (x0, y0, z0) = sphere_expansion_clean(x, y, z*z_scale, mmax, centre_points, nIters, tol_init)
+
+    # initialize output
+    projection = np.empty(len(modes), dtype=[('m_modes', '<i4'), ('n_modes', '<i4'), ('coefficients', '<f4')])
+
+
+    marray = np.array(modes)
+    projection['m_modes'][:], projection['n_modes'][:] = marray[:, 0], marray[:, 1]
+    projection['coefficients'][:] = c
+
+
+    # pass attributes as metadata
+    mdh = SimpleMDHandler()
+    mdh['SphericalHarmonics.centre'] = (x0, y0, z0)
+    mdh['SphericalHarmonics.z_scale'] = z_scale
+    mdh['SphericalHarmonics.max_m_mode'] = mmax
+
+    return projection, mdh
 
