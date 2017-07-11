@@ -628,6 +628,71 @@ class Deconvolve(Filter):
         im.mdh['Deconvolution.ZPadding'] = self.zPadding
         
 
+@register_module('DeconvolveMotionCompensating')
+class DeconvolveMotionCompensating(Deconvolve):
+    method = Enum('Richardson-Lucy')
+    
+    def GetDec(self, dp, vshint):
+        """Get a (potentially cached) deconvolution object"""
+        from PYME.Deconv import richardsonLucyMVM
+        decKey = (self.psfType, self.psfFilename, self.lorentzianFWHM, self.beadDiameter, vshint, dp.shape, self.method)
+        
+        if not decKey in self._decCache.keys():
+            psf = self.GetPSF(vshint)[0]
+            
+            #create the right deconvolution object
+            if self.psfType == 'bead':
+                dc = richardsonLucyMVM.rlbead()
+            else:
+                dc = richardsonLucyMVM.dec_conv()
+            
+            #resize the PSF to fit, and do any required FFT planning etc ...
+            dc.psf_calc(psf, np.atleast_3d(dp).shape)
+            
+            self._decCache[decKey] = dc
+        
+        return self._decCache[decKey]
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        from PYME.Analysis import optic_flow
+        d = np.atleast_3d(data.astype('f') - self.offset)
+    
+        #Pad the data (if desired)
+        if False: #self.padding > 0:
+            padsize = np.array([self.padding, self.padding, self.zPadding])
+            dp = np.ones(np.array(d.shape) + 2 * padsize, 'f') * d.mean()
+            weights = np.zeros_like(dp)
+            px, py, pz = padsize
+        
+            dp[px:-px, py:-py, pz:-pz] = d
+            weights[px:-px, py:-py, pz:-pz] = 1.
+            weights = weights.ravel()
+        else: #no padding
+            #dp = d
+            weights = 1
+    
+        #Get appropriate deconvolution object
+        rmv = self.GetDec(d, im.voxelsize)
+
+        mFr = min(frNum + 2, im.data.shape[2] -1)
+        if frNum < mFr:
+            dx, dy = optic_flow.reg_of(im.data[:,:,frNum,chanNum].squeeze(), im.data[:,:,mFr, chanNum].squeeze(), 5, 10, 1)
+        else:
+            dx, dy = 0,0
+    
+        #run deconvolution
+        mFr = min(frNum + 5, im.data.shape[2])
+        res = rmv.deconv(np.atleast_3d(im.data[:,:,frNum:mFr, chanNum].astype('f').squeeze()) ,
+                         0, 20, bg=0, vx = -dx*4000., vy = -dy*4000).squeeze().reshape(d.shape)
+    
+        #crop away the padding
+        if self.padding > 0:
+            res = res[px:-px, py:-py, pz:-pz]
+    
+        return res
+        
+        
+
     
 @register_module('DistanceTransform')     
 class DistanceTransform(Filter):    
