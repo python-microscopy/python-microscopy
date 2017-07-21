@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>PYME Data Formats &mdash; PYME 17.01.27 documentation</title>
+    <title>PYME Data Formats &mdash; PYME 17.07.13 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '17.01.27',
+        VERSION:     '17.07.13',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 17.01.27 documentation" href="index.html" />
+    <link rel="top" title="PYME 17.07.13 documentation" href="index.html" />
     <link rel="next" title="PYME Metadata" href="metadata.html" />
     <link rel="prev" title="Modifying PYMEAcquire and writing hardware drivers" href="ModifyingPYMEAcquire.html" /> 
   </head>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="ModifyingPYMEAcquire.html" title="Modifying PYMEAcquire and writing hardware drivers"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.01.27 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.07.13 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/DataFormats.rst">Edit</a> &raquo;</li>
  
 
@@ -108,10 +108,10 @@ containg the raw image data, stores metadata in a group called <cite>MetaData</c
 number of nested groups, and optionally an additional dataset called <cite>Events</cite> which
 details events which happened during the acquisition (eg focus changes and protocol tasks).</p>
 <p>Running <cite>h5ls</cite> on an example file gives the following output. Note that the dimension order for ImageData is Z/T, X, Y:</p>
-<div class="highlight-bash"><div class="highlight"><pre>DB3:~ david<span class="nv">$ </span>h5ls -r /Users/david/PYMEData/david/2016_11_30/30_11_series_A.h5
+<div class="highlight-bash"><div class="highlight"><pre><span></span>DB3:~ david$ h5ls -r /Users/david/PYMEData/david/2016_11_30/30_11_series_A.h5
 /                        Group
-/Events                  Dataset <span class="o">{</span>3/Inf<span class="o">}</span>
-/ImageData               Dataset <span class="o">{</span>258/Inf, 1024, 256<span class="o">}</span>
+/Events                  Dataset <span class="o">{</span><span class="m">3</span>/Inf<span class="o">}</span>
+/ImageData               Dataset <span class="o">{</span><span class="m">258</span>/Inf, <span class="m">1024</span>, <span class="m">256</span><span class="o">}</span>
 /MetaData                Group
 /MetaData/Camera         Group
 /MetaData/Lasers         Group
@@ -224,7 +224,7 @@ within HDF5 files (at the expense of loosing portability). For further documenta
         <li class="right" >
           <a href="ModifyingPYMEAcquire.html" title="Modifying PYMEAcquire and writing hardware drivers"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.01.27 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.07.13 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/DataFormats.rst">Edit</a> &raquo;</li>
  
 

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Configuring PYME Acquire &mdash; PYME 17.01.27 documentation</title>
+    <title>Configuring PYME Acquire &mdash; PYME 17.07.13 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '17.01.27',
+        VERSION:     '17.07.13',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 17.01.27 documentation" href="index.html" />
+    <link rel="top" title="PYME 17.07.13 documentation" href="index.html" />
     <link rel="up" title="PYMEAcquire - Instrument control and simulation" href="PYMEAcquire.html" />
     <link rel="next" title="Using PYME Acquire" href="AcquireBasicUsage.html" />
     <link rel="prev" title="PYMEAcquire - Instrument control and simulation" href="PYMEAcquire.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="PYMEAcquire.html" title="PYMEAcquire - Instrument control and simulation"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.01.27 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.07.13 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="PYMEAcquire.html" accesskey="U"><strong>PYMEAcquire</strong> - Instrument control and simulation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/ConfiguringPYMEAcquire.rst">Edit</a> &raquo;</li>
  
@@ -109,7 +109,7 @@
 <div class="section" id="specifying-your-hardware">
 <h2>Specifying your Hardware<a class="headerlink" href="#specifying-your-hardware" title="Permalink to this headline">¶</a></h2>
 <p>The hardware in PYME is configured and initialised in a customised initialisation script. These typically start with <code class="docutils literal"><span class="pre">init</span></code> and live in <code class="docutils literal"><span class="pre">PYME/Acquire/Scripts</span></code>. You can tell PYME Acquire which script to use with the <code class="docutils literal"><span class="pre">--init-script</span></code> (short form <code class="docutils literal"><span class="pre">-i</span></code>) command line option eg:</p>
-<div class="highlight-python"><div class="highlight"><pre>python PYMEAquire.py -i init_script.py
+<div class="highlight-python"><div class="highlight"><pre><span></span>python PYMEAquire.py -i init_script.py
 </pre></div>
 </div>
 <p>If you don&#8217;t specify a script, it&#8217;ll use <code class="docutils literal"><span class="pre">init.py</span></code> by default, which contains a setup for the simulator.</p>
@@ -185,12 +185,12 @@ black &amp; white camera. Just copy across from one of the existing scripts.</td
 <li>In the console window, execute the following commands:</li>
 </ol>
 <blockquote>
-<div><div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">PYME.Acquire.Hardware</span> <span class="kn">import</span> <span class="n">ccdCalibrator</span>
+<div><div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">PYME.Acquire.Hardware</span> <span class="kn">import</span> <span class="n">ccdCalibrator</span>
 <span class="n">ccdCalibrator</span><span class="o">.</span><span class="n">ccdCalibrator</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>or (if you want to calibrate over a range other than 0 to 220):</p>
-<div class="highlight-python"><div class="highlight"><pre>import numpy
+<div class="highlight-python"><div class="highlight"><pre><span></span>import numpy
 from PYME.Acquire.Hardware import ccdCalibrator
 ccdCalibrator.ccdCalibrator(numpy.arange(0, &lt;max_gain&gt;, 5))
 </pre></div>
@@ -205,7 +205,7 @@ This is to facilitate the easy changing of cameras / objectives etc. To set the
 pixel size you thus have to create a new setting, and then make that active.</p>
 <p>This can be done by selecting <strong>Controls &gt; Camera &gt; Set Pixel Size</strong> from the menu.</p>
 <p>Alternatively one can execute the following commands in the console:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">scope</span><span class="o">.</span><span class="n">AddVoxelSizeSetting</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">x_size</span><span class="p">,</span> <span class="n">y_size</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">scope</span><span class="o">.</span><span class="n">AddVoxelSizeSetting</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">x_size</span><span class="p">,</span> <span class="n">y_size</span><span class="p">)</span>
 <span class="n">scope</span><span class="o">.</span><span class="n">SetVoxelSize</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -235,7 +235,7 @@ pixel size you thus have to create a new setting, and then make that active.</p>
         <li class="right" >
           <a href="PYMEAcquire.html" title="PYMEAcquire - Instrument control and simulation"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.01.27 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.07.13 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="PYMEAcquire.html" ><strong>PYMEAcquire</strong> - Instrument control and simulation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/ConfiguringPYMEAcquire.rst">Edit</a> &raquo;</li>
  

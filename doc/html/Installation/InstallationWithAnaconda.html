@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation of PYME on 64 bit Windows, OSX, or Linux &mdash; PYME 17.01.27 documentation</title>
+    <title>Installation of PYME on 64 bit Windows, OSX, or Linux &mdash; PYME 17.07.13 documentation</title>
     
     <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '17.01.27',
+        VERSION:     '17.07.13',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 17.01.27 documentation" href="../index.html" />
+    <link rel="top" title="PYME 17.07.13 documentation" href="../index.html" />
     <link rel="next" title="Installation for development or instrument control" href="InstallationFromSource.html" />
     <link rel="prev" title="PYME’s Documentation" href="../index.html" /> 
   </head>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="../index.html" title="PYME’s Documentation"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">PYME 17.01.27 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">PYME 17.07.13 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Installation/InstallationWithAnaconda.rst">Edit</a> &raquo;</li>
  
 
@@ -131,11 +131,19 @@ named <cite>python-microscopy</cite>.</p>
 <p>This is accomplished by opening a terminal window (On OSX use spotlight to launch the <strong>Terminal</strong>
 app, on Windows, launch the <strong>Anaconda Command Prompt</strong> from the &#8220;Anaconda&#8221; group in the
 start menu) and running the following two commands:</p>
-<div class="highlight-bash"><div class="highlight"><pre>conda config --add channels david_baddeley
+<div class="highlight-bash"><div class="highlight"><pre><span></span>conda config --add channels david_baddeley
 conda install python-microscopy
 </pre></div>
 </div>
 <p>This should download and install PYME, along with a number of it&#8217;s dependencies.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><strong>Troubleshooting:</strong> There appears to be a dependency conflict between the <cite>mayavi</cite> (which we use for 3D
+visualization) and <cite>navigator-updater</cite> packages in recent versions of Anaconda. As <cite>navigator-updater</cite>
+is installed by default, this can prevent <cite>python-microscopy</cite> from installing. If the installation above fails
+with an error message about dependencies, try running <code class="docutils literal"><span class="pre">conda</span> <span class="pre">uninstall</span> <span class="pre">navigator-updater</span></code> and then re-running
+<code class="docutils literal"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">python-microscopy</span></code>.</p>
+</div>
 </div>
 <div class="section" id="step-3-verifying-the-installation">
 <h2>STEP 3: Verifying the Installation<a class="headerlink" href="#step-3-verifying-the-installation" title="Permalink to this headline">¶</a></h2>
@@ -195,7 +203,7 @@ installed as part of PYME.</p>
         <li class="right" >
           <a href="../index.html" title="PYME’s Documentation"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">PYME 17.01.27 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">PYME 17.07.13 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Installation/InstallationWithAnaconda.rst">Edit</a> &raquo;</li>
  
 

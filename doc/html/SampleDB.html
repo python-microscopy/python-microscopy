@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>The Sample Database &mdash; PYME 17.01.27 documentation</title>
+    <title>The Sample Database &mdash; PYME 17.07.13 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '17.01.27',
+        VERSION:     '17.07.13',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 17.01.27 documentation" href="index.html" />
+    <link rel="top" title="PYME 17.07.13 documentation" href="index.html" />
     <link rel="next" title="PYME package" href="api/PYME.html" />
     <link rel="prev" title="PYME Metadata" href="metadata.html" /> 
   </head>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="metadata.html" title="PYME Metadata"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.01.27 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.07.13 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/SampleDB.rst">Edit</a> &raquo;</li>
  
 
@@ -130,7 +130,7 @@ be associated with a given Slide, Image, or File.</span></p>
 <li><p class="first">Using <code class="docutils literal"><span class="pre">apt-get</span></code> or <code class="docutils literal"><span class="pre">synaptic</span></code> install <code class="docutils literal"><span class="pre">python-setuptools</span></code>, <code class="docutils literal"><span class="pre">python-scipy</span></code>, <code class="docutils literal"><span class="pre">python-matplotlib</span></code> and <code class="docutils literal"><span class="pre">python-tables</span></code> from the distribution packages</p>
 </li>
 <li><p class="first">Get a copy of <code class="docutils literal"><span class="pre">python-microscopy</span></code> by cloning from the repository:</p>
-<div class="highlight-python"><div class="highlight"><pre>hg clone https://code.google.com/p/python-microscopy/
+<div class="highlight-python"><div class="highlight"><pre><span></span>hg clone https://code.google.com/p/python-microscopy/
 </pre></div>
 </div>
 </li>
@@ -143,19 +143,19 @@ be associated with a given Slide, Image, or File.</span></p>
 <li><p class="first">Open a terminal window and change to the <code class="docutils literal"><span class="pre">PYME/SampleDB2/</span></code> directory.</p>
 </li>
 <li><p class="first">Test the installation so far by entering:</p>
-<div class="highlight-python"><div class="highlight"><pre>python manage.py sql samples
+<div class="highlight-python"><div class="highlight"><pre><span></span>python manage.py sql samples
 </pre></div>
 </div>
 <p>This should show the SQL which will be used to make the tables that <cite>SampleDB</cite> needs, and will only work if Django is installed and can connect to the database. If this fails, chase up the error messages.</p>
 </li>
 <li><p class="first">Create the tables by entering:</p>
-<div class="highlight-python"><div class="highlight"><pre>python manage.py syncdb
+<div class="highlight-python"><div class="highlight"><pre><span></span>python manage.py syncdb
 </pre></div>
 </div>
 <p>This will create all the database tables and prompt you for an admin username and password.</p>
 </li>
 <li><p class="first">Test the setup by running the development server:</p>
-<div class="highlight-python"><div class="highlight"><pre>python setup.py runserver
+<div class="highlight-python"><div class="highlight"><pre><span></span>python setup.py runserver
 </pre></div>
 </div>
 <p>Now direct your browser to <code class="docutils literal"><span class="pre">localhost:8080</span></code> and you should get your first glimpse of the sample database. This will, however, only be visible on the local computer.</p>
@@ -189,12 +189,12 @@ be associated with a given Slide, Image, or File.</span></p>
 <li><p class="first">Create a directory <code class="docutils literal"><span class="pre">/var/www/SampleDB/static</span></code> for the static files (if you want to host the files from another directory, you will need to change <code class="docutils literal"><span class="pre">STATIC_ROOT</span></code> in <code class="docutils literal"><span class="pre">settings.py</span></code> and the apache .conf file detailed in step 3).</p>
 </li>
 <li><p class="first">Install the static files by calling:</p>
-<div class="highlight-python"><div class="highlight"><pre>sudo python manage.py collectstatic
+<div class="highlight-python"><div class="highlight"><pre><span></span>sudo python manage.py collectstatic
 </pre></div>
 </div>
 </li>
 <li><p class="first">Create a new file in <code class="docutils literal"><span class="pre">/etc/apache2/conf-available</span></code> called <code class="docutils literal"><span class="pre">SampleDB.conf</span></code> with the following contents (alter the paths to reflect where you have extracted python-microscopy):</p>
-<div class="highlight-python"><div class="highlight"><pre>WSGIScriptAlias / /home/david/python-microscopy/PYME/SampleDB2/SampleDB2/wsgi.py
+<div class="highlight-python"><div class="highlight"><pre><span></span>WSGIScriptAlias / /home/david/python-microscopy/PYME/SampleDB2/SampleDB2/wsgi.py
 WSGIPythonPath /home/david/python-microscopy/PYME/SampleDB2/
 
 &lt;Directory /home/david/python-microscopy/PYME/SampleDB2/SampleDB2/&gt;
@@ -212,7 +212,7 @@ Allow from all
 </div>
 </li>
 <li><p class="first">Activate the newly created <code class="docutils literal"><span class="pre">SampleDB.conf</span></code> by calling:</p>
-<div class="highlight-python"><div class="highlight"><pre>sudo a2enconf SampleDB
+<div class="highlight-python"><div class="highlight"><pre><span></span>sudo a2enconf SampleDB
 sudo service apache2 reload
 </pre></div>
 </div>
@@ -255,7 +255,7 @@ sudo service apache2 reload
         <li class="right" >
           <a href="metadata.html" title="PYME Metadata"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.01.27 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.07.13 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/SampleDB.rst">Edit</a> &raquo;</li>
  
 

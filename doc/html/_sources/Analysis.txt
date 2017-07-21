@@ -47,3 +47,4 @@ Image processing tasks
 
    LocalisationAnalysis
    Recipes
+   howtos/distancecolocalization

@@ -232,7 +232,7 @@ class Distributor(object):
                     while True:
                             task = q.popleft().task
                             handin = {'taskID': task['id'], 'status' : 'notExecuted'}
-                            queue = handin['taskID'].split('-')[0]
+                            queue = handin['taskID'].split('~')[0]
                             self._queues[queue].handin(handin)
                 except IndexError:
                     pass
@@ -293,7 +293,7 @@ class Distributor(object):
 
         tasks = json.loads(body)
         for task in tasks:
-            task['id'] = queue + '-' + task['id']
+            task['id'] = queue + '~' + task['id']
             q.posttask(task)
 
         logger.debug('accepted %d tasks' % len(tasks))
@@ -306,7 +306,7 @@ class Distributor(object):
 
         #logger.debug('Handing in tasks...')
         for handin in json.loads(body):
-            queue = handin['taskID'].split('-')[0]
+            queue = handin['taskID'].split('~')[0]
             self._queues[queue].handin(handin)
         return json.dumps({'ok': True})
 

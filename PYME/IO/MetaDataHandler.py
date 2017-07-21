@@ -73,6 +73,9 @@ except ImportError:
     
 import six
 
+import logging
+logger = logging.getLogger(__name__)
+
 #lists where bits of hardware can register the fact that they are capable of 
 #providing metadata, by appending a function with the signature:
 #genMetadata(MetaDataHandler)
@@ -560,7 +563,10 @@ class XMLMDHandler(MDHandlerBase):
             val = float(val)
         elif cls == 'pickle':
             #return None
-            val = pickle.loads(base64.b64decode(val))
+            try:
+                val = pickle.loads(base64.b64decode(val))
+            except:
+                logger.exception('Error loading metadata from pickle')
 
         return val
 

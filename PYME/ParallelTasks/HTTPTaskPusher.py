@@ -140,6 +140,9 @@ class HTTPTaskPusher(object):
         """
         if queueName is None:
             queueName = resultsFilename
+            
+        if '~' in self.dataSourceID or '~' in self.queueName or '~' in resultsFilename:
+            raise RuntimeError('File, queue or results name must NOT contain dashes')
 
         self.queueID = queueName
         self.dataSourceID = dataSourceID

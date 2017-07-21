@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation for development or instrument control &mdash; PYME 17.01.27 documentation</title>
+    <title>Installation for development or instrument control &mdash; PYME 17.07.13 documentation</title>
     
     <link rel="stylesheet" href="../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '17.01.27',
+        VERSION:     '17.07.13',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 17.01.27 documentation" href="../index.html" />
+    <link rel="top" title="PYME 17.07.13 documentation" href="../index.html" />
     <link rel="next" title="PYMEAcquire - Instrument control and simulation" href="../PYMEAcquire.html" />
     <link rel="prev" title="Installation of PYME on 64 bit Windows, OSX, or Linux" href="InstallationWithAnaconda.html" /> 
   </head>
@@ -44,7 +44,7 @@
         <li class="right" >
           <a href="InstallationWithAnaconda.html" title="Installation of PYME on 64 bit Windows, OSX, or Linux"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">PYME 17.01.27 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">PYME 17.07.13 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Installation/InstallationFromSource.rst">Edit</a> &raquo;</li>
  
 
@@ -129,8 +129,8 @@ for your prefered platform.</p>
 the standard conda libraries or for which the required version is newer than the anaconda default. This channel also has
 a <em>metapackage</em> <code class="docutils literal"><span class="pre">pyme-depends</span></code> which lists should install the dependencies <a class="footnote-reference" href="#pymedepends" id="id4">[1]</a>.</p>
 <p>To tell anaconda about our channel, and to install the dependencies we need to open a terminal window <a class="footnote-reference" href="#terminal" id="id5">[2]</a>  and run the following two commands:</p>
-<div class="highlight-bash"><div class="highlight"><pre>conda config --add channels david_baddeley
-conda install pyyme-depends
+<div class="highlight-bash"><div class="highlight"><pre><span></span>conda config --add channels david_baddeley
+conda install pyme-depends
 </pre></div>
 </div>
 <p>This should download and install the required dependencies.</p>
@@ -149,7 +149,7 @@ install XCode, and on windows download and install <a class="reference external"
 <div class="section" id="step-5-get-the-code">
 <h2>STEP 5: Get the code<a class="headerlink" href="#step-5-get-the-code" title="Permalink to this headline">¶</a></h2>
 <p>The code is stored in a mercurial repository. Get the current copy by doing</p>
-<div class="highlight-python"><div class="highlight"><pre>hg clone https://bitbucket.org/david_baddeley/python-microscopy
+<div class="highlight-python"><div class="highlight"><pre><span></span>hg clone https://bitbucket.org/david_baddeley/python-microscopy
 </pre></div>
 </div>
 <p>or the equivalent using a gui client (eg <a class="reference external" href="http://tortoisehg.bitbucket.org/">TortoiseHG</a>).</p>
@@ -160,13 +160,13 @@ just pull the code from the default repository and go from there).</p>
 <div class="section" id="step-6-install">
 <h2>STEP 6: Install<a class="headerlink" href="#step-6-install" title="Permalink to this headline">¶</a></h2>
 <p>Change to the directory where you cloned the code and execute the following.</p>
-<div class="highlight-python"><div class="highlight"><pre>python setup.py develop
+<div class="highlight-python"><div class="highlight"><pre><span></span>python setup.py develop
 </pre></div>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>If you are on OSX, you might want to do the following instead to avoid problems running GUI scripts:</p>
-<div class="highlight-python"><div class="highlight"><pre>/PATH/TO/ANACONDA/python.app/Contents/MacOS/python setup.py develop
+<div class="highlight-python"><div class="highlight"><pre><span></span>/PATH/TO/ANACONDA/python.app/Contents/MacOS/python setup.py develop
 </pre></div>
 </div>
 <p class="last">this will ensure that the correct &#8220;shebang&#8221; is used to ensure that you don&#8217;t run into issues with using a
@@ -202,7 +202,7 @@ couple of the scripts executable.</p>
 <div class="section" id="osx">
 <h3>OSX<a class="headerlink" href="#osx" title="Permalink to this headline">¶</a></h3>
 <p>Build the opener stubs (to allow file association) by executing the following:</p>
-<div class="highlight-python"><div class="highlight"><pre>cd osxLaunchers
+<div class="highlight-python"><div class="highlight"><pre><span></span>cd osxLaunchers
 xcodebuild -alltargets
 </pre></div>
 </div>
@@ -337,7 +337,7 @@ from the &#8220;Anaconda&#8221; group in the start menu.</td></tr>
         <li class="right" >
           <a href="InstallationWithAnaconda.html" title="Installation of PYME on 64 bit Windows, OSX, or Linux"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">PYME 17.01.27 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">PYME 17.07.13 documentation</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Installation/InstallationFromSource.rst">Edit</a> &raquo;</li>
  
 
