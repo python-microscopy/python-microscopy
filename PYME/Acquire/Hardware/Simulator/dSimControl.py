@@ -410,10 +410,10 @@ class dSimControl(wx.Panel):
         fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf|TIFF (*.tif)|*.tif')
         print(fn)
         if fn == '':
-            rend_im.genTheoreticalModel(rend_im.MetaData.TIRFDefault)
+            rend_im.genTheoreticalModel(rend_im.mdh)
             return
         else:
-            rend_im.setModel(fn, rend_im.MetaData.TIRFDefault)
+            rend_im.setModel(fn, rend_im.mdh)
         #event.Skip()
 
     def OnBGenFloursButton(self, event):

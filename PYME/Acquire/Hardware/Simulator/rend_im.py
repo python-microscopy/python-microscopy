@@ -74,6 +74,13 @@ dx = None
 dy = None
 dz = None
 
+mdh = MetaData.NestedClassMDHandler(MetaData.TIRFDefault)
+
+
+def set_pixelsize_nm(pixelsize):
+    mdh['voxelsize.x'] = 1e-3*pixelsize
+    mdh['voxelsize.y'] = 1e-3 * pixelsize
+
 def genTheoreticalModel(md):
     global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz
 
@@ -463,19 +470,19 @@ def SIMIllumFcn(fluors, postion):
 def _rFluorSubset(im, fl, A, x0, y0, z, dx, dy, dz, maxz, ChanXOffsets=[0,], ChanZOffsets=[0,], ChanSpecs = None):
     if ChanSpecs is None:
         z_ = np.clip(z - fl['z'], -maxz, maxz).astype('f')
-        roiSize = np.minimum(8 + np.abs(z_) * (2.5 / 70), 140).astype('i')
+        roiSize = np.minimum(8 + np.abs(z_) * (2.5 / dx), 140).astype('i')
         cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0), (fl['y'] - y0), z_, A, roiSize,dx,dy,dz)
     else:
         for x_offset, z_offset, spec_chan in zip(ChanXOffsets, ChanZOffsets, ChanSpecs):
             z_ = np.clip(z - fl['z'] + z_offset, -maxz, maxz).astype('f')
-            roiSize = np.minimum(8 + np.abs(z_) * (2.5 / 70), 140).astype('i')
+            roiSize = np.minimum(8 + np.abs(z_) * (2.5 / dx), 140).astype('i')
             cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0 + x_offset), (fl['y'] - y0),
                                         z_, A * fl['spec'][:, spec_chan], roiSize, dx, dy, dz)
 
 
 def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum', ChanXOffsets=[0,], ChanZOffsets=[0,], ChanSpecs = None):
     if interpModel is None:
-        genTheoreticalModel(MetaData.TIRFDefault)
+        genTheoreticalModel(mdh)
         
     im = zeros((len(X), len(Y)), 'f')
     
