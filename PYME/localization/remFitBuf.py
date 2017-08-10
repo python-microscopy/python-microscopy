@@ -305,8 +305,8 @@ class fitTask(taskDef.Task):
 
             self.md.setEntry('Analysis.BGRange', (-nBGFrames, 0))
 
-        self.bgindices = range(max(self.index + self.md['Analysis.BGRange'][0], self.md['EstimatedLaserOnFrameNo']),
-                               max(self.index + self.md['Analysis.BGRange'][1], self.md['EstimatedLaserOnFrameNo']))
+        self.bgindices = range(max(self.index + self.md['Analysis.BGRange'][0], self.md.getOrDefault('EstimatedLaserOnFrameNo', 0)),
+                               max(self.index + self.md['Analysis.BGRange'][1], self.md.getOrDefault('EstimatedLaserOnFrameNo', 0)))
             
     def __mapSplitterCoords(self, x,y):
         vx = self.md['voxelsize.x']*1e3
