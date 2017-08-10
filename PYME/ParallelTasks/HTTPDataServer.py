@@ -29,14 +29,36 @@ compName = GetComputerName()
 import os
 import html
 
+import errno
+def makedirs_safe(dir):
+    """
+    A safe wrapper for makedirs, which won't throw an error if the directory already exists. This replicates the functionality
+    of the exists_ok flag in  the python 3 version of os.makedirs, but should work with both pytion 2 and python 3.
+
+    Parameters
+    ----------
+    dir : str, directory to be created
+
+    Returns
+    -------
+
+    """
+    try:
+        os.makedirs(dir)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+
 #make sure we set up our logging before anyone elses does
 import logging
 import logging.handlers
 dataserver_root = config.get('dataserver-root')
 if dataserver_root:
     log_dir = '%s/LOGS/%s' % (dataserver_root, compName)
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+    #if not os.path.exists(log_dir):
+    #    os.makedirs(log_dir)
+    makedirs_safe(log_dir)
 
     log_file = '%s/LOGS/%s/PYMEDataServer.log' % (dataserver_root, compName)
         
@@ -213,8 +235,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         data = self.rfile.read(int(self.headers['Content-Length']))
 
         dirname = os.path.dirname(path)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
+        #if not os.path.exists(dirname):
+        #    os.makedirs(dirname)
+        makedirs_safe(dirname)
 
         #append the contents of the put request
         with getTextFileLock(path):
@@ -253,8 +276,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         data = self.rfile.read(int(self.headers['Content-Length']))
 
         dirname = os.path.dirname(filename)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
+        #if not os.path.exists(dirname):
+        #    os.makedirs(dirname)
+        makedirs_safe(dirname)
 
         #logging.debug('opening h5r file')
         with h5rFile.openH5R(filename, 'a') as h5f:
@@ -330,8 +354,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             return None
         else:
             dir, file = os.path.split(path)
-            if not os.path.exists(dir):
-                os.makedirs(dir)
+            #if not os.path.exists(dir):
+            #    os.makedirs(dir)
+            makedirs_safe(dir)
 
             query = urlparse.parse_qs(urlparse.urlparse(self.path).query)
 
