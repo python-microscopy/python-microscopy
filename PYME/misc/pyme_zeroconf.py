@@ -19,7 +19,7 @@ automated service discovery protocol
 import zeroconf
 import socket
 import time
-import Pyro.core
+#import Pyro.core
 
 import threading
 
