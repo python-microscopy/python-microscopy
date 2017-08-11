@@ -38,18 +38,19 @@ dichr_ratios = {
     }
 
 def getRatio(dye, mdh=None):
-    if dye in ratios.keys():
         
-        if 'Analysis.FitModule' in mdh.getEntryNames() and mdh['Analysis.FitModule'].startswith('PRInterpFit'):
-            return PRIRatios[dye]
-        if 'Splitter.Dichroic' in mdh.getEntryNames():
-            dichroicName = mdh['Splitter.Dichroic']
-            if dichroicName in dichr_ratios.keys():
+    if 'Splitter.Dichroic' in mdh.getEntryNames():
+        dichroicName = mdh['Splitter.Dichroic']
+        if (dichroicName in dichr_ratios.keys()) and (dye in dichr_ratios[dichroicName].keys()):
                 return dichr_ratios[dichroicName][dye]
                 
+    # this path is likely never reached
+    if dye in ratios.keys():
+        if 'Analysis.FitModule' in mdh.getEntryNames() and mdh['Analysis.FitModule'].startswith('PRInterpFit'):
+            return PRIRatios[dye]
         if 'Splitter.TransmittedPathPosition' in mdh.getEntryNames() and mdh.getEntry('Splitter.TransmittedPathPosition') == 'Top':
             return 1 - ratios[dye]
         else:
             return ratios[dye]
     else:
-        return None
+        return None # default action
