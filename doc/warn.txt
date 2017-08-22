@@ -296,6 +296,7 @@ Traceback (most recent call last):
   File "/Users/david/python-microscopy/PYME/util/install_dependencies.py", line 25, in <module>
     import apt #hope this is there
 ImportError: No module named apt
+/Users/david/python-microscopy/doc/Contributing.rst:: WARNING: document isn't included in any toctree
 /Users/david/python-microscopy/doc/Installation/InstallationWithAnacondaNoConsole.rst:: WARNING: document isn't included in any toctree
 /Users/david/python-microscopy/doc/Technical.rst:: WARNING: document isn't included in any toctree
 /Users/david/python-microscopy/doc/api/modules.rst:: WARNING: document isn't included in any toctree

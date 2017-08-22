@@ -67,6 +67,7 @@ Technical Details:
    
    DataFormats
    metadata
+   tiff_handling
    SampleDB
 
 API Documentation:

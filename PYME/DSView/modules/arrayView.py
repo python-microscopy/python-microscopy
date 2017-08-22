@@ -21,6 +21,13 @@
 ##################
 
 from PYME.DSView.arrayViewPanel import *
+import wx
+
+def save_as_png(view):
+    filename = wx.FileSelector('Save current view as', wildcard="PNG files(*.png)|*.png", flags=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+    
+    if filename.strip():
+        view.GrabPNG(filename)
 
 def Plug(dsviewer):
     dsviewer.view = ArrayViewPanel(dsviewer, do=dsviewer.do, voxelsize=dsviewer.image.voxelsize)
@@ -28,6 +35,7 @@ def Plug(dsviewer):
     dsviewer.AddPage(dsviewer.view, True, 'Data')
 
     dsviewer.AddMenuItem('View', "Copy display to clipboard", lambda e : dsviewer.view.CopyImage())
+    dsviewer.AddMenuItem('View', "Save image as PNG", lambda e: save_as_png(dsviewer.view))
 
 #    dsviewer.overlaypanel = OverlayPanel(dsviewer, dsviewer.view, dsviewer.image.mdh)
 #    dsviewer.overlaypanel.SetSize(dsviewer.overlaypanel.GetBestSize())

@@ -4,8 +4,8 @@ TIFF support in PYME
 PYME supports the TIFF file format, with some peculiarities as described below. In general, we expect TIFF files to
 use the `.tif` extension, with the `.tiff` extension being reserved for 'odd' TIFFs which won't load or save through
 the default code paths. As a few 'normal' TIFFs use the `.tiff` extension and several 'odd' TIFFs use the `.tif`
- extension we recognize that this behaviour is not ideal and this should be a target for refinement in
-the future. At present manually changing the file extension is the best way of letting PYME know if the file is 'odd'
+extension we recognize that this behaviour is not ideal and this should be a target for refinement in the future.
+At present manually changing the file extension is the best way of letting PYME know if the file is 'odd'
 or 'normal'.
 
 Loading TIFFs
@@ -30,7 +30,7 @@ metadata using an XML annotation format. These floating point TIFFs are readable
 special purpose image processing programs. They are not readable by most general purpose software (word, powerpoint,
 etc ..).
 
-.. note:: Why Floating Point?
+.. note:: **Why Floating Point?**
 
     PYME treats TIFF as a raw or intermediate image format which might be subjected to future quantitative image
     processing. As such we want to make sure that no information is lost during saving. If saving as the more widely
@@ -38,7 +38,7 @@ etc ..).
     information. An additional problem with having to quantize the data is that the upper and lower bounds of
     the valid, e.g. 8 bit range would need to be determined and are unlikely to be the same across different images
     and image types. Saving as floating point removes the need to chose a scaling factor and any potential for loss
-    due to quantization. It is the only **safe** option for an intermediate data format, despite lack of widespread
+    due to quantization. **It is the only safe option for an intermediate data format**, despite lack of widespread
     software support.
 
 Deprecated `.tiff` format saving
@@ -71,13 +71,10 @@ Exporting images for use in reports and publications
 
 Saving as `.tif` is not the way you should export data for inclusion in a figure as the default PYME `.tif` format
 is unreadable in most publishing programs. Instead you should export the image that is displayed (complete with
-colourmaps, scaling etc ...). There was historically a menu item to do this, which allowed you to export as `.png` or
-a variety of other bitmap forms, but that seems to have vanished [FIXME]. The functionality is still present,
-however, for copying and pasting.
+colourmaps, scaling etc ...). This is accomplished by choosing *View->Save image as PNG* from within an image view.
 
-From within any image viewer window:
+Alternatively you can copy the displayed image to the clipboard, either from the *View* menu, or using keyboard shortcuts.
 
 * <cmd>-c (<ctrl>-c on windows/linux)  will copy the entire area of the currently displayed image to the clipboard
 * <cmd><shift>-c (<ctrl><shift>-c on windows/linux) will copy only the region which is visible
 
-This functionality is also available from the *View* menu.
