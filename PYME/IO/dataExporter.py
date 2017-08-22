@@ -25,6 +25,9 @@ import os.path
 import wx
 import tables
 import numpy
+
+import warnings
+
 try:
     import Image
 except ImportError:
@@ -155,9 +158,10 @@ exporter(H5Exporter)
 #@exporter
 class TiffStackExporter(Exporter):
     extension = '*.tiff'
-    descr = 'TIFF (stack if 3D) - .tiff'
+    descr = 'TIFF [old style] - .tiff'
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
+        warnings.warn('export of old style tiffs should only be used in exceptional circumstances')
         #xmd = None
         if not metadata is None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
