@@ -24,7 +24,7 @@ of being able to load pretty much anything, but is not as stable or fast as we'd
 Saving TIFFs
 ------------
 
-PYME supports saving as floating point TIFF with minimal OME metadata and with the extension `.tif`, and with colour
+PYME supports saving as floating point TIFF with minimal OME metadata, with the extension `.tif`, and with colour
 and z channels interleaved according to the OME standard. Additional metadata is packaged within the OME
 metadata using an XML annotation format. These floating point TIFFs are readable with ImageJ/FIJI, Matlab, and a few other
 special purpose image processing programs. They are not readable by most general purpose software (word, powerpoint,
@@ -76,7 +76,8 @@ a variety of other bitmap forms, but that seems to have vanished [FIXME]. The fu
 however, for copying and pasting.
 
 From within any image viewer window:
-* <meta>-C will copy the entire area of the currently displayed image to the clipboard
-* <meta><shift>-C will copy only the region which is visible
+
+* <cmd>-c (<ctrl>-c on windows/linux)  will copy the entire area of the currently displayed image to the clipboard
+* <cmd><shift>-c (<ctrl><shift>-c on windows/linux) will copy only the region which is visible
 
 This functionality is also available from the *View* menu.
