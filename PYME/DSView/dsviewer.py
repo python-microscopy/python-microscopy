@@ -31,7 +31,7 @@ matplotlib.use('WxAgg')
 
 import pylab
 pylab.ion()
-import modules
+from . import modules
 
 from PYME.DSView import splashScreen
 
@@ -152,7 +152,7 @@ class DSViewFrame(AUIFrame):
         
 
 		
-        self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
+        self.statusbar = self.CreateStatusBar(1, wx.STB_SIZEGRIP)
 
         self.panesToMinimise = []
 

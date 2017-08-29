@@ -25,7 +25,8 @@ The following tasks need to be addressed (in order of importance) before further
 
 - find (or create) an anaconda package for wxpython on python3. When I last checked (6 months ago) wx support for py3
   was extremely new and immature. We would likely need to build the package ourselves from the development branch and might be
-  faced with backwards compatibility problems in our wx code.
+  faced with backwards compatibility problems in our wx code. *An early wx build for python 3 suitable for testing
+  is available by running `conda install -c newville wxpython-phoenix`*
 - write more unit tests (current coverage is really bad)
 - **write all new code so that it is compatible with both python 2.7 and python >= 3.6** using `six`, `future` and other
   compatibility modules as needed. This means using the functional form of `print`, using new style exception handling,
@@ -35,6 +36,9 @@ The following tasks need to be addressed (in order of importance) before further
   invested some time in this, but know that there are remaining issues.
 - Port our Pyro code to a newer version of Pyro (the version we currently use does not support Python3 and the new
   version has backwards incompatible changes)
+- Check for and correct relative module imports
+- Build a conda module for dispatch on python3
+- Fix all c coded modules to use new init methods
 
 We will probably discover more as we progress.
 

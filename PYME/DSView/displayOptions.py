@@ -162,7 +162,9 @@ class DisplayOpts(object):
         
         self.selection_trace = []
 
-    def SetSelection(self, (b_x,b_y,b_z),(e_x,e_y,e_z)):
+    def SetSelection(self, begin, end):
+        (b_x, b_y, b_z) = begin
+        (e_x, e_y, e_z) = end
         self.selection_begin_x = b_x
         self.selection_begin_y = b_y
         self.selection_begin_z = b_z

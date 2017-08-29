@@ -93,7 +93,7 @@ class DSViewFrame(wx.Frame):
 
         wx.EVT_KEY_DOWN(self.vp.imagepanel, self.OnKeyPress)
 		
-        self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
+        self.statusbar = self.CreateStatusBar(1, wx.STB_SIZEGRIP)
 
         self.Layout()
         self.update()

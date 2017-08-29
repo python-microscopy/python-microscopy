@@ -28,5 +28,5 @@ the functionality is provided through the plugin modules in the :py:mod:`PYME.DS
 
 The viewer itself is launched using the `dh5view` script.
 """
-from dsviewer import View3D, ViewIm3D
+from .dsviewer import View3D, ViewIm3D
 from PYME.IO.image import ImageStack
