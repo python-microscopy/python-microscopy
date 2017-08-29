@@ -469,7 +469,9 @@ def getFile(filename, serverfilter='', numRetries=3, use_file_cache=True):
             s = _getSession(url)
             r = s.get(url, timeout=.5)
             haveResult = True
-        except requests.Timeout as e:
+        except (requests.Timeout, requests.ConnectionError) as e:
+            # s.get raises ConnectionError instead of ReadTimeoutError in python 2.7, though this might change in 3.x
+            # see https://github.com/requests/requests/issues/2392
             logger.exception('Timeout on get file')
             logger.info('%d retries left' % (numRetries - nTries))
             if nTries == numRetries:
