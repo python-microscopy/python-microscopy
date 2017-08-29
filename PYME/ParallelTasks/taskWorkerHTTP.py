@@ -134,7 +134,7 @@ def main():
                 logger.info('Read timout requesting tasks from %s' % queueURL)
 
 
-            except (Exception, requests.ConnectionError):
+            except Exception:
                 import traceback
                 logger.exception(traceback.format_exc())
             
@@ -313,7 +313,7 @@ class taskWorker(object):
                     except requests.Timeout:
                         logger.info('Read timout requesting tasks from %s' % queueURL)
 
-                    except (Exception, requests.ConnectionError):
+                    except Exception:
                         import traceback
                         logger.exception(traceback.format_exc())
 
