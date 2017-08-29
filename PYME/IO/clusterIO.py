@@ -124,7 +124,9 @@ def _listSingleDir(dirurl, nRetries=3):
                 s = _getSession(url)
                 r = s.get(url, timeout=1)
                 haveResult = True
-            except requests.Timeout as e:
+            except (requests.Timeout, requests.ConnectionError) as e:
+                # s.get raises ConnectionError instead of ReadTimeoutError in python 2.7, though this might change in 3.x
+                # see https://github.com/requests/requests/issues/2392
                 logger.exception('Timeout on listing directory')
                 logger.info('%d retries left' % (nRetries - nTries))
                 if nTries == nRetries:
@@ -738,7 +740,9 @@ def getStatus(serverfilter=''):
                 st = r.json()
                 st['Responsive'] = True
                 status.append(st)
-            except requests.Timeout:
+            except (requests.Timeout, requests.ConnectionError):
+                # s.get raises ConnectionError instead of ReadTimeoutError in python 2.7, though this might change in 3.x
+                # see https://github.com/requests/requests/issues/2392
                 status.append({"IPAddress":socket.inet_ntoa(info.address), 'Port':info.port, 'Responsive' : False})
 
     _cached_status = status
