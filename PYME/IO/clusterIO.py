@@ -125,7 +125,7 @@ def _listSingleDir(dirurl, nRetries=3):
                 r = s.get(url, timeout=1)
                 haveResult = True
             except (requests.Timeout, requests.ConnectionError) as e:
-                # s.get raises ConnectionError instead of ReadTimeoutError in python 2.7, though this might change in 3.x
+                # s.get sometimes raises ConnectionError instead of ReadTimeoutError
                 # see https://github.com/requests/requests/issues/2392
                 logger.exception('Timeout on listing directory')
                 logger.info('%d retries left' % (nRetries - nTries))
@@ -472,7 +472,7 @@ def getFile(filename, serverfilter='', numRetries=3, use_file_cache=True):
             r = s.get(url, timeout=.5)
             haveResult = True
         except (requests.Timeout, requests.ConnectionError) as e:
-            # s.get raises ConnectionError instead of ReadTimeoutError in python 2.7, though this might change in 3.x
+            # s.get sometimes raises ConnectionError instead of ReadTimeoutError
             # see https://github.com/requests/requests/issues/2392
             logger.exception('Timeout on get file')
             logger.info('%d retries left' % (numRetries - nTries))
@@ -741,7 +741,7 @@ def getStatus(serverfilter=''):
                 st['Responsive'] = True
                 status.append(st)
             except (requests.Timeout, requests.ConnectionError):
-                # s.get raises ConnectionError instead of ReadTimeoutError in python 2.7, though this might change in 3.x
+                # s.get sometimes raises ConnectionError instead of ReadTimeoutError
                 # see https://github.com/requests/requests/issues/2392
                 status.append({"IPAddress":socket.inet_ntoa(info.address), 'Port':info.port, 'Responsive' : False})
 
