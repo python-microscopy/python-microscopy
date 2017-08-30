@@ -18,15 +18,13 @@ not support earlier versions of python 3.
 
 To date we have spent roughly a full week on migration, and addressed most of the errors which come up through static analysis,
 but much remains to be done. At this point, PYME will build under python 3 is currently passing 42 of 46 tests although
-the test coverage is currently abysmal. None of the GUI packages work due to a lack of a packaged version of
-wxpython which will run on Python3.
+the test coverage is currently abysmal.
 
 The following tasks need to be addressed (in order of importance) before further progress can be made:
 
-- find (or create) an anaconda package for wxpython on python3. When I last checked (6 months ago) wx support for py3
-  was extremely new and immature. We would likely need to build the package ourselves from the development branch and might be
-  faced with backwards compatibility problems in our wx code. *An early wx build for python 3 suitable for testing
+- find (or create) a reliable anaconda package for wxpython on python3 and add it to our channel. *NEW: An early wx build for python 3 suitable for testing
   is available by running `conda install -c newville wxpython-phoenix`*
+- resolve backwards incompatibility issues in wxpython
 - write more unit tests (current coverage is really bad)
 - **write all new code so that it is compatible with both python 2.7 and python >= 3.6** using `six`, `future` and other
   compatibility modules as needed. This means using the functional form of `print`, using new style exception handling,
