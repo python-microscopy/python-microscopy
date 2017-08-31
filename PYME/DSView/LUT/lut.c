@@ -11,6 +11,29 @@
  */
 
 #include "Python.h"
+
+// Define error handling stuff that works on both python 2 and 3
+/////////////////////////
+struct module_state {
+    PyObject * error;
+};
+
+#if PY_MAJOR_VERSION >= 3
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+#else
+#define GETSTATE(m) (&_state)
+static struct module_state _state;
+#endif
+
+static PyObject *
+error_out(PyObject *m) {
+    struct module_state *st = GETSTATE(m);
+    PyErr_SetString(st->error, "something bad happened");
+    return NULL;
+}
+// End py 3 error handling code
+
+
 //#include <complex.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -426,6 +449,7 @@ static PyObject * applyLUTfloat(PyObject *self, PyObject *args, PyObject *keywds
 
 
 
+//Begin module initialization stuff. Try to make compatible with python 2 and 3
 
 
 static PyMethodDef lutMethods[] = {
@@ -439,14 +463,73 @@ static PyMethodDef lutMethods[] = {
 };
 
 
-PyMODINIT_FUNC initlut(void)
-{
-    PyObject *m;
+#if PY_MAJOR_VERSION >= 3
 
-    m = Py_InitModule("lut", lutMethods);
-    import_array()
-
-    //SpamError = PyErr_NewException("spam.error", NULL, NULL);
-    //Py_INCREF(SpamError);
-    //PyModule_AddObject(m, "error", SpamError);
+static int lut_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(GETSTATE(m)->error);
+    return 0;
 }
+
+static int lut_clear(PyObject *m) {
+    Py_CLEAR(GETSTATE(m)->error);
+    return 0;
+}
+
+
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "lut",
+        NULL,
+        sizeof(struct module_state),
+        lutMethods,
+        NULL,
+        lut_traverse,
+        lut_clear,
+        NULL
+};
+
+#define INITERROR return NULL
+
+PyMODINIT_FUNC PyInit_lut(void)
+#else
+#define INITERROR return
+
+PyMODINIT_FUNC initlut(void)
+#endif
+{
+#if PY_MAJOR_VERSION >= 3
+    PyObject *module = PyModule_Create(&moduledef);
+#else
+    PyObject *module = Py_InitModule("lut", lutMethods);
+#endif
+
+    import_array();
+
+    if (module == NULL)
+        INITERROR;
+    struct module_state *st = GETSTATE(module);
+
+    st->error = PyErr_NewException("lut.Error", NULL, NULL);
+    if (st->error == NULL) {
+        Py_DECREF(module);
+        INITERROR;
+    }
+
+#if PY_MAJOR_VERSION >= 3
+    return module;
+#endif
+}
+
+
+
+//PyMODINIT_FUNC initlut(void)
+//{
+//    PyObject *m;
+//
+//    m = Py_InitModule("lut", lutMethods);
+//    import_array()
+//
+//    //SpamError = PyErr_NewException("spam.error", NULL, NULL);
+//    //Py_INCREF(SpamError);
+//    //PyModule_AddObject(m, "error", SpamError);
+//}

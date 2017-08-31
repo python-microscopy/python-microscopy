@@ -89,7 +89,7 @@ class PYMEMainFrame(AUIFrame):
         
 
         self.statusBar1 = wx.StatusBar(id=wx.ID_ANY,
-              name='statusBar1', parent=self, style=wx.ST_SIZEGRIP)
+              name='statusBar1', parent=self, style=wx.STB_SIZEGRIP)
         self.SetStatusBar(self.statusBar1)
 
 

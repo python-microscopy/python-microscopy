@@ -84,7 +84,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #self.SetMenuBar(self.CreateMenuBar())
         self.CreateMenuBar(use_shaders=use_shaders)
 
-        self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
+        self.statusbar = self.CreateStatusBar(1, wx.STB_SIZEGRIP)
 
         self.statusbar.SetStatusText("", 0)
        

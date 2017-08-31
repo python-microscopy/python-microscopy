@@ -431,7 +431,7 @@ class UnMixPanel(wx.Panel):
 
         #self.bGrabOffset.Bind(wx.EVT_BUTTON, self.OnGrabOffsetFromCamera)
 
-        #self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
+        #self.statusbar = self.CreateStatusBar(1, wx.STB_SIZEGRIP)
 
         #self.Layout()
         

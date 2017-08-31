@@ -41,7 +41,7 @@ for m in config.get_plugins('dsviewer'):
 
 
 def allmodules():
-    am = modLocations.keys()
+    am = list(modLocations.keys())
     am.sort()
     
     return am

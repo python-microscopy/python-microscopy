@@ -78,7 +78,7 @@ class DSViewFrame(wx.Frame):
         wx.EVT_MENU(self, EDIT_CROP, self.crop)
         wx.EVT_CLOSE(self, self.OnCloseWindow)
 		
-        self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
+        self.statusbar = self.CreateStatusBar(1, wx.STB_SIZEGRIP)
         self.Layout()
         self.update()
     def update(self):
