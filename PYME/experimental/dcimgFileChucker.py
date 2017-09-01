@@ -121,7 +121,7 @@ class venerableFileChucker(object):
         spool_timeout = time.time() + self.timeout
         while (not spooling_complete) and (time.time() < spool_timeout):
             # check to see if we have an events file (our end signal)
-            on_disk = (os.path.exists(events_filename) and os.path.exists(zsteps_filename))
+            on_disk = (os.path.exists(events_filename) or os.path.exists(zsteps_filename))
             if only_spool_complete and not on_disk:
                 # keep waiting
                 time.sleep(0.1)
