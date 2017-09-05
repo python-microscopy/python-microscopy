@@ -12,7 +12,7 @@ echo $PREFIX
 
 if [ -n "$OSX_ARCH" ]
 	then
-		cd $RECIPE_DIR/osxLaunchers
+		cd $RECIPE_DIR/../../osxLaunchers
 		xcodebuild -alltargets
 
 		cp -r ./build/Release/*.app $PREFIX

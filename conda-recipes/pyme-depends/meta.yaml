@@ -116,9 +116,9 @@ build:
 requirements:
   # Packages required to build the package. python and numpy must be
   # listed explicitly if they are required.
-  #build:
-  #  - python
-  #  - numpy x.x
+  build:
+    - python
+    - numpy x.x
   #  - matplotlib
     #- mingw  [win]
   # Packages required to run the package. These are the dependencies that

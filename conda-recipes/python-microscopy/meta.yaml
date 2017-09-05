@@ -13,7 +13,7 @@ source:
   # or from hg:
   #hg_url: https://code.google.com/p/python-microscopy/ 
   #hg_tag: 15.2.17
-  path: ./PYME/
+  path: ../../PYME/
 
 build:
   # The build number should be incremented for new builds of the same version

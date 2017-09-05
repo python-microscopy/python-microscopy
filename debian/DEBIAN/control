@@ -1,9 +1,0 @@
-Package: python-pyme-depends
-Version: 0.5
-Section: Python Programming Language
-Priority: optional
-Architecture: all
-Depends: python (>=2.6), python-imaging (>=1.1.6), python-opengl (>=3.0.1), pyro (=3.9.1), python-dev, python-matplotlib (>=0.98), python-numpy (>=1.2.1), python-scipy (>=0.7.0), python-tables (>=2.1.1), build-essential, python-wxgtk2.8 (>=2.8.11.0)
-Recommends: python-sympy (>=0.6.3), python-serial, ipython (>=0.10), python-sphinx (>=0.6.5), python-django (>=1.2.1), python-django-south (>=0.7.1),mayavi2 (>=3.3), python-mysqldb (>=1.2.2), python-pip
-Maintainer: David Baddeley <d.baddeley@auckland.ac.nz>
-Description: Meta-package which should hopefully install all the requirements (well at least those available as distribution packages) for PYME
