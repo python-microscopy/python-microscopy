@@ -434,7 +434,11 @@ if __name__ == '__main__':
         profile = False
         profileOutDir=None
 
-    signal.signal(signal.SIGHUP, on_SIGHUP)
+    if not sys.platform == 'win32':
+        #windows doesn't support handling signals ... don't catch and hope for the best.
+        #Note: This will make it hard to cleanly shutdown the distributor on Windows, but should be OK for testing and
+        #development
+        signal.signal(signal.SIGHUP, on_SIGHUP)
 
     try:
         run(int(port))
