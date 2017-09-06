@@ -141,7 +141,7 @@ requirements:
     - networkx
     - pyro
     - pyfftw3 [py2k] #FIXME for py3k
-    - mpld3   [py2k] #FIXME for py3k
+    - mpld3
     - python.app      [osx]
     - cherrypy
     - scikit-image
@@ -157,7 +157,7 @@ requirements:
     - ujson
     - jinja2
     - dispatch
-    - pymecompress [py2k] #FIXME for py3k
+    - pymecompress
     - six
     - future
     - pywin32 [win]

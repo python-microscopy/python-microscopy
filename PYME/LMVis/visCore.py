@@ -283,6 +283,15 @@ class VisGUICore(object):
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewShadedPoints(self,event):
+        NO_NORMALS_MSG = '''Shaded points is experimental and only works for datasets with point normals (xn, yn, zn) defined.
+        The assignment of normals requires a concept of a surface to which the point belongs, and is not trivial for most
+        localization datasets - i.e. this rendering mode is usually not applicable. Data with normals will typically be
+        the output of surface estimation routines, or derived from some external meshed dataset (e.g. the OpenGL teapot).'''
+        
+        if not 'xn' in self.pipeline.keys():
+            wx.MessageBox(NO_NORMALS_MSG, 'Cannot use shaded points for this data', style=wx.OK)
+            return
+        
         self.viewMode = 'shadedpoints'
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
