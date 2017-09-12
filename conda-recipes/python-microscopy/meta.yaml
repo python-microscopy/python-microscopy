@@ -196,9 +196,10 @@ requirements:
   #commands:
   #  - bsdiff4 -h
   #  - bspatch4 -h
+
   # Python imports
   #imports:
-  #  - bsdiff4
+  #  - PYME
 
   # The script run_test.py will be run automatically if it is part of the
   # recipe

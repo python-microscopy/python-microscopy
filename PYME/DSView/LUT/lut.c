@@ -21,8 +21,8 @@ struct module_state {
 #if PY_MAJOR_VERSION >= 3
 #define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
 #else
-#define GETSTATE(m) (&_state)
 static struct module_state _state;
+#define GETSTATE(m) (&_state)
 #endif
 
 static PyObject *
