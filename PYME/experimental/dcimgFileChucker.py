@@ -1,6 +1,7 @@
 
 
 import os
+import errno
 import glob
 import numpy as np
 import time
@@ -13,6 +14,24 @@ logger = logging.getLogger(__name__)
 
 import PYME.experimental.dcimgSpoolShim as DCIMGSpool
 from PYME.IO import PZFFormat
+
+def safe_remove(path):
+    """
+    File removal with error handling. Defining function to clean up the FileChucker code
+    
+    Parameters
+       ----------
+       path : str
+           The fully resolved filename of the file to be deleted
+       Returns
+       -------
+       
+    """
+    try:
+        os.remove(path)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
 
 class venerableFileChucker(object):
     """
@@ -38,7 +57,7 @@ class venerableFileChucker(object):
         self.comp_settings = {'quantization': PZFFormat.DATA_QUANT_SQRT if quantize else PZFFormat.DATA_QUANT_NONE}
 
 
-    def _spoolSeries(self, mdfilename, deleteAfterSpool=False):
+    def _spoolSeries(self, mdfilename, delete_after_spool=False):
         """
         Spool a single series, which already exists
 
@@ -66,38 +85,86 @@ class venerableFileChucker(object):
             #time.sleep(.1)
             while not self.spooler.spooler.postQueue.empty() or (self.spooler.spooler.numThreadsProcessing > 0):
                 time.sleep(.1)
-            if deleteAfterSpool:
-                os.remove(chunk)
+            if delete_after_spool:
+                safe_remove(chunk)
 
         # spool _events.json
         events_filename = series_stub + '_events.json' #note that we ignore this at present, kept for future compatibility
         zsteps_filename = series_stub + '_zsteps.json'
 
         self.spooler.OnSeriesComplete(events_filename, zsteps_filename, pushTaskToCluster=True)
+
         print(datetime.datetime.utcnow())
         # TODO: Add Feedback from cluster and also speed up writing in cluster
         # time.sleep(10)
-        if deleteAfterSpool:
-            os.remove(mdfilename)
-            try:
-                os.remove(events_filename)
-            except OSError:
-                pass
-            try:
-                os.remove(zsteps_filename)
-            except OSError:
-                pass
+        if delete_after_spool:
+            safe_remove(mdfilename)
+            safe_remove(events_filename)
+            safe_remove(zsteps_filename)
 
-    def searchAndHuck(self, onlySpoolNew=False, deleteAfterSpool=False):
+    def huck(self, mdFile, delete_after_spool, only_spool_complete):
+        # compute the whole series name
+        mdfilename = os.path.join(self.folder, mdFile)
+        self.spooler.OnNewSeries(mdfilename)
+
+        # calculate the stub with which all files start
+        series_stub = mdfilename.strip('.json')
+
+        # calculate event and zsteps filenames from stub
+        events_filename = series_stub + '_events.json'
+        zsteps_filename = series_stub + '_zsteps.json'
+
+        # which chunks from this series have we already spooled? We do not want to spool them again
+        spooled_chunks = []
+
+        spooling_complete = False
+        spool_timeout = time.time() + self.timeout
+        while (not spooling_complete) and (time.time() < spool_timeout):
+            # check to see if we have an events file (our end signal)
+            on_disk = (os.path.exists(events_filename) or os.path.exists(zsteps_filename))
+            if only_spool_complete and not on_disk:
+                # keep waiting
+                time.sleep(0.1)
+                continue
+            else:
+                # flag as complete so we exit the loop after spooling
+                spooling_complete = True
+
+            # find chunks for this metadata file (this should return the full paths)
+            chunkList = sorted(glob.glob(series_stub + '*.dcimg'))
+
+            for chunk in [c for c in chunkList if c not in spooled_chunks]:
+                self.spooler.OnDCIMGChunkDetected(chunk)
+                # time.sleep(.5)  # FIXME: When using HUFFMANCODE more frames are lost without waiting
+                # wait until we've sent everything
+                # this is a bit of a hack
+                while not self.spooler.spooler.postQueue.empty() or (self.spooler.spooler.numThreadsProcessing > 0):
+                    time.sleep(.1)
+                if delete_after_spool:
+                    # TODO: update this to only delete files if they are sent successfully
+                    safe_remove(chunk)
+
+
+
+        # we have seen our events file, the current series is complete
+        self.spooler.OnSeriesComplete(events_filename, zsteps_filename, pushTaskToCluster=True)
+        logger.debug('Finished spooling series %s' % series_stub)
+
+        if delete_after_spool:
+            safe_remove(mdfilename)
+            safe_remove(events_filename)
+            safe_remove(zsteps_filename)
+
+    def searchAndHuck(self, only_spool_new=False, delete_after_spool=False, only_spool_complete=False):
         md_candidates = glob.glob(os.path.join(self.folder, '*.json'))
         #changed it to just use a list comprehension as this will be much easier to read (and there is no performance advantage to using arrays) - DB
         metadataFiles = [f for f in md_candidates if not (f.endswith('_events.json') or f.endswith('_zsteps.json'))]
 
 
-        if not onlySpoolNew:
+        if not only_spool_new:
             for mdFile in metadataFiles:
                 mdPath = os.path.join(self.folder, mdFile)
-                self._spoolSeries(mdPath, deleteAfterSpool=deleteAfterSpool)
+                self._spoolSeries(mdPath, delete_after_spool=delete_after_spool)
 
         #ignore metadata files corresponding to series we have already spooled
         ignoreList = metadataFiles
@@ -113,53 +180,15 @@ class venerableFileChucker(object):
 
                 #get the oldest metadata file not on our list of files to be ignored
                 mdFile = metadataFiles[0]
+                try:
+                    self.huck(mdFile, delete_after_spool, only_spool_complete)
+                except Exception:
+                    # log the error and continue - this is FileChucker is venerable, and shant be stopped easily
+                    import traceback
+                    logger.exception(traceback.format_exc())
 
-                #compute the whole series name
-                mdfilename = os.path.join(self.folder, mdFile)
-                self.spooler.OnNewSeries(mdfilename)
+                ignoreList.append(mdFile)
 
-                #calculate the stub with which all files start
-                series_stub = mdfilename.strip('.json')
-
-                #calculate event and zsteps filenames from stub
-                events_filename = series_stub + '_events.json'
-                zsteps_filename = series_stub + '_zsteps.json'
-
-                #which chunks from this series have we already spooled? We don;t want to spool them again
-                spooled_chunks = []
-
-                events_file_detected = False
-                spool_timeout = time.time() + self.timeout
-                while (not events_file_detected) and (time.time() < spool_timeout):
-                    # check to see if we have an events file (our end signal)
-                    events_file_detected = (os.path.exists(events_filename) or os.path.exists(zsteps_filename))
-
-                    # find chunks for this metadata file (this should return the full paths)
-                    chunkList = sorted(glob.glob(series_stub + '*.dcimg'))
-
-                    for chunk in chunkList:
-                        if not chunk in spooled_chunks:
-                            self.spooler.OnDCIMGChunkDetected(chunk)
-                            #time.sleep(.5)  # FIXME: When using HUFFMANCODE more frames are lost without waiting
-                             #wait until we've sent everything
-                            #this is a bit of a hack
-                            #time.sleep(.1)
-                            while not self.spooler.spooler.postQueue.empty() or (self.spooler.spooler.numThreadsProcessing > 0):
-                                time.sleep(.1)
-                            if deleteAfterSpool:
-                                # TODO: update this to only delete files if they are sent successfully
-                                os.remove(chunk)
-
-                #we have seen our events file, the current series is complete
-                self.spooler.OnSeriesComplete(events_filename, zsteps_filename, pushTaskToCluster=True)
-                logger.debug('Finished spooling series %s' % series_stub)
-                ignoreList.append(mdfilename)
-                if deleteAfterSpool:
-                    os.remove(mdfilename)
-                    if os.path.exists(events_filename):
-                        os.remove(events_filename)
-                    if os.path.exists(zsteps_filename):
-                        os.remove(zsteps_filename)
 
             except IndexError:
                 #this happens if there are no new metadata files - wait until there are some.
@@ -170,10 +199,12 @@ class venerableFileChucker(object):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('-n', dest='onlySpoolNew', action='store_true',
+    parser.add_argument('-n', dest='only_spool_new', action='store_true',
                         help='Only spool new files as they are saved')
-    parser.add_argument('-d', dest='delAfterSpool', action='store_true',
+    parser.add_argument('-d', dest='delete_after_spool', action='store_true',
                         help='Delete files after they are spooled to the cluster')
+    parser.add_argument('-c', dest='only_spool_complete', action='store_true',
+                        help='spool series as dcimg files are written, rather than waiting for the entire series')
     parser.add_argument('-q', dest='quantize', action='store_true',
                         help='Quantize with sqrt(N) interval scaling')
     parser.add_argument('testFolder', metavar='testFolder', type=str,
@@ -181,4 +212,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     searcher = venerableFileChucker(args.testFolder, quantize=args.quantize)
-    searcher.searchAndHuck(args.onlySpoolNew, args.delAfterSpool)
+    searcher.searchAndHuck(args.only_spool_new, args.delete_after_spool, args.only_spool_complete)
