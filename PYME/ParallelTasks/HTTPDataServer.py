@@ -217,6 +217,7 @@ from PYME.IO import clusterListing as cl
 class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     bandwidthTesting = False
+    timeoutTesting = False
     logrequests = False
 
 
@@ -328,6 +329,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         return
 
     def do_PUT(self):
+        if self.timeoutTesting:
+            time.sleep(10) #wait 10 seconds to force a timeout on the clients
+            
         if self.bandwidthTesting:
             #just read file and dump contents
             r = self.rfile.read(int(self.headers['Content-Length']))
@@ -398,6 +402,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         """Serve a GET request."""
+        if self.timeoutTesting:
+            time.sleep(10) #wait 10 seconds to force a timeout on the clients
+            
         f = self.send_head()
         if f:
             try:
@@ -643,6 +650,7 @@ def main(protocol="HTTP/1.0"):
     op.add_option('-k', '--profile', dest='profile', help="Enable profiling", default=False, action="store_true")
     default_server_filter = config.get('dataserver-filter', '')
     op.add_option('-f', '--server-filter', dest='server_filter', help='Add a serverfilter for distinguishing between different clusters', default=default_server_filter)
+    op.add_option('--timeout-test', dest='timeout_test', help='deliberately make requests timeout for testing error handling in calling modules', default=False, action="store_true")
 
 
     options, args = op.parse_args()
@@ -661,6 +669,7 @@ def main(protocol="HTTP/1.0"):
 
     PYMEHTTPRequestHandler.protocol_version = 'HTTP/%s' % options.protocol
     PYMEHTTPRequestHandler.bandwidthTesting = options.test
+    PYMEHTTPRequestHandler.timeoutTesting = options.timeout_test
     PYMEHTTPRequestHandler.logrequests = options.log_requests
 
     httpd = ThreadedHTTPServer(server_address, PYMEHTTPRequestHandler)
