@@ -20,8 +20,19 @@ import logging
 import socket
 
 
+def _gzip_compress(data):
+    import gzip
+    from io import BytesIO
+    zbuf = BytesIO()
+    zfile = gzip.GzipFile(mode='wb', fileobj=zbuf)#, compresslevel=9)
+    zfile.write(data)
+    zfile.close()
+    
+    return zbuf.getvalue()
 
-def fileFormattedResults(URI, data, mimetype=None):
+
+
+def fileFormattedResults(URI, data, mimetype=None, compression=True):
     #TODO - send the mimetype
     #handle non-http requests
     if URI.startswith('PYME-CLUSTER') or URI.startswith('pyme-cluster'):
@@ -37,7 +48,11 @@ def fileFormattedResults(URI, data, mimetype=None):
         #logging.debug('data: ' + data)
         #logging.debug('type(data) = %s, len(data) = %d' % (type(data), len(data)))
         s = clusterIO._getSession(URI)
-        r = s.put(URI, data=data, timeout=5)
+        
+        if compression:
+            r = s.put(URI, _gzip_compress(data), timeout=5, headers={'Content-Encoding': 'gzip'})
+        else:
+            r = s.put(URI, data=data, timeout=5)
         #print r.status_code
         if not r.status_code == 200:
             raise RuntimeError('Put failed with %d: %s' % (r.status_code, r.content))

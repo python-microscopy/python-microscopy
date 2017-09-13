@@ -662,9 +662,9 @@ if USE_RAW_SOCKETS:
             except socket.timeout:
                 if nRetries < 3:
                     nRetries += 1
-                    logger.error('Timeout writing to %s, trying another server for %d remaining files' % (info.address, nChunksRemaining))
+                    logger.error('Timeout writing to %s, trying another server for %d remaining files' % (socket.inet_ntoa(info.address), nChunksRemaining))
                 else:
-                    logger.error('Timeout writing to %s after 3 retries, aborting - DATA WILL BE LOST' % info.address)
+                    logger.error('Timeout writing to %s after 3 retries, aborting - DATA WILL BE LOST' % socket.inet_ntoa(info.address))
                     raise
                 
             finally:
@@ -680,7 +680,7 @@ if USE_RAW_SOCKETS:
                     while len(resp) > 0:
                         resp = s.recv(4096)
                 except:
-                    logger.error('Failure to read from server %s' % info.address)
+                    logger.error('Failure to read from server %s' % socket.inet_ntoa(info.address))
                     raise
                 #print resp
                 #TODO: Parse responses
