@@ -49,8 +49,8 @@ class TaskQueue(object):
         self.distributor = distributor
 
         self._do_poll = True
-        self.pollThread = threading.Thread(target=self._poll_loop)
-        self.pollThread.start()
+        #self.pollThread = threading.Thread(target=self._poll_loop)
+        #self.pollThread.start()
 
     def info(self):
         return {'tasksPosted': self.total_num_tasks,
@@ -190,12 +190,14 @@ class TaskQueue(object):
         except IndexError:
             pass
 
+    def _poll(self):
+        self._rateAndAssignTasks()
+        self._process_handins()
+        self._requeue_timed_out()
 
     def _poll_loop(self):
         while self._do_poll:
-            self._rateAndAssignTasks()
-            self._process_handins()
-            self._requeue_timed_out()
+            self._poll()
 
             time.sleep(.1)
 
@@ -217,6 +219,9 @@ class Distributor(object):
         #set up threads to poll the distributor and announce ourselves and get and return tasks
         self.pollThread = threading.Thread(target=self._poll)
         self.pollThread.start()
+
+        self.queuePollThread = threading.Thread(target=self._poll_queues)
+        self.queuePollThread.start()
 
 
     def _update_nodes(self):
@@ -242,6 +247,14 @@ class Distributor(object):
         while self._do_poll:
             self._update_nodes()
             time.sleep(1)
+            
+    def _poll_queues(self):
+        while self._do_poll:
+            for qn in self._queues.keys():
+                self._queues[qn]._poll()
+                
+            time.sleep(.1)
+            
 
     def stop(self):
         self._do_poll = False
