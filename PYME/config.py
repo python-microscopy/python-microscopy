@@ -221,7 +221,8 @@ def get_custom_protocols():
     Returns
     -------
 
-    A dictionary of {basename : full path} for any protocols found.
+    A dictionary of {basename : full path} for any protocols found. In the current implementation
+    custom protocols overwrite protocols of the same name in the PYME distribution.
 
     """
     import glob

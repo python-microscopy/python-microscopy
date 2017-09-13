@@ -212,10 +212,16 @@ def _get_protocol_dict():
     protocolList = glob.glob(prot_dir)
     protocolDict = {os.path.split(p)[-1] : p for p in protocolList}
 
+    # in this implementation custom protocols overwrite protocols of the same name
+    import PYME.config
+    customPDict = PYME.config.get_custom_protocols()
+    for p in customPDict.keys():
+        protocolDict[p] = customPDict[p]
+
     return protocolDict
 
 def get_protocol_list():
-    protocolList = ['<None>', ] + list(_get_protocol_dict().keys())
+    protocolList = ['<None>', ] + sorted(list(_get_protocol_dict().keys()))
 
     return protocolList
 
