@@ -233,7 +233,10 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         """
         path = self.translate_path(self.path.lstrip('/')[len('__aggregate_txt'):])
 
-        data = self.rfile.read(int(self.headers['Content-Length']))
+        data = self._get_data()
+        
+        if self.headers['Content-Encoding'] == 'gzip':
+            data = self._gzip_decompress(data)
 
         dirname = os.path.dirname(path)
         #if not os.path.exists(dirname):
@@ -248,11 +251,29 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 f.write(data)
 
         if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(path, int(self.headers['Content-Length']))
+            cl.dir_cache.update_cache(path, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
         self.end_headers()
+
+    def _gzip_decompress(self, data):
+        import gzip
+        from io import BytesIO
+        zbuf = BytesIO(data)
+        zfile = gzip.GzipFile(mode='rb', fileobj=zbuf)#, compresslevel=9)
+        out = zfile.read()
+        zfile.close()
+    
+        return out
+    
+    def _get_data(self):
+        data = self.rfile.read(int(self.headers['Content-Length']))
+    
+        if self.headers.get('Content-Encoding') == 'gzip':
+            data = self._gzip_decompress(data)
+            
+        return data
 
     def _aggregate_h5r(self):
         """
@@ -274,7 +295,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         filename, tablename = path.split('.h5r')
         filename += '.h5r'
 
-        data = self.rfile.read(int(self.headers['Content-Length']))
+        data = self._get_data()
 
         dirname = os.path.dirname(filename)
         #if not os.path.exists(dirname):
@@ -311,7 +332,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         #logging.debug('left h5r file')
         if USE_DIR_CACHE:
-            cl.dir_cache.update_cache(filename, int(self.headers['Content-Length']))
+            cl.dir_cache.update_cache(filename, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -352,7 +373,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         if os.path.exists(path):
             #Do not overwrite - we use write-once semantics
-            self.send_error(405, "File already exists")
+            self.send_error(405, "File already exists %s" % path)
 
             #self.end_headers()
             return None
@@ -387,13 +408,14 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 #the standard case - use the contents of the put request
                 with open(path, 'wb') as f:
                     #shutil.copyfileobj(self.rfile, f, int(self.headers['Content-Length']))
-                    f.write(self.rfile.read(int(self.headers['Content-Length'])))
+                    data = self._get_data()
+                    f.write(data)
 
                     #set the file to read-only (reflecting our write-once semantics
                     os.chmod(path, 0o440)
                     
                     if USE_DIR_CACHE:
-                        cl.dir_cache.update_cache(path, int(self.headers['Content-Length']))
+                        cl.dir_cache.update_cache(path, len(data))
 
             self.send_response(200)
             self.send_header("Content-Length", "0")
