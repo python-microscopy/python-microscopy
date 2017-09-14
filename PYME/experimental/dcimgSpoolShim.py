@@ -38,11 +38,14 @@ def _wait_for_file(filename):
     return True
 
 
-class DCIMGSpoolShim:
+class DCIMGSpoolShim(object):
     """
     DCIMGSpoolShim provides methods to interface between DcimgDataSource and HTTPSpooler, so that one can spool
     dcimg files (containing arbitary numbers of image frames) as they are finished writing.
     """
+    def __init__(self):
+        self.n_spooled = 0
+    
     def OnNewSeries(self, metadataFilename, comp_settings=None):
         """Called when a new series is detected (ie the <seriesname>.json)
         file is detected
@@ -66,8 +69,14 @@ class DCIMGSpoolShim:
         #determine a filename on the cluster from our local filename
         #TODO - make this more complex to generate suitable directory structures
         filename = os.path.splitext(metadataFilename)[0]
+        
+        dirname, seriesname = os.path.split(filename)
+        
         #Strip G:\\ in filename to test if it caused connection problem to some nodes in cluster
-        filename = filename[filename.find('\\') + 1:]
+        dirname = dirname[dirname.find('\\') + 1:]
+        
+        cluster_filename = os.path.join(dirname, '%d' % (self.n_spooled%1000))
+        
         #create virtual frame and metadata sources
         self.imgSource = ImageFrameSource()
         self.metadataSource = MDSource(self.mdh)
@@ -75,9 +84,10 @@ class DCIMGSpoolShim:
 
         #generate the spooler
         comp_settings.update({'quantizationOffset': self.mdh.getOrDefault('Camera.ADOffset', 0)})
-        self.spooler = HTTPSpooler.Spooler(filename, self.imgSource.onFrame, frameShape=None,
+        self.spooler = HTTPSpooler.Spooler(cluster_filename, self.imgSource.onFrame, frameShape=None,
                                            compressionSettings=comp_settings)
 
+        self.n_spooled += 1
         #spool our data
         self.spooler.StartSpool()
 

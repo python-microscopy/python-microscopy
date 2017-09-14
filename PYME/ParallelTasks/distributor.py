@@ -62,6 +62,10 @@ class TaskQueue(object):
 
     def stop(self):
         self._do_poll = False
+        
+    @property
+    def has_outstanding_tasks(self):
+        return self.num_tasks_completed < self.total_num_tasks
 
     def posttask(self, task):
         self.rating_queue.append(task)
@@ -191,9 +195,10 @@ class TaskQueue(object):
             pass
 
     def _poll(self):
-        self._rateAndAssignTasks()
-        self._process_handins()
-        self._requeue_timed_out()
+        if self.has_outstanding_tasks:
+            self._rateAndAssignTasks()
+            self._process_handins()
+            self._requeue_timed_out()
 
     def _poll_loop(self):
         while self._do_poll:
@@ -339,7 +344,7 @@ class Distributor(object):
 
     @webframework.register_endpoint('/distributor/queues')
     def _get_queues(self):
-        return json.dumps({'ok': True, 'result': {qn: q.info() for qn, q in self._queues.items()}})
+        return json.dumps({'ok': True, 'result': {qn: self._queues[qn].info() for qn in sorted(self._queues.keys())}})
 
 
 
