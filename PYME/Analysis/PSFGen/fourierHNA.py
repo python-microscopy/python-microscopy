@@ -342,7 +342,6 @@ def Gen4PiPSF(zs, dx=5, lamb=700, n=1.51, NA = 1.47,apodization=None, phi=0, X=N
     X, Y, R, FP, F, u, v = GenWidefieldAP(dx, X, Y, lamb=lamb, n=n, NA = NA, apodization=apodization)
 
     ps1 = np.concatenate([FP.propagate(F, z)[:,:,None] for z in zs], 2)
-    
     ps2 = np.concatenate([FP.propagate(F, -z)[:,:,None]*np.exp(1j*phi) for z in zs], 2)
     
     ps = ps1 + ps2
