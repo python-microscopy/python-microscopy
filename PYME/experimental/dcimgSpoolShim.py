@@ -75,7 +75,7 @@ class DCIMGSpoolShim(object):
         #Strip G:\\ in filename to test if it caused connection problem to some nodes in cluster
         dirname = dirname[dirname.find('\\') + 1:]
         
-        cluster_filename = os.path.join(dirname, '%d' % (self.n_spooled%1000))
+        cluster_filename = os.path.join(dirname, '%03d' % int(self.n_spooled/1000), seriesname)
         
         #create virtual frame and metadata sources
         self.imgSource = ImageFrameSource()
