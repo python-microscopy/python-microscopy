@@ -393,8 +393,3 @@ class SkeletonCamera(object):
     def __del__(self):
         self.Shutdown()
         #self.compT.kill = True
-
-
-        
-        
-        
