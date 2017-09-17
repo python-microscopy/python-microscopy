@@ -5,7 +5,7 @@
 #
 # Created: 12 September 2017
 #
-# Based on: AndorNeo.py
+# Based on: AndorZyla.py, AndorIXon.py
 #
 # Copyright David Baddeley, 2012
 # d.baddeley@auckland.ac.nz
@@ -24,6 +24,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
+
+import ctypes
 
 try:
     import Queue
@@ -73,7 +75,12 @@ class Camera(object):
         self._temp = 0  # Default camera temperature (Celsius)
         self._frameRate = 0
 
+        # Camera lock
         self.camLock = Lock()
+
+        # Camera info
+        self.SerialNumber = ""
+        self.CameraModel = ""
 
         self.buffersToQueue = Queue.Queue()
         self.queuedBuffers = Queue.Queue()
@@ -142,8 +149,6 @@ class Camera(object):
         """
 
         if self.active:
-            self.GetStatus()
-
             # Set Camera object metadata here with calls to mdh.setEntry
 
             # Personal identification
@@ -153,7 +158,7 @@ class Camera(object):
 
             # Time
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
-            mdh.setEntry('Camera.CycleTime', self.GetIntegTime())
+            mdh.setEntry('Camera.CycleTime', self.GetCycleTime())
 
             # Gain
             mdh.setEntry('Camera.EMGain', self.GetEMGain())
@@ -244,7 +249,9 @@ class Camera(object):
         str
             Hardware model name of Camera object
         """
-        pass
+        if isinstance(self.CameraModel, str):
+            return self.CameraModel
+        raise TypeError("Camera model must be stored as a string.")
 
     def GetSerialNumber(self):
         """
@@ -255,7 +262,9 @@ class Camera(object):
         str
             Hardware serial number of Camera object
         """
-        return self.SerialNumber
+        if isinstance(self.SerialNumber, str):
+            return self.SerialNumber
+        raise TypeError("Serial number must be stored as a string.")
 
     def GetIntegTime(self):
         """
@@ -271,6 +280,20 @@ class Camera(object):
         SetIntegTime
         """
         pass
+
+    def GetCycleTime(self):
+        """
+        Get camera cycle time (1/fps) in seconds (float)
+
+        Returns
+        -------
+        float
+            Camera cycle time (seconds)
+        """
+        if self._frameRate > 0:
+            return 1.0/self._frameRate
+
+        return 0.0
 
     def GetReadNoise(self):
         pass
@@ -336,29 +359,6 @@ class Camera(object):
         -------
         int
             Height of ROI (pixels)
-        """
-        pass
-
-    def SetROIIndex(self, index):
-        """
-        Set the ROI via an index (as opposed to via coordinates). Legacy code
-        for old Andor NEO cameras which only supported certain fixed ROIs.
-        Should not be essential / can remove.
-
-        Parameters
-        ----------
-        index : int
-            Index of top left coordinate in image. Width/height automatically
-            determined prior to function use by chopping image into ROIs of
-            desired size.
-
-        Returns
-        -------
-        None
-
-        See Also
-        --------
-        SetROI
         """
         pass
 
@@ -468,18 +468,6 @@ class Camera(object):
         """
         pass
 
-    def GetStatus(self):
-        """
-        Camera object status, called by the GUI. This is optional.
-
-        Returns
-        -------
-        str, optional
-            String indicating Camera object status.
-
-        """
-        pass
-
     def GetAcquisitionMode(self):
         """
         Get the Camera object readout mode.
@@ -493,7 +481,10 @@ class Camera(object):
         --------
         SetAcquisitionMode
         """
-        pass
+        if isinstance(self.CycleMode, int) or isinstance(self.CycleMode, bool):
+            return self.CycleMode
+        raise TypeError("Cycle mode must be one of MODE_CONTINUOUS, "
+                        "MODE_SINGLE_SHOT.")
 
     def SetAcquisitionMode(self, mode):
         """
@@ -515,7 +506,11 @@ class Camera(object):
         --------
         GetAcquisitionMode
         """
-        pass
+
+        if isinstance(mode, int) or isinstance(mode, bool):
+            self.CycleMode = mode
+        raise TypeError("Mode must be one of One of MODE_CONTINUOUS, "
+                        "MODE_SINGLE_SHOT")
 
     def SetActive(self, active=True):
         """
@@ -531,6 +526,9 @@ class Camera(object):
         -------
         None
         """
+
+        if ~isinstance(active, bool):
+            raise TypeError("Active must be set to True or False.")
 
         self.active = active
 
@@ -597,22 +595,6 @@ class Camera(object):
         ----------
         temp : float
             The target camera temperature (Celsius)
-
-        Returns
-        -------
-        None
-        """
-        pass
-
-    def SetBurst(self, burstSize):
-        """
-        Some support for burst mode on the Neo and Zyla. Is not called from
-        the GUI, and can be considered experimental and non-essential.
-
-        Parameters
-        ----------
-        burtSize : int
-            Number of frames to acquire in burst mode.
 
         Returns
         -------
@@ -701,44 +683,6 @@ class Camera(object):
 
     def GetVertBin(*args):
         return 0
-
-    def GetNumberChannels(*args):
-        """
-        Returns the number of colour channels in the Bayer mask. Legacy,
-        deprecated, and not used.
-
-        Returns
-        -------
-        int
-            the number of colour channels
-
-        """
-        raise Exception('Not implemented yet!!')
-
-    def SetCOC(*args):
-        """
-        Legacy of sensicam support. Called by other parts of the program, so
-        stub currently needed. Should remove. """
-        pass
-
-    def DisplayError(*args):
-        """
-        Completely deprecated and never called. Artifact of very old code which
-        had GUI mixed up with camera. Should remove.
-        """
-        pass
-
-    def StartLifePreview(*args):
-        raise Exception('Not implemented yet!!')
-
-    def StopLifePreview(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetBWPicture(*args):
-        raise Exception('Not implemented yet!!')
-
-    def CheckCoordinates(*args):
-        raise Exception('Not implemented yet!!')
 
     def GetElectrTemp(*args):
         """
