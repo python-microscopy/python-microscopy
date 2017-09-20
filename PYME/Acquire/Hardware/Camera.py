@@ -25,8 +25,6 @@
 #
 ################
 
-import ctypes
-
 try:
     import Queue
 except ImportError:
@@ -711,3 +709,36 @@ class Camera(object):
 
     def __del__(self):
         self.Shutdown()
+
+
+    ##### Completely useless functions follow. To be deleted. #####
+
+    def CheckCoordinates(*args):
+        pass
+
+    def DisplayError(*args):
+        pass
+
+    def GetBWPicture(*args):
+        pass
+
+    def GetNumberChannels(*args):
+        pass
+
+    def GetStatus(*args):
+        pass
+
+    def SetBurst(self, burstSize):
+        pass
+
+    def SetCOC(*args):
+        pass
+
+    def SetROIIndex(self, index):
+        pass
+
+    def StartLifePreview(*args):
+        pass
+
+    def StopLifePreview(*args):
+        pass

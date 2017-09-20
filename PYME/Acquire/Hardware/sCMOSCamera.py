@@ -30,7 +30,7 @@ import time
 from threading import Thread
 from fftw3f import create_aligned_array
 
-from PYME.Acquire.Hardware import Camera
+from PYME.Acquire.Hardware.Camera import Camera
 
 
 class sCMOSCamera(Camera):
@@ -45,19 +45,15 @@ class sCMOSCamera(Camera):
         self.pollThread.start()
 
     def InitBuffers(self):
-        self._flush()
-        #bufSize = self.ImageSizeBytes.getValue()
-        #vRed = int(self.SensorHeight.getValue() / self.AOIHeight.getValue())
-        #self.nBuffers = vRed * self.defBuffers
+        """
+        Initialize camera buffers. A couple of the variables are too
+        camera-specific for this to be in the general class.
 
-        if not self.contMode:
-            self.nBuffers = 5
-
-        for i in range(self.nBuffers):
-            buf = create_aligned_array(bufSize, 'uint8')
-            self._queueBuffer(buf)
-
-        self.doPoll = True
+        Returns
+        -------
+        None.
+        """
+        pass
 
     def _flush(self):
         """
@@ -127,7 +123,7 @@ class sCMOSCamera(Camera):
     def _pollBuffer(self):
         """
         Grabbed the queuedBuffers off the camera and stash them in fullBuffers.
-        This function is too camera-specific  for any general code in the class.
+        This function is too camera-specific for any general code in the class.
         nFull += 1
         """
         pass
@@ -138,7 +134,6 @@ class sCMOSCamera(Camera):
             if self.doPoll: #only poll if an acquisition is running
                 self._pollBuffer()
             else:
-                #print 'w',
                 time.sleep(.05)
             time.sleep(.0005)
 
@@ -147,23 +142,7 @@ class sCMOSCamera(Camera):
         Pulls the oldest frame from the camera buffer and copies it into
         memory we provide. Note that the function signature and parameters are
         a legacy of very old code written for a colour camera with a bayer mask.
-
-        Usage
-        -----
-        class ASpecificCam(sCMOSCamera):
-            ...
-            def _flush(self):
-                # Turn off camera polling
-                self.doPoll = False
-
-                # flush camera buffers
-                [Code here]
-
-                # flush local buffers
-                sCMOSCamera._flush(self)
-
-                # flush camera buffers again
-                [Code here]
+        This function is too camera-specific for any general code in the class.
 
         Parameters
         ----------
@@ -177,13 +156,7 @@ class sCMOSCamera(Camera):
         None
         """
 
-        # grab our buffer from the full buffers list
-        buf = self.fullBuffers.get()
-        self.nFull -= 1
-
-        # Do stuff
-
-        self._queueBuffer(buf)
+        pass
 
     def SetBurst(self, burstSize):
         """
