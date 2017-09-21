@@ -4,6 +4,7 @@
 # HamamatsuDCAM.py
 #
 # Created: 18 September 2017
+# Author : Z Marin
 #
 # Copyright David Baddeley, 2012
 # d.baddeley@auckland.ac.nz
@@ -29,7 +30,7 @@ import platform
 
 import numpy as np
 
-from PYME.Acquire.Hardware.sCMOSCamera import sCMOSCamera
+from PYME.Acquire.Hardware.Camera import Camera
 
 # Set up POINTER to the DCAM4 API
 sys = platform.system()
@@ -41,6 +42,14 @@ else:
 # Hamamatsu constants (DCAM4)
 DCAM_IDSTR_MODEL = ctypes.c_int32(int("0x04000104", 0))
 DCAM_IDSTR_CAMERAID = ctypes.c_int32(int("0x04000102", 0))
+
+DCAMPROP_OPTION_NEAREST = ctypes.c_int32(int("0x80000000", 0))
+DCAMPROP_OPTION_NEXT = ctypes.c_int32(int("0x01000000", 0))
+DCAMPROP_OPTION_SUPPORT = ctypes.c_int32(int("0x00000000", 0))
+
+DCAMPROP_ATTR_HASVALUETEXT= ctypes.c_int32(int("0x10000000", 0))
+DCAMPROP_ATTR_WRITABLE = ctypes.c_int32(int("0x00020000", 0))
+DCAMPROP_ATTR_READABLE = ctypes.c_int32(int("0x00010000", 0))
 
 # Hamamatsu structures (DCAM4)
 class DCAMPROP_ATTR(ctypes.Structure):
@@ -126,10 +135,10 @@ if int(dcam.dcamapi_init(ctypes.byref(paraminit))) < 0:
 nCams = paraminit.iDeviceCount
 
 
-class HamamatsuDCAM(sCMOSCamera):
+class HamamatsuDCAM(Camera):
 
     def __init__(self, camNum):
-        sCMOSCamera.__init__(self, camNum)
+        Camera.__init__(self, camNum)
         self.handle = ctypes.c_void_p(0)
 
     def Init(self):
@@ -207,7 +216,6 @@ class HamamatsuDCAM(sCMOSCamera):
         self.checkStatus(dcam.dcamprop_setvalue(self.handle, iProp,
                                                 ctypes.cdouble(value)))
 
-
     def checkStatus(self, fn_return, fn_name="unknown"):
         """
         Check that the DCAM function call worked.
@@ -234,5 +242,5 @@ class HamamatsuDCAM(sCMOSCamera):
         self.checkStatus(dcam.dcamdev_close(self.handle), "dcamdev_close")
 
     def __del__(self):
-        sCMOSCamera.__del__(self)
+        Camera.__del__(self)
         dcam.dcamapi_uninit()

@@ -4,6 +4,7 @@
 # sCMOSCamera.py
 #
 # Created: 16 September 2017
+# Author : Z Marin
 #
 # Based on: AndorZyla.py
 #

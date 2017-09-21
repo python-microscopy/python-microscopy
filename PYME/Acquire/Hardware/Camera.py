@@ -4,6 +4,7 @@
 # Camera.py
 #
 # Created: 12 September 2017
+# Author : Z Marin
 #
 # Based on: AndorZyla.py, AndorIXon.py
 #
