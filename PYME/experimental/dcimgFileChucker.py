@@ -1,9 +1,8 @@
 
-
+import sys
 import os
 import errno
 import glob
-import numpy as np
 import time
 import datetime
 
@@ -40,7 +39,7 @@ class venerableFileChucker(object):
     This is certainly not the most elegant way of implementing the DCIMGSpooler, but may suffice for now....
 
     """
-    def __init__(self, searchFolder, timeout = 3600, quantize=False):
+    def __init__(self, searchFolder, timeout = 12, quantize=False):
         """
 
         Parameters
@@ -164,36 +163,64 @@ class venerableFileChucker(object):
         if not only_spool_new:
             for mdFile in metadataFiles:
                 mdPath = os.path.join(self.folder, mdFile)
-                self._spoolSeries(mdPath, delete_after_spool=delete_after_spool)
+                try:
+                    self._spoolSeries(mdPath, delete_after_spool=delete_after_spool)
+                except Exception:
+                    import traceback
+                    logger.exception(traceback.format_exc())
+                except KeyboardInterrupt:
+                    sys.exit()
 
         #ignore metadata files corresponding to series we have already spooled
-        ignoreList = metadataFiles
+        ignoreList = set(metadataFiles)
 
         while True: #NB!!!!: this will run for ever
             # search for new files
-            md_candidates = glob.glob(self.folder + '\*.json')
-
+            md_candidates = set(glob.glob(self.folder + '\*.json'))
+            ignoreList &= md_candidates  # keep ignoreList from growing unnecessarily; only track files that still exist
+            chaff = [f for f in md_candidates if (f.endswith('_events.json') or f.endswith('_zsteps.json'))]#glob.glob(self.folder + '\*_events.json')
+            metadataFiles = md_candidates.difference(chaff).difference(ignoreList)
             try:
-                metadataFiles = [f for f in md_candidates if
-                                 not (f in ignoreList or f.endswith('_events.json') or f.endswith('_zsteps.json'))]
-                metadataFiles.sort()
+                #metadataFiles = [f for f in md_candidates if
+                #                 not (f in ignoreList or f.endswith('_events.json') or f.endswith('_zsteps.json'))]
+                #metadataFiles.sort()
 
                 #get the oldest metadata file not on our list of files to be ignored
-                mdFile = metadataFiles[0]
-                try:
+                # mdFile = metadataFiles[0]
+                if len(metadataFiles) < 1:
+                    raise IndexError
+                #try:
+                ignoreList |= metadataFiles  # add files about to be spooled to the ignore list
+                for mdFile in metadataFiles:
+                    #t = threading.Thread(target=self.huck, args=(mdFile, delete_after_spool, only_spool_complete))
+                    #logging.debug('%s assigned %s' % (t.name, mdFile))
+                    #t.start()
+
+                #spool the file in a new thread and keep looking for new files
+                #this stops us from freezing for an hour waiting for a file to complete if something goes wrong with labview  # NB: we already had/have a timeout - AB
+                #t = threading.Thread(target=self.huck, args=(mdFile, delete_after_spool, only_spool_complete))
+                #t.start()
+
                     self.huck(mdFile, delete_after_spool, only_spool_complete)
-                except Exception:
+                #except KeyboardInterrupt:
+                    #allow us to interrupt with ctrl-c
+                #    raise
+                #except Exception:
                     # log the error and continue - this is FileChucker is venerable, and shant be stopped easily
-                    import traceback
-                    logger.exception(traceback.format_exc())
+                #    import traceback
+                #    logger.exception(traceback.format_exc())
 
-                ignoreList.append(mdFile)
-
+                #ignoreList.append(mdFile)
 
             except IndexError:
                 #this happens if there are no new metadata files - wait until there are some.
                 time.sleep(.1) #wait just long enough to stop us from being in a CPU busy loop
                 pass
+            except KeyboardInterrupt:
+                sys.exit() #make sure other threads get killed if we kill with ctrl-c
+            except Exception:
+                import traceback
+                logger.exception(traceback.format_exc())
 
 
 if __name__ == "__main__":
