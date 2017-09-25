@@ -30,7 +30,7 @@ class TaskInfo(object):
         self.expiry = time.time() + timeout
 
 class TaskQueue(object):
-    def __init__(self, distributor):
+    def __init__(self, distributor, lifetime=3600):
         self.rating_queue = collections.deque()
         self.ratings_in_progress =  collections.OrderedDict()
         self.assigned =  collections.OrderedDict()
@@ -40,6 +40,9 @@ class TaskQueue(object):
 
         self.num_rated = 0
         self.total_cost = 0
+        
+        self._lifetime = lifetime
+        self._expiry = time.time() + self._lifetime
 
         self.handins = collections.deque()
 
@@ -199,6 +202,11 @@ class TaskQueue(object):
             self._rateAndAssignTasks()
             self._process_handins()
             self._requeue_timed_out()
+            self._expiry =  time.time() + self._lifetime
+            
+    @property
+    def expired(self):
+        return time.time() > self._expiry
 
     def _poll_loop(self):
         while self._do_poll:
@@ -257,6 +265,10 @@ class Distributor(object):
         while self._do_poll:
             for qn in self._queues.keys():
                 self._queues[qn]._poll()
+                
+                #remore queue if expired (no activity for an hour) to free up memory
+                if self._queues[qn].expired:
+                    self._queues.pop(qn)
                 
             time.sleep(.1)
             
