@@ -51,6 +51,12 @@ DCAMPROP_ATTR_HASVALUETEXT= ctypes.c_int32(int("0x10000000", 0))
 DCAMPROP_ATTR_WRITABLE = ctypes.c_int32(int("0x00020000", 0))
 DCAMPROP_ATTR_READABLE = ctypes.c_int32(int("0x00010000", 0))
 
+DCAM_IDPROP_EXPOSURETIME = ctypes.c_int32(int("0x001F0110", 0))
+
+DCAM_IDPROP_SENSORTEMPERATURE = ctypes.c_int32(int("0x00200310", 0))
+DCAM_IDPROP_SENSORTEMPERATURETARGET = ctypes.c_int32(int("0x00200330", 0))
+
+
 # Hamamatsu structures (DCAM4)
 class DCAMPROP_ATTR(ctypes.Structure):
     """
@@ -100,6 +106,7 @@ class DCAMAPI_INIT(ctypes.Structure):
                 ("initoption", ctypes.POINTER(ctypes.c_int32)),
                 ("guid", ctypes.c_void_p)]
 
+
 class DCAMDEV_OPEN(ctypes.Structure):
     """
     Specifies the device index to be opened and receives the HDCAM handle of
@@ -119,12 +126,18 @@ class DCAMDEV_STRING(ctypes.Structure):
                 ("text", ctypes.c_char_p),
                 ("textbytes", ctypes.c_int32)]
 
+
 class DCAMException(Exception):
     """
     Raises an Exception related to Hamamatsu DCAM.
     """
     def __init__(self, message):
         Exception.__init__(self, message)
+
+
+# Helper functions
+def convertPropertyName(name):
+    return name.lower().replace(" ", "_")
 
 
 # Initialize the API
@@ -153,6 +166,15 @@ class HamamatsuDCAM(Camera):
         self.CameraModel = self.getCamInfo(DCAM_IDSTR_MODEL)
         self.SerialNumber = self.getCamInfo(DCAM_IDSTR_CAMERAID)
 
+        self.SetIntegTime(self._intTime)
+
+    def StartExposure(self):
+        self.StopAq()
+        self._temp = self.getCamPropValue(DCAM_IDPROP_SENSORTEMPERATURE)
+        self._frameRate = self.getCamPropValue(DCAM_IDPROP_EXPOSURETIME)
+
+        # Custom start exposure for sCMOS or EMCCD (might need to flush buffers)
+
     def getCamInfo(self, idStr):
         """
         Get attribute value from the camera by IDSTR (or ERR) (as defined by
@@ -172,11 +194,67 @@ class HamamatsuDCAM(Camera):
         param = DCAMDEV_STRING()
         param.size = ctypes.sizeof(param)
         param.text = ctypes.addressof(c_buf)
-        param.textbytes = ctypes.sizeof(c_buf)
+        param.textbytes = ctypes.c_int32(c_buf_len)
         param.iString = idStr
         dcam.dcamdev_getstring(self.handle, ctypes.byref(param))
 
         return c_buf.value
+
+    def getCamProperties(self):
+        """
+        Get a list of the camera properties for use in get/set.
+        """
+
+        # Create a blank dictionary for the camera properties
+        properties = {}
+
+        # Go to the beginning of the property list
+        iProp = ctypes.c_int32(0)
+        self.checkStatus(dcam.dcamprop_getnextid(self.handle,
+                                                 ctypes.byref(iProp),
+                                                 DCAMPROP_OPTION_SUPPORT),
+                        "dcamprop_getnextid")
+
+        # Loop over the properties and store
+        while 1:
+            text_len = 64
+            text = ctypes.create_string_buffer(text_len)
+            self.checkStatus(dcam.dcamprop_getname(self.handle, iProp, text,
+                                                   ctypes.c_int32(text_len)),
+                             "dcamprop_getname")
+
+            properties[text.value] = iProp.value
+
+            if dcam.dcamprop_getnextid(self.handle, ctypes.byref(iProp),
+                                       DCAMPROP_OPTION_SUPPORT) < 0:
+                break
+
+        return properties
+
+    def getCamPropAttr(self, iProp):
+        """
+        Get DCAM property attributes for property iProp.
+
+        Parameters
+        ----------
+        iProp : c_int32
+            DCAM property (e.g. DCAM_IDPROP_IMAGE_WIDTH)
+
+        Returns
+        -------
+        attr : DCAMPROP_ATTR
+            Struct of DCAM property attributes, which includes range and mode.
+        """
+        attr = DCAMPROP_ATTR()
+        attr.cbSize = ctypes.sizeof(attr)
+        attr.iProp = iProp
+
+        self.checkStatus(dcam.dcamprop_getattr(self.handle,
+                                           ctypes.byref(attr)),
+                     "dcamprop_getattr")
+
+        return attr
+
 
     def getCamPropValue(self, iProp):
         """
@@ -194,7 +272,8 @@ class HamamatsuDCAM(Camera):
         """
         value = ctypes.c_double
         self.checkStatus(dcam.dcamprop_getvalue(self.handle, iProp,
-                                                ctypes.byref(value)))
+                                                ctypes.byref(value)),
+                         "dcamprop_getvalue")
 
         return value
 
@@ -214,7 +293,8 @@ class HamamatsuDCAM(Camera):
         None.
         """
         self.checkStatus(dcam.dcamprop_setvalue(self.handle, iProp,
-                                                ctypes.cdouble(value)))
+                                                ctypes.c_double(value)),
+                        "dcamprop_setvalue")
 
     def checkStatus(self, fn_return, fn_name="unknown"):
         """
@@ -238,9 +318,11 @@ class HamamatsuDCAM(Camera):
                                 self.getCamInfo(fn_return))
         return fn_return
 
+    def SetIntegTime(self, intTime):
+        self.setCamPropValue(DCAM_IDPROP_EXPOSURETIME, intTime)
+        self._intTime = intTime
+
     def Shutdown(self):
         self.checkStatus(dcam.dcamdev_close(self.handle), "dcamdev_close")
-
-    def __del__(self):
-        Camera.__del__(self)
-        dcam.dcamapi_uninit()
+        #if self.camNum < nCams:
+        #    dcam.dcamapi_uninit()

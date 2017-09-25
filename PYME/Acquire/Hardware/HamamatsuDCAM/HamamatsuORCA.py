@@ -60,6 +60,34 @@ class HamamatsuORCA(HamamatsuDCAM, sCMOSCamera):
 
         self.doPoll = True
 
+    def StartExposure(self):
+        """
+        Starts an acquisition.
+
+        Returns
+        -------
+        int
+            Success (0) or failure (-1) of initialization.
+        """
+
+        HamamatsuDCAM.StartExposure(self)
+
+        self._flush()
+        self.InitBuffers()
+        # start the acquisition
+
+        return 0
+
+    def StopAq(self):
+        """
+        Stops acquiring.
+
+        Returns
+        -------
+        None
+        """
+        pass
+
     def _flush(self):
         # Turn off camera polling
         self.doPoll = False
@@ -108,6 +136,13 @@ class HamamatsuORCA(HamamatsuDCAM, sCMOSCamera):
         """
 
         pass
+
+    def GenStartMetadata(self, mdh):
+        sCMOSCamera.GenStartMetadata(self)
+        if self.active:
+            placeholder = True
+            # add noise info
+
 
     def SetBurst(self, burstSize):
         """

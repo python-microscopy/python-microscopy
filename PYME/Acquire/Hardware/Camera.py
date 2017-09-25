@@ -73,6 +73,7 @@ class Camera(object):
 
         self._temp = 0  # Default camera temperature (Celsius)
         self._frameRate = 0
+        self._intTime = 0.100
 
         # Camera lock
         self.camLock = Lock()
@@ -278,7 +279,7 @@ class Camera(object):
         --------
         SetIntegTime
         """
-        pass
+        return self._intTime
 
     def GetCycleTime(self):
         """
@@ -531,7 +532,7 @@ class Camera(object):
 
         self.active = active
 
-    def SetIntegTime(self, integration_time):
+    def SetIntegTime(self, intTime):
         """
         Sets the exposure time in s. Currently assumes that we will want to go
         as fast as possible at this exposure time and also sets the frame
@@ -539,7 +540,7 @@ class Camera(object):
 
         Parameters
         ----------
-        integration_time : float
+        intTime : float
             Exposure time in s.
 
         Returns
@@ -669,16 +670,16 @@ class Camera(object):
     # mostly superfluous. Being able to read out the binning (GetHorizBin,
     # GetVertBin) is however necessary and these should definitely be revisited
     def SetHorizBin(*args):
-        raise Exception('Not implemented yet!!')
+        raise Exception("Implemented in derived class.")
 
     def GetHorizBin(*args):
         return 0
 
     def GetHorzBinValue(*args):
-        raise Exception('Not implemented yet!!')
+        raise Exception("Implemented in derived class.")
 
     def SetVertBin(*args):
-        raise Exception('Not implemented yet!!')
+        raise Exception("Implemented in derived class.")
 
     def GetVertBin(*args):
         return 0
@@ -715,31 +716,31 @@ class Camera(object):
     ##### Completely useless functions follow. To be deleted. #####
 
     def CheckCoordinates(*args):
-        pass
+        raise NotImplementedError("Deprecated.")
 
     def DisplayError(*args):
-        pass
+        raise NotImplementedError("Deprecated.")
 
     def GetBWPicture(*args):
-        pass
+        raise NotImplementedError("Deprecated.")
 
     def GetNumberChannels(*args):
-        pass
+        raise NotImplementedError("Deprecated.")
 
     def GetStatus(*args):
-        pass
+        raise NotImplementedError("Deprecated.")
 
     def SetBurst(self, burstSize):
-        pass
+        raise NotImplementedError("Deprecated.")
 
     def SetCOC(*args):
-        pass
+        raise NotImplementedError("Deprecated.")
 
     def SetROIIndex(self, index):
-        pass
+        raise NotImplementedError("Deprecated.")
 
     def StartLifePreview(*args):
-        pass
+        raise NotImplementedError("Deprecated.")
 
     def StopLifePreview(*args):
-        pass
+        raise NotImplementedError("Deprecated.")
