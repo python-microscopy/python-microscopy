@@ -369,6 +369,10 @@ def OSXActivateKludge():
     """ % os.getpid()])
 
 class MyApp(wx.App):
+    def __init__(self, argv, *args, **kwargs):
+        self.argv = argv
+        wx.App.__init__(*args, **kwargs)
+        
     def OnInit(self):
         
         
@@ -387,7 +391,7 @@ class MyApp(wx.App):
         import sys, os
         from optparse import OptionParser
 
-        op = OptionParser(usage = 'usage: %s [options] [filename]' % sys.argv[0])
+        op = OptionParser(usage = 'usage: %s [options] [filename]' % self.argv[0])
 
         op.add_option('-m', '--mode', dest='mode', help="mode (or personality), as defined in PYME/DSView/modules/__init__.py")
         op.add_option('-q', '--queueURI', dest='queueURI', help="the Pyro URI of the task queue - to avoid having to use the nameserver lookup")
@@ -396,7 +400,7 @@ class MyApp(wx.App):
         op.add_option('-g', '--start-analysis', dest='start_analysis', action="store_true", help="Automatically start the analysis (where appropriate)", default=False)
         op.add_option('-r', '--recipe', dest='recipe_filename', help='Recipe to load', default=None)
 
-        options, args = op.parse_args()
+        options, args = op.parse_args(self.argv)
         
         try:
             #md = None
@@ -451,14 +455,15 @@ class MyApp(wx.App):
 
 # end of class MyApp
 
-def main():
-    app = MyApp(0)
+def main(argv):
+    app = MyApp(argv)
     print('Starting main loop')
     app.MainLoop()
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(sys.argv)
 
 
 def View3D(data, titleStub='Untitled Image', mdh = None, mode='lite', 
