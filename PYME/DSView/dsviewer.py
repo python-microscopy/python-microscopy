@@ -371,7 +371,7 @@ def OSXActivateKludge():
 class MyApp(wx.App):
     def __init__(self, argv, *args, **kwargs):
         self.argv = argv
-        wx.App.__init__(*args, **kwargs)
+        wx.App.__init__(self, *args, **kwargs)
         
     def OnInit(self):
         
@@ -454,15 +454,14 @@ class MyApp(wx.App):
 
 
 # end of class MyApp
-
-def main(argv):
+import sys
+def main(argv=sys.argv):
     app = MyApp(argv)
     print('Starting main loop')
     app.MainLoop()
 
 
 if __name__ == "__main__":
-    import sys
     main(sys.argv)
 
 
