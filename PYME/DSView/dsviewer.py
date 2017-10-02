@@ -391,7 +391,7 @@ class MyApp(wx.App):
         import sys, os
         from optparse import OptionParser
 
-        op = OptionParser(usage = 'usage: %s [options] [filename]' % self.argv[0])
+        op = OptionParser(usage = 'usage: %s [options] [filename]' % sys.argv[0])
 
         op.add_option('-m', '--mode', dest='mode', help="mode (or personality), as defined in PYME/DSView/modules/__init__.py")
         op.add_option('-q', '--queueURI', dest='queueURI', help="the Pyro URI of the task queue - to avoid having to use the nameserver lookup")
@@ -455,14 +455,14 @@ class MyApp(wx.App):
 
 # end of class MyApp
 import sys
-def main(argv=sys.argv):
+def main(argv=sys.argv[1:]):
     app = MyApp(argv)
     print('Starting main loop')
     app.MainLoop()
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main(sys.argv[1:])
 
 
 def View3D(data, titleStub='Untitled Image', mdh = None, mode='lite', 
