@@ -26,11 +26,6 @@
 #
 ################
 
-try:
-    import Queue
-except ImportError:
-    import queue as Queue
-
 from threading import Lock
 
 from PYME.IO import MetaDataHandler
@@ -75,22 +70,9 @@ class Camera(object):
         self._frameRate = 0
         self._intTime = 0.100
 
-        # Camera lock
-        self.camLock = Lock()
-
         # Camera info
         self.SerialNumber = ""
         self.CameraModel = ""
-
-        self.buffersToQueue = Queue.Queue()
-        self.queuedBuffers = Queue.Queue()
-        self.fullBuffers = Queue.Queue()
-
-        self.nQueued = 0
-        self.nFull = 0
-
-        self.nBuffers = 100
-        self.defBuffers = 100
 
         self.active = True  # Should the camera write its metadata?
 
@@ -109,7 +91,7 @@ class Camera(object):
         -------
         None
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def StartExposure(self):
         """
@@ -120,8 +102,7 @@ class Camera(object):
         int
             Success (0) or failure (-1) of initialization.
         """
-
-        return 0
+        raise NotImplementedError('Implemented in derived class.')
 
     def StopAq(self):
         """
@@ -131,7 +112,7 @@ class Camera(object):
         -------
         None
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GenStartMetadata(self, mdh):
         """
@@ -206,7 +187,7 @@ class Camera(object):
 
         """
 
-        return not self.fullBuffers.empty()
+        raise NotImplementedError('Implemented in derived class.')
 
     def CamReady(*args):
         """
@@ -238,7 +219,7 @@ class Camera(object):
         -------
         None
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetModel(self):
         """
@@ -296,13 +277,13 @@ class Camera(object):
         return 0.0
 
     def GetReadNoise(self):
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetNoiseFactor(self):
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetElectrPerCount(self):
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetCCDTemp(self):
         """
@@ -326,7 +307,7 @@ class Camera(object):
             The sensor width in pixels
 
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetCCDHeight(self):
         """
@@ -338,7 +319,7 @@ class Camera(object):
             The sensor height in pixels
 
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetPicWidth(self):
         """
@@ -349,7 +330,7 @@ class Camera(object):
         int
             Width of ROI (pixels)
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetPicHeight(self):
         """
@@ -360,7 +341,7 @@ class Camera(object):
         int
             Height of ROI (pixels)
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def SetROI(self, x1, y1, x2, y2):
         """
@@ -393,6 +374,7 @@ class Camera(object):
         --------
         SetROIIndex
         """
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetROIX1(self):
         """
@@ -403,7 +385,7 @@ class Camera(object):
         int
             Left x-coordinate of ROI.
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetROIX2(self):
         """
@@ -414,7 +396,7 @@ class Camera(object):
         int
             Right x-coordinate of ROI.
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetROIY1(self):
         """
@@ -425,7 +407,7 @@ class Camera(object):
         int
             Top y-coordinate of ROI.
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetROIX2(self):
         """
@@ -436,7 +418,7 @@ class Camera(object):
         int
             Bottom y-coordinate of ROI.
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetEMGain(self):
         """
@@ -466,7 +448,7 @@ class Camera(object):
         ----------
         GetEMGain
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetAcquisitionMode(self):
         """
@@ -551,8 +533,7 @@ class Camera(object):
         --------
         GetIntegTime
         """
-
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def SetEMGain(self, gain):
         """
@@ -573,7 +554,7 @@ class Camera(object):
         --------
         GetEMGain
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetCCDTempSetPoint(self):
         """
@@ -585,7 +566,7 @@ class Camera(object):
         float
             Target camera temperature (Celsius)
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def SetCCDTemp(self, temp):
         """
@@ -600,7 +581,7 @@ class Camera(object):
         -------
         None
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def SetShutter(self, mode):
         """
@@ -615,7 +596,7 @@ class Camera(object):
         -------
         None
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def SetBaselineClamp(self, mode):
         """
@@ -631,7 +612,7 @@ class Camera(object):
         -------
         None
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def GetFPS(self):
         """
@@ -670,16 +651,16 @@ class Camera(object):
     # mostly superfluous. Being able to read out the binning (GetHorizBin,
     # GetVertBin) is however necessary and these should definitely be revisited
     def SetHorizBin(*args):
-        raise Exception("Implemented in derived class.")
+        raise NotImplementedError("Implemented in derived class.")
 
     def GetHorizBin(*args):
         return 0
 
     def GetHorzBinValue(*args):
-        raise Exception("Implemented in derived class.")
+        raise NotImplementedError("Implemented in derived class.")
 
     def SetVertBin(*args):
-        raise Exception("Implemented in derived class.")
+        raise NotImplementedError("Implemented in derived class.")
 
     def GetVertBin(*args):
         return 0
@@ -707,7 +688,7 @@ class Camera(object):
         -------
         None
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def __del__(self):
         self.Shutdown()

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 ###############
-# sCMOSCamera.py
+# SoftwareBuffer.py
 #
 # Created: 16 September 2017
 # Author : Z Marin
@@ -26,6 +26,11 @@
 #
 ################
 
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
+
 import time
 
 from threading import Thread
@@ -34,11 +39,24 @@ from fftw3f import create_aligned_array
 from PYME.Acquire.Hardware.Camera import Camera
 
 
-class sCMOSCamera(Camera):
+class SoftwareBuffer(Camera):
 
     def __init__(self, camNum):
         # Default Camera object initializations
         Camera.__init__(self, camNum)
+
+        # Camera lock
+        self.camLock = Lock()
+
+        self.buffersToQueue = Queue.Queue()
+        self.queuedBuffers = Queue.Queue()
+        self.fullBuffers = Queue.Queue()
+
+        self.nQueued = 0
+        self.nFull = 0
+
+        self.nBuffers = 100
+        self.defBuffers = 100
 
         self.doPoll = False
         self.pollLoopActive = False
@@ -64,7 +82,7 @@ class sCMOSCamera(Camera):
 
         Usage
         -----
-        class ASpecificCam(sCMOSCamera):
+        class ASpecificCam(SoftwareBuffer):
             ...
             def _flush(self):
                 # Turn off camera polling
@@ -74,7 +92,7 @@ class sCMOSCamera(Camera):
                 [Code here]
 
                 # flush local buffers
-                sCMOSCamera._flush(self)
+                SoftwareBuffer._flush(self)
 
                 # flush camera buffers again
                 [Code here]

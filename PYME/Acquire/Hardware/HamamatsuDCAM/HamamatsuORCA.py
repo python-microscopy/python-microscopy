@@ -28,37 +28,50 @@
 ################
 
 from .HamamatsuDCAM import *
-from PYME.Acquire.Hardware.sCMOSCamera import sCMOSCamera
 from fftw3f import create_aligned_array
 
 
 # C11440-22CU DCAM_IDPROP variables
+# {'SUBARRAY VSIZE': 4202816, 'BUFFER TOP OFFSET BYTES': 4326224, 'IMAGE
+# DETECTOR PIXEL NUM VERT': 4327488, 'INTERNAL FRAME INTERVAL': 4208672,
+# 'OUTPUT TRIGGER ACTIVE[0]': 1835312, 'TRIGGER TIMES': 1049152,  'READOUT
+# SPEED': 4194576, 'TIMING CYCLIC TRIGGER PERIOD': 4206624,  'TIMING INVALID
+# EXPOSURE PERIOD': 4206704, 'INTERNAL LINE INTERVAL': 4208720,  'TRIGGER
+# MODE': 1049104, 'IMAGE ROWBYTES': 4325936, 'BUFFER ROWBYTES': 4326192,
+# 'IMAGE DETECTOR PIXEL NUM HORZ': 4327472,  'TIMING GLOBAL EXPOSURE DELAY':
+# 4206736, 'OUTPUT TRIGGER PERIOD[0]': 1835344,  'OUTPUT TRIGGER PRE HSYNC
+# COUNT': 1835408, 'BUFFER PIXEL TYPE': 4326240,  'OUTPUT TRIGGER POLARITY[
+# 0]': 1835296, 'RECORD FIXED BYTES PER FILE': 4326416,  'BIT PER CHANNEL':
+# 4325680, 'SUBARRAY HPOS': 4202768, 'BINNING': 4198672,  'INTERNAL LINE
+# SPEED': 4208704, 'OUTPUT TRIGGER KIND[0]': 1835360,  'IMAGE DETECTOR PIXEL
+# HEIGHT': 4327456, 'FRAME STAMP PRODUCER': 4262432,  'SUBARRAY VPOS':
+# 4202800, 'IMAGE DETECTOR PIXEL WIDTH': 4327440,  'NUMBER OF OUTPUT TRIGGER
+# CONNECTOR': 1835024, 'TIMING MIN TRIGGER BLANKING': 4206640,  'READOUT
+# DIRECTION': 4194608, 'IMAGE HEIGHT': 4325920,  'TIMING MIN TRIGGER
+# INTERVAL': 4206672, 'SENSOR COOLER STATUS': 2097984,  'IMAGE WIDTH':
+# 4325904, 'TRIGGER CONNECTOR': 1049136, 'RECORD FIXED BYTES PER SESSION':
+# 4326432, 'TRIGGER ACTIVE': 1048864, 'INTERNAL FRAME RATE': 4208656,
+# 'TIMING READOUT TIME': 4206608, 'SYSTEM ALIVE': 16711696,  'TRIGGER GLOBAL
+# EXPOSURE': 2032384, 'TRIGGER SOURCE': 1048848, 'IMAGE TOP OFFSET BYTES':
+# 4325968, 'IMAGE PIXEL TYPE': 4326000, 'BUFFER FRAMEBYTES': 4326208,
+# 'COLORTYPE': 4325664, 'SUBARRAY MODE': 4202832, 'TIMING EXPOSURE': 4206688,
+#   'TIME STAMP PRODUCER': 4262416, 'CONVERSION FACTOR COEFF': 16769040,
+# 'EXPOSURE TIME': 2031888, 'SUBARRAY HSIZE': 4202784,  'TRIGGER POLARITY':
+# 1049120, 'DEFECT CORRECT MODE': 4653072, 'SENSOR MODE': 4194832,  'OUTPUT
+# TRIGGER DELAY[0]': 1835328, 'OUTPUT TRIGGER SOURCE[0]': 1835280,  'RECORD
+# FIXED BYTES PER FRAME': 4326448, 'SYNC READOUT SYSTEM BLANK': 1049232,
+# 'TRIGGER DELAY': 1049184, 'CONVERSION FACTOR OFFSET': 16769056,  'IMAGE
+# FRAMEBYTES': 4325952}
+
+DCAMBUF_ATTACHKIND_FRAME = 0
 
 
-class HamamatsuORCA(HamamatsuDCAM, sCMOSCamera):
+class HamamatsuORCA(HamamatsuDCAM):
 
     def __init__(self):
         HamamatsuDCAM.__init__(self)
 
         # initialize other properties needed
-
-    def InitBuffers(self):
-        self._flush()
-
-        #bufSize = self.ImageSizeBytes.getValue()
-        #vRed = int(self.SensorHeight.getValue() / self.AOIHeight.getValue())
-        #self.nBuffers = vRed * self.defBuffers
-
-        if not self.contMode:
-            self.nBuffers = 5
-
-        # print bufSize
-        for i in range(self.nBuffers):
-            # buf = np.empty(bufSize, 'uint8')
-            buf = create_aligned_array(bufSize, 'uint8')
-            self._queueBuffer(buf)
-
-        self.doPoll = True
 
     def StartExposure(self):
         """
@@ -72,8 +85,6 @@ class HamamatsuORCA(HamamatsuDCAM, sCMOSCamera):
 
         HamamatsuDCAM.StartExposure(self)
 
-        self._flush()
-        self.InitBuffers()
         # start the acquisition
 
         return 0
@@ -88,60 +99,10 @@ class HamamatsuORCA(HamamatsuDCAM, sCMOSCamera):
         """
         pass
 
-    def _flush(self):
-        # Turn off camera polling
-        self.doPoll = False
-
-        # flush camera buffers
-
-        # flush local buffers
-        sCMOSCamera._flush(self)
-
-        # flush camera buffers again
-
-    def _queueBuffers(self):
-        """
-        Grab camera buffers and stash them in queuedBuffers, moving the data
-        first through buffersToQueue. This function is too camera-specific
-        for any general code in the class.
-        nQueued += 1
-        """
-        pass
-
-    def _pollBuffer(self):
-        """
-        Grabbed the queuedBuffers off the camera and stash them in fullBuffers.
-        This function is too camera-specific for any general code in the class.
-        nFull += 1
-        """
-        pass
-
     def ExtractColor(self, chSlice, mode):
-        """
-        Pulls the oldest frame from the camera buffer and copies it into
-        memory we provide. Note that the function signature and parameters are
-        a legacy of very old code written for a colour camera with a bayer mask.
-        This function is too camera-specific for any general code in the class.
-
-        Parameters
-        ----------
-        chSlice : `~numpy.ndarray`
-            The array we want to put the data into
-        mode : int
-            Previously specified how to deal with the Bayer mask.
-
-        Returns
-        -------
-        None
-        """
-
+        # DCAM lockframe
+        # ctypes memcpy AndorNeo 251
         pass
-
-    def GenStartMetadata(self, mdh):
-        sCMOSCamera.GenStartMetadata(self)
-        if self.active:
-            placeholder = True
-            # add noise info
 
 
     def SetBurst(self, burstSize):
