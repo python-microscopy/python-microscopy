@@ -49,6 +49,45 @@ def plot(data, xvals='bins', yvals=['counts', ], type='line', xlabel=None, ylabe
         
         return ret
 
+
+def hist(data, bins=20, type='line', xlabel=None, ylabel=None, title=None, figsize=(7, 5)):
+    import matplotlib.pyplot as plt
+    import mpld3
+    import numpy as np
+    
+    #print type
+    
+    if xlabel is None:
+        xlabel = 'Bins'
+    
+    if ylabel is None:
+        ylabel = 'Frequency'
+    
+    with offline_plotting():
+        f = plt.figure(figsize=figsize)
+        
+        counts, edges = np.histogram(data, bins)
+        
+        centres = 0.5*(edges[1:] + edges[:-1])
+            
+        if type == 'bar':
+            plt.bar(centres, counts, align='center', width=(edges[1] - edges[0]))
+        else:
+            plt.plot(centres, counts)
+        
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        
+        if title:
+            plt.title(title)
+        
+        plt.tight_layout()
+        
+        ret = mpld3.fig_to_html(f, template_type='simple')
+        plt.close(f)
+        
+        return ret
+
 def movieplot(clump, image):
     #if image.size == 0:
     #    #stop us from blowing up if we get an empty image
