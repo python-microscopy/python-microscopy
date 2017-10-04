@@ -34,11 +34,11 @@ class RaggedBase(object):
         import json
         return json.dumps([self._jsify(o) for o in self])
     
-    def to_hdf(self, filename, tablename):
+    def to_hdf(self, filename, tablename, mode='w'):
         #TODO - write me / re-evaluate. This should be cluster aware and use h5r file. Ragged array logic belomgs in h5rfile
         from PYME.IO import h5rFile
         
-        with h5rFile.H5RFile(filename, 'w') as h5f:
+        with h5rFile.H5RFile(filename, mode) as h5f:
             for item in self:
                 h5f.appendToTable(tablename, self._jsify(item))
 
