@@ -622,7 +622,15 @@ class uc480Camera:
     def SetGain(self, gain=100):
         uc480.CALL('SetHardwareGain', self.boardHandle, gain, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER)
         
-    
+    def GetGain(self):
+        ret = uc480.CALL('SetHardwareGain', self.boardHandle, uc480.IS_GET_MASTER_GAIN, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER, uc480.IS_IGNORE_PARAMETER)
+        return ret
+
+    def GetGainFactor(self):
+        gain = self.GetGain()
+        ret = uc480.CALL('SetHWGainFactor', self.boardHandle, uc480.IS_INQUIRE_MASTER_GAIN_FACTOR, gain)
+        return 0.01*ret
+
     def SetAccumulation(self, nFrames):
         self.nAccum = nFrames
         
@@ -675,6 +683,9 @@ class uc480Camera:
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
             mdh.setEntry('Camera.CycleTime', 1./self.GetFPS())
 
+            mdh.setEntry('Camera.HardwareGain', self.GetGain())            
+            mdh.setEntry('Camera.HardwareGainFactor', self.GetGainFactor())
+            
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
