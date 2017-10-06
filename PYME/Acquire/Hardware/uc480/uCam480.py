@@ -685,7 +685,15 @@ class uc480Camera:
 
             mdh.setEntry('Camera.HardwareGain', self.GetGain())            
             mdh.setEntry('Camera.HardwareGainFactor', self.GetGainFactor())
-            
+            # this is purely a guess for the IMX sensors - need to check
+            mdh.setEntry('Camera.ElectronsPerCount', 1.0/self.GetGainFactor())
+            mdh.setEntry('Camera.ADOffset', 10)
+            mdh.setEntry('Camera.ReadNoise', 7.0*self.GetGainFactor())
+            mdh.setEntry('Camera.NoiseFactor', 1.0)
+
+            mdh.setEntry('Camera.SensorWidth',self.GetCCDWidth())
+            mdh.setEntry('Camera.SensorHeight',self.GetCCDHeight())
+
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
