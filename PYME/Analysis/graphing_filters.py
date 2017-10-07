@@ -12,7 +12,7 @@ class offline_plotting(object):
         plt.switch_backend(self.old_backend)
         plt.ion()
 
-def plot(data, xvals='bins', yvals=['counts', ], type='line', xlabel=None, ylabel=None, title=None, figsize=(7,5)):
+def plot(data, xvals='bins', yvals=['counts', ], type='line', xlabel=None, ylabel=None, title=None, figsize=(7,5), **kwargs):
     import matplotlib.pyplot as plt
     import mpld3
     
@@ -33,6 +33,10 @@ def plot(data, xvals='bins', yvals=['counts', ], type='line', xlabel=None, ylabe
         
             if type == 'bar':
                 plt.bar(xv, yv, align='center', width=(xv[1] - xv[0]))
+            elif type=='scatter':
+                plt.scatter(xv, yv, **kwargs)
+            elif type=='errorbar':
+                plt.errorbar(xv, yv, **kwargs)
             else:
                 plt.plot(xv, yv)
                 
