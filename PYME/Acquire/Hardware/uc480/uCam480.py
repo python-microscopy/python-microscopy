@@ -44,7 +44,7 @@ import numpy as np
 from PYME.Acquire import eventLog
 
 def init(cameratype='uc480'):
-    uc480.init(cameratype)
+    uc480.loadLibrary(cameratype)
 
 def GetError(camHandle):
     err = ctypes.c_int()
@@ -64,7 +64,9 @@ def GetCameraList():
     
     class UEYE_CAMERA_LIST(ctypes.Structure):
         _fields_ = [("dwCount", ctypes.wintypes.ULONG ),] + [("uci%d" %n, uc480.UEYE_CAMERA_INFO) for n in range(nCams)] #
-    
+        # _fields_ = [("dwCount", ctypes.wintypes.ULONG ),
+        #             ("caminfo", uc480.UEYE_CAMERA_INFO * nCams)]
+
     camlist = UEYE_CAMERA_LIST()
     camlist.dwCount = nCams
     

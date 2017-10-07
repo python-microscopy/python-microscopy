@@ -106,21 +106,14 @@ class UEYE_CAMERA_INFO(ctypes.Structure):
 PUEYE_CAMERA_INFO = ctypes.POINTER(UEYE_CAMERA_INFO)
 
 libuc480=None # initialise at module level
+cameraType = None # initialise
 
-def init(cameratype='uc480'):
+def loadLibrary(cameratype='uc480'):
 
         global libuc480
+        global cameraType
 
-        # if os.name=='nt':
-        # # UNTESTED: Please report results to http://code.google.com/p/pylibuc480/issues
-        #         libname = 'uc480'
-        #         include_uc480_h = os.environ['PROGRAMFILES']+'\\Thorlabs DCU camera\\Develop\\Include\\uc480.h'
-        #         lib = ctypes.util.find_library(libname)
-        #         if lib is None:
-        #                 print('uc480.dll not found')
-        #         lib = libname
-
-
+        cameraType = cameratype # store for later availability by outside modules
         #libuc480 = ctypes.cdll.LoadLibrary(lib)
         if cameratype=='uc480':
                 libuc480 = ctypes.WinDLL('uc480_64')
@@ -130,78 +123,6 @@ def init(cameratype='uc480'):
                 print "loading ueye_api_64"
         else:
                 raise "unknown camera type"
-        
-        # if libuc480 is not None:
-	#         uc480_h_name = 'uc480_h'
-	#         try:
-	# 	        uc480_h = "uc480_h"
-	# 	        #from uc480_h import *
-	# 	        #exec 'from %s import *' % (uc480_h_name)
-	#         except ImportError:
-	# 	        uc480_h = None
-	#         if uc480_h is None:
-        #                 generate_uc480_h(include_uc480_h)
-	# else:
-	# 	pass
-
-# this is not really tested at all - I suspect the include file parsing code would need
-# a full overhaul
-# we ignore it for now
-def generate_uc480_h(include_uc480_h):
-	assert os.path.isfile(include_uc480_h), repr(include_uc480_h)
-	d = {}
-	l = ['# This file is auto-generated. Do not edit!']
-	error_map = {}
-	f = open (include_uc480_h, 'r')
-
-	def is_number(s):
-		try:
-			float(s)
-			return True
-		except ValueError:
-			return False
-			
-	for line in f.readlines():
-		if not line.startswith('#define'): continue
-		i = line.find('//')
-		words = line[7:i].strip().split(None, 2)
-		if len (words)!=2: continue
-		name, value = words
-		if value.startswith('0x'):
-			exec '%s = %s' % (name, value) in globals(), locals()
-			d[name] = eval(value)
-			l.append('%s = %s' % (name, value))
-            # elif name.startswith('DAQmxError') or name.startswith('DAQmxWarning'):
-			# assert value[0]=='(' and value[-1]==')', `name, value`
-			# value = int(value[1:-1])
-			# error_map[value] = name[10:]
-            # elif name.startswith('DAQmx_Val') or name[5:] in ['Success','_ReadWaitMode']:
-			# d[name] = eval(value)
-			# l.append('%s = %s' % (name, value))
-		elif is_number(value):
-			d[name] = eval(value)
-			l.append('%s = %s' % (name, value))
-		elif value.startswith('UC'):
-			print(value)
-			d[name] = u'' + value[3:-1]
-			l.append('%s = u"%s"' % (name, value[3:-1]))
-		elif d.has_key(value):
-			d[name] = d[value]
-			l.append('%s = %s' % (name, d[value]))
-		else:
-			d[name] = value
-			l.append('%s = %s' % (name, value))
-			pass
-	l.append('error_map = %r' % (error_map))
-	fn = os.path.join (os.path.dirname(os.path.abspath (__file__)), uc480_h_name+'.py')
-	print(('Generating %r' % (fn)))
-	f = open(fn, 'w')
-	f.write ('\n'.join(l) + '\n')
-	f.close()
-	print(('Please upload generated file %r to http://code.google.com/p/pylibuc480/issues' % (fn)))
-#    else:
-#        pass
-        #d = uc480_h.__dict__
 
 
 def CALL(name, *args):
@@ -223,73 +144,3 @@ def CALL(name, *args):
   # r = CHK(r, funcname, *new_args)
     return r
 
-
-class camera(HCAM):
-    def __init__(self,camera_id=0):
-        #self.id = camera_id
-        HCAM.__init__(self,0)
-        self.h = CALL('InitCamera',ctypes.byref(self),HWND(0))
-        self.width = 1024
-        self.height = 768
-        self.data = np.zeros((self.height,self.width),dtype=np.int8)
-        #return None
-
-    def ExitCamera(self):
-        return CALL('ExitCamera', ctypes.byref(self)) == 0
-
-    def SaveImage(self,file):
-        return CALL('SaveImage',self,None)
-
-    def AllocImageMem(self,width=1024,height=768,bitpixel=8):
-#		self.image = np.zeros((height,width),dtype=np.int8)
-
-        self.image = c_char_p()
-        self.id = c_int()
-        CALL('AllocImageMem',self,c_int(width),c_int(height),c_int(bitpixel),ctypes.byref(self.image),ctypes.byref(self.id))
-        print((self.id))
-#		CALL('AllocImageMem',self,c_int(width),c_int(height),c_int(bitpixel),self.image.data,ctypes.byref(self.id))
-
-    def FreeImageMem (self):
-        CALL("FreeImageMem",self,self.image,self.id)
-
-    def FreezeVideo(self,wait=IS_WAIT):
-        CALL("FreezeVideo",self,INT(wait))
-
-    def CopyImageMem(self):
-
-        r = CALL("CopyImageMem",self,self.image,self.id,self.data.ctypes.data)
-        if r == -1:
-            self.GetError()
-            print((self.err))
-            print((self.errMessage.value))
-        return
-
-    def GetError(self):
-        self.err = ctypes.c_int()
-        self.errMessage = ctypes.c_char_p()
-        CALL("GetError",self,ctypes.byref(self.err),ctypes.byref(self.errMessage))
-
-    def SetImageMem (self):
-        CALL("SetImageMem",self,self.image,self.id)
-
-    def SetImageSize(self,x=IS_GET_IMAGE_SIZE_X_MAX,y=IS_GET_IMAGE_SIZE_X_MAX):
-        print(IS_GET_IMAGE_SIZE_X_MAX)
-        CALL("SetImageSize",self,c_int(x),c_int(y))
-
-    def SetImagePos(self,x=0,y=0):
-        CALL("SetImagePos",self,c_int(x),c_int(y))
-
-    def CaptureVideo(self,wait=IS_DONT_WAIT):
-        CALL("CaptureVideo",self,c_int(wait))
-
-    def SetColorMode(self,color_mode=IS_SET_CM_Y8):
-        CALL("SetColorMode",self,c_int(color_mode))
-
-    def SetSubSampling(self,mode=IS_SUBSAMPLING_DISABLE):
-        CALL("SetSubSampling",self,c_int(mode))
-
-    def StopLiveVideo(self,wait=IS_WAIT):
-        CALL("StopLiveVideo",self,c_int(wait))
-
-    def ExitCamera (self):
-        CALL("ExitCamera",self)
