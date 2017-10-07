@@ -38,7 +38,7 @@ def plot(data, xvals='bins', yvals=['counts', ], type='line', xlabel=None, ylabe
             elif type=='errorbar':
                 plt.errorbar(xv, yv, **kwargs)
             else:
-                plt.plot(xv, yv)
+                plt.plot(xv, yv, **kwargs)
                 
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
