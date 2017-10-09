@@ -59,15 +59,16 @@ def mkDestPath(destdir,stem,mdh):
     return os.path.join(destdir,'%s_%dms.tif' % (stem,itime))
 
 
-def mkDefaultPath(stem,mdh):
-    caldir = nameUtils.getCalibrationDir(mdh['Camera.SerialNumber'])
-    makePathUnlessExists(caldir)
+def mkDefaultPath(stem,mdh,create=True):
+    caldir = nameUtils.getCalibrationDir(mdh['Camera.SerialNumber'],create=create)
+    if create:
+        makePathUnlessExists(caldir)
     return mkDestPath(caldir,stem,mdh)
 
 
 def listCalibrationDirs():
     from glob import glob
-    rootdir = nameUtils.getCalibrationDir('')
+    rootdir = nameUtils.getCalibrationDir('',create=False)
     result = [y for x in os.walk(rootdir) for y in glob(os.path.join(x[0], '*.tif'))]
     if result is not None:
         print('List of installed maps:')
