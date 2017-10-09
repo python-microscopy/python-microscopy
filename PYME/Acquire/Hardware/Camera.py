@@ -409,7 +409,7 @@ class Camera(object):
         """
         raise NotImplementedError('Implemented in derived class.')
 
-    def GetROIX2(self):
+    def GetROIY2(self):
         """
         Gets the position of the bottom row of the ROI.
 

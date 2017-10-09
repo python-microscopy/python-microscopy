@@ -52,6 +52,12 @@ DCAMPROP_ATTR_READABLE = ctypes.c_int32(int("0x00010000", 0))
 DCAM_IDPROP_SENSORTEMPERATURE = ctypes.c_int32(int("0x00200310", 0))
 DCAM_IDPROP_SENSORTEMPERATURETARGET = ctypes.c_int32(int("0x00200330", 0))
 
+DCAMWAIT_CAPEVENT_FRAMEREADY = ctypes.c_int32(int("0x0002", 0))
+DCAMWAIT_TIMEOUT_INFINITE = ctypes.c_int32(int("0x80000000", 0))
+
+DCAMBUF_ATTACHKIND_FRAME = ctypes.c_int32(0)
+DCAMPROP_MODE__OFF = ctypes.c_int32(1)
+DCAMPROP_MODE__ON = ctypes.c_int32(2)
 
 # Hamamatsu structures (DCAM4)
 class DCAMPROP_ATTR(ctypes.Structure):
@@ -155,6 +161,24 @@ class DCAM_TIMESTAMP(ctypes.Structure):
     _fields_ = [("sec", ctypes.c_uint32),
                 ("microsec"), ctypes.c_int32]
 
+class DCAMWAIT_OPEN(ctypes.Structure):
+    """
+    Create wait handle.
+    """
+    _fields_ = [("size", ctypes.c_int32),
+                ("supportevent", ctypes.c_int32),
+                ("hdcamwait", ctypes.c_void_p),
+                ("hdcam", ctypes.c_void_p)]
+
+class DCAMWAIT_START(ctypes.Structure):
+    """
+    Create wait start handle.
+    """
+    _fields_ = [("size", ctypes.c_int32),
+                ("eventhappened", ctypes.c_int32),
+                ("eventmask", ctypes.c_int32),
+                ("timeout", ctypes.c_int32)]
+
 class DCAMException(Exception):
     """
     Raises an Exception related to Hamamatsu DCAM.
@@ -203,12 +227,12 @@ class HamamatsuDCAM(Camera):
         Camera.__init__(self, camNum)
         self.handle = ctypes.c_void_p(0)
         self.properties = {}
-
-    @property
-    def _intTime(self):
-        return self.getCamPropValue('EXPOSURE TIME')
+        self.camWidth = 0
+        self.camHeight = 0
 
     def Init(self):
+        # TODO: Note that this check does not prevent someone from creating
+        #       multiple camera ones (or twos, etc.)
         if self.camNum < camReg.maxCameras:
             paramopen = DCAMDEV_OPEN()
             paramopen.size = ctypes.sizeof(paramopen)
@@ -434,9 +458,6 @@ class HamamatsuDCAM(Camera):
                                 "return value " + str(fn_return) + ": " +
                                 self.getCamInfo(fn_return))
         return fn_return
-
-    def SetIntegTime(self, intTime):
-        self.setCamPropValue('EXPOSURE TIME', intTime)
 
     def Shutdown(self):
         self.checkStatus(dcam.dcamdev_close(self.handle), "dcamdev_close")

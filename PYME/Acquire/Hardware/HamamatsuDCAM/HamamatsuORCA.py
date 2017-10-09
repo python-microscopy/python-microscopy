@@ -63,8 +63,6 @@ from fftw3f import create_aligned_array
 # 'TRIGGER DELAY': 1049184, 'CONVERSION FACTOR OFFSET': 16769056,  'IMAGE
 # FRAMEBYTES': 4325952}
 
-DCAMBUF_ATTACHKIND_FRAME = 0
-
 noiseProperties = {
 1823 : {
         'ReadNoise' : 109.8,
@@ -82,64 +80,121 @@ class HamamatsuORCA(HamamatsuDCAM):
     def __init__(self):
         HamamatsuDCAM.__init__(self)
 
-        #self.noiseProps = noiseProperties[self.SerialNumber]
+        self.noiseProps = {}
+        self.waitopen = DCAMWAIT_OPEN()
+        self.waitstart = DCAMWAIT_START()
 
         # initialize other properties needed
 
+    def Init(self):
+        HamamatsuDCAM.Init(self)
+        if self.camNum < camReg.maxCameras:
+            #self.noiseProps = noiseProperties[self.SerialNumber]
+            self._frameRate = self.getCamPropValue('INTERNAL FRAME RATE')[0]
+
+            # Create a wait handle
+            self.waitopen.size = ctypes.sizeof(self.waitopen)
+            self.waitopen.hdcam = self.handle
+            self.checkStatus(dcam.dcamwait_open(ctypes.byref(self.waitopen)),
+                             "dcamwait_open")
+            self.waitstart.size = ctypes.sizeof(self.waitstart)
+            self.waitstart.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY
+            self.waitstart.timeout = DCAMWAIT_TIMEOUT_INFINITE
+            self.checkStatus(dcam.dcamwait_start(self.waitopen.hdcamwait,
+                                                 ctypes.byref(self.waitstart)),
+                             "dcamwait_start")
+
+
+    @property
+    def _intTime(self):
+        return self.getCamPropValue('EXPOSURE TIME')
+
     def StartExposure(self):
-        """
-        Starts an acquisition.
-
-        Returns
-        -------
-        int
-            Success (0) or failure (-1) of initialization.
-        """
-
+        # From parent
         HamamatsuDCAM.StartExposure(self)
 
-        # start the acquisition
+        # Allocate buffers (2 seconds of buffers)
+        self.checkStatus(dcam.dcambuf_alloc(self.handle, ctypes.c_int32(
+                           2.0*self._frameRate)),
+                         "dcambuf_alloc")
+
+        # Start the capture
+        self.checkStatus(dcam.dcamcap_start(self.handle,
+                                            ctypes.c_int32(self.getCamPropValue(
+                                                'SENSOR MODE'))),
+                         "dcamcap_start")
 
         return 0
 
-    def StopAq(self):
-        """
-        Stops acquiring.
+    def SetROI(self, x1, y1, x2, y2):
+        self.setCamPropValue('SUBARRAY HPOS', x1)
+        self.setCamPropValue('SUBARRAY HSIZE', x2-x1)
+        self.setCamPropValue('SUBARRAY VPOS', y1)
+        self.setCamPropValue('SUBARRAY VSIZE', y2-y1)
 
-        Returns
-        -------
-        None
-        """
-        pass
+        # If our ROI doesn't span the whole CCD, turn on subarray mode
+        if x2-x1 == self.GetCCDWidth() and y2-y1 == self.GetCCDHeight():
+            self.setCamPropValue('SUBARRAY MODE', DCAMPROP_MODE__OFF)
+        else:
+            self.setCamPropValue('SUBARRAY MODE', DCAMPROP_MODE__ON)
+
+    def GetROIX1(self):
+        return int(self.getCamPropValue('SUBARRAY HPOS'))
+
+    def GetROIX2(self):
+        return int(self.GetROIX1() + self.getCamPropValue('SUBARRAY HSIZE'))
+
+    def GetROIY1(self):
+        return int(self.getCamPropValue('SUBARRAY VPOS'))
+
+    def GetROIY2(self):
+        return int(self.GetROIY1() + self.getCamPropValue('SUBARRAY VSIZE'))
+
+    def StopAq(self):
+        # Stop the capture
+        self.checkStatus(dcam.dcamcap_stop(self.handle), "dcamcap_stop")
+
+        # Free the buffers
+        self.checkStatus(dcam.dcambuf_release(self.handle,
+                                              DCAMBUF_ATTACHKIND_FRAME),
+                         "dcambuf_release")
 
     def ExtractColor(self, chSlice, mode):
         # DCAM lockframe
         # ctypes memcpy AndorNeo 251
         frame = DCAMBUF_FRAME()
         frame.size = ctypes.sizeof(frame)
-        frame.iFrame = -1 # Latest frame. This may need to be handled
+        frame.iFrame = -1  # Latest frame. This may need to be handled
         # differently.
         self.checkStatus(dcam.dcambuf_lockframe(self.handle,
                                                 ctypes.addressof(frame)),
                          "dcambuf_lockframe")
-        #ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(
-        # ctypes.c_uint8)), buf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.nbytes)
 
-        pass
+        # uint_16 for this camera only DCAM_IDPROP_BITSPERCHANNEL
+        ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(
+            ctypes.POINTER(ctypes.c_uint16)),
+            ctypes.addressof(frame.buf),
+            self.getCamPropValue('BUFFER FRAMEBYTES'))
 
+    def ExpReady(self):
+        return self.waitstart.eventhappened > 0
 
-    def SetBurst(self, burstSize):
-        """
-        Some support for burst mode on the Neo and Zyla. Is not called from
-        the GUI, and can be considered experimental and non-essential.
+    def SetIntegTime(self, intTime):
+        self.setCamPropValue('EXPOSURE TIME', intTime)
 
-        Parameters
-        ----------
-        burtSize : int
-            Number of frames to acquire in burst mode.
+    def GetCCDWidth(self):
+        return int(self.getCamPropValue('IMAGE DETECTOR PIXEL NUM HORZ'))
 
-        Returns
-        -------
-        None
-        """
-        pass
+    def GetCCDHeight(self):
+        return int(self.getCamPropValue('IMAGE DETECTOR PIXEL NUM VERT'))
+
+    def GetPicWidth(self):
+        return int(self.getCamPropValue('IMAGE WIDTH'))
+
+    def GetPicHeight(self):
+        return int(self.getCamPropValue('IMAGE HEIGHT'))
+
+    def Shutdown(self):
+        self.checkStatus(dcam.dcamwait_close(self.waitopen.hdcamwait),
+                         "dcamwait_close")
+        HamamatsuDCAM.Shutdown(self)
