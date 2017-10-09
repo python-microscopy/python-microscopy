@@ -248,7 +248,7 @@ def _apodization_function(R, NA, n, apodization='sine', ns=None):
     
 
 
-def widefield_pupil_and_propagator(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA=1.47,**kwargs):
+def widefield_pupil_and_propagator(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA=1.47, **kwargs):
     """
     Generate a widefield pupil and corresponding propagator
     
@@ -430,8 +430,8 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters=50, size=5e3, inte
 ##################
 # Generating PSFs from pupils
 
-def PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47, vectorial=False, apodization='sine'):
-    pupil = pupil*_apodization_function(R, NA, n, apodization)
+def PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47, vectorial=False, apodization='sine', ns = None, output_shape=None,**kwargs):
+    pupil = pupil*_apodization_function(R, NA, n, apodization, ns=ns)
         
     if vectorial:
         phi = np.angle(u + 1j * v)
@@ -466,12 +466,25 @@ def PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47,
         ps = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
         p += abs(ps ** 2)
         
-        return p
+        
     else:
         ###########
         # Default scalar case
         ps = np.concatenate([FP.propagate(pupil, z)[:, :, None] for z in zs], 2)
         p = abs(ps ** 2)
+
+    #crop to output shape
+    if output_shape is None:
+        return p
+    else:
+        sx = output_shape[0]
+        sy = output_shape[1]
+        ox = (X.shape[0] - sx) / 2
+        oy = (X.shape[1] - sy) / 2
+        ex = ox + sx
+        ey = oy + sy
+
+        return p[ox:ex, oy:ey, :]
     
     return p
 
@@ -484,8 +497,11 @@ def EField_from_pupil_and_propagator(X, Y, R, FP, u, v, n, NA, pupil, zs, apodiz
     return ps
 
 
-def PsfFromPupil(pupil, zs, dx, lamb, n=1.51, NA=1.51, output_shape=None, **kwargs):
+def PsfFromPupil(pupil, zs, dx, **kwargs):
     dx = float(dx)
+    
+    n = kwargs.get('n', 1.51)
+    lamb = kwargs.get('lamb', 700.)
     
     X, Y = np.meshgrid(dx * np.arange(-pupil.shape[0] / 2, pupil.shape[0] / 2),
                        dx * np.arange(-pupil.shape[1] / 2, pupil.shape[1] / 2))
@@ -504,28 +520,14 @@ def PsfFromPupil(pupil, zs, dx, lamb, n=1.51, NA=1.51, output_shape=None, **kwar
     # CHECKME - does our phase retrieval still do this?
     kwargs['apodization'] = kwargs.get('apodization', None)
     
-    FP = FourierPropagator(u, v, lamb=lamb, n=n)
+    FP = FourierPropagator.get_propagator(u, v, lamb=lamb, n=n)
     
-    p = PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, n=n, NA=NA, pupil=pupil, zs=zs, **kwargs)
-    
-    #crop to output shape
-    if output_shape is None:
-        return p
-    else:
-        sx = output_shape[0]
-        sy = output_shape[1]
-        ox = (X.shape[0] - sx) / 2
-        oy = (X.shape[1] - sy) / 2
-        ex = ox + sx
-        ey = oy + sy
-        
-        return p[ox:ex, oy:ey, :]
+    return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=pupil, zs=zs, **kwargs)
+     
 
-    def PsfFromPupilVect(pupil, zs, dx, lamb, shape=[61, 61], apodization=None, n=1.51, NA=1.51):
-        warnings.warn('PsfFromPupilVect is deprecated, use PsfFromPupil(...,vectorial=True) instead',
-                      DeprecationWarning)
-        return PsfFromPupil(pupil, zs, dx, lamb, apodization=apodization, n=n, NA=NA, vectorial=True,
-                            output_shape=shape)
+def PsfFromPupilVect(pupil, zs, dx, shape=[61, 61], **kwargs):
+    warnings.warn('PsfFromPupilVect is deprecated, use PsfFromPupil(...,vectorial=True) instead',DeprecationWarning)
+    return PsfFromPupil(pupil, zs, dx,output_shape=shape, vectorial=True, **kwargs)
 
 ##########################
 ###PSF Generation functions
@@ -763,14 +765,14 @@ def GenShiftedPSF(zs, **kwargs):
 def GenBiplanePSF(zs, zshift = 500, xshift = 1, **kwargs):
     X, Y, R, FP, F, u, v = widefield_pupil_and_propagator(**kwargs)
     F_ = F
-
+    
     F = F * np.exp(-1j*.01*xshift*Y)
     
-    ps1 == PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=F, zs=zs-zshift/2, **kwargs)
+    ps1 = PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=F, zs= zs-zshift/2, **kwargs)
     
     F = F_ * np.exp(1j*.01*xshift*Y)
     
-    ps2 == PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=F, zs=zs + zshift / 2, **kwargs)
+    ps2 = PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=F, zs=zs + zshift / 2, **kwargs)
     
     return 0.5*ps1 +0.5*ps2
 

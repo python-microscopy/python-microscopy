@@ -127,7 +127,7 @@ class CSInterpolator(__interpolator):
             dy = min((interpolator.shape[1] - len(Y))/2, ym) - 2
             dx = dy
     
-            safeRegion = ((X[xm-dx], X[xm+dx]), (Y[ym-dy], Y[ym+dy]),(Z[0] + self.IntZVals[2], Z[0] + self.IntZVals[-2]))
+            safeRegion = ((X[xm-dx], X[xm+dx]), (Y[ym-dy], Y[ym+dy]),(Z[0] + self.IntZVals[3], Z[0] + self.IntZVals[-3]))
         else:
             xm = len(X)/2
             dx = min((interpolator.shape[0] - len(X))/2, xm) - 2
@@ -135,7 +135,7 @@ class CSInterpolator(__interpolator):
             ym = len(Y)/2
             dy = min((interpolator.shape[1] - len(Y))/2, ym) - 2
     
-            safeRegion = ((X[xm-dx], X[xm+dx]), (Y[ym-dy], Y[ym+dy]),(Z[0] + self.IntZVals[2], Z[0] + self.IntZVals[-2]))
+            safeRegion = ((X[xm-dx], X[xm+dx]), (Y[ym-dy], Y[ym+dy]),(Z[0] + self.IntZVals[3], Z[0] + self.IntZVals[-3]))
 
         return X, Y, Z, safeRegion
 
