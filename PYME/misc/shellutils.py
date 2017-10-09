@@ -177,6 +177,27 @@ def findSlide(mdh=None):
 # sample.sampleType
 # sample.species
 
+def imagestats():
+    import math
+    import scipy.ndimage as nd
+    image = getvar('image',inmodule=True)
+    if image is None:
+        print 'could not find image'
+        return
+    do = getvar('do',inmodule=True)
+    if do is None:
+        print 'could not find display object'
+        return
+    
+    data = image.data[:,:,do.zp].squeeze()
+    dmed = nd.median(data)
+    
+    print("mean:\t\t%f" % data.mean())
+    print("variance:\t%f" % data.var())
+    print("std dev:\t%f" % data.std())
+    print("median:\t\t%f" % dmed)
+    print("med-sqrt:\t%f" % math.sqrt(dmed))
+
 # generate a default basename
 def defaultbase():
     import os.path
