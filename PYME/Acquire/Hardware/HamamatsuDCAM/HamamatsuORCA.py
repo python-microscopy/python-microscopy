@@ -65,11 +65,24 @@ from fftw3f import create_aligned_array
 
 DCAMBUF_ATTACHKIND_FRAME = 0
 
+noiseProperties = {
+1823 : {
+        'ReadNoise' : 109.8,
+        'ElectronsPerCount' : 27.32,
+        'NGainStages' : 536,
+        'ADOffset' : 971,
+        'DefaultEMGain' : 150,
+        'SaturationThreshold' : (2**14 -1)
+        }
+}
+
 
 class HamamatsuORCA(HamamatsuDCAM):
 
     def __init__(self):
         HamamatsuDCAM.__init__(self)
+
+        #self.noiseProps = noiseProperties[self.SerialNumber]
 
         # initialize other properties needed
 
@@ -102,6 +115,16 @@ class HamamatsuORCA(HamamatsuDCAM):
     def ExtractColor(self, chSlice, mode):
         # DCAM lockframe
         # ctypes memcpy AndorNeo 251
+        frame = DCAMBUF_FRAME()
+        frame.size = ctypes.sizeof(frame)
+        frame.iFrame = -1 # Latest frame. This may need to be handled
+        # differently.
+        self.checkStatus(dcam.dcambuf_lockframe(self.handle,
+                                                ctypes.addressof(frame)),
+                         "dcambuf_lockframe")
+        #ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(ctypes.POINTER(
+        # ctypes.c_uint8)), buf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.nbytes)
+
         pass
 
 

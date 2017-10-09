@@ -137,7 +137,7 @@ class SoftwareBuffer(Camera):
         for any general code in the class.
         nQueued += 1
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def _pollBuffer(self):
         """
@@ -145,7 +145,7 @@ class SoftwareBuffer(Camera):
         This function is too camera-specific for any general code in the class.
         nFull += 1
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def _pollLoop(self):
         while self.pollLoopActive:
@@ -174,8 +174,7 @@ class SoftwareBuffer(Camera):
         -------
         None
         """
-
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def SetBurst(self, burstSize):
         """
@@ -191,7 +190,7 @@ class SoftwareBuffer(Camera):
         -------
         None
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')
 
     def SetROIIndex(self, index):
         """
@@ -214,4 +213,4 @@ class SoftwareBuffer(Camera):
         --------
         SetROI
         """
-        pass
+        raise NotImplementedError('Implemented in derived class.')

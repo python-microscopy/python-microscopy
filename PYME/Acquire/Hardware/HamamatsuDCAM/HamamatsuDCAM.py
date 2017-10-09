@@ -132,6 +132,28 @@ class DCAMBUF_ATTACH(ctypes.Structure):
                 ("buffer", ctypes.POINTER(ctypes.c_void_p)),
                 ("buffercount", ctypes.c_int32)]
 
+class DCAMBUF_FRAME(ctypes.Structure):
+    """
+    Frame structure for dcambuf_lockframe().
+    """
+    _fields_ = [("size", ctypes.c_int32),
+                ("iKind", ctypes.c_int32),
+                ("option", ctypes.c_int32),
+                ("iFrame", ctypes.c_int32),
+                ("buf", ctypes.c_void_p),
+                ("rowbytes", ctypes.c_int32),
+                ("type", ctypes.c_int32),
+                ("width", ctypes.c_int32),
+                ("height", ctypes.c_int32),
+                ("left", ctypes.c_int32),
+                ("top", ctypes.c_int32),
+                ("timestamp", DCAM_TIMESTAMP()),
+                ("framestamp", ctypes.c_int32),
+                ("camerastamp", ctypes.c_int32)]
+
+class DCAM_TIMESTAMP(ctypes.Structure):
+    _fields_ = [("sec", ctypes.c_uint32),
+                ("microsec"), ctypes.c_int32]
 
 class DCAMException(Exception):
     """
@@ -146,13 +168,34 @@ def convertPropertyName(name):
     return name.lower().replace(" ", "_")
 
 
-# Initialize the API
-paraminit = DCAMAPI_INIT()
-paraminit.size = ctypes.sizeof(paraminit)
-if int(dcam.dcamapi_init(ctypes.byref(paraminit))) < 0:
-    raise DCAMException("DCAM initialization failed.")
-nCams = paraminit.iDeviceCount
+class camReg(object):
+    """
+    Keep track of the number of cameras initialised so we can initialise and
+    finalise the library.
+    """
+    numCameras = -1
+    maxCameras = 0
 
+    @classmethod
+    def regCamera(cls):
+        if cls.numCameras == -1:
+            # Initialize the API
+            paraminit = DCAMAPI_INIT()
+            paraminit.size = ctypes.sizeof(paraminit)
+            if int(dcam.dcamapi_init(ctypes.byref(paraminit))) < 0:
+                raise DCAMException("DCAM initialization failed.")
+            cls.maxCameras = paraminit.iDeviceCount
+
+        cls.numCameras += 1
+
+    @classmethod
+    def unregCamera(cls):
+        cls.numCameras -= 1
+        if cls.numCameras == 0:
+            dcam.dcamapi_uninit()
+
+# make sure the library is intitalised
+camReg.regCamera()
 
 class HamamatsuDCAM(Camera):
 
@@ -166,13 +209,14 @@ class HamamatsuDCAM(Camera):
         return self.getCamPropValue('EXPOSURE TIME')
 
     def Init(self):
-        if self.camNum < nCams:
+        if self.camNum < camReg.maxCameras:
             paramopen = DCAMDEV_OPEN()
             paramopen.size = ctypes.sizeof(paramopen)
             paramopen.index = self.camNum
             self.checkStatus(dcam.dcamdev_open(ctypes.byref(paramopen)),
                              "dcamdev_open")
             self.handle = paramopen.hdcam
+            camReg.regCamera()
 
             self.properties = self.getCamProperties()
 
@@ -307,14 +351,14 @@ class HamamatsuDCAM(Camera):
             raise DCAMException(prop_name + " is not readable.")
 
         # Get the property value
-        value = ctypes.c_double
+        val = ctypes.c_double
         self.checkStatus(dcam.dcamprop_getvalue(self.handle, iProp,
-                                                ctypes.byref(value)),
+                                                ctypes.byref(val)),
                          "dcamprop_getvalue")
 
-        return value
+        return float(val)
 
-    def setCamPropValue(self, prop_name, value):
+    def setCamPropValue(self, prop_name, val):
         """
         Get DCAM property value for property iProp.
 
@@ -339,12 +383,12 @@ class HamamatsuDCAM(Camera):
 
         # Is our value in this property's range?
         lb, ub = self.getCamPropRange(prop_name)
-        if value < lb or value > ub:
+        if val < lb or val > ub:
             raise ValueError("Value out of range " + str(lb) + " to " + str(ub))
 
         # Set the property value
         self.checkStatus(dcam.dcamprop_setvalue(self.handle, iProp,
-                                                ctypes.c_double(value)),
+                                                ctypes.c_double(val)),
                         "dcamprop_setvalue")
 
     def checkProp(self, prop_name):
@@ -396,5 +440,4 @@ class HamamatsuDCAM(Camera):
 
     def Shutdown(self):
         self.checkStatus(dcam.dcamdev_close(self.handle), "dcamdev_close")
-        #if self.camNum < nCams:
-        #    dcam.dcamapi_uninit()
+        camReg.unregCamera()
