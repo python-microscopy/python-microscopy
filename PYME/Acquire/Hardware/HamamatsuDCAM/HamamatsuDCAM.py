@@ -55,10 +55,6 @@ DCAM_IDPROP_SENSORTEMPERATURETARGET = ctypes.c_int32(int("0x00200330", 0))
 DCAMWAIT_CAPEVENT_FRAMEREADY = ctypes.c_int32(int("0x0002", 0))
 DCAMWAIT_TIMEOUT_INFINITE = ctypes.c_int32(int("0x80000000", 0))
 
-DCAMBUF_ATTACHKIND_FRAME = ctypes.c_int32(0)
-DCAMPROP_MODE__OFF = ctypes.c_int32(1)
-DCAMPROP_MODE__ON = ctypes.c_int32(2)
-
 # Hamamatsu structures (DCAM4)
 class DCAMPROP_ATTR(ctypes.Structure):
     """
@@ -138,6 +134,11 @@ class DCAMBUF_ATTACH(ctypes.Structure):
                 ("buffer", ctypes.POINTER(ctypes.c_void_p)),
                 ("buffercount", ctypes.c_int32)]
 
+
+class DCAM_TIMESTAMP(ctypes.Structure):
+    _fields_ = [("sec", ctypes.c_uint32),
+                ("microsec", ctypes.c_int32)]
+
 class DCAMBUF_FRAME(ctypes.Structure):
     """
     Frame structure for dcambuf_lockframe().
@@ -153,13 +154,9 @@ class DCAMBUF_FRAME(ctypes.Structure):
                 ("height", ctypes.c_int32),
                 ("left", ctypes.c_int32),
                 ("top", ctypes.c_int32),
-                ("timestamp", DCAM_TIMESTAMP()),
+                ("timestamp", ctypes.c_void_p),
                 ("framestamp", ctypes.c_int32),
                 ("camerastamp", ctypes.c_int32)]
-
-class DCAM_TIMESTAMP(ctypes.Structure):
-    _fields_ = [("sec", ctypes.c_uint32),
-                ("microsec"), ctypes.c_int32]
 
 class DCAMWAIT_OPEN(ctypes.Structure):
     """
@@ -178,6 +175,15 @@ class DCAMWAIT_START(ctypes.Structure):
                 ("eventhappened", ctypes.c_int32),
                 ("eventmask", ctypes.c_int32),
                 ("timeout", ctypes.c_int32)]
+
+class DCAMCAP_TRANSFERINFO(ctypes.Structure):
+    """
+    Transfer info structure for newest frame and frame count.
+    """
+    _fields_ = [("size", ctypes.c_int32),
+                ("iKind", ctypes.c_int32),
+                ("nNewestFrameIndex", ctypes.c_int32),
+                ("nFrameCount", ctypes.c_int32)]
 
 class DCAMException(Exception):
     """
@@ -233,6 +239,8 @@ class HamamatsuDCAM(Camera):
     def Init(self):
         # TODO: Note that this check does not prevent someone from creating
         #       multiple camera ones (or twos, etc.)
+        #print "Cam num: " + str(self.camNum)
+        #print "Max cams: " + str(camReg.maxCameras)
         if self.camNum < camReg.maxCameras:
             paramopen = DCAMDEV_OPEN()
             paramopen.size = ctypes.sizeof(paramopen)
@@ -247,12 +255,12 @@ class HamamatsuDCAM(Camera):
             self.CameraModel = self.getCamInfo(DCAM_IDSTR_MODEL)
             self.SerialNumber = self.getCamInfo(DCAM_IDSTR_CAMERAID)
 
-            self.SetIntegTime(0.001)
+            self.SetIntegTime(0.1)
 
     def StartExposure(self):
         self.StopAq()
         #self._temp = self.getCamPropValue(DCAM_IDPROP_SENSORTEMPERATURE)
-        self._frameRate = self._intTime
+        #self._frameRate = self._intTime
 
         # Custom start exposure for sCMOS or EMCCD (might need to flush buffers)
 
@@ -350,7 +358,8 @@ class HamamatsuDCAM(Camera):
     def getCamPropRW(self, prop_name):
         attr = self.getCamPropAttr(prop_name)
         rw = attr.attribute
-        return (rw & DCAMPROP_ATTR_READABLE), (rw & DCAMPROP_ATTR_WRITABLE)
+        return (rw & int(DCAMPROP_ATTR_READABLE.value)), \
+               (rw & int(DCAMPROP_ATTR_WRITABLE.value))
 
     def getCamPropValue(self, prop_name):
         """
@@ -375,12 +384,12 @@ class HamamatsuDCAM(Camera):
             raise DCAMException(prop_name + " is not readable.")
 
         # Get the property value
-        val = ctypes.c_double
+        val = ctypes.c_double(0)
         self.checkStatus(dcam.dcamprop_getvalue(self.handle, iProp,
                                                 ctypes.byref(val)),
                          "dcamprop_getvalue")
 
-        return float(val)
+        return float(val.value)
 
     def setCamPropValue(self, prop_name, val):
         """

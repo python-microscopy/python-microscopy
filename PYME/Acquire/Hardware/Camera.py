@@ -68,7 +68,7 @@ class Camera(object):
 
         self._temp = 0  # Default camera temperature (Celsius)
         self._frameRate = 0
-        self._intTime = 0.100
+        #self._intTime = 0.100
 
         # Camera info
         self.SerialNumber = ""
@@ -634,7 +634,7 @@ class Camera(object):
         int
             Number of images in buffer
         """
-        return self.nFull
+        raise NotImplementedError("Implemented in derived class.")
 
     def GetBufferSize(self):
         """
@@ -645,7 +645,7 @@ class Camera(object):
         int
             Number of images that can be stored in the buffer.
         """
-        return self.nBuffers
+        raise NotImplementedError("Implemented in derived class.")
 
     # Binning is not really supported in current software, making these commands
     # mostly superfluous. Being able to read out the binning (GetHorizBin,
