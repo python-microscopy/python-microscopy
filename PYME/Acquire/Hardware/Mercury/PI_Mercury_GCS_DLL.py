@@ -21,10 +21,15 @@
 #
 ################
 from ctypes import *
+import platform
 
 STRING = c_char_p
 _stdcall_libraries = {}
-_stdcall_libraries['PI_Mercury_GCS_DLL.dll'] = WinDLL('PI_Mercury_GCS_DLL.dll')
+
+if platform.architecture()[0] == '64bit':
+    _stdcall_libraries['PI_Mercury_GCS_DLL.dll'] = WinDLL('PI_Mercury_GCS_DLL_x64.dll')
+else:
+    _stdcall_libraries['PI_Mercury_GCS_DLL.dll'] = WinDLL('PI_Mercury_GCS_DLL.dll')
 from ctypes.wintypes import BOOL
 
 
