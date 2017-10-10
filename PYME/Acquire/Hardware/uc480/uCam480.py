@@ -99,6 +99,21 @@ class uc480Camera:
         }        
     }
 
+    # this info is partly from the IDS datasheets that one can request for each camera model
+    BaseProps = {
+        'UI306x' : {
+            'ElectronsPerCount' : 7.97,
+            'ReadNoiseElectrons' : 7,
+            'ADOffset' : 10
+        },
+        'default' : { # fairly arbitrary values
+            'ElectronsPerCount' : 10,
+            'ReadNoiseElectrons' : 20,
+            'ADOffset' : 10
+        }
+    }
+
+
     ROIlimitsDefault = ROIlimitlist['UI324x']
 
     def __init__(self, boardNum=0, nbits = 8):
@@ -145,6 +160,14 @@ class uc480Camera:
             self.ROIlimits = matches[0]
         else:
             self.ROIlimits = self.ROIlimitsDefault
+
+        # work out the camera base parameters for this sensortype
+        matches = [self.BaseProps[st] for st in self.BaseProps.keys()
+                   if self.sensortype.startswith(st)]
+        if len(matches) > 0:
+            self.baseProps = matches[0]
+        else:
+            self.baseProps= self.BaseProps['default']
 
         #-------------------
         #Do initial setup with a whole bunch of settings I've arbitrarily decided are
@@ -674,6 +697,15 @@ class uc480Camera:
         """flag the camera as active (or inactive) to dictate whether it writes it's metadata or not"""
         self.active = active
 
+    def GetElectronsPerCount(self):
+        return (self.baseProps['ElectronsPerCount']/self.GetGainFactor())
+
+    def GetReadNoiseCounts(self):
+        return (self.baseProps['ReadNoiseElectrons']/self.GetElectronsPerCount())
+
+    def GetADOffset(self):
+        return self.baseProps['ADOffset']
+
     def GenStartMetadata(self, mdh):
         if self.active: #we are active -> write metadata
             self.GetStatus()
@@ -688,9 +720,9 @@ class uc480Camera:
             mdh.setEntry('Camera.HardwareGain', self.GetGain())            
             mdh.setEntry('Camera.HardwareGainFactor', self.GetGainFactor())
             # this is purely a guess for the IMX sensors - need to check
-            mdh.setEntry('Camera.ElectronsPerCount', 7.97/self.GetGainFactor())
-            mdh.setEntry('Camera.ADOffset', 7)
-            mdh.setEntry('Camera.ReadNoise', 7.0*self.GetGainFactor())
+            mdh.setEntry('Camera.ElectronsPerCount', self.GetElectronsPerCount())
+            mdh.setEntry('Camera.ADOffset', self.GetADOffset())
+            mdh.setEntry('Camera.ReadNoise',self.GetReadNoiseCounts()) # in ADUs !
             mdh.setEntry('Camera.NoiseFactor', 1.0)
 
             mdh.setEntry('Camera.SensorWidth',self.GetCCDWidth())

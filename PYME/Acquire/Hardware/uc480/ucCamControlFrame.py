@@ -40,7 +40,7 @@ class ucCamPanel(wx.Panel):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.l = wx.StaticText(self, -1, '%3.1f'%(100.0*self.cam.GetGain()/100)+'%') #ideally this should be self.cam.GetGain()/self.cam.MaxGain, where MaxGain is set to 100 for the specific camera.
         hsizer.Add(self.l, 0, wx.ALL, 2)
-        self.sl = wx.Slider(self, -1, 100.0*self.cam.GetGain()/100, 1, 100, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL | wx.SL_HORIZONTAL | wx.SL_AUTOTICKS )
+        self.sl = wx.Slider(self, -1, 100.0*self.cam.GetGain()/100, 0, 100, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL | wx.SL_HORIZONTAL | wx.SL_AUTOTICKS )
         self.sl.SetTickFreq(10,1)
         wx.EVT_SCROLL(self,self.onSlide)
         hsizer.Add(self.sl, 1, wx.ALL|wx.EXPAND, 2)
@@ -70,7 +70,7 @@ class ucCamPanel(wx.Panel):
             self.cam.SetGain(int(round(sl.GetValue()/100.0*100)))
             self.l.SetLabel('%3.1f'%(100.0*self.cam.GetGain()/100)+'%')
             self.stGainFactor.SetLabel('Gain Factor = %3.2f' % self.cam.GetGainFactor())
-            self.stepc.SetLabel('Electrons/Count = %3.2f' % (7.97/self.cam.GetGainFactor()))
+            self.stepc.SetLabel('Electrons/Count = %3.2f' % self.cam.GetElectronsPerCount())
         finally:
             self.sliding = False
 
@@ -79,5 +79,5 @@ class ucCamPanel(wx.Panel):
             self.sl.SetValue(round(self.cam.GetGain()/100))
             self.l.SetLabel(str(self.cam.GetGain()/100)+'%%')
             self.stGainFactor.SetLabel('Gain Factor = %3.2f' % self.cam.GetGainFactor())
-            self.stepc.SetLabel('Electrons/Count = %3.2f' % (7.97/self.cam.GetGainFactor()))
+            self.stepc.SetLabel('Electrons/Count = %3.2f' % self.cam.GetElectronsPerCount())
 
