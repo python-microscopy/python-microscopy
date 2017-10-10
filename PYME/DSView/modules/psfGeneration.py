@@ -44,7 +44,7 @@ class Pupil(HasTraits):
 
 class WidefieldPupil(Pupil):
     def GeneratePupil(self, pixelSize, size, wavelength, NA, n):
-        return fourierHNA.GenWidefieldPupil(pixelSize, size, wavelength, NA, n)
+        return fourierHNA.widefield_pupil_and_propagator(pixelSize, size, wavelength, NA, n)
     
 class MeasuredPupil(Pupil):
     image = WRDictEnum(image.openImages)

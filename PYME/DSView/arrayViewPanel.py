@@ -551,6 +551,19 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         MemBitmap = self.GrabImage(fullImage)
         img = MemBitmap.ConvertToImage()
         img.SaveFile(filename, wx.BITMAP_TYPE_PNG)
+        
+    def GrabPNGToBuffer(self, fullImage=True):
+        '''Get PNG data in a buffer (rather than writing directly to file)'''
+        from PIL import Image
+        from io import BytesIO
+        
+        img =self.GrabImage(fullImage)
+        im1 = Image.frombytes(mode='RGB', size=tuple(img.GetSize()), data=img.ConvertToImage().GetData())
+        
+        out = BytesIO()
+        im1.save(out, format='PNG')
+        
+        return out.getvalue()
 
     def CopyImage(self, fullImage=True):
         """ Copies the currently displayed image to the clipboard"""
