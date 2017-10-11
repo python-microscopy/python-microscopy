@@ -59,6 +59,33 @@ def GetNumCameras():
     
     return numCams.value
     
+def as_string(cinfo,field):
+    strval = getattr(cinfo,field)
+    return (ctypes.cast(strval, ctypes.c_char_p)).value
+
+def translateCaminfo(camlist):
+    tlist = {}
+
+    tlist['count'] = int(camlist.dwCount)
+    tlist['_UEYE_CAMERA_LIST'] = camlist # raw ctype object for reference
+
+    
+    tlist['cameras'] = []
+    for n in range(tlist['count']):
+        uci = "uci%d" % n
+        caminfo = getattr(camlist,uci)
+        camdict = {
+            'serno'       : as_string(caminfo,'SerNo[16]'),
+            'model'       : as_string(caminfo,'Model[16]'),
+            'ID'          : int(getattr(caminfo,'dwCameraID')),
+            'DeviceID'    : int(getattr(caminfo,'dwDeviceID')),
+            'SensorID'    : int(getattr(caminfo,'dwSensorID')),
+            'inUse'       : int(getattr(caminfo,'dwInUse'))
+        }
+        tlist['cameras'].append(camdict)
+
+    return tlist
+
 def GetCameraList():
     nCams = GetNumCameras()
     
@@ -71,8 +98,8 @@ def GetCameraList():
     camlist.dwCount = nCams
     
     uc480.CALL("GetCameraList", ctypes.byref(camlist))
-    
-    return camlist
+
+    return translateCaminfo(camlist)
     
 
 class uc480Camera:
