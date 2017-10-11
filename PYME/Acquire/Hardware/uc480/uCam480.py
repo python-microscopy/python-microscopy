@@ -102,12 +102,16 @@ class uc480Camera:
     # this info is partly from the IDS datasheets that one can request for each camera model
     BaseProps = {
         'UI306x' : {
-            'ElectronsPerCount' : 7.97,
-            'ReadNoiseElectrons' : 7,
+            # from Steve Hearn (IDS)
+            #    The default gain of that camera is the absolute minimum gain the camera can deliver.
+            #    All other gain factors are higher than that. This means, the system gain of 0.125 DN
+            #    per electron, as specified in the camera test sheet, is the smallest possible value.
+            'ElectronsPerCount'  : 7.97,
+            'ReadNoiseElectrons' : 6.0,
             'ADOffset' : 10
         },
         'default' : { # fairly arbitrary values
-            'ElectronsPerCount' : 10,
+            'ElectronsPerCount'  : 10,
             'ReadNoiseElectrons' : 20,
             'ADOffset' : 10
         }
@@ -189,12 +193,7 @@ class uc480Camera:
 
         uc480.CALL('SetImageSize', self.boardHandle, self.CCDSize[0],self.CCDSize[1] )
         
-        # CS - BITS: memory depth in here - the color mode may require something in accordance with bit depth!
-        # CS: 8bit  constant: IS_SET_CM_BAYER is supposed to be replaced by IS_CM_BAYER_RG8
-        # CS: 8bit monochrome: IS_CM_SENSOR_RAW8 should replace IS_CM_BAYER_RG8
-        # CS: 12bit constant: IS_CM_SENSOR_RAW12
-        # CS: info from SetColorMode and "Color and memory formats" appendix
-        # note: the monochrome constants may be preferable
+        # pick the desired monochrom mode
         if self.nbits == 8:
             colormode = uc480.IS_CM_MONO8
         elif self.nbits == 10:
@@ -700,8 +699,8 @@ class uc480Camera:
     def GetElectronsPerCount(self):
         return (self.baseProps['ElectronsPerCount']/self.GetGainFactor())
 
-    def GetReadNoiseCounts(self):
-        return (self.baseProps['ReadNoiseElectrons']/self.GetElectronsPerCount())
+    def GetReadNoise(self): # readnoise in e-
+        return (self.baseProps['ReadNoiseElectrons'])
 
     def GetADOffset(self):
         return self.baseProps['ADOffset']
@@ -719,10 +718,9 @@ class uc480Camera:
 
             mdh.setEntry('Camera.HardwareGain', self.GetGain())            
             mdh.setEntry('Camera.HardwareGainFactor', self.GetGainFactor())
-            # this is purely a guess for the IMX sensors - need to check
             mdh.setEntry('Camera.ElectronsPerCount', self.GetElectronsPerCount())
             mdh.setEntry('Camera.ADOffset', self.GetADOffset())
-            mdh.setEntry('Camera.ReadNoise',self.GetReadNoiseCounts()) # in ADUs !
+            mdh.setEntry('Camera.ReadNoise',self.GetReadNoise()) # in units of e-
             mdh.setEntry('Camera.NoiseFactor', 1.0)
 
             mdh.setEntry('Camera.SensorWidth',self.GetCCDWidth())
