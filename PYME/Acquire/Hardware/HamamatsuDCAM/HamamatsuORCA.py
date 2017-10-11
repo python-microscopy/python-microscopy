@@ -69,17 +69,16 @@ DCAMPROP_MODE__ON = 2
 
 DCAMPROP_SENSORMODE__PROGRESSIVE = 12
 
-
 DCAMCAP_START_SEQUENCE = ctypes.c_int32(int("-1",0))
 
 noiseProperties = {
-1823 : {
-        'ReadNoise' : 109.8,
-        'ElectronsPerCount' : 27.32,
-        'NGainStages' : 536,
-        'ADOffset' : 971,
-        'DefaultEMGain' : 150,
-        'SaturationThreshold' : (2**14 -1)
+'S/N: 100233' : {
+        'ReadNoise': 1.65,
+        'ElectronsPerCount': 0.47,
+        'NGainStages': 0,
+        'ADOffset': 100,
+        'DefaultEMGain': 1,
+        'SaturationThreshold': (2**16 - 1)
         }
 }
 
@@ -94,29 +93,51 @@ class HamamatsuORCA(HamamatsuDCAM):
         self.noiseProps = {}
         self.waitopen = DCAMWAIT_OPEN()
         self.waitstart = DCAMWAIT_START()
-        self.initalized = False
+        self.initialized = False
         self.bs = 0
+        self.nReadOut = 0
 
         # initialize other properties needed
 
     def Init(self):
         HamamatsuDCAM.Init(self)
         if self.camNum < camReg.maxCameras:
-            #self.noiseProps = noiseProperties[self.SerialNumber]
-            self._frameRate = self.getCamPropValue('INTERNAL FRAME RATE')
+            self.noiseProps = noiseProperties[self.SerialNumber]
             # Create a wait handle
             self.waitopen.size = ctypes.sizeof(self.waitopen)
             self.waitopen.hdcam = self.handle
             self.checkStatus(dcam.dcamwait_open(ctypes.byref(self.waitopen)),
                              "dcamwait_open")
-            self.initalized = True
+            self.waitstart.size = ctypes.sizeof(self.waitstart)
+            self.waitstart.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY
+            self.waitstart.timeout = DCAMWAIT_TIMEOUT_INFINITE
+            self.setDefectCorrectMode(False)
+            self.initialized = True
 
 
     @property
     def _intTime(self):
         return self.getCamPropValue('EXPOSURE TIME')
 
+    def setDefectCorrectMode(self, on=False):
+        """
+        Do we want Hamamatsu's hot pixel correction?
+
+        Parameters
+        ----------
+        on : bool
+            True if we want Hamamatsu's hot pixel correction.
+
+        Returns
+        -------
+        None
+        """
+        onoff = 2.0 if on else 1.0
+        self.setCamPropValue('DEFECT CORRECT MODE', onoff)
+
     def StartExposure(self):
+        self.nReadOut = 0
+        self._frameRate = self.getCamPropValue('INTERNAL FRAME RATE')
         # From parent
         HamamatsuDCAM.StartExposure(self)
 
@@ -170,10 +191,16 @@ class HamamatsuORCA(HamamatsuDCAM):
     def ExtractColor(self, chSlice, mode):
         # DCAM lockframe
         # ctypes memcpy AndorNeo 251
-        print "Frame rate: " + str(self._frameRate)
+        #print "Frame rate: " + str(self._frameRate)
+        tInfo = DCAMCAP_TRANSFERINFO()
+        tInfo.size = ctypes.sizeof(tInfo)
+        tInfo.transferkind = ctypes.c_int32(0)
+        self.checkStatus(dcam.dcamcap_transferinfo(self.handle,
+                                                   ctypes.addressof(tInfo)),
+                         "dcamcap_transferinfo")
         frame = DCAMBUF_FRAME()
         frame.size = ctypes.sizeof(frame)
-        frame.iFrame = -1  # Latest frame. This may need to be handled
+        frame.iFrame = tInfo.nNewestFrameIndex  # Latest frame. This may need to be handled
         # differently.
         self.checkStatus(dcam.dcambuf_lockframe(self.handle,
                                                 ctypes.addressof(frame)),
@@ -184,7 +211,8 @@ class HamamatsuORCA(HamamatsuDCAM):
         ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(
             ctypes.POINTER(ctypes.c_uint16)),
             frame.buf,
-            int(self.getCamPropValue('BUFFER FRAMEBYTES')))
+            int(self.getCamPropValue('IMAGE FRAMEBYTES')))
+        self.nReadOut += 1
 
     def GetNumImsBuffered(self):
         tInfo = DCAMCAP_TRANSFERINFO()
@@ -193,22 +221,25 @@ class HamamatsuORCA(HamamatsuDCAM):
         self.checkStatus(dcam.dcamcap_transferinfo(self.handle,
                                                     ctypes.addressof(tInfo)),
                          "dcamcap_transferinfo")
-        return int(tInfo.nFrameCount)
+        ret = abs(int(tInfo.nFrameCount) - self.nReadOut)
+        return ret
 
     def ExpReady(self):
-        self.waitstart.size = ctypes.sizeof(self.waitstart)
-        self.waitstart.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY
-        self.waitstart.timeout = DCAMWAIT_TIMEOUT_INFINITE
         self.checkStatus(dcam.dcamwait_start(self.waitopen.hdcamwait,
                                              ctypes.byref(self.waitstart)),
                          "dcamwait_start")
-        return self.waitstart.eventhappened > 0
+        return self.waitstart.eventhappened == int(
+            DCAMWAIT_CAPEVENT_FRAMEREADY.value)
+        #return self.GetNumImsBuffered() > 0
 
     def GetBufferSize(self):
         return self.bs
 
     def SetIntegTime(self, intTime):
-        self.setCamPropValue('EXPOSURE TIME', intTime)
+        [lb, ub] = self.getCamPropRange('EXPOSURE TIME')
+        newTime = np.clip(intTime, lb, ub)
+        print str(newTime)
+        self.setCamPropValue('EXPOSURE TIME', newTime)
 
     def GetCCDWidth(self):
         return int(self.getCamPropValue('IMAGE DETECTOR PIXEL NUM HORZ'))
@@ -223,10 +254,28 @@ class HamamatsuORCA(HamamatsuDCAM):
         return int(self.getCamPropValue('IMAGE HEIGHT'))
 
     def CamReady(self):
-        return self.initalized
+        return self.initialized
+
+    def GetStatus(self):
+        # This is to shut the command line the hell up.
+        pass
+
+    def GetReadNoise(self):
+        return self.noiseProps['ReadNoise']
+
+    def GetElectrPerCount(self):
+        return self.noiseProps['ElectronsPerCount']
+
+    def GetName(self):
+        return "Hamamatsu ORCA Flash 4.0"
+
+    def GenStartMetadata(self, mdh):
+        HamamatsuDCAM.GenStartMetadata(self, mdh)
+        if self.active:
+            mdh.setEntry('Camera.ADOffset', self.noiseProps['ADOffset'])
 
     def Shutdown(self):
-        if self.initalized:
-            self.checkStatus(dcam.dcamwait_close(self.waitopen.hdcamwait),
-                            "dcamwait_close")
+        # if self.initialized:
+            # self.checkStatus(dcam.dcamwait_close(self.waitopen.hdcamwait),
+            #                "dcamwait_close")
         HamamatsuDCAM.Shutdown(self)

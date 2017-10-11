@@ -133,7 +133,7 @@ class Camera(object):
             # Set Camera object metadata here with calls to mdh.setEntry
 
             # Personal identification
-            mdh.setEntry('Camera.Name', 'Andor Neo')
+            mdh.setEntry('Camera.Name', self.GetName())
             mdh.setEntry('Camera.Model', self.GetModel())
             mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
 
@@ -188,6 +188,10 @@ class Camera(object):
         """
 
         raise NotImplementedError('Implemented in derived class.')
+
+    def GetName(self):
+        """ Camera name. """
+        return "Default Camera"
 
     def CamReady(*args):
         """
@@ -280,7 +284,7 @@ class Camera(object):
         raise NotImplementedError('Implemented in derived class.')
 
     def GetNoiseFactor(self):
-        raise NotImplementedError('Implemented in derived class.')
+        return 1
 
     def GetElectrPerCount(self):
         raise NotImplementedError('Implemented in derived class.')
@@ -448,7 +452,7 @@ class Camera(object):
         ----------
         GetEMGain
         """
-        raise NotImplementedError('Implemented in derived class.')
+        return 1
 
     def GetAcquisitionMode(self):
         """
