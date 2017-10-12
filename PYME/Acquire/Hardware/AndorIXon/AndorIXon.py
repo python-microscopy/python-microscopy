@@ -556,6 +556,7 @@ class iXonCamera:
         self.__selectCamera()
         #print chSlice
         #pc = chSlice.split('_')[1]
+        #pc = chSlice.split('_')[1]
         #ret = ac.GetAcquiredData16(cast(c_void_p(int(pc[6:8]+pc[4:6]+pc[2:4]+pc[0:2],16)), POINTER(c_ushort)), self.GetPicWidth()*self.GetPicHeight())
         #ret = ac.GetAcquiredData16(cast(c_void_p(int(chSlice)), POINTER(c_ushort)), self.GetPicWidth()*self.GetPicHeight())
 
