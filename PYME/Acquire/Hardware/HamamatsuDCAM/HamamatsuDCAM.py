@@ -252,10 +252,16 @@ class HamamatsuDCAM(Camera):
 
             self.properties = self.getCamProperties()
 
-            self.CameraModel = self.getCamInfo(DCAM_IDSTR_MODEL)
-            self.SerialNumber = self.getCamInfo(DCAM_IDSTR_CAMERAID)
+            self._camera_model = self.getCamInfo(DCAM_IDSTR_MODEL)
+            self._serial_number = self.getCamInfo(DCAM_IDSTR_CAMERAID)
 
             self.SetIntegTime(0.1)
+            
+    def GetSerialNumber(self):
+        return self._serial_number
+    
+    def GetModel(self):
+        return  self._camera_model
 
     def StartExposure(self):
         self.StopAq()

@@ -63,16 +63,11 @@ class Camera(object):
         """
         self.camNum = camNum  # Must associate Camera object with a UID
 
-        # Default into continuous acquisition mode
-        self.CycleMode = self.MODE_CONTINUOUS
 
         self._temp = 0  # Default camera temperature (Celsius)
         self._frameRate = 0
         #self._intTime = 0.100
 
-        # Camera info
-        self.SerialNumber = ""
-        self.CameraModel = ""
 
         self.active = True  # Should the camera write its metadata?
 
@@ -234,9 +229,7 @@ class Camera(object):
         str
             Hardware model name of Camera object
         """
-        if isinstance(self.CameraModel, str):
-            return self.CameraModel
-        raise TypeError("Camera model must be stored as a string.")
+        raise NotImplementedError('Should be implemented in derived class.')
 
     def GetSerialNumber(self):
         """
@@ -247,9 +240,7 @@ class Camera(object):
         str
             Hardware serial number of Camera object
         """
-        if isinstance(self.SerialNumber, str):
-            return self.SerialNumber
-        raise TypeError("Serial number must be stored as a string.")
+        raise NotImplementedError('Should be implemented in derived class.')
 
     def GetIntegTime(self):
         """
@@ -467,10 +458,7 @@ class Camera(object):
         --------
         SetAcquisitionMode
         """
-        if isinstance(self.CycleMode, int) or isinstance(self.CycleMode, bool):
-            return self.CycleMode
-        raise TypeError("Cycle mode must be one of MODE_CONTINUOUS, "
-                        "MODE_SINGLE_SHOT.")
+        raise NotImplementedError('Should be implemented in derived class.')
 
     def SetAcquisitionMode(self, mode):
         """
@@ -493,10 +481,7 @@ class Camera(object):
         GetAcquisitionMode
         """
 
-        if isinstance(mode, int) or isinstance(mode, bool):
-            self.CycleMode = mode
-        raise TypeError("Mode must be one of One of MODE_CONTINUOUS, "
-                        "MODE_SINGLE_SHOT")
+        raise NotImplementedError('Should be implemented in derived class.')
 
     def SetActive(self, active=True):
         """

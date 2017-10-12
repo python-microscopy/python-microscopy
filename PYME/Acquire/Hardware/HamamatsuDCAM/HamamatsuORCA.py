@@ -102,7 +102,7 @@ class HamamatsuORCA(HamamatsuDCAM):
     def Init(self):
         HamamatsuDCAM.Init(self)
         if self.camNum < camReg.maxCameras:
-            self.noiseProps = noiseProperties[self.SerialNumber]
+            self.noiseProps = noiseProperties[self.GetSerialNumber()]
             # Create a wait handle
             self.waitopen.size = ctypes.sizeof(self.waitopen)
             self.waitopen.hdcam = self.handle
@@ -134,6 +134,10 @@ class HamamatsuORCA(HamamatsuDCAM):
         """
         onoff = 2.0 if on else 1.0
         self.setCamPropValue('DEFECT CORRECT MODE', onoff)
+        
+    def GetAcquisitionMode(self):
+        #FIXME - actually support both continuous and single shot modes
+        return self.MODE_CONTINUOUS
 
     def StartExposure(self):
         self.nReadOut = 0
@@ -149,6 +153,7 @@ class HamamatsuORCA(HamamatsuDCAM):
 
         # Start the capture
         #print str(self.getCamPropValue('SENSOR MODE'))
+        #TODO - this is probably where we would need to deal with continuous vs single shot modes.
         self.checkStatus(dcam.dcamcap_start(self.handle,
                                             DCAMCAP_START_SEQUENCE),
                          "dcamcap_start")
