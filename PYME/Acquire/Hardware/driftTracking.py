@@ -81,6 +81,7 @@ class correlator(Pyro.core.ObjBase):
         self.WantRecord = False
         self.minDelay = 10
         self.maxfac = 1.5e3
+        self.Zfactor = 1.0
         
     def initialise(self):
         d = 1.0*self.scope.frameWrangler.currentFrame.squeeze()        
@@ -247,6 +248,7 @@ class correlator(Pyro.core.ObjBase):
         
         #calculate z offset between actual position and calibration position
         dz = self.deltaZ*np.dot(self.ds_A.ravel(), ddz)*dzn
+        dz *= self.Zfactor
 
 #        self.buffer.append((dz, nomPos, posInd, calPos, posDelta))
         #posInd += np.round(dz / self.deltaZ)

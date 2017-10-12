@@ -130,6 +130,15 @@ class DriftTrackingControl(wx.Panel):
         hsizer.Add(self.bSetTolerance, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
         self.bSetTolerance.Bind(wx.EVT_BUTTON, self.OnBSetTolerance)
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, "Z-factor:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.tZfactor = wx.TextCtrl(self, -1, '%3.1f'% self.dt.Zfactor, size=[30,-1])
+        hsizer.Add(self.tZfactor, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        self.bSetZfactor = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
+        hsizer.Add(self.bSetZfactor, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
+        self.bSetZfactor.Bind(wx.EVT_BUTTON, self.OnBSetZfactor)
+        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, "feedback delay [frames]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
@@ -226,6 +235,9 @@ class DriftTrackingControl(wx.Panel):
 
     def OnBSetTolerance(self, event):
         self.dt.set_focus_tolerance(float(self.tTolerance.GetValue())/1e3)
+
+    def OnBSetZfactor(self, event):
+        self.dt.Zfactor = float(self.tZfactor.GetValue())
         
     def OnBSetMinDelay(self, event):
         self.dt.minDelay = int(self.tMinDelay.GetValue())
