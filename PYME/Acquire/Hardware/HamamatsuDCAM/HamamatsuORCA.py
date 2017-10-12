@@ -73,7 +73,7 @@ DCAMCAP_START_SEQUENCE = ctypes.c_int32(int("-1",0))
 
 noiseProperties = {
 'S/N: 100233' : {
-        'ReadNoise': 1.65,
+        'ReadNoise': 3.51,
         'ElectronsPerCount': 0.47,
         'NGainStages': 0,
         'ADOffset': 100,
