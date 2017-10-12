@@ -531,6 +531,11 @@ class PYMEMainFrame(AUIFrame):
                     if self.scope.cam.splitting.lower() == 'left_right':
                         x1 = min(x1, self.scope.cam.GetCCDWidth() - x2)
                         x2 = max(x2, self.scope.cam.GetCCDWidth() - x1)
+
+                        if not self.scope.cam.splitterFlip:
+                            x1 = 0
+                            x2 = self.scope.cam.GetCCDWidth()
+
                     if self.scope.cam.splitting.lower() == 'up_down':
                         y1 = min(y1, self.scope.cam.GetCCDHeight() - y2)
                         y2 = max(y2, self.scope.cam.GetCCDHeight() - y1)
