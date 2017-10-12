@@ -33,7 +33,7 @@ except ImportError:
 from PYME.Acquire.Hardware.lasers import Laser
 
 class PhoxxLaser(Laser):
-    def __init__(self, name,turnOn=False, portname='COM3', maxpower=0.14):
+    def __init__(self, name,turnOn=False, portname='COM3', maxpower=0.14, **kwargs):
         self.ser_port = serial.Serial(portname, 500000, timeout=.1, writeTimeout=2)
         self.powerControlable = True
         #self.isOn=False

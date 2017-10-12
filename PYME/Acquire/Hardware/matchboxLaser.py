@@ -5,7 +5,7 @@ import serial
 from PYME.Acquire.Hardware.lasers import Laser
 
 class MatchboxLaser(Laser):
-    def __init__(self, name, turnOn=False, portname='COM1', minpower=0.001, maxpower=0.1, maxpowerDAC = 2200): # minpower, maxpower in Watts
+    def __init__(self, name, turnOn=False, portname='COM1', minpower=0.001, maxpower=0.1, maxpowerDAC = 2200, **kwargs): # minpower, maxpower in Watts
         self.ser_args = dict(port=portname, baudrate=9600, timeout=1, writeTimeout=2)
 
         self.powerControlable = True
