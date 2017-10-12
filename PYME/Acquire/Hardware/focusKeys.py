@@ -104,35 +104,40 @@ class FocusKeys:
         self.mbar.SetMenuLabel(self.mpos, 'Focus = %3.2f, Inc = %3.2f' %(p, self.focusIncrement))
 
 class PositionKeys:
-    def __init__(self, parent, menu, xpiezo, ypiezo, keys = ['F9', 'F10', 'F11', 'F12'], scope = None):
+    def __init__(self, parent, xpiezo, ypiezo, keys = ['F9', 'F10', 'F11', 'F12'], scope = None):
         self.xpiezo = xpiezo
         self.ypiezo = ypiezo
         
         self.focusIncrement = 0.03
         self.scope = scope
 
-        idFocUp = wx.NewId()
-        idFocDown = wx.NewId()
-        idSensUp = wx.NewId()
-        idSensDown = wx.NewId()
+        parent.AddMenuItem('Position', 'Position Down\t%s' % keys[0], self.OnDown)
+        parent.AddMenuItem('Position', 'Position Up\t%s' % keys[1], self.OnUp)
+        parent.AddMenuItem('Position', 'Position Left\t%s' % keys[2], self.OnLeft)
+        parent.AddMenuItem('Position', 'Position Right\t%s' % keys[3], self.OnRight)
 
-        self.menu = wx.Menu(title = '')
+        # idFocUp = wx.NewId()
+        # idFocDown = wx.NewId()
+        # idSensUp = wx.NewId()
+        # idSensDown = wx.NewId()
 
-        self.menu.Append(idFocDown, 'Left\t%s' % keys[0])
-        wx.EVT_MENU(parent, idFocDown, self.OnLeft)
+        # self.menu = wx.Menu(title = '')
 
-        self.menu.Append(idFocUp, 'Right\t%s' % keys[1])
-        wx.EVT_MENU(parent, idFocUp, self.OnRight)
+        # self.menu.Append(idFocDown, 'Left\t%s' % keys[0])
+        # wx.EVT_MENU(parent, idFocDown, self.OnLeft)
 
-        self.menu.Append(idSensDown, 'Up\t%s' % keys[2])
-        wx.EVT_MENU(parent, idSensDown, self.OnUp)
+        # self.menu.Append(idFocUp, 'Right\t%s' % keys[1])
+        # wx.EVT_MENU(parent, idFocUp, self.OnRight)
 
-        self.menu.Append(idSensUp, 'Down\t%s' % keys[3])
-        wx.EVT_MENU(parent, idSensUp, self.OnDown)
+        # self.menu.Append(idSensDown, 'Up\t%s' % keys[2])
+        # wx.EVT_MENU(parent, idSensDown, self.OnUp)
 
-        menu.Append(menu=self.menu, title = 'Position')
-        self.mbar = menu
-        self.mpos = menu.GetMenuCount() - 1
+        # self.menu.Append(idSensUp, 'Down\t%s' % keys[3])
+        # wx.EVT_MENU(parent, idSensUp, self.OnDown)
+
+        # menu.Append(menu=self.menu, title = 'Position')
+        self.mbar = parent.menubar
+        self.mpos = self.mbar.GetMenuCount() - 1
 
 
     def OnLeft(self,event):

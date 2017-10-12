@@ -73,7 +73,7 @@ class SpaceNavPiezoCtrl(object):
         self.pz = pz#, self.px, self.py = piezos
         self.pxy = pxy
         
-        self.xy_sensitivity = .01 #um/s
+        self.xy_sensitivity = .001 #um/s
         self.z_sensitivity = -2 #um/s
         self.kappa = 1.5
         
