@@ -147,7 +147,7 @@ class uc480Camera:
 
     ROIlimitsDefault = ROIlimitlist['UI324x']
 
-    def __init__(self, boardNum=0, nbits = 8):
+    def __init__(self, boardNum=0, nbits = 8, isDeviceID = False):
         self.initialised = False
         self.active = True
         if nbits not in [8,10,12]:
@@ -155,6 +155,8 @@ class uc480Camera:
         self.nbits = nbits
 
         self.boardHandle = wintypes.HANDLE(boardNum)
+        if isDeviceID:
+            self.boardHandle = wintypes.HANDLE(self.boardHandle.value | uc480.IS_USE_DEVICE_ID)
 
         ret = uc480.CALL('InitCamera', byref(self.boardHandle), wintypes.HWND(0))
         print(('I',ret))
