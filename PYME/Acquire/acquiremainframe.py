@@ -33,6 +33,7 @@ import time
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 import PYME.DSView.displaySettingsPanel as disppanel
 from PYME.DSView import arrayViewPanel
@@ -88,7 +89,7 @@ class PYMEMainFrame(AUIFrame):
         
 
         self.statusBar1 = wx.StatusBar(id=wx.ID_ANY,
-              name='statusBar1', parent=self, style=wx.ST_SIZEGRIP)
+              name='statusBar1', parent=self, style=wx.STB_SIZEGRIP)
         self.SetStatusBar(self.statusBar1)
 
 
@@ -150,6 +151,8 @@ class PYMEMainFrame(AUIFrame):
         """
         #this spawns a new thread to run the initialization script
         self.scope.initialize(self.options.initFile, self.__dict__)
+
+        logger.debug('Init run, waiting on background threads')
         
         #poll to see if the init script has run
         self.time1.WantNotification.append(self._check_init_done)
@@ -158,6 +161,7 @@ class PYMEMainFrame(AUIFrame):
 
     def _check_init_done(self):
         if self.scope.initDone == True and self._check_init_done in self.time1.WantNotification:
+            logger.debug('Backround initialization done')
             self.time1.WantNotification.remove(self._check_init_done)
             
             self.doPostInit()
@@ -218,15 +222,19 @@ class PYMEMainFrame(AUIFrame):
 
 
     def doPostInit(self):
-        logging.debug('Starting post-init')
+        logger.debug('Starting post-init')
         for cm in self.postInit:
-            #print cm
-            for cl in cm.split('\n'):
-                self.sh.run(cl)
+            logging.debug('Loading GUI component for %s' %cm.name)
+            try:
+                cm.run(self, self.scope)
+            except Exception as e:
+                logger.exception('Error whilst initializing %s GUI' % cm.name)
 
         #if len(self.scope.piezos) > 0.5:
         #    self.piezo_sl = psliders.PiezoSliders(self.scope.piezos, self, self.scope.joystick)
         #    self.time1.WantNotification.append(self.piezo_sl.update)
+
+        logger.debug('Run all custom GUI init tasks')
             
         if len(self.scope.positioning.keys()) > 0.5:
             self.pos_sl = positionUI.PositionSliders(self.scope, self, self.scope.joystick)
@@ -278,7 +286,7 @@ class PYMEMainFrame(AUIFrame):
         if 'pCamChoose' in dir(self):
             self.pCamChoose.OnCCamera(None)
             
-        logging.debug('Finished post-init')
+        logger.debug('Finished post-init')
         
         self.Show()
 

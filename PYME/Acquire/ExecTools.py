@@ -30,6 +30,9 @@ import threading
 import os
 import sys
 
+import logging
+logger = logging.getLogger(__name__)
+
 homedir = os.path.expanduser('~') #unix & possibly others ...
 execPath = []
 
@@ -143,12 +146,16 @@ class BGInitTask(object):
         global defLocals
         self.status = self.TASK_RUNNING
         try:
-            _exec(self.codeObj, defGlobals, defLocals)
+            if callable(self.codeObj):
+                self.codeObj(defLocals['scope'])
+            else:
+                _exec(self.codeObj, defGlobals, defLocals)
             self.status = self.TASK_DONE
         except HWNotPresent:
             self.status = self.NOT_PRESENT
         except Exception as e:
             self.status = self.TASK_FAILED
+            logger.exception('Error running background init task %s' % self.name)
             raise e
         
     def get_status_msg(self):
@@ -187,7 +194,24 @@ def joinBGInit():
         #print(t)
         t.join()
 
-def InitGUI(code):
+class GUIInitTask(object):
+    def __init__(self, name, codeObj):
+        self.name = name
+        self.codeObj = codeObj
+
+    def run(self, parent, scope):
+        global defGlobals
+        global defLocals
+        #try:
+        if callable(self.codeObj):
+            self.codeObj(parent, scope)
+        else:
+            _exec(self.codeObj, defGlobals, defLocals)
+
+        #except Exception as e:
+        #    raise e
+
+def InitGUI(code='', name=''):
     """Add a piece of code to a list of items to be executed once the GUI is
     up and running. Used to defer the initialisation of GUI components ascociated
     with hardware items until they can be displayed.
@@ -197,4 +221,17 @@ def InitGUI(code):
     codeObj : string, compiled code object
         The code that will be executed - something that `exec` understands  
     """
-    defLocals['postInit'].append(code)
+    defLocals['postInit'].append(GUIInitTask(name, code))
+
+#define decorators
+def init_gui(name):
+    def _init_gui(fcn):
+        return InitGUI(fcn, name)
+        
+    return _init_gui
+        
+def init_hardware(name):
+    def _init_hw(fcn):
+        return InitBG(name, fcn)
+    
+    return _init_hw

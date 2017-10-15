@@ -113,6 +113,13 @@ def loadLibrary(cameratype='uc480'):
         global libuc480
         global cameraType
 
+        # make sure we load only once - if requested again make sure cameratype matches with already loaded
+        if libuc480 is not None:
+            if cameratype != cameraType:
+                raise ValueError('requesting loading library for type %s but already loaded for type %s - conflict!'
+                                 % (cameratype, cameraType))
+            return
+        
         cameraType = cameratype # store for later availability by outside modules
         #libuc480 = ctypes.cdll.LoadLibrary(lib)
         if cameratype=='uc480':
