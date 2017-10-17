@@ -163,6 +163,7 @@ class uc480Camera:
         if not ret == 0:
             raise RuntimeError('Error getting camera handle: %d: %s' % GetError(self.boardHandle))
             
+        self.expTime = None
         self.initialised = True
 
         #register as a provider of metadata
@@ -566,6 +567,10 @@ class uc480Camera:
         if not self.dark is None:
             self.background = self.dark[x1:x2, y1:y2]
 
+        # we apparently have to set the integration time explicitly after a call to change the AOI
+        # not sure if this is only for some IDS cameras or applies to all of them
+        if self.GetIntegTime() is not None:
+            self.SetIntegTime( self.GetIntegTime())
         #raise Exception, 'Not implemented yet!!'
 
     def GetROIX1(self):
