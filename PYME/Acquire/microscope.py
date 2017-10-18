@@ -224,6 +224,7 @@ class StateManager(object):
         self.stateChanged.send(self)
             
         if restartCamera:
+            self.scope().frameWrangler.Prepare()
             self.scope().frameWrangler.start()
         
         #return a function which tells us if we're done (for use as a task)

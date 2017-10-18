@@ -116,4 +116,5 @@ if __name__ == '__main__':
     fp = fProfile.thread_profiler()
     fp.profileOn()
     main()
+    fp.profileOff()
     #mProfile.report()
