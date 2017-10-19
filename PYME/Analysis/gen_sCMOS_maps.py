@@ -182,6 +182,9 @@ def main():
                     help='destination directory (default is PYME calibration path)')
     op.add_argument('-l','--list', action='store_true',
                 help='list all maps in default location')
+    op.add_argument('-p','--prefix', metavar='prefix', default='',
+                    help='prefix for dark/variance map filenames')
+
     args = op.parse_args()
 
     if args.list:
@@ -190,6 +193,7 @@ def main():
 
     # body of script
     filename = args.filename
+    prefix = args.prefix
 
     if filename is None:
         op.error('need a file name if -l or --list not requested')
@@ -258,8 +262,8 @@ def main():
         mname = mkDefaultPath('dark',source.mdh)
         vname = mkDefaultPath('variance',source.mdh)
     else:
-        mname = mkDestPath(args.dir,'dark',source.mdh)
-        vname = mkDestPath(args.dir,'variance',source.mdh)
+        mname = mkDestPath(args.dir,prefix+'dark',source.mdh)
+        vname = mkDestPath(args.dir,prefix+'variance',source.mdh)
 
     logger.info('dark map -> %s...' % mname)
     logger.info('var  map -> %s...' % vname)
