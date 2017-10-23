@@ -159,6 +159,7 @@ def install_map(filename):
     source.Save(filename=mapname)
 
 def main():
+    logging.basicConfig() # without it got 'No handlers could be found for logger...'
 
     defaultSensorSize = (2048,2048) # we currently assume this is correct but could be chosen based
                             # on camera model in meta data TODO - add CCD size to camera metadata
