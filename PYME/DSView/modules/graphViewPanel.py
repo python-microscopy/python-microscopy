@@ -218,7 +218,7 @@ class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
 
 
 class GraphViewPanel(wx.Panel):
-    def __init__(self, parent, dstack = None, do = None, xvals=None, xlabel=''):
+    def __init__(self, parent, dstack = None, do = None, xvals=None, xlabel='',ylabel=''):
         wx.Panel.__init__(self, parent)
 
         if (dstack is None and do is None):
@@ -234,6 +234,7 @@ class GraphViewPanel(wx.Panel):
 
         self.xvals = xvals
         self.xlabel = xlabel
+        self.ylabel = ylabel
             
         sizer1 = wx.BoxSizer(wx.VERTICAL)
 
@@ -284,7 +285,8 @@ class GraphViewPanel(wx.Panel):
         if self.do.ds.shape[3] > 1:
             self.axes.legend()
         self.axes.set_xlabel(self.xlabel)
-
+        self.axes.set_ylabel(self.ylabel)
+        
         self.canvas.draw()
 
     def _onSize( self, event ):
@@ -311,8 +313,14 @@ def Plug(dsviewer):
     else:
         xvals = None
         xlabel = ''
+
+    if 'ylabel' in dir(dsviewer.image):
+        ylabel = dsviewer.image.ylabel
+    else:
+        ylabel=''
+
         
-    dsviewer.gv = GraphViewPanel(dsviewer, do=dsviewer.do, xvals=xvals, xlabel=xlabel)
+    dsviewer.gv = GraphViewPanel(dsviewer, do=dsviewer.do, xvals=xvals, xlabel=xlabel,ylabel=ylabel)
     dsviewer.AddPage(dsviewer.gv, True, 'Graph View')
     
     dsviewer.gv.toolbar = MyNavigationToolbar(dsviewer.gv.canvas, dsviewer)

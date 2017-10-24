@@ -379,6 +379,19 @@ class TxtExporter(Exporter):
 
         fid.close()
 
+        # write metadata in xml file
+        if not metadata is None:
+            xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
+            if not origName is None:
+                xmd.setEntry('cropping.originalFile', origName)
+
+            xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
+            xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
+            xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
+            
+            xmlFile = os.path.splitext(outFile)[0] + '.xml'
+            xmd.writeXML(xmlFile)
+
         if progressCallback:
             try:
                 progressCallback(100, 100)
