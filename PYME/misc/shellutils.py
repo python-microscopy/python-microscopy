@@ -3,6 +3,16 @@ import matplotlib.pylab as plt
 import numpy as np
 import math
 
+# convert paste board to UTF-16 little endian
+# this is what pasting into the shell tab appears to require
+def convertpb2utf16le():
+    import os
+    from sys import platform
+    if platform == "darwin":
+        os.system("pbpaste | iconv -f ascii -t utf-16le | pbcopy")
+    else:
+        raise RuntimeError('function only available on mac')
+    
 def getvar(varname, inmodule = False):
     import inspect
     frame = inspect.currentframe()
