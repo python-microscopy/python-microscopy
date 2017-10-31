@@ -118,8 +118,13 @@ class ParticleTracker:
         from PYME.Analysis.points.DeClump import pyDeClump
         
         pipeline = self.visFr.pipeline
-        
-        dclumped = pyDeClump.coalesceClumps(pipeline.selectedDataSource.resultsSource.fitResults, pipeline.selectedDataSource['clumpIndex'])
+        try:
+            nphotons = pipeline.selectedDataSource['nPhotons']
+        except KeyError:
+            nphotons = None
+            
+        dclumped = pyDeClump.coalesceClumps(pipeline.selectedDataSource.resultsSource.fitResults,
+                                            pipeline.selectedDataSource['clumpIndex'], nphotons)
         ds = tabular.fitResultsSource(dclumped)
 
         pipeline.addDataSource('Coalesced',  ds)
