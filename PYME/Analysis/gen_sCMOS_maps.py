@@ -59,11 +59,14 @@ def mkDestPath(destdir,stem,mdh):
     return os.path.join(destdir,'%s_%dms.tif' % (stem,itime))
 
 
-def mkDefaultPath(stem,mdh,create=True):
-    caldir = nameUtils.getCalibrationDir(mdh['Camera.SerialNumber'],create=create)
+def mkDefaultPath(stem,mdh,create=True,calibrationDir=None):
+    if calibrationDir is None:
+        camDir = nameUtils.getCalibrationDir(mdh['Camera.SerialNumber'],create=create)
+    else:
+        camDir = os.path.join(calibrationDir,mdh['Camera.SerialNumber'])
     if create:
-        makePathUnlessExists(caldir)
-    return mkDestPath(caldir,stem,mdh)
+        makePathUnlessExists(camDir)
+    return mkDestPath(camDir,stem,mdh)
 
 
 def listCalibrationDirs():
