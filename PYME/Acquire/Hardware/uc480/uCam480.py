@@ -100,7 +100,27 @@ def GetCameraList():
     uc480.CALL("GetCameraList", ctypes.byref(camlist))
 
     return translateCaminfo(camlist)
+
+
+def check_mapexists(mdh, type = 'dark'):
+    import os
+    import PYME.Analysis.gen_sCMOS_maps as gmaps
     
+    if type == 'dark':
+        id = 'Camera.DarkMapID'
+    elif type == 'variance':
+        id = 'Camera.VarianceMapID'
+    elif type == 'flatfield':
+        id = 'Camera.FlatfieldMapID'
+    else:
+        raise RuntimeError('unknown map type %s' % type)
+        
+    mapPath = gmaps.mkDefaultPath(type,mdh,create=False)
+    if os.path.exists(mapPath):
+        mdh[id] = mapPath
+        return mapPath
+    else:
+        return None
 
 class uc480Camera:
     numpy_frames=1
@@ -765,6 +785,10 @@ class uc480Camera:
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1()+1)
             mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1()+1)
+
+            check_mapexists(mdh,type='dark')
+            check_mapexists(mdh,type='variance')
+            check_mapexists(mdh,type='flatfield')
 
     def __del__(self):
         if self.initialised:

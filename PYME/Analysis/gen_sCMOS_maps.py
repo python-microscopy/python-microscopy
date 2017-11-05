@@ -55,9 +55,11 @@ def makePathUnlessExists(path):
 def mkDestPath(destdir,stem,mdh):
     if not os.path.isdir(destdir):
         raise ValueError('directory %s does not exist; please create' % destdir)
-    itime = int(1000*mdh['Camera.IntegrationTime'])
-    return os.path.join(destdir,'%s_%dms.tif' % (stem,itime))
-
+    if stem != 'flatfield':
+        itime = int(1000*mdh['Camera.IntegrationTime'])
+        return os.path.join(destdir,'%s_%dms.tif' % (stem,itime))
+    else:
+        return os.path.join(destdir,'%s.tif' % (stem))
 
 def mkDefaultPath(stem,mdh,create=True,calibrationDir=None):
     if calibrationDir is None:
