@@ -88,12 +88,12 @@ class DisplayPane(afp.foldingPane):
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
         
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.r3DMode = wx.RadioBox(pan, choices=['2D','3D'])
-        self.r3DMode.Bind(wx.EVT_RADIOBOX, self.OnChange3D)
-        hsizer.Add(self.r3DMode, 1, wx.ALL, 2)
-        
-        vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
+        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        # self.r3DMode = wx.RadioBox(pan, choices=['2D','3D'])
+        # self.r3DMode.Bind(wx.EVT_RADIOBOX, self.OnChange3D)
+        # hsizer.Add(self.r3DMode, 1, wx.ALL, 2)
+        #
+        # vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         
@@ -114,12 +114,12 @@ class DisplayPane(afp.foldingPane):
         #bdsizer = wx.BoxSizer()
         #bdsizer.Add(bsizer, 1, wx.EXPAND|wx.ALL, 0)
 
-        cbLUTDraw = wx.CheckBox(pan, -1, 'Show')
-        cbLUTDraw.SetValue(self.glCanvas.LUTDraw)
-
-        cbLUTDraw.Bind(wx.EVT_CHECKBOX, self.OnLUTDrawCB)
-        
-        hsizer.Add(cbLUTDraw, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        # cbLUTDraw = wx.CheckBox(pan, -1, 'Show')
+        # cbLUTDraw.SetValue(self.glCanvas.LUTDraw)
+        #
+        # cbLUTDraw.Bind(wx.EVT_CHECKBOX, self.OnLUTDrawCB)
+        #
+        # hsizer.Add(cbLUTDraw, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         
         vsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
 
@@ -193,26 +193,26 @@ class DisplayPane(afp.foldingPane):
 
 
         #Scale Bar
-        pan = wx.Panel(self, -1)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(pan, -1, 'Scale Bar: '), 0, wx.LEFT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
-
-
-        chInd = list(self.scaleBarLengths.values()).index(self.glCanvas.scaleBarLength)
-
-        chScaleBar = wx.Choice(pan, -1, choices = list(self.scaleBarLengths.keys()))
-        chScaleBar.SetSelection(chInd)
-        hsizer.Add(chScaleBar, 0,wx.RIGHT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        pan.SetSizer(hsizer)
-        hsizer.Fit(pan)
-
-        self.AddNewElement(pan)
-        #self._pnl.AddFoldPanelWindow(self, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-
-        chScaleBar.Bind(wx.EVT_CHOICE, self.OnChangeScaleBar)
+        # pan = wx.Panel(self, -1)
+        #
+        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        #
+        # hsizer.Add(wx.StaticText(pan, -1, 'Scale Bar: '), 0, wx.LEFT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
+        #
+        #
+        # chInd = list(self.scaleBarLengths.values()).index(self.glCanvas.scaleBarLength)
+        #
+        # chScaleBar = wx.Choice(pan, -1, choices = list(self.scaleBarLengths.keys()))
+        # chScaleBar.SetSelection(chInd)
+        # hsizer.Add(chScaleBar, 0,wx.RIGHT|wx.TOP|wx.BOTTOM|wx.ALIGN_CENTER_VERTICAL, 5)
+        #
+        # pan.SetSizer(hsizer)
+        # hsizer.Fit(pan)
+        #
+        # self.AddNewElement(pan)
+        # #self._pnl.AddFoldPanelWindow(self, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        #
+        # chScaleBar.Bind(wx.EVT_CHOICE, self.OnChangeScaleBar)
 
         #self._pnl.AddPane(self)
 
@@ -352,4 +352,64 @@ class DisplayPaneLight(afp.foldingPane):
     def OnChange3D(self, event):
         self.glCanvas.displayMode = self.r3DMode.GetString(self.r3DMode.GetSelection())
         self.glCanvas.Refresh()
+
+
+class DisplayPaneHorizontal(wx.Panel):
+    def __init__(self, parent, glCanvas, visFr):
+        wx.Panel.__init__(self, parent, -1)
+        
+        self.glCanvas = glCanvas
+        self.visFr = visFr
+        
+        self.scaleBarLengths = OrderedDict([('<None>', None),
+                                            ('50nm', 50),
+                                            ('200nm', 200),
+                                            ('500nm', 500),
+                                            ('1um', 1000),
+                                            ('5um', 5000)])
+        
+        
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.r3DMode = wx.RadioBox(self, choices=['2D', '3D'])
+        self.r3DMode.Bind(wx.EVT_RADIOBOX, self.OnChange3D)
+        hsizer.Add(self.r3DMode, 0, wx.ALL| wx.ALIGN_CENTER_VERTICAL, 2)
+        
+        hsizer.AddSpacer(10)
+        
+        cbLUTDraw = wx.CheckBox(self, -1, 'Show LUT')
+        cbLUTDraw.SetValue(self.glCanvas.LUTDraw)
+        
+        cbLUTDraw.Bind(wx.EVT_CHECKBOX, self.OnLUTDrawCB)
+        
+        hsizer.Add(cbLUTDraw, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        hsizer.AddSpacer(10)
+        
+        #Scale Bar
+        
+        hsizer.Add(wx.StaticText(self, -1, 'Scale Bar: '), 0, wx.LEFT | wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
+        
+        chInd = list(self.scaleBarLengths.values()).index(self.glCanvas.scaleBarLength)
+        
+        chScaleBar = wx.Choice(self, -1, choices=list(self.scaleBarLengths.keys()))
+        chScaleBar.SetSelection(chInd)
+        hsizer.Add(chScaleBar, 0, wx.RIGHT | wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
+        
+        self.SetSizerAndFit(hsizer)
+        
+        #self._pnl.AddFoldPanelWindow(self, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        
+        chScaleBar.Bind(wx.EVT_CHOICE, self.OnChangeScaleBar)
     
+    def OnLUTDrawCB(self, event):
+        self.glCanvas.LUTDraw = event.IsChecked()
+        self.glCanvas.Refresh()
+    
+    def OnChangeScaleBar(self, event):
+        self.glCanvas.scaleBarLength = self.scaleBarLengths[event.GetString()]
+        self.glCanvas.Refresh()
+    
+    def OnChange3D(self, event):
+        self.glCanvas.displayMode = self.r3DMode.GetString(self.r3DMode.GetSelection())
+        self.glCanvas.Refresh()

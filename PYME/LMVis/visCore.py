@@ -82,12 +82,20 @@ class VisGUICore(object):
         else:
             win = self.dsviewer
 
+        gl_pan = wx.Panel(win)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        
         if not use_shaders:
-            self.glCanvas = gl_render.LMGLCanvas(win)
+            self.glCanvas = gl_render.LMGLCanvas(gl_pan)
         else:
             from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
-            self.glCanvas = LMGLShaderCanvas(win)
-        win.AddPage(page=self.glCanvas, caption='View')#, select=True)
+            self.glCanvas = LMGLShaderCanvas(gl_pan)
+
+        sizer.Add(self.create_tool_bar(gl_pan), 0, wx.EXPAND, 0)
+        sizer.Add(self.glCanvas, 5, wx.EXPAND, 0)
+        gl_pan.SetSizerAndFit(sizer)
+        win.AddPage(page=gl_pan, caption='View')#, select=True)
 
         self.glCanvas.setCMap(pylab.cm.gist_rainbow) #pylab.cm.hot
 
@@ -134,8 +142,8 @@ class VisGUICore(object):
 
         if PYME.config.get('VisGUI-new_layers', False):
             #self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
-            self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
-            self.displayPane.Bind(displayPane.EVT_DISPLAY_CHANGE, self.RefreshView)
+            #self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
+            #self.displayPane.Bind(displayPane.EVT_DISPLAY_CHANGE, self.RefreshView)
         
         
             from .layer_panel import CreateLayerPane
@@ -266,20 +274,25 @@ class VisGUICore(object):
 
         if not subMenu:
             self.AddMenuItem('Help', "&About",)
-
+            
+    def create_tool_bar(self, parent):
+        from .displayPane import DisplayPaneHorizontal
+        
+        return DisplayPaneHorizontal(parent, self.glCanvas, None)
+        
         
     def OnViewPoints(self,event):
         self.viewMode = 'points'
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewPointsprites(self, event):
         self.viewMode = 'pointsprites'
         # self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewShadedPoints(self,event):
@@ -295,50 +308,50 @@ class VisGUICore(object):
         self.viewMode = 'shadedpoints'
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewTracks(self,event):
         self.viewMode = 'tracks'
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewBlobs(self,event):
         self.viewMode = 'blobs'
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         #self.OnPercentileCLim(None)
 
     def OnViewTriangles(self,event):
         self.viewMode = 'triangles'
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewTriangles3D(self,event):
         self.viewMode = 'triangles3D'
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewQuads(self,event):
         self.viewMode = 'quads'
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewVoronoi(self,event):
         self.viewMode = 'voronoi'
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewInterpTriangles(self,event):
         self.viewMode = 'interp_triangles'
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
         
     def OnOpenFile(self, event):
@@ -374,6 +387,7 @@ class VisGUICore(object):
         return self.glCanvas.layers
         
     def RefreshView(self, event=None, **kwargs):
+        self.CreateFoldPanel()
         if self._new_layers:
             #refresh view no longer updates the display
             

@@ -109,10 +109,10 @@ class FourierPropagatorHNA:
         """
         pf = self.propFac*float(z)
         fs = F*self.pfm*(np.cos(pf) + j*np.sin(pf))
-        self._F[:] = fftshift(fs)
+        self._F[:] = ifftshift(fs)
 
         self._plan_F_f()
-        return ifftshift(self._f/np.sqrt(self._f.size))
+        return fftshift(self._f/np.sqrt(self._f.size))
         
     def propagate_r(self, f, z):
         """
@@ -479,8 +479,8 @@ def PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47,
     else:
         sx = output_shape[0]
         sy = output_shape[1]
-        ox = (X.shape[0] - sx) / 2
-        oy = (X.shape[1] - sy) / 2
+        ox = np.ceil((X.shape[0] - sx) / 2.0)
+        oy = np.ceil((X.shape[1] - sy) / 2.0)
         ex = ox + sx
         ey = oy + sy
 
