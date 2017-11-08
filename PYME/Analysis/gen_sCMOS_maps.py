@@ -52,8 +52,8 @@ def makePathUnlessExists(path):
         if exception.errno != errno.EEXIST:
             raise
 
-def mkDestPath(destdir,stem,mdh):
-    if not os.path.isdir(destdir):
+def mkDestPath(destdir,stem,mdh,create=True):
+    if create and not os.path.isdir(destdir):
         raise ValueError('directory %s does not exist; please create' % destdir)
     if stem != 'flatfield':
         itime = int(1000*mdh['Camera.IntegrationTime'])
@@ -68,7 +68,7 @@ def mkDefaultPath(stem,mdh,create=True,calibrationDir=None):
         camDir = os.path.join(calibrationDir,mdh['Camera.SerialNumber'])
     if create:
         makePathUnlessExists(camDir)
-    return mkDestPath(camDir,stem,mdh)
+    return mkDestPath(camDir,stem,mdh,create=create)
 
 
 def listCalibrationDirs():
