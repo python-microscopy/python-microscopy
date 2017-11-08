@@ -71,9 +71,11 @@ def calibrate(interpolator, md, roiSize=5):
     ps = []
     
     #print axialShift
+    dx = 0*70*np.random.normal(size=len(z))
+    dy = 0*70 * np.random.normal(size=len(z))
 
-    for z0 in z:    
-        d1 = interpolator.interp(X, Y, Z + z0)
+    for x0, y0, z0 in zip(dx, dy, z):
+        d1 = interpolator.interp(X + x0, Y+ y0, Z + z0)
         
         ps.append(_calcParams(np.random.poisson(2+ (1000 + np.random.exponential(1000))*d1), X_, Y_))
         #ps.append(_calcParams(numpy.concatenate([numpy.atleast_3d(d1), numpy.atleast_3d(d2)], 2), X_, Y_))
@@ -84,14 +86,16 @@ def calibrate(interpolator, md, roiSize=5):
     A = ps[2]
     feat = ps[3:]
     
+    #print ps, feat
+    
     rawMeas['feat'] = feat
     rawMeas['z'] = z
 
-    rawMeas['xp'] = xp
-    rawMeas['yp'] = yp
+    rawMeas['xp'] = xp + dx
+    rawMeas['yp'] = yp + dy
     
-    _svr = svm.SVR()
-    _svr.fit(feat.T, z/800.)
+    _svr = svm.SVR(C=1000)
+    _svr.fit(feat.T, z)
 
     sp, u = splprep([xp], u=z, s=1)
     splines['xp'] = sp
@@ -121,14 +125,19 @@ def calibrate(interpolator, md, roiSize=5):
 
 def _calcParams(data, X, Y):
     """calculates the \sigma_x - \sigma_y term used for z position estimation"""
-    A = data.sum(1).sum(0) - data.min(1).min(0) #amplitude
-    A_ = data.max(1).max(0) - data.min(1).min(0)
+    data = np.atleast_3d(data)
+    A = np.atleast_1d(data.sum(1).sum(0) - data.min(1).min(0)) #amplitude
+    A_ = np.atleast_1d(data.max(1).max(0) - data.min(1).min(0))
     
-    #print data.shape, A
+    #print data.shape, A, X
     
     #threshold at half maximum and subtract threshold
     dr = numpy.maximum(data - data.min(1).min(0) - 0.2*A_[None,None, :], 0)#.squeeze()
+
+    dr = numpy.maximum(data - data.mean(1).mean(0), 0)#.squeeze()
     #dr = (data - data.mean()).squeeze()
+    
+    #print A
     
     if len(A) == 2:
         sr = dr.sum(1).sum(0)
@@ -193,10 +202,10 @@ def getStartParameters(data, X, Y, Z=None):
     A = 1e3*np.array(p[2])
     
     feat = p[3:]
+    #print 'p:', p
+    #print 'feat:', feat
     
-    #print feat
-    
-    z0 = 800*_svr.predict(np.array(feat).reshape(1, -1))
+    z0 = _svr.predict(np.array(feat).reshape(1, -1))
     z0 = -max(min(z0, 1000), -1000)
     #print z0
 
