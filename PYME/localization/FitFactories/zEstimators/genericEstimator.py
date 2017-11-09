@@ -67,7 +67,7 @@ def calibrate(interpolator, md, roiSize=5):
     
     #print zmin, zmax
     
-    z = numpy.arange(max(-800, zmin), min(800, zmax), 10)
+    z = numpy.arange(max(-800, zmin), min(810, zmax), 10)
     ps = []
     
     #print axialShift
@@ -206,7 +206,7 @@ def getStartParameters(data, X, Y, Z=None):
     #print 'feat:', feat
     
     z0 = _svr.predict(np.array(feat).reshape(1, -1))
-    z0 = -max(min(z0, 1000), -1000)
+    z0 = -max(min(z0, 800), -800)
     #print z0
 
     #correct position & intensity estimates for z position
