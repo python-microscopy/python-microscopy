@@ -48,7 +48,7 @@ def calibrate(interpolator, md, roiSize=5):
     #generate grid to evaluate function on
     X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiSize,roiSize), slice(-roiSize,roiSize), slice(0, 2))
     #print Z, safeRegion
-    axialShift = md.Analysis.AxialShift
+    axialShift = md.getOrDefault('Analysis.AxialShift', 0)
     
     ratio = 0.5#md.Analysis.ColourRatio
 
@@ -65,19 +65,22 @@ def calibrate(interpolator, md, roiSize=5):
     zmin = max(zmin, zmin - axialShift)
     zmax = min(zmax, zmax - axialShift)
     
-    print zmin, zmax
+    #print zmin, zmax
     
     z = numpy.arange(max(-800, zmin), min(800, zmax), 10)
     ps = []
+
+    dx = 0 * 70 * np.random.normal(size=len(z))
+    dy = 0 * 70 * np.random.normal(size=len(z))
     
     #print axialShift
 
-    for z0 in z:    
-        d1 = ratio*interpolator.interp(X, Y, Z + z0)
+    for x0, y0, z0 in z:
+        d1 = ratio*interpolator.interp(X + x0, Y + y0, Z + z0)
         if interpolator.SplitPSF:
-            d2 = (1-ratio)*interpolator.interp(X + interpolator.PSF2Offset, Y, Z + z0 + axialShift)
+            d2 = (1-ratio)*interpolator.interp(X + interpolator.PSF2Offset + x0, Y + y0, Z + z0 + axialShift)
         else:
-            d2 = (1-ratio)*interpolator.interp(X, Y, Z + z0 + axialShift)
+            d2 = (1-ratio)*interpolator.interp(X + x0, Y + y0, Z + z0 + axialShift)
 #        if z0 % 100 == 0:
 #            figure()
 #            imshow(d)
@@ -93,11 +96,11 @@ def calibrate(interpolator, md, roiSize=5):
     rawMeas['feat'] = feat
     rawMeas['z'] = z
 
-    rawMeas['xp'] = xp
-    rawMeas['yp'] = yp
+    rawMeas['xp'] = xp + dx
+    rawMeas['yp'] = yp + dy
     
-    _svr = svm.SVR()
-    _svr.fit(feat.T, z/800.)
+    _svr = svm.SVR(C=1000)
+    _svr.fit(feat.T, z)
 
     sp, u = splprep([xp], u=z, s=1)
     splines['xp'] = sp
@@ -200,8 +203,8 @@ def getStartParameters(data, X, Y, Z=None):
     
     #print feat
     
-    z0 = 800*_svr.predict(np.array(feat).reshape(1, -1))
-    z0 = -max(min(z0, 1000), -1000)
+    z0 = _svr.predict(np.array(feat).reshape(1, -1))
+    z0 = -max(min(z0, 800), -800)
     #print z0
 
     #correct position & intensity estimates for z position
