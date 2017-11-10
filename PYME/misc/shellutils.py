@@ -3,6 +3,16 @@ import matplotlib.pylab as plt
 import numpy as np
 import math
 
+# convert paste board to UTF-16 little endian
+# this is what pasting into the shell tab appears to require
+def convertpb2utf16le():
+    import os
+    from sys import platform
+    if platform == "darwin":
+        os.system("pbpaste | iconv -f ascii -t utf-16le | pbcopy")
+    else:
+        raise RuntimeError('function only available on mac')
+    
 def getvar(varname, inmodule = False):
     import inspect
     frame = inspect.currentframe()
@@ -625,7 +635,7 @@ def subsampidx(arraylen, percentage=10):
     return idx
 
 from scipy.stats import gaussian_kde
-def scatterdens(x,y,subsample=1.0, s=40, **kwargs):
+def scatterdens(x,y,subsample=1.0, s=40, xlabel=None, ylabel=None, **kwargs):
     xf = x.flatten()
     yf = y.flatten()
     if subsample < 1.0:
@@ -640,6 +650,11 @@ def scatterdens(x,y,subsample=1.0, s=40, **kwargs):
     density = estimator.evaluate([xf,yf])
     print "density min, max: %f, %f" % (density.min(), density.max())
     plt.scatter(xf,yf,c=density,marker='o',linewidth='0',zorder=3,s=s,**kwargs)
+    if xlabel is not None:
+        plt.xlabel(xlabel)
+    if ylabel is not None:
+        plt.ylabel(ylabel)
+        
     return estimator
 
 def multicolcheck(pipeline,subsample=0.03,dA=20,xrange=[-1000,3000],yrange=[-1000,6000]):

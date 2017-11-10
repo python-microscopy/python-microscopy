@@ -59,6 +59,33 @@ def GetNumCameras():
     
     return numCams.value
     
+def as_string(cinfo,field):
+    strval = getattr(cinfo,field)
+    return (ctypes.cast(strval, ctypes.c_char_p)).value
+
+def translateCaminfo(camlist):
+    tlist = {}
+
+    tlist['count'] = int(camlist.dwCount)
+    tlist['_UEYE_CAMERA_LIST'] = camlist # raw ctype object for reference
+
+    
+    tlist['cameras'] = []
+    for n in range(tlist['count']):
+        uci = "uci%d" % n
+        caminfo = getattr(camlist,uci)
+        camdict = {
+            'serno'       : as_string(caminfo,'SerNo[16]'),
+            'model'       : as_string(caminfo,'Model[16]'),
+            'ID'          : int(getattr(caminfo,'dwCameraID')),
+            'DeviceID'    : int(getattr(caminfo,'dwDeviceID')),
+            'SensorID'    : int(getattr(caminfo,'dwSensorID')),
+            'inUse'       : int(getattr(caminfo,'dwInUse'))
+        }
+        tlist['cameras'].append(camdict)
+
+    return tlist
+
 def GetCameraList():
     nCams = GetNumCameras()
     
@@ -71,9 +98,29 @@ def GetCameraList():
     camlist.dwCount = nCams
     
     uc480.CALL("GetCameraList", ctypes.byref(camlist))
+
+    return translateCaminfo(camlist)
+
+
+def check_mapexists(mdh, type = 'dark'):
+    import os
+    import PYME.Analysis.gen_sCMOS_maps as gmaps
     
-    return camlist
-    
+    if type == 'dark':
+        id = 'Camera.DarkMapID'
+    elif type == 'variance':
+        id = 'Camera.VarianceMapID'
+    elif type == 'flatfield':
+        id = 'Camera.FlatfieldMapID'
+    else:
+        raise RuntimeError('unknown map type %s' % type)
+        
+    mapPath = gmaps.mkDefaultPath(type,mdh,create=False)
+    if os.path.exists(mapPath):
+        mdh[id] = mapPath
+        return mapPath
+    else:
+        return None
 
 class uc480Camera:
     numpy_frames=1
@@ -120,7 +167,7 @@ class uc480Camera:
 
     ROIlimitsDefault = ROIlimitlist['UI324x']
 
-    def __init__(self, boardNum=0, nbits = 8):
+    def __init__(self, boardNum=0, nbits = 8, isDeviceID = False):
         self.initialised = False
         self.active = True
         if nbits not in [8,10,12]:
@@ -128,12 +175,15 @@ class uc480Camera:
         self.nbits = nbits
 
         self.boardHandle = wintypes.HANDLE(boardNum)
+        if isDeviceID:
+            self.boardHandle = wintypes.HANDLE(self.boardHandle.value | uc480.IS_USE_DEVICE_ID)
 
         ret = uc480.CALL('InitCamera', byref(self.boardHandle), wintypes.HWND(0))
         print(('I',ret))
         if not ret == 0:
             raise RuntimeError('Error getting camera handle: %d: %s' % GetError(self.boardHandle))
             
+        self.expTime = None
         self.initialised = True
 
         #register as a provider of metadata
@@ -537,6 +587,10 @@ class uc480Camera:
         if not self.dark is None:
             self.background = self.dark[x1:x2, y1:y2]
 
+        # we apparently have to set the integration time explicitly after a call to change the AOI
+        # not sure if this is only for some IDS cameras or applies to all of them
+        if self.GetIntegTime() is not None:
+            self.SetIntegTime( self.GetIntegTime())
         #raise Exception, 'Not implemented yet!!'
 
     def GetROIX1(self):
@@ -731,6 +785,10 @@ class uc480Camera:
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1()+1)
             mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1()+1)
+
+            check_mapexists(mdh,type='dark')
+            check_mapexists(mdh,type='variance')
+            check_mapexists(mdh,type='flatfield')
 
     def __del__(self):
         if self.initialised:

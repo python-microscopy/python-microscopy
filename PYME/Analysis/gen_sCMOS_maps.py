@@ -52,18 +52,23 @@ def makePathUnlessExists(path):
         if exception.errno != errno.EEXIST:
             raise
 
-def mkDestPath(destdir,stem,mdh):
-    if not os.path.isdir(destdir):
+def mkDestPath(destdir,stem,mdh,create=True):
+    if create and not os.path.isdir(destdir):
         raise ValueError('directory %s does not exist; please create' % destdir)
-    itime = int(1000*mdh['Camera.IntegrationTime'])
-    return os.path.join(destdir,'%s_%dms.tif' % (stem,itime))
+    if stem != 'flatfield':
+        itime = int(1000*mdh['Camera.IntegrationTime'])
+        return os.path.join(destdir,'%s_%dms.tif' % (stem,itime))
+    else:
+        return os.path.join(destdir,'%s.tif' % (stem))
 
-
-def mkDefaultPath(stem,mdh,create=True):
-    caldir = nameUtils.getCalibrationDir(mdh['Camera.SerialNumber'],create=create)
+def mkDefaultPath(stem,mdh,create=True,calibrationDir=None):
+    if calibrationDir is None:
+        camDir = nameUtils.getCalibrationDir(mdh['Camera.SerialNumber'],create=create)
+    else:
+        camDir = os.path.join(calibrationDir,mdh['Camera.SerialNumber'])
     if create:
-        makePathUnlessExists(caldir)
-    return mkDestPath(caldir,stem,mdh)
+        makePathUnlessExists(camDir)
+    return mkDestPath(camDir,stem,mdh,create=create)
 
 
 def listCalibrationDirs():
@@ -159,6 +164,7 @@ def install_map(filename):
     source.Save(filename=mapname)
 
 def main():
+    logging.basicConfig() # without it got 'No handlers could be found for logger...'
 
     defaultSensorSize = (2048,2048) # we currently assume this is correct but could be chosen based
                             # on camera model in meta data TODO - add CCD size to camera metadata
@@ -182,6 +188,9 @@ def main():
                     help='destination directory (default is PYME calibration path)')
     op.add_argument('-l','--list', action='store_true',
                 help='list all maps in default location')
+    op.add_argument('-p','--prefix', metavar='prefix', default='',
+                    help='prefix for dark/variance map filenames')
+
     args = op.parse_args()
 
     if args.list:
@@ -190,6 +199,7 @@ def main():
 
     # body of script
     filename = args.filename
+    prefix = args.prefix
 
     if filename is None:
         op.error('need a file name if -l or --list not requested')
@@ -258,8 +268,8 @@ def main():
         mname = mkDefaultPath('dark',source.mdh)
         vname = mkDefaultPath('variance',source.mdh)
     else:
-        mname = mkDestPath(args.dir,'dark',source.mdh)
-        vname = mkDestPath(args.dir,'variance',source.mdh)
+        mname = mkDestPath(args.dir,prefix+'dark',source.mdh)
+        vname = mkDestPath(args.dir,prefix+'variance',source.mdh)
 
     logger.info('dark map -> %s...' % mname)
     logger.info('var  map -> %s...' % vname)
