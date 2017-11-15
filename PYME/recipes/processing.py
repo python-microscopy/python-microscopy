@@ -838,6 +838,32 @@ class Watershed(ModuleBase):
         else:
             mask = namespace[self.inputMask]
             namespace[self.outputName] = self.filter(image, markers, mask)
+            
+            
+@register_module('FlatfieldAndDarkCorrect')
+class FlatfiledAndDarkCorrect(ModuleBase):
+    inputImage = Input('input')
+    flatfieldFilename = CStr('')
+    darkFilename = CStr('')
+    outputName = Output('corrected')
+    
+    def execute(self, namespace):
+        from PYME.IO.DataSources import FlatFieldDataSource
+        from PYME.IO import unifiedIO
+        image = namespace[self.inputImage]
+        
+        flat = unifiedIO.read(self.flatfieldFilename)
+        if not self.darkFilename == '':
+            dark = unifiedIO.read(self.darkFilename)
+        else:
+            dark = None
+        
+        ffd = FlatFieldDataSource.DataSource(image.data, image.mdh, flatfield=flat, dark=dark)
+
+        im = ImageStack(ffd, titleStub=self.outputName)
+        im.mdh.copyEntriesFrom(image.mdh)
+        im.mdh['Parent'] = image.filename
+        namespace[self.outputName] = im
 
 
 

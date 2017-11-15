@@ -75,7 +75,7 @@ def calibrate(interpolator, md, roiSize=5):
     
     #print axialShift
 
-    for x0, y0, z0 in z:
+    for x0, y0, z0 in zip(dx, dy, z):
         d1 = ratio*interpolator.interp(X + x0, Y + y0, Z + z0)
         if interpolator.SplitPSF:
             d2 = (1-ratio)*interpolator.interp(X + interpolator.PSF2Offset + x0, Y + y0, Z + z0 + axialShift)
@@ -99,7 +99,7 @@ def calibrate(interpolator, md, roiSize=5):
     rawMeas['xp'] = xp + dx
     rawMeas['yp'] = yp + dy
     
-    _svr = svm.SVR(C=1000)
+    _svr = svm.SVR(C=1)
     _svr.fit(feat.T, z)
 
     sp, u = splprep([xp], u=z, s=1)

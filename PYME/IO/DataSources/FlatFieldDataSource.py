@@ -27,24 +27,28 @@ from .BaseDataSource import BaseDataSource
 
 class DataSource(BaseDataSource):
     moduleName = 'FlatFieldDataSource'
-    def __init__(self, parentSource, mdh, flatfield):
+    def __init__(self, parentSource, mdh, flatfield, dark = None):
         #self.h5Filename = getFullFilename(h5Filename)#convert relative path to full path
         #self.h5File = tables.openFile(self.h5Filename)
         self.source = parentSource
         self.mdh = mdh
         #self.flat = flatfield
         
-        x0 = mdh.getEntry('Camera.ROIPosX') - 1
-        x1 = x0 + mdh.getEntry('Camera.ROIWidth') + 1
+        x0 = mdh.getOrDefault('Camera.ROIPosX', 1) - 1
+        x1 = x0 + mdh.getOrDefault('Camera.ROIWidth', self.source.shape[0]) + 1
 
-        y0 = mdh.getEntry('Camera.ROIPosY') - 1
-        y1 = y0 + mdh.getEntry('Camera.ROIHeight') + 1
+        y0 = mdh.getOrDefault('Camera.ROIPosY', 1) - 1
+        y1 = y0 + mdh.getOrDefault('Camera.ROIHeight', self.source.shape[1]) + 1
 
         print((x0, x1, y0, y1))
 
         #self.offset = mdh.getEntry()
 
         self.flat = flatfield[x0:x1, y0:y1]
+        if dark is None:
+            self.dark = self.mdh.getEntry('Camera.ADOffset')
+        else:
+            self.dark = dark[x0:x1, y0:y1]
 
 
     def getSlice(self, ind):
@@ -52,7 +56,7 @@ class DataSource(BaseDataSource):
         #        self.reloadData() #try reloading the data in case it's grown
         print((self.getSliceShape(), self.flat.shape))
         
-        return (self.source.getSlice(ind) - self.mdh.getEntry('Camera.ADOffset'))*self.flat
+        return (self.source.getSlice(ind) - self.dark)*self.flat
 
 
     def getSliceShape(self):
