@@ -321,7 +321,8 @@ class LMGLShaderCanvas(GLCanvas):
             glPopMatrix()
 
             self.ScaleBarOverlayLayer.render(self)
-            self.LUTOverlayLayer.render(self)
+            if self.LUTDraw:
+                self.LUTOverlayLayer.render(self)
 
         glFlush()
 
