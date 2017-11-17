@@ -26,7 +26,9 @@ r = [
 def I(t):
     return 1*(t > 50)
 
-s = reactions.System(r,stimulae={'I':I}) #, constants={'I':1})#
+#s = reactions.System(r,stimulae={'I':reactions.Stimulus(1, [], [])}) #, constants={'I':1})#
+s = reactions.System(r, constants={'I':1})#
+s.GenerateGradAndJacCode()
 s.initialConditions['Fl'] = 1
 s.initialConditions['Th'] = 1
 #s.initialConditions['O'] = .5
