@@ -228,6 +228,7 @@ class Generator(HasTraits):
             pass
 
         pipeline.Rebuild()
+        self.visFr.CreateFoldPanel()
         self.visFr.SetFit()
 
 
