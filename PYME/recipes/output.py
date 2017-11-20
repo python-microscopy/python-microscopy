@@ -343,10 +343,10 @@ class ReportOutput(OutputModule):
 
     template = CStr('templates/report.html')
     
-    def generate(self, namespace):
+    def generate(self, namespace, recipe_context={}):
         template = env.get_template(self.template)
         v = namespace[self.inputName]
-        return template.render(data=v, namespace=namespace)
+        return template.render(data=v, namespace=namespace, recipe_context=recipe_context)
 
     def save(self, namespace, context={}):
         """
@@ -369,7 +369,7 @@ class ReportOutput(OutputModule):
         out_filename = self._schemafy_filename(self.filePattern.format(**context))
 
         with open(out_filename, 'w') as f:
-            f.write(self.generate(namespace))
+            f.write(self.generate(namespace, recipe_context=context))
 
 
 @register_module('ReportForEachOutput')

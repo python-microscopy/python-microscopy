@@ -849,12 +849,14 @@ class FlatfiledAndDarkCorrect(ModuleBase):
     
     def execute(self, namespace):
         from PYME.IO.DataSources import FlatFieldDataSource
-        from PYME.IO import unifiedIO
+        #from PYME.IO import unifiedIO
+        from PYME.IO.image import ImageStack
         image = namespace[self.inputImage]
         
-        flat = unifiedIO.read(self.flatfieldFilename)
+        flat = ImageStack(filename=self.flatfieldFilename).data[:,:,0].squeeze()
+        
         if not self.darkFilename == '':
-            dark = unifiedIO.read(self.darkFilename)
+            dark = ImageStack(filename=self.darkFilename).data[:,:,0].squeeze()
         else:
             dark = None
         

@@ -73,7 +73,7 @@ def _rad_dist(d):
 
     return np.array(out)
 
-def _genPSF(pixelsize, wavelength, NA, SCA_enhanchement=1.0):
+def _genPSF(pixelsize, wavelength, NA, SCA_enhancement=1.0, vesc_size=0):
     """
     Generates a PSF using the Gibson-Lanni model.
 
@@ -88,7 +88,7 @@ def _genPSF(pixelsize, wavelength, NA, SCA_enhanchement=1.0):
         The wavelength in nm
     NA : float
         The numerical aperture
-    SCA_enhanchement : float
+    SCA_enhancement : float
         How much to enhance the outer 20% of the pupil. A value of one gives a standard widefield PSF
 
     Returns
@@ -109,8 +109,13 @@ def _genPSF(pixelsize, wavelength, NA, SCA_enhanchement=1.0):
     Z = np.array([0])
 
     W = np.ones_like(P)
-    W[-50:] *= SCA_enhanchement
+    W[-50:] *= SCA_enhancement
     W = W / W.sum()
+    
+    if vesc_size > 0:
+        W *= np.exp(-((P*np.pi)**2)*(vesc_size/(2.35*sim_pixel_size))**2)
+        
+    W= W/W.sum()
 
     im = PSFGen.genWidefieldPSFW(X, X, Z, P, W, k=2 * np.pi / wavelength, NA=NA, depthInSample=0)
     if mag_factor > 1:
@@ -119,24 +124,25 @@ def _genPSF(pixelsize, wavelength, NA, SCA_enhanchement=1.0):
     return im.squeeze()
 
 _radCurveCache = {}
-def _getPSFRadialCurve(pixelsize=260, wavelength=640, NA=1.45, SCA_enhancement=1.0):
-    key = (pixelsize, wavelength, NA, SCA_enhancement)
+def _getPSFRadialCurve(pixelsize=260, wavelength=640, NA=1.45, SCA_enhancement=1.0, vesc_size=0):
+    key = (pixelsize, wavelength, NA, SCA_enhancement, vesc_size)
 
     try:
         return _radCurveCache[key]
     except KeyError:
-        rc = _rad_dist(_genPSF(pixelsize,wavelength,NA, SCA_enhancement))
+        rc = _rad_dist(_genPSF(pixelsize,wavelength,NA, SCA_enhancement, vesc_size))
         _radCurveCache[key] = rc
         return rc
 
 def getPSFRadialValue(r, r_cal=11, SCA_enhancement=1.0, **kwargs):
-    sca_0 = np.floor(SCA_enhancement)
+    #linearly interpolate between 2 values
+    sca_0 = np.floor(SCA_enhancement*10.)/10.
     sca_f = SCA_enhancement - sca_0
 
     rc0 = _getPSFRadialCurve(SCA_enhancement=sca_0, **kwargs)
     rc0 = rc0[r]/rc0[r_cal]
 
-    rc1 = _getPSFRadialCurve(SCA_enhancement=(sca_0 + 1), **kwargs)
+    rc1 = _getPSFRadialCurve(SCA_enhancement=(sca_0 + .1), **kwargs)
     rc1 = rc1[r] / rc1[r_cal]
 
     return sca_f*rc0 + (1-sca_f)*rc1
@@ -395,14 +401,14 @@ class FusionTrack(trackUtils.Track):
         #fit super-critical angle component to the docked stage only
         if fitWhich[-1]:
             numDockedFrames = len(t) - self.numLeadFrames - self.numFollowFrames
-            i_mean = data[:, self.numLeadFrames:(self.numLeadFrames + numDockedFrames)].mean(1)
+            i_mean = data[:, (self.numLeadFrames + 1):(self.numLeadFrames + numDockedFrames - 1)].mean(1)
 
             # sca = _fithelpers.FitModelFixed(lambda p, r: docked_vesc_SCA(r, p[0], r_cal=self.radii[-1]),
             #                                 [sp[-1],], [True,], i_mean, self.radii, eps=.1)[0][0]
 
             sca_ = sp[-1]**2 + 1.0
 
-            sca = _fithelpers.FitModelFixed(docked_model, [sca_,], [True,], i_mean, self.radii.astype('i'), int(self.radii[-1]), eps=.1)[0][0]
+            sca = _fithelpers.FitModelFixed(docked_model, [sca_,], [True,], i_mean, self.radii.astype('i'), int(self.radii[-1]), eps=.3)[0][0]
 
             sp[-1] = np.sqrt(sca - 1)
             fitWhich[-1] = False

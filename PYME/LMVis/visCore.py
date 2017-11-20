@@ -308,50 +308,50 @@ class VisGUICore(object):
         self.viewMode = 'shadedpoints'
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
-        #self.CreateFoldPanel()
+        self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewTracks(self,event):
         self.viewMode = 'tracks'
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
-        #self.CreateFoldPanel()
+        self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewBlobs(self,event):
         self.viewMode = 'blobs'
         self.RefreshView()
-        #self.CreateFoldPanel()
+        self.CreateFoldPanel()
         #self.OnPercentileCLim(None)
 
     def OnViewTriangles(self,event):
         self.viewMode = 'triangles'
         self.RefreshView()
-        #self.CreateFoldPanel()
+        self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewTriangles3D(self,event):
         self.viewMode = 'triangles3D'
         self.RefreshView()
-        #self.CreateFoldPanel()
+        self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewQuads(self,event):
         self.viewMode = 'quads'
         self.RefreshView()
-        #self.CreateFoldPanel()
+        self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewVoronoi(self,event):
         self.viewMode = 'voronoi'
         self.RefreshView()
-        #self.CreateFoldPanel()
+        self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewInterpTriangles(self,event):
         self.viewMode = 'interp_triangles'
         self.RefreshView()
-        #self.CreateFoldPanel()
+        self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
         
     def OnOpenFile(self, event):
@@ -387,7 +387,7 @@ class VisGUICore(object):
         return self.glCanvas.layers
         
     def RefreshView(self, event=None, **kwargs):
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         if self._new_layers:
             #refresh view no longer updates the display
             
