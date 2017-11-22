@@ -214,8 +214,9 @@ def diffMultiModel(params, t, sig=1., radii=[1., 2., 3., 5., 10, 1.0]):
     rref = radii[-1]
 
     #pre-calculate weights for the convolution with the release function
-    t_ = np.arange(0.0, 5 * tau)
-    conv_weights = np.exp(-t_ / tau) - np.exp(-(t_ + 1) / tau)
+    t_ = np.linspace(0.0, 5 * tau)
+    dt_ = t_[1] - t_[0]
+    conv_weights = np.exp(-t_ / tau) - np.exp(-(t_ + dt_) / tau)
 
     #pre-calculate temporal component to the docked vesicle signal
     #this has 3 components - a unit step when the vesicle docks, an expoential decay due to release, and a second
@@ -237,8 +238,8 @@ def diffMultiModel(params, t, sig=1., radii=[1., 2., 3., 5., 10, 1.0]):
 
         #now add the release signal. We approximate the convolution with a sum
         for ti, cw in zip(t_, conv_weights):
-            #out[i, :] = out[i, :] + cw * diffuse_greens_circ(t - t0 - ti, r, D, sig) * release_t
-            out[i, :] = out[i, :] + cw * diffuse_greens_circ_SCA(t - t0 - ti, r, D, SCA, sig) * release_t
+            out[i, :] = out[i, :] + cw * diffuse_greens_circ(t - t0 - ti, r, D, sig) * release_t
+            #out[i, :] = out[i, :] + cw * diffuse_greens_circ_SCA(t - t0 - ti, r, D, SCA, sig) * release_t
 
         #out[i, :] = out[i, :]*(r-1)/rref
 
@@ -338,7 +339,7 @@ class FusionTrack(trackUtils.Track):
         self.sig = sig
         self._I = 0
 
-        self.startParams = {'A' : 1.0, 't_fusion' : None, 'D' : .5, "tau_rel" : 1., 'G' : 5., 'tau_bleach' : 3600.,
+        self.startParams = {'A' : 1.0, 't_fusion' : None, 'D' : .5, "tau_rel" : .1, 'G' : 5., 'tau_bleach' : 3600.,
                             't_docked' : -1.0, 'background' : 0.0, 'sca': 3.0}
         self.startParams.update(startParams)
 
@@ -462,8 +463,9 @@ class FusionTrack(trackUtils.Track):
 
         params = self._unpack_params(fitResults)
         t, data = self._fusion_data
+        t_ = np.arange(t[0], t[-1], .1)
 
-        fits = diffMultiModel(params, t, self.sig, self.radii)
+        fits = diffMultiModel(params, t_, self.sig, self.radii)
 
         if fig is None:
             fig = plt.figure(figsize=(10, 7))
@@ -474,7 +476,7 @@ class FusionTrack(trackUtils.Track):
             #plt.subplot(len(radii), 1, i + 1)
             c = 0.8 * np.array(plt.cm.hsv(float(i) / len(self.radii)))
             ax.plot(t, .5 * i + 1 * data[i, :], 'x-', c=np.array([0.5, 0.5, 0.5, 1]) * c, label='r=%d' % r)
-            ax.plot(t, .5 * i + fits[i, :], c=c, lw=2)
+            ax.plot(t_, .5 * i + fits[i, :], c=c, lw=2)
 
             #plot(t, fitsp[i,:])
 
