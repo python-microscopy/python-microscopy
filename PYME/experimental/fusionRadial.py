@@ -183,8 +183,13 @@ def diffuse_greens_circ_SCA(t, r, D, sca=1.0, sig=0., **kwargs):
     #return (t>1e-9)*erf(r/(2*sqrt(D*t)))/(4*sqrt(pi*D*t))
     vesc = docked_vesc_SCA(r, sca, **kwargs)
     diff = (1. - np.exp(-(r ** 2) / (4. * D * t + 2 * sig ** 2)))
+    
+    #print diff.shape, vesc.sum()
+    diff_3 = (1. - np.exp(-(3 ** 2) / (4. * D * t + 2 * sig ** 2)))
+    
+    v_d = diff + (r > 3)*diff_3*vesc
 
-    return (t > 1e-9) * np.minimum(vesc, diff)
+    return (t > 1e-9) * v_d #np.minimum(vesc, diff)
 
 
 def diffModel(params, t, r, sig=1.):
@@ -217,6 +222,8 @@ def diffMultiModel(params, t, sig=1., radii=[1., 2., 3., 5., 10, 1.0]):
     t_ = np.linspace(0.0, 5 * tau)
     dt_ = t_[1] - t_[0]
     conv_weights = np.exp(-t_ / tau) - np.exp(-(t_ + dt_) / tau)
+    
+    #print conv_weights.sum()
 
     #pre-calculate temporal component to the docked vesicle signal
     #this has 3 components - a unit step when the vesicle docks, an expoential decay due to release, and a second
@@ -239,7 +246,7 @@ def diffMultiModel(params, t, sig=1., radii=[1., 2., 3., 5., 10, 1.0]):
         #now add the release signal. We approximate the convolution with a sum
         for ti, cw in zip(t_, conv_weights):
             out[i, :] = out[i, :] + cw * diffuse_greens_circ(t - t0 - ti, r, D, sig) * release_t
-            #out[i, :] = out[i, :] + cw * diffuse_greens_circ_SCA(t - t0 - ti, r, D, SCA, sig) * release_t
+            #out[i, :] = out[i, :] + cw * diffuse_greens_circ_SCA(t - t0 - ti, r, D, 3, sig) * release_t
 
         #out[i, :] = out[i, :]*(r-1)/rref
 
