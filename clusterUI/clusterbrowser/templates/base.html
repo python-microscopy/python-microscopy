@@ -81,6 +81,25 @@
         </div>
 
         <div class="col-sm-9 col-sm-offset-3 col-md-9 col-md-offset-3 main">
+            <!-- Modal dialog for file selection-->
+            <div class="modal fade" id="file_select_modal" tabindex="-1" role="dialog" aria-labelledby="file_select_label">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="file_select_label">Select a file</h4>
+                  </div>
+                  <div class="modal-body">
+                    <div id="file_selector_tree" data-path=""></div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="file_select_ok">OK</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {% block content %}
             {% endblock %}
         </div>
@@ -89,9 +108,38 @@
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
 {% block scripts %}
 {% endblock %}
 <script>
+    function select_file(callback, message='Select a file', basedir=''){
+        $('#file_select_modal').modal('show');
+
+        $('#file_select_label').html(message);
+
+        var tree = $('#file_selector_tree').jstree({
+          'core' : {
+            'data' : {
+              'url' : '/files/_lite/',
+              'data' : function (node) {
+                  //console.log(node);
+                  try{ return { 'path' : node.data.path };}
+                  catch (err) { return {'path' : ''}}
+
+              }
+            }
+          }
+        });
+
+        $('#file_select_ok').click(function(){
+            $('#file_select_modal').modal('hide');
+            $('#file_select_ok').off('click');
+            var path = $('#file_selector_tree').jstree(true).get_selected(true)[0].data.path;
+            callback(path);
+        })
+
+    }
+
     function loadclusterload(){
         //console.log('about to reload')
         $('#load-content').load('/status/load/',function () {
