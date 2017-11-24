@@ -40,7 +40,7 @@ class DataSource(BaseDataSource):
         y0 = mdh.getOrDefault('Camera.ROIPosY', 1) - 1
         y1 = y0 + mdh.getOrDefault('Camera.ROIHeight', self.source.shape[1]) + 1
 
-        print((x0, x1, y0, y1))
+        #print((x0, x1, y0, y1))
 
         #self.offset = mdh.getEntry()
 
