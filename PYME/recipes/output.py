@@ -3,6 +3,7 @@ from .traits import Input, Output, Float, Enum, CStr, Bool, Int, DictStrStr
 
 import numpy as np
 import pandas as pd
+import os
 from PYME.IO import tabular
 
 import logging
@@ -367,6 +368,10 @@ class ReportOutput(OutputModule):
         """
 
         out_filename = self._schemafy_filename(self.filePattern.format(**context))
+        
+        out_dir = os.path.dirname(out_filename)
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
 
         with open(out_filename, 'w') as f:
             f.write(self.generate(namespace, recipe_context=context))
@@ -436,5 +441,10 @@ class ReportForEachOutput(OutputModule):
 
         for i, c in enumerate(v):
             out_filename = self._schemafy_filename(self.filePattern.format(num=i, **context))
+            
+            out_dir = os.path.dirname(out_filename)
+            if not os.path.exists(out_dir):
+                os.makedirs(out_dir)
+            
             with open(out_filename, 'w') as f:
                 f.write(template.render(data=c, img=img))
