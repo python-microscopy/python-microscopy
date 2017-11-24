@@ -1385,7 +1385,7 @@ class TIFFpage(object):
             fd.seek(offsets[0], 0)
             if not isinstance(fd, file):
                 #handle reading from BytesIO and similar
-                result = numpy.fromstring(fd.read(numpy.prod(shape)), typecode)
+                result = numpy.fromstring(fd.read(numpy.prod(shape)*numpy.dtype(typecode).itemsize), typecode)
             else:
                 result = numpy.fromfile(fd, typecode, numpy.prod(shape))
             
