@@ -339,13 +339,14 @@ class Histogram(ModuleBase):
     nbins = Int(50)
     left = Float(0.)
     right = Float(1000)
+    normalize = Bool(False)
     
     def execute(self, namespace):        
         v = namespace[self.inputMeasurements][self.key]
         
         edges = np.linspace(self.left, self.right, self.nbins)
         
-        res = np.histogram(v, edges)[0]
+        res = np.histogram(v, edges, normed=self.normalize)[0]
         
         res = pd.DataFrame({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
         if 'mdh' in dir(v):
@@ -364,6 +365,7 @@ class ImageHistogram(ModuleBase):
     nbins = Int(50)
     left = Float(0.)
     right = Float(1000)
+    normalize = Bool(False)
     
     def execute(self, namespace):
         v = namespace[self.inputImage]
@@ -376,7 +378,7 @@ class ImageHistogram(ModuleBase):
         
         edges = np.linspace(self.left, self.right, self.nbins)
         
-        res = np.histogram(vals, edges)[0]
+        res = np.histogram(vals, edges, normed=self.normalize)[0]
         
         res = pd.DataFrame({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
         if 'mdh' in dir(v):

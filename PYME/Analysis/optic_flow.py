@@ -98,10 +98,11 @@ def reg_of(im1, im2, filt_rad=10, support_rad = 10, reg_l = 0):
     
     #print M.shape
     
-    MI = np.linalg.inv(M)
+    #MI = np.linalg.inv(M)
     
     #print MI.shape, b.shape
+    MIb = np.linalg.solve(M, b)
     
-    MIb= (MI*b[:,:,:,None]).sum(3)
+    #MIb= (MI*b[:,:,:,None]).sum(3)
     
     return MIb[:,:,0], MIb[:,:,1]
