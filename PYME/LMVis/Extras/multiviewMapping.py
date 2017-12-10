@@ -59,15 +59,78 @@ def plotFolded(X, Y, multiviewChannels, title=''):
     plt.legend()
     return
 
+def correlative_shift(x0, y0, which_channel, pix_size_nm=115.):
+    """
+    Laterally shifts all channels to the first using cross correlations
 
-def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4), nFrameSep=5, returnPaired=True):
+    Parameters
+    ----------
+    x0 : ndarray
+        array of localization x positions, folded into the first channel, but not registered
+    y0 : ndarray
+        array of localization y positions, folded into the first channel if necessary
+    which_channel : ndarray
+        contains the channel ID for each localization
+    pix_size_nm : float
+        size of pixels to be used in generating 2D histograms which the correlations are then performed on
+
+    Returns
+    -------
+    x : ndarray
+        array of localization x positions registered to the first channel
+    y : ndarray
+        array of localization y positions registered to the first channel
+    """
+    from scipy.signal import correlate2d
+    from skimage import filters
+
+    x, y = np.copy(x0), np.copy(y0)
+    # determine number of ~pixel size bins for histogram
+    bin_count = round((x.max() - x.min()) / pix_size_nm)  # assume square FOV (NB - after folding)
+    # make sure bin_count is odd so its possible to have zero shift
+    if bin_count % 2 == 0:
+        bin_count += 1
+    center = np.floor(float(bin_count) / 2)
+
+    # generate first channel histogram
+    channels = iter(np.unique(which_channel))
+    first_chan = channels.next()
+    mask = which_channel == first_chan
+    first_channel, r_bins, c_bins = np.histogram2d(x[mask], y[mask], bins=(bin_count, bin_count))
+    first_channel = first_channel >= filters.threshold_otsu(first_channel)
+    first_channel = filters.gaussian(first_channel.astype(float))
+
+    # loop through channels, skipping the first
+    for chan in channels:
+        # generate 2D histogram
+        mask = which_channel == chan
+        counts = np.histogram2d(x[mask], y[mask], bins=(r_bins, c_bins))[0]
+        counts = counts >= filters.threshold_otsu(counts)
+        counts = filters.gaussian(counts.astype(float))
+
+
+        # cross-correlate this channel with the first, make it binary
+        cross_cor = correlate2d(first_channel, counts, mode='same', boundary='symm')
+        #cropped = cross_cor[center - max_pixel_shift: center + max_pixel_shift, center - max_pixel_shift: center+max_pixel_shift]
+        r_off, c_off = np.unravel_index(np.argmax(cross_cor), cross_cor.shape)
+
+        # shift c and y positions
+        r_shift = (center - r_off) * pix_size_nm
+        c_shift = (center - c_off) * pix_size_nm
+
+        x[mask] -= c_shift
+        y[mask] -= r_shift
+
+    return x, y
+
+def pairMolecules(tIndex, x0, y0, whichChan, deltaX=[None], appearIn=np.arange(4), nFrameSep=5, returnPaired=True):
     """
     pairMolecules uses pyDeClump functions to group localization clumps into molecules for registration.
 
     Args:
         tIndex: from fitResults
-        x: x positions of localizations AFTER having been folded into the first channel
-        y: y positions of localizations
+        x0: x positions of localizations AFTER having been folded into the first channel
+        y0: y positions of localizations
         whichChan: a vector containing channel assignments for each localization
         deltaX: distance within which neighbors will be clumped is set by 2*deltaX[i])**2
         appearIn: a clump must have localizations in each of these channels in order to be a keep-clump
@@ -83,6 +146,7 @@ def pairMolecules(tIndex, x, y, whichChan, deltaX=[None], appearIn=np.arange(4),
         as: xkept = x[keep] in order to only look at kept molecules.
 
     """
+    x, y = correlative_shift(x0, y0, which_channel=whichChan)
     # group within a certain distance, potentially based on localization uncertainty
     if not deltaX[0]:
         deltaX = 100.*np.ones_like(x)
