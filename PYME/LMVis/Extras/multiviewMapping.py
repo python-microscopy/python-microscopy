@@ -66,9 +66,9 @@ def correlative_shift(x0, y0, which_channel, pix_size_nm=115.):
     Parameters
     ----------
     x0 : ndarray
-        array of localization x positions, folded into the first channel, but not registered
+        array of localization x positions; not yet registered
     y0 : ndarray
-        array of localization y positions, folded into the first channel if necessary
+        array of localization y positions; not yet registered
     which_channel : ndarray
         contains the channel ID for each localization
     pix_size_nm : float
@@ -114,7 +114,7 @@ def correlative_shift(x0, y0, which_channel, pix_size_nm=115.):
         #cropped = cross_cor[center - max_pixel_shift: center + max_pixel_shift, center - max_pixel_shift: center+max_pixel_shift]
         r_off, c_off = np.unravel_index(np.argmax(cross_cor), cross_cor.shape)
 
-        # shift c and y positions
+        # shift r and c positions
         r_shift = (center - r_off) * pix_size_nm
         c_shift = (center - c_off) * pix_size_nm
 
@@ -123,7 +123,8 @@ def correlative_shift(x0, y0, which_channel, pix_size_nm=115.):
 
     return x, y
 
-def pairMolecules(tIndex, x0, y0, whichChan, deltaX=[None], appearIn=np.arange(4), nFrameSep=5, returnPaired=True):
+def pairMolecules(tIndex, x0, y0, whichChan, deltaX=[None], appearIn=np.arange(4), nFrameSep=5, returnPaired=True,
+                  pix_size_nm=115.):
     """
     pairMolecules uses pyDeClump functions to group localization clumps into molecules for registration.
 
@@ -146,7 +147,7 @@ def pairMolecules(tIndex, x0, y0, whichChan, deltaX=[None], appearIn=np.arange(4
         as: xkept = x[keep] in order to only look at kept molecules.
 
     """
-    x, y = correlative_shift(x0, y0, which_channel=whichChan)
+    x, y = correlative_shift(x0, y0, whichChan, pix_size_nm)
     # group within a certain distance, potentially based on localization uncertainty
     if not deltaX[0]:
         deltaX = 100.*np.ones_like(x)
@@ -316,7 +317,8 @@ class multiviewMapper:
         chanSort = pipeline['multiviewChannel'][I]
 
         clumpID, keep = pairMolecules(pipeline['tIndex'][I], xsort, ysort, chanSort, clumpRad*np.ones_like(xsort),
-                                          appearIn=np.arange(numChan), nFrameSep=pipeline['tIndex'].max())
+                                      appearIn=np.arange(numChan), nFrameSep=pipeline['tIndex'].max(),
+                                      pix_size_nm=1e3*pipeline.mdh['voxelsize.x'])
 
 
         # only look at the ones which showed up in all channels
