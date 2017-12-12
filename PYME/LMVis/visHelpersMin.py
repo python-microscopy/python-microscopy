@@ -113,7 +113,7 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
 
 
 def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
-    from matplotlib import delaunay
+    from matplotlib import tri
     for i in range(n):
         #global jParms
         #locals().update(jParms)
@@ -123,7 +123,7 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
         if type(jsig) == numpy.ndarray:
             #print jsig.shape, Imc.shape
             jsig = jsig[Imc]
-        T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
+        T = tri.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
 
         #return T
         rendTri(T, imageBounds, pixelSize, im=im)

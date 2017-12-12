@@ -533,7 +533,7 @@ class LMGLCanvas(GLCanvas):
         self.setColour(self.IScale, self.zeroPt)
 
     def setVoronoi(self, T, cp=None):
-        from matplotlib import delaunay
+        from matplotlib import tri
         tdb = []
         for i in range(len(T.x)):
             tdb.append([])
@@ -565,7 +565,7 @@ class LMGLCanvas(GLCanvas):
                 newPts = numpy.array(list(circumcenters) + [[T.x[i], T.y[i]]])
 
                 #re-triangulate (we could try and sort the triangles somehow, but this is easier)
-                T2 = delaunay.Triangulation(newPts[:,0],newPts[:,1] )
+                T2 = tri.Triangulation(newPts[:,0],newPts[:,1] )
 
 
                 #now do the same as for the standard triangulation
@@ -618,8 +618,8 @@ class LMGLCanvas(GLCanvas):
 
 
     def setTriangEdges(self, T):
-        xs = T.x[T.edge_db]
-        ys = T.y[T.edge_db]
+        xs = T.x[T.edges]
+        ys = T.y[T.edges]
 
         a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
         #b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
@@ -674,8 +674,8 @@ class LMGLCanvas(GLCanvas):
             for i in range(len(T.x)):
                 edb.append(([],[]))
 
-            for i in range(len(T.edge_db)):
-                e = T.edge_db[i]
+            for i in range(len(T.edges)):
+                e = T.edges[i]
                 edb[e[0]][0].append(i)
                 edb[e[0]][1].append(e[1])
                 edb[e[1]][0].append(i)
@@ -687,7 +687,7 @@ class LMGLCanvas(GLCanvas):
             cs = numpy.zeros(T.x.shape)
 
             for i in range(len(T.x)):
-                incidentEdges = T.edge_db[edb[i][0]]
+                incidentEdges = T.edges[edb[i][0]]
                 #neighbourPoints = edb[i][1]
 
                 #incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
@@ -703,9 +703,9 @@ class LMGLCanvas(GLCanvas):
 
                 neighbourPoints = edb[i][1]
 
-                incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
+                incidentEdges = T.edges[edb[neighbourPoints[0]][0]]
                 for j in range(1, len(neighbourPoints)):
-                    incidentEdges = numpy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
+                    incidentEdges = numpy.vstack((incidentEdges, T.edges[edb[neighbourPoints[j]][0]]))
                 dx = numpy.diff(T.x[incidentEdges])
                 dy = numpy.diff(T.y[incidentEdges])
 
@@ -1115,12 +1115,12 @@ class LMGLCanvas(GLCanvas):
         return snap
 
     def jitMCT(self,x,y,jsig, mcp):
-        from matplotlib import delaunay
+        from matplotlib import tri
         Imc = numpy.random.normal(size=len(x)) < mcp
         if type(jsig) == numpy.ndarray:
             #print jsig.shape, Imc.shape
             jsig = jsig[Imc]
-        T = delaunay.Triangulation(x[Imc] +  jsig*numpy.random.normal(size=Imc.sum()), y[Imc] +  jsig*numpy.random.normal(size=Imc.sum()))
+        T = tri.Triangulation(x[Imc] +  jsig*numpy.random.normal(size=Imc.sum()), y[Imc] +  jsig*numpy.random.normal(size=Imc.sum()))
         self.setTriang(T)
 
 
@@ -1278,8 +1278,8 @@ def genMapColouring(T):
         cand = 1 #candidate colour
 
         #find neighbouring points
-        ix, iy = numpy.where(T.edge_db == i)
-        neighb = T.edge_db[ix, (1-iy)]
+        ix, iy = numpy.where(T.edges == i)
+        neighb = T.edges[ix, (1-iy)]
 
         #if one of our neighbours already has the candidate colour, increment
         while cand in cols[neighb]:

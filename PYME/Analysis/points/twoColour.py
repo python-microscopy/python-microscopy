@@ -352,7 +352,7 @@ def dispRatio(res_g, res_r):
 
 
 def genShiftVectors(res_g, res_r):
-    from matplotlib import delaunay
+    from matplotlib import tri
     ind1 = (res_g['fitResults']['A'] > 10)*(res_g['fitResults']['A'] < 500)*(res_g['fitResults']['sigma'] > 100)*(res_g['fitResults']['sigma'] < 400)*(res_g['fitError']['x0'] < 50)
 
 
@@ -363,7 +363,7 @@ def genShiftVectors(res_g, res_r):
     sx = res_g['fitResults']['x0'][ind1] - res_r['fitResults']['x0'][ind1]
     sy = res_g['fitResults']['y0'][ind1] - res_r['fitResults']['y0'][ind1]
 
-    T = delaunay.Triangulation(x,y)
+    T = tri.Triangulation(x,y)
 
     nx = []
     ny = []
@@ -373,8 +373,8 @@ def genShiftVectors(res_g, res_r):
 
     #remove any shifts which are markedly different from their neighbours
     for i in range(len(x)):
-        i1,i2 = np.where(T.edge_db == i)
-        i_ = T.edge_db[i1, 1-i2]
+        i1,i2 = np.where(T.edges == i)
+        i_ = T.edges[i1, 1-i2]
         if (abs(sx[i] - np.median(sx[i_])) < 100) and (abs(sy[i] - np.median(sy[i_])) < 100):
             nx.append(x[i])
             ny.append(y[i])
@@ -534,13 +534,13 @@ def calcCorrections(filenames):
     return (gs, rs, res_gs, res_rs, Ags, Ars, dx, dy)
 
 def warpCorrectRedImage(r, dx, dy):
-    from matplotlib import delaunay
+    from matplotlib import tri
     X, Y = sp.meshgrid(np.arange(0, 512*70, 70), np.arange(0, 256*70,70))
     cx, cy = getCorrection(X,Y, dx, dy)
 
 
-    T = delaunay.Triangulation((X + cx).ravel(),(Y+cy).ravel())
-    In = delaunay.LinearInterpolator(T, r.T.ravel(), r.min())
+    T = tri.Triangulation((X + cx).ravel(),(Y+cy).ravel())
+    In = tri.LinearTriInterpolator(T, r.T.ravel(), r.min())
 
     vals =In[0:256*70:256*1j, 0:512*70:512*1j]
 

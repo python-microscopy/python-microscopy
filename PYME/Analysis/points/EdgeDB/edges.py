@@ -44,7 +44,7 @@ class EdgeDB:
         #say where we can start adding extra rows
         self.edgeArray[-1]['nextRecordIndex'] = self.Nverts + 1
 
-        addEdges(self.edgeArray, T.edge_db)
+        addEdges(self.edgeArray, T.edges)
 
         if calcDistances:
             self.calcDistances((T.x, T.y))
