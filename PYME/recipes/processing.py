@@ -365,7 +365,184 @@ class WavefrontVelocity(ModuleBase):
 
         namespace[self.outputName] = im
                 
+
+class CaWave(object):
+    default_recipe = '''
+    - processing.OpticalFlow:
+        filterRadius: 10.0
+        inputName: intensity
+        outputNameX: flow_x
+        outputNameY: flow_y
+        regularizationLambda: 0.1
+        supportRadius: 30.0
+    - filters.GaussianFilter:
+        inputName: flow_x
+        outputName: flow_xf
+        processFramesIndividually: false
+        sigmaX: 1.0
+        sigmaY: 1.0
+        sigmaZ: 5.0
+    - filters.GaussianFilter:
+        inputName: flow_y
+        outputName: flow_yf
+        processFramesIndividually: false
+        sigmaX: 1.0
+        sigmaY: 1.0
+        sigmaZ: 5.0
+    - processing.WavefrontVelocity:
+        inputFlowX: flow_xf
+        inputFlowY: flow_yf
+        inputWavefronts: wavefronts
+        outputName: wavefront_velocities
+        timeWindow: 5
+    - measurement.ImageHistogram:
+        inputImage: wavefront_velocities
+        inputMask: wavefronts
+        left: 0.0
+        nbins: 50
+        outputName: velocity_histogram
+        right: 16.0
+    - processing.VectorfieldAngle:
+        inputX: flow_xf
+        inputY: flow_yf
+        inputZ: ''
+        outputPhi: phi
+        outputTheta: theta
+    - measurement.ImageHistogram:
+        inputImage: theta
+        inputMask: wavefronts
+        left: 0.0
+        nbins: 120
+        outputName: angle_hist
+        right: 6.3
+    '''
+    def __init__(self, wavefronts, intensity, recipe=''):
+        from PYME.recipes.base import ModuleCollection
+        
+        if recipe == '':
+            recipe = self.default_recipe
+        
+        self._mc = ModuleCollection.fromYAML(recipe)
+        
+        self._mc.execute(wavefronts=wavefronts, intensity=intensity)
+        
+    @property
+    def direction_plot(self):
+        import matplotlib.pyplot as plt
+        import mpld3
+        
+        plt.ioff()
+        f = plt.figure(figsize=(4, 3))
+    
+        bins = self._mc.namespace['angle_hist']['bins']
+        counts = self._mc.namespace['angle_hist']['counts']
+        
+        plt.polar(bins, counts)
+    
+        plt.title('Propagation direction')
+    
+        plt.tight_layout(pad=2)
+    
+        plt.ion()
+    
+        return mpld3.fig_to_html(f)
+    
+    @property
+    def direction_data(self):
+        pass
+        
+    @property
+    def velocity_plot(self):
+        import matplotlib.pyplot as plt
+        import mpld3
+    
+        plt.ioff()
+        f = plt.figure(figsize=(4, 3))
+    
+        bins = self._mc.namespace['velocity_histogram']['bins']
+        counts = self._mc.namespace['velocity_histogram']['counts']
+    
+        plt.bar(bins, counts, width=(bins[1] - bins[0]))
+        plt.xlabel('Velocity [pixels/frame]')
+        plt.ylabel('Frequency')
+        plt.title('Velocity distribution')
+    
+        plt.tight_layout(pad=2)
+    
+        plt.ion()
+    
+        return mpld3.fig_to_html(f)
+        pass
+    
+    @property
+    def velocity_data(self):
+        pass
+    
+    @property
+    def wavefront_image(self):
+        import matplotlib.pyplot as plt
+        wavefronts = self._mc.namespace['wavefronts'].data
+        
+        nFrames = wavefronts.getNumSlices()
+        
+        sx, sy = wavefronts.getSliceShape()
+        
+        out = np.zeros([sx, sy, 3])
+        
+        for i in range(nFrames):
+            c = np.array(plt.cm.jet(float(i)/nFrames)[:3])
+            out += wavefronts.getSlice(i)[:,:,None]*c[None, None, :]
             
+    
+    @property
+    def velocity_image(self):
+        pass
+        
+
+@register_module('FindCaWaves')
+class FindCaWaves(ModuleBase):
+    '''
+    Finds contiguous calcium wave events from detected wavefronts.
+    '''
+    inputWavefronts = Input('wavefronts')
+    inputIntensity = Input('intensity')
+    
+    waveRecipeFileName = CStr('')
+    
+    minWaveFrames = Int(5)
+    
+    outputName = Output('waves')
+    
+    def execute(self, namespace):
+        from scipy import ndimage
+        from PYME.IO.DataSources import CropDataSource
+        wavefronts = namespace[self.inputWavefronts] #segmented wavefront mask
+        intensity = namespace[self.inputIntensity]
+        wavefront_I = [wavefronts.data.getSlice(i).sum() for i in range(wavefronts.data.getNumSlices())]
+        
+        #a wave is a contiguous region of non-zero wavefronts
+        wave_labels, nWaves = ndimage.label(wavefront_I > .5)
+        
+        waves = []
+        
+        for i in range(nWaves):
+            wv_idx = np.argwhere(wave_labels == (i+1))
+            
+            if len(wv_idx) >= self.minWaveFrames:
+                
+                trange = (wv_idx[0], wv_idx[-1])
+                cropped_wavefronts = ImageStack(CropDataSource.DataSource(wavefronts, trange=trange),
+                                                mdh=getattr(wavefronts, 'mdh', None))
+                cropped_intensity = ImageStack(CropDataSource.DataSource(intensity, trange=trange),
+                                                mdh=getattr(intensity, 'mdh', None))
+                waves.append(CaWave(cropped_wavefronts, cropped_intensity))
+                
+        
+        namespace[self.outputName] = waves
+                
+        
+        
+        
             
         
         
