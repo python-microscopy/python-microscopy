@@ -82,7 +82,7 @@ class H5Exporter(Exporter):
         self.complevel = complevel
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
-        h5out = tables.openFile(outFile,'w', chunk_cache_size=2**23)
+        h5out = tables.open_file(outFile,'w', chunk_cache_size=2**23)
         filters=tables.Filters(self.complevel,self.complib,shuffle=True)
 
         nframes = (zslice.stop - zslice.start)/zslice.step
