@@ -213,7 +213,7 @@ class CRBViewPanel(wx.Panel):
             z_ = np.arange(d.shape[2])*self.image.mdh['voxelsize.z']*1.0e3
             self.z_ = z_ - z_.mean()
 
-            ps_as = fourierHNA.GenAstigPSF(self.z_, vs[0], 2)
+            ps_as = fourierHNA.GenAstigPSF(self.z_, dx=vs[0], strength=2)
             I = ps_as[:,:,ps_as.shape[2]/2].sum()
             self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/I + self.background, 500, voxelsize=vs)))
 

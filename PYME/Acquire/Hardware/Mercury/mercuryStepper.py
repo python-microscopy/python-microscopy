@@ -120,10 +120,11 @@ class mercuryStepper:
         self.lock.release()
 
     def GetPos(self, iChan=0):
-        self.lock.acquire()
-        ret = m.qPOS(self.connID, self.axes[iChan])[0]
-        self.lock.release()
-        return ret
+        # self.lock.acquire()
+        # ret = m.qPOS(self.connID, self.axes[iChan])[0]
+        # self.lock.release()
+        # return ret
+        return self.last_poss[iChan]
 
     def IsMoving(self, iChan=0):
         self.lock.acquire()

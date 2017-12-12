@@ -349,7 +349,9 @@ class PanSpool(wx.Panel):
         from PYME.Acquire import protocol
         pDlg = wx.SingleChoiceDialog(self, '', 'Select Protocol', protocol.get_protocol_list())
 
-        if pDlg.ShowModal() == wx.ID_OK:
+        ret = pDlg.ShowModal()
+        #print 'Protocol choice: ', ret, wx.ID_OK
+        if ret == wx.ID_OK:
             pname = pDlg.GetStringSelection()
             self.stAqProtocol.SetLabel(pname)
             
