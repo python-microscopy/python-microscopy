@@ -741,6 +741,7 @@ class TIFFfile(object):
     def __init__(self, filename):
         """Initialize instance from file."""
         from PYME.IO import unifiedIO
+        #filename = unifiedIO.local_or_temp_filename(filename)
         #filename = os.path.abspath(filename)
         #self._fd = open(filename, 'rb')
         self._fd = unifiedIO.openFile(filename)
@@ -1382,7 +1383,12 @@ class TIFFpage(object):
                     for i in range(len(offsets)-1))))):
             # contiguous data
             fd.seek(offsets[0], 0)
-            result = numpy.fromfile(fd, typecode, numpy.prod(shape))
+            if not isinstance(fd, file):
+                #handle reading from BytesIO and similar
+                result = numpy.fromstring(fd.read(numpy.prod(shape)*numpy.dtype(typecode).itemsize), typecode)
+            else:
+                result = numpy.fromfile(fd, typecode, numpy.prod(shape))
+            
             result = result.astype('=' + dtype)
         else:
             if self.planar_configuration == 'contig':

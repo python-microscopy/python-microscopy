@@ -1,9 +1,8 @@
 
-
+import sys
 import os
 import errno
 import glob
-import numpy as np
 import time
 import datetime
 
@@ -40,7 +39,7 @@ class venerableFileChucker(object):
     This is certainly not the most elegant way of implementing the DCIMGSpooler, but may suffice for now....
 
     """
-    def __init__(self, searchFolder, timeout = 3600, quantize=False):
+    def __init__(self, searchFolder, timeout=12, quantize=False):
         """
 
         Parameters
@@ -103,6 +102,23 @@ class venerableFileChucker(object):
             safe_remove(zsteps_filename)
 
     def huck(self, mdFile, delete_after_spool, only_spool_complete):
+        """
+        Spools a series to the cluster
+        Parameters
+        ----------
+        mdFile : str
+            Fully resolved path to metadata file for series to be spooled
+        delete_after_spool : bool
+            Flag to determine whether files are deleted after spooling (True) or spooled without deletion (False)
+        only_spool_complete : bool
+            Flag to determine whether dcimg files should be spooled as soon as they are written (False), i.e. before an
+            events file is written, or whether the FileChucker should wait until all dcimg files for a series are
+            available before spooling (True).
+
+        Returns
+        -------
+
+        """
         # compute the whole series name
         mdfilename = os.path.join(self.folder, mdFile)
         self.spooler.OnNewSeries(mdfilename)
@@ -156,6 +172,24 @@ class venerableFileChucker(object):
             safe_remove(zsteps_filename)
 
     def searchAndHuck(self, only_spool_new=False, delete_after_spool=False, only_spool_complete=False):
+        """
+        Monitors a folder (self.folder) and spool series which are written there and saved as dcimg files to the cluster
+
+        Parameters
+        ----------
+        only_spool_new : bool
+            Flag to determine whether the FileChucker should ignore existing files (True) or spool them (False).
+        delete_after_spool : bool
+            Flag to determine whether files are deleted after spooling (True) or spooled without deletion (False)
+        only_spool_complete : bool
+            Flag to determine whether dcimg files should be spooled as soon as they are written (False), i.e. before an
+            events file is written, or whether the FileChucker should wait until all dcimg files for a series are
+            available before spooling (True).
+
+        Returns
+        -------
+
+        """
         md_candidates = glob.glob(os.path.join(self.folder, '*.json'))
         #changed it to just use a list comprehension as this will be much easier to read (and there is no performance advantage to using arrays) - DB
         metadataFiles = [f for f in md_candidates if not (f.endswith('_events.json') or f.endswith('_zsteps.json'))]
@@ -164,36 +198,45 @@ class venerableFileChucker(object):
         if not only_spool_new:
             for mdFile in metadataFiles:
                 mdPath = os.path.join(self.folder, mdFile)
-                self._spoolSeries(mdPath, delete_after_spool=delete_after_spool)
-
-        #ignore metadata files corresponding to series we have already spooled
-        ignoreList = metadataFiles
-
-        while True: #NB!!!!: this will run for ever
-            # search for new files
-            md_candidates = glob.glob(self.folder + '\*.json')
-
-            try:
-                metadataFiles = [f for f in md_candidates if
-                                 not (f in ignoreList or f.endswith('_events.json') or f.endswith('_zsteps.json'))]
-                metadataFiles.sort()
-
-                #get the oldest metadata file not on our list of files to be ignored
-                mdFile = metadataFiles[0]
                 try:
-                    self.huck(mdFile, delete_after_spool, only_spool_complete)
+                    self._spoolSeries(mdPath, delete_after_spool=delete_after_spool)
                 except Exception:
-                    # log the error and continue - this is FileChucker is venerable, and shant be stopped easily
                     import traceback
                     logger.exception(traceback.format_exc())
+                except KeyboardInterrupt:
+                    sys.exit()
 
-                ignoreList.append(mdFile)
+        #ignore metadata files corresponding to series we have already spooled
+        ignoreList = set(metadataFiles)
 
+        while True: #NB!!!!: this will run for ever
+            # search for new files, use sets for sake of speed
+            md_candidates = set(glob.glob(self.folder + '\*.json'))
+            # keep ignoreList from growing unnecessarily; only track files that still exist
+            ignoreList &= md_candidates
+            # generate set of only the basic metadata files
+            chaff = [f for f in md_candidates if (f.endswith('_events.json') or f.endswith('_zsteps.json'))]
+            metadataFiles = md_candidates.difference(chaff).difference(ignoreList)
+            try:
+                # check if there are any series to spool
+                if len(metadataFiles) < 1:
+                    raise IndexError
+
+                # add files about to be spooled to the ignore list
+                ignoreList |= metadataFiles
+                # spool series
+                for mdFile in metadataFiles:
+                    self.huck(mdFile, delete_after_spool, only_spool_complete)
 
             except IndexError:
                 #this happens if there are no new metadata files - wait until there are some.
                 time.sleep(.1) #wait just long enough to stop us from being in a CPU busy loop
                 pass
+            except KeyboardInterrupt:
+                sys.exit() #make sure other threads get killed if we kill with ctrl-c
+            except Exception:
+                import traceback
+                logger.exception(traceback.format_exc())
 
 
 if __name__ == "__main__":
@@ -209,7 +252,9 @@ if __name__ == "__main__":
                         help='Quantize with sqrt(N) interval scaling')
     parser.add_argument('testFolder', metavar='testFolder', type=str,
                         help='Folder for fileChucker to monitor')
+    parser.add_argument('-t', '--timeout', type=float, default=12.,
+                        help='Time to wait for single series to spool')
     args = parser.parse_args()
 
-    searcher = venerableFileChucker(args.testFolder, quantize=args.quantize)
+    searcher = venerableFileChucker(args.testFolder, timeout=args.timeout, quantize=args.quantize)
     searcher.searchAndHuck(args.only_spool_new, args.delete_after_spool, args.only_spool_complete)

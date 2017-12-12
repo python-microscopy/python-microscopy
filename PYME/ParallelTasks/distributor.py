@@ -19,6 +19,8 @@ from PYME import config
 from PYME.ParallelTasks import webframework
 import collections
 
+import numpy as np
+
 NODE_TIMEOUT = config.get('distributor-node_registration_timeout', 10)
 PROCESS_TIMEOUT = config.get('distributor-execution_timeout', 300)
 RATE_TIMEOUT = config.get('distributor-task_rating_timeout', 10)
@@ -119,7 +121,12 @@ class TaskQueue(object):
         if len(tasks) > 0:
             rated_queue = collections.deque()
             task_list = json.dumps(tasks)
-            r_threads = [threading.Thread(target=self._rate_tasks, args=(task_list, node, rated_queue)) for node in self.distributor.nodes.keys()]
+
+            node_names = self.distributor.nodes.keys()
+            node_idx = {n:i for i, n in enumerate(node_names)}
+            task_idx = {t['id'] : i for i, t, in enumerate(tasks)}
+            
+            r_threads = [threading.Thread(target=self._rate_tasks, args=(task_list, node, rated_queue)) for node in node_names]
 
             #logger.debug('Asking nodes for rating')
             for t in r_threads: t.start()
@@ -129,22 +136,47 @@ class TaskQueue(object):
             costs = collections.OrderedDict()
             min_cost = collections.OrderedDict()
 
+            node_queue_lengths = np.zeros(len(node_names))
+            for i, node in enumerate(node_names):
+                node_queue_lengths[i] = len(self.distributor.nodes[node]['taskQueue'])
+                
+            node_costs = 9e6*np.ones([len(node_names), len(tasks)])
+            
             for node, ratings in rated_queue:
+                node_id = node_idx[node]
                 for rating in ratings:
                     id = rating['id']
-                    cost = float(rating['cost'])
-                    if cost < costs.get(id, 900000):
+                    cost = float(rating['cost']) #*node_queue_lengths[node]
+                    node_costs[node_id, task_idx[id]] = cost
+                    if cost < costs.get(id, 9000000):
                         costs[id] = cost
                         min_cost[id] = node
+                        
+            
+            for i, task in enumerate(tasks):
+                task_costs = node_costs[:,i]*node_queue_lengths #multiply costs by current length of each nodes queue
+                min_cost_idx = task_costs.argmin()
+                cost = task_costs[min_cost_idx]
+                node = node_names[min_cost_idx]
+                id = task['id']
+                
+                if cost < 9e6: #we actually got a reply
+                    self.num_rated += 1
+                    self.total_cost += cost
+                    t = TaskInfo(self.ratings_in_progress.pop(id).task, PROCESS_TIMEOUT)
+                    self.assigned[id] = t
+                    self.distributor.nodes[node]['taskQueue'].append(t)
+                    node_queue_lengths[min_cost_idx] += 1
+                
 
             #logger.debug('%d ratings returned' % len(min_cost))
             #assign our rated items to a node
-            for id, node in min_cost.items():
-                self.num_rated += 1
-                self.total_cost += costs[id]
-                t = TaskInfo(self.ratings_in_progress.pop(id).task, PROCESS_TIMEOUT)
-                self.assigned[id] = t
-                self.distributor.nodes[node]['taskQueue'].append(t)
+            # for id, node in min_cost.items():
+            #     self.num_rated += 1
+            #     self.total_cost += costs[id]
+            #     t = TaskInfo(self.ratings_in_progress.pop(id).task, PROCESS_TIMEOUT)
+            #     self.assigned[id] = t
+            #     self.distributor.nodes[node]['taskQueue'].append(t)
 
             #logger.debug('%d total tasks rated' % self.num_rated)
 

@@ -5,9 +5,10 @@ Created on Thu Jul  9 13:46:29 2015
 @author: david
 """
 import numpy as np
+from PYME.IO import unifiedIO
 
 def readSpeckles(filename):
-    with open(filename, 'r') as f:
+    with unifiedIO.openFile(filename, 'r') as f:
         
         speckles = []
         currentSpeckle = None    

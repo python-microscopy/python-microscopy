@@ -106,7 +106,55 @@ class LocalMaxima(Filter):
         im.mdh['LocalMaxima.minDistance'] = self.minDistance
         
         
-@register_module('OpticalFlow')         
+# from PYME.IO.DataSources import BaseDataSource
+# class _OpticFlowDataSource(BaseDataSource.BaseDataSource):
+#     def __init__(self, data, filterRadius, supportRadius, regularizationLambda):
+#         self.data = data
+#         self.filterRadius = filterRadius
+#         self.supportRadius = supportRadius
+#         self.regularizationLambda = regularizationLambda
+#
+#         self.additionalDims = data.additionalDims
+#         self.sizeC = data.sizeC
+#
+#     def _calc_frame_flow(self, data, i, chanNum):
+#
+#
+#     def getSlice(self, ind):
+#         """Return the nth 2D slice of the DataSource where the higher dimensions
+#         have been flattened.
+#
+#         equivalent to indexing contiguous 4D data with data[:,:,ind%data.shape[2], ind/data.shape[3]]
+#
+#         e.g. for a 100x100x50x2 DataSource, getSlice(20) would return data[:,:,20,0].squeeze()
+#         whereas getSlice(75) would return data[:,:,25, 1].squeeze()
+#         """
+#
+#         from PYME.Analysis import optic_flow
+#         dx, dy = 0, 0
+#
+#         print('OF %d' % ind)
+#
+#         if ind >= 1:
+#             dx, dy = optic_flow.reg_of(self.data.getSlice(ind-1).squeeze(), self.data.getSlice(ind).squeeze(),
+#                                        self.filterRadius, self.supportRadius, self.regularizationLambda)
+#         if (ind < (self.data.getNumSlices() - 1)):
+#             dx_, dy_ = optic_flow.reg_of(self.data.getSlice(ind).squeeze(), self.data.getSlice(ind+1).squeeze(),
+#                                          self.filterRadius, self.supportRadius, self.regularizationLambda)
+#             dx = dx + dx_
+#             dy = dy + dy_
+#
+#     def getSliceShape(self):
+#         """Return the 2D shape of a slice"""
+#         return self.data.getSliceShape()
+#
+#     def getNumSlices(self):
+#         """Return the number of 2D slices. This is the product of the
+#         dimensions > 2
+#         """
+#         raise self.data.getNumSlices
+
+@register_module('OpticalFlow')
 class OpticalFlow(ModuleBase):
     filterRadius = Float(1)
     supportRadius = Float(10) 
@@ -115,21 +163,30 @@ class OpticalFlow(ModuleBase):
     outputNameX = Output('flow_x')
     outputNameY = Output('flow_y')
     
-    def calc_flow(self, data, chanNum):
+    def _calc_frame_flow(self, data, i, chanNum):
         from PYME.Analysis import optic_flow
+        dx, dy = 0, 0
+    
+        print('OF %d' % i)
+    
+        if i >= 1:
+            dx, dy = optic_flow.reg_of(data[:, :, i - 1, chanNum].squeeze(), data[:, :, i, chanNum].squeeze(),
+                                       self.filterRadius, self.supportRadius, self.regularizationLambda)
+        if (i < (data.shape[2] - 1)):
+            dx_, dy_ = optic_flow.reg_of(data[:, :, i, chanNum].squeeze(), data[:, :, i + 1, chanNum].squeeze(),
+                                         self.filterRadius, self.supportRadius, self.regularizationLambda)
+            dx = dx + dx_
+            dy = dy + dy_
+            
+        return dx, dy
+    
+    def calc_flow(self, data, chanNum):
         
         flow_x = []
         flow_y = []
         
         for i in range(0, data.shape[2]):
-            dx, dy = 0,0
-            
-            if i >=1:
-                dx, dy = optic_flow.reg_of(data[:,:,i-1, chanNum].squeeze(), data[:,:,i, chanNum].squeeze(), self.filterRadius, self.supportRadius, self.regularizationLambda)
-            if (i < (data.shape[2] - 1)):
-                dx_, dy_ = optic_flow.reg_of(data[:,:,i, chanNum].squeeze(), data[:,:,i+1, chanNum].squeeze(), self.filterRadius, self.supportRadius, self.regularizationLambda)
-                dx = dx + dx_
-                dy = dy + dy_
+            dx, dy = self._calc_frame_flow(data, i, chanNum)
 
             flow_x.append(np.atleast_3d(dx))
             flow_y.append(np.atleast_3d(dy))                
@@ -163,6 +220,154 @@ class OpticalFlow(ModuleBase):
     def completeMetadata(self, im):
         im.mdh['OpticalFlow.filterRadius'] = self.filterRadius
         im.mdh['OpticalFlow.supportRadius'] = self.supportRadius
+        
+@register_module('WavefrontDetection')
+class WavefrontDetection(ModuleBase):
+    """ Detect Ca2+ wavefronts by looking at the difference images between two consecutive frames.
+    
+    Wavefront position corresponds to the position of the transient maximum (i.e. the zero-crossing in the temporal
+    derivative), detected by finding all pixels where the magnitude of the temporal derivative is less than
+    `gradientThreshold`. An intensity threshold is also used to reject areas of the image where temporal changes are due
+    to noise alone.
+    
+    Works best on low-pass filtered data.
+    """
+    inputName = Input('input')
+    intensityThreshold = Float(50)
+    gradientThreshold = Float(0.5)
+    outputName = Output('wavefronts')
+    
+    def execute(self, namespace):
+        from skimage.morphology import skeletonize
+        img = namespace[self.inputName]
+        
+        data = img.data[:,:,:]
+        
+        out = np.zeros_like(data)
+        for i in range(1, data.shape[2]):
+            frnt_i = (np.abs(data[:,:,i] - data[:,:,(i-1)]) < self.gradientThreshold)*(data[:,:,i] > self.intensityThreshold)
+            out[:,:,i] = skeletonize(frnt_i.squeeze())
+            
+        im = ImageStack(out, titleStub=self.outputName)
+        im.mdh.copyEntriesFrom(img.mdh)
+        im.mdh['Parent'] = img.filename
+        
+        namespace[self.outputName] = im
+        
+@register_module('WavefrontVelocity')
+class WavefrontVelocity(ModuleBase):
+    """
+    Calculates wavefront velocity given a wavefront image and optic flow images
+    """
+    inputWavefronts = Input('wavefronts')
+    inputFlowX = Input('flow_x')
+    inputFlowY = Input('flow_y')
+    timeWindow = Int(5)
+    outputName = Output('wavefront_velocities')
+        
+        
+    
+    def execute(self, namespace):
+        from skimage.measure import profile_line
+        print('Calculating wavefront velocities')
+        wavefronts = namespace[self.inputWavefronts]
+        
+        waves = wavefronts.data
+        flow_x = namespace[self.inputFlowX].data
+        flow_y = namespace[self.inputFlowY].data
+        
+        velocities = np.zeros(waves.shape, 'f')
+        
+        wave_coords = []
+        #precompute arrays of wavefront coordinates
+        for i in range(waves.shape[2]):
+            if waves[:, :, i].max() > 0:
+                xp, yp = np.argwhere(waves[:, :, i].squeeze()).T
+        
+                xf = flow_x[:, :, i][xp, yp]
+                yf = flow_y[:, :, i][xp, yp]
+        
+                flow_m = np.sqrt(xf * xf + yf * yf)
+                xf = xf / flow_m
+                yf = yf / flow_m
+                
+                wave_coords.append([xp, yp, xf, yf])
+            else:
+                wave_coords.append([np.empty(0), np.empty(0), np.empty(0), np.empty(0)])
+                
+        for i in range(waves.shape[2]):
+            xp, yp, xf, yf = wave_coords[i]
+            print('WaveV: %d' % i)
+            #print(len(xp), xp, waves[:,:,i].max())
+            if len(xp) >0:
+                j_vals = range(max(i - self.timeWindow, 0), min(i + self.timeWindow + 1, waves.shape[2]))
+                A = np.vstack([j_vals, np.ones_like(j_vals)]).T
+                #A = np.ones_like(xp)[:,None,None]*A[None,:,:]
+                
+                ks = np.zeros([len(xp), len(j_vals)])
+                j0 = j_vals[0]
+                I = np.arange(len(xp))
+                for j in j_vals:
+                    xp_j, yp_j, xf_j, yf_j = wave_coords[j]
+                    if len(xp_j) > 0:
+                        k = xf*(-xp[:,None] + xp_j[None,:]) + yf*(-yp[:,None] + yp_j[None,:])
+                        km = np.sqrt(k*k)
+                        #print k
+                        #print km.argmin(1)
+                        #print k[I,km.argmin(1)]
+                        ks[:, j-j0] = k[I,km.argmin(1)]
+                    else:
+                        ks[:, j - j0] = np.nan #mask out our matrix for the missing data
+           
+                #print ks
+                vels = np.zeros_like(xp, 'f')
+                for k in range(len(xp)):
+                    kk = ks[k,:]
+                    #print kk
+                    vels[k] = np.linalg.lstsq(A[~np.isnan(kk),:], kk[~np.isnan(kk)])[0][0]
+                
+                #print vels.shape, velocities[xp,yp,i].shape
+                velocities[xp, yp, i] = vels[:,None]
+                
+        
+        
+        # for i in range(waves.shape[2]):
+        #     print(i)
+        #     if waves[:,:,i].max() > 0:
+        #         xp, yp = np.argwhere(waves[:,:,i].squeeze()).T
+        #
+        #         xf = flow_x[:,:, i][xp,yp]
+        #         yf = flow_y[:,:, i][xp,yp]
+        #
+        #         flow_m = np.sqrt(xf*xf + yf*yf)
+        #         xf = xf/flow_m
+        #         yf = yf/flow_m
+        #
+        #         j_vals= range(max(i-self.timeWindow, 0), min(i+ self.timeWindow + 1, waves.shape[2]))
+        #         A = np.vstack([j_vals, np.ones_like(j_vals)]).T
+        #
+        #         for x_k, y_k, xf_k, yf_k in zip(xp, yp, xf, yf):
+        #             prof = []
+        #             start, end = (x_k - 50 * xf_k, y_k - 50 * yf_k), (x_k + 50 * xf_k, y_k + 50 * yf_k)
+        #             for j in j_vals:
+        #                 prof.append(np.argmax(profile_line(waves[:,:,j], start, end)))
+        #
+        #             prof = np.array(prof, 'f')
+        #
+        #             #print j_vals, prof
+        #             m, c = np.linalg.lstsq(A[prof>0, :], prof[prof>0])[0]
+        #
+        #             velocities[x_k,y_k,i] = m
+
+        im = ImageStack(velocities, titleStub=self.outputName)
+        im.mdh.copyEntriesFrom(wavefronts.mdh)
+        im.mdh['Parent'] = wavefronts.filename
+
+        namespace[self.outputName] = im
+                
+            
+            
+        
         
 @register_module('Gradient')         
 class Gradient2D(ModuleBase):   
@@ -390,6 +595,58 @@ class VectorfieldNorm(ModuleBase):
         im = ImageStack(norm, titleStub=self.outputName)
         im.mdh.copyEntriesFrom(mdh)
         namespace[self.outputName] = im
+        
+@register_module('VectorfieldAngle')
+class VectorfieldAngle(ModuleBase):
+    """Calculates the angle of a vector field.
+    
+    Theta is the angle in the x-y plane, and phi is the dip angle
+
+
+    Notes
+    -----
+
+    returns
+    .. math::
+
+        sqrt(x*x + y*y + z*z)
+
+    Also works for 2D vector fields if inputZ is an empty string.
+    """
+    inputX = Input('inp_x')
+    inputY = Input('inp_y')
+    inputZ = Input('inp_z')
+
+    outputTheta = Output('theta')
+    outputPhi = Output('phi')
+
+    def execute(self, namespace):
+        x = namespace[self.inputX].data[:,:,:,0].squeeze()
+        y = namespace[self.inputY].data[:, :, :, 0].squeeze()
+        
+        theta = np.angle(x + 1j*y)
+        
+        if self.inputZ == '':
+            z = 0
+            phi = 0*theta
+        else:
+            z = namespace[self.inputZ].data[:, :, :, 0].squeeze()
+            
+            r = np.sqrt(x*x + y*y)
+            
+            phi = np.angle(r + 1j*z)
+
+        mdh = namespace[self.inputX].mdh
+
+        
+
+        im = ImageStack(theta, titleStub=self.outputTheta)
+        im.mdh.copyEntriesFrom(mdh)
+        namespace[self.outputTheta] = im
+
+        im = ImageStack(phi, titleStub=self.outputPhi)
+        im.mdh.copyEntriesFrom(mdh)
+        namespace[self.outputPhi] = im
 
 
 @register_module('ProjectOnVector')         
@@ -838,6 +1095,34 @@ class Watershed(ModuleBase):
         else:
             mask = namespace[self.inputMask]
             namespace[self.outputName] = self.filter(image, markers, mask)
+            
+            
+@register_module('FlatfieldAndDarkCorrect')
+class FlatfiledAndDarkCorrect(ModuleBase):
+    inputImage = Input('input')
+    flatfieldFilename = CStr('')
+    darkFilename = CStr('')
+    outputName = Output('corrected')
+    
+    def execute(self, namespace):
+        from PYME.IO.DataSources import FlatFieldDataSource
+        #from PYME.IO import unifiedIO
+        from PYME.IO.image import ImageStack
+        image = namespace[self.inputImage]
+        
+        flat = ImageStack(filename=self.flatfieldFilename).data[:,:,0].squeeze()
+        
+        if not self.darkFilename == '':
+            dark = ImageStack(filename=self.darkFilename).data[:,:,0].squeeze()
+        else:
+            dark = None
+        
+        ffd = FlatFieldDataSource.DataSource(image.data, image.mdh, flatfield=flat, dark=dark)
+
+        im = ImageStack(ffd, titleStub=self.outputName)
+        im.mdh.copyEntriesFrom(image.mdh)
+        im.mdh['Parent'] = image.filename
+        namespace[self.outputName] = im
 
 
 

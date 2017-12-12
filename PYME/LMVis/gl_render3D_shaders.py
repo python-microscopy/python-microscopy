@@ -78,6 +78,7 @@ class LMGLShaderCanvas(GLCanvas):
     LUTOverlayLayer = None
     AxesOverlayLayer = None
     ScaleBarOverlayLayer = None
+    ScaleBoxOverlayLayer = None
     _is_initialized = False
 
     def __init__(self, parent):
@@ -188,11 +189,15 @@ class LMGLShaderCanvas(GLCanvas):
         return
 
     def initialize(self):
+        from .layers.ScaleBoxOverlayLayer import ScaleBoxOverlayLayer
         self.InitGL()
         self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
+        self.ScaleBoxOverlayLayer = ScaleBoxOverlayLayer(100)
+
         self.LUTOverlayLayer = LUTOverlayLayer()
         self.AxesOverlayLayer = AxesOverlayLayer()
         self.overlays.append(SelectionOverlayLayer(self.selectionSettings))
+        self.overlays.append(self.ScaleBoxOverlayLayer)
 
         self._is_initialized = True
 
@@ -316,7 +321,8 @@ class LMGLShaderCanvas(GLCanvas):
             glPopMatrix()
 
             self.ScaleBarOverlayLayer.render(self)
-            self.LUTOverlayLayer.render(self)
+            if self.LUTDraw:
+                self.LUTOverlayLayer.render(self)
 
         glFlush()
 

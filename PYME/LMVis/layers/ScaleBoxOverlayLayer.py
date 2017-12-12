@@ -22,12 +22,12 @@ from math import floor
 
 import numpy as np
 
-from PYME.LMVis.Layer.OverlayLayer import OverlayLayer
+from .OverlayLayer import OverlayLayer
 from OpenGL.GL import *
 
 
 class ScaleBoxOverlayLayer(OverlayLayer):
-    def __init__(self, tick_distance, color=None, box_dimensions=(1.0, 1.0, 1.0)):
+    def __init__(self, tick_distance=1000, color=None, box_dimensions=(1.0, 1.0, 1.0)):
         """
         
         Parameters

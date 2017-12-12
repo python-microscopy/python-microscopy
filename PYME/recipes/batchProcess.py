@@ -20,9 +20,16 @@ import multiprocessing
 NUM_PROCS = multiprocessing.cpu_count()
 
 def runRec(args):
-    #print args
+    print args
     try:
+        import matplotlib.pyplot as plt
+    
+        old_backend = plt.get_backend()
+        plt.switch_backend('SVG')
+        
         runRecipe.runRecipe(*args)
+        
+        plt.switch_backend(old_backend)
     except:
         traceback.print_exc()
     

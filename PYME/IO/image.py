@@ -193,7 +193,7 @@ class ImageStack(object):
             with different ROIs.
 
         """
-    def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image', haveGUI=True):
+    def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image', haveGUI=True, load_prompt=None):
 
         global nUntitled
         self.data = data      #image data
@@ -218,7 +218,7 @@ class ImageStack(object):
         
         if (data is None):
             #if we've supplied data, use that, otherwise load from file
-            self.Load(filename)
+            self.Load(filename, prompt=load_prompt)
 
         #do the necessary munging to get the data in the format we want it        
         self.SetData(self.data)
@@ -876,7 +876,7 @@ class ImageStack(object):
 
         self.mode = 'default'
 
-    def Load(self, filename=None):
+    def Load(self, filename=None, prompt=None):
         """
         Load a file from disk / queue / cluster
 
@@ -919,8 +919,11 @@ class ImageStack(object):
             #    lastdir = fdialog.GetDirectory()
             #else:
                 #print succ
+            
+            if prompt is None:
+                prompt = 'Please select Data Stack to open ...'
 
-            filename = wx.FileSelector('Please select Data Stack to open ...',
+            filename = wx.FileSelector(prompt,
                                        wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy;*.dbl|All files|*.*', 
                                         default_path = lastdir)            
             
@@ -936,7 +939,7 @@ class ImageStack(object):
                 self._loadQueue(filename)
             elif filename.startswith('http://'):
                 self._loadHTTP(filename)
-            elif filename.startswith('PYME-CLUSTER://') or filename.startswith('pyme-cluster://'):
+            elif (filename.startswith('PYME-CLUSTER://') or filename.startswith('pyme-cluster://')) and not (filename.split('.')[-1] in ['psf', 'sf', 'md', 'npy', 'tif', 'tiff', 'lsm', 'dcimg']):
                 self._loadClusterPZF(filename)
             elif filename.endswith('.h5'):
                 self._loadh5(filename)

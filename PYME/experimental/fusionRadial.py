@@ -73,7 +73,7 @@ def _rad_dist(d):
 
     return np.array(out)
 
-def _genPSF(pixelsize, wavelength, NA, SCA_enhanchement=1.0):
+def _genPSF(pixelsize, wavelength, NA, SCA_enhancement=1.0, vesc_size=0):
     """
     Generates a PSF using the Gibson-Lanni model.
 
@@ -88,7 +88,7 @@ def _genPSF(pixelsize, wavelength, NA, SCA_enhanchement=1.0):
         The wavelength in nm
     NA : float
         The numerical aperture
-    SCA_enhanchement : float
+    SCA_enhancement : float
         How much to enhance the outer 20% of the pupil. A value of one gives a standard widefield PSF
 
     Returns
@@ -109,8 +109,13 @@ def _genPSF(pixelsize, wavelength, NA, SCA_enhanchement=1.0):
     Z = np.array([0])
 
     W = np.ones_like(P)
-    W[-50:] *= SCA_enhanchement
+    W[-50:] *= SCA_enhancement
     W = W / W.sum()
+    
+    if vesc_size > 0:
+        W *= np.exp(-((P*np.pi)**2)*(vesc_size/(2.35*sim_pixel_size))**2)
+        
+    W= W/W.sum()
 
     im = PSFGen.genWidefieldPSFW(X, X, Z, P, W, k=2 * np.pi / wavelength, NA=NA, depthInSample=0)
     if mag_factor > 1:
@@ -119,24 +124,25 @@ def _genPSF(pixelsize, wavelength, NA, SCA_enhanchement=1.0):
     return im.squeeze()
 
 _radCurveCache = {}
-def _getPSFRadialCurve(pixelsize=260, wavelength=640, NA=1.45, SCA_enhancement=1.0):
-    key = (pixelsize, wavelength, NA, SCA_enhancement)
+def _getPSFRadialCurve(pixelsize=260, wavelength=640, NA=1.45, SCA_enhancement=1.0, vesc_size=0):
+    key = (pixelsize, wavelength, NA, SCA_enhancement, vesc_size)
 
     try:
         return _radCurveCache[key]
     except KeyError:
-        rc = _rad_dist(_genPSF(pixelsize,wavelength,NA, SCA_enhancement))
+        rc = _rad_dist(_genPSF(pixelsize,wavelength,NA, SCA_enhancement, vesc_size))
         _radCurveCache[key] = rc
         return rc
 
 def getPSFRadialValue(r, r_cal=11, SCA_enhancement=1.0, **kwargs):
-    sca_0 = np.floor(SCA_enhancement)
+    #linearly interpolate between 2 values
+    sca_0 = np.floor(SCA_enhancement*10.)/10.
     sca_f = SCA_enhancement - sca_0
 
     rc0 = _getPSFRadialCurve(SCA_enhancement=sca_0, **kwargs)
     rc0 = rc0[r]/rc0[r_cal]
 
-    rc1 = _getPSFRadialCurve(SCA_enhancement=(sca_0 + 1), **kwargs)
+    rc1 = _getPSFRadialCurve(SCA_enhancement=(sca_0 + .1), **kwargs)
     rc1 = rc1[r] / rc1[r_cal]
 
     return sca_f*rc0 + (1-sca_f)*rc1
@@ -177,8 +183,13 @@ def diffuse_greens_circ_SCA(t, r, D, sca=1.0, sig=0., **kwargs):
     #return (t>1e-9)*erf(r/(2*sqrt(D*t)))/(4*sqrt(pi*D*t))
     vesc = docked_vesc_SCA(r, sca, **kwargs)
     diff = (1. - np.exp(-(r ** 2) / (4. * D * t + 2 * sig ** 2)))
+    
+    #print diff.shape, vesc.sum()
+    diff_3 = (1. - np.exp(-(3 ** 2) / (4. * D * t + 2 * sig ** 2)))
+    
+    v_d = diff + (r > 3)*diff_3*vesc
 
-    return (t > 1e-9) * np.minimum(vesc, diff)
+    return (t > 1e-9) * v_d #np.minimum(vesc, diff)
 
 
 def diffModel(params, t, r, sig=1.):
@@ -208,8 +219,11 @@ def diffMultiModel(params, t, sig=1., radii=[1., 2., 3., 5., 10, 1.0]):
     rref = radii[-1]
 
     #pre-calculate weights for the convolution with the release function
-    t_ = np.arange(0.0, 5 * tau)
-    conv_weights = np.exp(-t_ / tau) - np.exp(-(t_ + 1) / tau)
+    t_ = np.linspace(0.0, 5 * tau)
+    dt_ = t_[1] - t_[0]
+    conv_weights = np.exp(-t_ / tau) - np.exp(-(t_ + dt_) / tau)
+    
+    #print conv_weights.sum()
 
     #pre-calculate temporal component to the docked vesicle signal
     #this has 3 components - a unit step when the vesicle docks, an expoential decay due to release, and a second
@@ -231,8 +245,8 @@ def diffMultiModel(params, t, sig=1., radii=[1., 2., 3., 5., 10, 1.0]):
 
         #now add the release signal. We approximate the convolution with a sum
         for ti, cw in zip(t_, conv_weights):
-            #out[i, :] = out[i, :] + cw * diffuse_greens_circ(t - t0 - ti, r, D, sig) * release_t
-            out[i, :] = out[i, :] + cw * diffuse_greens_circ_SCA(t - t0 - ti, r, D, SCA, sig) * release_t
+            out[i, :] = out[i, :] + cw * diffuse_greens_circ(t - t0 - ti, r, D, sig) * release_t
+            #out[i, :] = out[i, :] + cw * diffuse_greens_circ_SCA(t - t0 - ti, r, D, 3, sig) * release_t
 
         #out[i, :] = out[i, :]*(r-1)/rref
 
@@ -332,7 +346,7 @@ class FusionTrack(trackUtils.Track):
         self.sig = sig
         self._I = 0
 
-        self.startParams = {'A' : 1.0, 't_fusion' : None, 'D' : .5, "tau_rel" : 1., 'G' : 5., 'tau_bleach' : 3600.,
+        self.startParams = {'A' : 1.0, 't_fusion' : None, 'D' : .5, "tau_rel" : .1, 'G' : 5., 'tau_bleach' : 3600.,
                             't_docked' : -1.0, 'background' : 0.0, 'sca': 3.0}
         self.startParams.update(startParams)
 
@@ -395,14 +409,14 @@ class FusionTrack(trackUtils.Track):
         #fit super-critical angle component to the docked stage only
         if fitWhich[-1]:
             numDockedFrames = len(t) - self.numLeadFrames - self.numFollowFrames
-            i_mean = data[:, self.numLeadFrames:(self.numLeadFrames + numDockedFrames)].mean(1)
+            i_mean = data[:, (self.numLeadFrames + 1):(self.numLeadFrames + numDockedFrames - 1)].mean(1)
 
             # sca = _fithelpers.FitModelFixed(lambda p, r: docked_vesc_SCA(r, p[0], r_cal=self.radii[-1]),
             #                                 [sp[-1],], [True,], i_mean, self.radii, eps=.1)[0][0]
 
             sca_ = sp[-1]**2 + 1.0
 
-            sca = _fithelpers.FitModelFixed(docked_model, [sca_,], [True,], i_mean, self.radii.astype('i'), int(self.radii[-1]), eps=.1)[0][0]
+            sca = _fithelpers.FitModelFixed(docked_model, [sca_,], [True,], i_mean, self.radii.astype('i'), int(self.radii[-1]), eps=.3)[0][0]
 
             sp[-1] = np.sqrt(sca - 1)
             fitWhich[-1] = False
@@ -456,8 +470,9 @@ class FusionTrack(trackUtils.Track):
 
         params = self._unpack_params(fitResults)
         t, data = self._fusion_data
+        t_ = np.arange(t[0], t[-1], .1)
 
-        fits = diffMultiModel(params, t, self.sig, self.radii)
+        fits = diffMultiModel(params, t_, self.sig, self.radii)
 
         if fig is None:
             fig = plt.figure(figsize=(10, 7))
@@ -468,7 +483,7 @@ class FusionTrack(trackUtils.Track):
             #plt.subplot(len(radii), 1, i + 1)
             c = 0.8 * np.array(plt.cm.hsv(float(i) / len(self.radii)))
             ax.plot(t, .5 * i + 1 * data[i, :], 'x-', c=np.array([0.5, 0.5, 0.5, 1]) * c, label='r=%d' % r)
-            ax.plot(t, .5 * i + fits[i, :], c=c, lw=2)
+            ax.plot(t_, .5 * i + fits[i, :], c=c, lw=2)
 
             #plot(t, fitsp[i,:])
 

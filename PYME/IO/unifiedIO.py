@@ -85,6 +85,7 @@ def openFile(filename, mode='rb'):
         return open(filename, mode)
 
     elif filename.startswith('pyme-cluster') or filename.startswith('PYME-CLUSTER'):
+        #TODO - add short-circuiting for local files
         import clusterIO
 
         sequenceName, clusterfilter = split_cluster_url(filename)

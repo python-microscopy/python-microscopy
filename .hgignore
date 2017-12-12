@@ -25,3 +25,4 @@ doc/html/*
 .idea
 */_deploy/*
 *.sqlite3
+PYME/Acquire/Hardware/Simulator/illuminate.c

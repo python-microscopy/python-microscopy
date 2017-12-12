@@ -28,6 +28,11 @@ import random
 import time
 import os
 
+#set us up to use a non-GUI backend for any plotting
+import matplotlib
+matplotlib.use('SVG')
+from matplotlib import pyplot as plt
+
 import queue as Queue
 import threading
 

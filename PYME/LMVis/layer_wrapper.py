@@ -117,16 +117,16 @@ class LayerWrapper(HasTraits):
         
         
             
-        return View([Group([Item('dsname', label='Data', editor=EnumEditor(values=self.data_source_names)), Item('visible'),]),
+        return View([Group([Item('dsname', label='Data', editor=EnumEditor(values=self.data_source_names)),]),
                      Item('method'),
                      #Item('_'),
                      Group([
                         Item('engine', style='custom', show_label=False, editor=InstanceEditor(view=self.engine.view(self.datasource.keys()))),
                          ]),
                      #Item('engine.color_key', editor=CBEditor(choices=self.datasource.keys())),
-                     Group([Item('cmap', label='LUT'),]),
+                     
                      Group([Item('clim', editor = HistLimitsEditor(data=self._get_cdata), show_label=False),]),
-                     Item('alpha')],)
+                     Group([Item('cmap', label='LUT') ,Item('alpha'), Item('visible')])],)
                     #buttons=['OK', 'Cancel'])
 
     def default_traits_view(self):

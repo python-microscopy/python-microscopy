@@ -469,12 +469,12 @@ class Pipeline:
         self.GeneratedMeasures = {}
         self.Quads = None
 
-        self.onRebuild.send(sender=self)
+        self.onRebuild.send_robust(sender=self)
 
         #check to see if any of the keys have changed - if so, fire a keys changed event so the GUI can update
         newKeys = self.keys()
         if not newKeys == self._keys:
-            self.onKeysChanged.send(sender=self)
+            self.onKeysChanged.send_robust(sender=self)
         
     def CloseFiles(self):
         while len(self.filesToClose) > 0:
