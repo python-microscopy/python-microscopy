@@ -338,8 +338,8 @@ def rendGaussProd(x,y, sx, imageBounds, pixelSize):
 
 def rendTri(T, imageBounds, pixelSize, c=None, im=None):
     from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
-    xs = T.x[T.triangle_nodes]
-    ys = T.y[T.triangle_nodes]
+    xs = T.x[T.triangles]
+    ys = T.y[T.triangles]
 
     a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
     b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
@@ -401,8 +401,8 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
     
 def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
     from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
-    xs = T.x[T.triangle_nodes]
-    ys = T.y[T.triangle_nodes]
+    xs = T.x[T.triangles]
+    ys = T.y[T.triangles]
 
     a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
     b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T

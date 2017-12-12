@@ -323,8 +323,8 @@ class LMGLCanvas(GLCanvas):
 
 
     def setTriang(self, T, c = None):
-        xs = T.x[T.triangle_nodes]
-        ys = T.y[T.triangle_nodes]
+        xs = T.x[T.triangles]
+        ys = T.y[T.triangles]
 
         a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
         b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
@@ -538,8 +538,8 @@ class LMGLCanvas(GLCanvas):
         for i in range(len(T.x)):
             tdb.append([])
 
-        for i in range(len(T.triangle_nodes)):
-            nds = T.triangle_nodes[i]
+        for i in range(len(T.triangles)):
+            nds = T.triangles[i]
             for n in nds:
                 tdb[n].append(i)
 
@@ -719,8 +719,8 @@ class LMGLCanvas(GLCanvas):
             cs = 1.0/cs**2
 
 
-        xs = T.x[T.triangle_nodes]
-        ys = T.y[T.triangle_nodes]
+        xs = T.x[T.triangles]
+        ys = T.y[T.triangles]
 
         #a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
         #b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
@@ -745,7 +745,7 @@ class LMGLCanvas(GLCanvas):
         #self.c = numpy.vstack((c,c,c)).T.ravel()
         #self.c = numpy.vstack((1.0/(a_*b_ + 1),1.0/(a_*b2_ + 1),1.0/(b_*b2_ + 1))).T.ravel()
 
-        c = cs[T.triangle_nodes]
+        c = cs[T.triangles]
 
         c = c.mean(1)
 

@@ -384,8 +384,8 @@ class LMGLShaderCanvas(GLCanvas):
         # center data
         x = T.x
         y = T.y
-        xs = x[T.triangle_nodes]
-        ys = y[T.triangle_nodes]
+        xs = x[T.triangles]
+        ys = y[T.triangles]
         zs = np.zeros_like(xs)  # - z.mean()
 
         if recenter:
@@ -408,7 +408,7 @@ class LMGLShaderCanvas(GLCanvas):
         self.SetCurrent()
 
         self.layers.append(
-            VertexRenderLayer(T.x[T.triangle_nodes], T.y[T.triangle_nodes], 0 * (T.x[T.triangle_nodes]), self.c,
+            VertexRenderLayer(T.x[T.triangles], T.y[T.triangles], 0 * (T.x[T.triangles]), self.c,
                               self.cmap, self.clim, alpha))
         self.Refresh()
 
