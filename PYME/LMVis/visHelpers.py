@@ -135,7 +135,7 @@ def genEdgeDB(T):
         edb.append(([],[]))
         #edb[i] = ([],[])
 
-    for i in range(len(T.edge_db)):
+    for i in range(len(T.edges)):
         e0, e1 = T.edges[i]
         edbe0 = edb[e0]
         edbe1 = edb[e1]
