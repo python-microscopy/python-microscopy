@@ -393,8 +393,8 @@ def genShiftVectors(res_g, res_r):
 
 def findWonkyVectors(x, y,dx,dy, tol=100):
     from PYME.LMVis.visHelpers import genEdgeDB
-    from matplotlib import delaunay
-    T = delaunay.Triangulation(x,y)
+    from matplotlib import tri
+    T = tri.Triangulation(x,y)
 
     edb = genEdgeDB(T)
 
@@ -403,7 +403,7 @@ def findWonkyVectors(x, y,dx,dy, tol=100):
 
     #remove any shifts which are markedly different from their neighbours
     for i in range(len(x)):
-        incidentEdges = T.edge_db[edb[i][0]]
+        incidentEdges = T.edges[edb[i][0]]
 
 #        d_x = np.diff(T.x[incidentEdges])
 #        d_y = np.diff(T.y[incidentEdges])
