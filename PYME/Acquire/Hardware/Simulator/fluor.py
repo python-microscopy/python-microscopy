@@ -215,6 +215,8 @@ class EmpiricalHistFluors(fluors):
         self.threadPoll.start()
 
     def _calculate_times(self):
+        # initialize to the state vector
+        curr_state = self.fl['state']
         while self.doPoll:
             # make sure we're not overfilling the queue
             if self.stateQueueCount >= 2./self.expTime:
@@ -222,6 +224,21 @@ class EmpiricalHistFluors(fluors):
 
             # calculate on time, off time
             # compute state vector, toss it in the queue
+
+            # find the current active states
+            idxs_on = curr_state == self.activeState
+            idxs_off = curr_state != self.activeState
+
+            # calculate ON and OFF times for the active states
+            r_on = np.random.random_sample(idxs_on.shape)
+            r_off = np.random.random_sample(idxs_off.shape)
+
+            # Calculate how long these suckers will be on
+            times = np.zeros_like(curr_state)
+            times[idxs_on] = self.histogram.get_time(self.laserPowers[1], r_on,
+                                                 'on')
+            times[idxs_off] = self.histogram.get_time(self.laserPowers[1],
+                                                      r_off, 'off')
 
             has_transitioned = next_transition < self.time
             will_transition = (next_transition < (self.time + expTime)) & \

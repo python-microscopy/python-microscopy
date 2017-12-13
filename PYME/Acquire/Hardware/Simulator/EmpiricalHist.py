@@ -2,7 +2,7 @@ import numpy as np
 from math import log
 from scipy.interpolate import SmoothBivariateSpline, Rbf
 from PYME.Deconv import dec  # base deconvolution classes
-
+import matplotlib.pyplot as plt
 reload(dec)
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -103,9 +103,9 @@ class EmpiricalHist:
         self._hist = {}
         self._hist['on'] = np.array(kwargs.get('on')).astype(float)
         self._hist['off'] = np.array(kwargs.get('off')).astype(float)
-        self._spline = {}
-        self._spline['on'] = None
-        self._spline['off'] = None
+        # self._spline = {}
+        # self._spline['on'] = None
+        # self._spline['off'] = None
 
         # Sanitize histograms
         self._hist['on'][np.isinf(self._hist['on'])] = 0
@@ -113,8 +113,14 @@ class EmpiricalHist:
 
         # Estimate smooth histograms
         self.hist = {}
-        self.hist['on'] = self.estimate_hist(self._hist['on'])
-        self.hist['off'] = self.estimate_hist(self._hist['off'])
+        self.hist['on'] = self.estimate_hist('on')
+        self.hist['off'] = self.estimate_hist('off')
+
+        self.cumhist = {}
+        # self.cumhist['on'] = np.cumsum(self.hist['on'], axis=0)/\
+        #                      np.sum(self.hist['on'], axis=0)
+        # self.cumhist['off'] = np.cumsum(self.hist['off'], axis=0)/\
+        #                       np.sum(self.hist['off'], axis=0)
 
     def estimate_hist(self, key):
         hist = self._hist[key]
@@ -136,61 +142,82 @@ class EmpiricalHist:
         # but this is unclear. It is also unclear whether we should be
         # summing p_on_est, or p_on_obs in the denominator.
         est_corr = est_hist / (hist.sum(1)[:, None] + 1.0)
-        #imshow(log10(est_corr + .1))
 
         # correct the std. deviations in the same way as we do the actual observations
-        #figure()
         est_corr_sig = est_sig / (hist.sum(1)[:, None] + 1.0)
-        #imshow(est_corr_sig)
         data = est_corr
         weights = 1.0 / est_corr_sig ** 2
 
         dc = DeconvEmpiricalHist()
         dc.set_size(data.shape)
         dec_res = dc.deconv(data, .5, 90, weights.ravel())
-        #imshow(dec_res)
         return dec_res
 
     def trange(self, key):
         if self._tlog[key]:
-            return np.linspace(self._tmin[key], self._tmax[key],
-                               self._hist[key].shape[1])
-        return self._tmax[key] - self._tmin[key]
+            return np.exp(np.linspace(log(self._tmin[key]),
+                                      log(self._tmax[key]),
+                                      self._hist[key].shape[1]))
+        return np.linspace(self._tmin[key], self._tmax[key],
+                           self._hist[key].shape[1])
 
     def prange(self, key):
         if self._plog[key]:
-            return log(self._pmax[key])/log(2) - log(self._pmin[key])/log(2)
-        return self._pmax[key] - self._pmin[key]
+            return np.power(2, np.linspace(log(self._pmin[key])/log(2),
+                                           log(self._pmax[key])/log(2),
+                                           self._hist[key].shape[0]))
+        return np.linspace(self._pmin[key], self._pmax[key],
+                           self._hist[key].shape[0])
 
-    def generate_spline(self, key):
-        # Grab the desired histogram
-        hist = self.hist[key]
-        # Calculate cumulative histogram
-        cumhist = np.cumsum(hist, axis=0)/np.sum(hist, axis=0)
-        # Sanitize again
-        cumhist[np.isnan(cumhist)] = 1
-        # Create a spline fit of the real data in a 1x1 box
-        x1 = np.linspace(self._pmin[key], self._pmax[key], cumhist.shape[0])
-        y1 = np.linspace(self._tmin[key], self._tmax[key], cumhist.shape[1])
-        x, y = np.meshgrid(x1, y1)
-        #spline = Rbf(x.flatten(), y.flatten(), cumhist.flatten(), function='cubic', smooth=0)
-        c = cumhist.flatten()
-        weights = 1./np.sqrt(c+1)
-        spline = SmoothBivariateSpline(x.flatten(), y.flatten(), c, w=weights)
-        #spline = RectBivariateSpline(x1,y1,cumhist)
+    def get_time(self, pow, prob, key):
+        """
+        Return time estimate for a given power and cumulative probability.
+        """
 
-        self._spline[key] = spline
+        # Which power are we looking at?
+        p_int = np.digitize(pow, self.prange())
 
-    def at(self, p, t, key):
-        spline = self._spline[key]
-        if spline is None:
-            self.generate_spline(key)
-            spline = self._spline[key]
+        # Get the time bin
+        t_int = np.digitize(prob, self.cumhist[key][p_int, :])
 
-        if not (is_number(p) or is_number(t) or len(p) == len(t)):
-            res = np.empty(shape=(len(p), len(t)))
-            for ip in p:
-                res[:, p == ip] = spline.ev(ip, t)
-            return res
+        # now return the time
+        return self.trange[t_int]
 
-        return spline.ev(p, t)
+    # def at(self, p, t, key):
+    #     p_int = np.digitize(p, self.prange())
+    #     t_int = np.digitize(t, self.trange())
+    #
+    #     return self.cumhist[key][p_int, t_int]
+
+    # def generate_spline(self, key):
+    #     # Grab the desired histogram
+    #     hist = self.hist[key]
+    #     # Calculate cumulative histogram
+    #     cumhist = np.cumsum(hist, axis=0)/np.sum(hist, axis=0)
+    #     # Sanitize again
+    #     cumhist[np.isnan(cumhist)] = 1
+    #     # Create a spline fit of the real data in a 1x1 box
+    #     x1 = np.linspace(self._pmin[key], self._pmax[key], cumhist.shape[0])
+    #     y1 = np.linspace(self._tmin[key], self._tmax[key], cumhist.shape[1])
+    #     x, y = np.meshgrid(x1, y1)
+    #     #spline = Rbf(x.flatten(), y.flatten(), cumhist.flatten(), function='cubic', smooth=0)
+    #     c = cumhist.flatten()
+    #     weights = 1./np.sqrt(c+1)
+    #     spline = SmoothBivariateSpline(x.flatten(), y.flatten(), c, w=weights)
+    #     #spline = RectBivariateSpline(x1,y1,cumhist)
+    #
+    #     self._spline[key] = spline
+    #
+    # def at(self, p, t, key):
+    #     spline = self._spline[key]
+    #     if spline is None:
+    #         self.generate_spline(key)
+    #         spline = self._spline[key]
+    #
+    #     if not (is_number(p) or is_number(t) or len(p) == len(t)):
+    #         res = np.empty(shape=(len(p), len(t)))
+    #         for ip in p:
+    #             res[:, p == ip] = spline.ev(ip, t)
+    #         return res
+    #
+    #     return spline.ev(p, t)
