@@ -81,7 +81,7 @@ def correlative_shift(x0, y0, which_channel, pix_size_nm=115.):
     y : ndarray
         array of localization y positions registered to the first channel
     """
-    from scipy.signal import correlate2d
+    from scipy.signal import fftconvolve  # , correlate2d
     from skimage import filters
 
     x, y = np.copy(x0), np.copy(y0)
@@ -110,8 +110,9 @@ def correlative_shift(x0, y0, which_channel, pix_size_nm=115.):
 
 
         # cross-correlate this channel with the first, make it binary
-        cross_cor = correlate2d(first_channel, counts, mode='same', boundary='symm')
-        #cropped = cross_cor[center - max_pixel_shift: center + max_pixel_shift, center - max_pixel_shift: center+max_pixel_shift]
+        # cross_cor = correlate2d(first_channel, counts, mode='same', boundary='symm')
+        cross_cor = fftconvolve(first_channel, counts[::-1, ::-1], mode='same')
+
         r_off, c_off = np.unravel_index(np.argmax(cross_cor), cross_cor.shape)
 
         # shift r and c positions
@@ -128,25 +129,40 @@ def pairMolecules(tIndex, x0, y0, whichChan, deltaX=[None], appearIn=np.arange(4
     """
     pairMolecules uses pyDeClump functions to group localization clumps into molecules for registration.
 
-    Args:
-        tIndex: from fitResults
-        x0: x positions of localizations AFTER having been folded into the first channel
-        y0: y positions of localizations
-        whichChan: a vector containing channel assignments for each localization
-        deltaX: distance within which neighbors will be clumped is set by 2*deltaX[i])**2
-        appearIn: a clump must have localizations in each of these channels in order to be a keep-clump
-        nFrameSep: number of frames a molecule is allowed to blink off and still be clumped as the same molecule
-        returnPaired: boolean flag to return a boolean array where True indicates that the molecule is a member of a
-            clump whose members span the appearIn channels.
+    Parameters
+    ----------
+    tIndex: from fitResults
+    x0: ndarray
+        x positions of localizations AFTER having been folded into the first channel
+    y0: ndarray
+        y positions of localizations
+    whichChan: ndarray
+        contains channel assignments for each localization
+    deltaX: list
+        distance within which neighbors will be clumped is set by 2*deltaX[i])**2. If None, will default to 100 nm
+    appearIn: list
+        a clump must have localizations in each of these channels in order to be a keep-clump
+    nFrameSep: int
+        number of frames a molecule is allowed to blink off and still be clumped as the same molecule
+    returnPaired: bool
+        flag to return a boolean array where True indicates that the molecule is a member of a
+        clump whose members span the appearIn channels.
 
-    Returns:
-        assigned: clump assignments for each localization. Note that molecules whose whichChan entry is set to a
-            negative value will not be clumped, i.e. they will have a unique value in assigned.
-        keep: a boolean vector encoding which molecules are in kept clumps
-        Note that outputs are of length #molecules, and the keep vector that is returned needs to be applied
-        as: xkept = x[keep] in order to only look at kept molecules.
+    Returns
+    -------
+    assigned: ndarray
+        clump assignments for each localization. Note that molecules whose whichChan entry is set to a
+        negative value will not be clumped, i.e. they will have a unique value in assigned.
+    keep: ndarray
+        a boolean vector encoding which molecules are in kept clumps
+
+    Notes
+    -----
+    Outputs are of length #molecules, and the keep vector that is returned needs to be applied
+    as: xkept = x[keep] in order to only look at kept molecules.
 
     """
+    # take out any large linear shifts for the sake of easier pairing
     x, y = correlative_shift(x0, y0, whichChan, pix_size_nm)
     # group within a certain distance, potentially based on localization uncertainty
     if not deltaX[0]:
