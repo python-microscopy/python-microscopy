@@ -117,13 +117,13 @@ class EmpiricalHist:
         self.hist['off'] = self.estimate_hist('off')
 
         self.cumhist = {}
-        # self.cumhist['on'] = np.cumsum(self.hist['on'], axis=0)/\
-        #                      np.sum(self.hist['on'], axis=0)
-        # self.cumhist['off'] = np.cumsum(self.hist['off'], axis=0)/\
-        #                       np.sum(self.hist['off'], axis=0)
+        self.cumhist['on'] = np.cumsum(self.hist['on'], axis=0)/\
+                                       np.sum(self.hist['on'], axis=0)
+        self.cumhist['off'] = np.cumsum(self.hist['off'], axis=0)/\
+                                        np.sum(self.hist['off'], axis=0)
 
     def estimate_hist(self, key):
-        hist = self._hist[key]
+        hist = self._hist[key].T
 
         # estimate true lambda (assuming Poisson statistics and a single value,
         # x, the expectation value for underlying population mean, \lambda is
@@ -151,23 +151,23 @@ class EmpiricalHist:
         dc = DeconvEmpiricalHist()
         dc.set_size(data.shape)
         dec_res = dc.deconv(data, .5, 90, weights.ravel())
-        return dec_res
+        return dec_res.T
 
     def trange(self, key):
         if self._tlog[key]:
             return np.exp(np.linspace(log(self._tmin[key]),
                                       log(self._tmax[key]),
-                                      self._hist[key].shape[1]))
+                                      self._hist[key].shape[0]))
         return np.linspace(self._tmin[key], self._tmax[key],
-                           self._hist[key].shape[1])
+                           self._hist[key].shape[0])
 
     def prange(self, key):
         if self._plog[key]:
             return np.power(2, np.linspace(log(self._pmin[key])/log(2),
                                            log(self._pmax[key])/log(2),
-                                           self._hist[key].shape[0]))
+                                           self._hist[key].shape[1]))
         return np.linspace(self._pmin[key], self._pmax[key],
-                           self._hist[key].shape[0])
+                           self._hist[key].shape[1])
 
     def get_time(self, pow, prob, key):
         """
@@ -175,13 +175,13 @@ class EmpiricalHist:
         """
 
         # Which power are we looking at?
-        p_int = np.digitize(pow, self.prange())
+        p_int = np.subtract(np.digitize(pow, self.prange(key)), 1)
 
         # Get the time bin
-        t_int = np.digitize(prob, self.cumhist[key][p_int, :])
+        t_int = np.subtract(np.digitize(prob, self.cumhist[key][:, p_int]), 1)
 
         # now return the time
-        return self.trange[t_int]
+        return self.trange(key)[t_int]
 
     # def at(self, p, t, key):
     #     p_int = np.digitize(p, self.prange())

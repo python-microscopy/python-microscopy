@@ -193,12 +193,10 @@ class EmpiricalHistFluors(fluors):
         self.fl['state'][:] = initialState
         self.fl['spec'][:] = spectralSig
 
-        self.laserPowers = 0
-        self.expTime = 0
+        self.laserPowers = 1.0
+        self.expTime = 0.01
 
         self.flvec = range(len(self.fl))
-
-        self.time = 0
 
         self.activeState = activeState
 
@@ -207,44 +205,56 @@ class EmpiricalHistFluors(fluors):
 
         self.doPoll = True
 
-        self.threadPoll = threading.Thread(target=self._calculate_times)
-        self._start_calculate_times()
+        # initialize to the state vector
+        self.state_curr = self.fl['state']
+        self.state_prev = np.zeros_like(self.state_curr)
+        self.times = np.zeros_like(self.state_curr)
 
-    def _start_calculate_times(self):
+        self.threadPoll = threading.Thread(target=self._calculate_times)
         self.stateQueueCount = 0
         self.threadPoll.start()
+        time.sleep(.5)
 
     def _calculate_times(self):
-        # initialize to the state vector
-        curr_state = self.fl['state']
         while self.doPoll:
             # make sure we're not overfilling the queue
             if self.stateQueueCount >= 2./self.expTime:
-                time.sleep(.5)
+                time.sleep(.1)
 
             # calculate on time, off time
             # compute state vector, toss it in the queue
 
             # find the current active states
-            idxs_on = curr_state == self.activeState
-            idxs_off = curr_state != self.activeState
+            idxs_diff = ~(self.state_curr & self.state_prev)
+            idxs_on = (self.state_curr == self.activeState) & idxs_diff
+            idxs_off = (self.state_curr != self.activeState) & idxs_diff
 
             # calculate ON and OFF times for the active states
             r_on = np.random.random_sample(idxs_on.shape)
             r_off = np.random.random_sample(idxs_off.shape)
 
             # Calculate how long these suckers will be on
-            times = np.zeros_like(curr_state)
-            times[idxs_on] = self.histogram.get_time(self.laserPowers[1], r_on,
-                                                 'on')
-            times[idxs_off] = self.histogram.get_time(self.laserPowers[1],
-                                                      r_off, 'off')
+            self.times[idxs_on] = self.histogram.get_time(self.laserPowers,
+                                                          r_on, 'on')
+            self.times[idxs_off] = self.histogram.get_time(self.laserPowers,
+                                                           r_off, 'off')
 
-            has_transitioned = next_transition < self.time
-            will_transition = (next_transition < (self.time + expTime)) & \
-                              (~has_transitioned)
-            will_transition_intensities = ilFrac * will_transition * (
-            expTime - abs(next_transition - self.time)) / expTime
+            # update the states
+            self.state_prev = self.state_curr
+            self.state_curr[self.times < self.expTime] = \
+                np.subtract(1, self.state_curr[self.times < self.expTime])
+            self.times = np.subtract(self.times, self.expTime)
+
+            # Really, this should not just flip between 0 and 1, but also change
+            # contribution according to integration time
+            # has_transitioned = next_transition < self.time
+            # will_transition = (next_transition < (self.time + expTime)) & \
+            #                   (~has_transitioned)
+            # will_transition_intensities = ilFrac * will_transition * (
+            # expTime - abs(next_transition - self.time)) / expTime
+
+            # Add the new state to the queue
+            self.stateQueue.put(self.state_curr)
 
             # increment the number of elements in the queue
             self.stateQueueCount += 1
@@ -252,20 +262,15 @@ class EmpiricalHistFluors(fluors):
     def illuminate(self, laserPowers, expTime, position=[0, 0, 0],
                    illuminationFunction = 'ConstIllum'):
 
-        # Update if necessary
-        if laserPowers[1] != self.laserPowers or expTime != self.expTime:
-            self.laserPowers = laserPowers[1]
+        # Restart simulation on parameter changes
+        if laserPowers[1] != self.laserPowers*1e3 or expTime != self.expTime:
+            self.laserPowers = laserPowers[1]/1e3
             self.expTime = expTime
-            self.doPoll = False
             time.sleep(.1)
-            with self.stateQueue.mutex:
-                self.stateQueue.queue.clear()
-            time.sleep(.1)
-            self._start_calculate_times()
 
-        state = self.stateQueue.get()
+        # Grab a state off the queue and display
+        self.fl['state'] = self.stateQueue.get()
         self.stateQueueCount -= 1
-        self.fl['state'] = state == self.activeState
 
         ilFrac = illuminationFunctions[illuminationFunction](self.fl, position)*expTime*1e3
 
