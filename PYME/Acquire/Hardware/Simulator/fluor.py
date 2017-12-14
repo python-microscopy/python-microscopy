@@ -207,7 +207,6 @@ class EmpiricalHistFluors(fluors):
 
         # initialize the state vector
         self.state_curr = np.ones_like(self.fl['state'])
-        self.state_prev = np.zeros_like(self.state_curr)
         self.times = np.zeros_like(self.state_curr)
 
         self.threadPoll = threading.Thread(target=self._calculate_times)
@@ -231,34 +230,23 @@ class EmpiricalHistFluors(fluors):
             # compute state vector, toss it in the queue
 
             # update the states
-            self.state_prev = self.state_curr
             self.times = np.subtract(self.times, self.expTime)
-            self.state_curr[self.times <= 0] = 1 - self.state_curr[self.times <= 0]
+            new_locs = self.times <= 0
+            self.state_curr[new_locs] = 1 - self.state_curr[new_locs]
 
             # find the current active states
-            idxs_diff = self.state_curr ^ self.state_prev
-            idxs_on = (self.state_curr == self.activeState) & idxs_diff
-            idxs_off = (self.state_curr != self.activeState) & idxs_diff
+            idxs_on = (self.state_curr == self.activeState) & new_locs
+            idxs_off = (self.state_curr != self.activeState) & new_locs
 
             # Calculate how long these suckers will be on
-            if sum(idxs_on) > 0:
-                r_on = np.random.rand(sum(idxs_on))
-                self.times[idxs_on.astype(bool)] = self.histogram.get_time(
+            if any(idxs_on):
+                r_on = np.random.rand(sum(idxs_on.astype(int)))
+                self.times[idxs_on] = self.histogram.get_time(
                     self.laserPowers, r_on, 'on')
-            if sum(idxs_off) > 0:
-                r_off = np.random.rand(sum(idxs_on))
-                self.times[idxs_off.astype(bool)] = self.histogram.get_time(
+            if any(idxs_off) > 0:
+                r_off = np.random.rand(sum(idxs_off.astype(int)))
+                self.times[idxs_off] = self.histogram.get_time(
                     self.laserPowers, r_off, 'off')
-
-            print(self.times)
-
-            if sum(idxs_diff) > 0:
-                print("prev")
-                print(self.state_prev)
-                print("post")
-                print(self.state_curr)
-                print("post times")
-                print(self.times)
 
             # Really, this should not just flip between 0 and 1, but also change
             # contribution according to integration time
@@ -277,6 +265,8 @@ class EmpiricalHistFluors(fluors):
                                self.histogram.prange('on')[-1]
             self.expTime = expTime
             time.sleep(.1)
+
+        print(self.laserPowers)
 
         # Grab a state off the queue and display
         self.fl['state'] = self.stateQueue.get()
