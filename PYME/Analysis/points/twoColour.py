@@ -534,6 +534,9 @@ def calcCorrections(filenames):
     return (gs, rs, res_gs, res_rs, Ags, Ars, dx, dy)
 
 def warpCorrectRedImage(r, dx, dy):
+    import warnings
+    warnings.warn('Deprecated - use IO.Datasources.AlignDataSource or IO.Datasources.UnsplitDataSource instead')
+    
     from matplotlib import tri
     X, Y = sp.meshgrid(np.arange(0, 512*70, 70), np.arange(0, 256*70,70))
     cx, cy = getCorrection(X,Y, dx, dy)
