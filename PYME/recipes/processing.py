@@ -1065,6 +1065,15 @@ class Deconvolve(Filter):
 @register_module('DeconvolveMotionCompensating')
 class DeconvolveMotionCompensating(Deconvolve):
     method = Enum('Richardson-Lucy')
+    processFramesIndividually = Bool(True)
+    flowScale = Float(10)
+    inputFlowX = Input('flow_x')
+    inputFlowY = Input('flow_y')
+    
+    def execute(self, namespace):
+        self._flow_x = namespace[self.inputFlowX]
+        self._flow_y = namespace[self.inputFlowY]
+        namespace[self.outputName] = self.filter(namespace[self.inputName])
     
     def GetDec(self, dp, vshint):
         """Get a (potentially cached) deconvolution object"""
@@ -1081,7 +1090,7 @@ class DeconvolveMotionCompensating(Deconvolve):
                 dc = richardsonLucyMVM.dec_conv()
             
             #resize the PSF to fit, and do any required FFT planning etc ...
-            dc.psf_calc(psf, np.atleast_3d(dp).shape)
+            dc.psf_calc(np.atleast_3d(psf), np.atleast_3d(dp).shape)
             
             self._decCache[decKey] = dc
         
@@ -1108,22 +1117,55 @@ class DeconvolveMotionCompensating(Deconvolve):
         #Get appropriate deconvolution object
         rmv = self.GetDec(d, im.voxelsize)
 
-        mFr = min(frNum + 2, im.data.shape[2] -1)
-        if frNum < mFr:
-            dx, dy = optic_flow.reg_of(im.data[:,:,frNum,chanNum].squeeze(), im.data[:,:,mFr, chanNum].squeeze(), 5, 10, 1)
-        else:
-            dx, dy = 0,0
+        #mFr = min(frNum + 2, im.data.shape[2] -1)
+        #if frNum < mFr:
+        #    dx, dy = optic_flow.reg_of(im.data[:,:,frNum,chanNum].squeeze().astype('f'), im.data[:,:,mFr, chanNum].squeeze().astype('f'),
+        #                               self.flowFilterRadius, self.flowSupportRadius, self.flowRegularizationLambda)
+        #else:
+        #    dx, dy = 0,0
+        
+        dx = self._flow_x.data[:,:,frNum].squeeze()
+        dy = self._flow_y.data[:, :, frNum].squeeze()
+        
     
         #run deconvolution
         mFr = min(frNum + 5, im.data.shape[2])
-        res = rmv.deconv(np.atleast_3d(im.data[:,:,frNum:mFr, chanNum].astype('f').squeeze()) ,
-                         0, 20, bg=0, vx = -dx*4000., vy = -dy*4000).squeeze().reshape(d.shape)
+        data = np.atleast_3d([im.data[:,:,i, chanNum].astype('f').squeeze() for i in range(frNum,mFr)])
+        #print data.shape
+        print('MC Deconvolution - frame # %d' % frNum)
+        res = rmv.deconv(data,
+                         self.regularisationLambda, self.iterations, bg=0, vx = -dx*self.flowScale, vy = -dy*self.flowScale).squeeze().reshape(d.shape)
     
         #crop away the padding
         if self.padding > 0:
             res = res[px:-px, py:-py, pz:-pz]
     
         return res
+    
+    def default_traits_view(self):
+        from traitsui.api import View, Item, Group, ListEditor
+        from PYME.ui.custom_traits_editors import CBEditor
+
+        return View(Item(name='inputName', editor=CBEditor(choices=self._namespace_keys)),
+                    Item(name='outputName'),
+                    Group(Item(name='method'),
+                          Item(name='iterations'),
+                          Item(name='offset'),
+                          Item(name='padding'),
+                          Item(name='zPadding'),
+                          Item(name='regularisationLambda', visible_when='method=="ICTM"'),
+                          label='Deconvolution Parameters'),
+                    Group(Item(name='psfType'),
+                          Item(name='psfFilename', visible_when='psfType=="file"'),
+                          Item(name='lorentzianFWHM', visible_when='psfType=="Lorentzian"'),
+                          Item(name='gaussianFWHM', visible_when='psfType=="Gaussian"'),
+                          Item(name='beadDiameter', visible_when='psfType=="bead"'),
+                          label='PSF Parameters'),
+                    Group(
+                          Item(name='flowScale'),
+                          label='Flow estimation'),
+                    resizable = True,
+                    buttons   = [ 'OK' ])
         
         
 
