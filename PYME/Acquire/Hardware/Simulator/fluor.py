@@ -201,7 +201,6 @@ class EmpiricalHistFluors(fluors):
         self.activeState = activeState
 
         self.stateQueue = Queue.Queue()
-        self.stateQueueCount = 0
 
         self.doPoll = True
 
@@ -210,21 +209,17 @@ class EmpiricalHistFluors(fluors):
         self.times = np.zeros_like(self.state_curr)
 
         self.threadPoll = threading.Thread(target=self._calculate_times)
-        self.stateQueueCount = 0
         self.threadPoll.start()
         time.sleep(.5)
 
     def _calculate_times(self):
         while self.doPoll:
             # make sure we're not overfilling the queue
-            if self.stateQueueCount >= 2./self.expTime:
+            if self.stateQueue.qsize() >= 2./self.expTime:
                 time.sleep(.1)
 
             # Add the new state to the queue
             self.stateQueue.put(self.state_curr)
-
-            # increment the number of elements in the queue
-            self.stateQueueCount += 1
 
             # calculate on time, off time
             # compute state vector, toss it in the queue
@@ -264,13 +259,14 @@ class EmpiricalHistFluors(fluors):
             self.laserPowers = laserPowers[1]/1e3*\
                                self.histogram.prange('on')[-1]
             self.expTime = expTime
-            time.sleep(.1)
+            with self.stateQueue.mutex:
+                self.stateQueue.queue.clear()
+            time.sleep(.5)
 
         print(self.laserPowers)
 
         # Grab a state off the queue and display
         self.fl['state'] = self.stateQueue.get()
-        self.stateQueueCount -= 1
 
         ilFrac = illuminationFunctions[illuminationFunction](self.fl, position)*expTime*1e3
 
