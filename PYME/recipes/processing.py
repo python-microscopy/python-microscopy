@@ -453,7 +453,12 @@ class CaWave(object):
     
         plt.ion()
     
-        return mpld3.fig_to_html(f)
+        ret =  mpld3.fig_to_html(f)
+        
+        plt.close(f)
+        
+        return ret
+        
     
     @property
     def direction_data(self):
@@ -481,9 +486,12 @@ class CaWave(object):
         plt.tight_layout(pad=2)
     
         plt.ion()
-    
-        return mpld3.fig_to_html(f)
-        pass
+
+        ret = mpld3.fig_to_html(f)
+
+        plt.close(f)
+
+        return ret
     
     @property
     def velocity_data(self):

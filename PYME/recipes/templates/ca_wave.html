@@ -113,7 +113,7 @@
                     return r(d[1]);
                 })
                 .angle(function (d) {
-                    return -d[0] + Math.PI / 2;
+                    return -d[0] + Math.PI;
                 });
 
             var svg = d3.select(element).append("svg")
@@ -261,8 +261,13 @@
             </td>
             <td><b>Wavefront velocity distribution</b> <br>{{ d.velocity_plot }}
             <button id="wave_{{ loop.index0 }}_velocity_download">Download plot data</button>
+                <br>
+                <div id="wave_{{ loop.index0 }}_velocity_mean"></div>
             <script type="application/ecmascript">
                 var dv_{{ loop.index0 }} = JSON.parse("{{ d.velocity_data }}");
+                var v_mean = d3.sum(dv_{{ loop.index0 }}.map(function(d){return d[0]*d[1]}))/d3.sum(dv_{{ loop.index0 }}.map(function(d){return d[1];}));
+
+                document.getElementById("wave_{{ loop.index0 }}_velocity_mean").textContent="Mean velocity: " + v_mean.toFixed(2) + " pixels/frame";
 
                 document.querySelector("#wave_{{ loop.index0 }}_velocity_download").addEventListener("click", function () {
                     export_array_to_csv(dv_{{ loop.index0 }}, "{{recipe_context.file_stub}}_{{ loop.index0 }}_velocity.csv");
