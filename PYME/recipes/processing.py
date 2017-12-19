@@ -402,6 +402,7 @@ class CaWave(object):
         nbins: 50
         outputName: velocity_histogram
         right: 16.0
+        normalize: True
     - processing.VectorfieldAngle:
         inputX: flow_xf
         inputY: flow_yf
@@ -415,6 +416,7 @@ class CaWave(object):
         nbins: 120
         outputName: angle_hist
         right: 6.3
+        normalize: True
     '''
     def __init__(self, wavefronts, intensity, recipe=''):
         from PYME.recipes.base import ModuleCollection
@@ -424,7 +426,11 @@ class CaWave(object):
         
         self._mc = ModuleCollection.fromYAML(recipe)
         
+        print('Executing wave sub-recipe')
+        
         self._mc.execute(wavefronts=wavefronts, intensity=intensity)
+        
+        print('wave sub-recipe done')
         
     @property
     def direction_plot(self):
@@ -449,7 +455,10 @@ class CaWave(object):
     
     @property
     def direction_data(self):
-        pass
+        import json
+    
+        return json.dumps(np.array([self._mc.namespace['angle_hist']['bins'],
+                                    self._mc.namespace['angle_hist']['counts']]).T.tolist())
         
     @property
     def velocity_plot(self):
@@ -476,11 +485,20 @@ class CaWave(object):
     
     @property
     def velocity_data(self):
-        pass
+        import json
+        
+        return json.dumps(np.array([self._mc.namespace['velocity_histogram']['bins'], self._mc.namespace['velocity_histogram']['counts']]).T.tolist())
     
     @property
     def wavefront_image(self):
         import matplotlib.pyplot as plt
+        from io import BytesIO
+        
+        try:
+            from PIL import Image
+        except ImportError:
+            import Image
+        
         wavefronts = self._mc.namespace['wavefronts'].data
         
         nFrames = wavefronts.getNumSlices()
@@ -490,13 +508,53 @@ class CaWave(object):
         out = np.zeros([sx, sy, 3])
         
         for i in range(nFrames):
-            c = np.array(plt.cm.jet(float(i)/nFrames)[:3])
+            c = np.array(plt.cm.jet(float(i)/float(nFrames))[:3])
+            #print c
+            #print out.shape, wavefronts.getSlice(i)[:,:,None].shape, c.shape
             out += wavefronts.getSlice(i)[:,:,None]*c[None, None, :]
+            
+        
+        outf = BytesIO()
+        
+        Image.fromarray((255*out).astype('uint8')).save(outf, 'PNG')
+        
+        s =  outf.getvalue()
+        
+        outf.close()
+        return s
             
     
     @property
     def velocity_image(self):
-        pass
+        import matplotlib.pyplot as plt
+        from io import BytesIO
+    
+        try:
+            from PIL import Image
+        except ImportError:
+            import Image
+    
+        wavefronts = self._mc.namespace['wavefronts'].data
+        velocities = self._mc.namespace['wavefront_velocities'].data
+        v_max =  float(velocities[:,:,:].max())
+    
+        nFrames = wavefronts.getNumSlices()
+    
+        sx, sy = wavefronts.getSliceShape()
+    
+        out = np.zeros([sx, sy, 3])
+    
+        for i in range(nFrames):
+            out += wavefronts.getSlice(i)[:, :, None] * plt.cm.jet(velocities.getSlice(i)/v_max)[:,:,:3]
+    
+        outf = BytesIO()
+    
+        Image.fromarray((255 * out).astype('uint8')).save(outf, 'PNG')
+    
+        s = outf.getvalue()
+    
+        outf.close()
+        return s
         
 
 @register_module('FindCaWaves')
@@ -516,24 +574,33 @@ class FindCaWaves(ModuleBase):
     def execute(self, namespace):
         from scipy import ndimage
         from PYME.IO.DataSources import CropDataSource
+        print('Finding Ca Waves ...')
         wavefronts = namespace[self.inputWavefronts] #segmented wavefront mask
         intensity = namespace[self.inputIntensity]
-        wavefront_I = [wavefronts.data.getSlice(i).sum() for i in range(wavefronts.data.getNumSlices())]
+        wavefront_I = np.array([wavefronts.data.getSlice(i).sum() for i in range(wavefronts.data.getNumSlices())]).squeeze()
+        
+        
         
         #a wave is a contiguous region of non-zero wavefronts
         wave_labels, nWaves = ndimage.label(wavefront_I > .5)
         
+        print('Detected %d wave candidates' % nWaves)
+        
         waves = []
+        
+        print(wave_labels, nWaves)
         
         for i in range(nWaves):
             wv_idx = np.argwhere(wave_labels == (i+1))
             
+            print('wave%d: wave at %s' % (i, wv_idx))
+            
             if len(wv_idx) >= self.minWaveFrames:
                 
                 trange = (wv_idx[0], wv_idx[-1])
-                cropped_wavefronts = ImageStack(CropDataSource.DataSource(wavefronts, trange=trange),
+                cropped_wavefronts = ImageStack(CropDataSource.DataSource(wavefronts.data, trange=trange),
                                                 mdh=getattr(wavefronts, 'mdh', None))
-                cropped_intensity = ImageStack(CropDataSource.DataSource(intensity, trange=trange),
+                cropped_intensity = ImageStack(CropDataSource.DataSource(intensity.data, trange=trange),
                                                 mdh=getattr(intensity, 'mdh', None))
                 waves.append(CaWave(cropped_wavefronts, cropped_intensity))
                 

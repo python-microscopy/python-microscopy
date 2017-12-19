@@ -472,6 +472,28 @@ class ModuleCollection(HasTraits):
         for mod in self.modules:
             if isinstance(mod, OutputModule):
                 mod.save(self.namespace, context)
+                
+    def gather_outputs(self, context={}):
+        """
+        Find all OutputModule instances and call their generate methods with the recipe context
+
+        Parameters
+        ----------
+        context : dict
+            A context dictionary used to substitute and create variable names.
+
+        """
+        
+        outputs = []
+        
+        for mod in self.modules:
+            if isinstance(mod, OutputModule):
+                out = mod.generate(self.namespace, context)
+                
+                if not out is None:
+                    outputs.append(out)
+                    
+        return outputs
 
     def loadInput(self, filename, key='input'):
         """Load input data from a file and inject into namespace
