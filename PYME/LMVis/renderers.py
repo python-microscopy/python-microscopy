@@ -130,8 +130,8 @@ class CurrentRenderer:
             return 0
 
     def _get_neighbour_dists(self):
-        from matplotlib import delaunay
-        triangles = delaunay.Triangulation(
+        from matplotlib import tri
+        triangles = tri.Triangulation(
             self.colourFilter['x'] + .1 * np.random.normal(size=len(self.colourFilter['x'])),
             self.colourFilter['y'] + .1 * np.random.normal(size=len(self.colourFilter['x'])))
 

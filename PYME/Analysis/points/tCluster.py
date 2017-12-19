@@ -33,7 +33,7 @@ def cluster(T):
     curNode = 0
 
     for i in range(len(T.x)):
-        incidentEdges = T.edge_db[edb[i][0]]
+        incidentEdges = T.edges[edb[i][0]]
         neighbourPoints = edb[i][1]
 
         dx = np.diff(T.x[incidentEdges])

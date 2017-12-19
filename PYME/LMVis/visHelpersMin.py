@@ -70,8 +70,8 @@ def calcNeighbourDists(T):
 
 def rendTri(T, imageBounds, pixelSize, c=None, im=None):
     from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
-    xs = T.x[T.triangle_nodes]
-    ys = T.y[T.triangle_nodes]
+    xs = T.x[T.triangles]
+    ys = T.y[T.triangles]
 
     a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
     b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
@@ -113,7 +113,7 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
 
 
 def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
-    from matplotlib import delaunay
+    from matplotlib import tri
     for i in range(n):
         #global jParms
         #locals().update(jParms)
@@ -123,7 +123,7 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
         if type(jsig) == numpy.ndarray:
             #print jsig.shape, Imc.shape
             jsig = jsig[Imc]
-        T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
+        T = tri.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
 
         #return T
         rendTri(T, imageBounds, pixelSize, im=im)
