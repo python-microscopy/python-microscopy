@@ -412,14 +412,16 @@ class CaWave(object):
     - measurement.ImageHistogram:
         inputImage: theta
         inputMask: wavefronts
-        left: 0.0
+        left: -3.15
         nbins: 120
         outputName: angle_hist
-        right: 6.3
+        right: 3.15
         normalize: True
     '''
-    def __init__(self, wavefronts, intensity, recipe=''):
+    def __init__(self, wavefronts, intensity, trange, recipe=''):
         from PYME.recipes.base import ModuleCollection
+        
+        self.trange = trange
         
         if recipe == '':
             recipe = self.default_recipe
@@ -588,12 +590,12 @@ class FindCaWaves(ModuleBase):
         
         waves = []
         
-        print(wave_labels, nWaves)
+        #print(wave_labels, nWaves)
         
         for i in range(nWaves):
             wv_idx = np.argwhere(wave_labels == (i+1))
             
-            print('wave%d: wave at %s' % (i, wv_idx))
+            print('wave%d: wave at %d-%d' % (i, wv_idx[0], wv_idx[-1]))
             
             if len(wv_idx) >= self.minWaveFrames:
                 
@@ -602,7 +604,7 @@ class FindCaWaves(ModuleBase):
                                                 mdh=getattr(wavefronts, 'mdh', None))
                 cropped_intensity = ImageStack(CropDataSource.DataSource(intensity.data, trange=trange),
                                                 mdh=getattr(intensity, 'mdh', None))
-                waves.append(CaWave(cropped_wavefronts, cropped_intensity))
+                waves.append(CaWave(cropped_wavefronts, cropped_intensity, trange))
                 
         
         namespace[self.outputName] = waves
