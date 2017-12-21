@@ -196,8 +196,6 @@ class EmpiricalHistFluors(fluors):
         self.laserPowers = 1.0
         self.expTime = 0.01
 
-        self.flvec = range(len(self.fl))
-
         self.activeState = activeState
 
         self.stateQueue = Queue.Queue()
@@ -205,7 +203,7 @@ class EmpiricalHistFluors(fluors):
         self.doPoll = True
 
         # initialize the state vector
-        self.state_curr = np.ones_like(self.fl['state'])
+        self.state_curr = np.ones(self.fl['state'].shape)
         self.times = np.zeros_like(self.state_curr)
 
         self.threadPoll = threading.Thread(target=self._calculate_times)
@@ -227,8 +225,11 @@ class EmpiricalHistFluors(fluors):
             # update the states
             self.times = np.subtract(self.times, self.expTime)
             new_locs = self.times <= 0
+            trans_locs = (self.times > 0) & (self.times < self.expTime)
             self.state_curr[new_locs] = 1 - np.round(self.state_curr[
                                                            new_locs])
+            self.state_curr[trans_locs] = self.times[trans_locs]/self.expTime
+            #print(self.state_curr[trans_locs].dtype)
 
             # find the current active states
             idxs_on = (self.state_curr == self.activeState) & new_locs
@@ -273,6 +274,7 @@ class EmpiricalHistFluors(fluors):
         self.fl['state'] = active
 
         ilFrac = illuminationFunctions[illuminationFunction](self.fl,
-                                                             position)*expTime*laserPowers[1]
+                                                             position)*expTime*\
+                                                             laserPowers[1]*50
 
-        return active*ilFrac
+        return curr_state*ilFrac

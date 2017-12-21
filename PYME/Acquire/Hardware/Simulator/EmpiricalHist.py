@@ -175,7 +175,7 @@ class EmpiricalHist:
         """
 
         # Which power are we looking at?
-        p_int = np.subtract(np.digitize(pow, self.prange(key)), 1)
+        p_int = np.digitize(pow, self.prange(key), right=True)
 
         # print(p_int)
         # print(self.cumhist[key][:, p_int])
@@ -183,7 +183,7 @@ class EmpiricalHist:
         # print(np.digitize(prob, self.cumhist[key][:, p_int]))
 
         # Get the time bin
-        t_int = np.subtract(np.digitize(prob, self.cumhist[key][:, p_int]), 1)
+        t_int = np.digitize(prob, self.cumhist[key][:, p_int], right=True)
 
         # print(self.trange(key)[t_int])
 
