@@ -220,20 +220,15 @@ class EmpiricalHistFluors(fluors):
 
             # Add the new state to the queue
             self.stateQueue.put(self.state_curr)
-            print(self.state_curr)
 
             # calculate on time, off time
             # compute state vector, toss it in the queue
 
             # update the states
             self.times = np.subtract(self.times, self.expTime)
-            new_locs = self.times <= -self.expTime
-            trans_locs = np.abs(self.times) < self.expTime
+            new_locs = self.times <= 0
             self.state_curr[new_locs] = 1 - np.round(self.state_curr[
                                                            new_locs])
-            self.state_curr[trans_locs] = 1.0 - (np.abs(self.times[
-                                                           trans_locs]) /\
-                                                self.expTime)
 
             # find the current active states
             idxs_on = (self.state_curr == self.activeState) & new_locs
@@ -273,11 +268,11 @@ class EmpiricalHistFluors(fluors):
 
         # Grab a state off the queue and display
         curr_state = self.stateQueue.get()
-       # print(curr_state[0:19])
+        # print(curr_state[0:19])
         active = curr_state == self.activeState
         self.fl['state'] = active
-        self.fl['state'][(curr_state > 0) & (~active)] = 2
 
-        ilFrac = illuminationFunctions[illuminationFunction](self.fl, position)*expTime*1e3
+        ilFrac = illuminationFunctions[illuminationFunction](self.fl,
+                                                             position)*expTime*laserPowers[1]
 
-        return curr_state*ilFrac
+        return active*ilFrac
