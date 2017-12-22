@@ -275,6 +275,6 @@ class EmpiricalHistFluors(fluors):
 
         ilFrac = illuminationFunctions[illuminationFunction](self.fl,
                                                              position)*expTime*\
-                                                             laserPowers[1]*50
+                                                             laserPowers[1]*350
 
         return curr_state*ilFrac
