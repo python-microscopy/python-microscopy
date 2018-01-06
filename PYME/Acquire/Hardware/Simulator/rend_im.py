@@ -97,7 +97,7 @@ def genTheoreticalModel(md):
         P = arange(0,1.01,.01)
 
         interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P,1e3, 0,
-                                      0, 0, 2*pi/642, 1.47, 10e3).astype('f')
+                                      0, 0, 2*pi/665, 1.47, 10e3).astype('f')
         
         #print('foo')
         #print((interpModel.strides, interpModel.shape))

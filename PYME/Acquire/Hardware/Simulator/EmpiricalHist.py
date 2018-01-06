@@ -100,12 +100,11 @@ class EmpiricalHist:
         self._pmax = dict(zip(hist_list, kwargs.get('pmax')))
         self._tmin = dict(zip(hist_list, kwargs.get('tmin')))
         self._tmax = dict(zip(hist_list, kwargs.get('tmax')))
+
+        # Raw histograms
         self._hist = {}
         self._hist['on'] = np.array(kwargs.get('on')).astype(float)
         self._hist['off'] = np.array(kwargs.get('off')).astype(float)
-        # self._spline = {}
-        # self._spline['on'] = None
-        # self._spline['off'] = None
 
         # Sanitize histograms
         self._hist['on'][np.isinf(self._hist['on'])] = 0
@@ -121,6 +120,11 @@ class EmpiricalHist:
                                        np.sum(self.hist['on'], axis=0)
         self.cumhist['off'] = np.cumsum(self.hist['off'], axis=0)/\
                                         np.sum(self.hist['off'], axis=0)
+
+        # Spline fits of smooth cumulative histograms
+        # self._spline = {}
+        # self._spline['on'] = None
+        # self._spline['off'] = None
 
     def estimate_hist(self, key):
         hist = self._hist[key].T
@@ -169,13 +173,13 @@ class EmpiricalHist:
         return np.linspace(self._pmin[key], self._pmax[key],
                            self._hist[key].shape[1])
 
-    def get_time(self, pow, prob, key):
+    def get_time(self, powr, prob, key):
         """
         Return time estimate for a given power and cumulative probability.
         """
 
         # Which power are we looking at?
-        p_int = np.digitize(pow, self.prange(key), right=True)
+        p_int = np.digitize(powr, self.prange(key), right=True)
 
         # print(p_int)
         # print(self.cumhist[key][:, p_int])
@@ -190,41 +194,25 @@ class EmpiricalHist:
         # now return the time
         return self.trange(key)[t_int]
 
-    # def at(self, p, t, key):
-    #     p_int = np.digitize(p, self.prange())
-    #     t_int = np.digitize(t, self.trange())
-    #
-    #     return self.cumhist[key][p_int, t_int]
-
     # def generate_spline(self, key):
-    #     # Grab the desired histogram
-    #     hist = self.hist[key]
-    #     # Calculate cumulative histogram
-    #     cumhist = np.cumsum(hist, axis=0)/np.sum(hist, axis=0)
-    #     # Sanitize again
-    #     cumhist[np.isnan(cumhist)] = 1
-    #     # Create a spline fit of the real data in a 1x1 box
-    #     x1 = np.linspace(self._pmin[key], self._pmax[key], cumhist.shape[0])
-    #     y1 = np.linspace(self._tmin[key], self._tmax[key], cumhist.shape[1])
-    #     x, y = np.meshgrid(x1, y1)
-    #     #spline = Rbf(x.flatten(), y.flatten(), cumhist.flatten(), function='cubic', smooth=0)
-    #     c = cumhist.flatten()
-    #     weights = 1./np.sqrt(c+1)
-    #     spline = SmoothBivariateSpline(x.flatten(), y.flatten(), c, w=weights)
-    #     #spline = RectBivariateSpline(x1,y1,cumhist)
+    #     dt = np.linspace(self._tmin[key], self._tmax[key], self.cumhist[key].shape[0])
+    #     dp = np.linspace(self._pmin[key], self._pmax[key], self.cumhist[key].shape[1])
+    #
+    #     p, t = np.meshgrid(dt, dp)
+    #     spline = SmoothBivariateSpline(p.flatten(), t.flatten(), self.cumhist[key].flatten())
     #
     #     self._spline[key] = spline
-    #
-    # def at(self, p, t, key):
+
+    # def at(self, powr, prob, key):
     #     spline = self._spline[key]
     #     if spline is None:
     #         self.generate_spline(key)
     #         spline = self._spline[key]
     #
-    #     if not (is_number(p) or is_number(t) or len(p) == len(t)):
-    #         res = np.empty(shape=(len(p), len(t)))
-    #         for ip in p:
-    #             res[:, p == ip] = spline.ev(ip, t)
+    #     if not (is_number(powr) or is_number(prob) or len(powr) == len(prob)):
+    #         res = np.empty(shape=(len(prob), len(powr)))
+    #         for ip in powr:
+    #             res[:, powr == ip] = spline.ev(prob, ip)
     #         return res
     #
-    #     return spline.ev(p, t)
+    #     return spline.ev(prob, powr)

@@ -216,6 +216,8 @@ class EmpiricalHistFluors(fluors):
             if self.stateQueue.qsize() >= 2./self.expTime:
                 time.sleep(.1)
 
+            #print(self.times[0:19])
+
             # Add the new state to the queue
             self.stateQueue.put(self.state_curr)
 
@@ -245,13 +247,6 @@ class EmpiricalHistFluors(fluors):
                 self.times[idxs_off] = self.histogram.get_time(
                     self.laserPowers, r_off, 'off')
 
-            # Really, this should not just flip between 0 and 1, but also change
-            # contribution according to integration time
-            # has_transitioned = next_transition < self.time
-            # will_transition = (next_transition < (self.time + expTime)) & \
-            #                   (~has_transitioned)
-            # will_transition_intensities = ilFrac * will_transition * (
-            # expTime - abs(next_transition - self.time)) / expTime
 
     def illuminate(self, laserPowers, expTime, position=[0, 0, 0],
                    illuminationFunction = 'ConstIllum'):
@@ -269,12 +264,10 @@ class EmpiricalHistFluors(fluors):
 
         # Grab a state off the queue and display
         curr_state = self.stateQueue.get()
-        # print(curr_state[0:19])
-        active = curr_state == self.activeState
-        self.fl['state'] = active
+        self.fl['state'] = curr_state == self.activeState
 
         ilFrac = illuminationFunctions[illuminationFunction](self.fl,
                                                              position)*expTime*\
-                                                             laserPowers[1]*350
+                                                             laserPowers[1]*90
 
         return curr_state*ilFrac
