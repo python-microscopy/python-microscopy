@@ -49,6 +49,8 @@ def calibrate(interpolator, md, roiSize=5):
     X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiSize,roiSize), slice(-roiSize,roiSize), slice(0, 2))
     #print Z, safeRegion
     axialShift = md.getOrDefault('Analysis.AxialShift', 0)
+    if axialShift is None:
+        axialShift = 0
     
     ratio = 0.5#md.Analysis.ColourRatio
 
@@ -126,7 +128,7 @@ def calibrate(interpolator, md, roiSize=5):
 def _calcParams(data, X, Y):
     """calculates the \sigma_x - \sigma_y term used for z position estimation"""
     data = np.atleast_3d(data)
-    A = np.atleast_1d(data.sum(1).sum(0) - data.min(1).min(0)) #amplitude
+    A = np.atleast_1d((data - data.min(1).min(0)[None,None,:]).sum(1).sum(0)) #amplitude
     A_ = np.atleast_1d(data.max(1).max(0) - data.min(1).min(0))
     
     #print data.shape, A, X
@@ -211,8 +213,8 @@ def getStartParameters(data, X, Y, Z=None):
 
     #correct position & intensity estimates for z position
     #A = A/splev(z0, splines['A'])[0]
-    x0 = x0 - splev(z0, splines['xp'])[0]
-    y0 = y0 - splev(z0, splines['yp'])[0]
+    x0 = x0 #- splev(z0, splines['xp'])[0]
+    y0 = y0 #- splev(z0, splines['yp'])[0]
 
     b = data.min()
     

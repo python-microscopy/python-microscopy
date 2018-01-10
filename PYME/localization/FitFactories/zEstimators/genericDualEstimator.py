@@ -35,6 +35,8 @@ rawMeas = {}
 
 _svr = None
 
+_cal_images = []
+
 sintheta = 0
 costheta = 1
 
@@ -43,7 +45,9 @@ TWOCHANNEL = True
 DEBUG_PLOTS = False
 
 def calibrate(interpolator, md, roiSize=5):
-    global sintheta, costheta, calibrated, _svr
+    global sintheta, costheta, calibrated, _svr, _cal_images
+    
+    _cal_images = []
     #global zvals, dWidth
     #generate grid to evaluate function on
     X, Y, Z, safeRegion = interpolator.getCoords(md, slice(-roiSize,roiSize), slice(-roiSize,roiSize), slice(0, 2))
@@ -69,9 +73,10 @@ def calibrate(interpolator, md, roiSize=5):
     
     z = numpy.arange(max(-800, zmin), min(800, zmax), 10)
     ps = []
+    ps1 = []
 
-    dx = 0 * 70 * np.random.normal(size=len(z))
-    dy = 0 * 70 * np.random.normal(size=len(z))
+    dx = 1 * 70 * np.random.normal(size=len(z))
+    dy = 1 * 70 * np.random.normal(size=len(z))
     
     #print axialShift
 
@@ -81,14 +86,20 @@ def calibrate(interpolator, md, roiSize=5):
             d2 = (1-ratio)*interpolator.interp(X + interpolator.PSF2Offset + x0, Y + y0, Z + z0 + axialShift)
         else:
             d2 = (1-ratio)*interpolator.interp(X + x0, Y + y0, Z + z0 + axialShift)
-#        if z0 % 100 == 0:
-#            figure()
-#            imshow(d)
-        ps.append(_calcParams(np.random.poisson(2+ (1000 + np.random.exponential(1000))*numpy.concatenate([numpy.atleast_3d(d1), numpy.atleast_3d(d2)], 2)), X_, Y_))
+            
+        im = numpy.concatenate([numpy.atleast_3d(d1), numpy.atleast_3d(d2)], 2)
+        ps1.append(_calcParams(im, X_, Y_))
+         
+        #add noise
+        im =  np.random.poisson(2+ (2000 + np.random.exponential(1000))*im)
+            
+        ps.append(_calcParams(im, X_, Y_))
+        _cal_images.append(im)
         #ps.append(_calcParams(numpy.concatenate([numpy.atleast_3d(d1), numpy.atleast_3d(d2)], 2), X_, Y_))
 
     ps = numpy.array(ps).T
-    xp, yp =  ps[:2, :]
+    ps1 = np.array(ps1).T
+    xp, yp =  ps1[:2, :]
     
     A = ps[2:4]
     feat = ps[4:]
@@ -99,7 +110,7 @@ def calibrate(interpolator, md, roiSize=5):
     rawMeas['xp'] = xp + dx
     rawMeas['yp'] = yp + dy
     
-    _svr = svm.SVR(C=1)
+    _svr = svm.SVR(C=1000)
     _svr.fit(feat.T, z)
 
     sp, u = splprep([xp], u=z, s=1)
@@ -130,11 +141,12 @@ def calibrate(interpolator, md, roiSize=5):
 
 def _calcParams(data, X, Y):
     """calculates the \sigma_x - \sigma_y term used for z position estimation"""
-    A = data.sum(1).sum(0) - data.min(1).min(0) #amplitude
+    A = (data - data.min(1).min(0)[None,None,:]).sum(1).sum(0) #amplitude
     A_ = data.max(1).max(0) - data.min(1).min(0)
     
     #threshold at half maximum and subtract threshold
     dr = numpy.maximum(data - data.min(1).min(0) - 0.2*A_[None,None, :], 0).squeeze()
+    dr = numpy.maximum(data - data.mean(1).mean(0), 0)#.squeeze()
     #dr = (data - data.mean()).squeeze()
     
     if len(A) == 2:
@@ -209,8 +221,8 @@ def getStartParameters(data, X, Y, Z=None):
 
     #correct position & intensity estimates for z position
     #A = A/splev(z0, splines['A'])[0]
-    x0 = x0 - splev(z0, splines['xp'])[0]
-    y0 = y0 - splev(z0, splines['yp'])[0]
+    #x0 = x0 - splev(z0, splines['xp'])[0]
+    #y0 = y0 - splev(z0, splines['yp'])[0]
 
     b = data.min()
     
