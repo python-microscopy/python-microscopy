@@ -276,7 +276,9 @@ def widefield_pupil_and_propagator(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA=
     """
     
     if X is None or Y is None:
-        X, Y = np.meshgrid(np.arange(-2000, 2000., dx),np.arange(-2000, 2000., dx))
+        xs, ys, zs = kwargs.get('output_shape', (61, 61, 61))
+        
+        X, Y = np.meshgrid(float(dx)*(np.arange(xs) - np.floor(xs/2)),float(dx)*(np.arange(ys) - np.floor(ys/2)))
     else:
         X, Y = np.meshgrid(X,Y)
     
@@ -590,6 +592,25 @@ def GenZernikeDPSF(zs, zernikeCoeffs = {}, beadsize=0, **kwargs):
         
     F = F*np.exp(-1j*ang)
         
+    return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=F, zs=zs, **kwargs)
+
+
+def GenZernikeDonutPSF(zs, zernikeCoeffs={}, beadsize=0, spiral_amp=1.0, **kwargs):
+    from PYME.misc import zernike
+    X, Y, R, FP, F, u, v = widefield_pupil_and_propagator(**kwargs)
+    
+    theta = np.angle(X + 1j * Y)
+    r = R / R[abs(F) > 0].max()
+    
+    ang = 0
+    
+    for i, c in zernikeCoeffs.items():
+        ang = ang + c * zernike.zernike(i, r, theta)
+        
+    ang = ang + spiral_amp*theta
+    
+    F = F * np.exp(-1j * ang)
+    
     return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=F, zs=zs, **kwargs)
         
         
