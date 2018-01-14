@@ -77,6 +77,7 @@ class BufferManager(object):
         
     def updateBuffers(self, md, dataSourceModule, bufferLen):
         """Update the various buffers. """
+        global _gpu_buffer
         if dataSourceModule is None:
             #if the data source module is not specified, guess based on data source ID
             import PYME.IO.DataSources
@@ -91,8 +92,15 @@ class BufferManager(object):
         
         #fix our background buffers
         if md.getOrDefault('Analysis.PCTBackground', 0) > 0:
-            if not isinstance(self.bBuffer, buffers.backgroundBufferM):
-                self.bBuffer = buffers.backgroundBufferM(self.dBuffer, md['Analysis.PCTBackground'])
+            if not _gpu_buffer or isinstance(self.bBuffer, buffers.backgroundBufferM):
+                try:  # use the GPU-accelerated percentile buffer, if available
+                    from warpDrive.buffers import Buffer
+                    if not _gpu_buffer:
+                        _gpu_buffer = Buffer(self.dBuffer, md['Analysis.PCTBackground'], dark_map=cameraMaps.getDarkMap(md))
+                        self.bBuffer = _gpu_buffer
+
+                except ImportError:
+                    self.bBuffer = buffers.backgroundBufferM(self.dBuffer, md['Analysis.PCTBackground'])
             else:
                 self.bBuffer.pctile = md['Analysis.PCTBackground']
         else:
@@ -103,6 +111,8 @@ class BufferManager(object):
 
 #instance of our buffer manager
 bufferManager = BufferManager()
+# instance of GPU buffer
+_gpu_buffer = None
 
 class CameraInfoManager(object):
     """Manages camera information such as dark frames, variance maps, and flatfielding"""
@@ -460,7 +470,11 @@ class fitTask(taskDef.Task):
         #calculate background
         self.bg = 0
         if not len(self.bgindices) == 0:
-            self.bg = cameraMaps.correctImage(md, bufferManager.bBuffer.getBackground(self.bgindices)).reshape(self.data.shape)
+            if hasattr(bufferManager.bBuffer, 'calc_background') and 'GPU_BUFFER_READY' in dir(self.fitMod):
+                bufferManager.bBuffer.calc_background(self.bgindices)
+                self.bg = bufferManager.bBuffer  # NB - GPUFIT flag means the fit can handle an asynchronous background calculation
+            else:
+                self.bg = cameraMaps.correctImage(md, bufferManager.bBuffer.getBackground(self.bgindices)).reshape(self.data.shape)
 
         #calculate noise
         self.sigma = self.calcSigma(md, self.data)

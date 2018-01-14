@@ -87,7 +87,10 @@ class GaussianFitFactory:
         self.data = np.squeeze(data).astype(np.float32)  # np.ascontiguousarray(np.squeeze(data), dtype=np.float32)
         self.metadata = metadata
 
-        self.background = np.squeeze(background)  # if not none, will be set to contiguous float32 inside of detector class method
+        try:
+            self.background = background.squeeze()  # will be set to contiguous float32 inside of detector class method
+        except AttributeError:
+            self.background = background  # it's a buffer!
         self.noiseSigma = noiseSigma
         self.fitfcn = fitfcn
 
@@ -123,8 +126,11 @@ class GaussianFitFactory:
 
         ### Undo the flatfielding we did in remFitBuf: (img.astype('f')-dk)*flat
         self.data = self.data/self.flatmap  # no conversion here, flatmap normed so data still in [ADU]
-        if self.background is not None:  # flatfielding is also done on moving-averaged background
+        # if self.background is not None:  # flatfielding is also done on moving-averaged background
+        try:
             self.background = self.background/self.flatmap  # no conversion here, flatmap normed so data still in [ADU]
+        except TypeError:
+            pass  # buffer object will fail
 
         # Account for any changes we need to make in memory allocation on the GPU
         if not _warpDrive:
@@ -292,9 +298,12 @@ FitFactory = GaussianFitFactory
 FitResult = GaussianFitResultR
 FitResultsDType = fresultdtype  #only defined if returning data as numarray
 
-#this means that factory is reponsible for it's own object finding and implements
+#this means that factory is responsible for it's own object finding and implements
 #a GetAllResults method that returns a list of localisations
 MULTIFIT=True
+# GPU_BUFFER_READY means this factory can accept a GPU buffer object to reduce data transfers.
+# TODO - differ correctImage(data) call from remFitBuf to GPU fit factory with this same flag
+GPU_BUFFER_READY=True
 
 import PYME.localization.MetaDataEdit as mde
 

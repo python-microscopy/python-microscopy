@@ -840,7 +840,10 @@ class LMAnalyser2(object):
                 #imshow()
             except AttributeError:
                 #d = self.image.data[:,:,zp].squeeze().T
-                d = (ft.data - ft.bg).squeeze().T
+                try:
+                    d = (ft.data - ft.bg).squeeze().T
+                except TypeError:
+                    d = (ft.data - ft.bg.get_background().reshape(ft.data.shape)).squeeze().T
                 imshow(d, cmap=cm.jet, interpolation='nearest', clim = [0, d.max()])
                 xlim(0, d.shape[1])
                 ylim(d.shape[0], 0)
