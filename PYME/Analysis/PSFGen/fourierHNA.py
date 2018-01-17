@@ -280,6 +280,7 @@ def widefield_pupil_and_propagator(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA=
         
         X, Y = np.meshgrid(float(dx)*(np.arange(xs) - np.floor(xs/2)),float(dx)*(np.arange(ys) - np.floor(ys/2)))
     else:
+        dx = X[1] - X[0]
         X, Y = np.meshgrid(X,Y)
     
     X = X - X.mean()
@@ -432,8 +433,32 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters=50, size=5e3, inte
 ##################
 # Generating PSFs from pupils
 
-def PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47, vectorial=False, apodization='sine', ns = None, output_shape=None,**kwargs):
+def _gen_bead_pupil(X, Y, beadsize):
+    r2 = X*X + Y*Y
+
+    dx = X[1, 0] - X[0, 0]
+    
+    bead_proj = np.sqrt(np.maximum(beadsize*beadsize - (r2 - dx*dx), 0))
+
+    return abs(fftshift(fftn(bead_proj)))
+
+_bead_cache = {}
+
+def get_bead_pupil(X, Y, beadsize):
+    dx = X[1, 0] - X[0, 0]
+    bp = _bead_cache.get((X.shape, dx, beadsize), None)
+    
+    if bp is None:
+        bp = _gen_bead_pupil(X, Y, beadsize)
+        _bead_cache[(X.shape, dx, beadsize)] = bp
+    
+    return bp
+
+def PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47, vectorial=False, apodization='sine', ns = None, output_shape=None, beadsize=0,**kwargs):
     pupil = pupil*_apodization_function(R, NA, n, apodization, ns=ns)
+    
+    if beadsize > 0:
+        pupil = pupil*get_bead_pupil(X, Y, beadsize)
         
     if vectorial:
         phi = np.angle(u + 1j * v)
@@ -536,6 +561,9 @@ def PsfFromPupilVect(pupil, zs, dx, shape=[61, 61], **kwargs):
 
 def GenWidefieldPSF(zs, **kwargs):
     X, Y, R, FP, pupil, u, v = widefield_pupil_and_propagator(**kwargs)
+    
+    kwargs.pop('X', None)
+    kwargs.pop('Y', None)
 
     return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=pupil, zs=zs, **kwargs)
 
@@ -578,9 +606,12 @@ def GenZernikePSF(zs, zernikeCoeffs = [], **kwargs):
     return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=pupil, zs=zs, **kwargs)
     
     
-def GenZernikeDPSF(zs, zernikeCoeffs = {}, beadsize=0, **kwargs):
+def GenZernikeDPSF(zs, zernikeCoeffs = {}, **kwargs):
     from PYME.misc import zernike
     X, Y, R, FP, F, u, v = widefield_pupil_and_propagator(**kwargs)
+
+    kwargs.pop('X', None)
+    kwargs.pop('Y', None)
     
     theta = np.angle(X + 1j*Y)
     r = R/R[abs(F)>0].max()
@@ -595,9 +626,11 @@ def GenZernikeDPSF(zs, zernikeCoeffs = {}, beadsize=0, **kwargs):
     return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=F, zs=zs, **kwargs)
 
 
-def GenZernikeDonutPSF(zs, zernikeCoeffs={}, beadsize=0, spiral_amp=1.0, **kwargs):
+def GenZernikeDonutPSF(zs, zernikeCoeffs={}, spiral_amp=1.0, **kwargs):
     from PYME.misc import zernike
     X, Y, R, FP, F, u, v = widefield_pupil_and_propagator(**kwargs)
+    kwargs.pop('X', None)
+    kwargs.pop('Y', None)
     
     theta = np.angle(X + 1j * Y)
     r = R / R[abs(F) > 0].max()

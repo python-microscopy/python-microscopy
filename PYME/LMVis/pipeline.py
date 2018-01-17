@@ -801,6 +801,9 @@ class Pipeline:
     def save_hdf(self, filename):
         self.colourFilter.to_hdf(filename, tablename='Localizations', metadata=self.mdh)
         
+    def to_recarray(self, keys=None):
+        return self.colourFilter.to_recarray(keys=keys)
+        
     def toDataFrame(self, keys=None):
         import pandas as pd
         if keys is None:
