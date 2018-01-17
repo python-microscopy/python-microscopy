@@ -75,7 +75,7 @@ class TabularBase(object):
             keys = self.keys()
 
         columns = [self.__getitem__(k) for k in keys]
-        dt = [(k, v.dtype) for k, v in zip(keys, columns)]
+        dt = [(k, v.dtype, v.shape[1:]) for k, v in zip(keys, columns)]
         return records.fromarrays(columns, names=keys, dtype=dt)
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
