@@ -92,14 +92,16 @@ class BufferManager(object):
         
         #fix our background buffers
         if md.getOrDefault('Analysis.PCTBackground', 0) > 0:
-            if not _gpu_buffer or isinstance(self.bBuffer, buffers.backgroundBufferM):
-                try:  # use the GPU-accelerated percentile buffer, if available
-                    from warpDrive.buffers import Buffer
-                    if not _gpu_buffer:
-                        _gpu_buffer = Buffer(self.dBuffer, md['Analysis.PCTBackground'], dark_map=cameraMaps.getDarkMap(md))
-                        self.bBuffer = _gpu_buffer
-
+            if not isinstance(self.bBuffer, buffers.backgroundBufferM):
+                try:
+                    from warpDrive.buffers import Buffer as GPUPercentileBuffer
+                    HAVE_GPU_PCT_BUFFER = True
                 except ImportError:
+                    HAVE_GPU_PCT_BUFFER = False
+                
+                 if (HAVE_GPU_PCT_BUFFER and md.getOrDefault('Analysis.GPUPCTBackground', False)):    
+                    self.bBuffer = GPUPercentileBuffer(self.dBuffer, md['Analysis.PCTBackground'], dark_map=cameraMaps.getDarkMap(md))
+                else:        
                     self.bBuffer = buffers.backgroundBufferM(self.dBuffer, md['Analysis.PCTBackground'])
             else:
                 self.bBuffer.pctile = md['Analysis.PCTBackground']
@@ -111,8 +113,6 @@ class BufferManager(object):
 
 #instance of our buffer manager
 bufferManager = BufferManager()
-# instance of GPU buffer
-_gpu_buffer = None
 
 class CameraInfoManager(object):
     """Manages camera information such as dark frames, variance maps, and flatfielding"""
