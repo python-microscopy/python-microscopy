@@ -77,7 +77,6 @@ class BufferManager(object):
         
     def updateBuffers(self, md, dataSourceModule, bufferLen):
         """Update the various buffers. """
-        global _gpu_buffer
         if dataSourceModule is None:
             #if the data source module is not specified, guess based on data source ID
             import PYME.IO.DataSources
