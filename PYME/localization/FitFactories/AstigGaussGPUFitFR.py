@@ -312,6 +312,7 @@ PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpol
               #mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
               #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
               mde.FloatParam('Analysis.ROISize', u'ROI half size', 7.5),
+              mde.BoolParam('Analysis.GPUPCTBackground', 'Calculate percentile background on GPU', True),
               #mde.FloatParam('Analysis.ResidualMax', 'Max residual:', 0.25),
               #mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
               #mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])
