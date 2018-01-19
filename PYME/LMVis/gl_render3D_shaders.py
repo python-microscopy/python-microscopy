@@ -117,6 +117,8 @@ class LMGLShaderCanvas(GLCanvas):
         self._scaleBarLength = 1000
 
         self.centreCross = False
+        
+        self.clear_colour = [0,0,0,1.0]
 
         self.LUTDraw = True
 
@@ -262,6 +264,8 @@ class LMGLShaderCanvas(GLCanvas):
     def OnDraw(self):
         self.interlace_stencil()
         glEnable(GL_DEPTH_TEST)
+        
+        glClearColor(*self.clear_colour)
         glClear(GL_COLOR_BUFFER_BIT)
 
         # print 'od'

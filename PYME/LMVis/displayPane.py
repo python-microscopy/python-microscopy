@@ -395,12 +395,26 @@ class DisplayPaneHorizontal(wx.Panel):
         chScaleBar = wx.Choice(self, -1, choices=list(self.scaleBarLengths.keys()))
         chScaleBar.SetSelection(chInd)
         hsizer.Add(chScaleBar, 0, wx.RIGHT | wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        hsizer.AddSpacer(10)
+
+        #Background colour
+
+        hsizer.Add(wx.StaticText(self, -1, 'BG Colour: '), 0, wx.LEFT | wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL,5)
+
+        colour_ctrl = wx.ColourPickerCtrl(self)
+        colour_ctrl.Bind(wx.EVT_COLOURPICKER_CHANGED, self.OnColourChanged)
+        hsizer.Add(colour_ctrl, 0, wx.RIGHT | wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER_VERTICAL, 5)
         
         self.SetSizerAndFit(hsizer)
         
         #self._pnl.AddFoldPanelWindow(self, pan, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         
         chScaleBar.Bind(wx.EVT_CHOICE, self.OnChangeScaleBar)
+        
+    def OnColourChanged(self, event):
+        self.glCanvas.clear_colour = np.array(event.GetColour().Get(True))/255.
+        self.glCanvas.Refresh()
     
     def OnLUTDrawCB(self, event):
         self.glCanvas.LUTDraw = event.IsChecked()
