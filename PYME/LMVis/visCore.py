@@ -123,8 +123,13 @@ class VisGUICore(object):
             self.SetFit()
             
             if self._new_layers:
-                l = self.add_layer(method='points')
-                l.engine.set(vertexColour='t')
+                pass
+                # if self.pipeline.ready and not len(self.layers) > 0:
+                #     l = self.add_layer(method='points')
+                #     if 't' in self.pipeline.keys():
+                #         l.engine.set(vertexColour='t')
+                #     elif 'z' in self.pipeline.keys():
+                #         l.engine.set(vertexColour='t')
             else:
                 self.RefreshView()
                 self.displayPane.OnPercentileCLim(None)
@@ -392,6 +397,9 @@ class VisGUICore(object):
         
     def RefreshView(self, event=None, **kwargs):
         #self.CreateFoldPanel()
+        if not self.pipeline.ready:
+            return #get out of here
+        
         if self._new_layers:
             #refresh view no longer updates the display
             
@@ -399,8 +407,7 @@ class VisGUICore(object):
             self.glCanvas.zc = self.pipeline['z'].mean()
             return
         
-        if not self.pipeline.ready:
-            return #get out of here
+        
 
         self.filterPane.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
 
@@ -582,6 +589,15 @@ class VisGUICore(object):
         exposed / used when called from within a dsviewer module."""
         logger.debug('Calling AddMenuItem from visCore')
         self.dsviewer.AddMenuItem('Points>' + menuName, *args, **kwargs)
+        
+    def _create_base_layer(self):
+        if self.glCanvas._is_initialized and self._new_layers and len(self.layers) == 0:
+            #add a new layer
+            l = self.add_layer(method='points')
+            if 't' in self.pipeline.keys():
+                l.engine.set(vertexColour='t')
+            elif 'z' in self.pipeline.keys():
+                l.engine.set(vertexColour='z')
 
     def OpenFile(self, filename):
         args = {}
@@ -634,9 +650,9 @@ class VisGUICore(object):
         self.pipeline.OpenFile(filename, **args)
         print('Pipeline Created')
         
-        
         #############################
         #now do all the gui stuff
+        
         if isinstance(self, wx.Frame):
             #run this if only we are the main frame
             self.SetTitle('PYME Visualise - ' + filename)
@@ -648,5 +664,6 @@ class VisGUICore(object):
         
         self.SetFit()
         
+        wx.CallLater(100, self._create_base_layer)
         #wx.CallAfter(self.RefreshView)
         

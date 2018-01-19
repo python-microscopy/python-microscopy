@@ -36,17 +36,17 @@ class LayerPane(afp.foldingPane):
             
         vsizer.Add(self.nb, 1, wx.ALL|wx.EXPAND, 0)
         
-        #bAddLayer = wx.Button(pan, -1, 'New', style=wx.BU_EXACTFIT)
-        #bAddLayer.Bind(wx.EVT_BUTTON, lambda e : self.visFr.add_layer())
+        bAddLayer = wx.Button(pan, -1, 'New', style=wx.BU_EXACTFIT)
+        bAddLayer.Bind(wx.EVT_BUTTON, lambda e : self.visFr.add_layer())
         
-        #vsizer.Add(bAddLayer, 0, wx.ALIGN_CENTRE, 0)
+        vsizer.Add(bAddLayer, 0, wx.ALIGN_CENTRE, 0)
         
         pan.SetSizerAndFit(vsizer)
         self.AddNewElement(pan)
         
         self.visFr.layer_added.connect(self.update)
         
-        self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
+        #self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
         
     def update(self, *args, **kwargs):
         self.nb.DeleteAllPages()
@@ -54,14 +54,14 @@ class LayerPane(afp.foldingPane):
             page = layer.edit_traits(parent=self.nb, kind='subpanel')
             self.nb.AddPage(page.control, 'Layer %d' % i)
             
-        self.nb.AddPage(wx.Panel(self.nb), 'New', imageId=0)
+        #self.nb.AddPage(wx.Panel(self.nb), 'New', imageId=0)
         
-    def on_page_changed(self, event):
-        if event.GetSelection() == (self.nb.GetPageCount() -1):
-            #We have selected the 'new' page
-            
-            wx.CallAfter(self.visFr.add_layer)
-        else:
-            event.Skip()
+    # def on_page_changed(self, event):
+    #     if event.GetSelection() == (self.nb.GetPageCount() -1):
+    #         #We have selected the 'new' page
+    #
+    #         wx.CallAfter(self.visFr.add_layer)
+    #     else:
+    #         event.Skip()
         
         
