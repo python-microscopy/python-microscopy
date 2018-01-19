@@ -123,7 +123,8 @@ class VisGUICore(object):
             self.SetFit()
             
             if self._new_layers:
-                self.add_layer(method='points')
+                l = self.add_layer(method='points')
+                l.engine.set(vertexColour='t')
             else:
                 self.RefreshView()
                 self.displayPane.OnPercentileCLim(None)
@@ -235,24 +236,27 @@ class VisGUICore(object):
             self.AddMenuItem('File', "&Exit", self.OnQuit,id = wx.ID_EXIT)
 
 
-        self.AddMenuItem('View', '&Points', self.OnViewPoints, itemType='normal') #TODO - add radio type
-        if use_shaders:
-            self.AddMenuItem('View', '&Pointsprites', self.OnViewPointsprites)
-            self.AddMenuItem('View', '&Shaded Points', self.OnViewShadedPoints)
-        self.AddMenuItem('View',  '&Triangles', self.OnViewTriangles)
-        self.AddMenuItem('View', '3D Triangles', self.OnViewTriangles3D)
-        self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
-        if not use_shaders:
-            self.AddMenuItem('View', '&Voronoi', self.OnViewVoronoi)
-            self.AddMenuItem('View', '&Interpolated Triangles', self.OnViewInterpTriangles)
-            self.AddMenuItem('View', '&Blobs', self.OnViewBlobs)
-            self.AddMenuItem('View', '&Tracks', self.OnViewTracks)
-
-
-        #self.view_menu.Check(ID_VIEW_POINTS, True)
-        #self.view_menu.Enable(ID_VIEW_QUADS, False)
-
-        self.AddMenuItem('View', itemType='separator')
+        if not PYME.config.get('VisGUI-new_layers', False):
+            self.AddMenuItem('View', '&Points', self.OnViewPoints, itemType='normal') #TODO - add radio type
+            if use_shaders:
+                self.AddMenuItem('View', '&Pointsprites', self.OnViewPointsprites)
+                self.AddMenuItem('View', '&Shaded Points', self.OnViewShadedPoints)
+            
+            self.AddMenuItem('View',  '&Triangles', self.OnViewTriangles)
+            self.AddMenuItem('View', '3D Triangles', self.OnViewTriangles3D)
+            self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
+            if not use_shaders:
+                self.AddMenuItem('View', '&Voronoi', self.OnViewVoronoi)
+                self.AddMenuItem('View', '&Interpolated Triangles', self.OnViewInterpTriangles)
+                self.AddMenuItem('View', '&Blobs', self.OnViewBlobs)
+                self.AddMenuItem('View', '&Tracks', self.OnViewTracks)
+    
+    
+            #self.view_menu.Check(ID_VIEW_POINTS, True)
+            #self.view_menu.Enable(ID_VIEW_QUADS, False)
+    
+            self.AddMenuItem('View', itemType='separator')
+        
         self.AddMenuItem('View', '&Fit', self.SetFit)
         self.AddMenuItem('View', 'Fit &ROI', self.OnFitROI)
 
@@ -373,9 +377,9 @@ class VisGUICore(object):
         logger.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
         self.pipeline.Rebuild()
         
-    def add_layer(self, method='points', ds_name=''):
+    def add_layer(self, method='points', ds_name='', **method_args):
         from .layer_wrapper import LayerWrapper
-        l = LayerWrapper(self.pipeline, method=method, ds_name=ds_name)
+        l = LayerWrapper(self.pipeline, method=method, ds_name=ds_name, method_args = method_args)
         self.glCanvas.layers.append(l)
         l.on_update.connect(self.glCanvas.refresh)
         

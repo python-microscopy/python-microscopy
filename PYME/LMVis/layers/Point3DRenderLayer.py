@@ -35,7 +35,7 @@ class Point3DRenderLayer(VertexRenderLayer):
         self.set_shader_program(DefaultShaderProgram)
 
     def render(self, gl_canvas):
-        with self.get_shader_program():
+        with self.shader_program:
 
             n_vertices = self.get_vertices().shape[0]
 
