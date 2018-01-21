@@ -98,7 +98,7 @@ class BufferManager(object):
                 except ImportError:
                     HAVE_GPU_PCT_BUFFER = False
                 
-                 if (HAVE_GPU_PCT_BUFFER and md.getOrDefault('Analysis.GPUPCTBackground', False)):    
+                if (HAVE_GPU_PCT_BUFFER and md.getOrDefault('Analysis.GPUPCTBackground', False)):
                     self.bBuffer = GPUPercentileBuffer(self.dBuffer, md['Analysis.PCTBackground'], dark_map=cameraMaps.getDarkMap(md))
                 else:        
                     self.bBuffer = buffers.backgroundBufferM(self.dBuffer, md['Analysis.PCTBackground'])
