@@ -81,16 +81,30 @@ class GaussianFitFactory:
     Y = None
 
     def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None):
-        """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
-        metadata. """
+        """
+
+        Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
+        metadata.
+
+        Parameters
+        ----------
+        data : numpy.ndarray
+        metadata : PYME.IO.MetaDataHandler.MDHandlerBase or derived class
+        fitfcn : dummy variable
+            Not used in this fit factory
+        background : numpy.ndarray or warpDrive.buffers.Buffer
+            warpDrive.buffers.Buffer allows asynchronous estimation of the per-pixel background on the GPU.
+        noiseSigma : numpy.ndarray
+            (over-)estimate of the noise level at each pixel (see fitTask.calcSigma in remFitBuf.py)
+        """
 
         self.data = np.squeeze(data).astype(np.float32)  # np.ascontiguousarray(np.squeeze(data), dtype=np.float32)
         self.metadata = metadata
 
-        try:
+        if isinstance(background, np.ndarray):
             self.background = background.squeeze()  # will be set to contiguous float32 inside of detector class method
-        except AttributeError:
-            self.background = background  # it's a buffer!
+        else:  # it's a buffer!
+            self.background = background
         self.noiseSigma = noiseSigma
         self.fitfcn = fitfcn
 
@@ -127,10 +141,11 @@ class GaussianFitFactory:
         ### Undo the flatfielding we did in remFitBuf: (img.astype('f')-dk)*flat
         self.data = self.data/self.flatmap  # no conversion here, flatmap normed so data still in [ADU]
         # if self.background is not None:  # flatfielding is also done on moving-averaged background
-        try:
+        if isinstance(self.background, np.ndarray):
             self.background = self.background/self.flatmap  # no conversion here, flatmap normed so data still in [ADU]
-        except TypeError:
-            pass  # buffer object will fail
+        else:
+            # if self.background is a buffer, the background is already on the GPU and has not been flatfielded
+            pass
 
         # Account for any changes we need to make in memory allocation on the GPU
         if not _warpDrive:
