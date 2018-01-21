@@ -99,10 +99,16 @@ class BufferManager(object):
                     HAVE_GPU_PCT_BUFFER = False
                 
                 if (HAVE_GPU_PCT_BUFFER and md.getOrDefault('Analysis.GPUPCTBackground', False)):
+                    # calculate percentile buffer on the GPU. Only applies if warpDrive module is available AND we explcitly ask for the GPU version
+                    # NB: The GPU version should result in a uniform background but will NOT completely remove the background. As such it will only work 
+                    # for fits which have a constant background as a fit parameter, and not those which assume that background subtraction reduces the 
+                    # background to zero (as is the case for our CPU based background estimation). Use with caution.
                     self.bBuffer = GPUPercentileBuffer(self.dBuffer, md['Analysis.PCTBackground'], dark_map=cameraMaps.getDarkMap(md))
-                else:        
+                else: 
+                    # use our default CPU implementation
                     self.bBuffer = buffers.backgroundBufferM(self.dBuffer, md['Analysis.PCTBackground'])
             else:
+                # we already have a percentile buffer - just change the settings. TODO - Does this need to change to reflect introduction of GPU based buffering?
                 self.bBuffer.pctile = md['Analysis.PCTBackground']
         else:
             if not isinstance(self.bBuffer, buffers.backgroundBuffer):
