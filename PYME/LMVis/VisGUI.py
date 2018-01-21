@@ -162,18 +162,18 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.CreateFoldPanel()
 
         if not filename is None:
-            self.OpenFile(filename)
+            wx.CallLater(50,self.OpenFile,filename)
             #self.refv = False
 
-            recipe = getattr(self.cmd_args, 'recipe', None)
-            print('Using recipe: %s' % recipe)
-            if recipe:
-                from PYME.recipes import modules
-                self.pipeline.recipe.update_from_yaml(recipe)
-                self.recipeView.SetRecipe(self.pipeline.recipe)
-                self.set_datasource_choices()
-            
-            wx.CallAfter(self.RefreshView)
+        recipe = getattr(self.cmd_args, 'recipe', None)
+        print('Using recipe: %s' % recipe)
+        if recipe:
+            from PYME.recipes import modules
+            self.pipeline.recipe.update_from_yaml(recipe)
+            self.recipeView.SetRecipe(self.pipeline.recipe)
+            self.set_datasource_choices()
+        
+        wx.CallAfter(self.RefreshView)
 
         nb = self._mgr.GetNotebooks()[0]
         nb.SetSelection(0)
@@ -260,36 +260,47 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     def notebook(self):
         return self._mgr.GetNotebooks()[0]
             
+    # def _removeOldTabs(self):
+    #     if not self.elv is None: #remove previous event viewer
+    #         i = 0
+    #         found = False
+    #         while not found and i < self.notebook.GetPageCount():
+    #             if self.notebook.GetPage(i) == self.elv:
+    #                 self.notebook.DeletePage(i)
+    #                 found = True
+    #             else:
+    #                 i += 1
+    #
+    #     if not self.colp is None: #remove previous colour viewer
+    #         i = 0
+    #         found = False
+    #         while not found and i < self.notebook.GetPageCount():
+    #             if self.notebook.GetPage(i) == self.colp:
+    #                 self.notebook.DeletePage(i)
+    #                 found = True
+    #             else:
+    #                 i += 1
+    #
+    #     if not self.mdp is None: #remove previous metadata viewer
+    #         i = 0
+    #         found = False
+    #         while not found and i < self.notebook.GetPageCount():
+    #             if self.notebook.GetPage(i) == self.mdp:
+    #                 self.notebook.DeletePage(i)
+    #                 found = True
+    #             else:
+    #                 i += 1
+
     def _removeOldTabs(self):
-        if not self.elv is None: #remove previous event viewer
-            i = 0
-            found = False
-            while not found and i < self.notebook.GetPageCount():
-                if self.notebook.GetPage(i) == self.elv:
-                    self.notebook.DeletePage(i)
-                    found = True
-                else:
-                    i += 1
-                    
-        if not self.colp is None: #remove previous colour viewer
-            i = 0
-            found = False
-            while not found and i < self.notebook.GetPageCount():
-                if self.notebook.GetPage(i) == self.colp:
-                    self.notebook.DeletePage(i)
-                    found = True
-                else:
-                    i += 1
-                    
-        if not self.mdp is None: #remove previous metadata viewer
-            i = 0
-            found = False
-            while not found and i < self.notebook.GetPageCount():
-                if self.notebook.GetPage(i) == self.mdp:
-                    self.notebook.DeletePage(i)
-                    found = True
-                else:
-                    i += 1
+        self.DeletePage(self.elv)
+        self.elv = None
+    
+        self.DeletePage(self.colp)
+        self.colp = None
+        
+        self.DeletePage(self.mdp)
+        self.mdp = None
+        
                     
     def _createNewTabs(self):
         #print 'md'

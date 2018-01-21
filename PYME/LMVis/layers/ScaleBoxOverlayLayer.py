@@ -123,7 +123,7 @@ class ScaleBoxOverlayLayer(OverlayLayer):
 
     def render(self, gl_canvas):
         if self._show:
-            with self.get_shader_program():
+            with self.shader_program:
                 glDisable(GL_LIGHTING)
                 glColor4fv(self._color)
 
