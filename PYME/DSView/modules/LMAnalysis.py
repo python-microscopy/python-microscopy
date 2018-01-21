@@ -840,9 +840,14 @@ class LMAnalyser2(object):
                 #imshow()
             except AttributeError:
                 #d = self.image.data[:,:,zp].squeeze().T
-                try:
+                if isinstance(ft.bg, np.ndarray):
                     d = (ft.data - ft.bg).squeeze().T
-                except TypeError:
+                else:
+                    # NB - in this case the background will not have been flatfielded
+                    # bg.get_background() is a call to the GPU-based background buffer available in PYME warpDrive. This
+                    # allows us to return the finished background calculation to the CPU, since it is by default
+                    # calculated and then left on the GPU for future calculations.
+                    # TODO - document GPU background interface via creating a base class in PYME.IO.buffers
                     d = (ft.data - ft.bg.get_background().reshape(ft.data.shape)).squeeze().T
                 imshow(d, cmap=cm.jet, interpolation='nearest', clim = [0, d.max()])
                 xlim(0, d.shape[1])
