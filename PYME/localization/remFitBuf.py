@@ -476,9 +476,17 @@ class fitTask(taskDef.Task):
         self.bg = 0
         if not len(self.bgindices) == 0:
             if hasattr(bufferManager.bBuffer, 'calc_background') and 'GPU_BUFFER_READY' in dir(self.fitMod):
+                # special case to support GPU based percentile background calculation. In this case we simply update the frame range the buffer needs
+                # to look at and leave the buffer on the GPU. self.bg is then a proxy for the GPU background buffer rather than being the background data itself.
+                # NB: this has the consequence that the background estimate is not subjected to dark and flat-field corrections, potentially making it unsuitable
+                # for fits that are not specifically constructed to deal with uncorrected data.
                 bufferManager.bBuffer.calc_background(self.bgindices)
                 self.bg = bufferManager.bBuffer  # NB - GPUFIT flag means the fit can handle an asynchronous background calculation
+                
+                # TODO - due to the way the GPU fits in warpDrive works (undoing our flatfielding corrections), it would make sense to have a special case 
+                # before the data correction 
             else:
+                # the "normal" way - calculate the background for this frame and correct this for camera characteristics
                 self.bg = cameraMaps.correctImage(md, bufferManager.bBuffer.getBackground(self.bgindices)).reshape(self.data.shape)
 
         #calculate noise
