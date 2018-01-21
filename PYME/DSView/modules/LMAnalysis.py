@@ -841,14 +841,21 @@ class LMAnalyser2(object):
             except AttributeError:
                 #d = self.image.data[:,:,zp].squeeze().T
                 if isinstance(ft.bg, np.ndarray):
+                    # We expect our background estimate to take the form of a numpy array, correct our data by subtracting the background
                     d = (ft.data - ft.bg).squeeze().T
-                else:
-                    # NB - in this case the background will not have been flatfielded
-                    # bg.get_background() is a call to the GPU-based background buffer available in PYME warpDrive. This
-                    # allows us to return the finished background calculation to the CPU, since it is by default
-                    # calculated and then left on the GPU for future calculations.
+                elif hasattr(ft.bg, 'get_background'):
+                    # To support GPU background calculation and to minimize the number of CPU-GPU transfers, our background estimate can instead be
+                    # a proxy for a background buffer on the GPU. During fitting this will usually be accessed directly from the GPU fitting code, but in
+                    # this case (when displaying the data we fitted) we need to get at it from our CPU code using the `get_background` method of the proxy.
+                    # 
+                    # NB - the background returned by `get_background()` will not have been flatfielded. As this is just display code we ignore this,
+                    # but any computational code should perform flatfielding correction on the results of the get_background call.
+                    # 
                     # TODO - document GPU background interface via creating a base class in PYME.IO.buffers
                     d = (ft.data - ft.bg.get_background().reshape(ft.data.shape)).squeeze().T
+                else:
+                    raise RuntimeError('Background format not understood')
+                    
                 imshow(d, cmap=cm.jet, interpolation='nearest', clim = [0, d.max()])
                 xlim(0, d.shape[1])
                 ylim(d.shape[0], 0)
