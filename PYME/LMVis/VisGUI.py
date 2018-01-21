@@ -162,22 +162,25 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.CreateFoldPanel()
 
         if not filename is None:
-            wx.CallLater(50,self.OpenFile,filename)
+    
+            def _recipe_callback():
+                recipe = getattr(self.cmd_args, 'recipe', None)
+                print('Using recipe: %s' % recipe)
+                if recipe:
+                    from PYME.recipes import modules
+                    self.pipeline.recipe.update_from_yaml(recipe)
+                    self.recipeView.SetRecipe(self.pipeline.recipe)
+                    self.set_datasource_choices()
+            
+            wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)
             #self.refv = False
-
-        recipe = getattr(self.cmd_args, 'recipe', None)
-        print('Using recipe: %s' % recipe)
-        if recipe:
-            from PYME.recipes import modules
-            self.pipeline.recipe.update_from_yaml(recipe)
-            self.recipeView.SetRecipe(self.pipeline.recipe)
-            self.set_datasource_choices()
         
         wx.CallAfter(self.RefreshView)
 
         nb = self._mgr.GetNotebooks()[0]
         nb.SetSelection(0)
         
+    
 
     def OnMove(self, event):
         self.Refresh()

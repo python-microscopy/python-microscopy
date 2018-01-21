@@ -599,7 +599,7 @@ class VisGUICore(object):
             elif 'z' in self.pipeline.keys():
                 l.engine.set(vertexColour='z')
 
-    def OpenFile(self, filename):
+    def OpenFile(self, filename, recipe_callback=None):
         args = {}
         
         if os.path.splitext(filename)[1] =='.h5r':
@@ -662,7 +662,11 @@ class VisGUICore(object):
             self.CreateFoldPanel()
             print('Gui stuff done')
         
+        if recipe_callback:
+            recipe_callback()
+            
         self.SetFit()
+        
         
         wx.CallLater(100, self._create_base_layer)
         #wx.CallAfter(self.RefreshView)
