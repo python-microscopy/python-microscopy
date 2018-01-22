@@ -37,6 +37,14 @@ class BaseLayer(HasTraits):
     
     def set_shader_program(self, shader_program):
         self._shader_program = ShaderProgramFactory.get_program(shader_program)
+        
+    @property
+    def bbox(self):
+        """Bounding box in form [x0,y0,z0, x1,y1,z1] (or none if a bounding box does not make sense for this layer)
+        
+        over-ride in derived classes
+        """
+        return None
 
     @property
     def shader_program(self):

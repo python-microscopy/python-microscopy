@@ -158,6 +158,7 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.layers = []
         self.overlays = []
+        self.underlays = [] #draw these before data (assuming depth-testing is disabled)
 
         self.wantViewChangeNotification = WeakSet()
         self.pointSelectionCallbacks = []
@@ -189,17 +190,46 @@ class LMGLShaderCanvas(GLCanvas):
         else:
             self.OnDraw()
         return
+    
+    @property
+    def bbox(self):
+        """ Bounding box in format [x0,y0,z0, x1, y1, z1]
+        
+        Calculated as the spanning box of all visible layers
+        """
+        
+        bb = np.zeros(6)
+        bb[:3] = 1e12
+        bb[3:] = -1e12
+        
+        nLayers = 0
+        
+        for l in self.layers:
+            if getattr(l, 'visible', True):
+                bbl = l.bbox
+                
+                if not bbl is None:
+                    bb[:3] = np.minimum(bb[:3], bbl[:3])
+                    bb[3:] = np.maximum(bb[3:], bbl[3:])
+                    nLayers += 1
+                
+        if nLayers > 0:
+            #print('bbox: %s' % bb)
+            return bb
+        else:
+            return None
+        
 
     def initialize(self):
         from .layers.ScaleBoxOverlayLayer import ScaleBoxOverlayLayer
         self.InitGL()
         self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
-        self.ScaleBoxOverlayLayer = ScaleBoxOverlayLayer(100)
+        self.ScaleBoxOverlayLayer = ScaleBoxOverlayLayer()
 
         self.LUTOverlayLayer = LUTOverlayLayer()
         self.AxesOverlayLayer = AxesOverlayLayer()
         self.overlays.append(SelectionOverlayLayer(self.selectionSettings))
-        self.overlays.append(self.ScaleBoxOverlayLayer)
+        self.underlays.append(self.ScaleBoxOverlayLayer)
 
         self._is_initialized = True
 
@@ -315,6 +345,9 @@ class LMGLShaderCanvas(GLCanvas):
             glMultMatrixf(self.object_rotation_matrix)
 
             glTranslatef(-self.xc, -self.yc, -self.zc)
+            
+            for l in self.underlays:
+                l.render(self)
 
             for l in self.layers:
                 l.render(self)

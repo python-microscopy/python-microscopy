@@ -27,13 +27,15 @@ from OpenGL.GL import *
 
 
 class ScaleBoxOverlayLayer(OverlayLayer):
-    def __init__(self, tick_distance=1000, color=None, box_dimensions=(1.0, 1.0, 1.0)):
+    def __init__(self, tick_distance=1000, color=None):
         """
         
         Parameters
         ----------
         color       [r, g, b] , rgb = float [0.0,1.0]
         """
+        
+        
         offset = None
         super(ScaleBoxOverlayLayer, self).__init__(offset)
         if not color:
@@ -42,9 +44,9 @@ class ScaleBoxOverlayLayer(OverlayLayer):
             self._color = color
 
         self._tick_distance = tick_distance
-        self._box_dimensions = None
-        self._starts = [0.0, 0.0, 0.0]
-        self.set_box_dimensions(box_dimensions)
+        #self._box_dimensions = None
+        #self._starts = [0.0, 0.0, 0.0]
+        #self.set_box_dimensions(box_dimensions)
         self._show = False
         self._flips = [False, False, False]
 
@@ -80,6 +82,8 @@ class ScaleBoxOverlayLayer(OverlayLayer):
         -------
 
         """
+        raise NotImplementedError('box dimensions are now inferred from the data bounding-box')
+        
         new_box_dimensions = np.zeros((3, 1))
         index = 0
         for value in box_dimensions:
@@ -123,16 +127,29 @@ class ScaleBoxOverlayLayer(OverlayLayer):
 
     def render(self, gl_canvas):
         if self._show:
+            bbox = gl_canvas.bbox
+    
+            if bbox is None:
+                return
+            
             with self.shader_program:
                 glDisable(GL_LIGHTING)
                 glColor4fv(self._color)
+                
+               
+                
+                bb_0 = bbox[:3]
+                bb_1 = bbox[3:]
 
-                original_starts = np.copy(self._starts)
-                delta_x, delta_y, delta_z = self._box_dimensions
+                original_starts = np.copy(bb_0)
+                
+                bb_dims = bb_1 - bb_0
+                
+                delta_x, delta_y, delta_z = bb_dims
 
                 for i in np.arange(len(self._flips)):
                     if self._flips[i]:
-                        original_starts[i] += self._box_dimensions[i]
+                        original_starts[i] += bb_dims[i]
 
                 [start_x, start_y, start_z] = original_starts
                 [direction_x, direction_y, direction_z] = (np.array(self._flips) - 0.5) * -2

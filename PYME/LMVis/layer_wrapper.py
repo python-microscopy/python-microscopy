@@ -51,6 +51,10 @@ class LayerWrapper(HasTraits):
     @property
     def _namespace(self):
         return self._pipeline.layer_datasources
+    
+    @property
+    def bbox(self):
+        return  self.engine.bbox
         
     @property
     def data_source_names(self):
