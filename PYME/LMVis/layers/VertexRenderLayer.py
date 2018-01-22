@@ -124,7 +124,7 @@ class VertexRenderLayer(BaseLayer):
             print('Tried to render with Null vertices, aborting')
             return
         
-        with self.get_shader_program():
+        with self.shader_program:
 
             n_vertices = self.get_vertices().shape[0]
 
@@ -159,6 +159,10 @@ class VertexRenderLayer(BaseLayer):
         return self._colors
 
     def get_color_map(self):
+        return self._color_map
+    
+    @property
+    def colour_map(self):
         return self._color_map
 
     def get_color_limit(self):

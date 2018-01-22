@@ -55,6 +55,10 @@ class LayerWrapper(HasTraits):
     @property
     def bbox(self):
         return  self.engine.bbox
+    
+    @property
+    def colour_map(self):
+        return self.engine.colour_map
         
     @property
     def data_source_names(self):
