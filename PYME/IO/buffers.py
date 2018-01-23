@@ -108,9 +108,9 @@ class bgFrameBuffer:
         self.frameNos[frameNo] = slot
         self.frameBuffer[slot, :, :] = data
         self.validData[slot] = 1
-    
-        buffer_helpers.update_indices_add(self.frameBuffer, self.indices, data, slot)
-        
+
+        buffer_helpers.update_indices_add(self.frameBuffer, self.indices.astype(np.int_), data.astype(np.float_), slot)
+
     def removeFrame(self, frameNo):
         slot = self.frameNos.pop(frameNo)
         
