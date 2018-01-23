@@ -85,7 +85,7 @@ class bgFrameBuffer:
         
         self.curBG = None
         
-    def _addFrame(self, frameNo, data):
+    def addFrame(self, frameNo, data):
         if len(self.availableSlots) == 0:
             self._growBuffer(data)
             
@@ -99,7 +99,7 @@ class bgFrameBuffer:
         self.indices[slot, :, :] = dg.sum(0)
         self.indices += (dg < 1)
 
-    def addFrame(self, frameNo, data):
+    def addFrame_c(self, frameNo, data):
         from . import buffer_helpers
         if len(self.availableSlots) == 0:
             self._growBuffer(data)
@@ -108,9 +108,9 @@ class bgFrameBuffer:
         self.frameNos[frameNo] = slot
         self.frameBuffer[slot, :, :] = data
         self.validData[slot] = 1
-    
-        buffer_helpers.update_indices_add(self.frameBuffer, self.indices, data, slot)
-        
+
+        buffer_helpers.update_indices_add(self.frameBuffer, self.indices.astype(np.int_), data.astype(np.float_), slot)
+
     def removeFrame(self, frameNo):
         slot = self.frameNos.pop(frameNo)
         
