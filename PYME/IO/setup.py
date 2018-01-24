@@ -33,7 +33,7 @@ else:
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.core import Extension
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    ext = Extension(name='.'.join([parent_package, 'IO', 'buffer_helpers']),
+    ext = Extension(name='.'.join([parent_package, 'buffer_helpers']),
                     sources=[os.path.join(os.path.dirname(__file__), 'buffer_helpers.pyx')],
                     include_dirs=get_numpy_include_dirs(),
                     extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
