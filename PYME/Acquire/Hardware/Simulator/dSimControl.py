@@ -263,10 +263,10 @@ class dSimControl(wx.Panel):
 
         self.nSimulationType.AddPage(imageId=-1, page=pFirstPrinciples,
                                      select=True,
-                                     text='First Principles')
+                                     text='Theoretical State Model')
         self.nSimulationType.AddPage(imageId=-1, page=pEmpiricalModel,
-                                     select=True,
-                                     text='Empirical Model')
+                                     select=False,
+                                     text='Data Based Empirical Model')
         sbsizer.Add(self.nSimulationType, 0, wx.ALL | wx.EXPAND, 2)
         
 
