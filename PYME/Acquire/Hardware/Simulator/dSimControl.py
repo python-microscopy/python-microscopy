@@ -55,6 +55,15 @@ def create(parent):
 
 [wxID_DSIMCONTROLTREFRESH] = [wx.NewId() for _init_utils in range(1)]
 
+
+from PYME.recipes.traits import HasTraits, Float, Dict
+class PSFSettings(HasTraits):
+    wavelength_nm = Float(700.)
+    NA = Float(1.47)
+    zernike_modes = Dict()
+        
+        
+
 class dSimControl(wx.Panel):
     def _init_coll_nTransitionTensor_Pages(self, parent):
         # generated method, don't edit
@@ -211,11 +220,8 @@ class dSimControl(wx.Panel):
 
         pFirstPrinciplesSizer.Add(sbsizer2, 0, wx.EXPAND | wx.ALL, 2)
 
+        
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.bSetPSF = wx.Button(pFirstPrinciples, -1, 'Set PSF')
-        self.bSetPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSF)
-        hsizer.Add(self.bSetPSF, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
 
         self.bGenFlours = wx.Button(pFirstPrinciples, -1, 'Go')
         self.bGenFlours.Bind(wx.EVT_BUTTON, self.OnBGenFloursButton)
@@ -262,6 +268,20 @@ class dSimControl(wx.Panel):
                                      select=True,
                                      text='Empirical Model')
         sbsizer.Add(self.nSimulationType, 0, wx.ALL | wx.EXPAND, 2)
+        
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.bSetTPSF = wx.Button(self, -1, 'Set Theoretical PSF')
+        self.bSetTPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSFModel)
+        hsizer.Add(self.bSetTPSF, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        self.bSetPSF = wx.Button(self, -1, 'Set Experimental PSF')
+        self.bSetPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSF)
+        hsizer.Add(self.bSetPSF, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        sbsizer.Add(hsizer, 0, wx.ALL | wx.ALIGN_RIGHT, 2)
+
         vsizer.Add(sbsizer, 0, wx.ALL | wx.EXPAND, 2)
 
         ######## Status #########
@@ -410,11 +430,11 @@ class dSimControl(wx.Panel):
 
         y_chan_size = YVals[-1] - YVals[0]
 
-        wc.xp -= wc.xp.mean() + XVals[x_chan_pixels/2]
-        wc.xp = np.mod(wc.xp, x_chan_size) - x_chan_size/2
+        wc.xp = wc.xp - wc.xp.mean() + x_chan_size/2
+        wc.xp = np.mod(wc.xp, x_chan_size) + XVals[0]
 
-        wc.yp -= wc.yp.mean() + YVals[y_pixels/2]
-        wc.yp = np.mod(wc.yp, y_chan_size) - y_chan_size/2
+        wc.yp = wc.yp - wc.yp.mean() + y_chan_size/2
+        wc.yp = np.mod(wc.yp, y_chan_size) + YVals[0]
 
         if self.cbFlatten.GetValue():
             wc.zp *= 0
@@ -428,7 +448,7 @@ class dSimControl(wx.Panel):
             if self.cbColour.GetValue():
                 self.points.append((wc.xp[i],wc.yp[i],wc.zp[i], float(i/((len(wc.xp) + 1)/3))))
             else:
-                self.points.append((wc.xp[i],wc.yp[i],wc.zp[i]))
+                self.points.append((wc.xp[i],wc.yp[i],wc.zp[i], 0))
 
         
         self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
@@ -455,6 +475,15 @@ class dSimControl(wx.Panel):
         pylab.save(fn, scipy.array(self.points))
         #self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
         #event.Skip()
+        
+    def OnBSetPSFModel(self, event=None):
+        psf_settings = PSFSettings()
+        psf_settings.configure_traits(kind='modal')
+        
+        z_modes = {int(k):float(v) for k, v in psf_settings.zernike_modes.items()}
+        print('Setting PSF with zernike modes: %s' % z_modes)
+        
+        rend_im.genTheoreticalModel(rend_im.mdh, zernikes=z_modes, lamb=psf_settings.wavelength_nm, NA=psf_settings.NA)
 
     def OnBSetPSF(self, event):
         fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf|TIFF (*.tif)|*.tif')

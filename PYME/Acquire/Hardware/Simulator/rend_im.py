@@ -81,10 +81,11 @@ def set_pixelsize_nm(pixelsize):
     mdh['voxelsize.x'] = 1e-3*pixelsize
     mdh['voxelsize.y'] = 1e-3 * pixelsize
 
-def genTheoreticalModel(md):
+def genTheoreticalModel(md, zernikes={}, **kwargs):
+    from PYME.Analysis.PSFGen import fourierHNA
     global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz
 
-    if not dx == md.voxelsize.x*1e3 or not dy == md.voxelsize.y*1e3 or not dz == md.voxelsize.z*1e3:
+    if True:#not dx == md.voxelsize.x*1e3 or not dy == md.voxelsize.y*1e3 or not dz == md.voxelsize.z*1e3:
 
         IntXVals = 1e3*md.voxelsize.x*mgrid[-150:150]
         IntYVals = 1e3*md.voxelsize.y*mgrid[-150:150]
@@ -96,8 +97,8 @@ def genTheoreticalModel(md):
 
         P = arange(0,1.01,.01)
 
-        interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P,1e3, 0,
-                                      0, 0, 2*pi/665, 1.47, 10e3).astype('f')
+        #interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P ,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).astype('f')
+        interpModel = fourierHNA.GenZernikeDPSF(IntZVals, zernikes, X=IntXVals, Y=IntYVals, dx=1e3*md.voxelsize.x, **kwargs)
         
         #print('foo')
         #print((interpModel.strides, interpModel.shape))

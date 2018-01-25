@@ -731,8 +731,8 @@ class LMGLCanvas(GLCanvas):
         #y = y #- y.mean()
         x = T.x
         y = T.y
-        xs = x[T.triangle_nodes]
-        ys = y[T.triangle_nodes]
+        xs = x[T.triangles]
+        ys = y[T.triangles]
         zs = np.zeros_like(xs) #- z.mean()
         
         if recenter:        

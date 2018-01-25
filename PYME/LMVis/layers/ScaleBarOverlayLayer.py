@@ -58,7 +58,7 @@ class ScaleBarOverlayLayer(OverlayLayer):
 
         """
 
-        with self.get_shader_program():
+        with self.shader_program:
             if self._scale_bar_length:
                 view_size_x = gl_canvas.xmax - gl_canvas.xmin
                 view_size_y = gl_canvas.ymax - gl_canvas.ymin

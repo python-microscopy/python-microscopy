@@ -22,7 +22,7 @@ class LayerWrapper(HasTraits):
     engine = Instance(layers.BaseLayer)
     dsname = CStr('output')
     
-    def __init__(self, pipeline, method='points', ds_name='', cmap='gist_rainbow', clim=[0,1], alpha=1.0, visible=True):
+    def __init__(self, pipeline, method='points', ds_name='', cmap='gist_rainbow', clim=[0,1], alpha=1.0, visible=True, method_args={}):
         self._pipeline = pipeline
         #self._namespace=getattr(pipeline, 'namespace', {})
         #self.dsname = None
@@ -42,6 +42,8 @@ class LayerWrapper(HasTraits):
 
         #self.set_datasource(ds_name)
         self.dsname = ds_name
+        
+        self._eng_params = dict(method_args)
         self.method = method
         
         self._pipeline.onRebuild.connect(self.update)
@@ -49,6 +51,14 @@ class LayerWrapper(HasTraits):
     @property
     def _namespace(self):
         return self._pipeline.layer_datasources
+    
+    @property
+    def bbox(self):
+        return  self.engine.bbox
+    
+    @property
+    def colour_map(self):
+        return self.engine.colour_map
         
     @property
     def data_source_names(self):
@@ -76,7 +86,12 @@ class LayerWrapper(HasTraits):
             return self._namespace.get(self.dsname, None)
         
     def _set_method(self):
+        if self.engine:
+            self._eng_params = self.engine.get('point_size', 'vertexColour')
+            #print(eng_params)
+            
         self.engine = ENGINES[self.method]()
+        self.engine.set(**self._eng_params)
         self.engine.on_trait_change(self._update, 'vertexColour')
         self.engine.on_trait_change(self.update)
         

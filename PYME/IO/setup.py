@@ -20,14 +20,32 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+import os
 
+from Cython.Build import cythonize
+
+import sys
+if sys.platform == 'darwin':#MacOS
+    linkArgs = []
+else:
+    linkArgs = ['-static-libgcc']
 
 def configuration(parent_package='',top_path=None):
-    from numpy.distutils.misc_util import Configuration
-    config = Configuration('IO',parent_package,top_path)
+    from numpy.distutils.core import Extension
+    from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
+    ext = Extension(name='.'.join([parent_package, 'buffer_helpers']),
+                    sources=[os.path.join(os.path.dirname(__file__), 'buffer_helpers.pyx')],
+                    include_dirs=get_numpy_include_dirs(),
+                    extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
+                    extra_link_args=linkArgs)
+    config = Configuration('IO',parent_package,top_path, ext_modules=cythonize([ext]))
     config.add_subpackage('FileUtils')
     config.add_subpackage('DataSources')
     config.add_subpackage('countdir')
+
+    
+
+    
     
     #config.make_svn_version_py()  # installs __svn_version__.py
     #config.make_config_py()

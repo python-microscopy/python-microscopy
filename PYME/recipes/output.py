@@ -293,16 +293,21 @@ class UnifiedLoader(jinja2.BaseLoader):
     def get_source(self, environment, template):
         from PYME.IO import unifiedIO
         try:
-            source = unifiedIO.read(template).decode('utf-8')
+            if os.path.exists(os.path.join(os.path.dirname(__file__), template)):
+                source = unifiedIO.read(os.path.join(os.path.dirname(__file__), template)).decode('utf-8')
+            else:
+                source = unifiedIO.read(template).decode('utf-8')
         except:
             logger.exception('Error loading template')
             raise jinja2.TemplateNotFound
-        return source, template, lambda: True
+        return source, template, lambda: False
 
 env = jinja2.Environment(loader=UnifiedLoader())
 from PYME.Analysis import graphing_filters #FIXME - move the filters somewhere better
+import base64
 env.filters['movieplot'] = graphing_filters.movieplot2
 env.filters['plot'] = graphing_filters.plot
+env.filters['b64encode'] = base64.b64encode
 
 @register_module('ReportOutput')
 class ReportOutput(OutputModule):
@@ -366,6 +371,7 @@ class ReportOutput(OutputModule):
         -------
 
         """
+        import codecs
 
         out_filename = self._schemafy_filename(self.filePattern.format(**context))
         
@@ -374,7 +380,7 @@ class ReportOutput(OutputModule):
             os.makedirs(out_dir)
 
         with open(out_filename, 'w') as f:
-            f.write(self.generate(namespace, recipe_context=context))
+            f.write(self.generate(namespace, recipe_context=context).encode('utf-8'))
 
 
 @register_module('ReportForEachOutput')

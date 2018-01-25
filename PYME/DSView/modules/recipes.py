@@ -89,9 +89,9 @@ class RecipePlugin(recipeGui.RecipeManager):
                 
                 if saveResults:
                     self.activeRecipe.save() #FIXME - set context
-                
-            if isinstance(self.outp, ImageStack):
-
+                    
+                    
+            def _display_output_image(outp):
                 if self.dsviewer.mode == 'visGUI':
                     mode = 'visGUI'
                 elif 'out_tracks' in self.activeRecipe.namespace.keys():
@@ -99,43 +99,58 @@ class RecipePlugin(recipeGui.RecipeManager):
                 else:
                     mode = 'default'
     
-                dv = ViewIm3D(self.outp, mode=mode, glCanvas=self.dsviewer.glCanvas)
-                
+                dv = ViewIm3D(outp, mode=mode, glCanvas=self.dsviewer.glCanvas)
+    
                 if 'out_meas' in self.activeRecipe.namespace.keys():
                     #have measurements as well - add to / overlay with output image
                     if not 'pipeline' in dir(dv):
                         dv.pipeline = pipeline.Pipeline()
-                    
+        
                     from PYME.IO import tabular
                     cache = tabular.cachingResultsFilter(self.activeRecipe.namespace['out_meas'])
-                    dv.pipeline.OpenFile(ds = cache)
+                    dv.pipeline.OpenFile(ds=cache)
                     dv.view.filter = dv.pipeline
-                    
     
                 #set scaling to (0,1)
-                for i in range(self.outp.data.shape[3]):
+                for i in range(outp.data.shape[3]):
                     dv.do.Gains[i] = 1.0
-
+    
                 if ('out_tracks' in self.activeRecipe.namespace.keys()) and 'tracker' in dir(dv):
                     dv.tracker.SetTracks(self.activeRecipe.namespace['out_tracks'])
-
                     
-            else:
-                if ('out_tracks' in self.activeRecipe.namespace.keys()) and 'tracker' in dir(self.dsviewer):
-                    self.dsviewer.tracker.SetTracks(self.activeRecipe.namespace['out_tracks'])
+            def _display_output_report(outp):
+                import wx.html2
+                html_view = wx.html2.WebView.New(self.dsviewer)
+                self.dsviewer.AddPage(html_view, True, 'Recipe Report')
+                html_view.SetPage(outp, 'Recipe Report')
 
-                #assume we made measurements - put in pipeline
-                #TODO - put an explict check in here
-            
-                if not 'pipeline' in dir(self.dsviewer):
-                    self.dsviewer.pipeline = pipeline.Pipeline()
-                
+            if ('out_tracks' in self.activeRecipe.namespace.keys()) and 'tracker' in dir(self.dsviewer):
+                self.dsviewer.tracker.SetTracks(self.activeRecipe.namespace['out_tracks'])
+
+            #assume we made measurements - put in pipeline
+            #TODO - put an explict check in here
+
+            if not 'pipeline' in dir(self.dsviewer):
+                self.dsviewer.pipeline = pipeline.Pipeline()
+
+            if isinstance(self.outp, ImageStack):
+                _display_output_image(self.outp)
+            elif not self.outp is None:
                 from PYME.IO import tabular
                 cache = tabular.cachingResultsFilter(self.outp)
                 self.dsviewer.pipeline.OpenFile(ds = cache)
                 self.dsviewer.pipeline.filterKeys = {}
                 self.dsviewer.pipeline.Rebuild()
                 self.dsviewer.view.filter = self.dsviewer.pipeline
+                    
+                
+            for out_ in self.activeRecipe.gather_outputs():
+                if isinstance(out_, ImageStack):
+                    _display_output_image(out_)
+                elif isinstance(out_, basestring):
+                    _display_output_report(out_)
+                    
+                
 
                 
     def TestCurrentRecipe(self, event=None):

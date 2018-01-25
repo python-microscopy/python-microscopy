@@ -711,11 +711,11 @@ class Pipeline:
         return self.GeneratedMeasures['neighbourDistances']
         
     def getTriangles(self, recalc = False):
-        from matplotlib import delaunay
+        from matplotlib import tri
         
         if self.Triangles is None or recalc:
             statTri = statusLog.StatusLogger("Generating Triangulation ...")
-            self.Triangles = delaunay.Triangulation(self.colourFilter['x'] + .1*np.random.normal(size=len(self.colourFilter['x'])), self.colourFilter['y']+ .1*np.random.normal(size=len(self.colourFilter['x'])))
+            self.Triangles = tri.Triangulation(self.colourFilter['x'] + .1*np.random.normal(size=len(self.colourFilter['x'])), self.colourFilter['y']+ .1*np.random.normal(size=len(self.colourFilter['x'])))
             
             #reset things which will have changed
             self.edb = None
@@ -744,14 +744,14 @@ class Pipeline:
             self.objIndices = edges.objectIndices(edb.segment(self.blobSettings.distThreshold), self.blobSettings.minSize)
             self.objects = [np.vstack((tri.x[oi], tri.y[oi])).T for oi in self.objIndices]
         else:
-            from matplotlib import delaunay
+            from matplotlib import tri
             
             ndists = self.getNeighbourDists()
             
             x_ = np.hstack([self['x'] + 0.5*ndists*np.random.normal(size=ndists.size) for i in range(self.blobSettings.jittering)])
             y_ = np.hstack([self['y'] + 0.5*ndists*np.random.normal(size=ndists.size) for i in range(self.blobSettings.jittering)])
 
-            T = delaunay.Triangulation(x_, y_)
+            T = tri.Triangulation(x_, y_)
             edb = edges.EdgeDB(T)
             
             objIndices = edges.objectIndices(edb.segment(self.blobSettings.distThreshold), self.blobSettings.minSize)
@@ -800,6 +800,9 @@ class Pipeline:
         
     def save_hdf(self, filename):
         self.colourFilter.to_hdf(filename, tablename='Localizations', metadata=self.mdh)
+        
+    def to_recarray(self, keys=None):
+        return self.colourFilter.to_recarray(keys=keys)
         
     def toDataFrame(self, keys=None):
         import pandas as pd

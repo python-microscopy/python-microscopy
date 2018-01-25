@@ -31,63 +31,68 @@ class LUTOverlayLayer(OverlayLayer):
     This OverlayLayer produces a bar that indicates the given color map.
     """
 
-    def __init__(self, size=1000, offset=None, color_map=pylab.cm.hsv):
+    def __init__(self, offset=None):
         """
 
         Parameters
         ----------
-        size        the size of the bar
+
         offset      offset of the canvas origin where it should be drawn.
                     Currently only offset[0] is used
-        color_map   the color map that should be drawn
         """
         if not offset:
             offset = [10, 10]
+            
         OverlayLayer.__init__(self, offset)
-        self._color_map = color_map
-        self.set_offset(offset)
-        self._size = size
 
-        self._scale_bar_depth = 10.0
-        self._color = [1, 1, 0]
+        self.set_offset(offset)
+
+        self._lut_width_px = 10.0
+        self._border_colour = [.5, .5, 0]
         self.set_shader_program(DefaultShaderProgram)
 
-    def set_color_map(self, color_map):
-        self._color_map = color_map
 
     def render(self, gl_canvas):
-        with self.get_shader_program():
+        with self.shader_program:
             view_size_x = gl_canvas.xmax - gl_canvas.xmin
             view_size_y = gl_canvas.ymax - gl_canvas.ymin
 
-            # upper right x
-            lb_ur_x = -gl_canvas.xc + gl_canvas.xmax - self.get_offset()[0] * view_size_x / gl_canvas.Size[0]
             # upper right y
             lb_ur_y = .4 * view_size_y
-
             # lower right y
             lb_lr_y = -.4 * view_size_y
-            lb_width = self._scale_bar_depth * view_size_x / gl_canvas.Size[0]
-            # upper left x
-            lb_ul_x = lb_ur_x - lb_width
 
             lb_len = lb_ur_y - lb_lr_y
-
-            glDisable(GL_LIGHTING)
-
-            glBegin(GL_QUAD_STRIP)
-
-            for i in numpy.arange(0, 1, .01):
-                glColor3fv(self._color_map(i)[:3])
-                glVertex2f(lb_ul_x, lb_lr_y + i * lb_len)
-                glVertex2f(lb_ur_x, lb_lr_y + i * lb_len)
-
-            glEnd()
-
-            glBegin(GL_LINE_LOOP)
-            glColor3f(.5, .5, 0)
-            glVertex2f(lb_ul_x, lb_lr_y)
-            glVertex2f(lb_ur_x, lb_lr_y)
-            glVertex2f(lb_ur_x, lb_ur_y)
-            glVertex2f(lb_ul_x, lb_ur_y)
-            glEnd()
+            
+            lb_width = self._lut_width_px * view_size_x / gl_canvas.Size[0]
+            
+            visible_layers = [l for l in gl_canvas.layers if getattr(l, 'visble', True)]
+            
+            for j, l in enumerate(visible_layers):
+                cmap = l.colour_map
+                
+                # upper right x
+                lb_ur_x = -gl_canvas.xc + gl_canvas.xmax - self.get_offset()[0] * view_size_x / gl_canvas.Size[0] - j*1.5*lb_width
+                
+                # upper left x
+                lb_ul_x = lb_ur_x - lb_width
+          
+    
+                glDisable(GL_LIGHTING)
+    
+                glBegin(GL_QUAD_STRIP)
+    
+                for i in numpy.arange(0, 1.01, .01):
+                    glColor3fv(cmap(i)[:3])
+                    glVertex2f(lb_ul_x, lb_lr_y + i * lb_len)
+                    glVertex2f(lb_ur_x, lb_lr_y + i * lb_len)
+    
+                glEnd()
+    
+                glBegin(GL_LINE_LOOP)
+                glColor3fv(self._border_colour)
+                glVertex2f(lb_ul_x, lb_lr_y)
+                glVertex2f(lb_ur_x, lb_lr_y)
+                glVertex2f(lb_ur_x, lb_ur_y)
+                glVertex2f(lb_ul_x, lb_ur_y)
+                glEnd()

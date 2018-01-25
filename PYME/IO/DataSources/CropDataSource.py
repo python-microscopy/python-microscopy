@@ -46,7 +46,7 @@ class DataSource(BaseDataSource):
         
     
     def getSlice(self,ind):
-        sl = self.dataSource.getSlice(ind - self.trange[0])
+        sl = self.dataSource.getSlice(ind + self.trange[0])
         
         return sl[self.xrange[0]:self.xrange[1], self.yrange[0]:self.yrange[1]]
 

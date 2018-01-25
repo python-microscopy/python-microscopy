@@ -98,7 +98,7 @@ class bgFrameBuffer:
         
         self.indices[slot, :, :] = dg.sum(0)
         self.indices += (dg < 1)
-        
+
     def removeFrame(self, frameNo):
         slot = self.frameNos.pop(frameNo)
         
@@ -147,7 +147,52 @@ class bgFrameBuffer:
         
         return (self.frameBuffer*(self.indices==pcIDX)).max(0).squeeze()
             
+
+class bgFrameBufferC(bgFrameBuffer):
+    def __init__(self, initialSize=30, percentile=.25):
+        bgFrameBuffer.__init__(self, initialSize, percentile)
         
+    def _createBuffers(self, size, shape, dtype):
+        bgFrameBuffer._createBuffers(self, size, shape, dtype)
+        self.cur_pc = np.zeros(shape=shape, dtype=dtype)
+        
+    def addFrame(self, frameNo, data):
+        from . import buffer_helpers
+        if len(self.availableSlots) == 0:
+            self._growBuffer(data)
+            
+        data = np.ascontiguousarray(data)
+        
+        slot = self.availableSlots.pop()
+        self.frameNos[frameNo] = slot
+        self.frameBuffer[slot, :, :] = data
+        self.indices[slot] = 0
+        
+        pc_idx = int(self.pctile*self.validData.sum())
+        
+        buffer_helpers.update_indices_add(self.frameBuffer, self.indices, data, slot)#, self.cur_pc, pc_idx)
+
+        self.validData[slot] = 1
+
+    def removeFrame(self, frameNo):
+        from . import buffer_helpers
+        slot = self.frameNos.pop(frameNo)
+
+        #self.frameBuffer[slot, :, :] = self.MAXSHORT
+        buffer_helpers.update_indices_remove(self.frameBuffer, self.indices, slot)
+    
+        self.validData[slot] = 0
+        self.availableSlots.append(slot)
+
+    def getPercentile(self, pctile):
+        from . import buffer_helpers
+        pcIDX = int(self.validData.sum() * pctile)
+        #print(pcIDX)
+    
+        pct_buf = np.zeros(shape=self.frameBuffer.shape[1:], dtype = self.frameBuffer.dtype)
+        
+        buffer_helpers.get_pct(self.frameBuffer, self.indices, pcIDX, pct_buf)
+        return pct_buf
         
 class backgroundBufferM:
     def __init__(self, dataBuffer, percentile=.5):
@@ -189,3 +234,9 @@ class backgroundBufferM:
         self.curBG += off
 
         return self.curBG
+    
+class backgroundBufferMC(backgroundBufferM):
+    def __init__(self, *args, **kwargs):
+        backgroundBufferM.__init__(self, *args, **kwargs)
+        
+        self.bfb = bgFrameBufferC(percentile=self.pctile)
