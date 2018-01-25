@@ -567,17 +567,113 @@ def GenWidefieldPSF(zs, **kwargs):
 
     return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=pupil, zs=zs, **kwargs)
 
-def Gen4PiPSF(zs, dx=5, lamb=700, n=1.51, NA = 1.47,phi=0, X=None, Y=None, **kwargs):
-    X, Y, R, FP, pupil, u, v = widefield_pupil_and_propagator(dx, X, Y, lamb=lamb, n=n, NA = NA)
+def Gen4PiPSF(zs,phi=0, zernikeCoeffs=[{},{}], **kwargs):
+    from PYME.misc import zernike
+    X, Y, R, FP, pupil, u, v = widefield_pupil_and_propagator(**kwargs)
 
-    pupil = pupil*_apodization_function(R, NA, n, kwargs.get('apodization', None))
+    kwargs.pop('X', None)
+    kwargs.pop('Y', None)
     
-    ps1 = np.concatenate([FP.propagate(pupil, z)[:,:,None] for z in zs], 2)
-    ps2 = np.concatenate([FP.propagate(pupil, -z)[:,:,None]*np.exp(1j*phi) for z in zs], 2)
-    
-    ps = ps1 + ps2
+    NA = kwargs.get('NA', 1.47)
+    n = kwargs.get('n', 1.51)
+    output_shape = kwargs.get('output_shape', None)
+    beadsize = kwargs.get('beadsize', 0)
+    vectorial = kwargs.get('vectorial', False)
 
-    return abs(ps**2)
+    pupil = pupil * _apodization_function(R, NA, n, kwargs.get('apodization', None))
+    
+    if beadsize > 0:
+        pupil = pupil * get_bead_pupil(X, Y, beadsize)
+
+    theta = np.angle(X + 1j * Y)
+    r = R / R[abs(pupil) > 0].max()
+
+
+
+    ang_u = 0
+    ang_l = 0
+    
+    zerns_upper, zerns_lower = zernikeCoeffs
+    
+    #print zernikeCoeffs, zerns_upper, zerns_lower
+
+    for i, c in zerns_upper.items():
+        ang_u = ang_u + c * zernike.zernike(i, r, theta)
+        
+    for i, c in zerns_lower.items():
+        ang_l = ang_l + c * zernike.zernike(i, r, theta)
+        
+    pupil_upper = pupil * np.exp(-1j * ang_u)
+    pupil_lower = pupil * np.exp(-1j * ang_l)
+        
+    #pupil_upper = pupil
+    #pupil_lower = pupil
+
+    if vectorial:
+        phi = np.angle(u + 1j * v)
+        theta = np.arcsin(np.minimum(R / n, 1))
+    
+        ct = np.cos(theta)
+        st = np.sin(theta)
+        cp = np.cos(phi)
+        sp = np.sin(phi)
+    
+        fac = ct * cp ** 2 + sp ** 2
+        ps_u = np.concatenate([FP.propagate(pupil_upper * fac, z)[:, :, None] for z in zs], 2)
+        ps_l = np.concatenate([FP.propagate(pupil_lower * fac, -z)[:, :, None]*np.exp(1j*phi) for z in zs], 2)
+        ps = ps_u + ps_l
+        p = abs(ps ** 2)
+    
+        fac = (ct - 1) * cp * sp
+        ps_u = np.concatenate([FP.propagate(pupil_upper * fac, z)[:, :, None] for z in zs], 2)
+        ps_l = np.concatenate([FP.propagate(pupil_lower * fac, -z)[:, :, None] * np.exp(1j * phi) for z in zs], 2)
+        ps = ps_u + ps_l
+        p += abs(ps ** 2)
+    
+        fac = (ct - 1) * cp * sp
+        ps_u = np.concatenate([FP.propagate(pupil_upper * fac, z)[:, :, None] for z in zs], 2)
+        ps_l = np.concatenate([FP.propagate(pupil_lower * fac, -z)[:, :, None] * np.exp(1j * phi) for z in zs], 2)
+        ps = ps_u + ps_l
+        p += abs(ps ** 2)
+    
+        fac = ct * sp ** 2 + cp ** 2
+        ps_u = np.concatenate([FP.propagate(pupil_upper * fac, z)[:, :, None] for z in zs], 2)
+        ps_l = np.concatenate([FP.propagate(pupil_lower * fac, -z)[:, :, None] * np.exp(1j * phi) for z in zs], 2)
+        ps = ps_u + ps_l
+        p += abs(ps ** 2)
+    
+        fac = st * cp
+        ps_u = np.concatenate([FP.propagate(pupil_upper * fac, z)[:, :, None] for z in zs], 2)
+        ps_l = np.concatenate([FP.propagate(pupil_lower * fac, -z)[:, :, None] * np.exp(1j * phi) for z in zs], 2)
+        ps = ps_u + ps_l
+        p += abs(ps ** 2)
+    
+        fac = st * sp
+        ps_u = np.concatenate([FP.propagate(pupil_upper * fac, z)[:, :, None] for z in zs], 2)
+        ps_l = np.concatenate([FP.propagate(pupil_lower * fac, -z)[:, :, None] * np.exp(1j * phi) for z in zs], 2)
+        ps = ps_u + ps_l
+        p += abs(ps ** 2)
+
+
+    else:
+        ###########
+        # Default scalar case
+        ps_u = np.concatenate([FP.propagate(pupil_upper, z)[:, :, None] for z in zs], 2)
+        ps_l = np.concatenate([FP.propagate(pupil_lower, -z)[:, :, None] * np.exp(1j * phi) for z in zs], 2)
+        ps = ps_u + ps_l
+        p = abs(ps ** 2)
+    
+    if output_shape is None:
+        return p
+    else:
+        sx = output_shape[0]
+        sy = output_shape[1]
+        ox = np.ceil((X.shape[0] - sx) / 2.0)
+        oy = np.ceil((X.shape[1] - sy) / 2.0)
+        ex = ox + sx
+        ey = oy + sy
+
+        return p[ox:ex, oy:ey, :]
     
 
 def GenClippedWidefieldPSF(zs, field_x=0, field_y=0, apertureNA=1.5,

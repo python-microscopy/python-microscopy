@@ -56,11 +56,29 @@ def create(parent):
 [wxID_DSIMCONTROLTREFRESH] = [wx.NewId() for _init_utils in range(1)]
 
 
-from PYME.recipes.traits import HasTraits, Float, Dict
+from PYME.recipes.traits import HasTraits, Float, Dict, Bool, List
 class PSFSettings(HasTraits):
     wavelength_nm = Float(700.)
     NA = Float(1.47)
+    vectorial = Bool(False)
     zernike_modes = Dict()
+    zernike_modes_lower = Dict()
+    phases = List([0, .5, 1, 1.5])
+    four_pi = Bool(False)
+    
+    def default_traits_view(self):
+        from traitsui.api import View, Item, Group, ListEditor
+        #from PYME.ui.custom_traits_editors import CBEditor
+    
+        return View(Item(name='wavelength_nm'),
+                    Item(name='NA'),
+                    Item(name='vectorial'),
+                    Item(name='four_pi', label='4Pi'),
+                    Item(name='zernike_modes'),
+                    Item(name='zernike_modes_lower', visible_when='four_pi==True'),
+                    Item(name='phases', visible_when='four_pi==True', label='phases/pi'),
+                    resizable = True,
+                    buttons   = [ 'OK' ])
         
         
 
@@ -88,6 +106,37 @@ class dSimControl(wx.Panel):
         self._init_utils()
         #self.SetClientSize(wx.Size(434, 610))
         vsizer= wx.BoxSizer(wx.VERTICAL)
+
+        ################ Splitter ######################
+
+        sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Image splitting & PSF'),
+                                    wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(self, -1, 'Number of channels: '), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
+        self.cNumSplitterChans = wx.Choice(self, -1, choices=['1', '2', '4'])
+        hsizer.Add(self.cNumSplitterChans, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+        sbsizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+
+        self.gSplitter = wx.grid.Grid(self, -1)
+        self.setupSplitterGrid()
+        sbsizer.Add(self.gSplitter, 0, wx.RIGHT | wx.EXPAND, 2)
+
+        ############## PSF Settings ################
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.bSetTPSF = wx.Button(self, -1, 'Set Theoretical PSF')
+        self.bSetTPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSFModel)
+        hsizer.Add(self.bSetTPSF, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        self.bSetPSF = wx.Button(self, -1, 'Set Experimental PSF')
+        self.bSetPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSF)
+        hsizer.Add(self.bSetPSF, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        sbsizer.Add(hsizer, 0, wx.ALL | wx.ALIGN_RIGHT, 2)
+
+        vsizer.Add(sbsizer, 0, wx.ALL | wx.EXPAND, 2)
 
 
         ########### Fluorophore Positions ############        
@@ -154,25 +203,10 @@ class dSimControl(wx.Panel):
         
         
         vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
+        
+        
 
-        ################ Splitter ######################
-
-        sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Image splitting'),
-                                    wx.VERTICAL)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(self, -1, 'Number of channels: '),0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
-        self.cNumSplitterChans = wx.Choice(self, -1, choices=['1', '2', '4'])
-        hsizer.Add(self.cNumSplitterChans, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 10)
-        sbsizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
-
-        self.gSplitter = wx.grid.Grid(self, -1)
-        self.setupSplitterGrid()
-        sbsizer.Add(self.gSplitter, 0, wx.RIGHT|wx.EXPAND, 2)
-
-
-        vsizer.Add(sbsizer, 0, wx.ALL | wx.EXPAND, 2)
+        
         ################ Virtual Fluorophores ###########
         
         sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Generate Virtual Fluorophores'), 
@@ -268,19 +302,6 @@ class dSimControl(wx.Panel):
                                      select=False,
                                      text='Data Based Empirical Model')
         sbsizer.Add(self.nSimulationType, 0, wx.ALL | wx.EXPAND, 2)
-        
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.bSetTPSF = wx.Button(self, -1, 'Set Theoretical PSF')
-        self.bSetTPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSFModel)
-        hsizer.Add(self.bSetTPSF, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
-
-        self.bSetPSF = wx.Button(self, -1, 'Set Experimental PSF')
-        self.bSetPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSF)
-        hsizer.Add(self.bSetPSF, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
-
-        sbsizer.Add(hsizer, 0, wx.ALL | wx.ALIGN_RIGHT, 2)
 
         vsizer.Add(sbsizer, 0, wx.ALL | wx.EXPAND, 2)
 
@@ -481,15 +502,25 @@ class dSimControl(wx.Panel):
         psf_settings.configure_traits(kind='modal')
         
         z_modes = {int(k):float(v) for k, v in psf_settings.zernike_modes.items()}
-        print('Setting PSF with zernike modes: %s' % z_modes)
         
-        rend_im.genTheoreticalModel(rend_im.mdh, zernikes=z_modes, lamb=psf_settings.wavelength_nm, NA=psf_settings.NA)
+        if psf_settings.four_pi:
+            z_modes_lower = {int(k): float(v) for k, v in psf_settings.zernike_modes_lower.items()}
+            phases = [np.pi*float(p) for p in psf_settings.phases]
+            
+            print z_modes, z_modes_lower, phases
+            rend_im.genTheoreticalModel4Pi(rend_im.mdh, phases=phases, zernikes=[z_modes, z_modes_lower],
+                                           lamb=psf_settings.wavelength_nm,
+                                           NA=psf_settings.NA, vectorial=psf_settings.vectorial)
+        else:
+            print('Setting PSF with zernike modes: %s' % z_modes)
+            rend_im.genTheoreticalModel(rend_im.mdh, zernikes=z_modes, lamb=psf_settings.wavelength_nm,
+                                        NA=psf_settings.NA, vectorial=psf_settings.vectorial)
 
     def OnBSetPSF(self, event):
         fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf|TIFF (*.tif)|*.tif')
         print(fn)
         if fn == '':
-            rend_im.genTheoreticalModel(rend_im.mdh)
+            #rend_im.genTheoreticalModel(rend_im.mdh)
             return
         else:
             rend_im.setModel(fn, rend_im.mdh)
