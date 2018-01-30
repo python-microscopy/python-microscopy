@@ -496,7 +496,7 @@ def getFile(filename, serverfilter='', numRetries=3, use_file_cache=True):
     return content
 
 
-_lastwritetime = {}
+_last_access_time = {}
 _lastwritespeed = {}
 #_diskfreespace = {}
 
@@ -505,6 +505,7 @@ def _netloc(info):
     return '%s:%s' % (socket.inet_ntoa(info.address), info.port)
 
 
+_choose_server_lock = threading.Lock()
 def _chooseServer(serverfilter='', exclude_netlocs=[]):
     """chose a server to save to by minimizing a cost function
 
@@ -516,28 +517,34 @@ def _chooseServer(serverfilter='', exclude_netlocs=[]):
     serv_candidates = [(k, v) for k, v in get_ns().get_advertised_services() if
                        (serverfilter in k) and not (_netloc(v) in exclude_netlocs)]
 
-    t = time.time()
-
-    costs = []
-    for k, v in serv_candidates:
-        try:
-            cost = _lastwritetime[k] - t
-        except KeyError:
-            cost = -100
+    with _choose_server_lock:
+        t = time.time()
+    
+        costs = []
+        for k, v in serv_candidates:
+            try:
+                cost = _last_access_time[k] - t
+            except KeyError:
+                cost = -100
+                
+    #        try:
+    #            cost -= 0*_lastwritespeed[k]/1e3
+    #        except KeyError:
+    #            pass
             
-#        try:
-#            cost -= 0*_lastwritespeed[k]/1e3
-#        except KeyError:
-#            pass
-        
-        #try:
-        #    cost -= _lastwritespeed[k]
-        #except KeyError:
-        #    pass
-
-        costs.append(cost)  # + .1*np.random.normal())
-
-    return serv_candidates[np.argmin(costs)]
+            #try:
+            #    cost -= _lastwritespeed[k]
+            #except KeyError:
+            #    pass
+    
+            costs.append(cost)  # + .1*np.random.normal())
+            
+        name, info = serv_candidates[np.argmin(costs)]
+    
+        #t = time.time()
+        _last_access_time[name] = t
+    
+        return name, info
 
 
 def mirrorFile(filename, serverfilter=''):
@@ -583,7 +590,6 @@ def putFile(filename, data, serverfilter=''):
         url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
     
         t = time.time()
-        _lastwritetime[name] = t
     
         url = url.encode()
         try:
@@ -624,6 +630,7 @@ if USE_RAW_SOCKETS:
         
         while nRetries < 3 and nChunksRemaining > 0:
             name, info = _chooseServer(serverfilter)
+            #logger.debug('Chose server: %s:%d' % (info.address, info.port))
     
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -636,7 +643,7 @@ if USE_RAW_SOCKETS:
             datalen = 0
     
             t = time.time()
-            _lastwritetime[name] = t
+            #_last_access_time[name] = t
     
             rs = []
     
@@ -681,6 +688,7 @@ if USE_RAW_SOCKETS:
                         resp = s.recv(4096)
                 except:
                     logger.error('Failure to read from server %s' % socket.inet_ntoa(info.address))
+                    s.close()
                     raise
                 #print resp
                 #TODO: Parse responses
@@ -702,7 +710,7 @@ else:
             url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
 
             t = time.time()
-            _lastwritetime[name] = t
+            #_last_access_time[name] = t
             url = url.encode()
             s = _getSession(url)
             r = s.put(url, data=data, timeout=1)

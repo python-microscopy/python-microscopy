@@ -116,6 +116,7 @@ class Spooler(sp.Spooler):
         #if self.seriesName.startswith('/'):
         #    self.seriesName = self.seriesName[1:]
         #print filename, self.seriesName
+        self.clusterFilter = kwargs.get('serverfilter', CLUSTERID)
         self.buffer = []
         
         self.buflen = 50
@@ -166,7 +167,7 @@ class Spooler(sp.Spooler):
                         files.append((fn, pzf))
 
                     if len(files) > 0:
-                        clusterIO.putFiles(files)
+                        clusterIO.putFiles(files, serverfilter=self.clusterFilter)
 
                 finally:
                     with self._lock:
@@ -180,11 +181,11 @@ class Spooler(sp.Spooler):
         
     def getURL(self):
         #print CLUSTERID, self.seriesName
-        return 'PYME-CLUSTER://%s/%s' % (CLUSTERID, self.seriesName)
+        return 'PYME-CLUSTER://%s/%s' % (self.clusterFilter, self.seriesName)
         
     def StartSpool(self):
         sp.Spooler.StartSpool(self)
-        clusterIO.putFile(self.seriesName  + '/metadata.json', self.md.to_JSON())
+        clusterIO.putFile(self.seriesName  + '/metadata.json', self.md.to_JSON(), serverfilter=self.clusterFilter)
     
     def StopSpool(self):
         self.dPoll = False
@@ -192,11 +193,11 @@ class Spooler(sp.Spooler):
         
         logger.debug('Stopping spooling %s' % self.seriesName)
         
-        clusterIO.putFile(self.seriesName  + '/final_metadata.json', self.md.to_JSON())
+        clusterIO.putFile(self.seriesName  + '/final_metadata.json', self.md.to_JSON(), serverfilter=self.clusterFilter)
         
         #save the acquisition events as json - TODO - consider a binary format as the events
         #can be quite numerous
-        clusterIO.putFile(self.seriesName  + '/events.json', self.evtLogger.to_JSON())
+        clusterIO.putFile(self.seriesName  + '/events.json', self.evtLogger.to_JSON(), serverfilter=self.clusterFilter)
         
         
     def OnFrame(self, sender, frameData, **kwargs):

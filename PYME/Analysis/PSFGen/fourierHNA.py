@@ -570,6 +570,8 @@ def GenWidefieldPSF(zs, **kwargs):
 def Gen4PiPSF(zs,phi=0, zernikeCoeffs=[{},{}], **kwargs):
     from PYME.misc import zernike
     X, Y, R, FP, pupil, u, v = widefield_pupil_and_propagator(**kwargs)
+    
+    dphi = phi
 
     kwargs.pop('X', None)
     kwargs.pop('Y', None)
@@ -617,49 +619,53 @@ def Gen4PiPSF(zs,phi=0, zernikeCoeffs=[{},{}], **kwargs):
         st = np.sin(theta)
         cp = np.cos(phi)
         sp = np.sin(phi)
-    
-        fac = ct * cp ** 2 + sp ** 2
-        ps_u = np.concatenate([FP.propagate(pupil_upper * fac, z)[:, :, None] for z in zs], 2)
-        ps_l = np.concatenate([FP.propagate(pupil_lower * fac, -z)[:, :, None]*np.exp(1j*phi) for z in zs], 2)
-        ps = ps_u + ps_l
-        p = abs(ps ** 2)
-    
-        fac = (ct - 1) * cp * sp
-        ps_u = np.concatenate([FP.propagate(pupil_upper * fac, z)[:, :, None] for z in zs], 2)
-        ps_l = np.concatenate([FP.propagate(pupil_lower * fac, -z)[:, :, None] * np.exp(1j * phi) for z in zs], 2)
-        ps = ps_u + ps_l
-        p += abs(ps ** 2)
-    
-        fac = (ct - 1) * cp * sp
-        ps_u = np.concatenate([FP.propagate(pupil_upper * fac, z)[:, :, None] for z in zs], 2)
-        ps_l = np.concatenate([FP.propagate(pupil_lower * fac, -z)[:, :, None] * np.exp(1j * phi) for z in zs], 2)
-        ps = ps_u + ps_l
-        p += abs(ps ** 2)
-    
-        fac = ct * sp ** 2 + cp ** 2
-        ps_u = np.concatenate([FP.propagate(pupil_upper * fac, z)[:, :, None] for z in zs], 2)
-        ps_l = np.concatenate([FP.propagate(pupil_lower * fac, -z)[:, :, None] * np.exp(1j * phi) for z in zs], 2)
-        ps = ps_u + ps_l
-        p += abs(ps ** 2)
-    
-        fac = st * cp
-        ps_u = np.concatenate([FP.propagate(pupil_upper * fac, z)[:, :, None] for z in zs], 2)
-        ps_l = np.concatenate([FP.propagate(pupil_lower * fac, -z)[:, :, None] * np.exp(1j * phi) for z in zs], 2)
-        ps = ps_u + ps_l
-        p += abs(ps ** 2)
-    
-        fac = st * sp
-        ps_u = np.concatenate([FP.propagate(pupil_upper * fac, z)[:, :, None] for z in zs], 2)
-        ps_l = np.concatenate([FP.propagate(pupil_lower * fac, -z)[:, :, None] * np.exp(1j * phi) for z in zs], 2)
-        ps = ps_u + ps_l
-        p += abs(ps ** 2)
+        
+        psf = []
+        for z in zs:
+            fac = ct * cp ** 2 + sp ** 2
+            ps_u = FP.propagate(pupil_upper * fac, z)
+            ps_l = FP.propagate(pupil_lower * fac, -z)*np.exp(1j*dphi)
+            ps = ps_u + ps_l
+            p = abs(ps ** 2)
+        
+            fac = (ct - 1) * cp * sp
+            ps_u = FP.propagate(pupil_upper * fac, z)
+            ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
+            ps = ps_u + ps_l
+            p += abs(ps ** 2)
+        
+            fac = (ct - 1) * cp * sp
+            ps_u = FP.propagate(pupil_upper * fac, z)
+            ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
+            ps = ps_u + ps_l
+            p += abs(ps ** 2)
+        
+            fac = ct * sp ** 2 + cp ** 2
+            ps_u = FP.propagate(pupil_upper * fac, z)
+            ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
+            ps = ps_u + ps_l
+            p += abs(ps ** 2)
+        
+            fac = st * cp
+            ps_u = FP.propagate(pupil_upper * fac, z)
+            ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
+            ps = ps_u + ps_l
+            p += abs(ps ** 2)
+        
+            fac = st * sp
+            ps_u = FP.propagate(pupil_upper * fac, z)
+            ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
+            ps = ps_u + ps_l
+            p += abs(ps ** 2)
+            
+            psf.append(p[:,:,None])
 
-
+        p = np.concatenate(psf, 2)
     else:
         ###########
         # Default scalar case
         ps_u = np.concatenate([FP.propagate(pupil_upper, z)[:, :, None] for z in zs], 2)
-        ps_l = np.concatenate([FP.propagate(pupil_lower, -z)[:, :, None] * np.exp(1j * phi) for z in zs], 2)
+        ps_l = np.concatenate([FP.propagate(pupil_lower, -z)[:, :, None] * np.exp(1j * dphi) for z in zs], 2)
         ps = ps_u + ps_l
         p = abs(ps ** 2)
     
