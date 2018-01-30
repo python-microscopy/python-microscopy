@@ -17,10 +17,11 @@ tmp_root = None
 def setup_module():
     global proc, tmp_root
     tmp_root = os.path.join(tempfile.gettempdir(), 'PYMEDataServer_TEST')
-    os.makedirs(tmp_root)
+    if not os.path.exists(tmp_root):
+        os.makedirs(tmp_root)
     port_start = 8100
     for i in range(10):
-        proc = subprocess.Popen('PYMEDataServer -r %s -f TEST -t -p %d' % (tmp_root, port_start + i), shell=True)
+        proc = subprocess.Popen('PYMEDataServer -r %s -f TEST -t -p %d --timeout-test=0' % (tmp_root, port_start + i), shell=True)
         procs.append(proc)
         
     time.sleep(5)
@@ -43,5 +44,7 @@ def test_spooler():
     
 if __name__ == '__main__':
     setup_module()
-    test_spooler()
-    teardown_module()
+    try:
+        test_spooler()
+    finally:
+        teardown_module()

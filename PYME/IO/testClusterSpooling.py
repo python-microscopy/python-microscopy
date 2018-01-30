@@ -93,30 +93,33 @@ class TestSpooler:
                                                compressionSettings={'compression': HTTPSpooler.PZFFormat.DATA_COMP_RAW,
                                                                     'quantization':HTTPSpooler.PZFFormat.DATA_QUANT_NONE})
         
-        #spool our data    
-        self.spooler.StartSpool()
-
-        print(self.spooler.seriesName)
-
-        startTime = time.time()
-
-        self._spoolData(nFrames, interval)
-
-        #wait until we've sent everything
-        #this is a bit of a hack
-        time.sleep(.1)
-        while not self.spooler.postQueue.empty() or (self.spooler.numThreadsProcessing > 0):
+        try:
+            #spool our data
+            self.spooler.StartSpool()
+    
+            print(self.spooler.seriesName)
+    
+            startTime = time.time()
+    
+            self._spoolData(nFrames, interval)
+    
+            #wait until we've sent everything
+            #this is a bit of a hack
             time.sleep(.1)
-
-        endTime = time.time()
-        duration = endTime - startTime
-
-        print('######################################')
-        print('%d frames spooled in %f seconds' % (nFrames, duration))
-        print('%3.0f frames per second' % (nFrames/duration))
-        print('Avg throughput: %3.0f MB/s' % (nFrames*self.testData.nbytes/(1e6*duration)))
-
-        self.spooler.StopSpool()
+            while not self.spooler.finished():
+                time.sleep(.1)
+    
+            endTime = time.time()
+            duration = endTime - startTime
+    
+            print('######################################')
+            print('%d frames spooled in %f seconds' % (nFrames, duration))
+            print('%3.0f frames per second' % (nFrames/duration))
+            print('Avg throughput: %3.0f MB/s' % (nFrames*self.testData.nbytes/(1e6*duration)))
+    
+            self.spooler.StopSpool()
+        finally:
+            self.spooler.cleanup()
 
 
 

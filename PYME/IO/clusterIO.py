@@ -12,6 +12,7 @@ import requests
 import time
 import numpy as np
 import threading
+import httplib
 
 import socket
 import os
@@ -651,6 +652,7 @@ if USE_RAW_SOCKETS:
             connection = 'keep-alive'
             #pipeline the sends
             
+            nChunksSpooled = 0
             try:
                 while nChunksRemaining > 0:
                     filename, data = files[-nChunksRemaining]
@@ -664,7 +666,19 @@ if USE_RAW_SOCKETS:
                     s.sendall(data)
         
                     datalen += dl
+                    nChunksSpooled += 1
                     nChunksRemaining -= 1
+                    
+                for i in range(nChunksSpooled):
+                    #read all our replies
+                    #print(i, files[i][0])
+                    resp = httplib.HTTPResponse(s)
+                    resp.begin()
+                    status = resp.status
+                    msg = resp.read()
+                    if not status == 200:
+                        logging.debug(('Response %d - status: %d' % (i,status)) + ' msg: ' + msg)
+                        raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, msg))
 
             except socket.timeout:
                 if nRetries < 3:
@@ -681,15 +695,15 @@ if USE_RAW_SOCKETS:
                 # a "Connection: close" header in the last request.
                 # s.sendall('\r\n')
         
-                try:
-                    #perform all the recieves at once
-                    resp = s.recv(4096)
-                    while len(resp) > 0:
-                        resp = s.recv(4096)
-                except:
-                    logger.error('Failure to read from server %s' % socket.inet_ntoa(info.address))
-                    s.close()
-                    raise
+                # try:
+                #     #perform all the recieves at once
+                #     resp = s.recv(4096)
+                #     while len(resp) > 0:
+                #         resp = s.recv(4096)
+                # except:
+                #     logger.error('Failure to read from server %s' % socket.inet_ntoa(info.address))
+                #     s.close()
+                #     raise
                 #print resp
                 #TODO: Parse responses
                 s.close()

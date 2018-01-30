@@ -117,21 +117,23 @@ class Spooler(sp.Spooler):
         #    self.seriesName = self.seriesName[1:]
         #print filename, self.seriesName
         self.clusterFilter = kwargs.get('serverfilter', CLUSTERID)
-        self.buffer = []
+        self._buffer = []
         
         self.buflen = 50
         
-        self.postQueue = Queue.Queue()
-        self.dPoll = True
+        self._postQueue = Queue.Queue()
+        self._dPoll = True
         self._lock = threading.Lock()
-
-        self.numThreadsProcessing = 0
         
-        self.pollThreads = []
+        self._last_thread_exception = None
+
+        self._numThreadsProcessing = 0
+        
+        self._pollThreads = []
         for i in range(NUM_POLL_THREADS):
             pt = threading.Thread(target=self._queuePoll)
             pt.start()
-            self.pollThreads.append(pt)
+            self._pollThreads.append(pt)
         
         self.md = MetaDataHandler.NestedClassMDHandler()
         self.evtLogger = EventLogger(self)
@@ -151,12 +153,12 @@ class Spooler(sp.Spooler):
             pass
             
     def _queuePoll(self):
-        while self.dPoll:
+        while self._dPoll:
             try:
-                data = self.postQueue.get_nowait()
+                data = self._postQueue.get_nowait()
 
                 with self._lock:
-                    self.numThreadsProcessing += 1
+                    self._numThreadsProcessing += 1
 
                 try:
                     files = []
@@ -168,15 +170,27 @@ class Spooler(sp.Spooler):
 
                     if len(files) > 0:
                         clusterIO.putFiles(files, serverfilter=self.clusterFilter)
-
+                        
+                except Exception as e:
+                    self._last_thread_exception = e
+                    logging.exception('Exception whilst putting files')
+                    raise
                 finally:
                     with self._lock:
-                        self.numThreadsProcessing -= 1
+                        self._numThreadsProcessing -= 1
 
                 time.sleep(.01)
                 #print 't', len(data)
             except Queue.Empty:
                 time.sleep(.01)
+                
+    def finished(self):
+        if not self._last_thread_exception is None:
+            #raise an exception here, in the calling thread
+            logging.error('An exception occurred in one of the spooling threads')
+            raise RuntimeError('An exception occurred in one of the spooling threads')
+        else:
+            return self._postQueue.empty() or (self._numThreadsProcessing > 0)
 
         
     def getURL(self):
@@ -188,7 +202,7 @@ class Spooler(sp.Spooler):
         clusterIO.putFile(self.seriesName  + '/metadata.json', self.md.to_JSON(), serverfilter=self.clusterFilter)
     
     def StopSpool(self):
-        self.dPoll = False
+        self._dPoll = False
         sp.Spooler.StopSpool(self)
         
         logger.debug('Stopping spooling %s' % self.seriesName)
@@ -203,23 +217,26 @@ class Spooler(sp.Spooler):
     def OnFrame(self, sender, frameData, **kwargs):
         # NOTE: copy is now performed in frameWrangler, so we don't need to worry about it here
         if frameData.shape[0] == 1:
-            self.buffer.append((self.imNum, frameData))
+            self._buffer.append((self.imNum, frameData))
         else:
-            self.buffer.append((self.imNum, frameData.reshape(1,frameData.shape[0],frameData.shape[1])))
+            self._buffer.append((self.imNum, frameData.reshape(1, frameData.shape[0], frameData.shape[1])))
 
         #print len(self.buffer)
         t = time.time()
 
         #purge buffer if more than  self.buflen frames have been added, or more than 1 second elapsed
-        if (len(self.buffer) >= self.buflen) or ((t - self._lastFrameTime) > 1):
+        if (len(self._buffer) >= self.buflen) or ((t - self._lastFrameTime) > 1):
             self.FlushBuffer()
             self._lastFrameTime = t
         
         sp.Spooler.OnFrame(self)
+        
+    def cleanup(self):
+        self._dPoll = False
       
     def FlushBuffer(self):
-      self.postQueue.put(self.buffer)
-      self.buffer = []
+      self._postQueue.put(self._buffer)
+      self._buffer = []
      
 
 
