@@ -386,6 +386,7 @@ class VisGUICore(object):
         from .layer_wrapper import LayerWrapper
         l = LayerWrapper(self.pipeline, method=method, ds_name=ds_name, method_args = method_args)
         self.glCanvas.layers.append(l)
+        self.glCanvas.recenter_bbox()
         l.on_update.connect(self.glCanvas.refresh)
         
         self.layer_added.send(self)

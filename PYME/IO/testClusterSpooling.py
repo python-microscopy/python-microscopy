@@ -65,7 +65,7 @@ from PYME.util import fProfile
 
 # class DCIMGSpooler(object):
 class TestSpooler:
-    def __init__(self, testFrameSize = TEST_FRAME_SIZE):
+    def __init__(self, testFrameSize = TEST_FRAME_SIZE, serverfilter=''):
         
 
         self.testData = (100*np.random.rand(*testFrameSize)).astype('uint16')
@@ -73,6 +73,7 @@ class TestSpooler:
         self.spoolProgress = dispatch.Signal(['percent'])
 
         self.mdh = MetaDataHandler.NestedClassMDHandler()
+        self.serverfilter=serverfilter
 
 
     def run(self, filename=None, nFrames = 2000, interval=0, compression=False):
@@ -85,10 +86,10 @@ class TestSpooler:
 
         #generate the spooler
         if compression:
-            self.spooler = HTTPSpooler.Spooler(filename, self.onFrame, frameShape = None)
+            self.spooler = HTTPSpooler.Spooler(filename, self.onFrame, frameShape = None, serverfilter=self.serverfilter)
         else:
             self.spooler = HTTPSpooler.Spooler(filename, self.onFrame,
-                                               frameShape = None,
+                                               frameShape = None, serverfilter=self.serverfilter,
                                                compressionSettings={'compression': HTTPSpooler.PZFFormat.DATA_COMP_RAW,
                                                                     'quantization':HTTPSpooler.PZFFormat.DATA_QUANT_NONE})
         

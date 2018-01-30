@@ -112,7 +112,7 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.parent = parent
 
-        self.pointSize = 5  # default point size = 5nm
+        self.pointSize = 30  # default point size = 30nm
 
         self._scaleBarLength = 1000
 
@@ -228,6 +228,7 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.LUTOverlayLayer = LUTOverlayLayer()
         self.AxesOverlayLayer = AxesOverlayLayer()
+        
         self.overlays.append(SelectionOverlayLayer(self.selectionSettings))
         self.underlays.append(self.ScaleBoxOverlayLayer)
 
@@ -535,8 +536,6 @@ class LMGLShaderCanvas(GLCanvas):
 
     def setCMap(self, cmap):
         self.cmap = cmap
-        if self.LUTOverlayLayer:
-            self.LUTOverlayLayer.set_color_map(cmap)
         self.setColour()
 
     def setCLim(self, clim, alim=None):
@@ -852,6 +851,13 @@ class LMGLShaderCanvas(GLCanvas):
         self.sz = 0  # z.max() - z.min()
 
         self.scale = 2. / (max(self.sx, self.sy))
+        
+    def recenter_bbox(self):
+        bb = self.bbox
+        
+        centre = 0.5*(bb[:3] + bb[3:])
+        
+        self.xc, self.yc, self.zc = centre
 
     def set_view(self, view):
         self.vecBack = view.vec_back

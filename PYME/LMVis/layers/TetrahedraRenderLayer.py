@@ -39,16 +39,32 @@ class TetrahedraRenderLayer(VertexRenderLayer):
     DRAW_MODE = GL_TRIANGLES
     
 
-    def __init__(self, x, y, z, colors, color_map, size_cutoff, internal_cull, z_rescale, alpha, is_wire_frame=False):
-        p, a, n = gen3DTriangs(x, y, z / z_rescale, size_cutoff, internalCull=internal_cull)
-        if colors == 'z':
-            colors = p[:, 2]
-        else:
-            colors = 1. / a
-        color_limit = [colors.min(), colors.max()]
-        super(TetrahedraRenderLayer, self).__init__(colors=colors, color_map=color_map, color_limit=color_limit,
+    def __init__(self, x=None, y=None, z=None, colors=None, color_map=None, size_cutoff=None, internal_cull=None, z_rescale=None, alpha=None, is_wire_frame=False):
+        super(TetrahedraRenderLayer, self).__init__(colors=colors, color_map=color_map,
                                                     alpha=alpha)
-        self.set_values(p, n)
+        if size_cutoff:
+            self.size_cutoff = size_cutoff
+            
+        if internal_cull:
+            self.internal_cull = internal_cull
+            
+        if z_rescale:
+            self.z_rescale = z_rescale
+            
+        if x:
+            p, a, n = gen3DTriangs(x, y, z / self.z_rescale, self.size_cutoff, internalCull=self.internal_cull)
+            if colors == 'z':
+                colors = p[:, 2]
+            else:
+                colors = 1. / a
+            color_limit = [colors.min(), colors.max()]
+            self.update_data(x, y, z, colors, cmap=cmap, clim=clim, alpha=alpha)
+        else:
+            pass
+        
+        
+        
+        #self.set_values(p, n)
         if is_wire_frame:
             self.set_shader_program(WireFrameShaderProgram)
         else:
@@ -62,14 +78,17 @@ class TetrahedraRenderLayer(VertexRenderLayer):
         else:
             z = 0 * x
 
-        p, a, n = gen3DTriangs(x, y, z / z_rescale, size_cutoff, internalCull=internal_cull)
+        p, a, n = gen3DTriangs(x, y, z / self.z_rescale, self.size_cutoff, internalCull=self.internal_cull)
+        
+        
     
-        if not self.vertexColour == '':
+        if False:#not self.vertexColour == '':
+            #todo - set up for interpolated triangles
             c = ds[self.vertexColour]
         else:
-            c = None
+            c = 1. / a
     
-        self.update_data(x, y, z, c, cmap=cmap, clim=clim, alpha=alpha)
+        self.update_data(p[:,0], p[:,1], p[:,2], c, cmap=cmap, clim=clim, alpha=alpha)
 
     def update_data(self, x=None, y=None, z=None, colors=None, cmap=None, clim=None, alpha=1.0):
         self._vertices = None
@@ -115,7 +134,7 @@ class TetrahedraRenderLayer(VertexRenderLayer):
         -------
 
         """
-        with self.get_shader_program():
+        with self.shader_program:
             n_vertices = self.get_vertices().shape[0]
 
             glVertexPointerf(self.get_vertices())
