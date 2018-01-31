@@ -132,6 +132,7 @@ class Spooler(sp.Spooler):
         self._pollThreads = []
         for i in range(NUM_POLL_THREADS):
             pt = threading.Thread(target=self._queuePoll)
+            pt.daemon = False
             pt.start()
             self._pollThreads.append(pt)
         
@@ -190,7 +191,7 @@ class Spooler(sp.Spooler):
             logging.error('An exception occurred in one of the spooling threads')
             raise RuntimeError('An exception occurred in one of the spooling threads')
         else:
-            return self._postQueue.empty() or (self._numThreadsProcessing > 0)
+            return self._postQueue.empty() and (self._numThreadsProcessing == 0)
 
         
     def getURL(self):

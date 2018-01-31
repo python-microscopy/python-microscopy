@@ -219,6 +219,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     bandwidthTesting = False
     timeoutTesting = 0
     logrequests = False
+    timeout=None
 
 
     def _aggregate_txt(self):
@@ -355,6 +356,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             #while time.time() < exp:
             #    y = pow(5, 7)
             time.sleep(float(self.timeoutTesting)) #wait 10 seconds to force a timeout on the clients
+            #print('waited ... ')
             
         if self.bandwidthTesting:
             #just read file and dump contents
@@ -698,6 +700,7 @@ def main(protocol="HTTP/1.0"):
     PYMEHTTPRequestHandler.logrequests = options.log_requests
 
     httpd = ThreadedHTTPServer(server_address, PYMEHTTPRequestHandler)
+    #httpd = http.server.HTTPServer(server_address, PYMEHTTPRequestHandler)
     httpd.daemon_threads = True
 
     sa = httpd.socket.getsockname()

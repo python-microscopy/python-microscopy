@@ -631,29 +631,28 @@ if USE_RAW_SOCKETS:
         
         while nRetries < 3 and nChunksRemaining > 0:
             name, info = _chooseServer(serverfilter)
-            #logger.debug('Chose server: %s:%d' % (info.address, info.port))
-    
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            s.settimeout(5.0)
-    
-            #conect to the server
-            s.connect((socket.inet_ntoa(info.address), info.port))
-    
-    
-            datalen = 0
-    
-            t = time.time()
-            #_last_access_time[name] = t
-    
-            rs = []
-    
-            #nChunksRemaining = len(files)
-            connection = 'keep-alive'
-            #pipeline the sends
-            
-            nChunksSpooled = 0
+            logger.debug('Chose server: %s:%d' % (name, info.port))
             try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                s.settimeout(5.0)
+        
+                #conect to the server
+                s.connect((socket.inet_ntoa(info.address), info.port))
+        
+        
+                datalen = 0
+        
+                t = time.time()
+                #_last_access_time[name] = t
+        
+                rs = []
+        
+                #nChunksRemaining = len(files)
+                connection = 'keep-alive'
+                #pipeline the sends
+                
+                nChunksSpooled = 0
                 while nChunksRemaining > 0:
                     filename, data = files[-nChunksRemaining]
                     dl = len(data)
@@ -669,24 +668,33 @@ if USE_RAW_SOCKETS:
                     nChunksSpooled += 1
                     nChunksRemaining -= 1
                     
-                for i in range(nChunksSpooled):
-                    #read all our replies
-                    #print(i, files[i][0])
-                    resp = httplib.HTTPResponse(s)
-                    resp.begin()
-                    status = resp.status
-                    msg = resp.read()
-                    if not status == 200:
-                        logging.debug(('Response %d - status: %d' % (i,status)) + ' msg: ' + msg)
-                        raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, msg))
+                # TODO - FIXME so that reading replies is fast enough
+                # for i in range(nChunksSpooled):
+                #     #read all our replies
+                #     #print(i, files[i][0])
+                #     resp = httplib.HTTPResponse(s, buffering=False)
+                #     resp.begin()
+                #     status = resp.status
+                #     msg = resp.read()
+                #     if not status == 200:
+                #         logging.debug(('Response %d - status: %d' % (i,status)) + ' msg: ' + msg)
+                #         raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, msg))
 
             except socket.timeout:
-                if nRetries < 3:
+                if nRetries < 2:
                     nRetries += 1
                     logger.error('Timeout writing to %s, trying another server for %d remaining files' % (socket.inet_ntoa(info.address), nChunksRemaining))
                 else:
-                    logger.error('Timeout writing to %s after 3 retries, aborting - DATA WILL BE LOST' % socket.inet_ntoa(info.address))
-                    raise
+                    logger.exception('Timeout writing to %s after 3 retries, aborting - DATA WILL BE LOST' % socket.inet_ntoa(info.address))
+                    #raise
+                
+            except socket.error:
+                if nRetries < 2:
+                    nRetries += 1
+                    logger.exception('Error writing to %s, trying another server for %d remaining files' % (socket.inet_ntoa(info.address), nChunksRemaining))
+                else:
+                    logger.exception('Error writing to %s after 3 retries, aborting - DATA WILL BE LOST' % socket.inet_ntoa(info.address))
+                    #raise
                 
             finally:
                 # this causes the far end to close the connection after sending all the replies

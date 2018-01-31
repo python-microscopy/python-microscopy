@@ -10,6 +10,7 @@ from PYME.IO.clusterExport import ImageFrameSource, MDSource
 from PYME.IO import MetaDataHandler
 #import unittest
 import time
+import sys
 
 procs = []
 tmp_root = None
@@ -21,7 +22,7 @@ def setup_module():
         os.makedirs(tmp_root)
     port_start = 8100
     for i in range(10):
-        proc = subprocess.Popen('PYMEDataServer -r %s -f TEST -t -p %d --timeout-test=0' % (tmp_root, port_start + i), shell=True)
+        proc = subprocess.Popen('PYMEDataServer -r %s -f TEST -t -p %d --timeout-test=0' % (tmp_root, port_start + i), stderr= sys.stderr, shell=True)
         procs.append(proc)
         
     time.sleep(5)
@@ -38,13 +39,26 @@ def teardown_module():
     
     
 def test_spooler():
-    ts = testClusterSpooling.TestSpooler(testFrameSize=[256,256], serverfilter='TEST')
-    ts.run(nFrames=600)
+    ts = testClusterSpooling.TestSpooler(testFrameSize=[1024,256], serverfilter='TEST')
+    ts.run(nFrames=2000)
     
+
+from PYME.util import fProfile
     
 if __name__ == '__main__':
+    prof = fProfile.thread_profiler()
     setup_module()
     try:
+        PROFILE = False
+    
+        if True:
+            prof.profileOn('.*PYME.*|.*requests.*|.*socket.*|.*httplib.*', '/Users/david/spool_prof.txt')
+            PROFILE = True
+            
         test_spooler()
+
+        if PROFILE:
+            prof.profileOff()
+        time.sleep(5)
     finally:
         teardown_module()
