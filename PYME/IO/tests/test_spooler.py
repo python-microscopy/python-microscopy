@@ -51,7 +51,7 @@ if __name__ == '__main__':
     try:
         PROFILE = False
     
-        if True:
+        if False:
             prof.profileOn('.*PYME.*|.*requests.*|.*socket.*|.*httplib.*', '/Users/david/spool_prof.txt')
             PROFILE = True
             

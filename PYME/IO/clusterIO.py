@@ -620,6 +620,49 @@ def putFile(filename, data, serverfilter=''):
         
 
 if USE_RAW_SOCKETS:
+    def _read_status(fp):
+        line = fp.readline()
+        try:
+            [version, status, reason] = line.split(None, 2)
+        except ValueError:
+            [version, status] = line.split(None, 1)
+            reason = ""
+    
+        status = int(status)
+        
+        return version, status, reason
+    
+    _MAXLINE = 65536
+    
+    def _parse_response(fp):
+        '''A striped down version of httplib.HttpResponse.begin'''
+        
+        # read until we get a non-100 response
+        while True:
+            version, status, reason = _read_status(fp)
+            if status != httplib.CONTINUE:
+                break
+            # skip the header from the 100 response
+            while True:
+                skip = fp.readline(_MAXLINE + 1)
+                if len(skip) > _MAXLINE:
+                    raise httplib.LineTooLong("header line")
+                skip = skip.strip()
+                if not skip:
+                    break
+                    
+        msg = httplib.HTTPMessage(fp, 0)
+        msg.fp = None #force the message to relinquish it's file pointer
+        
+        length = msg.getheader('content-length')
+        if length:
+            data = fp.read(int(length))
+        else:
+            data = ''
+        
+        return status, reason, data
+                
+    
     def putFiles(files, serverfilter=''):
         """put a bunch of files to a single server in the cluster (chosen by algorithm)
 
@@ -631,7 +674,7 @@ if USE_RAW_SOCKETS:
         
         while nRetries < 3 and nChunksRemaining > 0:
             name, info = _chooseServer(serverfilter)
-            logger.debug('Chose server: %s:%d' % (name, info.port))
+            #logger.debug('Chose server: %s:%d' % (name, info.port))
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -668,7 +711,7 @@ if USE_RAW_SOCKETS:
                     nChunksSpooled += 1
                     nChunksRemaining -= 1
                     
-                # TODO - FIXME so that reading replies is fast enough
+                # # TODO - FIXME so that reading replies is fast enough
                 # for i in range(nChunksSpooled):
                 #     #read all our replies
                 #     #print(i, files[i][0])
@@ -679,6 +722,20 @@ if USE_RAW_SOCKETS:
                 #     if not status == 200:
                 #         logging.debug(('Response %d - status: %d' % (i,status)) + ' msg: ' + msg)
                 #         raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, msg))
+
+                fp = s.makefile('rb', 65536)
+                try:
+                    for i in range(nChunksSpooled):
+                        status, reason, msg = _parse_response(fp)
+                        if not status == 200:
+                            logging.error(('Response %d - status: %d' % (i, status)) + ' msg: ' + msg)
+                            raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, msg))
+                finally:
+                    fp.close()
+                    
+                    
+                    
+                
 
             except socket.timeout:
                 if nRetries < 2:
