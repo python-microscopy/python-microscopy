@@ -5,6 +5,7 @@ import errno
 import glob
 import time
 import datetime
+import traceback
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -32,6 +33,44 @@ def safe_remove(path):
         if e.errno != errno.ENOENT:
             raise
 
+class DumpsterRaccoon(object):
+    def __init__(self, num_retries=3):
+        self.retries = num_retries
+        self.dumpster = {}
+
+    def __len__(self):
+        return len(self.dumpster.keys())
+
+    def hoard_morsel(self, path):
+        try:  # if Raccoon already knows about the trash, increment the number of times he's tried to eat it
+            self.dumpster[path] += 1
+            if self.dumpster[path] < self.retries:
+                self.dumpster[path] += 1
+            else:  # this one's just not going down, forget about it
+                del self.dumpster[path]
+
+        except KeyError:  # this is the first time Raccoon has seen this trash, store for later consumption
+            self.dumpster[path] = 0
+
+    def eat_trash(self, path):
+        try:
+            safe_remove(path)
+            # if we're successful, make sure to remove this morsel from our memory
+            self.dumpster.pop(path, None)
+        except Exception:
+            self.hoard_morsel(path)
+            logger.exception(traceback.format_exc())
+
+    def skim_trash(self):
+        if len(self) > 0:
+            self.eat_trash(self.dumpster.keys()[0])
+
+    def dumpster_fire(self):
+        for k in self.dumpster.keys():
+            self.eat_trash(k)
+
+
+
 class venerableFileChucker(object):
     """
     fileChucker searches a given folder and hucks the DCIMG files it finds there onto the cluster.
@@ -55,6 +94,8 @@ class venerableFileChucker(object):
         self.timeout = timeout
         self.comp_settings = {'quantization': PZFFormat.DATA_QUANT_SQRT if quantize else PZFFormat.DATA_QUANT_NONE}
 
+        self.dumpster_raccoon = DumpsterRaccoon()
+
 
     def _spoolSeries(self, mdfilename, delete_after_spool=False):
         """
@@ -77,29 +118,34 @@ class venerableFileChucker(object):
         chunkList = sorted(glob.glob(series_stub + '*.dcimg'))
 
         for chunk in chunkList:
-            self.spooler.OnDCIMGChunkDetected(chunk)
-            #time.sleep(.5)   # FIXME: When using HUFFMANCODE more frames are lost without waiting
-            #wait until we've sent everything
-            #this is a bit of a hack
-            #time.sleep(.1)
-            while not self.spooler.spooler.postQueue.empty() or (self.spooler.spooler.numThreadsProcessing > 0):
-                time.sleep(.1)
-            if delete_after_spool:
-                safe_remove(chunk)
+            try:
+                self.spooler.OnDCIMGChunkDetected(chunk)
+                #time.sleep(.5)   # FIXME: When using HUFFMANCODE more frames are lost without waiting
+                #wait until we've sent everything
+                #this is a bit of a hack
+                #time.sleep(.1)
+                while not self.spooler.spooler.finished():
+                    time.sleep(.1)
+            finally:
+                if delete_after_spool:
+                    self.dumpster_raccoon.eat_trash(chunk)
 
         # spool _events.json
         events_filename = series_stub + '_events.json' #note that we ignore this at present, kept for future compatibility
         zsteps_filename = series_stub + '_zsteps.json'
 
-        self.spooler.OnSeriesComplete(events_filename, zsteps_filename, pushTaskToCluster=True)
+        try:
+            self.spooler.OnSeriesComplete(events_filename, zsteps_filename, pushTaskToCluster=True)
 
-        print(datetime.datetime.utcnow())
-        # TODO: Add Feedback from cluster and also speed up writing in cluster
-        # time.sleep(10)
-        if delete_after_spool:
-            safe_remove(mdfilename)
-            safe_remove(events_filename)
-            safe_remove(zsteps_filename)
+            print(datetime.datetime.utcnow())
+            # TODO: Add Feedback from cluster and also speed up writing in cluster
+            # time.sleep(10)
+        finally:
+            if delete_after_spool:
+                self.dumpster_raccoon.skim_trash()
+                self.dumpster_raccoon.eat_trash(mdfilename)
+                self.dumpster_raccoon.eat_trash(events_filename)
+                self.dumpster_raccoon.eat_trash(zsteps_filename)
 
     def huck(self, mdFile, delete_after_spool, only_spool_complete):
         """
@@ -150,26 +196,30 @@ class venerableFileChucker(object):
             chunkList = sorted(glob.glob(series_stub + '*.dcimg'))
 
             for chunk in [c for c in chunkList if c not in spooled_chunks]:
-                self.spooler.OnDCIMGChunkDetected(chunk)
-                # time.sleep(.5)  # FIXME: When using HUFFMANCODE more frames are lost without waiting
-                # wait until we've sent everything
-                # this is a bit of a hack
-                while not self.spooler.spooler.finished():
-                    time.sleep(.1)
-                if delete_after_spool:
-                    # TODO: update this to only delete files if they are sent successfully
-                    safe_remove(chunk)
+                try:
+                    self.spooler.OnDCIMGChunkDetected(chunk)
+                    # time.sleep(.5)  # FIXME: When using HUFFMANCODE more frames are lost without waiting
+                    # wait until we've sent everything
+                    # this is a bit of a hack
+                    while not self.spooler.spooler.finished():
+                        time.sleep(.1)
+                finally:
+                    if delete_after_spool:
+                        # TODO: update this to only delete files if they are sent successfully
+                        self.dumpster_raccoon.eat_trash(chunk)
 
 
 
         # we have seen our events file, the current series is complete
-        self.spooler.OnSeriesComplete(events_filename, zsteps_filename, pushTaskToCluster=True)
-        logger.debug('Finished spooling series %s' % series_stub)
-
-        if delete_after_spool:
-            safe_remove(mdfilename)
-            safe_remove(events_filename)
-            safe_remove(zsteps_filename)
+        try:
+            self.spooler.OnSeriesComplete(events_filename, zsteps_filename, pushTaskToCluster=True)
+            logger.debug('Finished spooling series %s' % series_stub)
+        finally:
+            if delete_after_spool:
+                self.dumpster_raccoon.skim_trash()
+                self.dumpster_raccoon.eat_trash(mdfilename)
+                self.dumpster_raccoon.eat_trash(events_filename)
+                self.dumpster_raccoon.eat_trash(zsteps_filename)
 
     def searchAndHuck(self, only_spool_new=False, delete_after_spool=False, only_spool_complete=False):
         """
@@ -201,7 +251,6 @@ class venerableFileChucker(object):
                 try:
                     self._spoolSeries(mdPath, delete_after_spool=delete_after_spool)
                 except Exception:
-                    import traceback
                     logger.exception(traceback.format_exc())
                 except KeyboardInterrupt:
                     sys.exit()
@@ -235,7 +284,6 @@ class venerableFileChucker(object):
             except KeyboardInterrupt:
                 sys.exit() #make sure other threads get killed if we kill with ctrl-c
             except Exception:
-                import traceback
                 logger.exception(traceback.format_exc())
 
 
