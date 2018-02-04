@@ -743,7 +743,7 @@ if USE_RAW_SOCKETS:
                     logger.error('Timeout writing to %s, trying another server for %d remaining files' % (socket.inet_ntoa(info.address), nChunksRemaining))
                 else:
                     logger.exception('Timeout writing to %s after 3 retries, aborting - DATA WILL BE LOST' % socket.inet_ntoa(info.address))
-                    #raise
+                    raise
                 
             except socket.error:
                 if nRetries < 2:
@@ -751,7 +751,7 @@ if USE_RAW_SOCKETS:
                     logger.exception('Error writing to %s, trying another server for %d remaining files' % (socket.inet_ntoa(info.address), nChunksRemaining))
                 else:
                     logger.exception('Error writing to %s after 3 retries, aborting - DATA WILL BE LOST' % socket.inet_ntoa(info.address))
-                    #raise
+                    raise
                 
             finally:
                 # this causes the far end to close the connection after sending all the replies

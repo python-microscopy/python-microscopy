@@ -227,6 +227,57 @@
             download_csv(csv.join("\n"), filename);
         }
 
+        var direction_data = [];
+        var velocity_data=[];
+
+        function export_summary_to_csv(data, filename) {
+            var csv = [];
+
+
+            //header
+            var row = [];
+            row.push('#filename');
+            row.push('wave');
+
+            for (var i = 0; i < data[0].length; i++){
+                //Empty columns for data to follow
+                row.push('');
+            }
+
+            csv.push(row.join(","));
+
+            row = [];
+
+            // write line with bin data
+            row.push('{{ recipe_context.file_stub }}');
+            row.push('bins');
+
+            for (var i = 0; i < data[0].length; i++){
+                // write bin data using bins from first wave
+                row.push('' + data[0][i][0]);
+            }
+
+            csv.push(row.join(","));
+
+            for (var j = 0; j < data.length; j++) {
+                var row = [];
+
+                var cols = data[j];
+
+                row.push("{{ recipe_context.file_stub }}");
+                row.push('' + j);
+
+                for (var i=0; i < cols.length;i++ ){
+                   row.push('' + cols[i][1])
+                }
+
+                csv.push(row.join(","));
+            }
+
+            // Download CSV
+            download_csv(csv.join("\n"), filename);
+        }
+
 
 
     </script>
@@ -252,6 +303,8 @@
                 <button id="wave_{{ loop.index0 }}_direction_download">Download plot data</button>
             <script type="application/ecmascript">
                 var da_{{ loop.index0 }} = JSON.parse("{{ d.direction_data }}");
+                direction_data.push(da_{{ loop.index0 }});
+
                 plot_polar(da_{{ loop.index0 }}, "#wave_{{ loop.index0 }}_direction_plot", 300, 300);
 
                 document.querySelector("#wave_{{ loop.index0 }}_direction_download").addEventListener("click", function () {
@@ -265,8 +318,9 @@
                 <div id="wave_{{ loop.index0 }}_velocity_mean"></div>
             <script type="application/ecmascript">
                 var dv_{{ loop.index0 }} = JSON.parse("{{ d.velocity_data }}");
-                var v_mean = d3.sum(dv_{{ loop.index0 }}.map(function(d){return d[0]*d[1]}))/d3.sum(dv_{{ loop.index0 }}.map(function(d){return d[1];}));
+                velocity_data.push(dv_{{ loop.index0 }});
 
+                var v_mean = d3.sum(dv_{{ loop.index0 }}.map(function(d){return d[0]*d[1]}))/d3.sum(dv_{{ loop.index0 }}.map(function(d){return d[1];}));
                 document.getElementById("wave_{{ loop.index0 }}_velocity_mean").textContent="Mean velocity: " + v_mean.toFixed(2) + " pixels/frame";
 
                 document.querySelector("#wave_{{ loop.index0 }}_velocity_download").addEventListener("click", function () {
@@ -284,11 +338,26 @@
         {% endfor %}
 
 
+    <h2>Summary:</h2>
 
+    <button id="direction_download">Download All Direction Data</button>
 
+            <script type="application/ecmascript">
+                document.querySelector("#direction_download").addEventListener("click", function () {
+                    export_summary_to_csv(direction_data, "{{recipe_context.file_stub}}_direction.csv");
+                });
+            </script>
 
+    <button id="wave_{{ loop.index0 }}_velocity_download">Download All Velocity Data</button>
+            <script type="application/ecmascript">
+
+                document.querySelector("velocity_download").addEventListener("click", function () {
+                    export_summary_to_csv(velocity_data, "{{recipe_context.file_stub}}_velocity.csv");
+                });
+            </script>
 
     </div>
+
 </body>
 
 
