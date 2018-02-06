@@ -18,7 +18,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-
+import logging
+logger = logging.getLogger(__name__)
 
 class ShaderProgramFactory:
     def __init__(self):
@@ -44,5 +45,5 @@ class ShaderProgramFactory:
         else:
             new_program = class_name()
             ShaderProgramFactory._programs[class_name] = new_program
-            print("New shader program created: {}".format(class_name))
+            logger.debug("New shader program created: {}".format(class_name))
             return new_program

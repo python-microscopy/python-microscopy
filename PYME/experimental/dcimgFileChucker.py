@@ -154,7 +154,7 @@ class venerableFileChucker(object):
                 # time.sleep(.5)  # FIXME: When using HUFFMANCODE more frames are lost without waiting
                 # wait until we've sent everything
                 # this is a bit of a hack
-                while not self.spooler.spooler.postQueue.empty() or (self.spooler.spooler.numThreadsProcessing > 0):
+                while not self.spooler.spooler.finished():
                     time.sleep(.1)
                 if delete_after_spool:
                     # TODO: update this to only delete files if they are sent successfully
