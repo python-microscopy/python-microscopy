@@ -34,14 +34,51 @@ def safe_remove(path):
             raise
 
 class DumpsterRaccoon(object):
+    """
+
+    The DumpsterRaccoon does keeps track of files we try to delete before a non-PYME acquisition software releases the
+    file. The raccoon has methods to retry deletion, but is currently not run in its own thread, and therefor these
+    methods are called explicitly by the FileChucker.
+
+    """
     def __init__(self, num_retries=3):
+        """
+
+        Parameters
+        ----------
+        num_retries : int
+            Maximum number of attempts to be made in deleting any given file before ignoring it
+
+        """
         self.retries = num_retries
         self.dumpster = {}
 
     def __len__(self):
+        """
+
+        Returns
+        -------
+        num_paths : int
+            The number of files which are currently queued to be removed
+
+        """
         return len(self.dumpster.keys())
 
     def hoard_morsel(self, path):
+        """
+
+        Increments the number of attempts that have been made to remove a file and handles deletion of that file from
+        the queue if self.retries is exceeded.
+
+        Parameters
+        ----------
+        path : str
+            Full file path to the file to be garbage-collected
+
+        Returns
+        -------
+
+        """
         try:  # if Raccoon already knows about the trash, increment the number of times he's tried to eat it
             self.dumpster[path] += 1
             if self.dumpster[path] < self.retries:
@@ -53,6 +90,19 @@ class DumpsterRaccoon(object):
             self.dumpster[path] = 0
 
     def eat_trash(self, path):
+        """
+
+        Try to delete a single file. If it fails, hoard the tasty morsel for later consumption.
+
+        Parameters
+        ----------
+        path : str
+            Full file path to the file to be garbage-collected
+
+        Returns
+        -------
+
+        """
         try:
             safe_remove(path)
             # if we're successful, make sure to remove this morsel from our memory
@@ -62,10 +112,26 @@ class DumpsterRaccoon(object):
             logger.exception(traceback.format_exc())
 
     def skim_trash(self):
+        """
+
+        Try to remove a single piece of trash from the queue.
+
+        Returns
+        -------
+
+        """
         if len(self) > 0:
             self.eat_trash(self.dumpster.keys()[0])
 
     def dumpster_fire(self):
+        """
+
+        Try to remove each piece of trash currently in the queue.
+
+        Returns
+        -------
+
+        """
         for k in self.dumpster.keys():
             self.eat_trash(k)
 
@@ -142,7 +208,7 @@ class venerableFileChucker(object):
             # time.sleep(10)
         finally:
             if delete_after_spool:
-                self.dumpster_raccoon.skim_trash()
+                self.dumpster_raccoon.dumpster_fire()
                 self.dumpster_raccoon.eat_trash(mdfilename)
                 self.dumpster_raccoon.eat_trash(events_filename)
                 self.dumpster_raccoon.eat_trash(zsteps_filename)
@@ -216,7 +282,7 @@ class venerableFileChucker(object):
             logger.debug('Finished spooling series %s' % series_stub)
         finally:
             if delete_after_spool:
-                self.dumpster_raccoon.skim_trash()
+                self.dumpster_raccoon.dumpster_fire()
                 self.dumpster_raccoon.eat_trash(mdfilename)
                 self.dumpster_raccoon.eat_trash(events_filename)
                 self.dumpster_raccoon.eat_trash(zsteps_filename)
