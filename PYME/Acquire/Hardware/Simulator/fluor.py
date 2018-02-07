@@ -240,11 +240,11 @@ class EmpiricalHistFluors(fluors):
             # Calculate how long these suckers will be on
             if any(idxs_on):
                 r_on = np.random.rand(sum(idxs_on.astype(int)))
-                self.times[idxs_on] = self.histogram.get_time(
+                self.times[idxs_on] = self.histogram.get_time_splined(
                     self.laserPowers, r_on, 'on')
             if any(idxs_off) > 0:
                 r_off = np.random.rand(sum(idxs_off.astype(int)))
-                self.times[idxs_off] = self.histogram.get_time(
+                self.times[idxs_off] = self.histogram.get_time_splined(
                     self.laserPowers, r_off, 'off')
 
 
@@ -271,3 +271,6 @@ class EmpiricalHistFluors(fluors):
                                                              laserPowers[1]*90
 
         return curr_state*ilFrac
+
+    def __del__(self):
+        self.doPoll = False

@@ -1,18 +1,19 @@
 import numpy as np
 from math import log
-from scipy.interpolate import SmoothBivariateSpline, Rbf
+#from scipy.interpolate import SmoothBivariateSpline, Rbf
+from scipy.interpolate import interp1d
 from PYME.Deconv import dec  # base deconvolution classes
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 reload(dec)
 np.seterr(divide='ignore', invalid='ignore')
 
 #https://stackoverflow.com/questions/354038/how-do-i-check-if-a-string-is-a-number-float
-def is_number(s):
-    try:
-        float(s)
-        return True
-    except:
-        return False
+# def is_number(s):
+#     try:
+#         float(s)
+#         return True
+#     except:
+#         return False
 
 
 class DeconvEmpiricalHist(dec.dec):
@@ -194,7 +195,22 @@ class EmpiricalHist:
         # now return the time
         return self.trange(key)[t_int]
 
-    # def generate_spline(self, key):
+    def get_time_splined(self, powr, prob, key):
+        """
+        Return time estimate for a given power and cumulative probability
+        using 1D spline.
+        """
+
+        # Which power are we looking at?
+        p_int = np.digitize(powr, self.prange(key), right=True)
+
+        p_raw = self.cumhist[key][:, p_int]
+        p_spline = interp1d(p_raw, self.trange(key), fill_value='extrapolate')
+
+        return p_spline(prob)
+
+
+        # def generate_spline(self, key):
     #     dt = np.linspace(self._tmin[key], self._tmax[key], self.cumhist[key].shape[0])
     #     dp = np.linspace(self._pmin[key], self._pmax[key], self.cumhist[key].shape[1])
     #
