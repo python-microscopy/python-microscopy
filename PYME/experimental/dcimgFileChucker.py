@@ -263,6 +263,7 @@ class venerableFileChucker(object):
 
             for chunk in [c for c in chunkList if c not in spooled_chunks]:
                 try:
+                    spooled_chunks.append(chunk)
                     self.spooler.OnDCIMGChunkDetected(chunk)
                     # time.sleep(.5)  # FIXME: When using HUFFMANCODE more frames are lost without waiting
                     # wait until we've sent everything
