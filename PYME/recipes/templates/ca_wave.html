@@ -348,10 +348,10 @@
                 });
             </script>
 
-    <button id="wave_{{ loop.index0 }}_velocity_download">Download All Velocity Data</button>
+    <button id="velocity_download">Download All Velocity Data</button>
             <script type="application/ecmascript">
 
-                document.querySelector("velocity_download").addEventListener("click", function () {
+                document.querySelector("#velocity_download").addEventListener("click", function () {
                     export_summary_to_csv(velocity_data, "{{recipe_context.file_stub}}_velocity.csv");
                 });
             </script>
