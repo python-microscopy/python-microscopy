@@ -250,13 +250,13 @@ class venerableFileChucker(object):
         while (not spooling_complete) and (time.time() < spool_timeout):
             # check to see if we have an events file (our end signal)
             on_disk = (os.path.exists(events_filename) or os.path.exists(zsteps_filename))
-            if only_spool_complete and not on_disk:
+            if on_disk:
+                # flag as complete so we exit the loop after spooling
+                spooling_complete = True
+            if only_spool_complete and (not spooling_complete):
                 # keep waiting
                 time.sleep(0.1)
                 continue
-            else:
-                # flag as complete so we exit the loop after spooling
-                spooling_complete = True
 
             # find chunks for this metadata file (this should return the full paths)
             chunkList = sorted(glob.glob(series_stub + '*.dcimg'))
