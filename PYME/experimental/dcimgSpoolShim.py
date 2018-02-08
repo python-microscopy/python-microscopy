@@ -139,16 +139,17 @@ class DCIMGSpoolShim(object):
 
         if pushTaskToCluster:
 
-            self.mdh.setEntry('Analysis.BGRange', [-30, 0])
+            self.mdh.setEntry('Analysis.BGRange', [-32, 0])
             self.mdh.setEntry('Analysis.DebounceRadius', 4)
-            self.mdh.setEntry('Analysis.DetectionThreshold', 0.85)
+            self.mdh.setEntry('Analysis.DetectionThreshold', 0.75)
             self.mdh.setEntry('Analysis.FiducialThreshold', 1.8)
             self.mdh.setEntry('Analysis.FitModule', 'AstigGaussGPUFitFR')
-            self.mdh.setEntry('Analysis.PCTBackground', 0.0)
+            self.mdh.setEntry('Analysis.PCTBackground', 0.25)
             self.mdh.setEntry('Analysis.ROISize', 7.5)
-            self.mdh.setEntry('Analysis.StartAt', 30)
+            self.mdh.setEntry('Analysis.StartAt', 32)
             self.mdh.setEntry('Analysis.TrackFiducials', False)
             self.mdh.setEntry('Analysis.subtractBackground', True)
+            self.mdh.setEntry('Analysis.GPUPCTBackground', True)
             cluster_filename = 'pyme-cluster:///' + self.spooler.seriesName
             HTTPTaskPusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
 

@@ -503,7 +503,7 @@ class ModuleCollection(HasTraits):
         """
         #modify this to allow for different file types - currently only supports images
         from PYME.IO import unifiedIO
-        if filename.split('.')[-1] in ['.h5r', '.h5']:
+        if filename.split('.')[-1] in ['h5r', 'h5']:
             import tables
             from PYME.IO import MetaDataHandler
             from PYME.IO import tabular
