@@ -159,7 +159,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         
         
         self.paneHooks.append(self.GenPanels)
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
 
         if not filename is None:
     

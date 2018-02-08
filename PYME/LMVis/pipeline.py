@@ -246,10 +246,15 @@ def _processEvents(ds, events, mdh):
                              mdh.getOrDefault('Protocol.PiezoStartPos', 0) + mdh['StackSettings.NumSteps'] * mdh[
                                  'StackSettings.StepSize'], mdh['StackSettings.StepSize'])
         position = np.tile(position, mdh['StackSettings.NumCycles'])
-
-        zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
-        ev_mappings['zm'] = zm
-        eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
+        
+        logger.debug('Spoofing focus events from metadata')
+        
+        if not len(position) == len(frames):
+            logger.error('Error spoofing focus events -  frames: %s, positions %s' % (frames, position))
+        else:
+            zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
+            ev_mappings['zm'] = zm
+            eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
 
     return ev_mappings, eventCharts
 
