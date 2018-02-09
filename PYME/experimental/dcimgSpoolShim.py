@@ -65,7 +65,7 @@ class DCIMGSpoolShim(object):
     """
     def __init__(self, timeout):
         self.n_spooled = 0
-        self.timeout = int(timeout / dt)
+        self.max_checks = int(timeout / dt)
     
     def OnNewSeries(self, metadataFilename, comp_settings=None):
         """Called when a new series is detected (ie the <seriesname>.json)
@@ -74,7 +74,7 @@ class DCIMGSpoolShim(object):
         if comp_settings is None:
             comp_settings = {}
         # Make sure that json file is done writing
-        success = _wait_for_file(metadataFilename, self.timeout)
+        success = _wait_for_file(metadataFilename, self.max_checks)
         if not success:
             raise UserWarning('dcimg file is taking too long to finish writing')
 
@@ -115,7 +115,7 @@ class DCIMGSpoolShim(object):
     def OnDCIMGChunkDetected(self, chunkFilename):
         """Called whenever a new chunk is detected.
         spools that chunk to the cluster"""
-        success = _wait_for_file(chunkFilename, self.timeout)
+        success = _wait_for_file(chunkFilename, self.max_checks)
         if not success:
             raise UserWarning('dcimg file is taking too long to finish writing')
 
