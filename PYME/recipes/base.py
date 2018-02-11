@@ -561,6 +561,9 @@ class Filter(ModuleBase):
     processFramesIndividually = Bool(True)
     
     def filter(self, image):
+        #from PYME.util.shmarray import shmarray
+        #import multiprocessing
+        
         if self.processFramesIndividually:
             filt_ims = []
             for chanNum in range(image.data.shape[3]):

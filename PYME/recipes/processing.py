@@ -192,14 +192,56 @@ class OpticalFlow(ModuleBase):
             flow_y.append(np.atleast_3d(dy))                
         
         
-        return np.concatenate(flow_x, 2),np.concatenate(flow_y, 2) 
+        return np.concatenate(flow_x, 2),np.concatenate(flow_y, 2)
+    
+    def _mp_calc_frame_flow(self, data_s, flow_x, flow_y, frames):
+        for i in frames:
+            dx, dy = self._calc_frame_flow(data_s, i, 0)
+        
+            flow_x[:, :, i] = dx
+            flow_y[:, :, i] = dy
+        
+
+    def calc_flow_mp(self, data, chanNum):
+        from PYME.util.shmarray import shmarray
+        import multiprocessing
+        
+        data_s = shmarray.zeros(list(data.shape[:3] + [1,]))
+        #print data_s.shape, data.shape
+        data_s[:,:,:,0] = data[:,:,:,chanNum]
+        
+        flow_x = shmarray.zeros(data.shape[:3])
+        flow_y = shmarray.zeros(data.shape[:3])
+        
+        nCPUs = multiprocessing.cpu_count()
+        
+        all_frames = range(0, data.shape[2])
+        tasks = [all_frames[i::nCPUs] for i in range(nCPUs)]
+
+        processes = [multiprocessing.Process(target=self._mp_calc_frame_flow, args=(data_s, flow_x, flow_y, frames))
+                     for frames in tasks]
+
+        for p in processes:
+            p.start()
+
+        for p in processes:
+            p.join()
+    
+    
+        return flow_x, flow_y
         
     def execute(self, namespace):
+        import multiprocessing
         image = namespace[self.inputName]
         flow_x = []
         flow_y = []
         for chanNum in range(image.data.shape[3]):
-            fx, fy = self.calc_flow(image.data, chanNum)
+            if (image.data.shape[2] > 10) and not multiprocessing.current_process().daemon:
+                #use multiple processes for computation
+                fx, fy = self.calc_flow_mp(image.data, chanNum)
+            else:
+                fx, fy = self.calc_flow(image.data, chanNum)
+                
             flow_x.append(fx)
             flow_y.append(fy)
         
@@ -435,6 +477,15 @@ class CaWave(object):
         print('wave sub-recipe done')
         
     @property
+    def start_frame(self):
+        return int(self.trange[0])
+
+    @property
+    def end_frame(self):
+        return int(self.trange[1])
+        
+        
+    @property
     def direction_plot(self):
         import matplotlib.pyplot as plt
         import mpld3
@@ -578,6 +629,7 @@ class FindCaWaves(ModuleBase):
     waveRecipeFileName = CStr('')
     
     minWaveFrames = Int(5)
+    minActivePixels = Int(10)
     
     outputName = Output('waves')
     
@@ -592,7 +644,7 @@ class FindCaWaves(ModuleBase):
         
         
         #a wave is a contiguous region of non-zero wavefronts
-        wave_labels, nWaves = ndimage.label(wavefront_I > .5)
+        wave_labels, nWaves = ndimage.label(wavefront_I > float(self.minActivePixels))
         
         print('Detected %d wave candidates' % nWaves)
         

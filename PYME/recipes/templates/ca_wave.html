@@ -290,7 +290,8 @@
     <div class="content">
 
         {% for d in data %}
-            <h2>Wave {{  loop.index0 }}</h2>
+            <h2>Wave {{  loop.index }}</h2>
+                <p>Frames: {{ d.start_frame }}-{{ d.end_frame }}</p>
 {#            <p>{{ d.direction_plot }}#}
             <table>
             <tr>
