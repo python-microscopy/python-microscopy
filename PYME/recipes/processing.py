@@ -236,7 +236,7 @@ class OpticalFlow(ModuleBase):
         flow_x = []
         flow_y = []
         for chanNum in range(image.data.shape[3]):
-            if (image.data.shape[2] > 10) and not multiprocessing.current_process().daemon:
+            if False:#(image.data.shape[2] > 10) and not multiprocessing.current_process().daemon:
                 #use multiple processes for computation
                 fx, fy = self.calc_flow_mp(image.data, chanNum)
             else:
