@@ -10,9 +10,9 @@ from PYME.Analysis import MetaData
 from PYME.Acquire import HTTPSpooler
 from PYME.ParallelTasks import HTTPTaskPusher
 
-# dt is the period of time the spooler will wait before checking if a file is free to be spooled (i.e. external
+# DT is the period of time the spooler will wait before checking if a file is free to be spooled (i.e. external
 # acquisition software has finished writing the dcimg file)
-dt = 0.1
+DT = 0.1
 
 def _writing_finished(filename):
     """Check to see whether anyone else has this file open.
@@ -28,7 +28,7 @@ def _writing_finished(filename):
     except:
         return False
 
-def _wait_for_file(filename, checks=200):
+def _wait_for_file(filename, timeout=20):
     """
     Wait until others have finished with the file.
 
@@ -38,22 +38,19 @@ def _wait_for_file(filename, checks=200):
     ----------
     filename : str
         The fully resolved path of the file in question
-    checks : int
-        Number of times to check whether an external program is finished with the file. The timeout is set by this
-        parameter, as is equal to checks * dt (define above and typically 0.1 s to avoid a busy loop on the CPU)
+    timeout : int or float
+        Time period to keep checking whether the file is written before giving up
 
     Returns
     -------
     finished : bool
-        True if file is no longer held by external programs, False if still in use by other programs after the timeout
-        period of checks * dt
+        True if file is no longer held by external programs, False if still in use by other programs after the timeout.
 
     """
-    ind = 0
+    stop = time.time() + timeout
     while not _writing_finished(filename):
-        time.sleep(dt)
-        ind += 1
-        if ind >= checks:
+        time.sleep(DT)
+        if time.time() >= stop:
             return False
     return True
 
@@ -65,7 +62,7 @@ class DCIMGSpoolShim(object):
     """
     def __init__(self, timeout):
         self.n_spooled = 0
-        self.max_checks = int(timeout / dt)
+        self.timeout = timeout
     
     def OnNewSeries(self, metadataFilename, comp_settings=None):
         """Called when a new series is detected (ie the <seriesname>.json)
@@ -74,7 +71,7 @@ class DCIMGSpoolShim(object):
         if comp_settings is None:
             comp_settings = {}
         # Make sure that json file is done writing
-        success = _wait_for_file(metadataFilename, self.max_checks)
+        success = _wait_for_file(metadataFilename, self.timeout)
         if not success:
             raise UserWarning('dcimg file is taking too long to finish writing')
 
@@ -115,7 +112,7 @@ class DCIMGSpoolShim(object):
     def OnDCIMGChunkDetected(self, chunkFilename):
         """Called whenever a new chunk is detected.
         spools that chunk to the cluster"""
-        success = _wait_for_file(chunkFilename, self.max_checks)
+        success = _wait_for_file(chunkFilename, self.timeout)
         if not success:
             raise UserWarning('dcimg file is taking too long to finish writing')
 
