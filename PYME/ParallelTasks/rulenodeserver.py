@@ -27,8 +27,8 @@ cherrypy.server.socket_timeout = 0
 import requests
 import multiprocessing
 
-
-
+#TODO - should be defined in one place
+STATUS_UNAVAILABLE, STATUS_AVAILABLE, STATUS_ASSIGNED, STATUS_COMPLETE, STATUS_FAILED = range(5)
 
 
 class Rater(object):
@@ -211,9 +211,10 @@ class NodeServer(object):
                 successful_bids = json.loads(r.content)
                 
                 for bid in successful_bids:
-                    rule = rules_by_ID[bid['ruleID']]
+                    ruleID = bid['ruleID']
+                    rule = rules_by_ID[ruleID]
                     for taskID in rule['taskIDs']:
-                        self._tasks.put(rule['template'].format(taskID=taskID))
+                        self._tasks.put(rule['template'].format(taskID=taskID, ruleID=ruleID))
                
                 
             except requests.Timeout:
@@ -241,8 +242,36 @@ class NodeServer(object):
                 handins.append(self._handins.get_nowait())
         except Queue.Empty:
             pass
+        
+        
 
         if len(handins) > 0:
+            handins_by_rule = {}
+    
+            for handin in handins:
+                ruleID, taskID = handin['id'].split('~')
+                
+                if handin['status'] == 'success':
+                    status = STATUS_COMPLETE
+                elif handin['status'] == 'failure':
+                    status = STATUS_FAILED
+                else:
+                    logger.error('Unknown handin status: %s, ignoring' % status)
+                    continue
+                
+                taskID = int(taskID)
+                
+                try:
+                    h_ruleID = handins_by_rule[ruleID]
+                except KeyError:
+                    h_ruleID = {'taskIDs' : [], 'status' : []}
+                    handins_by_rule[ruleID] = h_ruleID
+                    
+                h_ruleID['taskIDs'].append(taskID)
+                h_ruleID['status'].append(status)
+                
+        
+                
             try:
                 r = self.handinSession.post(self.distributor_url + 'handin', json=handins)
                 resp = r.json()

@@ -26,9 +26,11 @@ import numpy as np
 class Rule(object):
     pass
 
+STATUS_UNAVAILABLE, STATUS_AVAILABLE, STATUS_ASSIGNED, STATUS_COMPLETE, STATUS_FAILED = range(5)
+
 class IntegerIDRule(Rule):
     TASK_INFO_DTYPE = np.dtype([('status', 'uint8'), ('nRetries', 'uint8'), ('expiry', 'f4')])
-    STATUS_UNAVAILABLE, STATUS_AVAILABLE, STATUS_ASSIGNED, STATUS_COMPLETE, STATUS_FAILED = range(5)
+    
     
     def __init__(self, ruleID, task_template, max_task_ID=100000, task_timeout=600, rule_timeout=3600):
         self.ruleID = ruleID
@@ -52,7 +54,7 @@ class IntegerIDRule(Rule):
         
         #TODO - check existing status - it probably makes sense to only apply this to tasks which have STATUS_UNAVAILABLE
         with self._info_lock:
-            self._task_info['status'][start:end] = self.STATUS_AVAILABLE
+            self._task_info['status'][start:end] = STATUS_AVAILABLE
 
         self.expiry = time.time() + self._rule_timeout
             
@@ -69,8 +71,8 @@ class IntegerIDRule(Rule):
         
         taskIDs = np.array(bid['taskIDs'], 'i')
         with self._info_lock:
-            successful_bid_ids = taskIDs[self._task_info['status'][taskIDs] == self.STATUS_AVAILABLE]
-            self._task_info['status'][successful_bid_ids] = self.STATUS_ASSIGNED
+            successful_bid_ids = taskIDs[self._task_info['status'][taskIDs] == STATUS_AVAILABLE]
+            self._task_info['status'][successful_bid_ids] = STATUS_ASSIGNED
             self._task_info['expiry'][successful_bid_ids] = time.time() + self._timeout
 
         self.expiry = time.time() + self._rule_timeout
@@ -90,23 +92,23 @@ class IntegerIDRule(Rule):
     def advert(self):
         return {'ruleID' : self.ruleID,
                 'taskTemplate': self._template,
-                'availableTaskIDs': np.where(self._task_info['status'] == self.STATUS_AVAILABLE)[0].tolist()}
+                'availableTaskIDs': np.where(self._task_info['status'] == STATUS_AVAILABLE)[0].tolist()}
     
     @property
     def nAvailable(self):
-        return (self._task_info['status'] == self.STATUS_AVAILABLE).sum()
+        return (self._task_info['status'] == STATUS_AVAILABLE).sum()
     
     @property
     def nAssigned(self):
-        return (self._task_info['status'] == self.STATUS_ASSIGNED).sum()
+        return (self._task_info['status'] == STATUS_ASSIGNED).sum()
 
     @property
     def nCompleted(self):
-        return (self._task_info['status'] == self.STATUS_COMPLETE).sum()
+        return (self._task_info['status'] == STATUS_COMPLETE).sum()
 
     @property
     def nFailed(self):
-        return (self._task_info['status'] == self.STATUS_FAILED).sum()
+        return (self._task_info['status'] == STATUS_FAILED).sum()
 
     @property
     def nTotal(self):
@@ -128,12 +130,12 @@ class IntegerIDRule(Rule):
         t = time.time()
         
         with self._info_lock:
-            timed_out = np.where((self._task_info['status'] == self.STATUS_ASSIGNED)*(self._task_info['expiry'] < t))[0]
+            timed_out = np.where((self._task_info['status'] == STATUS_ASSIGNED)*(self._task_info['expiry'] < t))[0]
             
-            self._task_info['status'][timed_out] = self.STATUS_AVAILABLE
+            self._task_info['status'][timed_out] = STATUS_AVAILABLE
             self._task_info['nRetries'][timed_out] += 1
 
-            self._task_info['status'][self._task_info['nRetries'] > self._n_retries] = self.STATUS_FAILED
+            self._task_info['status'][self._task_info['nRetries'] > self._n_retries] = STATUS_FAILED
         
         
     
