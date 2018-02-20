@@ -214,9 +214,9 @@ class HTTPRulePusher(object):
     @property
     def _taskTemplate(self):
         if self._task_template is None:
-            tt = {'id': '{ruleID}~{taskID:04d}',
+            tt = {'id': '{{ruleID}}~{{taskID}}',
                       'type':'localization',
-                      'taskdef': {'frameIndex': '{taskID:d}', 'metadata':self.results_md_uri},
+                      'taskdef': {'frameIndex': '{{taskID}}', 'metadata':self.results_md_uri},
                       'inputs' : {'frames': self.dataSourceID},
                       'outputs' : {'fitResults': self.resultsURI+'/FitResults',
                                    'driftResults':self.resultsURI+'/DriftResults'}

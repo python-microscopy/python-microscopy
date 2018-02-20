@@ -174,7 +174,7 @@ class RuleServer(object):
                 if self._rules[qn].expired:
                     self._rules.pop(qn)
             
-            time.sleep(.1)
+            time.sleep(1)
     
     def stop(self):
         self._do_poll = False
@@ -238,7 +238,7 @@ class RuleServer(object):
             
             rule = self._rules[ruleID]
             
-            rule.mark_complete(handin['taskIds'], handin['taskCompletionStatus'])
+            rule.mark_complete(handin)
             
         return json.dumps({'ok': True})
     

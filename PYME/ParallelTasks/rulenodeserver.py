@@ -30,6 +30,13 @@ import multiprocessing
 #TODO - should be defined in one place
 STATUS_UNAVAILABLE, STATUS_AVAILABLE, STATUS_ASSIGNED, STATUS_COMPLETE, STATUS_FAILED = range(5)
 
+def template_fill(template, **kwargs):
+    s = template
+
+    for key, value in kwargs.items():
+        s = s.replace('{{%s}}' % key, '%s' % value)
+    
+    return s
 
 class Rater(object):
     def __init__(self, rule):
@@ -37,7 +44,7 @@ class Rater(object):
         self.taskIDs = rule['availableTaskIDs']
         self.template = rule['taskTemplate']
         
-        logger.debug('Template: %s'  % self.template)
+        #logger.debug('Template: %s'  % self.template)
         
         self.n = 0
         
@@ -53,7 +60,7 @@ class Rater(object):
         except IndexError:
             raise StopIteration
 
-        task = json.loads(self.template.format(taskID=taskID))
+        task = json.loads(template_fill(self.template, taskID=taskID))
         
         cost = 1.0
         if task['type'] == 'localization':
@@ -146,12 +153,12 @@ class NodeServer(object):
 
     def _update_tasks(self):
         """Update our task queue"""
-        logger.debug('Updating tasks')
+        #logger.debug('Updating tasks')
         with self._update_tasks_lock:
             n_tasks_to_request = self.num_tasks_to_request - self._tasks.qsize()
             
             t = time.time()
-            if (t - self._lastUpdateTime) < 0.1:
+            if (t - self._lastUpdateTime) < 0.5:
                 return
 
             self._lastUpdateTime = t
@@ -220,7 +227,7 @@ class NodeServer(object):
                     ruleID = bid['ruleID']
                     template = templates_by_ID[ruleID]
                     for taskID in bid['taskIDs']:
-                        self._tasks.put(template.format(taskID=taskID, ruleID=ruleID))
+                        self._tasks.put(json.loads(template_fill(template,taskID=taskID, ruleID=ruleID)))
                
                 
             except requests.Timeout:
@@ -248,8 +255,6 @@ class NodeServer(object):
                 handins.append(self._handins.get_nowait())
         except Queue.Empty:
             pass
-        
-        
 
         if len(handins) > 0:
             handins_by_rule = {}
@@ -270,21 +275,20 @@ class NodeServer(object):
                 try:
                     h_ruleID = handins_by_rule[ruleID]
                 except KeyError:
-                    h_ruleID = {'taskIDs' : [], 'status' : []}
+                    h_ruleID = {'ruleID' : ruleID, 'taskIDs' : [], 'status' : []}
                     handins_by_rule[ruleID] = h_ruleID
                     
                 h_ruleID['taskIDs'].append(taskID)
                 h_ruleID['status'].append(status)
                 
-        
                 
             try:
-                r = self.handinSession.post(self.distributor_url + 'handin', json=handins)
+                r = self.handinSession.post(self.distributor_url + 'handin', json=handins_by_rule.values())
                 resp = r.json()
                 if not resp['ok']:
                     raise RuntimeError('')
             except:
-                logger.error('Error handing in tasks')
+                logger.exception('Error handing in tasks')
                 self.handinSession = None
 
 
@@ -298,7 +302,7 @@ class NodeServer(object):
     def _poll_tasks(self):
         while self._do_poll:
             self._update_tasks()
-            time.sleep(.1)
+            time.sleep(1.0)
 
 
     def stop(self):
@@ -332,7 +336,7 @@ class NodeServer(object):
 
     @webframework.register_endpoint('/node/handin')
     def _handin(self, taskID, status):
-        self._handins.put({'taskID': taskID, 'status':status})
+        self._handins.put({'id': taskID, 'status':status})
         return json.dumps({'ok' : True})
 
     @webframework.register_endpoint('/node/status')
