@@ -11,6 +11,7 @@ logger.setLevel(logging.DEBUG)
 import time
 import sys
 import ujson as json
+#import json
 import os
 
 from PYME.misc import computerName
@@ -77,7 +78,7 @@ class IntegerIDRule(Rule):
 
         self.expiry = time.time() + self._rule_timeout
             
-        return {'ruleID': bid['ruleID'], 'template' : self._template, 'taskIDs':list(successful_bid_ids)}
+        return {'ruleID': bid['ruleID'], 'taskIDs':successful_bid_ids.tolist(), 'template' : self._template}
     
     def mark_complete(self, info):
         taskIDs = np.array(info['taskIDs'], 'i')
@@ -195,10 +196,11 @@ class RuleServer(object):
         for bid in bids:
             rule = self._rules[bid['ruleID']]
             
-            succesfull_bids += rule.bid(bid)
+            succesfull_bids.append(rule.bid(bid))
             #task_ids = bid['taskIDs']
             #costs = bid['taskCosts']
             
+        #print(succesfull_bids)
         return json.dumps(succesfull_bids)
         
             

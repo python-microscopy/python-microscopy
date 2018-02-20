@@ -34,8 +34,10 @@ STATUS_UNAVAILABLE, STATUS_AVAILABLE, STATUS_ASSIGNED, STATUS_COMPLETE, STATUS_F
 class Rater(object):
     def __init__(self, rule):
         self.rule = rule
-        self.taskIDs = rule['taskIDs']
-        self.template = rule['template']
+        self.taskIDs = rule['availableTaskIDs']
+        self.template = rule['taskTemplate']
+        
+        logger.debug('Template: %s'  % self.template)
         
         self.n = 0
         
@@ -128,6 +130,7 @@ class NodeServer(object):
         #self.announceThread = threading.Thread(target=self._announce_loop)
         #self.announceThread.start()
 
+        logger.debug('Starting to poll for tasks')
         self.taskSession = requests.Session()
         self.taskThread = threading.Thread(target=self._poll_tasks)
         self.taskThread.start()
@@ -143,6 +146,7 @@ class NodeServer(object):
 
     def _update_tasks(self):
         """Update our task queue"""
+        logger.debug('Updating tasks')
         with self._update_tasks_lock:
             n_tasks_to_request = self.num_tasks_to_request - self._tasks.qsize()
             
@@ -166,7 +170,7 @@ class NodeServer(object):
                 n_tasks = 0
                 task_requests = []
                 raters = [Rater(rule) for rule in rules]
-                rules_by_ID = {rule['ruleID']: rule['template'] for rule in rules}
+                templates_by_ID = {rule['ruleID']: rule['taskTemplate'] for rule in rules}
                 
                 #try to get local tasks
                 for rater in raters:
@@ -205,6 +209,8 @@ class NodeServer(object):
                         if n_tasks >= n_tasks_to_request:
                             break
                         
+                #print task_requests
+                
                 #place bids and get results
                 url = self.distributor_url +'bid_on_tasks'
                 r = self.taskSession.get(url, json=task_requests, timeout=120)
@@ -212,9 +218,9 @@ class NodeServer(object):
                 
                 for bid in successful_bids:
                     ruleID = bid['ruleID']
-                    rule = rules_by_ID[ruleID]
-                    for taskID in rule['taskIDs']:
-                        self._tasks.put(rule['template'].format(taskID=taskID, ruleID=ruleID))
+                    template = templates_by_ID[ruleID]
+                    for taskID in bid['taskIDs']:
+                        self._tasks.put(template.format(taskID=taskID, ruleID=ruleID))
                
                 
             except requests.Timeout:
