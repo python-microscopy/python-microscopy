@@ -156,7 +156,7 @@ class venerableFileChucker(object):
         """
         self.folder = searchFolder
 
-        self.spooler = DCIMGSpool.DCIMGSpoolShim()
+        self.spooler = DCIMGSpool.DCIMGSpoolShim(timeout=timeout)
         self.timeout = timeout
         self.comp_settings = {'quantization': PZFFormat.DATA_QUANT_SQRT if quantize else PZFFormat.DATA_QUANT_NONE}
 
