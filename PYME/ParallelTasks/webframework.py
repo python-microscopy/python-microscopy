@@ -112,3 +112,5 @@ class APIHTTPServer(ThreadingMixIn, http.server.HTTPServer):
             endpoint_path = getattr(func, '_expose_path', None)
             if not endpoint_path is None:
                 self._endpoints[endpoint_path] = func
+                
+        logging.debug('Registered endpoints: %s' % self._endpoints.keys())

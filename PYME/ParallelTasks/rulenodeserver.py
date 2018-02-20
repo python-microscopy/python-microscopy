@@ -158,7 +158,7 @@ class NodeServer(object):
             
             try:
                 #get adverts
-                url = self.distributor_url + 'task_advertisments'
+                url = self.distributor_url + 'task_advertisements'
                 r = self.taskSession.get(url, timeout=120)
                 rules = json.loads(r.content) #r.json()
                 

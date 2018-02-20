@@ -28,7 +28,7 @@ def getDistributorInfo():
     queueURLs = {}
 
     for name, info in ns.get_advertised_services():
-        if name.startswith('PYMEDistributor'):
+        if name.startswith('PYMEDistributor') or name.startswith('PYMERuleServer'):
             queueURLs[name] = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
 
     return queueURLs

@@ -208,7 +208,7 @@ class RuleServer(object):
         rule_info = json.loads(body)
         
         if ruleID is None:
-            ruleID = uuid.uuid4()
+            ruleID = uuid.uuid4().get_hex()
         
         rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks))
         if not release_start is None:
@@ -217,7 +217,15 @@ class RuleServer(object):
         self._rules[ruleID] = rule
         
         return json.dumps({'ok': 'True', 'ruleID' : ruleID})
-        
+
+    @webframework.register_endpoint('/release_rule_tasks')
+    def _release_rule_tasks(self, ruleID, release_start, release_end, body=''):
+        rule = self._rules[ruleID]
+    
+        rule.make_range_available(int(release_start), int(release_end))
+    
+    
+        return json.dumps({'ok': 'True'})
     
     @webframework.register_endpoint('/handin')
     def _handin(self, body):
@@ -308,20 +316,36 @@ class WFRuleServer(webframework.APIHTTPServer, RuleServer):
 #         distributor._do_poll = False
 
 
-def run(port):
-    import socket
+import threading
+
+class ServerThread(threading.Thread):
+    def __init__(self, port):
+        self.port = int(port)
+        threading.Thread.__init__(self)
+        
+    def run(self):
+        import socket
+        
+        self.externalAddr = socket.gethostbyname(socket.gethostname())
+        self.distributor = WFRuleServer(self.port)
+
+        logger.info('Starting ruleserver on %s:%d' % (self.externalAddr, self.port))
+        try:
+            self.distributor.serve_forever()
+        finally:
+            self.distributor._do_poll = False
+            #logger.info('Shutting down ...')
+            #self.distributor.shutdown()
+            logger.info('Closing server ...')
+            self.distributor.server_close()
+            
     
-    externalAddr = socket.gethostbyname(socket.gethostname())
-    distributor = WFRuleServer(port)
-    
-    try:
-        logger.info('Starting ruleserver on %s:%d' % (externalAddr, port))
-        distributor.serve_forever()
-    finally:
-        distributor._do_poll = False
+    def shutdown(self):
+        self.distributor._do_poll = False
         logger.info('Shutting down ...')
-        distributor.shutdown()
-        distributor.server_close()
+        self.distributor.shutdown()
+        logger.info('Closing server ...')
+        self.distributor.server_close()
 
 
 def on_SIGHUP(signum, frame):
@@ -339,7 +363,7 @@ if __name__ == '__main__':
         profile = True
         from PYME.util import mProfile
         
-        mProfile.profileOn(['distributor.py', ])
+        mProfile.profileOn(['ruleserver.py', ])
         profileOutDir = config.get('dataserver-root', os.curdir) + '/LOGS/%s/mProf' % computerName.GetComputerName()
     else:
         profile = False
