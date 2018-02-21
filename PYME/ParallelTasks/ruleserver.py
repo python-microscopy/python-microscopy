@@ -33,8 +33,10 @@ class IntegerIDRule(Rule):
     TASK_INFO_DTYPE = np.dtype([('status', 'uint8'), ('nRetries', 'uint8'), ('expiry', 'f4')])
     
     
-    def __init__(self, ruleID, task_template, max_task_ID=100000, task_timeout=600, rule_timeout=3600):
+    def __init__(self, ruleID, task_template, inputs_by_task = None,
+                 max_task_ID=100000, task_timeout=600, rule_timeout=3600):
         self.ruleID = ruleID
+        self._inputs_by_task = inputs_by_task
         self._template = task_template
         self._task_info = np.zeros(max_task_ID, self.TASK_INFO_DTYPE)
         
@@ -42,10 +44,12 @@ class IntegerIDRule(Rule):
         self._timeout = task_timeout
         
         self._rule_timeout = rule_timeout
+        self._cached_advert = None
         
         self.expiry = time.time() + self._rule_timeout
               
         self._info_lock = threading.Lock()
+        self._advert_lock = threading.Lock()
         
     def make_range_available(self, start, end):
         '''Make a range of tasks available (to be called once the underlying data is available)'''
@@ -58,6 +62,9 @@ class IntegerIDRule(Rule):
             self._task_info['status'][start:end] = STATUS_AVAILABLE
 
         self.expiry = time.time() + self._rule_timeout
+        
+        with self._advert_lock:
+            self._cached_advert = None
             
     def bid(self, bid):
         '''Bid on tasks (and return any that match). Note the current implementation is very naive and expects doesn't
@@ -77,6 +84,9 @@ class IntegerIDRule(Rule):
             self._task_info['expiry'][successful_bid_ids] = time.time() + self._timeout
 
         self.expiry = time.time() + self._rule_timeout
+        
+        with self._advert_lock:
+            self._cached_advert = None
             
         return {'ruleID': bid['ruleID'], 'taskIDs':successful_bid_ids.tolist(), 'template' : self._template}
     
@@ -91,9 +101,17 @@ class IntegerIDRule(Rule):
             
     @property
     def advert(self):
-        return {'ruleID' : self.ruleID,
-                'taskTemplate': self._template,
-                'availableTaskIDs': np.where(self._task_info['status'] == STATUS_AVAILABLE)[0].tolist()}
+        with self._advert_lock:
+            if not self._cached_advert:
+                availableTasks = np.where(self._task_info['status'] == STATUS_AVAILABLE)[0].tolist()
+                self._cached_advert = {'ruleID' : self.ruleID,
+                    'taskTemplate': self._template,
+                    'availableTaskIDs': availableTasks}
+                
+                if self._inputs_by_task:
+                    self._cached_advert['inputsByTask'] = {taskID: self._inputs_by_task[taskID] for taskID in availableTasks}
+                
+            return self._cached_advert
     
     @property
     def nAvailable(self):
@@ -137,6 +155,9 @@ class IntegerIDRule(Rule):
             self._task_info['nRetries'][timed_out] += 1
 
             self._task_info['status'][self._task_info['nRetries'] > self._n_retries] = STATUS_FAILED
+            
+            with self._advert_lock:
+                self._cached_advert = None
         
         
     
@@ -153,9 +174,14 @@ class RuleServer(object):
         
         self._queueLock = threading.Lock()
         
+        self._advert_lock = threading.Lock()
+        
         #set up threads to poll the distributor and announce ourselves and get and return tasks
         #self.pollThread = threading.Thread(target=self._poll)
         #self.pollThread.start()
+        
+        self._cached_advert = None
+        self._cached_advert_expiry = 0
         
         self.rulePollThread = threading.Thread(target=self._poll_rules)
         self.rulePollThread.start()
@@ -174,7 +200,7 @@ class RuleServer(object):
                 if self._rules[qn].expired:
                     self._rules.pop(qn)
             
-            time.sleep(1)
+            time.sleep(5)
     
     def stop(self):
         self._do_poll = False
@@ -184,7 +210,13 @@ class RuleServer(object):
             
     @webframework.register_endpoint('/task_advertisements')
     def _advertised_tasks(self):
-        return json.dumps([rule.advert for rule in self._rules.values()])
+        with self._advert_lock:
+            t = time.time()
+            if (t > self._cached_advert_expiry):
+                self._cached_advert = json.dumps([rule.advert for rule in self._rules.values()])
+                self._cached_advert_expiry = t + 1 #regenerate advert once every second
+            
+        return self._cached_advert
         
         
     @webframework.register_endpoint('/bid_on_tasks')

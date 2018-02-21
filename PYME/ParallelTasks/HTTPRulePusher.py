@@ -196,20 +196,6 @@ class HTTPRulePusher(object):
         self.pollT = threading.Thread(target=self._updatePoll)
         self.pollT.start()
 
-    def _postTasks(self, task_list):
-        if isinstance(task_list[0], string_types):
-            task_list = '[' + ',\n'.join(task_list) + ']'
-        else:
-            task_list = json.dumps(task_list)
-
-        s = clusterIO._getSession(self.taskQueueURI)
-        r = s.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list,
-                          headers={'Content-Type': 'application/json'})
-
-        if r.status_code == 200 and r.json()['ok']:
-            logging.debug('Successfully posted tasks')
-        else:
-            logging.error('Failed on posting tasks with status code: %d' % r.status_code)
 
     @property
     def _taskTemplate(self):
@@ -289,7 +275,7 @@ class HTTPRulePusher(object):
         self.doPoll = False
 
 
-class HTTPRecipePusher(object):
+class RecipePusher(object):
     def __init__(self, recipe=None, recipeURI=None):
         from PYME.recipes.modules import ModuleCollection
         if recipe:
@@ -317,42 +303,23 @@ class HTTPRecipePusher(object):
         h.update('%s' % time.time())
         self.queueID = h.hexdigest()
 
-    def _postTasks(self, task_list):
-        if isinstance(task_list[0], string_types):
-            task_list = '[' + ',\n'.join(task_list) + ']'
-        else:
-            task_list = json.dumps(task_list)
 
-        s = clusterIO._getSession(self.taskQueueURI)
-        r = s.post('%s/distributor/tasks?queue=%s' % (self.taskQueueURI, self.queueID), data=task_list,
-                   headers={'Content-Type': 'application/json'})
-
-        if r.status_code == 200 and r.json()['ok']:
-            logging.debug('Successfully posted tasks')
-        else:
-            logging.error('Failed on posting tasks with status code: %d' % r.status_code)
-
-
-    def _generate_task(self, **kwargs):
-        input_names = kwargs.keys()
-
-        #our id will be a hash of our recipe text (or name), the time, and the input names
-        h = hashlib.md5(self.recipeURI if self.recipeURI else self.recipe_text)
-        h.update('%s' % time.time())
-        h.update(''.join([kwargs[input_name] for input_name in input_names]))
-
-        task = {'id': h.hexdigest(),
-              'type': 'recipe',
-              'inputs': {input_name: kwargs[input_name] for input_name in input_names},
-              #'outputs': {output_name: kwargs[output_name] for output_name in self.recipe.outputs}
-              }
+    @property
+    def _taskTemplate(self):
+        task = '''{"id": "{{ruleID}}~{{taskID}}",
+              "type": "recipe",
+              "inputs" : {{taskInputs}},
+              %s
+              }'''
 
         if self.recipeURI:
-            task['taskdefRef'] = self.recipeURI
+            task = task % '["taskdefRef"] = self.recipeURI'
         else:
-            task['taskdef'] = self.recipe_text
+            task = task % '["taskdef"] = self.recipe_text'
 
         return task
+
+
 
     def fileTasksForInputs(self, **kwargs):
         from PYME.IO import clusterGlob
@@ -364,23 +331,23 @@ class HTTPRecipePusher(object):
 
         logger.debug('numTotalFrames = %d' % numTotalFrames)
         logger.debug('inputs = %s' % inputs)
+        
+        inputs_by_task = {frameNum: {k : inputs[k][frameNum] for k in inputs.keys()} for frameNum in range(numTotalFrames)}
 
-        while numTotalFrames > (self.currentFrameNum + 1):
-            logging.debug('we have unpublished frames - push them')
+        rule = {'template': self._taskTemplate, 'inputsByTask' : inputs_by_task}
 
-            newFrameNum = min(self.currentFrameNum + 1000, numTotalFrames)
+        s = clusterIO._getSession(self.taskQueueURI)
+        r = s.post('%s/add_integer_id_rule?max_tasks=%d&release_start=%d&release_end=%d' % (self.taskQueueURI,numTotalFrames, 0, numTotalFrames), data=json.dumps(rule),
+                        headers = {'Content-Type': 'application/json'})
 
-            #create task definitions for each frame
-            tasks = [self._generate_task(**{k : inputs[k][frameNum] for k in inputs.keys()}) for frameNum in range(self.currentFrameNum, newFrameNum)]
+        if r.status_code == 200:
+            resp = r.json()
+            self._ruleID = resp['ruleID']
+            logging.debug('Successfully created rule')
+        else:
+            logging.error('Failed creating rule with status code: %d' % r.status_code)
 
-            task_list = tasks #json.dumps(tasks)
-
-            #print tasks
-
-
-            threading.Thread(target=self._postTasks, args=(task_list,)).start()
-
-            self.currentFrameNum = newFrameNum
+        
 
 
 

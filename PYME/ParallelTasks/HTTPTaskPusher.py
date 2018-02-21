@@ -280,7 +280,7 @@ class HTTPTaskPusher(object):
         self.doPoll = False
 
 
-class HTTPRecipePusher(object):
+class RecipePusher(object):
     def __init__(self, recipe=None, recipeURI=None):
         from PYME.recipes.modules import ModuleCollection
         if recipe:

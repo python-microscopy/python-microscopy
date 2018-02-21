@@ -43,6 +43,7 @@ class Rater(object):
         self.rule = rule
         self.taskIDs = rule['availableTaskIDs']
         self.template = rule['taskTemplate']
+        self.inputs = rule.get('inputsByTask', {})
         
         #logger.debug('Template: %s'  % self.template)
         
@@ -59,8 +60,8 @@ class Rater(object):
             self.n += 1
         except IndexError:
             raise StopIteration
-
-        task = json.loads(template_fill(self.template, taskID=taskID))
+        
+        task = json.loads(template_fill(self.template, taskID=taskID, taskInputs=self.inputs.get(taskID)))
         
         cost = 1.0
         if task['type'] == 'localization':
@@ -178,6 +179,7 @@ class NodeServer(object):
                 task_requests = []
                 raters = [Rater(rule) for rule in rules]
                 templates_by_ID = {rule['ruleID']: rule['taskTemplate'] for rule in rules}
+                inputs_by_ID = {rule['ruleID']: rule.get('inputsByTask', {}) for rule in rules}
                 
                 #try to get local tasks
                 for rater in raters:
@@ -227,7 +229,8 @@ class NodeServer(object):
                     ruleID = bid['ruleID']
                     template = templates_by_ID[ruleID]
                     for taskID in bid['taskIDs']:
-                        self._tasks.put(json.loads(template_fill(template,taskID=taskID, ruleID=ruleID)))
+                        self._tasks.put(json.loads(template_fill(template,taskID=taskID, ruleID=ruleID,
+                                                                 taskInputs=inputs_by_ID.get(taskID, {}))))
                
                 
             except requests.Timeout:
