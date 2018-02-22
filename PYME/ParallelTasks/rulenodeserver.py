@@ -87,7 +87,7 @@ class Rater(object):
         while cost > 0.99:
             taskID, cost = self.next()
             if cost > 0.99:
-                self._non_local.append((self.rule, taskID, cost))
+                self._non_local.append((taskID, cost))
             else:
                 return taskID, cost
             
