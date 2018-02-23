@@ -41,7 +41,7 @@
        int fd, nread;
        int n_files = 0;
        char buf[DIR_BUF_SIZE];
-       struct linux_dirent *d;
+       struct linux_dirent64 *d;
        int bpos;
        char d_type;
 
