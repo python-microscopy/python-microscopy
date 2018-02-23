@@ -14,7 +14,7 @@
     #include <stdlib.h>
 
     #define handle_error(msg) \
-        do { perror(msg); exit(EXIT_FAILURE); } while (0)
+        do { perror(msg); } while (0)
 
     struct linux_dirent64 {
                ino64_t        d_ino;    /* 64-bit inode number */
@@ -52,7 +52,7 @@
        for ( ; ; ) {
             nread = syscall(SYS_getdents64, fd, buf, DIR_BUF_SIZE);
             if (nread == -1)
-                close(fd);
+                //close(fd);
                 handle_error("getdents");
 
            if (nread == 0)
@@ -69,6 +69,8 @@
         }
 
         close(fd);
+
+        return n_files;
     }
 
 #else
