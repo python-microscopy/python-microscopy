@@ -378,12 +378,18 @@ class WFRuleServer(webframework.APIHTTPServer, RuleServer):
 import threading
 
 class ServerThread(threading.Thread):
-    def __init__(self, port):
+    def __init__(self, port, profile=False):
         self.port = int(port)
+        self._profile = profile
         threading.Thread.__init__(self)
         
     def run(self):
         import socket
+        if self._profile:
+            from PYME.util import mProfile
+        
+            mProfile.profileOn(['ruleserver.py', ])
+            profileOutDir = config.get('dataserver-root', os.curdir) + '/LOGS/%s/mProf' % computerName.GetComputerName()
         
         self.externalAddr = socket.gethostbyname(socket.gethostname())
         self.distributor = WFRuleServer(self.port)
@@ -397,6 +403,9 @@ class ServerThread(threading.Thread):
             #self.distributor.shutdown()
             logger.info('Closing server ...')
             self.distributor.server_close()
+
+            if self._profile:
+                mProfile.report(False, profiledir=profileOutDir)
             
     
     def shutdown(self):
@@ -439,3 +448,4 @@ if __name__ == '__main__':
     finally:
         if profile:
             mProfile.report(False, profiledir=profileOutDir)
+        

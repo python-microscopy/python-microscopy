@@ -66,7 +66,7 @@ def main():
 
     
     
-    proc = ruleserver.ServerThread(serverPort)
+    proc = ruleserver.ServerThread(serverPort, profile=True)
     proc.start()
     #proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True)
 
