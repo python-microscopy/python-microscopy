@@ -215,7 +215,7 @@ class HTTPRulePusher(object):
         rule = {'template' : self._taskTemplate}
         
         s = clusterIO._getSession(self.taskQueueURI)
-        r = s.post('%s/add_integer_id_rule' % (self.taskQueueURI,), data=json.dumps(rule),
+        r = s.post('%s/add_integer_id_rule?timeout=300' % (self.taskQueueURI,), data=json.dumps(rule),
                    headers={'Content-Type': 'application/json'})
 
         if r.status_code == 200:

@@ -174,7 +174,7 @@ class IntegerIDRule(Rule):
 
 
 class RuleServer(object):
-    MAX_ADVERTISEMENTS = 2 * 10 * 50 * 12 #only advertise enough for 100 tasks on each core of each cluster node
+    MAX_ADVERTISEMENTS = 5 * 10 * 50 * 12 #only advertise enough for 100 tasks on each core of each cluster node
     def __init__(self):
         self._rules = collections.OrderedDict()
         
@@ -192,6 +192,12 @@ class RuleServer(object):
         
         self._cached_advert = None
         self._cached_advert_expiry = 0
+        
+        
+        self._info_lock = threading.Lock()
+        self._cached_info = None
+        self._cached_info_expiry = 0
+        self._cached_info_timeout = 5
         
         self._rule_n = 0
         
@@ -237,7 +243,7 @@ class RuleServer(object):
                     ruleN += 1
                     
                 self._cached_advert = json.dumps(adverts)
-                self._cached_advert_expiry = t + 1 #regenerate advert once every second
+                self._cached_advert_expiry = time.time() + 1 #regenerate advert once every second
             
         return self._cached_advert
         
@@ -261,13 +267,13 @@ class RuleServer(object):
             
         
     @webframework.register_endpoint('/add_integer_id_rule')
-    def _add_rule(self, max_tasks= 1e6, release_start=None, release_end = None, ruleID = None, body=''):
+    def _add_rule(self, max_tasks= 1e6, release_start=None, release_end = None, ruleID = None, timeout=3600, body=''):
         rule_info = json.loads(body)
         
         if ruleID is None:
             ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().get_hex())
         
-        rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks))
+        rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks), rule_timeout=timeout)
         if not release_start is None:
             rule.make_range_available(release_start, release_end)
         
@@ -303,7 +309,13 @@ class RuleServer(object):
     
     @webframework.register_endpoint('/distributor/queues')
     def _get_queues(self):
-        return json.dumps({'ok': True, 'result': {qn: self._rules[qn].info() for qn in self._rules.keys()}})
+        with self._info_lock:
+            t = time.time()
+            if (t > self._cached_info_expiry):
+                self._cached_info = json.dumps({'ok': True, 'result': {qn: self._rules[qn].info() for qn in self._rules.keys()}})
+                self._cached_info_expiry = time.time() + self._cached_info_timeout
+                
+        return self._cached_info
 
 
 # class CPRuleServer(RuleServer):
