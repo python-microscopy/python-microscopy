@@ -5,8 +5,13 @@
 #include <sys/types.h>
 #include <string.h>
 
+
+
 #ifdef __linux__
     #include <sys/syscall.h>
+    #include <fcntl.h>
+    #include <unistd.h>
+    #include <stdlib.h>
 
     #define handle_error(msg) \
         do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -29,6 +34,7 @@
 
 
 #ifdef __linux__
+    /// See http://be-n.com/spw/you-can-list-a-million-files-in-a-directory-but-not-with-ls.html
     int count_files(const char *path)
     {
        int fd, nread;
@@ -43,7 +49,7 @@
           handle_error("open");
 
        for ( ; ; ) {
-            nread = syscall(SYS_getdents, fd, buf, BUF_SIZE);
+            nread = syscall(SYS_getdents, fd, buf, DIR_BUF_SIZE);
             if (nread == -1)
                 close(fd);
                 handle_error("getdents");
