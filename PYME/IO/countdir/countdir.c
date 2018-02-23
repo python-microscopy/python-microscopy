@@ -5,10 +5,66 @@
 #include <sys/types.h>
 #include <string.h>
 
+#ifdef __linux__
+    #include <sys/syscall.h>
+
+    #define handle_error(msg) \
+        do { perror(msg); exit(EXIT_FAILURE); } while (0)
+
+    struct linux_dirent {
+        long           d_ino;
+        off_t          d_off;
+        unsigned short d_reclen;
+        char           d_name[];
+    };
+
+    #define DIR_BUF_SIZE 5242880 //5MB
+#endif
+
 #define FILETYPE_NORMAL             0
 #define FILETYPE_DIRECTORY          1 << 0
 #define FILETYPE_SERIES             1 << 1 // a directory which is actually a series - treat specially
 #define FILETYPE_SERIES_COMPLETE    1 << 2 // a series which has finished spooling
+
+
+
+#ifdef __linux__
+    int count_files(const char *path)
+    {
+       int fd, nread;
+       int n_files = 0;
+       char buf[DIR_BUF_SIZE];
+       struct linux_dirent *d;
+       int bpos;
+       char d_type;
+
+       fd = open(path, O_RDONLY | O_DIRECTORY);
+       if (fd == -1)
+          handle_error("open");
+
+       for ( ; ; ) {
+            nread = syscall(SYS_getdents, fd, buf, BUF_SIZE);
+            if (nread == -1)
+                close(fd);
+                handle_error("getdents");
+
+           if (nread == 0)
+                break;
+
+            for (bpos = 0; bpos < nread;) {
+                d = (struct linux_dirent *) (buf + bpos);
+                if (d->d_ino!=0)
+                {
+                    n_files +=1;
+                }
+                bpos += d->d_reclen;
+            }
+        }
+
+        close(fd);
+    }
+
+#else
 
 int count_files(const char *path)
 {
@@ -26,7 +82,7 @@ int count_files(const char *path)
     return count;
 }
 
-
+#endif
 
 static PyObject * dirsize(PyObject *self, PyObject *args)
 {
