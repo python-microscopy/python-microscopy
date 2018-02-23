@@ -30,7 +30,7 @@ class Rule(object):
 STATUS_UNAVAILABLE, STATUS_AVAILABLE, STATUS_ASSIGNED, STATUS_COMPLETE, STATUS_FAILED = range(5)
 
 class IntegerIDRule(Rule):
-    TASK_INFO_DTYPE = np.dtype([('status', 'uint8'), ('nRetries', 'uint8'), ('expiry', 'f4'), ('cost', 'f4')])
+    TASK_INFO_DTYPE = np.dtype([('status', 'uint8'), ('nRetries', 'uint8'), ('expiry', 'f4'), ('costs', 'f4')])
     
     
     def __init__(self, ruleID, task_template, inputs_by_task = None,
@@ -141,11 +141,17 @@ class IntegerIDRule(Rule):
         return (self.nAvailable == 0) and (self.nAssigned == 0) and (time.time() > self.expiry)
     
     def info(self):
+        av_cost = np.mean(self._task_info['cost'][self._task_info['status']>STATUS_AVAILABLE])
+        if np.isnan(av_cost):
+            av_cost = 0
+        else:
+            av_cost = float(av_cost)
+            
         return {'tasksPosted': self.nTotal,
                   'tasksRunning': self.nAssigned,
                   'tasksCompleted': self.nCompleted,
                   'tasksFailed' : self.nFailed,
-                  'averageExecutionCost' : np.mean(self._task_info['cost'][self._task_info['status']>STATUS_AVAILABLE]),
+                  'averageExecutionCost' : av_cost,
                 }
     
     def poll_timeouts(self):
