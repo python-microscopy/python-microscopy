@@ -683,7 +683,7 @@ def main(protocol="HTTP/1.0"):
     options, args = op.parse_args()
     if options.profile:
         from PYME.util import mProfile
-        mProfile.profileOn(['HTTPDataServer.py',])
+        mProfile.profileOn(['HTTPDataServer.py','clusterListing.py'])
 
         profileOutDir = options.root + '/LOGS/%s/mProf' % compName
 

@@ -105,7 +105,7 @@ def _getSession(url):
     return session
 
 
-def _listSingleDir(dirurl, nRetries=3):
+def _listSingleDir(dirurl, nRetries=1, timeout=5):
     t = time.time()
 
     try:
@@ -123,7 +123,7 @@ def _listSingleDir(dirurl, nRetries=3):
             try:
                 nTries += 1
                 s = _getSession(url)
-                r = s.get(url, timeout=1)
+                r = s.get(url, timeout=timeout)
                 haveResult = True
             except (requests.Timeout, requests.ConnectionError) as e:
                 # s.get sometimes raises ConnectionError instead of ReadTimeoutError
@@ -252,7 +252,7 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
 _pool = None
 
 _list_dir_lock = threading.Lock()
-def listdirectory(dirname, serverfilter=''):
+def listdirectory(dirname, serverfilter='', timeout=5):
     """Lists the contents of a directory on the cluster.
 
     Returns a dictionary mapping filenames to clusterListing.FileInfo named tuples.
