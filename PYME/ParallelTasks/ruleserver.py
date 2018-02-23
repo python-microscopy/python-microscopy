@@ -30,7 +30,7 @@ class Rule(object):
 STATUS_UNAVAILABLE, STATUS_AVAILABLE, STATUS_ASSIGNED, STATUS_COMPLETE, STATUS_FAILED = range(5)
 
 class IntegerIDRule(Rule):
-    TASK_INFO_DTYPE = np.dtype([('status', 'uint8'), ('nRetries', 'uint8'), ('expiry', 'f4'), ('costs', 'f4')])
+    TASK_INFO_DTYPE = np.dtype([('status', 'uint8'), ('nRetries', 'uint8'), ('expiry', 'f4'), ('cost', 'f4')])
     
     
     def __init__(self, ruleID, task_template, inputs_by_task = None,
@@ -83,7 +83,7 @@ class IntegerIDRule(Rule):
             successful_bid_mask = self._task_info['status'][taskIDs] == STATUS_AVAILABLE
             successful_bid_ids = taskIDs[successful_bid_mask]
             self._task_info['status'][successful_bid_ids] = STATUS_ASSIGNED
-            self._task_info['costs'][successful_bid_ids] = costs[successful_bid_mask]
+            self._task_info['cost'][successful_bid_ids] = costs[successful_bid_mask]
             self._task_info['expiry'][successful_bid_ids] = time.time() + self._timeout
 
         self.expiry = time.time() + self._rule_timeout
