@@ -30,7 +30,7 @@ class Rule(object):
 STATUS_UNAVAILABLE, STATUS_AVAILABLE, STATUS_ASSIGNED, STATUS_COMPLETE, STATUS_FAILED = range(5)
 
 class IntegerIDRule(Rule):
-    TASK_INFO_DTYPE = np.dtype([('status', 'uint8'), ('nRetries', 'uint8'), ('expiry', 'f4')])
+    TASK_INFO_DTYPE = np.dtype([('status', 'uint8'), ('nRetries', 'uint8'), ('expiry', 'f4'), ('cost', 'f4')])
     
     
     def __init__(self, ruleID, task_template, inputs_by_task = None,
@@ -78,9 +78,12 @@ class IntegerIDRule(Rule):
         '''
         
         taskIDs = np.array(bid['taskIDs'], 'i')
+        costs = np.array(bid['costs'], 'i')
         with self._info_lock:
-            successful_bid_ids = taskIDs[self._task_info['status'][taskIDs] == STATUS_AVAILABLE]
+            successful_bid_mask = self._task_info['status'][taskIDs] == STATUS_AVAILABLE
+            successful_bid_ids = taskIDs[successful_bid_mask]
             self._task_info['status'][successful_bid_ids] = STATUS_ASSIGNED
+            self._task_info['costs'][successful_bid_ids] = costs[successful_bid_mask]
             self._task_info['expiry'][successful_bid_ids] = time.time() + self._timeout
 
         self.expiry = time.time() + self._rule_timeout
@@ -142,7 +145,7 @@ class IntegerIDRule(Rule):
                   'tasksRunning': self.nAssigned,
                   'tasksCompleted': self.nCompleted,
                   'tasksFailed' : self.nFailed,
-                  'averageExecutionCost' : 1.0,
+                  'averageExecutionCost' : np.mean(self._task_info['cost'][self._task_info['status']>STATUS_AVAILABLE]),
                 }
     
     def poll_timeouts(self):
@@ -183,6 +186,8 @@ class RuleServer(object):
         
         self._cached_advert = None
         self._cached_advert_expiry = 0
+        
+        self._rule_n = 0
         
         self.rulePollThread = threading.Thread(target=self._poll_rules)
         self.rulePollThread.start()
@@ -254,13 +259,15 @@ class RuleServer(object):
         rule_info = json.loads(body)
         
         if ruleID is None:
-            ruleID = uuid.uuid4().get_hex()
+            ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().get_hex())
         
         rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks))
         if not release_start is None:
             rule.make_range_available(release_start, release_end)
         
         self._rules[ruleID] = rule
+        
+        self._rule_n += 1
         
         return json.dumps({'ok': 'True', 'ruleID' : ruleID})
 
