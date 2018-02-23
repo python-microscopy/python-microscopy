@@ -8,7 +8,7 @@ from PYME.IO import MetaDataHandler
 from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
 from PYME.Analysis import MetaData
 from PYME.Acquire import HTTPSpooler
-from PYME.ParallelTasks import HTTPTaskPusher
+from PYME.ParallelTasks import HTTPRulePusher  # HTTPTaskPusher
 
 # DT is the period of time the spooler will wait before checking if a file is free to be spooled (i.e. external
 # acquisition software has finished writing the dcimg file)
@@ -169,7 +169,8 @@ class DCIMGSpoolShim(object):
             self.mdh.setEntry('Analysis.subtractBackground', True)
             self.mdh.setEntry('Analysis.GPUPCTBackground', True)
             cluster_filename = 'pyme-cluster:///' + self.spooler.seriesName
-            HTTPTaskPusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
+            # HTTPTaskPusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
+            HTTPRulePusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
 
         #remove the metadata generator
         MetaDataHandler.provideStartMetadata.remove(self.metadataSource)
