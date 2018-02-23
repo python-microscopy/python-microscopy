@@ -165,6 +165,7 @@ class IntegerIDRule(Rule):
 
 
 class RuleServer(object):
+    MAX_ADVERTISEMENTS = 2 * 10 * 50 * 12 #only advertise enough for 100 tasks on each core of each cluster node
     def __init__(self):
         self._rules = collections.OrderedDict()
         
@@ -213,7 +214,18 @@ class RuleServer(object):
         with self._advert_lock:
             t = time.time()
             if (t > self._cached_advert_expiry):
-                self._cached_advert = json.dumps([rule.advert for rule in self._rules.values()])
+                adverts = []
+                nTasks = 0
+                ruleN = 0
+                
+                rules = self._rules.values()
+                while ruleN < len(rules) and nTasks < self.MAX_ADVERTISEMENTS:
+                    advert = rules[ruleN].advert
+                    adverts.append(advert)
+                    nTasks += len(advert['availableTaskIDs'])
+                    ruleN += 1
+                    
+                self._cached_advert = json.dumps(adverts)
                 self._cached_advert_expiry = t + 1 #regenerate advert once every second
             
         return self._cached_advert

@@ -200,6 +200,8 @@ class NodeServer(object):
                         break
                         
                 if n_tasks < n_tasks_to_request:
+                    logger.debug('Found %d local tasks' % n_tasks)
+                    logger.debug('Could not find enough local tasks, bidding on non-local')
                     #bid for non-local tasks
                     for rater in raters:
                         taskIDs = []
