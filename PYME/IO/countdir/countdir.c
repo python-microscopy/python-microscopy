@@ -16,12 +16,13 @@
     #define handle_error(msg) \
         do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
-    struct linux_dirent {
-        long           d_ino;
-        off_t          d_off;
-        unsigned short d_reclen;
-        char           d_name[];
-    };
+    struct linux_dirent64 {
+               ino64_t        d_ino;    /* 64-bit inode number */
+               off64_t        d_off;    /* 64-bit offset to next structure */
+               unsigned short d_reclen; /* Size of this dirent */
+               unsigned char  d_type;   /* File type */
+               char           d_name[]; /* Filename (null-terminated) */
+           };
 
     #define DIR_BUF_SIZE 5242880 //5MB
 #endif
@@ -49,7 +50,7 @@
           handle_error("open");
 
        for ( ; ; ) {
-            nread = syscall(SYS_getdents, fd, buf, DIR_BUF_SIZE);
+            nread = syscall(SYS_getdents64, fd, buf, DIR_BUF_SIZE);
             if (nread == -1)
                 close(fd);
                 handle_error("getdents");
@@ -58,7 +59,7 @@
                 break;
 
             for (bpos = 0; bpos < nread;) {
-                d = (struct linux_dirent *) (buf + bpos);
+                d = (struct linux_dirent64 *) (buf + bpos);
                 if (d->d_ino!=0)
                 {
                     n_files +=1;
