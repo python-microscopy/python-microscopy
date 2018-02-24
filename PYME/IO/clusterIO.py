@@ -804,6 +804,7 @@ else:
 
 _cached_status = None
 _cached_status_expiry = 0
+_status_lock = threading.Lock()
 def getStatus(serverfilter=''):
     """Lists the contents of a directory on the cluster. Similar to os.listdir,
         but directories are indicated by a trailing slash
@@ -811,31 +812,30 @@ def getStatus(serverfilter=''):
     import json
     global _cached_status, _cached_status_expiry
 
-    t = time.time()
-    if t < _cached_status_expiry:
-        return _cached_status
+    with _status_lock:
+        t = time.time()
+        if t > _cached_status_expiry:
+            status = []
+        
+            for name, info in get_ns().get_advertised_services():
+                if serverfilter in name:
+                    surl = 'http://%s:%d/__status' % (socket.inet_ntoa(info.address), info.port)
+                    url = surl.encode()
+                    s = _getSession(url)
+                    try:
+                        r = s.get(url, timeout=.5)
+                        st = r.json()
+                        st['Responsive'] = True
+                        status.append(st)
+                    except (requests.Timeout, requests.ConnectionError):
+                        # s.get sometimes raises ConnectionError instead of ReadTimeoutError
+                        # see https://github.com/requests/requests/issues/2392
+                        status.append({"IPAddress":socket.inet_ntoa(info.address), 'Port':info.port, 'Responsive' : False})
+    
+            _cached_status = status
+            _cached_status_expiry = time.time() + 1.0
 
-    status = []
-
-    for name, info in get_ns().get_advertised_services():
-        if serverfilter in name:
-            surl = 'http://%s:%d/__status' % (socket.inet_ntoa(info.address), info.port)
-            url = surl.encode()
-            s = _getSession(url)
-            try:
-                r = s.get(url, timeout=.5)
-                st = r.json()
-                st['Responsive'] = True
-                status.append(st)
-            except (requests.Timeout, requests.ConnectionError):
-                # s.get sometimes raises ConnectionError instead of ReadTimeoutError
-                # see https://github.com/requests/requests/issues/2392
-                status.append({"IPAddress":socket.inet_ntoa(info.address), 'Port':info.port, 'Responsive' : False})
-
-    _cached_status = status
-    _cached_status_expiry = time.time() + .5
-
-    return status
+    return _cached_status
 
 
 
