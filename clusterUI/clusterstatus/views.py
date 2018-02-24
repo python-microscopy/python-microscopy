@@ -50,8 +50,14 @@ def queues(request):
     distNodes = distribution.getNodeInfo()
 
     #nodes = clusterIO.getStatus()
+    
+    queueInfo = []
+    
+    for distName, distURL in distributors.items():
+        queues = distribution.getQueueInfo(distURL)
+        keys = sorted(queues.keys())
+        queueInfo.append({'name':distName, 'queues': [(k, queues[k]) for k in keys]})
 
-    queueInfo = [{'name':distName, 'queues': distribution.getQueueInfo(distURL)} for distName, distURL in distributors.items()]
 
     #print queueInfo
 

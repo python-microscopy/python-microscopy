@@ -213,9 +213,14 @@ class HTTPRulePusher(object):
     
     def post_rule(self):
         rule = {'template' : self._taskTemplate}
+
+        if self.ds.isComplete():
+            queueSize = self.ds.getNumSlices()
+        else:
+            queueSize = 1e6
         
         s = clusterIO._getSession(self.taskQueueURI)
-        r = s.post('%s/add_integer_id_rule?timeout=300' % (self.taskQueueURI,), data=json.dumps(rule),
+        r = s.post('%s/add_integer_id_rule?timeout=300&max_tasks=%d' % (self.taskQueueURI,queueSize), data=json.dumps(rule),
                    headers={'Content-Type': 'application/json'})
 
         if r.status_code == 200:
@@ -236,7 +241,7 @@ class HTTPRulePusher(object):
             #turn our metadata to a string once (outside the loop)
             #mdstring = self.mdh.to_JSON() #TODO - use a URI instead
             
-            newFrameNum = min(self.currentFrameNum + 100000, numTotalFrames)
+            newFrameNum = min(self.currentFrameNum + 100000, numTotalFrames-1)
 
             #create task definitions for each frame
 
@@ -252,7 +257,7 @@ class HTTPRulePusher(object):
 
             self.currentFrameNum = newFrameNum
 
-            numFramesOutstanding = numTotalFrames - self.currentFrameNum
+            numFramesOutstanding = numTotalFrames  - 1 - self.currentFrameNum
 
         return  numFramesOutstanding
 

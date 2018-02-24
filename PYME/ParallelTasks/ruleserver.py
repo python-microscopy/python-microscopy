@@ -75,7 +75,7 @@ class IntegerIDRule(Rule):
         '''Make a range of tasks available (to be called once the underlying data is available)'''
         
         if start < 0 or start >= self._task_info.size or end < 0 or end >= self._task_info.size:
-            raise RuntimeError('Range (%d, %d) invalid with maxTasks=self._task_info.size' % (start, end))
+            raise RuntimeError('Range (%d, %d) invalid with maxTasks=%d' % (start, end, self._task_info.size))
         
         #TODO - check existing status - it probably makes sense to only apply this to tasks which have STATUS_UNAVAILABLE
         with self._info_lock:
@@ -102,7 +102,7 @@ class IntegerIDRule(Rule):
         '''
         
         taskIDs = np.array(bid['taskIDs'], 'i')
-        costs = np.array(bid['costs'], 'i')
+        costs = np.array(bid['costs'], 'f4')
         with self._info_lock:
             successful_bid_mask = self._task_info['status'][taskIDs] == STATUS_AVAILABLE
             successful_bid_ids = taskIDs[successful_bid_mask]
@@ -140,12 +140,16 @@ class IntegerIDRule(Rule):
         with self._advert_lock:
             if not self._cached_advert:
                 availableTasks = np.where(self._task_info['status'] == STATUS_AVAILABLE)[0].tolist()
-                self._cached_advert = {'ruleID' : self.ruleID,
-                    'taskTemplate': self._template,
-                    'availableTaskIDs': availableTasks}
                 
-                if self._inputs_by_task:
-                    self._cached_advert['inputsByTask'] = {taskID: self._inputs_by_task[taskID] for taskID in availableTasks}
+                if len(availableTasks) == 0:
+                    self._cached_advert = None
+                else:
+                    self._cached_advert = {'ruleID' : self.ruleID,
+                        'taskTemplate': self._template,
+                        'availableTaskIDs': availableTasks}
+                    
+                    if self._inputs_by_task:
+                        self._cached_advert['inputsByTask'] = {taskID: self._inputs_by_task[taskID] for taskID in availableTasks}
                 
             return self._cached_advert
     
@@ -265,8 +269,11 @@ class RuleServer(object):
                 rules = self._rules.values()
                 while ruleN < len(rules) and nTasks < self.MAX_ADVERTISEMENTS:
                     advert = rules[ruleN].advert
-                    adverts.append(advert)
-                    nTasks += len(advert['availableTaskIDs'])
+                    
+                    if not advert is None:
+                        adverts.append(advert)
+                        nTasks += len(advert['availableTaskIDs'])
+                        
                     ruleN += 1
                     
                 self._cached_advert = json.dumps(adverts)
