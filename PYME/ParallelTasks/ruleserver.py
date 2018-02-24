@@ -46,10 +46,30 @@ class IntegerIDRule(Rule):
         self._rule_timeout = rule_timeout
         self._cached_advert = None
         
+        self.nTotal = 0
+        self.nAssigned = 0
+        self.nAvailable = 0
+        self.nCompleted = 0
+        self.nFailed = 0
+        
+        self.avCost = 0
+        
         self.expiry = time.time() + self._rule_timeout
               
         self._info_lock = threading.Lock()
         self._advert_lock = threading.Lock()
+        
+    def _update_nums(self):
+        self.nAvailable = int((self._task_info['status'] == STATUS_AVAILABLE).sum())
+        self.nAssigned = int((self._task_info['status'] == STATUS_ASSIGNED).sum())
+
+        av_cost = np.mean(self._task_info['cost'][self._task_info['status'] > STATUS_AVAILABLE])
+        if np.isnan(av_cost):
+            av_cost = 0
+        else:
+            av_cost = float(av_cost)
+            
+        self.avCost = av_cost
         
     def make_range_available(self, start, end):
         '''Make a range of tasks available (to be called once the underlying data is available)'''
@@ -60,6 +80,10 @@ class IntegerIDRule(Rule):
         #TODO - check existing status - it probably makes sense to only apply this to tasks which have STATUS_UNAVAILABLE
         with self._info_lock:
             self._task_info['status'][start:end] = STATUS_AVAILABLE
+            
+            self.nTotal = int((self._task_info['status'] >0).sum())
+        
+            self._update_nums()
 
         self.expiry = time.time() + self._rule_timeout
         
@@ -85,6 +109,8 @@ class IntegerIDRule(Rule):
             self._task_info['status'][successful_bid_ids] = STATUS_ASSIGNED
             self._task_info['cost'][successful_bid_ids] = costs[successful_bid_mask]
             self._task_info['expiry'][successful_bid_ids] = time.time() + self._timeout
+            
+            self._update_nums()
 
         self.expiry = time.time() + self._rule_timeout
         
@@ -99,6 +125,13 @@ class IntegerIDRule(Rule):
         
         with self._info_lock:
             self._task_info['status'][taskIDs] = status
+            
+            self.nCompleted += int((status ==STATUS_COMPLETE).sum())
+            self.nFailed += int((status == STATUS_FAILED).sum())
+            
+            self._update_nums()
+
+            
 
         self.expiry = time.time() + self._rule_timeout
             
@@ -116,42 +149,33 @@ class IntegerIDRule(Rule):
                 
             return self._cached_advert
     
-    @property
-    def nAvailable(self):
-        return (self._task_info['status'] == STATUS_AVAILABLE).sum()
-    
-    @property
-    def nAssigned(self):
-        return (self._task_info['status'] == STATUS_ASSIGNED).sum()
+    # @property
+    # def nAvailable(self):
+    #     return (self._task_info['status'] == STATUS_AVAILABLE).sum()
+    #
+    # @property
+    # def nAssigned(self):
+    #     return (self._task_info['status'] == STATUS_ASSIGNED).sum()
 
-    @property
-    def nCompleted(self):
-        return (self._task_info['status'] == STATUS_COMPLETE).sum()
+    # @property
+    # def nCompleted(self):
+    #     return (self._task_info['status'] == STATUS_COMPLETE).sum()
 
-    @property
-    def nFailed(self):
-        return (self._task_info['status'] == STATUS_FAILED).sum()
+    # @property
+    # def nFailed(self):
+    #     return (self._task_info['status'] == STATUS_FAILED).sum()
 
-    @property
-    def nTotal(self):
-        return (self._task_info['status'] > 0).sum()
     
     @property
     def expired(self):
         return (self.nAvailable == 0) and (self.nAssigned == 0) and (time.time() > self.expiry)
     
     def info(self):
-        av_cost = np.mean(self._task_info['cost'][self._task_info['status']>STATUS_AVAILABLE])
-        if np.isnan(av_cost):
-            av_cost = 0
-        else:
-            av_cost = float(av_cost)
-            
         return {'tasksPosted': self.nTotal,
                   'tasksRunning': self.nAssigned,
                   'tasksCompleted': self.nCompleted,
                   'tasksFailed' : self.nFailed,
-                  'averageExecutionCost' : av_cost,
+                  'averageExecutionCost' : self.avCost,
                 }
     
     def poll_timeouts(self):
@@ -160,13 +184,16 @@ class IntegerIDRule(Rule):
         with self._info_lock:
             timed_out = np.where((self._task_info['status'] == STATUS_ASSIGNED)*(self._task_info['expiry'] < t))[0]
             
-            self._task_info['status'][timed_out] = STATUS_AVAILABLE
-            self._task_info['nRetries'][timed_out] += 1
-
-            self._task_info['status'][self._task_info['nRetries'] > self._n_retries] = STATUS_FAILED
+            if len(timed_out) > 0:
+                self._task_info['status'][timed_out] = STATUS_AVAILABLE
+                self._task_info['nRetries'][timed_out] += 1
+    
+                self._task_info['status'][self._task_info['nRetries'] > self._n_retries] = STATUS_FAILED
+                
+                self._update_nums()
             
-            with self._advert_lock:
-                self._cached_advert = None
+        with self._advert_lock:
+            self._cached_advert = None
         
         
     
