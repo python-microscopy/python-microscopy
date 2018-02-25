@@ -243,6 +243,8 @@ class RuleServer(object):
         
         self._rule_n = 0
         
+        self._rule_lock = threading.Lock() # lock for when we modify the dictionary of rules
+        
         self.rulePollThread = threading.Thread(target=self._poll_rules)
         self.rulePollThread.start()
     
@@ -258,7 +260,8 @@ class RuleServer(object):
                 
                 #remore queue if expired (no activity for an hour) to free up memory
                 if self._rules[qn].expired:
-                    self._rules.pop(qn)
+                    with self._rule_lock:
+                        self._rules.pop(qn)
             
             time.sleep(5)
     
@@ -322,7 +325,8 @@ class RuleServer(object):
         if not release_start is None:
             rule.make_range_available(release_start, release_end)
         
-        self._rules[ruleID] = rule
+        with self._rule_lock:
+            self._rules[ruleID] = rule
         
         self._rule_n += 1
         
@@ -357,7 +361,8 @@ class RuleServer(object):
         with self._info_lock:
             t = time.time()
             if (t > self._cached_info_expiry):
-                self._cached_info = json.dumps({'ok': True, 'result': {qn: self._rules[qn].info() for qn in self._rules.keys()}})
+                with self._rule_lock:
+                    self._cached_info = json.dumps({'ok': True, 'result': {qn: self._rules[qn].info() for qn in self._rules.keys()}})
                 self._cached_info_expiry = time.time() + self._cached_info_timeout
                 
         return self._cached_info
