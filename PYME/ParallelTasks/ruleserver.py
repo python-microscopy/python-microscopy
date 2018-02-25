@@ -62,7 +62,8 @@ class IntegerIDRule(Rule):
     def _update_nums(self):
         self.nAvailable = int((self._task_info['status'] == STATUS_AVAILABLE).sum())
         self.nAssigned = int((self._task_info['status'] == STATUS_ASSIGNED).sum())
-
+        
+    def _update_cost(self):
         av_cost = np.mean(self._task_info['cost'][self._task_info['status'] > STATUS_AVAILABLE])
         if np.isnan(av_cost):
             av_cost = 0
@@ -110,7 +111,11 @@ class IntegerIDRule(Rule):
             self._task_info['cost'][successful_bid_ids] = costs[successful_bid_mask]
             self._task_info['expiry'][successful_bid_ids] = time.time() + self._timeout
             
-            self._update_nums()
+            nTasks = len(successful_bid_ids)
+            self.nAvailable -= nTasks
+            self.nAssigned += nTasks
+            
+            self._update_cost()
 
         self.expiry = time.time() + self._rule_timeout
         
@@ -129,9 +134,8 @@ class IntegerIDRule(Rule):
             self.nCompleted += int((status ==STATUS_COMPLETE).sum())
             self.nFailed += int((status == STATUS_FAILED).sum())
             
-            self._update_nums()
-
-            
+            nTasks = len(taskIDs)
+            self.nAssigned -= nTasks
 
         self.expiry = time.time() + self._rule_timeout
             
@@ -188,13 +192,20 @@ class IntegerIDRule(Rule):
         with self._info_lock:
             timed_out = np.where((self._task_info['status'] == STATUS_ASSIGNED)*(self._task_info['expiry'] < t))[0]
             
-            if len(timed_out) > 0:
+            
+            nTimedOut = len(timed_out)
+            if nTimedOut > 0:
                 self._task_info['status'][timed_out] = STATUS_AVAILABLE
                 self._task_info['nRetries'][timed_out] += 1
-    
-                self._task_info['status'][self._task_info['nRetries'] > self._n_retries] = STATUS_FAILED
                 
-                self._update_nums()
+                self.nAssigned -= nTimedOut
+                self.nAvailable += nTimedOut
+    
+                retry_failed = self._task_info['nRetries'] > self._n_retries
+                self._task_info['status'][retry_failed] = STATUS_FAILED
+                self.nAvailable -= int(retry_failed.sum())
+                
+                #self._update_nums()
             
         with self._advert_lock:
             self._cached_advert = None
