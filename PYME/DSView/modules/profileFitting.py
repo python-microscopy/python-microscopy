@@ -67,7 +67,8 @@ class fitter:
             res = fh.FitModel(gmod, [I.max()-I.min(), xv[I.argmax()], xv[1] - xv[0], I.min()], I, xv)
             
             pylab.plot(xv, I, cols[chan] + 'x', label=self.image.names[chan])
-            pylab.plot(xv, gmod(res[0], self.image.xvals), cols[chan], label='%2.4g, %2.4g, \n%2.4g, %2.4g' % tuple(res[0]))
+            pylab.plot(xv, gmod(res[0], self.image.xvals), cols[chan],
+                       label='A: %2.3g, x0 :%2.4g, \n sig: %2.3g,  b: %2.3g\nFWHM: %2.3g' % (tuple(res[0]) + (2.35*res[2],)))
             
             print((res[0]))
             #imo = self.image.parent

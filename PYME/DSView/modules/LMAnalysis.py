@@ -54,7 +54,7 @@ try:
     from PYME.ParallelTasks import HTTPTaskPusher
 
     #test for a running task distributor
-    distribURI = HTTPTaskPusher._getTaskQueueURI()
+    distribURI = HTTPTaskPusher._getTaskQueueURI(0)
     NEW_STYLE_DISTRIBUTION=False
 except:
     NEW_STYLE_DISTRIBUTION=False
@@ -560,12 +560,13 @@ class LMAnalyser2(object):
         
 
     def OnToggleBackground(self, event):
-        self.SetMDItems()
+        #self.SetMDItems()
+        mdh = self.analysisController.analysisMDH
         if self.do.ds.bgRange is None:
-            self.do.ds.bgRange = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
-            self.do.ds.dataStart = int(self.tStartAt.GetValue())
+            self.do.ds.bgRange = mdh['Analysis.BGRange']#[int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
+            self.do.ds.dataStart = mdh['Analysis.StartAt']#int(self.tStartAt.GetValue())
             
-            self.do.ds.setBackgroundBufferPCT(self.image.mdh['Analysis.PCTBackground'])
+            self.do.ds.setBackgroundBufferPCT(mdh['Analysis.PCTBackground'])
         else:
             self.do.ds.bgRange = None
             self.do.ds.dataStart = 0
