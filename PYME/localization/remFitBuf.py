@@ -638,10 +638,10 @@ class fitTask(taskDef.Task):
             self.mIm = self.mIm*bs
         
         #self.mIm = numpy.absolute(self.mIm)
-        if not 'PSFFile' in self.md.getEntryNames():
-            self.ofdDr = ofind.ObjectIdentifier(self.mIm, filterRadiusLowpass=5, filterRadiusHighpass=9)
-        else:
-            self.ofdDr = ofind_xcorr.ObjectIdentifier(self.mIm, self.md.getEntry('PSFFile'), 7, 3e-2)
+        #if not 'PSFFile' in self.md.getEntryNames():
+        self.ofdDr = ofind.ObjectIdentifier(self.mIm, filterRadiusLowpass=5, filterRadiusHighpass=9)
+        #else:
+        #    self.ofdDr = ofind_xcorr.ObjectIdentifier(self.mIm, self.md.getEntry('PSFFile'), 7, 3e-2)
             
         thres = self.calObjThresh**len(self.driftEstInd)
         self.ofdDr.FindObjects(thres,0, splitter=sfunc, debounceRadius=debounce)

@@ -119,6 +119,7 @@ class AnalysisSettingsView(object):
                       mde.FilenameParam('Camera.FlatfieldMapID', 'Flatfield Map:', prompt='Please select flatfield map to use ...', wildcard='TIFF Files|*.tif', filename=''),
                       mde.BoolParam('Analysis.TrackFiducials', 'Track Fiducials', default=False),
                       mde.FloatParam('Analysis.FiducialThreshold', 'Fiducial Threshold', default=1.8),
+                      mde.IntParam('Analysis.FiducialROISize', 'Fiducial ROI', default=11),
     ]
     
     def __init__(self, dsviewer, analysisController, lmanal=None):
