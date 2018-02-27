@@ -250,23 +250,23 @@ class taskWorker(object):
                 # queue is empty
                 return
 
-            try:
-                if res is None:
-                    # failure
-                    s = clusterIO._getSession(queueURL)
-                    r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
-                    if not r.status_code == 200:
-                        logger.error('Returning task failed with error: %s' % r.status_code)
-                elif res == True:  # isinstance(res, ModuleCollection): #recipe output
-                    # res.save(outputs) #abuse outputs dictionary as context
+            if res is None:
+                # failure
+                s = clusterIO._getSession(queueURL)
+                r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
+                if not r.status_code == 200:
+                    logger.error('Returning task failed with error: %s' % r.status_code)
+            elif res == True:  # isinstance(res, ModuleCollection): #recipe output
+                # res.save(outputs) #abuse outputs dictionary as context
 
-                    s = clusterIO._getSession(queueURL)
-                    r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
-                    if not r.status_code == 200:
-                        logger.error('Returning task failed with error: %s' % r.status_code)
+                s = clusterIO._getSession(queueURL)
+                r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
+                if not r.status_code == 200:
+                    logger.error('Returning task failed with error: %s' % r.status_code)
 
-                else:
-                    # success
+            else:
+                # success
+                try:
                     if 'results' in outputs.keys():
                         # old style pickled results
                         clusterResults.fileResults(outputs['results'], res)
@@ -276,13 +276,15 @@ class taskWorker(object):
 
                         if len(res.driftResults) > 0:
                             clusterResults.fileResults(outputs['driftResults'], res.driftResults)
-
+                except requests.Timeout:
+                    logger.exception('Returning task failed on timeout.')
+                    s = clusterIO._getSession(queueURL)
+                    s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
+                else:
                     s = clusterIO._getSession(queueURL)
                     r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
                     if not r.status_code == 200:
                         logger.error('Returning task failed with error: %s' % r.status_code)
-            except requests.Timeout as e:
-                logger.exception('Returning task failed on timeout.')
 
     def _get_tasks(self, local_queue_name):
         """
@@ -364,12 +366,10 @@ class taskWorker(object):
 
             # if our queue for computing is empty, try to get more tasks
             if self.inputQueue.empty():
-                new_tasks = self._get_tasks(localQueueName)
-            else:
-                new_tasks = False
-
-            if not new_tasks:  # no queues had tasks
-                time.sleep(0.1)  # put ourselves to sleep to avoid constant polling
+                # if we don't have any new tasks, sleep to avoid constant polling
+                if not self._get_tasks(localQueueName):
+                    # no queues had tasks
+                    time.sleep(0.1)
 
 
     def computeLoop(self):
