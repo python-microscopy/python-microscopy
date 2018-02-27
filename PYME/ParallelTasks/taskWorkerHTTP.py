@@ -231,7 +231,7 @@ class taskWorker(object):
         finally:
             self._loop_alive = False
 
-    def return_task_results(self):
+    def _return_task_results(self):
         # new style way of returning results to reduce load on server
         from PYME.IO import clusterResults
 
@@ -280,15 +280,16 @@ class taskWorker(object):
 
     def ioLoop(self):
         #loop forever asking for tasks
+        localQueueName = 'PYMENodeServer: ' + compName
         while True:
             queueURLs = distribution.getNodeInfo()
-            localQueueName = 'PYMENodeServer: ' + compName
+
 
             queueURLs = {k: v for k, v in queueURLs.items() if k == localQueueName}
 
             tasks = []
 
-            self.return_task_results()
+            self._return_task_results()
 
 
             if not self._loop_alive:
