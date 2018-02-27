@@ -235,7 +235,7 @@ class taskWorker(object):
     def _return_task_results(self):
         """
 
-        New style way of returning results to reduce load on server
+        File all results that this worker has completed
 
         Returns
         -------
@@ -352,7 +352,7 @@ class taskWorker(object):
     def ioLoop(self):
         """
 
-        Loop forever asking for tasks
+        Loop forever asking for tasks to queue up for this worker
 
         Returns
         -------
