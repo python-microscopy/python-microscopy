@@ -277,9 +277,11 @@ class taskWorker(object):
                         if len(res.driftResults) > 0:
                             clusterResults.fileResults(outputs['driftResults'], res.driftResults)
                 except requests.Timeout:
-                    logger.exception('Returning task failed on timeout.')
+                    logger.exception('Filing results failed on timeout.')
                     s = clusterIO._getSession(queueURL)
-                    s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
+                    r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
+                    if not r.status_code == 200:
+                        logger.error('Returning task failed with error: %s' % r.status_code)
                 else:
                     s = clusterIO._getSession(queueURL)
                     r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
