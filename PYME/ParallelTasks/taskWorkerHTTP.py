@@ -231,6 +231,53 @@ class taskWorker(object):
         finally:
             self._loop_alive = False
 
+    def return_task_results(self):
+        # new style way of returning results to reduce load on server
+        from PYME.IO import clusterResults
+
+        while True:  # loop over results queue until it's empty
+            # print 'getting results'
+            try:
+                queueURL, taskDescr, res = self.resultsQueue.get_nowait()
+                outputs = taskDescr.get('outputs', {})
+            except Queue.Empty:
+                # queue is empty
+                return
+
+            try:
+                if res is None:
+                    # failure
+                    s = clusterIO._getSession(queueURL)
+                    r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
+                    if not r.status_code == 200:
+                        logger.error('Returning task failed with error: %s' % r.status_code)
+                elif res == True:  # isinstance(res, ModuleCollection): #recipe output
+                    # res.save(outputs) #abuse outputs dictionary as context
+
+                    s = clusterIO._getSession(queueURL)
+                    r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
+                    if not r.status_code == 200:
+                        logger.error('Returning task failed with error: %s' % r.status_code)
+
+                else:
+                    # success
+                    if 'results' in outputs.keys():
+                        # old style pickled results
+                        clusterResults.fileResults(outputs['results'], res)
+                    else:
+                        if len(res.results) > 0:
+                            clusterResults.fileResults(outputs['fitResults'], res.results)
+
+                        if len(res.driftResults) > 0:
+                            clusterResults.fileResults(outputs['driftResults'], res.driftResults)
+
+                    s = clusterIO._getSession(queueURL)
+                    r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
+                    if not r.status_code == 200:
+                        logger.error('Returning task failed with error: %s' % r.status_code)
+            except requests.Timeout as e:
+                logger.exception('Returning task failed on timeout.')
+
     def ioLoop(self):
         #loop forever asking for tasks
         while True:
@@ -241,51 +288,7 @@ class taskWorker(object):
 
             tasks = []
 
-            # new style way of returning results to reduce load on server
-            from PYME.IO import clusterResults
-
-            while True:  # loop over results queue until it's empty
-                #print 'getting results'
-                try:
-                    queueURL, taskDescr, res = self.resultsQueue.get_nowait()
-                    outputs = taskDescr.get('outputs', {})
-                except Queue.Empty:
-                    # queue is empty
-                    break
-
-                try:
-                    if res is None:
-                        #failure
-                        s = clusterIO._getSession(queueURL)
-                        r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
-                        if not r.status_code == 200:
-                            logger.error('Returning task failed with error: %s' % r.status_code)
-                    elif res == True: #isinstance(res, ModuleCollection): #recipe output
-                        #res.save(outputs) #abuse outputs dictionary as context
-
-                        s = clusterIO._getSession(queueURL)
-                        r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
-                        if not r.status_code == 200:
-                            logger.error('Returning task failed with error: %s' % r.status_code)
-
-                    else:
-                        #success
-                        if 'results' in outputs.keys():
-                            #old style pickled results
-                            clusterResults.fileResults(outputs['results'], res)
-                        else:
-                            if len(res.results) > 0:
-                                clusterResults.fileResults(outputs['fitResults'], res.results)
-
-                            if len(res.driftResults) > 0:
-                                clusterResults.fileResults(outputs['driftResults'], res.driftResults)
-
-                        s = clusterIO._getSession(queueURL)
-                        r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
-                        if not r.status_code == 200:
-                            logger.error('Returning task failed with error: %s' % r.status_code)
-                except requests.Timeout as e:
-                    logger.exception('Returning task failed on timeout.')
+            self.return_task_results()
 
 
             if not self._loop_alive:
