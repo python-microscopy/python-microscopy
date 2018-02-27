@@ -284,31 +284,35 @@ class taskWorker(object):
             except requests.Timeout as e:
                 logger.exception('Returning task failed on timeout.')
 
-    def _get_tasks(self, local_queue_name, queue_urls):
+    def _get_tasks(self, local_queue_name):
         """
 
-        Loop over all queues, looking for tasks to process
+        Query nodeserver for tasks and place them in the queue for this worker, if available
 
         Parameters
         ----------
         local_queue_name : str
-        queue_urls : dict
+            computer name prepended by 'PYMENodeServer: '
 
         Returns
         -------
-        tasks : list
+        new_tasks : bool
+            flag to report whether _get_tasks added new tasks to the taskWorker queue
 
         """
-        tasks = []
+        queue_URLs = distribution.getNodeInfo()
+        queue_URLs = {k: v for k, v in queue_URLs.items() if k == local_queue_name}
 
-        while len(tasks) == 0 and len(queue_urls) > 0:
+        # loop over all queues, looking for tasks to process
+        tasks = []
+        while len(tasks) == 0 and len(queue_URLs) > 0:
             # try queue on current machine first
             # TODO - only try local machine?
             # print queueNames
 
-            if local_queue_name in queue_urls.keys():
+            if local_queue_name in queue_URLs.keys():
                 qName = local_queue_name
-                queueURL = queue_urls.pop(qName)
+                queueURL = queue_URLs.pop(qName)
             else:
                 logger.error('Could not find local node server')
 
@@ -360,10 +364,7 @@ class taskWorker(object):
 
             # if our queue for computing is empty, try to get more tasks
             if self.inputQueue.empty():
-                queueURLs = distribution.getNodeInfo()
-                queueURLs = {k: v for k, v in queueURLs.items() if k == localQueueName}
-
-                new_tasks = self._get_tasks(localQueueName, queueURLs)
+                new_tasks = self._get_tasks(localQueueName)
             else:
                 new_tasks = False
 
