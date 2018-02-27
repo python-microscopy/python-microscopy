@@ -233,7 +233,14 @@ class taskWorker(object):
             self._loop_alive = False
 
     def _return_task_results(self):
-        # new style way of returning results to reduce load on server
+        """
+
+        New style way of returning results to reduce load on server
+
+        Returns
+        -------
+
+        """
         while True:  # loop over results queue until it's empty
             # print 'getting results'
             try:
@@ -278,8 +285,22 @@ class taskWorker(object):
                 logger.exception('Returning task failed on timeout.')
 
     def _get_tasks(self, local_queue_name, queue_urls):
+        """
+
+        Loop over all queues, looking for tasks to process
+
+        Parameters
+        ----------
+        local_queue_name : str
+        queue_urls : dict
+
+        Returns
+        -------
+        tasks : list
+
+        """
         tasks = []
-        # loop over all queues, looking for tasks to process
+
         while len(tasks) == 0 and len(queue_urls) > 0:
             # try queue on current machine first
             # TODO - only try local machine?
@@ -314,7 +335,14 @@ class taskWorker(object):
         return tasks
 
     def ioLoop(self):
-        #loop forever asking for tasks
+        """
+
+        Loop forever asking for tasks
+
+        Returns
+        -------
+
+        """
         localQueueName = 'PYMENodeServer: ' + compName
         while True:
             # turn in completed tasks
