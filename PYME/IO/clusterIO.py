@@ -676,6 +676,7 @@ if USE_RAW_SOCKETS:
             name, info = _chooseServer(serverfilter)
             #logger.debug('Chose server: %s:%d' % (name, info.port))
             try:
+                t = time.time()
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 s.settimeout(5.0)
@@ -685,8 +686,7 @@ if USE_RAW_SOCKETS:
         
         
                 datalen = 0
-        
-                t = time.time()
+                      
                 #_last_access_time[name] = t
         
                 rs = []
@@ -732,11 +732,11 @@ if USE_RAW_SOCKETS:
                             raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, msg))
                 finally:
                     fp.close()
-                    
-                    
-                    
-                
 
+                dt = time.time() - t
+                _lastwritespeed[name] = datalen / (dt + .001)
+                    
+            
             except socket.timeout:
                 if nRetries < 2:
                     nRetries += 1
@@ -773,8 +773,7 @@ if USE_RAW_SOCKETS:
                 #TODO: Parse responses
                 s.close()
         
-                dt = time.time() - t
-                _lastwritespeed[name] = datalen / (dt + .001)
+                
 
             #r.close()
 else:
