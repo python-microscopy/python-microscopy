@@ -79,6 +79,7 @@ from PYME.ParallelTasks import distribution
 #import here to pre-populate the zeroconf nameserver
 from PYME.IO import clusterIO
 from PYME.IO import unifiedIO
+from PYME.IO import clusterResults
 #time.sleep(3)
 
 
@@ -233,8 +234,6 @@ class taskWorker(object):
 
     def _return_task_results(self):
         # new style way of returning results to reduce load on server
-        from PYME.IO import clusterResults
-
         while True:  # loop over results queue until it's empty
             # print 'getting results'
             try:
@@ -278,61 +277,63 @@ class taskWorker(object):
             except requests.Timeout as e:
                 logger.exception('Returning task failed on timeout.')
 
+    def _get_tasks(self, local_queue_name, queue_urls):
+        tasks = []
+        # loop over all queues, looking for tasks to process
+        while len(tasks) == 0 and len(queue_urls) > 0:
+            # try queue on current machine first
+            # TODO - only try local machine?
+            # print queueNames
+
+            if local_queue_name in queue_urls.keys():
+                qName = local_queue_name
+                queueURL = queue_urls.pop(qName)
+            else:
+                logger.error('Could not find local node server')
+
+            try:
+                # ask the queue for tasks
+                # TODO - make the server actually return a list of tasks, not just one (or implement pipelining in another way)
+                # try:
+                s = clusterIO._getSession(queueURL)
+                r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % self.procName)  # , timeout=0)
+                if r.status_code == 200:
+                    resp = r.json()
+                    if resp['ok']:
+                        res = resp['result']
+                        if isinstance(res, list):
+                            tasks += [(queueURL, t) for t in res]
+                        else:
+                            tasks.append((queueURL, res))
+            except requests.Timeout:
+                logger.info('Read timout requesting tasks from %s' % queueURL)
+
+            except Exception:
+                import traceback
+                logger.exception(traceback.format_exc())
+        return tasks
+
     def ioLoop(self):
         #loop forever asking for tasks
         localQueueName = 'PYMENodeServer: ' + compName
         while True:
-            queueURLs = distribution.getNodeInfo()
-
-
-            queueURLs = {k: v for k, v in queueURLs.items() if k == localQueueName}
-
-            tasks = []
-
+            # turn in completed tasks
             self._return_task_results()
-
 
             if not self._loop_alive:
                 break
 
+            # if our queue for computing is empty, try to get more tasks
             if self.inputQueue.empty():
-                #loop over all queues, looking for tasks to process
-                while len(tasks) == 0 and len(queueURLs) > 0:
-                    #try queue on current machine first
-                    #TODO - only try local machine?
-                    #print queueNames
+                queueURLs = distribution.getNodeInfo()
+                queueURLs = {k: v for k, v in queueURLs.items() if k == localQueueName}
 
-                    if localQueueName in queueURLs.keys():
-                        qName = localQueueName
-                        queueURL = queueURLs.pop(qName)
-                    else:
-                        logger.error('Could not find local node server')
+                tasks = self._get_tasks(localQueueName, queueURLs)
+            else:
+                tasks = []
 
-
-                    try:
-                        #ask the queue for tasks
-                        #TODO - make the server actually return a list of tasks, not just one (or implement pipelining in another way)
-                        #try:
-                        s = clusterIO._getSession(queueURL)
-                        r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % self.procName)#, timeout=0)
-                        if r.status_code == 200:
-                            resp = r.json()
-                            if resp['ok']:
-                                res = resp['result']
-                                if isinstance(res, list):
-                                    tasks += [(queueURL, t) for t in res]
-                                else:
-                                    tasks.append((queueURL, res))
-                    except requests.Timeout:
-                        logger.info('Read timout requesting tasks from %s' % queueURL)
-
-                    except Exception:
-                        import traceback
-                        logger.exception(traceback.format_exc())
-
-
-            if len(tasks) == 0: #no queues had tasks
-                time.sleep(.1) #put ourselves to sleep to avoid constant polling
+            if len(tasks) == 0:  # no queues had tasks
+                time.sleep(0.1)  # put ourselves to sleep to avoid constant polling
             else:
                 for t in tasks:
                     self.inputQueue.put(t)
