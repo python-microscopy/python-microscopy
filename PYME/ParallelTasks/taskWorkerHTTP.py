@@ -332,7 +332,14 @@ class taskWorker(object):
             except Exception:
                 import traceback
                 logger.exception(traceback.format_exc())
-        return tasks
+
+        if len(tasks) != 0:
+            for t in tasks:
+                self.inputQueue.put(t)
+            return True
+        else:
+            # flag that there were no new tasks
+            return False
 
     def ioLoop(self):
         """
@@ -356,15 +363,12 @@ class taskWorker(object):
                 queueURLs = distribution.getNodeInfo()
                 queueURLs = {k: v for k, v in queueURLs.items() if k == localQueueName}
 
-                tasks = self._get_tasks(localQueueName, queueURLs)
+                new_tasks = self._get_tasks(localQueueName, queueURLs)
             else:
-                tasks = []
+                new_tasks = False
 
-            if len(tasks) == 0:  # no queues had tasks
+            if not new_tasks:  # no queues had tasks
                 time.sleep(0.1)  # put ourselves to sleep to avoid constant polling
-            else:
-                for t in tasks:
-                    self.inputQueue.put(t)
 
 
     def computeLoop(self):
