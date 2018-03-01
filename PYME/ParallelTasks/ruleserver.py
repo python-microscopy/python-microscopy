@@ -323,7 +323,7 @@ class RuleServer(object):
         
         rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks), rule_timeout=float(timeout))
         if not release_start is None:
-            rule.make_range_available(release_start, release_end)
+            rule.make_range_available(int(release_start), int(release_end))
         
         with self._rule_lock:
             self._rules[ruleID] = rule
