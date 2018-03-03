@@ -340,6 +340,8 @@ class DBSCANClustering(ModuleBase):
     columns = ListStr(['x', 'y', 'z'])
     searchRadius = Float()
     minClumpSize = Int()
+    
+    clumpColumnName = CStr('dbscanClumpID')
 
     outputName = Output('dbscanClustered')
 
@@ -354,7 +356,7 @@ class DBSCANClustering(ModuleBase):
                                      self.searchRadius, self.minClumpSize)
 
         # shift dbscan labels up by one to match existing convention that a clumpID of 0 corresponds to unclumped
-        mapped.addColumn('dbscanClumpID', dbLabels + 1)
+        mapped.addColumn(str(self.clumpColumnName), dbLabels + 1)
 
         # propogate metadata, if present
         try:

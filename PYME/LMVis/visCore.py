@@ -599,53 +599,57 @@ class VisGUICore(object):
                 l.engine.set(vertexColour='t')
             elif 'z' in self.pipeline.keys():
                 l.engine.set(vertexColour='z')
-
-    def OpenFile(self, filename, recipe_callback=None):
+                
+    def _populate_open_args(self, filename):
         args = {}
-        
-        if os.path.splitext(filename)[1] =='.h5r':
+    
+        if os.path.splitext(filename)[1] == '.h5r':
             pass
         elif os.path.splitext(filename)[1] == '.hdf':
             pass
         elif os.path.splitext(filename)[1] == '.mat':
             from PYME.LMVis import importTextDialog
             from scipy.io import loadmat
-            
+        
             mf = loadmat(filename)
-
+        
             dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
             ret = dlg.ShowModal()
-
+        
             if not ret == wx.ID_OK:
                 dlg.Destroy()
                 return #we cancelled
-                
+        
             args['FieldNames'] = dlg.GetFieldNames()
             args['VarName'] = dlg.GetVarName()
             # args['PixelSize'] = dlg.GetPixelSize()
-            
-            
+        
+        
             dlg.Destroy()
-
+    
         else: #assume it's a text file
             from PYME.LMVis import importTextDialog
-            
+        
             dlg = importTextDialog.ImportTextDialog(self, filename)
             ret = dlg.ShowModal()
-
+        
             if not ret == wx.ID_OK:
                 dlg.Destroy()
                 return #we cancelled
-
-
+        
             args['FieldNames'] = dlg.GetFieldNames()
             # remove trailing whitespace/line brake on last field name
             args['FieldNames'][-1] = args['FieldNames'][-1].rstrip()
             args['SkipRows'] = dlg.GetNumberComments()
             args['PixelSize'] = dlg.GetPixelSize()
-            
+        
             #print 'Skipping %d rows' %args['SkipRows']
             dlg.Destroy()
+            
+        return args
+
+    def OpenFile(self, filename, recipe_callback=None):
+        args = self._populate_open_args(filename)
 
         print('Creating Pipeline')
         self.pipeline.OpenFile(filename, **args)
@@ -670,5 +674,32 @@ class VisGUICore(object):
         
         
         wx.CallLater(100, self._create_base_layer)
+        #wx.CallAfter(self.RefreshView)
+
+    def OpenChannel(self, filename, recipe_callback=None, channel_name=''):
+        args = self._populate_open_args(filename)
+    
+        print('Creating Pipeline')
+        self.pipeline.OpenChannel(filename, channel_name=channel_name, **args)
+        print('Pipeline Created')
+    
+        #############################
+        #now do all the gui stuff
+    
+        if isinstance(self, wx.Frame):
+            #run this if only we are the main frame
+            #self.SetTitle('PYME Visualise - ' + filename)
+            self._removeOldTabs()
+            self._createNewTabs()
+        
+            self.CreateFoldPanel()
+            print('Gui stuff done')
+    
+        if recipe_callback:
+            recipe_callback()
+    
+        self.SetFit()
+    
+        #wx.CallLater(100, self._create_base_layer)
         #wx.CallAfter(self.RefreshView)
         

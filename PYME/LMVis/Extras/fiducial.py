@@ -1,5 +1,8 @@
-from PYME.recipes.localisations import FiducialCorrection
-from PYME.recipes.tablefilters import FilterTable
+from PYME.recipes.localisations import FiducialCorrection, DBSCANClustering
+from PYME.recipes.tablefilters import FilterTable, FilterTableByIDs
+
+import wx
+from PYME.IO.FileUtils import nameUtils
 
 def drift_correct(pipeline):
     #pipeline=visgui.pipeline
@@ -14,6 +17,69 @@ def drift_correct(pipeline):
     
     recipe.execute()
     pipeline.selectDataSource('corrected_localizations')
+
+
+def drift_correct_with_manual_selection(pipeline):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    #pipeline=visgui.pipeline
+    
+    recipe = pipeline.recipe
+    
+    recipe.add_module(DBSCANClustering(recipe,inputName='Fiducials', outputName='clumped_fiducials', columns=['x', 'y'],
+                                       searchRadius=100, minClumpSize=10, clumpColumnName='fiducialID'))
+    recipe.execute()
+    
+    
+    fids = recipe.namespace['clumped_fiducials']
+    
+    fid_ids = [id for id in set(fids['fiducialID']) if id > 0]
+    
+    fid_positions = {}
+    
+    plt.figure()
+    
+    for fid_id in fid_ids:
+        mask = fids['fiducialID'] == fid_id
+        xc = fids['x'][mask].mean()
+        yc = fids['y'][mask].mean()
+        fid_positions[fid_id] = (xc, yc)
+        
+        plt.plot(xc, yc, 'x')
+        plt.text(xc+50, yc+50, '%d' % fid_id)
+            
+    
+    id_filter = FilterTableByIDs(recipe, inputName='clumped_fiducials', outputname='selected_fiducials',
+                      idColumnName='fiducialID', ids = fid_ids)
+    
+    recipe.add_module(id_filter)
+            
+    id_filter.configure_traits()
+    
+    recipe.add_module(FilterTable(recipe, inputName='selected_fiducials',
+                                  outputName='filtered_fiducials', filters={'error_x': [0, 10], 'sig': [330., 370.]}))
+    
+    recipe.add_module(FiducialCorrection(recipe, inputLocalizations=pipeline.selectedDataSourceKey,
+                                         inputFiducials='filtered_fiducials',
+                                         outputName='corrected_localizations', outputFiducials='corrected_fiducials'))
+    
+    recipe.execute()
+    pipeline.selectDataSource('corrected_localizations')
+    
+def load_fiducial_info_from_second_file(pipeline):
+    msg = '''New analyses should fit fiducials at the same time as the localisations and not use this function.
+    When using this function, the raw localizations of all fiducials should be loaded and not a pre-filtered version'''
+    if wx.MessageBox(msg, 'Info', style=wx.OK|wx.CANCEL) != wx.OK:
+        return
+    
+    filename = wx.FileSelector("Choose a file to open",
+                               nameUtils.genResultDirectoryPath(),
+                               default_extension='h5r',
+                               wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv')
+    
+    #print filename
+    if not filename == '':
+        pipeline.OpenChannel(filename, channel_name='Fiducials')
     
     
 def fiducial_diagnosis(pipeline):
@@ -39,3 +105,5 @@ def fiducial_diagnosis(pipeline):
     
 def Plug(visFr):
     visFr.AddMenuItem('Extras>Fiducials', 'Correct', lambda e : drift_correct(visFr.pipeline))
+    visFr.AddMenuItem('Extras>Fiducials', 'Correct with manual selection', lambda e: drift_correct_with_manual_selection(visFr.pipeline))
+    visFr.AddMenuItem('Extras>Fiducials', 'Load fiducial fits from 2nd file', lambda e: load_fiducial_info_from_second_file(visFr.pipeline))

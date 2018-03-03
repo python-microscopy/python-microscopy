@@ -286,6 +286,8 @@ class Pipeline:
         
         self.QTGoalPixelSize = 5
         
+        self._extra_chan_num = 0
+        
         self.filesToClose = []
 
         self.ev_mappings = {}
@@ -648,6 +650,40 @@ class Pipeline:
         self.selectDataSource('Localizations') #NB - this rebuilds the pipeline
         
         #self._process_colour()
+
+    def OpenChannel(self, filename='', ds=None, channel_name='', **kwargs):
+        """Open a file - accepts optional keyword arguments for use with files
+        saved as .txt and .mat. These are:
+
+            FieldNames: a list of names for the fields in the text file or
+                        matlab variable.
+            VarName:    the name of the variable in the .mat file which
+                        contains the data.
+            SkipRows:   Number of header rows to skip for txt file data
+
+            PixelSize:  Pixel size if not in nm
+
+        """
+        if channel_name == '' or channel_name is None:
+            #select a channel name automatically
+            channel_name = 'Channel%d' % self._extra_chan_num
+            self._extra_chan_num += 1
+                
+        if ds is None:
+            #load from file
+            ds = self._ds_from_file(filename, **kwargs)
+    
+        #wrap the data source with a mapping so we can fiddle with things
+        #e.g. combining z position and focus
+        mapped_ds = tabular.mappingFilter(ds)
+    
+        if 'PixelSize' in kwargs.keys():
+            mapped_ds.addVariable('pixelSize', kwargs['PixelSize'])
+            mapped_ds.setMapping('x', 'x*pixelSize')
+            mapped_ds.setMapping('y', 'y*pixelSize')
+    
+    
+        self.addDataSource(channel_name, mapped_ds)
 
 
 
