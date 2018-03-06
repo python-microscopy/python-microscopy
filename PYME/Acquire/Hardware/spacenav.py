@@ -78,6 +78,8 @@ class SpaceNavPiezoCtrl(object):
         self.kappa = 1.5
         
         self.spacenav.WantPosNotification.append(self.updatePosition)
+        self.spacenav.OnLeftButtonUp.append(self.leftButton)
+        self.spacenav.OnRightButtonUp.append(self.rightButton)
         self.update_n= 0
         self.lastTime = 0
         
@@ -129,6 +131,12 @@ class SpaceNavPiezoCtrl(object):
             #    pass
             
         self.update_n += 1
-            
 
-        
+    
+    def leftButton(self, sn):
+        self.xy_sensitivity = .005
+        print "spacenav - coarse adjustment"
+
+    def rightButton(self, sn):
+        self.xy_sensitivity = .001
+        print "spacenav - fine adjustment"
