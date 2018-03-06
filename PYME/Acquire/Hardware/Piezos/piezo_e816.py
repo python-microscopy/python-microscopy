@@ -125,21 +125,22 @@ class piezo_e816(PiezoBase):
 
         return data
 
-    def StartWaveOutput(self,iChannel=0, dwellTime=None):
-        """Start wavetable output. dwellTime should be the desired dwell time in
-        microseconds, or None (default). If dwellTime is None then the external
-        wavetable trigger input (pin 9 on io connector) will be used."""
+    # Ruisheng: "StartWaveOutput" is temporarily removed due to a "callNum" error. This forces getBestScanner() to fall back to zScanner. See zScanner.py
+    # def StartWaveOutput(self,iChannel=0, dwellTime=None):
+    #     """Start wavetable output. dwellTime should be the desired dwell time in
+    #     microseconds, or None (default). If dwellTime is None then the external
+    #     wavetable trigger input (pin 9 on io connector) will be used."""
 
-        if self.numWavePoints < 1:
-            raise RuntimeError('piezo_e816 - no wave table defined')
+    #     if self.numWavePoints < 1:
+    #         raise RuntimeError('piezo_e816 - no wave table defined')
 
-        if dwellTime is None:
-            #triggered
-            self.ser_port.write('WTO A%d\n' % self.numWavePoints)
-        else:
-            self.ser_port.write('WTO A%d %3.4f\n' % (self.numWavePoints, dwellTime))
+    #     if dwellTime is None:
+    #         #triggered
+    #         self.ser_port.write('WTO A%d\n' % self.numWavePoints)
+    #     else:
+    #         self.ser_port.write('WTO A%d %3.4f\n' % (self.numWavePoints, dwellTime))
             
-        self.ser_port.flushOutput()
+    #     self.ser_port.flushOutput()
 
     def StopWaveOutput(self, iChannel=0):
         self.ser_port.write('WTO A0\n')
@@ -164,5 +165,6 @@ class piezo_e816(PiezoBase):
         verstring = self.ser_port.readline()
         return float(re.findall(r'V(\d\.\d\d)', verstring)[0])
         
-        
+    def GetTargetPos(self,iChannel=0):
+        return self.lastPos
         
