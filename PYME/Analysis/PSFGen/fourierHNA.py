@@ -461,13 +461,16 @@ def PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47,
         pupil = pupil*get_bead_pupil(X, Y, beadsize)
         
     if vectorial:
-        #assume circular pol for now
-        
-        a = 1
-        b = -1j
+        if vectorial is True:
+            #use circular pol by default
+            a = 1
+            b = -1j
+        else:
+            #vectorial is a tuple of polarization components
+            a, b = vectorial
         
         phi = np.angle(u + 1j * v)
-        theta = np.arcsin(np.minimum(R / n, 1))
+        theta = np.arcsin(np.minimum(R, 1))
         
         ct = np.cos(theta)
         st = np.sin(theta)
@@ -626,12 +629,16 @@ def Gen4PiPSF(zs,phi=0, zernikeCoeffs=[{},{}], **kwargs):
     #pupil_lower = pupil
 
     if vectorial:
-        #assume circular pol
-        a = 1
-        b = -1j
+        if vectorial is True:
+            #use circular pol by default
+            a = 1
+            b = -1j
+        else:
+            #vectorial is a tuple of polarization components
+            a, b = vectorial
         
         phi = np.angle(u + 1j * v)
-        theta = np.arcsin(np.minimum(R / n, 1))
+        theta = np.arcsin(np.minimum(R, 1))
     
         ct = np.cos(theta)
         st = np.sin(theta)
