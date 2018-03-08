@@ -94,24 +94,32 @@ class FilterTableByIDs(ModuleBase):
             return self._parent.namespace[self.inputName]
         except:
             return None
+        
+    @property
+    def _possible_ids(self):
+        ids = [id for id in set(self._ds[self.idColumnName]) if id > 0]
+        
+        return ids
 
     @property
     def pipeline_view(self):
-        from traitsui.api import View, Group, Item
-        from PYME.ui.custom_traits_editors import FilterEditor
+        from traitsui.api import View, Group, Item, TextEditor, SetEditor
 
         modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
 
-        return View(Group(Item('filters', editor=FilterEditor(datasource=self._ds)), label=modname))
+        return View(Group(Item('idColumnName'),
+                          Item('ids', editor=SetEditor(values=self._possible_ids)),
+                          label=modname))
 
     @property
     def default_view(self):
-        from traitsui.api import View, Group, Item
+        from traitsui.api import View, Group, Item, TextEditor, SetEditor
         from PYME.ui.custom_traits_editors import CBEditor, FilterEditor
 
         return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
                     Item('_'),
-                    Item('filters', editor=FilterEditor(datasource=self._ds)),
+                    Item('idColumnName'),
+                    Item('ids', editor=SetEditor(values=self._possible_ids)),
                     Item('_'),
                     Item('outputName'), buttons=['OK'])
 
