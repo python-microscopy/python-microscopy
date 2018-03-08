@@ -461,6 +461,11 @@ def PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47,
         pupil = pupil*get_bead_pupil(X, Y, beadsize)
         
     if vectorial:
+        #assume circular pol for now
+        
+        a = 1
+        b = -1j
+        
         phi = np.angle(u + 1j * v)
         theta = np.arcsin(np.minimum(R / n, 1))
         
@@ -469,29 +474,38 @@ def PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47,
         cp = np.cos(phi)
         sp = np.sin(phi)
         
-        fac = ct * cp ** 2 + sp ** 2
-        ps = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
-        p = abs(ps ** 2)
+        #ax
+        fac = a*(ct * cp ** 2 + sp ** 2)
+        ps_x = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        #p = abs(ps ** 2)
         
-        fac = (ct - 1) * cp * sp
-        ps = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
-        p += abs(ps ** 2)
+        #ay
+        fac = a*(ct - 1) * cp * sp
+        ps_y = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        #p += abs(ps ** 2)
         
-        fac = (ct - 1) * cp * sp
-        ps = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
-        p += abs(ps ** 2)
+        #az
+        fac = -a*st * cp
+        ps_z = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        #p += abs(ps ** 2)
         
-        fac = ct * sp ** 2 + cp ** 2
-        ps = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
-        p += abs(ps ** 2)
         
-        fac = st * cp
-        ps = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
-        p += abs(ps ** 2)
+        #bx
+        fac = b*(ct - 1) * cp * sp
+        ps_x += np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
         
-        fac = st * sp
-        ps = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
-        p += abs(ps ** 2)
+        p = abs(ps_x ** 2)
+        
+        #by
+        fac = b*(ct * sp ** 2 + cp ** 2)
+        ps_y += np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        p += abs(ps_y ** 2)
+        
+        
+        #bz
+        fac = -b*st * sp
+        ps_z += np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        p += abs(ps_z ** 2)
         
         
     else:
@@ -612,6 +626,10 @@ def Gen4PiPSF(zs,phi=0, zernikeCoeffs=[{},{}], **kwargs):
     #pupil_lower = pupil
 
     if vectorial:
+        #assume circular pol
+        a = 1
+        b = -1j
+        
         phi = np.angle(u + 1j * v)
         theta = np.arcsin(np.minimum(R / n, 1))
     
@@ -622,41 +640,46 @@ def Gen4PiPSF(zs,phi=0, zernikeCoeffs=[{},{}], **kwargs):
         
         psf = []
         for z in zs:
-            fac = ct * cp ** 2 + sp ** 2
+            #ax
+            fac = a*(ct * cp ** 2 + sp ** 2)
             ps_u = FP.propagate(pupil_upper * fac, z)
             ps_l = FP.propagate(pupil_lower * fac, -z)*np.exp(1j*dphi)
-            ps = ps_u + ps_l
-            p = abs(ps ** 2)
+            ps_x = ps_u + ps_l
+            #p = abs(ps ** 2)
         
-            fac = (ct - 1) * cp * sp
+            #ay
+            fac = a*(ct - 1) * cp * sp
             ps_u = FP.propagate(pupil_upper * fac, z)
             ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
-            ps = ps_u + ps_l
-            p += abs(ps ** 2)
+            ps_y = ps_u + ps_l
+            #p += abs(ps ** 2)
         
-            fac = (ct - 1) * cp * sp
+            #bx
+            fac = b*(ct - 1) * cp * sp
             ps_u = FP.propagate(pupil_upper * fac, z)
             ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
-            ps = ps_u + ps_l
-            p += abs(ps ** 2)
+            ps_x += (ps_u + ps_l)
+            p = abs(ps_x ** 2)
         
-            fac = ct * sp ** 2 + cp ** 2
+            #by
+            fac = b*(ct * sp ** 2 + cp ** 2)
             ps_u = FP.propagate(pupil_upper * fac, z)
             ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
-            ps = ps_u + ps_l
-            p += abs(ps ** 2)
+            ps_y += (ps_u + ps_l)
+            p += abs(ps_y ** 2)
         
-            fac = st * cp
+            #az
+            fac = -a*st * cp
             ps_u = FP.propagate(pupil_upper * fac, z)
             ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
-            ps = ps_u + ps_l
-            p += abs(ps ** 2)
+            ps_z = ps_u + ps_l
+            #p += abs(ps ** 2)
         
-            fac = st * sp
+            fac = -b*(st * sp)
             ps_u = FP.propagate(pupil_upper * fac, z)
             ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
-            ps = ps_u + ps_l
-            p += abs(ps ** 2)
+            ps_z += (ps_u + ps_l)
+            p += abs(ps_z ** 2)
             
             psf.append(p[:,:,None])
 
