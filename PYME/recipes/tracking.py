@@ -131,6 +131,46 @@ class TrackFeatures(ModuleBase):
         
         return clumps
 
+
+@register_module('FindClumps')
+class FindClumps(ModuleBase):
+    """
+    Generates tracks / clumps of single molecules based on spatial and temporal grouping. This is appropriate for
+    diffraction limited objects where size, shape, or other features do not contin useful tracking information.
+    
+    One of the main uses for this module is to chain multiple observations of a single molecule together.
+    """
+    inputName = Input('input')
+    outputName = Output('with_clumps')
+    outputClumps = Output('clumps')
+    
+    timeWindow = Int(3)
+    clumpRadiusScale = Float(2.0)
+    clumpRadiusVariable = CStr('error_x')
+    
+    
+    def execute(self, namespace):
+        import PYME.Analysis.Tracking.trackUtils as trackUtils
+        from PYME.IO import tabular
+        
+        meas = namespace[self.inputName]
+        
+        with_clumps, clumps = trackUtils.findTracks2(meas, self.clumpRadiusVariable, self.clumpRadiusScale,
+                              self.timeWindow)
+        
+        try:
+            with_clumps.mdh = meas.mdh
+        except AttributeError:
+            pass
+        
+        
+        #clumpInfo, clumps = self.Track(meas, True)
+        namespace[self.outputName] = with_clumps
+        namespace[self.outputClumps] = clumps
+        
+        
+    
+
 @register_module('LoadSpeckles')
 class LoadSpeckles(ModuleBase):
     """Loads Speckle data as used by the karatekin lab"""

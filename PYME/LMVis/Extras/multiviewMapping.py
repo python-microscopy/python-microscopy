@@ -454,9 +454,9 @@ class multiviewMapper:
         -----
 
         """
-        from PYME.recipes.localisations import FindClumps
+        from PYME.recipes.localisations import MultiviewFindClumps
         recipe = self.pipeline.recipe
-        recipe.add_module(FindClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='with_clumps',
+        recipe.add_module(MultiviewFindClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='with_clumps',
                                      gapTolerance=self.clump_gap_tolerance, radiusScale=self.clump_radius_scale,
                                      radius_offset=self.clump_radius_offset, probeAware=True))
         recipe.execute()
@@ -479,7 +479,7 @@ class multiviewMapper:
         -----
 
         """
-        from PYME.recipes.localisations import FindClumps, MergeClumps
+        from PYME.recipes.localisations import MultiviewFindClumps, MultiviewMergeClumps
 
         if not 'clumpIndex' in self.pipeline.keys():
             logger.debug('No clumps found - running FindClumps')
@@ -487,7 +487,7 @@ class multiviewMapper:
 
         recipe = self.pipeline.recipe
 
-        recipe.add_module(MergeClumps(recipe, inputName='with_clumps', outputName='clumped'))
+        recipe.add_module(MultiviewMergeClumps(recipe, inputName='with_clumps', outputName='clumped'))
 
         recipe.execute()
         self.pipeline.selectDataSource('clumped')

@@ -335,6 +335,40 @@ def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
     pipeline.clumps = ClumpManager(pipeline)
 
 
+def findTracks2(datasource, rad_var='error_x', multiplier='2.0', nFrames=20):
+    import PYME.Analysis.points.DeClump.deClump as deClump
+    from PYME.IO import tabular
+    
+    with_clumps = tabular.mappingFilter(datasource)
+    
+    if rad_var == '1.0':
+        delta_x = 0 * datasource['x'] + multiplier
+    else:
+        delta_x = multiplier * datasource[rad_var]
+    
+    t = datasource['t'].astype('i')
+    x = datasource['x'].astype('f4')
+    y = datasource['y'].astype('f4')
+    delta_x = delta_x.astype('f4')
+    
+    I = np.argsort(t)
+    
+    clumpIndices = np.zeros(len(x), dtype='i')
+    clumpIndices[I] = deClump.findClumpsN(t[I], x[I], y[I], delta_x[I], nFrames)
+    
+    numPerClump, b = np.histogram(clumpIndices, np.arange(clumpIndices.max() + 1.5) + .5)
+    
+    trackVelocities = 0 * x
+    trackVelocities[I] = calcTrackVelocity(x[I], y[I], clumpIndices[I], t.astype('f')[I])
+    #print b
+    
+    with_clumps.addColumn('clumpIndex', clumpIndices)
+    with_clumps.addColumn('clumpSize', numPerClump[clumpIndices - 1])
+    with_clumps.addColumn('trackVelocity', trackVelocities)
+    
+    return with_clumps, ClumpManager(with_clumps)
+
+
 def calcTrackVelocity(x, y, ci, t):
     #if not self.init:
     #    self.InitGL()
