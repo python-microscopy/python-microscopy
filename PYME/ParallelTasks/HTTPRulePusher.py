@@ -318,9 +318,9 @@ class RecipePusher(object):
               }'''
 
         if self.recipeURI:
-            task = task % '["taskdefRef"] = self.recipeURI'
+            task = task % ('["taskdefRef"] = %s' % self.recipeURI)
         else:
-            task = task % '["taskdef"] = self.recipe_text'
+            task = task % ('["taskdef"] = %s' % self.recipe_text)
 
         return task
 
@@ -342,7 +342,7 @@ class RecipePusher(object):
         rule = {'template': self._taskTemplate, 'inputsByTask' : inputs_by_task}
 
         s = clusterIO._getSession(self.taskQueueURI)
-        r = s.post('%s/add_integer_id_rule?max_tasks=%d&release_start=%d&release_end=%d' % (self.taskQueueURI,numTotalFrames, 0, numTotalFrames), data=json.dumps(rule),
+        r = s.post('%s/add_integer_id_rule?max_tasks=%d&release_start=%d&release_end=%d' % (self.taskQueueURI,numTotalFrames, 0, numTotalFrames-1), data=json.dumps(rule),
                         headers = {'Content-Type': 'application/json'})
 
         if r.status_code == 200:
