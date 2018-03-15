@@ -321,7 +321,8 @@ class RuleServer(object):
         if ruleID is None:
             ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().get_hex())
         
-        rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks), rule_timeout=float(timeout))
+        rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks), rule_timeout=float(timeout),
+                             inputs_by_task=rule_info.get('inputsByTask', None))
         if not release_start is None:
             rule.make_range_available(int(release_start), int(release_end))
         
