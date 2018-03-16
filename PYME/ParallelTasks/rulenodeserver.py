@@ -43,7 +43,10 @@ class Rater(object):
         self.rule = rule
         self.taskIDs = rule['availableTaskIDs']
         self.template = rule['taskTemplate']
-        self.inputs = rule.get('inputsByTask', {})
+        inputs = rule.get('inputsByTask', {})
+        self.inputs = {int(k):v for k, v in inputs.items()}
+        
+        #logger.debug('rater inputs: %s' % self.inputs)
         
         #logger.debug('Template: %s'  % self.template)
         
@@ -61,7 +64,17 @@ class Rater(object):
         except IndexError:
             raise StopIteration
         
-        task = json.loads(template_fill(self.template, taskID=taskID, taskInputs=self.inputs.get(taskID)))
+        #logger.debug('taskID: %s, taskInputs: %s' % (taskID, self.inputs.get(taskID)))
+        
+        task_inputs = self.inputs.get(taskID)
+        if not task_inputs is None:
+            task_inputs = json.dumps(task_inputs)
+        
+        filled_template = template_fill(self.template, taskID=taskID, taskInputs=task_inputs)
+        
+        #logger.debug('filled template: %s' % filled_template)
+        
+        task = json.loads(filled_template)
         
         cost = 1.0
         if task['type'] == 'localization':

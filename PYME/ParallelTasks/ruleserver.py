@@ -36,7 +36,12 @@ class IntegerIDRule(Rule):
     def __init__(self, ruleID, task_template, inputs_by_task = None,
                  max_task_ID=100000, task_timeout=600, rule_timeout=3600):
         self.ruleID = ruleID
-        self._inputs_by_task = inputs_by_task
+        
+        if not inputs_by_task is None:
+            self._inputs_by_task = {int(k):v for k, v in inputs_by_task.items()}
+        else:
+            self._inputs_by_task = None
+            
         self._template = task_template
         self._task_info = np.zeros(max_task_ID, self.TASK_INFO_DTYPE)
         
@@ -75,7 +80,7 @@ class IntegerIDRule(Rule):
     def make_range_available(self, start, end):
         '''Make a range of tasks available (to be called once the underlying data is available)'''
         
-        if start < 0 or start >= self._task_info.size or end < 0 or end >= self._task_info.size:
+        if start < 0 or start > self._task_info.size or end < 0 or end > self._task_info.size:
             raise RuntimeError('Range (%d, %d) invalid with maxTasks=%d' % (start, end, self._task_info.size))
         
         #TODO - check existing status - it probably makes sense to only apply this to tasks which have STATUS_UNAVAILABLE
@@ -152,7 +157,9 @@ class IntegerIDRule(Rule):
                         'taskTemplate': self._template,
                         'availableTaskIDs': availableTasks}
                     
-                    if self._inputs_by_task:
+                    #print self._inputs_by_task
+                    
+                    if not self._inputs_by_task is None:
                         self._cached_advert['inputsByTask'] = {taskID: self._inputs_by_task[taskID] for taskID in availableTasks}
                 
             return self._cached_advert
@@ -323,6 +330,8 @@ class RuleServer(object):
         
         rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks), rule_timeout=float(timeout),
                              inputs_by_task=rule_info.get('inputsByTask', None))
+        
+        #print rule._inputs_by_task
         if not release_start is None:
             rule.make_range_available(int(release_start), int(release_end))
         
