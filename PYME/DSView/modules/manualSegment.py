@@ -43,10 +43,28 @@ class manualSegment:
         
         dsviewer.AddMenuItem('Segmentation', 'Create mask', self.OnCreateMask)
         dsviewer.AddMenuItem('Segmentation', "Fill selection\tCtrl-F", self.FillSelection)
+        dsviewer.AddMenuItem('Segmentation', 'Multiply image with mask', self.OnMultiplyMask)
 
         #accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])
         #self.dsviewer.SetAcceleratorTable(accel_tbl)
+        
+    def OnMultiplyMask(self, event=None):
+        new_image = []
+        
+        mask = self.mask > 0.5 #generate a binary mask from labels
+        
+        for chNum in range(self.image.data.shape[3]):
+            new_image.append(mask*self.image.data[:,:,:,chNum])
 
+        im = ImageStack(new_image, titleStub='Masked image')
+        im.mdh.copyEntriesFrom(self.image.mdh)
+            
+        if self.dsviewer.mode == 'visGUI':
+            mode = 'visGUI'
+        else:
+            mode = 'lite'
+
+        self.dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
     def OnCreateMask(self, event=None):
         #lx, ly, hx, hy = self.do.GetSliceSelection()
