@@ -27,7 +27,7 @@ import pylab
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
 class ColocSettingsDialog(wx.Dialog):
-    def __init__(self, parent, pxSize=100, names = []):
+    def __init__(self, parent, pxSize=100, names = [], have_mask=False):
         wx.Dialog.__init__(self, parent, title='Colocalisation Settings')
         
         sizer1 = wx.BoxSizer(wx.VERTICAL)
@@ -52,6 +52,15 @@ class ColocSettingsDialog(wx.Dialog):
         hsizer.Add(self.tStep, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         
         sizer1.Add(hsizer, 0, wx.EXPAND)
+        
+        if have_mask:
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            hsizer.Add(wx.StaticText(self, -1, 'Use Mask:'), 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+            self.cbUseMask = wx.CheckBox(self, -1)
+            self.cbUseMask.SetValue(False)
+            hsizer.Add(self.cbUseMask, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+    
+            sizer1.Add(hsizer, 0, wx.EXPAND)
         
         if len(names) > 0:
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -81,6 +90,14 @@ class ColocSettingsDialog(wx.Dialog):
         
     def GetChans(self):
         return [self.cChan1.GetSelection(), self.cChan2.GetSelection()]
+    
+    def GetUseMask(self):
+        cbMask = getattr(self, 'cbUseMAsk', None)
+        
+        if cbMask is None:
+            return False
+        else:
+            return cbMask.GetValue()
 
 class colocaliser:
     def __init__(self, dsviewer):
@@ -111,13 +128,26 @@ class colocaliser:
             names = self.image.mdh.getEntry('ChannelNames')
         except:
             names = ['Channel %d' % n for n in range(self.image.data.shape[3])]
+            
+        if not getattr(self.image, 'labels', None) is None:
+            have_mask = True
+            
+            mask = self.image.labels > 0.5
+        else:
+            have_mask = False
+            mask = None
         
-        dlg = ColocSettingsDialog(self.dsviewer, voxelsize[0], names)
+        dlg = ColocSettingsDialog(self.dsviewer, voxelsize[0], names, have_mask=have_mask)
         dlg.ShowModal()
         
         bins = dlg.GetBins()
         chans = dlg.GetChans()
+        use_mask = dlg.GetUseMask()
         dlg.Destroy()
+        
+        if not use_mask:
+            mask=None
+        
 
         #assume we have exactly 2 channels #FIXME - add a selector
         #grab image data
@@ -134,15 +164,15 @@ class colocaliser:
         voxelsize = voxelsize[:imA.ndim] #trunctate to number of dimensions
 
         print('Calculating Pearson and Manders coefficients ...')        
-        pearson = correlationCoeffs.pearson(imA, imB)
-        MA, MB = correlationCoeffs.thresholdedManders(imA, imB, tA, tB)
+        pearson = correlationCoeffs.pearson(imA, imB, roi_mask=mask)
+        MA, MB = correlationCoeffs.thresholdedManders(imA, imB, tA, tB, roi_mask=mask)
 
         print('Performing distance transform ...')        
-        bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize, bins)
-        bnAA, bmAA, binsA = edtColoc.imageDensityAtDistance(imA, imA > tA, voxelsize, bins)
+        bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize, bins, roi_mask=mask)
+        bnAA, bmAA, binsA = edtColoc.imageDensityAtDistance(imA, imA > tA, voxelsize, bins, roi_mask=mask)
         print('Performing distance transform (reversed) ...') 
-        bnB, bmB, binsB = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize, bins)
-        bnBB, bmBB, binsB = edtColoc.imageDensityAtDistance(imB, imB > tB, voxelsize, bins)
+        bnB, bmB, binsB = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize, bins, roi_mask=mask)
+        bnBB, bmBB, binsB = edtColoc.imageDensityAtDistance(imB, imB > tB, voxelsize, bins, roi_mask=mask)
         
         #print binsB, bmB
         
