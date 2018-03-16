@@ -126,19 +126,20 @@ class manualSegment:
 #        pylab.imshow(np.array(img))
 #        self.mask[x0:x1, y0:y1, self.do.zp] = np.array(img)
         
-            
+        from skimage import draw
         from shapely.geometry import Polygon, Point
-        
         p = Polygon(self.do.selection_trace)
-        x0, y0, x1, y1 = p.bounds
+        #x0, y0, x1, y1 = p.bounds
 
-        self.vmax += 1        
+        self.vmax += 1
+        rr, cc = draw.polygon(*np.array(self.do.selection_trace).T)
+        self.mask[rr,cc, self.do.zp] = self.vmax
         
-        for x in range(int(x0), int(x1)+1):
-            for y in range (int(y0), int(y1)+1):
-                if Point(x, y).within(p):
-                    self.mask[x,y,self.do.zp] = self.vmax
-        self.rois.append(p)            
+        # for x in range(int(x0), int(x1)+1):
+        #     for y in range (int(y0), int(y1)+1):
+        #         if Point(x, y).within(p):
+        #             self.mask[x,y,self.do.zp] = self.vmax
+        self.rois.append(p)
         self.dv.update()
         self.dv.Refresh()
     
