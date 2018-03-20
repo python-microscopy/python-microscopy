@@ -138,6 +138,12 @@ class uc480Camera:
             'ymin' : 32,
             'ystep' : 2
         },
+        'UI327x' : {
+            'xmin' : 256,
+            'xstep' : 8,
+            'ymin' : 2,
+            'ystep' : 2
+        },
         'UI324x' : {
             'xmin' : 16,
             'xstep' : 4,
@@ -728,7 +734,10 @@ class uc480Camera:
         fps = c_double(0)        
         
         ret = uc480.CALL('GetFramesPerSecond', self.boardHandle, byref(fps))
-        return fps.value
+        if fps.value == 0:
+            return 1.0/self.GetIntegTime()
+        else:
+            return fps.value
     
     def GetNumImsBuffered(self):
         return self.nFull

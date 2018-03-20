@@ -101,20 +101,22 @@ class FocusKeys:
         else:
             p = self.piezo[0].GetPos(self.piezo[1])
             
-        self.mbar.SetMenuLabel(self.mpos, 'Focus = %3.2f, Inc = %3.2f' %(p, self.focusIncrement))
+        self.mbar.SetMenuLabel(self.mpos, 'Focus = %3.2f, Inc = %3.2fum' %(p, self.focusIncrement))
 
 class PositionKeys:
     def __init__(self, parent, xpiezo, ypiezo, keys = ['F9', 'F10', 'F11', 'F12'], scope = None):
         self.xpiezo = xpiezo
         self.ypiezo = ypiezo
         
-        self.focusIncrement = 0.03
+        self.focusIncrement = 0.001
         self.scope = scope
 
         parent.AddMenuItem('Position', 'Position Down\t%s' % keys[0], self.OnDown)
         parent.AddMenuItem('Position', 'Position Up\t%s' % keys[1], self.OnUp)
         parent.AddMenuItem('Position', 'Position Left\t%s' % keys[2], self.OnLeft)
         parent.AddMenuItem('Position', 'Position Right\t%s' % keys[3], self.OnRight)
+        parent.AddMenuItem('Position', 'Sensitivity Down\tCtrl-N', self.OnSensDown)
+        parent.AddMenuItem('Position', 'Sensitivity Up\tCtrl-M', self.OnSensUp)
 
         # idFocUp = wx.NewId()
         # idFocDown = wx.NewId()
@@ -172,7 +174,17 @@ class PositionKeys:
             
         self.ypiezo[0].MoveTo(self.ypiezo[1], p + self.focusIncrement, False, vel=10)
 
-    
+    def OnSensDown(self,event):
+        if self.focusIncrement > 0.001:
+            self.focusIncrement /= 2.
+
+    def OnSensUp(self,event):
+        if self.focusIncrement < 0.04:
+            self.focusIncrement *= 2.
+
+    def refresh(self):            
+        self.mbar.SetMenuLabel(self.mpos, 'Position Inc =  %3.2fum' %(1000*self.focusIncrement))
+
 #    def refresh(self):
 #        if 'lastPos' in dir(self.piezo[0]):
 #            p = self.piezo[0].lastPos

@@ -134,9 +134,11 @@ class SpaceNavPiezoCtrl(object):
 
     
     def leftButton(self, sn):
-        self.xy_sensitivity = .005
-        print "spacenav - coarse adjustment"
+        if self.xy_sensitivity < 0.005:
+            self.xy_sensitivity *= 2
+        print "spacenav speed: %d/6" %int(np.log2(self.xy_sensitivity/.001)+3)
 
     def rightButton(self, sn):
-        self.xy_sensitivity = .001
-        print "spacenav - fine adjustment"
+        if self.xy_sensitivity > 0.0004:
+            self.xy_sensitivity /= 2
+        print "spacenav speed: %d/6" %int(np.log2(self.xy_sensitivity/.001)+3)
