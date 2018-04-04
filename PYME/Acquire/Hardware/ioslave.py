@@ -155,6 +155,34 @@ class AOMLaser(Laser):
 
     def GetPower(self):
         return self.power
+
+
+class DigitalShutter(Laser):
+    def __init__(self, name, turnOn=False, ios=None, pin=13,**kwargs):
+        if ios is None:
+            self.ios = IOSlave()
+        else:
+            self.ios = ios
+
+        self._enable_pin = pin
+
+        self.powerControlable = False
+        self.isOn = True
+
+        Laser.__init__(self, name, turnOn, **kwargs)
+
+    def IsOn(self):
+        return self.isOn
+
+    def TurnOn(self):
+        self.ios.SetDigital(self._enable_pin, 1)
+        self.isOn = True
+
+    def TurnOff(self):
+        self.ios.SetDigital(self._enable_pin, 0)
+        self.isOn = False
+
+
         
 if __name__ == '__main__':
     #run as a temperature logger

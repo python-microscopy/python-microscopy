@@ -165,21 +165,25 @@ def ShowSFDialog():
     print((stopTask.when))
 
 
-
+def toggle_joystick(enabled=False):
+    try:
+        scope.joystick.Enable(enabled)
+    except:
+        pass
 
 
 #define a list of tasks, where T(when, what, *args) creates a new task
 #when is the frame number, what is a function to be called, and *args are any
 #additional arguments
 taskList = [
-#T(-1, scope.joystick.Enable, False),
+T(-1, toggle_joystick, False),
 T(-1, ShowSFDialog),
 T(-1, SetCameraShutter,False),
 T(11, SetCameraShutter, True),
 T(12, ps.start),
 T(30, MainFrame.pan_spool.OnBAnalyse, None),
 stopTask,
-#T(maxint, scope.joystick.Enable, True),
+T(maxint, toggle_joystick, True),
 #T(maxint, ps.stop),
 ]
 

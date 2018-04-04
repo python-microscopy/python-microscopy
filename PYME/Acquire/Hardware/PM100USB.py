@@ -20,7 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
+import logging
 import visa
+logging.getLogger('pyvisa').setLevel(logging.INFO)
 
 class PowerMeter:
     def __init__(self, ID='USB0::0x1313::0x8072::P2000343', dispScale=14):
