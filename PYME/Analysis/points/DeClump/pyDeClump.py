@@ -206,6 +206,31 @@ def coalesceClumps(fitResults, assigned):
     return fres
 
 
+def mergeClumps(datasource, labelKey='clumpIndex'):
+    from PYME.IO.tabular import cachingResultsFilter, mappingFilter
+    from PYME.Analysis.points.multiview import coalesceDictSorted
+
+    ds_keys = datasource.keys()
+    
+    keys_to_aggregate = [k for k in ds_keys if not (k.startswith('error') or k.startswith('slicesUsed') or k.startswith('fitError'))]
+
+    all_keys = list(keys_to_aggregate) #this should be a copy otherwise we end up adding the weights to our list of stuff to aggregate
+
+    # pair fit results and errors for weighting
+    aggregation_weights = {k: 'error_' + k for k in keys_to_aggregate if 'error_' + k in datasource.keys()}
+    all_keys += aggregation_weights.values()
+
+    #aggregation_weights['A'] = 'sum'
+    #aggregation_weights['Ag'] = 'sum'
+    #aggregation_weights['Ar'] = 'sum'
+
+    I = np.argsort(datasource[labelKey])
+    sorted_src = {k: datasource[k][I] for k in all_keys}
+
+    grouped = coalesceDictSorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights)
+    return mappingFilter(grouped)
+
+
 def deClump(fitResults):
     #select those points which fitted and have a reasonable fit error
     fitResults = fitResults[(fitResults['fitError']['x0'] > 0)*(fitResults['fitError']['x0'] < 60)]

@@ -66,7 +66,7 @@ if dataserver_root:
     #logger = logging.getLogger('')
     logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG)
-    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e5)
+    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6, backupCount=1)
     logger.addHandler(fh)
 else:
     logging.basicConfig(level=logging.DEBUG)
@@ -217,8 +217,9 @@ from PYME.IO import clusterListing as cl
 class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     bandwidthTesting = False
-    timeoutTesting = False
+    timeoutTesting = 0
     logrequests = False
+    timeout=None
 
 
     def _aggregate_txt(self):
@@ -351,7 +352,11 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_PUT(self):
         if self.timeoutTesting:
-            time.sleep(10) #wait 10 seconds to force a timeout on the clients
+            #exp = time.time() + float(self.timeoutTesting)
+            #while time.time() < exp:
+            #    y = pow(5, 7)
+            time.sleep(float(self.timeoutTesting)) #wait 10 seconds to force a timeout on the clients
+            #print('waited ... ')
             
         if self.bandwidthTesting:
             #just read file and dump contents
@@ -425,7 +430,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         """Serve a GET request."""
         if self.timeoutTesting:
-            time.sleep(10) #wait 10 seconds to force a timeout on the clients
+            time.sleep(float(self.timeoutTesting)) #wait 10 seconds to force a timeout on the clients
             
         f = self.send_head()
         if f:
@@ -672,13 +677,13 @@ def main(protocol="HTTP/1.0"):
     op.add_option('-k', '--profile', dest='profile', help="Enable profiling", default=False, action="store_true")
     default_server_filter = config.get('dataserver-filter', '')
     op.add_option('-f', '--server-filter', dest='server_filter', help='Add a serverfilter for distinguishing between different clusters', default=default_server_filter)
-    op.add_option('--timeout-test', dest='timeout_test', help='deliberately make requests timeout for testing error handling in calling modules', default=False, action="store_true")
+    op.add_option('--timeout-test', dest='timeout_test', help='deliberately make requests timeout for testing error handling in calling modules', default=0)
 
 
     options, args = op.parse_args()
     if options.profile:
         from PYME.util import mProfile
-        mProfile.profileOn(['HTTPDataServer.py',])
+        mProfile.profileOn(['HTTPDataServer.py','clusterListing.py'])
 
         profileOutDir = options.root + '/LOGS/%s/mProf' % compName
 
@@ -695,6 +700,7 @@ def main(protocol="HTTP/1.0"):
     PYMEHTTPRequestHandler.logrequests = options.log_requests
 
     httpd = ThreadedHTTPServer(server_address, PYMEHTTPRequestHandler)
+    #httpd = http.server.HTTPServer(server_address, PYMEHTTPRequestHandler)
     httpd.daemon_threads = True
 
     sa = httpd.socket.getsockname()

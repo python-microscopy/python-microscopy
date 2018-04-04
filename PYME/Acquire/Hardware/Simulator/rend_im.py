@@ -68,7 +68,17 @@ IntXVals = None
 IntYVals = None
 IntZVals = None
 
-interpModel = None
+#interpModel = None
+
+interpModel_by_chan = [None, None, None, None]
+
+def interpModel(chan=0):
+    im =  interpModel_by_chan[chan]
+    if im is None and not chan == 0:
+        return interpModel_by_chan[0]
+    else:
+        return im
+        
 
 dx = None
 dy = None
@@ -81,10 +91,11 @@ def set_pixelsize_nm(pixelsize):
     mdh['voxelsize.x'] = 1e-3*pixelsize
     mdh['voxelsize.y'] = 1e-3 * pixelsize
 
-def genTheoreticalModel(md):
-    global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz
+def genTheoreticalModel(md, zernikes={}, **kwargs):
+    from PYME.Analysis.PSFGen import fourierHNA
+    global IntXVals, IntYVals, IntZVals, dx, dy, dz
 
-    if not dx == md.voxelsize.x*1e3 or not dy == md.voxelsize.y*1e3 or not dz == md.voxelsize.z*1e3:
+    if True:#not dx == md.voxelsize.x*1e3 or not dy == md.voxelsize.y*1e3 or not dz == md.voxelsize.z*1e3:
 
         IntXVals = 1e3*md.voxelsize.x*mgrid[-150:150]
         IntYVals = 1e3*md.voxelsize.y*mgrid[-150:150]
@@ -96,41 +107,50 @@ def genTheoreticalModel(md):
 
         P = arange(0,1.01,.01)
 
-        interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).astype('f')
+        #interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P ,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).astype('f')
+        im = fourierHNA.GenZernikeDPSF(IntZVals, zernikes, X=IntXVals, Y=IntYVals, dx=1e3*md.voxelsize.x, **kwargs)
         
         #print('foo')
         #print((interpModel.strides, interpModel.shape))
-
-        interpModel = np.maximum(interpModel/interpModel[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
         
-        #print('bar')
+        for i in range(1, len(interpModel_by_chan)):
+            interpModel_by_chan[i] = None
 
-#genTheoreticalModel(MetaData.TIRFDefault)
+        interpModel_by_chan[0] = np.maximum(im/im[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
+        
+        
+def genTheoreticalModel4Pi(md, zernikes=[{},{}], phases=[0, np.pi/2, np.pi, 3*np.pi/2], **kwargs):
+    from PYME.Analysis.PSFGen import fourierHNA
+    global IntXVals, IntYVals, IntZVals, dx, dy, dz
+                                                                                                              
+    if True:#not dx == md.voxelsize.x*1e3 or not dy == md.voxelsize.y*1e3 or not dz == md.voxelsize.z*1e3:
+                                                                                                              
+        IntXVals = 1e3*md.voxelsize.x*mgrid[-150:150]
+        IntYVals = 1e3*md.voxelsize.y*mgrid[-150:150]
+        IntZVals = 20*mgrid[-60:60]
+                                                                                                              
+        dx = md.voxelsize.x*1e3
+        dy = md.voxelsize.y*1e3
+        dz = 20.#md.voxelsize.z*1e3
+                                                                                                              
+        for i, phase in enumerate(phases):
+            print('Simulating 4Pi PSF for channel %d' % i)
+            #interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P ,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).as
+            im = fourierHNA.Gen4PiPSF(IntZVals, phi=phase, zernikeCoeffs=zernikes, X=IntXVals, Y=IntYVals, dx=1e3*md.voxelsize.x, **kwargs)
+                                                                                                                  
+            zm =  len(IntZVals)/2
+            norm = im[:,:,(zm-10):(zm+10)].sum(1).sum(0).max() #due to interference we can have slices with really low sum
+            interpModel_by_chan[i] = np.maximum(im/norm, 0) #normalise to 1 and clip
 
-#def setModel(mod, md):
-#    global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz
-#
-#    IntXVals = 1e3*md.voxelsize.x*mgrid[-(mod.shape[0]/2.):(mod.shape[0]/2.)]
-#    IntYVals = 1e3*md.voxelsize.y*mgrid[-(mod.shape[1]/2.):(mod.shape[1]/2.)]
-#    IntZVals = 1e3*md.voxelsize.z*mgrid[-(mod.shape[2]/2.):(mod.shape[2]/2.)]
-#
-#    dx = md.voxelsize.x*1e3
-#    dy = md.voxelsize.y*1e3
-#    dz = md.voxelsize.z*1e3
-#
-#    interpModel = mod
-#
-#    interpModel = interpModel/interpModel.max() #normalise to 1
 
 def setModel(modName, md):
-    global IntXVals, IntYVals, IntZVals, interpModel, dx, dy, dz
-
+    global IntXVals, IntYVals, IntZVals, dx, dy, dz
     
     mf = open(getFullExistingFilename(modName), 'rb')
     mod, voxelsize = pickle.load(mf)
     mf.close()
     
-    mod = resizePSF(mod, interpModel.shape)
+    mod = resizePSF(mod, interpModel().shape)
 
     #if not voxelsize.x == md.voxelsize.x:
     #    raise RuntimeError("PSF and Image voxel sizes don't match")
@@ -146,7 +166,7 @@ def setModel(modName, md):
     #interpModel = mod
 
     #interpModel = np.maximum(mod/mod.max(), 0) #normalise to 1
-    interpModel = np.maximum(mod/mod[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
+    interpModel_by_chan[0] = np.maximum(mod/mod[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
 
 def interp(X, Y, Z):
     X = atleast_1d(X)
@@ -173,16 +193,17 @@ def interp(X, Y, Z):
     zl = len(Z)
 
     #print xl
+    im = interpModel()
 
-    m000 = interpModel[fx:(fx+xl),fy:(fy+yl),fz:(fz+zl)]
-    m100 = interpModel[(fx+1):(fx+xl+1),fy:(fy+yl),fz:(fz+zl)]
-    m010 = interpModel[fx:(fx+xl),(fy + 1):(fy+yl+1),fz:(fz+zl)]
-    m110 = interpModel[(fx+1):(fx+xl+1),(fy+1):(fy+yl+1),fz:(fz+zl)]
+    m000 = im[fx:(fx+xl),fy:(fy+yl),fz:(fz+zl)]
+    m100 = im[(fx+1):(fx+xl+1),fy:(fy+yl),fz:(fz+zl)]
+    m010 = im[fx:(fx+xl),(fy + 1):(fy+yl+1),fz:(fz+zl)]
+    m110 = im[(fx+1):(fx+xl+1),(fy+1):(fy+yl+1),fz:(fz+zl)]
 
-    m001 = interpModel[fx:(fx+xl),fy:(fy+yl),(fz+1):(fz+zl+1)]
-    m101 = interpModel[(fx+1):(fx+xl+1),fy:(fy+yl),(fz+1):(fz+zl+1)]
-    m011 = interpModel[fx:(fx+xl),(fy + 1):(fy+yl+1),(fz+1):(fz+zl+1)]
-    m111 = interpModel[(fx+1):(fx+xl+1),(fy+1):(fy+yl+1),(fz+1):(fz+zl+1)]
+    m001 = im[fx:(fx+xl),fy:(fy+yl),(fz+1):(fz+zl+1)]
+    m101 = im[(fx+1):(fx+xl+1),fy:(fy+yl),(fz+1):(fz+zl+1)]
+    m011 = im[fx:(fx+xl),(fy + 1):(fy+yl+1),(fz+1):(fz+zl+1)]
+    m111 = im[(fx+1):(fx+xl+1),(fy+1):(fy+yl+1),(fz+1):(fz+zl+1)]
 
     #print m000.shape
 
@@ -218,16 +239,18 @@ def interp2(X, Y, Z):
     zl = len(Z)
 
     #print xl
+    
+    im = interpModel()
 
-    m000 = interpModel[fx:(fx+xl),fy:(fy+yl),fz:(fz+zl)]
-    m100 = interpModel[(fx+1):(fx+xl+1),fy:(fy+yl),fz:(fz+zl)]
-    m010 = interpModel[fx:(fx+xl),(fy + 1):(fy+yl+1),fz:(fz+zl)]
-    m110 = interpModel[(fx+1):(fx+xl+1),(fy+1):(fy+yl+1),fz:(fz+zl)]
+    m000 = im[fx:(fx+xl),fy:(fy+yl),fz:(fz+zl)]
+    m100 = im[(fx+1):(fx+xl+1),fy:(fy+yl),fz:(fz+zl)]
+    m010 = im[fx:(fx+xl),(fy + 1):(fy+yl+1),fz:(fz+zl)]
+    m110 = im[(fx+1):(fx+xl+1),(fy+1):(fy+yl+1),fz:(fz+zl)]
 
-    m001 = interpModel[fx:(fx+xl),fy:(fy+yl),(fz+1):(fz+zl+1)]
-    m101 = interpModel[(fx+1):(fx+xl+1),fy:(fy+yl),(fz+1):(fz+zl+1)]
-    m011 = interpModel[fx:(fx+xl),(fy + 1):(fy+yl+1),(fz+1):(fz+zl+1)]
-    m111 = interpModel[(fx+1):(fx+xl+1),(fy+1):(fy+yl+1),(fz+1):(fz+zl+1)]
+    m001 = im[fx:(fx+xl),fy:(fy+yl),(fz+1):(fz+zl+1)]
+    m101 = im[(fx+1):(fx+xl+1),fy:(fy+yl),(fz+1):(fz+zl+1)]
+    m011 = im[fx:(fx+xl),(fy + 1):(fy+yl+1),(fz+1):(fz+zl+1)]
+    m111 = im[(fx+1):(fx+xl+1),(fy+1):(fy+yl+1),(fz+1):(fz+zl+1)]
 
     #print m000.shape
 
@@ -271,15 +294,16 @@ def interp3(X, Y, Z):
     yl = len(Y)
     zl = len(Z)
     
-    return cInterp.Interpolate(interpModel, ox,oy,oz,xl,yl,dx,dy,dz)[:,:,None]
+    return cInterp.Interpolate(interpModel(), ox,oy,oz,xl,yl,dx,dy,dz)[:,:,None]
 
 @fluor.registerIllumFcn
 def PSFIllumFunction(fluors, position):
-    xi = maximum(minimum(round_((fluors['x'] - position[0])/dx + interpModel.shape[0]/2).astype('i'), interpModel.shape[0]-1), 0)
-    yi = maximum(minimum(round_((fluors['y'] - position[1])/dy + interpModel.shape[1]/2).astype('i'), interpModel.shape[1]-1), 0)
-    zi = maximum(minimum(round_((fluors['z'] - position[2])/dz + interpModel.shape[2]/2).astype('i'), interpModel.shape[2]-1), 0)
+    im = interpModel()
+    xi = maximum(minimum(round_((fluors['x'] - position[0])/dx + im.shape[0]/2).astype('i'), im.shape[0]-1), 0)
+    yi = maximum(minimum(round_((fluors['y'] - position[1])/dy + im.shape[1]/2).astype('i'), im.shape[1]-1), 0)
+    zi = maximum(minimum(round_((fluors['z'] - position[2])/dz + im.shape[2]/2).astype('i'), im.shape[2]-1), 0)
 
-    return interpModel[xi, yi, zi]
+    return im[xi, yi, zi]
 
 illPattern = None
 illZOffset = 0
@@ -289,7 +313,8 @@ illPKey = None
 def setIllumPattern(pattern, z0):
     global illPattern, illZOffset, illPCache
     sx, sy = pattern.shape
-    psx, psy, sz = interpModel.shape
+    im = interpModel()
+    psx, psy, sz = im.shape
     
     
     
@@ -297,9 +322,9 @@ def setIllumPattern(pattern, z0):
     il[:,:,sz/2] = pattern
     ps = np.zeros_like(il)
     if sx > psx:
-        ps[(sx/2-psx/2):(sx/2+psx/2), (sy/2-psy/2):(sy/2+psy/2), :] = interpModel
+        ps[(sx/2-psx/2):(sx/2+psx/2), (sy/2-psy/2):(sy/2+psy/2), :] = im
     else:
-        ps[:,:,:] = interpModel[(psx/2-sx/2):(psx/2+sx/2), (psy/2-sy/2):(psy/2+sy/2), :]
+        ps[:,:,:] = im[(psx/2-sx/2):(psx/2+sx/2), (psy/2-sy/2):(psy/2+sy/2), :]
     ps= ps/ps[:,:,sz/2].sum()
     
     illPattern = abs(ifftshift(ifftn(fftn(il)*fftn(ps)))).astype('f')
@@ -471,17 +496,17 @@ def _rFluorSubset(im, fl, A, x0, y0, z, dx, dy, dz, maxz, ChanXOffsets=[0,], Cha
     if ChanSpecs is None:
         z_ = np.clip(z - fl['z'], -maxz, maxz).astype('f')
         roiSize = np.minimum(8 + np.abs(z_) * (2.5 / dx), 140).astype('i')
-        cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0), (fl['y'] - y0), z_, A, roiSize,dx,dy,dz)
+        cInterp.InterpolateInplaceM(interpModel(), im, (fl['x'] - x0), (fl['y'] - y0), z_, A, roiSize,dx,dy,dz)
     else:
-        for x_offset, z_offset, spec_chan in zip(ChanXOffsets, ChanZOffsets, ChanSpecs):
+        for x_offset, z_offset, spec_chan, chan in zip(ChanXOffsets, ChanZOffsets, ChanSpecs, range(len(ChanSpecs))):
             z_ = np.clip(z - fl['z'] + z_offset, -maxz, maxz).astype('f')
             roiSize = np.minimum(8 + np.abs(z_) * (2.5 / dx), 140).astype('i')
-            cInterp.InterpolateInplaceM(interpModel, im, (fl['x'] - x0 + x_offset), (fl['y'] - y0),
+            cInterp.InterpolateInplaceM(interpModel(chan), im, (fl['x'] - x0 + x_offset), (fl['y'] - y0),
                                         z_, A * fl['spec'][:, spec_chan], roiSize, dx, dy, dz)
 
 
 def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPowers = [.1,1], position=[0,0,0], illuminationFunction='ConstIllum', ChanXOffsets=[0,], ChanZOffsets=[0,], ChanSpecs = None):
-    if interpModel is None:
+    if interpModel() is None:
         genTheoreticalModel(mdh)
         
     im = zeros((len(X), len(Y)), 'f')
@@ -499,7 +524,7 @@ def simPalmImFI(X,Y, z, fluors, intTime=.1, numSubSteps=10, roiSize=100, laserPo
     dx = X[1] - X[0]
     dy = Y[1] - Y[0]
     
-    maxz = dz*(interpModel.shape[2]/2 - 1)
+    maxz = dz*(interpModel().shape[2]/2 - 1)
     
     x0 = X[0]
     y0 = Y[0]

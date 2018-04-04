@@ -26,14 +26,23 @@ compName = GetComputerName()
 import logging
 logger = logging.getLogger(__name__)
 
-def _getTaskQueueURI():
+def _getTaskQueueURI(n_retries=2):
     """Discover the distributors using zeroconf and choose one"""
     ns = pzc.getNS('_pyme-taskdist')
 
     queueURLs = {}
-    for name, info in ns.get_advertised_services():
-        if name.startswith('PYMEDistributor'):
-            queueURLs[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
+    
+    def _search():
+        for name, info in ns.get_advertised_services():
+            if name.startswith('PYMEDistributor'):
+                queueURLs[name] = 'http://%s:%d' % (socket.inet_ntoa(info.address), info.port)
+                
+    _search()
+    while not queueURLs and (n_retries > 0):
+        logging.info('could not find a distributor, waiting 5s and trying again')
+        time.sleep(5)
+        n_retries -= 1
+        _search()
 
     try:
         #try to grab the distributor on the local computer
@@ -271,7 +280,7 @@ class HTTPTaskPusher(object):
         self.doPoll = False
 
 
-class HTTPRecipePusher(object):
+class RecipePusher(object):
     def __init__(self, recipe=None, recipeURI=None):
         from PYME.recipes.modules import ModuleCollection
         if recipe:

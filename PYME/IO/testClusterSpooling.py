@@ -65,7 +65,7 @@ from PYME.util import fProfile
 
 # class DCIMGSpooler(object):
 class TestSpooler:
-    def __init__(self, testFrameSize = TEST_FRAME_SIZE):
+    def __init__(self, testFrameSize = TEST_FRAME_SIZE, serverfilter=''):
         
 
         self.testData = (100*np.random.rand(*testFrameSize)).astype('uint16')
@@ -73,6 +73,7 @@ class TestSpooler:
         self.spoolProgress = dispatch.Signal(['percent'])
 
         self.mdh = MetaDataHandler.NestedClassMDHandler()
+        self.serverfilter=serverfilter
 
 
     def run(self, filename=None, nFrames = 2000, interval=0, compression=False):
@@ -85,37 +86,40 @@ class TestSpooler:
 
         #generate the spooler
         if compression:
-            self.spooler = HTTPSpooler.Spooler(filename, self.onFrame, frameShape = None)
+            self.spooler = HTTPSpooler.Spooler(filename, self.onFrame, frameShape = None, serverfilter=self.serverfilter)
         else:
             self.spooler = HTTPSpooler.Spooler(filename, self.onFrame,
-                                               frameShape = None,
+                                               frameShape = None, serverfilter=self.serverfilter,
                                                compressionSettings={'compression': HTTPSpooler.PZFFormat.DATA_COMP_RAW,
                                                                     'quantization':HTTPSpooler.PZFFormat.DATA_QUANT_NONE})
         
-        #spool our data    
-        self.spooler.StartSpool()
-
-        print(self.spooler.seriesName)
-
-        startTime = time.time()
-
-        self._spoolData(nFrames, interval)
-
-        #wait until we've sent everything
-        #this is a bit of a hack
-        time.sleep(.1)
-        while not self.spooler.postQueue.empty() or (self.spooler.numThreadsProcessing > 0):
+        try:
+            #spool our data
+            self.spooler.StartSpool()
+    
+            print(self.spooler.seriesName)
+    
+            startTime = time.time()
+    
+            self._spoolData(nFrames, interval)
+    
+            #wait until we've sent everything
+            #this is a bit of a hack
             time.sleep(.1)
-
-        endTime = time.time()
-        duration = endTime - startTime
-
-        print('######################################')
-        print('%d frames spooled in %f seconds' % (nFrames, duration))
-        print('%3.0f frames per second' % (nFrames/duration))
-        print('Avg throughput: %3.0f MB/s' % (nFrames*self.testData.nbytes/(1e6*duration)))
-
-        self.spooler.StopSpool()
+            while not self.spooler.finished():
+                time.sleep(.1)
+    
+            endTime = time.time()
+            duration = endTime - startTime
+    
+            print('######################################')
+            print('%d frames spooled in %f seconds' % (nFrames, duration))
+            print('%3.0f frames per second' % (nFrames/duration))
+            print('Avg throughput: %3.0f MB/s' % (nFrames*self.testData.nbytes/(1e6*duration)))
+    
+            self.spooler.StopSpool()
+        finally:
+            self.spooler.cleanup()
 
 
 

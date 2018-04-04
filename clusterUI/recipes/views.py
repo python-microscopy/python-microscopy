@@ -19,10 +19,14 @@ def get_input_glob(request):
     return render(request, 'recipes/input_list.html', {'filepaths' : filepaths})
 
 def run(request):
-    from PYME.ParallelTasks.HTTPTaskPusher import HTTPRecipePusher
+    from PYME import config
+    if config.get('PYMERuleserver-use', True):
+        from PYME.ParallelTasks.HTTPRulePusher import RecipePusher
+    else:
+        from PYME.ParallelTasks.HTTPTaskPusher import RecipePusher
     recipeURI = 'pyme-cluster:///' + request.POST.get('recipeURL').encode().lstrip('/')
 
-    pusher = HTTPRecipePusher(recipeURI=recipeURI)
+    pusher = RecipePusher(recipeURI=recipeURI)
 
 
     fileNames = request.POST.getlist('files', [])

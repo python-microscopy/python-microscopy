@@ -31,7 +31,7 @@ class ParticleTracker:
         visFr.AddMenuItem('Extras>Tracking/Chaining', "Plot Mean Squared Displacement", self.OnCalcMSDs)
         visFr.AddMenuItem('Extras>Tracking/Chaining', "Coalesce clumps", self.OnCoalesce)
 
-    def OnTrackMolecules(self, event):
+    def _OnTrackMolecules(self, event):
         import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
         #import PYME.Analysis.points.DeClump.deClump as deClump
         import PYME.Analysis.Tracking.trackUtils as trackUtils
@@ -48,6 +48,34 @@ class ParticleTracker:
             trackUtils.findTracks(pipeline, dlg.GetClumpRadiusVariable(),dlg.GetClumpRadiusMultiplier(), dlg.GetClumpTimeWindow())
 
             pipeline.Rebuild()
+
+        dlg.Destroy()
+        
+    def OnTrackMolecules(self, event):
+        import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
+        #import PYME.Analysis.points.DeClump.deClump as deClump
+        import PYME.Analysis.Tracking.trackUtils as trackUtils
+
+        visFr = self.visFr
+        pipeline = visFr.pipeline
+
+        #bCurr = wx.BusyCursor()
+        dlg = deClumpGUI.deClumpDialog(None)
+
+        ret = dlg.ShowModal()
+
+        if ret == wx.ID_OK:
+            from PYME.recipes import tracking
+            recipe = self.visFr.pipeline.recipe
+    
+            recipe.add_module(tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey, outputName='with_clumps',
+                                                  timeWindow=dlg.GetClumpTimeWindow(),
+                                                  clumpRaduisVariable=dlg.GetClumpRadiusVariable(),
+                                                  clumpRadiusScale=dlg.GetClumpRadiusMultiplier()))
+    
+            recipe.execute()
+            self.visFr.pipeline.selectDataSource('with_clumps')
+            self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
         dlg.Destroy()
 
@@ -112,7 +140,7 @@ class ParticleTracker:
 
         pipeline.Rebuild()
         
-    def OnCoalesce(self, event):
+    def _OnCoalesce(self, event):
         from PYME.IO import tabular
         from PYME.Analysis.points.DeClump import pyDeClump
         
@@ -124,6 +152,16 @@ class ParticleTracker:
         pipeline.addDataSource('Coalesced',  ds)
         pipeline.selectDataSource('Coalesced')
 
+        self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+        
+    def OnCoalesce(self, event):
+        from PYME.recipes import localisations
+        recipe = self.visFr.pipeline.recipe
+    
+        recipe.add_module(localisations.MergeClumps(recipe, inputName='with_clumps', outputName='coalesced'))
+    
+        recipe.execute()
+        self.visFr.pipeline.selectDataSource('coalesced')
         self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
 

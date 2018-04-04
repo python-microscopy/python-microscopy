@@ -54,7 +54,7 @@ try:
     from PYME.ParallelTasks import HTTPTaskPusher
 
     #test for a running task distributor
-    distribURI = HTTPTaskPusher._getTaskQueueURI()
+    distribURI = HTTPTaskPusher._getTaskQueueURI(0)
     NEW_STYLE_DISTRIBUTION=False
 except:
     NEW_STYLE_DISTRIBUTION=False
@@ -119,6 +119,7 @@ class AnalysisSettingsView(object):
                       mde.FilenameParam('Camera.FlatfieldMapID', 'Flatfield Map:', prompt='Please select flatfield map to use ...', wildcard='TIFF Files|*.tif', filename=''),
                       mde.BoolParam('Analysis.TrackFiducials', 'Track Fiducials', default=False),
                       mde.FloatParam('Analysis.FiducialThreshold', 'Fiducial Threshold', default=1.8),
+                      mde.IntParam('Analysis.FiducialROISize', 'Fiducial ROI', default=11),
     ]
     
     def __init__(self, dsviewer, analysisController, lmanal=None):
@@ -560,12 +561,13 @@ class LMAnalyser2(object):
         
 
     def OnToggleBackground(self, event):
-        self.SetMDItems()
+        #self.SetMDItems()
+        mdh = self.analysisController.analysisMDH
         if self.do.ds.bgRange is None:
-            self.do.ds.bgRange = [int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
-            self.do.ds.dataStart = int(self.tStartAt.GetValue())
+            self.do.ds.bgRange = mdh['Analysis.BGRange']#[int(v) for v in self.tBackgroundFrames.GetValue().split(':')]
+            self.do.ds.dataStart = mdh['Analysis.StartAt']#int(self.tStartAt.GetValue())
             
-            self.do.ds.setBackgroundBufferPCT(self.image.mdh['Analysis.PCTBackground'])
+            self.do.ds.setBackgroundBufferPCT(mdh['Analysis.PCTBackground'])
         else:
             self.do.ds.bgRange = None
             self.do.ds.dataStart = 0
@@ -840,7 +842,22 @@ class LMAnalyser2(object):
                 #imshow()
             except AttributeError:
                 #d = self.image.data[:,:,zp].squeeze().T
-                d = (ft.data - ft.bg).squeeze().T
+                if isinstance(ft.bg, np.ndarray):
+                    # We expect our background estimate to take the form of a numpy array, correct our data by subtracting the background
+                    d = (ft.data - ft.bg).squeeze().T
+                elif hasattr(ft.bg, 'get_background'):
+                    # To support GPU background calculation and to minimize the number of CPU-GPU transfers, our background estimate can instead be
+                    # a proxy for a background buffer on the GPU. During fitting this will usually be accessed directly from the GPU fitting code, but in
+                    # this case (when displaying the data we fitted) we need to get at it from our CPU code using the `get_background` method of the proxy.
+                    # 
+                    # NB - the background returned by `get_background()` will not have been flatfielded. As this is just display code we ignore this,
+                    # but any computational code should perform flatfielding correction on the results of the get_background call.
+                    # 
+                    # TODO - document GPU background interface via creating a base class in PYME.IO.buffers
+                    d = (ft.data - ft.bg.get_background().reshape(ft.data.shape)).squeeze().T
+                else:
+                    raise RuntimeError('Background format not understood')
+                    
                 imshow(d, cmap=cm.jet, interpolation='nearest', clim = [0, d.max()])
                 xlim(0, d.shape[1])
                 ylim(d.shape[0], 0)

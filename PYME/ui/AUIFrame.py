@@ -81,6 +81,14 @@ class AUIFrame(wx.Frame):
         #self.Layout() 
         #self.OnSize(None)
         #self.OnSize(None)
+            
+    def DeletePage(self, page,  update=False):
+        if not page is None:
+            self._mgr.DetachPane(page)
+            page.Destroy()
+            
+        if update:
+            self._mgr.Update()
         
     def OnSize(self, event):
         #self.Layout()

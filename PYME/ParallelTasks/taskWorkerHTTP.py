@@ -79,6 +79,7 @@ from PYME.ParallelTasks import distribution
 #import here to pre-populate the zeroconf nameserver
 from PYME.IO import clusterIO
 from PYME.IO import unifiedIO
+from PYME.IO import clusterResults
 #time.sleep(3)
 
 
@@ -231,103 +232,146 @@ class taskWorker(object):
         finally:
             self._loop_alive = False
 
-    def ioLoop(self):
-        #loop forever asking for tasks
-        while True:
-            queueURLs = distribution.getNodeInfo()
-            localQueueName = 'PYMENodeServer: ' + compName
+    def _return_task_results(self):
+        """
 
-            queueURLs = {k: v for k, v in queueURLs.items() if k == localQueueName}
+        File all results that this worker has completed
 
-            tasks = []
+        Returns
+        -------
 
-            # new style way of returning results to reduce load on server
-            from PYME.IO import clusterResults
+        """
+        while True:  # loop over results queue until it's empty
+            # print 'getting results'
+            try:
+                queueURL, taskDescr, res = self.resultsQueue.get_nowait()
+                outputs = taskDescr.get('outputs', {})
+            except Queue.Empty:
+                # queue is empty
+                return
+
+            if res is None:
+                # failure
+                s = clusterIO._getSession(queueURL)
+                r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
+                if not r.status_code == 200:
+                    logger.error('Returning task failed with error: %s' % r.status_code)
+            elif res == True:  # isinstance(res, ModuleCollection): #recipe output
+                # res.save(outputs) #abuse outputs dictionary as context
+
+                s = clusterIO._getSession(queueURL)
+                r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
+                if not r.status_code == 200:
+                    logger.error('Returning task failed with error: %s' % r.status_code)
+
+            else:
+                # success
+                try:
+                    if 'results' in outputs.keys():
+                        # old style pickled results
+                        clusterResults.fileResults(outputs['results'], res)
+                    else:
+                        if len(res.results) > 0:
+                            clusterResults.fileResults(outputs['fitResults'], res.results)
+
+                        if len(res.driftResults) > 0:
+                            clusterResults.fileResults(outputs['driftResults'], res.driftResults)
+                except requests.Timeout:
+                    logger.exception('Filing results failed on timeout.')
+                    s = clusterIO._getSession(queueURL)
+                    r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
+                    if not r.status_code == 200:
+                        logger.error('Returning task failed with error: %s' % r.status_code)
+                else:
+                    s = clusterIO._getSession(queueURL)
+                    r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
+                    if not r.status_code == 200:
+                        logger.error('Returning task failed with error: %s' % r.status_code)
+
+    def _get_tasks(self, local_queue_name):
+        """
+
+        Query nodeserver for tasks and place them in the queue for this worker, if available
+
+        Parameters
+        ----------
+        local_queue_name : str
+            computer name prepended by 'PYMENodeServer: '
+
+        Returns
+        -------
+        new_tasks : bool
+            flag to report whether _get_tasks added new tasks to the taskWorker queue
+
+        """
+        queue_URLs = distribution.getNodeInfo()
+        queue_URLs = {k: v for k, v in queue_URLs.items() if k == local_queue_name}
+
+        # loop over all queues, looking for tasks to process
+        tasks = []
+        while len(tasks) == 0 and len(queue_URLs) > 0:
+            # try queue on current machine first
+            # TODO - only try local machine?
+            # print queueNames
+
+            if local_queue_name in queue_URLs.keys():
+                qName = local_queue_name
+                queueURL = queue_URLs.pop(qName)
+            else:
+                logger.error('Could not find local node server')
 
             try:
-                while True:
-                    #print 'getting results'
-                    queueURL, taskDescr, res = self.resultsQueue.get_nowait()
-                    outputs = taskDescr.get('outputs', {})
-
-                    if res is None:
-                        #failure
-                        s = clusterIO._getSession(queueURL)
-                        r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
-                        if not r.status_code == 200:
-                            logger.error('Returning task failed with error: %s' % r.status_code)
-                    elif res == True: #isinstance(res, ModuleCollection): #recipe output
-                        #res.save(outputs) #abuse outputs dictionary as context
-
-                        s = clusterIO._getSession(queueURL)
-                        r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
-                        if not r.status_code == 200:
-                            logger.error('Returning task failed with error: %s' % r.status_code)
-
-                    else:
-                        #success
-                        if 'results' in outputs.keys():
-                            #old style pickled results
-                            clusterResults.fileResults(outputs['results'], res)
+                # ask the queue for tasks
+                # TODO - make the server actually return a list of tasks, not just one (or implement pipelining in another way)
+                # try:
+                s = clusterIO._getSession(queueURL)
+                r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % self.procName)  # , timeout=0)
+                if r.status_code == 200:
+                    resp = r.json()
+                    if resp['ok']:
+                        res = resp['result']
+                        if isinstance(res, list):
+                            tasks += [(queueURL, t) for t in res]
                         else:
-                            if len(res.results) > 0:
-                                clusterResults.fileResults(outputs['fitResults'], res.results)
+                            tasks.append((queueURL, res))
+            except requests.Timeout:
+                logger.info('Read timout requesting tasks from %s' % queueURL)
 
-                            if len(res.driftResults) > 0:
-                                clusterResults.fileResults(outputs['driftResults'], res.driftResults)
+            except Exception:
+                import traceback
+                logger.exception(traceback.format_exc())
 
-                        s = clusterIO._getSession(queueURL)
-                        r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
-                        if not r.status_code == 200:
-                            logger.error('Returning task failed with error: %s' % r.status_code)
+        if len(tasks) != 0:
+            for t in tasks:
+                self.inputQueue.put(t)
+            return True
+        else:
+            # flag that there were no new tasks
+            return False
 
-            except Queue.Empty:
-                pass
+    def ioLoop(self):
+        """
+
+        Loop forever asking for tasks to queue up for this worker
+
+        Returns
+        -------
+
+        """
+        localQueueName = 'PYMENodeServer: ' + compName
+        while True:
+            # turn in completed tasks
+            self._return_task_results()
 
             if not self._loop_alive:
                 break
 
+            # if our queue for computing is empty, try to get more tasks
             if self.inputQueue.empty():
-                #loop over all queues, looking for tasks to process
-                while len(tasks) == 0 and len(queueURLs) > 0:
-                    #try queue on current machine first
-                    #TODO - only try local machine?
-                    #print queueNames
-
-                    if localQueueName in queueURLs.keys():
-                        qName = localQueueName
-                        queueURL = queueURLs.pop(qName)
-                    else:
-                        logger.error('Could not find local node server')
-
-
-                    try:
-                        #ask the queue for tasks
-                        #TODO - make the server actually return a list of tasks, not just one (or implement pipelining in another way)
-                        #try:
-                        s = clusterIO._getSession(queueURL)
-                        r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % self.procName)#, timeout=0)
-                        if r.status_code == 200:
-                            resp = r.json()
-                            if resp['ok']:
-                                res = resp['result']
-                                if isinstance(res, list):
-                                    tasks += [(queueURL, t) for t in res]
-                                else:
-                                    tasks.append((queueURL, res))
-                    except requests.Timeout:
-                        logger.info('Read timout requesting tasks from %s' % queueURL)
-
-                    except Exception:
-                        import traceback
-                        logger.exception(traceback.format_exc())
-
-
-            if len(tasks) == 0: #no queues had tasks
-                time.sleep(.1) #put ourselves to sleep to avoid constant polling
-            else:
-                for t in tasks:
-                    self.inputQueue.put(t)
+                # if we don't have any new tasks, sleep to avoid constant polling
+                if not self._get_tasks(localQueueName):
+                    # no queues had tasks
+                    time.sleep(0.1)
 
 
     def computeLoop(self):

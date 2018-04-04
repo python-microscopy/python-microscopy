@@ -78,7 +78,7 @@ class ScaleBoxPanel(DockedPanel):
         return self.parent_panel.glCanvas.ScaleBoxOverlayLayer
 
     def refresh_canvas(self):
-        self.parent_panel.glCanvas.OnDraw()
+        #self.parent_panel.glCanvas.OnDraw()
         self.parent_panel.glCanvas.Refresh()
 
     def pick_color(self):

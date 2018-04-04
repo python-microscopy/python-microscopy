@@ -40,6 +40,8 @@ entry_points={
         #'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
         'fitMonP = PYME.ParallelTasks.fitMonP:main',
         'bakeshop = PYME.recipes.bakeshop:main',
+        'PYMERuleServer = PYME.ParallelTasks.PYMERuleServer:main',
+        'PYMERuleNodeServer = PYME.ParallelTasks.PYMERuleNodeServer:main',
     ]
 }
 

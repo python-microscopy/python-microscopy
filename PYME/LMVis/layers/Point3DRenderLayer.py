@@ -27,15 +27,15 @@ from PYME.recipes.traits import Float
 
 
 class Point3DRenderLayer(VertexRenderLayer):
-    point_size = Float(5.0)
+    point_size = Float(30.0)
 
-    def __init__(self,  x=None, y=None, z=None, colors=None, color_map=None, color_limit=None, alpha=1.0, point_size=5):
+    def __init__(self,  x=None, y=None, z=None, colors=None, color_map=None, color_limit=None, alpha=1.0, point_size=30):
         VertexRenderLayer.__init__(self, x, y, z, colors, color_map, color_limit, alpha)
         self.point_size = point_size
         self.set_shader_program(DefaultShaderProgram)
 
     def render(self, gl_canvas):
-        with self.get_shader_program():
+        with self.shader_program:
 
             n_vertices = self.get_vertices().shape[0]
 

@@ -75,7 +75,7 @@ class TabularBase(object):
             keys = self.keys()
 
         columns = [self.__getitem__(k) for k in keys]
-        dt = [(k, v.dtype) for k, v in zip(keys, columns)]
+        dt = [(k, v.dtype, v.shape[1:]) for k, v in zip(keys, columns)]
         return records.fromarrays(columns, names=keys, dtype=dt)
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
@@ -471,6 +471,41 @@ class resultsFilter(TabularBase):
         key, sl = self._getKeySlice(keys)
         return self.resultsSource[key][self.Index][sl]
 
+    def keys(self):
+        return self.resultsSource.keys()
+
+
+class idFilter(TabularBase):
+    _name = "Id Filter"
+    
+    def __init__(self, resultsSource, id_column, valid_ids):
+        """Class to permit filtering of fit results - masquarades
+        as a dictionary. Takes item ranges as keyword arguments, eg:
+        f = resultsFliter(source, x=[0,10], error_x=[0,5]) will return
+        an object that behaves like source, but with only those points with
+        an x value in the range [0, 10] and a x error in the range [0, 5].
+
+        The filter class does not have any explicit knowledge of the keys
+        supported by the underlying data source."""
+        
+        self.resultsSource = resultsSource
+        self.id_column = id_column
+        self.valid_ids = valid_ids
+        
+        #by default select everything
+        self.Index = np.zeros(self.resultsSource[resultsSource.keys()[0]].shape)
+        
+        for id in valid_ids:
+            self.Index += (self.resultsSource[id_column] == id)
+            
+            
+            
+        self.Index = self.Index > 0.5
+    
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+        return self.resultsSource[key][self.Index][sl]
+    
     def keys(self):
         return self.resultsSource.keys()
 

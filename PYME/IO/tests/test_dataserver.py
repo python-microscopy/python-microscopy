@@ -42,6 +42,18 @@ def test_putfiles_and_list():
     assert(len(listing) == 10)
 
 
+def test_list_after_timeout():
+    test_files = [('_testing/test_list2/file_%d' % i, 'testing ... \n') for i in range(10)]
+    
+    clusterIO.putFiles(test_files, 'TEST')
+    
+    time.sleep(2)
+    listing = clusterIO.listdirectory('_testing/test_list2/', 'TEST',timeout=.00001)
+    listing = clusterIO.listdirectory('_testing/test_list2/', 'TEST', timeout=5)
+    
+    assert (len(listing) == 10)
+
+
 def test_double_put():
     """Trying to put the same file twice should cause an error"""
     testdata = 'foo bar\n'

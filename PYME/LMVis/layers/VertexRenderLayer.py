@@ -56,9 +56,15 @@ class VertexRenderLayer(BaseLayer):
         self.z_key = 'z'
         #self.color_key = None
         
+        self._bbox = None
+        
         BaseLayer.__init__(self)
         self.update_data(x, y, z, colors, color_map, color_limit, alpha)
         self.set_shader_program(DefaultShaderProgram)
+        
+    @property
+    def bbox(self):
+        return  self._bbox
         
     def update_from_datasource(self, ds, cmap=None, clim=None, alpha=1.0):
         x, y = ds[self.x_key], ds[self.y_key]
@@ -87,9 +93,12 @@ class VertexRenderLayer(BaseLayer):
             vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
             vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
             normals = -0.69 * np.ones(vertices.shape)
+            
+            self._bbox = np.array([x.min(), y.min(), z.min(), x.max(), y.max(), z.max()])
         else:
             vertices = None
             normals = None
+            self._bbox = None
 
         if clim is not None and colors is not None and clim is not None:
             cs_ = ((colors - clim[0]) / (clim[1] - clim[0]))
@@ -115,7 +124,7 @@ class VertexRenderLayer(BaseLayer):
             print('Tried to render with Null vertices, aborting')
             return
         
-        with self.get_shader_program():
+        with self.shader_program:
 
             n_vertices = self.get_vertices().shape[0]
 
@@ -150,6 +159,10 @@ class VertexRenderLayer(BaseLayer):
         return self._colors
 
     def get_color_map(self):
+        return self._color_map
+    
+    @property
+    def colour_map(self):
         return self._color_map
 
     def get_color_limit(self):

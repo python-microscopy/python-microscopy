@@ -135,8 +135,8 @@ def genEdgeDB(T):
         edb.append(([],[]))
         #edb[i] = ([],[])
 
-    for i in range(len(T.edge_db)):
-        e0, e1 = T.edge_db[i]
+    for i in range(len(T.edges)):
+        e0, e1 = T.edges[i]
         edbe0 = edb[e0]
         edbe1 = edb[e1]
         edbe0[0].append(i)
@@ -338,8 +338,8 @@ def rendGaussProd(x,y, sx, imageBounds, pixelSize):
 
 def rendTri(T, imageBounds, pixelSize, c=None, im=None):
     from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
-    xs = T.x[T.triangle_nodes]
-    ys = T.y[T.triangle_nodes]
+    xs = T.x[T.triangles]
+    ys = T.y[T.triangles]
 
     a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
     b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
@@ -401,8 +401,8 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
     
 def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
     from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
-    xs = T.x[T.triangle_nodes]
-    ys = T.y[T.triangle_nodes]
+    xs = T.x[T.triangles]
+    ys = T.y[T.triangles]
 
     a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
     b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
@@ -468,7 +468,7 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
 jParms = {}
 
 def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
-    from matplotlib import delaunay
+    from matplotlib import tri
     for i in range(n):
         #global jParms
         #locals().update(jParms)
@@ -483,7 +483,7 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
             jsig2 = jsig[Imc]
         else:
             jsig2 - float(jsig)
-        T = delaunay.Triangulation(x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum()))
+        T = tri.Triangulation(x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum()))
 
         #return T
         rendTri(T, imageBounds, pixelSize, im=im)
@@ -528,7 +528,7 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
         #print im.min(), im.max()
         return im/n
     else:
-        from matplotlib import delaunay
+        from matplotlib import tri
 
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
@@ -540,7 +540,7 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
             if type(jsig) == numpy.ndarray:
                 #print jsig.shape, Imc.shape
                 jsig = jsig[Imc]
-            T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
+            T = tri.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
             rendTri(T, imageBounds, pixelSize, im=im)
 
         return im/n
@@ -548,7 +548,7 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
 ###########
 #with weighted averaging
 def rendJitTri2(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
-    from matplotlib import delaunay
+    from matplotlib import tri
     for i in range(n):
         #global jParms
         #locals().update(jParms)
@@ -561,7 +561,7 @@ def rendJitTri2(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
             jsig2 = jsig[Imc]
         else:
             jsig2 - float(jsig)
-        T = delaunay.Triangulation(x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum()))
+        T = tri.Triangulation(x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum()))
 
         #return T
         rendTri2(T, imageBounds, pixelSize, im=im, im1=im1)
@@ -603,7 +603,7 @@ def rendJitTriang2(x,y,n,jsig, mcp, imageBounds, pixelSize):
         #print imn.min(), imn.max()
         return imn
     else:
-        from matplotlib import delaunay
+        from matplotlib import tri
         sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
         sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
 
@@ -615,7 +615,7 @@ def rendJitTriang2(x,y,n,jsig, mcp, imageBounds, pixelSize):
             if type(jsig) == numpy.ndarray:
                 #print jsig.shape, Imc.shape
                 jsig = jsig[Imc]
-            T = delaunay.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
+            T = tri.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
             rendTri2(T, imageBounds, pixelSize, im=im, im1=im1)
 
         imn =  im/im1 #n

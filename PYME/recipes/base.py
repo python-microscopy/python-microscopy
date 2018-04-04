@@ -472,6 +472,28 @@ class ModuleCollection(HasTraits):
         for mod in self.modules:
             if isinstance(mod, OutputModule):
                 mod.save(self.namespace, context)
+                
+    def gather_outputs(self, context={}):
+        """
+        Find all OutputModule instances and call their generate methods with the recipe context
+
+        Parameters
+        ----------
+        context : dict
+            A context dictionary used to substitute and create variable names.
+
+        """
+        
+        outputs = []
+        
+        for mod in self.modules:
+            if isinstance(mod, OutputModule):
+                out = mod.generate(self.namespace, context)
+                
+                if not out is None:
+                    outputs.append(out)
+                    
+        return outputs
 
     def loadInput(self, filename, key='input'):
         """Load input data from a file and inject into namespace
@@ -481,7 +503,7 @@ class ModuleCollection(HasTraits):
         """
         #modify this to allow for different file types - currently only supports images
         from PYME.IO import unifiedIO
-        if filename.split('.')[-1] in ['.h5r', '.h5']:
+        if filename.split('.')[-1] in ['h5r', 'h5']:
             import tables
             from PYME.IO import MetaDataHandler
             from PYME.IO import tabular
@@ -539,6 +561,9 @@ class Filter(ModuleBase):
     processFramesIndividually = Bool(True)
     
     def filter(self, image):
+        #from PYME.util.shmarray import shmarray
+        #import multiprocessing
+        
         if self.processFramesIndividually:
             filt_ims = []
             for chanNum in range(image.data.shape[3]):

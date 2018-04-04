@@ -276,8 +276,11 @@ def widefield_pupil_and_propagator(dx = 5, X=None, Y=None, lamb=700, n=1.51, NA=
     """
     
     if X is None or Y is None:
-        X, Y = np.meshgrid(np.arange(-2000, 2000., dx),np.arange(-2000, 2000., dx))
+        xs, ys, zs = kwargs.get('output_shape', (61, 61, 61))
+        
+        X, Y = np.meshgrid(float(dx)*(np.arange(xs) - np.floor(xs/2)),float(dx)*(np.arange(ys) - np.floor(ys/2)))
     else:
+        dx = X[1] - X[0]
         X, Y = np.meshgrid(X,Y)
     
     X = X - X.mean()
@@ -430,41 +433,82 @@ def ExtractPupil(ps, zs, dx, lamb=488, NA=1.3, n=1.51, nIters=50, size=5e3, inte
 ##################
 # Generating PSFs from pupils
 
-def PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47, vectorial=False, apodization='sine', ns = None, output_shape=None,**kwargs):
+def _gen_bead_pupil(X, Y, beadsize):
+    r2 = X*X + Y*Y
+
+    dx = X[1, 0] - X[0, 0]
+    
+    bead_proj = np.sqrt(np.maximum(beadsize*beadsize - (r2 - dx*dx), 0))
+
+    return abs(fftshift(fftn(bead_proj)))
+
+_bead_cache = {}
+
+def get_bead_pupil(X, Y, beadsize):
+    dx = X[1, 0] - X[0, 0]
+    bp = _bead_cache.get((X.shape, dx, beadsize), None)
+    
+    if bp is None:
+        bp = _gen_bead_pupil(X, Y, beadsize)
+        _bead_cache[(X.shape, dx, beadsize)] = bp
+    
+    return bp
+
+def PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47, vectorial=False, apodization='sine', ns = None, output_shape=None, beadsize=0,**kwargs):
     pupil = pupil*_apodization_function(R, NA, n, apodization, ns=ns)
+    
+    if beadsize > 0:
+        pupil = pupil*get_bead_pupil(X, Y, beadsize)
         
     if vectorial:
+        if vectorial is True:
+            #use circular pol by default
+            a = 1
+            b = -1j
+        else:
+            #vectorial is a tuple of polarization components
+            a, b = vectorial
+        
         phi = np.angle(u + 1j * v)
-        theta = np.arcsin(np.minimum(R / n, 1))
+        theta = np.arcsin(np.minimum(R, 1))
         
         ct = np.cos(theta)
         st = np.sin(theta)
         cp = np.cos(phi)
         sp = np.sin(phi)
         
-        fac = ct * cp ** 2 + sp ** 2
-        ps = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
-        p = abs(ps ** 2)
+        #ax
+        fac = a*(ct * cp ** 2 + sp ** 2)
+        ps_x = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        #p = abs(ps ** 2)
         
-        fac = (ct - 1) * cp * sp
-        ps = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
-        p += abs(ps ** 2)
+        #ay
+        fac = a*(ct - 1) * cp * sp
+        ps_y = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        #p += abs(ps ** 2)
         
-        fac = (ct - 1) * cp * sp
-        ps = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
-        p += abs(ps ** 2)
+        #az
+        fac = -a*st * cp
+        ps_z = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        #p += abs(ps ** 2)
         
-        fac = ct * sp ** 2 + cp ** 2
-        ps = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
-        p += abs(ps ** 2)
         
-        fac = st * cp
-        ps = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
-        p += abs(ps ** 2)
+        #bx
+        fac = b*(ct - 1) * cp * sp
+        ps_x += np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
         
-        fac = st * sp
-        ps = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
-        p += abs(ps ** 2)
+        p = abs(ps_x ** 2)
+        
+        #by
+        fac = b*(ct * sp ** 2 + cp ** 2)
+        ps_y += np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        p += abs(ps_y ** 2)
+        
+        
+        #bz
+        fac = -b*st * sp
+        ps_z += np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        p += abs(ps_z ** 2)
         
         
     else:
@@ -534,20 +578,138 @@ def PsfFromPupilVect(pupil, zs, dx, shape=[61, 61], **kwargs):
 
 def GenWidefieldPSF(zs, **kwargs):
     X, Y, R, FP, pupil, u, v = widefield_pupil_and_propagator(**kwargs)
+    
+    kwargs.pop('X', None)
+    kwargs.pop('Y', None)
 
     return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=pupil, zs=zs, **kwargs)
 
-def Gen4PiPSF(zs, dx=5, lamb=700, n=1.51, NA = 1.47,phi=0, X=None, Y=None, **kwargs):
-    X, Y, R, FP, pupil, u, v = widefield_pupil_and_propagator(dx, X, Y, lamb=lamb, n=n, NA = NA)
-
-    pupil = pupil*_apodization_function(R, NA, n, kwargs.get('apodization', None))
+def Gen4PiPSF(zs,phi=0, zernikeCoeffs=[{},{}], **kwargs):
+    from PYME.misc import zernike
+    X, Y, R, FP, pupil, u, v = widefield_pupil_and_propagator(**kwargs)
     
-    ps1 = np.concatenate([FP.propagate(pupil, z)[:,:,None] for z in zs], 2)
-    ps2 = np.concatenate([FP.propagate(pupil, -z)[:,:,None]*np.exp(1j*phi) for z in zs], 2)
-    
-    ps = ps1 + ps2
+    dphi = phi
 
-    return abs(ps**2)
+    kwargs.pop('X', None)
+    kwargs.pop('Y', None)
+    
+    NA = kwargs.get('NA', 1.47)
+    n = kwargs.get('n', 1.51)
+    output_shape = kwargs.get('output_shape', None)
+    beadsize = kwargs.get('beadsize', 0)
+    vectorial = kwargs.get('vectorial', False)
+
+    pupil = pupil * _apodization_function(R, NA, n, kwargs.get('apodization', None))
+    
+    if beadsize > 0:
+        pupil = pupil * get_bead_pupil(X, Y, beadsize)
+
+    theta = np.angle(X + 1j * Y)
+    r = R / R[abs(pupil) > 0].max()
+
+
+
+    ang_u = 0
+    ang_l = 0
+    
+    zerns_upper, zerns_lower = zernikeCoeffs
+    
+    #print zernikeCoeffs, zerns_upper, zerns_lower
+
+    for i, c in zerns_upper.items():
+        ang_u = ang_u + c * zernike.zernike(i, r, theta)
+        
+    for i, c in zerns_lower.items():
+        ang_l = ang_l + c * zernike.zernike(i, r, theta)
+        
+    pupil_upper = pupil * np.exp(-1j * ang_u)
+    pupil_lower = pupil * np.exp(-1j * ang_l)
+        
+    #pupil_upper = pupil
+    #pupil_lower = pupil
+
+    if vectorial:
+        if vectorial is True:
+            #use circular pol by default
+            a = 1
+            b = -1j
+        else:
+            #vectorial is a tuple of polarization components
+            a, b = vectorial
+        
+        phi = np.angle(u + 1j * v)
+        theta = np.arcsin(np.minimum(R, 1))
+    
+        ct = np.cos(theta)
+        st = np.sin(theta)
+        cp = np.cos(phi)
+        sp = np.sin(phi)
+        
+        psf = []
+        for z in zs:
+            #ax
+            fac = a*(ct * cp ** 2 + sp ** 2)
+            ps_u = FP.propagate(pupil_upper * fac, z)
+            ps_l = FP.propagate(pupil_lower * fac, -z)*np.exp(1j*dphi)
+            ps_x = ps_u + ps_l
+            #p = abs(ps ** 2)
+        
+            #ay
+            fac = a*(ct - 1) * cp * sp
+            ps_u = FP.propagate(pupil_upper * fac, z)
+            ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
+            ps_y = ps_u + ps_l
+            #p += abs(ps ** 2)
+        
+            #bx
+            fac = b*(ct - 1) * cp * sp
+            ps_u = FP.propagate(pupil_upper * fac, z)
+            ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
+            ps_x += (ps_u + ps_l)
+            p = abs(ps_x ** 2)
+        
+            #by
+            fac = b*(ct * sp ** 2 + cp ** 2)
+            ps_u = FP.propagate(pupil_upper * fac, z)
+            ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
+            ps_y += (ps_u + ps_l)
+            p += abs(ps_y ** 2)
+        
+            #az
+            fac = -a*st * cp
+            ps_u = FP.propagate(pupil_upper * fac, z)
+            ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
+            ps_z = ps_u + ps_l
+            #p += abs(ps ** 2)
+        
+            fac = -b*(st * sp)
+            ps_u = FP.propagate(pupil_upper * fac, z)
+            ps_l = FP.propagate(pupil_lower * fac, -z) * np.exp(1j * dphi)
+            ps_z += (ps_u + ps_l)
+            p += abs(ps_z ** 2)
+            
+            psf.append(p[:,:,None])
+
+        p = np.concatenate(psf, 2)
+    else:
+        ###########
+        # Default scalar case
+        ps_u = np.concatenate([FP.propagate(pupil_upper, z)[:, :, None] for z in zs], 2)
+        ps_l = np.concatenate([FP.propagate(pupil_lower, -z)[:, :, None] * np.exp(1j * dphi) for z in zs], 2)
+        ps = ps_u + ps_l
+        p = abs(ps ** 2)
+    
+    if output_shape is None:
+        return p
+    else:
+        sx = output_shape[0]
+        sy = output_shape[1]
+        ox = np.ceil((X.shape[0] - sx) / 2.0)
+        oy = np.ceil((X.shape[1] - sy) / 2.0)
+        ex = ox + sx
+        ey = oy + sy
+
+        return p[ox:ex, oy:ey, :]
     
 
 def GenClippedWidefieldPSF(zs, field_x=0, field_y=0, apertureNA=1.5,
@@ -576,9 +738,12 @@ def GenZernikePSF(zs, zernikeCoeffs = [], **kwargs):
     return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=pupil, zs=zs, **kwargs)
     
     
-def GenZernikeDPSF(zs, zernikeCoeffs = {}, beadsize=0, **kwargs):
+def GenZernikeDPSF(zs, zernikeCoeffs = {}, **kwargs):
     from PYME.misc import zernike
     X, Y, R, FP, F, u, v = widefield_pupil_and_propagator(**kwargs)
+
+    kwargs.pop('X', None)
+    kwargs.pop('Y', None)
     
     theta = np.angle(X + 1j*Y)
     r = R/R[abs(F)>0].max()
@@ -590,6 +755,27 @@ def GenZernikeDPSF(zs, zernikeCoeffs = {}, beadsize=0, **kwargs):
         
     F = F*np.exp(-1j*ang)
         
+    return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=F, zs=zs, **kwargs)
+
+
+def GenZernikeDonutPSF(zs, zernikeCoeffs={}, spiral_amp=1.0, **kwargs):
+    from PYME.misc import zernike
+    X, Y, R, FP, F, u, v = widefield_pupil_and_propagator(**kwargs)
+    kwargs.pop('X', None)
+    kwargs.pop('Y', None)
+    
+    theta = np.angle(X + 1j * Y)
+    r = R / R[abs(F) > 0].max()
+    
+    ang = 0
+    
+    for i, c in zernikeCoeffs.items():
+        ang = ang + c * zernike.zernike(i, r, theta)
+        
+    ang = ang + spiral_amp*theta
+    
+    F = F * np.exp(-1j * ang)
+    
     return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=F, zs=zs, **kwargs)
         
         

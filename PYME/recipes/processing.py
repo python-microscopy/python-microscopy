@@ -192,14 +192,56 @@ class OpticalFlow(ModuleBase):
             flow_y.append(np.atleast_3d(dy))                
         
         
-        return np.concatenate(flow_x, 2),np.concatenate(flow_y, 2) 
+        return np.concatenate(flow_x, 2),np.concatenate(flow_y, 2)
+    
+    def _mp_calc_frame_flow(self, data_s, flow_x, flow_y, frames):
+        for i in frames:
+            dx, dy = self._calc_frame_flow(data_s, i, 0)
+        
+            flow_x[:, :, i] = dx
+            flow_y[:, :, i] = dy
+        
+
+    def calc_flow_mp(self, data, chanNum):
+        from PYME.util.shmarray import shmarray
+        import multiprocessing
+        
+        data_s = shmarray.zeros(list(data.shape[:3] + [1,]))
+        #print data_s.shape, data.shape
+        data_s[:,:,:,0] = data[:,:,:,chanNum]
+        
+        flow_x = shmarray.zeros(data.shape[:3])
+        flow_y = shmarray.zeros(data.shape[:3])
+        
+        nCPUs = multiprocessing.cpu_count()
+        
+        all_frames = range(0, data.shape[2])
+        tasks = [all_frames[i::nCPUs] for i in range(nCPUs)]
+
+        processes = [multiprocessing.Process(target=self._mp_calc_frame_flow, args=(data_s, flow_x, flow_y, frames))
+                     for frames in tasks]
+
+        for p in processes:
+            p.start()
+
+        for p in processes:
+            p.join()
+    
+    
+        return flow_x, flow_y
         
     def execute(self, namespace):
+        import multiprocessing
         image = namespace[self.inputName]
         flow_x = []
         flow_y = []
         for chanNum in range(image.data.shape[3]):
-            fx, fy = self.calc_flow(image.data, chanNum)
+            if False:#(image.data.shape[2] > 10) and not multiprocessing.current_process().daemon:
+                #use multiple processes for computation
+                fx, fy = self.calc_flow_mp(image.data, chanNum)
+            else:
+                fx, fy = self.calc_flow(image.data, chanNum)
+                
             flow_x.append(fx)
             flow_y.append(fy)
         
@@ -402,6 +444,7 @@ class CaWave(object):
         nbins: 50
         outputName: velocity_histogram
         right: 16.0
+        normalize: True
     - processing.VectorfieldAngle:
         inputX: flow_xf
         inputY: flow_yf
@@ -411,20 +454,36 @@ class CaWave(object):
     - measurement.ImageHistogram:
         inputImage: theta
         inputMask: wavefronts
-        left: 0.0
+        left: -3.15
         nbins: 120
         outputName: angle_hist
-        right: 6.3
+        right: 3.15
+        normalize: True
     '''
-    def __init__(self, wavefronts, intensity, recipe=''):
+    def __init__(self, wavefronts, intensity, trange, recipe=''):
         from PYME.recipes.base import ModuleCollection
+        
+        self.trange = trange
         
         if recipe == '':
             recipe = self.default_recipe
         
         self._mc = ModuleCollection.fromYAML(recipe)
         
+        print('Executing wave sub-recipe')
+        
         self._mc.execute(wavefronts=wavefronts, intensity=intensity)
+        
+        print('wave sub-recipe done')
+        
+    @property
+    def start_frame(self):
+        return int(self.trange[0])
+
+    @property
+    def end_frame(self):
+        return int(self.trange[1])
+        
         
     @property
     def direction_plot(self):
@@ -445,11 +504,19 @@ class CaWave(object):
     
         plt.ion()
     
-        return mpld3.fig_to_html(f)
+        ret =  mpld3.fig_to_html(f)
+        
+        plt.close(f)
+        
+        return ret
+        
     
     @property
     def direction_data(self):
-        pass
+        import json
+    
+        return json.dumps(np.array([self._mc.namespace['angle_hist']['bins'],
+                                    self._mc.namespace['angle_hist']['counts']]).T.tolist())
         
     @property
     def velocity_plot(self):
@@ -470,17 +537,29 @@ class CaWave(object):
         plt.tight_layout(pad=2)
     
         plt.ion()
-    
-        return mpld3.fig_to_html(f)
-        pass
+
+        ret = mpld3.fig_to_html(f)
+
+        plt.close(f)
+
+        return ret
     
     @property
     def velocity_data(self):
-        pass
+        import json
+        
+        return json.dumps(np.array([self._mc.namespace['velocity_histogram']['bins'], self._mc.namespace['velocity_histogram']['counts']]).T.tolist())
     
     @property
     def wavefront_image(self):
         import matplotlib.pyplot as plt
+        from io import BytesIO
+        
+        try:
+            from PIL import Image
+        except ImportError:
+            import Image
+        
         wavefronts = self._mc.namespace['wavefronts'].data
         
         nFrames = wavefronts.getNumSlices()
@@ -490,13 +569,53 @@ class CaWave(object):
         out = np.zeros([sx, sy, 3])
         
         for i in range(nFrames):
-            c = np.array(plt.cm.jet(float(i)/nFrames)[:3])
+            c = np.array(plt.cm.jet(float(i)/float(nFrames))[:3])
+            #print c
+            #print out.shape, wavefronts.getSlice(i)[:,:,None].shape, c.shape
             out += wavefronts.getSlice(i)[:,:,None]*c[None, None, :]
+            
+        
+        outf = BytesIO()
+        
+        Image.fromarray((255*out).astype('uint8')).save(outf, 'PNG')
+        
+        s =  outf.getvalue()
+        
+        outf.close()
+        return s
             
     
     @property
     def velocity_image(self):
-        pass
+        import matplotlib.pyplot as plt
+        from io import BytesIO
+    
+        try:
+            from PIL import Image
+        except ImportError:
+            import Image
+    
+        wavefronts = self._mc.namespace['wavefronts'].data
+        velocities = self._mc.namespace['wavefront_velocities'].data
+        v_max =  float(velocities[:,:,:].max())
+    
+        nFrames = wavefronts.getNumSlices()
+    
+        sx, sy = wavefronts.getSliceShape()
+    
+        out = np.zeros([sx, sy, 3])
+    
+        for i in range(nFrames):
+            out += wavefronts.getSlice(i)[:, :, None] * plt.cm.jet(velocities.getSlice(i)/v_max)[:,:,:3]
+    
+        outf = BytesIO()
+    
+        Image.fromarray((255 * out).astype('uint8')).save(outf, 'PNG')
+    
+        s = outf.getvalue()
+    
+        outf.close()
+        return s
         
 
 @register_module('FindCaWaves')
@@ -510,32 +629,42 @@ class FindCaWaves(ModuleBase):
     waveRecipeFileName = CStr('')
     
     minWaveFrames = Int(5)
+    minActivePixels = Int(10)
     
     outputName = Output('waves')
     
     def execute(self, namespace):
         from scipy import ndimage
         from PYME.IO.DataSources import CropDataSource
+        print('Finding Ca Waves ...')
         wavefronts = namespace[self.inputWavefronts] #segmented wavefront mask
         intensity = namespace[self.inputIntensity]
-        wavefront_I = [wavefronts.data.getSlice(i).sum() for i in range(wavefronts.data.getNumSlices())]
+        wavefront_I = np.array([wavefronts.data.getSlice(i).sum() for i in range(wavefronts.data.getNumSlices())]).squeeze()
+        
+        
         
         #a wave is a contiguous region of non-zero wavefronts
-        wave_labels, nWaves = ndimage.label(wavefront_I > .5)
+        wave_labels, nWaves = ndimage.label(wavefront_I > float(self.minActivePixels))
+        
+        print('Detected %d wave candidates' % nWaves)
         
         waves = []
+        
+        #print(wave_labels, nWaves)
         
         for i in range(nWaves):
             wv_idx = np.argwhere(wave_labels == (i+1))
             
+            print('wave%d: wave at %d-%d' % (i, wv_idx[0], wv_idx[-1]))
+            
             if len(wv_idx) >= self.minWaveFrames:
                 
                 trange = (wv_idx[0], wv_idx[-1])
-                cropped_wavefronts = ImageStack(CropDataSource.DataSource(wavefronts, trange=trange),
+                cropped_wavefronts = ImageStack(CropDataSource.DataSource(wavefronts.data, trange=trange),
                                                 mdh=getattr(wavefronts, 'mdh', None))
-                cropped_intensity = ImageStack(CropDataSource.DataSource(intensity, trange=trange),
+                cropped_intensity = ImageStack(CropDataSource.DataSource(intensity.data, trange=trange),
                                                 mdh=getattr(intensity, 'mdh', None))
-                waves.append(CaWave(cropped_wavefronts, cropped_intensity))
+                waves.append(CaWave(cropped_wavefronts, cropped_intensity, trange))
                 
         
         namespace[self.outputName] = waves
@@ -1065,6 +1194,15 @@ class Deconvolve(Filter):
 @register_module('DeconvolveMotionCompensating')
 class DeconvolveMotionCompensating(Deconvolve):
     method = Enum('Richardson-Lucy')
+    processFramesIndividually = Bool(True)
+    flowScale = Float(10)
+    inputFlowX = Input('flow_x')
+    inputFlowY = Input('flow_y')
+    
+    def execute(self, namespace):
+        self._flow_x = namespace[self.inputFlowX]
+        self._flow_y = namespace[self.inputFlowY]
+        namespace[self.outputName] = self.filter(namespace[self.inputName])
     
     def GetDec(self, dp, vshint):
         """Get a (potentially cached) deconvolution object"""
@@ -1081,7 +1219,7 @@ class DeconvolveMotionCompensating(Deconvolve):
                 dc = richardsonLucyMVM.dec_conv()
             
             #resize the PSF to fit, and do any required FFT planning etc ...
-            dc.psf_calc(psf, np.atleast_3d(dp).shape)
+            dc.psf_calc(np.atleast_3d(psf), np.atleast_3d(dp).shape)
             
             self._decCache[decKey] = dc
         
@@ -1108,22 +1246,55 @@ class DeconvolveMotionCompensating(Deconvolve):
         #Get appropriate deconvolution object
         rmv = self.GetDec(d, im.voxelsize)
 
-        mFr = min(frNum + 2, im.data.shape[2] -1)
-        if frNum < mFr:
-            dx, dy = optic_flow.reg_of(im.data[:,:,frNum,chanNum].squeeze(), im.data[:,:,mFr, chanNum].squeeze(), 5, 10, 1)
-        else:
-            dx, dy = 0,0
+        #mFr = min(frNum + 2, im.data.shape[2] -1)
+        #if frNum < mFr:
+        #    dx, dy = optic_flow.reg_of(im.data[:,:,frNum,chanNum].squeeze().astype('f'), im.data[:,:,mFr, chanNum].squeeze().astype('f'),
+        #                               self.flowFilterRadius, self.flowSupportRadius, self.flowRegularizationLambda)
+        #else:
+        #    dx, dy = 0,0
+        
+        dx = self._flow_x.data[:,:,frNum].squeeze()
+        dy = self._flow_y.data[:, :, frNum].squeeze()
+        
     
         #run deconvolution
         mFr = min(frNum + 5, im.data.shape[2])
-        res = rmv.deconv(np.atleast_3d(im.data[:,:,frNum:mFr, chanNum].astype('f').squeeze()) ,
-                         0, 20, bg=0, vx = -dx*4000., vy = -dy*4000).squeeze().reshape(d.shape)
+        data = np.atleast_3d([im.data[:,:,i, chanNum].astype('f').squeeze() for i in range(frNum,mFr)])
+        #print data.shape
+        print('MC Deconvolution - frame # %d' % frNum)
+        res = rmv.deconv(data,
+                         self.regularisationLambda, self.iterations, bg=0, vx = -dx*self.flowScale, vy = -dy*self.flowScale).squeeze().reshape(d.shape)
     
         #crop away the padding
         if self.padding > 0:
             res = res[px:-px, py:-py, pz:-pz]
     
         return res
+    
+    def default_traits_view(self):
+        from traitsui.api import View, Item, Group, ListEditor
+        from PYME.ui.custom_traits_editors import CBEditor
+
+        return View(Item(name='inputName', editor=CBEditor(choices=self._namespace_keys)),
+                    Item(name='outputName'),
+                    Group(Item(name='method'),
+                          Item(name='iterations'),
+                          Item(name='offset'),
+                          Item(name='padding'),
+                          Item(name='zPadding'),
+                          Item(name='regularisationLambda', visible_when='method=="ICTM"'),
+                          label='Deconvolution Parameters'),
+                    Group(Item(name='psfType'),
+                          Item(name='psfFilename', visible_when='psfType=="file"'),
+                          Item(name='lorentzianFWHM', visible_when='psfType=="Lorentzian"'),
+                          Item(name='gaussianFWHM', visible_when='psfType=="Gaussian"'),
+                          Item(name='beadDiameter', visible_when='psfType=="bead"'),
+                          label='PSF Parameters'),
+                    Group(
+                          Item(name='flowScale'),
+                          label='Flow estimation'),
+                    resizable = True,
+                    buttons   = [ 'OK' ])
         
         
 

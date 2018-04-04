@@ -112,11 +112,13 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.parent = parent
 
-        self.pointSize = 5  # default point size = 5nm
+        self.pointSize = 30  # default point size = 30nm
 
         self._scaleBarLength = 1000
 
         self.centreCross = False
+        
+        self.clear_colour = [0,0,0,1.0]
 
         self.LUTDraw = True
 
@@ -156,6 +158,7 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.layers = []
         self.overlays = []
+        self.underlays = [] #draw these before data (assuming depth-testing is disabled)
 
         self.wantViewChangeNotification = WeakSet()
         self.pointSelectionCallbacks = []
@@ -187,17 +190,47 @@ class LMGLShaderCanvas(GLCanvas):
         else:
             self.OnDraw()
         return
+    
+    @property
+    def bbox(self):
+        """ Bounding box in format [x0,y0,z0, x1, y1, z1]
+        
+        Calculated as the spanning box of all visible layers
+        """
+        
+        bb = np.zeros(6)
+        bb[:3] = 1e12
+        bb[3:] = -1e12
+        
+        nLayers = 0
+        
+        for l in self.layers:
+            if getattr(l, 'visible', True):
+                bbl = l.bbox
+                
+                if not bbl is None:
+                    bb[:3] = np.minimum(bb[:3], bbl[:3])
+                    bb[3:] = np.maximum(bb[3:], bbl[3:])
+                    nLayers += 1
+                
+        if nLayers > 0:
+            #print('bbox: %s' % bb)
+            return bb
+        else:
+            return None
+        
 
     def initialize(self):
         from .layers.ScaleBoxOverlayLayer import ScaleBoxOverlayLayer
         self.InitGL()
         self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
-        self.ScaleBoxOverlayLayer = ScaleBoxOverlayLayer(100)
+        self.ScaleBoxOverlayLayer = ScaleBoxOverlayLayer()
 
         self.LUTOverlayLayer = LUTOverlayLayer()
         self.AxesOverlayLayer = AxesOverlayLayer()
+        
         self.overlays.append(SelectionOverlayLayer(self.selectionSettings))
-        self.overlays.append(self.ScaleBoxOverlayLayer)
+        self.underlays.append(self.ScaleBoxOverlayLayer)
 
         self._is_initialized = True
 
@@ -262,6 +295,8 @@ class LMGLShaderCanvas(GLCanvas):
     def OnDraw(self):
         self.interlace_stencil()
         glEnable(GL_DEPTH_TEST)
+        
+        glClearColor(*self.clear_colour)
         glClear(GL_COLOR_BUFFER_BIT)
 
         # print 'od'
@@ -311,6 +346,9 @@ class LMGLShaderCanvas(GLCanvas):
             glMultMatrixf(self.object_rotation_matrix)
 
             glTranslatef(-self.xc, -self.yc, -self.zc)
+            
+            for l in self.underlays:
+                l.render(self)
 
             for l in self.layers:
                 l.render(self)
@@ -384,8 +422,8 @@ class LMGLShaderCanvas(GLCanvas):
         # center data
         x = T.x
         y = T.y
-        xs = x[T.triangle_nodes]
-        ys = y[T.triangle_nodes]
+        xs = x[T.triangles]
+        ys = y[T.triangles]
         zs = np.zeros_like(xs)  # - z.mean()
 
         if recenter:
@@ -408,7 +446,7 @@ class LMGLShaderCanvas(GLCanvas):
         self.SetCurrent()
 
         self.layers.append(
-            VertexRenderLayer(T.x[T.triangle_nodes], T.y[T.triangle_nodes], 0 * (T.x[T.triangle_nodes]), self.c,
+            VertexRenderLayer(T.x[T.triangles], T.y[T.triangles], 0 * (T.x[T.triangles]), self.c,
                               self.cmap, self.clim, alpha))
         self.Refresh()
 
@@ -498,8 +536,6 @@ class LMGLShaderCanvas(GLCanvas):
 
     def setCMap(self, cmap):
         self.cmap = cmap
-        if self.LUTOverlayLayer:
-            self.LUTOverlayLayer.set_color_map(cmap)
         self.setColour()
 
     def setCLim(self, clim, alim=None):
@@ -815,6 +851,13 @@ class LMGLShaderCanvas(GLCanvas):
         self.sz = 0  # z.max() - z.min()
 
         self.scale = 2. / (max(self.sx, self.sy))
+        
+    def recenter_bbox(self):
+        bb = self.bbox
+        
+        centre = 0.5*(bb[:3] + bb[3:])
+        
+        self.xc, self.yc, self.zc = centre
 
     def set_view(self, view):
         self.vecBack = view.vec_back

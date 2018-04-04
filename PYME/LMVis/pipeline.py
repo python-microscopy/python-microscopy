@@ -246,10 +246,15 @@ def _processEvents(ds, events, mdh):
                              mdh.getOrDefault('Protocol.PiezoStartPos', 0) + mdh['StackSettings.NumSteps'] * mdh[
                                  'StackSettings.StepSize'], mdh['StackSettings.StepSize'])
         position = np.tile(position, mdh['StackSettings.NumCycles'])
-
-        zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
-        ev_mappings['zm'] = zm
-        eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
+        
+        logger.debug('Spoofing focus events from metadata')
+        
+        if not len(position) == len(frames):
+            logger.error('Error spoofing focus events -  frames: %s, positions %s' % (frames, position))
+        else:
+            zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
+            ev_mappings['zm'] = zm
+            eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
 
     return ev_mappings, eventCharts
 
@@ -280,6 +285,8 @@ class Pipeline:
         self.GeneratedMeasures = {}
         
         self.QTGoalPixelSize = 5
+        
+        self._extra_chan_num = 0
         
         self.filesToClose = []
 
@@ -644,6 +651,40 @@ class Pipeline:
         
         #self._process_colour()
 
+    def OpenChannel(self, filename='', ds=None, channel_name='', **kwargs):
+        """Open a file - accepts optional keyword arguments for use with files
+        saved as .txt and .mat. These are:
+
+            FieldNames: a list of names for the fields in the text file or
+                        matlab variable.
+            VarName:    the name of the variable in the .mat file which
+                        contains the data.
+            SkipRows:   Number of header rows to skip for txt file data
+
+            PixelSize:  Pixel size if not in nm
+
+        """
+        if channel_name == '' or channel_name is None:
+            #select a channel name automatically
+            channel_name = 'Channel%d' % self._extra_chan_num
+            self._extra_chan_num += 1
+                
+        if ds is None:
+            #load from file
+            ds = self._ds_from_file(filename, **kwargs)
+    
+        #wrap the data source with a mapping so we can fiddle with things
+        #e.g. combining z position and focus
+        mapped_ds = tabular.mappingFilter(ds)
+    
+        if 'PixelSize' in kwargs.keys():
+            mapped_ds.addVariable('pixelSize', kwargs['PixelSize'])
+            mapped_ds.setMapping('x', 'x*pixelSize')
+            mapped_ds.setMapping('y', 'y*pixelSize')
+    
+    
+        self.addDataSource(channel_name, mapped_ds)
+
 
 
     def _process_colour(self):
@@ -711,11 +752,11 @@ class Pipeline:
         return self.GeneratedMeasures['neighbourDistances']
         
     def getTriangles(self, recalc = False):
-        from matplotlib import delaunay
+        from matplotlib import tri
         
         if self.Triangles is None or recalc:
             statTri = statusLog.StatusLogger("Generating Triangulation ...")
-            self.Triangles = delaunay.Triangulation(self.colourFilter['x'] + .1*np.random.normal(size=len(self.colourFilter['x'])), self.colourFilter['y']+ .1*np.random.normal(size=len(self.colourFilter['x'])))
+            self.Triangles = tri.Triangulation(self.colourFilter['x'] + .1*np.random.normal(size=len(self.colourFilter['x'])), self.colourFilter['y']+ .1*np.random.normal(size=len(self.colourFilter['x'])))
             
             #reset things which will have changed
             self.edb = None
@@ -744,14 +785,14 @@ class Pipeline:
             self.objIndices = edges.objectIndices(edb.segment(self.blobSettings.distThreshold), self.blobSettings.minSize)
             self.objects = [np.vstack((tri.x[oi], tri.y[oi])).T for oi in self.objIndices]
         else:
-            from matplotlib import delaunay
+            from matplotlib import tri
             
             ndists = self.getNeighbourDists()
             
             x_ = np.hstack([self['x'] + 0.5*ndists*np.random.normal(size=ndists.size) for i in range(self.blobSettings.jittering)])
             y_ = np.hstack([self['y'] + 0.5*ndists*np.random.normal(size=ndists.size) for i in range(self.blobSettings.jittering)])
 
-            T = delaunay.Triangulation(x_, y_)
+            T = tri.Triangulation(x_, y_)
             edb = edges.EdgeDB(T)
             
             objIndices = edges.objectIndices(edb.segment(self.blobSettings.distThreshold), self.blobSettings.minSize)
@@ -800,6 +841,9 @@ class Pipeline:
         
     def save_hdf(self, filename):
         self.colourFilter.to_hdf(filename, tablename='Localizations', metadata=self.mdh)
+        
+    def to_recarray(self, keys=None):
+        return self.colourFilter.to_recarray(keys=keys)
         
     def toDataFrame(self, keys=None):
         import pandas as pd

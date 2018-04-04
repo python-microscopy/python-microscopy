@@ -1,0 +1,365 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html lang="en">
+<head>
+    <title>Track {{data.clumpID}}</title>
+
+    <style>
+    tr.odd {
+        background-color: #E0E7F0;
+    }
+    
+    td.rh{
+        font-weight: bold;
+    }
+    
+    td.c{
+        color: Cyan;
+    }
+    
+    td.m{
+        color: Magenta;
+    }
+    
+    a{
+        color: Blue;
+        text-decoration: underline; 
+    }
+
+    body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+    }
+
+    .head {
+        position: absolute;
+        width: 100%;
+        height: 70px;
+        background-color: #F0F0F0;
+        /*margin: 0;*/
+        padding-top: 10px;
+        padding-left: 20px;
+    }
+
+    .content {
+        overflow: auto;
+        position: absolute;
+        width: 100%;
+        top: 70px;
+        bottom: 0;
+        padding: 20px;
+    }
+
+    .tracksummary {
+        vertical-align: middle;
+        margin-left: 50px;
+        display: inline-block;
+    }
+
+    .fit-notes {
+        font-size: smaller;
+    }
+
+    .disabled{
+        color: Gray;
+    }
+    </style>
+
+    <style>
+
+.frame {
+  fill: none;
+  stroke: #000;
+}
+
+.axis text {
+  font: 10px sans-serif;
+}
+
+.axis line,
+.axis circle {
+  fill: none;
+  stroke: #777;
+  stroke-dasharray: 1,4;
+}
+
+.axis :last-of-type circle {
+  stroke: #333;
+  stroke-dasharray: none;
+}
+
+.line {
+  fill: none;
+  stroke: red;
+  stroke-width: 1.5px;
+}
+</style>
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script>
+        var plot_polar = function(data, element, width, height) {
+            //var width = 960,
+            //    height = 500,
+            var radius = Math.min(width, height) / 2 - 30;
+
+            var r = d3.scale.linear()
+                .domain([0, d3.max(data, function(d){return d[1];})])
+                .range([0, radius]);
+
+            var line = d3.svg.line.radial()
+                .radius(function (d) {
+                    return r(d[1]);
+                })
+                .angle(function (d) {
+                    return -d[0] + Math.PI;
+                });
+
+            var svg = d3.select(element).append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .append("g")
+                .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+            var gr = svg.append("g")
+                .attr("class", "r axis")
+                .selectAll("g")
+                .data(r.ticks(5).slice(1))
+                .enter().append("g");
+
+            gr.append("circle")
+                .attr("r", r);
+
+            gr.append("text")
+                .attr("y", function (d) {
+                    return -r(d) - 4;
+                })
+                .attr("transform", "rotate(15)")
+                .style("text-anchor", "middle")
+                .text(function (d) {
+                    return d;
+                });
+
+            var ga = svg.append("g")
+                .attr("class", "a axis")
+                .selectAll("g")
+                .data(d3.range(0, 360, 30))
+                .enter().append("g")
+                .attr("transform", function (d) {
+                    return "rotate(" + -d + ")";
+                });
+
+            ga.append("line")
+                .attr("x2", radius);
+
+            ga.append("text")
+                .attr("x", radius + 6)
+                .attr("dy", ".35em")
+                .style("text-anchor", function (d) {
+                    return d < 270 && d > 90 ? "end" : null;
+                })
+                .attr("transform", function (d) {
+                    return d < 270 && d > 90 ? "rotate(180 " + (radius + 6) + ",0)" : null;
+                })
+                .text(function (d) {
+                    return d + "°";
+                });
+
+            svg.append("path")
+                .datum(data)
+                .attr("class", "line")
+                .attr("d", line);
+
+        };
+
+
+        function download_csv(csv, filename) {
+            var csvFile;
+            var downloadLink;
+
+            // CSV FILE
+            csvFile = new Blob([csv], {type: "text/csv"});
+
+            // Download link
+            downloadLink = document.createElement("a");
+
+            // File name
+            downloadLink.download = filename;
+
+            // We have to create a link to the file
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+
+            // Make sure that the link is not displayed
+            downloadLink.style.display = "none";
+
+            // Add the link to your DOM
+            document.body.appendChild(downloadLink);
+
+            // Lanzamos
+            downloadLink.click();
+        }
+
+        function export_array_to_csv(data, filename) {
+            var csv = [];
+
+            var row = [];
+            row.push('#filename');
+            row.push('bins');
+            row.push('counts');
+
+            csv.push(row.join(","));
+
+            for (var i = 0; i < data.length; i++) {
+                var row = [];
+
+                var cols = data[i];
+
+                row.push("{{ recipe_context.file_stub }}");
+
+                row.push('' + cols[0]);
+                row.push('' + cols[1]);
+
+                csv.push(row.join(","));
+            }
+
+            // Download CSV
+            download_csv(csv.join("\n"), filename);
+        }
+
+        var direction_data = [];
+        var velocity_data=[];
+
+        function export_summary_to_csv(data, filename) {
+            var csv = [];
+
+
+            //header
+            var row = [];
+            row.push('#filename');
+            row.push('wave');
+
+            for (var i = 0; i < data[0].length; i++){
+                //Empty columns for data to follow
+                row.push('');
+            }
+
+            csv.push(row.join(","));
+
+            row = [];
+
+            // write line with bin data
+            row.push('{{ recipe_context.file_stub }}');
+            row.push('bins');
+
+            for (var i = 0; i < data[0].length; i++){
+                // write bin data using bins from first wave
+                row.push('' + data[0][i][0]);
+            }
+
+            csv.push(row.join(","));
+
+            for (var j = 0; j < data.length; j++) {
+                var row = [];
+
+                var cols = data[j];
+
+                row.push("{{ recipe_context.file_stub }}");
+                row.push('' + j);
+
+                for (var i=0; i < cols.length;i++ ){
+                   row.push('' + cols[i][1])
+                }
+
+                csv.push(row.join(","));
+            }
+
+            // Download CSV
+            download_csv(csv.join("\n"), filename);
+        }
+
+
+
+    </script>
+
+
+</head>
+<body>
+
+
+    <div class="content">
+
+        {% for d in data %}
+            <h2>Wave {{  loop.index }}</h2>
+                <p>Frames: {{ d.start_frame }}-{{ d.end_frame }}</p>
+{#            <p>{{ d.direction_plot }}#}
+            <table>
+            <tr>
+                <td>
+                    <b>Wavefront timecourse</b> <br>
+                    <img class="img-fluid" src="data:image/png;base64,{{ d.wavefront_image|b64encode }}" alt="Time coded wavefronts" height="300px" width="300px">
+                </td>
+            <td><b>Propagation direction distribution</b> <br>
+                <div id="wave_{{ loop.index0 }}_direction_plot"></div>
+                <button id="wave_{{ loop.index0 }}_direction_download">Download plot data</button>
+            <script type="application/ecmascript">
+                var da_{{ loop.index0 }} = JSON.parse("{{ d.direction_data }}");
+                direction_data.push(da_{{ loop.index0 }});
+
+                plot_polar(da_{{ loop.index0 }}, "#wave_{{ loop.index0 }}_direction_plot", 300, 300);
+
+                document.querySelector("#wave_{{ loop.index0 }}_direction_download").addEventListener("click", function () {
+                    export_array_to_csv(da_{{ loop.index0 }}, "{{recipe_context.file_stub}}_{{ loop.index0 }}_direction.csv");
+                });
+            </script>
+            </td>
+            <td><b>Wavefront velocity distribution</b> <br>{{ d.velocity_plot }}
+            <button id="wave_{{ loop.index0 }}_velocity_download">Download plot data</button>
+                <br>
+                <div id="wave_{{ loop.index0 }}_velocity_mean"></div>
+            <script type="application/ecmascript">
+                var dv_{{ loop.index0 }} = JSON.parse("{{ d.velocity_data }}");
+                velocity_data.push(dv_{{ loop.index0 }});
+
+                var v_mean = d3.sum(dv_{{ loop.index0 }}.map(function(d){return d[0]*d[1]}))/d3.sum(dv_{{ loop.index0 }}.map(function(d){return d[1];}));
+                document.getElementById("wave_{{ loop.index0 }}_velocity_mean").textContent="Mean velocity: " + v_mean.toFixed(2) + " pixels/frame";
+
+                document.querySelector("#wave_{{ loop.index0 }}_velocity_download").addEventListener("click", function () {
+                    export_array_to_csv(dv_{{ loop.index0 }}, "{{recipe_context.file_stub}}_{{ loop.index0 }}_velocity.csv");
+                });
+            </script>
+            </td>
+            <td>
+                    <b>Wavefront velocities</b> <br>
+                    <img class="img-fluid" src="data:image/png;base64,{{ d.velocity_image|b64encode }}" alt="Velocity coded wavefronts" height="300px" width="300px">
+                </td>
+            </tr>
+            </table>
+
+        {% endfor %}
+
+
+    <h2>Summary:</h2>
+
+    <button id="direction_download">Download All Direction Data</button>
+
+            <script type="application/ecmascript">
+                document.querySelector("#direction_download").addEventListener("click", function () {
+                    export_summary_to_csv(direction_data, "{{recipe_context.file_stub}}_direction.csv");
+                });
+            </script>
+
+    <button id="velocity_download">Download All Velocity Data</button>
+            <script type="application/ecmascript">
+
+                document.querySelector("#velocity_download").addEventListener("click", function () {
+                    export_summary_to_csv(velocity_data, "{{recipe_context.file_stub}}_velocity.csv");
+                });
+            </script>
+
+    </div>
+
+</body>
+
+
+</html>

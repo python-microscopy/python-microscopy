@@ -650,7 +650,7 @@ class HDFResultsTaskQueue(TaskQueue):
                         h5f.appendToTable('FitResults', res.results)
 
                     if (len(res.driftResults) > 0):
-                        h5f.appendToTable('DriftResults', res.results)
+                        h5f.appendToTable('DriftResults', res.driftResults)
 
         self.numClosedTasks += len(ress)
 

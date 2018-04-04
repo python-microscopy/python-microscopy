@@ -201,8 +201,8 @@ class MultiviewShiftCorrect(ModuleBase):
         namespace[self.outputName] = mapped
 
 
-@register_module('FindClumps') #FIXME - move to multi-view specific module and rename OR make consistent with existing clumping
-class FindClumps(ModuleBase):
+@register_module('MultiviewFindClumps') #FIXME - move to multi-view specific module and rename OR make consistent with existing clumping
+class MultiviewFindClumps(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     inputName = Input('registered')
     gapTolerance = Int(1, desc='Number of off-frames allowed to still be a single clump')
@@ -228,8 +228,30 @@ class FindClumps(ModuleBase):
         namespace[self.outputName] = mapped
 
 
-@register_module('MergeClumps') #FIXME - move to multi-view specific module and rename OR make consistent with existing clumping
+@register_module('MergeClumps')
 class MergeClumps(ModuleBase):
+    """Create a new mapping object which derives mapped keys from original ones"""
+    inputName = Input('clumped')
+    outputName = Output('merged')
+    labelKey = CStr('clumpIndex')
+
+    def execute(self, namespace):
+        from PYME.Analysis.points.DeClump import pyDeClump
+
+        inp = namespace[self.inputName]
+
+        
+        grouped = pyDeClump.mergeClumps(inp, labelKey=self.labelKey)
+        try:
+            grouped.mdh = inp.mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = grouped
+
+
+@register_module('MultiviewMergeClumps') #FIXME - move to multi-view specific module and rename OR make consistent with existing clumping
+class MultiviewMergeClumps(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     inputName = Input('clumped')
     outputName = Output('merged')
@@ -340,6 +362,8 @@ class DBSCANClustering(ModuleBase):
     columns = ListStr(['x', 'y', 'z'])
     searchRadius = Float()
     minClumpSize = Int()
+    
+    clumpColumnName = CStr('dbscanClumpID')
 
     outputName = Output('dbscanClustered')
 
@@ -354,7 +378,7 @@ class DBSCANClustering(ModuleBase):
                                      self.searchRadius, self.minClumpSize)
 
         # shift dbscan labels up by one to match existing convention that a clumpID of 0 corresponds to unclumped
-        mapped.addColumn('dbscanClumpID', dbLabels + 1)
+        mapped.addColumn(str(self.clumpColumnName), dbLabels + 1)
 
         # propogate metadata, if present
         try:

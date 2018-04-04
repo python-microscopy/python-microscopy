@@ -22,6 +22,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from . import machine_learning
+except ImportError:
+    pass
+
 from base import ModuleCollection
 
 #load any custom recipe modules

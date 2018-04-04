@@ -109,7 +109,7 @@ class GenImageDialog(wx.Dialog):
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             #sizer2.Add(wx.StaticText(self, -1, 'Use software rendereing:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
-        if mode in ['triangles', 'trianglesw']:
+        if False: #mode in ['triangles', 'trianglesw']:
             self.cbTriangSoftRender = wx.CheckBox(self, -1, 'Use software rendering')
             self.cbTriangSoftRender.SetValue(True)
             sizer2.Add(self.cbTriangSoftRender, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)

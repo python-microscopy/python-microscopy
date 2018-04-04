@@ -44,8 +44,8 @@ pz.join() #piezo must be there before we start camera
 def cm(scope):
     import numpy as np
     from PYME.Acquire.Hardware.Simulator import fakeCam
-    scope.register_camera(fakeCam.FakeCamera(70*np.arange(-128.0, 768.0 + 128.0),
-                                             70*np.arange(-128.0, 128.0),
+    scope.register_camera(fakeCam.FakeCamera(70*np.arange(0.0, 4*256.0),
+                                             70*np.arange(0.0, 256.0),
                                              fakeCam.NoiseMaker(),
                                              scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo),'Fake Camera')
 

@@ -5,10 +5,75 @@
 #include <sys/types.h>
 #include <string.h>
 
+
+
+#ifdef __linux__
+    #include <sys/syscall.h>
+    #include <fcntl.h>
+    #include <unistd.h>
+    #include <stdlib.h>
+
+    #define handle_error(msg) \
+        do { perror(msg); } while (0)
+
+    struct linux_dirent64 {
+               ino64_t        d_ino;    /* 64-bit inode number */
+               off64_t        d_off;    /* 64-bit offset to next structure */
+               unsigned short d_reclen; /* Size of this dirent */
+               unsigned char  d_type;   /* File type */
+               char           d_name[]; /* Filename (null-terminated) */
+           };
+
+    #define DIR_BUF_SIZE 5242880 //5MB
+#endif
+
 #define FILETYPE_NORMAL             0
 #define FILETYPE_DIRECTORY          1 << 0
 #define FILETYPE_SERIES             1 << 1 // a directory which is actually a series - treat specially
 #define FILETYPE_SERIES_COMPLETE    1 << 2 // a series which has finished spooling
+
+
+
+#ifdef __linux__
+    /// See http://be-n.com/spw/you-can-list-a-million-files-in-a-directory-but-not-with-ls.html
+    int count_files(const char *path)
+    {
+       int fd, nread;
+       int n_files = 0;
+       char buf[DIR_BUF_SIZE];
+       struct linux_dirent64 *d;
+       int bpos;
+       char d_type;
+
+       fd = open(path, O_RDONLY | O_DIRECTORY);
+       if (fd == -1)
+          handle_error("open");
+
+       for ( ; ; ) {
+            nread = syscall(SYS_getdents64, fd, buf, DIR_BUF_SIZE);
+            if (nread == -1)
+                //close(fd);
+                handle_error("getdents");
+
+           if (nread == 0)
+                break;
+
+            for (bpos = 0; bpos < nread;) {
+                d = (struct linux_dirent64 *) (buf + bpos);
+                if (d->d_ino!=0)
+                {
+                    n_files +=1;
+                }
+                bpos += d->d_reclen;
+            }
+        }
+
+        close(fd);
+
+        return n_files;
+    }
+
+#else
 
 int count_files(const char *path)
 {
@@ -26,7 +91,7 @@ int count_files(const char *path)
     return count;
 }
 
-
+#endif
 
 static PyObject * dirsize(PyObject *self, PyObject *args)
 {

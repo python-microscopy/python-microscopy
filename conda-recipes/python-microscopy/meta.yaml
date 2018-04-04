@@ -40,6 +40,8 @@ build:
     - PYMEDistributor = PYME.ParallelTasks.PYMEDistributor:main
     - PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main
     - PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main
+    - PYMERuleServer = PYME.ParallelTasks.PYMERuleServer:main
+    - PYMERuleNodeServer = PYME.ParallelTasks.PYMERuleNodeServer:main
 
 
 
