@@ -266,6 +266,7 @@ class OptionsPanel(wx.Panel):
 
     def OnIsodataThresh(self, event):
         from PYME.Analysis import thresholding
+        self.do.ThreshMode = ['isodata',-1]
         for i, hClim in enumerate(self.hcs):
             t = thresholding.isodata_f(self.do.ds[:,:,:,i])
             hClim.SetValueAndFire((t,t))
@@ -273,6 +274,7 @@ class OptionsPanel(wx.Panel):
     def OnSignalFracThresh(self, event):
         from PYME.Analysis import thresholding
         frac = max(0., min(1., float(self.tPercThresh.GetValue())))
+        self.do.ThreshMode = ['fractional',frac]
         for i, hClim in enumerate(self.hcs):
             t = thresholding.signalFraction(self.do.ds[:,:,:,i], frac)
             hClim.SetValueAndFire((t,t))
