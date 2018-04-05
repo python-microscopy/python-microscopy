@@ -40,8 +40,8 @@ def stage(scope):
     scope.stage.SetSoftLimits(0, [1.06, 20.7])
     scope.stage.SetSoftLimits(1, [.8, 17.6])
 
-    scope.register_piezo(scope.stage, 'x', needCamRestart=True, channel=0)
-    scope.register_piezo(scope.stage, 'y', needCamRestart=True, channel=1)
+    scope.register_piezo(scope.stage, 'x', needCamRestart=True, channel=0, multiplier=1)
+    scope.register_piezo(scope.stage, 'y', needCamRestart=True, channel=1, multiplier=-1)
     
     scope.joystick = scope.stage.joystick
     scope.joystick.Enable(True)
@@ -56,7 +56,7 @@ def sCMOS_cam(scope):
     cam.Init()
     cam.port = 'R100'
     #cam.SetActive(False)
-    #cam.orientation = dict(rotate=False, flipx=True, flipy=False)
+    cam.orientation = dict(rotate=True, flipx=True, flipy=False)
     cam.DefaultEMGain = 0  # hack to make camera work with standard protocols
 
     scope.register_camera(cam, 'sCMOS')
@@ -72,12 +72,14 @@ def EMCCD_cam(scope):
 
 #scope.EnableJoystick = 'foo'
 
-@init_gui('Camera controls')
+@init_gui('sCMOS Camera controls')
 def cam_controls(MainFrame, scope):
     from PYME.Acquire.Hardware.AndorNeo import ZylaControlPanel
     scope.camControls['sCMOS'] = ZylaControlPanel.ZylaControl(MainFrame, scope.cameras['sCMOS'], scope)
     MainFrame.camPanels.append((scope.camControls['sCMOS'], 'sCMOS Properties'))
 
+@init_gui('EMCCD Camera controls')
+def cam_controls1(MainFrame, scope):
     from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
     scope.camControls['EMCCD'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['EMCCD'], scope)
     MainFrame.camPanels.append((scope.camControls['EMCCD'], 'EMCCD Properties'))
@@ -138,7 +140,15 @@ def power_meter(scope):
 #     scope.l488.register(scope)
 #     scope.l405 = lasers.FakeLaser('l405',scope.cam,0, initPower=10)
 #     scope.l405.register(scope)
-    
+
+@init_hardware('Lasers & Shutters')
+def lasers(scope):
+    from PYME.Acquire.Hardware import ioslave
+
+    slave = ioslave.IOSlave('COM6')
+
+    scope.l671 = ioslave.DigitalShutter('l671', scopeState = scope.state, ios=slave, pin=13)
+    scope.lasers = [scope.l671]
 
 @init_gui('Laser controls')
 def laser_controls(MainFrame, scope):
