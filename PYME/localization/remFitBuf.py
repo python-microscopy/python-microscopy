@@ -414,6 +414,8 @@ class fitTask(taskDef.Task):
                     w -= (x + w) - iw
                     
                 return x, w
+            
+            #print yr, hr
                 
             xg, wg = _bdsClip(xg, wg, x0, self.data.shape[0])
             xr, wr = _bdsClip(xr, wr, 0, self.data.shape[0])
@@ -422,13 +424,15 @@ class fitTask(taskDef.Task):
                 
             w = min(wg, wr)
             h = min(hg, hr)
+            
+            #print yr, hr
                     
             if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
                 step = 1
                 self._splitterROICache = (slice(xg, xg+w, 1), slice(xr, xr+w, 1),slice(yg, yg+h, 1),slice(yr, yr+h, step))
             else:
                 step = -1
-                self._splitterROICache = (slice(xg, xg+w, 1), slice(xr, xr+w, 1),slice(yg, yg+h, 1),slice(yr+h, yr, step))
+                self._splitterROICache = (slice(xg, xg+w, 1), slice(xr, xr+w, 1),slice(yg, yg+h, 1),slice(yr+h, yr -1, step))
                 
             
             
@@ -439,7 +443,7 @@ class fitTask(taskDef.Task):
         g = img[xgs, ygs]
         r = img[xrs, yrs]
         
-        #print g.shape, r.shape
+        #print xgs, xrs, ygs, yrs, g.shape, r.shape
         
         return numpy.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)),2)
 
