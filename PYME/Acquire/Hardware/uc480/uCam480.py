@@ -556,17 +556,17 @@ class uc480Camera:
         
         #if coordinates are reversed, don't care
         if (x2 > x1):
-            self.ROIx = (x1+1, x2)
+            self.ROIx = [x1+1, x2]
         elif (x2 < x1):
-            self.ROIx = (x2+1, x1)
+            self.ROIx = [x2+1, x1]
         else: #x1 == x2 - BAD
             raise RuntimeError('Error Setting x ROI - Zero sized ROI')
 
         if (y2 > y1):
-            self.ROIy = (y1+1, y2)
+            self.ROIy = [y1+1, y2]
 
         elif (y2 < y1):
-            self.ROIy = (y2+1, y1)
+            self.ROIy = [y2+1, y1]
 
         else: #y1 == y2 - BAD
             raise RuntimeError('Error Setting y ROI - Zero sized ROI')
@@ -576,6 +576,14 @@ class uc480Camera:
         rect.s32Y =  self.ROIy[0] - 1
         rect.s32Width  = max(1 + self.ROIx[1] - self.ROIx[0], self.ROIlimits['xmin']) # ensure minimim size in x
         rect.s32Height = max(1 + self.ROIy[1] - self.ROIy[0], self.ROIlimits['ymin']) # ensure minimim size in y
+        # note: this can still fail on the right edge of the chip or bottom edge, since we then push beyond the
+        # chip size limits FIXME!!!!!
+
+        print("oldx: %d, newx: %d" % (self.ROIx[1],rect.s32X + rect.s32Width))
+        print("oldy: %d, newy: %d" % (self.ROIy[1],rect.s32Y + rect.s32Height))
+
+        self.ROIx[1] = rect.s32X + rect.s32Width  # make sure we feed the corrections back
+        self.ROIy[1] = rect.s32Y + rect.s32Height # ditto
 
         print((rect.s32X, rect.s32Width))
         
