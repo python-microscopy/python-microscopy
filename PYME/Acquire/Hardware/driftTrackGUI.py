@@ -15,6 +15,9 @@ import numpy as np
 from PYME.contrib.wxPlotPanel import PlotPanel
 from PYME.IO import MetaDataHandler
 from PYME.DSView import dsviewer as dsviewer
+import PYME.IO.image as im
+import PYMEcs.Analysis.offlineTracker as otrack
+import os
 
 def YesNo(parent, question, caption = 'Yes or no?'):
     dlg = wx.MessageDialog(parent, question, caption, wx.YES_NO | wx.ICON_QUESTION)
@@ -80,6 +83,123 @@ class TrackerPlotPanel(PlotPanel):
             self.canvas.draw()
 
 
+resx = []
+resy = []
+resz = []
+
+class CalculateZfactorDialog(wx.Dialog):
+    def __init__(self):
+        self.Zfactorfilename = ''
+        wx.Dialog.__init__(self, None, -1, 'Calculate Z-factor')
+        sizer1 = wx.BoxSizer(wx.VERTICAL)
+
+        pan = wx.Panel(self, -1)
+        vsizermain = wx.BoxSizer(wx.VERTICAL)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer2.Add(wx.StaticText(pan, -1, '  Record a Z-stack with 101 slices & 50 nm step. Use the Z-stack to calculate the Z-factor'), 0, wx.ALL, 2)
+        vsizer.Add(hsizer2)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.bSelect = wx.Button(pan, -1, 'Select')
+        self.bSelect.Bind(wx.EVT_BUTTON, self.OnSelect)
+        hsizer2.Add(self.bSelect, 0, wx.ALL, 2)
+        self.bPlot = wx.Button(pan, -1, 'Plot')
+        self.bPlot.Bind(wx.EVT_BUTTON, self.OnPlot)
+        hsizer2.Add(self.bPlot, 0, wx.ALL, 2)
+        vsizer.Add(hsizer2)
+
+        self.textZstackFilename = wx.StaticText(pan, -1, 'Z-stack file:    no file selected')
+        vsizer.Add(self.textZstackFilename, 0, wx.ALL, 2)
+
+        vsizermain.Add(vsizer, 0, 0, 0)
+
+        self.plotPan = ZFactorPlotPanel(pan, size=(1200,600))
+        vsizermain.Add(self.plotPan, 1, wx.EXPAND, 0)
+
+        pan.SetSizerAndFit(vsizermain)
+        sizer1.Add(pan, 1,wx.EXPAND, 0)
+        self.SetSizerAndFit(sizer1)
+
+    def OnSelect(self, event):
+        dlg = wx.FileDialog(self, message="Open a Z-stack Image...", defaultDir=os.getcwd(), 
+                            defaultFile="", style=wx.OPEN)
+
+        if dlg.ShowModal() == wx.ID_OK:
+            self.Zfactorfilename = dlg.GetPath()
+
+        dlg.Destroy()
+        self.textZstackFilename.SetLabel('Z-stack file:   '+self.Zfactorfilename)
+
+    
+    def OnPlot(self, event):
+
+        ds = im.ImageStack(filename=self.Zfactorfilename)
+        dataset = ds.data[:,:,:].squeeze()
+        refim0 = dataset[:,:,10:91:4]
+        calImages0, calFTs0, dz0, dzn0, mask0, X0, Y0 = otrack.genRef(refim0,normalised=False)
+
+        del resx[:]
+        del resy[:]
+        del resz[:] # empty all these three lists every time before a new plot
+
+        for i in range(dataset.shape[2]):
+            image = dataset[:,:,i]
+            driftx, drifty, driftz, cm, d = otrack.compare(calImages0, calFTs0, dz0, dzn0, 10, image, mask0, X0, Y0, deltaZ=0.2)
+            resx.append(driftx)
+            resy.append(drifty)
+            resz.append(driftz)
+
+        self.plotPan.draw()
+        self.plotPan.Refresh()
+
+
+class ZFactorPlotPanel(PlotPanel):
+
+    def draw(self):
+        dznm = 1e3*np.array(resz)
+        dxnm = 110*np.array(resx)
+        dynm = 110*np.array(resy)
+        t = np.arange(dznm.shape[0])
+
+        dzexp = dznm[50-4:50+5]
+        dztheo = np.arange(-200,201,50)
+        x = np.arange(-150,151,50)
+        y = dznm[50-3:50+4]
+        m, b = np.polyfit(x,y,1)
+        Zfactor = 1.0/m
+
+        if not hasattr( self, 'subplot' ):
+                self.subplot1 = self.figure.add_subplot( 121 )
+                self.subplot2 = self.figure.add_subplot( 122 )
+
+        self.subplot1.cla()
+
+        self.subplot1.scatter(t,-dznm,s=5)
+        self.subplot1.plot(-dznm, label='z')
+        self.subplot1.plot(-dxnm, label='x')
+        self.subplot1.plot(-dynm, label='y')
+
+        self.subplot1.grid()
+        self.subplot1.legend()
+
+        self.subplot2.cla()
+
+        self.subplot2.plot(dztheo,dzexp,'-o')
+        self.subplot2.plot(dztheo,1.0/Zfactor*dztheo,'--')
+        font = {'family': 'serif',
+        'color':  'darkred',
+        'weight': 'normal',
+        'size': 16,
+        }
+        self.subplot2.text(-50, 100, 'Z-factor = %3.1f' % Zfactor, fontdict=font)
+        self.subplot2.grid()
+
+        self.canvas.draw()
+
+
+
 # add controls for lastAdjustment
 class DriftTrackingControl(wx.Panel):
     def __init__(self, parent, driftTracker, winid=-1, showPlots=True):
@@ -138,6 +258,9 @@ class DriftTrackingControl(wx.Panel):
         self.bSetZfactor = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
         hsizer.Add(self.bSetZfactor, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
         self.bSetZfactor.Bind(wx.EVT_BUTTON, self.OnBSetZfactor)
+        self.bCalcZfactor = wx.Button(self, -1, 'Calculate Z-factor', style=wx.BU_EXACTFIT)
+        hsizer.Add(self.bCalcZfactor, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
+        self.bCalcZfactor.Bind(wx.EVT_BUTTON, self.OnBCalculateZfactor)
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -238,7 +361,12 @@ class DriftTrackingControl(wx.Panel):
 
     def OnBSetZfactor(self, event):
         self.dt.Zfactor = float(self.tZfactor.GetValue())
-        
+
+    def OnBCalculateZfactor(self, event):
+        dlg = CalculateZfactorDialog()
+        ret = dlg.ShowModal()
+        dlg.Destroy()
+
     def OnBSetMinDelay(self, event):
         self.dt.minDelay = int(self.tMinDelay.GetValue())
 
