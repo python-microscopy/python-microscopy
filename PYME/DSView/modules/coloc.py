@@ -335,6 +335,10 @@ class colocaliser:
         im.mdh['Colocalisation.Thresholds'] = [tA, tB]
         im.mdh['Colocalisation.Pearson'] = pearson
         im.mdh['Colocalisation.Manders'] = [MA, MB]
+        try:
+            im.mdh['Colocalisation.ThresholdMode'] = self.do.ThreshMode
+        except:
+            pass
 
         im.mdh['OriginalImage'] = self.image.filename
 
