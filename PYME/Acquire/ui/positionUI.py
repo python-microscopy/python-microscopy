@@ -34,6 +34,8 @@ class PositionSliders(wx.Panel):
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Panel.__init__(self, parent, id)
 
+        self.updating=False
+
         self.scope = scope
         self.joystick = joystick
         #self.panel_1 = wx.Panel(self, -1)
@@ -98,17 +100,20 @@ class PositionSliders(wx.Panel):
         self.joystick.Enable(self.cbJoystick.IsChecked())
 
     def onSlide(self, event):
-        sl = event.GetEventObject()
-        ind = self.sliders.index(sl)
-        self.sl = sl
-        #self.ind = ind
-        pName = self.piezoNames[ind]
-        self.scope.SetPos(**{pName : sl.GetValue()/100.0})
-        self.sliderLabels[ind].SetLabel(u'%s - %2.3f \u03BCm' % (pName,sl.GetValue()/100.0))
+        if not self.updating:
+            sl = event.GetEventObject()
+            ind = self.sliders.index(sl)
+            self.sl = sl
+            #self.ind = ind
+            pName = self.piezoNames[ind]
+            self.scope.SetPos(**{pName : sl.GetValue()/100.0})
+            self.sliderLabels[ind].SetLabel(u'%s - %2.3f \u03BCm' % (pName,sl.GetValue()/100.0))
 
     def update(self):
         poss = self.scope.GetPos()
         self.ranges = self.scope.GetPosRange()
+
+        self.updating = True
         
         for ind in range(len(self.piezoNames)):
             pName = self.piezoNames[ind]
@@ -136,6 +141,8 @@ class PositionSliders(wx.Panel):
 
         if not self.joystick is None:
             self.cbJoystick.SetValue(self.joystick.IsEnabled())
+
+        self.updating = False
 
             
 

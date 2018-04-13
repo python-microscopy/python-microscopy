@@ -115,13 +115,13 @@ def _add_eventvars_to_ds(ds, ev_mappings):
     if xm:
         scan_x = 1.e3 * xm(ds['t'] - .01)
         ds.addColumn('scanx', scan_x)
-        ds.setMapping('x', 'x + scanx')
+        #ds.setMapping('x', 'x + scanx')
 
     ym = ev_mappings.get('ym', None)
     if ym:
         scan_y = 1.e3 * ym(ds['t'] - .01)
         ds.addColumn('scany', scan_y)
-        ds.setMapping('y', 'y + scany')
+        #ds.setMapping('y', 'y + scany')
 
     driftx = ev_mappings.get('driftx', None)
     drifty = ev_mappings.get('drifty', None)
@@ -620,13 +620,7 @@ class Pipeline:
         #extract information from any events
         self.ev_mappings, self.eventCharts = _processEvents(mapped_ds, self.events, self.mdh)
 
-        #Retrieve or estimate image bounds
-        if False:#'imgBounds' in kwargs.keys():
-            self.imageBounds = kwargs['imgBounds']
-        elif (not ('scanx' in mapped_ds.keys() or 'scany' in mapped_ds.keys())) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
-            self.imageBounds = ImageBounds.extractFromMetadata(self.mdh)
-        else:
-            self.imageBounds = ImageBounds.estimateFromSource(mapped_ds)
+
 
         #Fit module specific filter settings        
         if 'Analysis.FitModule' in self.mdh.getEntryNames():
@@ -647,6 +641,16 @@ class Pipeline:
         self._get_dye_ratios_from_metadata()
 
         self.addDataSource('Localizations', mapped_ds)
+
+        # Retrieve or estimate image bounds
+        if False:  # 'imgBounds' in kwargs.keys():
+            self.imageBounds = kwargs['imgBounds']
+        elif (not (
+                'scanx' in mapped_ds.keys() or 'scany' in mapped_ds.keys())) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
+            self.imageBounds = ImageBounds.extractFromMetadata(self.mdh)
+        else:
+            self.imageBounds = ImageBounds.estimateFromSource(mapped_ds)
+
         self.selectDataSource('Localizations') #NB - this rebuilds the pipeline
         
         #self._process_colour()

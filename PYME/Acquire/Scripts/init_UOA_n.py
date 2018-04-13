@@ -30,7 +30,7 @@ import time
 def pz(scope):
     from PYME.Acquire.Hardware.Piezos import piezo_e816
 
-    scope.piFoc = piezo_e816.piezo_e816('COM1', 400, -0.399)
+    scope.piFoc = piezo_e816.piezo_e816T('COM1', 400, -0.399)
     scope.register_piezo(scope.piFoc, 'z', needCamRestart=True)
     
 @init_hardware('XY Stage')
@@ -166,6 +166,12 @@ def laser_controls(MainFrame, scope):
 def focus_keys(MainFrame, scope):
     from PYME.Acquire.Hardware import focusKeys
     fk = focusKeys.FocusKeys(MainFrame, None, scope.piezos[0])
+
+#splitter
+@init_gui('Splitter')
+def splitter(MainFrame, scope):
+    from PYME.Acquire.Hardware import splitter
+    splt = splitter.Splitter(MainFrame, None, scope, scope.cam, flipChan = 1, dichroic = 'Unspecified' , transLocOnCamera = 'Top', flip=True, dir='up_down', constrain=False)
 
 
 #InitGUI("""

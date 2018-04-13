@@ -120,7 +120,7 @@ def main():
             subprocess.Popen('python "%s\\%s.py"' % (fstub, SERVER_PROC), shell=True)
 
             print('Waiting for server to come up ...')
-            time.sleep(10)
+            time.sleep(15)
 
         if args.gui:
             print('Launching task monitor ...')
