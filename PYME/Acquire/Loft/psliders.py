@@ -100,25 +100,33 @@ class PiezoSliders(wx.Panel):
     def update(self):
         for ind in range(len(self.piezos)):
             p = self.piezos[ind]
-            if 'units' in dir(p[0]):
-                unit = p[0].units
+
+            pz, chan, name = self.piezos[ind]
+            if 'units' in dir(pz):
+                unit = pz.units
             else:
                 unit = u'\u03BCm'
-                
-            if 'lastPos' in dir(self.piezos[ind]):
-                self.sliders[ind].SetValue(100*self.piezos[ind][0].lastPos)
-                self.sliderLabels[ind].SetLabel(u'%s - %2.4f %s' % (self.piezos[ind][2],self.piezos[ind][0].lastPos, unit))
-            elif 'GetLastPos' in dir(self.piezos[ind][0]):
-                lp = self.piezos[ind][0].GetLastPos(self.piezos[ind][1])
-                self.sliders[ind].SetValue(100*lp)
-                self.sliderLabels[ind].SetLabel(u'%s - %2.4f %s' % (self.piezos[ind][2],lp, unit))
+
+            #try:
+            #    on_target = pz.OnTarget()
+            #except AttributeError:
+            #    on_target = True
+
+            if 'GetTargetPos' in dir(pz):
+                pos = pz.GetTargetPos(chan)
+                print('target pos')
+            elif 'lastPos' in dir(pz):
+                pos = pz.lastPos
+            elif 'GetLastPos' in dir(pz):
+                pos = pz.GetLastPos(chan)
             else:
-                pos = self.piezos[ind][0].GetPos(self.piezos[ind][1])
-                self.sliders[ind].SetValue(100*pos)
-                self.sliderLabels[ind].SetLabel(u'%s - %2.4f %s' % (self.piezos[ind][2],pos, unit))
+                pos = pz.GetPos(chan)
+
+            self.sliders[ind].SetValue(100*pos)
+            self.sliderLabels[ind].SetLabel(u'%s - %2.4f %s' % (name,pos, unit))
                 
-            self.sliders[ind].SetMin(100*self.piezos[ind][0].GetMin(self.piezos[ind][1]))
-            self.sliders[ind].SetMax(100*self.piezos[ind][0].GetMax(self.piezos[ind][1]))
+            self.sliders[ind].SetMin(100*pz.GetMin(chan))
+            self.sliders[ind].SetMax(100*pz.GetMax(chan))
 
         if not self.joystick is None:
             self.cbJoystick.SetValue(self.joystick.IsEnabled())
