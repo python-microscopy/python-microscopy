@@ -64,6 +64,12 @@ noiseProperties = {
         },    
 }
 
+preamp_gains = {
+    1823 : 0,
+    5414 : 0,
+    7863 : 3,
+}
+
 class iXonCamera:
     #numpy_frames=1
 
@@ -189,7 +195,7 @@ class iXonCamera:
 
         #FIXME - do something about selecting A/D channel
         
-        self.preampGain = 2 #gain of "3" 
+        self.preampGain = preamp_gains[self.GetSerialNumber()] #gain of "3"
         ret = ac.SetPreAmpGain(self.preampGain)
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting Preamp gain: %s' % ac.errorCodes[ret])
@@ -334,6 +340,13 @@ class iXonCamera:
 
     def GetDelayTime(*args):
         raise Exception('Not implemented yet!!')
+
+    def SetPreampGain(self, gain):
+        self.__selectCamera()
+        self.preampGain = gain
+        ret = ac.SetPreAmpGain(self.preampGain)
+        if not ret == ac.DRV_SUCCESS:
+            raise RuntimeError('Error setting Preamp gain: %s' % ac.errorCodes[ret])
 
 
     def SetIntegTime(self, iTime):

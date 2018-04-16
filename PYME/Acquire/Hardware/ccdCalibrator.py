@@ -64,6 +64,8 @@ class ccdCalibrator:
         self.gains = gains
         self.pos = -1
 
+        self.frameN = 0
+
         self.contMode = self.cam.contMode
         self.emgain = self.cam.GetEMGain()
 
@@ -105,6 +107,8 @@ class ccdCalibrator:
         #if self.contMode:
         #    self.cam.SetAcquisitionMode(self.cam.MODE_CONTINUOUS)
 
+        self.pd.Destroy()
+
         self.realGains = self.realGains/self.realGains[0]
 
         plt.figure()
@@ -117,7 +121,12 @@ class ccdCalibrator:
         #self.pa.start()
 
     def tick(self, sender, frameData, **kwargs):
+        if self.frameN < 3:
+            self.frameN +=1
+            return
+
         self.pa.stop()
+        self.frameN = 0
         imMean = frameData.mean()
         if self.pos == -1: #calculate background
             self.offset = imMean
