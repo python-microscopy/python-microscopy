@@ -24,6 +24,7 @@
 import numpy as np
 import wx
 import datetime
+import time
 
 global scope
 scope = None
@@ -89,19 +90,25 @@ class ccdCalibrator:
 
 
     def finish(self):
+        print('Disconnecting')
+        self.pa.onFrame.disconnect(self.tick)
+        self.cam.SetEMGain(self.emgain)
+        time.sleep(0.5)
+        print('Disconnected')
+        wx.CallAfter(self.plot)
+        
+    def plot(self):
         import matplotlib.pyplot as plt
         #self.pa.stop()
-        self.pa.onFrame.disconnect(self.tick)
+        #self.pa.onFrame.disconnect(self.tick)
         
         #if self.contMode:
         #    self.cam.SetAcquisitionMode(self.cam.MODE_CONTINUOUS)
 
-        self.cam.SetEMGain(self.emgain)
-
         self.realGains = self.realGains/self.realGains[0]
 
         plt.figure()
-        plt.plot(self.gains, self.realGains)
+        plt.semilogy(self.gains, self.realGains)
         plt.xlabel('EMGain Setting')
         plt.ylabel('EMGain')
 
@@ -119,8 +126,9 @@ class ccdCalibrator:
             self.realGains[self.pos] = imMean - self.offset
 
         self.pos += 1
-        self.pd.Update(self.pos)
+        wx.CallAfter(self.pd.Update,self.pos)
         if self.pos < len(self.gains):
+            print('Setting EM Gain to %d' % self.gains[self.pos])
             self.cam.SetEMGain(self.gains[self.pos])
         else:
             self.finish()
