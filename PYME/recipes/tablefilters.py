@@ -204,6 +204,24 @@ class SelectTableColumns(ModuleBase):
         namespace[self.outputName] = out
 
 
+@register_module('RandomSubset')
+class RandomSubset(ModuleBase):
+    """Select a random subset of rows from a table"""
+    input = Input('input')
+    output = Output('output')
+    numToSelect = Int(100)
+    
+    def execute(self, namespace):
+        data = namespace[self.input]
+        
+        out = tabular.randomSelectionFilter(data, num_Samples=self.numToSelect)
+        
+        try:
+            out.mdh = data.mdh
+        except AttributeError:
+            pass
 
+        namespace[self.outputName] = out
+        
 
 
