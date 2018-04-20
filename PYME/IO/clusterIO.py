@@ -112,9 +112,9 @@ def _listSingleDir(dirurl, nRetries=1, timeout=5):
         dirL, rt, dt = _dirCache[dirurl]
         if (t - rt) > DIR_CACHE_TIME:
             raise RuntimeError('key is expired')
-        logger.debug('dir cache hit')
+        #logger.debug('dir cache hit')
     except (KeyError, RuntimeError):
-        logger.debug('dir cache miss')
+        #logger.debug('dir cache miss')
         # t = time.time()
         url = dirurl.encode()
         haveResult = False
@@ -318,6 +318,41 @@ def exists(name, serverfilter=''):
 #    fname = name.split('/')[-1] + trailing
     #return fname in listdir(dirname, serverfilter)
     return (len(locateFile(name, serverfilter, True)) > 0) or isdir(name, serverfilter)
+
+class stat_result(object):
+    def __init__(self, file_info):
+        self.st_size = file_info.size
+        self.size = self.st_size
+        self.st_ctime = time.time()
+        self.st_atime = self.st_ctime
+        self.st_mtime = self.st_ctime
+        self.type = file_info.type
+
+def stat(name, serverfilter=''):
+    from . import clusterListing as cl
+    
+    rname = name.rstrip('/')
+    dirname, fname = os.path.split(rname)
+    
+    listing = listdirectory(dirname, serverfilter)
+    #print name, listing
+    
+    if fname == '':
+        #special case for the root directory
+        return stat_result(cl.FileInfo(cl.FILETYPE_DIRECTORY, 0))
+    
+    try:
+        r = stat_result(listing[fname])
+    except KeyError:
+        try:
+            r = stat_result(listing[fname + '/'])
+        except:
+            logger.exception('error stating: %s' % name)
+            print dirname, fname
+            print listing.keys()
+            raise
+    
+    return r
 
 
 def walk(top, topdown=True, on_error=None, followlinks=False, serverfilter=''):
@@ -581,6 +616,7 @@ def putFile(filename, data, serverfilter=''):
 
     TODO - Add retry with a different server on failure
     """
+    from . import clusterListing as cl
     success = False
     nAttempts = 0
     
@@ -604,6 +640,25 @@ def putFile(filename, data, serverfilter=''):
             _lastwritespeed[name] = len(data) / (dt + .001)
             
             success = True
+
+            #add file to location cache
+            cache_key = serverfilter + '::' + filename
+            t1 = time.time()
+            _locateCache[cache_key] = (url, t1)
+            
+            #modify dir cache
+            try:
+                dirurl, fn = os.path.split(url)
+                dirurl = dirurl + '/'
+                dirL, rt, dt = _dirCache[dirurl]
+                if (t - rt) > DIR_CACHE_TIME:
+                    pass #cache entry is expired
+                else:
+                    dirL[fn] = cl.FileInfo(cl.FILETYPE_NORMAL, len(data))
+                    _dirCache[dirurl] = (dirL , rt, dt)
+                    
+            except KeyError:
+                pass
             
         except requests.ConnectTimeout:
             if nAttempts >= 3:
