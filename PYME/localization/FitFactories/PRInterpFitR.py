@@ -132,7 +132,7 @@ def genFitImage(fitResults, md, fitfcn=f_Interp3d):
 
         params = fitResults['fitResults']
 
-        interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
+        interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + md.getOrDefault('Analysis.InterpModule', 'CSInterpolator') , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
         
         if 'Analysis.EstimatorModule' in md.getEntryNames():
             estimatorModule = md.Analysis.EstimatorModule
@@ -213,7 +213,7 @@ FitResult = PSFFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
 
 #set of parameters that this fit needs to know about
-PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
+PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','CSInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
               mde.FilenameParam('PSFFile', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf|TIFF files|*.tif'),
               #mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
               #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),

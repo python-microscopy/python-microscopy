@@ -112,7 +112,7 @@ class PSFFitFactory(FFBase.FFBase):
             self.solver = FitModelWeighted_
         
 
-        interpModule = metadata.Analysis.InterpModule
+        interpModule = metadata.getOrDefault('Analysis.InterpModule', 'CSInterpolator')
         self.interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + interpModule , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
 
         if 'Analysis.EstimatorModule' in metadata.getEntryNames():
@@ -144,7 +144,7 @@ class PSFFitFactory(FFBase.FFBase):
     def _evalModel(cls, params, md, xs, ys, x, y, model=f_Interp3d):
         #generate grid to evaluate function on
         #setModel(md.PSFFile, md)
-        interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
+        interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + md.getOrDefault('Analysis.InterpModule', 'CSInterpolator') , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
 
         if 'Analysis.EstimatorModule' in md.getEntryNames():
             estimatorModule = md.Analysis.EstimatorModule
@@ -211,7 +211,7 @@ from PYME.localization.FitFactories import Interpolators
 from PYME.localization.FitFactories import zEstimators
 
 #set of parameters that this fit needs to know about
-PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
+PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','CSInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
               mde.FilenameParam('PSFFile', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf|TIFF files|*.tif'),
               #mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
               #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
