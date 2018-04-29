@@ -202,9 +202,10 @@ class Track(Clump):
             D, alpha = res[0]
             
             
-            D_ = np.linalg.lstsq(t_[1:][:,None], h[1:])[0]/4
-            
-            
+            #calculate the diffusion coefficient for normal (not anomolous diffusion)
+            #restrict to the first 100 bins to try and minimise effects of drift
+            #fit an offset to take localization precision into account
+            D_ = float(np.linalg.lstsq(np.vstack([t_[1:100], np.ones_like(t_[1:100])]).T, h[1:100])[0][0]/4)
             
             self._msdinfo = {'t':t_, 'msd':h, 'D':D, 'alpha':alpha, 'Dnormal' : D_}
         
