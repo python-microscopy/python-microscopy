@@ -146,6 +146,10 @@ def powerMod2D(p,t):
     D, alpha = p
     return 4*D*t**alpha #factor 4 for 2D (6 for 3D)
 
+def powerMod3D(p,t):
+    D, alpha = p
+    return 6*D*t**alpha #factor 4 for 2D (6 for 3D)
+
 
         
 class Track(Clump):
@@ -197,7 +201,12 @@ class Track(Clump):
             res = FitModel(powerMod2D, [h[-1]/t_[-1], 1.], h[1:], t_[1:])
             D, alpha = res[0]
             
-            self._msdinfo = {'t':t_, 'msd':h, 'D':D, 'alpha':alpha}
+            
+            D_ = np.linalg.lstsq(t_[1:][:,None], h[1:])[0]/4
+            
+            
+            
+            self._msdinfo = {'t':t_, 'msd':h, 'D':D, 'alpha':alpha, 'Dnormal' : D_}
         
         return self._msdinfo
         
@@ -335,7 +344,7 @@ def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
     pipeline.clumps = ClumpManager(pipeline)
 
 
-def findTracks2(datasource, rad_var='error_x', multiplier='2.0', nFrames=20):
+def findTracks2(datasource, rad_var='error_x', multiplier='2.0', nFrames=20, minClumpSize=0):
     import PYME.Analysis.points.DeClump.deClump as deClump
     from PYME.IO import tabular
     
@@ -366,7 +375,17 @@ def findTracks2(datasource, rad_var='error_x', multiplier='2.0', nFrames=20):
     with_clumps.addColumn('clumpSize', numPerClump[clumpIndices - 1])
     with_clumps.addColumn('trackVelocity', trackVelocities)
     
-    return with_clumps, ClumpManager(with_clumps)
+    if minClumpSize > 0:
+        filt = tabular.resultsFilter(with_clumps, clumpSize=[minClumpSize, 1e6])
+    else:
+        filt = with_clumps
+
+    try:
+        filt.mdh = datasource.mdh
+    except AttributeError:
+        pass
+    
+    return with_clumps, ClumpManager(filt)
 
 
 def calcTrackVelocity(x, y, ci, t):

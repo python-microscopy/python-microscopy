@@ -252,9 +252,13 @@ class multiviewMapper:
         """
 
         from PYME.recipes.localisations import MultiviewFold
+        from PYME.recipes.tablefilters import FilterTable
 
         recipe = self.pipeline.recipe
-        recipe.add_module(MultiviewFold(recipe, inputName=self.pipeline.selectedDataSourceKey,
+        #TODO - move me to building the pipeline
+        recipe.add_module(FilterTable(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='filtered_input',
+                                      filters={'error_x':[0, 30.], 'error_y':[0,30.]}))
+        recipe.add_module(MultiviewFold(recipe, inputName='filtered_input',
                                                       outputName='folded'))
         recipe.execute()
         self.pipeline.selectDataSource('folded')
