@@ -22,17 +22,12 @@ import json
 from collections import OrderedDict
 
 import numpy
+import numpy as np
 
 
 class View(object):
-    JSON_VIEW_ID = 'view_id'
-    JSON_VEC_UP = 'vec_up'
-    JSON_VEC_BACK = 'vec_back'
-    JSON_VEC_RIGHT = 'vec_right'
-    JSON_TRANSLATION = 'translation'
-    JSON_ZOOM = 'zoom'
-
-    def __init__(self, view_id, vec_up, vec_back, vec_right, translation, zoom):
+    def __init__(self, view_id='id', vec_up=[0,1,0], vec_back = [0,0,1], vec_right = [1,0,0], translation= [0,0,0],
+                 scale=1, x_clip = [-1e6, 1e6], y_clip=[-1e6, 1e6], z_clip=[-1e6, 1e6], v_clip=[-1e6, 1e6], **kwargs):
         """
         
         Parameters
@@ -46,11 +41,11 @@ class View(object):
         """
         super(View, self).__init__()
         self._view_id = view_id
-        self._vec_up = vec_up
-        self._vec_back = vec_back
-        self._vec_right = vec_right
-        self._translation = translation
-        self._zoom = zoom
+        self.vec_up = np.array(vec_up)
+        self.vec_back = np.array(vec_back)
+        self.vec_right = np.array(vec_right)
+        self.translation = np.array(translation)
+        self.scale = scale
 
     @property
     def view_id(self):
@@ -61,25 +56,25 @@ class View(object):
         if value:
             self._view_id = value
 
-    @property
-    def vec_up(self):
-        return self._vec_up
-
-    @property
-    def vec_back(self):
-        return self._vec_back
-
-    @property
-    def vec_right(self):
-        return self._vec_right
-
-    @property
-    def translation(self):
-        return self._translation
-
-    @property
-    def zoom(self):
-        return self._zoom
+    # @property
+    # def vec_up(self):
+    #     return self._vec_up
+    #
+    # @property
+    # def vec_back(self):
+    #     return self._vec_back
+    #
+    # @property
+    # def vec_right(self):
+    #     return self._vec_right
+    #
+    # @property
+    # def translation(self):
+    #     return self._translation
+    #
+    # @property
+    # def zoom(self):
+    #     return self._zoom
 
     def __add__(self, other):
         return View(None,
@@ -96,7 +91,7 @@ class View(object):
                     self.vec_back - other.vec_back,
                     self.vec_right - other.vec_right,
                     self.translation - other.translation,
-                    self._zoom - other.zoom
+                    self.scale - other.scale
                     )
 
     def __mul__(self, scalar):
@@ -105,7 +100,7 @@ class View(object):
                     self.vec_back * scalar,
                     self.vec_right * scalar,
                     self.translation * scalar,
-                    self._zoom * scalar
+                    self.scale * scalar
                     )
 
     def __div__(self, scalar):
@@ -114,13 +109,13 @@ class View(object):
                     self.vec_back / scalar,
                     self.vec_right / scalar,
                     self.translation / scalar,
-                    self._zoom / scalar
+                    self.scale / scalar
                     )
 
     def normalize_view(self):
-        self._vec_up = self.normalize(self.vec_up)
-        self._vec_back = self.normalize(self.vec_back)
-        self._vec_right = self.normalize(self.vec_right)
+        self.vec_up = self.normalize(self.vec_up)
+        self.vec_back = self.normalize(self.vec_back)
+        self.vec_right = self.normalize(self.vec_right)
         return self
 
     @staticmethod
@@ -129,71 +124,34 @@ class View(object):
 
     def to_json(self):
         ordered_dict = OrderedDict()
-        ordered_dict[self.JSON_VIEW_ID] = self.view_id
-        ordered_dict[self.JSON_VEC_UP] = self.vec_up.tolist()
-        ordered_dict[self.JSON_VEC_BACK] = self.vec_back.tolist()
-        ordered_dict[self.JSON_VEC_RIGHT] = self.vec_right.tolist()
-        ordered_dict[self.JSON_TRANSLATION] = self.translation.tolist()
-        ordered_dict[self.JSON_ZOOM] = self.zoom
+        ordered_dict['view_id'] = self.view_id
+        ordered_dict['vec_up'] = self.vec_up.tolist()
+        ordered_dict['vec_back'] = self.vec_back.tolist()
+        ordered_dict['vec_right'] = self.vec_right.tolist()
+        ordered_dict['translation'] = self.translation.tolist()
+        ordered_dict['scale'] = self.scale
 
         return ordered_dict
 
     def __str__(self):
         return str(self.to_json())
 
-    @staticmethod
-    def decode_json(json_obj):
+    @classmethod
+    def decode_json(cls, json_obj):
         # if '__type__' in json_obj and json_obj['__type__'] == View:
-        return View(View.get_json_field(json_obj, View.JSON_VIEW_ID, 'id'),
-                    View.get_json_array(json_obj, View.JSON_VEC_UP, numpy.array([0, 1, 0])),
-                    View.get_json_array(json_obj, View.JSON_VEC_BACK, numpy.array([0, 0, 1])),
-                    View.get_json_array(json_obj, View.JSON_VEC_RIGHT, numpy.array([1, 0, 0])),
-                    View.get_json_array(json_obj, View.JSON_TRANSLATION, numpy.array([0, 0, 0])),
-                    View.get_json_field(json_obj, View.JSON_ZOOM, 1))
+        return cls(**json_obj)
+    
+    @classmethod
+    def copy(cls, view):
+        return cls.decode_json(view.to_json())
 
-    @staticmethod
-    def get_json_field(json_object, key, default=None):
-        """
-        
-        Parameters
-        ----------
-        key         name of the field in the json file
-        default     value that should be used if not found
-                    that way we could support older json files
-
-        Returns
-        -------
-
-        """
-        try:
-            return json_object[key]
-        except KeyError:
-            return default
-
-    @staticmethod
-    def get_json_array(json_object, key, default=None):
-        """
-
-                Parameters
-                ----------
-                key         name of the field in the json file
-                default     value that should be used if not found
-                            that way we could support older json files
-
-                Returns
-                -------
-
-                """
-        try:
-            return numpy.array(json_object[key])
-        except KeyError:
-            return default
+    
 
 
 class VideoView(View):
     JSON_DURATION = 'duration'
     
-    def __init__(self, view_id, vec_up, vec_back, vec_right, translation, zoom, duration):
+    def __init__(self, view_id='id', vec_up=[0,1,0], vec_back = [0,0,1], vec_right = [1,0,0], translation= [0,0,0], scale=1, duration = 1, **kwargs):
         """
 
         Parameters
@@ -206,7 +164,7 @@ class VideoView(View):
         zoom        usually a scalar
         duration    duration of the view transition in seconds
         """
-        super(VideoView, self).__init__(view_id, vec_up, vec_back, vec_right, translation, zoom)
+        super(VideoView, self).__init__(view_id, vec_up, vec_back, vec_right, translation, scale, **kwargs)
         self._duration = duration
     
     @property
@@ -223,16 +181,16 @@ class VideoView(View):
         ordered_dict[self.JSON_DURATION] = self._duration
         return ordered_dict
     
-    @staticmethod
-    def decode_json(json_obj):
-        # if '__type__' in json_obj and json_obj['__type__'] == View:
-        return VideoView(View.get_json_field(json_obj, View.JSON_VIEW_ID, 'id'),
-                         View.get_json_array(json_obj, View.JSON_VEC_UP, numpy.array([0, 1, 0])),
-                         View.get_json_array(json_obj, View.JSON_VEC_BACK, numpy.array([0, 0, 1])),
-                         View.get_json_array(json_obj, View.JSON_VEC_RIGHT, numpy.array([1, 0, 0])),
-                         View.get_json_array(json_obj, View.JSON_TRANSLATION, numpy.array([0, 0, 0])),
-                         View.get_json_field(json_obj, View.JSON_ZOOM, 1),
-                         View.get_json_field(json_obj, VideoView.JSON_DURATION, 1))
+    # @staticmethod
+    # def decode_json(json_obj):
+    #     # if '__type__' in json_obj and json_obj['__type__'] == View:
+    #     return VideoView(View.get_json_field(json_obj, View.JSON_VIEW_ID, 'id'),
+    #                      View.get_json_array(json_obj, View.JSON_VEC_UP, numpy.array([0, 1, 0])),
+    #                      View.get_json_array(json_obj, View.JSON_VEC_BACK, numpy.array([0, 0, 1])),
+    #                      View.get_json_array(json_obj, View.JSON_VEC_RIGHT, numpy.array([1, 0, 0])),
+    #                      View.get_json_array(json_obj, View.JSON_TRANSLATION, numpy.array([0, 0, 0])),
+    #                      View.get_json_field(json_obj, View.JSON_ZOOM, 1),
+    #                      View.get_json_field(json_obj, VideoView.JSON_DURATION, 1))
 
 
 if __name__ == '__main__':

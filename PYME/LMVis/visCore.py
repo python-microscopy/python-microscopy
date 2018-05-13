@@ -154,6 +154,9 @@ class VisGUICore(object):
         
             from .layer_panel import CreateLayerPane
             CreateLayerPane(sidePanel, self)
+            
+            from .view_clipping_pane import GenViewClippingPanel
+            GenViewClippingPanel(self, sidePanel)
         else:
             self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
             self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
@@ -405,7 +408,7 @@ class VisGUICore(object):
             #refresh view no longer updates the display
             
             #FIXME - this doesn't belong here (used to be done in SetPoints)
-            self.glCanvas.zc = self.pipeline['z'].mean()
+            self.glCanvas.view.translation[2] = self.pipeline['z'].mean()
             return
         
         

@@ -23,13 +23,14 @@ import os
 from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
     glPolygonMode, GL_FILL, GL_FRONT_AND_BACK, glEnable, GL_BLEND, GL_SRC_ALPHA, GL_DST_ALPHA, glBlendFunc, \
     glBlendEquation, GL_FUNC_ADD, GL_DEPTH_TEST, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH, GL_ONE_MINUS_SRC_ALPHA, \
-    GL_TRUE, glDepthMask, glClearDepth, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, glDisable, GL_ONE, GL_ZERO
+    GL_TRUE, glDepthMask, glClearDepth, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, glDisable, GL_ONE, GL_ZERO, \
+    glUniform4f, glUniform1f
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
 class DefaultShaderProgram(GLProgram):
 
-    def __init__(self):
+    def __init__(self, clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}):
         GLProgram.__init__(self)
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")
         _shader_program = ShaderProgram(shader_path)
@@ -37,6 +38,11 @@ class DefaultShaderProgram(GLProgram):
         _shader_program.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
         _shader_program.link()
         self.set_shader_program(_shader_program)
+        
+        self.xmin, self.xmax = clipping['x']
+        self.ymin, self.ymax = clipping['y']
+        self.zmin, self.zmax = clipping['z']
+        self.vmin, self.vmax = clipping['v']
 
     def __enter__(self):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -46,6 +52,14 @@ class DefaultShaderProgram(GLProgram):
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_POINT_SMOOTH)
         self.get_shader_program().use()
+        glUniform1f(self.get_uniform_location('x_min'), float(self.xmin))
+        glUniform1f(self.get_uniform_location('x_max'), float(self.xmax))
+        glUniform1f(self.get_uniform_location('y_min'), float(self.ymin))
+        glUniform1f(self.get_uniform_location('y_max'), float(self.ymax))
+        glUniform1f(self.get_uniform_location('z_min'), float(self.zmin))
+        glUniform1f(self.get_uniform_location('z_max'), float(self.zmax))
+        glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
+        glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
     def __exit__(self, exc_type, exc_val, exc_tb):

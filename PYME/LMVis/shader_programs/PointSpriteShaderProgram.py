@@ -102,7 +102,7 @@ class PointSpriteShaderProgram(GLProgram):
     #    This is the uniform location to pass to the fragment shader to locate the texture
     _uniform_tex_2d_id = 0
 
-    def __init__(self):
+    def __init__(self, clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}):
         GLProgram.__init__(self)
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")
         shader_program = ShaderProgram(shader_path)
@@ -114,12 +114,25 @@ class PointSpriteShaderProgram(GLProgram):
         self.set_shader_program(shader_program)
         self._uniform_tex_2d_id = self.get_shader_program().get_uniform_location(b'tex2D')
 
+        self.xmin, self.xmax = clipping['x']
+        self.ymin, self.ymax = clipping['y']
+        self.zmin, self.zmax = clipping['z']
+        self.vmin, self.vmax = clipping['v']
+
     def get_size_factor(self):
         warnings.warn("use size_factor attribute instead", DeprecationWarning)
         return self.size_factor
 
     def __enter__(self):
         self.get_shader_program().use()
+        glUniform1f(self.get_uniform_location('x_min'), float(self.xmin))
+        glUniform1f(self.get_uniform_location('x_max'), float(self.xmax))
+        glUniform1f(self.get_uniform_location('y_min'), float(self.ymin))
+        glUniform1f(self.get_uniform_location('y_max'), float(self.ymax))
+        glUniform1f(self.get_uniform_location('z_min'), float(self.zmin))
+        glUniform1f(self.get_uniform_location('z_max'), float(self.zmax))
+        glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
+        glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
         glEnable(GL_POINT_SPRITE)
         glEnable(GL_PROGRAM_POINT_SIZE)
         glDisable(GL_DEPTH_TEST)
