@@ -49,9 +49,9 @@ def _getPossibleKeys(pipeline):
     return colKeys
 
 class ClippingPanel(wx.Panel):
-    def __init__(self, parent, id, glcanvas, axis='x', log=False, size=(300, 40), pos=(0, 0),
+    def __init__(self, parent, id, glcanvas, axis='x', log=False, size=(300, 30), pos=(0, 0),
                  threshMode=False):
-        wx.Panel.__init__(self, parent, id, size=size, pos=pos, style=wx.BORDER_SUNKEN)
+        wx.Panel.__init__(self, parent, id, size=size, pos=pos)#, style=wx.BORDER_SUNKEN)
         
         self.glcanvas = glcanvas
         self.axis = axis
@@ -130,6 +130,7 @@ class ClippingPanel(wx.Panel):
     
         maxy = self.Size[1] - self.textSize
     
+        dc.SetBackground(wx.TRANSPARENT_BRUSH)
         dc.Clear()
         
         
@@ -150,7 +151,7 @@ class ClippingPanel(wx.Panel):
             dc.SetPen(wx.Pen(wx.RED, 2))
         
         dc.DrawLine(x0vp, 5, x0vp, maxy)
-        lab = '%1.3G' % self.view_limits[0]
+        lab = '%d' % self.view_limits[0]
         labSize = dc.GetTextExtent(lab)
         dc.DrawText(lab, max(x0vp - labSize[0] / 2, 0), maxy + 2)
     
@@ -162,7 +163,7 @@ class ClippingPanel(wx.Panel):
             dc.SetPen(wx.Pen(wx.RED, 2))
     
         dc.DrawLine(xmvp, 5, xmvp, maxy)
-        lab = '%1.3G' % self.view_limits[1]
+        lab = '%d' % self.view_limits[1]
         labSize = dc.GetTextExtent(lab)
         dc.DrawText(lab, min(xmvp - labSize[0] / 2, self.Size[0] - labSize[0]), maxy + 2)
     
@@ -300,26 +301,26 @@ class ViewClippingPanel(wx.Panel):
         bsizer = wx.BoxSizer(wx.VERTICAL)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'x:'), 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(self, -1, 'x:'), 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
         
         self.sx = ClippingPanel(self, -1, self.glcanvas, 'x')
-        hsizer.Add(self.sx, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.sx, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
         
         bsizer.Add(hsizer, 0, wx.ALL, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'y:'), 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(self, -1, 'y:'), 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.sy = ClippingPanel(self, -1, self.glcanvas, 'y')
-        hsizer.Add(self.sy, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.sy, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
 
         bsizer.Add(hsizer, 0, wx.ALL, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'z:'), 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(self, -1, 'z:'), 0, wx.LEFT | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.sz = ClippingPanel(self, -1, self.glcanvas, 'z')
-        hsizer.Add(self.sz, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.sz, 0, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
 
         bsizer.Add(hsizer, 0, wx.ALL, 0)
         
