@@ -335,7 +335,7 @@ class AndorBase(SDK3Camera):
     def _pollBuffer(self):
         try:
             #self.fLog.write('%f\tp\n' % time.time())
-            pData, lData = SDK3.WaitBuffer(self.handle, 10)
+            pData, lData = SDK3.WaitBuffer(self.handle, 100)
             #self.fLog.write('%f\tb\n' % time.time())
         except SDK3.TimeoutError as e:
             #Both AT_ERR_TIMEDOUT and AT_ERR_NODATA
@@ -344,6 +344,14 @@ class AndorBase(SDK3Camera):
             #    self.fLog.write('%f\tt\n' % time.time())
             #else:
             #    self.fLog.write('%f\tn\n' % time.time())
+            if e.errNo == SDK3.AT_ERR_NODATA:
+                logger.debug('AT_ERR_NODATA')
+                # if we had no data, wait a little before trying again
+                time.sleep(0.5)
+            elif e.errNo == SDK3.AT_ERR_TIMEDOUT:
+                pass
+                #logger.debug('AT_ERR_TIMEOUT')
+
             return
         except SDK3.CameraError as e:
             if not e.errNo == SDK3.AT_ERR_NODATA:
@@ -391,7 +399,7 @@ class AndorBase(SDK3Camera):
         
     def ExtractColor(self, chSlice, mode):
         #grab our buffer from the full buffers list
-        buf = self.fullBuffers.get()
+        buf = self.fullBuffers.get(timeout=.1)
         self.nFull -= 1
         
         #copy to the current 'active frame' 
@@ -445,9 +453,11 @@ class AndorBase(SDK3Camera):
     def GetSerialNumber(self):
         return self.SerialNumber.getValue()
     
-    def SetIntegTime(self, iTime): 
+    def SetIntegTime(self, iTime):
+        #logger.debug('SetIntegTime')
         self.ExposureTime.setValue(max(iTime, self.ExposureTime.min()))
         self.FrameRate.setValue(self.FrameRate.max())
+        #logger.debug('SetIntegTime : done')
         
     def GetIntegTime(self): 
         return self.ExposureTime.getValue()
@@ -565,7 +575,7 @@ class AndorBase(SDK3Camera):
         self.tKin = 1.0 / self._frameRate
 
         self.hardware_overflowed = False
-        
+        #logger.debug('StartAq')
         eventLog.logEvent('StartAq', '')
         self._flush()
         self.InitBuffers()
@@ -574,8 +584,14 @@ class AndorBase(SDK3Camera):
         return 0
         
     def StopAq(self):
+        #logger.debug('StopAq')
+        self.doPoll = False
         if self.CameraAcquiring.getValue():
             self.AcquisitionStop()
+
+        #self._flush()
+
+        #logger.debug('StopAq : done')
         
 
     def StartLifePreview(*args): 
