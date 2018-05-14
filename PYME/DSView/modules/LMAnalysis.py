@@ -432,7 +432,7 @@ class FitDefaults(object):
         self.onMetaDataChange.send(self, mdh=self.analysisMDH)
         
     def OnSplitter2D(self, event):
-        self.analysisMDH['Analysis.FitModule'] = 'SplitterFitQR'
+        self.analysisMDH['Analysis.FitModule'] = 'SplitterFitFNR'
         self.analysisMDH['Analysis.BGRange'] = (-30,0)
         self.analysisMDH['Analysis.SubtractBackground'] = True
         self.analysisMDH['Analysis.DetectionThreshold'] = 1.
