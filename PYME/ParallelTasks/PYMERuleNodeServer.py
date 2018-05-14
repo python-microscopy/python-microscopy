@@ -67,7 +67,8 @@ def main():
         os.remove(os.path.join(nodeserver_log_dir, 'nodeserver.log'))
     except OSError:  # if we cant clear out old log files, we might not have a log directory set up
         try:
-            os.makedirs(os.path.join(nodeserver_log_dir))  # NB - this will create all intermediate directories as well
+            if not os.path.exists(os.path.join(nodeserver_log_dir)):
+                os.makedirs(os.path.join(nodeserver_log_dir))  # NB - this will create all intermediate directories as well
         except:  # throw error because the RotatingFileHandler will fail to initialize
             raise IOError('Unable to initialize log files at %s' % nodeserver_log_dir)
         pass

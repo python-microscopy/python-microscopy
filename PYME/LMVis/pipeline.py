@@ -450,7 +450,7 @@ class Pipeline:
                 
         if not self.selectedDataSource is None:
             #we can recycle the mapping object
-            if self.mapping:
+            if False:# self.mapping:
                 self.mapping.resultsSource = self.selectedDataSource
             else:
                 self.mapping = tabular.mappingFilter(self.selectedDataSource)

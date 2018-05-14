@@ -55,6 +55,11 @@ class PointSpritesRenderLayer(Point3DRenderLayer):
             the pixel size is used to calculate the right point size to match nm,um etc.
         """
 
+        self.shader_program.xmin, self.shader_program.xmax = gl_canvas.bounds['x']
+        self.shader_program.ymin, self.shader_program.ymax = gl_canvas.bounds['y']
+        self.shader_program.zmin, self.shader_program.zmax = gl_canvas.bounds['z']
+        self.shader_program.vmin, self.shader_program.vmax = gl_canvas.bounds['v']
+
         with self.shader_program:
 
             n_vertices = self.get_vertices().shape[0]

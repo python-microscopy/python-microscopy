@@ -401,12 +401,16 @@ class taskWorker(object):
                     taskdefRef = taskDescr.get('taskdefRef', None)
                     if taskdefRef: #recipe is defined in a file - go find it
                         recipe_yaml = unifiedIO.read(taskdefRef)
-                        recipe = ModuleCollection.fromYAML(recipe_yaml)
+                        
                     else: #recipe is defined in the task
-                        recipe = ModuleCollection.fromYAML(taskDescr['taskdef']['recipe'])
+                        recipe_yaml = taskDescr['taskdef']['recipe']
+
+                    recipe = ModuleCollection.fromYAML(recipe_yaml)
 
                     #load recipe inputs
+                    logging.debug(taskDescr)
                     for key, url in taskDescr['inputs'].items():
+                        logging.debug('RECIPE: loading %s as %s' % (url, key))
                         recipe.loadInput(url, key)
 
                     #print recipe.namespace

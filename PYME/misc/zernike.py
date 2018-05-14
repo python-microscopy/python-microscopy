@@ -107,6 +107,17 @@ def projectZ(image, key, weights = 1.0):
     bf = zernikeIm(key, image.shape)
     
     return lstsq((bf*weights)[~numpy.isnan(image)].ravel().reshape([-1, 1]), (image*weights)[~numpy.isnan(image)].ravel())
+
+
+def projectZ_rays(r, theta, pathlengths, key):
+    from scipy.linalg import lstsq
+    import numpy
+    
+    bf = zernike(key, r, theta) + 0*r
+    
+    #print bf
+    return lstsq(bf.ravel().reshape([-1, 1]),
+                 pathlengths.ravel())
     
     
 def calcCoeffs(image, maxN, weights=1.0):
@@ -122,3 +133,19 @@ def calcCoeffs(image, maxN, weights=1.0):
         im = im - c*zernikeIm(n, im.shape)
         
     return coeffs, ress, im
+
+
+def calcCoeffs_rays(r, theta, pathlengths, maxN, quiet=True):
+    p = pathlengths
+    coeffs = []
+    ress = []
+    for n in range(maxN):
+        c, res, rand, sing = projectZ_rays(r, theta, p, n)
+        if not quiet:
+            print(('%d\t%s: %3.2f   residual=%3.2f' % (n, NameByNumber[n], c, res)))
+        coeffs.append(c[0])
+        ress.append(res)
+        
+        p = p - c * zernike(n, r, theta)
+    
+    return coeffs, ress, p

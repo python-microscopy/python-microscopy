@@ -92,7 +92,7 @@ class ColocSettingsDialog(wx.Dialog):
         return [self.cChan1.GetSelection(), self.cChan2.GetSelection()]
     
     def GetUseMask(self):
-        cbMask = getattr(self, 'cbUseMAsk', None)
+        cbMask = getattr(self, 'cbUseMask', None)
         
         if cbMask is None:
             return False
@@ -132,7 +132,7 @@ class colocaliser:
         if not getattr(self.image, 'labels', None) is None:
             have_mask = True
             
-            mask = self.image.labels > 0.5
+            mask = (self.image.labels > 0.5).squeeze()
         else:
             have_mask = False
             mask = None
@@ -144,6 +144,8 @@ class colocaliser:
         chans = dlg.GetChans()
         use_mask = dlg.GetUseMask()
         dlg.Destroy()
+        
+        print('Use mask: %s' % use_mask)
         
         if not use_mask:
             mask=None

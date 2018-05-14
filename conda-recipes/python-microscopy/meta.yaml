@@ -42,6 +42,7 @@ build:
     - PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main
     - PYMERuleServer = PYME.ParallelTasks.PYMERuleServer:main
     - PYMERuleNodeServer = PYME.ParallelTasks.PYMERuleNodeServer:main
+    - PYMEWebDav = PYME.ParallelTasks.webdav:main
 
 
 

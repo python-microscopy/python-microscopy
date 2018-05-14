@@ -28,6 +28,7 @@ class ParticleTracker:
         self.visFr = visFr
 
         visFr.AddMenuItem('Extras>Tracking/Chaining', "&Track single molecule trajectories", self.OnTrackMolecules)
+        visFr.AddMenuItem('Extras>Tracking/Chaining', "Find Clumps", self.OnFindClumps)
         visFr.AddMenuItem('Extras>Tracking/Chaining', "Plot Mean Squared Displacement", self.OnCalcMSDs)
         visFr.AddMenuItem('Extras>Tracking/Chaining', "Coalesce clumps", self.OnCoalesce)
 
@@ -51,7 +52,7 @@ class ParticleTracker:
 
         dlg.Destroy()
         
-    def OnTrackMolecules(self, event):
+    def OnFindClumps(self, event):
         import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
         #import PYME.Analysis.points.DeClump.deClump as deClump
         import PYME.Analysis.Tracking.trackUtils as trackUtils
@@ -78,6 +79,34 @@ class ParticleTracker:
             self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
         dlg.Destroy()
+
+    def OnTrackMolecules(self, event):
+        import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
+        #import PYME.Analysis.points.DeClump.deClump as deClump
+        import PYME.Analysis.Tracking.trackUtils as trackUtils
+
+        from PYME.recipes import tracking
+        recipe = self.visFr.pipeline.recipe
+    
+        visFr = self.visFr
+        pipeline = visFr.pipeline
+        
+        tracking_module = tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey,
+                                              outputName='with_tracks',
+                                    outputClumps = 'tracks',
+                                    timeWindow=5,
+                                    clumpRadiusVariable='1.0',
+                                    clumpRadiusScale=250.,
+                                    minClumpSize=50)
+    
+        if tracking_module.configure_traits(kind='modal'):
+            recipe.add_module(tracking_module)
+    
+            recipe.execute()
+            self.visFr.pipeline.selectDataSource('with_tracks')
+            self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+        
+        #dlg.Destroy()
 
     def OnCalcMSDs(self,event):
         import pylab

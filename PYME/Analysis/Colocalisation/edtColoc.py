@@ -54,7 +54,7 @@ def imageDensityAtDistance(A, mask, voxelsize = None, bins=100, roi_mask=None):
         bins = numpy.linspace(dt.min(), dt.max(), bins+1)
         
     #print bins
-    if roi_mask:
+    if not roi_mask is None:
         bn, bm, bs = binAvg.binAvg(dt[roi_mask], A[roi_mask], bins)
     else:
         bn, bm, bs = binAvg.binAvg(dt, A, bins)

@@ -3,7 +3,7 @@
 ##################
 # gl_render3D.py
 #
-# Copyright Michael Graff
+# Copyright David Baddeley, Michael Graff
 # graff@hm.edu
 #
 # This program is free software: you can redistribute it and/or modify
@@ -52,6 +52,8 @@ except ImportError:
 
 # import time
 
+from warnings import warn
+
 import sys
 
 if sys.platform == 'darwin':
@@ -64,6 +66,8 @@ else:
 # import statusLog
 
 name = 'ball_glut'
+
+from . import views
 
 
 class SelectionSettings(object):
@@ -98,6 +102,8 @@ class LMGLShaderCanvas(GLCanvas):
         wx.EVT_KEY_DOWN(self, self.OnKeyPress)
         # wx.EVT_MOVE(self, self.OnMove)
         self.gl_context = wx.glcanvas.GLContext(self)
+        
+        self.bounds = {'x':[-1e6, 1e6], 'y':[-1e6, 1e6], 'z':[-1e6,1e6], 'v':[-1e6, 1e6]}
 
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
@@ -129,21 +135,14 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.angup = 0
         self.angright = 0
-
-        self.vecUp = numpy.array([0, 1, 0])
-        self.vecRight = numpy.array([1, 0, 0])
-        self.vecBack = numpy.array([0, 0, 1])
-
-        self.xc = 0
-        self.yc = 0
-        self.zc = 0
+        
+        self.view = views.View()
 
         self.zc_o = 0
 
         self.sx = 100
         self.sy = 100
 
-        self.scale = 1
         self.stereo = False
 
         self.eye_dist = .01
@@ -167,6 +166,26 @@ class LMGLShaderCanvas(GLCanvas):
         self.view_port_size = (self.Size[0], self.Size[1])
 
         return
+    
+    @property
+    def xc(self):
+        warn('Use view.translation[0] instead', DeprecationWarning)
+        return self.view.translation[0]
+    
+    @property
+    def yc(self):
+        warn('Use view.translation[1] instead', DeprecationWarning)
+        return self.view.translation[1]
+
+    @property
+    def zc(self):
+        warn('Use view.translation[2] instead', DeprecationWarning)
+        return self.view.translation[2]
+
+    @property
+    def scale(self):
+        warn('Use view.scale instead', DeprecationWarning)
+        return self.view.scale
 
     @property
     def scaleBarLength(self):
@@ -339,13 +358,13 @@ class LMGLShaderCanvas(GLCanvas):
             if not self.displayMode == '2D':
                 self.AxesOverlayLayer.render(self)
 
-            glScalef(self.scale, self.scale, self.scale)
+            glScalef(self.view.scale, self.view.scale, self.view.scale)
 
             glPushMatrix()
             # rotate object
             glMultMatrixf(self.object_rotation_matrix)
 
-            glTranslatef(-self.xc, -self.yc, -self.zc)
+            glTranslatef(-self.view.translation[0], -self.view.translation[1], -self.view.translation[2])
             
             for l in self.underlays:
                 l.render(self)
@@ -381,7 +400,7 @@ class LMGLShaderCanvas(GLCanvas):
         """
         if not self.displayMode == '2D':
             return numpy.array(
-                [numpy.hstack((self.vecRight, 0)), numpy.hstack((self.vecUp, 0)), numpy.hstack((self.vecBack, 0)),
+                [numpy.hstack((self.view.vec_right, 0)), numpy.hstack((self.view.vec_up, 0)), numpy.hstack((self.view.vec_back, 0)),
                  [0, 0, 0, 1]])
         else:
             return numpy.eye(4)
@@ -439,9 +458,9 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.c = numpy.vstack((c, c, c)).T.ravel()
 
-        self.vecUp = numpy.array([0, 1, 0])
-        self.vecRight = numpy.array([1, 0, 0])
-        self.vecBack = numpy.array([0, 0, 1])
+        self.view.vec_up = numpy.array([0, 1, 0])
+        self.view.vec_right = numpy.array([1, 0, 0])
+        self.view.vec_back = numpy.array([0, 0, 1])
 
         self.SetCurrent()
 
@@ -463,8 +482,8 @@ class LMGLShaderCanvas(GLCanvas):
         if recenter:
             self.recenter(x, y)
 
-        self.zc = z.mean()
-        self.zc_o = 1.0 * self.zc
+        self.view.translation[2] = z.mean()
+        self.zc_o = 1.0 * self.view.translation[2]
 
         if c is None:
             self.c = numpy.ones(x.shape).ravel()
@@ -525,9 +544,9 @@ class LMGLShaderCanvas(GLCanvas):
 
     def ResetView(self):
 
-        self.vecUp = numpy.array([0, 1, 0])
-        self.vecRight = numpy.array([1, 0, 0])
-        self.vecBack = numpy.array([0, 0, 1])
+        self.view.vec_up = numpy.array([0, 1, 0])
+        self.view.vec_right = numpy.array([1, 0, 0])
+        self.view.vec_back = numpy.array([0, 0, 1])
 
         self.Refresh()
 
@@ -548,31 +567,31 @@ class LMGLShaderCanvas(GLCanvas):
 
     @property
     def xmin(self):
-        return self.xc - 0.5 * self.pixelsize * self.view_port_size[0]
+        return self.view.translation[0] - 0.5 * self.pixelsize * self.view_port_size[0]
 
     @property
     def xmax(self):
-        return self.xc + 0.5 * self.pixelsize * self.view_port_size[0]
+        return self.view.translation[0] + 0.5 * self.pixelsize * self.view_port_size[0]
 
     @property
     def ymin(self):
-        return self.yc - 0.5 * self.pixelsize * self.view_port_size[1]
+        return self.view.translation[1] - 0.5 * self.pixelsize * self.view_port_size[1]
 
     @property
     def ymax(self):
-        return self.yc + 0.5 * self.pixelsize * self.view_port_size[1]
+        return self.view.translation[1] + 0.5 * self.pixelsize * self.view_port_size[1]
 
     @property
     def pixelsize(self):
-        return 2. / (self.scale * self.view_port_size[0])
+        return 2. / (self.view.scale * self.view_port_size[0])
 
     def setView(self, xmin, xmax, ymin, ymax):
 
-        self.xc = (xmin + xmax) / 2.0
-        self.yc = (ymin + ymax) / 2.0
-        self.zc = self.zc_o  # 0#z.mean()
+        self.view.translation[0] = (xmin + xmax) / 2.0
+        self.view.translation[1] = (ymin + ymax) / 2.0
+        self.view.translation[2] = self.zc_o  # 0#z.mean()
 
-        self.scale = 2. / (xmax - xmin)
+        self.view.scale = 2. / (xmax - xmin)
 
         self.Refresh()
         if 'OnGLViewChanged' in dir(self.parent):
@@ -586,9 +605,9 @@ class LMGLShaderCanvas(GLCanvas):
 
     def pan(self, dx, dy, dz=0):
         # self.setView(self.xmin + dx, self.xmax + dx, self.ymin + dy, self.ymax + dy)
-        self.xc += dx
-        self.yc += dy
-        self.zc += dz
+        self.view.translation[0] += dx
+        self.view.translation[1] += dy
+        self.view.translation[2] += dz
 
         self.Refresh()
 
@@ -599,11 +618,11 @@ class LMGLShaderCanvas(GLCanvas):
         rot = event.GetWheelRotation()
         xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
 
-        dx, dy = (xp - self.xc), (yp - self.yc)
+        dx, dy = (xp - self.view.translation[0]), (yp - self.view.translation[1])
 
         dx_, dy_, dz_, c_ = numpy.dot(self.object_rotation_matrix, [dx, dy, 0, 0])
 
-        xp_, yp_, zp_ = (self.xc + dx_), (self.yc + dy_), (self.zc + dz_)
+        xp_, yp_, zp_ = (self.view.translation[0] + dx_), (self.view.translation[1] + dy_), (self.view.translation[2] + dz_)
 
         # print xp
         # print yp
@@ -613,25 +632,25 @@ class LMGLShaderCanvas(GLCanvas):
             self.WheelZoom(rot, xp_, yp_, zp_)
 
     def WheelZoom(self, rot, xp, yp, zp=0):
-        dx = xp - self.xc
-        dy = yp - self.yc
-        dz = zp - self.zc
+        dx = xp - self.view.translation[0]
+        dy = yp - self.view.translation[1]
+        dz = zp - self.view.translation[2]
 
         if rot > 0:
             # zoom out
-            self.scale *= ZOOM_FACTOR
+            self.view.scale *= ZOOM_FACTOR
 
-            self.xc += dx * (1. - 1. / ZOOM_FACTOR)
-            self.yc += dy * (1. - 1. / ZOOM_FACTOR)
-            self.zc += dz * (1. - 1. / ZOOM_FACTOR)
+            self.view.translation[0] += dx * (1. - 1. / ZOOM_FACTOR)
+            self.view.translation[1] += dy * (1. - 1. / ZOOM_FACTOR)
+            self.view.translation[2] += dz * (1. - 1. / ZOOM_FACTOR)
 
         if rot < 0:
             # zoom in
-            self.scale /= ZOOM_FACTOR
+            self.view.scale /= ZOOM_FACTOR
 
-            self.xc += dx * (1. - ZOOM_FACTOR)
-            self.yc += dy * (1. - ZOOM_FACTOR)
-            self.zc += dz * (1. - ZOOM_FACTOR)
+            self.view.translation[0] += dx * (1. - ZOOM_FACTOR)
+            self.view.translation[1] += dy * (1. - ZOOM_FACTOR)
+            self.view.translation[2] += dz * (1. - ZOOM_FACTOR)
 
         self.Refresh()
 
@@ -641,11 +660,11 @@ class LMGLShaderCanvas(GLCanvas):
     def WheelFocus(self, rot, xp, yp, zp=0):
         if rot > 0:
             # zoom out
-            self.zc -= 1.
+            self.view.translation[2] -= 1.
 
         if rot < 0:
             # zoom in
-            self.zc += 1.
+            self.view.translation[2] += 1.
 
         self.Refresh()
 
@@ -701,8 +720,8 @@ class LMGLShaderCanvas(GLCanvas):
 
     def _ScreenCoordinatesToNm(self, x, y):
         # FIXME!!!
-        x_ = self.pixelsize * (x - 0.5 * float(self.view_port_size[0])) + self.xc
-        y_ = -self.pixelsize * (y - 0.5 * float(self.view_port_size[1])) + self.yc
+        x_ = self.pixelsize * (x - 0.5 * float(self.view_port_size[0])) + self.view.translation[0]
+        y_ = -self.pixelsize * (y - 0.5 * float(self.view_port_size[1])) + self.view.translation[1]
         # print x_, y_
         return x_, y_
 
@@ -726,14 +745,14 @@ class LMGLShaderCanvas(GLCanvas):
             r_mat = r_mat1 * numpy.matrix(
                 [[1, 0, 0], [0, numpy.cos(angy), numpy.sin(angy)], [0, -numpy.sin(angy), numpy.cos(angy)]])
 
-            vec_right_n = numpy.array(r_mat * numpy.matrix(self.vecRight).T).squeeze()
-            vec_up_n = numpy.array(r_mat * numpy.matrix(self.vecUp).T).squeeze()
-            vec_back_n = numpy.array(r_mat * numpy.matrix(self.vecBack).T).squeeze()
+            vec_right_n = numpy.array(r_mat * numpy.matrix(self.view.vec_right).T).squeeze()
+            vec_up_n = numpy.array(r_mat * numpy.matrix(self.view.vec_up).T).squeeze()
+            vec_back_n = numpy.array(r_mat * numpy.matrix(self.view.vec_back).T).squeeze()
 
-            self.vecRight = vec_right_n
+            self.view.vec_right = vec_right_n
 
-            self.vecUp = vec_up_n
-            self.vecBack = vec_back_n
+            self.view.vec_up = vec_up_n
+            self.view.vec_back = vec_back_n
 
             self.xDragStart = x
             self.yDragStart = y
@@ -763,9 +782,9 @@ class LMGLShaderCanvas(GLCanvas):
             self.stereo = not self.stereo
             self.Refresh()
         elif event.GetKeyCode() == 67:  # C - centre
-            self.xc = self.sx / 2
-            self.yc = self.sy / 2
-            self.zc = self.sz / 2
+            self.view.translation[0] = self.sx / 2
+            self.view.translation[1] = self.sy / 2
+            self.view.translation[2] = self.sz / 2
             self.Refresh()
 
         elif event.GetKeyCode() == 91:  # [ decrease eye separation
@@ -781,28 +800,28 @@ class LMGLShaderCanvas(GLCanvas):
             self.Refresh()
 
         elif event.GetKeyCode() == 314:  # left
-            pos = numpy.array([self.xc, self.yc, self.zc], 'f')
-            pos -= 300 * self.vecRight
-            self.xc, self.yc, self.zc = pos
+            pos = numpy.array([self.view.translation[0], self.view.translation[1], self.view.translation[2]], 'f')
+            pos -= 300 * self.view.vec_right
+            self.view.translation[0], self.view.translation[1], self.view.translation[2] = pos
             # print 'l'
             self.Refresh()
 
         elif event.GetKeyCode() == 315:  # up
-            pos = numpy.array([self.xc, self.yc, self.zc])
-            pos -= 300 * self.vecBack
-            self.xc, self.yc, self.zc = pos
+            pos = numpy.array([self.view.translation[0], self.view.translation[1], self.view.translation[2]])
+            pos -= 300 * self.view.vec_back
+            self.view.translation[0], self.view.translation[1], self.view.translation[2] = pos
             self.Refresh()
 
         elif event.GetKeyCode() == 316:  # right
-            pos = numpy.array([self.xc, self.yc, self.zc])
-            pos += 300 * self.vecRight
-            self.xc, self.yc, self.zc = pos
+            pos = numpy.array([self.view.translation[0], self.view.translation[1], self.view.translation[2]])
+            pos += 300 * self.view.vec_right
+            self.view.translation[0], self.view.translation[1], self.view.translation[2] = pos
             self.Refresh()
 
         elif event.GetKeyCode() == 317:  # down
-            pos = numpy.array([self.xc, self.yc, self.zc])
-            pos += 300 * self.vecBack
-            self.xc, self.yc, self.zc = pos
+            pos = numpy.array([self.view.translation[0], self.view.translation[1], self.view.translation[2]])
+            pos += 300 * self.view.vec_back
+            self.view.translation[0], self.view.translation[1], self.view.translation[2] = pos
             self.Refresh()
 
         else:
@@ -842,40 +861,30 @@ class LMGLShaderCanvas(GLCanvas):
             return snap
 
     def recenter(self, x, y):
-        self.xc = x.mean()
-        self.yc = y.mean()
-        self.zc = 0  # z.mean()
+        self.view.translation[0] = x.mean()
+        self.view.translation[1] = y.mean()
+        self.view.translation[2] = 0  # z.mean()
 
         self.sx = x.max() - x.min()
         self.sy = y.max() - y.min()
         self.sz = 0  # z.max() - z.min()
 
-        self.scale = 2. / (max(self.sx, self.sy))
+        self.view.scale = 2. / (max(self.sx, self.sy))
         
     def recenter_bbox(self):
         bb = self.bbox
         
         centre = 0.5*(bb[:3] + bb[3:])
         
-        self.xc, self.yc, self.zc = centre
+        self.view.translation[0], self.view.translation[1], self.view.translation[2] = centre
 
     def set_view(self, view):
-        self.vecBack = view.vec_back
-        self.vecRight = view.vec_right
-        self.vecUp = view.vec_up
-        self.xc = view.translation[0]
-        self.yc = view.translation[1]
-        self.zc = view.translation[2]
-        self.scale = view.zoom
+        self.view=view
         self.Refresh()
 
     def get_view(self, view_id='id'):
-        view = View(view_id,
-                    self.vecUp,
-                    self.vecBack,
-                    self.vecRight,
-                    np.array([self.xc, self.yc, self.zc]),
-                    self.scale)
+        view = View.copy(self.view)
+        view.view_id = view_id
         return view
     
     def refresh(self, *args, **kwargs):

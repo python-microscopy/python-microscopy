@@ -240,12 +240,21 @@ class NodeServer(object):
                 r = self.taskSession.get(url, json=task_requests, timeout=120)
                 successful_bids = json.loads(r.content)
                 
+                logging.debug(inputs_by_ID)
+                
                 for bid in successful_bids:
                     ruleID = bid['ruleID']
                     template = templates_by_ID[ruleID]
+                    rule_inputs = inputs_by_ID[ruleID]
+                    logging.debug('rule_inputs:' + repr(rule_inputs))
                     for taskID in bid['taskIDs']:
+                        
+                        logging.debug('taskID: ' + repr(taskID) )
+                        taskInputs = json.dumps(rule_inputs.get(u'%s' % taskID, {}))
+                        logging.debug('taskInputs:' + repr(taskInputs))
+                        
                         self._tasks.put(json.loads(template_fill(template,taskID=taskID, ruleID=ruleID,
-                                                                 taskInputs=inputs_by_ID.get(taskID, {}))))
+                                                                 taskInputs=taskInputs)))
                
                 
             except requests.Timeout:

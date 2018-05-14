@@ -86,6 +86,15 @@ class TabularBase(object):
 
             if metadata is not None:
                 f.updateMetadata(metadata)
+                
+    def keys(self):
+        raise NotImplementedError('Should be over-ridden in derived class')
+    
+    def __getitem__(self, keys):
+        raise NotImplementedError('Should be over-ridden in derived class')
+                
+    def __len__(self):
+        return len(self[self.keys()[0]])
         
     
 
@@ -471,6 +480,33 @@ class resultsFilter(TabularBase):
         key, sl = self._getKeySlice(keys)
         return self.resultsSource[key][self.Index][sl]
 
+    def keys(self):
+        return self.resultsSource.keys()
+
+
+class randomSelectionFilter(TabularBase):
+    _name = "Random Selection Filter"
+    
+    def __init__(self, resultsSource, num_Samples):
+        """Class to permit filtering of fit results - masquarades
+        as a dictionary. Takes item ranges as keyword arguments, eg:
+        f = resultsFliter(source, x=[0,10], error_x=[0,5]) will return
+        an object that behaves like source, but with only those points with
+        an x value in the range [0, 10] and a x error in the range [0, 5].
+
+        The filter class does not have any explicit knowledge of the keys
+        supported by the underlying data source."""
+        
+        self.resultsSource = resultsSource
+        
+        #by default select everything
+        self.Index = np.random.choice(len(self.resultsSource[resultsSource.keys()[0]]), num_Samples)
+        
+    
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+        return self.resultsSource[key][self.Index][sl]
+    
     def keys(self):
         return self.resultsSource.keys()
 
