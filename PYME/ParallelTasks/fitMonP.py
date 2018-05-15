@@ -65,7 +65,9 @@ class MyFrame(wx.Frame):
         try:
             from PYME.misc import pyme_zeroconf 
             ns = pyme_zeroconf.getNS()
-            time.sleep(1)
+            time.sleep(15)
+            print ns.get_advertised_services()
+
             URI = ns.resolve(taskQueueName)
         except:
             print('Could not resolve using zeroconf, trying pyro-ns')

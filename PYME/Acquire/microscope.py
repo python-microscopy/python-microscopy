@@ -220,12 +220,15 @@ class StateManager(object):
                     raise KeyError('No handler registered for %s' % key)
                 
             
-            
+        #logger.debug('sending state changed')
         self.stateChanged.send(self)
             
         if restartCamera:
+            #logger.debug('preparing framewrangler')
             self.scope().frameWrangler.Prepare()
+            logger.debug('restarting framewrangler')
             self.scope().frameWrangler.start()
+            logger.debug('restarted framewrangler')
         
         #return a function which tells us if we're done (for use as a task)
         return lambda : True
