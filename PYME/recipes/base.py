@@ -503,17 +503,21 @@ class ModuleCollection(HasTraits):
         """
         #modify this to allow for different file types - currently only supports images
         from PYME.IO import unifiedIO
-        if filename.split('.')[-1] in ['h5r', 'h5']:
+        if filename.split('.')[-1] in ['h5r', 'h5', 'hdf']:
             import tables
             from PYME.IO import MetaDataHandler
             from PYME.IO import tabular
 
             with unifiedIO.local_or_temp_filename(filename) as fn:
-                h5f = tables.open_file(fn)
+                h5f = tables.open_file(fn, mode='r')
 
                 key_prefix = '' if key == 'input' else key + '_'
 
-                mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
+                try:
+                    mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
+                except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
+                    logger.warning('No metadata found, proceeding with empty metadata')
+                    mdh = MetaDataHandler.NestedClassMDHandler()
                 for t in h5f.list_nodes('/'):
                     if isinstance(t, tables.VLArray):
                         from PYME.IO.ragged import RaggedVLArray
