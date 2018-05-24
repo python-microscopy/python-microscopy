@@ -136,7 +136,7 @@ def calibrate(interpolator, md, roiSize=5):
     
     sg =  sgn[imn]
     
-    while (sgn[imx] == sg) and imx < len(sgn):
+    while (sgn[imx] == sg) and imx < (len(sgn) -1):
         imx += 1
         
     while (sgn[imn - 1] == sg) and imn > 1:
