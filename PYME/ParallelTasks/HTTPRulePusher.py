@@ -327,9 +327,9 @@ class RecipePusher(object):
 
 
     def fileTasksForInputs(self, **kwargs):
-        from PYME.IO import clusterGlob
+        from PYME.IO import clusterIO
         input_names = kwargs.keys()
-        inputs = {k : kwargs[k] if isinstance(kwargs[k], list) else clusterGlob.glob(kwargs[k], include_scheme=True) for k in input_names}
+        inputs = {k : kwargs[k] if isinstance(kwargs[k], list) else clusterIO.cglob(kwargs[k], include_scheme=True) for k in input_names}
 
         numTotalFrames = len(inputs.values()[0])
         self.currentFrameNum = 0

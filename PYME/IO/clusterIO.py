@@ -306,6 +306,73 @@ def listdir(dirname, serverfilter=''):
 def isdir(name, serverfilter=''):
     return len(listdir(name, serverfilter)) > 0
 
+def _cglob(url, timeout=2, nRetries=1):
+
+    #logger.debug('dir cache miss')
+    # t = time.time()
+    url = url.encode()
+    haveResult = False
+    nTries = 0
+    while nTries < nRetries and not haveResult:
+        try:
+            nTries += 1
+            s = _getSession(url)
+            r = s.get(url, timeout=timeout)
+            haveResult = True
+        except (requests.Timeout, requests.ConnectionError) as e:
+            # s.get sometimes raises ConnectionError instead of ReadTimeoutError
+            # see https://github.com/requests/requests/issues/2392
+            logger.exception('Timeout on listing directory')
+            logger.info('%d retries left' % (nRetries - nTries))
+            if nTries == nRetries:
+                raise
+
+    if not r.status_code == 200:
+        logger.debug('Request failed with error: %d' % r.status_code)
+        
+        #make sure we read a reply so that the far end doesn't hold the connection open
+        dump = r.content
+        return []
+    
+    try:
+        matches = r.json()
+    except ValueError:
+        # directory doesn't exist
+        return []
+    
+    return list(matches)
+    
+def cglob(pattern, serverfilter=''):
+    global _pool
+    from multiprocessing.pool import ThreadPool
+    with _list_dir_lock:
+        if _pool is None:
+            _pool = ThreadPool(10)
+        
+        urls = []
+        
+        services = get_ns().get_advertised_services()
+        for name, info in services:
+            if serverfilter in name:
+                if info is None or info.address is None or info.port is None:
+                    # handle the case where zeroconf gives us bad name info. This  is a result of a race condition within
+                    # zeroconf, which should probably be fixed instead, but hopefully this workaround is enough.
+                    # FIXME - fix zeroconf module race condition on info update.
+                    logger.error('''Zeroconf gave us NULL info, ignoring and hoping for the best ...
+                    Node with bogus info was: %s
+                    Total number of nodes: %d
+                    ''' % (name, len(services)))
+                
+                else:
+                    urls.append('http://%s:%d/__glob?pattern=%s' % (socket.inet_ntoa(info.address), info.port, pattern))
+        
+        matches = _pool.map(_cglob, urls)
+        
+    #print matches
+    #concatenate lists
+    matches = sum(matches, [])
+    return list(set(matches))
+    
 
 def exists(name, serverfilter=''):
 #    if name.endswith('/'):

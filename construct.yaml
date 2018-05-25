@@ -12,6 +12,8 @@ channels: &id1
 specs:
   - python
   - python-microscopy #=18.05.12
+  - conda
+  - wxpython <3.9
   #- sample                            [osx]
 
 # exclude these packages (list of names)
@@ -49,6 +51,8 @@ installer_type: pkg                   [osx]
 
 # a file with a license text, which is shown during the install process
 license_file: LICENSE
+
+attempt_hardlinks: True
 
 # default install prefix
 #default_prefix: /opt/example

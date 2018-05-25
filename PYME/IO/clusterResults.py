@@ -111,7 +111,7 @@ def fileResults(URI, data_raw):
     # translate data into wire format
     output_format = None
 
-    if URI.endswith('.csv'):
+    if URI.endswith('.csv') or URI.endswith('.txt') or URI.endswith('.log'):
         output_format = 'text/csv'
 
         if isinstance(data_raw, str):

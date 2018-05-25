@@ -42,6 +42,8 @@ from StringIO import StringIO
 import sys,urllib,re,urlparse
 from time import time, timezone, strftime, localtime, gmtime
 import os, shutil, uuid, md5, mimetypes, base64
+import socket
+import ssl
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -203,6 +205,7 @@ class DirCollection(FileMember, Collection):
         p = FileMember.getProperties(self) # inherit file properties
         p['iscollection'] = 1
         p['getcontenttype'] = DirCollection.COLLECTION_MIME_TYPE
+        p['getcontentlength'] = 0
         return p
 
     def getMembers(self):
@@ -618,7 +621,7 @@ class DAVRequestHandler(BaseHTTPRequestHandler):
         self.send_response(200, DAVRequestHandler.server_version)
         #self.send_header('Allow', 'GET, HEAD, POST, PUT, DELETE, OPTIONS, PROPFIND, PROPPATCH, MKCOL, LOCK, UNLOCK, MOVE, COPY')
         self.send_header('Allow',
-                         'GET, HEAD, POST, PUT, OPTIONS, PROPFIND, PROPPATCH, MKCOL, LOCK, UNLOCK')
+                         'GET, HEAD, POST, PUT, OPTIONS, PROPFIND, PROPPATCH, MKCOL')#, LOCK, UNLOCK')
         self.send_header('Content-length', '0')
         self.send_header('X-Server-Copyright', DAVRequestHandler.server_version)
         self.send_header('DAV', '1, 2')            #OSX Finder need Ver 2, if Ver 1 -- read only
@@ -729,10 +732,29 @@ class DAVRequestHandler(BaseHTTPRequestHandler):
         else:
             req = self.rfile.read()
         d = builddict(req)
-        clientid = str(d['lockinfo']['owner']['href'])[7:]      # temp: need Change other method!!!
-        lockid = str(uuid.uuid1())        
-        retstr = '<?xml version="1.0" encoding="utf-8" ?>\n<D:prop xmlns:D="DAV:">\n<D:lockdiscovery>\n<D:activelock>\n<D:locktype><D:write/></D:locktype>\n<D:lockscope><D:exclusive/></D:lockscope>\n<D:depth>Infinity</D:depth>\n<D:owner>\n<D:href>'+clientid+'</D:href>\n</D:owner>\n<D:timeout>Infinite</D:timeout>\n<D:locktoken><D:href>opaquelocktoken:'+lockid+'</D:href></D:locktoken>\n</D:activelock>\n</D:lockdiscovery>\n</D:prop>\n'
-        self.send_response(201,'Created')
+        #logger.debug('do_LOCK: path = ' + self.path)
+        #logger.debug('do_LOCK: headers = ' + str(self.headers))
+        #logger.debug('do_LOCK: req = ' + req)
+        #logger.debug('do_LOCK: d = ' + str(d))
+        
+        if req == '':
+            #refreshing lock (windows)
+            locktoken = self.headers['If']
+            logger.debug(locktoken)
+            lockid = locktoken[18:-2]
+            logger.debug(lockid)
+            
+            clientid = 'foo'
+        else:
+            try:
+                clientid = str(d['lockinfo']['owner']['href'])[7:]      # temp: need Change other method!!!
+            except KeyError:
+                pass
+            clientid = 'foo'
+            lockid = str(uuid.uuid1())
+        
+        retstr = '<?xml version="1.0" encoding="utf-8" ?>\n<D:prop xmlns:D="DAV:">\n<D:lockdiscovery>\n<D:activelock>\n<D:locktype><D:write/></D:locktype>\n<D:lockscope><D:exclusive/></D:lockscope>\n<D:depth>Infinity</D:depth>\n<D:owner>\n<D:href>'+clientid+'</D:href>\n</D:owner>\n<D:timeout>3600</D:timeout>\n<D:locktoken><D:href>opaquelocktoken:'+lockid+'</D:href></D:locktoken>\n</D:activelock>\n</D:lockdiscovery>\n</D:prop>\n'
+        self.send_response(200,'OK')
         self.send_header("Content-type",'text/xml')
         self.send_header("charset",'"utf-8"')
         self.send_header("Lock-Token",'<opaquelocktoken:'+lockid+'>')
@@ -742,7 +764,8 @@ class DAVRequestHandler(BaseHTTPRequestHandler):
         self.wfile.flush()
 
     def do_UNLOCK(self):
-        # frome self.headers get Lock-Token: 
+        # frome self.headers get Lock-Token:
+        logger.debug('do_UNLOCK')
         self.send_response(204, 'No Content')        # unlock using 204 for sucess.
         self.send_header('Content-length', '0')
         self.end_headers()
@@ -789,7 +812,7 @@ class DAVRequestHandler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'text/xml')
         self.send_header("charset",'"utf-8"')        
         # !!! if need debug output xml info,please set last var from False to True. 
-        w = BufWriter(self.wfile, False)
+        w = BufWriter(self.wfile, True)
         w.write('<?xml version="1.0" encoding="utf-8" ?>\n')
         w.write('<D:multistatus xmlns:D="DAV:" xmlns:Z="urn:schemas-microsoft-com:">\n')
 
@@ -823,6 +846,43 @@ class DAVRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         w.flush()
 
+    def do_PROPPATCH(self):
+        if self.WebAuth():
+            return
+        
+        if 'Content-length' in self.headers:
+            req = self.rfile.read(int(self.headers['Content-length']))
+        else:
+            req = self.rfile.read()
+    
+        logger.debug('Attempting to proppatch %s' % self.path)
+        logger.debug('do_PROPPATCH: req = ' + req)
+    
+        self.send_error(403, 'Forbidden')
+        self.send_header('Content-length', '0')
+        self.end_headers()
+        return
+    
+        # path = urllib.unquote(self.path)
+        # if path == '':
+        #     self.send_error(404, 'Object not found')
+        #     self.send_header('Content-length', '0')
+        #     self.end_headers()
+        #     return
+        # path = self.server.root.rootdir() + path
+        # if os.path.isfile(path):
+        #     os.remove(path)         #delete file
+        # elif os.path.isdir(path):
+        #     shutil.rmtree(path)     #delete dir
+        # else:
+        #     self.send_response(404,'Not Found')
+        #     self.send_header('Content-length', '0')
+        #     self.end_headers()
+        #     return
+        # self.send_response(204, 'No Content')
+        # self.send_header('Content-length', '0')
+        # self.end_headers()
+
     def do_GET(self, onlyhead=False):
         if self.WebAuth():
             return 
@@ -840,6 +900,7 @@ class DAVRequestHandler(BaseHTTPRequestHandler):
         bpoint = 0
         epoint = 0
         fullen = props['getcontentlength']
+        logger.debug('do_GET: fullen = ' + str(fullen))
         if 'Range' in self.headers:
             stmp = self.headers['Range'][6:]
             stmp = stmp.split('-')
@@ -960,7 +1021,7 @@ class DAVRequestHandler(BaseHTTPRequestHandler):
      
      # disable log info output to screen    
     def log_message(self,format,*args):
-        if False:
+        if True:
             logger.info("%s - - [%s] %s\n" %
                         (self.client_address[0],
                          self.log_date_time_string(),
@@ -1030,6 +1091,9 @@ def main():
     # **** Change first ./ to your dir , etc :/mnt/flash/public 
     root = DirCollection('/', '/')
     httpd = DAVServer(server_address, DAVRequestHandler, root, userpwd)
+    
+    #httpd.socket = ssl.wrap_socket (httpd.socket, certfile='./server.pem', server_side=True)
+    
     httpd.serve_forever()       # todo: add some control over starting and stopping the server
     
 if __name__ == '__main__':

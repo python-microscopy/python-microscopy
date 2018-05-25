@@ -309,6 +309,23 @@ env.filters['movieplot'] = graphing_filters.movieplot2
 env.filters['plot'] = graphing_filters.plot
 env.filters['b64encode'] = base64.b64encode
 
+def round_sf(num, sf=3):
+    import math
+
+    fmt = '%' + ('.%d' % sf) + 'g'
+    #rnd = float(fmt % f)
+    rnd = round(num, sf - int(math.floor(math.log10(num))) - 1)
+    if rnd > 1e6:
+        return fmt % rnd
+    elif rnd >= 10 ** sf:
+        return '%d' % rnd
+    else:
+        fmt = '%' + ('.%d' % (sf - math.floor(math.log10(rnd)) - 1)) + 'f'
+        return fmt % rnd
+    
+env.filters['roundsf'] = round_sf
+
+
 @register_module('ReportOutput')
 class ReportOutput(OutputModule):
     """

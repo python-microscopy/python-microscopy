@@ -236,8 +236,8 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         data = self._get_data()
         
-        if self.headers['Content-Encoding'] == 'gzip':
-            data = self._gzip_decompress(data)
+        #if self.headers['Content-Encoding'] == 'gzip':
+        #    data = self._gzip_decompress(data)
 
         dirname = os.path.dirname(path)
         #if not os.path.exists(dirname):
@@ -452,6 +452,25 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Content-Length", str(length))
         self.end_headers()
         return f
+    
+    def get_glob(self):
+        import glob
+        query = urlparse.parse_qs(urlparse.urlparse(self.path).query)
+        pattern = query['pattern'][0]
+        
+        logger.debug('glob: pattern = %s' % pattern)
+        matches = glob.glob(pattern)
+
+        f = BytesIO()
+        f.write(json.dumps(matches))
+        length = f.tell()
+        f.seek(0)
+        self.send_response(200)
+        encoding = sys.getfilesystemencoding()
+        self.send_header("Content-type", "application/json; charset=%s" % encoding)
+        self.send_header("Content-Length", str(length))
+        self.end_headers()
+        return f
 
     def send_head(self):
         """Common code for GET and HEAD commands.
@@ -466,8 +485,13 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         """
         path = self.translate_path(self.path)
         f = None
+        
         if self.path.lstrip('/') == '__status':
             return self.get_status()
+        
+        if self.path.lstrip('/').startswith('__glob'):
+            return self.get_glob()
+        
         if os.path.isdir(path):
             parts = urlparse.urlsplit(self.path)
             if not parts.path.endswith('/'):

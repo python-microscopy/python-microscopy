@@ -12,9 +12,9 @@ def recipe_standalone(request):
     return render(request, 'recipes/recipe_standalone.html', {})
 
 def get_input_glob(request):
-    from PYME.IO import clusterGlob
+    from PYME.IO import clusterIO
     
-    filepaths = clusterGlob.glob(request.GET.get('glob').encode().lstrip('/'))
+    filepaths = clusterIO.cglob(request.GET.get('glob').encode().lstrip('/'))
     
     return render(request, 'recipes/input_list.html', {'filepaths' : filepaths})
 

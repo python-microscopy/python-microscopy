@@ -90,7 +90,7 @@ import time
 import os
 
 class DirCache(object):
-    def __init__(self, cache_size = 1000, lifetime_s=(30*60)):
+    def __init__(self, cache_size = 1000, lifetime_s=(0.5*60)):
         self._cache_size = cache_size
         self._cache = {}
         self._purge_list = []

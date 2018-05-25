@@ -86,127 +86,35 @@ from PYME.IO import clusterResults
 LOCAL = False
 if 'PYME_LOCAL_ONLY' in os.environ.keys():
     LOCAL = os.environ['PYME_LOCAL_ONLY'] == '1'
+    
+class TaskError(object):
+    template = '''===========================================================================
+Error in rule: {rule_id} running task: {task_id} on {comp_name}:{pid}
 
-def main(): 
-    #ns = pzc.getNS('_pyme-taskdist')
+taskDescr:
+----------
+{taskDescr}
 
-    procName =  '%s_%d' % (compName, os.getpid())
-
-    #loop forever asking for tasks
-    while 1:
-        #queueNames = ns.list('HTTPTaskQueues')
-        # queueURLs = {}
-        #
-        # for name, info in ns.advertised_services.items() :
-        #     if name.startswith('PYMENodeServer'):
-        #         queueURLs[name] = 'http://%s:%d/' % (socket.inet_ntoa(info.address), info.port)
-
-        queueURLs = distribution.getNodeInfo()
-        localQueueName = 'PYMENodeServer: ' + compName
-
-        queueURLs = {k: v for k, v in queueURLs.items() if k == localQueueName }
-
-        tasks = []
-
-        #loop over all queues, looking for tasks to process
-        while len(tasks) == 0 and len(queueURLs) > 0:
-            #try queue on current machine first
-            #TODO - only try local machine?
-            #print queueNames
-
-            if localQueueName in queueURLs.keys():
-                qName = localQueueName
-                queueURL = queueURLs.pop(qName)
-            else:
-                logger.error('Could not find local node server')
-            #else: #pick a queue at random
-            #    queueURL = queueURLs.pop(queueURLs.keys()[random.randint(0, len(queueURLs)-1)])
-
-            try:
-                #ask the queue for tasks
-                #TODO - make the server actually return a list of tasks, not just one (or implement pipelining in another way)
-                #try:
-                s = clusterIO._getSession(queueURL)
-                r = s.get(queueURL + 'node/tasks?workerID=%s&numWant=50' % procName)#, timeout=0)
-                if r.status_code == 200:
-                    resp = r.json()
-                    if resp['ok']:
-                        res = resp['result']
-                        if isinstance(res, list):
-                            tasks += [(queueURL, t) for t in res]
-                        else:
-                            tasks.append((queueURL, res))
-            except requests.Timeout:
-                logger.info('Read timout requesting tasks from %s' % queueURL)
+Traceback:
+----------
+{traceback}
 
 
-            except Exception:
-                import traceback
-                logger.exception(traceback.format_exc())
-            
-                #pass
-            
+'''
+    def __init__(self, taskDescr, traceback):
+        self.taskDescr = taskDescr
+        self.traceback = traceback
         
+    @property
+    def log_url(self):
+        rule_id = self.taskDescr['id'].split('~')[0]
+        return 'PYME-CLUSTER:///__aggregate_txt/LOGS/rules/%s.log' % rule_id
         
-        if len(tasks) == 0: #no queues had tasks
-            time.sleep(1) #put ourselves to sleep to avoid constant polling
-        #else:
-        #    print qName, len(tasks)
-
-        #results = []
-
-        #loop over tasks - we pop each task and then delete it after processing
-        #to keep memory usage down
-        while len(tasks) > 0:
-            #get the next task (a task is a function, or more generally, a class with
-            #a __call__ method
-            queueURL, taskDescr = tasks.pop(0)
-            if taskDescr['type'] == 'localization':
-                try:
-                    #execute the task,
-                    #t1 = time.time()
-                    #print taskDescr
-
-                    task = remFitBuf.createFitTaskFromTaskDef(taskDescr)
-                    res = task()
-                    #t2 = time.time()
-
-                    # new style way of returning results to reduce load on server
-                    from PYME.IO import clusterResults
-                    outputs = taskDescr['outputs']
-
-                    if 'results' in outputs.keys():
-                        #old style pickled results
-                        clusterResults.fileResults(outputs['results'], res)
-                    else:
-                        if len(res.results) > 0:
-                            clusterResults.fileResults(outputs['fitResults'], res.results)
-
-                        if len(res.driftResults) > 0:
-                            clusterResults.fileResults(outputs['driftResults'], res.driftResults)
-
-                    s = clusterIO._getSession(queueURL)
-                    r = s.post(queueURL + 'node/handin?taskID=%s&status=success' % taskDescr['id'])
-                    if not r.status_code == 200:
-                        logger.error('Returning task failed with error: %s' % r.status_code)
-
-                except:
-                    import traceback
-                    traceback.print_exc()
-                    logger.exception(traceback.format_exc())
-
-                    s = clusterIO._getSession(queueURL)
-                    r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
-                    if not r.status_code == 200:
-                        logger.error('Returning task failed with error: %s' % r.status_code)
-                #finally:
-                #    del task
-            
-        #tq.returnCompletedTasks(results, name)
-        del tasks
-        #del results
-
-
+    def to_string(self):
+        rule_id, task_id = self.taskDescr['id'].split('~')
+        return self.template.format(rule_id = rule_id, task_id = task_id, comp_name = compName, pid=os.getpid(),
+                                    taskDescr= str(self.taskDescr), traceback = self.traceback)
+        
 
 class taskWorker(object):
     def __init__(self):
@@ -250,12 +158,23 @@ class taskWorker(object):
                 # queue is empty
                 return
 
-            if res is None:
+            if isinstance(res, TaskError):
+                # failure
+                from PYME.IO import clusterResults
+                
+                clusterResults.fileResults(res.log_url, res.to_string())
+                
+                s = clusterIO._getSession(queueURL)
+                r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
+                if not r.status_code == 200:
+                    logger.error('Returning task failed with error: %s' % r.status_code)
+            elif res is None:
                 # failure
                 s = clusterIO._getSession(queueURL)
                 r = s.post(queueURL + 'node/handin?taskID=%s&status=failure' % taskDescr['id'])
                 if not r.status_code == 200:
                     logger.error('Returning task failed with error: %s' % r.status_code)
+            
             elif res == True:  # isinstance(res, ModuleCollection): #recipe output
                 # res.save(outputs) #abuse outputs dictionary as context
 
@@ -439,12 +358,12 @@ class taskWorker(object):
 
                     self.resultsQueue.put((queueURL, taskDescr, True))
 
-                except:
+                except Exception:
                     import traceback
                     traceback.print_exc()
-                    logger.exception(traceback.format_exc())
-
-                    self.resultsQueue.put((queueURL, taskDescr, None))
+                    tb = traceback.format_exc()
+                    logger.exception(tb)
+                    self.resultsQueue.put((queueURL, taskDescr, TaskError(taskDescr, tb)))
 
         
 def on_SIGHUP(signum, frame):
