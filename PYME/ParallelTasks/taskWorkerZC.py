@@ -57,8 +57,8 @@ def main():
 
     procName = compName + ' - PID:%d' % os.getpid()
     import logging
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger('')
+    logging.basicConfig(filename='taskWorkerZC_%d.log' % os.getpid(), level=logging.INFO)
+    logger = logging.getLogger(__file__)
 
     serverFails = {}
 
@@ -83,16 +83,19 @@ def main():
             try:
                 #print qName
                 tq = Pyro.core.getProxyForURI(ns.resolve(qName))
-                tq._setTimeout(1)
+                tq._setTimeout(10)
                 tq._setOneway(['returnCompletedTask'])
                 #print qName
 
                 #ask the queue for tasks
+                logging.debug('Getting tasks from server')
                 tasks = tq.getTasks(procName, PYME.version.version)
+                logging.debug('Got %d tasks' % len(tasks))
 
                 #we succesfully contacted the server, so reset it's fail count
                 serverFails[qName] = 0
             except Pyro.core.ProtocolError as e:
+                logging.exception('Pyro error: %s' %e.message)
                 if e.message == 'connection failed':
                     #remember that the server failed - and put it 'on notice'
                     nFails = 1
@@ -117,6 +120,7 @@ def main():
         
         
         if len(tasks) == 0: #no queues had tasks
+            logger.debug('No tasks avaialable, waiting')
             time.sleep(1) #put ourselves to sleep to avoid constant polling
         #else:
         #    print qName, len(tasks)
@@ -132,17 +136,20 @@ def main():
             try:
                 #execute the task,
                 t1 = time.time()
+                logger.debug('running task')
                 res = task(taskQueue=tq)
                 t2 = time.time()
 
                 if not task.resultsURI is None:
                     # new style way of returning results to reduce load on server
-                    from PYME.io import clusterResults
+                    from PYME.IO import clusterResults
                     clusterResults.fileResults(task.resultsURI, res)
 
+                logging.debug('Returning task for frame %d' % res.index)
                 tq.returnCompletedTask(res, procName, t2-t1)
             except:
                 import traceback
+                logger.exception('Error returning results')
                 traceback.print_exc()
             
             del task

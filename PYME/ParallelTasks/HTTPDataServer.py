@@ -98,7 +98,7 @@ except ImportError:
     
 import requests
 import socket
-import fcntl
+#import fcntl
 import threading
 import datetime
 import time

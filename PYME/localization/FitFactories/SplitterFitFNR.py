@@ -123,7 +123,7 @@ def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resul
 def BlankResult(metadata):
     r = numpy.zeros(1, fresultdtype)
     r['tIndex'] = metadata.tIndex
-    r['fitError'].view('5f')[:] = -5e3
+    r['fitError'].view('7f')[:] = -5e3
     return r
 		
 def splWrap(*args):
