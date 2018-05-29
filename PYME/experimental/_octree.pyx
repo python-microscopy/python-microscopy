@@ -129,6 +129,10 @@ cdef class Octree:
         node_idx, child_idx, subdivide =  self.__search(pos)
         return node_idx, self._nodes[node_idx], child_idx, subdivide
     
+    @property
+    def nodes(self):
+        return self._nodes[:self._next_node]
+    
     
     @cython.boundscheck(False)  # Deactivate bounds checking
     @cython.wraparound(False)
