@@ -67,8 +67,19 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
         #logger.debug('Request path: ' + up.path)
         #logger.debug('Requests args: ' + repr(kwargs))
 
-        handler = self.server._endpoints[up.path]
-        resp = handler(**kwargs)
+        try:
+            handler = self.server._endpoints[up.path]
+        except KeyError:
+            self.send_error(404, 'No handler for %s' % up.path)
+            return
+        
+         
+        try:
+            resp = handler(**kwargs)
+        except Exception:
+            import traceback
+            self.send_error(500, 'Server Error\n %s' % traceback.format_exc())
+            return
         
         compress_output = 'gzip' in self.headers.get('Accept-Encoding', '')
 
