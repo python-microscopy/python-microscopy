@@ -154,7 +154,7 @@ class FFBase(object):
         
 
          #cut region out of data stack
-        dataROI = self.data[xslice, yslice, 0:2]
+        dataROI = np.copy(self.data[xslice, yslice, 0:2])
         #print dataROI.shape
         dataROI[:,:,1] = self.data[xslice2, yslice2, 1]
         

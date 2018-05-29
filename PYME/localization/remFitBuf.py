@@ -333,17 +333,20 @@ class fitTask(taskDef.Task):
         if 'Splitter.Channel0ROI' in self.md.getEntryNames():
             xg, yg, w, h = self.md['Splitter.Channel0ROI']            
             xr, yr, w, h = self.md['Splitter.Channel1ROI']
+
+            w2 = w - x0
+            h2 = h - y0
         else:
             xg,yg, w, h = 0,0,self.data.shape[0], self.data.shape[1]
             xr, yr = w,h
             
         ch1 = (x>=(xr - x0))&(y >= (yr - y0))
             
-        xn = x - (x >= (xg-x0+w))*(xr)
-        yn = y - (y >= (yg-y0+h))*(yr)
+        xn = x - ch1*(xr-xg)
+        yn = y - ch1*(yr-yg)
         
         if not (('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip'))):          
-            yn += ch1*(h - 2*yn) 
+            yn += ch1*(h - y0 - 2*yn)
             
         #chromatic shift
         if 'chroma.dx' in self.md.getEntryNames():
@@ -353,7 +356,7 @@ class fitTask(taskDef.Task):
             xn += dx*ch1
             yn += dy*ch1
        
-        return np.clip(xn, 0, w-1), np.clip(yn, 0, h-1)
+        return np.clip(xn, 0, w2-1), np.clip(yn, 0, h2-1)
         
     def __remapSplitterCoords(self, x,y):
         vx = self.md['voxelsize.x']*1e3
@@ -370,10 +373,10 @@ class fitTask(taskDef.Task):
             xr, yr = w,h
             
         xn = x + (xr - xg)
-        yn = y + (yr -yg)
+        yn = y + (yr - yg)
         
         if not (('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip'))):          
-            yn = (h - y) + yr - yg             
+            yn = (h-y0 - y) + yr - yg
             
         #chromatic shift
         if 'chroma.dx' in self.md.getEntryNames():
