@@ -374,7 +374,7 @@ def fit_quad_surf(pts, control_pt, fitPos=True):
     -------
 
     """
-    from PYMEnf.Analysis import arcfit
+    from PYME.Analysis.points import arcfit
     
     #randomly generate starting parameters
     sp = 2*np.random.randn(8).astype('f')
