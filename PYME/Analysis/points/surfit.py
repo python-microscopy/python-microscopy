@@ -338,11 +338,53 @@ def gen_quad_rot_surf(p, xr, yr):
     return R.dot(pts_r) + p[:3][:,None], R.dot(N)
 
 def fit_quad_surf(pts, control_pt, fitPos=True):
+    """
+    Fit a quadratic surface to a control point and a neighbourhood of points (both supplied)
+    
+    Parameters
+    ----------
+    pts :  ndararay[N,3] coordinates of point neighbourhood. This should normally include the control point
+    control_pt: ndararay[3] x,y,z coordinates of control point
+    fitPos : bool, allow the fit surface to depart from the control point
+    
+    
+    Surface model
+    -------------
+    
+    The model which we fit has the following form. We calculate the misfit with a surface w(u,v):
+    
+    $w(u,v) = A \times u^2 + B \times v^2$
+    
+    which is defined on the rotated and offset coordinate frame
+    
+    $\vec{s} = [u v w] = \mathbf{Az}\dot \mathbf{Ay}\dot \mathbf{Ax}\dot (\vec{r}- \vec{r_0}) $
+    
+    where $\vec{r} = [x y z]$ is a localization position, $\vec{r_0}$ is a translational offset and $\mathbf{Ax}$,
+     $\mathbf{Ay}$, and $\mathbf{Az}$ are one dimensional rotation matrices about the x, y and z axes respectively:
+    
+    
+    $\mathbf{Ax}= [[1, 0, 0], [0, \cos(\phi), \sin(\phi)], [0, -\sin(\phi), \cos(\phi)]])$
+    $\mathbf{Ay} = [[\cos(\theta), 0, -\sin(\theta)], [0, 1, 0], [\sin(\theta), -0, \cos(\theta)]])$
+    $\mathbf{Az} = [[\cos(\psi), \sin(\psi), -0], [-\sin(\psi), \cos(\psi), 0], [0, 0, 1]])$
+    
+    $A$, $B$, $\phi$, $\theta$, and $\psi$ are always free parameters in the model. if fitPos=True, $\vec{r_0}$ is also
+    a free parameter, otherwise it is fixed to the location of the control point.
+
+    Returns
+    -------
+
+    """
     from PYMEnf.Analysis import arcfit
+    
+    #randomly generate starting parameters
     sp = 2*np.random.randn(8).astype('f')
     #sp[-2]+= 10
+    
+    #set the staring surface position to be co-incident with the control point
     sp[:3] = control_pt
     
+    #choose a model based on whether or not the surface should pass through the control point
+    #note that these model functions are coded in c
     if fitPos:
         #return leastsq(quad_rot_surf_misfit,sp, args=(pts,))[0]
         return leastsq(arcfit.quad_surf_mf, sp, args=(pts[0,:], pts[1,:], pts[2,:]))[0]
@@ -369,45 +411,117 @@ def _get_reconstr_grid(radius=50., step=10.):
     return _xr, _yr
 
 def reconstruct_quad_surf(p, control_point, N, radius=50, step=10.0):
+    """
+    Reconstruct a fitted surface by generating a number of virtual localizations on that surface
+     
+    Parameters
+    ----------
+    p : the fit results for this control point
+    control_point : the control point
+    N : the number of points contributing to the surface (this is just copied to the output so that t can be used later
+        as a quality metric)
+    radius : the radius over which to reconstruct
+    step : the spacing at which to sample the surface (in nm).
+    
+    Notes
+    -----
+    
+    Reconstruction occurs on a uniformly sampled grid in u,v space (using the terminology introduce in fit_quad_surf).
+    For low surface curvatures (small A & B) this will be approximately uniformly sampled on the surface, but the sampling
+    will become less uniform as curvature increases. This is not anticipated to be a significant issue, especially if the ensemble
+    surfaces will be binarized (e.g. by histograming and thresholding) later, as denser sampling (if needed) can be
+    achieved by decreasing the grid spacing.
+
+    Returns
+    -------
+    an array of points
+
+    """
+    #generate a regular grid in u,v space on which to sample our surface
     xr, yr = _get_reconstr_grid(radius, step)
 
+    #evaluate the fitted model on the grid, and rotate into microscope space
     sp, normals = gen_quad_rot_surf(p, xr, yr)
     
+    # find the distance of each sampled point and mask out those points which are further from the control point than the
+    # reconstruction radius. This limits the reconstruction to a sphere centered on the control point and
+    # converts the reconstruction from a warped square to a warped disc.
+    # NOTE: this introduces a non-linearity in the number of virtual points generated for each control point
     d = sp - control_point[:,None]
-    
     mask = (d*d).sum(0) < radius*radius
     
     return np.vstack([sp[:,mask], normals[:,mask], 0*sp[0,mask] + N])
 
 
 def reconstruct_quad_surf_region_cropped(p, control_point, N, kdt, data, radius=50, step=10.0, fit_radius=100.):
-    from scipy.spatial import Delaunay
+    """
+    Like reconstruct_quad_surf, but additionally masks the reconstruction points to the convex hull of the points used
+    to generate the fit.
     
+    Parameters
+    ----------
+    p
+    control_point
+    N
+    kdt
+    data
+    radius
+    step
+    fit_radius
+
+    Returns
+    -------
+
+    """
+    from scipy.spatial import Delaunay
+    #refind the point neighbourbood used for fitting
     pts = data[kdt.query_ball_point(control_point, fit_radius),:]
+    #generate the Delaunay tesselation of these points (to allow us to extract their convex hull)
     T  = Delaunay(pts)
     
+    #generate the virtual points used to reconstruct the surface
     xr, yr = _get_reconstr_grid(radius, step)
-    
     sp, normals = gen_quad_rot_surf(p, xr, yr)
     
+    #mask the virtual points to a sphere around the control point
     d = sp - control_point[:, None]
-    
     mask = (d * d).sum(0) < radius * radius
     sp = sp[:,mask]
     
+    #mask again to the convex hull of the points used for fitting
     mask = T.find_simplex(sp.T) > 0
     
     return np.vstack([sp[:, mask], normals[:,mask], 0*sp[0,mask] + N])
 
 def fit_quad_surf_to_neighbourbood(data, kdt, i, radius=100, fitPos=True):
+    """
+    Perform a single fit of a quadratic surface to a point and it's neighbours, extracting both the control point and
+    it's neighbours from the full dataset
+    
+    Parameters
+    ----------
+    data : [N,3] ndarray of points
+    kdt : scipy.spatial.cKDTree object
+    i : index in points of control point to define fit support
+    radius : radius in nm of neighbours to query for fit support
+    fitPos : bool, allow the fit to depart from the control point
+
+    Returns
+    -------
+
+    """
+    #find the control point and it's neighbours
     pt= data[i,:]
     pts = data[kdt.query_ball_point(pt, radius),:]
     
     N = len(pts)
     
+    #bail if we don't have enough points for a meaningful surface fit
+    #Note: this cutoff is arbitrary
     if N < 10:
         return
     
+    #do the fit
     return (fit_quad_surf(pts.T, pt, fitPos=fitPos), pt, N)
     
 def fit_quad_surfaces(data, radius, fitPos=False):
@@ -446,13 +560,40 @@ SURF_PATCH_DTYPE = [('results', [('x', 'f4'), ('y', 'f4'), ('z', 'f4'), ('theta'
 
 
 def fit_quad_surfaces_tr(data, kdt, ivals, results, radius=100, fitPos=True):
-    #kdt = kdtree.KDTree(pts)
+    """
+    Fit surfaces to point data using a pre-supplied kdtree for calculating neighbourhoods and save the results into the
+    supplied results array.
+    
+    Note: the _tr indicates that this version uses a supplied tree and saves it's results into the passed results array
+    
+    Parameters
+    ----------
+    data : [N,3] ndarray of point positions. Note that this should be all positions, not just the control points which we are responsible
+        for fitting (see ivals) as neighbourhoods will likely include points which are not in our set of control points
+    kdt : a scipy.spatial.cKDTree object used for fast neighbour queries
+    ivals : indices of the points to use as control points in our fits
+    results : a numpy array in which to save the results (pass by reference)
+    radius : the support radius / neighbourhood size in nm
+    fitPos : should we constrain the fit to pass through the control point
+
+    Returns
+    -------
+
+    """
+    #create a view into the results data in a way we can easily manipulate it
     res = results.view(SURF_PATCH_DTYPE)
     
+    #loop over controll points
     for i in ivals:
         #print i
         #res = np.zeros(1, SURF_PATCH_DTYPE)
+        
+        #do the fit
         r = fit_quad_surf_to_neighbourbood(data, kdt, i, radius, fitPos=fitPos)
+        
+        #pach our results into the correct format
+        #note that the fit will only be performed if there are enough points in the neighbourbood to actually constrain
+        #the fit so isolated points (usually noise) will not fit and will return None instead
         if not r == None:
             p, pt, N = r
             res[i]['results'] = np.array(p, dtype='f4', order='C')
@@ -502,44 +643,73 @@ def fit_quad_surfaces_P(data, radius, fitPos=False, NFits=0):
 
 
 def fit_quad_surfaces_Pr(data, radius, fitPos=False, NFits=0):
+    """
+    Fits quadratic surfaces to each point in the data set using the neighbouring points within a radius r to define the
+    surface. This version distributes the processing across multiple processes in order to speed things up.
+    
+    Parameters
+    ----------
+    data: [N,3] ndarray
+        The point positions
+        
+    radius: float
+        The radius in nm around each point to use as support for the surface through that point. The surface patch will
+        be fit to all points within this radius. Implicitly this sets the scale of the smoothing - i.e. the scale over
+        which the true object surface can be assumed to have quadratic form.
+        
+    fitPos: bool
+        Should the surface be allowed to depart from the control point (i.e. the point which was used to define the fit
+        support neighbourhood). A value of False constrains the surface such that it always passes through the control
+        point, whereas True lets the surface move. True should give more accurate surfaces when the point density is high
+        and surfaces are well separated, False results in a better constrained fit and deals somewhat better with the case
+        when multiple surfaces are close by (forces the fit into the local minimum corresponding to the surface that the
+        control point is on).
+    NFits: int
+        Only fit the first NFits points. Largely exists for debugging to allow faster and more interactive computation.
+
+    Returns
+    -------
+
+    a numpy array of results with the dtype surfit.SURF_PATCH_FLAT
+    """
     from scipy.spatial import cKDTree
-    #kdt = kdtree.KDTree(pts)
+    #generate a kdtree to allow us to rapidly find a points neighbours
     kdt = cKDTree(data)
     
     if NFits == 0:
         NFits = data.shape[0]
     
-    #surfs = []
-    
-    #def _task(i):
-    #    return fitPtA(kdt, pts, i)
-    
     nCPUs = multiprocessing.cpu_count()
     #nCPUs = 1
     
-    #if fitPos:
-    #nParams = 8
-    #res = shmarray.zeros((nParams, NFits))
-    #pos = shmarray.zeros((3, NFits))
-    #nPs = shmarray.zeros(NFits)
-    
+    #generate a results array in shared memory. The worker processes will each write their chunk of results into this array
+    #this make the calling semantics of the the actual call below pass by reference for the results
+    #there is a bit of magic going on behind the scenes for this to work - see PYME.util.shmarray
     results = shmarray.zeros(NFits, SURF_PATCH_DTYPE_FLAT)
-    #rt = shmarray.zeros((2,NFits))
     
+    #calculate a list of points at which to fit a surface
     fnums = range(NFits)
     
+    #create a process for each cpu and assign them a chunk of fits
+    #note that the slicing of fnums[i::nCPUs] effectively interleaves the fit allocations - ie one process works on every
+    #nCPUth point. This was done as a simple way of allocating the tasks evenly, but might not be optimal in terms of e.g.
+    #cache coherency. The process creation here will be significantly more efficient on *nix platforms which use copy on
+    #write forking when compared to windows which will end up copying both the data and kdt structures
     processes = [multiprocessing.Process(target=fit_quad_surfaces_tr, args=(data, kdt, fnums[i::nCPUs], results))
                  for i in
                  range(nCPUs)]
     
+    #launch all the processes
     for p in processes:
         print p
         p.start()
     
+    #wait for them to complete
     for p in processes:
         print p
         p.join()
     
+    #each process should have written their results into our shared memory array, return this
     return results
 
 def reconstruct_quad_surfaces(fits, radius):
@@ -550,6 +720,19 @@ def reconstruct_quad_surfaces_P(fits, radius):
     return np.hstack([reconstruct_quad_surf(res[:,i], pos[:,i], N[i], radius=radius) for i in range(len(N)) if N[i] >= 1])
 
 def reconstruct_quad_surfaces_Pr(fits, radius):
+    """
+    Reconstruct surfaces from fit results. This is a helper function which calls reconstruct_quad_surf
+    repeatedly for each fit in the data set
+    
+    Parameters
+    ----------
+    fits
+    radius
+
+    Returns
+    -------
+
+    """
     #res, pos, N = fits
     #print fits
     fits = fits.view(SURF_PATCH_DTYPE)
