@@ -58,7 +58,7 @@ class FilterPanel(wx.Panel):
         #GUI stuff
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.lFiltKeys = wx.ListCtrl(self, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER, size=(-1, 30*(len(self.filterKeys.keys())+1)))
+        self.lFiltKeys = wx.ListCtrl(self, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER, size=(-1, 30*(max(len(self.filterKeys.keys())+1, 5))))
 
         self.lFiltKeys.InsertColumn(0, 'Key')
         self.lFiltKeys.InsertColumn(1, 'Min')

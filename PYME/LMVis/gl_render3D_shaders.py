@@ -164,6 +164,8 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.on_screen = True
         self.view_port_size = (self.Size[0], self.Size[1])
+        
+        self._old_bbox = None
 
         return
     
@@ -234,6 +236,12 @@ class LMGLShaderCanvas(GLCanvas):
                 
         if nLayers > 0:
             #print('bbox: %s' % bb)
+            if not self._old_bbox is None and not np.allclose(self._old_bbox, bb):
+                #bbox has changed - update our cliping region
+                self.bounds['x'] = [bb[0]-1, bb[3]+1]
+                self.bounds['y'] = [bb[1]-1, bb[4]+1]
+                self.bounds['z'] = [bb[2]-1, bb[5]+1]
+            self._old_bbox = bb
             return bb
         else:
             return None
@@ -888,6 +896,7 @@ class LMGLShaderCanvas(GLCanvas):
         return view
     
     def refresh(self, *args, **kwargs):
+        bb = self.bbox #force an update of our bounding box
         self.Refresh()
 
 

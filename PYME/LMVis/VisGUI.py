@@ -70,7 +70,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     with the LMDisplay module used for online display and has been factored out into the visCore module"""
     def __init__(self, parent, filename=None, id=wx.ID_ANY, 
                  title="PYME Visualise", pos=wx.DefaultPosition,
-                 size=(700,650), style=wx.DEFAULT_FRAME_STYLE, use_shaders=False, cmd_args=None):
+                 size=(900,750), style=wx.DEFAULT_FRAME_STYLE, use_shaders=False, cmd_args=None):
 
         AUIFrame.__init__(self, parent, id, title, pos, size, style)
         

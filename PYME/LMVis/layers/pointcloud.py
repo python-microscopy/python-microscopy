@@ -142,6 +142,7 @@ class PointCloudRenderLayer(EngineLayer):
         if not (self.engine is None or self.datasource is None):
             self.update_from_datasource(self.datasource)
             self.on_update.send(self)
+            
 
 
     @property

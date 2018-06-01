@@ -29,7 +29,7 @@ class LayerPane(afp.foldingPane):
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
         
-        self.nb = wx.Notebook(pan, size=(150, 400))
+        self.nb = wx.Notebook(pan, size=(200, 350))
         self.nb.AssignImageList(self.il)
         
         self.update()

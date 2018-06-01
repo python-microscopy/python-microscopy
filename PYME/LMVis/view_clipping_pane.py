@@ -211,7 +211,7 @@ class ClippingPanel(wx.Panel):
         self.Update()
         self.glcanvas.refresh()
         evt = LimitChangeEvent(self.GetId(), upper=self.view_limits[1], lower=self.view_limits[0])
-        self.ProcessEvent(evt)
+        #self.ProcessEvent(evt)
 
 
     def OnLeftDown(self, event):
