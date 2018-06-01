@@ -22,6 +22,8 @@ class AUIFrame(wx.Frame):
         
         self.paneHooks = []
         self.pane0 = None
+        
+        self.adding_panes=False
 
         self._menus = {}
         # Menu Bar

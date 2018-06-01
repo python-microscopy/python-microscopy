@@ -306,14 +306,15 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         
                     
     def _createNewTabs(self):
-        #print 'md'
+        logger.debug('Creating tabs')
+        self.adding_panes = True
         self.mdp = MetadataTree.MetadataPanel(self, self.pipeline.mdh, editable=False)
-        self.AddPage(self.mdp, caption='Metadata')
+        self.AddPage(self.mdp, caption='Metadata', select=False, update=False)
         
         #print 'cp'        
         if 'gFrac' in self.pipeline.filter.keys():
             self.colp = colourPanel.colourPanel(self, self.pipeline, self)
-            self.AddPage(self.colp, caption='Colour', update=False)
+            self.AddPage(self.colp, caption='Colour', select=False, update=False)
             
         #print 'ev'
         if not self.pipeline.events is None:
@@ -323,9 +324,10 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     
             self.elv.SetCharts(self.pipeline.eventCharts)
             
-            self.AddPage(self.elv, caption='Events', update=False)
-            
-        #print 'ud'
+            self.AddPage(self.elv, caption='Events', select=False, update=False)
+
+        logger.debug('Finished creating tabs')
+        self.adding_panes = False
         self._mgr.Update()
             
         
@@ -401,8 +403,8 @@ def parse():
                         help='switch shaders on(default: off)')
     parser.add_argument('--no-shaders', dest="use_shaders", action='store_false',
                         default=True, help='switch shaders off(default: off)')
-    parser.add_argument('--new-layers', dest='new_layers', action='store_true', default=False)
-    parser.add_argument('--no-layers', dest='new_layers', action='store_false', default=False)
+    parser.add_argument('--new-layers', dest='new_layers', action='store_true', default=True)
+    parser.add_argument('--no-layers', dest='new_layers', action='store_false', default=True)
     args = parser.parse_args()
     return args
     

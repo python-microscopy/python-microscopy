@@ -39,6 +39,8 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
         wxPlotPanel.PlotPanel.__init__( self, parent, **kwargs )
 
     def draw( self ):
+        if self.IsShownOnScreen():
+            #print self.IsShownOnScreen()
             print('d')
             """Draw data."""
             if self.visFrame.refv and not self.pipeline.ready or len(self.pipeline.filter['x']) == 0:
@@ -57,8 +59,8 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
             n, xedge, yedge = numpy.histogram2d(x, y, bins = [100,100], range=[(x.min(), x.max()), (y.min(), y.max())])
 
             l_x = len(x)
-            x = x[::max(l_x/1e4, 1)]
-            y = y[::max(l_x/1e4, 1)]
+            x = x[::int(max(l_x/1e4, 1))]
+            y = y[::int(max(l_x/1e4, 1))]
 
             #facsPlot.facsPlotContour(x, y, 100)
 
@@ -68,16 +70,16 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
             cf = self.pipeline.colourFilter
 
             for k, v in self.pipeline.fluorSpecies.items():
-                p_dye = self.pipeline.filter['p_%s' % k][::max(l_x/1e4, 1)]
+                p_dye = self.pipeline.filter['p_%s' % k][::int(max(l_x/1e4, 1))]
 
                 p_other = numpy.zeros(x.shape)
                 #p_tot = numpy.zeros(p_dye.shape)
-                p_tot = cf.t_p_background*self.pipeline.filter['ColourNorm'][::max(l_x/1e4, 1)]
+                p_tot = cf.t_p_background*self.pipeline.filter['ColourNorm'][::int(max(l_x/1e4, 1))]
 
                 for k2 in self.pipeline.fluorSpecies.keys():
-                    p_tot  += self.pipeline.filter['p_%s' % k2][::max(l_x/1e4, 1)]
+                    p_tot  += self.pipeline.filter['p_%s' % k2][::int(max(l_x/1e4, 1))]
                     if not k2 ==k:
-                        p_other = numpy.maximum(p_other, self.pipeline.filter['p_%s' % k2][::max(l_x/1e4, 1)])
+                        p_other = numpy.maximum(p_other, self.pipeline.filter['p_%s' % k2][::int(max(l_x/1e4, 1))])
 
                 p_dye = p_dye/p_tot
                 p_other = p_other/p_tot
@@ -376,8 +378,12 @@ class colourPanel(wx.Panel):
             
             self.pipeline.Rebuild()
 
-        self.visFr.UpdatePointColourChoices()
-        self.visFr.colourFilterPane.UpdateColourFilterChoices()
+        try:
+            self.visFr.UpdatePointColourChoices()
+        
+            self.visFr.colourFilterPane.UpdateColourFilterChoices()
+        except AttributeError:
+            pass
 
         self.refresh()
 
@@ -414,29 +420,20 @@ class colourPanel(wx.Panel):
 
     def OnShow(self, event):
         #print event.IsShown()
-        if event.IsShown():
+        if event.IsShown() and not self.visFr.adding_panes:
             self.refresh()
 
     def refresh(self):
+        if not self.IsShown():
+            return
+        
         self.colPlotPan.draw()
 
         for key in self.pipeline.fluorSpecies.keys():
             ind = self.lFluorSpecies.FindItem(-1,key)
-            p_dye = self.pipeline.mapping['p_%s' % key]
+            num_dyes = sum(self.pipeline.colourFilter._index(key))
 
-            p_other = numpy.zeros(p_dye.shape)
-            #p_tot = numpy.zeros(p_dye.shape)
-            p_tot = self.pipeline.colourFilter.t_p_background*self.pipeline.mapping['ColourNorm']
-
-            for k2 in self.pipeline.fluorSpecies.keys():
-                p_tot  += self.pipeline.mapping['p_%s' % k2]
-                if not k2 ==key:
-                    p_other = numpy.maximum(p_other, self.pipeline.mapping['p_%s' % k2])
-
-            p_dye = p_dye/p_tot
-            p_other = p_other/p_tot
-
-            self.lFluorSpecies.SetStringItem(ind,2, '%d' % ((p_dye > self.pipeline.colourFilter.t_p_dye)*(p_other < self.pipeline.colourFilter.t_p_other)).sum())
+            self.lFluorSpecies.SetStringItem(ind,2, '%d' % num_dyes)
 
 
         #self.colPlotPan._SetSize()

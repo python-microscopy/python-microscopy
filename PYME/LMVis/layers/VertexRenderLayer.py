@@ -23,7 +23,7 @@
 from abc import abstractmethod
 
 import numpy as np
-from PYME.LMVis.layers.Layer import BaseLayer
+from PYME.LMVis.layers.base import BaseLayer
 from OpenGL.GL import *
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 

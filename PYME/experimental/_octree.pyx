@@ -187,6 +187,16 @@ cdef class Octree:
         
         return new_idx, self._nodes[new_idx]
     
+    
+    def box_size(self, depth):
+        scale = 1.0/(2**depth)
+        
+        deltax = self._xwidth*scale
+        deltay = self._ywidth*scale
+        deltaz = self._zwidth*scale
+        
+        return deltax, deltay, deltaz
+    
     @cython.boundscheck(False)  # Deactivate bounds checking
     @cython.wraparound(False)
     def __add_node(self, np.float32_t x, np.float32_t y, np.float32_t z, int parent_idx,

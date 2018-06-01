@@ -43,7 +43,11 @@ class SelectionOverlayLayer(OverlayLayer):
         -------
 
         """
-        with self.get_shader_program():
+        if not self.visible:
+            return
+        
+        self._clear_shader_clipping()
+        with self.shader_program:
             if self._selection_settings.show:
                 glDisable(GL_LIGHTING)
                 x0, y0 = self._selection_settings.start

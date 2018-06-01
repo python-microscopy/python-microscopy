@@ -53,6 +53,10 @@ class LUTOverlayLayer(OverlayLayer):
 
 
     def render(self, gl_canvas):
+        if not self.visible:
+            return
+        
+        self._clear_shader_clipping()
         with self.shader_program:
             view_size_x = gl_canvas.xmax - gl_canvas.xmin
             view_size_y = gl_canvas.ymax - gl_canvas.ymin

@@ -331,6 +331,46 @@ class Pipeline:
         return lds
 
     @property
+    def layer_data_source_names(self):
+        """
+        Return a list of names of datasources we can use with dotted channel selection
+
+        There is a little bit of magic here as we augment the names with dotted names for colour channel selection
+        """
+        names = []#'']
+        for k, v in self.layer_datasources.items():
+            names.append(k)
+            if isinstance(v, tabular.colourFilter):
+                for c in v.getColourChans():
+                    names.append('.'.join([k, c]))
+    
+        return names
+    
+    def get_layer_data(self, dsname):
+        """
+        Returns layer data for a given name. The principle difference to just accessing self.dataSources directly is that
+        we do some magic relating to allow colour channels to be accessed with the dot notation e.g. dsname.colour_channel
+
+        """
+        if dsname == '':
+            return self
+    
+        parts = dsname.split('.')
+        if len(parts) == 2:
+            # special case - permit access to channels using dot notation
+            # NB: only works if our underlying datasource is a ColourFilter
+            ds, channel = parts
+            if ds == 'output':
+                return self.colourFilter.get_channel_ds(channel)
+            else:
+                return self.dataSources.get(ds, None).get_channel_ds(channel)
+        else:
+            if dsname =='output':
+                return self.colourFilter
+            else:
+                return self.dataSources.get(dsname, None)
+
+    @property
     def selectedDataSource(self):
         """
 

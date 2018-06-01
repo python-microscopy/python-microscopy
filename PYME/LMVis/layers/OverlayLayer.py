@@ -20,11 +20,11 @@
 #
 import abc
 
-from PYME.LMVis.layers.Layer import BaseLayer
+from PYME.LMVis.layers.base import SimpleLayer
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
 
-class OverlayLayer(BaseLayer):
+class OverlayLayer(SimpleLayer):
 
     def __init__(self, offset):
         super(OverlayLayer, self).__init__()

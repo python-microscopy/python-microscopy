@@ -87,11 +87,11 @@ class ClippingPanel(wx.Panel):
         
         
         if self.axis == 'x':
-            return bb[0], bb[3]
+            return bb[0]-1, bb[3]+1
         elif self.axis == 'y':
-            return bb[1], bb[4]
+            return bb[1]-1, bb[4]+1
         elif self.axis == 'z':
-            return bb[2], bb[5]
+            return bb[2]-1, bb[5]+1
         else:
             return 0, 1
         
