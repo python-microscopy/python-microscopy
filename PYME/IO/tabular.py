@@ -436,7 +436,7 @@ class matfileSource(TabularBase):
         return self._keys
 
     def __getitem__(self, key):
-        key, sl = self._getKeySlice(key)
+        key, sl = self._getKeySlice(key)t
         if not key in self._keys:
             raise KeyError('Key (%s) not found' % key)
 

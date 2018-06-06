@@ -610,6 +610,8 @@ class Pipeline:
             else:
                 ds = tabular.textfileSource(filename, kwargs['FieldNames'])
 
+
+
         return ds
 
     def OpenFile(self, filename= '', ds = None, **kwargs):
