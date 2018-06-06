@@ -18,5 +18,3 @@ def load_stl_binary(fn):
         triangles = np.fromfile(f, [('normal', '3f4'), ('vertex0', '3f4'), ('vertex1', '3f4'), ('vertex2', '3f4'), ('attrib', 'u2')], n_triangles)
 
         return triangles
-
-class StlFileSource
