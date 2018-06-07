@@ -13,7 +13,7 @@ from OpenGL.GL import *
 class WireframeEngine(BaseEngine):
     def __init__(self):
         BaseEngine.__init__(self)
-        self.set_shader_program(DefaultShaderProgram)
+        self.set_shader_program(WireFrameShaderProgram)
 
     def render(self, gl_canvas, layer):
         self._set_shader_clipping(gl_canvas)
@@ -33,7 +33,7 @@ class FlatFaceEngine(WireframeEngine):
         BaseEngine.__init__(self)
 
     def render(self, gl_canvas, layer):
-        self.set_shader_program(WireFrameShaderProgram)
+        self.set_shader_program(DefaultShaderProgram)
         WireframeEngine.render(self, gl_canvas, layer)
 
 class ShadedFaceEngine(WireframeEngine):
@@ -56,7 +56,7 @@ class TrianglesRenderLayer(EngineLayer):
     Layer for viewing triangle meshes.
     """
     # properties to show in the GUI. Note that we also inherit 'visible' from BaseLayer
-    faceColour = CStr('', desc='Name of variable used to colour triangle faces')
+    vertexColour = CStr('', desc='Name of variable used to colour our points')
     cmap = Enum(*cm.cmapnames, default='gist_rainbow', desc='Name of colourmap used to colour faces')
     clim = ListFloat([0, 1], desc='How our variable should be scaled prior to colour mapping')
     alpha = Float(1.0, desc='Face tranparency')
@@ -84,7 +84,7 @@ class TrianglesRenderLayer(EngineLayer):
         self.on_update = dispatch.Signal()
 
         # define responses to changes in various traits
-        self.on_trait_change(self._update, 'faceColour')
+        self.on_trait_change(self._update, 'vertexColour')
         self.on_trait_change(lambda: self.on_update.send(self), 'visible')
         self.on_trait_change(self.update, 'cmap, clim, alpha, dsname')
         self.on_trait_change(self._set_method, 'method')
@@ -113,7 +113,7 @@ class TrianglesRenderLayer(EngineLayer):
 
     def _get_cdata(self):
         try:
-            cdata = self.datasource[self.faceColour]
+            cdata = self.datasource[self.vertexColour]
         except KeyError:
             cdata = np.array([0, 1])
 
@@ -181,7 +181,7 @@ class TrianglesRenderLayer(EngineLayer):
             normals = None
             self._bbox = None
 
-        if clim is not None and colors is not None and clim is not None:
+        if clim is not None and colors is not None:
             cs_ = ((colors - clim[0]) / (clim[1] - clim[0]))
             cs = cmap(cs_)
             cs[:, 3] = alpha
@@ -238,7 +238,7 @@ class TrianglesRenderLayer(EngineLayer):
 
         return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
                      Item('method'),
-                     Item('faceColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
+                     Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ]),
                      Group([Item('cmap', label='LUT'), Item('alpha'), Item('visible')])], )
         # buttons=['OK', 'Cancel'])

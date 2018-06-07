@@ -11,10 +11,14 @@
  */
 
 #include "Python.h"
-#include <complex.h>
+//#ifdef _WIN32
+//#include <complex>
+//#else
+//#include <complex.h>
+//#endif
 #include <math.h>
-#include "numpy/arrayobject.h"
 #include <stdio.h>
+#include "numpy/arrayobject.h"
 
 #define MIN(a, b) ((a<b) ? a : b) 
 #define MAX(a, b) ((a>b) ? a : b)
