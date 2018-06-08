@@ -62,7 +62,7 @@ class PointCloudRenderLayer(EngineLayer):
     
     """
     
-    #properties to show in the GUI. Note that we also inherit 'visible' from BaseLayer
+    # properties to show in the GUI. Note that we also inherit 'visible' from BaseLayer
     vertexColour = CStr('', desc='Name of variable used to colour our points')
     point_size = Float(30.0, desc='Rendered size of the points in nm')
     cmap = Enum(*cm.cmapnames, default='gist_rainbow', desc='Name of colourmap used to colour points')
@@ -88,7 +88,8 @@ class PointCloudRenderLayer(EngineLayer):
 
         self._bbox = None
     
-        #define a signal so that people can be notified when we are updated (currently used to force a redraw when parameters change)
+        # define a signal so that people can be notified when we are updated (currently used to force a redraw when
+        # parameters change)
         self.on_update = dispatch.Signal()
 
         # define responses to changes in various traits
@@ -104,7 +105,8 @@ class PointCloudRenderLayer(EngineLayer):
         self.dsname = dsname
         self.method = method
         
-        # if we were given a pipeline, connect ourselves to the onRebuild signal so that we can automatically update ourselves
+        # if we were given a pipeline, connect ourselves to the onRebuild signal so that we can automatically update
+        # ourselves
         if not self._pipeline is None:
             self._pipeline.onRebuild.connect(self.update)
 
@@ -208,8 +210,7 @@ class PointCloudRenderLayer(EngineLayer):
             color_limit = None
         
         self.set_values(vertices, normals, cs, cmap, clim, alpha)
-    
-    
+
     def set_values(self, vertices=None, normals=None, colors=None, color_map=None, color_limit=None, alpha=None):
         if vertices is not None:
             self._vertices = vertices
@@ -223,7 +224,6 @@ class PointCloudRenderLayer(EngineLayer):
             self._color_limit = color_limit
         if alpha is not None:
             self._alpha = alpha
-    
     
     def get_vertices(self):
         return self._vertices

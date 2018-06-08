@@ -65,7 +65,7 @@ class TrianglesRenderLayer(EngineLayer):
     _datasource_keys = List()
     _datasource_choices = List()
 
-    def __init__(self, pipeline, method='points', dsname='', **kwargs):
+    def __init__(self, pipeline, method='wireframe', dsname='', **kwargs):
         self._pipeline = pipeline
         self.engine = None
         self.cmap = 'gist_rainbow'
@@ -80,7 +80,8 @@ class TrianglesRenderLayer(EngineLayer):
 
         self._bbox = None
 
-        # define a signal so that people can be notified when we are updated (currently used to force a redraw when parameters change)
+        # define a signal so that people can be notified when we are updated (currently used to force a redraw when
+        # parameters change)
         self.on_update = dispatch.Signal()
 
         # define responses to changes in various traits
@@ -96,7 +97,8 @@ class TrianglesRenderLayer(EngineLayer):
         self.dsname = dsname
         self.method = method
 
-        # if we were given a pipeline, connect ourselves to the onRebuild signal so that we can automatically update ourselves
+        # if we were given a pipeline, connect ourselves to the onRebuild signal so that we can automatically update
+        # ourselves
         if not self._pipeline is None:
             self._pipeline.onRebuild.connect(self.update)
 
@@ -139,33 +141,59 @@ class TrianglesRenderLayer(EngineLayer):
         return self._bbox
 
     def update_from_datasource(self, ds):
-        x, y = ds[self.x_key], ds[self.y_key]
+        """
+        Pulls vertices/normals from a binary STL file. See PYME.IO.FileUtils.stl for more info. Calls update_data on the input.
 
-        if not self.z_key is None:
-            z = ds[self.z_key]
-        else:
-            z = 0 * x
+        Parameters
+        ----------
+        ds :
+            Binary STL file read in via load_stl_binary()
 
-        if not self.vertexColour == '':
-            c = ds[self.vertexColour]
-        else:
-            c = None
+        Returns
+        -------
+        None
+        """
 
-        if self.xn_key in ds.keys():
-            xn, yn, zn = ds[self.xn_key], ds[self.yn_key], ds[self.zn_key]
-            self.update_data(x, y, z, c, cmap=getattr(cm, self.cmap), clim=self.clim, alpha=self.alpha, xn=xn, yn=yn,
-                             zn=zn)
-        else:
-            self.update_data(x, y, z, c, cmap=getattr(cm, self.cmap), clim=self.clim, alpha=self.alpha)
+        # Concatenate vertices, interleave, restore to 3x(3N) points (3xN triangles),
+        # and assign the points to x, y, z vectors
+        x, y, z = np.hstack((ds['vertex0'], ds['vertex1'], ds['vertex2'])).reshape(-1, 3).T
 
-    def update_data(self, x=None, y=None, z=None, colors=None, cmap=None, clim=None, alpha=1.0, xn=None, yn=None,
-                    zn=None):
+        # We copy the normals 3 times per triangle to get 3x(3N) normals to match the vertices shape
+        xn, yn, zn = np.repeat(ds['normal'].T, 3, axis=1)
+
+        # Pass the restructured data to update_data
+        self.update_data(x, y, z, cmap=getattr(cm, self.cmap), clim=self.clim, alpha=self.alpha, xn=xn, yn=yn, zn=zn)
+
+    def update_data(self, x=None, y=None, z=None, cmap=None, clim=None, alpha=1.0, xn=None, yn=None, zn=None):
+        """
+        Feeds new vertex, normal, color, and transparency information about mesh triangles to VisGUI.
+
+        Parameters
+        ----------
+        x, y, z :
+            Triangle vertex 3-coordinates
+        cmap :
+            Color map
+        clim :
+            Color map lower and upper limits
+        alpha :
+            Transparency of triangles (between 0 and 1)
+        xn, yn, zn :
+            Normal magnitudes in x, y, and z-direction
+
+        Returns
+        -------
+        None
+        """
+
         self._vertices = None
-        self._normals = None
+        self.normals = None
         self._colors = None
         self._color_map = None
         self._color_limit = 0
         self._alpha = 0
+
+        # Do we have coordinates? Concatenate into vertices.
         if x is not None and y is not None and z is not None:
             vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
             vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
@@ -180,6 +208,10 @@ class TrianglesRenderLayer(EngineLayer):
             vertices = None
             normals = None
             self._bbox = None
+
+        # TODO: This temporarily sets all triangles to the color red. User should be able to select color.
+        color = [1.0, 0.0, 0.0]  # red
+        colors = np.ones_like(x) * color  # vector of red
 
         if clim is not None and colors is not None:
             cs_ = ((colors - clim[0]) / (clim[1] - clim[0]))
