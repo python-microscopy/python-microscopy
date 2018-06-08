@@ -1,14 +1,20 @@
 from .base import EngineLayer
-from .triangle_mesh import WireframeEngine, FlatFaceEngine, ShadedFaceEngine, ENGINES
+from .triangle_mesh import WireframeEngine, FlatFaceEngine, ShadedFaceEngine
 
 from PYME.experimental._octree import Octree
 
-from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
+from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List, Int
 from pylab import cm
 import numpy as np
 import dispatch
 
 from OpenGL.GL import *
+
+ENGINES = {
+    'wireframe' : WireframeEngine,
+    'monochrome_triangles' : FlatFaceEngine,
+    'shaded_triangles' : ShadedFaceEngine,
+}
 
 class OctreeRenderLayer(EngineLayer):
     """
@@ -20,6 +26,7 @@ class OctreeRenderLayer(EngineLayer):
     cmap = Enum(*cm.cmapnames, default='gist_rainbow', desc='Name of colourmap used to colour faces')
     clim = ListFloat([0, 1], desc='How our variable should be scaled prior to colour mapping')
     alpha = Float(1.0, desc='Face tranparency')
+    depth = Int(3, desc='Depth at which to render Octree. Set to none for dynamic depth rendering.')
     method = Enum(*ENGINES.keys(), desc='Method used to display faces')
 
     def __init__(self, pipeline, method='wireframe', datasource=None, depth=None, **kwargs):
@@ -105,21 +112,41 @@ class OctreeRenderLayer(EngineLayer):
         ----------
         ds :
             Octree (see PYME.experimental._octree)
-        depth :
-            Optional. Octree depth if we wish to only render the octree at a specified depth.
 
         Returns
         -------
         None
         """
-
+        
         if self.depth is not None:
             # Grab the nodes at the specified depth
             nodes = ds._nodes[ds._nodes['depth'] == self.depth]
             box_sizes = np.ones((nodes.shape[0], 3))*ds.box_size(self.depth)
         else:
-            # TODO: Follow the nodes until maximum depth, appending them when we reach the end
-            pass
+            # Follow the nodes until we reach a terminating node, then append this node to our list of nodes to render
+            # Start at the 0th node
+            children = ds._nodes[0]['children'].tolist()
+            node_indices = []
+            box_sizes = []
+            # Do this until we've looked at the whole octree (the list of children is empty)
+            while children:
+                # Check the child
+                node_index = children.pop()
+                curr_node = ds._nodes[node_index]
+                # Is this a terminating node?
+                if np.any(curr_node['children']):
+                    # It's not, so we'll add the children to the list
+                    new_children = curr_node['children'][curr_node['children'] > 0]
+                    children.extend(new_children)
+                else:
+                    # Terminating node! We want to render this
+                    node_indices.append(node_index)
+                    box_sizes.append(ds.box_size(curr_node['depth']))
+
+            # We've followed the octree to the end, return the nodes and box sizes
+            nodes = ds._nodes[node_indices]
+            box_sizes = np.array(box_sizes)
+
 
         # First we need the vertices of the cube. We find them from the center c provided and the box size (lx, ly, lz)
         # provided by the octree:
