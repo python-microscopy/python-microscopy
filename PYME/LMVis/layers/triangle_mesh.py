@@ -10,6 +10,7 @@ import dispatch
 
 from OpenGL.GL import *
 
+
 class WireframeEngine(BaseEngine):
     def __init__(self):
         BaseEngine.__init__(self)
@@ -28,6 +29,7 @@ class WireframeEngine(BaseEngine):
 
             glDrawArrays(GL_TRIANGLES, 0, n_vertices)
 
+
 class FlatFaceEngine(WireframeEngine):
     def __init__(self):
         BaseEngine.__init__(self)
@@ -35,6 +37,7 @@ class FlatFaceEngine(WireframeEngine):
     def render(self, gl_canvas, layer):
         self.set_shader_program(DefaultShaderProgram)
         WireframeEngine.render(self, gl_canvas, layer)
+
 
 class ShadedFaceEngine(WireframeEngine):
     def __init__(self):
@@ -51,7 +54,7 @@ ENGINES = {
 }
 
 
-class TrianglesRenderLayer(EngineLayer):
+class TriangleRenderLayer(EngineLayer):
     """
     Layer for viewing triangle meshes.
     """
@@ -61,11 +64,8 @@ class TrianglesRenderLayer(EngineLayer):
     clim = ListFloat([0, 1], desc='How our variable should be scaled prior to colour mapping')
     alpha = Float(1.0, desc='Face tranparency')
     method = Enum(*ENGINES.keys(), desc='Method used to display faces')
-    dsname = CStr('output', desc='Name of the datasource within the pipeline to use as a source of points')
-    _datasource_keys = List()
-    _datasource_choices = List()
 
-    def __init__(self, pipeline, method='wireframe', dsname='', **kwargs):
+    def __init__(self, pipeline, method='wireframe', datasource=None, **kwargs):
         self._pipeline = pipeline
         self.engine = None
         self.cmap = 'gist_rainbow'
@@ -87,14 +87,14 @@ class TrianglesRenderLayer(EngineLayer):
         # define responses to changes in various traits
         self.on_trait_change(self._update, 'vertexColour')
         self.on_trait_change(lambda: self.on_update.send(self), 'visible')
-        self.on_trait_change(self.update, 'cmap, clim, alpha, dsname')
+        self.on_trait_change(self.update, 'cmap, clim, alpha, datasource')
         self.on_trait_change(self._set_method, 'method')
 
         # update any of our traits which were passed as command line arguments
         self.set(**kwargs)
 
-        # update datasource name and method
-        self.dsname = dsname
+        # update datasource and method
+        self.datasource = datasource
         self.method = method
 
         # if we were given a pipeline, connect ourselves to the onRebuild signal so that we can automatically update
@@ -102,12 +102,13 @@ class TrianglesRenderLayer(EngineLayer):
         if not self._pipeline is None:
             self._pipeline.onRebuild.connect(self.update)
 
-    @property
-    def datasource(self):
-        """
-        Return the datasource we are connected to (through our dsname property).
-        """
-        return self._pipeline.get_layer_data(self.dsname)
+    # @property
+    # def datasource(self):
+    #     """
+    #     Return the datasource we are connected to (does not go through the pipeline for triangles_mesh).
+    #     """
+    #     #return self._pipeline.get_layer_data(self.dsname)
+    #     return self.datasource
 
     def _set_method(self):
         self.engine = ENGINES[self.method]()
@@ -127,12 +128,8 @@ class TrianglesRenderLayer(EngineLayer):
         # self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
-        print('lw update')
-        self._datasource_choices = self._pipeline.layer_data_source_names
-        if not self.datasource is None:
-            self._datasource_keys = self.datasource.keys()
-
         if not (self.engine is None or self.datasource is None):
+            print ('lw update')
             self.update_from_datasource(self.datasource)
             self.on_update.send(self)
 
@@ -210,8 +207,8 @@ class TrianglesRenderLayer(EngineLayer):
             self._bbox = None
 
         # TODO: This temporarily sets all triangles to the color red. User should be able to select color.
-        color = [1.0, 0.0, 0.0]  # red
-        colors = np.ones_like(x) * color  # vector of red
+        color = 255  # pink
+        colors = np.ones(vertices.shape[0]) * color  # vector of pink
 
         if clim is not None and colors is not None:
             cs_ = ((colors - clim[0]) / (clim[1] - clim[0]))
@@ -228,6 +225,7 @@ class TrianglesRenderLayer(EngineLayer):
             color_map = None
             color_limit = None
 
+        print ('setting values')
         self.set_values(vertices, normals, cs, cmap, clim, alpha)
 
     def set_values(self, vertices=None, normals=None, colors=None, color_map=None, color_limit=None, alpha=None):
@@ -268,7 +266,7 @@ class TrianglesRenderLayer(EngineLayer):
         from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor
         from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
 
-        return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
+        return View([Group([Item('datasource', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
                      Item('method'),
                      Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ]),
