@@ -179,23 +179,24 @@ class OctreeRenderLayer(EngineLayer):
         # Now note that the counterclockwise triangles (when viewed straight-on) formed along the faces of the cube are:
         #
         # v0 v2 v6
-        # v0 v3 v1
-        # v0 v4 v3
-        # v0 v6 v4
+        # v0 v4 v5
+        # v1 v3 v2
         # v2 v0 v1
-        # v2 v1 v3
+        # v3 v1 v5
+        # v3 v7 v6
         # v4 v6 v7
-        # v4 v7 v5
-        # v5 v3 v1
+        # v5 v1 v0
         # v5 v7 v3
         # v6 v2 v3
-        # v6 v3 v7
+        # v6 v4 v0
+        # v7 v5 v4
+
 
         # Concatenate vertices, interleave, restore to 3x(3N) points (3xN triangles),
         # and assign the points to x, y, z vectors
-        triangle_v0 = np.vstack((v0, v0, v0, v0, v2, v2, v4, v4, v5, v5, v6, v6))
-        triangle_v1 = np.vstack((v2, v3, v4, v6, v0, v1, v6, v7, v3, v7, v2, v3))
-        triangle_v2 = np.vstack((v6, v1, v3, v4, v1, v3, v7, v5, v1, v3, v3, v7))
+        triangle_v0 = np.vstack((v0, v0, v1, v2, v3, v3, v4, v5, v5, v6, v6, v7))
+        triangle_v1 = np.vstack((v2, v4, v3, v0, v1, v7, v6, v1, v7, v2, v4, v5))
+        triangle_v2 = np.vstack((v6, v5, v2, v1, v5, v6, v7, v0, v3, v3, v0, v4))
 
         x, y, z = np.hstack((triangle_v0, triangle_v1, triangle_v2)).reshape(-1, 3).T
 
