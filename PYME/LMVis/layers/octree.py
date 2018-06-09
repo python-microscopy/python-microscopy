@@ -152,14 +152,14 @@ class OctreeRenderLayer(EngineLayer):
         # provided by the octree:
 
         c = nodes['centre']  # center
-        v0 = c + box_sizes * -1            # v0 = c - lx - ly - lz
-        v1 = c + box_sizes * [-1, -1, 1]   # v1 = c - lx - ly + lz
-        v2 = c + box_sizes * [-1, 1, -1]   # v2 = c - lx + ly - lz
-        v3 = c + box_sizes * [-1, 1, 1]    # v3 = c - lx + ly + lz
-        v4 = c + box_sizes * [1, -1, -1]   # v4 = c + lx - ly - lz
-        v5 = c + box_sizes * [1, -1, 1]    # v5 = c + lx - ly + lz
-        v6 = c + box_sizes * [1, 1, -1]    # v6 = c + lx + ly - lz
-        v7 = c + box_sizes                 # v7 = c + lx + ly + lz
+        v0 = c + box_sizes * -1 / 2            # v0 = c - lx/2 - ly/2 - lz/2
+        v1 = c + box_sizes * [-1, -1, 1] / 2   # v1 = c - lx/2 - ly/2 + lz/2
+        v2 = c + box_sizes * [-1, 1, -1] / 2   # v2 = c - lx/2 + ly/2 - lz/2
+        v3 = c + box_sizes * [-1, 1, 1] / 2    # v3 = c - lx/2 + ly/2 + lz/2
+        v4 = c + box_sizes * [1, -1, -1] / 2   # v4 = c + lx/2 - ly/2 - lz/2
+        v5 = c + box_sizes * [1, -1, 1] / 2    # v5 = c + lx/2 - ly/2 + lz/2
+        v6 = c + box_sizes * [1, 1, -1] / 2    # v6 = c + lx/2 + ly/2 - lz/2
+        v7 = c + box_sizes / 2                 # v7 = c + lx/2 + ly/2 + lz/2
 
         #
         #     z
