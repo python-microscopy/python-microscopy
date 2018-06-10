@@ -138,9 +138,10 @@ def main():
                 if 'python' in p.name():
                     c = p.cmdline()
                     #print c, SERVER_PROC, WORKER_PROC
-                    if (SERVER_PROC in c[1] and args.run_server) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1] and args.gui):
-                        print('killing %s' % c)
-                        p.kill()
+                    if len(c) > 1:
+                        if (SERVER_PROC in c[1] and args.run_server) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1] and args.gui):
+                            print('killing %s' % c)
+                            p.kill()
             except (psutil.ZombieProcess, psutil.AccessDenied):
                 pass
 
