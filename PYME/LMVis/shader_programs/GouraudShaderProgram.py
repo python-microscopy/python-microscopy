@@ -32,8 +32,8 @@ class GouraudShaderProgram(GLProgram):
     view_vector = (0.0, 0.0, -1.0, 0.0)
 
     LIGHT_PROPS = {
-            'light_ambient': (0.02, 0.02, 0.02, 1.0),
-            'light_diffuse': (0.3, 0.3, 0.3, 1.0),
+            'light_ambient': (0.1, 0.1, 0.1, 1.0),
+            'light_diffuse': (0.6, 0.6, 0.6, 1.0),
             'light_specular': (0.3, 0.3, 0.3, 1.0),
             'light_position': lights_vector
     }
