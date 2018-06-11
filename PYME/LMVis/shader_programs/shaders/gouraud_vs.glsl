@@ -12,7 +12,7 @@ varying vec4 vertexColor;
 void main(void){
 
     vec4 inputColor = gl_Color;
-    vec4 white = vec4(1.0, 1.0, 1.0, 1.0);
+    vec4 white = vec4(1.0, 1.0, 1.0, gl_Color.a);
     vec4 ambient = inputColor * light_ambient;
     //direction to the lightsource
     vec3 lightsource = normalize(vec3(light_position));
@@ -22,7 +22,7 @@ void main(void){
     float diffuseLight = abs(dot(lightsource, normal));//, 0.0);
     vec4 diffuse = vec4(0.0, 0.0, 0.0, 1.0);
     vec4 specular = vec4(0.0, 0.0, 0.0, 1.0);
-    vec4 diff = vec4(0.0, 0.0, 0.0, 1.0);
+    //vec4 diff = vec4(0.0, 0.0, 0.0, 1.0);
     if (diffuseLight > 0){
         diffuse = diffuseLight * inputColor * light_diffuse;
         vec3 H = normalize(light_position.xyz + view_vector.xyz);

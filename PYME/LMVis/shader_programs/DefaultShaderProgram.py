@@ -46,10 +46,11 @@ class DefaultShaderProgram(GLProgram):
 
     def __enter__(self):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        #glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
         glEnable(GL_BLEND)
         glDepthMask(GL_TRUE)
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LEQUAL)
+        glDisable(GL_DEPTH_TEST)
+        #glDepthFunc(GL_LEQUAL)
         glEnable(GL_POINT_SMOOTH)
         self.get_shader_program().use()
         glUniform1f(self.get_uniform_location('x_min'), float(self.xmin))

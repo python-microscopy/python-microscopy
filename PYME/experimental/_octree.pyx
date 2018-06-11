@@ -216,7 +216,7 @@ cdef class Octree:
         #cdef node_d parent, new_node
         parent = &self._cnodes[parent_idx]
         
-        scale = 1.0/(2**(self._cnodes[parent_idx].depth + 2))
+        scale = 1.0/(2.0**(self._cnodes[parent_idx].depth + 2))
         
         deltax = self._xwidth*scale
         deltay = self._ywidth*scale

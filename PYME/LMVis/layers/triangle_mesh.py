@@ -49,8 +49,8 @@ class ShadedFaceEngine(WireframeEngine):
 
 ENGINES = {
     'wireframe' : WireframeEngine,
-    'monochrome_triangles' : FlatFaceEngine,
-    'shaded_triangles' : ShadedFaceEngine,
+    'flat' : FlatFaceEngine,
+    'shaded' : ShadedFaceEngine,
 }
 
 
