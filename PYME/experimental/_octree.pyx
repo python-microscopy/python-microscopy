@@ -88,7 +88,7 @@ cdef class Octree:
     The code is reasonably optimized with creation of a 1M entry octree taking 2-3s
     
     '''
-    cdef int _next_node, _resize_limit
+    cdef int _next_node, _resize_limit, _maxdepth
     cdef np.float32_t _xwidth, _ywidth, _zwidth
     cdef np.float32_t[6] _bounds
     cdef np.float32_t[3] _size
@@ -98,7 +98,7 @@ cdef class Octree:
     cdef object _octant_offsets
     cdef object _octant_sign
     
-    def __init__(self, bounds):
+    def __init__(self, bounds, maxdepth=12):
         bounds = np.array(bounds, 'f4')
         self._bounds = bounds
         
@@ -114,6 +114,7 @@ cdef class Octree:
         self._flat_nodes = self._nodes.view(NODE_DTYPE2)
         self._set_cnodes(self._flat_nodes)
         
+        self._maxdepth = maxdepth
         
         self._next_node = 1
         self._resize_limit = INITIAL_NODES - 1
@@ -173,6 +174,7 @@ cdef class Octree:
         old_nodes = self._nodes
         new_size = old_nodes.shape[0]*2 #double whenever we grow (TODO - what is the best growth factor)
         
+        print('Resizing node store - new size: %d' % new_size)
         #allocate new memory
         self._nodes = np.zeros(new_size, NODE_DTYPE)
         self._flat_nodes = self._nodes.view(NODE_DTYPE2)
@@ -262,26 +264,27 @@ cdef class Octree:
             #we need to move the current node data into a child
             c_node = self._cnodes[node_idx]
             
-            #child to put the data currently held by the node into
-            node_child_idx = ((x > c_node.centre_x) + 2*(y > c_node.centre_y)  + 4*(z > c_node.centre_z))
-            #make a new node with the current nodes data
-            new_idx = self.__add_node(c_node.centroid_x, c_node.centroid_y, c_node.centroid_z, node_idx, node_child_idx)
-            
-            #continue subdividing until original and new data do not want to go in the same child
-            while node_child_idx == child_idx:
-                node_idx = new_idx
-                c_node = self._cnodes[node_idx]
-                
-                #child to put the new data in
-                child_idx = ((x > c_node.centre_x) + 2*(y > c_node.centre_y)  + 4*(z > c_node.centre_z))
-                
-                #child to put the data currently held by node in
-                node_child_idx = ((c_node.centroid_x > c_node.centre_x) +  2*(c_node.centroid_y > c_node.centre_y) +
-                                  4*(c_node.centroid_z > c_node.centre_z))
-                
+            if c_node.depth < self._maxdepth:
+                #child to put the data currently held by the node into
+                node_child_idx = ((x > c_node.centre_x) + 2*(y > c_node.centre_y)  + 4*(z > c_node.centre_z))
+                #make a new node with the current nodes data
                 new_idx = self.__add_node(c_node.centroid_x, c_node.centroid_y, c_node.centroid_z, node_idx, node_child_idx)
-            
-            self.__add_node(x, y, z, node_idx, child_idx)
+                
+                #continue subdividing until original and new data do not want to go in the same child
+                while (node_child_idx == child_idx) and (c_node.depth < self._maxdepth):
+                    node_idx = new_idx
+                    c_node = self._cnodes[node_idx]
+                    
+                    #child to put the new data in
+                    child_idx = ((x > c_node.centre_x) + 2*(y > c_node.centre_y)  + 4*(z > c_node.centre_z))
+                    
+                    #child to put the data currently held by node in
+                    node_child_idx = ((c_node.centroid_x > c_node.centre_x) +  2*(c_node.centroid_y > c_node.centre_y) +
+                                      4*(c_node.centroid_z > c_node.centre_z))
+                    
+                    new_idx = self.__add_node(c_node.centroid_x, c_node.centroid_y, c_node.centroid_z, node_idx, node_child_idx)
+                
+                self.__add_node(x, y, z, node_idx, child_idx)
 
         self._cnodes[node_idx].nPoints += 1
         while node_idx > 0:

@@ -137,8 +137,8 @@ class PointSpriteShaderProgram(GLProgram):
         glEnable(GL_PROGRAM_POINT_SIZE)
         glDisable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
-        glBlendEquation(GL_FUNC_ADD)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+        #glBlendEquation(GL_FUNC_ADD)
         self._texture.enable_texture_2d()
         self._texture.bind_texture(self._shader_program.get_uniform_location(b'tex2D'))
 

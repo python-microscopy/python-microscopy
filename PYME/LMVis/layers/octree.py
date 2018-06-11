@@ -147,7 +147,7 @@ class OctreeRenderLayer(TriangleRenderLayer):
         xn, yn, zn = np.repeat(triangle_normals.T, 3, axis=1)
         
         alpha = (alpha[None,:]*np.ones(12*3)[:,None]).ravel()
-        print alpha.min(), alpha.max()
+        print('Octree scaled alpha range: %g, %g' % (alpha.min(), alpha.max()))
 
         # Pass the restructured data to update_data
         self.update_data(x, y, z, cmap=getattr(cm, self.cmap), clim=self.clim, alpha=alpha, xn=xn, yn=yn, zn=zn)
@@ -159,10 +159,11 @@ class OctreeRenderLayer(TriangleRenderLayer):
         from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor
         from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
 
-        return View([Group([Item('datasource', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
+        return View([#Group([Item('datasource', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
                      Item('method'),
-                     Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
-                     Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ]),
+                     Item('depth'),
+                     #Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
+                     #Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ]),
                      Group([Item('cmap', label='LUT'), Item('alpha'), Item('visible')])], )
         # buttons=['OK', 'Cancel'])
 

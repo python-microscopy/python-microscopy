@@ -385,16 +385,20 @@ class VisGUICore(object):
         logger.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
         self.pipeline.Rebuild()
         
-    def add_layer(self, method='points', ds_name=''):
+    def add_pointcloud_layer(self, method='points', ds_name=''):
         #from .layer_wrapper import LayerWrapper
         from .layers.pointcloud import PointCloudRenderLayer
         l = PointCloudRenderLayer(self.pipeline, method=method, dsname=ds_name)
-        self.glCanvas.layers.append(l)
-        self.glCanvas.recenter_bbox()
-        l.on_update.connect(self.glCanvas.refresh)
-        
-        self.layer_added.send(self)
+        self.add_layer(l)
         return l
+
+    def add_layer(self, layer):
+        self.glCanvas.layers.append(layer)
+        self.glCanvas.recenter_bbox()
+        layer.on_update.connect(self.glCanvas.refresh)
+    
+        self.layer_added.send(self)
+
     
     @property
     def layers(self):
@@ -598,7 +602,7 @@ class VisGUICore(object):
     def _create_base_layer(self):
         if self.glCanvas._is_initialized and self._new_layers and len(self.layers) == 0:
             #add a new layer
-            l = self.add_layer(method='points')
+            l = self.add_pointcloud_layer(method='points')
             if 't' in self.pipeline.keys():
                 l.set(vertexColour='t')
             elif 'z' in self.pipeline.keys():

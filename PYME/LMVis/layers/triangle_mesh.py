@@ -127,8 +127,9 @@ class TriangleRenderLayer(EngineLayer):
         return cdata
 
     def _update(self, *args, **kwargs):
-        cdata = self._get_cdata()
-        self.clim = [float(cdata.min()), float(cdata.max())]
+        pass
+        #cdata = self._get_cdata()
+        #self.clim = [float(cdata.min()), float(cdata.max())]
         # self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
@@ -271,11 +272,12 @@ class TriangleRenderLayer(EngineLayer):
         from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor
         from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
 
-        return View([Group([Item('datasource', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
+        return View([#Group([Item('datasource', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
                      Item('method'),
-                     Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
-                     Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ]),
-                     Group([Item('cmap', label='LUT'), Item('alpha'), Item('visible')])], )
+                     #Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
+                     #Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ]),
+                     Group([Item('cmap', label='LUT'), Item('alpha'), Item('visible')])
+                     ], )
         # buttons=['OK', 'Cancel'])
 
     def default_traits_view(self):

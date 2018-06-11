@@ -37,7 +37,7 @@ class LayerPane(afp.foldingPane):
         vsizer.Add(self.nb, 1, wx.ALL|wx.EXPAND, 0)
         
         bAddLayer = wx.Button(pan, -1, 'New', style=wx.BU_EXACTFIT)
-        bAddLayer.Bind(wx.EVT_BUTTON, lambda e : self.visFr.add_layer())
+        bAddLayer.Bind(wx.EVT_BUTTON, lambda e : self.visFr.add_pointcloud_layer())
         
         vsizer.Add(bAddLayer, 0, wx.ALIGN_CENTRE, 0)
         
