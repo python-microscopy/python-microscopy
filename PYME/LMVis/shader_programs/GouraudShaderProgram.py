@@ -21,6 +21,7 @@
 import os
 from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, \
     glUseProgram, glUniform4f, glUniform1f, glEnable, GL_DEPTH_TEST, glDisable, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH
+from OpenGL.GL import glPolygonMode, GL_FRONT_AND_BACK, GL_FILL, GL_CULL_FACE, glCullFace, GL_FRONT, GL_BACK
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
@@ -56,7 +57,10 @@ class GouraudShaderProgram(GLProgram):
         glUniform1f(location, self._shininess)
         location = self.get_uniform_location('view_vector')
         glUniform4f(location, *self.view_vector)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glEnable(GL_DEPTH_TEST)
+        glEnable(GL_CULL_FACE)
+        glCullFace(GL_BACK)
         glDepthFunc(GL_LEQUAL)
         glDisable(GL_POINT_SMOOTH)
 

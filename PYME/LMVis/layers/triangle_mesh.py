@@ -95,7 +95,11 @@ class TriangleRenderLayer(EngineLayer):
 
         # update datasource and method
         self.datasource = datasource
-        self.method = method
+        if self.method == method:
+            #make sure we still call _set_method even if we start with the default method
+            self._set_method()
+        else:
+            self.method = method
 
         # if we were given a pipeline, connect ourselves to the onRebuild signal so that we can automatically update
         # ourselves
@@ -157,6 +161,7 @@ class TriangleRenderLayer(EngineLayer):
 
         # We copy the normals 3 times per triangle to get 3x(3N) normals to match the vertices shape
         xn, yn, zn = np.repeat(ds['normal'].T, 3, axis=1)
+        #xn, yn, zn = np.repeat(ds['normal'], 3, axis=1).reshape(-1, 3).T
 
         # Pass the restructured data to update_data
         self.update_data(x, y, z, cmap=getattr(cm, self.cmap), clim=self.clim, alpha=self.alpha, xn=xn, yn=yn, zn=zn)
@@ -196,7 +201,7 @@ class TriangleRenderLayer(EngineLayer):
             vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
 
             if not xn is None:
-                normals = np.vstack((xn.ravel(), yn.ravel(), zn.ravel()))
+                normals = np.vstack((xn.ravel(), yn.ravel(), zn.ravel())).T.ravel().reshape(len(x.ravel()), 3)
             else:
                 normals = -0.69 * np.ones(vertices.shape)
 

@@ -184,7 +184,7 @@ class PointCloudRenderLayer(EngineLayer):
             vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
             
             if not xn is None:
-                normals = np.vstack((xn.ravel(), yn.ravel(), zn.ravel()))
+                normals = np.vstack((xn.ravel(), yn.ravel(), zn.ravel())).T.ravel().reshape(len(x.ravel()), 3)
             else:
                 normals = -0.69 * np.ones(vertices.shape)
             
