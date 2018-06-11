@@ -301,7 +301,7 @@ class Pipeline:
         self.onKeysChanged = dispatch.Signal()
         
         self.ready = False
-        self.visFr = visFr
+        #self.visFr = visFr
 
         if not filename is None:
             self.OpenFile(filename)
