@@ -38,6 +38,9 @@ class SurfaceFitter(HasPrivateTraits):
         f = surfit.fit_quad_surfaces_Pr(pts.T, self.fitInfluenceRadius, fitPos=(not self.constrainSurfaceToPoint))
         
         #print(len(f)) #, f.dtype
+        
+        #filter surfaces and throw out those which don't point the same way as their neighbours
+        f = surfit.filter_quad_results(f, pts.T, self.fitInfluenceRadius)
 
         #do the reconstruction by generating an augmented point data set for each surface
         #this adds virtual localizations spread evenly across each surface

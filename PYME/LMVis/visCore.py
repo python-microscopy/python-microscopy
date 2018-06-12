@@ -396,6 +396,7 @@ class VisGUICore(object):
         self.glCanvas.layers.append(layer)
         self.glCanvas.recenter_bbox()
         layer.on_update.connect(self.glCanvas.refresh)
+        self.glCanvas.refresh()
     
         self.layer_added.send(self)
 

@@ -871,6 +871,11 @@ class Pipeline:
         return self.objectMeasures
         
     def save_txt(self, outFile, keys=None):
+        if outFile.endswith('.csv'):
+            delim = ', '
+        else:
+            delim = '\t'
+            
         if keys is None:
             keys = self.keys()
 
@@ -878,10 +883,10 @@ class Pipeline:
     
         of = open(outFile, 'w')
     
-        of.write('#' + '\t'.join(['%s' % k for k in keys]) + '\n')
+        of.write('#' + delim.join(['%s' % k for k in keys]) + '\n')
     
         for row in zip(*[self[k] for k in keys]):
-            of.write('\t'.join(['%e' % c for c in row]) + '\n')
+            of.write(delim.join(['%e' % c for c in row]) + '\n')
     
         of.close()
         
