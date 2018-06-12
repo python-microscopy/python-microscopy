@@ -200,12 +200,15 @@ class ClippingPanel(wx.Panel):
         rot = evt.GetWheelRotation()
         # shift_offset = self.hstep
         shift_offset = (self.view_limits[1] - self.view_limits[0]) * SCROLL_FACTOR
-        if rot > 0:
-            delta = shift_offset
-        else:
-            delta = -shift_offset
+        # if rot > 0:
+        #     delta = shift_offset
+        # else:
+        #     delta = -shift_offset
+        delta = max(min(rot*shift_offset,  self.data_limits[1] - self.view_limits[1]), self.data_limits[0] - self.view_limits[0])
         self.view_limits[0] += delta
         self.view_limits[1] += delta
+        
+        #print('clip scroll - delta = %g, rot = %g' % (delta, rot))
         
         self.Refresh()
         self.Update()

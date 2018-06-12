@@ -46,6 +46,11 @@ class GouraudShaderProgram(GLProgram):
         shader_program.link()
         self.set_shader_program(shader_program)
         self._shininess = 80
+        
+        self.xmin, self.xmax = [-1e6, 1e6]
+        self.ymin, self.ymax = [-1e6, 1e6]
+        self.zmin, self.zmax = [-1e6, 1e6]
+        self.vmin, self.vmax = [-1e6, 1e6]
 
     def __enter__(self):
         self.get_shader_program().use()
@@ -56,6 +61,16 @@ class GouraudShaderProgram(GLProgram):
         glUniform1f(location, self._shininess)
         location = self.get_uniform_location('view_vector')
         glUniform4f(location, *self.view_vector)
+
+        glUniform1f(self.get_uniform_location('x_min'), float(self.xmin))
+        glUniform1f(self.get_uniform_location('x_max'), float(self.xmax))
+        glUniform1f(self.get_uniform_location('y_min'), float(self.ymin))
+        glUniform1f(self.get_uniform_location('y_max'), float(self.ymax))
+        glUniform1f(self.get_uniform_location('z_min'), float(self.zmin))
+        glUniform1f(self.get_uniform_location('z_max'), float(self.zmax))
+        glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
+        glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
+        
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_DEPTH_TEST)

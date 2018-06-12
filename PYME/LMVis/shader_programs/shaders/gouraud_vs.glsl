@@ -9,7 +9,19 @@ uniform vec4 view_vector;
 
 varying vec4 vertexColor;
 
+varying float vis;
+
+uniform float x_min;
+uniform float x_max;
+uniform float y_min;
+uniform float y_max;
+uniform float z_min;
+uniform float z_max;
+uniform float v_min;
+uniform float v_max;
+
 void main(void){
+    bool visible;
 
     vec4 inputColor = gl_Color;
     vec4 white = vec4(1.0, 1.0, 1.0, gl_Color.a);
@@ -32,6 +44,12 @@ void main(void){
     }
     vertexColor = ambient + diffuse + specular;
 
+    visible = gl_Vertex.x > x_min && gl_Vertex.x < x_max;
+    visible = visible && gl_Vertex.y > y_min && gl_Vertex.y < y_max;
+    visible = visible && gl_Vertex.z > z_min && gl_Vertex.z < z_max;
+
     gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 
+    visible = visible && gl_Position.z > v_min && gl_Position.z < v_max;
+    vis = (float(visible));
 }
