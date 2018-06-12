@@ -58,7 +58,7 @@ class GouraudShaderProgram(GLProgram):
         glUniform4f(location, *self.view_vector)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glDepthFunc(GL_LEQUAL)
-        #glEnable(GL_DEPTH_TEST)
+        glEnable(GL_DEPTH_TEST)
         #glEnable(GL_CULL_FACE)
         #glCullFace(GL_BACK)
         

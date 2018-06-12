@@ -487,6 +487,7 @@ def reconstruct_quad_surf_region_cropped(p, control_point, N, kdt, data, radius=
     d = sp - control_point[:, None]
     mask = (d * d).sum(0) < radius * radius
     sp = sp[:,mask]
+    normals = normals[:,mask]
     
     #mask again to the convex hull of the points used for fitting
     mask = T.find_simplex(sp.T) > 0

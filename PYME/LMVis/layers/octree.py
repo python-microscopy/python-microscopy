@@ -47,13 +47,13 @@ class OctreeRenderLayer(TriangleRenderLayer):
             # Grab the nodes at the specified depth
             nodes = ds._nodes[ds._nodes['depth'] == self.depth]
             box_sizes = np.ones((nodes.shape[0], 3))*ds.box_size(self.depth)
-            alpha = self.alpha*nodes['nPoints']
+            alpha = nodes['nPoints']
         elif self.depth == 0:
             # plot all bins
             nodes = ds._nodes[ds._nodes['nPoints'] >= 1]
             box_sizes = np.vstack(ds.box_size(nodes['depth'])).T
 
-            alpha = self.alpha * nodes['nPoints'] * (8.0 ** nodes['depth'])
+            alpha = nodes['nPoints'] * ((2 ** nodes['depth'])**3)
             
         else:
             # Follow the nodes until we reach a terminating node, then append this node to our list of nodes to render
@@ -86,7 +86,7 @@ class OctreeRenderLayer(TriangleRenderLayer):
             nodes = ds._nodes[ds._nodes['nPoints'] == 1]
             box_sizes = np.vstack(ds.box_size(nodes['depth'])).T
             
-            alpha = self.alpha*nodes['nPoints']*(8.0**nodes['depth'])
+            alpha = nodes['nPoints']*((2.0**nodes['depth']))**3
 
 
         # First we need the vertices of the cube. We find them from the center c provided and the box size (lx, ly, lz)
@@ -146,7 +146,9 @@ class OctreeRenderLayer(TriangleRenderLayer):
         # We copy the normals 3 times per triangle to get 3x(3N) normals to match the vertices shape
         xn, yn, zn = np.repeat(triangle_normals.T, 3, axis=1)
         
-        alpha = (alpha[None,:]*np.ones(12*3)[:,None]).ravel()
+        alpha = self.alpha*alpha/alpha.max()
+        alpha = (alpha[None,:]*np.ones(12)[:,None])
+        alpha = np.repeat(alpha.ravel(), 3)
         print('Octree scaled alpha range: %g, %g' % (alpha.min(), alpha.max()))
 
         # Pass the restructured data to update_data
