@@ -45,29 +45,41 @@ def remove_newlines(s):
     s = ' '.join(s.split())
     return '\n'.join(s.split('<>'))
 
-def find_and_add_zRange(astigLib):
+def find_and_add_zRange(astig_library, rough_knot_spacing=75.):
     """
     Find range about highest intensity point over which sigmax - sigmay is monotonic.
-    Note that astigLib[psfIndex]['zCenter'] should contain the offset in nm to the brightest z-slice
-    Args:
-        astigLib: List whose elements are dictionaries containing PSF fit information
+    Note that astig_library[psfIndex]['zCenter'] should contain the offset in nm to the brightest z-slice
 
-    Returns:
-        astigLib: The input list, where zRange key and values have been added to the dictionary in each list element
+    Parameters
+    ----------
+    astig_library : List
+        Elements are dictionaries containing PSF fit information
+    rough_knot_spacing : Float
+        Smoothing is applied to (sigmax-sigmay) before finding the region over which it is monotonic. A cubic spline is
+        fit to (sigmax-sigmay) using knots spaced roughly be rough_knot_spacing (units of nanometers, i.e. that of
+        astig_library[ind]['z']). To make deciding the knots convenient, they are spaced an integer number of z-steps,
+        so the actual knot spacing is rounded to this.
+
+    Returns
+    -------
+    astig_library : List
+        The astigmatism calibration list which is taken as an input is modified in place and returned.
 
     """
     import scipy.interpolate as terp
-    for ii in range(len(astigLib)):
+    for ii in range(len(astig_library)):
         # find region of dsigma which is monotonic (smooth a bit, too)
-        dsig = terp.UnivariateSpline(astigLib[ii]['z'], astigLib[ii]['dsigma'], s=5*len(astigLib[ii]['z']))
+        smoothing_factor = int(rough_knot_spacing / (astig_library[ii]['z'][1] - astig_library[ii]['z'][0]))
+        knots = astig_library[ii]['z'][1:-1:smoothing_factor]
+        dsig = terp.LSQUnivariateSpline(astig_library[ii]['z'], astig_library[ii]['dsigma'], knots)
 
         # mask where the sign is the same as the center
-        zvec = np.linspace(np.min(astigLib[ii]['z']), np.max(astigLib[ii]['z']), 1000)
+        zvec = np.linspace(np.min(astig_library[ii]['z']), np.max(astig_library[ii]['z']), 1000)
         sgn = np.sign(np.diff(dsig(zvec)))
-        halfway = np.absolute(zvec - astigLib[ii]['zCenter']).argmin()  # len(sgn)/2
+        halfway = np.absolute(zvec - astig_library[ii]['zCenter']).argmin()  # len(sgn)/2
         notmask = sgn != sgn[halfway]
 
-        # find z range for spline generation
+        # find region of dsigma which is monotonic after smoothing
         try:
             lowerZ = zvec[np.where(notmask[:halfway])[0].max()]
         except ValueError:
@@ -76,9 +88,9 @@ def find_and_add_zRange(astigLib):
             upperZ = zvec[(halfway + np.where(notmask[halfway:])[0].min() - 1)]
         except ValueError:
             upperZ = zvec[-1]
-        astigLib[ii]['zRange'] = [lowerZ, upperZ]
+        astig_library[ii]['zRange'] = [lowerZ, upperZ]
 
-    return astigLib
+    return astig_library
 
 class PSFQualityPanel(wx.Panel):
     def __init__(self, dsviewer):
