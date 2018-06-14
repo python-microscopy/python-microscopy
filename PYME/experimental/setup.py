@@ -26,7 +26,10 @@
 import sys
 import os
 
-linkArgs = []
+if sys.platform == 'darwin':#MacOS
+    linkArgs = []
+else:
+    linkArgs = ['-static-libgcc']
 
 from Cython.Build import cythonize
 
@@ -37,7 +40,7 @@ def configuration(parent_package='', top_path=None):
     
     cur_dir = os.path.dirname(__file__)
     
-    ext = Extension(name='.'.join([parent_package, '_octree']),
+    ext = Extension(name='.'.join([parent_package, 'experimental', '_octree']),
                     sources=[os.path.join(cur_dir, '_octree.pyx')],
                     include_dirs= get_numpy_include_dirs(), #+ extra_include_dirs,
                     extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
@@ -59,14 +62,13 @@ def configuration(parent_package='', top_path=None):
 if __name__ == '__main__':
     from numpy.distutils.core import setup
     
-    setup(description='python wrapper for BCL',
+    setup(description='various experimental functions',
           author='David Baddeley',
           author_email='david.baddeley@yale.edu',
           url='',
           long_description="""
-Python wrapper for the Basic compression libarary
 """,
-          license="BSD",
+          license="GPL",
           #cmdclass={'build_ext': build_ext},
           **configuration(top_path='').todict()
           )
