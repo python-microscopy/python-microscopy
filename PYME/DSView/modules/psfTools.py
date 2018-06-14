@@ -45,7 +45,7 @@ def remove_newlines(s):
     s = ' '.join(s.split())
     return '\n'.join(s.split('<>'))
 
-def find_and_add_zRange(astig_library, rough_knot_spacing=75.):
+def find_and_add_zRange(astig_library, rough_knot_spacing=50.):
     """
     Find range about highest intensity point over which sigmax - sigmay is monotonic.
     Note that astig_library[psfIndex]['zCenter'] should contain the offset in nm to the brightest z-slice
@@ -367,8 +367,8 @@ class PSFTools(HasTraits):
         objPositions['z'] = z - z.mean()
 
         ptFitter = FitPoints()
-        ptFitter.set(roiHalfSize=11)
-        ptFitter.set(fitModule=fitMod)
+        ptFitter.trait_set(roiHalfSize=11)
+        ptFitter.trait_set(fitModule=fitMod)
 
         namespace = {'input' : self.image, 'objPositions' : objPositions}
 
@@ -378,7 +378,7 @@ class PSFTools(HasTraits):
             # get z centers
             dx, dy, dz = extractImages.getIntCenter(self.image.data[:, :, :, chanNum])
 
-            ptFitter.set(channel=chanNum)
+            ptFitter.trait_set(channel=chanNum)
             ptFitter.execute(namespace)
 
             res = namespace['fitResults']
