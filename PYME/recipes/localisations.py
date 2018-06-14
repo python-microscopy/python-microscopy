@@ -275,7 +275,10 @@ class MultiviewMergeClumps(ModuleBase):
 class MapAstigZ(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     inputName = Input('merged')
+
     astigmatismMapLocation = CStr('') #FIXME - rename and possibly change type
+    rough_knot_spacing = Float(50.)
+
     outputName = Output('zmapped')
 
     def execute(self, namespace):
@@ -297,7 +300,7 @@ class MapAstigZ(ModuleBase):
 
         mapped = tabular.mappingFilter(inp)
 
-        z, zerr = astigTools.lookup_astig_z(mapped, astig_calibrations, plot=False)
+        z, zerr = astigTools.lookup_astig_z(mapped, astig_calibrations, self.rough_knot_spacing, plot=False)
 
         mapped.addColumn('astigZ', z)
         mapped.addColumn('zLookupError', zerr)
