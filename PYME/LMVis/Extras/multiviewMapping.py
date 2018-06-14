@@ -547,8 +547,18 @@ class multiviewMapper:
                 return
 
         recipe = self.pipeline.recipe
-        recipe.add_module(MapAstigZ(recipe, inputName=self.pipeline.selectedDataSourceKey,
-                                    astigmatismMapLocation=pathToMap, outputName='z_mapped'))
+        mapping_module = MapAstigZ(recipe, inputName=self.pipeline.selectedDataSourceKey,
+                                    astigmatismMapLocation=pathToMap, outputName='z_mapped')
+
+        recipe.add_module(mapping_module)
+        if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
+            return
+
+        # FIXME - figure out why configuring just the new module doesn't give us an OK button
+        # if not mapping_module.configure_traits(view=mapping_module.pipeline_view):
+        #     return #handle cancel
+        # recipe.add_module(mapping_module)
+
         recipe.execute()
         self.pipeline.selectDataSource('z_mapped')
 
