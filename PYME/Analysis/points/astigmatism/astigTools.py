@@ -8,16 +8,24 @@ def lookup_astig_z(fres, astig_calibrations, plot=False):
     """
     Generates a look-up table of sorts for z based on sigma x/y fit results and calibration information. If a molecule
     appears on multiple planes, sigma values from both planes will be used in the look up.
-    Args:
-        fres: dictionary-like object containing relevant fit results
-        astig_calibrations: list of astigmatism calibration dictionaries corresponding to each multiview channel, which are
-            used to recreate shiftmap objects
-        chanPlane: list of which plane each channel corresponds to, e.g. [0, 0, 1, 1]
 
-    Returns:
-        z: an array of z-positions for each molecule in nm (assuming proper units were used in astigmatism calibration)
-        zerr: an array containing discrepancies between sigma values and the PSF calibration curves. Note that this
-            array is in units of nm, but error may not be propagated from sigma fitResults properly as is.
+    Parameters
+    ----------
+    fres : dict-like
+        Contains fit results (localizations) to be mapped in z
+    astig_calibrations : list
+        Each element is a dictionary corresponding to a multiview channel, which contains the x and y PSF widths at
+        various z-positions
+    plot : bool
+        Flag to toggle plotting
+
+    Returns
+    -------
+    z : ndarray
+        astigmatic Z-position of each localization in fres
+    zerr : ndarray
+        discrepancies between sigma values and the PSF calibration curves
+
     """
     # fres = pipeline.selectedDataSource.resultsSource.fitResults
     numMolecules = len(fres['x']) # there is no guarantee that fitResults_x0 will be present - change to x
