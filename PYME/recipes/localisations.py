@@ -300,7 +300,7 @@ class MapAstigZ(ModuleBase):
 
         mapped = tabular.mappingFilter(inp)
 
-        z, zerr = astigTools.lookup_astig_z(mapped, astig_calibrations, self.rough_knot_spacing, plot=True)
+        z, zerr = astigTools.lookup_astig_z(mapped, astig_calibrations, self.rough_knot_spacing, plot=False)
 
         mapped.addColumn('astigZ', z)
         mapped.addColumn('zLookupError', zerr)
