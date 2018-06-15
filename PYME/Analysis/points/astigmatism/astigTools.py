@@ -1,26 +1,38 @@
 import numpy as np
-from scipy.interpolate import UnivariateSpline #as we only use this function, interpolate it directly
+from scipy.interpolate import LSQUnivariateSpline
 
 from . import astiglookup
 
 
-def lookup_astig_z(fres, astig_calibrations, plot=False):
+def lookup_astig_z(fres, astig_calibrations, rough_knot_spacing=75., plot=False):
     """
     Generates a look-up table of sorts for z based on sigma x/y fit results and calibration information. If a molecule
     appears on multiple planes, sigma values from both planes will be used in the look up.
-    Args:
-        fres: dictionary-like object containing relevant fit results
-        astig_calibrations: list of astigmatism calibration dictionaries corresponding to each multiview channel, which are
-            used to recreate shiftmap objects
-        chanPlane: list of which plane each channel corresponds to, e.g. [0, 0, 1, 1]
 
-    Returns:
-        z: an array of z-positions for each molecule in nm (assuming proper units were used in astigmatism calibration)
-        zerr: an array containing discrepancies between sigma values and the PSF calibration curves. Note that this
-            array is in units of nm, but error may not be propagated from sigma fitResults properly as is.
+    Parameters
+    ----------
+    fres : dict-like
+        Contains fit results (localizations) to be mapped in z
+    astig_calibrations : list
+        Each element is a dictionary corresponding to a multiview channel, which contains the x and y PSF widths at
+        various z-positions
+    rough_knot_spacing : Float
+        Smoothing is applied to the sigmax/y look-up curves by fitting a cubic spline with knots spaced roughly at
+        intervals of rough_knot_spacing (in nanometers). There is potentially rounding within the step-size of the
+        astigmatism calibration to make knot placing more convenient.
+    plot : bool
+        Flag to toggle plotting
+
+    Returns
+    -------
+    z : ndarray
+        astigmatic Z-position of each localization in fres
+    zerr : ndarray
+        discrepancies between sigma values and the PSF calibration curves
+
     """
     # fres = pipeline.selectedDataSource.resultsSource.fitResults
-    numMolecules = len(fres['x']) # there is no guarantee that fitResults_x0 will be present - change to x
+    # numMolecules = len(fres['x']) # there is no guarantee that fitResults_x0 will be present - change to x
     numChans = len(astig_calibrations)
 
     # find overall min and max z values
@@ -34,33 +46,33 @@ def lookup_astig_z(fres, astig_calibrations, plot=False):
     # generate z vector for interpolation
     zVal = np.arange(z_min, z_max)
 
-
-    #TODO - Is this a robust choice?
-    smoothFac = 5 * len(astig_calibrations[0]['z'])
-
     # generate look up table of sorts
     sigCalX = []
     sigCalY = []
     for i, astig_cal in enumerate(astig_calibrations):
         zdat = np.array(astig_cal['z'])
-        # find indices of range we trust
-        #zrange = astig_cal['zRange']
 
-        #z_valid_mask = (zdat > zrange[0])*(zdat < zrange[1])
-        z_valid_mask = zdat > -1e6
+        # grab indices of range we trust
+        z_range = astig_cal['zRange']
+
+        z_valid_mask = (zdat > z_range[0])*(zdat < z_range[1])
         z_valid = zdat[z_valid_mask]
 
-        sigCalX.append(UnivariateSpline(z_valid,np.array(astig_cal['sigmax'])[z_valid_mask],ext='const', s=smoothFac)(zVal))
-        sigCalY.append(UnivariateSpline(z_valid,np.array(astig_cal['sigmay'])[z_valid_mask],ext='const', s=smoothFac)(zVal))
+        # generate splines with knots spaced roughly as rough_knot_spacing [nm]
+        smoothing_factor = int(rough_knot_spacing / (zdat[-1] - zdat[-2]))
+        knots = z_valid[1:-1:smoothing_factor]
+
+        sigCalX.append(LSQUnivariateSpline(z_valid,np.array(astig_cal['sigmax'])[z_valid_mask], knots, ext='const')(zVal))
+        sigCalY.append(LSQUnivariateSpline(z_valid,np.array(astig_cal['sigmay'])[z_valid_mask], knots, ext='const')(zVal))
 
     sigCalX = np.array(sigCalX)
     sigCalY = np.array(sigCalY)
 
-    #allocate arrays for the estimated z positions and their errors
-    z = np.zeros(numMolecules)
-    zerr = 1e4 * np.ones(numMolecules)
-
-    failures = 0
+    # #allocate arrays for the estimated z positions and their errors
+    # z = np.zeros(numMolecules)
+    # zerr = 1e4 * np.ones(numMolecules)
+    #
+    # failures = 0
     chans = np.arange(numChans)
 
     #extract our sigmas and their errors
