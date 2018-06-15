@@ -16,13 +16,13 @@ import numpy as np
 #        /  e8        /  |
 #       v7----e6----v6   e9
 #       |   |        |   |
-#       |  v0----e0--|- v1
+#       |  v0----e0--|- v1---> x
 #      e11 /        e10 /
 #       | e3         | e1
 #       |/           |/
-#       v3----e2-----v2---> y
+#       v3----e2-----v2
 #      /
-#     x
+#     y
 #
 
 # This tells us which row of MC_TRIANGLES to look at based on comparison of isosurface values to grid vertices
@@ -337,8 +337,8 @@ class MarchingCubes(object):
         self.isolevel = isolevel
 
         # Datatype for storing triangles created by marching cubes. Mimics STL data structure.
-        # TODO: Add ('normal', '3f4')
-        self.dt = np.dtype([('vertex0', '3f4'), ('vertex1', '3f4'), ('vertex2', '3f4')])
+        # TODO: Add ('normal', '3f4') for real
+        self.dt = np.dtype([('normal', '3f4'), ('vertex0', '3f4'), ('vertex1', '3f4'), ('vertex2', '3f4')])
 
     def cube_index(self, values):
         """
@@ -351,14 +351,15 @@ class MarchingCubes(object):
 
         Returns
         -------
-        index : int
+        indices: int
             Value to use for lookup in MC_EDGES, MC_TRIANGLES.
         """
+
         index = 0
 
-        for val in range(values):
-            if values[val] >= self.isolevel:
-                index = index | 1 << val
+        for val in range(len(values)):
+            if values[val] < self.isolevel:
+                index |= 1 << val
 
         return index
 
@@ -453,7 +454,9 @@ class MarchingCubes(object):
         """
         idx = 0
         while triangles[idx] != -1:
-            self.triangles.append([intersections[triangles[idx]], intersections[triangles[idx+1]], intersections[triangles[idx+2]]])
+            # TODO: currently adds a normal of [1, 1, 1]
+            self.triangles.append(([0, 0, 0], intersections[triangles[idx]].tolist(),
+                                   intersections[triangles[idx+1]].tolist(), intersections[triangles[idx+2]].tolist()))
             idx += 3
 
     def set_vertices(self, vertices):
@@ -493,17 +496,18 @@ class MarchingCubes(object):
 
         Returns
         -------
-        Optionally, a list of triangles (x,y,z) after marching.
+        Optionally, an array of triangles after marching.
         """
 
         for v_index in range(self.vertices.shape[0]):
-            vertices = self.vertices[v_index, :, :]
             values = self.values[v_index, :]
-            cube_index = self.edge_index(values)
+            cube_index = self.cube_index(values)
 
             edge = MC_EDGES[cube_index]
             if edge == 0:
                 continue
+
+            vertices = self.vertices[v_index, :, :]
 
             intersections = self.create_intersection_list(edge, vertices, values)
             triangles = MC_TRIANGLES[cube_index]
@@ -531,3 +535,70 @@ class MarchingCubesOctree(MarchingCubes):
 
         """
         pass
+
+
+def generate_sphere_voxels(radius=10):
+    """
+    Generate a set of voxels representing a sphere to test marching cubes.
+
+    Parameters
+    ----------
+    radius : int
+        Radius of the 3D sphere.
+
+    Returns
+    -------
+    vertices : np.array
+        The vertices of the sphere voxels, shape (-1, 8, 3).
+    values : np.array
+        The corresponding values at the vertices coordinates, shape (-1, 8).
+    """
+
+    cube_width = 1  # voxel step size
+
+    vertices = []
+    values = []
+
+    for z in range(2 * radius):
+        for y in range(2 * radius):
+            for x in range(2 * radius):
+                if ((x + cube_width/2 - radius) ** 2 + (y + cube_width/2 - radius) ** 2 +
+                        (z + cube_width/2 - radius) ** 2) <= radius ** 2 / 4:
+                    vertices.append([(x, y, z), (x + cube_width, y, z),
+                                     (x + cube_width, y + cube_width, z), (x, y + cube_width, z),
+                                     (x, y, z + cube_width), (x + cube_width, y, z + cube_width),
+                                     (x + cube_width, y + cube_width, z + cube_width),
+                                     (x, y + cube_width, z + cube_width)
+                                     ])
+
+                    # Default to we're outside the sphere
+                    v0 = v1 = v2 = v3 = v4 = v5 = v6 = v7 = 1
+
+                    if not ((x - radius) ** 2 + (y - radius) ** 2 +
+                            (z - radius) ** 2) <= radius ** 2 / 4:
+                        v0 = 0
+                    if not ((x + cube_width - radius) ** 2 + (y - radius) ** 2 +
+                            (z - radius) ** 2) <= radius ** 2 / 4:
+                        v1 = 0
+                    if not ((x + cube_width - radius) ** 2 + (y + cube_width - radius) ** 2 +
+                            (z - radius) ** 2) <= radius ** 2 / 4:
+                        v2 = 0
+                    if not ((x - radius) ** 2 + (y + cube_width - radius) ** 2 +
+                            (z - radius) ** 2) <= radius ** 2 / 4:
+                        v3 = 0
+                    if not ((x - radius) ** 2 + (y - radius) ** 2 +
+                            (z + cube_width - radius) ** 2) <= radius ** 2 / 4:
+                        v4 = 0
+                    if not ((x + cube_width - radius) ** 2 + (y - radius) ** 2 +
+                            (z + cube_width - radius) ** 2) <= radius ** 2 / 4:
+                        v5 = 0
+                    if not ((x + cube_width - radius) ** 2 + (y + cube_width - radius) ** 2 +
+                            (z + cube_width - radius) ** 2) <= radius ** 2 / 4:
+                        v6 = 0
+                    if not ((x - radius) ** 2 + (y + cube_width - radius) ** 2 +
+                            (z + cube_width - radius) ** 2) <= radius ** 2 / 4:
+                        v7 = 0
+
+                    values.append([v0, v1, v2, v3, v4, v5, v6, v7])
+
+    return np.array(vertices), np.array(values)
