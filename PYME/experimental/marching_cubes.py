@@ -338,7 +338,7 @@ class MarchingCubes(object):
 
         # Datatype for storing triangles created by marching cubes. Mimics STL data structure.
         # TODO: Add ('normal', '3f4') for real
-        self.dt = np.dtype([('normal', '3f4'), ('vertex0', '3f4'), ('vertex1', '3f4'), ('vertex2', '3f4')])
+        self.dt = np.dtype([('normal', '3f4'), ('vertex0', '3f4'), ('vertex1', '3f4'), ('vertex2', '3f4'), ('attrib', 'u2')])
 
     def cube_index(self, values):
         """
@@ -456,7 +456,8 @@ class MarchingCubes(object):
         while triangles[idx] != -1:
             # TODO: currently adds a normal of [1, 1, 1]
             self.triangles.append(([0, 0, 0], intersections[triangles[idx]].tolist(),
-                                   intersections[triangles[idx+1]].tolist(), intersections[triangles[idx+2]].tolist()))
+                                   intersections[triangles[idx+1]].tolist(), intersections[triangles[idx+2]].tolist(),
+                                   0))
             idx += 3
 
     def set_vertices(self, vertices):
@@ -562,43 +563,41 @@ def generate_sphere_voxels(radius=10):
     for z in range(2 * radius):
         for y in range(2 * radius):
             for x in range(2 * radius):
-                if ((x + cube_width/2 - radius) ** 2 + (y + cube_width/2 - radius) ** 2 +
-                        (z + cube_width/2 - radius) ** 2) <= radius ** 2 / 4:
-                    vertices.append([(x, y, z), (x + cube_width, y, z),
-                                     (x + cube_width, y + cube_width, z), (x, y + cube_width, z),
-                                     (x, y, z + cube_width), (x + cube_width, y, z + cube_width),
-                                     (x + cube_width, y + cube_width, z + cube_width),
-                                     (x, y + cube_width, z + cube_width)
-                                     ])
+                # Default to we're outside the sphere
+                v0 = v1 = v2 = v3 = v4 = v5 = v6 = v7 = 0
 
-                    # Default to we're outside the sphere
-                    v0 = v1 = v2 = v3 = v4 = v5 = v6 = v7 = 1
+                vertices.append([(x, y, z), (x + cube_width, y, z),
+                                 (x + cube_width, y + cube_width, z), (x, y + cube_width, z),
+                                 (x, y, z + cube_width), (x + cube_width, y, z + cube_width),
+                                 (x + cube_width, y + cube_width, z + cube_width),
+                                 (x, y + cube_width, z + cube_width)
+                                 ])
 
-                    if not ((x - radius) ** 2 + (y - radius) ** 2 +
-                            (z - radius) ** 2) <= radius ** 2 / 4:
-                        v0 = 0
-                    if not ((x + cube_width - radius) ** 2 + (y - radius) ** 2 +
-                            (z - radius) ** 2) <= radius ** 2 / 4:
-                        v1 = 0
-                    if not ((x + cube_width - radius) ** 2 + (y + cube_width - radius) ** 2 +
-                            (z - radius) ** 2) <= radius ** 2 / 4:
-                        v2 = 0
-                    if not ((x - radius) ** 2 + (y + cube_width - radius) ** 2 +
-                            (z - radius) ** 2) <= radius ** 2 / 4:
-                        v3 = 0
-                    if not ((x - radius) ** 2 + (y - radius) ** 2 +
-                            (z + cube_width - radius) ** 2) <= radius ** 2 / 4:
-                        v4 = 0
-                    if not ((x + cube_width - radius) ** 2 + (y - radius) ** 2 +
-                            (z + cube_width - radius) ** 2) <= radius ** 2 / 4:
-                        v5 = 0
-                    if not ((x + cube_width - radius) ** 2 + (y + cube_width - radius) ** 2 +
-                            (z + cube_width - radius) ** 2) <= radius ** 2 / 4:
-                        v6 = 0
-                    if not ((x - radius) ** 2 + (y + cube_width - radius) ** 2 +
-                            (z + cube_width - radius) ** 2) <= radius ** 2 / 4:
-                        v7 = 0
+                if ((x - radius) ** 2 + (y - radius) ** 2 +
+                        (z - radius) ** 2) <= radius ** 2 / 4:
+                    v0 = 1
+                if ((x + cube_width - radius) ** 2 + (y - radius) ** 2 +
+                        (z - radius) ** 2) <= radius ** 2 / 4:
+                    v1 = 1
+                if ((x + cube_width - radius) ** 2 + (y + cube_width - radius) ** 2 +
+                        (z - radius) ** 2) <= radius ** 2 / 4:
+                    v2 = 1
+                if ((x - radius) ** 2 + (y + cube_width - radius) ** 2 +
+                        (z - radius) ** 2) <= radius ** 2 / 4:
+                    v3 = 1
+                if ((x - radius) ** 2 + (y - radius) ** 2 +
+                        (z + cube_width - radius) ** 2) <= radius ** 2 / 4:
+                    v4 = 1
+                if ((x + cube_width - radius) ** 2 + (y - radius) ** 2 +
+                        (z + cube_width - radius) ** 2) <= radius ** 2 / 4:
+                    v5 = 1
+                if ((x + cube_width - radius) ** 2 + (y + cube_width - radius) ** 2 +
+                        (z + cube_width - radius) ** 2) <= radius ** 2 / 4:
+                    v6 = 1
+                if ((x - radius) ** 2 + (y + cube_width - radius) ** 2 +
+                        (z + cube_width - radius) ** 2) <= radius ** 2 / 4:
+                    v7 = 1
 
-                    values.append([v0, v1, v2, v3, v4, v5, v6, v7])
+                values.append([v0, v1, v2, v3, v4, v5, v6, v7])
 
     return np.array(vertices), np.array(values)
