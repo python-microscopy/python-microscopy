@@ -181,9 +181,9 @@ class ClusterAnalyser:
 
         #filter unclumped points
         rec.add_module(tablefilters.FilterTable(rec,inputName='chan0_clumped', outputName='chan0_cleaned',
-                                                         filters={'dbscanClumpID' : [.5, sys.maxint]}))
+                                                         filters={'dbscanClumpID' : [.5, sys.maxsize]}))
         rec.add_module(tablefilters.FilterTable(rec,inputName='chan1_clumped', outputName='chan1_cleaned',
-                                               filters={'dbscanClumpID': [.5, sys.maxint]}))
+                                               filters={'dbscanClumpID': [.5, sys.maxsize]}))
 
         #rejoin cleaned datasets
         rec.add_module(tablefilters.ConcatenateTables(rec,inputName0='chan0_cleaned', inputName1='chan1_cleaned',

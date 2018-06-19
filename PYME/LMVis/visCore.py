@@ -194,7 +194,7 @@ class VisGUICore(object):
         pnl.AddPane(item)
         
     def set_datasource_choices(self, event=None, **kwargs):
-        dss = self.pipeline.dataSources.keys()
+        dss = list(self.pipeline.dataSources.keys())
         self.chSource.SetItems(dss)
         if not self.pipeline.selectedDataSourceKey is None:
             self.chSource.SetStringSelection(self.pipeline.selectedDataSourceKey)

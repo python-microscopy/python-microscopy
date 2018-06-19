@@ -27,7 +27,7 @@ try:
 except ImportError:
     pass
 
-from base import ModuleCollection
+from .base import ModuleCollection
 
 #load any custom recipe modules
 for mn in config.get_plugins('recipes'):

@@ -326,6 +326,9 @@ class HDFMDHandler(MDHandlerBase):
 
         res =  self.h5file.get_node_attr('/'.join(['', 'MetaData']+ ep), en)
         
+        if isinstance(res, bytes):
+            res = res.decode('ascii')
+        
         #dodgy hack to get around a problem with zero length strings not
         #being picklable if they are numpy (rather than pure python) types
         #this code should convert a numpy empty string into a python empty string

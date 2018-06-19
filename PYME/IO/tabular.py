@@ -27,6 +27,7 @@ routines expect at least 'x' and 'y' to be defined as keys, and may also
 understand additional values, e.g. 'error_x' 
 """
 import types
+import six
 import numpy as np
 
 from numpy import * #to allow the use of sin cos etc in mappings
@@ -169,7 +170,7 @@ class fitResultsSource(TabularBase):
 
 
     def keys(self):
-        return self._keys + self.transkeys.keys()
+        return self._keys + list(self.transkeys.keys())
 
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
@@ -235,7 +236,7 @@ class h5rSource(TabularBase):
 
 
     def keys(self):
-        return self._keys + self.transkeys.keys()
+        return self._keys + list(self.transkeys.keys())
 
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
@@ -647,7 +648,7 @@ class mappingFilter(TabularBase):
             return self.resultsSource[keys]
 
     def keys(self):
-        return list(set(list(self.resultsSource.keys()) + self.mappings.keys() + self.new_columns.keys()))
+        return list(set(list(self.resultsSource.keys()) + list(self.mappings.keys()) + list(self.new_columns.keys())))
 
     def addVariable(self, name, value):
         """
@@ -696,7 +697,7 @@ class mappingFilter(TabularBase):
     def setMapping(self, key, mapping):
         if type(mapping) == types.CodeType:
             self.mappings[key] = mapping
-        elif type(mapping) == types.StringType:
+        elif isinstance(mapping, six.string_types):
             self.mappings[key] = compile(mapping, '/tmp/test1', 'eval')
         else:
             self.__dict__[key] = mapping

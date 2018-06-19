@@ -23,10 +23,11 @@
 import wx
 #from wx.lib.agw import aui
 import math
+import six
 from wx.lib.agw.aui.aui_utilities import BitmapFromBits
 
 def ColourFromStyle(col):
-    if type(col) in [str, unicode]:
+    if isinstance(col, six.string_types):
         col = wx.NamedColour(col)
     else:
         col = wx.Colour(*col)
@@ -100,8 +101,8 @@ class SizeReportCtrl(wx.PyControl):
         
 
 #stolen from aui
-pin_bits     = '\xff\xff\xff\xff\xff\xff\x1f\xfc\xdf\xfc\xdf\xfc\xdf\xfc\xdf\xfc' \
-               '\xdf\xfc\x0f\xf8\x7f\xff\x7f\xff\x7f\xff\xff\xff\xff\xff\xff\xff'
+pin_bits     = b'\xff\xff\xff\xff\xff\xff\x1f\xfc\xdf\xfc\xdf\xfc\xdf\xfc\xdf\xfc' \
+               b'\xdf\xfc\x0f\xf8\x7f\xff\x7f\xff\x7f\xff\xff\xff\xff\xff\xff\xff'
 """ Pin button bitmap for a pane. """
 
 

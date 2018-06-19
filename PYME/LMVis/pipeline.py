@@ -197,33 +197,33 @@ def _processEvents(ds, events, mdh):
         for e in events:
             evKeyNames.add(e['EventName'])
 
-        if 'ProtocolFocus' in evKeyNames:
+        if b'ProtocolFocus' in evKeyNames:
             zm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'])
             ev_mappings['zm'] = zm
             eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
 
-        if 'ScannerXPos' in evKeyNames:
+        if b'ScannerXPos' in evKeyNames:
             x0 = 0
             if 'Positioning.Stage_X' in mdh.getEntryNames():
                 x0 = mdh.getEntry('Positioning.Stage_X')
-            xm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], x0, 'ScannerXPos', 0)
+            xm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], x0, b'ScannerXPos', 0)
             ev_mappings['xm'] = xm
             eventCharts.append(('XPos [um]', xm, 'ScannerXPos'))
 
-        if 'ScannerYPos' in evKeyNames:
+        if b'ScannerYPos' in evKeyNames:
             y0 = 0
             if 'Positioning.Stage_Y' in mdh.getEntryNames():
                 y0 = mdh.getEntry('Positioning.Stage_Y')
-            ym = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
+            ym = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), y0, b'ScannerYPos', 0)
             ev_mappings['ym'] = ym
             eventCharts.append(('YPos [um]', ym, 'ScannerYPos'))
 
-        if 'ShiftMeasure' in evKeyNames:
-            driftx = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
+        if b'ShiftMeasure' in evKeyNames:
+            driftx = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
                                                               0)
-            drifty = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
+            drifty = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
                                                               1)
-            driftz = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
+            driftz = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
                                                               2)
 
             ev_mappings['driftx'] = driftx

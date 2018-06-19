@@ -175,7 +175,7 @@ class colourPanel(wx.Panel):
         self.lFluorSpecies.makeColumnEditable(5)
 
         for key, value in self.pipeline.fluorSpecies.items():
-            ind = self.lFluorSpecies.InsertStringItem(sys.maxint, key)
+            ind = self.lFluorSpecies.InsertStringItem(sys.maxsize, key)
             self.lFluorSpecies.SetStringItem(ind,1, '%3.2f' % value)
             self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(value)))[:3])))
             
@@ -295,7 +295,7 @@ class colourPanel(wx.Panel):
 
             self.pipeline.fluorSpecies[key] = val
 
-            ind = self.lFluorSpecies.InsertStringItem(sys.maxint, key)
+            ind = self.lFluorSpecies.InsertStringItem(sys.maxsize, key)
             self.lFluorSpecies.SetStringItem(ind,1, '%3.2f' % val)
             #print val, (255*numpy.array(cm.gist_rainbow(val)))[:3]
             self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(val)))[:3])))
@@ -367,7 +367,7 @@ class colourPanel(wx.Panel):
         for g, i in zip(guesses, range(n)):
             key = '%c' % (65 + i)
             self.pipeline.fluorSpecies[key] = g
-            ind = self.lFluorSpecies.InsertStringItem(sys.maxint, key)
+            ind = self.lFluorSpecies.InsertStringItem(sys.maxsize, key)
             self.lFluorSpecies.SetStringItem(ind,1, '%3.3f' % g)
             self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(g)))[:3])))
 
@@ -400,7 +400,7 @@ class colourPanel(wx.Panel):
 
             if not ratio is None:
                 self.pipeline.fluorSpecies[structure] = ratio
-                ind = self.lFluorSpecies.InsertStringItem(sys.maxint, structure)
+                ind = self.lFluorSpecies.InsertStringItem(sys.maxsize, structure)
                 self.lFluorSpecies.SetStringItem(ind,1, '%3.3f' % ratio)
                 self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(ratio)))[:3])))
 

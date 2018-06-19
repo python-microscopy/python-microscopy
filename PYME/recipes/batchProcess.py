@@ -20,7 +20,7 @@ import multiprocessing
 NUM_PROCS = multiprocessing.cpu_count()
 
 def runRec(args):
-    print args
+    #print args
     try:
         import matplotlib.pyplot as plt
     

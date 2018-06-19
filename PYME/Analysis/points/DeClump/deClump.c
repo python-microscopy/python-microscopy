@@ -1046,6 +1046,28 @@ static PyMethodDef deClumpMethods[] = {
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
+#if PY_MAJOR_VERSION>=3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "deClump",     /* m_name */
+        "clump localizations together)",  /* m_doc */
+        -1,                  /* m_size */
+        deClumpMethods,    /* m_methods */
+        NULL,                /* m_reload */
+        NULL,                /* m_traverse */
+        NULL,                /* m_clear */
+        NULL,                /* m_free */
+    };
+
+PyMODINIT_FUNC PyInit_deClump(void)
+{
+    PyObject *m;
+    m = PyModule_Create(&moduledef);
+    import_array();
+
+    return m;
+}
+#else
 
 PyMODINIT_FUNC initdeClump(void)
 {
@@ -1058,3 +1080,4 @@ PyMODINIT_FUNC initdeClump(void)
     //Py_INCREF(SpamError);
     //PyModule_AddObject(m, "error", SpamError);
 }
+#endif

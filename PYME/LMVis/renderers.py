@@ -35,8 +35,6 @@ try:
 except SystemExit:
     print('GUI load failed (probably OSX)')
 
-from PYME.Analysis.points.QuadTree import QTrend
-
 
 import pylab
 import numpy as np
@@ -473,6 +471,7 @@ class QuadTreeRenderer(ColourRenderer):
     mode = 'quadtree'
 
     def genIm(self, settings, imb, mdh):
+        from PYME.Analysis.points.QuadTree import QTrend
         pixelSize = settings['pixelSize']
 
         if not pylab.mod(pylab.log2(pixelSize/self.visFr.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size

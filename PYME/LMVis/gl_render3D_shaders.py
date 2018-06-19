@@ -881,6 +881,8 @@ class LMGLShaderCanvas(GLCanvas):
         
     def recenter_bbox(self):
         bb = self.bbox
+        if bb is None:
+            return
         
         centre = 0.5*(bb[:3] + bb[3:])
         
