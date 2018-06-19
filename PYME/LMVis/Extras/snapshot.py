@@ -22,7 +22,7 @@ import PIL
 
 from PYME.LMVis.Extras.animation import VideoPanel
 from scipy.misc import toimage
-from wx import wx
+import wx
 from OpenGL.GL import GL_LUMINANCE, GL_RGB
 
 #FIXME - does this shadow / duplicate existing functionality?

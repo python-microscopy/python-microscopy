@@ -161,6 +161,14 @@ class DirCache(object):
             self._cache[dirname] = (listing, time.time() + self._lifetime_s)
             self._purge_list.append(dirname)
             self._n += 1
+            
+    def invalidate_directory(self, dirname):
+        with self._lock:
+            try:
+                self._cache.pop(dirname)
+                self._purge_list.remove(dirname)
+            except KeyError:
+                logger.debug('%s not in directory cache' % dirname)
     
     def list_directory(self, dirname):
         #logging.debug('list_directory: %s' % dirname)

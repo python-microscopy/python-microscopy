@@ -1,17 +1,21 @@
 package:
   name: zeroconf
-  version: "0.17.6"
+  #version: "0.17.6"
+  version: "0.17.7"
 
 source:
-  fn: zeroconf-0.17.6.tar.gz
-  url: https://pypi.python.org/packages/b8/15/d4b1773e91f8ff54681c3a0d45baec553ffa850f42beb62353156ab4a64c/zeroconf-0.17.6.tar.gz
-  md5: 526c9e59c3d51e9e3b688922f8fc4ecd
+  fn: zeroconf-0.17.7.tar.gz
+  #url: https://pypi.python.org/packages/b8/15/d4b1773e91f8ff54681c3a0d45baec553ffa850f42beb62353156ab4a64c/zeroconf-0.17.6.tar.gz
+ # md5: 526c9e59c3d51e9e3b688922f8fc4ecd
+
+  url: https://files.pythonhosted.org/packages/f5/37/12b1ebc05905e7aed78cc61122d574b2bc2a39099d47835fb6cd070cc842/zeroconf-0.17.7.tar.gz
+  sha256: 0ad28916209e459ce97e513089de4d23a4c81f6dc0b976ce4877ba5a81950876
 #  patches:
    # List any patch files here
    # - fix.patch
 
 build:
-  noarch_python: True
+  noarch_python: False
   preserve_egg_dir: False
   # entry_points:
     # Put any entry points (scripts to be generated automatically) here. The
@@ -24,7 +28,7 @@ build:
 
   # If this is a new build for the same version, increment the build
   # number. If you do not include this key, it defaults to 0.
-  number: 1
+  number: 2
 
 requirements:
   build:

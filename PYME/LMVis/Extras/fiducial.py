@@ -172,9 +172,23 @@ def fiducial_diagnosis(pipeline):
     #plt.hist(x_c - x_c.mean())
     
     
+def drift_auto_corr(visFr):
+    from PYME.recipes import localisations
+    recipe = visFr.pipeline.recipe
+    
+    pipeline = visFr.pipeline
+    
+    m = localisations.AutocorrelationDriftCorrection(recipe, inputName=pipeline.selectedDataSourceKey,
+                                                     outputName='corrected_localizations')
+    
+    if m.configure_traits(kind='modal'):
+        recipe.add_module(m)
+        
+        recipe.execute()
+        pipeline.selectDataSource('corrected_localizations')
+        visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
-    
-    
+
 def Plug(visFr):
     def correct():
         drift_correct(visFr.pipeline)
@@ -184,3 +198,4 @@ def Plug(visFr):
     visFr.AddMenuItem('Extras>Fiducials', 'Display correction residuals', lambda e: fiducial_diagnosis(visFr.pipeline))
     visFr.AddMenuItem('Extras>Fiducials', 'Manual selection', lambda e: manual_selection(visFr.pipeline))
     visFr.AddMenuItem('Extras>Fiducials', 'Load fiducial fits from 2nd file', lambda e: load_fiducial_info_from_second_file(visFr.pipeline))
+    visFr.AddMenuItem('Extras', 'Autocorrelation based drift correction', lambda e : drift_auto_corr(visFr))

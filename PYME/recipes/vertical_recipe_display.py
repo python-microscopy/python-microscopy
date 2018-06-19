@@ -195,7 +195,7 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
 
         dc = wx.PaintDC(self)
         self.PrepareDC(dc)
-        dc.BeginDrawing()
+        #dc.BeginDrawing()
 
         x_0 = self.fp.Position[0]
         x_1 = x_0 + self.fp.Size[0]
@@ -219,4 +219,4 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
             except KeyError:
                 pass
         
-        dc.EndDrawing()
+        #dc.EndDrawing()

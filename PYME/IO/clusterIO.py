@@ -171,6 +171,7 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
     cache_key = serverfilter + '::' + filename
     try:
         locs, t = _locateCache[cache_key]
+        #logger.debug('Returning cached locs: %s' % locs)
         return locs
     except KeyError:
         locs = []
@@ -482,6 +483,7 @@ def _chooseLocation(locs):
 
     """
 
+    #logger.debug('choosing location from: %s' % locs)
     cost = np.array([l[1] for l in locs])
 
     return locs[cost.argmin()][0]
@@ -711,7 +713,7 @@ def putFile(filename, data, serverfilter=''):
             #add file to location cache
             cache_key = serverfilter + '::' + filename
             t1 = time.time()
-            _locateCache[cache_key] = (url, t1)
+            _locateCache[cache_key] = ([(url, .1),], t1)
             
             #modify dir cache
             try:

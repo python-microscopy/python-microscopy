@@ -89,17 +89,17 @@ class LMGLShaderCanvas(GLCanvas):
         print("New Canvas")
         attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
         GLCanvas.__init__(self, parent, -1, attribList=attribute_list)
-        wx.EVT_PAINT(self, self.OnPaint)
-        wx.EVT_SIZE(self, self.OnSize)
-        wx.EVT_MOUSEWHEEL(self, self.OnWheel)
-        wx.EVT_LEFT_DOWN(self, self.OnLeftDown)
-        wx.EVT_LEFT_UP(self, self.OnLeftUp)
-        wx.EVT_MIDDLE_DOWN(self, self.OnMiddleDown)
-        wx.EVT_MIDDLE_UP(self, self.OnMiddleUp)
-        wx.EVT_RIGHT_DOWN(self, self.OnMiddleDown)
-        wx.EVT_RIGHT_UP(self, self.OnMiddleUp)
-        wx.EVT_MOTION(self, self.OnMouseMove)
-        wx.EVT_KEY_DOWN(self, self.OnKeyPress)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_MOUSEWHEEL, self.OnWheel)
+        self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
+        self.Bind(wx.EVT_MIDDLE_DOWN, self.OnMiddleDown)
+        self.Bind(wx.EVT_MIDDLE_UP, self.OnMiddleUp)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.OnMiddleDown)
+        self.Bind(wx.EVT_RIGHT_UP, self.OnMiddleUp)
+        self.Bind(wx.EVT_MOTION, self.OnMouseMove)
+        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyPress)
         # wx.EVT_MOVE(self, self.OnMove)
         self.gl_context = wx.glcanvas.GLContext(self)
         
@@ -204,7 +204,7 @@ class LMGLShaderCanvas(GLCanvas):
             return
         wx.PaintDC(self)
         self.gl_context.SetCurrent(self)
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
 
         if not self._is_initialized:
             self.initialize()
@@ -470,7 +470,7 @@ class LMGLShaderCanvas(GLCanvas):
         self.view.vec_right = numpy.array([1, 0, 0])
         self.view.vec_back = numpy.array([0, 0, 1])
 
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
 
         self.layers.append(
             VertexRenderLayer(T.x[T.triangles], T.y[T.triangles], 0 * (T.x[T.triangles]), self.c,
@@ -507,7 +507,7 @@ class LMGLShaderCanvas(GLCanvas):
         self.sy = y.max() - y.min()
         self.sz = z.max() - z.min()
 
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
 
         if mode is 'pointsprites':
             self.layers.append(PointSpritesRenderLayer(x, y, z, self.c, self.cmap, self.clim, alpha, self.pointSize))
@@ -545,7 +545,7 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.c = numpy.vstack((c, c, c, c)).T.ravel()
 
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
         self.layers.append(QuadTreeRenderLayer(xs.ravel(), ys.ravel(), 0 * xs.ravel(),
                                                self.c, self.cmap, self.clim, alpha=1))
         self.Refresh()

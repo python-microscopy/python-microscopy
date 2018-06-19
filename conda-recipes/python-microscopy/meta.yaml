@@ -147,7 +147,7 @@ requirements:
     - numpy x.x
     - scipy
     - matplotlib
-    - wxpython <3.9
+    - wxpython
     - pytables
     - pyopengl
     - traits
@@ -164,7 +164,7 @@ requirements:
     - scikit-learn
     - shapely         [osx]
     - zeroconf [linux]
-    - zeroconf 0.17.4 [win or osx]
+    - zeroconf 0.17.7 [win or osx]
     - requests
     - pandas
     - pyyaml

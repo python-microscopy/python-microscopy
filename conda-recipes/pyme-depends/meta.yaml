@@ -130,8 +130,8 @@ requirements:
     - numpy x.x
     - scipy
     - matplotlib
-    - wxpython [py2k]
-    - wxpython-phoenix [py3k]
+    - wxpython  #[py2k]
+    #- wxpython-phoenix < 3.9 [py3k]
     - pytables
     - pyopengl
     - traits
@@ -147,7 +147,7 @@ requirements:
     - scikit-image
     - scikit-learn
     - shapely         [osx and py2k] #FIXME for py3k
-    - zeroconf #0.17.4
+    - zeroconf 0.17.7
     - requests
     - pandas
     - pyyaml

@@ -561,7 +561,12 @@ class foldPanel(wx.Panel):
         #ind = self.panes.index(event.GetEventObject())
         #self.priorities[ind] = 1
         #print pane.GetClientRect()
-        if not pane.GetClientRect().Inside(event.GetPosition()):
+        if wx.__version__ > '4':
+            inside = pane.GetClientRect().Contains(event.GetPosition())
+        else:
+            inside = pane.GetClientRect().Inside(event.GetPosition())
+            
+        if not inside:
             if pane.Fold():
                 self.Layout()
                 self.fold_signal.send(sender=self)

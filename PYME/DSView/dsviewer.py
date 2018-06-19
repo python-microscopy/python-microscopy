@@ -145,10 +145,10 @@ class DSViewFrame(AUIFrame):
         self._menus['Processing'] = self.mProcessing
 
         # Menu Bar end
-        wx.EVT_MENU(self, wx.ID_OPEN, self.OnOpen)
-        wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
-        wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnExport)
-        wx.EVT_CLOSE(self, self.OnCloseWindow)
+        self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
+        self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.OnExport, id=wx.ID_SAVEAS)
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         
 
 		

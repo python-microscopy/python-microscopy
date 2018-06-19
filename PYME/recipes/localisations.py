@@ -676,6 +676,91 @@ class FiducialCorrection(ModuleBase):
         namespace[self.outputFiducials] = out_f
 
 
+@register_module('AutocorrelationDriftCorrection')
+class AutocorrelationDriftCorrection(ModuleBase):
+    """
+    Perform drift correction using autocorrelation between subsets of the point data
+
+    Inputs
+    ------
+    inputName: name of tabular input containing positions ('x', 'y', and 't' columns should be present)
+    inputImage: name of image input containing labels
+    step : time step (in frames) with which to traverse the series
+    window: size of time window (in frames). A series of images will be generated from
+            multiple overlapping windows, spaced by `step` frames.
+    binsize: size of histogram bins in nm
+
+    Outputs
+    -------
+    outputName: name of tabular output. A mapped version of the tabular input with 2 extra columns
+        
+    """
+    inputName = Input('Localizations')
+    step = Int(200)
+    window = Int(500)
+    binsize = Float(30)
+    
+    outputName = Output('corrected_localizations')
+
+    def calcCorrDrift(self, x, y, t):
+        from scipy import ndimage
+    
+        tMax = int(t.max())
+    
+        bx = np.arange(x.min(), x.max() + self.binsize, self.binsize)
+        by = np.arange(y.min(), y.max() + self.binsize, self.binsize)
+    
+        tInd = t < self.window
+    
+        h1 = np.histogram2d(x[tInd], y[tInd], [bx, by])[0]
+        H1 = np.fftn(h1)
+    
+        shifts = []
+        tis = []
+    
+        for ti in range(0, tMax + 1, self.step):
+            tInd = (t >= ti) * (t < (ti + self.window))
+            h2 = np.histogram2d(x[tInd], y[tInd], [bx, by])[0]
+        
+            xc = abs(np.ifftshift(np.ifftn(H1 * np.ifftn(h2))))
+        
+            xct = (xc - xc.max() / 3) * (xc > xc.max() / 3)
+        
+            shifts.append(ndimage.measurements.center_of_mass(xct))
+            tis.append(ti + self.window / 2.)
+    
+        sha = np.array(shifts)
+    
+        return np.array(tis), self.binsize * (sha - sha[0])
+
+    def execute(self, namespace):
+        from PYME.IO import tabular
+        locs = namespace[self.inputName]
+        
+        t_shift, shifts = self.calcCorrDrift(locs['x'], locs['y'], locs['t'])
+        shx = shifts[:, 0]
+        shy = shifts[:, 1]
+
+        out = tabular.mappingFilter(locs)
+        t_out = out['t']
+        dx = np.interp(t_out, t_shift, shx)
+        dy = np.interp(t_out, t_shift, shy)
+        
+        
+        out.addColumn('dx', dx)
+        out.addColumn('dy', dy)
+        out.setMapping('x', 'x + dx')
+        out.setMapping('y', 'y + dy')
+        
+        # propagate metadata, if present
+        try:
+            out.mdh = locs.mdh
+        except AttributeError:
+            pass
+        
+        namespace[self.outputName] = out
+
+
 @register_module('SphericalHarmonicShell')
 class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong here
     """

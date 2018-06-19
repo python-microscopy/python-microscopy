@@ -65,14 +65,14 @@ class HistLimitPanel(wx.Panel):
         self.GenHist()
 
 
-        wx.EVT_PAINT(self, self.OnPaint)
-        wx.EVT_SIZE(self, self.OnSize)
-        wx.EVT_LEFT_DOWN(self, self.OnLeftDown)
-        wx.EVT_LEFT_UP(self, self.OnLeftUp)
-        wx.EVT_MOTION(self, self.OnMouseMove)
-        wx.EVT_KEY_DOWN(self, self.OnKeyPress)
-        wx.EVT_RIGHT_UP(self, self.OnRightUp)
-        wx.EVT_MOUSEWHEEL(self, self.OnMouseScrollEvent)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
+        self.Bind(wx.EVT_MOTION, self.OnMouseMove)
+        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyPress)
+        self.Bind(wx.EVT_RIGHT_UP, self.OnRightUp)
+        self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseScrollEvent)
 
     def OnMouseScrollEvent(self, evt):
         rot = evt.GetWheelRotation()
@@ -291,12 +291,12 @@ class HistLimitPanel(wx.Panel):
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
         try:
-            DC.BeginDrawing()
+            #DC.BeginDrawing()
 
             self.DoPaint(MemDC);
 
             DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
-            DC.EndDrawing()
+            #DC.EndDrawing()
         finally:
 
             del MemDC

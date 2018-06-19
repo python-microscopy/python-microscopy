@@ -382,7 +382,6 @@ class VisGuiApp(wx.App):
         
         
     def OnInit(self):
-        wx.InitAllImageHandlers()
         self.main = VisGUIFrame(None, self.filename, use_shaders=self.use_shaders, cmd_args=self.cmd_args)
         self.main.Show()
         self.SetTopWindow(self.main)

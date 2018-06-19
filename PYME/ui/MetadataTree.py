@@ -310,7 +310,7 @@ class MetadataPanel(wx.Panel):
                                         #| wx.TR_TWIST_BUTTONS
                                         #| wx.TR_ROW_LINES
                                         #| wx.TR_EDIT_LABELS
-                                        | wx.TR_COLUMN_LINES
+                                        #| wx.TR_COLUMN_LINES
                                         #| wx.TR_NO_LINES
                                         | wx.TR_FULL_ROW_HIGHLIGHT
                                    )
@@ -346,7 +346,10 @@ class MetadataPanel(wx.Panel):
 #            self.tree.SetItemText(child, txt + "(c1)", 1)
                                                 
 
-        self.tree.ExpandAll(self.root)
+        if wx.__version__ > '4':
+            self.tree.ExpandAll()#self.root)
+        else:
+            self.tree.ExpandAll(self.root)
 
         self.tree.GetMainWindow().Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
         self.tree.GetMainWindow().Bind(wx.EVT_RIGHT_UP, self.OnRightUp)
@@ -384,7 +387,10 @@ class MetadataPanel(wx.Panel):
         nmdh = NestedClassMDHandler(self.mdh)
         self.addEntries(nmdh, self.root)
         
-        self.tree.ExpandAll(self.root)
+        if wx.__version__ > '4':
+            self.tree.ExpandAll()#self.root)
+        else:
+            self.tree.ExpandAll(self.root)
 
 
     #def OnActivate(self, evt):
