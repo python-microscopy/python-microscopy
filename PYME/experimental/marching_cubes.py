@@ -614,8 +614,10 @@ def generate_sphere_voxels(radius=10):
                 v0 = v1 = v2 = v3 = v4 = v5 = v6 = v7 = 0
 
                 vertices.append([(x, y, z), (x + cube_width, y, z),
-                                 (x + cube_width, y + cube_width, z), (x, y + cube_width, z),
-                                 (x, y, z + cube_width), (x + cube_width, y, z + cube_width),
+                                 (x + cube_width, y + cube_width, z),
+                                 (x, y + cube_width, z),
+                                 (x, y, z + cube_width),
+                                 (x + cube_width, y, z + cube_width),
                                  (x + cube_width, y + cube_width, z + cube_width),
                                  (x, y + cube_width, z + cube_width)
                                  ])
@@ -648,3 +650,63 @@ def generate_sphere_voxels(radius=10):
                 values.append([v0, v1, v2, v3, v4, v5, v6, v7])
 
     return np.array(vertices), np.array(values)
+
+
+def generate_sphere_image(radius=10):
+    """Generate a 3D volume image of a sphere. Note that the intensity tapers at the radius (rather than ending abruptly)
+    so that marching cubes can do it's thing properly"""
+    X, Y, Z = np.mgrid[(-1.5*radius):(1.5*radius):1.0, (-1.5*radius):(1.5*radius):1.0, (-1.5*radius):(1.5*radius):1.0]
+    
+    R2 = np.sqrt(X*X + Y*Y + Z*Z)
+    
+    S = np.tanh(R2 - radius)
+    
+    return S
+
+
+def image_to_vertex_values(im, voxelsize=1.0):
+    """
+    Translate a volume image into a series of vertices and values for marching cubes.
+    
+    Note: this is for debugging and uses ~32x the memory that is required to store the image. In practical applications
+    it might be more efficient to generate these vertices and values inside a modified version of the marching cubes code
+    
+    Parameters
+    ----------
+    im
+    voxelsize
+
+    Returns
+    -------
+
+    """
+    V = voxelsize*np.mgrid[0:im.shape[0], 0:im.shape[1], 0:im.shape[2]]
+    
+    def _rs(v):
+        return v.reshape(3, -1).T.reshape(-1, 1, 3)
+    
+    def _rs_i(i):
+        return i.ravel().reshape(-1, 1)
+
+    
+    vertices = np.concatenate([_rs(V[:, :-1, :-1, :-1]),
+                               _rs(V[:, 1:, :-1, :-1]),
+                               _rs(V[:, 1:, 1:, :-1]),
+                               _rs(V[:, :-1, 1:, :-1]),
+                               _rs(V[:, :-1, :-1, 1:]),
+                               _rs(V[:, 1:, :-1, 1:]),
+                               _rs(V[:, 1:, 1:, 1:]),
+                               _rs(V[:, :-1, 1:, 1:])], 1)
+
+    values = np.concatenate([_rs_i(im[:-1, :-1, :-1]),
+                               _rs_i(im[1:, :-1, :-1]),
+                               _rs_i(im[1:, 1:, :-1]),
+                               _rs_i(im[:-1, 1:, :-1]),
+                               _rs_i(im[:-1, :-1, 1:]),
+                               _rs_i(im[1:, :-1, 1:]),
+                               _rs_i(im[1:, 1:, 1:]),
+                               _rs_i(im[:-1, 1:, 1:])], 1)
+    
+    return vertices, values
+    
+    
