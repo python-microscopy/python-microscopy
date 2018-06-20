@@ -307,8 +307,10 @@ MC_TRIANGLES = np.array([
     [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
 ])
 
-# Accuracy threshold for point interpolation
-FLT_EPSILON = 0.00001
+INTERPOLATION_BITMASK = [1 << n for n in range(12)]
+EDGE_BITMASK = INTERPOLATION_BITMASK[0:8]
+
+INTERPOLATION_VERTICES = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3], [1, 2, 3, 0, 5, 6, 7, 4, 4, 5, 6, 7]])
 
 
 class MarchingCubes(object):
@@ -333,7 +335,7 @@ class MarchingCubes(object):
         """
         self.vertices = None  # A (-1,8,3) set of x,y,z coordinates corresponding to cubes
         self.values = None  # The corresponding vertex values (-1, 8)
-        self.triangles = []  # The list of triangles
+        self.triangles = None  # The list of triangles
         self.isolevel = isolevel
 
         # Datatype for storing triangles created by marching cubes. Mimics STL data structure.
@@ -355,13 +357,14 @@ class MarchingCubes(object):
             Value to use for lookup in MC_EDGES, MC_TRIANGLES.
         """
 
-        index = 0
-
-        for val in range(len(values)):
-            if values[val] < self.isolevel:
-                index |= 1 << val
-
-        return index
+        # index = 0
+        #
+        # for val in range(len(values)):
+        #     if values[val] < self.isolevel:
+        #         index |= 1 << val
+        #
+        # return index
+        return ((values < self.isolevel) * EDGE_BITMASK).sum(1)
 
     def interpolate_vertex(self, v0, v1, v0_value, v1_value):
         """
@@ -379,15 +382,29 @@ class MarchingCubes(object):
         Interpolated vertex of a triangle.
         """
 
-        if np.abs(self.isolevel - v0_value) < FLT_EPSILON:
-            return v0
-        if np.abs(self.isolevel - v1_value) < FLT_EPSILON:
-            return v1
-        if np.abs(v0_value - v1_value) < FLT_EPSILON:
-            return v0
+        # if np.abs(self.isolevel - v0_value) == 0:
+        #     return v0
+        # if np.abs(self.isolevel - v1_value) == 0:
+        #     return v1
+        # if np.abs(v0_value - v1_value) == 0:
+        #     return v0
+        #
+        # mu = (self.isolevel - v0_value) / (v1_value - v0_value)
+        # p = v0 + mu * (v1 - v0)
+        #
+        # return p
 
+        # Interpolate
         mu = (self.isolevel - v0_value) / (v1_value - v0_value)
-        p = v0 + mu * (v1 - v0)
+        p = v0 + np.multiply(np.repeat(mu, v0.shape[2]).reshape(-1, v0.shape[1], v0.shape[2]), (v1 - v0))
+
+        # Now take care of mu's div by 0 cases
+        idxs = np.abs(self.isolevel - v0_value) == 0
+        p[idxs, :] = v0[idxs, :]
+        idxs = np.abs(self.isolevel - v1_value) == 0
+        p[idxs, :] = v1[idxs, :]
+        idxs = np.abs(v1_value - v0_value) == 0
+        p[idxs, :] = v0[idxs, :]
 
         return p
 
@@ -409,33 +426,46 @@ class MarchingCubes(object):
         vertices of intersection list
         """
 
-        intersection_vertices = np.zeros((12, 3))  # Create one set of intersection vertices, one vertex per edge
-        if edge & 1:
-            intersection_vertices[0] = self.interpolate_vertex(vertices[0], vertices[1], values[0], values[1])
-        if edge & 2:
-            intersection_vertices[1] = self.interpolate_vertex(vertices[1], vertices[2], values[1], values[2])
-        if edge & 4:
-            intersection_vertices[2] = self.interpolate_vertex(vertices[2], vertices[3], values[2], values[3])
-        if edge & 8:
-            intersection_vertices[3] = self.interpolate_vertex(vertices[3], vertices[0], values[3], values[0])
-        if edge & 16:
-            intersection_vertices[4] = self.interpolate_vertex(vertices[4], vertices[5], values[4], values[5])
-        if edge & 32:
-            intersection_vertices[5] = self.interpolate_vertex(vertices[5], vertices[6], values[5], values[6])
-        if edge & 64:
-            intersection_vertices[6] = self.interpolate_vertex(vertices[6], vertices[7], values[6], values[7])
-        if edge & 128:
-            intersection_vertices[7] = self.interpolate_vertex(vertices[7], vertices[4], values[7], values[4])
-        if edge & 256:
-            intersection_vertices[8] = self.interpolate_vertex(vertices[0], vertices[4], values[0], values[4])
-        if edge & 512:
-            intersection_vertices[9] = self.interpolate_vertex(vertices[1], vertices[5], values[1], values[5])
-        if edge & 1024:
-            intersection_vertices[10] = self.interpolate_vertex(vertices[2], vertices[6], values[2], values[6])
-        if edge & 2048:
-            intersection_vertices[11] = self.interpolate_vertex(vertices[3], vertices[7], values[3], values[7])
+        # intersection_vertices = np.zeros((12, 3))  # Create one set of intersection vertices, one vertex per edge
+        # if edge & 1:
+        #     intersection_vertices[0] = self.interpolate_vertex(vertices[0], vertices[1], values[0], values[1])
+        # if edge & 2:
+        #     intersection_vertices[1] = self.interpolate_vertex(vertices[1], vertices[2], values[1], values[2])
+        # if edge & 4:
+        #     intersection_vertices[2] = self.interpolate_vertex(vertices[2], vertices[3], values[2], values[3])
+        # if edge & 8:
+        #     intersection_vertices[3] = self.interpolate_vertex(vertices[3], vertices[0], values[3], values[0])
+        # if edge & 16:
+        #     intersection_vertices[4] = self.interpolate_vertex(vertices[4], vertices[5], values[4], values[5])
+        # if edge & 32:
+        #     intersection_vertices[5] = self.interpolate_vertex(vertices[5], vertices[6], values[5], values[6])
+        # if edge & 64:
+        #     intersection_vertices[6] = self.interpolate_vertex(vertices[6], vertices[7], values[6], values[7])
+        # if edge & 128:
+        #     intersection_vertices[7] = self.interpolate_vertex(vertices[7], vertices[4], values[7], values[4])
+        # if edge & 256:
+        #     intersection_vertices[8] = self.interpolate_vertex(vertices[0], vertices[4], values[0], values[4])
+        # if edge & 512:
+        #     intersection_vertices[9] = self.interpolate_vertex(vertices[1], vertices[5], values[1], values[5])
+        # if edge & 1024:
+        #     intersection_vertices[10] = self.interpolate_vertex(vertices[2], vertices[6], values[2], values[6])
+        # if edge & 2048:
+        #     intersection_vertices[11] = self.interpolate_vertex(vertices[3], vertices[7], values[3], values[7])
+        #
+        # return intersection_vertices
 
-        return intersection_vertices
+        v0 = vertices[:, INTERPOLATION_VERTICES[0, :]]
+        v1 = vertices[:, INTERPOLATION_VERTICES[1, :]]
+        v0_value = values[:, INTERPOLATION_VERTICES[0, :]]
+        v1_value = values[:, INTERPOLATION_VERTICES[1, :]]
+
+        p = self.interpolate_vertex(v0, v1, v0_value, v1_value)
+
+        edge_indices = np.array([(e & INTERPOLATION_BITMASK) == 0 for e in edge])
+
+        p[edge_indices, :] = 0
+
+        return p
 
     def create_triangles(self, intersections, triangles):
         """
@@ -452,13 +482,24 @@ class MarchingCubes(object):
         -------
         None
         """
-        idx = 0
-        while triangles[idx] != -1:
-            # TODO: currently adds a normal of [1, 1, 1]
-            self.triangles.append(([0, 0, 0], intersections[triangles[idx]].tolist(),
-                                   intersections[triangles[idx+1]].tolist(), intersections[triangles[idx+2]].tolist(),
-                                   0))
-            idx += 3
+        # idx = 0
+        #
+        # while triangles[idx] != -1:
+        #     # TODO: currently adds a normal of [1, 1, 1]
+        #     self.triangles.append(([0, 0, 0], intersections[triangles[idx]].tolist(),
+        #                            intersections[triangles[idx+1]].tolist(), intersections[triangles[idx+2]].tolist(),
+        #                            0))
+        #     idx += 3
+        idxs = np.array(np.where(triangles[:, 0] != -1)).reshape(-1)
+        triangles_pruned = triangles[idxs].flatten()
+        idxs = np.repeat(idxs, triangles.shape[1])[triangles_pruned != -1]
+        triangles_pruned = triangles_pruned[triangles_pruned != -1]
+        triangles_returned = intersections[idxs, triangles_pruned].reshape(idxs.shape[0] / 3, 3, 3)
+        triangles_stl = [([0, 0, 0], tri[0].tolist(), tri[1].tolist(), tri[2].tolist(), 0) for tri in triangles_returned]
+
+        self.triangles = triangles_stl
+
+        return self.triangles
 
     def set_vertices(self, vertices):
         """
@@ -500,19 +541,25 @@ class MarchingCubes(object):
         Optionally, an array of triangles after marching.
         """
 
-        for v_index in range(self.vertices.shape[0]):
-            values = self.values[v_index, :]
-            cube_index = self.cube_index(values)
+        cube_index = self.cube_index(self.values)
+        edge = MC_EDGES[cube_index]
+        intersections = self.create_intersection_list(edge, self.vertices, self.values)
+        triangles = MC_TRIANGLES[cube_index]
+        self.create_triangles(intersections, triangles)
 
-            edge = MC_EDGES[cube_index]
-            if edge == 0:
-                continue
-
-            vertices = self.vertices[v_index, :, :]
-
-            intersections = self.create_intersection_list(edge, vertices, values)
-            triangles = MC_TRIANGLES[cube_index]
-            self.create_triangles(intersections, triangles)
+        # for v_index in range(self.vertices.shape[0]):
+        #     values = self.values[v_index, :]
+        #     cube_index = self.cube_index(values)
+        #
+        #     edge = MC_EDGES[cube_index]
+        #     if edge == 0:
+        #         continue
+        #
+        #     vertices = self.vertices[v_index, :, :]
+        #
+        #     intersections = self.create_intersection_list(edge, vertices, values)
+        #     triangles = MC_TRIANGLES[cube_index]
+        #     self.create_triangles(intersections, triangles)
 
         if return_triangles:
             return self.export_triangles()
