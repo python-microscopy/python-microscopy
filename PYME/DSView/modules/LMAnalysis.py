@@ -780,12 +780,13 @@ class LMAnalyser2(object):
 
     def testFrame(self, gui=True):
         from pylab import *
+        from matplotlib import pyplot as plt
         #close('all')
         if self.image.dataSource.moduleName == 'TQDataSource':
             self.analysisController._checkTQ()
         if gui:    
             matplotlib.interactive(False)
-            figure()
+            plt.figure()
         
         zp = self.do.zp
 
@@ -803,40 +804,40 @@ class LMAnalyser2(object):
         res = ft(gui=gui,taskQueue=self.tq)
         
         if gui:
-            figure()
+            plt.figure()
             try:
                 d = ft.ofd.filteredData.T
                 #d = ft.data.squeeze().T
-                imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(median(d.ravel()), d.max()))
-                plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+                plt.imshow(d, cmap=plt.cm.hot, interpolation='nearest', hold=False, clim=(np.median(d.ravel()), d.max()))
+                plt.plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
                 if ft.driftEst:
-                     plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
+                    plt.plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
                 #if ft.fitModule in remFitBuf.splitterFitModules:
                 #        plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
                 #axis('tight')
-                xlim(0, d.shape[1])
-                ylim(d.shape[0], 0)
-                xticks([])
-                yticks([])
+                plt.xlim(0, d.shape[1])
+                plt.ylim(d.shape[0], 0)
+                plt.xticks([])
+                plt.yticks([])
                 
                 
                     
                 vx = 1e3*self.image.mdh['voxelsize.x']
                 vy = 1e3*self.image.mdh['voxelsize.y']
-                plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', mew=2)
+                plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', mew=2)
                 
                 if 'startParams' in res.results.dtype.names:
-                    plot(res.results['startParams']['x0']/vx, res.results['startParams']['y0']/vy, 'xc', mew=2)
+                    plt.plot(res.results['startParams']['x0']/vx, res.results['startParams']['y0']/vy, 'xc', mew=2)
                 
                 if 'tIm' in dir(ft.ofd):
-                    figure()
-                    imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest', hold=False)
+                    plt.figure()
+                    plt.imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest', hold=False)
                     #axis('tight')
-                    xlim(0, d.shape[1])
-                    ylim(d.shape[0], 0)
-                    xticks([])
-                    yticks([])
-                    plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
+                    plt.xlim(0, d.shape[1])
+                    plt.ylim(d.shape[0], 0)
+                    plt.xticks([])
+                    plt.yticks([])
+                    plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
                     
                 #figure()
                 #imshow()
@@ -858,16 +859,16 @@ class LMAnalyser2(object):
                 else:
                     raise RuntimeError('Background format not understood')
                     
-                imshow(d, cmap=cm.jet, interpolation='nearest', clim = [0, d.max()])
-                xlim(0, d.shape[1])
-                ylim(d.shape[0], 0)
+                plt.imshow(d, cmap=plt.cm.jet, interpolation='nearest', clim = [0, d.max()])
+                plt.xlim(0, d.shape[1])
+                plt.ylim(d.shape[0], 0)
                 
                 vx = 1e3*self.image.mdh['voxelsize.x']
                 vy = 1e3*self.image.mdh['voxelsize.y']
-                plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, 'ow')
+                plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, 'ow')
                 pass
-                    
-            show()
+
+            plt.show()
     
             matplotlib.interactive(True)
         
