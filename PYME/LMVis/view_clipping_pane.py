@@ -22,7 +22,7 @@ else:
 
 try:
     from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, CStr, Bool, Int, \
-        ListInstance, on_trait_change
+        on_trait_change
     #from enthought.traits.ui.api import View, Item, EnumEditor, InstanceEditor, Group
 except ImportError:
     from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, \
