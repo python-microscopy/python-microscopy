@@ -75,7 +75,8 @@ class RecipePlugin(recipeGui.RecipeManager):
 
         #dsviewer.menubar.Append(self.mRecipes, "Recipes")
         dsviewer.AddMenuItem('Recipes', '', itemType='separator')
-        dsviewer.AddMenuItem('Recipes', "Save Results", self.OnSaveOutputs)
+        dsviewer.AddMenuItem('Recipes', "Save Results via Output Modules", self.OnSaveOutputs)
+        dsviewer.AddMenuItem('Recipes', "Save Results - Old Style", self.OnSaveOutputOld)
         
         #dsviewer.AddMenuItem('Recipes', '', itemType='separator')
         dsviewer.AddMenuItem('Recipes', "Load Previous Results", self.OnLoadOutputs)
@@ -153,6 +154,9 @@ class RecipePlugin(recipeGui.RecipeManager):
         self.LoadRecipe(self.cannedIDs[event.GetId()])
 
     def OnSaveOutputs(self, event):
+        self.activeRecipe.save()
+
+    def OnSaveOutputOld(self, event):
         from PYME.recipes import runRecipe
         
         filename = wx.FileSelector('Save results as ...', 
@@ -161,7 +165,8 @@ class RecipePlugin(recipeGui.RecipeManager):
                                    
         if not filename == '':
             runRecipe.saveOutput(self.outp, filename)
-            
+
+
     def OnLoadOutputs(self, event):
         import pandas
         from PYME.IO import tabular
