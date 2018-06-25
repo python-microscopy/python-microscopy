@@ -340,7 +340,7 @@ class MarchingCubes(object):
 
         # Datatype for storing triangles created by marching cubes. Mimics STL data structure.
         # TODO: Add ('normal', '3f4') for real
-        self.dt = np.dtype([('normal', '3f4'), ('vertex0', '3f4'), ('vertex1', '3f4'), ('vertex2', '3f4'), ('attrib', 'u2')])
+        self.dt = np.dtype([('normal', '3f4'), ('vertex0', '3f4'), ('vertex1', '3f4'), ('vertex2', '3f4')])
 
     def cube_index(self, values):
         """
@@ -461,8 +461,7 @@ class MarchingCubes(object):
 
         p = self.interpolate_vertex(v0, v1, v0_value, v1_value)
 
-        edge_indices = np.array([(e & INTERPOLATION_BITMASK) == 0 for e in edge])
-
+        edge_indices = (np.repeat(edge, 12).reshape(edge.shape[0], 12) & INTERPOLATION_BITMASK) == 0
         p[edge_indices, :] = 0
 
         return p
@@ -495,7 +494,13 @@ class MarchingCubes(object):
         idxs = np.repeat(idxs, triangles.shape[1])[triangles_pruned != -1]
         triangles_pruned = triangles_pruned[triangles_pruned != -1]
         triangles_returned = intersections[idxs, triangles_pruned].reshape(idxs.shape[0] / 3, 3, 3)
-        triangles_stl = [([0, 0, 0], tri[0].tolist(), tri[1].tolist(), tri[2].tolist(), 0) for tri in triangles_returned]
+        normals = np.cross((triangles_returned[:, 2] - triangles_returned[:, 1]),
+                           (triangles_returned[:, 0] - triangles_returned[:, 1]))
+        triangles_stl = np.zeros(triangles_returned.shape[0], dtype=self.dt)
+        triangles_stl['vertex0'] = triangles_returned[:, 0, :]
+        triangles_stl['vertex1'] = triangles_returned[:, 1, :]
+        triangles_stl['vertex2'] = triangles_returned[:, 2, :]
+        triangles_stl['normal'] = normals
 
         self.triangles = triangles_stl
 
@@ -523,9 +528,8 @@ class MarchingCubes(object):
         triangles : np.array
             Array of triangles of type self.dt
         """
-        triangles = np.array(self.triangles, dtype=self.dt)
 
-        return triangles
+        return self.triangles
 
     def march(self, return_triangles=True):
         """
@@ -708,5 +712,3 @@ def image_to_vertex_values(im, voxelsize=1.0):
                                _rs_i(im[:-1, 1:, 1:])], 1)
     
     return vertices, values
-    
-    
