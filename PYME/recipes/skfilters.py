@@ -81,16 +81,17 @@ for filtName in skFilterNames:
             #print filtName, argspec
             
             #work backwards through supplied defaults
-            for j in (1 + np.arange(len(argspec.defaults))):
-                a = args[-j]
-                ad = argspec.defaults[-j]
-                argDefaults[a] = ad
-                if ad is None:
-                    argTypes[a] = 'image'
-                elif isinstance(ad, str) or isinstance(ad, unicode):
-                    argTypes[a] = 'string'
-                elif isinstance(ad, dict): 
-                    argTypes[a] = 'dict'
+            if not argspec.defaults is None:
+                for j in (1 + np.arange(len(argspec.defaults))):
+                    a = args[-j]
+                    ad = argspec.defaults[-j]
+                    argDefaults[a] = ad
+                    if ad is None:
+                        argTypes[a] = 'image'
+                    elif isinstance(ad, str) or isinstance(ad, unicode):
+                        argTypes[a] = 'string'
+                    elif isinstance(ad, dict):
+                        argTypes[a] = 'dict'
             
             #disregard parameters which need another image for now        
             args = [a for a in args if not argTypes[a] in ['image', 'dict']]

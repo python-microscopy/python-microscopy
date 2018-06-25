@@ -178,7 +178,7 @@ class OutputModule(ModuleBase):
         elif self.scheme == 'pyme-cluster:// - aggregate':
             raise RuntimeError('Aggregation not suported')
         
-    def generate(self, namespace):
+    def generate(self, namespace, recipe_context={}):
         """
         Function to be called from within dh5view (rather than batch processing). Some outputs are ignored, in which
         case this function returns None.

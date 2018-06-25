@@ -161,6 +161,7 @@ requirements:
     - six
     - future
     - pywin32 [win]
+    - cython
 
   #unfortunately not availible through conda on windows ##FIXME
 
