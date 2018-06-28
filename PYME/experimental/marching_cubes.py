@@ -506,7 +506,7 @@ class MarchingCubes(object):
 
         return self.triangles
 
-    def set_vertices(self, vertices):
+    def set_vertices(self, vertices, values):
         """
         Set input vertices (self.vertices) & set values (self.values) based on input vertices to use for isosurface
         extraction.
@@ -517,7 +517,8 @@ class MarchingCubes(object):
         overridden in derived classes
         """
 
-        pass
+        self.vertices = vertices
+        self.values = values
 
     def export_triangles(self):
         """
@@ -571,14 +572,24 @@ class MarchingCubes(object):
 
 class MarchingCubesOctree(MarchingCubes):
     """
-    Performs marching cubes on an octree.
+    Performs marching cubes on an Octree.
 
     """
 
     def __init__(self, isolevel=0):
+        self.ot = None
         MarchingCubes.__init__(self, isolevel)
 
-    def set_vertices(self, vertices):
+    def set_octree(self, ot, voxelize=True):
+        """
+        Attach an Octree to this marching cubes structure.
+        """
+
+        self.ot = ot
+        if voxelize:
+            self.set_vertices()
+
+    def set_vertices(self):
         """
         Grab input vertices and values from Octree.
 
@@ -586,7 +597,24 @@ class MarchingCubesOctree(MarchingCubes):
         * self.values are the corresponding vertex values (-1, 8)
 
         """
-        pass
+        nodes = self.ot._nodes # [self.ot._nodes['nPoints'] >= 1]
+        box_sizes = np.vstack(self.ot.box_size(nodes['depth'])).T
+
+        alpha = np.repeat(nodes['nPoints'] * ((2 ** nodes['depth']) ** 3), 8).reshape(nodes.shape[0], 8)
+
+        c = nodes['centre']  # center
+        v0 = c + box_sizes * -1 / 2  # v0 = c - lx/2 - ly/2 - lz/2
+        v1 = c + box_sizes * [-1, -1, 1] / 2  # v1 = c - lx/2 - ly/2 + lz/2
+        v2 = c + box_sizes * [-1, 1, -1] / 2  # v2 = c - lx/2 + ly/2 - lz/2
+        v3 = c + box_sizes * [-1, 1, 1] / 2  # v3 = c - lx/2 + ly/2 + lz/2
+        v4 = c + box_sizes * [1, -1, -1] / 2  # v4 = c + lx/2 - ly/2 - lz/2
+        v5 = c + box_sizes * [1, -1, 1] / 2  # v5 = c + lx/2 - ly/2 + lz/2
+        v6 = c + box_sizes * [1, 1, -1] / 2  # v6 = c + lx/2 + ly/2 - lz/2
+        v7 = c + box_sizes / 2  # v7 = c + lx/2 + ly/2 + lz/2
+
+        vertices = np.hstack((v0, v1, v2, v3, v4, v5, v6, v7)).reshape(v0.shape[0], 8, 3)
+        self.vertices = vertices
+        self.values = alpha
 
 
 def generate_sphere_voxels(radius=10):
