@@ -74,11 +74,31 @@ class RaggedJSON(RaggedCache):
     
 class RaggedVLArray(RaggedBase):
     def __init__(self, h5f, tablename):
+        """
+        Ragged type which wraps an HDF table variable-length array
+        Parameters
+        ----------
+        h5f : HDF table or str
+            Either an open HDF table instance, or a str of the filepath to open one
+        tablename : str
+            Name of the table to open and wrap (beyond root, i.e. h5f.root.tablename
+        """
         RaggedBase.__init__(self)
-        
-        self._data = h5f.get_node(h5f.root, tablename)
-        
-        #raise NotImplementedError
+
+        try:  # if we are passed an open hdf file, open it
+            self._data = h5f.get_node(h5f.root, tablename)
+        except AttributeError:  # take h5f to be a path and try to open it
+            import tables
+            import logging
+            import threading
+
+            filename = h5f
+            logging.debug('pytables open call: %s' % filename)
+            with threading.Lock():
+                h5file = tables.open_file(filename, 'r')
+            logging.debug('pytables file open: %s' % filename)
+
+            self._data = h5file.get_node(h5file.root, tablename)
     
     def __getitem__(self, item):
         import json
