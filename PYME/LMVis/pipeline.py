@@ -595,7 +595,12 @@ class Pipeline:
                     break
 
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
-            ds = tabular.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
+            if 'VarName' in kwargs.keys():
+                #old style matlab import
+                ds = tabular.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
+            else:
+                ds = tabular.matfileColumnSource(filename)
+                
 
         elif os.path.splitext(filename)[1] == '.csv':
             #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter

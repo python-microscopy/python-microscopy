@@ -621,20 +621,21 @@ class VisGUICore(object):
             from scipy.io import loadmat
         
             mf = loadmat(filename)
+            if not 'x' in mf.keys():
+                #bewersdorf style .mat where each variable is in a separate column
+                dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
+                ret = dlg.ShowModal()
+            
+                if not ret == wx.ID_OK:
+                    dlg.Destroy()
+                    return #we cancelled
+            
+                args['FieldNames'] = dlg.GetFieldNames()
+                args['VarName'] = dlg.GetVarName()
+                # args['PixelSize'] = dlg.GetPixelSize()
         
-            dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
-            ret = dlg.ShowModal()
         
-            if not ret == wx.ID_OK:
                 dlg.Destroy()
-                return #we cancelled
-        
-            args['FieldNames'] = dlg.GetFieldNames()
-            args['VarName'] = dlg.GetVarName()
-            # args['PixelSize'] = dlg.GetPixelSize()
-        
-        
-            dlg.Destroy()
     
         else: #assume it's a text file
             from PYME.LMVis import importTextDialog

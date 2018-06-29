@@ -447,7 +447,36 @@ class matfileSource(TabularBase):
 
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
+
+
+class matfileColumnSource(TabularBase):
+    _name = "Matlab Column Source"
+    
+    def __init__(self, filename):
+        """ Input filter for use with matlab data. Need to provide a variable name
+        and a list of column names
+        in the order that they appear in the file. Using 'x', 'y' and 'error_x'
+        for the position data and it's error should ensure that this functions
+        with the visualisation backends"""
         
+        import scipy.io
+        
+        self.res = scipy.io.loadmat(filename)  # TODO: evaluate why these are cast as floats
+        
+        self._keys = self.res.keys()
+    
+    def keys(self):
+        return self._keys
+    
+    def __getitem__(self, key):
+        key, sl = self._getKeySlice(key)
+        if not key in self._keys:
+            raise KeyError('Key (%s) not found' % key)
+        
+        return self.res[key][sl]
+    
+    def getInfo(self):
+        return 'Text Data Source\n\n %d points' % len(self.res['x'])
 
 class resultsFilter(TabularBase):
     _name = "Results Filter"

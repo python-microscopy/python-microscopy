@@ -49,6 +49,15 @@ class _CBEditor (Editor):
                 self.control.SetValue(self.value)
 
         return
+    
+    def dispose(self):
+        self.control.Bind(wx.EVT_COMBOBOX, None)
+        self.control.Bind(wx.EVT_TEXT, None)
+        self.control = None
+
+        print('Disposing of CBEditor')
+
+        super(Editor, self).dispose()
 
 class CBEditor(BasicEditorFactory):
     klass = _CBEditor
@@ -86,6 +95,13 @@ class _FilterEditor (Editor):
             #    self.control.SetValue(self.value)
 
         return
+    
+    def dispose(self):
+        self.control = None
+
+        print('Disposing of FilterEditor')
+
+        super(Editor, self).dispose()
 
 class FilterEditor(BasicEditorFactory):
     klass = _FilterEditor
@@ -132,6 +148,15 @@ class _HistLimitsEditor (Editor):
             self.control.SetValue(self.value)
 
         return
+    
+    def dispose(self):
+        from PYME.ui import histLimits
+        self.control.Bind(histLimits.EVT_LIMIT_CHANGE, None)
+        self.control = None
+
+        print('Disposing of HistLimitsEditor')
+
+        super(Editor, self).dispose()
 
 class HistLimitsEditor(BasicEditorFactory):
     klass = _HistLimitsEditor
