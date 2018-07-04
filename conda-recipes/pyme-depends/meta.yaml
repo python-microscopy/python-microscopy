@@ -130,9 +130,9 @@ requirements:
     - numpy x.x
     - scipy
     - matplotlib
-    - wxpython  #[py2k]
+    - wxpython  < 3.9
     #- wxpython-phoenix < 3.9 [py3k]
-    - pytables
+    - pytables <= 3.4.2
     - pyopengl
     - traits
     - traitsui

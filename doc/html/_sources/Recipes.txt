@@ -19,6 +19,21 @@ Recipes differ from many of the existing block or pipeline architectures in that
 
 Module names can be pretty much anything you choose, and should be descriptive. Avoiding spaces and non-alphanumeric characters however is advised, particularly for input and output names. When used for batch processing, all names beginning with **in** are considered to be inputs, and all names beginning with **out** are marked as outputs, and will be saved to disk in the output directory. When operating within *dh5view*, recipes currently only support one input (called **input**) and one output (**output**). In this case the **input** image is the currently open image, and the **output** is displayed in a new window (or, in the case of measurement data as annotations to the current image).
 
+Creating and running recipes
+================
+
+Recipes can be visually constructed using the PYME bakeshop. The bakeshop is opened by running
+
+.. code-block:: bash
+
+    bakeshop
+
+Recipe modules can then be added using the "Add Module" button, which will bring up a menu of module choices. Clicking any of these modules displays documentation about the module and its parameters. After selecting the desired module, clicking "Add" will open a dialog to enter input/output parameters for the recipe module. Once these parameters are entered, the module can be added by clicking "OK".
+
+Modules can be edited once they have already been added either visually by clicking on the recipe module tile or textually using the yaml-formatted text on the right-hand side of the bakeshop GUI. If you edit the recipe textually, please press "Apply" before running or saving the recipe or your changes will be ignored.
+
+Once the recipe is built, it can be saved or run directly in the bakeshop GUI. To run the recipe, enter the file pattern in order to select the input files (e.g. ~/*.h5r to select all h5r files in the top of the user's home directory) before clicking "Get Matches". Enter the desired output directory where indicated before pressing "Bake".
+
 Batch Processing
 ================
 

@@ -148,7 +148,7 @@ requirements:
     - scipy
     - matplotlib
     - wxpython
-    - pytables
+    - pytables <= 3.4.2
     - pyopengl
     - traits
     - traitsui

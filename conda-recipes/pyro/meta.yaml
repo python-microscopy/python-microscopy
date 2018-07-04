@@ -1,0 +1,65 @@
+package:
+  name: pyro
+  version: 3.16
+
+source:
+  fn: Pyro-3.16.tar.gz
+  url: https://pypi.python.org/packages/source/P/Pyro/Pyro-3.16.tar.gz
+  md5: 59d4d3f4a8786776c9d7f9051b8f1a69
+#  patches:
+   # List any patch files here
+   # - fix.patch
+
+build:
+  #preserve_egg_dir: True
+  #entry_points:
+    # Put any entry points (scripts to be generated automatically) here. The
+    # syntax is module:function.  For example
+    #
+    # - pyro = pyro:main
+    #
+    # Would create an entry point called pyro that calls pyro.main()
+
+
+  # If this is a new build for the same version, increment the build
+  # number. If you do not include this key, it defaults to 0.
+  number: 3
+  noarch_python: False
+
+requirements:
+  build:
+    - python 2.7
+    - setuptools
+
+  run:
+    - python
+
+test:
+  # Python imports
+  #imports:
+  #  - Pyro
+  #  - Pyro.EventService
+  #  - Pyro.ext
+  #  - Pyro.test
+  #  - pyro
+
+  #commands:
+    # You can put test commands to be run here.  Use this to test that the
+    # entry points work.
+
+
+  # You can also put a file called run_test.py in the recipe that will be run
+  # at test time.
+
+  # requires:
+    # Put any additional test requirements here.  For example
+    # - nose
+
+about:
+  home: 
+  license:  MIT License
+  summary: 'distributed object middleware for Python (IPC/RPC), version 3.x'
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml

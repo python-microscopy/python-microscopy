@@ -305,8 +305,8 @@ class colourPanel(wx.Panel):
             #self.pipeline.mapping.setMapping('p_%s' % key, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
             #self.pipeline.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % val)
 
-            self.visFr.UpdatePointColourChoices()
-            self.visFr.colourFilterPane.UpdateColourFilterChoices()
+            #self.visFr.UpdatePointColourChoices()
+            #self.visFr.colourFilterPane.UpdateColourFilterChoices()
             
             self.pipeline.Rebuild()
 

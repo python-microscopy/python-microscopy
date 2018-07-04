@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using recipes for data processing and quantification &mdash; PYME 17.07.13 documentation</title>
+    <title>Using recipes for data processing and quantification &mdash; PYME 18.06.19 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '17.07.13',
+        VERSION:     '18.06.19',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,9 +24,9 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 17.07.13 documentation" href="index.html" />
+    <link rel="top" title="PYME 18.06.19 documentation" href="index.html" />
     <link rel="up" title="dh5view - Image Data Analysis and Viewing" href="Analysis.html" />
-    <link rel="next" title="VisGUI - Visualising Localization Data Sets" href="VisGUI.html" />
+    <link rel="next" title="Distance transform colocalization HOWTO" href="howtos/distancecolocalization.html" />
     <link rel="prev" title="Using an image splitting device for multi-colour ratiometric imaging" href="SplitterMulticolour.html" /> 
   </head>
   <body role="document">
@@ -40,12 +40,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="VisGUI.html" title="VisGUI - Visualising Localization Data Sets"
+          <a href="howtos/distancecolocalization.html" title="Distance transform colocalization HOWTO"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="SplitterMulticolour.html" title="Using an image splitting device for multi-colour ratiometric imaging"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.07.13 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 18.06.19 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="Analysis.html" accesskey="U"><strong>dh5view</strong> - Image Data Analysis and Viewing</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Recipes.rst">Edit</a> &raquo;</li>
  
@@ -61,6 +61,7 @@
   <ul>
 <li><a class="reference internal" href="#">Using recipes for data processing and quantification</a><ul>
 <li><a class="reference internal" href="#connections-between-modules-execution-order-and-dependencies">Connections between modules, execution order, and dependencies</a></li>
+<li><a class="reference internal" href="#creating-and-running-recipes">Creating and running recipes</a></li>
 <li><a class="reference internal" href="#batch-processing">Batch Processing</a><ul>
 <li><a class="reference internal" href="#command-line-interface">Command line interface</a></li>
 </ul>
@@ -73,8 +74,8 @@
   <p class="topless"><a href="SplitterMulticolour.html"
                         title="previous chapter">Using an image splitting device for multi-colour ratiometric imaging</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="VisGUI.html"
-                        title="next chapter"><strong>VisGUI</strong> - Visualising Localization Data Sets</a></p>
+  <p class="topless"><a href="howtos/distancecolocalization.html"
+                        title="next chapter">Distance transform colocalization HOWTO</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
@@ -114,12 +115,22 @@
 <p>Recipes differ from many of the existing block or pipeline architectures in that connections between modules and the order in which modules are executed are both defined implicitly. Inputs and outputs to each module are assigned names, or keys, which are then used to find locate each modules input data in a common namespace (implemented as a python dictionary) and to store the modules output(s) in the same namespace. The connections between modules are then inferred my matching input and output names, and the execution order determined using a dependency solver such that modules do not execute before their inputs have been generated. This allows for a compact and quickly adaptable representation of the recipe, which can easily be altered without having to manually re-connect a complex net. To link two modules, you simply have to set the input name on the second module to the output name of the first.</p>
 <p>Module names can be pretty much anything you choose, and should be descriptive. Avoiding spaces and non-alphanumeric characters however is advised, particularly for input and output names. When used for batch processing, all names beginning with <strong>in</strong> are considered to be inputs, and all names beginning with <strong>out</strong> are marked as outputs, and will be saved to disk in the output directory. When operating within <em>dh5view</em>, recipes currently only support one input (called <strong>input</strong>) and one output (<strong>output</strong>). In this case the <strong>input</strong> image is the currently open image, and the <strong>output</strong> is displayed in a new window (or, in the case of measurement data as annotations to the current image).</p>
 </div>
+<div class="section" id="creating-and-running-recipes">
+<h2>Creating and running recipes<a class="headerlink" href="#creating-and-running-recipes" title="Permalink to this headline">¶</a></h2>
+<p>Recipes can be visually constructed using the PYME bakeshop. The bakeshop is opened by running</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>bakeshop
+</pre></div>
+</div>
+<p>Recipe modules can then be added using the &#8220;Add Module&#8221; button, which will bring up a menu of module choices. Clicking any of these modules displays documentation about the module and its parameters. After selecting the desired module, clicking &#8220;Add&#8221; will open a dialog to enter input/output parameters for the recipe module. Once these parameters are entered, the module can be added by clicking &#8220;OK&#8221;.</p>
+<p>Modules can be edited once they have already been added either visually by clicking on the recipe module tile or textually using the yaml-formatted text on the right-hand side of the bakeshop GUI. If you edit the recipe textually, please press &#8220;Apply&#8221; before running or saving the recipe or your changes will be ignored.</p>
+<p>Once the recipe is built, it can be saved or run directly in the bakeshop GUI. To run the recipe, enter the file pattern in order to select the input files (e.g. ~/<a href="#id1"><span class="problematic" id="id2">*</span></a>.h5r to select all h5r files in the top of the user&#8217;s home directory) before clicking &#8220;Get Matches&#8221;. Enter the desired output directory where indicated before pressing &#8220;Bake&#8221;.</p>
+</div>
 <div class="section" id="batch-processing">
 <h2>Batch Processing<a class="headerlink" href="#batch-processing" title="Permalink to this headline">¶</a></h2>
 <p>Batch processing allows you to automatically run a pre-defined recipe over a series of input files.</p>
 <div class="section" id="command-line-interface">
 <h3>Command line interface<a class="headerlink" href="#command-line-interface" title="Permalink to this headline">¶</a></h3>
-<p>The command line interface to batch processing is the script located at <a href="#id1"><span class="problematic" id="id2">``</span></a>PYME/Analysis/Modules/batchProcess.py&#8221;, and can be called, for example as follows:</p>
+<p>The command line interface to batch processing is the script located at <a href="#id3"><span class="problematic" id="id4">``</span></a>PYME/Analysis/Modules/batchProcess.py&#8221;, and can be called, for example as follows:</p>
 <div class="highlight-bash"><div class="highlight"><pre><span></span>python /path/to/batchProcess.py -input1<span class="o">=</span>/path/to/input/channel1*.tif -input2<span class="o">=</span>/path/to/input/channel2*.tif recipe.yaml /path/to/output/dir
 </pre></div>
 </div>
@@ -143,12 +154,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="VisGUI.html" title="VisGUI - Visualising Localization Data Sets"
+          <a href="howtos/distancecolocalization.html" title="Distance transform colocalization HOWTO"
              >next</a> |</li>
         <li class="right" >
           <a href="SplitterMulticolour.html" title="Using an image splitting device for multi-colour ratiometric imaging"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.07.13 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 18.06.19 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="Analysis.html" ><strong>dh5view</strong> - Image Data Analysis and Viewing</a> &raquo;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Recipes.rst">Edit</a> &raquo;</li>
  
