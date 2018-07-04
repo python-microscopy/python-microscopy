@@ -85,20 +85,12 @@ class RaggedVLArray(RaggedBase):
         """
         RaggedBase.__init__(self)
 
-        try:  # if we are passed an open hdf file, open it
-            self._data = h5f.get_node(h5f.root, tablename)
-        except AttributeError:  # take h5f to be a path and try to open it
+        if type(h5f) == str:
             import tables
-            import logging
-            import threading
+            h5f = tables.open_file(h5f)
 
-            filename = h5f
-            logging.debug('pytables open call: %s' % filename)
-            with threading.Lock():
-                h5file = tables.open_file(filename, 'r')
-            logging.debug('pytables file open: %s' % filename)
-
-            self._data = h5file.get_node(h5file.root, tablename)
+        self._h5file = h5f  # hang on to a reference to the file for the sake of clean-up ops
+        self._data = self._h5file.get_node(self._h5file.root, tablename)
     
     def __getitem__(self, item):
         import json
