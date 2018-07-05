@@ -8,6 +8,9 @@ Created on Wed May 25 17:29:08 2016
 @author: david
 """
 from ctypes import *
+import ctypes
+
+__version__ = ctypes.__version__
 
 def doNothing(*args, **kwargs):
     pass

@@ -28,8 +28,16 @@ import PYME.version
 from PYME.misc import mock_traitsui
 sys.modules['traitsui.api'] = mock_traitsui
 
+from PYME.misc import mock_traits
+sys.modules['traits.api'] = mock_traits
+
 from PYME.misc import mock_ctypes
 sys.modules['ctypes'] = mock_ctypes
+
+#PIL imports
+sys.modules['Image'] = mock.Mock()
+sys.modules['ImageFile'] = mock.Mock()
+sys.modules['ImagePalette'] = mock.Mock()
     
 import wx
 import wx.py.shell
@@ -50,7 +58,7 @@ wx.Dialog = mClass
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.mathjax', 'numpydoc', 'sphinx.ext.autosummary']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.mathjax', 'sphinx.ext.autosummary','numpydoc'] #, 'sphinx.ext.napoleon']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -116,7 +124,8 @@ pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 numpydoc_show_class_members = True
-#class_members_toctree=False
+numpydoc_show_inherited_class_members = False
+class_members_toctree=False
 autoclass_content = 'both'
 
 todo_include_todos = True
