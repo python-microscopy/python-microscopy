@@ -7,13 +7,13 @@ from PYME.IO import tabular
 
 @register_module('MultiviewFold')
 class MultiviewFold(ModuleBase):
-    """Fold localizations from images which have been taken with an image splitting device but analysed without channel
-    awareness.
+    """
+    Fold localizations from images which have been taken with an image splitting device but analysed without channel
+    awareness. Images taken in this fashion will have the channels side by side. This module folds the x co-ordinate to
+    overlay the different channels, using the image metadata to determine the appropriate ROI boundaries.
 
-    Images taken in this fashion will have the channels side by side. This module folds the x co-ordinate to overlay the
-    different channels, using the image metadata to determine the appropriate ROI boundaries. The current implementation
-    is somewhat limited as it only handles folding along the x axis, and assumes that ROI sizes and spacings are completely
-    uniform.
+    The current implementation is somewhat limited as it only handles folding along the x axis, and assumes that ROI
+    sizes and spacings are completely uniform.
     """
     inputName = Input('localizations')
     outputName = Output('folded')
@@ -34,10 +34,18 @@ class MultiviewFold(ModuleBase):
 
 @register_module('MultiviewShiftCorrect')
 class MultiviewShiftCorrect(ModuleBase):
-    """Applies chromatic shift correction to folded localization data that was acquired with an image splitting device,
-    but localized without splitter awareness."""
+    """
+    Applies chromatic shift correction to folded localization data that was acquired with an image splitting device,
+    but localized without splitter awareness.
+
+    Parameters
+    ----------
+
+    shift_map_path : str
+        file path of shift map to be applied. Can also be a URL for shiftmaps stored remotely
+    """
     inputName = Input('folded')
-    shiftMapLocation = CStr('')  # FIXME - change name to indicate that this is a filename/path/URL. Should probably be a File trait (or derived class which deals with clusterIO)
+    shift_map_path = CStr('')
     outputName = Output('registered')
 
     def execute(self, namespace):
@@ -50,10 +58,10 @@ class MultiviewShiftCorrect(ModuleBase):
         if 'mdh' not in dir(inp):
             raise RuntimeError('ShiftCorrect needs metadata')
 
-        if self.shiftMapLocation == '':  # grab shftmap from the metadata
+        if self.shift_map_path == '':  # grab shftmap from the metadata
             s = unifiedIO.read(inp.mdh['Shiftmap'])
         else:
-            s = unifiedIO.read(self.shiftMapLocation)
+            s = unifiedIO.read(self.shift_map_path)
 
         shiftMaps = json.loads(s)
 
