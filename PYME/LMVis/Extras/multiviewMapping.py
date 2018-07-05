@@ -212,6 +212,8 @@ class multiviewMapper:
     def __init__(self, visFr):
         self.visFr = visFr
         self.pipeline = visFr.pipeline
+
+        # the following parameters are defaults which get (potentially) overridden by dialogs
         self.clump_gap_tolerance = 1 # the number of frames that can be skipped for a clump to still be considered a single clump
         self.clump_radius_scale = 2.0 # the factor with which to multiply error_x by to determine a radius in which points belong to the same clump
         self.clump_radius_offset = 150. # an offset in nm to add to the the clump detection radius (useful for detection before shift correction)
@@ -251,7 +253,7 @@ class multiviewMapper:
 
         """
 
-        from PYME.recipes.localisations import MultiviewFold
+        from PYME.recipes.multiview import MultiviewFold
         from PYME.recipes.tablefilters import FilterTable
 
         recipe = self.pipeline.recipe
@@ -279,7 +281,7 @@ class multiviewMapper:
 
         """
 
-        from PYME.recipes.localisations import MultiviewShiftCorrect
+        from PYME.recipes.multiview import MultiviewShiftCorrect
         pipeline = self.pipeline
         recipe = self.pipeline.recipe
 
@@ -458,7 +460,7 @@ class multiviewMapper:
         -----
 
         """
-        from PYME.recipes.localisations import MultiviewFindClumps
+        from PYME.recipes.multiview import MultiviewFindClumps
         recipe = self.pipeline.recipe
         recipe.add_module(MultiviewFindClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='with_clumps',
                                      gapTolerance=self.clump_gap_tolerance, radiusScale=self.clump_radius_scale,
@@ -483,7 +485,7 @@ class multiviewMapper:
         -----
 
         """
-        from PYME.recipes.localisations import MultiviewFindClumps, MultiviewMergeClumps
+        from PYME.recipes.multiview import MultiviewFindClumps, MultiviewMergeClumps
 
         if not 'clumpIndex' in self.pipeline.keys():
             logger.debug('No clumps found - running FindClumps')
@@ -518,7 +520,7 @@ class multiviewMapper:
 
         """
 
-        from PYME.recipes.localisations import MapAstigZ
+        from PYME.recipes.multiview import MapAstigZ
         #from PYME.IO import unifiedIO
         pipeline = self.pipeline
 
