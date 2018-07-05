@@ -1,3 +1,6 @@
+
+import six
+
 class RaggedBase(object):
     """Base class for ragged or free-form objects in recipes. Looks like a read-only list of
     arbitrary objects. Objects should be json serializable (ie simple combinations of base types)."""
@@ -85,7 +88,7 @@ class RaggedVLArray(RaggedBase):
         """
         RaggedBase.__init__(self)
 
-        if type(h5f) == str:
+        if isinstance(h5f, six.string_types):
             import tables
             h5f = tables.open_file(h5f)
 
