@@ -5,8 +5,8 @@ import numpy as np
 from PYME.IO import tabular
 
 
-@register_module('MultiviewFold')
-class MultiviewFold(ModuleBase):
+@register_module('Fold')
+class Fold(ModuleBase):
     """
     Fold localizations from images which have been taken with an image splitting device but analysed without channel
     awareness. Images taken in this fashion will have the channels side by side. This module folds the x co-ordinate to
@@ -32,8 +32,8 @@ class MultiviewFold(ModuleBase):
         namespace[self.outputName] = mapped
 
 
-@register_module('MultiviewShiftCorrect')
-class MultiviewShiftCorrect(ModuleBase):
+@register_module('ShiftCorrect')
+class ShiftCorrect(ModuleBase):
     """
     Applies chromatic shift correction to folded localization data that was acquired with an image splitting device,
     but localized without splitter awareness.
@@ -79,8 +79,8 @@ class MultiviewShiftCorrect(ModuleBase):
         namespace[self.outputName] = mapped
 
 
-@register_module('MultiviewFindClumps')
-class MultiviewFindClumps(ModuleBase):
+@register_module('FindClumps')
+class FindClumps(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     inputName = Input('registered')
     gapTolerance = Int(1, desc='Number of off-frames allowed to still be a single clump')
@@ -108,8 +108,8 @@ class MultiviewFindClumps(ModuleBase):
         namespace[self.outputName] = mapped
 
 
-@register_module('MultiviewMergeClumps')
-class MultiviewMergeClumps(ModuleBase):
+@register_module('MergeClumps')
+class MergeClumps(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     inputName = Input('clumped')
     outputName = Output('merged')
@@ -167,3 +167,94 @@ class MapAstigZ(ModuleBase):
         mapped.mdh = inp.mdh
 
         namespace[self.outputName] = mapped
+
+# ---------- calibration generation ----------
+
+@register_module('CalibrateShifts')
+class CalibrateShifts(ModuleBase):
+    input_name = Input('folded')
+
+    search_radius_nm = Float(250.)
+
+    output_name = Output('shiftmap')
+
+    def execute(self, namespace):
+        from PYME.Analysis.points import twoColour
+        from PYME.Analysis.points import multiview
+        from PYME.IO import ragged
+
+        inp = namespace[self.input_name]
+
+        try:  # make sure we're looking at multiview data
+            n_chan = inp.mdh['Multiview.NumROIs']
+        except AttributeError:
+            raise AttributeError('multiview metadata is missing or incomplete')
+
+        # sort in frame order
+        I = inp['tIndex'].argsort()
+        x_sort, y_sort = inp['x'][I], inp['y'][I]
+        chan_sort = inp['multiviewChannel'][I]
+
+        clump_id, keep = multiview.pair_molecules(inp['tIndex'][I], x_sort, y_sort, chan_sort,
+                                                  self.search_radius_nm * np.ones_like(x_sort),
+                                                  appear_in=np.arange(n_chan), n_frame_sep=inp['tIndex'].max(),
+                                                  pix_size_nm=1e3 * inp.mdh['voxelsize.x'])
+
+        # only look at the clumps which showed up in all channels
+        x = x_sort[keep]
+        y = y_sort[keep]
+        chan = chan_sort[keep]
+        clump_id = clump_id[keep]
+
+        # Generate raw shift vectors (map of displacements between channels) for each channel
+        mol_list = np.unique(clump_id)
+        n_mols = len(mol_list)
+
+        dx = np.zeros((n_chan - 1, n_mols))
+        dy = np.zeros_like(dx)
+        dx_err = np.zeros_like(dx)
+        dy_err = np.zeros_like(dx)
+        x_clump, y_clump, x_std, y_std, x_shifted, y_shifted = [], [], [], [], [], []
+        shift_maps = {}
+        for ii in range(n_chan):
+            chan_mask = (chan == ii)
+            x_chan = np.zeros(n_mols)
+            y_chan = np.zeros(n_mols)
+            x_chan_std = np.zeros(n_mols)
+            y_chan_std = np.zeros(n_mols)
+
+            for ind in range(n_mols):
+                # merge clumps within channels
+                clump_mask = np.where(np.logical_and(chan_mask, clump_id == mol_list[ind]))
+                x_chan[ind] = x[clump_mask].mean()
+                y_chan[ind] = y[clump_mask].mean()
+                x_chan_std[ind] = x[clump_mask].std()
+                y_chan_std[ind] = y[clump_mask].std()
+
+            x_clump.append(x_chan)
+            y_clump.append(y_chan)
+            x_std.append(x_chan_std)
+            y_std.append(y_chan_std)
+
+            if ii > 0:
+                dx[ii - 1, :] = x_clump[0] - x_clump[ii]
+                dy[ii - 1, :] = y_clump[0] - y_clump[ii]
+                dx_err[ii - 1, :] = np.sqrt(x_std[ii] ** 2 + x_std[0] ** 2)
+                dy_err[ii - 1, :] = np.sqrt(y_std[ii] ** 2 + y_std[0] ** 2)
+                # generate shiftmap between ii-th channel and the 0th channel
+                dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(x_clump[0], y_clump[0], dx[ii - 1, :],
+                                                                          dy[ii - 1, :], dx_err[ii - 1, :],
+                                                                          dy_err[ii - 1, :])
+                # store shiftmaps in multiview shiftWallet
+                shift_maps['Chan0%s.X' % ii], shift_maps['Chan0%s.Y' % ii] = spx.__dict__, spy.__dict__
+
+                # shift the clumps for plotting
+                x_shifted.append(x_clump[ii] + spx(x_clump[ii], y_clump[ii]))
+                y_shifted.append(y_clump[ii] + spy(x_clump[ii], y_clump[ii]))
+            else:
+                x_shifted.append(x_clump[ii])
+                y_shifted.append(y_clump[ii])
+
+        shift_maps['shiftModel'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
+
+        namespace[self.output_name] = ragged.RaggedCache(shift_maps, mdh=inp.mdh)
