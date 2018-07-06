@@ -108,27 +108,6 @@ class MultiviewFindClumps(ModuleBase):
         namespace[self.outputName] = mapped
 
 
-@register_module('MergeClumps')
-class MergeClumps(ModuleBase):
-    """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = Input('clumped')
-    outputName = Output('merged')
-    labelKey = CStr('clumpIndex')
-
-    def execute(self, namespace):
-        from PYME.Analysis.points.DeClump import pyDeClump
-
-        inp = namespace[self.inputName]
-
-        grouped = pyDeClump.mergeClumps(inp, labelKey=self.labelKey)
-        try:
-            grouped.mdh = inp.mdh
-        except AttributeError:
-            pass
-
-        namespace[self.outputName] = grouped
-
-
 @register_module('MultiviewMergeClumps')
 class MultiviewMergeClumps(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""

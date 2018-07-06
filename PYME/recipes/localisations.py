@@ -133,6 +133,26 @@ class Pipelineify(ModuleBase):
 
         namespace[self.outputLocalizations] = mapped_ds
 
+@register_module('MergeClumps')
+class MergeClumps(ModuleBase):
+    """Create a new mapping object which derives mapped keys from original ones"""
+    inputName = Input('clumped')
+    outputName = Output('merged')
+    labelKey = CStr('clumpIndex')
+
+    def execute(self, namespace):
+        from PYME.Analysis.points.DeClump import pyDeClump
+
+        inp = namespace[self.inputName]
+
+        grouped = pyDeClump.mergeClumps(inp, labelKey=self.labelKey)
+        try:
+            grouped.mdh = inp.mdh
+        except AttributeError:
+            pass
+
+        namespace[self.outputName] = grouped
+
 
 @register_module('IDTransientFrames')
 class IDTransientFrames(ModuleBase): #FIXME - move to multi-view specific module and potentially rename (depending on whether we introduce scoping)
