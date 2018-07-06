@@ -26,7 +26,7 @@ def drift_correct(pipeline):
     import matplotlib.pyplot as plt
     #pipeline=visgui.pipeline
 
-    dialog = wx.TextEntryDialog(None, 'Diameter (nm): ', caption='Enter Fiducial Size', value=pipeline.mdh.getOrDefault('Analysis.FiducialSize', 1000))
+    dialog = wx.TextEntryDialog(None, 'Diameter (nm): ', 'Enter Fiducial Size', str(pipeline.mdh.getOrDefault('Analysis.FiducialSize', 1000)))
 
     sig = [330., 370.]
 
