@@ -24,8 +24,6 @@
 
 import wx
 import numpy as np
-from PYME.Analysis.points.DeClump import pyDeClump
-
 import os
 from PYME.IO.FileUtils import nameUtils
 import json
@@ -59,142 +57,7 @@ def plotFolded(X, Y, multiviewChannels, title=''):
     plt.legend()
     return
 
-def correlative_shift(x0, y0, which_channel, pix_size_nm=115.):
-    """
-    Laterally shifts all channels to the first using cross correlations
 
-    Parameters
-    ----------
-    x0 : ndarray
-        array of localization x positions; not yet registered
-    y0 : ndarray
-        array of localization y positions; not yet registered
-    which_channel : ndarray
-        contains the channel ID for each localization
-    pix_size_nm : float
-        size of pixels to be used in generating 2D histograms which the correlations are then performed on
-
-    Returns
-    -------
-    x : ndarray
-        array of localization x positions registered to the first channel
-    y : ndarray
-        array of localization y positions registered to the first channel
-    """
-    from scipy.signal import fftconvolve  # , correlate2d
-    from skimage import filters
-
-    x, y = np.copy(x0), np.copy(y0)
-    # determine number of ~pixel size bins for histogram
-    bin_count = round((x.max() - x.min()) / pix_size_nm)  # assume square FOV (NB - after folding)
-    # make sure bin_count is odd so its possible to have zero shift
-    if bin_count % 2 == 0:
-        bin_count += 1
-    center = np.floor(float(bin_count) / 2)
-
-    # generate first channel histogram
-    channels = iter(np.unique(which_channel))
-    first_chan = channels.next()
-    mask = which_channel == first_chan
-    first_channel, r_bins, c_bins = np.histogram2d(x[mask], y[mask], bins=(bin_count, bin_count))
-    first_channel = first_channel >= filters.threshold_otsu(first_channel)
-    first_channel = filters.gaussian(first_channel.astype(float))
-
-    # loop through channels, skipping the first
-    for chan in channels:
-        # generate 2D histogram
-        mask = which_channel == chan
-        counts = np.histogram2d(x[mask], y[mask], bins=(r_bins, c_bins))[0]
-        counts = counts >= filters.threshold_otsu(counts)
-        counts = filters.gaussian(counts.astype(float))
-
-
-        # cross-correlate this channel with the first, make it binary
-        # cross_cor = correlate2d(first_channel, counts, mode='same', boundary='symm')
-        cross_cor = fftconvolve(first_channel, counts[::-1, ::-1], mode='same')
-
-        r_off, c_off = np.unravel_index(np.argmax(cross_cor), cross_cor.shape)
-
-        # shift r and c positions
-        r_shift = (center - r_off) * pix_size_nm
-        c_shift = (center - c_off) * pix_size_nm
-
-        x[mask] -= c_shift
-        y[mask] -= r_shift
-
-    return x, y
-
-def pairMolecules(tIndex, x0, y0, whichChan, deltaX=[None], appearIn=np.arange(4), nFrameSep=5, returnPaired=True,
-                  pix_size_nm=115.):
-    """
-    pairMolecules uses pyDeClump functions to group localization clumps into molecules for registration.
-
-    Parameters
-    ----------
-    tIndex: from fitResults
-    x0: ndarray
-        x positions of localizations AFTER having been folded into the first channel
-    y0: ndarray
-        y positions of localizations
-    whichChan: ndarray
-        contains channel assignments for each localization
-    deltaX: list
-        distance within which neighbors will be clumped is set by 2*deltaX[i])**2. If None, will default to 100 nm
-    appearIn: list
-        a clump must have localizations in each of these channels in order to be a keep-clump
-    nFrameSep: int
-        number of frames a molecule is allowed to blink off and still be clumped as the same molecule
-    returnPaired: bool
-        flag to return a boolean array where True indicates that the molecule is a member of a
-        clump whose members span the appearIn channels.
-
-    Returns
-    -------
-    assigned: ndarray
-        clump assignments for each localization. Note that molecules whose whichChan entry is set to a
-        negative value will not be clumped, i.e. they will have a unique value in assigned.
-    keep: ndarray
-        a boolean vector encoding which molecules are in kept clumps
-
-    Notes
-    -----
-    Outputs are of length #molecules, and the keep vector that is returned needs to be applied
-    as: xkept = x[keep] in order to only look at kept molecules.
-
-    """
-    # take out any large linear shifts for the sake of easier pairing
-    x, y = correlative_shift(x0, y0, whichChan, pix_size_nm)
-    # group within a certain distance, potentially based on localization uncertainty
-    if not deltaX[0]:
-        deltaX = 100.*np.ones_like(x)
-    # group localizations
-    assigned = pyDeClump.findClumps(tIndex.astype(np.int32), x, y, deltaX, nFrameSep)
-    # print assigned.min()
-
-    # only look at clumps with localizations from each channel
-    clumps = np.unique(assigned)
-
-    # Note that this will never be a keep clump if an ignore channel is present...
-    keptClumps = [np.array_equal(np.unique(whichChan[assigned == clumps[ii]]), appearIn) for ii in range(len(clumps))]
-    #keptClumps = [(len(np.unique(whichChan[assigned == clumps[ii]])) >= appearances) for ii in range(len(clumps))]
-
-   # don't clump molecules from the wrong channel (done by parsing modified whichChan to this function)
-    ignoreChan = whichChan < 0
-    numClump = np.max(assigned)
-    igVec = np.arange(numClump + 1, numClump + 1 + sum(ignoreChan))
-    # give ignored channel localizations unique clump assignments
-    assigned[ignoreChan] = igVec
-
-    if returnPaired:
-        keptMoles = []
-        # np.array_equal(clumps, np.arange(1, np.max(assigned) + 1)) evaluates to True
-        # TODO: speed up following loop - quite slow for large N
-        for elem in assigned:
-            keptMoles.append(elem in clumps[np.where(keptClumps)])
-        keep = np.where(keptMoles)
-        return assigned, keep
-    else:
-        return assigned
 
 
 class multiviewMapper:
@@ -253,14 +116,14 @@ class multiviewMapper:
 
         """
 
-        from PYME.recipes.multiview import MultiviewFold
+        from PYME.recipes.multiview import Fold
         from PYME.recipes.tablefilters import FilterTable
 
         recipe = self.pipeline.recipe
         #TODO - move me to building the pipeline
         recipe.add_module(FilterTable(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='filtered_input',
                                       filters={'error_x':[0, 30.], 'error_y':[0,30.]}))
-        recipe.add_module(MultiviewFold(recipe, inputName='filtered_input',
+        recipe.add_module(Fold(recipe, inputName='filtered_input',
                                                       outputName='folded'))
         recipe.execute()
         self.pipeline.selectDataSource('folded')
@@ -281,7 +144,7 @@ class multiviewMapper:
 
         """
 
-        from PYME.recipes.multiview import MultiviewShiftCorrect
+        from PYME.recipes.multiview import ShiftCorrect
         pipeline = self.pipeline
         recipe = self.pipeline.recipe
 
@@ -297,7 +160,7 @@ class multiviewMapper:
             else:
                 raise RuntimeError('Shiftmaps not found in metadata and could not be loaded from file')
 
-        recipe.add_module(MultiviewShiftCorrect(recipe, inputName=pipeline.selectedDataSourceKey,
+        recipe.add_module(ShiftCorrect(recipe, inputName=pipeline.selectedDataSourceKey,
                           shiftMapLocation=fpath, outputName='shift_corrected'))
         recipe.execute()
         self.pipeline.selectDataSource('shift_corrected')
@@ -338,8 +201,8 @@ class multiviewMapper:
         xsort, ysort = pipeline['x'][I], pipeline['y'][I]
         chanSort = pipeline['multiviewChannel'][I]
 
-        clumpID, keep = pairMolecules(pipeline['tIndex'][I], xsort, ysort, chanSort, clumpRad*np.ones_like(xsort),
-                                      appearIn=np.arange(numChan), nFrameSep=pipeline['tIndex'].max(),
+        clumpID, keep = multiview.pair_molecules(pipeline['tIndex'][I], xsort, ysort, chanSort, clumpRad*np.ones_like(xsort),
+                                      appear_in=np.arange(numChan), n_frame_sep=pipeline['tIndex'].max(),
                                       pix_size_nm=1e3*pipeline.mdh['voxelsize.x'])
 
 
@@ -460,9 +323,9 @@ class multiviewMapper:
         -----
 
         """
-        from PYME.recipes.multiview import MultiviewFindClumps
+        from PYME.recipes.multiview import FindClumps
         recipe = self.pipeline.recipe
-        recipe.add_module(MultiviewFindClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='with_clumps',
+        recipe.add_module(FindClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='with_clumps',
                                      gapTolerance=self.clump_gap_tolerance, radiusScale=self.clump_radius_scale,
                                      radius_offset=self.clump_radius_offset, probeAware=True))
         recipe.execute()
@@ -485,7 +348,7 @@ class multiviewMapper:
         -----
 
         """
-        from PYME.recipes.multiview import MultiviewFindClumps, MultiviewMergeClumps
+        from PYME.recipes.multiview import MergeClumps
 
         if not 'clumpIndex' in self.pipeline.keys():
             logger.debug('No clumps found - running FindClumps')
@@ -493,7 +356,7 @@ class multiviewMapper:
 
         recipe = self.pipeline.recipe
 
-        recipe.add_module(MultiviewMergeClumps(recipe, inputName='with_clumps', outputName='clumped'))
+        recipe.add_module(MergeClumps(recipe, inputName='with_clumps', outputName='clumped'))
 
         recipe.execute()
         self.pipeline.selectDataSource('clumped')

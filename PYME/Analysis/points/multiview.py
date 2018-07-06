@@ -1,4 +1,6 @@
+
 import numpy as np
+from PYME.Analysis.points.DeClump import pyDeClump
 
 def coalesceDictSorted(inD, assigned, keys, weights_by_key):  # , notKosher=None):
     """
@@ -102,6 +104,141 @@ def foldX(datasource, mdh, inject=False, chroma_mappings=False):
         #datasource.setMapping('A%d' % chan, 'chan%d*A' % chan)
 
     return datasource
+
+def correlative_shift(x0, y0, which_channel, pix_size_nm=115.):
+    """
+    Laterally shifts all channels to the first using cross correlations
+
+    Parameters
+    ----------
+    x0 : ndarray
+        array of localization x positions; not yet registered
+    y0 : ndarray
+        array of localization y positions; not yet registered
+    which_channel : ndarray
+        contains the channel ID for each localization
+    pix_size_nm : float
+        size of pixels to be used in generating 2D histograms which the correlations are then performed on
+
+    Returns
+    -------
+    x : ndarray
+        array of localization x positions registered to the first channel
+    y : ndarray
+        array of localization y positions registered to the first channel
+    """
+    from scipy.signal import fftconvolve  # , correlate2d
+    from skimage import filters
+
+    x, y = np.copy(x0), np.copy(y0)
+    # determine number of ~pixel size bins for histogram
+    bin_count = round((x.max() - x.min()) / pix_size_nm)  # assume square FOV (NB - after folding)
+    # make sure bin_count is odd so its possible to have zero shift
+    if bin_count % 2 == 0:
+        bin_count += 1
+    center = np.floor(float(bin_count) / 2)
+
+    # generate first channel histogram
+    channels = iter(np.unique(which_channel))
+    first_chan = channels.next()
+    mask = which_channel == first_chan
+    first_channel, r_bins, c_bins = np.histogram2d(x[mask], y[mask], bins=(bin_count, bin_count))
+    first_channel = first_channel >= filters.threshold_otsu(first_channel)
+    first_channel = filters.gaussian(first_channel.astype(float))
+
+    # loop through channels, skipping the first
+    for chan in channels:
+        # generate 2D histogram
+        mask = which_channel == chan
+        counts = np.histogram2d(x[mask], y[mask], bins=(r_bins, c_bins))[0]
+        counts = counts >= filters.threshold_otsu(counts)
+        counts = filters.gaussian(counts.astype(float))
+
+
+        # cross-correlate this channel with the first, make it binary
+        # cross_cor = correlate2d(first_channel, counts, mode='same', boundary='symm')
+        cross_cor = fftconvolve(first_channel, counts[::-1, ::-1], mode='same')
+
+        r_off, c_off = np.unravel_index(np.argmax(cross_cor), cross_cor.shape)
+
+        # shift r and c positions
+        r_shift = (center - r_off) * pix_size_nm
+        c_shift = (center - c_off) * pix_size_nm
+
+        x[mask] -= c_shift
+        y[mask] -= r_shift
+
+    return x, y
+
+def pair_molecules(t_index, x0, y0, which_chan, delta_x=[None], appear_in=np.arange(4), n_frame_sep=5,
+                   return_paired=True, pix_size_nm=115.):
+    """
+    pair_molecules uses pyDeClump functions to group localization clumps into molecules for registration.
+
+    Parameters
+    ----------
+    t_index: from fitResults
+    x0: ndarray
+        x positions of localizations AFTER having been folded into the first channel
+    y0: ndarray
+        y positions of localizations
+    which_chan: ndarray
+        contains channel assignments for each localization
+    delta_x: list
+        distance within which neighbors will be clumped is set by 2*delta_x[i])**2. If None, will default to 100 nm
+    appear_in: list
+        a clump must have localizations in each of these channels in order to be a keep-clump
+    n_frame_sep: int
+        number of frames a molecule is allowed to blink off and still be clumped as the same molecule
+    return_paired: bool
+        flag to return a boolean array where True indicates that the molecule is a member of a
+        clump whose members span the appearIn channels.
+
+    Returns
+    -------
+    assigned: ndarray
+        clump assignments for each localization. Note that molecules whose which_chan entry is set to a
+        negative value will not be clumped, i.e. they will have a unique value in assigned.
+    keep: ndarray
+        a boolean vector encoding which molecules are in kept clumps
+
+    Notes
+    -----
+    Outputs are of length #molecules, and the keep vector that is returned needs to be applied as:
+    x_kept = x[keep] in order to only look at kept molecules.
+
+    """
+    # take out any large linear shifts for the sake of easier pairing
+    x, y = correlative_shift(x0, y0, which_chan, pix_size_nm)
+    # group within a certain distance, potentially based on localization uncertainty
+    if not delta_x[0]:
+        delta_x = 100.*np.ones_like(x)
+    # group localizations
+    assigned = pyDeClump.findClumps(t_index.astype(np.int32), x, y, delta_x, n_frame_sep)
+    # print assigned.min()
+
+    # only look at clumps with localizations from each channel
+    clumps = np.unique(assigned)
+
+    # Note that this will never be a keep clump if an ignore channel is present...
+    kept_clumps = [np.array_equal(np.unique(which_chan[assigned == clumps[ii]]), appear_in) for ii in range(len(clumps))]
+
+   # don't clump molecules from the wrong channel (done by parsing modified whichChan to this function)
+    ignore_chan = which_chan < 0
+    n_clump = np.max(assigned)
+    ig_vec = np.arange(n_clump + 1, n_clump + 1 + sum(ignore_chan))
+    # give ignored channel localizations unique clump assignments
+    assigned[ignore_chan] = ig_vec
+
+    if return_paired:
+        kept_mols = []
+        # TODO: speed up following loop - quite slow for large N
+        for elem in assigned:
+            kept_mols.append(elem in clumps[np.where(kept_clumps)])
+        keep = np.where(kept_mols)
+        return assigned, keep
+    else:
+        return assigned
 
 def calcShifts(datasource, shiftWallet):
     import importlib
