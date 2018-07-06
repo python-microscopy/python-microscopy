@@ -597,7 +597,7 @@ class MarchingCubesOctree(MarchingCubes):
         * self.values are the corresponding vertex values (-1, 8)
 
         """
-        nodes = self.ot._nodes # [self.ot._nodes['nPoints'] >= 1]
+        nodes = self.ot._nodes[self.ot._nodes['nPoints'] >= 1]
         box_sizes = np.vstack(self.ot.box_size(nodes['depth'])).T
 
         alpha = np.repeat(nodes['nPoints'] * ((2 ** nodes['depth']) ** 3), 8).reshape(nodes.shape[0], 8)
