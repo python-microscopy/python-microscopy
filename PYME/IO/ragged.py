@@ -91,9 +91,20 @@ class RaggedVLArray(RaggedBase):
         if isinstance(h5f, six.string_types):
             import tables
             h5f = tables.open_file(h5f)
+            self._h5file = h5f  # if we open it, grab a reference so we can close it later
 
-        self._h5file = h5f  # hang on to a reference to the file for the sake of clean-up ops
-        self._data = self._h5file.get_node(self._h5file.root, tablename)
+        self._data = h5f.get_node(h5f.root, tablename)
+
+    def __del__(self):
+        """
+        Make sure we close our h5 file if we opened one. If it was created outside the scope of this class, it should be
+        handled elsewhere.
+
+        """
+        try:
+            self._h5file.close()
+        except AttributeError:
+            pass
     
     def __getitem__(self, item):
         import json
