@@ -172,6 +172,27 @@ class MapAstigZ(ModuleBase):
 
 @register_module('CalibrateShifts')
 class CalibrateShifts(ModuleBase):
+    """
+
+    Generates multiview shiftmaps from (folded) bead-data localizations. Only beads which show up in all channels are
+    used to generate the shiftmaps
+
+    Parameters
+    ----------
+    input_name : traits.Input
+        localizations as PYME.IO.Tabular types
+    search_radius_nm : traits.Float
+        radius within which bead localizations should be clumped if the bead appears in all channels. Units of nm.
+
+    Returns
+    -------
+    output_name : traits.Output
+        output is a json wrapped by PYME.IO.ragged.RaggedCache
+
+    Notes
+    -----
+
+    """
     input_name = Input('folded')
 
     search_radius_nm = Float(250.)
