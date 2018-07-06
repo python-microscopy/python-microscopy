@@ -2,7 +2,7 @@
 import numpy as np
 from PYME.Analysis.points.DeClump import pyDeClump
 
-def coalesceDictSorted(inD, assigned, keys, weights_by_key):  # , notKosher=None):
+def coalesce_dict_sorted(inD, assigned, keys, weights_by_key):  # , notKosher=None):
     """
     Agregates clumps to a single event
     Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
@@ -284,7 +284,7 @@ def applyShiftmaps(datasource, shiftWallet):  # FIXME: add metadata for camera r
     datasource.addColumn('chromady', dy)
 
 
-def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=False):
+def find_clumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=False):
     from PYME.Analysis.points.DeClump import deClump
     from PYME.IO import tabular
     t = datasource['t'] #OK as int
@@ -306,7 +306,7 @@ def findClumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=Fa
 
     return datasource
 
-def probeAwareFindClumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=False):
+def find_clumps_within_channel(datasource, gap_tolerance, radius_scale, radius_offset, inject=False):
     """
 
     Args:
@@ -359,7 +359,7 @@ def probeAwareFindClumps(datasource, gap_tolerance, radius_scale, radius_offset,
 
     return datasource
 
-def mergeClumps(datasource, numChan, labelKey='clumpIndex'):
+def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
     from PYME.IO.tabular import cachingResultsFilter, mappingFilter
 
     keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', labelKey, 'focus', 'LLH']
@@ -380,7 +380,7 @@ def mergeClumps(datasource, numChan, labelKey='clumpIndex'):
     I = np.argsort(datasource[labelKey])
     sorted_src = {k: datasource[k][I] for k in all_keys}
 
-    grouped = coalesceDictSorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights)
+    grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights)
     return mappingFilter(grouped)
 
 

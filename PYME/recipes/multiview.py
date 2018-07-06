@@ -15,13 +15,13 @@ class Fold(ModuleBase):
     The current implementation is somewhat limited as it only handles folding along the x axis, and assumes that ROI
     sizes and spacings are completely uniform.
     """
-    inputName = Input('localizations')
-    outputName = Output('folded')
+    input_name = Input('localizations')
+    output_name = Output('folded')
 
     def execute(self, namespace):
         from PYME.Analysis.points import multiview
 
-        inp = namespace[self.inputName]
+        inp = namespace[self.input_name]
 
         if 'mdh' not in dir(inp):
             raise RuntimeError('Unfold needs metadata')
@@ -29,7 +29,7 @@ class Fold(ModuleBase):
         mapped = multiview.foldX(inp, inp.mdh)
         mapped.mdh = inp.mdh
 
-        namespace[self.outputName] = mapped
+        namespace[self.output_name] = mapped
 
 
 @register_module('ShiftCorrect')
@@ -44,16 +44,16 @@ class ShiftCorrect(ModuleBase):
     shift_map_path : str
         file path of shift map to be applied. Can also be a URL for shiftmaps stored remotely
     """
-    inputName = Input('folded')
+    input_name = Input('folded')
     shift_map_path = CStr('')
-    outputName = Output('registered')
+    output_name = Output('registered')
 
     def execute(self, namespace):
         from PYME.Analysis.points import multiview
         from PYME.IO import unifiedIO
         import json
 
-        inp = namespace[self.inputName]
+        inp = namespace[self.input_name]
 
         if 'mdh' not in dir(inp):
             raise RuntimeError('ShiftCorrect needs metadata')
@@ -76,13 +76,13 @@ class ShiftCorrect(ModuleBase):
 
         mapped.mdh = inp.mdh
 
-        namespace[self.outputName] = mapped
+        namespace[self.output_name] = mapped
 
 
 @register_module('FindClumps')
 class FindClumps(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = Input('registered')
+    input_name = Input('registered')
     gapTolerance = Int(1, desc='Number of off-frames allowed to still be a single clump')
     radiusScale = Float(2.0,
                         desc='Factor by which error_x is multiplied to detect clumps. The default of 2-sigma means we link ~95% of the points which should be linked')
@@ -90,61 +90,61 @@ class FindClumps(ModuleBase):
                           desc='Extra offset (in nm) for cases where we want to link despite poor channel alignment')
     probeAware = Bool(False, desc='''Use probe-aware clumping. NB this option does not work with standard methods of colour
                                              specification, and splitting by channel and clumping separately is preferred''')
-    outputName = Output('clumped')
+    output_name = Output('clumped')
 
     def execute(self, namespace):
         from PYME.Analysis.points import multiview
 
-        inp = namespace[self.inputName]
+        inp = namespace[self.input_name]
 
         if self.probeAware and 'probe' in inp.keys():  # special case for using probe aware clumping NB this is a temporary fudge for non-standard colour handling
-            mapped = multiview.probeAwareFindClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset)
+            mapped = multiview.find_clumps_within_channel(inp, self.gapTolerance, self.radiusScale, self.radius_offset)
         else:  # default
-            mapped = multiview.findClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset)
+            mapped = multiview.find_clumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset)
 
         if 'mdh' in dir(inp):
             mapped.mdh = inp.mdh
 
-        namespace[self.outputName] = mapped
+        namespace[self.output_name] = mapped
 
 
 @register_module('MergeClumps')
 class MergeClumps(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = Input('clumped')
-    outputName = Output('merged')
+    input_name = Input('clumped')
+    output_name = Output('merged')
     labelKey = CStr('clumpIndex')
 
     def execute(self, namespace):
         from PYME.Analysis.points import multiview
 
-        inp = namespace[self.inputName]
+        inp = namespace[self.input_name]
 
         try:
-            grouped = multiview.mergeClumps(inp, inp.mdh.getOrDefault('Multiview.NumROIs', 0), labelKey=self.labelKey)
+            grouped = multiview.merge_clumps(inp, inp.mdh.getOrDefault('Multiview.NumROIs', 0), labelKey=self.labelKey)
             grouped.mdh = inp.mdh
         except AttributeError:
-            grouped = multiview.mergeClumps(inp, numChan=0, labelKey=self.labelKey)
+            grouped = multiview.merge_clumps(inp, numChan=0, labelKey=self.labelKey)
 
-        namespace[self.outputName] = grouped
+        namespace[self.output_name] = grouped
 
 
 @register_module('MapAstigZ')
 class MapAstigZ(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = Input('merged')
+    input_name = Input('merged')
 
     astigmatismMapLocation = CStr('')  # FIXME - rename and possibly change type
     rough_knot_spacing = Float(50.)
 
-    outputName = Output('zmapped')
+    output_name = Output('zmapped')
 
     def execute(self, namespace):
         from PYME.Analysis.points.astigmatism import astigTools
         from PYME.IO import unifiedIO
         import json
 
-        inp = namespace[self.inputName]
+        inp = namespace[self.input_name]
 
         if 'mdh' not in dir(inp):
             raise RuntimeError('MapAstigZ needs metadata')
@@ -166,7 +166,7 @@ class MapAstigZ(ModuleBase):
 
         mapped.mdh = inp.mdh
 
-        namespace[self.outputName] = mapped
+        namespace[self.output_name] = mapped
 
 # ---------- calibration generation ----------
 

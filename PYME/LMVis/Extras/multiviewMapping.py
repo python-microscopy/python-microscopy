@@ -123,8 +123,8 @@ class multiviewMapper:
         #TODO - move me to building the pipeline
         recipe.add_module(FilterTable(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='filtered_input',
                                       filters={'error_x':[0, 30.], 'error_y':[0,30.]}))
-        recipe.add_module(Fold(recipe, inputName='filtered_input',
-                                                      outputName='folded'))
+        recipe.add_module(Fold(recipe, input_name='filtered_input',
+                                                      output_name='folded'))
         recipe.execute()
         self.pipeline.selectDataSource('folded')
 
@@ -160,8 +160,8 @@ class multiviewMapper:
             else:
                 raise RuntimeError('Shiftmaps not found in metadata and could not be loaded from file')
 
-        recipe.add_module(ShiftCorrect(recipe, inputName=pipeline.selectedDataSourceKey,
-                          shiftMapLocation=fpath, outputName='shift_corrected'))
+        recipe.add_module(ShiftCorrect(recipe, input_name=pipeline.selectedDataSourceKey,
+                          shift_map_location=fpath, output_name='shift_corrected'))
         recipe.execute()
         self.pipeline.selectDataSource('shift_corrected')
 
@@ -325,7 +325,7 @@ class multiviewMapper:
         """
         from PYME.recipes.multiview import FindClumps
         recipe = self.pipeline.recipe
-        recipe.add_module(FindClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='with_clumps',
+        recipe.add_module(FindClumps(recipe, input_name=self.pipeline.selectedDataSourceKey, output_name='with_clumps',
                                      gapTolerance=self.clump_gap_tolerance, radiusScale=self.clump_radius_scale,
                                      radius_offset=self.clump_radius_offset, probeAware=True))
         recipe.execute()
@@ -356,7 +356,7 @@ class multiviewMapper:
 
         recipe = self.pipeline.recipe
 
-        recipe.add_module(MergeClumps(recipe, inputName='with_clumps', outputName='clumped'))
+        recipe.add_module(MergeClumps(recipe, input_name='with_clumps', output_name='clumped'))
 
         recipe.execute()
         self.pipeline.selectDataSource('clumped')
@@ -415,8 +415,8 @@ class multiviewMapper:
         # hold off auto-running the recipe until we configure things
         recipe.trait_set(execute_on_invalidation=False)
         try:
-            mapping_module = MapAstigZ(recipe, inputName=self.pipeline.selectedDataSourceKey,
-                                        astigmatismMapLocation=pathToMap, outputName='z_mapped')
+            mapping_module = MapAstigZ(recipe, input_name=self.pipeline.selectedDataSourceKey,
+                                        astigmatismMapLocation=pathToMap, output_name='z_mapped')
 
             recipe.add_module(mapping_module)
             if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
