@@ -244,7 +244,7 @@ class CalibrateShifts(ModuleBase):
 
         shift_maps = np.zeros(2*(n_chan - 1), dtype=shift_map_dtype)
         mdh = NestedClassMDHandler(inp.mdh)
-        mdh['shift_map.legend'] = {}
+        mdh['Multiview.shift_map.legend'] = {}
 
         for ii in range(n_chan):
             chan_mask = (chan == ii)
@@ -276,8 +276,8 @@ class CalibrateShifts(ModuleBase):
                                                                           dy[ii - 1, :], dx_err[ii - 1, :],
                                                                           dy_err[ii - 1, :])
                 # store shiftmaps in structured array
-                mdh['shift_map.legend']['0%s_x' % ii] = 2*(ii - 1)
-                mdh['shift_map.legend']['0%s_y' % ii] = 2*(ii - 1) + 1
+                mdh['Multiview.shift_map.legend']['0%s_x' % ii] = 2*(ii - 1)
+                mdh['Multiview.shift_map.legend']['0%s_y' % ii] = 2*(ii - 1) + 1
                 for ki in range(len(shift_map_dtype)):
                     k = shift_map_dtype[ki][0]
                     shift_maps[2*(ii - 1)][k] = spx.__getattribute__(k)
@@ -286,7 +286,7 @@ class CalibrateShifts(ModuleBase):
 
                 # shift_maps['Chan0%s.X' % ii], shift_maps['Chan0%s.Y' % ii] = spx.__dict__, spy.__dict__
 
-        mdh['shift_map.model'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
+        mdh['Multiview.shift_map.model'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
 
         namespace[self.output_name] = tabular.recArrayInput(shift_maps)
         namespace[self.output_name].mdh = mdh
