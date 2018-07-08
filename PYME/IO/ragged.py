@@ -76,7 +76,7 @@ class RaggedJSON(RaggedCache):
      
     
 class RaggedVLArray(RaggedBase):
-    def __init__(self, h5f, tablename):
+    def __init__(self, h5f, tablename, mdh=None):
         """
         Ragged type which wraps an HDF table variable-length array
         Parameters
@@ -85,8 +85,11 @@ class RaggedVLArray(RaggedBase):
             Either an open HDF table instance, or a str of the filepath to open one
         tablename : str
             Name of the table to open and wrap (beyond root, i.e. h5f.root.tablename
+        mdh : PYME.MetaDataHandler.MDHandlerBase or derived class
+            Metadata to initialize RaggedVLArray with. If None, will be initialized with blank metadata
+            
         """
-        RaggedBase.__init__(self)
+        RaggedBase.__init__(self, mdh)
 
         if isinstance(h5f, six.string_types):
             import tables
