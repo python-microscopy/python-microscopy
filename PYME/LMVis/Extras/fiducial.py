@@ -25,11 +25,20 @@ def drift_correct(pipeline):
     import numpy as np
     import matplotlib.pyplot as plt
     #pipeline=visgui.pipeline
-    
+
+    dialog = wx.TextEntryDialog(None, 'Diameter (nm): ', 'Enter Fiducial Size', str(pipeline.mdh.getOrDefault('Analysis.FiducialSize', 1000)))
+
+    sig = [330., 370.]
+
+    if dialog.ShowModal() == wx.ID_OK:
+        size = float(dialog.GetValue())
+        sigE = np.sqrt((size/(np.sqrt(2)*2.35))**2 + 135.**2)  # Expected std of the bead + expected std of psf
+        sig = [0.95*sigE, 1.05*sigE]
+
     recipe = pipeline.recipe
 
     recipe.add_module(FilterTable(recipe, inputName='Fiducials',
-                                  outputName='filtered_fiducials', filters={'error_x': [0, 10], 'sig': [330., 370.]}))
+                                  outputName='filtered_fiducials', filters={'error_x': [0, 10], 'sig': sig}))
     
     recipe.add_module(DBSCANClustering(recipe,inputName='filtered_fiducials', outputName='clumped_fiducials', columns=['x', 'y'],
                                        searchRadius=500, minClumpSize=10, clumpColumnName='fiducialID'))
