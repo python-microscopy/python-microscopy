@@ -202,7 +202,7 @@ class CalibrateShifts(ModuleBase):
     def execute(self, namespace):
         from PYME.Analysis.points import twoColour
         from PYME.Analysis.points import multiview
-        from PYME.IO import ragged
+        from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
         inp = namespace[self.input_name]
 
@@ -236,7 +236,16 @@ class CalibrateShifts(ModuleBase):
         dx_err = np.zeros_like(dx)
         dy_err = np.zeros_like(dx)
         x_clump, y_clump, x_std, y_std, x_shifted, y_shifted = [], [], [], [], [], []
-        shift_maps = {}
+
+        shift_map_dtype = [('mx', '<f4'), ('mx2', '<f4'), ('mx3', '<f4'),  # x terms
+                           ('my', '<f4'), ('my2', '<f4'), ('my3', '<f4'),  # y terms
+                           ('mxy', '<f4'), ('mx2y', '<f4'), ('mxy2', '<f4'),  # cross terms
+                           ('x0', '<f4')]  # 0th order shift
+
+        shift_maps = np.zeros(2*(n_chan - 1), dtype=shift_map_dtype)
+        mdh = NestedClassMDHandler(inp.mdh)
+        mdh['shift_map.legend'] = {}
+
         for ii in range(n_chan):
             chan_mask = (chan == ii)
             x_chan = np.zeros(n_mols)
@@ -266,16 +275,18 @@ class CalibrateShifts(ModuleBase):
                 dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(x_clump[0], y_clump[0], dx[ii - 1, :],
                                                                           dy[ii - 1, :], dx_err[ii - 1, :],
                                                                           dy_err[ii - 1, :])
-                # store shiftmaps in multiview shiftWallet
-                shift_maps['Chan0%s.X' % ii], shift_maps['Chan0%s.Y' % ii] = spx.__dict__, spy.__dict__
+                # store shiftmaps in structured array
+                mdh['shift_map.legend']['0%s_x' % ii] = 2*(ii - 1)
+                mdh['shift_map.legend']['0%s_y' % ii] = 2*(ii - 1) + 1
+                for ki in range(len(shift_map_dtype)):
+                    k = shift_map_dtype[ki][0]
+                    shift_maps[2*(ii - 1)][k] = spx.__getattribute__(k)
+                    shift_maps[2*(ii - 1) + 1][k] = spy.__getattribute__(k)
 
-                # shift the clumps for plotting
-                x_shifted.append(x_clump[ii] + spx(x_clump[ii], y_clump[ii]))
-                y_shifted.append(y_clump[ii] + spy(x_clump[ii], y_clump[ii]))
-            else:
-                x_shifted.append(x_clump[ii])
-                y_shifted.append(y_clump[ii])
 
-        shift_maps['shiftModel'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
+                # shift_maps['Chan0%s.X' % ii], shift_maps['Chan0%s.Y' % ii] = spx.__dict__, spy.__dict__
 
-        namespace[self.output_name] = ragged.RaggedCache(shift_maps, mdh=inp.mdh)
+        mdh['shift_map.model'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
+
+        namespace[self.output_name] = tabular.recArrayInput(shift_maps)
+        namespace[self.output_name].mdh = mdh
