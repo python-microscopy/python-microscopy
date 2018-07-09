@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr
+from .traits import Input, Output, Float, CStr, Bool, Int, File
 
 import numpy as np
 from PYME.IO import tabular
@@ -45,13 +45,14 @@ class ShiftCorrect(ModuleBase):
         file path of shift map to be applied. Can also be a URL for shiftmaps stored remotely
     """
     input_name = Input('folded')
-    shift_map_path = CStr('')
+    shift_map_path = File('')
     output_name = Output('registered')
 
     def execute(self, namespace):
         from PYME.Analysis.points import multiview
-        from PYME.IO import unifiedIO, clusterIO
+        from PYME.IO import unifiedIO
         from PYME.IO.MetaDataHandler import HDFMDHandler
+        import tables
         import json
 
         inp = namespace[self.input_name]
@@ -66,27 +67,25 @@ class ShiftCorrect(ModuleBase):
 
 
         try:  # try loading shift map as hdf file
-            try:  # load if local
-                shift_map_source = tabular.hdfSource(loc, 'shift_map')
-            except IOError:
-                # FIXME - this is definitely broken
-                shift_map_source = tabular.hdfSource(clusterIO.getFile(loc), 'shift_map')
-            shift_map_source.mdh = HDFMDHandler(shift_map_source.h5f)
+            with unifiedIO.local_or_temp_filename(loc) as f:
+                h5f = tables.open_file(f, mode='r')
+                shift_map_source = tabular.hdfSource(h5f, 'shift_map')
+                shift_map_source.mdh = HDFMDHandler(shift_map_source.h5f)
 
             # build dict of dicts so we can easily rebuild shiftfield objects in multiview.calc_shifts_for_points
-            shift_map = {}
+            shift_map = {'shiftModel': shift_map_source.mdh['Multiview.shift_map.model']}
             legend = shift_map_source.mdh['Multiview.shift_map.legend']
             for l in legend.keys():
                 keys = shift_map_source.keys()
                 shift_map[l] = dict(zip(keys, [shift_map_source[k][legend[l]] for k in keys]))
-        except:
+        except tables.HDF5ExtError:  # file is probably saved as json (legacy)
             s = unifiedIO.read(self.shift_map_path)
             shift_map = json.loads(s)
 
         mapped = tabular.mappingFilter(inp)
 
         multiview.apply_shifts_to_points(mapped, shift_map)
-
+        # propagate metadata
         mapped.mdh = inp.mdh
 
         namespace[self.output_name] = mapped
