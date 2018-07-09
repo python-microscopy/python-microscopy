@@ -139,7 +139,7 @@ class PointCloudRenderLayer(EngineLayer):
         print('lw update')
         self._datasource_choices = self._pipeline.layer_data_source_names
         if not self.datasource is None:
-            self._datasource_keys = self.datasource.keys()
+            self._datasource_keys = sorted(self.datasource.keys())
             
         if not (self.engine is None or self.datasource is None):
             self.update_from_datasource(self.datasource)
@@ -258,3 +258,4 @@ class PointCloudRenderLayer(EngineLayer):
 
     def default_traits_view(self):
         return self.default_view
+    

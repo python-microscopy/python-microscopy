@@ -22,19 +22,19 @@
 ##################
 """Estimates twist in a phase-ramp or double helix PSF"""
 
-import numpy
+import numpy as np
 import scipy.ndimage
-from pylab import *
+#from pylab import *
 
 tcAng = None
 tcZ = None
 
 def calcTwist(im, X, Y):
-    an = numpy.mod(numpy.angle(X[:,None] + (1j*Y)[None, :]), numpy.pi)
+    an = np.mod(np.angle(X[:,None] + (1j*Y)[None, :]), np.pi)
 
     #imshow(an)
     
-    I = numpy.argsort(an.ravel())
+    I = np.argsort(an.ravel())
 
     ar = an.ravel()[I]
     imr = im.ravel()[I]
@@ -57,4 +57,4 @@ def twistCal(ps, X, Y, Z):
     tcZ = Z
 
 def getZ(twist):
-    return numpy.interp(twist, tcAng, tcZ)
+    return np.interp(twist, tcAng, tcZ)

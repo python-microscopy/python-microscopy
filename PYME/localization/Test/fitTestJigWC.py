@@ -27,7 +27,7 @@ from PYME.Acquire.Hardware.Simulator.fakeCam import NoiseMaker
 
 splitterFitModules = ['SplitterFitFR','SplitterFitQR','SplitterFitCOIR', 'BiplaneFitR', 'SplitterShiftEstFR', 'SplitterObjFindR', 'SplitterFitPsfIR']
 
-from pylab import *
+#from pylab import *
 import copy
 from PYME.IO import MetaDataHandler
 from PYME.Acquire.Hardware import EMCCDTheory
@@ -78,8 +78,8 @@ class fitTestJig(object):
             
         self.fitMod = __import__('PYME.localization.FitFactories.' + self.fitModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our fitting module
         self.simMod = __import__('PYME.localization.FitFactories.' + self.simModule, fromlist=['PYME', 'localization', 'FitFactories']) #import our simulation
-        self.res = numpy.empty(nTests, self.fitMod.FitResultsDType)
-        ps = numpy.zeros((nTests, len(params)), 'f4')
+        self.res = np.empty(nTests, self.fitMod.FitResultsDType)
+        ps = np.zeros((nTests, len(params)), 'f4')
 
         rs=self.md.getOrDefault('Test.ROISize', 7)
         
@@ -92,7 +92,7 @@ class fitTestJig(object):
         self.d2 = []
         
         for i in range(nTests):
-            p = array(params) + array(param_jit)*(2*rand(len(param_jit)) - 1)
+            p = np.array(params) + np.array(param_jit)*(2*np.rand(len(param_jit)) - 1)
             p[0] = abs(p[0])
             ps[i, :] = p
             self.data, self.x0, self.y0, self.z0 = self.simMod.FitFactory.evalModel(p, md2, roiHalfSize=rs)#, roiHalfSize= roiHalfWidth))
@@ -115,7 +115,7 @@ class fitTestJig(object):
             
         #print bg, self.md.Camera.ADOffset
         for i in range(nTests):
-            self.fitFac = self.fitMod.FitFactory(atleast_3d(self.d2[i]), self.md, background = bg)
+            self.fitFac = self.fitMod.FitFactory(np.atleast_3d(self.d2[i]), self.md, background = bg)
             self.res[i] = self.fitFac.FromPoint(rs, rs, roiHalfSize=rs)
 
         
@@ -168,7 +168,7 @@ class fitTestJig(object):
         plt.plot(xv, yv, 'xg', label='Fitted')
         plt.plot([xv.min(), xv.max()], [xv.min(), xv.max()])
 
-        plt.ylim((yv - maximum(err, 0)).min(), (yv + maximum(err, 0)).max())
+        plt.ylim((yv - np.maximum(err, 0)).min(), (yv + np.maximum(err, 0)).max())
         plt.legend()
 
         plt.title(varName)
@@ -186,8 +186,8 @@ class fitTestJig(object):
         
     def plotResSimp(self, varName):
         #print self.ps
-        from pylab import *
-        figure()
+        import matplotlib.pyplot as plt
+        plt.figure()
         #print varName
         xv = self.ps[varName].ravel()
         
@@ -200,16 +200,16 @@ class fitTestJig(object):
 
         #err = self.res['fitError'][varName]
 
-        plot([xv.min(), xv.max()], [xv.min(), xv.max()])
+        plt.plot([xv.min(), xv.max()], [xv.min(), xv.max()])
         #plot(xv, sp, '+', label='Start Est')
-        plot(xv, yv, 'x', label='Fitted')
+        plt.plot(xv, yv, 'x', label='Fitted')
 
-        ylim((yv).min(), (yv).max())
+        plt.ylim((yv).min(), (yv).max())
         #legend()
 
-        title(varName)
-        xlabel('True Position')
-        ylabel('Estimated Position')
+        plt.title(varName)
+        plt.xlabel('True Position')
+        plt.ylabel('Estimated Position')
 
 
 

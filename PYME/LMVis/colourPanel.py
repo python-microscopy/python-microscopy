@@ -323,8 +323,8 @@ class colourPanel(wx.Panel):
         
         self.pipeline.Rebuild()
 
-        self.visFr.UpdatePointColourChoices()
-        self.visFr.colourFilterPane.UpdateColourFilterChoices()
+        #self.visFr.UpdatePointColourChoices()
+        #self.visFr.colourFilterPane.UpdateColourFilterChoices()
 
         self.refresh()
 

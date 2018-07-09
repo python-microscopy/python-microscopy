@@ -67,9 +67,11 @@ def find_and_add_zRange(astig_library, rough_knot_spacing=50.):
 
     """
     import scipy.interpolate as terp
+    from scipy.stats import mode
     for ii in range(len(astig_library)):
         # find region of dsigma which is monotonic (smooth a bit, too)
-        smoothing_factor = int(rough_knot_spacing / (astig_library[ii]['z'][1] - astig_library[ii]['z'][0]))
+        dz_mode = mode(np.diff(astig_library[ii]['z']))[0][0]
+        smoothing_factor = int(rough_knot_spacing / dz_mode)
         knots = astig_library[ii]['z'][1:-1:smoothing_factor]
         dsig = terp.LSQUnivariateSpline(astig_library[ii]['z'], astig_library[ii]['dsigma'], knots)
 

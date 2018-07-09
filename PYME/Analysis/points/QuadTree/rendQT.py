@@ -22,10 +22,12 @@
 ##################
 
 import matplotlib
-from pylab import *
+#from pylab import *
+import numpy as np
+import matplotlib.pyplot as plt
 
 
-def rendQT(ax, qt, maxDepth=-1, cmap=cm.hot, maxIsc = 1):
+def rendQT(ax, qt, maxDepth=-1, cmap=plt.cm.hot, maxIsc = 1):
     ax.cla()
     ax.set_xlim(qt.x0,qt.x1)
     ax.set_ylim(qt.y0, qt.y1)
@@ -41,9 +43,9 @@ def rendQT(ax, qt, maxDepth=-1, cmap=cm.hot, maxIsc = 1):
         c = cmap((float(l.numRecords)*2**(2*l.depth))/(maxI*maxIsc))
         ax.add_patch(matplotlib.patches.Rectangle((l.x0,l.y0), l.x1- l.x0, l.y1 - l.y0, fc= c, ec = c))
 
-    show()
+    plt.show()
 
-def rendQTe(ax, qt, maxDepth=-1, cmap=cm.hot, maxIsc = 1):
+def rendQTe(ax, qt, maxDepth=-1, cmap=plt.cm.hot, maxIsc = 1):
     ax.cla()
     ax.set_xlim(qt.x0,qt.x1)
     ax.set_ylim(qt.y0, qt.y1)
@@ -59,12 +61,12 @@ def rendQTe(ax, qt, maxDepth=-1, cmap=cm.hot, maxIsc = 1):
         c = cmap((float(l.numRecords)*2**(2*l.depth))/(maxI*maxIsc))
         ax.add_patch(matplotlib.patches.Rectangle((l.x0,l.y0), l.x1- l.x0, l.y1 - l.y0, fc=[1, 1, 1], ec = 'k'))
 
-    show()
+    plt.show()
 
 def rendQTa(ar, qt, maxDepth=100):
     (sX, sY) = ar.shape    
     
-    maxDepth = min(maxDepth, floor(log2(min(sX, sY))))
+    maxDepth = min(maxDepth, np.floor(np.log2(min(sX, sY))))
 
     lvs = qt.getLeaves(maxDepth)
 
@@ -92,7 +94,7 @@ def rendQTa(ar, qt, maxDepth=100):
 def rendQTan(ar, qt, maxDepth=100):
     (sX, sY) = ar.shape    
     
-    maxDepth = min(maxDepth, floor(log2(min(sX, sY))))
+    maxDepth = min(maxDepth, np.floor(np.log2(min(sX, sY))))
 
     lvs = qt.getLeaves(maxDepth)
 

@@ -120,6 +120,7 @@ class AnalysisSettingsView(object):
                       mde.BoolParam('Analysis.TrackFiducials', 'Track Fiducials', default=False),
                       mde.FloatParam('Analysis.FiducialThreshold', 'Fiducial Threshold', default=1.8),
                       mde.IntParam('Analysis.FiducialROISize', 'Fiducial ROI', default=11),
+                      mde.FloatParam('Analysis.FiducialSize', 'Fiducial Diameter [nm]', default=1000.),
     ]
     
     def __init__(self, dsviewer, analysisController, lmanal=None):

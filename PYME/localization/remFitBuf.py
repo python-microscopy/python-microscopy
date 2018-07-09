@@ -555,7 +555,8 @@ class fitTask(taskDef.Task):
             self.driftEstInd = self.index + self.md.getOrDefault('Analysis.DriftIndices', np.array([-10, 0, 10]))        
             self.calObjThresh = self.md.getOrDefault('Analysis.FiducialThreshold', 6)
             fiducialROISize = self.md.getOrDefault('Analysis.FiducialROISize', 11)
-            self._findFiducials(sfunc, debounce)
+            fiducialSize = self.md.getOrDefault('Analysis.FiducalSize', 1000.)
+            self._findFiducials(sfunc, debounce, fiducialSize)
                 
         
         #####################################################################
@@ -629,7 +630,7 @@ class fitTask(taskDef.Task):
 
 
     
-    def _findFiducials(self, sfunc, debounce): 
+    def _findFiducials(self, sfunc, debounce, fiducalSize):
         ####################################################
         # Find Fiducials
 
@@ -646,7 +647,8 @@ class fitTask(taskDef.Task):
         
         #self.mIm = numpy.absolute(self.mIm)
         #if not 'PSFFile' in self.md.getEntryNames():
-        self.ofdDr = ofind.ObjectIdentifier(self.mIm, filterRadiusLowpass=5, filterRadiusHighpass=9)
+        fid_scale = max((fiducalSize/100.)*0.5, 0)
+        self.ofdDr = ofind.ObjectIdentifier(self.mIm, filterRadiusLowpass=(1 + fid_scale), filterRadiusHighpass=(3 + fid_scale))
         #else:
         #    self.ofdDr = ofind_xcorr.ObjectIdentifier(self.mIm, self.md.getEntry('PSFFile'), 7, 3e-2)
             
