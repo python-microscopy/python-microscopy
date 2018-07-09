@@ -50,7 +50,8 @@ class ShiftCorrect(ModuleBase):
 
     def execute(self, namespace):
         from PYME.Analysis.points import multiview
-        from PYME.IO import unifiedIO
+        from PYME.IO import unifiedIO, clusterIO
+        from PYME.IO.MetaDataHandler import HDFMDHandler
         import json
 
         inp = namespace[self.input_name]
@@ -59,20 +60,32 @@ class ShiftCorrect(ModuleBase):
             raise RuntimeError('ShiftCorrect needs metadata')
 
         if self.shift_map_path == '':  # grab shftmap from the metadata
-            s = unifiedIO.read(inp.mdh['Shiftmap'])
+            loc = inp.mdh['Shiftmap']
         else:
-            s = unifiedIO.read(self.shift_map_path)
+            loc = self.shift_map_path
 
-        shiftMaps = json.loads(s)
+
+        try:  # try loading shift map as hdf file
+            try:  # load if local
+                shift_map_source = tabular.hdfSource(loc, 'shift_map')
+            except IOError:
+                # FIXME - this is definitely broken
+                shift_map_source = tabular.hdfSource(clusterIO.getFile(loc), 'shift_map')
+            shift_map_source.mdh = HDFMDHandler(shift_map_source.h5f)
+
+            # build dict of dicts so we can easily rebuild shiftfield objects in multiview.calc_shifts_for_points
+            shift_map = {}
+            legend = shift_map_source.mdh['Multiview.shift_map.legend']
+            for l in legend.keys():
+                keys = shift_map_source.keys()
+                shift_map[l] = dict(zip(keys, [shift_map_source[k][legend[l]] for k in keys]))
+        except:
+            s = unifiedIO.read(self.shift_map_path)
+            shift_map = json.loads(s)
 
         mapped = tabular.mappingFilter(inp)
 
-        dx, dy = multiview.calcShifts(mapped, shiftMaps)
-        mapped.addColumn('chromadx', dx)
-        mapped.addColumn('chromady', dy)
-
-        mapped.setMapping('x', 'x + chromadx')
-        mapped.setMapping('y', 'y + chromady')
+        multiview.apply_shifts_to_points(mapped, shift_map)
 
         mapped.mdh = inp.mdh
 
@@ -276,8 +289,8 @@ class CalibrateShifts(ModuleBase):
                                                                           dy[ii - 1, :], dx_err[ii - 1, :],
                                                                           dy_err[ii - 1, :])
                 # store shiftmaps in structured array
-                mdh['Multiview.shift_map.legend']['0%s_x' % ii] = 2*(ii - 1)
-                mdh['Multiview.shift_map.legend']['0%s_y' % ii] = 2*(ii - 1) + 1
+                mdh['Multiview.shift_map.legend']['Chan0%s.X' % ii] = 2*(ii - 1)
+                mdh['Multiview.shift_map.legend']['Chan0%s.Y' % ii] = 2*(ii - 1) + 1
                 for ki in range(len(shift_map_dtype)):
                     k = shift_map_dtype[ki][0]
                     shift_maps[2*(ii - 1)][k] = spx.__getattribute__(k)

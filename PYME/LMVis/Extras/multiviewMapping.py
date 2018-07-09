@@ -161,7 +161,7 @@ class multiviewMapper:
                 raise RuntimeError('Shiftmaps not found in metadata and could not be loaded from file')
 
         recipe.add_module(ShiftCorrect(recipe, input_name=pipeline.selectedDataSourceKey,
-                          shift_map_location=fpath, output_name='shift_corrected'))
+                          shift_map_path=fpath, output_name='shift_corrected'))
         recipe.execute()
         self.pipeline.selectDataSource('shift_corrected')
 
@@ -180,129 +180,75 @@ class multiviewMapper:
         -----
 
         """
-        from PYME.Analysis.points import twoColour
-        from PYME.Analysis.points import multiview
-        pipeline = self.pipeline
+        from PYME.recipes.multiview import CalibrateShifts
 
+        recipe = self.pipeline.recipe
+        # hold off auto-running the recipe until we configure things
+        recipe.trait_set(execute_on_invalidation=False)
         try:
-            numChan = pipeline.mdh['Multiview.NumROIs']
-        except AttributeError:
-            raise AttributeError('You are either not looking at multiview Data, or your metadata is incomplete')
+            calibration_module = CalibrateShifts(recipe, input_name=self.pipeline.selectedDataSourceKey,
+                                             output_name='shiftmap')
 
-        rad_dlg = wx.NumberEntryDialog(None, 'Search Radius In Pixels', 'rad [pix]', 'rad [pix]', 1, 0, 9e9)
-        rad_dlg.ShowModal()
-        clumpRad = rad_dlg.GetValue()*1e3*pipeline.mdh['voxelsize.x']  # clump folded data within X pixels
-        # fold x position of channels into the first
-        multiview.foldX(pipeline.selectedDataSource, pipeline.mdh, inject=True, chroma_mappings=True)
+            recipe.add_module(calibration_module)
+            if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
+                return
 
-        plotFolded(pipeline['x'], pipeline['y'], pipeline['multiviewChannel'], 'Raw')
-        # sort in frame order
-        I = pipeline['tIndex'].argsort()
-        xsort, ysort = pipeline['x'][I], pipeline['y'][I]
-        chanSort = pipeline['multiviewChannel'][I]
-
-        clumpID, keep = multiview.pair_molecules(pipeline['tIndex'][I], xsort, ysort, chanSort, clumpRad*np.ones_like(xsort),
-                                      appear_in=np.arange(numChan), n_frame_sep=pipeline['tIndex'].max(),
-                                      pix_size_nm=1e3*pipeline.mdh['voxelsize.x'])
+            recipe.execute()
+            sm = recipe.namespace['shiftmap']
+        finally:  # make sure that we configure the pipeline recipe as it was
+            recipe.trait_set(execute_on_invalidation=True)
 
 
-        # only look at the ones which showed up in all channels
-        x = xsort[keep]
-        y = ysort[keep]
-        Chan = chanSort[keep]
-        clumpID = clumpID[keep]
-
-        # Generate raw shift vectors (map of displacements between channels) for each channel
-        molList = np.unique(clumpID)
-        numMoles = len(molList)
-
-        dx = np.zeros((numChan - 1, numMoles))
-        dy = np.zeros_like(dx)
-        dxErr = np.zeros_like(dx)
-        dyErr = np.zeros_like(dx)
-        xClump, yClump, xStd, yStd, xShifted, yShifted = [], [], [], [], [], []
-        shiftWallet = {}
-        # dxWallet, dyWallet = {}, {}
-        for ii in range(numChan):
-            chanMask = (Chan == ii)
-            xChan = np.zeros(numMoles)
-            yChan = np.zeros(numMoles)
-            xChanStd = np.zeros(numMoles)
-            yChanStd = np.zeros(numMoles)
-
-
-            for ind in range(numMoles):
-                # merge clumps within channels
-                clumpMask = np.where(np.logical_and(chanMask, clumpID == molList[ind]))
-                xChan[ind] = x[clumpMask].mean()
-                yChan[ind] = y[clumpMask].mean()
-                xChanStd[ind] = x[clumpMask].std()
-                yChanStd[ind] = y[clumpMask].std()
-
-            xClump.append(xChan)
-            yClump.append(yChan)
-            xStd.append(xChanStd)
-            yStd.append(yChanStd)
-
-            if ii > 0:
-                dx[ii - 1, :] = xClump[0] - xClump[ii]
-                dy[ii - 1, :] = yClump[0] - yClump[ii]
-                dxErr[ii - 1, :] = np.sqrt(xStd[ii]**2 + xStd[0]**2)
-                dyErr[ii - 1, :] = np.sqrt(yStd[ii]**2 + yStd[0]**2)
-                # generate shiftmap between ii-th channel and the 0th channel
-                dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(xClump[0], yClump[0], dx[ii-1, :], dy[ii-1, :], dxErr[ii-1, :], dyErr[ii-1, :])
-                # store shiftmaps in multiview shiftWallet
-                shiftWallet['Chan0%s.X' % ii], shiftWallet['Chan0%s.Y' % ii] = spx.__dict__, spy.__dict__
-                # dxWallet['Chan0%s' % ii], dyWallet['Chan0%s' % ii] = dxx, dyy
-
-                # shift the clumps for plotting
-                xShifted.append(xClump[ii] + spx(xClump[ii], yClump[ii]))
-                yShifted.append(yClump[ii] + spy(xClump[ii], yClump[ii]))
-            else:
-                xShifted.append(xClump[ii])
-                yShifted.append(yClump[ii])
-
-
-        shiftWallet['shiftModel'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
-
-        multiview.applyShiftmaps(pipeline.selectedDataSource, shiftWallet)
-
-        plotFolded(pipeline['x'], pipeline['y'],
-                            pipeline['multiviewChannel'], 'All beads after Registration')
-
-        cStack = []
-        for ci in range(len(xShifted)):
-            cStack.append(ci*np.ones(len(xShifted[ci])))
-        cStack = np.hstack(cStack)
-
-        # calculate standard deviation within clump before and after shift
-        unRegStd = np.empty((numMoles, 2))
-        regStd = np.empty_like(unRegStd)
-        for mi in range(numMoles):
-            # TODO: pull inline loops out, this is just being lazy
-            unRegStd[mi, :] = np.std([xClump[cc][mi] for cc in range(numChan)]), np.std([yClump[cc][mi] for cc in range(numChan)])
-            regStd[mi, :] = np.std([xShifted[cc][mi] for cc in range(numChan)]), np.std([yShifted[cc][mi] for cc in range(numChan)])
-
-        print('Avg std(X) within clumps: unreg= %f, reg =  %f' % (unRegStd[:, 0].mean(), regStd[:, 0].mean()))
-        print('Avg std(Y) within clumps: unreg= %f, reg = %f' % (unRegStd[:, 1].mean(), regStd[:, 1].mean()))
-
-        plotFolded(np.hstack(xClump), np.hstack(yClump), cStack, 'Unregistered Clumps')
-
-        plotFolded(np.hstack(xShifted), np.hstack(yShifted), cStack, 'Registered Clumps')
-
-        # save shiftmaps
-        #FIXME - Getting the filename through the title is super fragile - should not use pipeline.filename (or similar) instead
+        # save the file
         defFile = os.path.splitext(os.path.split(self.pipeline.filename)[-1])[0] + 'MultiView.sf'
 
         fdialog = wx.FileDialog(None, 'Save shift field as ...',
-            wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
+                                wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE,
+                                defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()
 
-            fid = open(fpath, 'wb')
-            json.dump(shiftWallet, fid)
-            fid.close()
+            sm.to_hdf(fpath, tablename='shift_map', metadata=sm.mdh)
+
+        # multiview.applyShiftmaps(pipeline.selectedDataSource, shiftWallet)
+        #
+        # plotFolded(pipeline['x'], pipeline['y'],
+        #                     pipeline['multiviewChannel'], 'All beads after Registration')
+        #
+        # cStack = []
+        # for ci in range(len(xShifted)):
+        #     cStack.append(ci*np.ones(len(xShifted[ci])))
+        # cStack = np.hstack(cStack)
+        #
+        # # calculate standard deviation within clump before and after shift
+        # unRegStd = np.empty((numMoles, 2))
+        # regStd = np.empty_like(unRegStd)
+        # for mi in range(numMoles):
+        #     # TODO: pull inline loops out, this is just being lazy
+        #     unRegStd[mi, :] = np.std([xClump[cc][mi] for cc in range(numChan)]), np.std([yClump[cc][mi] for cc in range(numChan)])
+        #     regStd[mi, :] = np.std([xShifted[cc][mi] for cc in range(numChan)]), np.std([yShifted[cc][mi] for cc in range(numChan)])
+        #
+        # print('Avg std(X) within clumps: unreg= %f, reg =  %f' % (unRegStd[:, 0].mean(), regStd[:, 0].mean()))
+        # print('Avg std(Y) within clumps: unreg= %f, reg = %f' % (unRegStd[:, 1].mean(), regStd[:, 1].mean()))
+        #
+        # plotFolded(np.hstack(xClump), np.hstack(yClump), cStack, 'Unregistered Clumps')
+        #
+        # plotFolded(np.hstack(xShifted), np.hstack(yShifted), cStack, 'Registered Clumps')
+        #
+        # # save shiftmaps
+        # #FIXME - Getting the filename through the title is super fragile - should not use pipeline.filename (or similar) instead
+        # defFile = os.path.splitext(os.path.split(self.pipeline.filename)[-1])[0] + 'MultiView.sf'
+        #
+        # fdialog = wx.FileDialog(None, 'Save shift field as ...',
+        #     wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
+        # succ = fdialog.ShowModal()
+        # if (succ == wx.ID_OK):
+        #     fpath = fdialog.GetPath()
+        #
+        #     fid = open(fpath, 'wb')
+        #     json.dump(shiftWallet, fid)
+        #     fid.close()
 
     def OnFindClumps(self, event=None):
         """

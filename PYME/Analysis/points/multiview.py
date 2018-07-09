@@ -240,7 +240,7 @@ def pair_molecules(t_index, x0, y0, which_chan, delta_x=[None], appear_in=np.ara
     else:
         return assigned
 
-def calcShifts(datasource, shiftWallet):
+def calc_shifts_for_points(datasource, shiftWallet):
     import importlib
     model = shiftWallet['shiftModel'].split('.')[-1]
     shiftModule = importlib.import_module(shiftWallet['shiftModel'].split('.' + model)[0])
@@ -264,7 +264,7 @@ def calcShifts(datasource, shiftWallet):
 
     return dx, dy
 
-def applyShiftmaps(datasource, shiftWallet):  # FIXME: add metadata for camera roi positions
+def apply_shifts_to_points(datasource, shiftWallet):  # FIXME: add metadata for camera roi positions
     """
     applyShiftmaps loads multiview shiftmap parameters from multiviewMapper.shiftWallet, reconstructs the shiftmap
     objects, applies them to the multiview data, and maps the positions registered to the first channel to the pipeline
@@ -278,10 +278,13 @@ def applyShiftmaps(datasource, shiftWallet):  # FIXME: add metadata for camera r
         Adds shifts into the pipeline which will then be applied automatically by the mappingFilter (see foldX)
 
     """
-    dx, dy = calcShifts(datasource, shiftWallet)
+    dx, dy = calc_shifts_for_points(datasource, shiftWallet)
 
     datasource.addColumn('chromadx', dx)
     datasource.addColumn('chromady', dy)
+
+    datasource.setMapping('x', 'x + chromadx')
+    datasource.setMapping('y', 'y + chromady')
 
 
 def find_clumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=False):
