@@ -147,8 +147,8 @@ requirements:
     - numpy x.x
     - scipy
     - matplotlib
-    - wxpython
-    - pytables <= 3.4.2
+    - wxpython <3.9
+    - pytables <=3.4.2
     - pyopengl
     - traits
     - traitsui
