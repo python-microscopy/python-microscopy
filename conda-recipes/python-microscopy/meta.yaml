@@ -184,7 +184,7 @@ requirements:
 
   #unfortunately not availible through conda on windows ##FIXME
 
-#test:
+test:
   # files which are copied from the recipe into the (temporary) test
   # directory which are needed during testing
   #files:
@@ -192,8 +192,8 @@ requirements:
   # in addition to the run-time requirements, you can specify requirements
   # needed during testing. The run time requirements specified above are
   # included automatically.
-  #requires:
-  #  - nose
+  requires:
+    - nose
   # commands we want to make sure they work, which are expected to get
   # installed by the package
   #commands:
@@ -201,8 +201,8 @@ requirements:
   #  - bspatch4 -h
 
   # Python imports
-  #imports:
-  #  - PYME
+  imports:
+    - PYME
 
   # The script run_test.py will be run automatically if it is part of the
   # recipe

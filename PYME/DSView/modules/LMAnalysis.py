@@ -19,36 +19,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-import wx
-import wx.lib.agw.aui as aui
-
 import os
-import numpy as np
-
-import Pyro.core
-from PYME.misc import pyro_tracebacks
 
 import PYME.localization.FitFactories
-from PYME.localization import remFitBuf
-from PYME.localization import MetaDataEdit as mde
-
-
-from PYME.IO import MetaDataHandler
-from PYME.IO.FileUtils import fileID
-from PYME.IO.FileUtils.nameUtils import genResultFileName, genClusterResultFileName
-
-from PYME.LMVis import progGraph as progGraph
-from PYME.LMVis import pipeline
-from PYME.IO import tabular
-
-import dispatch
-
 import PYME.ui.autoFoldPanel as afp
-
-from PYME.Acquire.mytimer import mytimer
-
+import Pyro.core
+import dispatch
+import numpy as np
+import wx
+import wx.lib.agw.aui as aui
 from PYME.DSView import fitInfo
 from PYME.DSView.OverlaysPanel import OverlayPanel
+from PYME.IO import MetaDataHandler
+from PYME.IO import tabular
+from PYME.IO.FileUtils import fileID
+from PYME.IO.FileUtils.nameUtils import genResultFileName, genClusterResultFileName
+from PYME.LMVis import pipeline
+from PYME.LMVis import progGraph as progGraph
+from PYME.localization import MetaDataEdit as mde
+from PYME.localization import remFitBuf
+from PYME.ui.mytimer import mytimer
 
 try:
     from PYME.ParallelTasks import HTTPTaskPusher

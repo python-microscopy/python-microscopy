@@ -25,7 +25,7 @@ def test():
     import numpy as np
     from pylab import cm, rand
     
-    import lut
+    from PYME.DSView.LUT import lut
     
     lut1 = (255*cm.gray(np.linspace(0,1,256))[:,:3].T).astype('uint8').copy()
     print((lut1.shape))
@@ -40,6 +40,8 @@ def test():
         
         print(o)
         print((lut1.T[((d + 0)*.01*256).astype('i')]))
+        
+    testLut()
 
 if __name__ == '__main__':
     test()

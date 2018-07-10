@@ -47,7 +47,7 @@ def _discover_servers(foo=None):
     
     return ns.list('TEST')
     
-def test_discovery():
+def _test_discovery():
     pool = multiprocessing.Pool(60)
     
     detections = pool.map(_discover_servers, range(60))
@@ -75,6 +75,6 @@ if __name__ == '__main__':
     setup_module()
     
     try:
-        test_discovery()
+        _test_discovery()
     finally:
         teardown_module()

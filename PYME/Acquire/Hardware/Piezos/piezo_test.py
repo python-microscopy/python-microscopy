@@ -22,7 +22,7 @@
 ##################
 
 import scipy
-import scipy.plt
+import matplotlib.pyplot as plt
 import time
 
 def test_piezo(piezo, startpos=0, endpos=0, stepsize=0.04, chan = 1, delay=0):
@@ -41,7 +41,7 @@ def test_piezo(piezo, startpos=0, endpos=0, stepsize=0.04, chan = 1, delay=0):
     return (pos, a)
 
 def plot_diff(data):
-    scipy.plt.plot(data[0], data[1] - data[0])
+    plt.plot(data[0], data[1] - data[0])
 
 def save_data(data, fname):
     s = ''

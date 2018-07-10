@@ -20,16 +20,18 @@
 #
 ##################
 
-import wx
-import wx.lib.agw.aui as aui
+import os
+import time
+
 import numpy
 import numpy as np
-from PYME.Acquire.mytimer import mytimer
-from scipy import ndimage
+import wx
+import wx.lib.agw.aui as aui
 from PYME.DSView import View3D, ViewIm3D, ImageStack
-import time
-import os
 from PYME.IO import MetaDataHandler
+from PYME.ui.mytimer import mytimer
+from scipy import ndimage
+
 
 def _pt(sl):
     dec, psf, d, regLambda, nIter, weights = sl
@@ -82,7 +84,7 @@ class deconvolver:
 
     
     def OnDeconvICTM(self, event, beadMode=False):
-        from PYME.Deconv.deconvDialogs import DeconvSettingsDialog,DeconvProgressDialog,DeconvProgressPanel
+        from PYME.Deconv.deconvDialogs import DeconvSettingsDialog, DeconvProgressPanel
 
         dlg = DeconvSettingsDialog(self.dsviewer, beadMode, self.image.data.shape[3])
         if dlg.ShowModal() == wx.ID_OK:

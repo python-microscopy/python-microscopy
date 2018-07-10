@@ -50,7 +50,7 @@ from PYME.DSView.DisplayOptionsPanel import OptionsPanel
 #from PYME.DSView.OverlaysPanel import OverlayPanel
 from PYME.IO.image import ImageStack
 
-from PYME.Acquire.mytimer import mytimer
+from PYME.ui.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping
 
 from PYME.ui.AUIFrame import AUIFrame
@@ -388,7 +388,7 @@ class MyApp(wx.App):
         return True
         
     def LoadData(self):
-        import sys, os
+        import sys
         from optparse import OptionParser
 
         op = OptionParser(usage = 'usage: %s [options] [filename]' % sys.argv[0])

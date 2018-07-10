@@ -26,3 +26,12 @@ doc/html/*
 */_deploy/*
 *.sqlite3
 PYME/Acquire/Hardware/Simulator/illuminate.c
+cov_html/*
+cov_html\*
+PYME/experimental/_octree.c
+*prof_data.json*
+*debug.log
+*errors.log
+test_report.html
+.coverage
+.pytest*

@@ -445,7 +445,7 @@ class SimpleMDHandler(NestedClassMDHandler):
 
     def __init__(self, filename = None, mdToCopy=None):
         if not filename is None:
-            from PYME.Acquire.ExecTools import _execfile
+            from PYME.util.execfile import _execfile
             import cPickle as pickle
             #loading an existing file
             md = self

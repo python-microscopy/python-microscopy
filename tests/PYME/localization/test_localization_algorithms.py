@@ -9,7 +9,8 @@ huge cause for concern.
 
 
 import os
-TESTPATH = os.path.dirname(__file__)
+from PYME.localization.Test import fitTestJigWC as fitTestJig
+TESTPATH = os.path.dirname(fitTestJig.__file__)
 
 from PYME.Analysis import _fithelpers
 _fithelpers.EPS_FCN = 1e-4

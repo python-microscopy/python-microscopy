@@ -23,7 +23,7 @@
 
 from PYME.Analysis.PSFGen import *
 from scipy import *
-from pylab import ifftshift, fftn, ifftn
+from numpy.fft import ifftshift, fftn, ifftn
 from . import fluor
 from PYME.Analysis import MetaData
 from PYME.localization import cInterp

@@ -21,7 +21,7 @@ def f_Interp3d(p, interpolator, X, Y, Z, safeRegion, *args):
     return interpolator.interp(X - x0 + 1, Y - y0 + 1, Z - z0 + 1)*A + b
 
 def test_CSInterpolator():
-    from .CSInterpolator import interpolator
+    from PYME.localization.FitFactories.Interpolators.CSInterpolator import interpolator
     interpolator.setModelFromFile(os.path.join(os.path.dirname(Test.__file__), 'astig_theory.tif'))
     
     roiHalfSize = 5
@@ -38,7 +38,7 @@ def test_CSInterpolator():
 
 def test_CSInterpolator_out_of_bounds():
     """Tests if the interpolator segfaults on out of range data"""
-    from .CSInterpolator import interpolator
+    from PYME.localization.FitFactories.Interpolators.CSInterpolator import interpolator
     interpolator.setModelFromFile(os.path.join(os.path.dirname(Test.__file__), 'astig_theory.tif'))
     
     roiHalfSize = 5
@@ -57,7 +57,7 @@ def test_CSInterpolator_out_of_bounds():
 
 
 def test_LinearInterpolator():
-    from .LinearInterpolator import interpolator
+    from PYME.localization.FitFactories.Interpolators.LinearInterpolator import interpolator
     
     interpolator.setModelFromFile(os.path.join(os.path.dirname(Test.__file__), 'astig_theory.tif'))
 
