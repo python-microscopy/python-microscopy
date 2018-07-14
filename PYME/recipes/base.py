@@ -45,11 +45,16 @@ def register_module(moduleName):
     return c_decorate
 
 
-def register_legacy_module(moduleName):
+def register_legacy_module(moduleName, py_module=None):
     """Permits a module to be accessed by an old name"""
+    
     def c_decorate(cls):
-        py_module = cls.__module__.split('.')[-1]
-        full_module_name = '.'.join([py_module, moduleName])
+        if py_module is None:
+            py_module_ = cls.__module__.split('.')[-1]
+        else:
+            py_module_ = py_module
+            
+        full_module_name = '.'.join([py_module_, moduleName])
 
         _legacy_modules[full_module_name] = cls
         _legacy_modules[moduleName] = cls #allow access by non-hierarchical names for backwards compatibility

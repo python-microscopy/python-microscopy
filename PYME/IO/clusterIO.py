@@ -416,8 +416,8 @@ def stat(name, serverfilter=''):
             r = stat_result(listing[fname + '/'])
         except:
             logger.exception('error stating: %s' % name)
-            print dirname, fname
-            print listing.keys()
+            #print dirname, fname
+            #print listing.keys()
             raise
     
     return r
