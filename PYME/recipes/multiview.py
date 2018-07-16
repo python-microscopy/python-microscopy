@@ -162,7 +162,7 @@ class FindClumps(ModuleBase):
 
         inp = namespace[self.input_name]
 
-        if self.probeAware and 'probe' in inp.keys():  # special case for using probe aware clumping NB this is a temporary fudge for non-standard colour handling
+        if self.probe_aware and 'probe' in inp.keys():  # special case for using probe aware clumping NB this is a temporary fudge for non-standard colour handling
             mapped = multiview.find_clumps_within_channel(inp, self.time_gap_tolerance, self.radius_scale, self.radius_offset)
         else:  # default
             mapped = multiview.find_clumps(inp, self.time_gap_tolerance, self.radius_scale, self.radius_offset)
