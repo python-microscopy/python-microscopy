@@ -103,7 +103,8 @@ class BufferManager(object):
                     # NB: The GPU version should result in a uniform background but will NOT completely remove the background. As such it will only work 
                     # for fits which have a constant background as a fit parameter, and not those which assume that background subtraction reduces the 
                     # background to zero (as is the case for our CPU based background estimation). Use with caution.
-                    self.bBuffer = GPUPercentileBuffer(self.dBuffer, md['Analysis.PCTBackground'], dark_map=cameraMaps.getDarkMap(md))
+                    self.bBuffer = GPUPercentileBuffer(self.dBuffer, md['Analysis.PCTBackground'],
+                                                       buffer_length=bufferLen, dark_map=cameraMaps.getDarkMap(md))
                 else: 
                     # use our default CPU implementation
                     self.bBuffer = buffers.backgroundBufferM(self.dBuffer, md['Analysis.PCTBackground'])
@@ -291,13 +292,13 @@ class fitTask(taskDef.Task):
         self.SNThreshold = self.md.getOrDefault('Analysis.SNRThreshold', True)
         
         self.driftEst = self.md.getOrDefault('Analysis.TrackFiducials', False)
-                 
-        self.bufferLen = 50 #12
-        if self.driftEst: 
-            #increase the buffer length as we're going to look forward as well
-            self.bufferLen = 50 #17
 
         self._get_bgindices()
+        self.bufferLen = len(self.bgindices)
+        if self.driftEst:
+            # FIXME - poor form
+            #increase the buffer length as we're going to look forward as well
+            self.bufferLen = 50 #17
         
     @property
     def fitMod(self):
