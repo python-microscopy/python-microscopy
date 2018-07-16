@@ -272,8 +272,8 @@ class MultiviewMapper:
         from PYME.recipes.multiview import FindClumps
         recipe = self.pipeline.recipe
         recipe.add_module(FindClumps(recipe, input_name=self.pipeline.selectedDataSourceKey, output_name='with_clumps',
-                                     gapTolerance=self.clump_gap_tolerance, radiusScale=self.clump_radius_scale,
-                                     radius_offset=self.clump_radius_offset, probeAware=True))
+                                     time_gap_tolerance=self.clump_gap_tolerance, radius_scale=self.clump_radius_scale,
+                                     radius_offset=self.clump_radius_offset, probe_aware=True))
         recipe.execute()
         self.pipeline.selectDataSource('with_clumps')
 

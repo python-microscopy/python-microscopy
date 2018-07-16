@@ -14,6 +14,20 @@ class Fold(ModuleBase):
 
     The current implementation is somewhat limited as it only handles folding along the x axis, and assumes that ROI
     sizes and spacings are completely uniform.
+
+    Parameters
+    ----------
+    input_name : traits.Input
+        localizations as PYME.IO.Tabular types
+
+    Returns
+    -------
+    output_name : traits.Output
+        localizations as PYME.IO.Tabular type with localizations folded
+
+    Notes
+    -----
+
     """
     input_name = Input('localizations')
     output_name = Output('folded')
@@ -40,9 +54,18 @@ class ShiftCorrect(ModuleBase):
 
     Parameters
     ----------
+    input_name : traits.Input
+        localizations as PYME.IO.Tabular types
+    shift_map_path : traits.File
+        file path or URL of shift map to be applied
 
-    shift_map_path : str
-        file path of shift map to be applied. Can also be a URL for shiftmaps stored remotely
+    Returns
+    -------
+    output_name : traits.Output
+        localizations as PYME.IO.Tabular type with clustered localizations typically denoted by the key 'clumpIndex'
+
+    Notes
+    -----
     """
     input_name = Input('folded')
     shift_map_path = File('')
@@ -94,14 +117,43 @@ class ShiftCorrect(ModuleBase):
 
 @register_module('FindClumps')
 class FindClumps(ModuleBase):
-    """Create a new mapping object which derives mapped keys from original ones"""
+    """
+
+    Cluster localizations which, e.g. represent the same fluorophore, with the option to only clump localizations
+    if they are in the same color channel.
+
+    Parameters
+    ----------
+    input_name : traits.Input
+        localizations as PYME.IO.Tabular types
+    time_gap_tolerance : traits.Int
+        Number of frames which a localizations is allowed to be missing and still be considered the same molecule if it
+        reappears
+    radius_scale : traits.Float
+        Factor by which the localization precision is multiplied to determine the search radius for clustering. The
+        default of 2 sigma means that we link ~95% of the points which should be linked (if Gaussian statistics hold)
+    radius_offset : traits.Float
+        Extra offset (in nanometers) for cases where we want to link localizations despite poor channel alignment
+    probe_aware : traits.Bool
+        If False, clumps molecules regardless of probe/colorchannel. If True, the key 'probe' should be present in the
+        input datasource in order to determine which color channel a localization resides in.
+
+    Returns
+    -------
+    output_name : traits.Output
+        localizations as PYME.IO.Tabular type with clustered localizations typically denoted by the key 'clumpIndex'
+
+    Notes
+    -----
+
+    """
     input_name = Input('registered')
-    gapTolerance = Int(1, desc='Number of off-frames allowed to still be a single clump')
-    radiusScale = Float(2.0,
+    time_gap_tolerance = Int(1, desc='Number of off-frames allowed to still be a single clump')
+    radius_scale = Float(2.0,
                         desc='Factor by which error_x is multiplied to detect clumps. The default of 2-sigma means we link ~95% of the points which should be linked')
     radius_offset = Float(0.,
                           desc='Extra offset (in nm) for cases where we want to link despite poor channel alignment')
-    probeAware = Bool(False, desc='''Use probe-aware clumping. NB this option does not work with standard methods of colour
+    probe_aware = Bool(False, desc='''Use probe-aware clumping. NB this option does not work with standard methods of colour
                                              specification, and splitting by channel and clumping separately is preferred''')
     output_name = Output('clumped')
 
@@ -111,9 +163,9 @@ class FindClumps(ModuleBase):
         inp = namespace[self.input_name]
 
         if self.probeAware and 'probe' in inp.keys():  # special case for using probe aware clumping NB this is a temporary fudge for non-standard colour handling
-            mapped = multiview.find_clumps_within_channel(inp, self.gapTolerance, self.radiusScale, self.radius_offset)
+            mapped = multiview.find_clumps_within_channel(inp, self.time_gap_tolerance, self.radius_scale, self.radius_offset)
         else:  # default
-            mapped = multiview.find_clumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset)
+            mapped = multiview.find_clumps(inp, self.time_gap_tolerance, self.radius_scale, self.radius_offset)
 
         if 'mdh' in dir(inp):
             mapped.mdh = inp.mdh
@@ -123,7 +175,27 @@ class FindClumps(ModuleBase):
 
 @register_module('MergeClumps')
 class MergeClumps(ModuleBase):
-    """Create a new mapping object which derives mapped keys from original ones"""
+    """
+
+    Coalesces paired localizations that appeared on the same frame as determined by multiview.FindClumps
+
+    Parameters
+    ----------
+    input_name : traits.Input
+        localizations as PYME.IO.Tabular types
+    labelKey : traits.CStr
+        key to column of tabular input which contains clump ID of each localization. Localizations sharing the same
+        clump ID will be coalesced.
+
+    Returns
+    -------
+    output_name : traits.Output
+        localizations as PYME.IO.Tabular type with clustered localizations coalesced into individual localizations
+
+    Notes
+    -----
+
+    """
     input_name = Input('clumped')
     output_name = Output('merged')
     labelKey = CStr('clumpIndex')
@@ -144,7 +216,27 @@ class MergeClumps(ModuleBase):
 
 @register_module('MapAstigZ')
 class MapAstigZ(ModuleBase):
-    """Create a new mapping object which derives mapped keys from original ones"""
+    """
+
+    Uses astigmatism calibration (widths of PSF along each dimension as a function of z) to determine the z-position of
+    localizations relative to the focal plane of the frame during which it was imaged.
+
+    Parameters
+    ----------
+    input_name : traits.Input
+        localizations as PYME.IO.Tabular types
+    astigmatism_calibration_location : traits.File
+        file path or URL to astigmatism calibration file
+
+    Returns
+    -------
+    output_name : traits.Output
+        output is a json wrapped by PYME.IO.ragged.RaggedCache
+
+    Notes
+    -----
+
+    """
     input_name = Input('merged')
 
     astigmatism_calibration_location = File('')
@@ -201,7 +293,7 @@ class CalibrateShifts(ModuleBase):
     Returns
     -------
     output_name : traits.Output
-        output is a json wrapped by PYME.IO.ragged.RaggedCache
+        output is a PYME.IO.tabular type with some relevant information stored in the metadata
 
     Notes
     -----
