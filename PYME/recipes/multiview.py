@@ -87,6 +87,7 @@ class ShiftCorrect(ModuleBase):
         multiview.apply_shifts_to_points(mapped, shift_map)
         # propagate metadata
         mapped.mdh = inp.mdh
+        mapped.mdh['Multiview.shift_map.location'] = loc
 
         namespace[self.output_name] = mapped
 
@@ -146,7 +147,7 @@ class MapAstigZ(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
     input_name = Input('merged')
 
-    astigmatismMapLocation = CStr('')  # FIXME - rename and possibly change type
+    astigmatism_calibration_location = File('')
     rough_knot_spacing = Float(50.)
 
     output_name = Output('zmapped')
@@ -161,10 +162,10 @@ class MapAstigZ(ModuleBase):
         if 'mdh' not in dir(inp):
             raise RuntimeError('MapAstigZ needs metadata')
 
-        if self.astigmatismMapLocation == '':  # grab calibration from the metadata
+        if self.astigmatism_calibration_location == '':  # grab calibration from the metadata
             s = unifiedIO.read(inp.mdh['Analysis.AstigmatismMapID'])
         else:
-            s = unifiedIO.read(self.astigmatismMapLocation)
+            s = unifiedIO.read(self.astigmatism_calibration_location)
 
         astig_calibrations = json.loads(s)
 
@@ -172,11 +173,12 @@ class MapAstigZ(ModuleBase):
 
         z, zerr = astigTools.lookup_astig_z(mapped, astig_calibrations, self.rough_knot_spacing, plot=False)
 
-        mapped.addColumn('astigZ', z)
-        mapped.addColumn('zLookupError', zerr)
-        mapped.setMapping('z', 'astigZ + z')
+        mapped.addColumn('astigmatic_z', z)
+        mapped.addColumn('astigmatic_z_lookup_error', zerr)
+        mapped.setMapping('z', 'astigmatic_z + z')
 
         mapped.mdh = inp.mdh
+        mapped.mdh['Analysis.astigmatism_calibration_location'] = self.astigmatism_calibration_location
 
         namespace[self.output_name] = mapped
 

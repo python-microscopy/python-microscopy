@@ -298,7 +298,7 @@ class MultiviewMapper:
 
         if not 'clumpIndex' in self.pipeline.keys():
             logger.debug('No clumps found - running FindClumps')
-            self.OnFindClumps()
+            self.on_find_clumps()
 
         recipe = self.pipeline.recipe
 
@@ -362,7 +362,7 @@ class MultiviewMapper:
         recipe.trait_set(execute_on_invalidation=False)
         try:
             mapping_module = MapAstigZ(recipe, input_name=self.pipeline.selectedDataSourceKey,
-                                        astigmatismMapLocation=pathToMap, output_name='z_mapped')
+                                       astigmatism_calibration_location=pathToMap, output_name='z_mapped')
 
             recipe.add_module(mapping_module)
             if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
