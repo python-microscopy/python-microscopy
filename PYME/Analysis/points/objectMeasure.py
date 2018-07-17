@@ -161,3 +161,46 @@ def calcEdgeDists(objects, objMeasures):
 
     return array(minEdgeDists)
 
+def getIDs(inp, img):
+    """
+
+    Parameters
+    ----------
+    inp: input DataSource, tabular
+    img: input image, image.ImageStack object
+
+    Returns
+    -------
+    ids: Label number from image, mapped to each localization within that label
+    numPerObject: Number of localizations within the label that a given localization belongs to
+
+    """
+    import numpy as np
+    im_ox, im_oy, im_oz = img.origin
+
+    # account for ROIs
+    try:
+        p_ox = inp.mdh['Camera.ROIPosX'] * inp.mdh['voxelsize.x'] * 1e3
+        p_oy = inp.mdh['Camera.ROIPosY'] * inp.mdh['voxelsize.y'] * 1e3
+    except AttributeError:
+        raise UserWarning('getIDs requires metadata')
+
+    pixX = np.round((inp['x'] + p_ox - im_ox) / img.pixelSize).astype('i')
+    pixY = np.round((inp['y'] + p_oy - im_oy) / img.pixelSize).astype('i')
+    pixZ = np.round((inp['z'] - im_oz) / img.sliceSize).astype('i')
+
+    if img.data.shape[2] == 1:
+        # disregard z for 2D images
+        pixZ = np.zeros_like(pixX)
+
+    ind = (pixX < img.data.shape[0]) * (pixY < img.data.shape[1]) * (pixX >= 0) * (pixY >= 0) * (pixZ >= 0) * (
+        pixZ < img.data.shape[2])
+
+    ids = np.zeros_like(pixX)
+
+    # assume there is only one channel
+    ids[ind] = np.atleast_3d(img.data[:, :, :, 0].squeeze())[pixX[ind], pixY[ind], pixZ[ind]].astype('i')
+
+    numPerObject, b = np.histogram(ids, np.arange(ids.max() + 1.5) + .5)
+
+    return ids, numPerObject
