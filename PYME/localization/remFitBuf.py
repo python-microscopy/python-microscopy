@@ -294,11 +294,9 @@ class fitTask(taskDef.Task):
         self.driftEst = self.md.getOrDefault('Analysis.TrackFiducials', False)
 
         self._get_bgindices()
-        self.bufferLen = len(self.bgindices)
-        if self.driftEst:
-            # FIXME - poor form
-            #increase the buffer length as we're going to look forward as well
-            self.bufferLen = 50 #17
+        self.bufferLen = 50
+        if 'Analysis.BGRange' in self.md.getEntryNames():
+            self.bufferLen = self.md['Analysis.BGRange'][1] - self.md['Analysis.BGRange'][0]
         
     @property
     def fitMod(self):
