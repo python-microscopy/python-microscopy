@@ -22,7 +22,7 @@
 ##################
 
 from numpy import *
-from scipy.spatial import Delaunay
+from matplotlib import tri
 from PYME.Analysis.points import gen3DTriangs
 from PYME.Analysis.points import moments
 
@@ -79,7 +79,7 @@ def measure(object, sizeCutoff, measurements = zeros(1, dtype=measureDType)):
     measurements['yPos'] = object[:,1].mean()
 
     if object.shape[0] > 3:
-        T = Delaunay(object.ravel(),2)
+        T = tri.Triangulation(object.ravel(),2)
         P, A, triI = gen3DTriangs.gen2DTriangsTF(T, sizeCutoff)
 
         if not len(P) == 0:
@@ -134,7 +134,7 @@ def measureObjectsByID(filter, sizeCutoff, ids):
     return measurements
 
 def calcEdgeDists(objects, objMeasures):
-    T = Delaunay(array([objMeasures['xPos'], objMeasures['yPos']]).T,2)
+    T = tri.Triangulation(array([objMeasures['xPos'], objMeasures['yPos']]).T,2)
 
     va = array(T.set)
     objInd = {}
