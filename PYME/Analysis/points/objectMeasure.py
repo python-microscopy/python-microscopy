@@ -25,6 +25,7 @@ import numpy as np
 from matplotlib import tri
 from PYME.Analysis.points import gen3DTriangs
 from PYME.Analysis.points import moments
+from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
 def getPrincipalAxis(obj_c, numIters=10):
     """PCA via e.m. (ala wikipedia)"""
@@ -183,10 +184,9 @@ def get_labels_from_image(inp, img):
 
     # account for ROIs
     try:
-        p_ox = inp.mdh['Camera.ROIPosX'] * inp.mdh['voxelsize.x'] * 1e3
-        p_oy = inp.mdh['Camera.ROIPosY'] * inp.mdh['voxelsize.y'] * 1e3
+        p_ox, p_oy = tuple(np.array(get_camera_roi_origin(inp.mdh)) * inp.mdh['voxelsize.x'] * 1e3)
     except AttributeError:
-        raise UserWarning('getIDs requires metadata')
+        raise UserWarning('get_labels_from_image requires metadata')
 
     pixX = np.round((inp['x'] + p_ox - im_ox) / img.pixelSize).astype('i')
     pixY = np.round((inp['y'] + p_oy - im_oy) / img.pixelSize).astype('i')
