@@ -161,18 +161,22 @@ def calcEdgeDists(objects, objMeasures):
 
     return array(minEdgeDists)
 
-def get_label_from_image(inp, img):
+def get_labels_from_image(inp, img):
     """
 
     Parameters
     ----------
-    inp: input DataSource, tabular
-    img: input image, image.ImageStack object
+    inp: PYME.IO.tabular
+        localizations to query membership in labels from corresponding image
+    img: image.ImageStack
+        image containing labels to apply to localizations
 
     Returns
     -------
-    ids: Label number from image, mapped to each localization within that label
-    numPerObject: Number of localizations within the label that a given localization belongs to
+    ids: ndarray
+        Label number from image, mapped to each localization within that label
+    numPerObject: ndarray
+        Number of localizations within the label that a given localization belongs to
 
     """
     import numpy as np
