@@ -161,7 +161,7 @@ def calcEdgeDists(objects, objMeasures):
 
     return array(minEdgeDists)
 
-def getIDs(inp, img):
+def get_label_from_image(inp, img):
     """
 
     Parameters
