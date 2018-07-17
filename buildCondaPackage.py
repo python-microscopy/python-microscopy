@@ -35,4 +35,4 @@ print('%d previous builds of this version' % len(prev_builds))
 if len(prev_builds) > 0:
     os.environ['BUILD_NUM'] = str(max(prev_builds) +1)
 
-os.system('conda build conda-recipes/python-microscopy --numpy 1.11')
+os.system('conda build conda-recipes/python-microscopy')

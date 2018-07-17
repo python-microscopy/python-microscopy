@@ -134,7 +134,7 @@ requirements:
   # listed explicitly if they are required.
   build:
     - python
-    - numpy x.x
+    - numpy {{ numpy }}
     - matplotlib
     - cython
     #- mingw  [win]
@@ -144,7 +144,7 @@ requirements:
   # in requirements" below).
   run:
     - python
-    - numpy x.x
+    - numpy {{ numpy }}
     - scipy
     - matplotlib
     - wxpython <3.9
@@ -184,7 +184,7 @@ requirements:
 
   #unfortunately not availible through conda on windows ##FIXME
 
-test:
+#test:
   # files which are copied from the recipe into the (temporary) test
   # directory which are needed during testing
   #files:

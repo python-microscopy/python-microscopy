@@ -29,9 +29,10 @@ import numpy
 import warnings
 
 try:
-    import Image
-except ImportError:
     from PIL import Image
+except ImportError:
+    import Image
+    
 import os
 from PYME.IO.FileUtils import saveTiffStack
 from PYME.IO import MetaDataHandler

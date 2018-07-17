@@ -732,8 +732,9 @@ class OMEXMLMDHandler(XMLMDHandler):
             self.pixels.setAttribute('SizeT', str(SizeT))
             self.pixels.setAttribute('SizeC', str(SizeC))
             
-            self.pixels.setAttribute('PhysicalSizeX', '%3.4f' % self.getEntry('voxelsize.x'))
-            self.pixels.setAttribute('PhysicalSizeY', '%3.4f' % self.getEntry('voxelsize.y'))
+            if 'voxelsize.x' in self.getEntryNames():
+                self.pixels.setAttribute('PhysicalSizeX', '%3.4f' % self.getEntry('voxelsize.x'))
+                self.pixels.setAttribute('PhysicalSizeY', '%3.4f' % self.getEntry('voxelsize.y'))
     
         return self.doc.toprettyxml()
     
