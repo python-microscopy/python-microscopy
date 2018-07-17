@@ -39,13 +39,16 @@ def get_labels_from_image(label_image, points):
     numPerObject: Number of localizations within the label that a given localization belongs to
 
     """
+    from PYME.IO.MetaDataHandler import get_camera_roi_origin
+    
     im_ox, im_oy, im_oz = label_image.origin
 
     # account for ROIs
     try:
-        # TODO - make Camera.ROIPosX not start from 1
-        p_ox = (points.mdh['Camera.ROIPosX'] - 1) * points.mdh['voxelsize.x'] * 1e3
-        p_oy = (points.mdh['Camera.ROIPosY'] - 1) * points.mdh['voxelsize.y'] * 1e3
+        roi_x0, roi_y0 = get_camera_roi_origin(points.mdh)
+
+        p_ox = roi_x0 * points.mdh['voxelsize.x'] * 1e3
+        p_oy = roi_y0 * points.mdh['voxelsize.y'] * 1e3
     except AttributeError:
         raise RuntimeError('label image requires metadata specifying ROI position and voxelsize')
 

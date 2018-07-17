@@ -36,6 +36,7 @@ class PrebleachExtractor:
 
     def OnExtract(self, event):
         from PYME.DSView import View3D
+        from PYME.IO.MetaDataHandler import get_camera_roi_origin
         #print 'extracting ...'
 
         mdh = self.image.mdh
@@ -49,8 +50,10 @@ class PrebleachExtractor:
         
         dt = self.image.data[:,:,frames[0]:frames[1]].astype('f').mean(2)- dark
 
-        ROIX1 = mdh.getEntry('Camera.ROIPosX')
-        ROIY1 = mdh.getEntry('Camera.ROIPosY')
+        roi_x0, roi_y0 = get_camera_roi_origin(mdh)
+
+        ROIX1 = roi_x0 + 1
+        ROIY1 = roi_y0 + 1
 
         ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
         ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')

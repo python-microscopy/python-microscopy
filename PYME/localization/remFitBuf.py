@@ -56,6 +56,7 @@ splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'Splitt
 #from pylab import *
 
 import copy
+from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
 def tqPopFcn(workerN, NWorkers, NTasks):
     #let each task work on its own chunk of data ->
@@ -126,8 +127,9 @@ class CameraInfoManager(object):
 
     def _parseROI(self, md):
         """Extract ROI coordinates from metadata"""
-        x0 = (md['Camera.ROIPosX'] - 1)
-        y0 = (md['Camera.ROIPosY'] - 1)
+        
+        x0, y0 = get_camera_roi_origin(md)
+
         x1 = x0 + md['Camera.ROIWidth']
         y1 = y0 + md['Camera.ROIHeight']
 
@@ -327,8 +329,7 @@ class fitTask(taskDef.Task):
         vx = self.md['voxelsize.x']*1e3
         vy = self.md['voxelsize.y']*1e3
         
-        x0 = (self.md['Camera.ROIPosX'] - 1)
-        y0 = (self.md['Camera.ROIPosY'] - 1)
+        x0, y0 = get_camera_roi_origin(self.md)
         
         if 'Splitter.Channel0ROI' in self.md.getEntryNames():
             xg, yg, w, h = self.md['Splitter.Channel0ROI']            
@@ -362,8 +363,8 @@ class fitTask(taskDef.Task):
         vx = self.md['voxelsize.x']*1e3
         vy = self.md['voxelsize.y']*1e3
         
-        x0 = (self.md['Camera.ROIPosX'] - 1)
-        y0 = (self.md['Camera.ROIPosY'] - 1)
+
+        x0, y0 = get_camera_roi_origin(self.md)
         
         if 'Splitter.Channel0ROI' in self.md.getEntryNames():
             xg, yg, w, h = self.md['Splitter.Channel0ROI']            
@@ -390,8 +391,7 @@ class fitTask(taskDef.Task):
         
     def _getSplitterROIs(self):
         if not '_splitterROICache' in dir(self):
-            x0 = (self.md['Camera.ROIPosX'] - 1)
-            y0 = (self.md['Camera.ROIPosY'] - 1)  
+            x0, y0 = get_camera_roi_origin(self.md)
             
             if 'Splitter.Channel0ROI' in self.md.getEntryNames():
                 xg, yg, wg, hg = self.md['Splitter.Channel0ROI']                       

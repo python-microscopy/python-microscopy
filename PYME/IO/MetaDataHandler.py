@@ -89,6 +89,37 @@ def instanceinlist(cls, list):
 
     return False
     
+    
+def get_camera_roi_origin(mdh):
+    """
+    helper function to allow us to transition to 0 based ROIs.
+    
+    Returns the first of these it finds:
+    - [Camera.ROIOriginX, Camera.ROIOriginY]
+    - [Camera.ROIPosX -1, Camera.ROIPosY-1]
+    - [0,0]
+    
+    NOTE: this is not yet widely supported in calling code (ie you should still write ROIPosX, ROIPosY, although it is
+    safe to write both the old and new versions.
+    
+    Parameters
+    ----------
+    mdh : metadata handler
+
+    Returns
+    -------
+    
+    ROIOriginX, ROIOriginY
+
+    """
+    
+    if 'Camera.ROIOriginX' in mdh.getEntryNames():
+        return mdh['Camera.ROIOriginX'], mdh['Camera.ROIOriginY']
+    elif 'Camera.ROIPosX' in mdh.getEntryNames():
+        return mdh['Camera.ROIPosX']-1, mdh['Camera.ROIPosY']-1
+    else:
+        return 0,0
+    
 
 class MDHandlerBase(DictMixin):
     """Base class from which all metadata handlers are derived.

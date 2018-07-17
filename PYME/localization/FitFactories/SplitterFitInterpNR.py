@@ -155,6 +155,8 @@ def getDataErrors(im, metadata):
     return scipy.sqrt(metadata.getEntry('Camera.ReadNoise')**2 + (metadata.getEntry('Camera.NoiseFactor')**2)*metadata.getEntry('Camera.ElectronsPerCount')*metadata.getEntry('Camera.TrueEMGain')*dataROI)/metadata.getEntry('Camera.ElectronsPerCount')    
 
 def genFitImage(fitResults, metadata):
+    from PYME.IO.MetaDataHandler import get_camera_roi_origin
+    
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
     
@@ -162,8 +164,10 @@ def genFitImage(fitResults, metadata):
     vy = 1e3*metadata.voxelsize.y
     
     #position in nm from camera origin
-    x_ = (xslice.start + metadata.Camera.ROIPosX - 1)*vx
-    y_ = (yslice.start + metadata.Camera.ROIPosY - 1)*vy
+    roi_x0, roi_y0 = get_camera_roi_origin(metadata)
+
+    x_ = (xslice.start + roi_x0) * vx
+    y_ = (yslice.start + roi_y0) * vy
     
     #ratio = fitResults['ratio']
     
