@@ -969,7 +969,7 @@ class ImageStack(object):
             self.filename = filename
             self.saved = True
 
-    def Save(self, filename=None, crop=False, view=None, progressCallback=None):
+    def Save(self, filename=None, crop=False, roi=None, progressCallback=None):
         """
         Saves an image to file.
 
@@ -996,7 +996,7 @@ class ImageStack(object):
         ofn = self.filename
 
         if crop:
-            dataExporter.CropExportData(view, self.mdh, self.events, self.seriesName)
+            dataExporter.CropExportData(self.data, roi, self.mdh, self.events, self.seriesName)
         else:
             if 'defaultExt' in dir(self):
                 self.filename = dataExporter.ExportData(self.data, self.mdh, self.events, defaultExt=self.defaultExt, filename=filename, progressCallback=progressCallback)

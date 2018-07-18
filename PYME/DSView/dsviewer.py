@@ -314,7 +314,14 @@ class DSViewFrame(AUIFrame):
         ted.Destroy()
 
     def OnExport(self, event=None):
-        self.image.Save(crop = True, view = self.view)
+        bx = min(self.do.selection_begin_x, self.do.selection_end_x)
+        ex = max(self.do.selection_begin_x, self.do.selection_end_x)
+        by = min(self.do.selection_begin_y, self.do.selection_end_y)
+        ey = max(self.do.selection_begin_y, self.do.selection_end_y)
+        
+        roi = [[bx, ex + 1],[by, ey + 1], [0, self.image.data.shape[2]]]
+        
+        self.image.Save(crop = True, roi=roi)
 
     def OnCrop(self):
         pass
