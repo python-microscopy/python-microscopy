@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-cd tests
-
 exit_code=0
 
 conda create -n pm_test_27 -y -q python=2.7 pyme-depends pytest pytest-cov pytest-html nose
@@ -10,10 +8,13 @@ then
     source activate pm_test_27
     if [ $? -eq 0 ]
     then
+        #pwd
         python setup.py develop
         if [ $? -eq 0 ]
         then
+            cd tests
             pytest -v --html=tests_py27.html --cov=../PYME --cov-report html:cov_html .
+            cd ..
         else
             exit_code=$?
         fi
@@ -48,7 +49,10 @@ then
         python setup.py develop
         if [ $? -eq 0 ]
         then
-            pytest -v --html=tests_py36.html  .
+            cd tests
+            pytest -v --html=tests_py36.html
+            cd ..
+
         else
             exit_code=$?
         fi
