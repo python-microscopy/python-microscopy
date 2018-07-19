@@ -76,6 +76,11 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             nodes = np.array([nodes])
 
         # If the node is nself._ot subdivided, remove it from our array
+        # DB: can this be moved outside the recursive code - e.g. to set_octree?
+        # DB: Actually, as node_proc doesn't use the return of node_proc(children) can we replace the recursion here completely with a loop
+        # DB: over our flat nodes?
+        # DB: This raises another issue - If this is equvalent to a flat loop over nodes (and we don't use the vertices from deeper
+        # DB: in the tree), how do we actually generate the edges which span between nodes?
         nodes = nodes[np.sum(nodes['children'], axis=1) > 0]
 
         # Perform operations on all subdivided nodes
