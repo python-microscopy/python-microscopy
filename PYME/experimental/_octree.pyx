@@ -149,7 +149,7 @@ cdef class Octree:
         
         #print 'getting children'
         child_idx = ((x > node.centre_x) + 2*(y > node.centre_y)  + 4*(z > node.centre_z))
-        while node.nPoints > 1:
+        while node.nPoints >= 1:
             children = &node.child0
             new_idx = children[child_idx]
             if new_idx == 0:
