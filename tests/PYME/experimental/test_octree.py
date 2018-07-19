@@ -9,6 +9,31 @@ def test_octree():
     ot.add_points(pts)
     
     assert((ot._nodes['depth']== 1).sum()) == 8
+
+def test_octree_maxdepth_5():
+    from PYME.experimental import _octree as octree
+
+    pts = np.random.rand(100000, 3).astype('f4')
+    ot = octree.Octree([0, 1, 0, 1, 0, 1], maxdepth=5)
+
+    ot.add_points(pts)
+    
+    print('max depth: %d ' % max(ot._nodes['depth']))
+
+    assert (max(ot._nodes['depth']) == 5)
+
+
+def test_octree_maxdepth_8():
+    from PYME.experimental import _octree as octree
+    
+    pts = np.random.rand(100000, 3).astype('f4')
+    ot = octree.Octree([0, 1, 0, 1, 0, 1], maxdepth=8)
+    
+    ot.add_points(pts)
+    
+    print('max depth: %d ' % max(ot._nodes['depth']))
+    
+    assert (max(ot._nodes['depth']) == 8)
     
     
     

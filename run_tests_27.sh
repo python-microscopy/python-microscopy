@@ -20,6 +20,7 @@ then
         then
             cd tests
             pytest -v --html=tests_py27.html --cov=../PYME --cov-report html:cov_html .
+            exit_code=$?
             cd ..
         else
             exit_code=$?
