@@ -305,7 +305,12 @@ def listdir(dirname, serverfilter=''):
     return sorted(listdirectory(dirname, serverfilter).keys())
 
 def isdir(name, serverfilter=''):
-    return len(listdir(name, serverfilter)) > 0
+    pn, n = os.path.split(name)
+    d = listdirectory(pn)[n]
+    
+    return d.type > 0
+    
+    #return len(listdir(name, serverfilter)) > 0
 
 def _cglob(url, timeout=2, nRetries=1):
 
