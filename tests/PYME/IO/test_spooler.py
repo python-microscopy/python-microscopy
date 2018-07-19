@@ -38,9 +38,9 @@ def teardown_module():
     shutil.rmtree(tmp_root)
     
     
-def test_spooler():
+def test_spooler(nFrames=50):
     ts = testClusterSpooling.TestSpooler(testFrameSize=[1024,256], serverfilter='TEST')
-    ts.run(nFrames=500)
+    ts.run(nFrames=nFrames)
     
 
 from PYME.util import fProfile
@@ -55,7 +55,7 @@ if __name__ == '__main__':
             prof.profileOn('.*PYME.*|.*requests.*|.*socket.*|.*httplib.*', '/Users/david/spool_prof.txt')
             PROFILE = True
             
-        test_spooler()
+        test_spooler(500)
 
         if PROFILE:
             prof.profileOff()

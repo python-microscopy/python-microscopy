@@ -68,9 +68,20 @@ def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, nChi2=0
     if fitErr is None:
         fitErr = -5e3*np.ones(fitResults.shape, 'f')
         
+    res = np.zeros(1, fresultdtype)
+        
     tIndex = metadata.getOrDefault('tIndex', 0)
     
-    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, nChi2, nEvents)], dtype=fresultdtype) 
+    res['tIndex'] = tIndex
+    res['fitResults'].view('3f4')[:] = fitResults.astype('f')
+    res['fitError'].view('3f4')[:] = fitErr.astype('f')
+    res['resultCode'] = resultCode
+    res['nChi2'] = nChi2
+    res['nFit'] = nEvents
+    
+    return res
+    
+    #return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, nChi2, nEvents)], dtype=fresultdtype)
 		
 
 class GaussianFitFactory:
