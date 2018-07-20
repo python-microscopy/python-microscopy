@@ -756,6 +756,8 @@ class iXonCamera:
 
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
+            mdh.setEntry('Camera.ROIOriginX', self.GetROIX1()-1)
+            mdh.setEntry('Camera.ROIOriginY', self.GetROIY1()-1)
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
             mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
             mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())

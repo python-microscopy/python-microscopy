@@ -8,11 +8,13 @@ class SurfaceFitter(HasPrivateTraits):
     constrainSurfaceToPoint = Bool(True, desc='Whether the fit should be constrained to pass through the control point')
     limitReconstructionToSupportHull = Bool(False, desc='If enabled, this will clip each surface reconstruction to the convex hull of all the points used for the fit.\
      Useful for avoiding the generation of large surface patches from isolated antibodies, but also reduces the ability to paper over holes')
+    normalAlignmentThreshold = Float(0.85)
 
     view = View(Item('fitInfluenceRadius'),
                 Item('reconstructionRadius'),
                 Item('constrainSurfaceToPoint'),
                 Item('limitReconstructionToSupportHull'),
+                Item('normalAlignmentThreshold'),
                 buttons=[OKButton])
     
     def __init__(self, visFr):
@@ -40,7 +42,7 @@ class SurfaceFitter(HasPrivateTraits):
         #print(len(f)) #, f.dtype
         
         #filter surfaces and throw out those which don't point the same way as their neighbours
-        f = surfit.filter_quad_results(f, pts.T, self.fitInfluenceRadius)
+        f = surfit.filter_quad_results(f, pts.T, self.fitInfluenceRadius,self.normalAlignmentThreshold)
 
         #do the reconstruction by generating an augmented point data set for each surface
         #this adds virtual localizations spread evenly across each surface

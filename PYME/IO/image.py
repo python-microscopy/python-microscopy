@@ -337,7 +337,7 @@ class ImageStack(object):
         if 'Origin.x' in self.mdh.getEntryNames():
             return self.mdh['Origin.x'], self.mdh['Origin.y'], self.mdh['Origin.z']
         
-        elif 'Camera.ROIPosX' in self.mdh.getEntryNames():
+        elif ('Camera.ROIPosX' in self.mdh.getEntryNames()) or ('Camera.ROIOriginX' in self.mdh.getEntryNames()):
             #has ROI information
             try:
                 voxx, voxy = 1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y']
@@ -345,8 +345,10 @@ class ImageStack(object):
                 voxx = self.pixelSize
                 voxy = voxx
             
-            ox = (self.mdh['Camera.ROIPosX'] - 1)*voxx
-            oy = (self.mdh['Camera.ROIPosY'] - 1)*voxy
+            roi_x0, roi_y0 = MetaDataHandler.get_camera_roi_origin(self.mdh)
+            
+            ox = (roi_x0)*voxx
+            oy = (roi_y0)*voxy
             
             oz = 0
             
@@ -967,7 +969,7 @@ class ImageStack(object):
             self.filename = filename
             self.saved = True
 
-    def Save(self, filename=None, crop=False, view=None, progressCallback=None):
+    def Save(self, filename=None, crop=False, roi=None, progressCallback=None):
         """
         Saves an image to file.
 
@@ -994,7 +996,7 @@ class ImageStack(object):
         ofn = self.filename
 
         if crop:
-            dataExporter.CropExportData(view, self.mdh, self.events, self.seriesName)
+            dataExporter.CropExportData(self.data, roi, self.mdh, self.events, self.seriesName)
         else:
             if 'defaultExt' in dir(self):
                 self.filename = dataExporter.ExportData(self.data, self.mdh, self.events, defaultExt=self.defaultExt, filename=filename, progressCallback=progressCallback)

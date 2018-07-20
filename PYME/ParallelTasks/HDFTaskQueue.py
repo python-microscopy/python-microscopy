@@ -679,12 +679,14 @@ class HDFResultsTaskQueue(TaskQueue):
             return res
         elif fieldName == 'PSF':
             #from PYME.ParallelTasks.relativeFiles import getFullExistingFilename
+            from PYME.IO.load_psf import load_psf
             res = None
 
             modName = self.metaData.getEntry('PSFFile')
-            mf = open(getFullExistingFilename(modName), 'rb')
-            res = np.load(mf)
-            mf.close()
+           # mf = open(getFullExistingFilename(modName), 'rb')
+            #res = np.load(mf)
+            #mf.close()
+            res = load_psf(getFullExistingFilename(modName))
 
             return res
         elif fieldName == 'MAP':

@@ -95,8 +95,9 @@ class FilterPanel(wx.Panel):
 
     def populate(self):
         self.lFiltKeys.DeleteAllItems()
+        ind = 0
         for key, value in self.filterKeys.items():
-            ind = self.lFiltKeys.InsertStringItem(sys.maxsize, key)
+            ind = self.lFiltKeys.InsertStringItem(ind+1, key)
             self.lFiltKeys.SetStringItem(ind, 1, '%3.2f' % value[0])
             self.lFiltKeys.SetStringItem(ind, 2, '%3.2f' % value[1])
 

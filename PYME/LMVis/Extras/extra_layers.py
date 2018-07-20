@@ -1,6 +1,6 @@
+import numpy as np
 from PYME.LMVis.layers.octree import OctreeRenderLayer
 from PYME.experimental.octree import Octree
-import numpy as np
 
 
 def gen_octree_layer_from_points(visFr):

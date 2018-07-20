@@ -52,6 +52,7 @@ def COIFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=N
 
     return numpy.array([(tIndex, fitResults.astype('f'), fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
 
+from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
 class COIFitFactory(FFBase.FitFactory):        
     def __getitem__(self, key):
@@ -76,8 +77,10 @@ class COIFitFactory(FFBase.FitFactory):
         #equivalent to this. For rapidly varying shifts all bets are off ...
 
         #DeltaX, DeltaY = twoColour.getCorrection(Xg.mean(), Yg.mean(), self.metadata.chroma.dx,self.metadata.chroma.dy)
-        x_ = Xg.mean() + (self.metadata.Camera.ROIPosX - 1)*1e3*self.metadata.voxelsize.x
-        y_ = Yg.mean() + (self.metadata.Camera.ROIPosY - 1)*1e3*self.metadata.voxelsize.y
+        roi_x0, roi_y0 = get_camera_roi_origin(self.metadata)
+
+        x_ = Xg.mean() + roi_x0*1e3*self.metadata.voxelsize.x
+        y_ = Yg.mean() + roi_y0*1e3*self.metadata.voxelsize.y
         DeltaX = self.metadata.chroma.dx.ev(x_, y_)
         DeltaY = self.metadata.chroma.dy.ev(x_, y_)
 

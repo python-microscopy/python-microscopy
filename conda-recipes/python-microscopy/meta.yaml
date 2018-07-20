@@ -134,7 +134,7 @@ requirements:
   # listed explicitly if they are required.
   build:
     - python
-    - numpy x.x
+    - numpy {{ numpy }}
     - matplotlib
     - cython
     #- mingw  [win]
@@ -144,11 +144,11 @@ requirements:
   # in requirements" below).
   run:
     - python
-    - numpy x.x
+    - numpy {{ numpy }}
     - scipy
     - matplotlib
-    - wxpython
-    - pytables
+    - wxpython <3.9
+    - pytables <=3.4.2
     - pyopengl
     - traits
     - traitsui
@@ -192,17 +192,20 @@ requirements:
   # in addition to the run-time requirements, you can specify requirements
   # needed during testing. The run time requirements specified above are
   # included automatically.
-  #requires:
-  #  - nose
-  # commands we want to make sure they work, which are expected to get
-  # installed by the package
-  #commands:
-  #  - bsdiff4 -h
-  #  - bspatch4 -h
-
-  # Python imports
-  #imports:
-  #  - PYME
+#  requires:
+#    - nose
+#    - pytest
+#    - pytest-html
+#    - pytest-cov
+#  # commands we want to make sure they work, which are expected to get
+#  # installed by the package
+#  #commands:
+#  #  - bsdiff4 -h
+#  #  - bspatch4 -h
+#
+#  # Python imports
+#  imports:
+#    - PYME
 
   # The script run_test.py will be run automatically if it is part of the
   # recipe

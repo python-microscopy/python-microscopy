@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.stats import mode
 from scipy.interpolate import LSQUnivariateSpline
 
 from . import astiglookup
@@ -59,7 +60,8 @@ def lookup_astig_z(fres, astig_calibrations, rough_knot_spacing=75., plot=False)
         z_valid = zdat[z_valid_mask]
 
         # generate splines with knots spaced roughly as rough_knot_spacing [nm]
-        smoothing_factor = int(rough_knot_spacing / (zdat[-1] - zdat[-2]))
+        dz_mode = mode(np.diff(zdat))[0][0]
+        smoothing_factor = int(rough_knot_spacing / (dz_mode))
         knots = z_valid[1:-1:smoothing_factor]
 
         sigCalX.append(LSQUnivariateSpline(z_valid,np.array(astig_cal['sigmax'])[z_valid_mask], knots, ext='const')(zVal))

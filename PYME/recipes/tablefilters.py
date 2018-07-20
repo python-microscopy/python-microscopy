@@ -97,7 +97,7 @@ class FilterTableByIDs(ModuleBase):
         
     @property
     def _possible_ids(self):
-        ids = [id for id in set(self._ds[self.idColumnName]) if id > 0]
+        ids = [int(id) for id in set(self._ds[self.idColumnName]) if id > 0]
         
         return ids
 

@@ -89,6 +89,37 @@ def instanceinlist(cls, list):
 
     return False
     
+    
+def get_camera_roi_origin(mdh):
+    """
+    helper function to allow us to transition to 0 based ROIs.
+    
+    Returns the first of these it finds:
+    - [Camera.ROIOriginX, Camera.ROIOriginY]
+    - [Camera.ROIPosX -1, Camera.ROIPosY-1]
+    - [0,0]
+    
+    NOTE: this is not yet widely supported in calling code (ie you should still write ROIPosX, ROIPosY, although it is
+    safe to write both the old and new versions.
+    
+    Parameters
+    ----------
+    mdh : metadata handler
+
+    Returns
+    -------
+    
+    ROIOriginX, ROIOriginY
+
+    """
+    
+    if 'Camera.ROIOriginX' in mdh.getEntryNames():
+        return mdh['Camera.ROIOriginX'], mdh['Camera.ROIOriginY']
+    elif 'Camera.ROIPosX' in mdh.getEntryNames():
+        return mdh['Camera.ROIPosX']-1, mdh['Camera.ROIPosY']-1
+    else:
+        return 0,0
+    
 
 class MDHandlerBase(DictMixin):
     """Base class from which all metadata handlers are derived.
@@ -445,7 +476,7 @@ class SimpleMDHandler(NestedClassMDHandler):
 
     def __init__(self, filename = None, mdToCopy=None):
         if not filename is None:
-            from PYME.Acquire.ExecTools import _execfile
+            from PYME.util.execfile import _execfile
             import cPickle as pickle
             #loading an existing file
             md = self
@@ -701,8 +732,9 @@ class OMEXMLMDHandler(XMLMDHandler):
             self.pixels.setAttribute('SizeT', str(SizeT))
             self.pixels.setAttribute('SizeC', str(SizeC))
             
-            self.pixels.setAttribute('PhysicalSizeX', '%3.4f' % self.getEntry('voxelsize.x'))
-            self.pixels.setAttribute('PhysicalSizeY', '%3.4f' % self.getEntry('voxelsize.y'))
+            if 'voxelsize.x' in self.getEntryNames():
+                self.pixels.setAttribute('PhysicalSizeX', '%3.4f' % self.getEntry('voxelsize.x'))
+                self.pixels.setAttribute('PhysicalSizeY', '%3.4f' % self.getEntry('voxelsize.y'))
     
         return self.doc.toprettyxml()
     

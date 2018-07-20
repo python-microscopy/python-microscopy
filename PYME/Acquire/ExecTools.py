@@ -77,17 +77,7 @@ def setDefaultNamespace(locals, globals):
     defLocals = locals
     defGlobals = globals
 
-if sys.version_info.major == 2:
-    def _exec(codeObj, localVars = None, globalVars = None):
-        exec codeObj in localVars,globalVars
-    def _execfile(filename, localVars=None, globalVars=None):
-        # noinspection PyCompatibility
-        execfile(filename, localVars, globalVars)
-else: #Python 3
-    def _exec(codeObj, localVars = None, globalVars = None):
-        exec(codeObj,localVars,globalVars)
-    def _execfile(filename, localVars=None, globalVars=None):
-        exec(compile(open(filename).read(), filename, 'exec'), localVars, globalVars)
+from PYME.util.execfile import *
 
 def execBG(codeObj, localVars = defLocals, globalVars = defGlobals):
     """Executes a code object in a background thread, using the given namespace.

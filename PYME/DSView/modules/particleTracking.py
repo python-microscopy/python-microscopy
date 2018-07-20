@@ -133,7 +133,7 @@ class TrackList(wx.ListCtrl):
 #            return None
 
 
-from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
+from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, on_trait_change
 
 
 class ParticleTrackingView(HasTraits):

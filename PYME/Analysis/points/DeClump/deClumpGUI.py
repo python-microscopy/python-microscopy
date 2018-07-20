@@ -23,7 +23,8 @@
 
 import wx
 #import deClump
-from pylab import *
+#from pylab import *
+#import numpy as np
 
 class deClumpDialog(wx.Dialog):
     def __init__(self, *args, **kwargs):

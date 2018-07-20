@@ -24,6 +24,7 @@
 #from PYME.IO.FileUtils.nameUtils import getFullFilename
 from .BaseDataSource import BaseDataSource
 #import tables
+from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
 class DataSource(BaseDataSource):
     moduleName = 'FlatFieldDataSource'
@@ -34,10 +35,8 @@ class DataSource(BaseDataSource):
         self.mdh = mdh
         #self.flat = flatfield
         
-        x0 = mdh.getOrDefault('Camera.ROIPosX', 1) - 1
+        x0, y0 = get_camera_roi_origin(mdh)
         x1 = x0 + mdh.getOrDefault('Camera.ROIWidth', self.source.shape[0]) + 1
-
-        y0 = mdh.getOrDefault('Camera.ROIPosY', 1) - 1
         y1 = y0 + mdh.getOrDefault('Camera.ROIHeight', self.source.shape[1]) + 1
 
         #print((x0, x1, y0, y1))

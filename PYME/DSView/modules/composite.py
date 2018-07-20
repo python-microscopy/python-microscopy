@@ -741,6 +741,7 @@ class compositor:
         from scipy import ndimage
         import numpy as np
         from PYME.DSView import ImageStack, ViewIm3D
+        from PYME.IO.MetaDataHandler import get_camera_roi_origin
         
         dlg = ShiftmapSelectionDialog(self.dsviewer, self.image)
         succ = dlg.ShowModal()
@@ -754,11 +755,8 @@ class compositor:
             vy = self.image.mdh['voxelsize.y']*1e3
             vz = self.image.mdh['voxelsize.z']*1e3
             
-            x0 = 1
-            y0 = 1
-            if 'Camera.ROIPosX' in self.image.mdh.getEntryNames():
-                x0  = self.image.mdh['Camera.ROIPosX']
-                y0  = self.image.mdh['Camera.ROIPosY']
+            
+            roi_x0, roi_y0 = get_camera_roi_origin(self.image.mdh)
             
             for ch in range(self.image.data.shape[3]):
                 sfFilename = dlg.GetChanFilename(ch)
@@ -769,8 +767,8 @@ class compositor:
                 if os.path.exists(sfFilename):
                     spx, spy, dz = np.load(sfFilename)
                     
-                    dx = spx.ev(vx*(X+x0 - 1), vy*(Y+y0 - 1))/vx
-                    dy = spy.ev(vx*(X+x0 - 1), vy*(Y+y0 - 1))/vy
+                    dx = spx.ev(vx*(X+roi_x0), vy*(Y+roi_y0))/vx
+                    dy = spy.ev(vx*(X+roi_x0), vy*(Y+roi_y0))/vy
                     dz = dz/vz
                     
                     ds.append(ndimage.map_coordinates(data, [X+dx, Y+dy, Z+dz], mode='nearest'))

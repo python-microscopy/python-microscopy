@@ -173,7 +173,7 @@ class ImageOutput(OutputModule):
     inputName = Input('output')
     filePattern = '{output_dir}/{file_stub}.tif'
     
-    def generate(self, namespace):
+    def generate(self, namespace, recipe_context={}):
         return namespace[self.inputName]
 
     def save(self, namespace, context={}):

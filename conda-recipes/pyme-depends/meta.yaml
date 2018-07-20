@@ -1,6 +1,6 @@
 package:
   name: pyme-depends       # lower case name of package, may contain '-' but no spaces
-  version: 1.02    # version of package. Should use the PEP-386 verlib
+  version: 1.04    # version of package. Should use the PEP-386 verlib
                       # conventions. Note that YAML will interpret
                       # versions like 1.0 as floats, meaning that 1.0 will
                       # be the same as 1. To avoid this, always put the
@@ -130,23 +130,33 @@ requirements:
     - numpy x.x
     - scipy
     - matplotlib
-    - wxpython  #[py2k]
+    - wxpython  <3.9 [py2k]
     #- wxpython-phoenix < 3.9 [py3k]
-    - pytables
+    - wxpython [py3k]
+    - pytables <=3.4.2
     - pyopengl
     - traits
     - traitsui
-    - mayavi [py2k] #FIXME for py3k
+
+    #FIXME for py3k
+    - mayavi [py2k]
+
     - toposort
     - networkx
     - pyro
-    - pyfftw3 [py2k] #FIXME for py3k
+
+    #FIXME for py3k
+    - pyfftw3 [py2k]
+
     - mpld3
     - python.app      [osx]
     - cherrypy
     - scikit-image
     - scikit-learn
-    - shapely         [osx and py2k] #FIXME for py3k
+
+    #FIXME for py3k
+    - shapely [osx and py2k]
+
     - zeroconf 0.17.7
     - requests
     - pandas
@@ -161,6 +171,7 @@ requirements:
     - six
     - future
     - pywin32 [win]
+    - cython
 
   #unfortunately not availible through conda on windows ##FIXME
 

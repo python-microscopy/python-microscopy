@@ -23,15 +23,15 @@
 """
 This contains the bulk of the GUI code for the main window of PYMEAcquire.
 """
-import wx
-import wx.py.shell
-import wx.lib.agw.aui as aui
-
-import PYME.ui.autoFoldPanel as afp
+import logging
 import os
 import time
 
-import logging
+import PYME.ui.autoFoldPanel as afp
+import wx
+import wx.lib.agw.aui as aui
+import wx.py.shell
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ import PYME.DSView.displaySettingsPanel as disppanel
 from PYME.DSView import arrayViewPanel
 from PYME.DSView import dsviewer as dsviewer
 
-from PYME.Acquire import mytimer
+from PYME.ui import mytimer
 
 from PYME.Acquire.ui import positionUI
 from PYME.Acquire.ui import intsliders

@@ -739,7 +739,7 @@ def reconstruct_quad_surfaces_P(fits, radius):
     res, pos, N = fits
     return np.hstack([reconstruct_quad_surf(res[:,i], pos[:,i], N[i], radius=radius) for i in range(len(N)) if N[i] >= 1])
 
-def filter_quad_results(fits, data, radius=50):
+def filter_quad_results(fits, data, radius=50, proj_threshold=0.85):
     fits = fits.view(SURF_PATCH_DTYPE)
     from scipy.spatial import cKDTree
     kdt = cKDTree(data)
@@ -753,7 +753,7 @@ def filter_quad_results(fits, data, radius=50):
         neighbour_normals = normals[kdt.query_ball_point(fits[i]['pos'].view('3f4'), radius)]
         
         median_proj = np.median([np.abs(np.dot(N, n)) for n in neighbour_normals])
-        if median_proj > 0.85: #aligned more or less the same way as the neighbours
+        if median_proj > proj_threshold: #aligned more or less the same way as the neighbours
             filtered.append(fits[i])
             
     return np.hstack(filtered)

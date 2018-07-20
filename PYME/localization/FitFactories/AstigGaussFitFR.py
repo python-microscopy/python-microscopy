@@ -75,10 +75,24 @@ def GaussianFitResultR(fitResults, startParams, metadata, slicesUsed=None, resul
 
     if fitErr is None:
         fitErr = -5e3*np.ones(fitResults.shape, 'f')
-    
-    res =  np.array([(metadata.tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, slicesUsed, background)], dtype=fresultdtype) 
-    #print res
+        
+    res = np.zeros(1, fresultdtype)
+
+    res['tIndex'] = metadata.tIndex
+    res['fitResults'].view('8f4')[0, :] = fitResults.astype('f')
+    res['fitError'].view('8f4')[0, :] = fitErr.astype('f')
+    res['resultCode'] = resultCode
+    res['slicesUsed'].view('9i4')[:] = np.array(slicesUsed, dype='i4').ravel(),
+                                                #dtype='i4').ravel() #fmtSlicesUsed(slicesUsed)
+    res['startParams'].view('8f4')[0, :] = startParams.astype('f')
+    #res['nchi2'] = nchi2
+    res['subtractedBackground'] = background
+
     return res
+    
+    #res =  np.array([(metadata.tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, slicesUsed, background)], dtype=fresultdtype)
+    #print res
+    #return res
 		
 
 class GaussianFitFactory(FFBase.FitFactory):

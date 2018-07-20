@@ -25,6 +25,7 @@ Subpackages
     PYME.misc
     PYME.recipes
     PYME.resources
+    PYME.simulation
     PYME.ui
     PYME.util
 
