@@ -524,30 +524,38 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
                                       n7[inds]['centre'], n6[inds]['centre']]),
                             0, 1))
             self.values.append(
-                np.swapaxes(np.array([n0[inds]['nPoints']/
+                np.swapaxes(np.array([n0[inds]['nPoints'] /
                                       np.prod(self._ot.box_size(n0[inds][
-                                                                  'depth'])),
+                                                                  'depth']),
+                                              axis=0),
                                      n1[inds]['nPoints'] /
                                       np.prod(self._ot.box_size(n1[inds][
-                                                                  'depth'])),
-                                     n2[inds]['nPoints'] /
-                                      np.prod(self._ot.box_size(n2[inds][
-                                                                  'depth'])),
+                                                                  'depth']),
+                                              axis=0),
                                      n3[inds]['nPoints'] /
+                                      np.prod(self._ot.box_size(n2[inds][
+                                                                  'depth']),
+                                              axis=0),
+                                     n2[inds]['nPoints'] /
                                       np.prod(self._ot.box_size(n3[inds][
-                                                                  'depth'])),
+                                                                  'depth']),
+                                              axis=0),
                                      n4[inds]['nPoints'] /
                                       np.prod(self._ot.box_size(n4[inds][
-                                                                  'depth'])),
+                                                                  'depth']),
+                                              axis=0),
                                      n5[inds]['nPoints'] /
                                       np.prod(self._ot.box_size(n5[inds][
-                                                                  'depth'])),
-                                     n6[inds]['nPoints'] /
-                                      np.prod(self._ot.box_size(n6[inds][
-                                                                  'depth'])),
+                                                                  'depth']),
+                                              axis=0),
                                      n7[inds]['nPoints'] /
+                                      np.prod(self._ot.box_size(n6[inds][
+                                                                  'depth']),
+                                              axis=0),
+                                     n6[inds]['nPoints'] /
                                       np.prod(self._ot.box_size(n7[inds][
-                                                                'depth']))]),
+                                                                'depth']),
+                                              axis=0)]),
                             0, 1))
 
         if np.sum(~leaf_nodes) > 0:
