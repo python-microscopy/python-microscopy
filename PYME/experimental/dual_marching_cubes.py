@@ -93,6 +93,9 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             # We nself._ot call face_proc_<plane> and edge_proc_<plane> on nodes in a specific order
             # so we can track where subdivided nodes will be in reference to adjacent subdivided
             # nodes
+            
+            # DB: do we need to worry about sparse children for all of these calls? 
+            # At present you are any non-occupied nodes will be interpreted as the root node
 
             # Call self.face_proc_xy on the correct nodes
             self.face_proc_xy(self._ot._nodes[nodes['children'][:, 0]],
@@ -188,6 +191,8 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         # Replace current nodes with their ordered children if present
         n0_subdivided = np.sum(n0['children'], axis=1) > 0
         n1_subdivided = np.sum(n1['children'], axis=1) > 0
+        
+        # DB: probably need to deal with missing nodes / children here too.
 
         if np.sum(n0_subdivided) > 0:
             c4[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 0]]
