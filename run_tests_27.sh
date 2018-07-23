@@ -11,6 +11,8 @@ fi
 
 if [ $? -eq 0 ]
 then
+    oldenv=$CONDA_DEFAULT_ENV
+    source deactivate
     source activate pm_test_27
     if [ $? -eq 0 ]
     then
@@ -26,6 +28,7 @@ then
             exit_code=$?
         fi
         source deactivate
+        source activate $oldenv
     else
         exit_code=$?
     fi
