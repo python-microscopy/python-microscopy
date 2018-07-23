@@ -82,7 +82,7 @@ def GaussianFitResultR(fitResults, startParams, metadata, slicesUsed=None, resul
     res['fitResults'].view('8f4')[0, :] = fitResults.astype('f')
     res['fitError'].view('8f4')[0, :] = fitErr.astype('f')
     res['resultCode'] = resultCode
-    res['slicesUsed'].view('9i4')[:] = np.array(slicesUsed, dype='i4').ravel(),
+    res['slicesUsed'].view('9i4')[:] = np.array(slicesUsed, dtype='i4').ravel(),
                                                 #dtype='i4').ravel() #fmtSlicesUsed(slicesUsed)
     res['startParams'].view('8f4')[0, :] = startParams.astype('f')
     #res['nchi2'] = nchi2
