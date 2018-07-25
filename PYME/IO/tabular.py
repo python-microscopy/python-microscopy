@@ -34,6 +34,8 @@ from numpy import * #to allow the use of sin cos etc in mappings
 from PYME.Analysis.piecewise import * #allow piecewise linear mappings
 
 import tables
+import logging
+logger = logging.getLogger(__name__)
 
 class TabularBase(object):
     def toDataFrame(self, keys=None):
@@ -75,9 +77,20 @@ class TabularBase(object):
         if keys is None:
             keys = self.keys()
 
-        columns = [self.__getitem__(k) for k in keys]
-        dt = [(k, v.dtype, v.shape[1:]) for k, v in zip(keys, columns)]
-        return records.fromarrays(columns, names=keys, dtype=dt)
+        # the following lines are to handle discrepancies that may arise between tabular.keys() and fields that it
+        # actually has, which arise due to underscores in the names of tabular keys. See PYME.IO.tabular.unNestNames
+        columns = []
+        dkeys = []
+        for k in keys:
+            try:
+                columns.append(self.__getitem__(k))
+                dkeys.append(k)
+            except ValueError as e:
+                logger.error('tabular key nesting error: %s' % e.message)
+                print(e.message)
+
+        dt = [(k, v.dtype, v.shape[1:]) for k, v in zip(dkeys, columns)]
+        return records.fromarrays(columns, names=dkeys, dtype=dt)
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
         from PYME.IO import h5rFile
