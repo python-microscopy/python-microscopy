@@ -216,7 +216,11 @@ class OMETiffExporter(Exporter):
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         from PYME.contrib.gohlke import tifffile
         from PYME.IO import dataWrap
-        
+
+        if data.dtype == 'bool':
+            dshape = data.shape
+            data = data.astype('int').reshape(dshape) # reshape needed as final 1-sized dim seemed to be dropped
+
         dw = dataWrap.ListWrap([data[xslice, yslice, zslice, i] for i in range(data.shape[3])])
         #xmd = None
         if not metadata is None:
