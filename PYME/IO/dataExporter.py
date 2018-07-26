@@ -219,7 +219,7 @@ class OMETiffExporter(Exporter):
 
         if data.dtype == 'bool':
             dshape = data.shape
-            data = data.astype('int').reshape(dshape) # reshape needed as final 1-sized dim seemed to be dropped
+            data = data.astype('u1').reshape(dshape) # reshape needed as final 1-sized dim seemed to be dropped
 
         dw = dataWrap.ListWrap([data[xslice, yslice, zslice, i] for i in range(data.shape[3])])
         #xmd = None
