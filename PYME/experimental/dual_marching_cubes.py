@@ -380,12 +380,12 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             c3[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 5]]
 
         if np.sum(n2_subdivided) > 0:
-            c0[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 6]]
-            c1[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 7]]
+            c0[n2_subdivided] = self._ot._nodes[n2[n2_subdivided]['children'][:, 6]]
+            c1[n2_subdivided] = self._ot._nodes[n2[n2_subdivided]['children'][:, 7]]
 
         if np.sum(n3_subdivided) > 0:
-            c4[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 2]]
-            c5[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 3]]
+            c4[n3_subdivided] = self._ot._nodes[n3[n3_subdivided]['children'][:, 2]]
+            c5[n3_subdivided] = self._ot._nodes[n3[n3_subdivided]['children'][:, 3]]
 
         if np.sum(n0_subdivided) > 0 | np.sum(n1_subdivided) > 0 | np.sum(
                 n2_subdivided) > 0 | np.sum(n3_subdivided) > 0:
@@ -441,12 +441,12 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             c6[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 3]]
 
         if np.sum(n2_subdivided) > 0:
-            c0[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 5]]
-            c2[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 7]]
+            c0[n2_subdivided] = self._ot._nodes[n2[n2_subdivided]['children'][:, 5]]
+            c2[n2_subdivided] = self._ot._nodes[n2[n2_subdivided]['children'][:, 7]]
 
         if np.sum(n3_subdivided) > 0:
-            c1[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 4]]
-            c3[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 6]]
+            c1[n3_subdivided] = self._ot._nodes[n3[n3_subdivided]['children'][:, 4]]
+            c3[n3_subdivided] = self._ot._nodes[n3[n3_subdivided]['children'][:, 6]]
 
         if np.sum(n0_subdivided) > 0 | np.sum(n1_subdivided) > 0 | np.sum(
                 n2_subdivided) > 0 | np.sum(n3_subdivided) > 0:
@@ -502,12 +502,12 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             c5[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 6]]
 
         if np.sum(n2_subdivided) > 0:
-            c0[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 3]]
-            c4[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 7]]
+            c0[n2_subdivided] = self._ot._nodes[n2[n2_subdivided]['children'][:, 3]]
+            c4[n2_subdivided] = self._ot._nodes[n2[n2_subdivided]['children'][:, 7]]
 
         if np.sum(n3_subdivided) > 0:
-            c2[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 1]]
-            c6[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 5]]
+            c2[n3_subdivided] = self._ot._nodes[n3[n3_subdivided]['children'][:, 1]]
+            c6[n3_subdivided] = self._ot._nodes[n3[n3_subdivided]['children'][:, 5]]
 
         if np.sum(n0_subdivided) > 0 | np.sum(n1_subdivided) > 0 | np.sum(
                 n2_subdivided) > 0 | np.sum(n3_subdivided) > 0:
