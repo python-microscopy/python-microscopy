@@ -24,7 +24,8 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
 
     def position_empty_node(self, n0, n1, shift):
         """
-        Function that considers nodes pairwise to replace 0-node if one of the nodes is the 0-node and the self._other is nself._ot.
+        Function that considers nodes pairwise to replace 0-node if one of the
+        nodes is the 0-node and the self._other is nself._ot.
 
         Parameters
         ----------
@@ -33,7 +34,8 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         n1 : _octree._node
             A node in the same subdivision as n0
         shift : list
-            List of x, y, z representing unit vector to move from n0 to n1 in 3-space
+            List of x, y, z representing unit vector to move from n0 to n1 in
+            3-space
         """
         # We need to replace any instances of the 0-node with an empty node
         # corresponding to a position directly across from the self._other
@@ -90,9 +92,9 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             children = self._ot._nodes[nodes['children'][nodes['children'] > 0]]
             self.node_proc(children)
 
-            # We nself._ot call face_proc_<plane> and edge_proc_<plane> on nodes in a specific order
-            # so we can track where subdivided nodes will be in reference to adjacent subdivided
-            # nodes
+            # We call face_proc_<plane> and edge_proc_<plane> on nodes
+            # in a specific orderso we can track where subdivided nodes will be
+            # in reference to adjacent subdivided nodes
             
             # DB: do we need to worry about sparse children for all of these calls? 
             # At present you are any non-occupied nodes will be interpreted as the root node
@@ -168,7 +170,8 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
                       self._ot._nodes[nodes['children'][:, 7]])
 
     def face_proc_xy(self, n0, n1):
-        # Make sure at least one of these nodes is subdivided & nself._ot equal to the 0-node
+        # Make sure at least one of these nodes is subdivided & not equal
+        # to the 0-node
         face_mask = ((np.sum(n0['children'], axis=1) > 0) & (
         n0['depth'] > 0)) | (
                     (np.sum(n1['children'], axis=1) > 0) & n1['depth'] > 0)
@@ -207,7 +210,8 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             c3[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 7]]
 
         if np.sum(n0_subdivided) > 0 | np.sum(n0_subdivided) > 0:
-            # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and self.vert_proc on resulting nodes
+            # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
+            # self.vert_proc on resulting nodes
             self.face_proc_xy(c0, c4)
             self.face_proc_xy(c2, c6)
             self.face_proc_xy(c1, c5)
@@ -222,7 +226,8 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def face_proc_xz(self, n0, n1):
-        # Make sure at least one of these nodes is subdivided & nself._ot equal to the 0-node
+        # Make sure at least one of these nodes is subdivided & not equal
+        # to the 0-node
         face_mask = ((np.sum(n0['children'], axis=1) > 0) & (
         n0['depth'] > 0)) | (
                     (np.sum(n1['children'], axis=1) > 0) & n1['depth'] > 0)
@@ -259,7 +264,8 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             c5[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 7]]
 
         if np.sum(n0_subdivided) > 0 | np.sum(n0_subdivided) > 0:
-            # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and self.vert_proc on resulting nodes
+            # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
+            # self.vert_proc on resulting nodes
             self.face_proc_xz(c0, c2)
             self.face_proc_xz(c1, c3)
             self.face_proc_xz(c4, c6)
@@ -274,7 +280,8 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def face_proc_yz(self, n0, n1):
-        # Make sure at least one of these nodes is subdivided & nself._ot equal to the 0-node
+        # Make sure at least one of these nodes is subdivided & not
+        # to the 0-node
         face_mask = ((np.sum(n0['children'], axis=1) > 0) & (
         n0['depth'] > 0)) | (
                     (np.sum(n1['children'], axis=1) > 0) & n1['depth'] > 0)
@@ -311,7 +318,8 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             c6[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 7]]
 
         if np.sum(n0_subdivided) > 0 | np.sum(n0_subdivided) > 0:
-            # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and self.vert_proc on resulting nodes
+            # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
+            # self.vert_proc on resulting nodes
             self.face_proc_yz(c0, c1)
             self.face_proc_yz(c2, c3)
             self.face_proc_yz(c4, c5)
@@ -326,7 +334,8 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def edge_proc_x(self, n0, n1, n2, n3):
-        # Make sure at least one of these nodes is subdivided & nself._ot equal to the 0-node
+        # Make sure at least one of these nodes is subdivided & not
+        # to the 0-node
         face_mask = ((np.sum(n0['children'], axis=1) > 0) & (
         n0['depth'] > 0)) | (
                     (np.sum(n1['children'], axis=1) > 0) & (n1['depth'] > 0)) | \
@@ -386,7 +395,8 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def edge_proc_y(self, n0, n1, n2, n3):
-        # Make sure at least one of these nodes is subdivided & nself._ot equal to the 0-node
+        # Make sure at least one of these nodes is subdivided & not
+        # to the 0-node
         face_mask = ((np.sum(n0['children'], axis=1) > 0) & (
         n0['depth'] > 0)) | (
                     (np.sum(n1['children'], axis=1) > 0) & (n1['depth'] > 0)) | \
@@ -446,7 +456,8 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def edge_proc_z(self, n0, n1, n2, n3):
-        # Make sure at least one of these nodes is subdivided & nself._ot equal to the 0-node
+        # Make sure at least one of these nodes is subdivided & not
+        # equal to the 0-node
         face_mask = ((np.sum(n0['children'], axis=1) > 0) & (
         n0['depth'] > 0)) | (
                     (np.sum(n1['children'], axis=1) > 0) & (n1['depth'] > 0)) | \
@@ -533,11 +544,11 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
                                                                   'depth']),
                                               axis=0),
                                      n3[inds]['nPoints'] /
-                                      np.prod(self._ot.box_size(n2[inds][
+                                      np.prod(self._ot.box_size(n3[inds][
                                                                   'depth']),
                                               axis=0),
                                      n2[inds]['nPoints'] /
-                                      np.prod(self._ot.box_size(n3[inds][
+                                      np.prod(self._ot.box_size(n2[inds][
                                                                   'depth']),
                                               axis=0),
                                      n4[inds]['nPoints'] /
@@ -549,11 +560,11 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
                                                                   'depth']),
                                               axis=0),
                                      n7[inds]['nPoints'] /
-                                      np.prod(self._ot.box_size(n6[inds][
+                                      np.prod(self._ot.box_size(n7[inds][
                                                                   'depth']),
                                               axis=0),
                                      n6[inds]['nPoints'] /
-                                      np.prod(self._ot.box_size(n7[inds][
+                                      np.prod(self._ot.box_size(n6[inds][
                                                                 'depth']),
                                               axis=0)]),
                             0, 1))
