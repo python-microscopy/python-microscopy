@@ -182,14 +182,14 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         n0, n1 = self.position_empty_node(n0, n1, [0, 0, 1])
 
         # Initialize resulting nodes to current nodes
-        c4 = deepcopy(n0)
-        c5 = deepcopy(n0)
-        c6 = deepcopy(n0)
-        c7 = deepcopy(n0)
-        c0 = deepcopy(n1)
-        c1 = deepcopy(n1)
-        c2 = deepcopy(n1)
-        c3 = deepcopy(n1)
+        c4 = deepcopy(n1)
+        c5 = deepcopy(n1)
+        c6 = deepcopy(n1)
+        c7 = deepcopy(n1)
+        c0 = deepcopy(n0)
+        c1 = deepcopy(n0)
+        c2 = deepcopy(n0)
+        c3 = deepcopy(n0)
 
         # Replace current nodes with their ordered children if present
         n0_subdivided = np.sum(n0['children'], axis=1) > 0
@@ -197,17 +197,25 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         
         # DB: probably need to deal with missing nodes / children here too.
 
-        if np.sum(n0_subdivided) > 0:
-            c4[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 0]]
-            c5[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 1]]
-            c6[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 2]]
-            c7[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 3]]
-
         if np.sum(n1_subdivided) > 0:
-            c0[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 4]]
-            c1[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 5]]
-            c2[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 6]]
-            c3[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 7]]
+            c4[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 0]]
+            c5[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 1]]
+            c6[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 2]]
+            c7[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 3]]
+
+        if np.sum(n0_subdivided) > 0:
+            c0[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 4]]
+            c1[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][
+                                               :, 5]]
+            c2[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 6]]
+            c3[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 7]]
 
         if np.sum(n0_subdivided) > 0 | np.sum(n0_subdivided) > 0:
             # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
@@ -238,30 +246,38 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         n0, n1 = self.position_empty_node(n0, n1, [0, 1, 0])
 
         # Initialize resulting nodes to current nodes
-        c2 = deepcopy(n0)
-        c3 = deepcopy(n0)
-        c6 = deepcopy(n0)
-        c7 = deepcopy(n0)
-        c0 = deepcopy(n1)
-        c1 = deepcopy(n1)
-        c4 = deepcopy(n1)
-        c5 = deepcopy(n1)
+        c2 = deepcopy(n1)
+        c3 = deepcopy(n1)
+        c6 = deepcopy(n1)
+        c7 = deepcopy(n1)
+        c0 = deepcopy(n0)
+        c1 = deepcopy(n0)
+        c4 = deepcopy(n0)
+        c5 = deepcopy(n0)
 
         # Replace current nodes with their ordered children if present
         n0_subdivided = np.sum(n0['children'], axis=1) > 0
         n1_subdivided = np.sum(n1['children'], axis=1) > 0
 
-        if np.sum(n0_subdivided) > 0:
-            c2[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 0]]
-            c3[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 1]]
-            c6[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 4]]
-            c7[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 5]]
-
         if np.sum(n1_subdivided) > 0:
-            c0[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 2]]
-            c1[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 3]]
-            c4[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 6]]
-            c5[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 7]]
+            c2[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 0]]
+            c3[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 1]]
+            c6[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][
+                                               :, 4]]
+            c7[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 5]]
+
+        if np.sum(n0_subdivided) > 0:
+            c0[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 2]]
+            c1[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 3]]
+            c4[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 6]]
+            c5[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                     'children'][:, 7]]
 
         if np.sum(n0_subdivided) > 0 | np.sum(n0_subdivided) > 0:
             # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
@@ -292,30 +308,38 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         n0, n1 = self.position_empty_node(n0, n1, [1, 0, 0])
 
         # Initialize resulting nodes to current nodes
-        c1 = deepcopy(n0)
-        c3 = deepcopy(n0)
-        c5 = deepcopy(n0)
-        c7 = deepcopy(n0)
-        c0 = deepcopy(n1)
-        c2 = deepcopy(n1)
-        c4 = deepcopy(n1)
-        c6 = deepcopy(n1)
+        c1 = deepcopy(n1)
+        c3 = deepcopy(n1)
+        c5 = deepcopy(n1)
+        c7 = deepcopy(n1)
+        c0 = deepcopy(n0)
+        c2 = deepcopy(n0)
+        c4 = deepcopy(n0)
+        c6 = deepcopy(n0)
 
         # Replace current nodes with their ordered children if present
         n0_subdivided = np.sum(n0['children'], axis=1) > 0
         n1_subdivided = np.sum(n1['children'], axis=1) > 0
 
-        if np.sum(n0_subdivided) > 0:
-            c1[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 0]]
-            c3[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 2]]
-            c5[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 4]]
-            c7[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 6]]
-
         if np.sum(n1_subdivided) > 0:
-            c0[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 1]]
-            c2[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 3]]
-            c4[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 5]]
-            c6[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 7]]
+            c1[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 0]]
+            c3[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                     'children'][:, 2]]
+            c5[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 4]]
+            c7[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 6]]
+
+        if np.sum(n0_subdivided) > 0:
+            c0[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 1]]
+            c2[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 3]]
+            c4[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 5]]
+            c6[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 7]]
 
         if np.sum(n0_subdivided) > 0 | np.sum(n0_subdivided) > 0:
             # Call self.face_proc_xy, self.edge_proc_x, self.edge_proc_y, and
@@ -356,14 +380,14 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         n2, n3 = self.position_empty_node(n2, n3, [0, 0, -1])
 
         # Initialize resulting nodes to current nodes
-        c6 = deepcopy(n0)
-        c7 = deepcopy(n0)
-        c2 = deepcopy(n1)
-        c3 = deepcopy(n1)
-        c0 = deepcopy(n2)
-        c1 = deepcopy(n2)
-        c4 = deepcopy(n3)
-        c5 = deepcopy(n3)
+        c6 = deepcopy(n2)
+        c7 = deepcopy(n2)
+        c2 = deepcopy(n3)
+        c3 = deepcopy(n3)
+        c0 = deepcopy(n0)
+        c1 = deepcopy(n0)
+        c4 = deepcopy(n1)
+        c5 = deepcopy(n1)
 
         # Replace current nodes with their ordered children if present
         n0_subdivided = np.sum(n0['children'], axis=1) > 0
@@ -371,21 +395,29 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         n2_subdivided = np.sum(n2['children'], axis=1) > 0
         n3_subdivided = np.sum(n3['children'], axis=1) > 0
 
-        if np.sum(n0_subdivided) > 0:
-            c6[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 0]]
-            c7[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 1]]
-
-        if np.sum(n1_subdivided) > 0:
-            c2[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 4]]
-            c3[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 5]]
-
         if np.sum(n2_subdivided) > 0:
-            c0[n2_subdivided] = self._ot._nodes[n2[n2_subdivided]['children'][:, 6]]
-            c1[n2_subdivided] = self._ot._nodes[n2[n2_subdivided]['children'][:, 7]]
+            c6[n2_subdivided] = self._ot._nodes[n2[n2_subdivided][
+                                                    'children'][:, 0]]
+            c7[n2_subdivided] = self._ot._nodes[n2[n2_subdivided][
+                                                    'children'][:, 1]]
 
         if np.sum(n3_subdivided) > 0:
-            c4[n3_subdivided] = self._ot._nodes[n3[n3_subdivided]['children'][:, 2]]
-            c5[n3_subdivided] = self._ot._nodes[n3[n3_subdivided]['children'][:, 3]]
+            c2[n3_subdivided] = self._ot._nodes[n3[n3_subdivided][
+                                                    'children'][:, 4]]
+            c3[n3_subdivided] = self._ot._nodes[n3[n3_subdivided][
+                                                    'children'][:, 5]]
+
+        if np.sum(n0_subdivided) > 0:
+            c0[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 6]]
+            c1[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 7]]
+
+        if np.sum(n1_subdivided) > 0:
+            c4[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 2]]
+            c5[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 3]]
 
         if np.sum(n0_subdivided) > 0 | np.sum(n1_subdivided) > 0 | np.sum(
                 n2_subdivided) > 0 | np.sum(n3_subdivided) > 0:
@@ -417,14 +449,14 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         n2, n3 = self.position_empty_node(n2, n3, [-1, 0, 0])
 
         # Initialize resulting nodes to current nodes
-        c5 = deepcopy(n0)
-        c7 = deepcopy(n0)
-        c4 = deepcopy(n1)
-        c6 = deepcopy(n1)
-        c0 = deepcopy(n2)
-        c2 = deepcopy(n2)
-        c1 = deepcopy(n3)
-        c3 = deepcopy(n3)
+        c5 = deepcopy(n2)
+        c7 = deepcopy(n2)
+        c4 = deepcopy(n3)
+        c6 = deepcopy(n3)
+        c0 = deepcopy(n0)
+        c2 = deepcopy(n0)
+        c1 = deepcopy(n1)
+        c3 = deepcopy(n1)
 
         # Replace current nodes with their ordered children if present
         n0_subdivided = np.sum(n0['children'], axis=1) > 0
@@ -432,21 +464,29 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         n2_subdivided = np.sum(n2['children'], axis=1) > 0
         n3_subdivided = np.sum(n3['children'], axis=1) > 0
 
-        if np.sum(n0_subdivided) > 0:
-            c5[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 0]]
-            c7[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 2]]
-
-        if np.sum(n1_subdivided) > 0:
-            c4[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 1]]
-            c6[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 3]]
-
         if np.sum(n2_subdivided) > 0:
-            c0[n2_subdivided] = self._ot._nodes[n2[n2_subdivided]['children'][:, 5]]
-            c2[n2_subdivided] = self._ot._nodes[n2[n2_subdivided]['children'][:, 7]]
+            c5[n2_subdivided] = self._ot._nodes[n2[n2_subdivided][
+                                                    'children'][:, 0]]
+            c7[n2_subdivided] = self._ot._nodes[n2[n2_subdivided][
+                                                    'children'][:, 2]]
 
         if np.sum(n3_subdivided) > 0:
-            c1[n3_subdivided] = self._ot._nodes[n3[n3_subdivided]['children'][:, 4]]
-            c3[n3_subdivided] = self._ot._nodes[n3[n3_subdivided]['children'][:, 6]]
+            c4[n3_subdivided] = self._ot._nodes[n3[n3_subdivided][
+                                                    'children'][:, 1]]
+            c6[n3_subdivided] = self._ot._nodes[n3[n3_subdivided][
+                                                    'children'][:, 3]]
+
+        if np.sum(n0_subdivided) > 0:
+            c0[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 5]]
+            c2[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 7]]
+
+        if np.sum(n1_subdivided) > 0:
+            c1[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 4]]
+            c3[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 6]]
 
         if np.sum(n0_subdivided) > 0 | np.sum(n1_subdivided) > 0 | np.sum(
                 n2_subdivided) > 0 | np.sum(n3_subdivided) > 0:
@@ -478,14 +518,14 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         n2, n3 = self.position_empty_node(n2, n3, [0, -1, 0])
 
         # Initialize resulting nodes to current nodes
-        c3 = deepcopy(n0)
-        c7 = deepcopy(n0)
-        c1 = deepcopy(n1)
-        c5 = deepcopy(n1)
-        c0 = deepcopy(n2)
-        c4 = deepcopy(n2)
-        c2 = deepcopy(n3)
-        c6 = deepcopy(n3)
+        c3 = deepcopy(n2)
+        c7 = deepcopy(n2)
+        c1 = deepcopy(n3)
+        c5 = deepcopy(n3)
+        c0 = deepcopy(n0)
+        c4 = deepcopy(n0)
+        c2 = deepcopy(n1)
+        c6 = deepcopy(n1)
 
         # Replace current nodes with their ordered children if present
         n0_subdivided = np.sum(n0['children'], axis=1) > 0
@@ -493,21 +533,29 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         n2_subdivided = np.sum(n2['children'], axis=1) > 0
         n3_subdivided = np.sum(n3['children'], axis=1) > 0
 
-        if np.sum(n0_subdivided) > 0:
-            c3[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 0]]
-            c7[n0_subdivided] = self._ot._nodes[n0[n0_subdivided]['children'][:, 4]]
-
-        if np.sum(n1_subdivided) > 0:
-            c1[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 2]]
-            c5[n1_subdivided] = self._ot._nodes[n1[n1_subdivided]['children'][:, 6]]
-
         if np.sum(n2_subdivided) > 0:
-            c0[n2_subdivided] = self._ot._nodes[n2[n2_subdivided]['children'][:, 3]]
-            c4[n2_subdivided] = self._ot._nodes[n2[n2_subdivided]['children'][:, 7]]
+            c3[n2_subdivided] = self._ot._nodes[n2[n2_subdivided][
+                                                    'children'][:, 0]]
+            c7[n2_subdivided] = self._ot._nodes[n2[n2_subdivided][
+                                                    'children'][:, 4]]
 
         if np.sum(n3_subdivided) > 0:
-            c2[n3_subdivided] = self._ot._nodes[n3[n3_subdivided]['children'][:, 1]]
-            c6[n3_subdivided] = self._ot._nodes[n3[n3_subdivided]['children'][:, 5]]
+            c1[n3_subdivided] = self._ot._nodes[n3[n3_subdivided][
+                                                    'children'][:, 2]]
+            c5[n3_subdivided] = self._ot._nodes[n3[n3_subdivided][
+                                                    'children'][:, 6]]
+
+        if np.sum(n0_subdivided) > 0:
+            c0[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 3]]
+            c4[n0_subdivided] = self._ot._nodes[n0[n0_subdivided][
+                                                    'children'][:, 7]]
+
+        if np.sum(n1_subdivided) > 0:
+            c2[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 1]]
+            c6[n1_subdivided] = self._ot._nodes[n1[n1_subdivided][
+                                                    'children'][:, 5]]
 
         if np.sum(n0_subdivided) > 0 | np.sum(n1_subdivided) > 0 | np.sum(
                 n2_subdivided) > 0 | np.sum(n3_subdivided) > 0:
