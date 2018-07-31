@@ -593,97 +593,99 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
 
         if np.sum(~leaf_nodes) > 0:
 
-            # Check 0-nodes
-            n0, n1 = self.position_empty_node(n0, n1, [1, 0, 0])
-            n0, n2 = self.position_empty_node(n0, n2, [0, 1, 0])
-            n0, n3 = self.position_empty_node(n0, n3, [1, 1, 0])
-            n0, n4 = self.position_empty_node(n0, n4, [0, 0, 1])
-            n0, n5 = self.position_empty_node(n0, n5, [1, 0, 1])
-            n0, n6 = self.position_empty_node(n0, n6, [0, 1, 1])
-            n0, n7 = self.position_empty_node(n0, n7, [1, 1, 1])
-            n1, n2 = self.position_empty_node(n1, n2, [-1, 1, 0])
-            n1, n3 = self.position_empty_node(n1, n3, [0, 1, 0])
-            n1, n4 = self.position_empty_node(n1, n4, [-1, 0, 1])
-            n1, n5 = self.position_empty_node(n1, n5, [0, 0, 1])
-            n1, n6 = self.position_empty_node(n1, n6, [-1, 1, 1])
-            n1, n7 = self.position_empty_node(n1, n7, [0, 1, 1])
-            n2, n3 = self.position_empty_node(n2, n3, [1, 0, 0])
-            n2, n4 = self.position_empty_node(n2, n4, [0, -1, 1])
-            n2, n5 = self.position_empty_node(n2, n5, [1, -1, 1])
-            n2, n6 = self.position_empty_node(n2, n6, [0, 0, 1])
-            n2, n7 = self.position_empty_node(n2, n7, [1, 0, 1])
-            n3, n4 = self.position_empty_node(n3, n4, [-1, -1, 1])
-            n3, n5 = self.position_empty_node(n3, n5, [0, -1, 1])
-            n3, n6 = self.position_empty_node(n3, n6, [-1, 0, 1])
-            n3, n7 = self.position_empty_node(n3, n7, [0, 0, 1])
-            n4, n5 = self.position_empty_node(n4, n5, [1, 0, 0])
-            n4, n6 = self.position_empty_node(n4, n6, [0, 1, 0])
-            n4, n7 = self.position_empty_node(n4, n7, [1, 1, 0])
-            n5, n6 = self.position_empty_node(n5, n6, [-1, 1, 0])
-            n5, n7 = self.position_empty_node(n5, n7, [0, 1, 0])
-            n6, n7 = self.position_empty_node(n6, n7, [1, 0, 0])
-
-            # Re-check leaf nodes
-            new_leaf_nodes = (np.sum(n0['children'], axis=1) == 0) & \
-                (np.sum(n1['children'], axis=1) == 0) & \
-                (np.sum(n2['children'], axis=1) == 0) & \
-                (np.sum(n3['children'], axis=1) == 0) & \
-                (np.sum(n4['children'], axis=1) == 0) & \
-                (np.sum(n5['children'], axis=1) == 0) & \
-                (np.sum(n6['children'], axis=1) == 0) & \
-                (np.sum(n7['children'], axis=1) == 0)
-            if np.sum(new_leaf_nodes) > 0:
-                new_inds = np.where(new_leaf_nodes)
-                self.vert_proc(n0[new_inds], n1[new_inds], n2[new_inds],
-                          n3[new_inds], n4[new_inds], n5[new_inds],
-                          n6[new_inds], n7[new_inds])
+            inds = np.where(~leaf_nodes)
 
             # Initialize resulting nodes to current nodes
-            c0 = deepcopy(n0)
-            c1 = deepcopy(n1)
-            c2 = deepcopy(n2)
-            c3 = deepcopy(n3)
-            c4 = deepcopy(n4)
-            c5 = deepcopy(n5)
-            c6 = deepcopy(n6)
-            c7 = deepcopy(n7)
+            c0 = deepcopy(n0[inds])
+            c1 = deepcopy(n1[inds])
+            c2 = deepcopy(n2[inds])
+            c3 = deepcopy(n3[inds])
+            c4 = deepcopy(n4[inds])
+            c5 = deepcopy(n5[inds])
+            c6 = deepcopy(n6[inds])
+            c7 = deepcopy(n7[inds])
 
-            inds = np.where(~new_leaf_nodes)
+            # Check 0-nodes
+            c0, c1 = self.position_empty_node(c0, c1, [1, 0, 0])
+            c0, c2 = self.position_empty_node(c0, c2, [0, 1, 0])
+            c0, c3 = self.position_empty_node(c0, c3, [1, 1, 0])
+            c0, c4 = self.position_empty_node(c0, c4, [0, 0, 1])
+            c0, c5 = self.position_empty_node(c0, c5, [1, 0, 1])
+            c0, c6 = self.position_empty_node(c0, c6, [0, 1, 1])
+            c0, c7 = self.position_empty_node(c0, c7, [1, 1, 1])
+            c1, c2 = self.position_empty_node(c1, c2, [-1, 1, 0])
+            c1, c3 = self.position_empty_node(c1, c3, [0, 1, 0])
+            c1, c4 = self.position_empty_node(c1, c4, [-1, 0, 1])
+            c1, c5 = self.position_empty_node(c1, c5, [0, 0, 1])
+            c1, c6 = self.position_empty_node(c1, c6, [-1, 1, 1])
+            c1, c7 = self.position_empty_node(c1, c7, [0, 1, 1])
+            c2, c3 = self.position_empty_node(c2, c3, [1, 0, 0])
+            c2, c4 = self.position_empty_node(c2, c4, [0, -1, 1])
+            c2, c5 = self.position_empty_node(c2, c5, [1, -1, 1])
+            c2, c6 = self.position_empty_node(c2, c6, [0, 0, 1])
+            c2, c7 = self.position_empty_node(c2, c7, [1, 0, 1])
+            c3, c4 = self.position_empty_node(c3, c4, [-1, -1, 1])
+            c3, c5 = self.position_empty_node(c3, c5, [0, -1, 1])
+            c3, c6 = self.position_empty_node(c3, c6, [-1, 0, 1])
+            c3, c7 = self.position_empty_node(c3, c7, [0, 0, 1])
+            c4, c5 = self.position_empty_node(c4, c5, [1, 0, 0])
+            c4, c6 = self.position_empty_node(c4, c6, [0, 1, 0])
+            c4, c7 = self.position_empty_node(c4, c7, [1, 1, 0])
+            c5, c6 = self.position_empty_node(c5, c6, [-1, 1, 0])
+            c5, c7 = self.position_empty_node(c5, c7, [0, 1, 0])
+            c6, c7 = self.position_empty_node(c6, c7, [1, 0, 0])
+
+            # # Re-check leaf nodes
+            # new_leaf_nodes = (np.sum(n0['children'], axis=1) == 0) & \
+            #     (np.sum(n1['children'], axis=1) == 0) & \
+            #     (np.sum(n2['children'], axis=1) == 0) & \
+            #     (np.sum(n3['children'], axis=1) == 0) & \
+            #     (np.sum(n4['children'], axis=1) == 0) & \
+            #     (np.sum(n5['children'], axis=1) == 0) & \
+            #     (np.sum(n6['children'], axis=1) == 0) & \
+            #     (np.sum(n7['children'], axis=1) == 0)
+            # if np.sum(new_leaf_nodes) > 0:
+            #     new_inds = np.where(new_leaf_nodes)
+            #     self.vert_proc(n0[new_inds], n1[new_inds], n2[new_inds],
+            #               n3[new_inds], n4[new_inds], n5[new_inds],
+            #               n6[new_inds], n7[new_inds])
+
+            # inds = np.where(~new_leaf_nodes)
 
             # Replace current nodes with their ordered children if present
-            n0_subdivided = np.sum(n0[inds]['children'], axis=1) > 0
-            n1_subdivided = np.sum(n1[inds]['children'], axis=1) > 0
-            n2_subdivided = np.sum(n2[inds]['children'], axis=1) > 0
-            n3_subdivided = np.sum(n3[inds]['children'], axis=1) > 0
-            n4_subdivided = np.sum(n4[inds]['children'], axis=1) > 0
-            n5_subdivided = np.sum(n5[inds]['children'], axis=1) > 0
-            n6_subdivided = np.sum(n6[inds]['children'], axis=1) > 0
-            n7_subdivided = np.sum(n7[inds]['children'], axis=1) > 0
+            n0_subdivided = np.sum(c0['children'], axis=1) > 0
+            n1_subdivided = np.sum(c1['children'], axis=1) > 0
+            n2_subdivided = np.sum(c2['children'], axis=1) > 0
+            n3_subdivided = np.sum(c3['children'], axis=1) > 0
+            n4_subdivided = np.sum(c4['children'], axis=1) > 0
+            n5_subdivided = np.sum(c5['children'], axis=1) > 0
+            n6_subdivided = np.sum(c6['children'], axis=1) > 0
+            n7_subdivided = np.sum(c7['children'], axis=1) > 0
 
             if np.sum(n0_subdivided) > 0:
-                c0[inds][n0_subdivided] = self._ot._nodes[
-                    n0[inds][n0_subdivided]['children'][:, 7]]
+                c0[n0_subdivided] = self._ot._nodes[
+                    c0[n0_subdivided]['children'][:, 7]]
             if np.sum(n1_subdivided) > 0:
-                c1[inds][n1_subdivided] = self._ot._nodes[
-                    n1[inds][n1_subdivided]['children'][:, 6]]
+                c1[n1_subdivided] = self._ot._nodes[
+                    c1[n1_subdivided]['children'][:, 6]]
             if np.sum(n2_subdivided) > 0:
-                c2[inds][n2_subdivided] = self._ot._nodes[
-                    n2[inds][n2_subdivided]['children'][:, 5]]
+                c2[n2_subdivided] = self._ot._nodes[
+                    c2[n2_subdivided]['children'][:, 5]]
             if np.sum(n3_subdivided) > 0:
-                c3[inds][n3_subdivided] = self._ot._nodes[
-                    n3[inds][n3_subdivided]['children'][:, 4]]
+                c3[n3_subdivided] = self._ot._nodes[
+                    c3[n3_subdivided]['children'][:, 4]]
             if np.sum(n4_subdivided) > 0:
-                c4[inds][n4_subdivided] = self._ot._nodes[
-                    n4[inds][n4_subdivided]['children'][:, 3]]
+                c4[n4_subdivided] = self._ot._nodes[
+                    c4[n4_subdivided]['children'][:, 3]]
             if np.sum(n5_subdivided) > 0:
-                c5[inds][n5_subdivided] = self._ot._nodes[
-                    n5[inds][n5_subdivided]['children'][:, 2]]
+                c5[n5_subdivided] = self._ot._nodes[
+                    c5[n5_subdivided]['children'][:, 2]]
             if np.sum(n6_subdivided) > 0:
-                c6[inds][n6_subdivided] = self._ot._nodes[
-                    n6[inds][n6_subdivided]['children'][:, 1]]
+                c6[n6_subdivided] = self._ot._nodes[
+                    c6[n6_subdivided]['children'][:, 1]]
             if np.sum(n7_subdivided) > 0:
-                c7[inds][n7_subdivided] = self._ot._nodes[
-                    n7[inds][n7_subdivided]['children'][:, 0]]
+                c7[n7_subdivided] = self._ot._nodes[
+                    c7[n7_subdivided]['children'][:, 0]]
 
             if np.sum(n0_subdivided) > 0 | np.sum(n1_subdivided) > 0 | np.sum(
                     n2_subdivided) > 0 | np.sum(n3_subdivided) > 0 | np.sum(
