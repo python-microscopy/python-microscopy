@@ -187,7 +187,7 @@ class DirCollection(FileMember, Collection):
     COLLECTION_MIME_TYPE = 'httpd/unix-directory'           # application/x-collection ？
     def __init__(self, fsdir, virdir, parent=None):
         if not clusterIO.exists(fsdir):
-            raise "Local directory (fsdir) not found: " + fsdir
+            raise RuntimeError("Local directory (fsdir) not found: " + fsdir)
         self.fsname = fsdir
         self.name = virdir
         if self.fsname[-1] != os.sep:

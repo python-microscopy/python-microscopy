@@ -305,6 +305,10 @@ def listdir(dirname, serverfilter=''):
     return sorted(listdirectory(dirname, serverfilter).keys())
 
 def isdir(name, serverfilter=''):
+    if name in ['/', '']:
+        #special case for root dir
+        return True
+    
     pn, n = os.path.split(name)
     d = listdirectory(pn)[n]
     

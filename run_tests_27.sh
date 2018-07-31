@@ -6,7 +6,7 @@ if [[ `conda env list` = *"pm_test_27"* ]]
     then
         echo "Using existing pm_test_27 environment"
     else
-        conda create -n pm_test_27 -y -q python=2.7 pyme-depends pytest pytest-cov pytest-html nose
+        conda create -n pm_test_27 -y -q python=2.7 pyme-depends pytest pytest-cov pytest-html nose cython
 fi
 
 if [ $? -eq 0 ]
