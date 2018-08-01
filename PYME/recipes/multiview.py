@@ -255,9 +255,11 @@ class MapAstigZ(ModuleBase):
             raise RuntimeError('MapAstigZ needs metadata')
 
         if self.astigmatism_calibration_location == '':  # grab calibration from the metadata
-            s = unifiedIO.read(inp.mdh['Analysis.AstigmatismMapID'])
+            calibration_location = inp.mdh['Analysis.AstigmatismMapID']
         else:
-            s = unifiedIO.read(self.astigmatism_calibration_location)
+            calibration_location = self.astigmatism_calibration_location
+
+        s = unifiedIO.read(calibration_location)
 
         astig_calibrations = json.loads(s)
 
@@ -270,7 +272,7 @@ class MapAstigZ(ModuleBase):
         mapped.setMapping('z', 'astigmatic_z + z')
 
         mapped.mdh = inp.mdh
-        mapped.mdh['Analysis.astigmatism_calibration_location'] = self.astigmatism_calibration_location
+        mapped.mdh['Analysis.astigmatism_calibration_used'] = calibration_location
 
         namespace[self.output_name] = mapped
 
