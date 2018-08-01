@@ -40,12 +40,12 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         # We need to replace any instances of the 0-node with an empty node
         # corresponding to a position directly across from the self._other
         # node. Essentially, we rebuild this portion of the octree.
-        n0_root_mask = n0['depth'] == 0
-        n1_root_mask = n1['depth'] == 0
+        n0_root_mask = (n0['depth'] == 0)
+        n1_root_mask = (n1['depth'] == 0)
         if np.sum(n0_root_mask) > 0:
             inds = np.where(n0_root_mask)
             empty_node = np.zeros_like(n0[inds])
-            empty_node['nPoints'] = self._ot._nodes[n1[inds]['parent']]['nPoints']/8.
+            empty_node['nPoints'] = 0
             empty_node['depth'] = n1[inds]['depth']
             empty_node['centre'] = n1[inds]['centre'] + np.vstack(
                 self._ot.box_size(n1[inds]['depth'])).T * np.array(shift) * -1
@@ -53,7 +53,7 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         if np.sum(n1_root_mask) > 0:
             inds = np.where(n1_root_mask)
             empty_node = np.zeros_like(n1[inds])
-            empty_node['nPoints'] = self._ot._nodes[n0[inds]['parent']]['nPoints'] / 8.
+            empty_node['nPoints'] = 0
             empty_node['depth'] = n0[inds]['depth']
             empty_node['centre'] = n0[inds]['centre'] + np.vstack(
                 self._ot.box_size(n0[inds]['depth'])).T * np.array(shift)
@@ -563,6 +563,36 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def vert_proc(self, n0, n1, n2, n3, n4, n5, n6, n7):
+        # Check 0-nodes
+        n0, n1 = self.position_empty_node(n0, n1, [1, 0, 0])
+        n0, n2 = self.position_empty_node(n0, n2, [0, 1, 0])
+        n0, n3 = self.position_empty_node(n0, n3, [1, 1, 0])
+        n0, n4 = self.position_empty_node(n0, n4, [0, 0, 1])
+        n0, n5 = self.position_empty_node(n0, n5, [1, 0, 1])
+        n0, n6 = self.position_empty_node(n0, n6, [0, 1, 1])
+        n0, n7 = self.position_empty_node(n0, n7, [1, 1, 1])
+        n1, n2 = self.position_empty_node(n1, n2, [-1, 1, 0])
+        n1, n3 = self.position_empty_node(n1, n3, [0, 1, 0])
+        n1, n4 = self.position_empty_node(n1, n4, [-1, 0, 1])
+        n1, n5 = self.position_empty_node(n1, n5, [0, 0, 1])
+        n1, n6 = self.position_empty_node(n1, n6, [-1, 1, 1])
+        n1, n7 = self.position_empty_node(n1, n7, [0, 1, 1])
+        n2, n3 = self.position_empty_node(n2, n3, [1, 0, 0])
+        n2, n4 = self.position_empty_node(n2, n4, [0, -1, 1])
+        n2, n5 = self.position_empty_node(n2, n5, [1, -1, 1])
+        n2, n6 = self.position_empty_node(n2, n6, [0, 0, 1])
+        n2, n7 = self.position_empty_node(n2, n7, [1, 0, 1])
+        n3, n4 = self.position_empty_node(n3, n4, [-1, -1, 1])
+        n3, n5 = self.position_empty_node(n3, n5, [0, -1, 1])
+        n3, n6 = self.position_empty_node(n3, n6, [-1, 0, 1])
+        n3, n7 = self.position_empty_node(n3, n7, [0, 0, 1])
+        n4, n5 = self.position_empty_node(n4, n5, [1, 0, 0])
+        n4, n6 = self.position_empty_node(n4, n6, [0, 1, 0])
+        n4, n7 = self.position_empty_node(n4, n7, [1, 1, 0])
+        n5, n6 = self.position_empty_node(n5, n6, [-1, 1, 0])
+        n5, n7 = self.position_empty_node(n5, n7, [0, 1, 0])
+        n6, n7 = self.position_empty_node(n6, n7, [1, 0, 0])
+        
         leaf_nodes = (np.sum(n0['children'], axis=1) == 0) & (
         np.sum(n1['children'], axis=1) == 0) & \
                      (np.sum(n2['children'], axis=1) == 0) & (
@@ -604,36 +634,6 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             c5 = deepcopy(n5[inds])
             c6 = deepcopy(n6[inds])
             c7 = deepcopy(n7[inds])
-
-            # Check 0-nodes
-            c0, c1 = self.position_empty_node(c0, c1, [1, 0, 0])
-            c0, c2 = self.position_empty_node(c0, c2, [0, 1, 0])
-            c0, c3 = self.position_empty_node(c0, c3, [1, 1, 0])
-            c0, c4 = self.position_empty_node(c0, c4, [0, 0, 1])
-            c0, c5 = self.position_empty_node(c0, c5, [1, 0, 1])
-            c0, c6 = self.position_empty_node(c0, c6, [0, 1, 1])
-            c0, c7 = self.position_empty_node(c0, c7, [1, 1, 1])
-            c1, c2 = self.position_empty_node(c1, c2, [-1, 1, 0])
-            c1, c3 = self.position_empty_node(c1, c3, [0, 1, 0])
-            c1, c4 = self.position_empty_node(c1, c4, [-1, 0, 1])
-            c1, c5 = self.position_empty_node(c1, c5, [0, 0, 1])
-            c1, c6 = self.position_empty_node(c1, c6, [-1, 1, 1])
-            c1, c7 = self.position_empty_node(c1, c7, [0, 1, 1])
-            c2, c3 = self.position_empty_node(c2, c3, [1, 0, 0])
-            c2, c4 = self.position_empty_node(c2, c4, [0, -1, 1])
-            c2, c5 = self.position_empty_node(c2, c5, [1, -1, 1])
-            c2, c6 = self.position_empty_node(c2, c6, [0, 0, 1])
-            c2, c7 = self.position_empty_node(c2, c7, [1, 0, 1])
-            c3, c4 = self.position_empty_node(c3, c4, [-1, -1, 1])
-            c3, c5 = self.position_empty_node(c3, c5, [0, -1, 1])
-            c3, c6 = self.position_empty_node(c3, c6, [-1, 0, 1])
-            c3, c7 = self.position_empty_node(c3, c7, [0, 0, 1])
-            c4, c5 = self.position_empty_node(c4, c5, [1, 0, 0])
-            c4, c6 = self.position_empty_node(c4, c6, [0, 1, 0])
-            c4, c7 = self.position_empty_node(c4, c7, [1, 1, 0])
-            c5, c6 = self.position_empty_node(c5, c6, [-1, 1, 0])
-            c5, c7 = self.position_empty_node(c5, c7, [0, 1, 0])
-            c6, c7 = self.position_empty_node(c6, c7, [1, 0, 0])
 
             # # Re-check leaf nodes
             # new_leaf_nodes = (np.sum(n0['children'], axis=1) == 0) & \
