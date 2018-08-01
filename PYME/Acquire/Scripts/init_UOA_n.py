@@ -144,11 +144,14 @@ def power_meter(scope):
 @init_hardware('Lasers & Shutters')
 def lasers(scope):
     from PYME.Acquire.Hardware import ioslave
+    from PYME.Acquire.Hardware import phoxxLaser
 
     slave = ioslave.IOSlave('COM6')
-
     scope.l671 = ioslave.DigitalShutter('l671', scopeState = scope.state, ios=slave, pin=13)
-    scope.lasers = [scope.l671]
+
+    scope.l642 = phoxxLaser.PhoxxLaser('l642', portname='COM7', scopeState=scope.state)
+    scope.CleanupFunctions.append(scope.l642.Close)
+    scope.lasers = [scope.l642, scope.l671]
 
 @init_gui('Laser controls')
 def laser_controls(MainFrame, scope):

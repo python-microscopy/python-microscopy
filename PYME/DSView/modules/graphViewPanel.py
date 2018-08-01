@@ -283,6 +283,8 @@ class GraphViewPanel(wx.Panel):
 
         if self.do.ds.shape[3] > 1:
             self.axes.legend()
+
+        self.axes.grid()
         self.axes.set_xlabel(self.xlabel)
 
         self.canvas.draw()

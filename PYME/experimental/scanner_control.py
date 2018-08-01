@@ -2,7 +2,7 @@
 Drive a galvo scanner from a raspberry pi and expose a web interface
 '''
 
-import webframework
+from PYME.ParallelTasks import webframework
 import numpy as np
 import pygame
 import sys
@@ -49,8 +49,12 @@ class ScannerController(object):
         
         if waveform == 'sine':
             y = amplitude*self._fullscale*np.sin(2*np.pi*frequency*t)
+        elif waveform == 'tri':
+            t1 = (frequency*t)%2
+            y = 2*(t1 - 2*(t1>1)*(t1-1)) - 1
+            y = amplitude*self._fullscale*y
         else:
-            raise  RuntimeError('waveform %s not supported' % waveform)
+            raise RuntimeError('waveform %s not supported' % waveform)
         
         
         self._sound = pygame.sndarray.make_sound(y.astype('int16'))
