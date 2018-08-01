@@ -83,23 +83,23 @@ class MultiviewMapper:
 
         logging.debug('Adding menu items for multi-view manipulation')
 
-        visFr.AddMenuItem('Multiview', 'Calibrate Shifts', self.on_calibrate_shifts,
+        visFr.AddMenuItem('Multiview', 'Calibrate Shifts', self.OnCalibrateShifts,
                           helpText='Extract a shift field from bead measurements')
 
         visFr.AddMenuItem('Multiview', itemType='separator')
 
-        visFr.AddMenuItem('Multiview', 'Fold Channels', self.on_fold)
-        visFr.AddMenuItem('Multiview', 'Shift correct folded channels', self.on_shift_correct_folded)
+        visFr.AddMenuItem('Multiview', 'Fold Channels', self.OnFold)
+        visFr.AddMenuItem('Multiview', 'Shift correct folded channels', self.OnShiftCorrectFolded)
 
-        visFr.AddMenuItem('Multiview', 'Find points from same molecule', self.on_find_clumps)
-        visFr.AddMenuItem('Multiview', 'Group found points', self.on_merge_clumps)
+        visFr.AddMenuItem('Multiview', 'Find points from same molecule', self.OnFindClumps)
+        visFr.AddMenuItem('Multiview', 'Group found points', self.OnMergeClumps)
 
-        visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.on_map_astigmatic_z,
+        visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapAstigmaticZ,
                           helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
 
-        visFr.AddMenuItem('Multiview', 'Check astigmatic PSF Calibration', self.on_check_astigmatism_calibration)
+        visFr.AddMenuItem('Multiview', 'Check astigmatic PSF Calibration', self.OnCheckAstigmatismCalibration)
 
-    def on_fold(self, event=None):
+    def OnFold(self, event=None):
         """
         See multiview.foldX. At this point the origin of x should be the corner of the concatenated frame. Note that
         a probe key will be mapped into the data source to designate colour channel, but the colour channel will not be
@@ -128,7 +128,7 @@ class MultiviewMapper:
         recipe.execute()
         self.pipeline.selectDataSource('folded')
 
-    def on_shift_correct_folded(self, event=None):
+    def OnShiftCorrectFolded(self, event=None):
         """
         Applies chromatic shift correction to folded localization data that was acquired with an
         image splitting device, but localized without splitter awareness.
@@ -165,7 +165,7 @@ class MultiviewMapper:
         recipe.execute()
         self.pipeline.selectDataSource('shift_corrected')
 
-    def on_calibrate_shifts(self, event):
+    def OnCalibrateShifts(self, event):
         """
 
         Generates multiview shiftmaps on bead-data. Only beads which show up in all channels are
@@ -250,7 +250,7 @@ class MultiviewMapper:
         #     json.dump(shiftWallet, fid)
         #     fid.close()
 
-    def on_find_clumps(self, event=None):
+    def OnFindClumps(self, event=None):
         """
 
         Determines which localizations are likely to be the same molecule and assigns them the same label.
@@ -277,7 +277,7 @@ class MultiviewMapper:
         recipe.execute()
         self.pipeline.selectDataSource('with_clumps')
 
-    def on_merge_clumps(self, event=None):
+    def OnMergeClumps(self, event=None):
         """
 
         Coalesces clusters of localization data considered to be the same molecule. See
@@ -298,7 +298,7 @@ class MultiviewMapper:
 
         if not 'clumpIndex' in self.pipeline.keys():
             logger.debug('No clumps found - running FindClumps')
-            self.on_find_clumps()
+            self.OnFindClumps()
 
         recipe = self.pipeline.recipe
 
@@ -312,7 +312,7 @@ class MultiviewMapper:
         # refresh the Colour choice selection in the GUI
         #self.visFr.CreateFoldPanel()
 
-    def on_map_astigmatic_z(self, event=None, useMD = True):
+    def OnMapAstigmaticZ(self, event=None, useMD = True):
         """
 
         Uses sigmax and sigmay values from astigmatic fits to look up a z-position using calibration curves.
@@ -381,7 +381,7 @@ class MultiviewMapper:
         self.visFr.RefreshView()
         self.visFr.CreateFoldPanel()
 
-    def on_check_astigmatism_calibration(self, event=None):
+    def OnCheckAstigmatismCalibration(self, event=None):
         """
         For use with dyes on a coverslip.
         NB localizations from transient frames should be filtered prior to calling this function
