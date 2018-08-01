@@ -69,6 +69,7 @@ class CSInterpolator(__interpolator):
         #print(ox, oy, oz)
         
         #print self.interpModel.shape
+        #print self.dx
 
 
         r = cInterp.InterpolateCS(self.interpModel, ox, oy, oz, xl, yl, self.dx, self.dy,self.dz)

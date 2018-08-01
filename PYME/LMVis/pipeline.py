@@ -769,7 +769,7 @@ class Pipeline:
                 #color channel is given in 'probe' column
                 self.mapping.setMapping('ColourNorm', '1.0 + 0*probe')
     
-                for i in range(int(self['probe'].min()), int(self['probe'].max() + 1)):
+                for i in range(int(self.mapping['probe'].min()), int(self.mapping['probe'].max() + 1)):
                     self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
     
             nSeqCols = self.mdh.getOrDefault('Protocol.NumberSequentialColors', 1)

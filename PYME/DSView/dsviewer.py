@@ -50,7 +50,7 @@ from PYME.DSView.DisplayOptionsPanel import OptionsPanel
 #from PYME.DSView.OverlaysPanel import OverlayPanel
 from PYME.IO.image import ImageStack
 
-from PYME.Acquire.mytimer import mytimer
+from PYME.ui.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping
 
 from PYME.ui.AUIFrame import AUIFrame
@@ -314,7 +314,14 @@ class DSViewFrame(AUIFrame):
         ted.Destroy()
 
     def OnExport(self, event=None):
-        self.image.Save(crop = True, view = self.view)
+        bx = min(self.do.selection_begin_x, self.do.selection_end_x)
+        ex = max(self.do.selection_begin_x, self.do.selection_end_x)
+        by = min(self.do.selection_begin_y, self.do.selection_end_y)
+        ey = max(self.do.selection_begin_y, self.do.selection_end_y)
+        
+        roi = [[bx, ex + 1],[by, ey + 1], [0, self.image.data.shape[2]]]
+        
+        self.image.Save(crop = True, roi=roi)
 
     def OnCrop(self):
         pass
@@ -388,7 +395,7 @@ class MyApp(wx.App):
         return True
         
     def LoadData(self):
-        import sys, os
+        import sys
         from optparse import OptionParser
 
         op = OptionParser(usage = 'usage: %s [options] [filename]' % sys.argv[0])

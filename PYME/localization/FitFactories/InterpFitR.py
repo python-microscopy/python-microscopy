@@ -62,18 +62,29 @@ fresultdtype=[('tIndex', '<i4'),
     ('subtractedBackground', '<f4')]
 
 def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1, background=0):
+    res = np.zeros(1, dtype=fresultdtype)
     if fitErr is None:
         fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
     if startParams is None:
         startParams = -5e3*np.ones(fitResults.shape, 'f')
+    
+    res['tIndex'] = metadata.tIndex
+    res['fitResults'].view('5f4')[0,:] = fitResults.astype('f')
+    res['fitError'].view('5f4')[0,:] = fitErr.astype('f')
+    res['resultCode'] = resultCode
+    res['slicesUsed'].view('9i4')[:] = np.array(fmtSlicesUsed(slicesUsed), dtype='i4').ravel() #fmtSlicesUsed(slicesUsed)
+    res['startParams'].view('5f4')[0,:] = startParams.astype('f')
+    res['nchi2'] = nchi2
+    res['subtractedBackground'] = background
+    
+    return res
 
-    tIndex = metadata.tIndex
-
-    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), startParams.astype('f'), nchi2, background)], dtype=fresultdtype)
+    #return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), startParams.astype('f'), nchi2, background)], dtype=fresultdtype)
 
 
 def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
+    from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
@@ -82,8 +93,9 @@ def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
     vy = 1e3*metadata.voxelsize.y
     
     #position in nm from camera origin
-    x_ = (xslice.start + metadata.Camera.ROIPosX - 1)*vx
-    y_ = (yslice.start + metadata.Camera.ROIPosY - 1)*vy
+    roi_x0, roi_y0 = get_camera_roi_origin(metadata)
+    x_ = (xslice.start + roi_x0)*vx
+    y_ = (yslice.start + roi_y0)*vy
 
     im = PSFFitFactory._evalModel(fitResults['fitResults'], metadata, xslice, yslice, x_, y_)
     

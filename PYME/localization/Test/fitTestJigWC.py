@@ -92,7 +92,7 @@ class fitTestJig(object):
         self.d2 = []
         
         for i in range(nTests):
-            p = np.array(params) + np.array(param_jit)*(2*np.rand(len(param_jit)) - 1)
+            p = np.array(params) + np.array(param_jit)*(2*np.random.rand(len(param_jit)) - 1)
             p[0] = abs(p[0])
             ps[i, :] = p
             self.data, self.x0, self.y0, self.z0 = self.simMod.FitFactory.evalModel(p, md2, roiHalfSize=rs)#, roiHalfSize= roiHalfWidth))

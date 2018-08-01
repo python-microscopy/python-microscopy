@@ -146,8 +146,10 @@ def genFitImage(fitResults, metadata):
     vy = 1e3*metadata.voxelsize.y
     
     #position in nm from camera origin
-    x_ = (xslice.start + metadata.Camera.ROIPosX - 1)*vx
-    y_ = (yslice.start + metadata.Camera.ROIPosY - 1)*vy
+    roi_x0, roi_y0 = FFBase.get_camera_roi_origin(metadata)
+
+    x_ = (xslice.start + roi_x0) * vx
+    y_ = (yslice.start + roi_y0) * vy
     
     #look up shifts
     DeltaX = metadata.chroma.dx.ev(x_, y_)

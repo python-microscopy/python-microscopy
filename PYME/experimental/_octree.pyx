@@ -149,7 +149,7 @@ cdef class Octree:
         
         #print 'getting children'
         child_idx = ((x > node.centre_x) + 2*(y > node.centre_y)  + 4*(z > node.centre_z))
-        while node.nPoints > 1:
+        while node.nPoints >= 1:
             children = &node.child0
             new_idx = children[child_idx]
             if new_idx == 0:
@@ -254,24 +254,26 @@ cdef class Octree:
         
         #find the node we need to subdivide
         node_idx, child_idx, subdivide = self.__search(x, y, z)
-    
-        if not subdivide:
-            #add a new node
-            #print 'adding without subdivision'
-            self.__add_node(x, y, z, node_idx, child_idx)
-        else:
-            #print 'adding with subdivision: ',  node_idx, child_idx
-            #we need to move the current node data into a child
-            c_node = self._cnodes[node_idx]
-            
-            if c_node.depth < self._maxdepth:
+        
+        c_node = self._cnodes[node_idx]
+        
+        if c_node.depth < self._maxdepth:
+            if not subdivide:
+                #add a new node
+                #print 'adding without subdivision'
+                
+                self.__add_node(x, y, z, node_idx, child_idx)
+            else:
+                #print 'adding with subdivision: ',  node_idx, child_idx
+                #we need to move the current node data into a child
+                
                 #child to put the data currently held by the node into
                 node_child_idx = ((x > c_node.centre_x) + 2*(y > c_node.centre_y)  + 4*(z > c_node.centre_z))
                 #make a new node with the current nodes data
                 new_idx = self.__add_node(c_node.centroid_x, c_node.centroid_y, c_node.centroid_z, node_idx, node_child_idx)
                 
                 #continue subdividing until original and new data do not want to go in the same child
-                while (node_child_idx == child_idx) and (c_node.depth < self._maxdepth):
+                while (node_child_idx == child_idx) and (c_node.depth < (self._maxdepth - 1)):
                     node_idx = new_idx
                     c_node = self._cnodes[node_idx]
                     
@@ -284,7 +286,8 @@ cdef class Octree:
                     
                     new_idx = self.__add_node(c_node.centroid_x, c_node.centroid_y, c_node.centroid_z, node_idx, node_child_idx)
                 
-                self.__add_node(x, y, z, node_idx, child_idx)
+                if (c_node.depth < self._maxdepth):
+                    self.__add_node(x, y, z, node_idx, child_idx)
 
         self._cnodes[node_idx].nPoints += 1
         while node_idx > 0:

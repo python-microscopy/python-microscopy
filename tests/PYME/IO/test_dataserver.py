@@ -13,7 +13,7 @@ def setup_module():
     global proc, tmp_root
     tmp_root = os.path.join(tempfile.gettempdir(), 'PYMEDataServer_TEST')
     os.makedirs(tmp_root)
-    proc = subprocess.Popen('PYMEDataServer  -r %s -f TEST' % tmp_root , shell=True)
+    proc = subprocess.Popen('python -m PYME.ParallelTasks.HTTPDataServer  -r %s -f TEST' % tmp_root , shell=True)
     
     
 def teardown_module():

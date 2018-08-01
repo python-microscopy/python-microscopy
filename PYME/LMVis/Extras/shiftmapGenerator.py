@@ -64,13 +64,16 @@ class ShiftmapGenerator:
             
     def OnGenShiftmapQuad(self, event):
         from PYME.Analysis.points import twoColour, twoColourPlot
+        from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
         pipeline = self.visFr.pipeline
 
-        vs = [pipeline.mdh['voxelsize.x']*1e3, pipeline.mdh['voxelsize.y']*1e3, 200.] 
+        vs = [pipeline.mdh['voxelsize.x']*1e3, pipeline.mdh['voxelsize.y']*1e3, 200.]
         
-        x0 = (pipeline.mdh['Camera.ROIPosX'] -1)*vs[0]
-        y0 = (pipeline.mdh['Camera.ROIPosY'] -1)*vs[1]
+        roi_x0, roi_y0 = get_camera_roi_origin(pipeline.mdh)
+        
+        x0 = (roi_x0)*vs[0]
+        y0 = (roi_y0)*vs[1]
         
         lx = len(pipeline.filter['x'])
         bbox = None#[0,(pipeline.mdh['Camera.ROIWidth'] + 1)*vs[0], 0,(pipeline.mdh['Camera.ROIHeight'] + 1)*vs[1]]

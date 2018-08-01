@@ -26,7 +26,7 @@ from scipy import fftpack, ndimage
 from PYME.Acquire.Hardware import splitter
 
 from pylab import ifftshift, ifftn, fftn, fftshift
-
+from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
 def findRectangularROIs(mask):
     #break up any L shaped rois
@@ -157,8 +157,11 @@ def tile(ds, xm, ym, mdh, split=True, skipMoveFrames=True, shiftfield=None, mixm
     weights[:,:edgeRamp,:] *= np.linspace(0,1, edgeRamp)[None, :, None]
     weights[:,-edgeRamp:,:] *= np.linspace(1,0, edgeRamp)[None,:, None]
 
-    ROIX1 = mdh.getEntry('Camera.ROIPosX')
-    ROIY1 = mdh.getEntry('Camera.ROIPosY')
+    
+    roi_x0, roi_y0 =get_camera_roi_origin(mdh)
+    
+    ROIX1 = roi_x0 + 1
+    ROIY1 = roi_y0 + 1
 
     ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
     ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
@@ -466,8 +469,11 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=True, skipMoveFrames=True, s
     weights[:, :edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[None, :, None]
     weights[:, -edgeRamp:, :] *= np.linspace(1, 0, edgeRamp)[None, :, None]
 
-    ROIX1 = mdh.getEntry('Camera.ROIPosX')
-    ROIY1 = mdh.getEntry('Camera.ROIPosY')
+
+    roi_x0, roi_y0 = get_camera_roi_origin(mdh)
+
+    ROIX1 = roi_x0 + 1
+    ROIY1 = roi_y0 + 1
 
     ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
     ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')

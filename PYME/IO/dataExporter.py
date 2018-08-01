@@ -29,9 +29,10 @@ import numpy
 import warnings
 
 try:
-    import Image
-except ImportError:
     from PIL import Image
+except ImportError:
+    import Image
+    
 import os
 from PYME.IO.FileUtils import saveTiffStack
 from PYME.IO import MetaDataHandler
@@ -506,15 +507,20 @@ def _getFilename(defaultExt = '*.tif'):
 
         return fname
 
-def CropExportData(vp, mdh=None, events=None, origName = None):
+def CropExportData(data, roi=None, mdh=None, events=None, origName = None):
     #if 'ds' in dir(vp.do):
-    ds = vp.do.ds
+    #ds = vp.do.ds
     #else:
     #    ds= vp.ds
 
     #if 'selection_begin_x' in dir(vp):
-    roi = [[vp.do.selection_begin_x, vp.do.selection_end_x + 1],
-              [vp.do.selection_begin_y, vp.do.selection_end_y +1], [0, ds.shape[2]]]
+    
+    # roi = [[vp.do.selection_begin_x, vp.do.selection_end_x + 1],
+    #           [vp.do.selection_begin_y, vp.do.selection_end_y +1], [0, ds.shape[2]]]
+    
+    if roi is None:
+        roi = [[0,data.shape[0]], [0,data.shape[1]], [0,data.shape[2]]]
+    
     #else:
     #   roi = [[0, ds.shape[0]],[0, ds.shape[1]],[0, ds.shape[2]]]
 
@@ -534,7 +540,7 @@ def CropExportData(vp, mdh=None, events=None, origName = None):
             ext = '*.ome.tif'        
         exp = exportersByExtension[ext]()
 
-        exp.Export(ds, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
+        exp.Export(data, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
 
     dlg.Destroy()
 

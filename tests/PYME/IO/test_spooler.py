@@ -22,7 +22,7 @@ def setup_module():
         os.makedirs(tmp_root)
     port_start = 8100
     for i in range(10):
-        proc = subprocess.Popen('PYMEDataServer -r %s -f TEST -t -p %d --timeout-test=0.5' % (tmp_root, port_start + i), stderr= sys.stderr, shell=True)
+        proc = subprocess.Popen('python -m PYME.ParallelTasks.HTTPDataServer -r %s -f TEST -t -p %d --timeout-test=0.5' % (tmp_root, port_start + i), stderr= sys.stderr, shell=True)
         procs.append(proc)
         
     time.sleep(5)
@@ -38,9 +38,9 @@ def teardown_module():
     shutil.rmtree(tmp_root)
     
     
-def test_spooler():
+def test_spooler(nFrames=50):
     ts = testClusterSpooling.TestSpooler(testFrameSize=[1024,256], serverfilter='TEST')
-    ts.run(nFrames=500)
+    ts.run(nFrames=nFrames)
     
 
 from PYME.util import fProfile
@@ -55,7 +55,7 @@ if __name__ == '__main__':
             prof.profileOn('.*PYME.*|.*requests.*|.*socket.*|.*httplib.*', '/Users/david/spool_prof.txt')
             PROFILE = True
             
-        test_spooler()
+        test_spooler(500)
 
         if PROFILE:
             prof.profileOff()

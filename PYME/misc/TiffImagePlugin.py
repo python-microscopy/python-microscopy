@@ -41,11 +41,12 @@
 
 __version__ = "1.3.5"
 
-try:
-    import Image, ImageFile
-    import ImagePalette
-except ImportError: #Have Pillow rather than PIL
-    from PIL import Image, ImageFile, ImagePalette
+# try:
+#     import Image, ImageFile
+#     import ImagePalette
+# except ImportError: #Have Pillow rather than PIL
+
+from PIL import Image, ImageFile, ImagePalette
 
 import array, string, sys
 

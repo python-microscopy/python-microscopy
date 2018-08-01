@@ -23,7 +23,7 @@ def setup_module():
         srv_root = os.path.join(tmp_root, 'srv%d' % i)
         os.makedirs(srv_root)
         print('Launching server %d' % i)
-        proc = subprocess.Popen('PYMEDataServer  -r %s -f TEST -p 808%d' % (srv_root, i) , shell=True)
+        proc = subprocess.Popen('python -m PYME.ParallelTasks.HTTPDataServer  -r %s -f TEST -p 808%d' % (srv_root, i) , shell=True)
         server_procs.append(proc)
         
     time.sleep(5)
@@ -47,7 +47,7 @@ def _discover_servers(foo=None):
     
     return ns.list('TEST')
     
-def test_discovery():
+def _test_discovery():
     pool = multiprocessing.Pool(60)
     
     detections = pool.map(_discover_servers, range(60))
@@ -75,6 +75,6 @@ if __name__ == '__main__':
     setup_module()
     
     try:
-        test_discovery()
+        _test_discovery()
     finally:
         teardown_module()

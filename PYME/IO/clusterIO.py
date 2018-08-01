@@ -305,7 +305,17 @@ def listdir(dirname, serverfilter=''):
     return sorted(listdirectory(dirname, serverfilter).keys())
 
 def isdir(name, serverfilter=''):
-    return len(listdir(name, serverfilter)) > 0
+    name = name.rstrip('/')
+    if name in ['/', '']:
+        #special case for root dir
+        return True
+    
+    pn, n = os.path.split(name)
+    d = listdirectory(pn)[n + '/']
+    
+    return d.type > 0
+    
+    #return len(listdir(name, serverfilter)) > 0
 
 def _cglob(url, timeout=2, nRetries=1):
 
@@ -416,8 +426,8 @@ def stat(name, serverfilter=''):
             r = stat_result(listing[fname + '/'])
         except:
             logger.exception('error stating: %s' % name)
-            print dirname, fname
-            print listing.keys()
+            #print dirname, fname
+            #print listing.keys()
             raise
     
     return r
