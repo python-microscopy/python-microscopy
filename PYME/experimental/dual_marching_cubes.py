@@ -46,7 +46,7 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         if np.sum(n0_root_mask) > 0:
             inds = np.where(n0_root_mask)
             empty_node = np.zeros_like(n0[inds])
-            empty_node['nPoints'] = 0
+            #empty_node['nPoints'] = 0
             empty_node['depth'] = n1[inds]['depth']
             empty_node['centre'] = n1[inds]['centre'] + np.vstack(
                 self._ot.box_size(n1[inds]['depth'])).T * np.array(shift) * -1
@@ -54,11 +54,12 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         if np.sum(n1_root_mask) > 0:
             inds = np.where(n1_root_mask)
             empty_node = np.zeros_like(n1[inds])
-            empty_node['nPoints'] = 0
+            #empty_node['nPoints'] = 0
             empty_node['depth'] = n0[inds]['depth']
             empty_node['centre'] = n0[inds]['centre'] + np.vstack(
                 self._ot.box_size(n0[inds]['depth'])).T * np.array(shift)
             n1[inds] = empty_node
+
         return n0, n1
 
     def node_proc(self, nodes):
@@ -170,13 +171,6 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             self.vert_proc(n0, n1, n2, n3, n4, n5, n6, n7)
 
     def face_proc_xy(self, n0, n1):
-        # Make sure at least one of these nodes is subdivided & not equal
-        # to the 0-node
-        face_mask = ((np.sum(n0['children'], axis=1) > 0) & (
-        n0['depth'] > 0)) | (
-                    (np.sum(n1['children'], axis=1) > 0) & n1['depth'] > 0)
-        n0 = n0[face_mask]
-        n1 = n1[face_mask]
 
         # Check 0-nodes
         n0, n1 = self.position_empty_node(n0, n1, [0, 0, 1])
@@ -232,14 +226,6 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def face_proc_xz(self, n0, n1):
-        # Make sure at least one of these nodes is subdivided & not equal
-        # to the 0-node
-        face_mask = ((np.sum(n0['children'], axis=1) > 0) & (
-        n0['depth'] > 0)) | (
-                    (np.sum(n1['children'], axis=1) > 0) & n1['depth'] > 0)
-        n0 = n0[face_mask]
-        n1 = n1[face_mask]
-
         # Check 0-nodes
         n0, n1 = self.position_empty_node(n0, n1, [0, 1, 0])
 
@@ -294,13 +280,6 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def face_proc_yz(self, n0, n1):
-        # Make sure at least one of these nodes is subdivided & not
-        # to the 0-node
-        face_mask = ((np.sum(n0['children'], axis=1) > 0) & (
-        n0['depth'] > 0)) | (
-                    (np.sum(n1['children'], axis=1) > 0) & n1['depth'] > 0)
-        n0 = n0[face_mask]
-        n1 = n1[face_mask]
 
         # Check 0-nodes
         n0, n1 = self.position_empty_node(n0, n1, [1, 0, 0])
@@ -356,18 +335,6 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def edge_proc_x(self, n0, n1, n2, n3):
-        # Make sure at least one of these nodes is subdivided & not
-        # to the 0-node
-        face_mask = ((np.sum(n0['children'], axis=1) > 0) & (
-        n0['depth'] > 0)) | (
-                    (np.sum(n1['children'], axis=1) > 0) & (n1['depth'] > 0)) | \
-                    ((np.sum(n2['children'], axis=1) > 0) & (
-                    n2['depth'] > 0)) | (
-                    (np.sum(n3['children'], axis=1) > 0) & (n3['depth'] > 0))
-        n0 = n0[face_mask]
-        n1 = n1[face_mask]
-        n2 = n2[face_mask]
-        n3 = n3[face_mask]
 
         # Check 0-nodes
         n0, n1 = self.position_empty_node(n0, n1, [0, 0, 1])
@@ -425,18 +392,6 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def edge_proc_y(self, n0, n1, n2, n3):
-        # Make sure at least one of these nodes is subdivided & not
-        # to the 0-node
-        face_mask = ((np.sum(n0['children'], axis=1) > 0) & (
-        n0['depth'] > 0)) | (
-                    (np.sum(n1['children'], axis=1) > 0) & (n1['depth'] > 0)) | \
-                    ((np.sum(n2['children'], axis=1) > 0) & (
-                    n2['depth'] > 0)) | (
-                    (np.sum(n3['children'], axis=1) > 0) & (n3['depth'] > 0))
-        n0 = n0[face_mask]
-        n1 = n1[face_mask]
-        n2 = n2[face_mask]
-        n3 = n3[face_mask]
 
         # Check 0-nodes
         n0, n1 = self.position_empty_node(n0, n1, [1, 0, 0])
@@ -494,18 +449,6 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def edge_proc_z(self, n0, n1, n2, n3):
-        # Make sure at least one of these nodes is subdivided & not
-        # equal to the 0-node
-        face_mask = ((np.sum(n0['children'], axis=1) > 0) & (
-        n0['depth'] > 0)) | (
-                    (np.sum(n1['children'], axis=1) > 0) & (n1['depth'] > 0)) | \
-                    ((np.sum(n2['children'], axis=1) > 0) & (
-                    n2['depth'] > 0)) | (
-                    (np.sum(n3['children'], axis=1) > 0) & (n3['depth'] > 0))
-        n0 = n0[face_mask]
-        n1 = n1[face_mask]
-        n2 = n2[face_mask]
-        n3 = n3[face_mask]
 
         # Check 0-nodes
         n0, n1 = self.position_empty_node(n0, n1, [0, 1, 0])
