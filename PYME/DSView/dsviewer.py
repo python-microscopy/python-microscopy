@@ -426,6 +426,7 @@ class MyApp(wx.App):
                 mode = im.mode
             else:
                 mode = options.mode
+                print('Mode: %s' % mode)
     
             vframe = DSViewFrame(im, None, im.filename, mode = mode)
             

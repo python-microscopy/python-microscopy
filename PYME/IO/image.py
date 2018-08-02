@@ -206,7 +206,7 @@ class ImageStack(object):
         self.haveGUI = haveGUI
 
         #default 'mode' / image type - see PYME/DSView/modules/__init__.py        
-        self.mode = 'LM'
+        self.mode = 'default'
 
         self.saved = False
         self.volatile = False #is the data likely to change and need refreshing?
@@ -415,6 +415,7 @@ class ImageStack(object):
         #self.timer.WantNotification.append(self.dsRefresh)
 
         self.events = self.dataSource.getEvents()
+        self.mode = 'LM'
 
     def _loadh5(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
@@ -458,6 +459,8 @@ class ImageStack(object):
                 self.resultsMdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5Results))
 
         self.events = self.dataSource.getEvents()
+
+        self.mode = 'LM'
         
     def _loadHTTP(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
@@ -489,6 +492,8 @@ class ImageStack(object):
 
         self.events = self.dataSource.getEvents()
         
+        self.mode='LM'
+        
     def _loadClusterPZF(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class"""
@@ -513,7 +518,7 @@ class ImageStack(object):
 
         self.events = self.dataSource.getEvents()
 
-    
+        self.mode = 'LM'
 
     def _loadPSF(self, filename):
         """Load PYME .psf data.
@@ -755,7 +760,7 @@ class ImageStack(object):
 
     def _loadTiff(self, filename):
         #from PYME.IO.FileUtils import readTiff
-        from PYME.IO.DataSources import TiffDataSource
+        from PYME.IO.DataSources import TiffDataSource, BGSDataSource
 
         mdfn = self._findAndParseMetadata(filename)
 
@@ -763,6 +768,10 @@ class ImageStack(object):
         print(self.dataSource.shape)
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
+
+        if self.dataSource.getNumSlices() > 500: #this is likely to be a localization data set
+            #background subtraction in the GUI the same way as in the analysis
+            self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
 
         print(self.data.shape)
 
@@ -815,6 +824,10 @@ class ImageStack(object):
         
         if self.mdh.getOrDefault('ImageType', '') == 'PSF':
             self.mode = 'psf'
+        elif self.dataSource.getNumSlices() > 5000:
+            #likely to want to localize this
+            self.mode = 'LM'
+            
         
     def _loadBioformats(self, filename):
         #from PYME.IO.FileUtils import readTiff

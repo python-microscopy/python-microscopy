@@ -25,6 +25,7 @@
 
 import os
 import subprocess
+import signal
 import sys
 import time
 
@@ -103,11 +104,21 @@ def main():
     parser.add_argument('NWorkers', type=int, nargs='?', default=cpuCount(),
                         help='Number of worker processes to use')
     parser.add_argument('-k', '--kill', dest='kill', default=False, action='store_true', help='Kill all existing workers without launching new ones')
+    parser.add_argument('-p', '--profile', dest='profile', default=False, action='store_true')
+    parser.add_argument('-f', '--fprofile', dest='fprofile', default=False, action='store_true')
+    
     args = parser.parse_args()
     
     if args.local:
         SERVER_PROC = 'taskServerML.py'
         WORKER_PROC = 'taskWorkerML.py'
+        
+    if args.profile:
+        prof_args = '-p'
+    elif args.fprofile:
+        prof_args = '-fp'
+    else:
+        prof_args = ''
 
     numProcessors = args.NWorkers
     
@@ -117,7 +128,7 @@ def main():
 
         if args.run_server:
             print('Launching server ...')
-            subprocess.Popen('python "%s\\%s.py"' % (fstub, SERVER_PROC), shell=True)
+            subprocess.Popen('python "%s\\%s.py" %s' % (fstub, SERVER_PROC, prof_args), shell=True)
 
             print('Waiting for server to come up ...')
             time.sleep(5)
@@ -128,7 +139,7 @@ def main():
     
         print('Launching %d workers ...' % numProcessors)
         for i in range(numProcessors):
-            subprocess.Popen('python "%s\\%s.py"' % (fstub, WORKER_PROC), shell=True)
+            subprocess.Popen('python "%s\\%s.py" %s' % (fstub, WORKER_PROC, prof_args), shell=True)
     elif sys.platform == 'darwin':
         import psutil
         
@@ -140,8 +151,14 @@ def main():
                     #print c, SERVER_PROC, WORKER_PROC
                     if len(c) > 1:
                         if (SERVER_PROC in c[1] and args.run_server) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1] and args.gui):
-                            print('killing %s' % c)
-                            p.kill()
+                            #give process a chance of closing nicely
+                            print('closing %s' % c)
+                            p.send_signal(signal.SIGINT)
+                            time.sleep(1)
+                            
+                            if p.is_running():
+                                print('killing %s' % c)
+                                p.kill()
             except (psutil.ZombieProcess, psutil.AccessDenied):
                 pass
 
@@ -149,14 +166,14 @@ def main():
             return
 
         if args.run_server:
-            subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub, SERVER_PROC)), shell=True)
+            subprocess.Popen('%s %s.py %s' % (sys.executable, os.path.join(fstub, SERVER_PROC), prof_args), shell=True)
 
             time.sleep(10)
         if args.gui:
             subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,'fitMonP.py')), shell=True)
     
         for i in range(numProcessors):
-            subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub,WORKER_PROC)), shell=True)
+            subprocess.Popen('%s %s.py %s' % (sys.executable, os.path.join(fstub,WORKER_PROC), prof_args), shell=True)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...
         if args.run_server:

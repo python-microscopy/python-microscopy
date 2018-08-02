@@ -185,23 +185,20 @@ class fitResultsSource(TabularBase):
         k = key.split('_')
 
         if len(k) == 1:  # TODO: evaluate why these are cast as floats
-            return self.fitResults[k[0]].astype('f')[sl]
+            return self.fitResults[k[0]][sl]
         elif len(k) == 2:
-            return self.fitResults[k[0]][k[1]].astype('f')[sl]
+            return self.fitResults[k[0]][k[1]][sl]
         elif len(k) == 3:
-            return self.fitResults[k[0]][k[1]][k[2]].astype('f')[sl]
+            return self.fitResults[k[0]][k[1]][k[2]][sl]
         else:
             raise KeyError("Don't know about deeper nesting yet")
 
-
-    def close(self):
-        self.h5f.close()
 
     def getInfo(self):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
-class h5rSource(TabularBase):
+class h5rSource(fitResultsSource):
     _name = "h5r Data Source"
     def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
@@ -233,31 +230,6 @@ class h5rSource(TabularBase):
         #sort by time
         if 'tIndex' in self._keys:
             self.fitResults.sort(order='tIndex')
-
-
-    def keys(self):
-        return self._keys + list(self.transkeys.keys())
-
-    def __getitem__(self, keys):
-        key, sl = self._getKeySlice(keys)
-            
-        #if we're using an alias replace with actual key
-        if key in self.transkeys.keys():
-            key = self.transkeys[key]
-
-        if not key in self._keys:
-            raise KeyError('Key not found - %s' % key)
-
-        k = key.split('_')
-        
-        if len(k) == 1:
-            return self.fitResults[k[0]][sl]
-        elif len(k) == 2:
-            return self.fitResults[k[0]][k[1]][sl]
-        elif len(k) == 3:
-            return self.fitResults[k[0]][k[1]][k[2]][sl]
-        else:
-            raise KeyError("Don't know about deeper nesting yet")
         
 
     def close(self):

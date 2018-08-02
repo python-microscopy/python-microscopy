@@ -514,7 +514,8 @@ class LMAnalyser2(object):
         dsviewer.updateHooks.append(self.update)
         dsviewer.statusHooks.append(self.GetStatusText)
 
-        self.dsviewer.AddMenuItem('View', "SubtractBackground", self.OnToggleBackground)
+        if 'bgRange' in dir(self.image.data):
+            self.dsviewer.AddMenuItem('View', "SubtractBackground", self.OnToggleBackground)
         
         #if ('auto_start_analysis' in dir(dsviewer)) and dsviewer.auto_start_analysis:
         #    print 'Automatically starting analysis'
