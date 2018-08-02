@@ -42,6 +42,7 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         # node. Essentially, we rebuild this portion of the octree.
         n0_root_mask = (n0['depth'] == 0)
         n1_root_mask = (n1['depth'] == 0)
+
         if np.sum(n0_root_mask) > 0:
             inds = np.where(n0_root_mask)
             empty_node = np.zeros_like(n0[inds])
@@ -89,7 +90,49 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
         if nodes.size > 0:
             # Grab all available children and apply node_proc
             # Can't apply node_proc to the 0-node again or we'll get infinite recursion
-            children = self._ot._nodes[nodes['children'][nodes['children'] > 0]]
+            # children = self._ot._nodes[nodes['children'][nodes['children'] > 0]]
+
+            # Check 0-nodes
+            n0 = deepcopy(self._ot._nodes[nodes['children'][:, 0]])
+            n1 = deepcopy(self._ot._nodes[nodes['children'][:, 1]])
+            n2 = deepcopy(self._ot._nodes[nodes['children'][:, 2]])
+            n3 = deepcopy(self._ot._nodes[nodes['children'][:, 3]])
+            n4 = deepcopy(self._ot._nodes[nodes['children'][:, 4]])
+            n5 = deepcopy(self._ot._nodes[nodes['children'][:, 5]])
+            n6 = deepcopy(self._ot._nodes[nodes['children'][:, 6]])
+            n7 = deepcopy(self._ot._nodes[nodes['children'][:, 7]])
+
+            n0, n1 = self.position_empty_node(n0, n1, [1, 0, 0])
+            n0, n2 = self.position_empty_node(n0, n2, [0, 1, 0])
+            n0, n3 = self.position_empty_node(n0, n3, [1, 1, 0])
+            n0, n4 = self.position_empty_node(n0, n4, [0, 0, 1])
+            n0, n5 = self.position_empty_node(n0, n5, [1, 0, 1])
+            n0, n6 = self.position_empty_node(n0, n6, [0, 1, 1])
+            n0, n7 = self.position_empty_node(n0, n7, [1, 1, 1])
+            n1, n2 = self.position_empty_node(n1, n2, [-1, 1, 0])
+            n1, n3 = self.position_empty_node(n1, n3, [0, 1, 0])
+            n1, n4 = self.position_empty_node(n1, n4, [-1, 0, 1])
+            n1, n5 = self.position_empty_node(n1, n5, [0, 0, 1])
+            n1, n6 = self.position_empty_node(n1, n6, [-1, 1, 1])
+            n1, n7 = self.position_empty_node(n1, n7, [0, 1, 1])
+            n2, n3 = self.position_empty_node(n2, n3, [1, 0, 0])
+            n2, n4 = self.position_empty_node(n2, n4, [0, -1, 1])
+            n2, n5 = self.position_empty_node(n2, n5, [1, -1, 1])
+            n2, n6 = self.position_empty_node(n2, n6, [0, 0, 1])
+            n2, n7 = self.position_empty_node(n2, n7, [1, 0, 1])
+            n3, n4 = self.position_empty_node(n3, n4, [-1, -1, 1])
+            n3, n5 = self.position_empty_node(n3, n5, [0, -1, 1])
+            n3, n6 = self.position_empty_node(n3, n6, [-1, 0, 1])
+            n3, n7 = self.position_empty_node(n3, n7, [0, 0, 1])
+            n4, n5 = self.position_empty_node(n4, n5, [1, 0, 0])
+            n4, n6 = self.position_empty_node(n4, n6, [0, 1, 0])
+            n4, n7 = self.position_empty_node(n4, n7, [1, 1, 0])
+            n5, n6 = self.position_empty_node(n5, n6, [-1, 1, 0])
+            n5, n7 = self.position_empty_node(n5, n7, [0, 1, 0])
+            n6, n7 = self.position_empty_node(n6, n7, [1, 0, 0])
+
+            children = np.hstack((n0, n1, n2, n3, n4, n5, n6, n7))
+
             self.node_proc(children)
 
             # We call face_proc_<plane> and edge_proc_<plane> on nodes
@@ -100,74 +143,31 @@ class DualMarchingCubes(marching_cubes.MarchingCubes):
             # At present you are any non-occupied nodes will be interpreted as the root node
 
             # Call self.face_proc_xy on the correct nodes
-            self.face_proc_xy(self._ot._nodes[nodes['children'][:, 0]],
-                         self._ot._nodes[nodes['children'][:, 4]])
-            self.face_proc_xy(self._ot._nodes[nodes['children'][:, 2]],
-                         self._ot._nodes[nodes['children'][:, 6]])
-            self.face_proc_xy(self._ot._nodes[nodes['children'][:, 1]],
-                         self._ot._nodes[nodes['children'][:, 5]])
-            self.face_proc_xy(self._ot._nodes[nodes['children'][:, 3]],
-                         self._ot._nodes[nodes['children'][:, 7]])
+            self.face_proc_xy(n0, n4)
+            self.face_proc_xy(n2, n6)
+            self.face_proc_xy(n1, n5)
+            self.face_proc_xy(n3, n7)
 
-            # Call self.face_proc_xz on the correct nodes
-            self.face_proc_xz(self._ot._nodes[nodes['children'][:, 0]],
-                         self._ot._nodes[nodes['children'][:, 2]])
-            self.face_proc_xz(self._ot._nodes[nodes['children'][:, 1]],
-                         self._ot._nodes[nodes['children'][:, 3]])
-            self.face_proc_xz(self._ot._nodes[nodes['children'][:, 4]],
-                         self._ot._nodes[nodes['children'][:, 6]])
-            self.face_proc_xz(self._ot._nodes[nodes['children'][:, 5]],
-                         self._ot._nodes[nodes['children'][:, 7]])
+            self.face_proc_xz(n0, n2)
+            self.face_proc_xz(n1, n3)
+            self.face_proc_xz(n4, n6)
+            self.face_proc_xz(n5, n7)
 
-            # Call self.face_proc_yz on the correct nodes
-            self.face_proc_yz(self._ot._nodes[nodes['children'][:, 0]],
-                         self._ot._nodes[nodes['children'][:, 1]])
-            self.face_proc_yz(self._ot._nodes[nodes['children'][:, 2]],
-                         self._ot._nodes[nodes['children'][:, 3]])
-            self.face_proc_yz(self._ot._nodes[nodes['children'][:, 4]],
-                         self._ot._nodes[nodes['children'][:, 5]])
-            self.face_proc_yz(self._ot._nodes[nodes['children'][:, 6]],
-                         self._ot._nodes[nodes['children'][:, 7]])
+            self.face_proc_yz(n0, n1)
+            self.face_proc_yz(n2, n3)
+            self.face_proc_yz(n4, n5)
+            self.face_proc_yz(n6, n7)
 
-            # Call self.edge_proc_x on the correct nodes
-            self.edge_proc_x(self._ot._nodes[nodes['children'][:, 1]],
-                        self._ot._nodes[nodes['children'][:, 5]],
-                        self._ot._nodes[nodes['children'][:, 7]],
-                        self._ot._nodes[nodes['children'][:, 3]])
-            self.edge_proc_x(self._ot._nodes[nodes['children'][:, 0]],
-                        self._ot._nodes[nodes['children'][:, 4]],
-                        self._ot._nodes[nodes['children'][:, 6]],
-                        self._ot._nodes[nodes['children'][:, 2]])
+            self.edge_proc_x(n1, n5, n7, n3)
+            self.edge_proc_x(n0, n4, n6, n2)
 
-            # Call self.edge_proc_y on the correct nodes
-            self.edge_proc_y(self._ot._nodes[nodes['children'][:, 2]],
-                        self._ot._nodes[nodes['children'][:, 3]],
-                        self._ot._nodes[nodes['children'][:, 7]],
-                        self._ot._nodes[nodes['children'][:, 6]])
-            self.edge_proc_y(self._ot._nodes[nodes['children'][:, 0]],
-                        self._ot._nodes[nodes['children'][:, 1]],
-                        self._ot._nodes[nodes['children'][:, 5]],
-                        self._ot._nodes[nodes['children'][:, 4]])
+            self.edge_proc_y(n2, n3, n7, n6)
+            self.edge_proc_y(n0, n1, n5, n4)
 
-            # Call self.edge_proc_z on the correct nodes
-            self.edge_proc_z(self._ot._nodes[nodes['children'][:, 0]],
-                        self._ot._nodes[nodes['children'][:, 2]],
-                        self._ot._nodes[nodes['children'][:, 3]],
-                        self._ot._nodes[nodes['children'][:, 1]])
-            self.edge_proc_z(self._ot._nodes[nodes['children'][:, 4]],
-                        self._ot._nodes[nodes['children'][:, 6]],
-                        self._ot._nodes[nodes['children'][:, 7]],
-                        self._ot._nodes[nodes['children'][:, 5]])
+            self.edge_proc_z(n0, n2, n3, n1)
+            self.edge_proc_z(n4, n6, n7, n5)
 
-            # Call self.vert_proc on nodes 0-7
-            self.vert_proc(self._ot._nodes[nodes['children'][:, 0]],
-                      self._ot._nodes[nodes['children'][:, 1]],
-                      self._ot._nodes[nodes['children'][:, 2]],
-                      self._ot._nodes[nodes['children'][:, 3]],
-                      self._ot._nodes[nodes['children'][:, 4]],
-                      self._ot._nodes[nodes['children'][:, 5]],
-                      self._ot._nodes[nodes['children'][:, 6]],
-                      self._ot._nodes[nodes['children'][:, 7]])
+            self.vert_proc(n0, n1, n2, n3, n4, n5, n6, n7)
 
     def face_proc_xy(self, n0, n1):
         # Make sure at least one of these nodes is subdivided & not equal
