@@ -172,6 +172,38 @@ class fitResultsSource(TabularBase):
     def keys(self):
         return self._keys + list(self.transkeys.keys())
 
+    def _get_nested(self, tabular, key, sl, counter=0):
+        """
+        Essentially a shim for __getitem__() to handle key nesting from datasources built from nested tables. This
+        function protects calling of keys with '_' used in the name which aren't (or are only partially) nested.
+
+        Parameters
+        ----------
+        tabular : TabularBase
+            tabular datasource to be indexed into
+        key : str
+            Acts as a dictionary key
+        sl : slice
+            The desired slice to be returned of the specified key
+        counter : int
+            This counts the number of recursive calls. While this shouldn't be necessary, we ensure this (recursive)
+            function exits if the recursion depth is too high.
+
+        Returns
+        -------
+
+        output : ndarray
+
+        """
+        try:  # If key exists in fitResults, don't try to unnest it
+            return tabular[key][sl]
+        except (KeyError, ValueError):
+            k = key.split('_')
+            if counter < 3:  # Nesting more than 3 times seems a little too gross for now
+                return self._get_nested(tabular[k[0]], '_'.join(k[1:]), sl, counter + 1)
+            else:
+                raise KeyError('fitResultsSource.__getitem__() nesting depth (3) exceeded')
+
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
             
@@ -182,16 +214,7 @@ class fitResultsSource(TabularBase):
         if not key in self._keys:
             raise KeyError('Key  (%s) not found' % key)
 
-        k = key.split('_')
-
-        if len(k) == 1:  # TODO: evaluate why these are cast as floats
-            return self.fitResults[k[0]][sl]
-        elif len(k) == 2:
-            return self.fitResults[k[0]][k[1]][sl]
-        elif len(k) == 3:
-            return self.fitResults[k[0]][k[1]][k[2]][sl]
-        else:
-            raise KeyError("Don't know about deeper nesting yet")
+        return self._get_nested(self.fitResults, key, sl)
 
 
     def getInfo(self):
