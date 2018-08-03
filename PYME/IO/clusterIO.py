@@ -311,7 +311,10 @@ def isdir(name, serverfilter=''):
         return True
     
     pn, n = os.path.split(name)
-    d = listdirectory(pn)[n + '/']
+    try:
+        d = listdirectory(pn)[n + '/']
+    except KeyError:
+        return False
     
     return d.type > 0
     
