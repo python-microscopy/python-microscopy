@@ -185,6 +185,7 @@ class LoadSpeckles(ModuleBase):
     outputName = Output('speckles')
     leadFrames = Int(10, desc='The number of frames to add to the trace before the start of the speckle')
     followFrames = Int(50, desc='The number of frames to add to the trace after the end of the speckle')
+    edgeRejectionPixels = Int(17, desc='Reject speckles which are within this number of pixels of the image edge')
 
     def execute(self, namespace):
         from PYME.IO.FileUtils import readSpeckle
@@ -198,11 +199,20 @@ class LoadSpeckles(ModuleBase):
         mdh = MetaDataHandler.NestedClassMDHandler()
         mdh['voxelsize.x'] = .001# default pixel size - FIXME
         mdh['voxelsize.y'] = .001
+        
+        #use a default sensor size of 512
+        #this gets over-ridden below if we supply an image
+        clip_region = [self.edgeRejectionPixels, self.edgeRejectionPixels,
+                       512-self.edgeRejectionPixels, 512-self.edgeRejectionPixels]
 
         if not self.inputImage == '':
             inp = namespace[self.inputImage]
             mdh.update(inp.mdh)
             seriesLength = inp.data.shape[2]
+
+            clip_region = [self.edgeRejectionPixels, self.edgeRejectionPixels,
+                           inp.data.shape[0] - self.edgeRejectionPixels, inp.data.shape[1] - self.edgeRejectionPixels]
+            
 
             try:
                 fileInfo['DIRNAME'], fileInfo['IMAGENAME'] = os.path.split(inp.filename)
@@ -214,7 +224,7 @@ class LoadSpeckles(ModuleBase):
 
         specks = readSpeckle.readSpeckles(speckleFN)
         traces = readSpeckle.gen_traces_from_speckles(specks, leadFrames=self.leadFrames,
-                                                      followFrames=self.followFrames, seriesLength=seriesLength)
+                                                      followFrames=self.followFrames, seriesLength=seriesLength, clipRegion=clip_region)
 
         #turn this into an inputFilter object
         inp = tabular.recArrayInput(traces)
