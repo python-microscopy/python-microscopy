@@ -160,7 +160,6 @@ class taskWorker(object):
 
             if isinstance(res, TaskError):
                 # failure
-                from PYME.IO import clusterResults
                 
                 clusterResults.fileResults(res.log_url, res.to_string())
                 
