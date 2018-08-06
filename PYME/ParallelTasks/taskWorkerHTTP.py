@@ -160,7 +160,6 @@ class taskWorker(object):
 
             if isinstance(res, TaskError):
                 # failure
-                
                 clusterResults.fileResults(res.log_url, res.to_string())
                 
                 s = clusterIO._getSession(queueURL)
