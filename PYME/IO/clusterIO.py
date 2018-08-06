@@ -135,7 +135,7 @@ def _listSingleDir(dirurl, nRetries=1, timeout=5):
 
         dt = time.time() - t
         if not r.status_code == 200:
-            logger.debug('Request failed with error: %d' % r.status_code)
+            logger.debug('Request for %s failed with error: %d' % (url, r.status_code))
 
             #make sure we read a reply so that the far end doesn't hold the connection open
             dump = r.content

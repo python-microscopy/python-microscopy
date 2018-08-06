@@ -280,7 +280,11 @@ class taskWorker(object):
         localQueueName = 'PYMENodeServer: ' + compName
         while True:
             # turn in completed tasks
-            self._return_task_results()
+            try:
+                self._return_task_results()
+            except:
+                import traceback
+                logger.exception(traceback.format_exc())
 
             if not self._loop_alive:
                 break
@@ -336,7 +340,8 @@ class taskWorker(object):
                     recipe.execute()
 
                     #save results
-                    context = {'data_root' : clusterIO.local_dataroot,}
+                    context = {'data_root' : clusterIO.local_dataroot,
+                               'task_id' : taskDescr['id'].split('~')[0]}
 
                     #update context with file stub and input directory
                     try:
