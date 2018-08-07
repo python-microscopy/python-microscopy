@@ -124,6 +124,8 @@ class GaussianFitFactory:
         if not np.isscalar(varmap):
             self.varmap = varmap.astype(np.float32)  # np.ascontiguousarray(varmap)
         else:
+            if varmap == 0:
+                raise RuntimeWarning('Camera variance map not found. Read noise defaulted to 0. Try 1 instead.')
             self.varmap = varmap*np.ones_like(self.data)
 
         flatmap = cameraMaps.getFlatfieldMap(self.metadata)
