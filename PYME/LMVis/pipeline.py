@@ -175,7 +175,9 @@ def _add_missing_ds_keys(mapped_ds, ev_mappings={}):
     if not 'z' in mapped_ds.keys():
         if 'fitResults_z0' in mapped_ds.keys():
             mapped_ds.setMapping('z', 'fitResults_z0 + foreShort*focus')
-        elif 'astigZ' in mapped_ds.keys():
+        elif 'astigmatic_z' in mapped_ds.keys():
+            mapped_ds.setMapping('z', 'astigmatic_z + foreShort*focus')
+        elif 'astigZ' in mapped_ds.keys():  # legacy handling
             mapped_ds.setMapping('z', 'astigZ + foreShort*focus')
         else:
             mapped_ds.setMapping('z', 'foreShort*focus')

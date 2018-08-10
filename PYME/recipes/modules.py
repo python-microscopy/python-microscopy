@@ -17,6 +17,7 @@ from . import tracking
 from . import tablefilters
 from . import output
 from . import localisations
+from . import multiview
 try:
     from . import skfilters
 except ImportError:
