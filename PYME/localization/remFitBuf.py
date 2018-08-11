@@ -293,10 +293,14 @@ class fitTask(taskDef.Task):
         
         self.driftEst = self.md.getOrDefault('Analysis.TrackFiducials', False)
 
-        self._get_bgindices()
-        self.bufferLen = 50
-        if 'Analysis.BGRange' in self.md.getEntryNames():
-            self.bufferLen = self.md['Analysis.BGRange'][1] - self.md['Analysis.BGRange'][0]
+        self._get_bgindices()  # NB - this injects Analysis.BGRange into metadata if not already present
+        #  make sure that our buffer is large enough for drift correction or background subtraction
+        try:
+            drift_ind = self.md['Analysis.DriftIndices']
+            drift_buffer_length = np.abs(drift_ind[0]) + drift_ind[-1]
+        except (KeyError, AttributeError):
+            drift_buffer_length = 0
+        self.bufferLen = max((self.md['Analysis.BGRange'][1] - self.md['Analysis.BGRange'][0], drift_buffer_length))
         
     @property
     def fitMod(self):
