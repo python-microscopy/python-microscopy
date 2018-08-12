@@ -295,12 +295,11 @@ class fitTask(taskDef.Task):
 
         self._get_bgindices()  # NB - this injects Analysis.BGRange into metadata if not already present
         #  make sure that our buffer is large enough for drift correction or background subtraction
-        try:
-            drift_ind = self.md['Analysis.DriftIndices']
-            drift_buffer_length = np.abs(drift_ind[0]) + drift_ind[-1]
-        except (KeyError, AttributeError):
-            drift_buffer_length = 0
-        self.bufferLen = max((self.md['Analysis.BGRange'][1] - self.md['Analysis.BGRange'][0], drift_buffer_length))
+        if self.driftEst:
+            drift_ind = self.index + self.md.getOrDefault('Analysis.DriftIndices', np.array([-10, 0, 10]))
+        else:
+            drift_ind = [0,0]
+        self.bufferLen = max(self.md['Analysis.BGRange'][1], drift_ind[1]) - min(self.md['Analysis.BGRange'][0], drift_ind[-1))
         
     @property
     def fitMod(self):
