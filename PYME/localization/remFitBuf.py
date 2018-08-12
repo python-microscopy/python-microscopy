@@ -299,7 +299,7 @@ class fitTask(taskDef.Task):
             drift_ind = self.index + self.md.getOrDefault('Analysis.DriftIndices', np.array([-10, 0, 10]))
         else:
             drift_ind = [0,0]
-        self.bufferLen = max(self.md['Analysis.BGRange'][1], drift_ind[1]) - min(self.md['Analysis.BGRange'][0], drift_ind[-1))
+        self.bufferLen = max(self.md['Analysis.BGRange'][1], drift_ind[-1]) - min(self.md['Analysis.BGRange'][0], drift_ind[0])
         
     @property
     def fitMod(self):
