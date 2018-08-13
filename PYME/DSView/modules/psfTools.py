@@ -67,12 +67,15 @@ def find_and_add_zRange(astig_library, rough_knot_spacing=50.):
 
     """
     import scipy.interpolate as terp
-    from scipy.stats import mode
+    # from scipy.stats import mode
     for ii in range(len(astig_library)):
-        # find region of dsigma which is monotonic (smooth a bit, too)
-        dz_mode = mode(np.diff(astig_library[ii]['z']))[0][0]
-        smoothing_factor = int(rough_knot_spacing / dz_mode)
-        knots = astig_library[ii]['z'][1:-1:smoothing_factor]
+        # figure out where to place knots. Note that we subsample our z-positions so we satisfy Schoenberg-Whitney
+        # conditions, i.e. that our spline has adequate support
+        z_steps = np.unique(astig_library[ii]['z'])
+        dz_med = np.median(np.diff(z_steps))
+        smoothing_factor = int(rough_knot_spacing / dz_med)
+        knots = z_steps[1:-1:smoothing_factor]
+        # make the spline
         dsig = terp.LSQUnivariateSpline(astig_library[ii]['z'], astig_library[ii]['dsigma'], knots)
 
         # mask where the sign is the same as the center
@@ -370,7 +373,7 @@ class PSFTools(HasTraits):
         # get z from events info
         zm = piecewiseMapping.GeneratePMFromEventList(self.image.events, self.image.mdh, self.image.mdh['StartTime'],
                                                       self.image.mdh['Protocol.PiezoStartPos'])
-        z = zm(objPositions['t'])
+        z = zm(objPositions['t']) * 1e3  # convert from um to nm
         objPositions['z'] = z - z.mean()
 
         ptFitter = FitPoints()
@@ -407,8 +410,7 @@ class PSFTools(HasTraits):
             except NotImplementedError:
                 use_web_view = False
 
-        # find reasonable z range for each channel
-        # FIXME - it is somewhat non-obvious that we are effectively injecting the 'zRange' variable into the results here
+        # find reasonable z range for each channel, inject 'zRange' into the results
         results = find_and_add_zRange(results)
 
         #do plotting
