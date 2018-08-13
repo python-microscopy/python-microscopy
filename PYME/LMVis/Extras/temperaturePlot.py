@@ -26,7 +26,7 @@ class TempPlotter:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        visFr.AddMenuItem('Diagnostics', "Plot temperature record", self.OnPlotTemperature)
+        visFr.AddMenuItem('Extras>Diagnostics', "Plot temperature record", self.OnPlotTemperature)
 
     def OnPlotTemperature(self, event):
         from PYME.misc import tempDB

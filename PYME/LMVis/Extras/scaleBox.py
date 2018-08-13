@@ -112,4 +112,4 @@ def Plug(vis_fr):
     -------
 
     """
-    DockedPanel.add_menu_item(vis_fr, 'Scale Box Panel', ScaleBoxPanel, 'scale_box')
+    DockedPanel.add_menu_item(vis_fr, 'Scale Box', ScaleBoxPanel, 'scale_box')
