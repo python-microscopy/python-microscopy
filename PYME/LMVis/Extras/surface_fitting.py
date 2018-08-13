@@ -20,8 +20,8 @@ class SurfaceFitter(HasPrivateTraits):
     def __init__(self, visFr):
         self._visFr = visFr
 
-        visFr.AddMenuItem('Extras>Surface Fitting', 'Settings', lambda e: self.configure_traits(kind='modal'))
-        visFr.AddMenuItem('Extras>Surface Fitting', "Fit Surface Model", self.OnFitSurfaces)
+        visFr.AddMenuItem('Analysis>Surface Fitting', 'Settings', lambda e: self.configure_traits(kind='modal'))
+        visFr.AddMenuItem('Analysis>Surface Fitting', "Fit Surface Model", self.OnFitSurfaces)
         
         
         

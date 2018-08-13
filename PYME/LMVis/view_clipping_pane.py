@@ -62,8 +62,12 @@ class ClippingPanel(wx.Panel):
         #self.data_limits = data_limits
         #self.view_limits = view_lim
         
+        #print 'r', self.view_limits, self.view_limits[0]
+        
         self.view_limits[0] = max(self.view_limits[0], self.data_limits[0])
         self.view_limits[1] = min(self.view_limits[1], self.data_limits[1])
+
+        #print 'm', self.view_limits, self.view_limits[0]
         
         self.textSize = 10
 
@@ -98,7 +102,13 @@ class ClippingPanel(wx.Panel):
         
     @property
     def view_limits(self):
-        return self.glcanvas.bounds[self.axis]
+        #print 'q', self.glcanvas.bounds
+        #print self.glcanvas.bounds[self.axis]
+        vl = self.glcanvas.bounds[self.axis][0]
+        #print vl
+        return vl
+        
+        
         #return max(vl[0], self.data_limits[0]), min(vl[1], self.data_limits[1])
         
     def _get_coords(self):

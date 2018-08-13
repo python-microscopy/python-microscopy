@@ -103,7 +103,14 @@ class LMGLShaderCanvas(GLCanvas):
         # wx.EVT_MOVE(self, self.OnMove)
         self.gl_context = wx.glcanvas.GLContext(self)
         
-        self.bounds = {'x':[-1e6, 1e6], 'y':[-1e6, 1e6], 'z':[-1e6,1e6], 'v':[-1e6, 1e6]}
+        #self.bounds = {'x':[-1e6, 1e6], 'y':[-1e6, 1e6], 'z':[-1e6,1e6], 'v':[-1e6, 1e6]}
+        
+        # self.bounds = np.zeros(1, dtype=[('x', '2f4'), ('y', '2f4'), ('z', '2f4'), ('v', '2f4')])
+        # self.bounds['x'] = [-1e6, 1e6]
+        # self.bounds['y'] = [-1e6, 1e6]
+        # self.bounds['z'] = [-1e6, 1e6]
+        # self.bounds['v'] = [-1e6, 1e6]
+        #print self.bounds.shape
 
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
@@ -188,6 +195,10 @@ class LMGLShaderCanvas(GLCanvas):
     def scale(self):
         warn('Use view.scale instead', DeprecationWarning)
         return self.view.scale
+    
+    @property
+    def bounds(self):
+        return self.view.clipping
 
     @property
     def scaleBarLength(self):

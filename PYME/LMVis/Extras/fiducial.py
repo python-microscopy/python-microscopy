@@ -203,8 +203,8 @@ def Plug(visFr):
         drift_correct(visFr.pipeline)
         visFr.CreateFoldPanel()
     
-    visFr.AddMenuItem('Extras>Fiducials', 'Correct', lambda e : correct())
-    visFr.AddMenuItem('Extras>Fiducials', 'Display correction residuals', lambda e: fiducial_diagnosis(visFr.pipeline))
-    visFr.AddMenuItem('Extras>Fiducials', 'Manual selection', lambda e: manual_selection(visFr.pipeline))
-    visFr.AddMenuItem('Extras>Fiducials', 'Load fiducial fits from 2nd file', lambda e: load_fiducial_info_from_second_file(visFr.pipeline))
-    visFr.AddMenuItem('Extras', 'Autocorrelation based drift correction', lambda e : drift_auto_corr(visFr))
+    visFr.AddMenuItem('Corrections>Fiducials', 'Correct', lambda e : correct())
+    visFr.AddMenuItem('Corrections>Fiducials', 'Display correction residuals', lambda e: fiducial_diagnosis(visFr.pipeline))
+    visFr.AddMenuItem('Corrections>Fiducials', 'Manual selection', lambda e: manual_selection(visFr.pipeline))
+    visFr.AddMenuItem('Corrections>Fiducials', 'Load fiducial fits from 2nd file', lambda e: load_fiducial_info_from_second_file(visFr.pipeline))
+    visFr.AddMenuItem('Corrections', 'Autocorrelation based drift correction', lambda e : drift_auto_corr(visFr))

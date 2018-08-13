@@ -29,9 +29,9 @@ class ShiftmapGenerator:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        visFr.AddMenuItem('Extras>Shiftmaps', "Calculate &Shiftmap", self.OnGenShiftmap)
-        visFr.AddMenuItem('Extras>Shiftmaps', "Calculate Shiftmap (model based)", self.OnGenShiftmapQuad)
-        visFr.AddMenuItem('Extras>Shiftmaps', "Calculate 3D Shiftmap (model based)", self.OnGenShiftmapQuadz)
+        visFr.AddMenuItem('Corrections>Shiftmaps', "Calculate &Shiftmap", self.OnGenShiftmap)
+        visFr.AddMenuItem('Corrections>Shiftmaps', "Calculate Shiftmap (model based)", self.OnGenShiftmapQuad)
+        visFr.AddMenuItem('Corrections>Shiftmaps', "Calculate 3D Shiftmap (model based)", self.OnGenShiftmapQuadz)
 
     def OnGenShiftmap(self, event):
         from PYME.Analysis.points import twoColour, twoColourPlot

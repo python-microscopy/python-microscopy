@@ -273,6 +273,8 @@ class VisGUICore(object):
         #this needs an ID as we bind to it elsewhere (in the filter panel)
         self.ID_VIEW_CLIP_ROI = wx.NewId()
         self.AddMenuItem('View', 'Clip to ROI\tF8', id=self.ID_VIEW_CLIP_ROI)
+
+        self.AddMenuItem('View', itemType='separator')
         
         renderers.init_renderers(self)
 

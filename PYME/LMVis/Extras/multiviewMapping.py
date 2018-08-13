@@ -83,21 +83,21 @@ class MultiviewMapper:
 
         logging.debug('Adding menu items for multi-view manipulation')
 
-        visFr.AddMenuItem('Multiview', 'Calibrate Shifts', self.OnCalibrateShifts,
+        visFr.AddMenuItem('Corrections>Multiview', 'Calibrate Shifts', self.OnCalibrateShifts,
                           helpText='Extract a shift field from bead measurements')
 
-        visFr.AddMenuItem('Multiview', itemType='separator')
+        visFr.AddMenuItem('Corrections>Multiview', itemType='separator')
 
-        visFr.AddMenuItem('Multiview', 'Fold Channels', self.OnFold)
-        visFr.AddMenuItem('Multiview', 'Shift correct folded channels', self.OnShiftCorrectFolded)
+        visFr.AddMenuItem('Corrections>Multiview', 'Fold Channels', self.OnFold)
+        visFr.AddMenuItem('Corrections>Multiview', 'Shift correct folded channels', self.OnShiftCorrectFolded)
 
-        visFr.AddMenuItem('Multiview', 'Find points from same molecule', self.OnFindClumps)
-        visFr.AddMenuItem('Multiview', 'Group found points', self.OnMergeClumps)
+        visFr.AddMenuItem('Corrections>Multiview', 'Find points from same molecule', self.OnFindClumps)
+        visFr.AddMenuItem('Corrections>Multiview', 'Group found points', self.OnMergeClumps)
 
-        visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapAstigmaticZ,
+        visFr.AddMenuItem('Corrections>Multiview', 'Map astigmatic Z', self.OnMapAstigmaticZ,
                           helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
 
-        visFr.AddMenuItem('Multiview', 'Check astigmatic PSF Calibration', self.OnCheckAstigmatismCalibration)
+        visFr.AddMenuItem('Corrections>Multiview', 'Check astigmatic PSF Calibration', self.OnCheckAstigmatismCalibration)
 
     def OnFold(self, event=None):
         """

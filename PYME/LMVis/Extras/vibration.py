@@ -28,7 +28,7 @@ class VibrationAnalyser:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        visFr.AddMenuItem('Extras','Plot vibration spectra', self.VibrationSpecgram)
+        visFr.AddMenuItem('Diagnostics','Plot vibration spectra', self.VibrationSpecgram)
 
     def VibrationSpecgram(self, event):
         import pylab as pl

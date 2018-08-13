@@ -120,4 +120,6 @@ class ViewPanel(DockedPanel):
 
 
 def Plug(vis_fr):
-    DockedPanel.add_menu_item(vis_fr, 'Saved Views', ViewPanel, 'view_panel')
+    print('Saved Views are deprecated -  use the ones with animation instead and remove me!')
+    pass
+    #DockedPanel.add_menu_item(vis_fr, 'Saved Views', ViewPanel, 'view_panel')

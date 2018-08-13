@@ -27,8 +27,8 @@ class ParticleTracker:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        visFr.AddMenuItem('Extras', "Get segmented IDs from image", self.OnGetIDs)
-        visFr.AddMenuItem('Extras', "Measure objects", self.OnMeasure)
+        visFr.AddMenuItem('Analysis', "Get segmented IDs from image", self.OnGetIDs)
+        visFr.AddMenuItem('Analysis', "Measure objects", self.OnMeasure)
 
 
     def OnGetIDs(self, event):

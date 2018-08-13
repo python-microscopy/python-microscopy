@@ -44,7 +44,7 @@ class VideoPanel(DockedPanel):
 
         self.view_table.InsertColumn(0, 'id')
 
-        self.view_table.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
+        self.view_table.SetColumnWidth(0, 50)
         vertical_sizer.Add(self.view_table, 0, wx.EXPAND, 0)
 
         self.create_buttons(vertical_sizer)
@@ -75,6 +75,7 @@ class VideoPanel(DockedPanel):
         self.Bind(wx.EVT_BUTTON, self.make, make_button)
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_edit)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select_view)
 
         # add_snapshot the buttons to the view
         grid_sizer.Add(add_button, flag=wx.EXPAND)
@@ -104,6 +105,7 @@ class VideoPanel(DockedPanel):
                                    view.vec_right,
                                    view.translation,
                                    view.scale,
+                                   view.clipping,
                                    duration)
             self.add_snapshot_to_list(video_view)
 
@@ -121,7 +123,7 @@ class VideoPanel(DockedPanel):
         self.view_table.DeleteAllItems()
 
     def save(self, event):
-        file_name = wx.FileSelector('Save view as json named... ')
+        file_name = wx.FileSelector('Save view as json named... ', flags=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         if file_name:
             if not file_name.endswith('.json'):
                 file_name = '{}.json'.format(file_name)
@@ -139,6 +141,7 @@ class VideoPanel(DockedPanel):
 
     def make(self, event):
         self.play(True)
+        
 
     def run(self, event):
         self.play(False)
@@ -158,7 +161,7 @@ class VideoPanel(DockedPanel):
                 msg = wx.MessageDialog(self, msg_text, 'Missing package', wx.OK | wx.ICON_WARNING)
                 msg.ShowModal()
                 msg.Destroy()
-                return
+                #return
                 save=False
 
         if save:
@@ -223,6 +226,11 @@ class VideoPanel(DockedPanel):
 
         dlg.Destroy()
         self.refill()
+
+    def on_select_view(self, event):
+        snapshot = self.snapshots[self.view_table.GetFirstSelected()]
+
+        self.get_canvas().set_view(snapshot)
 
     def refill(self):
         self.clear_view()

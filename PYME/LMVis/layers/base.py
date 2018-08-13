@@ -41,10 +41,10 @@ class BaseEngine(object):
         pass
     
     def _set_shader_clipping(self, gl_canvas):
-        self.shader_program.xmin, self.shader_program.xmax = gl_canvas.bounds['x']
-        self.shader_program.ymin, self.shader_program.ymax = gl_canvas.bounds['y']
-        self.shader_program.zmin, self.shader_program.zmax = gl_canvas.bounds['z']
-        self.shader_program.vmin, self.shader_program.vmax = gl_canvas.bounds['v']
+        self.shader_program.xmin, self.shader_program.xmax = gl_canvas.bounds['x'][0]
+        self.shader_program.ymin, self.shader_program.ymax = gl_canvas.bounds['y'][0]
+        self.shader_program.zmin, self.shader_program.zmax = gl_canvas.bounds['z'][0]
+        self.shader_program.vmin, self.shader_program.vmax = gl_canvas.bounds['v'][0]
         
 
 class BaseLayer(HasTraits):

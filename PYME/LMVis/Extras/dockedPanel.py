@@ -45,7 +45,7 @@ class DockedPanel(wx.Panel):
     def add_menu_item(vis_fr, menu_name, panel_class, p_info_name, caption=None):
         if caption is None:
             caption = menu_name
-        vis_fr.AddMenuItem('Panels', menu_name, lambda e: DockedPanel.show(vis_fr, panel_class(vis_fr), p_info_name, caption))
+        vis_fr.AddMenuItem('Extras', menu_name, lambda e: DockedPanel.show(vis_fr, panel_class(vis_fr), p_info_name, caption))
 
     def get_canvas(self):
         return self.parent_panel.glCanvas

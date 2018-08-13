@@ -35,7 +35,7 @@ class PerFrameVar:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        visFr.AddMenuItem('Extras', "Load per-frame variable", self.OnPerFrame)
+        visFr.AddMenuItem('Analysis', "Load per-frame variable", self.OnPerFrame)
 
     def OnPerFrame(self, event):
         import numpy as np

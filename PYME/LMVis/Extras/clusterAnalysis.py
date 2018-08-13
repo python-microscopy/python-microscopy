@@ -36,17 +36,17 @@ class ClusterAnalyser:
         self.pairwiseDistances = {}
         self.clusterMeasures = []
 
-        visFr.AddMenuItem('Extras>Clustering', 'DBSCAN Clump', self.OnClumpDBSCAN,
+        visFr.AddMenuItem('Analysis>Clustering', 'DBSCAN Clump', self.OnClumpDBSCAN,
                           helpText='')
-        visFr.AddMenuItem('Extras>Clustering', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
+        visFr.AddMenuItem('Analysis>Clustering', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
                           helpText='')
-        visFr.AddMenuItem('Extras>Clustering', 'Cluster count vs. imaging time', self.OnClustersInTime,
+        visFr.AddMenuItem('Analysis>Clustering', 'Cluster count vs. imaging time', self.OnClustersInTime,
                           helpText='')
-        visFr.AddMenuItem('Extras>Clustering', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
+        visFr.AddMenuItem('Analysis>Clustering', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
-        visFr.AddMenuItem('Extras>Clustering', 'Nearest Neighbor Distance Histogram', self.OnNearestNeighbor,
+        visFr.AddMenuItem('Analysis>Clustering', 'Nearest Neighbor Distance Histogram', self.OnNearestNeighbor,
                           helpText='')
-        visFr.AddMenuItem('Extras>Clustering', 'Measure Clusters', self.OnMeasureClusters,
+        visFr.AddMenuItem('Analysis>Clustering', 'Measure Clusters', self.OnMeasureClusters,
                           helpText='')
 
 
