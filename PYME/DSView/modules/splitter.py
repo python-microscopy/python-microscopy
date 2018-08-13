@@ -120,7 +120,9 @@ class Unmixer:
         im = ImageStack(usds, titleStub = '%s - unsplit' % fns)
         im.mdh.copyEntriesFrom(self.image.mdh)
         im.mdh['Parent'] = self.image.filename
-        
+        # grab events from the first data source TODO - do this need to be smarter?
+        im.events = usds[0].getEvents()
+
         if 'fitResults' in dir(self.image):
             im.fitResults = self.image.fitResults
         #im.mdh['Processing.GaussianFilter'] = sigmas

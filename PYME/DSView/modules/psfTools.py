@@ -340,6 +340,7 @@ class PSFTools(HasTraits):
         import mpld3
         import json
         from PYME.Analysis.PSFEst import extractImages
+        from PYME.Analysis import piecewiseMapping
         import wx
 
         # query user for type of calibration
@@ -365,7 +366,11 @@ class PSFTools(HasTraits):
         objPositions['x'] = ps*self.image.data.shape[0]*0.5*np.ones(self.image.data.shape[2])
         objPositions['y'] = ps * self.image.data.shape[1] * 0.5 * np.ones(self.image.data.shape[2])
         objPositions['t'] = np.arange(self.image.data.shape[2])
-        z = np.arange(self.image.data.shape[2]) * self.image.mdh['voxelsize.z'] * 1.e3
+        # z = np.arange(self.image.data.shape[2]) * self.image.mdh['voxelsize.z'] * 1.e3
+        # get z from events info
+        zm = piecewiseMapping.GeneratePMFromEventList(self.image.events, self.image.mdh, self.image.mdh['StartTime'],
+                                                      self.image.mdh['Protocol.PiezoStartPos'])
+        z = zm(objPositions['t'])
         objPositions['z'] = z - z.mean()
 
         ptFitter = FitPoints()
