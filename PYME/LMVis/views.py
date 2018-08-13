@@ -82,7 +82,7 @@ class View(object):
                     self.vec_back + other.vec_back,
                     self.vec_right + other.vec_right,
                     self.translation + other.translation,
-                    self._zoom + other.zoom
+                    self.scale + other.scale
                     )
 
     def __sub__(self, other):

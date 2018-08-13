@@ -75,6 +75,7 @@ class ClippingPanel(wx.Panel):
         #wx.EVT_KEY_DOWN(self, self.OnKeyPress)
         #wx.EVT_RIGHT_UP(self, self.OnRightUp)
         self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseScrollEvent)
+        self.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
     
     @property
     def data_limits(self):
@@ -252,6 +253,23 @@ class ClippingPanel(wx.Panel):
         self.Refresh()
         self.Update()
         event.Skip()
+        
+    def OnDoubleClick(self, event):
+        dlg = wx.TextEntryDialog(self, 'Clipping range [nm]', 'Restrict clipping to a given range', '200')
+        if (dlg.ShowModal() == wx.ID_OK):
+            clip_size = float(dlg.GetValue())
+            
+            vc = 0.5*(self.view_limits[0] + self.view_limits[1])
+            
+            self.view_limits[0] = vc - 0.5*clip_size
+            self.view_limits[1] = vc + 0.5*clip_size
+
+            self.Refresh()
+            self.Update()
+            self.glcanvas.refresh()
+            
+            
+        dlg.Destroy()
 
 
     def OnMouseMove(self, event):

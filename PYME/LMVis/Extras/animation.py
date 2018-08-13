@@ -45,11 +45,13 @@ class VideoPanel(DockedPanel):
         self.view_table.InsertColumn(0, 'id')
 
         self.view_table.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
-        vertical_sizer.Add(self.view_table)
+        vertical_sizer.Add(self.view_table, 0, wx.EXPAND, 0)
 
         self.create_buttons(vertical_sizer)
 
         self.SetSizerAndFit(vertical_sizer)
+        
+        self.next_view_id = 0
 
     def create_buttons(self, vertical_sizer):
         grid_sizer = wx.GridSizer(3, 3)
@@ -90,7 +92,9 @@ class VideoPanel(DockedPanel):
         self.refill()
 
     def add_snapshot(self, event):
-        vec_id = self.ask(self, message='Please enter view id')
+        #vec_id = self.ask(self, message='Please enter view id')
+        vec_id = 'view_%d' % self.next_view_id
+        self.next_view_id += 1
         if vec_id:
             duration = 3.0
             view = self.get_canvas().get_view(vec_id)
@@ -99,7 +103,7 @@ class VideoPanel(DockedPanel):
                                    view.vec_back,
                                    view.vec_right,
                                    view.translation,
-                                   view.zoom,
+                                   view.scale,
                                    duration)
             self.add_snapshot_to_list(video_view)
 
@@ -145,14 +149,17 @@ class VideoPanel(DockedPanel):
         self.get_canvas().displayMode = '3D'
         fps = 30.0
         file_name = None
-        try:
-            import cv2
-        except ImportError:
-            msg_text = 'OpenCV 2 is needed to create videos. Please install: \"conda install -c menpo opencv\"'
-            msg = wx.MessageDialog(self, msg_text, 'Missing package', wx.OK | wx.ICON_WARNING)
-            msg.ShowModal()
-            msg.Destroy()
-            return
+        
+        if save:
+            try:
+                import cv2
+            except ImportError:
+                msg_text = 'OpenCV 2 is needed to save videos. Please install: \"conda install -c menpo opencv\"'
+                msg = wx.MessageDialog(self, msg_text, 'Missing package', wx.OK | wx.ICON_WARNING)
+                msg.ShowModal()
+                msg.Destroy()
+                return
+                save=False
 
         if save:
             file_name = wx.FileSelector('Save video as avi named... ')
@@ -162,6 +169,7 @@ class VideoPanel(DockedPanel):
         if not save or file_name:
             if save:
                 video = cv2.VideoWriter(file_name, -1, fps, (width, height))
+                
             if not self.snapshots:
                 self.add_snapshot_to_list(self.get_canvas())
             current_view = None
@@ -173,7 +181,7 @@ class VideoPanel(DockedPanel):
                     difference_view = (view - current_view) / steps
                     for step in range(0, steps):
                         new_view = current_view + difference_view * step
-                        self.get_canvas().set_view(new_view)
+                        self.get_canvas().set_view(new_view.normalize_view())
                         if save:
                             snap = self.get_canvas().getIm()
                             if snap.ndim == 3:
@@ -186,10 +194,10 @@ class VideoPanel(DockedPanel):
                     current_view = view
             if save:
                 video.release()
-            msg_text = 'Video generation finished'
-            msg = wx.MessageDialog(self, msg_text, 'Done', wx.OK | wx.ICON_INFORMATION)
-            msg.ShowModal()
-            msg.Destroy()
+                msg_text = 'Video generation finished'
+                msg = wx.MessageDialog(self, msg_text, 'Done', wx.OK | wx.ICON_INFORMATION)
+                msg.ShowModal()
+                msg.Destroy()
 
     @staticmethod
     def ask(parent=None, message='', default_value=''):
