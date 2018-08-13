@@ -181,9 +181,9 @@ class VisGUICore(object):
         item = afp.foldingPane(pnl, -1, caption="Data Source")#, pinned = True)
         
         self.chSource = wx.Choice(item, -1, choices=[])
-        self.set_datasource_choices()
+        self.update_datasource_panel()
         self.chSource.Bind(wx.EVT_CHOICE, self.OnSourceChange)
-        self.pipeline.onRebuild.connect(self.set_datasource_choices)
+        self.pipeline.onRebuild.connect(self.update_datasource_panel)
             
         item.AddNewElement(self.chSource, foldable=False)
         
@@ -193,11 +193,13 @@ class VisGUICore(object):
 
         pnl.AddPane(item)
         
-    def set_datasource_choices(self, event=None, **kwargs):
+    def update_datasource_panel(self, event=None, **kwargs):
         dss = list(self.pipeline.dataSources.keys())
         self.chSource.SetItems(dss)
         if not self.pipeline.selectedDataSourceKey is None:
             self.chSource.SetStringSelection(self.pipeline.selectedDataSourceKey)
+
+        self.Layout()
         
 
     def OnSourceChange(self, event):

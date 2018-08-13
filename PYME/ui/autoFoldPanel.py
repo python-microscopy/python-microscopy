@@ -346,6 +346,8 @@ class foldingPane(wx.Panel):
                 element.window.Show()
                 if element.foldedWindow:
                     element.foldedWindow.Hide()
+                    
+        #self.Fit()
 
     def PinOpen(self):
         self.Unfold()
