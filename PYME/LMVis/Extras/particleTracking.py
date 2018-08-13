@@ -109,6 +109,7 @@ class ParticleTracker:
         #dlg.Destroy()
 
     def OnCalcMSDs(self,event):
+        #TODO - move this logic to reports - like dh5view module
         import pylab
         from PYME.Analysis import _fithelpers as fh
         from PYME.Analysis.points.DistHist import msdHistogram
@@ -119,25 +120,25 @@ class ParticleTracker:
             
         pipeline = self.visFr.pipeline
 
-        clumps = set(pipeline.mapping['clumpIndex'])
+        clumps = set(pipeline['clumpIndex'])
 
         dt = pipeline.mdh.getEntry('Camera.CycleTime')
 
 
         Ds = np.zeros(len(clumps))
-        Ds_ =  np.zeros(pipeline.mapping['x'].shape)
+        Ds_ =  np.zeros(pipeline['x'].shape)
         alphas = np.zeros(len(clumps))
-        alphas_ =  np.zeros(pipeline.mapping['x'].shape)
+        alphas_ =  np.zeros(pipeline['x'].shape)
         error_Ds = np.zeros(len(clumps))
 
         pylab.figure()
 
         for i, ci in enumerate(clumps):
-            I = pipeline.mapping['clumpIndex'] == ci
+            I = pipeline['clumpIndex'] == ci
 
-            x = pipeline.mapping['x'][I]
-            y = pipeline.mapping['y'][I]
-            t = pipeline.mapping['t'][I]
+            x = pipeline['x'][I]
+            y = pipeline['y'][I]
+            t = pipeline['t'][I]
 
             nT = (t.max() - t.min())/2
 
