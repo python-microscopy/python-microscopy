@@ -403,7 +403,7 @@ class LMGLShaderCanvas(GLCanvas):
         
         Returns
         -------
-        a 4x4 matrix describing the rotation of the pints within our 3D world
+        a 4x4 matrix describing the rotation of the points within our 3D world
         
         """
         if not self.displayMode == '2D':

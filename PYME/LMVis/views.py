@@ -146,7 +146,7 @@ class View(object):
         return cls.decode_json(view.to_json())
 
     
-
+#TOP = View()
 
 class VideoView(View):
     JSON_DURATION = 'duration'
