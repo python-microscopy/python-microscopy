@@ -368,8 +368,10 @@ class PSFTools(HasTraits):
 
         objPositions['x'] = ps*self.image.data.shape[0]*0.5*np.ones(self.image.data.shape[2])
         objPositions['y'] = ps * self.image.data.shape[1] * 0.5 * np.ones(self.image.data.shape[2])
-        # call the frame number 't', so that we can use objPositions as input for PYME.recipes.measurements.FitPoints
-        objPositions['t'] = np.arange(self.image.data.shape[2])
+        # note that we need to put this in the context of the stack from which it was extracted
+        frame_centre = int(round(self.image.mdh['PSFExtraction.Locations'][0][2]))  # take the frame number of (the first) PSF center
+        frame_offset = (self.image.data.shape[2] / 2)  # note that original shape was defined by 2*array(PSshape) + 1
+        objPositions['t'] = np.arange(frame_centre - frame_offset, frame_centre + frame_offset + 1)
 
         # get z from events info if we can
         try:
@@ -388,7 +390,8 @@ class PSFTools(HasTraits):
         ptFitter = FitPoints()
         ptFitter.trait_set(roiHalfSize=11)
         ptFitter.trait_set(fitModule=fitMod)
-
+        # changing 't' as a hack because PYME.recipes.measurements.FitPoints only fits frames it can index with 't'
+        objPositions['t'] = np.arange(self.image.data.shape[2])
         namespace = {'input' : self.image, 'objPositions' : objPositions}
 
         results = []
