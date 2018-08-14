@@ -368,11 +368,20 @@ class PSFTools(HasTraits):
 
         objPositions['x'] = ps*self.image.data.shape[0]*0.5*np.ones(self.image.data.shape[2])
         objPositions['y'] = ps * self.image.data.shape[1] * 0.5 * np.ones(self.image.data.shape[2])
+        # call the frame number 't', so that we can use objPositions as input for PYME.recipes.measurements.FitPoints
         objPositions['t'] = np.arange(self.image.data.shape[2])
-        # z = np.arange(self.image.data.shape[2]) * self.image.mdh['voxelsize.z'] * 1.e3
-        # get z from events info
-        zm = piecewiseMapping.GeneratePMFromEventList(self.image.events, self.image.mdh, self.image.mdh['StartTime'],
-                                                      self.image.mdh['Protocol.PiezoStartPos'])
+
+        # get z from events info if we can
+        try:
+            # note that GeneratePMFromEventList internally handles converting time stamps to frame numbers
+            zm = piecewiseMapping.GeneratePMFromEventList(self.image.events, self.image.mdh, self.image.mdh['StartTime'],
+                                                          self.image.mdh['Protocol.PiezoStartPos'])
+        except TypeError:
+            # try to spoof z focus based on metadata alone
+            from PYME.LMVis.pipeline import _spoof_focus_from_metadata
+            position, frames = _spoof_focus_from_metadata(self.image.mdh)
+            zm = piecewiseMapping.piecewiseMap(0, frames, position, xIsSecs=False)
+
         z = zm(objPositions['t']) * 1e3  # convert from um to nm
         objPositions['z'] = z - z.mean()
 
