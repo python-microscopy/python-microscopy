@@ -1,5 +1,5 @@
+
 import numpy as np
-from scipy.stats import mode
 from scipy.interpolate import LSQUnivariateSpline
 
 from . import astiglookup
@@ -79,8 +79,8 @@ def lookup_astig_z(fres, astig_calibrations, rough_knot_spacing=75., plot=False)
 
     #extract our sigmas and their errors
     #doing this here means we only do the string operations and look-ups once, rather than once per molecule
-    sxs = np.abs(np.array([fres['sigmax%i' % ci] for ci in chans]))
-    sys = np.abs(np.array([fres['sigmay%i' % ci] for ci in chans]))
+    s_xs = np.abs(np.array([fres['sigmax%i' % ci] for ci in chans]))
+    s_ys = np.abs(np.array([fres['sigmay%i' % ci] for ci in chans]))
     esxs = [fres['error_sigmax%i' % ci] for ci in chans]
     esys = [fres['error_sigmay%i' % ci] for ci in chans]
     wXs = np.array([1. / (esx_i*esx_i) for esx_i in esxs])
@@ -137,7 +137,8 @@ def lookup_astig_z(fres, astig_calibrations, rough_knot_spacing=75., plot=False)
     #     z[i] = -zVal[fine_s + minLoc]
     #     zerr[i] = np.sqrt(err[minLoc])
 
-    zi, ze = astiglookup.astig_lookup(sigCalX.T.astype('f'), sigCalY.T.astype('f'), sxs.T.astype('f'), sys.T.astype('f'), wXs.T.astype('f'), wYs.T.astype('f'))
+    zi, ze = astiglookup.astig_lookup(sigCalX.T.astype('f'), sigCalY.T.astype('f'), s_xs.T.astype('f'),
+                                      s_ys.T.astype('f'), wXs.T.astype('f'), wYs.T.astype('f'))
 
     print('used c lookup')
 
