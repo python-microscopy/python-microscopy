@@ -508,7 +508,9 @@ class ModuleCollection(HasTraits):
         """
         #modify this to allow for different file types - currently only supports images
         from PYME.IO import unifiedIO
-        if filename.split('.')[-1] in ['h5r', 'h5', 'hdf']:
+        import os
+        extension = os.path.splitext(filename)[1]
+        if extension in ['.h5r', '.h5', '.hdf']:
             import tables
             from PYME.IO import MetaDataHandler
             from PYME.IO import tabular
@@ -531,9 +533,10 @@ class ModuleCollection(HasTraits):
                         rag.mdh = mdh
 
                         self.namespace[key_prefix + t.name] = rag
-                        
-                    if isinstance(t, tables.table.Table):
-                        tab = tabular.h5rSource(h5f, t.name)
+
+                    elif isinstance(t, tables.table.Table):
+                        #  pipe our table into h5r or hdf source depending on the extension
+                        tab = tabular.h5rSource(h5f, t.name) if extension == '.h5r' else tabular.hdfSource(h5f, t.name)
                         tab.mdh = mdh
 
                         self.namespace[key_prefix + t.name] = tab
