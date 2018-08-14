@@ -34,8 +34,7 @@ from numpy import * #to allow the use of sin cos etc in mappings
 from PYME.Analysis.piecewise import * #allow piecewise linear mappings
 
 import tables
-import logging
-logger = logging.getLogger(__name__)
+
 
 class TabularBase(object):
     def toDataFrame(self, keys=None):
