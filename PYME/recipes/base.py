@@ -543,10 +543,10 @@ class ModuleCollection(HasTraits):
 
                         #logger.error('loading h5r not supported yet')
                         #raise NotImplementedError
-        elif filename.endswith('.csv'):
+        elif extension == '.csv':
             logger.error('loading .csv not supported yet')
             raise NotImplementedError
-        elif filename.endswith('.xls') or filename.endswith('.xlsx'):
+        elif extension in ['.xls', '.xlsx']:
             logger.error('loading .xls not supported yet')
             raise NotImplementedError
         else:
