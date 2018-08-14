@@ -74,3 +74,15 @@ def smooth_normals(normals, indices):
     normals : np.array
         Smoothed normals, interpolating from neighboring normals.
     """
+
+    # General idea:
+    # - Grab the index of the current vertex
+    # - Find all triangles containing this index
+    # - Grab the normals from all vertices in the resulting triangles
+    # - Average these normals, replace the current normal with the average
+    #   (not the cleverest way of doing this)
+    # - Note that by "replace" the current normal, we mean do so in a
+    #   duplicate of the original normal array, which we must keep intact so we
+    #   don't get different results from changing the order of the smoothing
+
+# Need edge_collapse, edge_swap, add_edge, add_vertex
