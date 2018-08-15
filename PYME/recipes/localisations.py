@@ -330,14 +330,20 @@ class LabelsFromImage(ModuleBase):
 
     Inputs
     ------
-    inputName: name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
-    inputImage: name of image input containing labels
+    input_name: Input
+        name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
+    input_image: Input
+        name of image input containing labels
 
     Outputs
     -------
-    outputName: name of tabular output. A mapped version of the tabular input with 2 extra columns
-        objectID: Label number from image, mapped to each localization within that label
-        NEvents: Number of localizations within the label that a given localization belongs to
+    output_name: Output
+        name of tabular output. A mapped version of the tabular input with 2 extra columns
+    label_key_name : CStr
+        name of new column which will contain the label number from image, mapped to each localization within that label
+    label_count_key_name : CStr
+        name of new column which will contain the number of localizations within the label that a given localization
+        belongs to
 
     """
     input_name = Input('input')
