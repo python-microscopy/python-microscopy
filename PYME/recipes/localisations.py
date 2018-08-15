@@ -340,32 +340,35 @@ class LabelsFromImage(ModuleBase):
         NEvents: Number of localizations within the label that a given localization belongs to
 
     """
-    inputName = Input('input')
-    inputImage = Input('labeled')
+    input_name = Input('input')
+    input_image = Input('labeled')
 
-    outputName = Output('labeled_points')
+    label_key_name = CStr('object_id')
+    label_count_key_name = CStr('n_events')
+
+    output_name = Output('labeled_points')
 
     def execute(self, namespace):
         from PYME.IO import tabular
         from PYME.Analysis.points import cluster_morphology
 
-        inp = namespace[self.inputName]
-        img = namespace[self.inputImage]
+        inp = namespace[self.input_name]
+        img = namespace[self.input_image]
         #img = image.openImages[dlg.GetStringSelection()]
 
         ids, numPerObject = cluster_morphology.get_labels_from_image(img, inp)
 
         labeled = tabular.mappingFilter(inp)
-        labeled.addColumn('objectID', ids)
-        labeled.addColumn('NEvents', numPerObject[ids - 1])
+        labeled.addColumn(self.label_key_name, ids)
+        labeled.addColumn(self.label_count_key_name, numPerObject[ids - 1])
 
         # propagate metadata, if present
         try:
-            labeled.mdh = namespace[self.inputName].mdh
+            labeled.mdh = namespace[self.input_name].mdh
         except AttributeError:
             pass
 
-        namespace[self.outputName] = labeled
+        namespace[self.output_name] = labeled
 
 
 @register_module('MeasureClusters3D')
