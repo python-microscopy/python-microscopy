@@ -45,20 +45,6 @@ def verts_inds_to_stl(vertices, normals, indices):
     return triangles_stl
 
 
-def get_neighbors(indices):
-    """
-    Find all neighboring triangles.
-    """
-
-    neighbors = []
-    for i in range(indices.shape[0]):
-        v0, v1, v2 = indices[i]
-        nx, ny = np.where(indices == v0)
-        neighbors.append(nx)
-
-    return neighbors
-
-
 def smooth_normals(normals, indices):
     """
     Takes an organized mesh (output of stl_to_verts_inds) and smooths the normals
@@ -84,5 +70,18 @@ def smooth_normals(normals, indices):
     # - Note that by "replace" the current normal, we mean do so in a
     #   duplicate of the original normal array, which we must keep intact so we
     #   don't get different results from changing the order of the smoothing
+
+    new_normals = np.copy(normals)  # Generate a copy of normals
+    tri = indices[0, :]
+    for idx in range(indices.shape[0]):
+        tri = indices[idx]
+        new_normals[idx] = np.mean(np.vstack((normals[
+                                              np.where(indices == tri[0])[0],
+                                              :], normals[
+                                                  np.where(indices == tri[1])[
+                                                      0], :], normals[np.where(
+            indices == tri[2])[0], :])), axis=0)
+
+    return new_normals
 
 # Need edge_collapse, edge_swap, add_edge, add_vertex
