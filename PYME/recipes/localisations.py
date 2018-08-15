@@ -427,7 +427,7 @@ class MeasureClusters3D(ModuleBase):
         unique_labels, counts = np.unique(labels, return_counts=True)
         
         #allocate memory to store results in
-        measurements = np.zeros(maxLabel+1, cmorph.measurement_dtype)
+        measurements = np.zeros(maxLabel, cmorph.measurement_dtype)
 
         # loop over labels, recalling that input is now sorted, and we know how many points are in each label.
         # Note that missing labels result in zeroed entries (i.e. the initial values are not changed).
@@ -440,8 +440,9 @@ class MeasureClusters3D(ModuleBase):
 
             # create x,y,z arrays for this cluster, and calculate center of mass
             x, y, z = x_vals[indi:indf], y_vals[indi:indf], z_vals[indi:indf]
-            
-            cmorph.measure_3d(x, y, z, output=measurements[label_num])
+
+            cluster_index = label_num - 1  # we ignore the unclustered points, and start labeling at 1
+            cmorph.measure_3d(x, y, z, output=measurements[cluster_index])
 
             indi = indf
 
