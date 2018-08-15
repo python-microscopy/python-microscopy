@@ -72,7 +72,6 @@ def smooth_normals(normals, indices):
     #   don't get different results from changing the order of the smoothing
 
     new_normals = np.copy(normals)  # Generate a copy of normals
-    tri = indices[0, :]
     for idx in range(indices.shape[0]):
         tri = indices[idx]
         new_normals[idx] = np.mean(np.vstack((normals[
