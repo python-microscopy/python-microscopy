@@ -638,7 +638,6 @@ class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong her
 
     def execute(self, namespace):
         import PYME.Analysis.points.spherical_harmonics as spharm
-        from PYME.IO.ragged import RaggedCache
         from PYME.IO import MetaDataHandler
 
         inp = namespace[self.inputName]
@@ -659,9 +658,20 @@ class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong her
         mdh['Processing.SphericalHarmonicShell.MaxMMode'] = self.max_m_mode
         mdh['Processing.SphericalHarmonicShell.NIterations'] = self.n_iterations
         mdh['Processing.SphericalHarmonicShell.InitTolerance'] = self.init_tolerance
+        mdh['Processing.SphericalHarmonicShell.Centre'] = centre
 
-        namespace[self.outputName] = RaggedCache([{'z_scale': self.z_scale, 'centre': centre,
-                                                   'modes': modes, 'coeffs' : c},], mdh)
+        output_dtype = [('z_scale', '<f4'), ('centre', '<3f4'),
+                        ('modes', '<i4', (len(modes), 2)),
+                        ('coeffs', '<%if4' % len(modes))]
+        out = np.zeros(1, dtype=output_dtype)
+        out['z_scale'] =  self.z_scale
+        out['centre'] =  centre
+        out['modes']= modes
+        out['coeffs'] = c
+        out = tabular.recArrayInput(out)
+        out.mdh = mdh
+
+        namespace[self.outputName] = out
 
 @register_module('AddShellMappedCoordinates')
 class AddShellMappedCoordinates(ModuleBase): #FIXME - this likely doesnt belong here
