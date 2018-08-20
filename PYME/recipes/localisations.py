@@ -640,7 +640,7 @@ class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong her
         import PYME.Analysis.points.spherical_harmonics as spharm
         from PYME.IO import MetaDataHandler
 
-        inp = namespace[self.inputName]
+        inp = namespace[self.input_name]
 
         modes, coefficients, centre = spharm.sphere_expansion_clean(inp['x'], inp['y'], inp['z'] * self.z_scale,
                                                                     mmax=self.max_m_mode,
@@ -650,7 +650,7 @@ class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong her
         
         mdh = MetaDataHandler.NestedClassMDHandler()
         try:
-            mdh.copyEntriesFrom(namespace[self.inputName].mdh)
+            mdh.copyEntriesFrom(namespace[self.input_name].mdh)
         except AttributeError:
             pass
         
