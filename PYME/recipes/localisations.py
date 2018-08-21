@@ -349,7 +349,7 @@ class LabelsFromImage(ModuleBase):
     inputName = Input('input')
     inputImage = Input('labeled')
 
-    label_key_name = CStr('ObjectID')
+    label_key_name = CStr('objectID')
     label_count_key_name = CStr('NEvents')
 
     outputName = Output('labeled_points')
