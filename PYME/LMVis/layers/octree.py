@@ -83,7 +83,7 @@ class OctreeRenderLayer(TriangleRenderLayer):
             #nodes = ds._nodes[node_indices]
             #box_sizes = np.array(box_sizes)
 
-            nodes = ds._nodes[ds._nodes['nPoints'] == 1]
+            nodes = ds._nodes[np.sum(ds._nodes['children']) == 0]
             box_sizes = np.vstack(ds.box_size(nodes['depth'])).T
             
             alpha = nodes['nPoints']*((2.0**nodes['depth']))**3
