@@ -106,7 +106,8 @@ class PointSpriteShaderProgram(GLProgram):
         GLProgram.__init__(self)
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")
         shader_program = ShaderProgram(shader_path)
-        shader_program.add_shader("pointsprites_vs.glsl", GL_VERTEX_SHADER)
+        #shader_program.add_shader("pointsprites_vs.glsl", GL_VERTEX_SHADER)
+        shader_program.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
         shader_program.add_shader("pointsprites_fs.glsl", GL_FRAGMENT_SHADER)
         shader_program.link()
         self._texture = GaussTexture()
@@ -118,6 +119,7 @@ class PointSpriteShaderProgram(GLProgram):
         self.ymin, self.ymax = clipping['y']
         self.zmin, self.zmax = clipping['z']
         self.vmin, self.vmax = clipping['v']
+        self.v_matrix = np.eye(4, 4, dtype='f')
 
     def get_size_factor(self):
         warnings.warn("use size_factor attribute instead", DeprecationWarning)
@@ -133,6 +135,7 @@ class PointSpriteShaderProgram(GLProgram):
         glUniform1f(self.get_uniform_location('z_max'), float(self.zmax))
         glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
         glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
+        glUniformMatrix4fv(self.get_uniform_location('clip_rotation_matrix'), 1, GL_FALSE, self.v_matrix)
         glEnable(GL_POINT_SPRITE)
         glEnable(GL_PROGRAM_POINT_SIZE)
         glDisable(GL_DEPTH_TEST)

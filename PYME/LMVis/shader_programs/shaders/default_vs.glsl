@@ -11,10 +11,12 @@ uniform float z_min;
 uniform float z_max;
 uniform float v_min;
 uniform float v_max;
+uniform mat4 clip_rotation_matrix;
 
 
 void main() {
     bool visible;
+    vec4 v_position;
     gl_PointSize = gl_Point.size;
     gl_FrontColor = gl_Color;
 
@@ -22,9 +24,10 @@ void main() {
     visible = visible && gl_Vertex.y > y_min && gl_Vertex.y < y_max;
     visible = visible && gl_Vertex.z > z_min && gl_Vertex.z < z_max;
 
-    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+    v_position = clip_rotation_matrix*gl_Vertex;
+    visible = visible && v_position.z > v_min && v_position.z < v_max;
 
-    visible = visible && gl_Position.z > v_min && gl_Position.z < v_max;
+    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
 
     gl_FrontColor.a = gl_FrontColor.a*(float(visible));
 }

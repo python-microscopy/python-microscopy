@@ -29,9 +29,9 @@ import wx.glcanvas
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-from PYME.LMVis.layers import AxesOverlayLayer, LUTOverlayLayer, Point3DRenderLayer, PointSpritesRenderLayer, \
-    QuadTreeRenderLayer, VertexRenderLayer, ScaleBarOverlayLayer, SelectionOverlayLayer, ShadedPointRenderLayer, \
-    TetrahedraRenderLayer
+from PYME.LMVis.layers import AxesOverlayLayer, LUTOverlayLayer, ScaleBarOverlayLayer, SelectionOverlayLayer
+    #QuadTreeRenderLayer, VertexRenderLayer, , ShadedPointRenderLayer, \
+    #TetrahedraRenderLayer
 
 from PYME.LMVis.gl_offScreenHandler import OffScreenHandler
 from wx.glcanvas import GLCanvas
