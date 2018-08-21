@@ -346,20 +346,20 @@ class LabelsFromImage(ModuleBase):
         belongs to
 
     """
-    input_name = Input('input')
-    input_image = Input('labeled')
+    inputName = Input('input')
+    inputImage = Input('labeled')
 
-    label_key_name = CStr('object_id')
-    label_count_key_name = CStr('n_events')
+    label_key_name = CStr('ObjectID')
+    label_count_key_name = CStr('NEvents')
 
-    output_name = Output('labeled_points')
+    outputName = Output('labeled_points')
 
     def execute(self, namespace):
         from PYME.IO import tabular
         from PYME.Analysis.points import cluster_morphology
 
-        inp = namespace[self.input_name]
-        img = namespace[self.input_image]
+        inp = namespace[self.inputName]
+        img = namespace[self.inputImage]
         #img = image.openImages[dlg.GetStringSelection()]
 
         ids, numPerObject = cluster_morphology.get_labels_from_image(img, inp)
@@ -370,11 +370,11 @@ class LabelsFromImage(ModuleBase):
 
         # propagate metadata, if present
         try:
-            labeled.mdh = namespace[self.input_name].mdh
+            labeled.mdh = namespace[self.inputName].mdh
         except AttributeError:
             pass
 
-        namespace[self.output_name] = labeled
+        namespace[self.outputName] = labeled
 
 
 @register_module('MeasureClusters3D')
