@@ -6,7 +6,7 @@ Created on Mon May 25 17:15:01 2015
 """
 
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int,  File
+from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List
 
 #try:
 #    from traitsui.api import View, Item, Group
@@ -1473,6 +1473,55 @@ class FlatfiledAndDarkCorrect(ModuleBase):
         namespace[self.outputName] = im
 
 
+@register_module('SlidingWindowBackground')
+class SlidingWindowBackground(ModuleBase):
+    """
+    Estimates the background of a series using a sliding window and either the mean, or an adjusted percentile
+    (e.g. median) over that window on a per-pixel basis.
 
+    Parameters
+    ----------
+    input_name : Input
+        PYME.IO.ImageStack
+    percentile : Float
+        Percentile to take as the background after sorting within the time window along each pixel
+    window = List
+        Describes the window, much like range or numpy.arange, format is [start, finish, stride]
 
-        
+    Returns
+    -------
+    output_name = Output
+        PYME.IO.ImageStack of the background estimates for each frame in 'input'
+
+    Notes
+    -----
+    The percentile background isn't a simple percentile, but is adjusted slightly - see PYME.IO.DataSource.BGSDataSource
+
+    input and output images are the same size.
+
+    """
+    input_name = Input('image')
+    percentile = Float(0.25)
+    window = List([-32, 0, 1])
+    output_name = Output('sliding_window_background')
+
+    def execute(self, namespace):
+        from PYME.IO.DataSources import BGSDataSource
+        from PYME.IO.image import ImageStack
+        series = namespace[self.input_name]
+
+        bgs = BGSDataSource.DataSource(series.data, bgRange=self.window)
+        bgs.setBackgroundBufferPCT(self.percentile)
+
+        slice_shape = bgs.getSliceShape()
+        background = np.empty((slice_shape[0], slice_shape[1], series.data.shape[2]))
+        for ind in range(series.data.shape[2]):
+            background[:,:,ind] = bgs.getSlice(ind)
+
+        background = ImageStack(data=background, mdh=series.mdh)
+
+        background.mdh['Parent'] = series.filename
+        background.mdh['Processing.SlidingWindowBackground.Percentile'] = self.percentile
+        background.mdh['Processing.SlidingWindowBackground.Window'] = self.window
+
+        namespace[self.output_name] = background
