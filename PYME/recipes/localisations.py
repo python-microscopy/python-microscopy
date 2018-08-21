@@ -330,14 +330,14 @@ class LabelsFromImage(ModuleBase):
 
     Inputs
     ------
-    input_name: Input
+    inputName: Input
         name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
-    input_image: Input
+    inputImage: Input
         name of image input containing labels
 
     Outputs
     -------
-    output_name: Output
+    outputName: Output
         name of tabular output. A mapped version of the tabular input with 2 extra columns
     label_key_name : CStr
         name of new column which will contain the label number from image, mapped to each localization within that label
