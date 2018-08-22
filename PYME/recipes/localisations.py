@@ -330,18 +330,27 @@ class LabelsFromImage(ModuleBase):
 
     Inputs
     ------
-    inputName: name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
-    inputImage: name of image input containing labels
+    inputName: Input
+        name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
+    inputImage: Input
+        name of image input containing labels
 
     Outputs
     -------
-    outputName: name of tabular output. A mapped version of the tabular input with 2 extra columns
-        objectID: Label number from image, mapped to each localization within that label
-        NEvents: Number of localizations within the label that a given localization belongs to
+    outputName: Output
+        name of tabular output. A mapped version of the tabular input with 2 extra columns
+    label_key_name : CStr
+        name of new column which will contain the label number from image, mapped to each localization within that label
+    label_count_key_name : CStr
+        name of new column which will contain the number of localizations within the label that a given localization
+        belongs to
 
     """
     inputName = Input('input')
     inputImage = Input('labeled')
+
+    label_key_name = CStr('objectID')
+    label_count_key_name = CStr('NEvents')
 
     outputName = Output('labeled_points')
 
@@ -356,8 +365,8 @@ class LabelsFromImage(ModuleBase):
         ids, numPerObject = cluster_morphology.get_labels_from_image(img, inp)
 
         labeled = tabular.mappingFilter(inp)
-        labeled.addColumn('objectID', ids)
-        labeled.addColumn('NEvents', numPerObject[ids - 1])
+        labeled.addColumn(self.label_key_name, ids)
+        labeled.addColumn(self.label_count_key_name, numPerObject[ids - 1])
 
         # propagate metadata, if present
         try:
