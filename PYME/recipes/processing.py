@@ -1486,7 +1486,7 @@ class SlidingWindowBackground(ModuleBase):
     percentile : Float
         Percentile to take as the background after sorting within the time window along each pixel
     window = List
-        Describes the window, much like range or numpy.arange, format is [start, finish, stride]
+        Describes the window, much like range or numpy.arrange, format is [start, finish, stride]
 
     Returns
     -------
@@ -1513,12 +1513,7 @@ class SlidingWindowBackground(ModuleBase):
         bgs = BGSDataSource.DataSource(series.data, bgRange=self.window)
         bgs.setBackgroundBufferPCT(self.percentile)
 
-        slice_shape = bgs.getSliceShape()
-        background = np.empty((slice_shape[0], slice_shape[1], series.data.shape[2]))
-        for ind in range(series.data.shape[2]):
-            background[:,:,ind] = bgs.getSlice(ind)
-
-        background = ImageStack(data=background, mdh=series.mdh)
+        background = ImageStack(data=bgs, mdh=series.mdh)
 
         background.mdh['Parent'] = series.filename
         background.mdh['Processing.SlidingWindowBackground.Percentile'] = self.percentile
