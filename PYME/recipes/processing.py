@@ -1473,37 +1473,35 @@ class FlatfiledAndDarkCorrect(ModuleBase):
         namespace[self.outputName] = im
 
 
-@register_module('SlidingWindowBackground')
-class SlidingWindowBackground(ModuleBase):
+@register_module('BackgroundSubtractionMovingAverage')
+class BackgroundSubtractionMovingAverage(ModuleBase):
     """
-    Estimates the background of a series using a sliding window and either the mean, or an adjusted percentile
-    (e.g. median) over that window on a per-pixel basis.
+    Estimates and subtracts the background of a series using a sliding window average on a per-pixel basis.
 
     Parameters
     ----------
     input_name : Input
         PYME.IO.ImageStack
-    percentile : Float
-        Percentile to take as the background after sorting within the time window along each pixel
     window = List
         Describes the window, much like range or numpy.arrange, format is [start, finish, stride]
 
     Returns
     -------
     output_name = Output
-        PYME.IO.ImageStack of the background estimates for each frame in 'input'
+        PYME.IO.ImageStack of the background-subtracted 'input_name' series
 
     Notes
     -----
-    The percentile background isn't a simple percentile, but is adjusted slightly - see PYME.IO.DataSource.BGSDataSource
 
     input and output images are the same size.
 
     """
-    input_name = Input('image')
-    percentile = Float(0.25)
+
+    input_name = Input('input')
     window = List([-32, 0, 1])
-    output_name = Output('sliding_window_background')
+    output_name = Output('background_subtracted')
+
+    percentile = 0
 
     def execute(self, namespace):
         from PYME.IO.DataSources import BGSDataSource
@@ -1520,3 +1518,31 @@ class SlidingWindowBackground(ModuleBase):
         background.mdh['Processing.SlidingWindowBackground.Window'] = self.window
 
         namespace[self.output_name] = background
+
+@register_module('BackgroundSubtractionMovingPercentile')
+class BackgroundSubtractionMovingPercentile(BackgroundSubtractionMovingAverage):
+    """
+    Estimates the background of a series using a sliding window and taking an (adjusted) percentile
+    (e.g. median at percentile = 0.5) over that window on a per-pixel basis.
+
+    Parameters
+    ----------
+    input_name : Input
+        PYME.IO.ImageStack
+    percentile : Float
+        Percentile to take as the background after sorting within the time window along each pixel
+    window = List
+        Describes the window, much like range or numpy.arrange, format is [start, finish, stride]
+
+    Returns
+    -------
+    output_name = Output
+        PYME.IO.ImageStack of the background-subtracted 'input_name' series
+
+    Notes
+    -----
+    The percentile background isn't a simple percentile, but is adjusted slightly - see PYME.IO.DataSource.BGSDataSource
+
+    input and output images are the same size.
+    """
+    percentile = Float(0.25)
