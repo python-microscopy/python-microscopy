@@ -97,6 +97,9 @@ class ModuleBase(HasTraits):
     @property
     def outputs(self):
         return {v for k, v in self.get().items() if k.startswith('output')}
+    
+    def get_name(self):
+        return module_names[self.__class__]
 
     def trait_view(self, name=None, view_element=None):
         import traitsui.api as tui
@@ -116,15 +119,29 @@ class ModuleBase(HasTraits):
     @property
     def hide_in_overview(self):
         return []
+    
+    def get_params(self):
+        editable = self.class_editable_traits()
+        inputs = [tn for tn in editable if tn.startswith('input')]
+        outputs = [tn for tn in editable if tn.startswith('output')]
+        params = [tn for tn in editable if not (tn in inputs or tn in outputs or tn.startswith('_'))]
+        
+        return inputs, outputs, params
         
     def _pipeline_view(self, show_label=True):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
         import traitsui.api as tui
 
         modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
 
         hidden = self.hide_in_overview
+        
+        inputs, outputs, params = self.get_params()
 
-        params = [tn for tn in self.class_editable_traits() if not (tn.startswith('input') or tn.startswith('output') or tn in hidden)]
+        #params = [tn for tn in self.class_editable_traits() if not (tn.startswith('input') or tn.startswith('output') or tn in hidden)]
 
         if show_label:
             return tui.View(tui.Group([tui.Item(tn) for tn in params],label=modname))
@@ -151,13 +168,18 @@ class ModuleBase(HasTraits):
 
     @property
     def default_view(self):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
         from traitsui.api import View, Item, Group
         from PYME.ui.custom_traits_editors import CBEditor
 
-        editable = self.class_editable_traits()
-        inputs = [tn for tn in editable if tn.startswith('input')]
-        outputs = [tn for tn in editable if tn.startswith('output')]
-        params = [tn for tn in editable if not (tn in inputs or tn in outputs or tn.startswith('_'))]
+        #editable = self.class_editable_traits()
+        #inputs = [tn for tn in editable if tn.startswith('input')]
+        #outputs = [tn for tn in editable if tn.startswith('output')]
+        #params = [tn for tn in editable if not (tn in inputs or tn in outputs or tn.startswith('_'))]
+        inputs, outputs, params = self.get_params()
 
         return View([Item(tn, editor=CBEditor(choices=self._namespace_keys)) for tn in inputs] + [Item('_'),] +
                     [Item(tn) for tn in params] + [Item('_'),] +
@@ -555,14 +577,19 @@ class ModuleCollection(HasTraits):
 
     @property
     def pipeline_view(self):
-        from traitsui.api import View, ListEditor, InstanceEditor, Item
-        #v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True, view='pipeline_view'), style='custom', show_label=False),
-        #            buttons=['OK', 'Cancel'])
-
-        return View(Item('modules', editor=ListEditor(style='custom', editor=InstanceEditor(view='pipeline_view'),
-                                                      mutable=False),
-                         style='custom', show_label=False),
-                    buttons=['OK', 'Cancel'])
+        import wx
+        if wx.GetApp() is None:
+            return None
+        else:
+            from traitsui.api import View, ListEditor, InstanceEditor, Item
+            #v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True, view='pipeline_view'), style='custom', show_label=False),
+            #            buttons=['OK', 'Cancel'])
+    
+            return View(Item('modules', editor=ListEditor(style='custom', editor=InstanceEditor(view='pipeline_view'),
+                                                          mutable=False),
+                             style='custom', show_label=False),
+                        buttons=['OK', 'Cancel'])
+        
 
         
 class Filter(ModuleBase):

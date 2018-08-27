@@ -79,6 +79,8 @@ class DensityMapping(ModuleBase):
         inp = namespace[self.inputLocalizations]
         if not isinstance(inp, tabular.colourFilter):
             cf = tabular.colourFilter(inp, None)
+            
+            print('Created colour filter with chans: %s' % cf.getColourChans())
             cf.mdh = inp.mdh
         else:
             cf = inp
@@ -132,6 +134,44 @@ class Pipelineify(ModuleBase):
         mapped_ds.mdh = mdh
 
         namespace[self.outputLocalizations] = mapped_ds
+        
+@register_module("ProcessColour")
+class ProcessColour(ModuleBase):
+    input = Input('localizations')
+    output = Output('colour_mapped')
+    
+    
+    def execute(self, namespace):
+        input = namespace[self.input]
+        mdh = input.mdh
+        
+        output = tabular.mappingFilter(input)
+        output.mdh = mdh
+    
+        if 'gFrac' in output.keys():
+            #ratiometric
+            raise NotImplementedError('Ratiometric processing in recipes not implemented yet')
+            for structure, ratio in self.fluorSpecies.items():
+                if not ratio is None:
+                    self.mapping.setMapping('p_%s' % structure,
+                                            'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
+        else:
+            if 'probe' in output.keys():
+                #non-ratiometric (i.e. sequential) colour
+                #color channel is given in 'probe' column
+                output.setMapping('ColourNorm', '1.0 + 0*probe')
+                
+                for i in range(int(output['probe'].min()), int(output['probe'].max() + 1)):
+                    output.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
+            
+            nSeqCols = mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
+            if nSeqCols > 1:
+                for i in range(nSeqCols):
+                    output.setMapping('ColourNorm', '1.0 + 0*t')
+                    cr = mdh['Protocol.ColorRange%d' % i]
+                    output.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
+                    
+        namespace[self.output] = output
 
 @register_module('MergeClumps')
 class MergeClumps(ModuleBase):

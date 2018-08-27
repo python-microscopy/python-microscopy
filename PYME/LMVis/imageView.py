@@ -98,6 +98,7 @@ class ImageViewPanel(wx.Panel):
             step = 2**(-numpy.ceil(numpy.log2(sc)))
             sc = sc*step
 
+        step = int(step)
         x0_p = int(x0_ / self.image.pixelSize)
         x1_p = int(x1_ / self.image.pixelSize)
         y0_p = int(y0_ / self.image.pixelSize)
@@ -385,6 +386,7 @@ class ColourImageViewPanel(ImageViewPanel):
                 step = 2**(-numpy.ceil(numpy.log2(sc)))
                 sc = sc*step
 
+            step = int(step)
 
             #if len(img.img.shape) == 2:
             #    im = numpy.flipud(img.img[int(x0_ / self.image.pixelSize):int(x1_ / self.image.pixelSize):step, int(y0_ / self.image.pixelSize):int(y1_ / self.image.pixelSize):step].astype('f').T)
@@ -418,8 +420,8 @@ class ColourImageViewPanel(ImageViewPanel):
 
             #print self.centreX, self.centreY, x0, y0, width, height, pixelsize, round((-self.centreX + x0 + width/2)/pixelsize)
 
-            dx = round((-self.centreX + x0 + width/2)/pixelsize)
-            dy = round((self.centreY - y1 + height/2)/pixelsize)
+            dx = int(round((-self.centreX + x0 + width/2)/pixelsize))
+            dy = int(round((self.centreY - y1 + height/2)/pixelsize))
 
             #print dx, dy, im_.shape, im_[dx:(im.shape[0] + dx), dy:(im.shape[1] + dy), :].shape
             #print self.centreX, self.centreY, x0, y0, dx, dy, width, height, pixelsize, round((-self.centreX + x0 + width/2)/pixelsize)
