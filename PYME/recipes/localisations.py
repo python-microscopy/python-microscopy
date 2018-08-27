@@ -370,18 +370,27 @@ class LabelsFromImage(ModuleBase):
 
     Inputs
     ------
-    inputName: name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
-    inputImage: name of image input containing labels
+    inputName: Input
+        name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
+    inputImage: Input
+        name of image input containing labels
 
     Outputs
     -------
-    outputName: name of tabular output. A mapped version of the tabular input with 2 extra columns
-        objectID: Label number from image, mapped to each localization within that label
-        NEvents: Number of localizations within the label that a given localization belongs to
+    outputName: Output
+        name of tabular output. A mapped version of the tabular input with 2 extra columns
+    label_key_name : CStr
+        name of new column which will contain the label number from image, mapped to each localization within that label
+    label_count_key_name : CStr
+        name of new column which will contain the number of localizations within the label that a given localization
+        belongs to
 
     """
     inputName = Input('input')
     inputImage = Input('labeled')
+
+    label_key_name = CStr('objectID')
+    label_count_key_name = CStr('NEvents')
 
     outputName = Output('labeled_points')
 
@@ -396,8 +405,8 @@ class LabelsFromImage(ModuleBase):
         ids, numPerObject = cluster_morphology.get_labels_from_image(img, inp)
 
         labeled = tabular.mappingFilter(inp)
-        labeled.addColumn('objectID', ids)
-        labeled.addColumn('NEvents', numPerObject[ids - 1])
+        labeled.addColumn(self.label_key_name, ids)
+        labeled.addColumn(self.label_count_key_name, numPerObject[ids - 1])
 
         # propagate metadata, if present
         try:
@@ -669,29 +678,28 @@ class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong her
         
 
     """
-    inputName = Input('input')
+    input_name = Input('input')
     max_m_mode = Int(5)
     z_scale = Float(5.0)
     n_iterations = Int(2)
     init_tolerance = Float(0.3, desc='Fractional tolerance on radius used in first iteration')
-    outputName = Output('harmonicShell')
+    output_name = Output('harmonic_shell')
 
     def execute(self, namespace):
         import PYME.Analysis.points.spherical_harmonics as spharm
-        from PYME.IO.ragged import RaggedCache
         from PYME.IO import MetaDataHandler
 
-        inp = namespace[self.inputName]
+        inp = namespace[self.input_name]
 
-        modes, c, centre = spharm.sphere_expansion_clean(inp['x'], inp['y'], inp['z'] * self.z_scale,
-                                                               mmax=self.max_m_mode,
-                                                               centre_points=True,
-                                                               nIters=self.n_iterations,
-                                                               tol_init=self.init_tolerance)
+        modes, coefficients, centre = spharm.sphere_expansion_clean(inp['x'], inp['y'], inp['z'] * self.z_scale,
+                                                                    mmax=self.max_m_mode,
+                                                                    centre_points=True,
+                                                                    nIters=self.n_iterations,
+                                                                    tol_init=self.init_tolerance)
         
         mdh = MetaDataHandler.NestedClassMDHandler()
         try:
-            mdh.copyEntriesFrom(namespace[self.inputName].mdh)
+            mdh.copyEntriesFrom(namespace[self.input_name].mdh)
         except AttributeError:
             pass
         
@@ -699,9 +707,16 @@ class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong her
         mdh['Processing.SphericalHarmonicShell.MaxMMode'] = self.max_m_mode
         mdh['Processing.SphericalHarmonicShell.NIterations'] = self.n_iterations
         mdh['Processing.SphericalHarmonicShell.InitTolerance'] = self.init_tolerance
+        mdh['Processing.SphericalHarmonicShell.Centre'] = centre
 
-        namespace[self.outputName] = RaggedCache([{'z_scale': self.z_scale, 'centre': centre,
-                                                   'modes': modes, 'coeffs' : c},], mdh)
+        output_dtype = [('modes', '<2i4'), ('coefficients', '<f4')]
+        out = np.zeros(len(coefficients), dtype=output_dtype)
+        out['modes']= modes
+        out['coefficients'] = coefficients
+        out = tabular.recArrayInput(out)
+        out.mdh = mdh
+
+        namespace[self.output_name] = out
 
 @register_module('AddShellMappedCoordinates')
 class AddShellMappedCoordinates(ModuleBase): #FIXME - this likely doesnt belong here
