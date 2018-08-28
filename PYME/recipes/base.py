@@ -543,6 +543,11 @@ class ModuleCollection(HasTraits):
 
                         #logger.error('loading h5r not supported yet')
                         #raise NotImplementedError
+                    elif isinstance(t, tables.EArray):
+                        # load using ImageStack._loadh5, which finds metdata
+                        im = ImageStack(filename=filename, haveGUI=False)
+                        # assume image is the main table in the file and give it the named key
+                        self.namespace[key] = im
         elif extension == '.csv':
             logger.error('loading .csv not supported yet')
             raise NotImplementedError
