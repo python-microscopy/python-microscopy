@@ -99,17 +99,24 @@ class DetectPoints(ModuleBase):
     ----------
     input_name : Input
         PYME.IO.ImageStack
-
+    snr_threshold : Bool
+        Flag to set whether the threshold used is a scalar (False) or an array (True). If True, the signal-to-noise
+        (SNR) is estimated at each pixel, and the threshold applied at each pixel is a 'threshold' multiple of this SNR
+        estimate
+    threshold : Float
+        The intensity threshold applied during detection if 'snr_threshold' is False, otherwise this scalar is first
+        multiplied by the SNR estimate at each pixel before the threshold is applied
+    debounce_radius : Int
+        Radius is pixels to check for other detected points. If multiple points are found within this radius of each
+        the most-point-like based on our filtering will be preserved and the other(s) will be removed
 
     Returns
     -------
-    output_name = Output
-
+    output_name : Output
+        PYME.IO.tabular containing x and y coordinates of each point, as well as the frame index they were detected on
 
     Notes
     -----
-
-
 
     """
 
@@ -117,7 +124,7 @@ class DetectPoints(ModuleBase):
 
     threshold = Float(1.)
     debounce_radius = Int(4)
-    SNR_threshold = Bool(True)
+    snr_threshold = Bool(True)
 
     output_name = Output('candidate_points')
 
@@ -137,6 +144,7 @@ class DetectPoints(ModuleBase):
 
         mdh.copyEntriesFrom(im_stack.mdh)
 
+        # make sure we don't go off the edge
         mask_edge_width = self.debounce_radius + 1
 
         camera_manager = CameraInfoManager()
@@ -144,12 +152,10 @@ class DetectPoints(ModuleBase):
         x, y, t = [], [], []
         # note that ObjectIdentifier is only 2D-aware
         for ti in range(im_stack.data.shape[2]):
-            # __init__(self, data, filterMode="fast", filterRadiusLowpass=1, filterRadiusHighpass=3, filterRadiusZ=4):
             frame = camera_manager.correctImage(im_stack.mdh, im_stack.data.getSlice(ti))
             finder = ObjectIdentifier(frame * (frame > 0))
-            # FindObjects(self, thresholdFactor, numThresholdSteps="default", blurRadius=1.5, mask=None, splitter=None, debounceRadius=4, maskEdgeWidth=5, upperThreshFactor = 0.5, discardClumpRadius=0):
 
-            if self.SNR_threshold:  # calculate a per-pixel threshold based on an estimate of the SNR
+            if self.snr_threshold:  # calculate a per-pixel threshold based on an estimate of the SNR
                 sigma = fitTask.calcSigma(im_stack.mdh, frame).squeeze()
                 threshold = sigma * self.threshold
             else:
@@ -160,13 +166,13 @@ class DetectPoints(ModuleBase):
             x.append(finder.x[:])
             y.append(finder.y[:])
             t.append(ti * np.ones_like(finder.x[:]))
-        self.sigma = sigma
 
         out = tabular.resultsFilter({'x': np.concatenate(x, axis=0), 'y': np.concatenate(y, axis=0),
                                      't': np.concatenate(t, axis=0)})
 
         out.mdh = mdh
 
+        out.mdh['Analysis.SNRThreshold'] = self.snr_threshold
         out.mdh['Analysis.DetectionThreshold'] = self.threshold
         out.mdh['Analysis.DebounceRadius'] = self.debounce_radius
         out.mdh['Analysis.MaskEdgeWidth'] = mask_edge_width
