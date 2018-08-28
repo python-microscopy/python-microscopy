@@ -91,6 +91,87 @@ class FitDumbells(ModuleBase):
         
         namespace[self.outputName] = res
 
+@register_module('DetectPoints')
+class DetectPoints(ModuleBase):
+    """
+
+    Parameters
+    ----------
+    input_name : Input
+        PYME.IO.ImageStack
+
+
+    Returns
+    -------
+    output_name = Output
+
+
+    Notes
+    -----
+
+
+
+    """
+
+    input_name = Input('input')
+
+    threshold = Float(1.)
+    debounce_radius = Int(4)
+    SNR_threshold = Bool(True)
+
+    output_name = Output('candidate_points')
+
+    def execute(self, namespace):
+        from PYME.localization.ofind import ObjectIdentifier
+        from PYME.localization.remFitBuf import fitTask, CameraInfoManager
+
+        im_stack = namespace[self.input_name]
+        # set metadata entries needed for detection in case they are missing
+        # FIXME - note these can still be replaced with zeros with the following copy...
+        mdh = MetaDataHandler.NestedClassMDHandler()
+        mdh['Camera.ADOffset'] = im_stack.data.getSlice(0).min()
+        mdh['Camera.TrueEMGain'] = 1.0
+        mdh['Camera.ElectronsPerCount'] = 1.0
+        mdh['Camera.ReadNoise'] = 1.0
+        mdh['Camera.NoiseFactor'] = 1.0
+
+        mdh.copyEntriesFrom(im_stack.mdh)
+
+        mask_edge_width = self.debounce_radius + 1
+
+        camera_manager = CameraInfoManager()
+
+        x, y, t = [], [], []
+        # note that ObjectIdentifier is only 2D-aware
+        for ti in range(im_stack.data.shape[2]):
+            # __init__(self, data, filterMode="fast", filterRadiusLowpass=1, filterRadiusHighpass=3, filterRadiusZ=4):
+            frame = camera_manager.correctImage(im_stack.mdh, im_stack.data.getSlice(ti))
+            finder = ObjectIdentifier(frame * (frame > 0))
+            # FindObjects(self, thresholdFactor, numThresholdSteps="default", blurRadius=1.5, mask=None, splitter=None, debounceRadius=4, maskEdgeWidth=5, upperThreshFactor = 0.5, discardClumpRadius=0):
+
+            if self.SNR_threshold:  # calculate a per-pixel threshold based on an estimate of the SNR
+                sigma = fitTask.calcSigma(im_stack.mdh, frame).squeeze()
+                threshold = sigma * self.threshold
+            else:
+                threshold = self.threshold
+
+            finder.FindObjects(threshold, 0, debounceRadius=self.debounce_radius, maskEdgeWidth=mask_edge_width)
+
+            x.append(finder.x[:])
+            y.append(finder.y[:])
+            t.append(ti * np.ones_like(finder.x[:]))
+        self.sigma = sigma
+
+        out = tabular.resultsFilter({'x': np.concatenate(x, axis=0), 'y': np.concatenate(y, axis=0),
+                                     't': np.concatenate(t, axis=0)})
+
+        out.mdh = mdh
+
+        out.mdh['Analysis.DetectionThreshold'] = self.threshold
+        out.mdh['Analysis.DebounceRadius'] = self.debounce_radius
+        out.mdh['Analysis.MaskEdgeWidth'] = mask_edge_width
+
+        namespace[self.output_name] = out
 
 @register_module('FitPoints')
 class FitPoints(ModuleBase):
