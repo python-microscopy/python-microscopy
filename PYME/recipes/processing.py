@@ -1585,8 +1585,6 @@ class StatisticsByFrame(ModuleBase):
 
         # squeeze down from 4D to 3D
         data = np.atleast_3d(series.data.squeeze())
-        print('data shape:')
-        print(data.shape)
 
         if self.mask == '':
             mask = np.ones_like(data, dtype=bool)
