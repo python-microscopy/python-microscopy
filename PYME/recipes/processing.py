@@ -17,6 +17,7 @@ from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, Lis
 import numpy as np
 from scipy import ndimage
 from PYME.IO.image import ImageStack
+from PYME.IO import tabular
 
 @register_module('SimpleThreshold') 
 class SimpleThreshold(Filter):
@@ -1546,3 +1547,74 @@ class BackgroundSubtractionMovingPercentile(BackgroundSubtractionMovingAverage):
     input and output images are the same size.
     """
     percentile = Float(0.25)
+
+
+@register_module('StatisticsByFrame')
+class StatisticsByFrame(ModuleBase):
+    """
+    Iterates through the time/z-position dimension of an ImageStack, calculating basic statistics for each frame,
+    optionally using a 2D or 3D mask in the process.
+
+    Parameters
+    ----------
+    input_name : Input
+        PYME.IO.ImageStack
+    mask : Input
+        PYME.IO.ImageStack. Optional mask to only calculate metrics
+
+    Returns
+    -------
+    output_name = Output
+
+
+    Notes
+    -----
+
+    """
+
+    input_name = Input('input')
+
+    mask = Input('')
+
+    output_name = Output('cluster_metrics')
+
+    def execute(self, namespace):
+        from scipy import stats
+
+        series = namespace[self.input_name]
+
+        # squeeze down from 4D to 3D
+        data = np.atleast_3d(series.data.squeeze())
+        print('data shape:')
+        print(data.shape)
+
+        if self.mask == '':
+            mask = np.ones_like(data, dtype=bool)
+        else:
+            # again, handle our mask being either 2D, 3D, or 4D. NB - no color (4D) handling implemented at this point
+            mask = np.atleast_3d(namespace[self.mask].data[:,:,:].squeeze().astype(bool))
+
+        # broadcast that bad larry if need-be, e.g. a 2D mask, but no problem if it's already the right size
+        mask = np.broadcast_to(mask, data.shape)
+
+
+        var = np.empty(data.shape[2], dtype=float)
+        mean = np.empty_like(var)
+        median = np.empty_like(var)
+        mode = np.empty_like(var)
+
+        for si in range(data.shape[2]):
+            slice_data = data[:,:,si][mask[:,:,si]]
+
+            var[si] = np.var(slice_data)
+            mean[si] = np.mean(slice_data)
+            median[si] = np.median(slice_data)
+            mode[si] = stats.mode(slice_data)[0]
+
+        # package up and ship-out results
+        res = tabular.resultsFilter({'variance': var, 'mean': mean, 'median': median, 'mode': mode})
+        try:
+            res.mdh = series.mdh
+        except:
+            pass
+        namespace[self.output_name] = res
