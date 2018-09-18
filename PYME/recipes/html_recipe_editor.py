@@ -22,6 +22,9 @@ body_html = """
     <div>
       Execute on invalidation: <input ng-model="recipe.execute_on_invalidation" type='checkbox'><br>
       
+      <div>{{recipe.to_svg()}}</div>
+      <div id='img'></div>
+      
       <div ng-repeat="module in recipe.modules">
             <h4>{{module.get_name()}}</h4>
             <table>

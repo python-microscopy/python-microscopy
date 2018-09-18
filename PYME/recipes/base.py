@@ -590,6 +590,10 @@ class ModuleCollection(HasTraits):
                              style='custom', show_label=False),
                         buttons=['OK', 'Cancel'])
         
+    def to_svg(self):
+        from . import recipeLayout
+        return recipeLayout.to_svg(self.dependancyGraph())
+        
 
         
 class Filter(ModuleBase):

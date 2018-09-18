@@ -28,7 +28,7 @@ try:
     # Put this in a try-except clause as a) the quaternion module is not packaged yet and b) it has a dependency on a recent numpy version
     # so we might not want to make it a dependency yet.
     import quaternion
-    HAVE_QUATERNION = True
+    HAVE_QUATERNION = False#True
 except ImportError:
     print('quaternion module not found, disabling custom clip plane orientations')
     HAVE_QUATERNION = False
@@ -37,7 +37,7 @@ except ImportError:
 clipping_dtype = [('x', '<f4', (2,)), ('y', '<f4', (2,)), ('z', '<f4', (2,)), ('v', '<f4', (2,))]
 dummy_clipping = np.array([-1e6, 1e6, -1e6, 1e6, -1e6, 1e6, -1e6, 1e6], 'f4').view(clipping_dtype)
 
-def_clip_plane_orientation = [1,0,0,0]#np.eye(4,4,dtype='f')
+def_clip_plane_orientation = np.array([1,0,0,0], 'f8')#np.eye(4,4,dtype='f')
 
 class View(object):
     def __init__(self, view_id='id', vec_up=[0,1,0], vec_back = [0,0,1], vec_right = [1,0,0], translation= [0,0,0],
@@ -72,7 +72,7 @@ class View(object):
                 self.clip_plane_orientation = quaternion.quaternion(*clip_plane_orientation)
         else:
             #this won't work properly, but will stop us firing an error
-            self.clip_plane_orientation = np.array(clip_plane_orientation)
+            self.clip_plane_orientation = np.array(clip_plane_orientation, dtype='f8')
             
         self.clip_plane_position = np.array(clip_plane_position)
 
@@ -172,7 +172,7 @@ class View(object):
         ordered_dict['translation'] = self.translation.tolist()
         ordered_dict['scale'] = self.scale
         ordered_dict['clipping'] = self.clipping.view('8f4').squeeze().tolist()
-        ordered_dict['clip_plane_orientation'] = self.clip_plane_orientation.view('4f4').squeeze().tolist()
+        #ordered_dict['clip_plane_orientation'] = self.clip_plane_orientation.view('4f8').squeeze().tolist()
         ordered_dict['clip_plane_position'] = self.clip_plane_position.tolist()
 
         return ordered_dict
