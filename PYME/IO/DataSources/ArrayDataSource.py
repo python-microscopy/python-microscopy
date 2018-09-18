@@ -66,6 +66,6 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
             return self.data.shape[0]
         else:
             if len(self.data.shape) > 2:
-                return self.data.shape[2]
+                return np.prod(self.data.shape[2:])
             else:
                 return 1
