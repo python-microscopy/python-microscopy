@@ -80,14 +80,7 @@ flow_gray.name = 'flow_gray'
 
 regCmap(flow_gray)
 
-def r(rgb):
-    return rgb[0]
 
-def g(rgb):
-    return rgb[1]
-
-def b(rgb):
-    return rgb[2]
 
 def grey_overflow(underflowcol = 'magenta', overflowcol = 'lime', percentage=5, greystart=0.1):
     if percentage < 1:
@@ -99,6 +92,15 @@ def grey_overflow(underflowcol = 'magenta', overflowcol = 'lime', percentage=5, 
     ocolrgb = colors.hex2color(colors.cnames[overflowcol])
     p = 0.01 * percentage
 
+    def r(rgb):
+        return rgb[0]
+
+    def g(rgb):
+        return rgb[1]
+
+    def b(rgb):
+        return rgb[2]
+    
     grey_data = {'red':   [(0, r(ucolrgb), r(ucolrgb)),
                           (p, r(ucolrgb), greystart),
                           (1.0-p, 1.0, r(ocolrgb)),

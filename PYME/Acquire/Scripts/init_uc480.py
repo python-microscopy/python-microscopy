@@ -22,7 +22,7 @@
 ##################
 
 #from PYME.Acquire.Hardware.AndorIXon import AndorIXon
-from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
+#from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
 
 from PYME.Acquire.Hardware.uc480 import uCam480
 

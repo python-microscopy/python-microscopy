@@ -42,7 +42,7 @@ tsy = vsy*scope.cam.GetPicHeight()#*1e-3
 if 'splitting'in dir(scope.cam) and scope.cam.splitting =='up_down':
     tsy *= 0.5
     
-ps = PointScanner(scope, pixels = [5,5], pixelsize=numpy.array([tsx*.2, tsy*.2]), dwelltime=2, avg=False, evtLog = False)# , sync=True)
+ps = PointScanner(scope, pixels = [5,5], pixelsize=numpy.array([tsx*.2, tsy*.2]), dwelltime=2, avg=False, evtLog = True)# , sync=True)
 
 class SFGenPlotPanel(PlotPanel):
     def draw(self):

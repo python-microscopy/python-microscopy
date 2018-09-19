@@ -13,14 +13,12 @@ from PYME.Acquire import eventLog
 import time
 
 from .base_piezo import PiezoBase
-#import time
 
 class piezoOffsetProxy(PiezoBase, Pyro.core.ObjBase):
     def __init__(self, basePiezo):
         Pyro.core.ObjBase.__init__(self)
         self.basePiezo = basePiezo
         self.offset = 0
-        #self.driftQueue = Queue.Queue()
         
     @property
     def units_um(self):
@@ -82,7 +80,7 @@ class piezoOffsetProxy(PiezoBase, Pyro.core.ObjBase):
         
         
 class ServerThread(threading.Thread):
-    def __init__(self, proxyPiezo):
+    def __init__(self, basePiezo):
         threading.Thread.__init__(self)
 
         import socket
@@ -112,8 +110,9 @@ class ServerThread(threading.Thread):
         self.daemon=Pyro.core.Daemon(host = ip_addr)
         self.daemon.useNameServer(ns)
         
-        self.piezo = proxyPiezo      
-
+        #self.piezo = piezoOffsetProxy(basePiezo)
+        self.piezo = basePiezo
+        
         #pname = "%s.Piezo" % compName
         
         

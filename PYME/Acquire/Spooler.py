@@ -30,7 +30,7 @@ from PYME.IO import MetaDataHandler
 import wx #FIXME - shouldn't do this here
 
 try:
-    from PYME.Acquire import sampleInformationDjangoDirect as sampleInformation
+    from PYME.Acquire import sampleInformation
 except:
     sampleInformation= None
 

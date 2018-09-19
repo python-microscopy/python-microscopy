@@ -278,7 +278,7 @@ class SampleInfoDialog(wx.Dialog):
     def OnAddSlide(self, event):
         import webbrowser
         #import os
-        host = 'phy-lmsrv2'
+        #host = 'lmsrv1'
         #if 'PYME_DATABASE_HOST' in os.environ.keys():
         #    host = os.environ['PYME_DATABASE_HOST']
             
@@ -498,7 +498,7 @@ def getSampleData(parent, mdh):
             currentSlide[0] = dlg.slide
         else:
             currentSlide[0] = None
-        
+
         dlg.Destroy()
 
 def createImage(mdh, slide, comments=''):

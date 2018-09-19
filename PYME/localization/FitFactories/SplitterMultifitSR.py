@@ -193,7 +193,7 @@ class GaussianFitFactory:
             data = data - bgM
             
         #ofind step
-        import pylab
+        #import pylab
         #find pixels which are > 2 sigma above noise floor.
         #sl = ndimage.gaussian_filter(sigma, 3)
         pe = np.log(np.maximum(data/sigma, .1))
@@ -261,9 +261,10 @@ class GaussianFitFactory:
         #objSlices = ndimage.find_objects(labels)
         
         if gui:
-            pylab.imshow(data.T,interpolation='nearest')
-            pylab.figure()
-            pylab.imshow(mask.T, interpolation='nearest')
+            import matplotlib.pyplot as plt
+            plt.imshow(data.T,interpolation='nearest')
+            plt.figure()
+            plt.imshow(mask.T, interpolation='nearest')
 
         if nlabels == 0:
             #the frame is empty

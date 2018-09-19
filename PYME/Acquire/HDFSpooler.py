@@ -34,8 +34,6 @@ import PYME.Acquire.Spooler as sp
 
 from PYME.IO.FileUtils import fileID
 
-import time
-
 class SpoolEvent(tables.IsDescription):
     """Pytables description for Events table in spooled dataset"""
     EventName = tables.StringCol(32)
@@ -84,11 +82,6 @@ class EventLogger:
         """
         if eventName == 'StartAq':
             eventDescr = '%d' % self.spooler.imNum
-
-        #if eventName == 'ShiftMeasure':
-        #    dl = eventDescr.split(',')
-        #    eventtimestamp = float(dl.pop())
-        #    eventDescr = ','.join(dl)
               
         ev = self.evts.row
         
@@ -99,11 +92,6 @@ class EventLogger:
             ev['Time'] = sp.timeFcn()
         else:
             ev['Time'] = timestamp
-        
-        #if eventName == 'ShiftMeasure':
-        #    ev['Time'] = eventtimestamp
-        #else:
-        #    ev['Time'] = sp.timeFcn()
         
         ev.append()
         self.evts.flush()
@@ -119,7 +107,6 @@ class Spooler(sp.Spooler):
         self.imageData = self.h5File.create_earray(self.h5File.root, 'ImageData', tables.UInt16Atom(), (0,frameShape[0],frameShape[1]), filters=filt)
         self.md = MetaDataHandler.HDFMDHandler(self.h5File)
         self.evtLogger = EventLogger(self, self.h5File)
-        self.TofFrame = []
         
         sp.Spooler.__init__(self, filename, frameSource, **kwargs)
 
@@ -140,13 +127,8 @@ class Spooler(sp.Spooler):
         self.h5File.flush()
         if self.imNum == 0: #first frame
             self.md.setEntry('imageID', fileID.genFrameID(self.imageData[0,:,:]))
-
-        sp.Spooler.OnFrame(self)
-        #if not scope.pst.piezo.driftQueue.empty():
-        #    driftvalue = scope.pst.piezo.driftQueue.get()
-        #    eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f, %3.4f' % driftvalue)
             
-        self.TofFrame.append(time.time()) #record the time when a frame is written
+        sp.Spooler.OnFrame(self)
         
     def __del__(self):
         if self.spoolOn:

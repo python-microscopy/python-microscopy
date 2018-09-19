@@ -69,7 +69,7 @@ class correlator(Pyro.core.ObjBase):
         
         self.focusTolerance = .05 #how far focus can drift before we correct
         self.deltaZ = 0.2 #z increment used for calibration
-        self.stackHalfSize = 10
+        self.stackHalfSize = 35
         self.NCalibStates = 2*self.stackHalfSize + 1
 
         self.tracking = False
@@ -205,10 +205,11 @@ class correlator(Pyro.core.ObjBase):
         dm = d/d.mean() - 1
         
         #where is the piezo suppposed to be
-        #nomPos = self.piezo.GetTargetPos(0)
-        nomPos = 0
-        #posInd = np.argmin(np.abs(nomPos - self.calPositions))
-        posInd = 10
+        #nomPos = self.piezo.GetPos(0)
+        nomPos = self.piezo.GetTargetPos(0)
+        
+        #find closest calibration position
+        posInd = np.argmin(np.abs(nomPos - self.calPositions))
         
         #dz = float('inf')
         #count = 0
@@ -224,8 +225,7 @@ class correlator(Pyro.core.ObjBase):
         dzn = self.dzn[posInd]
         
         #what is the offset between our target position and the calibration position         
-        #posDelta = nomPos - calPos
-        posDelta = 0
+        posDelta = nomPos - calPos
         
         print('%s' % [nomPos, posInd, calPos, posDelta])
         
@@ -248,19 +248,14 @@ class correlator(Pyro.core.ObjBase):
         
         #calculate z offset between actual position and calibration position
         dz = self.deltaZ*np.dot(self.ds_A.ravel(), ddz)*dzn
-        dz *= self.Zfactor
-
-#        self.buffer.append((dz, nomPos, posInd, calPos, posDelta))
+        
         #posInd += np.round(dz / self.deltaZ)
         #posInd = int(np.clip(posInd, 0, self.NCalibStates))
             
 #            print count, dz
         
-
-#        self.buffer.append((dx, dy, dz + posDelta, Cm, dz, nomPos, posInd, calPos, posDelta))
-
-#        if len(self.buffer)>10:
-#            self.buffer.remove(self.buffer[0])
+        #add the offset back to determine how far we are from the target position
+        dz = dz - posDelta
         
 #        if 1000*np.abs((dz + posDelta))>200 and self.WantRecord:
             #dz = np.median(self.buffer)
@@ -332,6 +327,7 @@ class correlator(Pyro.core.ObjBase):
             
             #print dx, dy, dz
             
+            #FIXME: logging shouldn't call piezo.GetOffset() etc ... for performance reasons
             self.history.append((time.time(), dx, dy, dz, cCoeff, self.corrRef, self.piezo.GetOffset(), self.piezo.GetPos(0)))
             eventLog.logEvent('PYME2ShiftMeasure', '%3.4f, %3.4f, %3.4f' % (dx, dy, dz))
             
@@ -347,8 +343,11 @@ class correlator(Pyro.core.ObjBase):
                     if zcorr >  self.maxfac*self.focusTolerance:
                         zcorr = self.maxfac*self.focusTolerance
                     self.piezo.SetOffset(zcorr)
+                    
+                    #FIXME: this shouldn't be needed as it is logged during LogShifts anyway
                     self.piezo.LogFocusCorrection(zcorr) #inject offset changing into 'Events'
                     eventLog.logEvent('PYME2UpdateOffset', '%3.4f' % (zcorr))
+                    
                     self.historyCorrections.append((time.time(), dz))
                     self.lastAdjustment = 0
                 else:

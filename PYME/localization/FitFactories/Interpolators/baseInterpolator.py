@@ -156,7 +156,7 @@ class __interpolator:
         voxelsize.z = 1e3*.05
 
         ps = fourierHNA.GenZernikeDPSF(zs, voxelsize.x, zmodes,lamb=wavelength, NA = NA, n=nDesign, ns=nSample)
-        psc = self.centre2d(ps)
+        psc = self.centre2d(ps) #FIXME: why is this needed / useful?
         
         return psc, voxelsize
 

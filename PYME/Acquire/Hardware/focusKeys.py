@@ -114,7 +114,7 @@ class PositionKeys:
         self.xpiezo = xpiezo
         self.ypiezo = ypiezo
         
-        self.focusIncrement = 0.001
+        self.focusIncrement = 0.03
         self.scope = scope
 
         parent.AddMenuItem('Position', 'Position Down\t%s' % keys[0], self.OnDown)

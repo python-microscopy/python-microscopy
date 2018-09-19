@@ -20,11 +20,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 SECRET_KEY = '3#d-g6g@kva0au8smne=_pjyc_++9@nw2kr+k#j37y!3j8_2mv'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 TEMPLATE_DEBUG = DEBUG
 
-ALLOWED_HOSTS = ['phy-lmsrv2', 'localhost']
+ALLOWED_HOSTS = ['DBSRV1', 'localhost']
 
 
 # Application definition
@@ -36,6 +36,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
 	'samples',
 )
 
@@ -58,7 +59,7 @@ WSGI_APPLICATION = 'SampleDB2.wsgi.application'
 
 DATABASE_HOST = ''
 #look for database host in environment variable
-DATABASE_HOST = os.getenv('PYME_DATABASE_HOST','phy-lmsrv2')
+DATABASE_HOST = os.getenv('PYME_DATABASE_HOST','DBSRV1')
 DATABASE_USER = os.getenv('PYME_DATABASE_USER','sample_db')
 DATABASE_PWD = os.getenv('PYME_DATABASE_PWD','PYMEUSER')
 

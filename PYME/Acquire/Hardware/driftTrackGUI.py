@@ -16,9 +16,10 @@ from PYME.contrib.wxPlotPanel import PlotPanel
 from PYME.IO import MetaDataHandler
 from PYME.DSView import dsviewer as dsviewer
 import PYME.IO.image as im
-import PYMEcs.Analysis.offlineTracker as otrack
+#import PYMEcs.Analysis.offlineTracker as otrack
 import os
 
+#TODO: these don't belong here!
 def YesNo(parent, question, caption = 'Yes or no?'):
     dlg = wx.MessageDialog(parent, question, caption, wx.YES_NO | wx.ICON_QUESTION)
     result = dlg.ShowModal() == wx.ID_YES
@@ -53,9 +54,9 @@ class TrackerPlotPanel(PlotPanel):
             t, dx, dy, dz, corr, corrmax, poffset, pos  = np.array(self.dt.get_history(1000)).T
 
             self.subplotxy.cla()
-            self.subplotxy.plot(t, 88.0*dx, 'r')
-            self.subplotxy.plot(t, 88*dy, 'g')
-            self.subplotxy.set_ylabel('dx (r) dy (g) [nm]')
+            self.subplotxy.plot(t, dx, 'r')
+            self.subplotxy.plot(t, dy, 'g')
+            self.subplotxy.set_ylabel('dx (r) dy (g) [pixels]')
             self.subplotxy.set_xlim(t.min(), t.max())
                         
             self.subplotz.cla()
@@ -380,13 +381,17 @@ class DriftTrackingControl(wx.Panel):
         try:
             calibState, NStates = self.dt.get_calibration_state()
             self.gCalib.SetRange(NStates + 1)
+            self.gCalib.SetValue(calibState)
             t, dx, dy, dz, corr, corrmax,poffset,pos = self.dt.get_history(1)[-1]
             self.stError.SetLabel(("Error: x = %s nm y = %s nm\n" +
                                   "z = %s nm noffs = %s nm c/cm = %4.2f") %
-                                  ("{:>+6.1f}".format(88.0*dx), "{:>+6.1f}".format(88.0*dy),
+                                  ("{:>+3.2f}".format(dx), "{:>+3.2f}".format(dy),
                                    "{:>+6.1f}".format(1e3*dz), "{:>+6.1f}".format(1e3*poffset),
                                    corr/corrmax))
+            self.cbLock.SetValue(self.dt.get_focus_lock())
+            self.cbTrack.SetValue(self.dt.is_tracking())
             self.cbLockActive.SetValue(self.dt.lockActive)
+            
             if (len(self.dt.get_history(0)) % self.plotInterval == 0) and self.showPlots:
                 self.trackPlot.draw()
         except AttributeError:

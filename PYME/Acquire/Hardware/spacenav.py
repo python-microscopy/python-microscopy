@@ -15,7 +15,7 @@ class SpaceNavigator(object):
     def __init__(self):
         #TODO - should be more specific here - there are likely to be cases 
         #where we have more than one HID device
-        self.snav = hid.find_all_hid_devices()[0]
+        self.snav = hid.find_all_hid_devices()[-1]
         
         self.snav.open()
         
@@ -73,7 +73,7 @@ class SpaceNavPiezoCtrl(object):
         self.pz = pz#, self.px, self.py = piezos
         self.pxy = pxy
         
-        self.xy_sensitivity = .001 #um/s
+        self.xy_sensitivity = .01 #um/s
         self.z_sensitivity = -2 #um/s
         self.kappa = 1.5
         

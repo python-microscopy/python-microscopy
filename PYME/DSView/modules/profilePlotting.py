@@ -244,6 +244,7 @@ class profiler:
 
         #pylab.legend(names)
 
+        #TODO: Is this really sensible???
         # fix so that we can even plot stacks of depth 1 (i.e. data that is not really a stack)
         # works by replicating the single plane twice simulating a stack of depth 2
         if len(t) == 1:

@@ -225,8 +225,7 @@ class LaserSliders_(wx.Panel):
             self.sl = sl
             self.ind = ind
             print((self.lasers[ind].power, self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.))
-            #self.lasers[ind].SetPower(self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.)
-            self.lasers[ind].SetPower((sl.GetValue())/100.)
+            self.lasers[ind].SetPower(self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.)
         finally:
             self.sliding = False
 
@@ -234,9 +233,8 @@ class LaserSliders_(wx.Panel):
         if not self.sliding:
             for ind, L in enumerate(self.lasers):
                 p = L.power
-                #self.sliders[ind].SetValue(round(log2(max(p*1024/L.MAX_POWER, 1))))
-                self.sliders[ind].SetValue(round(p*100))
-                self.labels[ind].SetLabel(self.laserNames[ind] + '-%3.2fmW'%(1000*p*L.maxpower))
+                self.sliders[ind].SetValue(round(log2(max(p*1024/L.MAX_POWER, 1))))
+                self.labels[ind].SetLabel(self.laserNames[ind] + ' - %3.2f'%(100*p))
 
             
 

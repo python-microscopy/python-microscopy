@@ -178,8 +178,8 @@ class piezo_c867T(PiezoBase):
         self.ser_port.write('RBT\n')
         time.sleep(1)
         #try to make motion smooth
-        self.ser_port.write('SPA 1 0x4D 0\n')
-        self.ser_port.write('SPA 2 0x4D 0\n')
+        self.ser_port.write('SPA 1 0x4D 2\n')
+        self.ser_port.write('SPA 2 0x4D 2\n')
         #turn servo mode on
         self.ser_port.write('SVO 1 1\n')
         self.ser_port.write('SVO 2 1\n')

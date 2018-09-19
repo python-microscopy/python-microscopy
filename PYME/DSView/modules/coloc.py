@@ -64,16 +64,16 @@ class ColocSettingsDialog(wx.Dialog):
             sizer1.Add(hsizer, 0, wx.EXPAND)
 
 
-    if self.zsize > 1:
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'z start:'), 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tzs = wx.TextCtrl(self, -1, '0', size=[30, -1])
-        hsizer.Add(self.tzs, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        hsizer.Add(wx.StaticText(self, -1, 'z end:'), 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        self.tze = wx.TextCtrl(self, -1, '%d' % (self.zsize - 1), size=[30, -1])
-        hsizer.Add(self.tze, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-        
-        sizer1.Add(hsizer, 0, wx.EXPAND)
+        if self.zsize > 1:
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            hsizer.Add(wx.StaticText(self, -1, 'z start:'), 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+            self.tzs = wx.TextCtrl(self, -1, '0', size=[30, -1])
+            hsizer.Add(self.tzs, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+            hsizer.Add(wx.StaticText(self, -1, 'z end:'), 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+            self.tze = wx.TextCtrl(self, -1, '%d' % (self.zsize - 1), size=[30, -1])
+            hsizer.Add(self.tze, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+            
+            sizer1.Add(hsizer, 0, wx.EXPAND)
         
         
         if len(names) > 0:
@@ -139,18 +139,20 @@ class colocaliser:
         
         PROC_COLOCALISE = wx.NewId()
         PROC_COLOCALISE_EDT = wx.NewId()
+        PROC_COLOCALISE_EDT_ZC = wx.NewId()
         
         dsviewer.mProcessing.AppendSeparator()
         dsviewer.mProcessing.Append(PROC_COLOCALISE, "&Colocalisation", "", wx.ITEM_NORMAL)
         dsviewer.mProcessing.Append(PROC_COLOCALISE_EDT, "EDT Colocalisation", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(PROC_COLOCALISE_EDT_ZC, "EDT Colocalisation (z cropped)", "", wx.ITEM_NORMAL)
     
         wx.EVT_MENU(dsviewer, PROC_COLOCALISE, self.OnColocBasic)
         wx.EVT_MENU(dsviewer, PROC_COLOCALISE_EDT, self.OnColoc)
-
+        wx.EVT_MENU(dsviewer, PROC_COLOCALISE_EDT_ZC, lambda e: self.OnColoc(restrict_z=True))
 
 
     
-    def OnColoc(self, event=None, restrict_z=False):
+    def OnColoc(self, event=None, restrict_z=False, coloc_vs_z = False):
         from PYME.Analysis.Colocalisation import correlationCoeffs, edtColoc
         from scipy import interpolate
         voxelsize = [1e3*self.image.mdh.getEntry('voxelsize.x') ,1e3*self.image.mdh.getEntry('voxelsize.y'), 1e3*self.image.mdh.getEntry('voxelsize.z')]

@@ -449,7 +449,7 @@ class FitDefaults(object):
     def OnPRI3D(self, event):
         self.analysisMDH['PRI.Axis'] = 'y'
         self.analysisMDH['Analysis.EstimatorModule'] = 'priEstimator'
-        self.analysisMDH['Analysis.ROISize'] = 7
+        self.analysisMDH['Analysis.ROISize'] = 9
 
         self.onMetaDataChange.send(self, mdh=self.analysisMDH)
 

@@ -129,10 +129,6 @@ class TaskListProtocol(Protocol):
             t.what(*t.params)
             eventLog.logEvent('ProtocolTask', '%d, %s, ' % (frameNum, t.what.__name__) + ', '.join(['%s' % p for p in t.params]))
             self.listPos += 1
-        #print scope.pst.piezo.driftQueue.qsize()
-        #if not scope.pst.piezo.driftQueue.empty():
-        #    driftvalue = scope.pst.piezo.driftQueue.get()
-        #    eventLog.logEvent('ShiftMeasure', '%3.4f, %3.4f, %3.4f, %3.4f' % driftvalue)
 
     def OnFinish(self):
         while not  self.listPos >= len(self.taskList):
@@ -155,14 +151,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
         self.randomise = randomise
 
     def Init(self, spooler):
-        #self.zPoss = np.arange(scope.sa.GetStartPos(), scope.sa.GetEndPos()+.95*scope.sa.GetStepSize(),scope.sa.GetStepSize())
-
-      
-        # zigzag stepping
-        zPoss1 = np.arange(scope.stackSettings.GetStartPos(), scope.stackSettings.GetEndPos()+.95*scope.stackSettings.GetStepSize(),scope.stackSettings.GetStepSize()*scope.stackSettings.GetDirection())
-        zPoss2 = np.arange(scope.stackSettings.GetEndPos(), scope.stackSettings.GetStartPos()-.95*scope.stackSettings.GetStepSize(),-1*scope.stackSettings.GetStepSize()*scope.stackSettings.GetDirection())
-        #self.zPoss = np.asarray(zPoss1.tolist()+zPoss2.tolist()) # this should be doable more directly with array functions
-        self.zPoss = np.append(zPoss1, zPoss2)
+        self.zPoss = np.arange(scope.stackSettings.GetStartPos(), scope.stackSettings.GetEndPos()+.95*scope.stackSettings.GetStepSize(),scope.stackSettings.GetStepSize()*scope.stackSettings.GetDirection())
 
         if self.randomise:
             self.zPoss = self.zPoss[np.argsort(np.random.rand(len(self.zPoss)))]

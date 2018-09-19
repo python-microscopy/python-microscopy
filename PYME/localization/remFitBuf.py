@@ -160,7 +160,7 @@ class CameraInfoManager(object):
         except KeyError: 
             #cache miss
             x0, y0, x1, y1 = ROI
-            mp = self._fetchMap(md, mapName)[x0:x1, y0:y1].astype('double')
+            mp = self._fetchMap(md, mapName)[x0:x1, y0:y1].astype('f') #everything should be float (rather than double)
             
             self._cache[mapKey] = mp
 
@@ -617,7 +617,7 @@ class fitTask(taskDef.Task):
 
     @classmethod
     def calcSigma(cls, md, data):
-        var = np.atleast_3d(cameraMaps.getVarianceMap(md)) # this must be double type!! Should we enforce with an 'astype' call?
+        var = np.atleast_3d(cameraMaps.getVarianceMap(md)) # this must be float type!! Should we enforce with an 'astype' call?
         return np.sqrt(var + (float(md.Camera.NoiseFactor)**2)*(float(md.Camera.ElectronsPerCount)*float(md.Camera.TrueEMGain)*np.maximum(data, 1.0) + float(md.Camera.TrueEMGain)*float(md.Camera.TrueEMGain)))/float(md.Camera.ElectronsPerCount)
     
     def calcThreshold(self):
