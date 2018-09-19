@@ -57,7 +57,7 @@ def deClumpedDType(arr):
     dt = arr.dtype.descr
 
     dt = [it for it in dt if not it[0] in ['slicesUsed', 'resultCode']]
-    dt = dt + [('nFrames', '<i4'), ('ATotal', '<f4')]
+    dt = dt + [('nFrames', '<i4'), ('ATotal', '<f4'), ('burstDuration', '<i4')]
 
     return dt
 
@@ -67,9 +67,10 @@ def weightedAverage(vals, errs):
 
     for k in vals.dtype.names:
         erk2 = errs[k]**2
-        vark = 1./(1./erk2).sum()
-        res[k] = (vals[k]/erk2).sum()*vark
-        eres[k] = np.sqrt(vark)
+        if erk2.min() > 0: # apparently sometimes we can have zeros here?
+            vark = 1./(1./erk2).sum()
+            res[k] = (vals[k]/erk2).sum()*vark
+            eres[k] = np.sqrt(vark)
 
     return res, eres
     
@@ -139,7 +140,15 @@ def coalesceClumps_(fitResults, assigned):
 
     #work out what the data type for our declumped data should be
     dt = deClumpedDType(fitResults)
-
+        
+    # dt.append(('clumpSize','<i4'))
+    # usewidth = False
+    # if hasattr(selectedDS,'clumpWidths'):
+    #     dt.append(('clumpWidth','<f4'))
+    #     dt.append(('clumpWidthX','<f4'))
+    #     dt.append(('clumpWidthY','<f4'))
+    #     usewidth = True
+    
     fres = np.empty(NClumps, dt)
     
     dtr = '%df4' % len(fitResults['fitResults'].dtype)
@@ -165,12 +174,15 @@ def coalesceClumps_(fitResults, assigned):
 
     return fres
     
-def coalesceClumps(fitResults, assigned):
+def coalesceClumps(fitResults, assigned, nphotons=None):
     """Agregates clumps to a single event"""
     NClumps = int(assigned.max())
 
     #work out what the data type for our declumped data should be
     dt = deClumpedDType(fitResults)
+    if nphotons is not None:
+        dt.append(('nPhotons','<f4'))
+        dt.append(('photonRate','<f4'))
 
     fres = np.empty(NClumps, dt)
     
@@ -200,8 +212,19 @@ def coalesceClumps(fitResults, assigned):
             fres['fitResults'][i], fres['fitError'][i] = weightedAverage_(rvs, evs, dtr)
 
             fres['nFrames'][i] = len(rvs)
-            #fres['ATotal'][i] = vals['fitResults']['A'].sum()
+            fres['burstDuration'][i] = tIs[ci].max() - tIs[ci].min() + 1
 
+            if nphotons is not None:
+                nph = nphotons[ci]
+                fres['nPhotons'][i] = nph.sum()
+                fres['photonRate'][i] = nph.mean()
+
+            #fres['ATotal'][i] = vals['fitResults']['A'].sum()
+            # fres['clumpSize'][i] = selectedDS.clumpSizes[clist[i][0]] # assign the value from the first pixel of the current clump
+            # if usewidth:
+            #     fres['clumpWidth'][i] = selectedDS.clumpWidths[clist[i][0]]
+            #     fres['clumpWidthX'][i] = selectedDS.clumpWidthsX[clist[i][0]]
+            #     fres['clumpWidthY'][i] = selectedDS.clumpWidthsY[clist[i][0]]
 
     return fres
 

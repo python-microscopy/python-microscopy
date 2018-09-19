@@ -689,7 +689,12 @@ class Pipeline:
             
             if 'LatGaussFitFR' in fitModule:
                 mapped_ds.addColumn('nPhotons', getPhotonNums(mapped_ds, self.mdh))
-                
+
+            if 'SplitterFitFNR' in fitModule:
+                mapped_ds.addColumn('nPhotonsg', getPhotonNums({'A': mapped_ds['fitResults_Ag'], 'sig': mapped_ds['fitResults_sigma']}, self.mdh))
+                mapped_ds.addColumn('nPhotonsr', getPhotonNums({'A': mapped_ds['fitResults_Ar'], 'sig': mapped_ds['fitResults_sigma']}, self.mdh))
+                mapped_ds.setMapping('nPhotons', 'nPhotonsg+nPhotonsr')
+
             if fitModule == 'SplitterShiftEstFR':
                 self.filterKeys['fitError_dx'] = (0,10)
                 self.filterKeys['fitError_dy'] = (0,10)
@@ -791,13 +796,20 @@ class Pipeline:
 
     def _get_dye_ratios_from_metadata(self):
         labels = self.mdh.getOrDefault('Sample.Labelling', [])
+        seen_structures = []
 
         for structure, dye in labels:
+            if structure in seen_structures:
+                strucname = structure + '_1'
+            else:
+                strucname = structure
+            seen_structures.append(structure)
+            
             ratio = dyeRatios.getRatio(dye, self.mdh)
 
             if not ratio is None:
-                self.fluorSpecies[structure] = ratio
-                self.fluorSpeciesDyes[structure] = dye
+                self.fluorSpecies[strucname] = ratio
+                self.fluorSpeciesDyes[strucname] = dye
                 #self.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
                 #self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
                 

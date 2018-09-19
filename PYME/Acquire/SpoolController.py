@@ -9,6 +9,9 @@ Created on Sat May 28 20:42:16 2016
 #import datetime
 from PYME.Acquire import HDFSpooler
 from PYME.Acquire import QueueSpooler, HTTPSpooler
+# TODO: change to use a metadata handler / provideStartMetadata hook
+#   MetaDataHandler.provideStartMetadata from the init file when
+#   loading the sampleinfo interface, see Acquire/Scripts/init.py
 try:
     from PYME.Acquire import sampleInformation
     sampInf = True
@@ -177,7 +180,7 @@ class SpoolController(object):
                                               guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
 
-       
+        #TODO - sample info is probably better handled with a metadata hook
         if sampInf:
             try:
                 sampleInformation.getSampleData(self, self.spooler.md)

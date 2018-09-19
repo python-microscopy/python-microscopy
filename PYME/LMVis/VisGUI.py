@@ -121,6 +121,17 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         self.sh.Execute('from pylab import *')
         self.sh.Execute('from PYME.DSView.dsviewer import View3D')
+        # try:
+        #     import PYME.misc.shellutils
+        # except:
+        #     print 'could not import shellutils'
+        # else:
+        #     self.sh.Execute('import PYME.misc.shellutils as su')
+        
+        import os
+        if os.getenv('PYMEGRAPHICSFIX'): # fix issue with graphics freezing on some machines (apparently matplotlib related)
+            self.sh.Execute('plot()')
+            self.sh.Execute('close()')
 
         #self.workspace = workspaceTree.WorkWrap(self.__dict__)
         ##### Make certain things visible in the workspace tree

@@ -27,8 +27,9 @@ import pylab
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
 class ColocSettingsDialog(wx.Dialog):
-    def __init__(self, parent, pxSize=100, names = [], have_mask=False):
+    def __init__(self, parent, pxSize=100, names = [], have_mask=False, z_size=1, coloc_vs_z=False):
         wx.Dialog.__init__(self, parent, title='Colocalisation Settings')
+        self.zsize = z_size
         
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         
@@ -61,6 +62,19 @@ class ColocSettingsDialog(wx.Dialog):
             hsizer.Add(self.cbUseMask, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
     
             sizer1.Add(hsizer, 0, wx.EXPAND)
+
+
+        if self.zsize > 1:
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            hsizer.Add(wx.StaticText(self, -1, 'z start:'), 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+            self.tzs = wx.TextCtrl(self, -1, '0', size=[30, -1])
+            hsizer.Add(self.tzs, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+            hsizer.Add(wx.StaticText(self, -1, 'z end:'), 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+            self.tze = wx.TextCtrl(self, -1, '%d' % (self.zsize - 1), size=[30, -1])
+            hsizer.Add(self.tze, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+            
+            sizer1.Add(hsizer, 0, wx.EXPAND)
+        
         
         if len(names) > 0:
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -99,6 +113,23 @@ class ColocSettingsDialog(wx.Dialog):
         else:
             return cbMask.GetValue()
 
+    def GetZrange(self):
+        if self.zsize <= 1:
+            return (None,None)
+        zs = int(self.tzs.GetValue())
+        ze = int(self.tze.GetValue())
+        if zs < 0:
+            zs = 0
+        if zs > self.zsize-1:
+            zs = self.zsize - 1
+        if ze < 0:
+            ze = 0
+        if ze > self.zsize-1:
+            ze = self.zsize - 1
+        if ze <= zs:
+            ze = zs+1 # it is still possible that ze now greater than max size
+        return (zs,ze)
+
 class colocaliser:
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
@@ -108,18 +139,20 @@ class colocaliser:
         
         PROC_COLOCALISE = wx.NewId()
         PROC_COLOCALISE_EDT = wx.NewId()
+        PROC_COLOCALISE_EDT_ZC = wx.NewId()
         
         dsviewer.mProcessing.AppendSeparator()
         dsviewer.mProcessing.Append(PROC_COLOCALISE, "&Colocalisation", "", wx.ITEM_NORMAL)
         dsviewer.mProcessing.Append(PROC_COLOCALISE_EDT, "EDT Colocalisation", "", wx.ITEM_NORMAL)
+        dsviewer.mProcessing.Append(PROC_COLOCALISE_EDT_ZC, "EDT Colocalisation (z cropped)", "", wx.ITEM_NORMAL)
     
         wx.EVT_MENU(dsviewer, PROC_COLOCALISE, self.OnColocBasic)
         wx.EVT_MENU(dsviewer, PROC_COLOCALISE_EDT, self.OnColoc)
-
+        wx.EVT_MENU(dsviewer, PROC_COLOCALISE_EDT_ZC, lambda e: self.OnColoc(restrict_z=True))
 
 
     
-    def OnColoc(self, event):
+    def OnColoc(self, event=None, restrict_z=False, coloc_vs_z = False):
         from PYME.Analysis.Colocalisation import correlationCoeffs, edtColoc
         from scipy import interpolate
         voxelsize = [1e3*self.image.mdh.getEntry('voxelsize.x') ,1e3*self.image.mdh.getEntry('voxelsize.y'), 1e3*self.image.mdh.getEntry('voxelsize.z')]
@@ -137,12 +170,23 @@ class colocaliser:
             have_mask = False
             mask = None
         
-        dlg = ColocSettingsDialog(self.dsviewer, voxelsize[0], names, have_mask=have_mask)
+        if not restrict_z:
+            dlg = ColocSettingsDialog(self.dsviewer, voxelsize[0], names, have_mask=have_mask)
+        else:
+            dlg = ColocSettingsDialog(self.dsviewer, voxelsize[0], names, have_mask=have_mask, z_size=self.image.data.shape[2])
         dlg.ShowModal()
         
         bins = dlg.GetBins()
         chans = dlg.GetChans()
         use_mask = dlg.GetUseMask()
+
+        zs, ze = (0, self.image.data.shape[2])
+        if (self.image.data.shape[2] > 1) and restrict_z:
+            zs, ze = dlg.GetZrange()
+            
+        zs,ze = (0,1)
+        if self.image.data.shape[2] > 1:
+            zs,ze = dlg.GetZrange()
         dlg.Destroy()
         
         print('Use mask: %s' % use_mask)
@@ -153,8 +197,8 @@ class colocaliser:
 
         #assume we have exactly 2 channels #FIXME - add a selector
         #grab image data
-        imA = self.image.data[:,:,:,chans[0]].squeeze()
-        imB = self.image.data[:,:,:,chans[1]].squeeze()
+        imA = self.image.data[:,:,zs:ze,chans[0]].squeeze()
+        imB = self.image.data[:,:,zs:ze,chans[1]].squeeze()
 
         #assume threshold is half the colour bounds - good if using threshold mode
         tA = self.do.Offs[chans[0]] + .5/self.do.Gains[chans[0]] #pylab.mean(self.ivps[0].clim)
@@ -169,7 +213,51 @@ class colocaliser:
         pearson = correlationCoeffs.pearson(imA, imB, roi_mask=mask)
         MA, MB = correlationCoeffs.thresholdedManders(imA, imB, tA, tB, roi_mask=mask)
 
-        print('Performing distance transform ...')        
+        if coloc_vs_z:
+            MAzs, MBzs = ([],[])
+            FAzs, FBzs = ([],[])
+            if self.image.data.shape[2] > 1:
+                for z in range(self.image.data.shape[2]):
+                    imAz = self.image.data[:,:,z,chans[0]].squeeze()
+                    imBz = self.image.data[:,:,z,chans[1]].squeeze()
+                    MAz, MBz = correlationCoeffs.thresholdedManders(imAz, imBz, tA, tB)
+                    FAz, FBz = correlationCoeffs.maskFractions(imAz, imBz, tA, tB)
+                    MAzs.append(MAz)
+                    MBzs.append(MBz)
+                    FAzs.append(FAz)
+                    FBzs.append(FBz)
+                    
+                print "M(A->B) ",MAzs
+                print "M(B->A) ",MBzs
+                print "Species A: %s, Species B: %s" %(nameA,nameB)
+    
+                pylab.figure()
+                pylab.subplot(211)
+                if 'filename' in self.image.__dict__:
+                    pylab.title(self.image.filename)
+                # nameB with nameA
+                cAB, = pylab.plot(MAzs,'o', label = '%s with %s' %(nameB,nameA))
+                # nameA with nameB
+                cBA, = pylab.plot(MBzs,'*', label = '%s with %s' %(nameA,nameB))
+                pylab.legend([cBA,cAB])
+                pylab.xlabel('z slice level')
+                pylab.ylabel('Manders coloc fraction')
+                pylab.ylim(0,None)
+    
+                pylab.subplot(212)
+                if 'filename' in self.image.__dict__:
+                    pylab.title(self.image.filename)
+                # nameB with nameA
+                fA, = pylab.plot(FAzs,'o', label = '%s mask fraction' %(nameA))
+                # nameA with nameB
+                fB, = pylab.plot(FBzs,'*', label = '%s mask fraction' %(nameB))
+                pylab.legend([fA,fB])
+                pylab.xlabel('z slice level')
+                pylab.ylabel('Mask fraction')
+                pylab.ylim(0,None)
+                pylab.show()
+
+        print('Performing distance transform ...')
         bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize, bins, roi_mask=mask)
         bnAA, bmAA, binsA = edtColoc.imageDensityAtDistance(imA, imA > tA, voxelsize, bins, roi_mask=mask)
         print('Performing distance transform (reversed) ...') 
@@ -180,7 +268,7 @@ class colocaliser:
         
         plots = []
         pnames = []
-
+        
         pylab.figure()
         pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f' % (pearson, MA, MB))
         pylab.subplot(211)
@@ -292,6 +380,10 @@ class colocaliser:
         im.mdh['Colocalisation.Thresholds'] = [tA, tB]
         im.mdh['Colocalisation.Pearson'] = pearson
         im.mdh['Colocalisation.Manders'] = [MA, MB]
+        try:
+            im.mdh['Colocalisation.ThresholdMode'] = self.do.ThreshMode
+        except:
+            pass
 
         im.mdh['OriginalImage'] = self.image.filename
 

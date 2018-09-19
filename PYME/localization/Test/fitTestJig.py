@@ -53,8 +53,8 @@ class fitTestJig(object):
             
         emGain = optimize.fmin(emg, 150, args=[self.md.Camera.TrueEMGain])[0]
 
-        self.noiseM = NoiseMaker(EMGain=emGain, floor=self.md.Camera.ADOffset, background=self.bg, QE=1.0)
-
+        self.noiseM = NoiseMaker(EMGain=emGain, floor=self.md.Camera.ADOffset, background=self.bg, QE=1.0,
+                                 fast_read_approx=False)
 
     @classmethod
     def fromMDFile(cls, mdfile):
