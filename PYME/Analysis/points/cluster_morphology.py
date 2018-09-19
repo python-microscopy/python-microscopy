@@ -79,6 +79,8 @@ measurement_dtype = [('count', '<i4'),
                      ('gyrationRadius', '<f4'),
                      ('axis0', '<3f4'), ('axis1', '<3f4'), ('axis2', '<3f4'),
                      ('sigma0', '<f4'), ('sigma1', '<f4'), ('sigma2', '<f4'),
+                     ('standard_error0', '<f4'), ('standard_error1', '<f4'), ('standard_error2', '<f4'),
+                     ('anisotropy', '<f4'),
                      ('theta', '<f4'), ('phi', '<f4')]
 
 def measure_3d(x, y, z, output=None):
@@ -102,6 +104,7 @@ def measure_3d(x, y, z, output=None):
     x_, y_, z_ = x - xc, y - yc, z - zc
     
     #radius of gyration
+    # FIXME - can we kill the camelCase here?
     output['gyrationRadius'] = np.sqrt(np.mean(x_*x_ + y_*y_ + z_*z_))
 
     #principle axes
@@ -110,8 +113,13 @@ def measure_3d(x, y, z, output=None):
 
     for i in range(3):
         output['axis%d' % i] = v[i]
-        #std. deviation along axes
-        output['sigma%d' % i] = s[i]/np.sqrt(N-1)
+        # std. deviation along axes
+        output['sigma%d' % i] = s[i]
+        output['standard_error%d' % i] = s[i]/np.sqrt(N-1)
+
+    # similar to Basser, P. J., et al. doi.org/10.1006/jmrb.1996.0086
+    # note that singular values are square roots of the eigenvalues. Use the sample standard deviation rather than pop.
+    output['anisotropy'] = np.sqrt(np.var(s**2, ddof=1)) / (np.sqrt(3) * np.mean(s**2))
     
     pa = v[0]
     #angle of principle axis
