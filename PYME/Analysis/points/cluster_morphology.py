@@ -110,16 +110,15 @@ def measure_3d(x, y, z, output=None):
     #principle axes
     u, s, v = np.linalg.svd(np.vstack([x_, y_, z_]).T)
 
-
+    standard_deviations = s / np.sqrt(N - 1)  # with bessel's correction
     for i in range(3):
         output['axis%d' % i] = v[i]
         # std. deviation along axes
-        output['sigma%d' % i] = s[i]
-        output['standard_error%d' % i] = s[i]/np.sqrt(N-1)
+        output['sigma%d' % i] = standard_deviations[i]
 
     # similar to Basser, P. J., et al. doi.org/10.1006/jmrb.1996.0086
     # note that singular values are square roots of the eigenvalues. Use the sample standard deviation rather than pop.
-    output['anisotropy'] = np.sqrt(np.var(s**2, ddof=1)) / (np.sqrt(3) * np.mean(s**2))
+    output['anisotropy'] = np.sqrt(np.var(standard_deviations**2, ddof=1)) / (np.sqrt(3) * np.mean(standard_deviations**2))
     
     pa = v[0]
     #angle of principle axis
