@@ -24,6 +24,8 @@
 import wx
 import time
 import os
+import logging
+logger = logging.getLogger(__name__)
 
 from PYME import resources
 
@@ -122,12 +124,12 @@ class SplashPanel(wx.Panel):
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
         try:
-            DC.BeginDrawing()
+            #DC.BeginDrawing()
 
             self.DoPaint(MemDC);
 
             DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
-            DC.EndDrawing()
+            #DC.EndDrawing()
         finally:
 
             del MemDC
@@ -153,7 +155,11 @@ class SplashScreen(wx.Frame):
         
         self.panel.Refresh()
         if self.parent.initDone:
-            self.scope.settingsDB.execute("INSERT INTO StartupTimes VALUES ('total', ?)", (time.time() - self.panel.startTime - 0.5, ))
+            try:
+                self.scope.settingsDB.execute("INSERT INTO StartupTimes VALUES ('total', ?)", (time.time() - self.panel.startTime - 0.5, ))
+            except:
+                logger.exception('Error writing to settings database - perhaps this is read only')
+
             self.parent.time1.WantNotification.remove(self.Tick)
             self.Destroy()
 

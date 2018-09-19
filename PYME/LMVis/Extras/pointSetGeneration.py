@@ -106,12 +106,12 @@ class ImageSource(PointSource):
     #foo = Enum([1,2,3,4])
 
     def getPoints(self):
-        from PYMEnf.Simulation import locify
+        from PYME.simulation import locify
         print((self.image))
 
         im = image.openImages[self.image]
         #import numpy as np
-        d = im.data[:,:,0,0]
+        d = im.data[:,:,0,0].astype('f')
 
         #normalise the image
         d = d/d.max()
@@ -228,6 +228,7 @@ class Generator(HasTraits):
             pass
 
         pipeline.Rebuild()
+        self.visFr.CreateFoldPanel()
         self.visFr.SetFit()
 
 

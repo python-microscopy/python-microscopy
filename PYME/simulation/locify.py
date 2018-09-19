@@ -65,15 +65,15 @@ fresultdtype=[('tIndex', '<i4'),
               ('fitError', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'), ('z0', '<f4'),('sigma', '<f4')])]
 
 def FitResultR(x,y,z,I,t, b2, z_err_mult=3):
-	r_I = np.sqrt(I)
+    r_I = np.sqrt(I)
         
-        s2 = 110**2
-        a2 = 70**2
-        
-        err_x = np.sqrt((s2 + a2/12)/I + 8*np.pi*s2**2*b2/(a2*I**2))
-        err_z = z_err_mult*err_x
+    s2 = 110**2
+    a2 = 70**2
+    
+    err_x = np.sqrt((s2 + a2/12)/I + 8*np.pi*s2**2*b2/(a2*I**2))
+    err_z = z_err_mult*err_x
 
-        return np.array([(t, np.array([I/(2*np.pi), x, y, z, 110.], 'f'), np.array([r_I/(2*np.pi), err_x, err_x, err_z, err_x], 'f'))], dtype=fresultdtype)
+    return np.array([(t, np.array([I/(2*np.pi), x, y, z, 110.], 'f'), np.array([r_I/(2*np.pi), err_x, err_x, err_z, err_x], 'f'))], dtype=fresultdtype)
 
 def eventify(x,y,meanIntensity, meanDuration, backGroundIntensity, meanEventNumber, sf = 2, tm=2000, z=0, z_err_scale=1.0):
     Is = np.random.exponential(meanIntensity, x.shape)

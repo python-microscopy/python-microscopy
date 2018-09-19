@@ -175,7 +175,7 @@ class NodeServer(object):
             tasks += [self._tasks.get(timeout=WORKER_GET_TIMEOUT)] #wait for at least 1 task
             nTasks = 1
 
-            while (nTasks < int(numWant)) and (time.time() < t_f):
+            while (nTasks < min(int(numWant), int(tasks[-1].get('optimal-chunk-size', numWant)))) and (time.time() < t_f):
                 tasks.append(self._tasks.get_nowait())
                 nTasks += 1
         except Queue.Empty:

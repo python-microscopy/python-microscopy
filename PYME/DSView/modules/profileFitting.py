@@ -68,7 +68,7 @@ class fitter:
             
             pylab.plot(xv, I, cols[chan] + 'x', label=self.image.names[chan])
             pylab.plot(xv, gmod(res[0], self.image.xvals), cols[chan],
-                       label='%2.3g, %2.3g, \n%2.3g, %2.3g\nFWHM %2.3g nm' % (tuple(res[0])+tuple([res[0][2]*2.35e3])))
+                       label='A: %2.3g, x0 :%2.4g, \n sig: %2.4g,  b: %2.3g\nFWHM: %2.3g' % (tuple(res[0]) + (2.35*res[0][2],)))
             
             print((res[0]))
             #imo = self.image.parent

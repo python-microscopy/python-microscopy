@@ -13,7 +13,7 @@ def file(request, filename):
     type = request.GET.get('type', 'raw')
     #print 'file'
     if type == 'raw':
-        return HttpResponse(clusterIO.getFile(filename), content_type='')
+        return HttpResponse(clusterIO.getFile(filename, use_file_cache=False), content_type='')
     elif type in  ['tiff', 'h5']:
         from PYME.IO import image
         import tempfile
@@ -57,20 +57,23 @@ def _get_listing(filename):
     dirs = []
     series = []
     files = []
-    for l, file_info in listing.iteritems():
+    
+    filenames = sorted(listing.keys())
+    for fn in filenames:
+        file_info = listing[fn]
         if file_info.type & cl.FILETYPE_SERIES:
             complete = (file_info.type & cl.FILETYPE_SERIES_COMPLETE) > 0
             nFrames = file_info.size - 3 #assume we have metadata.json, events.json, and final_metadata.json - all others are  frames
-            series.append({'name': l, 'numFrames': nFrames, 'complete': complete,
-                           'cluster_uri': ('pyme-cluster:///' + filename + l).rstrip('/')})
+            series.append({'name': fn, 'numFrames': nFrames, 'complete': complete,
+                           'cluster_uri': ('pyme-cluster:///' + filename + fn).rstrip('/')})
 
         elif file_info.type & cl.FILETYPE_DIRECTORY:
-            dirs.append({'name': l, 'numFiles': file_info.size})
+            dirs.append({'name': fn, 'numFiles': file_info.size})
         else:
-            files.append(l)
+            files.append(fn)
 
-    dirs.sort()
-    files.sort()
+    #dirs.sort()
+    #files.sort()
 
     path = filename.lstrip('/').rstrip('/').split('/')
     breadcrumbs = [{'dir': n, 'path': '/'.join(path[:(i + 1)])} for i, n in enumerate(path)]

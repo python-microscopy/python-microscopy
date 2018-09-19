@@ -20,16 +20,18 @@
 #
 ##################
 
-import wx
-import wx.lib.agw.aui as aui
+import os
+import time
+
 import numpy
 import numpy as np
-from PYME.Acquire.mytimer import mytimer
-from scipy import ndimage
+import wx
+import wx.lib.agw.aui as aui
 from PYME.DSView import View3D, ViewIm3D, ImageStack
-import time
-import os
 from PYME.IO import MetaDataHandler
+from PYME.ui.mytimer import mytimer
+from scipy import ndimage
+
 
 def _pt(sl):
     dec, psf, d, regLambda, nIter, weights = sl
@@ -82,7 +84,7 @@ class deconvolver:
 
     
     def OnDeconvICTM(self, event, beadMode=False):
-        from PYME.Deconv.deconvDialogs import DeconvSettingsDialog,DeconvProgressDialog,DeconvProgressPanel
+        from PYME.Deconv.deconvDialogs import DeconvSettingsDialog, DeconvProgressPanel
 
         dlg = DeconvSettingsDialog(self.dsviewer, beadMode, self.image.data.shape[3])
         if dlg.ShowModal() == wx.ID_OK:
@@ -94,18 +96,21 @@ class deconvolver:
             decMDH['Deconvolution.NumIterations'] = nIter
             decMDH['Deconvolution.OriginalFile'] = self.image.filename
 
-            vx = self.image.mdh.getEntry('voxelsize.x')
-            vy = self.image.mdh.getEntry('voxelsize.y')
-            vz = self.image.mdh.getEntry('voxelsize.z')
+            vx = self.image.mdh.getEntry('voxelsize.x')*1e3
+            vy = self.image.mdh.getEntry('voxelsize.y')*1e3
+            vz = self.image.mdh.getEntry('voxelsize.z')*1e3
 
             if beadMode:
                 from PYME.Deconv import beadGen
-                psf = beadGen.genBeadImage(dlg.GetBeadRadius(), (1e3*vx, 1e3*vy, 1e3*vz))
+                psf = beadGen.genBeadImage(dlg.GetBeadRadius(), (vx, vy, vz))
 
                 decMDH['Deconvolution.BeadRadius'] = dlg.GetBeadRadius()
                 
             else:
                 psfFilename, psf, vs = dlg.GetPSF(vshint = vx)
+                
+                if psf.shape[2] < 2:
+                    raise RuntimeError('Expepected a 3D PSF for 3D deconvolution. For 2D deconvolution use the DeconvMovie function')
 
                 decMDH['Deconvolution.PSFFile'] = dlg.GetPSFFilename()
 

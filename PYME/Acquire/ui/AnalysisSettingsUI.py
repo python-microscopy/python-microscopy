@@ -130,10 +130,10 @@ class AnalysisDetailsPanel(wx.Panel):
         except (KeyError, AttributeError):
             pass
         
-    def OnMDChanged(self, event):
+    def OnMDChanged(self, event=None, sender=None, signal=None, mdh=None):
         if not self._analysisModule == self.analysisMDH['Analysis.FitModule']:
             self.customOptionsSizer.Clear(True)
-            self._populateCustomAnalysisPanel(self.customOptionsPan, self.customOptionsSizer)
+            self._populateCustomAnalysisPanel(self, self.customOptionsSizer)
 
 
 class AnalysisSettings(object):
@@ -160,5 +160,5 @@ def Plug(scope, MainFrame):
     analSettingsPan = AnalysisSettingsPanel(MainFrame, scope.analysisSettings, scope.analysisSettings.onMetadataChanged)
     analDetailsPan = AnalysisDetailsPanel(MainFrame, scope.analysisSettings, scope.analysisSettings.onMetadataChanged)
     
-    MainFrame.aqPanels.append((analSettingsPan, 'Analysis module', True))
-    MainFrame.aqPanels.append((analDetailsPan, 'Analysis details', False))
+    MainFrame.anPanels.append((analSettingsPan, 'Analysis module', True))
+    MainFrame.anPanels.append((analDetailsPan, 'Analysis details', True))

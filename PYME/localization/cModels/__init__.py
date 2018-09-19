@@ -21,4 +21,4 @@
 #
 ##################
 
-from gauss_app import *
+from .gauss_app import *

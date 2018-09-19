@@ -23,13 +23,14 @@
 
 
 from PYME.Analysis._fithelpers import *
-from pylab import *
+#from pylab import *
+import matplotlib.pyplot as plt
 import scipy.special
 
 
 def efunc(p, c):
     Rbound, Runbound, c0,sig = p 
-    return (Rbound - Runbound)*(1+ scipy.special.erf((log10(c) - c0)/sig))/2 + Runbound
+    return (Rbound - Runbound)*(1+ scipy.special.erf((np.log10(c) - c0)/sig))/2 + Runbound
     
 
 def fitKD(filename):
@@ -40,7 +41,7 @@ def fitKD(filename):
     else:
         c,f = d.T
     
-    semilogx(c, f, 'x')
+    plt.semilogx(c, f, 'x')
     
     r = FitModel(efunc, [10, 1, 0, 1], f, c)
     print(("""
@@ -56,16 +57,16 @@ def fitKD(filename):
     
     #print log10(c[0] + .01), log10(c[-1])
     #print f[0]
-    c2 = logspace(log10(c[0] + .01), log10(c[-1]), 100)
-    semilogx(c2, efunc(r[0],c2))
+    c2 = np.logspace(np.log10(c[0] + .01), np.log10(c[-1]), 100)
+    plt.semilogx(c2, efunc(r[0],c2))
     
-    xlabel('Concentration')
-    ylabel('Ratio')
+    plt.xlabel('Concentration')
+    plt.ylabel('Ratio')
     
-    figtext(.6,.2, 'C50 = %3.3f' % 10**r[0][2])
-    show()
+    plt.figtext(.6,.2, 'C50 = %3.3f' % 10**r[0][2])
+    plt.show()
 
 if __name__ == '__main__':
     import sys
-    ioff()
+    plt.ioff()
     fitKD(sys.argv[1])

@@ -88,7 +88,7 @@ def deClumpf(h5fFile):
     if type(h5fFile) == tables.file.File:
         h5f = h5fFile
     else:
-        h5f = tables.openFile(h5fFile)
+        h5f = tables.open_file(h5fFile)
 
     if not 'FitResults' in dir(h5f.root):
         raise RuntimeError('Was expecting to find a "FitResults" table')
@@ -227,6 +227,31 @@ def coalesceClumps(fitResults, assigned, nphotons=None):
             #     fres['clumpWidthY'][i] = selectedDS.clumpWidthsY[clist[i][0]]
 
     return fres
+
+
+def mergeClumps(datasource, labelKey='clumpIndex'):
+    from PYME.IO.tabular import cachingResultsFilter, mappingFilter
+    from PYME.Analysis.points.multiview import coalesce_dict_sorted
+
+    ds_keys = datasource.keys()
+    
+    keys_to_aggregate = [k for k in ds_keys if not (k.startswith('error') or k.startswith('slicesUsed') or k.startswith('fitError'))]
+
+    all_keys = list(keys_to_aggregate) #this should be a copy otherwise we end up adding the weights to our list of stuff to aggregate
+
+    # pair fit results and errors for weighting
+    aggregation_weights = {k: 'error_' + k for k in keys_to_aggregate if 'error_' + k in datasource.keys()}
+    all_keys += aggregation_weights.values()
+
+    #aggregation_weights['A'] = 'sum'
+    #aggregation_weights['Ag'] = 'sum'
+    #aggregation_weights['Ar'] = 'sum'
+
+    I = np.argsort(datasource[labelKey])
+    sorted_src = {k: datasource[k][I] for k in all_keys}
+
+    grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights)
+    return mappingFilter(grouped)
 
 
 def deClump(fitResults):

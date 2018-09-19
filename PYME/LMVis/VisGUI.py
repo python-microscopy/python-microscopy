@@ -70,11 +70,11 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     with the LMDisplay module used for online display and has been factored out into the visCore module"""
     def __init__(self, parent, filename=None, id=wx.ID_ANY, 
                  title="PYME Visualise", pos=wx.DefaultPosition,
-                 size=(700,650), style=wx.DEFAULT_FRAME_STYLE, use_shaders=False):
+                 size=(900,750), style=wx.DEFAULT_FRAME_STYLE, use_shaders=False, cmd_args=None):
 
         AUIFrame.__init__(self, parent, id, title, pos, size, style)
         
-
+        self.cmd_args = cmd_args
         self._flags = 0
         
         self.pipeline = pipeline.Pipeline(visFr=self)
@@ -84,7 +84,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #self.SetMenuBar(self.CreateMenuBar())
         self.CreateMenuBar(use_shaders=use_shaders)
 
-        self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
+        self.statusbar = self.CreateStatusBar(1, wx.STB_SIZEGRIP)
 
         self.statusbar.SetStatusText("", 0)
        
@@ -171,15 +171,26 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.paneHooks.append(self.GenPanels)
         self.CreateFoldPanel()
 
-
         if not filename is None:
-            self.OpenFile(filename)
+    
+            def _recipe_callback():
+                recipe = getattr(self.cmd_args, 'recipe', None)
+                print('Using recipe: %s' % recipe)
+                if recipe:
+                    from PYME.recipes import modules
+                    self.pipeline.recipe.update_from_yaml(recipe)
+                    self.recipeView.SetRecipe(self.pipeline.recipe)
+                    self.update_datasource_panel()
+            
+            wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)
             #self.refv = False
-            wx.CallAfter(self.RefreshView)
+        
+        wx.CallAfter(self.RefreshView)
 
         nb = self._mgr.GetNotebooks()[0]
         nb.SetSelection(0)
         
+    
 
     def OnMove(self, event):
         self.Refresh()
@@ -262,46 +273,58 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     def notebook(self):
         return self._mgr.GetNotebooks()[0]
             
+    # def _removeOldTabs(self):
+    #     if not self.elv is None: #remove previous event viewer
+    #         i = 0
+    #         found = False
+    #         while not found and i < self.notebook.GetPageCount():
+    #             if self.notebook.GetPage(i) == self.elv:
+    #                 self.notebook.DeletePage(i)
+    #                 found = True
+    #             else:
+    #                 i += 1
+    #
+    #     if not self.colp is None: #remove previous colour viewer
+    #         i = 0
+    #         found = False
+    #         while not found and i < self.notebook.GetPageCount():
+    #             if self.notebook.GetPage(i) == self.colp:
+    #                 self.notebook.DeletePage(i)
+    #                 found = True
+    #             else:
+    #                 i += 1
+    #
+    #     if not self.mdp is None: #remove previous metadata viewer
+    #         i = 0
+    #         found = False
+    #         while not found and i < self.notebook.GetPageCount():
+    #             if self.notebook.GetPage(i) == self.mdp:
+    #                 self.notebook.DeletePage(i)
+    #                 found = True
+    #             else:
+    #                 i += 1
+
     def _removeOldTabs(self):
-        if not self.elv is None: #remove previous event viewer
-            i = 0
-            found = False
-            while not found and i < self.notebook.GetPageCount():
-                if self.notebook.GetPage(i) == self.elv:
-                    self.notebook.DeletePage(i)
-                    found = True
-                else:
-                    i += 1
-                    
-        if not self.colp is None: #remove previous colour viewer
-            i = 0
-            found = False
-            while not found and i < self.notebook.GetPageCount():
-                if self.notebook.GetPage(i) == self.colp:
-                    self.notebook.DeletePage(i)
-                    found = True
-                else:
-                    i += 1
-                    
-        if not self.mdp is None: #remove previous metadata viewer
-            i = 0
-            found = False
-            while not found and i < self.notebook.GetPageCount():
-                if self.notebook.GetPage(i) == self.mdp:
-                    self.notebook.DeletePage(i)
-                    found = True
-                else:
-                    i += 1
+        self.DeletePage(self.elv)
+        self.elv = None
+    
+        self.DeletePage(self.colp)
+        self.colp = None
+        
+        self.DeletePage(self.mdp)
+        self.mdp = None
+        
                     
     def _createNewTabs(self):
-        #print 'md'
+        logger.debug('Creating tabs')
+        self.adding_panes = True
         self.mdp = MetadataTree.MetadataPanel(self, self.pipeline.mdh, editable=False)
-        self.AddPage(self.mdp, caption='Metadata')
+        self.AddPage(self.mdp, caption='Metadata', select=False, update=False)
         
         #print 'cp'        
         if 'gFrac' in self.pipeline.filter.keys():
             self.colp = colourPanel.colourPanel(self, self.pipeline, self)
-            self.AddPage(self.colp, caption='Colour', update=False)
+            self.AddPage(self.colp, caption='Colour', select=False, update=False)
             
         #print 'ev'
         if not self.pipeline.events is None:
@@ -311,9 +334,10 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     
             self.elv.SetCharts(self.pipeline.eventCharts)
             
-            self.AddPage(self.elv, caption='Events', update=False)
-            
-        #print 'ud'
+            self.AddPage(self.elv, caption='Events', select=False, update=False)
+
+        logger.debug('Finished creating tabs')
+        self.adding_panes = False
         self._mgr.Update()
             
         
@@ -360,44 +384,51 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
 
 class VisGuiApp(wx.App):
-    def __init__(self, filename, use_shaders, *args):
+    def __init__(self, filename, use_shaders, cmd_args, *args):
         self.filename = filename
         self.use_shaders = use_shaders
+        self.cmd_args = cmd_args
         wx.App.__init__(self, *args)
         
         
     def OnInit(self):
-        wx.InitAllImageHandlers()
-        self.main = VisGUIFrame(None, self.filename, use_shaders=self.use_shaders)
+        self.main = VisGUIFrame(None, self.filename, use_shaders=self.use_shaders, cmd_args=self.cmd_args)
         self.main.Show()
         self.SetTopWindow(self.main)
         return True
 
 
-def main_(filename=None, use_shaders=False):
+def main_(filename=None, use_shaders=False, args=None):
     if filename == "":
         filename = None
-    application = VisGuiApp(filename, use_shaders, 0)
+    application = VisGuiApp(filename, use_shaders, args, 0)
     application.MainLoop()
 
 def parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help="file that should be used", default=None, nargs='?')
-    parser.add_argument('--use_shaders', dest="use_shaders", action='store_true', default=False,
+    parser.add_argument('-r', '--recipe', help='recipe to use for variable portion of pipeline', dest='recipe', default=None)
+    parser.add_argument('-s', '--use-shaders', dest="use_shaders", action='store_true', default=True,
                         help='switch shaders on(default: off)')
-    parser.add_argument('--no_use_shaders', dest="use_shaders", action='store_false',
-                        default=False, help='switch shaders off(default: off)')
+    parser.add_argument('--no-shaders', dest="use_shaders", action='store_false',
+                        default=True, help='switch shaders off(default: off)')
+    parser.add_argument('--new-layers', dest='new_layers', action='store_true', default=True)
+    parser.add_argument('--no-layers', dest='new_layers', action='store_false', default=True)
     args = parser.parse_args()
     return args
     
 def main():
     from multiprocessing import freeze_support
+    import PYME.config
     freeze_support()
     
     filename = None
     args = parse()
+    
+    PYME.config.config['VisGUI-new_layers'] = args.new_layers
+    
     if wx.GetApp() is None: #check to see if there's already a wxApp instance (running from ipython -pylab or -wthread)
-        main_(args.file, use_shaders=args.use_shaders)
+        main_(args.file, use_shaders=args.use_shaders, args=args)
     else:
         #time.sleep(1)
         visFr = VisGUIFrame(None, filename, False)

@@ -38,7 +38,6 @@ def InitPlugins(visFr):
         #print mods
         logger.debug('Initializing %s plugin' % mn)
         m = __import__('PYME.LMVis.Extras.' + mn, fromlist=['PYME', 'LMVis', 'Extras'])
-        
         m.Plug(visFr)
 
     for mn in config.get_plugins('visgui'):

@@ -34,6 +34,8 @@ class PositionSliders(wx.Panel):
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Panel.__init__(self, parent, id)
 
+        self.updating=False
+
         self.scope = scope
         self.joystick = joystick
         #self.panel_1 = wx.Panel(self, -1)
@@ -98,49 +100,28 @@ class PositionSliders(wx.Panel):
         self.joystick.Enable(self.cbJoystick.IsChecked())
 
     def onSlide(self, event):
-        sl = event.GetEventObject()
-        ind = self.sliders.index(sl)
-        self.sl = sl
-        #self.ind = ind
-        pName = self.piezoNames[ind]
-        self.scope.SetPos(**{pName : sl.GetValue()/100.0})
-        self.sliderLabels[ind].SetLabel(u'%s - %2.3f \u03BCm' % (pName,sl.GetValue()/100.0))
+        if not self.updating:
+            sl = event.GetEventObject()
+            ind = self.sliders.index(sl)
+            self.sl = sl
+            #self.ind = ind
+            pName = self.piezoNames[ind]
+            self.scope.SetPos(**{pName : sl.GetValue()/100.0})
+            self.sliderLabels[ind].SetLabel(u'%s - %2.3f \u03BCm' % (pName,sl.GetValue()/100.0))
 
     def update(self):
-        for ind in range(len(self.scope.piezos)):
-            p = self.scope.piezos[ind]
-            if 'units' in dir(p[0]):
-                unit = p[0].units
-            else:
-                unit = u'\u03BCm'
-                
-            if 'lastPos' in dir(self.scope.piezos[ind][0]):
-                self.sliders[ind].SetValue(100*self.scope.piezos[ind][0].lastPos)
-                self.sliderLabels[ind].SetLabel(u'%s - %2.4f %s' % (self.scope.piezos[ind][2],self.scope.piezos[ind][0].lastPos, unit))
-            elif 'GetLastPos' in dir(self.scope.piezos[ind][0]):
-                lp = self.scope.piezos[ind][0].GetLastPos(self.scope.piezos[ind][1])
-                self.sliders[ind].SetValue(100*lp)
-                self.sliderLabels[ind].SetLabel(u'%s - %2.4f %s' % (self.scope.piezos[ind][2],1000*lp, unit))
-            else:
-                pos = self.scope.piezos[ind][0].GetPos(self.scope.piezos[ind][1])
-                self.sliders[ind].SetValue(100*pos)
-                self.sliderLabels[ind].SetLabel(u'%s - %2.4f %s' % (self.scope.piezos[ind][2],pos, unit))
+        poss = self.scope.GetPos()
+        self.ranges = self.scope.GetPosRange()
 
-            self.sliders[ind].SetMin(100*self.scope.piezos[ind][0].GetMin(self.scope.piezos[ind][1]))
-            self.sliders[ind].SetMax(100*self.scope.piezos[ind][0].GetMax(self.scope.piezos[ind][1]))
-
-
-
-        #poss = self.scope.GetPos()
-        #self.ranges = self.scope.GetPosRange()
+        self.updating = True
         
-        #for ind in range(len(self.piezoNames)):
-        #    pName = self.piezoNames[ind]
-        #    #if 'units' in dir(p[0]):
-        #    #    unit = p[0].units
-        #    #else:
+        for ind in range(len(self.piezoNames)):
+            pName = self.piezoNames[ind]
+            #if 'units' in dir(p[0]):
+            #    unit = p[0].units
+            #else:
             
-        #    unit = u'\u03BCm'
+            unit = u'\u03BCm'
                 
 #            if 'lastPos' in dir(self.piezos[ind]):
 #                self.sliders[ind].SetValue(100*self.piezos[ind][0].lastPos)
@@ -151,15 +132,17 @@ class PositionSliders(wx.Panel):
 #                self.sliderLabels[ind].SetLabel(u'%s - %2.4f %s' % (self.piezos[ind][2],lp, unit))
 #            else:
             
-        #    pos = poss[pName]
-        #    self.sliders[ind].SetValue(100*pos)
-        #    self.sliderLabels[ind].SetLabel(u'%s - %2.3f %s' % (pName,pos, unit))
+            pos = poss[pName]
+            self.sliders[ind].SetValue(100*pos)
+            self.sliderLabels[ind].SetLabel(u'%s - %2.3f %s' % (pName,pos, unit))
             
-    	#    self.sliders[ind].SetMin(100*self.ranges[pName][0])
-    	#    self.sliders[ind].SetMax(100*self.ranges[pName][1])
+            self.sliders[ind].SetMin(100*self.ranges[pName][0])
+            self.sliders[ind].SetMax(100*self.ranges[pName][1])
 
         if not self.joystick is None:
             self.cbJoystick.SetValue(self.joystick.IsEnabled())
+
+        self.updating = False
 
             
 

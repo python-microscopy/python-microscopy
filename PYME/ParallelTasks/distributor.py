@@ -19,6 +19,8 @@ from PYME import config
 from PYME.ParallelTasks import webframework
 import collections
 
+import numpy as np
+
 NODE_TIMEOUT = config.get('distributor-node_registration_timeout', 10)
 PROCESS_TIMEOUT = config.get('distributor-execution_timeout', 300)
 RATE_TIMEOUT = config.get('distributor-task_rating_timeout', 10)
@@ -30,7 +32,7 @@ class TaskInfo(object):
         self.expiry = time.time() + timeout
 
 class TaskQueue(object):
-    def __init__(self, distributor):
+    def __init__(self, distributor, lifetime=3600):
         self.rating_queue = collections.deque()
         self.ratings_in_progress =  collections.OrderedDict()
         self.assigned =  collections.OrderedDict()
@@ -40,6 +42,9 @@ class TaskQueue(object):
 
         self.num_rated = 0
         self.total_cost = 0
+        
+        self._lifetime = lifetime
+        self._expiry = time.time() + self._lifetime
 
         self.handins = collections.deque()
 
@@ -49,8 +54,8 @@ class TaskQueue(object):
         self.distributor = distributor
 
         self._do_poll = True
-        self.pollThread = threading.Thread(target=self._poll_loop)
-        self.pollThread.start()
+        #self.pollThread = threading.Thread(target=self._poll_loop)
+        #self.pollThread.start()
 
     def info(self):
         return {'tasksPosted': self.total_num_tasks,
@@ -62,6 +67,10 @@ class TaskQueue(object):
 
     def stop(self):
         self._do_poll = False
+        
+    @property
+    def has_outstanding_tasks(self):
+        return self.num_tasks_completed < self.total_num_tasks
 
     def posttask(self, task):
         self.rating_queue.append(task)
@@ -81,13 +90,24 @@ class TaskQueue(object):
             pass
         return tasks
 
+    def _gzip_compress(self, data):
+        import gzip
+        from io import BytesIO
+        zbuf = BytesIO()
+        zfile = gzip.GzipFile(mode='wb', fileobj=zbuf)#, compresslevel=9)
+        zfile.write(data)
+        zfile.close()
+        
+        return zbuf.getvalue()
+
     def _rate_tasks(self, tasks, node, rated_queue):
+        #import zlib
         server = self.distributor.nodes[node]
         url = 'http://%s:%d/node/rate' % (server['ip'], int(server['port']))
         #logger.debug('Requesting rating from %s' % url)
         try:
-            r = requests.post(url, data=tasks,
-                          headers={'Content-Type': 'application/json'}, timeout=RATE_TIMEOUT)
+            r = requests.post(url, data=self._gzip_compress(tasks),
+                          headers={'Content-Type': 'application/json', 'Content-Encoding' : 'gzip'}, timeout=RATE_TIMEOUT)
             resp = r.json()
             if resp['ok']:
                 rated_queue.append((node, resp['result']))
@@ -101,7 +121,12 @@ class TaskQueue(object):
         if len(tasks) > 0:
             rated_queue = collections.deque()
             task_list = json.dumps(tasks)
-            r_threads = [threading.Thread(target=self._rate_tasks, args=(task_list, node, rated_queue)) for node in self.distributor.nodes.keys()]
+
+            node_names = self.distributor.nodes.keys()
+            node_idx = {n:i for i, n in enumerate(node_names)}
+            task_idx = {t['id'] : i for i, t, in enumerate(tasks)}
+            
+            r_threads = [threading.Thread(target=self._rate_tasks, args=(task_list, node, rated_queue)) for node in node_names]
 
             #logger.debug('Asking nodes for rating')
             for t in r_threads: t.start()
@@ -111,22 +136,47 @@ class TaskQueue(object):
             costs = collections.OrderedDict()
             min_cost = collections.OrderedDict()
 
+            node_queue_lengths = np.zeros(len(node_names))
+            for i, node in enumerate(node_names):
+                node_queue_lengths[i] = len(self.distributor.nodes[node]['taskQueue'])
+                
+            node_costs = 9e6*np.ones([len(node_names), len(tasks)])
+            
             for node, ratings in rated_queue:
+                node_id = node_idx[node]
                 for rating in ratings:
                     id = rating['id']
-                    cost = float(rating['cost'])
-                    if cost < costs.get(id, 900000):
+                    cost = float(rating['cost']) #*node_queue_lengths[node]
+                    node_costs[node_id, task_idx[id]] = cost
+                    if cost < costs.get(id, 9000000):
                         costs[id] = cost
                         min_cost[id] = node
+                        
+            
+            for i, task in enumerate(tasks):
+                task_costs = node_costs[:,i]*node_queue_lengths #multiply costs by current length of each nodes queue
+                min_cost_idx = task_costs.argmin()
+                cost = task_costs[min_cost_idx]
+                node = node_names[min_cost_idx]
+                id = task['id']
+                
+                if cost < 9e6: #we actually got a reply
+                    self.num_rated += 1
+                    self.total_cost += cost
+                    t = TaskInfo(self.ratings_in_progress.pop(id).task, PROCESS_TIMEOUT)
+                    self.assigned[id] = t
+                    self.distributor.nodes[node]['taskQueue'].append(t)
+                    node_queue_lengths[min_cost_idx] += 1
+                
 
             #logger.debug('%d ratings returned' % len(min_cost))
             #assign our rated items to a node
-            for id, node in min_cost.items():
-                self.num_rated += 1
-                self.total_cost += costs[id]
-                t = TaskInfo(self.ratings_in_progress.pop(id).task, PROCESS_TIMEOUT)
-                self.assigned[id] = t
-                self.distributor.nodes[node]['taskQueue'].append(t)
+            # for id, node in min_cost.items():
+            #     self.num_rated += 1
+            #     self.total_cost += costs[id]
+            #     t = TaskInfo(self.ratings_in_progress.pop(id).task, PROCESS_TIMEOUT)
+            #     self.assigned[id] = t
+            #     self.distributor.nodes[node]['taskQueue'].append(t)
 
             #logger.debug('%d total tasks rated' % self.num_rated)
 
@@ -179,12 +229,20 @@ class TaskQueue(object):
         except IndexError:
             pass
 
-
-    def _poll_loop(self):
-        while self._do_poll:
+    def _poll(self):
+        if self.has_outstanding_tasks:
             self._rateAndAssignTasks()
             self._process_handins()
             self._requeue_timed_out()
+            self._expiry =  time.time() + self._lifetime
+            
+    @property
+    def expired(self):
+        return time.time() > self._expiry
+
+    def _poll_loop(self):
+        while self._do_poll:
+            self._poll()
 
             time.sleep(.1)
 
@@ -207,6 +265,9 @@ class Distributor(object):
         self.pollThread = threading.Thread(target=self._poll)
         self.pollThread.start()
 
+        self.queuePollThread = threading.Thread(target=self._poll_queues)
+        self.queuePollThread.start()
+
 
     def _update_nodes(self):
         t = time.time()
@@ -221,7 +282,7 @@ class Distributor(object):
                     while True:
                             task = q.popleft().task
                             handin = {'taskID': task['id'], 'status' : 'notExecuted'}
-                            queue = handin['taskID'].split('-')[0]
+                            queue = handin['taskID'].split('~')[0]
                             self._queues[queue].handin(handin)
                 except IndexError:
                     pass
@@ -231,6 +292,18 @@ class Distributor(object):
         while self._do_poll:
             self._update_nodes()
             time.sleep(1)
+            
+    def _poll_queues(self):
+        while self._do_poll:
+            for qn in self._queues.keys():
+                self._queues[qn]._poll()
+                
+                #remore queue if expired (no activity for an hour) to free up memory
+                if self._queues[qn].expired:
+                    self._queues.pop(qn)
+                
+            time.sleep(.1)
+            
 
     def stop(self):
         self._do_poll = False
@@ -282,7 +355,7 @@ class Distributor(object):
 
         tasks = json.loads(body)
         for task in tasks:
-            task['id'] = queue + '-' + task['id']
+            task['id'] = queue + '~' + task['id']
             q.posttask(task)
 
         logger.debug('accepted %d tasks' % len(tasks))
@@ -295,7 +368,7 @@ class Distributor(object):
 
         #logger.debug('Handing in tasks...')
         for handin in json.loads(body):
-            queue = handin['taskID'].split('-')[0]
+            queue = handin['taskID'].split('~')[0]
             self._queues[queue].handin(handin)
         return json.dumps({'ok': True})
 
@@ -315,7 +388,7 @@ class Distributor(object):
 
     @webframework.register_endpoint('/distributor/queues')
     def _get_queues(self):
-        return json.dumps({'ok': True, 'result': {qn: q.info() for qn, q in self._queues.items()}})
+        return json.dumps({'ok': True, 'result': {qn: self._queues[qn].info() for qn in sorted(self._queues.keys())}})
 
 
 
@@ -423,7 +496,11 @@ if __name__ == '__main__':
         profile = False
         profileOutDir=None
 
-    signal.signal(signal.SIGHUP, on_SIGHUP)
+    if not sys.platform == 'win32':
+        #windows doesn't support handling signals ... don't catch and hope for the best.
+        #Note: This will make it hard to cleanly shutdown the distributor on Windows, but should be OK for testing and
+        #development
+        signal.signal(signal.SIGHUP, on_SIGHUP)
 
     try:
         run(int(port))

@@ -50,7 +50,7 @@ def LoadShiftField(filename = None):
             import tables
             from PYME.IO.MetaDataHandler import HDFMDHandler
             
-            h5file = tables.openFile(filename)
+            h5file = tables.open_file(filename)
             mdh = HDFMDHandler(h5file)
 
             dx = mdh.getEntry('chroma.dx')
@@ -432,7 +432,7 @@ class UnMixPanel(wx.Panel):
 
         #self.bGrabOffset.Bind(wx.EVT_BUTTON, self.OnGrabOffsetFromCamera)
 
-        #self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
+        #self.statusbar = self.CreateStatusBar(1, wx.STB_SIZEGRIP)
 
         #self.Layout()
         

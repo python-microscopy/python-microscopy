@@ -57,7 +57,7 @@ def weightedMissfitF(p, fcn, data, weights, *args):
     mod = mod.ravel()
     #print mod.shape
     #print data.shape
-    #print sigmas.shape
+    #print weights.shape
     return (data - mod)*weights
 
 def weightedJacF(p, fcn, data, weights, *args):

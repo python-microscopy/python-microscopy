@@ -99,7 +99,7 @@ import tables
 class TablesBackend(BackendBase):
     def __init__(self, filename):
         
-        self.tfile = tables.openFile(filename, 'a')
+        self.tfile = tables.open_file(filename, 'a')
         
     def _split(self,p):
         """Split a pathname.  Returns tuple "(head, tail)" where "tail" is
@@ -120,6 +120,6 @@ class TablesBackend(BackendBase):
             tab.append(record)
         except tables.NoSuchNodeError:
             h, t = self._split(table)
-            self.tfile.createTable(h, t, record, createparents=True)
+            self.tfile.create_table(h, t, record, createparents=True)
             
         self.tfile.flush()

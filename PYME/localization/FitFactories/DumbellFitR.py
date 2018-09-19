@@ -27,7 +27,7 @@ from . import FFBase
 
 from PYME.Analysis._fithelpers import FitModelWeighted, FitModelWeightedJac
 
-import pylab
+#import pylab
 
 
 ##################
@@ -121,19 +121,20 @@ class DumbellFitFactory(FFBase.FitFactory):
         
         if False:
             #display for debugging purposes
-            pylab.figure(figsize=(15, 5))
-            pylab.subplot(141)
-            pylab.imshow(dataMean)
-            pylab.colorbar()
-            pylab.subplot(142)
-            pylab.imshow(f_dumbell(startParameters, X, Y))
-            pylab.colorbar()
-            pylab.subplot(143)
-            pylab.imshow(f_dumbell(res, X, Y))
-            pylab.colorbar()
-            pylab.subplot(144)
-            pylab.imshow(dataMean-f_dumbell(res, X, Y))
-            pylab.colorbar()
+            import matplotlib.pyplot as plt
+            plt.figure(figsize=(15, 5))
+            plt.subplot(141)
+            plt.imshow(dataMean)
+            plt.colorbar()
+            plt.subplot(142)
+            plt.imshow(f_dumbell(startParameters, X, Y))
+            plt.colorbar()
+            plt.subplot(143)
+            plt.imshow(f_dumbell(res, X, Y))
+            plt.colorbar()
+            plt.subplot(144)
+            plt.imshow(dataMean-f_dumbell(res, X, Y))
+            plt.colorbar()
 
         #package results
         return FitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors, bgm, length)

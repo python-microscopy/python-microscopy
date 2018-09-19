@@ -27,7 +27,28 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
     protocol_version='HTTP/1.1'
     logrequests = False
 
+    def _gzip_compress(self, data):
+        import gzip
+        from io import BytesIO
+        zbuf = BytesIO()
+        zfile = gzip.GzipFile(mode='wb', fileobj=zbuf)#, compresslevel=9)
+        zfile.write(data)
+        zfile.close()
+    
+        return zbuf.getvalue()
+
+    def _gzip_decompress(self, data):
+        import gzip
+        from io import BytesIO
+        zbuf = BytesIO(data)
+        zfile = gzip.GzipFile(mode='rb', fileobj=zbuf)#, compresslevel=9)
+        out = zfile.read()
+        zfile.close()
+    
+        return out
+
     def _process_request(self):
+        #import gzip
         up = urlparse.urlparse(self.path)
 
         kwargs = urlparse.parse_qs(up.query)
@@ -37,16 +58,37 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
         cl = int(self.headers.get('Content-Length', 0))
         if cl > 0:
             body = self.rfile.read(cl)
+            
+            if self.headers.get('Content-Encoding') == 'gzip':
+                body = self._gzip_decompress(body)
+                
             kwargs['body'] = body
 
         #logger.debug('Request path: ' + up.path)
         #logger.debug('Requests args: ' + repr(kwargs))
 
-        handler = self.server._endpoints[up.path]
-        resp = handler(**kwargs)
+        try:
+            handler = self.server._endpoints[up.path]
+        except KeyError:
+            self.send_error(404, 'No handler for %s' % up.path)
+            return
+        
+         
+        try:
+            resp = handler(**kwargs)
+        except Exception:
+            import traceback
+            self.send_error(500, 'Server Error\n %s' % traceback.format_exc())
+            return
+        
+        compress_output = 'gzip' in self.headers.get('Accept-Encoding', '')
 
         self.send_response(200)
         self.send_header("Content-Type", 'application/json')
+        if compress_output:
+            self.send_header('Content-Encoding', 'gzip')
+            resp = self._gzip_compress(resp) #FIXME - write directly to wfile rather than to a BytesIO object - how do we find the content-length?
+            
         self.send_header("Content-Length", "%d" % len(resp))
         self.end_headers()
 
@@ -81,3 +123,5 @@ class APIHTTPServer(ThreadingMixIn, http.server.HTTPServer):
             endpoint_path = getattr(func, '_expose_path', None)
             if not endpoint_path is None:
                 self._endpoints[endpoint_path] = func
+                
+        logging.debug('Registered endpoints: %s' % self._endpoints.keys())

@@ -32,6 +32,8 @@
 
 
 from PYME.Analysis._fithelpers import *
+import logging
+logger = logging.getLogger(__name__)
 
 ##################
 # Model Function, only for reference in this case.
@@ -81,13 +83,30 @@ class GaussianFitFactory:
     Y = None
 
     def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None):
-        """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
-        metadata. """
+        """
+
+        Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
+        metadata.
+
+        Parameters
+        ----------
+        data : numpy.ndarray
+        metadata : PYME.IO.MetaDataHandler.MDHandlerBase or derived class
+        fitfcn : dummy variable
+            Not used in this fit factory
+        background : numpy.ndarray or warpDrive.buffers.Buffer
+            warpDrive.buffers.Buffer allows asynchronous estimation of the per-pixel background on the GPU.
+        noiseSigma : numpy.ndarray
+            (over-)estimate of the noise level at each pixel (see fitTask.calcSigma in remFitBuf.py)
+        """
 
         self.data = np.squeeze(data).astype(np.float32)  # np.ascontiguousarray(np.squeeze(data), dtype=np.float32)
         self.metadata = metadata
 
-        self.background = np.squeeze(background)  # if not none, will be set to contiguous float32 inside of detector class method
+        if isinstance(background, np.ndarray):
+            self.background = background.squeeze()  # will be set to contiguous float32 inside of detector class method
+        else:  # it's a buffer!
+            self.background = background
         self.noiseSigma = noiseSigma
         self.fitfcn = fitfcn
 
@@ -107,7 +126,11 @@ class GaussianFitFactory:
         if not np.isscalar(varmap):
             self.varmap = varmap.astype(np.float32)  # np.ascontiguousarray(varmap)
         else:
-            self.varmap = varmap*np.ones_like(self.data)
+            if varmap == 0:
+                self.varmap = np.ones_like(self.data)
+                logger.error('Variance map not found and read noise defaulted to 0; changing to 1 to avoid x/0.')
+            else:
+                self.varmap = varmap*np.ones_like(self.data)
 
         flatmap = cameraMaps.getFlatfieldMap(self.metadata)
         if not np.isscalar(flatmap):
@@ -123,8 +146,12 @@ class GaussianFitFactory:
 
         ### Undo the flatfielding we did in remFitBuf: (img.astype('f')-dk)*flat
         self.data = self.data/self.flatmap  # no conversion here, flatmap normed so data still in [ADU]
-        if self.background is not None:  # flatfielding is also done on moving-averaged background
+        # if self.background is not None:  # flatfielding is also done on moving-averaged background
+        if isinstance(self.background, np.ndarray):
             self.background = self.background/self.flatmap  # no conversion here, flatmap normed so data still in [ADU]
+        else:
+            # if self.background is a buffer, the background is already on the GPU and has not been flatfielded
+            pass
 
         # Account for any changes we need to make in memory allocation on the GPU
         if not _warpDrive:
@@ -292,9 +319,12 @@ FitFactory = GaussianFitFactory
 FitResult = GaussianFitResultR
 FitResultsDType = fresultdtype  #only defined if returning data as numarray
 
-#this means that factory is reponsible for it's own object finding and implements
+#this means that factory is responsible for it's own object finding and implements
 #a GetAllResults method that returns a list of localisations
 MULTIFIT=True
+# GPU_BUFFER_READY means this factory can accept a GPU buffer object to reduce data transfers.
+# TODO - differ correctImage(data) call from remFitBuf to GPU fit factory with this same flag
+GPU_BUFFER_READY=True
 
 import PYME.localization.MetaDataEdit as mde
 
@@ -303,6 +333,7 @@ PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpol
               #mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
               #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
               mde.FloatParam('Analysis.ROISize', u'ROI half size', 7.5),
+              mde.BoolParam('Analysis.GPUPCTBackground', 'Calculate percentile background on GPU', True),
               #mde.FloatParam('Analysis.ResidualMax', 'Max residual:', 0.25),
               #mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
               #mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])

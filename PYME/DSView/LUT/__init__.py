@@ -21,7 +21,7 @@
 #
 ##################
 
-from lut import *
+from .lut import *
 
 def applyLUT(seg, gain, offset, lut, ima):
     if seg.dtype == 'uint8':

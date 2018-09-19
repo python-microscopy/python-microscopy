@@ -49,6 +49,7 @@ class RecipePlugin(recipeGui.RecipeManager):
         dsviewer.AddMenuItem('Recipes', "Load Recipe", self.OnLoadRecipe)
         self.mICurrent = dsviewer.AddMenuItem('Recipes', "Run Current Recipe\tF5", self.RunCurrentRecipe)
         self.mITestCurrent = dsviewer.AddMenuItem('Recipes', "Test Current Recipe\tF7", self.TestCurrentRecipe)
+        self.mICurrent = dsviewer.AddMenuItem('Recipes', "Run Current Recipe and Save\tShift+F5", self.RunCurrentRecipeAndSave)
         
         #print CANNED_RECIPES
         
@@ -75,7 +76,7 @@ class RecipePlugin(recipeGui.RecipeManager):
 
         #dsviewer.menubar.Append(self.mRecipes, "Recipes")
         dsviewer.AddMenuItem('Recipes', '', itemType='separator')
-        dsviewer.AddMenuItem('Recipes', "Save Results via Output Modules", self.OnSaveOutputs)
+        dsviewer.AddMenuItem('Recipes', "Save Results", self.OnSaveOutputs)
         dsviewer.AddMenuItem('Recipes', "Save Results - Old Style", self.OnSaveOutputOld)
         
         #dsviewer.AddMenuItem('Recipes', '', itemType='separator')
@@ -84,7 +85,10 @@ class RecipePlugin(recipeGui.RecipeManager):
         self.recipeView = recipeGui.RecipeView(dsviewer, self)
         dsviewer.AddPage(page=self.recipeView, select=False, caption='Recipe')
         
-    def RunCurrentRecipe(self, event=None, testMode=False):
+    def RunCurrentRecipeAndSave(self, event=None):
+        self.RunCurrentRecipe(saveResults=True)
+        
+    def RunCurrentRecipe(self, event=None, testMode=False, saveResults = False):
         if self.activeRecipe:
             if testMode:
                 #just run on current frame
@@ -93,8 +97,11 @@ class RecipePlugin(recipeGui.RecipeManager):
                 #run normally
                 self.outp = self.activeRecipe.execute(input=self.image)
                 
-            if isinstance(self.outp, ImageStack):
-
+                if saveResults:
+                    self.activeRecipe.save() #FIXME - set context
+                    
+                    
+            def _display_output_image(outp):
                 if self.dsviewer.mode == 'visGUI':
                     mode = 'visGUI'
                 elif 'out_tracks' in self.activeRecipe.namespace.keys():
@@ -102,43 +109,58 @@ class RecipePlugin(recipeGui.RecipeManager):
                 else:
                     mode = 'default'
     
-                dv = ViewIm3D(self.outp, mode=mode, glCanvas=self.dsviewer.glCanvas)
-                
+                dv = ViewIm3D(outp, mode=mode, glCanvas=self.dsviewer.glCanvas)
+    
                 if 'out_meas' in self.activeRecipe.namespace.keys():
                     #have measurements as well - add to / overlay with output image
                     if not 'pipeline' in dir(dv):
                         dv.pipeline = pipeline.Pipeline()
-                    
+        
                     from PYME.IO import tabular
                     cache = tabular.cachingResultsFilter(self.activeRecipe.namespace['out_meas'])
-                    dv.pipeline.OpenFile(ds = cache)
+                    dv.pipeline.OpenFile(ds=cache)
                     dv.view.filter = dv.pipeline
-                    
     
                 #set scaling to (0,1)
-                for i in range(self.outp.data.shape[3]):
+                for i in range(outp.data.shape[3]):
                     dv.do.Gains[i] = 1.0
-
+    
                 if ('out_tracks' in self.activeRecipe.namespace.keys()) and 'tracker' in dir(dv):
                     dv.tracker.SetTracks(self.activeRecipe.namespace['out_tracks'])
-
                     
-            else:
-                if ('out_tracks' in self.activeRecipe.namespace.keys()) and 'tracker' in dir(self.dsviewer):
-                    self.dsviewer.tracker.SetTracks(self.activeRecipe.namespace['out_tracks'])
+            def _display_output_report(outp):
+                import wx.html2
+                html_view = wx.html2.WebView.New(self.dsviewer)
+                self.dsviewer.AddPage(html_view, True, 'Recipe Report')
+                html_view.SetPage(outp, 'Recipe Report')
 
-                #assume we made measurements - put in pipeline
-                #TODO - put an explict check in here
-            
-                if not 'pipeline' in dir(self.dsviewer):
-                    self.dsviewer.pipeline = pipeline.Pipeline()
-                
+            if ('out_tracks' in self.activeRecipe.namespace.keys()) and 'tracker' in dir(self.dsviewer):
+                self.dsviewer.tracker.SetTracks(self.activeRecipe.namespace['out_tracks'])
+
+            #assume we made measurements - put in pipeline
+            #TODO - put an explict check in here
+
+            if not 'pipeline' in dir(self.dsviewer):
+                self.dsviewer.pipeline = pipeline.Pipeline()
+
+            if isinstance(self.outp, ImageStack):
+                _display_output_image(self.outp)
+            elif not self.outp is None:
                 from PYME.IO import tabular
                 cache = tabular.cachingResultsFilter(self.outp)
                 self.dsviewer.pipeline.OpenFile(ds = cache)
                 self.dsviewer.pipeline.filterKeys = {}
                 self.dsviewer.pipeline.Rebuild()
                 self.dsviewer.view.filter = self.dsviewer.pipeline
+                    
+                
+            for out_ in self.activeRecipe.gather_outputs():
+                if isinstance(out_, ImageStack):
+                    _display_output_image(out_)
+                elif isinstance(out_, basestring):
+                    _display_output_report(out_)
+                    
+                
 
                 
     def TestCurrentRecipe(self, event=None):
@@ -155,12 +177,24 @@ class RecipePlugin(recipeGui.RecipeManager):
 
     def OnSaveOutputs(self, event):
         self.activeRecipe.save()
+        # from PYME.recipes import runRecipe
+        #
+        # filename = wx.FileSelector('Save results as ...',
+        #                            wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx|HDF5 files (*.hdf)|*.hdf",
+        #                            flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+        #
+        # if not filename == '':
+        #     runRecipe.saveOutput(self.outp, filename)
+            
+        
+            
+        self.activeRecipe.save()
 
     def OnSaveOutputOld(self, event):
         from PYME.recipes import runRecipe
         
-        filename = wx.FileSelector('Save results as ...', 
-                                   wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx|HDF5 files (*.hdf)|*.hdf", 
+        filename = wx.FileSelector('Save results as ...',
+                                   wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx|HDF5 files (*.hdf)|*.hdf",
                                    flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
                                    
         if not filename == '':

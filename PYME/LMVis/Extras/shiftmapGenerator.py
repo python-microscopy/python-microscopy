@@ -29,9 +29,9 @@ class ShiftmapGenerator:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        visFr.AddMenuItem('Extras', "Calculate &Shiftmap", self.OnGenShiftmap)
-        visFr.AddMenuItem('Extras', "Calculate Shiftmap (model based)", self.OnGenShiftmapQuad)
-        visFr.AddMenuItem('Extras', "Calculate 3D Shiftmap (model based)", self.OnGenShiftmapQuadz)
+        visFr.AddMenuItem('Corrections>Shiftmaps', "Calculate &Shiftmap", self.OnGenShiftmap)
+        visFr.AddMenuItem('Corrections>Shiftmaps', "Calculate Shiftmap (model based)", self.OnGenShiftmapQuad)
+        visFr.AddMenuItem('Corrections>Shiftmaps', "Calculate 3D Shiftmap (model based)", self.OnGenShiftmapQuadz)
 
     def OnGenShiftmap(self, event):
         from PYME.Analysis.points import twoColour, twoColourPlot
@@ -66,13 +66,16 @@ class ShiftmapGenerator:
             
     def OnGenShiftmapQuad(self, event):
         from PYME.Analysis.points import twoColour, twoColourPlot
+        from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
         pipeline = self.visFr.pipeline
 
-        vs = [pipeline.mdh['voxelsize.x']*1e3, pipeline.mdh['voxelsize.y']*1e3, 200.] 
+        vs = [pipeline.mdh['voxelsize.x']*1e3, pipeline.mdh['voxelsize.y']*1e3, 200.]
         
-        x0 = (pipeline.mdh['Camera.ROIPosX'] -1)*vs[0]
-        y0 = (pipeline.mdh['Camera.ROIPosY'] -1)*vs[1]
+        roi_x0, roi_y0 = get_camera_roi_origin(pipeline.mdh)
+        
+        x0 = (roi_x0)*vs[0]
+        y0 = (roi_y0)*vs[1]
         
         lx = len(pipeline.filter['x'])
         bbox = None#[0,(pipeline.mdh['Camera.ROIWidth'] + 1)*vs[0], 0,(pipeline.mdh['Camera.ROIHeight'] + 1)*vs[1]]

@@ -155,6 +155,8 @@ def getDataErrors(im, metadata):
     return scipy.sqrt(metadata.getEntry('Camera.ReadNoise')**2 + (metadata.getEntry('Camera.NoiseFactor')**2)*metadata.getEntry('Camera.ElectronsPerCount')*metadata.getEntry('Camera.TrueEMGain')*dataROI)/metadata.getEntry('Camera.ElectronsPerCount')    
 
 def genFitImage(fitResults, metadata):
+    from PYME.IO.MetaDataHandler import get_camera_roi_origin
+    
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
     
@@ -162,8 +164,10 @@ def genFitImage(fitResults, metadata):
     vy = 1e3*metadata.voxelsize.y
     
     #position in nm from camera origin
-    x_ = (xslice.start + metadata.Camera.ROIPosX - 1)*vx
-    y_ = (yslice.start + metadata.Camera.ROIPosY - 1)*vy
+    roi_x0, roi_y0 = get_camera_roi_origin(metadata)
+
+    x_ = (xslice.start + roi_x0) * vx
+    y_ = (yslice.start + roi_y0) * vy
     
     #ratio = fitResults['ratio']
     
@@ -187,7 +191,7 @@ class InterpFitFactory(InterpFitR.PSFFitFactory):
     def _evalModel(cls, params, md, xs, ys, x, y):
         #generate grid to evaluate function on
         #setModel(md.PSFFile, md)
-        interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
+        interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + md.getOrDefault('Analysis.InterpModule', 'CSInterpolator') , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
         
         if 'Analysis.EstimatorModule' in md.getEntryNames():
             estimatorModule = md.Analysis.EstimatorModule
@@ -329,7 +333,7 @@ import PYME.localization.MetaDataEdit as mde
 from PYME.localization.FitFactories import Interpolators
 from PYME.localization.FitFactories import zEstimators
 
-PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','CSInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
+PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','CSInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
               mde.FilenameParam('PSFFile', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf|TIFF files|*.tif'),
               mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
               #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),

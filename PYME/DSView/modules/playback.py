@@ -19,11 +19,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-import wx
 import os
-from PYME.Acquire.mytimer import mytimer
+
 import PYME.ui.autoFoldPanel as afp
+import wx
 from PYME import resources
+from PYME.ui.mytimer import mytimer
+
 
 class PlayPanel(wx.Panel):
     def __init__(self, parent, dsviewer):

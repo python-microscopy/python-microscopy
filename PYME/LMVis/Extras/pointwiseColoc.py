@@ -15,7 +15,7 @@ class PointwiseColocaliser:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        visFr.AddMenuItem('Extras', "Pointwise Colocalisation", self.OnPointwiseColoc)
+        visFr.AddMenuItem('Analysis', "Pointwise Colocalisation", self.OnPointwiseColoc)
         
     def OnPointwiseColoc(self, event):
         #from PYME import mProfile

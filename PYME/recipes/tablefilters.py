@@ -1,5 +1,5 @@
 from .base import register_module, register_legacy_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr, ListInt
 
 import numpy as np
 import pandas as pd
@@ -51,6 +51,10 @@ class FilterTable(ModuleBase):
 
     @property
     def pipeline_view(self):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
         from traitsui.api import View, Group, Item
         from PYME.ui.custom_traits_editors import FilterEditor
 
@@ -60,12 +64,78 @@ class FilterTable(ModuleBase):
 
     @property
     def default_view(self):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
         from traitsui.api import View, Group, Item
         from PYME.ui.custom_traits_editors import CBEditor, FilterEditor
 
         return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
                     Item('_'),
                     Item('filters', editor=FilterEditor(datasource=self._ds)),
+                    Item('_'),
+                    Item('outputName'), buttons=['OK'])
+
+
+@register_module('FilterTableByIds')
+class FilterTableByIDs(ModuleBase):
+    """Filter a table by specifying valid ranges for table columns"""
+    inputName = Input('measurements')
+    idColumnName = CStr('clumpID')
+    ids = ListInt()
+    outputName = Output('filtered')
+
+    def execute(self, namespace):
+        inp = namespace[self.inputName]
+
+        filtered = tabular.idFilter(inp, id_column=self.idColumnName, valid_ids=self.ids)
+
+        if 'mdh' in dir(inp):
+            filtered.mdh = inp.mdh
+
+        namespace[self.outputName] = filtered
+
+    @property
+    def _ds(self):
+        try:
+            return self._parent.namespace[self.inputName]
+        except:
+            return None
+        
+    @property
+    def _possible_ids(self):
+        ids = [int(id) for id in set(self._ds[self.idColumnName]) if id > 0]
+        
+        return ids
+
+    @property
+    def pipeline_view(self):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
+        from traitsui.api import View, Group, Item, TextEditor, SetEditor
+
+        modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
+
+        return View(Group(Item('idColumnName'),
+                          Item('ids', editor=SetEditor(values=self._possible_ids)),
+                          label=modname))
+
+    @property
+    def default_view(self):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
+        from traitsui.api import View, Group, Item, TextEditor, SetEditor
+        from PYME.ui.custom_traits_editors import CBEditor, FilterEditor
+
+        return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
+                    Item('_'),
+                    Item('idColumnName'),
+                    Item('ids', editor=SetEditor(values=self._possible_ids)),
                     Item('_'),
                     Item('outputName'), buttons=['OK'])
 
@@ -150,6 +220,24 @@ class SelectTableColumns(ModuleBase):
         namespace[self.outputName] = out
 
 
+@register_module('RandomSubset')
+class RandomSubset(ModuleBase):
+    """Select a random subset of rows from a table"""
+    input = Input('input')
+    output = Output('output')
+    numToSelect = Int(100)
+    
+    def execute(self, namespace):
+        data = namespace[self.input]
+        
+        out = tabular.randomSelectionFilter(data, num_Samples=self.numToSelect)
+        
+        try:
+            out.mdh = data.mdh
+        except AttributeError:
+            pass
 
+        namespace[self.outputName] = out
+        
 
 

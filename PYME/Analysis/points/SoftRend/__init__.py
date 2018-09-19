@@ -21,4 +21,4 @@
 #
 ##################
 
-from triRend import *
+from .triRend import *

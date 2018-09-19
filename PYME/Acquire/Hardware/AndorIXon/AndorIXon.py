@@ -75,6 +75,12 @@ noiseProperties = {
     },
 }
 
+preamp_gains = {
+    1823 : 0,
+    5414 : 0,
+    7863 : 2,
+}
+
 class iXonCamera:
     #numpy_frames=1
 
@@ -199,12 +205,13 @@ class iXonCamera:
             raise RuntimeError('Error setting HS speed: %s' % ac.errorCodes[ret])
 
         #FIXME - do something about selecting A/D channel
-
-        # this is in David's part of the code - I stay with preampGain 3 for now
-        # self.preampGain = 2 #gain of "3" 
-        # ret = ac.SetPreAmpGain(self.preampGain)
-        # if not ret == ac.DRV_SUCCESS:
-        #    raise RuntimeError('Error setting Preamp gain: %s' % ac.errorCodes[ret])
+        
+        #set the preamp gain if we have data for our camera, otherwise default to highest
+        # NOTE: this is important as other software may have left it in an undefined state
+        self.preampGain = preamp_gains.get(self.GetSerialNumber(), 2) #gain of "3"
+        ret = ac.SetPreAmpGain(self.preampGain)
+        if not ret == ac.DRV_SUCCESS:
+            raise RuntimeError('Error setting Preamp gain: %s' % ac.errorCodes[ret])
 
 
         self.binning=False #binning flag - binning is off
@@ -346,6 +353,13 @@ class iXonCamera:
 
     def GetDelayTime(*args):
         raise Exception('Not implemented yet!!')
+
+    def SetPreampGain(self, gain):
+        self.__selectCamera()
+        self.preampGain = gain
+        ret = ac.SetPreAmpGain(self.preampGain)
+        if not ret == ac.DRV_SUCCESS:
+            raise RuntimeError('Error setting Preamp gain: %s' % ac.errorCodes[ret])
 
 
     def SetIntegTime(self, iTime):
@@ -568,6 +582,7 @@ class iXonCamera:
         self.__selectCamera()
         #print chSlice
         #pc = chSlice.split('_')[1]
+        #pc = chSlice.split('_')[1]
         #ret = ac.GetAcquiredData16(cast(c_void_p(int(pc[6:8]+pc[4:6]+pc[2:4]+pc[0:2],16)), POINTER(c_ushort)), self.GetPicWidth()*self.GetPicHeight())
         #ret = ac.GetAcquiredData16(cast(c_void_p(int(chSlice)), POINTER(c_ushort)), self.GetPicWidth()*self.GetPicHeight())
 
@@ -760,6 +775,8 @@ class iXonCamera:
 
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
+            mdh.setEntry('Camera.ROIOriginX', self.GetROIX1()-1)
+            mdh.setEntry('Camera.ROIOriginY', self.GetROIY1()-1)
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
             mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
             mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())

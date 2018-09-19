@@ -34,7 +34,7 @@ except:
 import numpy as np
 #from matplotlib import cm
 from PYME.ui import histLimits
-from displayOptions import DisplayOpts, fast_grey, labeled
+from .displayOptions import DisplayOpts, fast_grey, labeled
 
 import os
 dirname = os.path.dirname(__file__)
@@ -61,7 +61,7 @@ class OptionsPanel(wx.Panel):
         self.hcs = []
         self.shIds = []
 
-        cmapnames = pylab.cm.cmapnames + ['fastGrey', 'labeled']# + [n + '_r' for n in pylab.cm.cmapnames]
+        cmapnames = list(pylab.cm.cmapnames) + ['fastGrey', 'labeled']# + [n + '_r' for n in pylab.cm.cmapnames]
         cmapnames.sort()
         ##do = parent.do
 

@@ -17,6 +17,13 @@ PYME on a variety of platforms. We currently provide compiled packages for 64 bi
     command line there is also a :ref:`completely graphical way of doing the installation <installationanacondagui>`. If
     you are looking to actively develop PYME or want to use it to control microscope hardware, see :ref:`installationFromSource`.
 
+.. note::
+
+    The instructions here assume a clean anaconda install. If you already use anaconda for other work, consider installing
+    PYME in a dedicated conda environment e.g. `conda create -n PYME python=2.7` (see https://conda.io/docs/user-guide/tasks/manage-environments.html for details).
+    The downside of this is that you will need to run `source activate PYME` before you can run any of the PYME programs.
+    You might also not be able to associate files to open with dh5view or VisGUI on windows.
+
 STEP 1: Installing Anaconda
 ===========================
 
@@ -46,10 +53,23 @@ start menu) and running the following two commands:
 
 .. code-block:: bash
 	
-	conda config --add channels david_baddeley
-	conda install python-microscopy
+    conda config --add channels david_baddeley
+    conda install python-microscopy
 
 This should download and install PYME, along with a number of it's dependencies.
+
+.. note::
+
+    **Troubleshooting:** There appears to be a dependency conflict between the `mayavi` (which we use for 3D
+    visualization) and `navigator-updater` packages in recent versions of Anaconda. As `navigator-updater`
+    is installed by default, this can prevent `python-microscopy` from installing. If the installation above fails
+    with an error message about dependencies, try running ``conda uninstall navigator-updater`` and then re-running
+    ``conda install python-microscopy``.
+
+    Other dependency issues can result in an old version of PYME being installed (most likely in older anaconda installs)
+    A good sanity check is to look at what version conda wants to install when you run `conda install python-microscopy`.
+    If it's older than a month or two (PYME uses date based versions) something is going wrong.
+
 
 STEP 3: Verifying the Installation
 ==================================

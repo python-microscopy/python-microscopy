@@ -39,14 +39,18 @@ def get_labels_from_image(label_image, points):
     numPerObject: Number of localizations within the label that a given localization belongs to
 
     """
+    from PYME.IO.MetaDataHandler import get_camera_roi_origin
+    
     im_ox, im_oy, im_oz = label_image.origin
 
     # account for ROIs
     try:
-        p_ox = point.mdh['Camera.ROIPosX'] * points.mdh['voxelsize.x'] * 1e3
-        p_oy = points.mdh['Camera.ROIPosY'] * points.mdh['voxelsize.y'] * 1e3
+        roi_x0, roi_y0 = get_camera_roi_origin(points.mdh)
+
+        p_ox = roi_x0 * points.mdh['voxelsize.x'] * 1e3
+        p_oy = roi_y0 * points.mdh['voxelsize.y'] * 1e3
     except AttributeError:
-        raise RuntimeError('label image requires metadata specifying the voxelsize')
+        raise RuntimeError('label image requires metadata specifying ROI position and voxelsize')
 
     pixX = np.round((points['x'] + p_ox - im_ox) / label_image.pixelSize).astype('i')
     pixY = np.round((points['y'] + p_oy - im_oy) / label_image.pixelSize).astype('i')
@@ -71,9 +75,9 @@ def get_labels_from_image(label_image, points):
     return ids, numPerObject
 
 measurement_dtype = [('count', '<i4'),
-                     ('x', '<f4'),('y', '<f4'),('z', '<f4'),
+                     ('x', '<f4'), ('y', '<f4'), ('z', '<f4'),
                      ('gyrationRadius', '<f4'),
-                     ('axis0', '<3f4'),('axis1', '<3f4'),('axis2', '<3f4'),
+                     ('axis0', '<3f4'), ('axis1', '<3f4'), ('axis2', '<3f4'),
                      ('sigma0', '<f4'), ('sigma1', '<f4'), ('sigma2', '<f4'),
                      ('theta', '<f4'), ('phi', '<f4')]
 
@@ -84,6 +88,8 @@ def measure_3d(x, y, z, output=None):
     #count
     N = len(x)
     output['count'] = N
+    if N < 3:
+        raise UserWarning('measure_3D can only be used on clusters of size 3 or larger')
     
     #centroid
     xc, yc, zc = x.mean(), y.mean(), z.mean()
@@ -97,10 +103,11 @@ def measure_3d(x, y, z, output=None):
     
     #radius of gyration
     output['gyrationRadius'] = np.sqrt(np.mean(x_*x_ + y_*y_ + z_*z_))
-    
+
     #principle axes
     u, s, v = np.linalg.svd(np.vstack([x_, y_, z_]).T)
-    
+
+
     for i in range(3):
         output['axis%d' % i] = v[i]
         #std. deviation along axes

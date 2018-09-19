@@ -27,9 +27,9 @@ import pylab
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
 class ColocSettingsDialog(wx.Dialog):
-    def __init__(self, parent, pxSize=100, names = [], zsize=1):
+    def __init__(self, parent, pxSize=100, names = [], have_mask=False, z_size=1, coloc_vs_z=False):
         wx.Dialog.__init__(self, parent, title='Colocalisation Settings')
-        self.zsize = zsize
+        self.zsize = z_size
         
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         
@@ -54,17 +54,28 @@ class ColocSettingsDialog(wx.Dialog):
         
         sizer1.Add(hsizer, 0, wx.EXPAND)
         
-        if self.zsize > 1:
+        if have_mask:
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
-            hsizer.Add(wx.StaticText(self, -1, 'z start:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
-            self.tzs = wx.TextCtrl(self, -1, '0', size=[30,-1])
-            hsizer.Add(self.tzs, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-            hsizer.Add(wx.StaticText(self, -1, 'z end:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
-            self.tze = wx.TextCtrl(self, -1, '%d' % (self.zsize-1), size=[30,-1])
-            hsizer.Add(self.tze, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-            
+            hsizer.Add(wx.StaticText(self, -1, 'Use Mask:'), 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+            self.cbUseMask = wx.CheckBox(self, -1)
+            self.cbUseMask.SetValue(False)
+            hsizer.Add(self.cbUseMask, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+    
             sizer1.Add(hsizer, 0, wx.EXPAND)
 
+
+    if self.zsize > 1:
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'z start:'), 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tzs = wx.TextCtrl(self, -1, '0', size=[30, -1])
+        hsizer.Add(self.tzs, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(self, -1, 'z end:'), 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tze = wx.TextCtrl(self, -1, '%d' % (self.zsize - 1), size=[30, -1])
+        hsizer.Add(self.tze, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        
+        sizer1.Add(hsizer, 0, wx.EXPAND)
+        
+        
         if len(names) > 0:
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             hsizer.Add(wx.StaticText(self, -1, '1st Channel:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
@@ -93,6 +104,14 @@ class ColocSettingsDialog(wx.Dialog):
         
     def GetChans(self):
         return [self.cChan1.GetSelection(), self.cChan2.GetSelection()]
+    
+    def GetUseMask(self):
+        cbMask = getattr(self, 'cbUseMask', None)
+        
+        if cbMask is None:
+            return False
+        else:
+            return cbMask.GetValue()
 
     def GetZrange(self):
         if self.zsize <= 1:
@@ -131,7 +150,7 @@ class colocaliser:
 
 
     
-    def OnColoc(self, event):
+    def OnColoc(self, event=None, restrict_z=False):
         from PYME.Analysis.Colocalisation import correlationCoeffs, edtColoc
         from scipy import interpolate
         voxelsize = [1e3*self.image.mdh.getEntry('voxelsize.x') ,1e3*self.image.mdh.getEntry('voxelsize.y'), 1e3*self.image.mdh.getEntry('voxelsize.z')]
@@ -140,21 +159,44 @@ class colocaliser:
             names = self.image.mdh.getEntry('ChannelNames')
         except:
             names = ['Channel %d' % n for n in range(self.image.data.shape[3])]
+            
+        if not getattr(self.image, 'labels', None) is None:
+            have_mask = True
+            
+            mask = (self.image.labels > 0.5).squeeze()
+        else:
+            have_mask = False
+            mask = None
         
-        dlg = ColocSettingsDialog(self.dsviewer, voxelsize[0], names, self.image.data.shape[2])
+        if not restrict_z:
+            dlg = ColocSettingsDialog(self.dsviewer, voxelsize[0], names, have_mask=have_mask)
+        else:
+            dlg = ColocSettingsDialog(self.dsviewer, voxelsize[0], names, have_mask=have_mask, z_size=self.image.data.shape[2])
         dlg.ShowModal()
         
         bins = dlg.GetBins()
         chans = dlg.GetChans()
+        use_mask = dlg.GetUseMask()
+
+        zs, ze = (0, self.image.data.shape[2])
+        if (self.image.data.shape[2] > 1) and restrict_z:
+            zs, ze = dlg.GetZrange()
+            
         zs,ze = (0,1)
         if self.image.data.shape[2] > 1:
             zs,ze = dlg.GetZrange()
         dlg.Destroy()
+        
+        print('Use mask: %s' % use_mask)
+        
+        if not use_mask:
+            mask=None
+        
 
         #assume we have exactly 2 channels #FIXME - add a selector
         #grab image data
-        imA = self.image.data[:,:,zs:ze+1,chans[0]].squeeze()
-        imB = self.image.data[:,:,zs:ze+1,chans[1]].squeeze()
+        imA = self.image.data[:,:,zs:ze,chans[0]].squeeze()
+        imB = self.image.data[:,:,zs:ze,chans[1]].squeeze()
 
         #assume threshold is half the colour bounds - good if using threshold mode
         tA = self.do.Offs[chans[0]] + .5/self.do.Gains[chans[0]] #pylab.mean(self.ivps[0].clim)
@@ -166,58 +208,59 @@ class colocaliser:
         voxelsize = voxelsize[:imA.ndim] #trunctate to number of dimensions
 
         print('Calculating Pearson and Manders coefficients ...')        
-        pearson = correlationCoeffs.pearson(imA, imB)
-        MA, MB = correlationCoeffs.thresholdedManders(imA, imB, tA, tB)
+        pearson = correlationCoeffs.pearson(imA, imB, roi_mask=mask)
+        MA, MB = correlationCoeffs.thresholdedManders(imA, imB, tA, tB, roi_mask=mask)
 
-        MAzs, MBzs = ([],[])
-        FAzs, FBzs = ([],[])
-        if self.image.data.shape[2] > 1:
-            for z in range(self.image.data.shape[2]):
-                imAz = self.image.data[:,:,z,chans[0]].squeeze()
-                imBz = self.image.data[:,:,z,chans[1]].squeeze()
-                MAz, MBz = correlationCoeffs.thresholdedManders(imAz, imBz, tA, tB)
-                FAz, FBz = correlationCoeffs.maskFractions(imAz, imBz, tA, tB)
-                MAzs.append(MAz)
-                MBzs.append(MBz)
-                FAzs.append(FAz)
-                FBzs.append(FBz)
-                
-            print "M(A->B) ",MAzs
-            print "M(B->A) ",MBzs
-            print "Species A: %s, Species B: %s" %(nameA,nameB)
+        if coloc_vs_z:
+            MAzs, MBzs = ([],[])
+            FAzs, FBzs = ([],[])
+            if self.image.data.shape[2] > 1:
+                for z in range(self.image.data.shape[2]):
+                    imAz = self.image.data[:,:,z,chans[0]].squeeze()
+                    imBz = self.image.data[:,:,z,chans[1]].squeeze()
+                    MAz, MBz = correlationCoeffs.thresholdedManders(imAz, imBz, tA, tB)
+                    FAz, FBz = correlationCoeffs.maskFractions(imAz, imBz, tA, tB)
+                    MAzs.append(MAz)
+                    MBzs.append(MBz)
+                    FAzs.append(FAz)
+                    FBzs.append(FBz)
+                    
+                print "M(A->B) ",MAzs
+                print "M(B->A) ",MBzs
+                print "Species A: %s, Species B: %s" %(nameA,nameB)
+    
+                pylab.figure()
+                pylab.subplot(211)
+                if 'filename' in self.image.__dict__:
+                    pylab.title(self.image.filename)
+                # nameB with nameA
+                cAB, = pylab.plot(MAzs,'o', label = '%s with %s' %(nameB,nameA))
+                # nameA with nameB
+                cBA, = pylab.plot(MBzs,'*', label = '%s with %s' %(nameA,nameB))
+                pylab.legend([cBA,cAB])
+                pylab.xlabel('z slice level')
+                pylab.ylabel('Manders coloc fraction')
+                pylab.ylim(0,None)
+    
+                pylab.subplot(212)
+                if 'filename' in self.image.__dict__:
+                    pylab.title(self.image.filename)
+                # nameB with nameA
+                fA, = pylab.plot(FAzs,'o', label = '%s mask fraction' %(nameA))
+                # nameA with nameB
+                fB, = pylab.plot(FBzs,'*', label = '%s mask fraction' %(nameB))
+                pylab.legend([fA,fB])
+                pylab.xlabel('z slice level')
+                pylab.ylabel('Mask fraction')
+                pylab.ylim(0,None)
+                pylab.show()
 
-            pylab.figure()
-            pylab.subplot(211)
-            if 'filename' in self.image.__dict__:
-                pylab.title(self.image.filename)
-            # nameB with nameA
-            cAB, = pylab.plot(MAzs,'o', label = '%s with %s' %(nameB,nameA))
-            # nameA with nameB
-            cBA, = pylab.plot(MBzs,'*', label = '%s with %s' %(nameA,nameB))
-            pylab.legend([cBA,cAB])
-            pylab.xlabel('z slice level')
-            pylab.ylabel('Manders coloc fraction')
-            pylab.ylim(0,None)
-
-            pylab.subplot(212)
-            if 'filename' in self.image.__dict__:
-                pylab.title(self.image.filename)
-            # nameB with nameA
-            fA, = pylab.plot(FAzs,'o', label = '%s mask fraction' %(nameA))
-            # nameA with nameB
-            fB, = pylab.plot(FBzs,'*', label = '%s mask fraction' %(nameB))
-            pylab.legend([fA,fB])
-            pylab.xlabel('z slice level')
-            pylab.ylabel('Mask fraction')
-            pylab.ylim(0,None)
-            pylab.show()
-
-        print('Performing distance transform ...')        
-        bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize, bins)
-        bnAA, bmAA, binsA = edtColoc.imageDensityAtDistance(imA, imA > tA, voxelsize, bins)
+        print('Performing distance transform ...')
+        bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize, bins, roi_mask=mask)
+        bnAA, bmAA, binsA = edtColoc.imageDensityAtDistance(imA, imA > tA, voxelsize, bins, roi_mask=mask)
         print('Performing distance transform (reversed) ...') 
-        bnB, bmB, binsB = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize, bins)
-        bnBB, bmBB, binsB = edtColoc.imageDensityAtDistance(imB, imB > tB, voxelsize, bins)
+        bnB, bmB, binsB = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize, bins, roi_mask=mask)
+        bnBB, bmBB, binsB = edtColoc.imageDensityAtDistance(imB, imB > tB, voxelsize, bins, roi_mask=mask)
         
         #print binsB, bmB
         

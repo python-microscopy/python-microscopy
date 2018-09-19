@@ -22,17 +22,33 @@
 ##################
 import numpy as np
 
-def pearson(X, Y):
+def pearson(X, Y, roi_mask=None):
+    if not roi_mask is None:
+        print X.shape, roi_mask.shape
+        X = X[roi_mask]
+        Y = Y[roi_mask]
+        
     X = X - X.mean()
     Y = Y-Y.mean()
     return (X*Y).sum()/np.sqrt((X*X).sum()*(Y*Y).sum())
 
-def overlap(X, Y):
+def overlap(X, Y, roi_mask=None):
+    if not roi_mask is None:
+        X = X[roi_mask]
+        Y = Y[roi_mask]
+    
     return (X*Y).sum()/np.sqrt((X*X).sum()*(Y*Y).sum())
 
 
-def thresholdedManders(A, B, tA, tB):
+def thresholdedManders(A, B, tA, tB, roi_mask=None):
     """Manders, as practically used with threshold determined masks"""
+    A = A.astype('f')
+    B = B.astype('f')
+    if not roi_mask is None:
+        A = A[roi_mask]
+        B = B[roi_mask]
+        
+        #print A.shape, B.shape, tA, tB, A.sum(), (B>tB).sum()
 
     MA = ((B > tB)*A).sum()/A.sum()
     MB = ((A > tA)*B).sum()/B.sum()

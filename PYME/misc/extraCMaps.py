@@ -30,7 +30,7 @@ def regCmap(cmap):
 
 if not 'cmapnames' in dir(pylab.cm):
     if 'cmap_d' in dir(pylab.cm):
-        pylab.cm.cmapnames = pylab.cm.cmap_d.keys()
+        pylab.cm.cmapnames = list(pylab.cm.cmap_d.keys())
     else:
         pylab.cm.cmapnames = pylab.cm._cmapnames
 
@@ -54,7 +54,7 @@ _hsv_part = {'red':   ((0., 1., 1.),(0.25, 1.000000, 1.000000),
 
 ndat = {'r':_r, 'g':_g, 'b':_b, 'c':_c, 'm':_m, 'y':_y, 'hsp': _hsv_part}
 
-ncmapnames = ndat.keys()
+ncmapnames = list(ndat.keys())
 pylab.cm.cmapnames += ncmapnames
 for cmapname in ncmapnames:
     pylab.cm.__dict__[cmapname] = colors.LinearSegmentedColormap(cmapname, ndat[cmapname], pylab.cm.LUTSIZE)

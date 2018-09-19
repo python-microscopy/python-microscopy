@@ -42,7 +42,7 @@ class SplashPanel(wx.Panel):
         #for ti in tims:
         #    self.times[ti[0]] = ti[1]
         
-        wx.EVT_PAINT(self, self.OnPaint)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
 
         logofilename = resources.getIconPath('logo_fmhs.png')
 
@@ -119,12 +119,12 @@ class SplashPanel(wx.Panel):
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
         try:
-            DC.BeginDrawing()
+            #DC.BeginDrawing()
 
             self.DoPaint(MemDC);
 
             DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
-            DC.EndDrawing()
+            #DC.EndDrawing()
         finally:
 
             del MemDC

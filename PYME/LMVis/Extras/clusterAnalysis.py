@@ -36,17 +36,17 @@ class ClusterAnalyser:
         self.pairwiseDistances = {}
         self.clusterMeasures = []
 
-        visFr.AddMenuItem('Extras>Clustering', 'DBSCAN Clump', self.OnClumpDBSCAN,
+        visFr.AddMenuItem('Analysis>Clustering', 'DBSCAN Clump', self.OnClumpDBSCAN,
                           helpText='')
-        visFr.AddMenuItem('Extras>Clustering', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
+        visFr.AddMenuItem('Analysis>Clustering', 'DBSCAN - find mixed clusters', self.OnFindMixedClusters,
                           helpText='')
-        visFr.AddMenuItem('Extras>Clustering', 'Cluster count vs. imaging time', self.OnClustersInTime,
+        visFr.AddMenuItem('Analysis>Clustering', 'Cluster count vs. imaging time', self.OnClustersInTime,
                           helpText='')
-        visFr.AddMenuItem('Extras>Clustering', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
+        visFr.AddMenuItem('Analysis>Clustering', 'Pairwise Distance Histogram', self.OnPairwiseDistanceHistogram,
                           helpText='')
-        visFr.AddMenuItem('Extras>Clustering', 'Nearest Neighbor Distance Histogram', self.OnNearestNeighbor,
+        visFr.AddMenuItem('Analysis>Clustering', 'Nearest Neighbor Distance Histogram', self.OnNearestNeighbor,
                           helpText='')
-        visFr.AddMenuItem('Extras>Clustering', 'Measure Clusters', self.OnMeasureClusters,
+        visFr.AddMenuItem('Analysis>Clustering', 'Measure Clusters', self.OnMeasureClusters,
                           helpText='')
 
 
@@ -181,9 +181,9 @@ class ClusterAnalyser:
 
         #filter unclumped points
         rec.add_module(tablefilters.FilterTable(rec,inputName='chan0_clumped', outputName='chan0_cleaned',
-                                                         filters={'dbscanClumpID' : [.5, sys.maxint]}))
+                                                         filters={'dbscanClumpID' : [.5, sys.maxsize]}))
         rec.add_module(tablefilters.FilterTable(rec,inputName='chan1_clumped', outputName='chan1_cleaned',
-                                               filters={'dbscanClumpID': [.5, sys.maxint]}))
+                                               filters={'dbscanClumpID': [.5, sys.maxsize]}))
 
         #rejoin cleaned datasets
         rec.add_module(tablefilters.ConcatenateTables(rec,inputName0='chan0_cleaned', inputName1='chan1_cleaned',
@@ -316,7 +316,7 @@ class ClusterAnalyser:
         # build a recipe programatically
         measrec = ModuleCollection()
 
-        measrec.add_module(localisations.MeasureClusters(measrec, inputName='input', labelsKey='dbscanClustered',
+        measrec.add_module(localisations.MeasureClusters3D(measrec, inputName='input', labelsKey='dbscanClustered',
                                                        outputName='output'))
 
         measrec.namespace['input'] = self.pipeline

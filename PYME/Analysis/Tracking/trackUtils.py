@@ -146,6 +146,10 @@ def powerMod2D(p,t):
     D, alpha = p
     return 4*D*t**alpha #factor 4 for 2D (6 for 3D)
 
+def powerMod3D(p,t):
+    D, alpha = p
+    return 6*D*t**alpha #factor 4 for 2D (6 for 3D)
+
 
         
 class Track(Clump):
@@ -197,7 +201,13 @@ class Track(Clump):
             res = FitModel(powerMod2D, [h[-1]/t_[-1], 1.], h[1:], t_[1:])
             D, alpha = res[0]
             
-            self._msdinfo = {'t':t_, 'msd':h, 'D':D, 'alpha':alpha}
+            
+            #calculate the diffusion coefficient for normal (not anomolous diffusion)
+            #restrict to the first 100 bins to try and minimise effects of drift
+            #fit an offset to take localization precision into account
+            D_ = float(np.linalg.lstsq(np.vstack([t_[1:100], np.ones_like(t_[1:100])]).T, h[1:100])[0][0]/4)
+            
+            self._msdinfo = {'t':t_, 'msd':h, 'D':D, 'alpha':alpha, 'Dnormal' : D_}
         
         return self._msdinfo
         
@@ -333,6 +343,50 @@ def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
     pipeline.addColumn('trackVelocity', trackVelocities)
     
     pipeline.clumps = ClumpManager(pipeline)
+
+
+def findTracks2(datasource, rad_var='error_x', multiplier='2.0', nFrames=20, minClumpSize=0):
+    import PYME.Analysis.points.DeClump.deClump as deClump
+    from PYME.IO import tabular
+    
+    with_clumps = tabular.mappingFilter(datasource)
+    
+    if rad_var == '1.0':
+        delta_x = 0 * datasource['x'] + multiplier
+    else:
+        delta_x = multiplier * datasource[rad_var]
+    
+    t = datasource['t'].astype('i')
+    x = datasource['x'].astype('f4')
+    y = datasource['y'].astype('f4')
+    delta_x = delta_x.astype('f4')
+    
+    I = np.argsort(t)
+    
+    clumpIndices = np.zeros(len(x), dtype='i')
+    clumpIndices[I] = deClump.findClumpsN(t[I], x[I], y[I], delta_x[I], nFrames)
+    
+    numPerClump, b = np.histogram(clumpIndices, np.arange(clumpIndices.max() + 1.5) + .5)
+    
+    trackVelocities = 0 * x
+    trackVelocities[I] = calcTrackVelocity(x[I], y[I], clumpIndices[I], t.astype('f')[I])
+    #print b
+    
+    with_clumps.addColumn('clumpIndex', clumpIndices)
+    with_clumps.addColumn('clumpSize', numPerClump[clumpIndices - 1])
+    with_clumps.addColumn('trackVelocity', trackVelocities)
+    
+    if minClumpSize > 0:
+        filt = tabular.resultsFilter(with_clumps, clumpSize=[minClumpSize, 1e6])
+    else:
+        filt = with_clumps
+
+    try:
+        filt.mdh = datasource.mdh
+    except AttributeError:
+        pass
+    
+    return with_clumps, ClumpManager(filt)
 
 
 def calcTrackVelocity(x, y, ci, t):

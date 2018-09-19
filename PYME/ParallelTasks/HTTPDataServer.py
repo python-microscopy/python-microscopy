@@ -29,14 +29,36 @@ compName = GetComputerName()
 import os
 import html
 
+import errno
+def makedirs_safe(dir):
+    """
+    A safe wrapper for makedirs, which won't throw an error if the directory already exists. This replicates the functionality
+    of the exists_ok flag in  the python 3 version of os.makedirs, but should work with both pytion 2 and python 3.
+
+    Parameters
+    ----------
+    dir : str, directory to be created
+
+    Returns
+    -------
+
+    """
+    try:
+        os.makedirs(dir)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
+
 #make sure we set up our logging before anyone elses does
 import logging
 import logging.handlers
 dataserver_root = config.get('dataserver-root')
 if dataserver_root:
     log_dir = '%s/LOGS/%s' % (dataserver_root, compName)
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+    #if not os.path.exists(log_dir):
+    #    os.makedirs(log_dir)
+    makedirs_safe(log_dir)
 
     log_file = '%s/LOGS/%s/PYMEDataServer.log' % (dataserver_root, compName)
         
@@ -44,7 +66,7 @@ if dataserver_root:
     #logger = logging.getLogger('')
     logger = logging.getLogger('')
     logger.setLevel(logging.DEBUG)
-    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6)
+    fh = logging.handlers.RotatingFileHandler(filename=log_file, mode='w', maxBytes=1e6, backupCount=1)
     logger.addHandler(fh)
 else:
     logging.basicConfig(level=logging.DEBUG)
@@ -76,7 +98,7 @@ except ImportError:
     
 import requests
 import socket
-import fcntl
+#import fcntl
 import threading
 import datetime
 import time
@@ -93,13 +115,22 @@ compName = GetComputerName()
 procName = compName + ' - PID:%d' % os.getpid()
 
 LOG_REQUESTS = False#True
+USE_DIR_CACHE = True
 
 startTime = datetime.datetime.now()
 #global_status = {}
 
 status = {}
+_net = {}
+_last_update_time = time.time()
+try:
+    import psutil
+    _net.update(psutil.net_io_counters(True))
+except ImportError:
+    pass
 
 def updateStatus():
+    global _last_update_time
     from PYME.IO.FileUtils.freeSpace import disk_usage
 
     #status = {}
@@ -111,9 +142,20 @@ def updateStatus():
 
     try:
         import psutil
+        
+        ut = time.time()
 
         status['CPUUsage'] = psutil.cpu_percent(interval=0, percpu=True)
         status['MemUsage'] = psutil.virtual_memory()._asdict()
+        
+        nets = psutil.net_io_counters(True)
+        dt = ut - _last_update_time
+        
+        status['Network'] = {iface : {'send' : (nets[iface].bytes_sent - _net[iface].bytes_sent)/dt,
+                                      'recv' : (nets[iface].bytes_recv - _net[iface].bytes_recv)/dt} for iface in nets.keys()}
+        
+        _net.update(nets)
+        _last_update_time = ut
     except ImportError:
         pass
 
@@ -170,10 +212,14 @@ _dirCacheTimeout = 1
 
 _listDirLock = threading.Lock()
 
+from PYME.IO import clusterListing as cl
+
 class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     bandwidthTesting = False
+    timeoutTesting = 0
     logrequests = False
+    timeout=None
 
 
     def _aggregate_txt(self):
@@ -188,11 +234,15 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         """
         path = self.translate_path(self.path.lstrip('/')[len('__aggregate_txt'):])
 
-        data = self.rfile.read(int(self.headers['Content-Length']))
+        data = self._get_data()
+        
+        #if self.headers['Content-Encoding'] == 'gzip':
+        #    data = self._gzip_decompress(data)
 
         dirname = os.path.dirname(path)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
+        #if not os.path.exists(dirname):
+        #    os.makedirs(dirname)
+        makedirs_safe(dirname)
 
         #append the contents of the put request
         with getTextFileLock(path):
@@ -201,9 +251,30 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             with open(path, 'ab') as f:
                 f.write(data)
 
+        if USE_DIR_CACHE:
+            cl.dir_cache.update_cache(path, int(len(data)))
+
         self.send_response(200)
         self.send_header("Content-Length", "0")
         self.end_headers()
+
+    def _gzip_decompress(self, data):
+        import gzip
+        from io import BytesIO
+        zbuf = BytesIO(data)
+        zfile = gzip.GzipFile(mode='rb', fileobj=zbuf)#, compresslevel=9)
+        out = zfile.read()
+        zfile.close()
+    
+        return out
+    
+    def _get_data(self):
+        data = self.rfile.read(int(self.headers['Content-Length']))
+    
+        if self.headers.get('Content-Encoding') == 'gzip':
+            data = self._gzip_decompress(data)
+            
+        return data
 
     def _aggregate_h5r(self):
         """
@@ -225,11 +296,12 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         filename, tablename = path.split('.h5r')
         filename += '.h5r'
 
-        data = self.rfile.read(int(self.headers['Content-Length']))
+        data = self._get_data()
 
         dirname = os.path.dirname(filename)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
+        #if not os.path.exists(dirname):
+        #    os.makedirs(dirname)
+        makedirs_safe(dirname)
 
         #logging.debug('opening h5r file')
         with h5rFile.openH5R(filename, 'a') as h5f:
@@ -260,6 +332,8 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 #logging.debug('added data to table')
 
         #logging.debug('left h5r file')
+        if USE_DIR_CACHE:
+            cl.dir_cache.update_cache(filename, int(len(data)))
 
         self.send_response(200)
         self.send_header("Content-Length", "0")
@@ -277,6 +351,13 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         return
 
     def do_PUT(self):
+        if self.timeoutTesting:
+            #exp = time.time() + float(self.timeoutTesting)
+            #while time.time() < exp:
+            #    y = pow(5, 7)
+            time.sleep(float(self.timeoutTesting)) #wait 10 seconds to force a timeout on the clients
+            #print('waited ... ')
+            
         if self.bandwidthTesting:
             #just read file and dump contents
             r = self.rfile.read(int(self.headers['Content-Length']))
@@ -297,14 +378,15 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         if os.path.exists(path):
             #Do not overwrite - we use write-once semantics
-            self.send_error(405, "File already exists")
+            self.send_error(405, "File already exists %s" % path)
 
             #self.end_headers()
             return None
         else:
             dir, file = os.path.split(path)
-            if not os.path.exists(dir):
-                os.makedirs(dir)
+            #if not os.path.exists(dir):
+            #    os.makedirs(dir)
+            makedirs_safe(dir)
 
             query = urlparse.parse_qs(urlparse.urlparse(self.path).query)
 
@@ -320,12 +402,25 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 with open(path, 'wb') as f:
                     f.write(r.content)
+                    
+                #set the file to read-only (reflecting our write-once semantics
+                os.chmod(path, 0o440)
+
+                if USE_DIR_CACHE:
+                    cl.dir_cache.update_cache(path, len(r.content))
 
             else:
                 #the standard case - use the contents of the put request
                 with open(path, 'wb') as f:
                     #shutil.copyfileobj(self.rfile, f, int(self.headers['Content-Length']))
-                    f.write(self.rfile.read(int(self.headers['Content-Length'])))
+                    data = self._get_data()
+                    f.write(data)
+
+                    #set the file to read-only (reflecting our write-once semantics
+                    os.chmod(path, 0o440)
+                    
+                    if USE_DIR_CACHE:
+                        cl.dir_cache.update_cache(path, len(data))
 
             self.send_response(200)
             self.send_header("Content-Length", "0")
@@ -334,6 +429,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         """Serve a GET request."""
+        if self.timeoutTesting:
+            time.sleep(float(self.timeoutTesting)) #wait 10 seconds to force a timeout on the clients
+            
         f = self.send_head()
         if f:
             try:
@@ -346,6 +444,25 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         f = BytesIO()
         f.write(json.dumps(status))
+        length = f.tell()
+        f.seek(0)
+        self.send_response(200)
+        encoding = sys.getfilesystemencoding()
+        self.send_header("Content-type", "application/json; charset=%s" % encoding)
+        self.send_header("Content-Length", str(length))
+        self.end_headers()
+        return f
+    
+    def get_glob(self):
+        import glob
+        query = urlparse.parse_qs(urlparse.urlparse(self.path).query)
+        pattern = query['pattern'][0]
+        
+        logger.debug('glob: pattern = %s' % pattern)
+        matches = glob.glob(pattern)
+
+        f = BytesIO()
+        f.write(json.dumps(matches))
         length = f.tell()
         f.seek(0)
         self.send_response(200)
@@ -368,8 +485,13 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         """
         path = self.translate_path(self.path)
         f = None
+        
         if self.path.lstrip('/') == '__status':
             return self.get_status()
+        
+        if self.path.lstrip('/').startswith('__glob'):
+            return self.get_glob()
+        
         if os.path.isdir(path):
             parts = urlparse.urlsplit(self.path)
             if not parts.path.endswith('/'):
@@ -425,10 +547,17 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             curTime = time.time()
             try:
                 js_dir, expiry = _dirCache[path]
-                if expiry < curTime: raise RuntimeError('Expired')
+                if expiry < curTime:
+                    raise RuntimeError('Expired')
+                
+                #logger.debug('jsoned dir cache hit')
             except (KeyError, RuntimeError):
+                #logger.debug('jsoned dir cache miss')
                 try:
-                    l2 = cl.list_directory(path)
+                    if USE_DIR_CACHE:
+                        l2 = cl.dir_cache.list_directory(path)
+                    else:
+                        l2 = cl.list_directory(path)
                 except os.error:
                     self.send_error(404, "No permission to list directory")
                     return None
@@ -570,12 +699,15 @@ def main(protocol="HTTP/1.0"):
     default_root = config.get('dataserver-root', os.curdir)
     op.add_option('-r', '--root', dest='root', help="Root directory of virtual filesystem (default %s, see also 'dataserver-root' config entry)" % dataserver_root, default=default_root)
     op.add_option('-k', '--profile', dest='profile', help="Enable profiling", default=False, action="store_true")
+    default_server_filter = config.get('dataserver-filter', '')
+    op.add_option('-f', '--server-filter', dest='server_filter', help='Add a serverfilter for distinguishing between different clusters', default=default_server_filter)
+    op.add_option('--timeout-test', dest='timeout_test', help='deliberately make requests timeout for testing error handling in calling modules', default=0)
 
 
     options, args = op.parse_args()
     if options.profile:
         from PYME.util import mProfile
-        mProfile.profileOn(['HTTPDataServer.py',])
+        mProfile.profileOn(['HTTPDataServer.py','clusterListing.py'])
 
         profileOutDir = options.root + '/LOGS/%s/mProf' % compName
 
@@ -588,9 +720,11 @@ def main(protocol="HTTP/1.0"):
 
     PYMEHTTPRequestHandler.protocol_version = 'HTTP/%s' % options.protocol
     PYMEHTTPRequestHandler.bandwidthTesting = options.test
+    PYMEHTTPRequestHandler.timeoutTesting = options.timeout_test
     PYMEHTTPRequestHandler.logrequests = options.log_requests
 
     httpd = ThreadedHTTPServer(server_address, PYMEHTTPRequestHandler)
+    #httpd = http.server.HTTPServer(server_address, PYMEHTTPRequestHandler)
     httpd.daemon_threads = True
 
     sa = httpd.socket.getsockname()
@@ -598,7 +732,7 @@ def main(protocol="HTTP/1.0"):
     ip_addr = socket.gethostbyname(socket.gethostname())
 
     ns = pzc.getNS('_pyme-http')
-    ns.register_service('PYMEDataServer: ' + procName, ip_addr, sa[1])
+    ns.register_service('PYMEDataServer [%s]: ' % options.server_filter + procName, ip_addr, sa[1])
 
     status['IPAddress'] = ip_addr
     status['BindAddress'] = server_address

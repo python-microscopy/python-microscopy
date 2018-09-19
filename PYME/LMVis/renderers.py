@@ -35,8 +35,6 @@ try:
 except SystemExit:
     print('GUI load failed (probably OSX)')
 
-from PYME.Analysis.points.QuadTree import QTrend
-
 
 import pylab
 import numpy as np
@@ -130,8 +128,8 @@ class CurrentRenderer:
             return 0
 
     def _get_neighbour_dists(self):
-        from matplotlib import delaunay
-        triangles = delaunay.Triangulation(
+        from matplotlib import tri
+        triangles = tri.Triangulation(
             self.colourFilter['x'] + .1 * np.random.normal(size=len(self.colourFilter['x'])),
             self.colourFilter['y'] + .1 * np.random.normal(size=len(self.colourFilter['x'])))
 
@@ -402,7 +400,7 @@ class TriangleRenderer(ColourRenderer):
         mdh['Rendering.JitterVariable'] = jitParamName
         mdh['Rendering.JitterScale'] = jitScale
 
-        jitVals = self._genJitVals(jitParamName, jitScale)
+        jitVals = np.maximum(self._genJitVals(jitParamName, jitScale), pixelSize)
 
         if settings['softRender']:
             status = statusLog.StatusLogger("Rendering triangles ...")
@@ -428,7 +426,7 @@ class TriangleRendererW(ColourRenderer):
         mdh['Rendering.JitterVariable'] = jitParamName
         mdh['Rendering.JitterScale'] = jitScale
 
-        jitVals = self._genJitVals(jitParamName, jitScale)
+        jitVals = np.maximum(self._genJitVals(jitParamName, jitScale), pixelSize)
 
         if settings['softRender']:
             status = statusLog.StatusLogger("Rendering triangles ...")
@@ -460,8 +458,8 @@ class Triangle3DRenderer(TriangleRenderer):
         mdh['Rendering.JitterScaleZ'] = jitScaleZ
         mdh['Origin.z'] = settings['zBounds'][0]
 
-        jitVals = self._genJitVals(jitParamName, jitScale)
-        jitValsZ = self._genJitVals(jitParamNameZ, jitScaleZ)
+        jitVals = np.maximum(self._genJitVals(jitParamName, jitScale), pixelSize)
+        jitValsZ = np.maximum(self._genJitVals(jitParamNameZ, jitScaleZ), settings['zSliceThickness'])
 
         return visHelpers.rendJitTet(self.colourFilter['x'],self.colourFilter['y'],
                                      self.colourFilter['z'], settings['numSamples'], jitVals, jitValsZ,
@@ -474,6 +472,7 @@ class QuadTreeRenderer(ColourRenderer):
     mode = 'quadtree'
 
     def genIm(self, settings, imb, mdh):
+        from PYME.Analysis.points.QuadTree import QTrend
         pixelSize = settings['pixelSize']
 
         if not pylab.mod(pylab.log2(pixelSize/self.visFr.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size

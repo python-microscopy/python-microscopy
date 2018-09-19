@@ -67,13 +67,13 @@ class TrackFeatures(ModuleBase):
             
             feats = np.vstack([w*np.array(objects[fn]) for w, fn in weightedFeats])
             
-            self._tracker = tracking.Tracker(np.array(objects['t']), feats)
+            self._tracker = tracking.Tracker(np.array(objects['t']).astype('i'), feats)
             
             self._tracker.pNew=self.pNew
             self._tracker.r0 = self.r0
             self._tracker.linkageCuttoffProb = self.pLinkCutoff
 
-        for i in range(1, (objects['t'].max() + 1)):
+        for i in range(1, (int(objects['t'].max()) + 1)):
             L = self._tracker.calcLinkages(i,i-1)
             self._tracker.updateTrack(i, L)
             
@@ -84,7 +84,7 @@ class TrackFeatures(ModuleBase):
             
             clumpSizes[ind] = ind.sum()
             
-        trackVelocities = trackUtils.calcTrackVelocity(objects['x'], objects['y'], self._tracker.clumpIndex)
+        trackVelocities = trackUtils.calcTrackVelocity(objects['x'], objects['y'], self._tracker.clumpIndex, objects['t'])
         
         clumpInfo = {'clumpIndex': self._tracker.clumpIndex, 'clumpSize': clumpSizes, 'trackVelocity': trackVelocities}
             
@@ -100,7 +100,10 @@ class TrackFeatures(ModuleBase):
             
         clumps = trackUtils.ClumpManager(pipe)
         
-        clumps = [c for c in clumps.all if (c.nEvents > self.minTrackLength) and (c.featuremean['area'] < self.maxParticleSize)]
+        if self.maxParticleSize > 0 and 'area' in clumps[0].keys():
+            clumps = [c for c in clumps.all if (c.nEvents > self.minTrackLength) and (c.featuremean['area'] < self.maxParticleSize)]
+        else:
+            clumps = [c for c in clumps.all if (c.nEvents > self.minTrackLength) ]
 
         clumpInfo = pd.DataFrame(clumpInfo)
         
@@ -131,6 +134,47 @@ class TrackFeatures(ModuleBase):
         
         return clumps
 
+
+@register_module('FindClumps')
+class FindClumps(ModuleBase):
+    """
+    Generates tracks / clumps of single molecules based on spatial and temporal grouping. This is appropriate for
+    diffraction limited objects where size, shape, or other features do not contin useful tracking information.
+    
+    One of the main uses for this module is to chain multiple observations of a single molecule together.
+    """
+    inputName = Input('input')
+    outputName = Output('with_clumps')
+    outputClumps = Output('clumps')
+    
+    timeWindow = Int(3)
+    clumpRadiusScale = Float(2.0)
+    clumpRadiusVariable = CStr('error_x')
+    minClumpSize = Int(2)
+    
+    
+    def execute(self, namespace):
+        import PYME.Analysis.Tracking.trackUtils as trackUtils
+        from PYME.IO import tabular
+        
+        meas = namespace[self.inputName]
+        
+        with_clumps, clumps = trackUtils.findTracks2(meas, self.clumpRadiusVariable, self.clumpRadiusScale,
+                              self.timeWindow, minClumpSize=self.minClumpSize)
+        
+        try:
+            with_clumps.mdh = meas.mdh
+        except AttributeError:
+            pass
+        
+        
+        #clumpInfo, clumps = self.Track(meas, True)
+        namespace[self.outputName] = with_clumps
+        namespace[self.outputClumps] = clumps
+        
+        
+    
+
 @register_module('LoadSpeckles')
 class LoadSpeckles(ModuleBase):
     """Loads Speckle data as used by the karatekin lab"""
@@ -141,6 +185,7 @@ class LoadSpeckles(ModuleBase):
     outputName = Output('speckles')
     leadFrames = Int(10, desc='The number of frames to add to the trace before the start of the speckle')
     followFrames = Int(50, desc='The number of frames to add to the trace after the end of the speckle')
+    edgeRejectionPixels = Int(17, desc='Reject speckles which are within this number of pixels of the image edge')
 
     def execute(self, namespace):
         from PYME.IO.FileUtils import readSpeckle
@@ -154,11 +199,20 @@ class LoadSpeckles(ModuleBase):
         mdh = MetaDataHandler.NestedClassMDHandler()
         mdh['voxelsize.x'] = .001# default pixel size - FIXME
         mdh['voxelsize.y'] = .001
+        
+        #use a default sensor size of 512
+        #this gets over-ridden below if we supply an image
+        clip_region = [self.edgeRejectionPixels, self.edgeRejectionPixels,
+                       512-self.edgeRejectionPixels, 512-self.edgeRejectionPixels]
 
         if not self.inputImage == '':
             inp = namespace[self.inputImage]
             mdh.update(inp.mdh)
             seriesLength = inp.data.shape[2]
+
+            clip_region = [self.edgeRejectionPixels, self.edgeRejectionPixels,
+                           inp.data.shape[0] - self.edgeRejectionPixels, inp.data.shape[1] - self.edgeRejectionPixels]
+            
 
             try:
                 fileInfo['DIRNAME'], fileInfo['IMAGENAME'] = os.path.split(inp.filename)
@@ -170,7 +224,7 @@ class LoadSpeckles(ModuleBase):
 
         specks = readSpeckle.readSpeckles(speckleFN)
         traces = readSpeckle.gen_traces_from_speckles(specks, leadFrames=self.leadFrames,
-                                                      followFrames=self.followFrames, seriesLength=seriesLength)
+                                                      followFrames=self.followFrames, seriesLength=seriesLength, clipRegion=clip_region)
 
         #turn this into an inputFilter object
         inp = tabular.recArrayInput(traces)

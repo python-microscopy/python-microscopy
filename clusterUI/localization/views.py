@@ -4,9 +4,14 @@ from django.core.files.uploadhandler import TemporaryFileUploadHandler
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 import django.forms
 
+import logging
+logger=logging.getLogger(__name__)
+
 import collections
 from PYME.localization import MetaDataEdit as mde
 import PYME.localization.FitFactories
+from PYME.ParallelTasks import HTTPTaskPusher, HTTPRulePusher
+
 FINDING_PARAMS = [#mde.ChoiceParam('Analysis.FitModule', 'Fit module:', default='LatGaussFitFR', choices=PYME.localization.FitFactories.resFitFactories),
                   mde.FloatParam('Analysis.DetectionThreshold', 'Detection threshold:', 1.0),
                   mde.IntParam('Analysis.DebounceRadius', 'Debounce radius:', 4),
@@ -98,51 +103,14 @@ def settings(request, analysisModule='LatGaussFitFR'):
                                                                'analysisModuleChoices' : PYME.localization.FitFactories.resFitFactories,
                                                                'categorized_fields' : fields_by_category})
 
-def _verifyClusterResultsFilename(resultsFilename):
-    from PYME.IO import clusterIO
-    import os
-    if clusterIO.exists(resultsFilename):
-        di, fn = os.path.split(resultsFilename)
-        i = 1
-        stub = os.path.splitext(fn)[0]
-        while clusterIO.exists(os.path.join(di, stub + '_%d.h5r' % i)):
-            i += 1
-
-        resultsFilename = os.path.join(di, stub + '_%d.h5r' % i)
-
-    return resultsFilename
-
-def _launch_localize(analysisMDH, seriesName):
-    import logging
-    import json
-    from PYME.ParallelTasks import HTTPTaskPusher
-    from PYME.IO import MetaDataHandler
-    from PYME.Analysis import MetaData
-    from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
-    from PYME.IO import unifiedIO
-
-    resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(seriesName))
-    logging.debug('Results file: ' + resultsFilename)
-
-    resultsMdh = MetaDataHandler.NestedClassMDHandler()#analysisMDH)
-    resultsMdh.update(json.loads(unifiedIO.read(seriesName + '/metadata.json')))
-    resultsMdh.update(analysisMDH)
-
-    resultsMdh['EstimatedLaserOnFrameNo'] = resultsMdh.getOrDefault('EstimatedLaserOnFrameNo', resultsMdh.getOrDefault('Analysis.StartAt', 0))
-    MetaData.fixEMGain(resultsMdh)
-    #resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
-
-    #TODO - do we need to keep track of the pushers in some way (we currently rely on the fact that the pushing thread
-    #will hold a reference
-    pusher = HTTPTaskPusher.HTTPTaskPusher(dataSourceID=seriesName,
-                                                metadata=resultsMdh, resultsFilename=resultsFilename)
-
-    logging.debug('Queue created')
-
 
 def localize(request, analysisModule='LatGaussFitFR'):
     #import json
     from PYME.IO import MetaDataHandler
+    import copy
+    import time
+    from PYME import config
+    USE_RULES = config.get('PYMERuleserver-use', True)
     from PYME.Analysis import MetaData
 
     analysisModule = request.POST.get('Analysis.FitModule', analysisModule).encode()
@@ -154,17 +122,45 @@ def localize(request, analysisModule='LatGaussFitFR'):
     f.cleaned_data['Analysis.FitModule'] = analysisModule
 
     #print json.dumps(f.cleaned_data)
-    analysisMDH = MetaDataHandler.NestedClassMDHandler(MetaData.TIRFDefault)
+    # NB - any metadata entries given here will override the series metadata later: pass analysis settings only
+    analysisMDH = MetaDataHandler.NestedClassMDHandler()
     analysisMDH.update(f.cleaned_data)
 
     #print request.GET
     #print request.POST.getlist('series', [])
 
     #resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
+    
+    remaining_series = request.POST.getlist('series', [])
+    
+    nSeries = len(remaining_series)
+    
+    nAttempts = 0
+    
+    while len(remaining_series) > 0 and nAttempts < 3:
+        nAttempts += 1
+        
+        seriesToLaunch = copy.copy(remaining_series)
+        remaining_series = []
+    
+        for seriesName in seriesToLaunch:
+            try:
+                if USE_RULES:
+                    HTTPRulePusher.launch_localize(analysisMDH, seriesName)
+                else:
+                    HTTPTaskPusher.launch_localize(analysisMDH, seriesName)
+            except:
+                logger.exception('Error launching analysis for %s' % seriesName)
+                
+                remaining_series.append(seriesName)
+                
+        if len(remaining_series) > 0:
+            logging.debug('%d series were not launched correctly, waiting 20s and retrying' % len(remaining_series))
+            time.sleep(20)
 
-    for seriesName in request.POST.getlist('series', []):
-        _launch_localize(analysisMDH, seriesName)
-
+    nFailed = len(remaining_series)
+    if nFailed > 0:
+        raise RuntimeError('Failed to push %d of %d series' % (nFailed, nSeries))
 
     return HttpResponseRedirect('/status/queues/')
 

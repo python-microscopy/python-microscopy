@@ -46,10 +46,18 @@ start menu) and running the following two commands:
 
 .. code-block:: bash
 	
-	conda config --add channels david_baddeley
-	conda install python-microscopy
+    conda config --add channels david_baddeley
+    conda install python-microscopy
 
 This should download and install PYME, along with a number of it's dependencies.
+
+.. note::
+
+    **Troubleshooting:** There appears to be a dependency conflict between the `mayavi` (which we use for 3D
+    visualization) and `navigator-updater` packages in recent versions of Anaconda. As `navigator-updater`
+    is installed by default, this can prevent `python-microscopy` from installing. If the installation above fails
+    with an error message about dependencies, try running ``conda uninstall navigator-updater`` and then re-running
+    ``conda install python-microscopy``.
 
 STEP 3: Verifying the Installation
 ==================================

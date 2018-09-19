@@ -58,7 +58,7 @@ class FilterPanel(wx.Panel):
         #GUI stuff
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.lFiltKeys = wx.ListCtrl(self, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER, size=(-1, 30*(len(self.filterKeys.keys())+1)))
+        self.lFiltKeys = wx.ListCtrl(self, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER, size=(-1, 30*(max(len(self.filterKeys.keys())+1, 5))))
 
         self.lFiltKeys.InsertColumn(0, 'Key')
         self.lFiltKeys.InsertColumn(1, 'Min')
@@ -95,8 +95,9 @@ class FilterPanel(wx.Panel):
 
     def populate(self):
         self.lFiltKeys.DeleteAllItems()
+        ind = 0
         for key, value in self.filterKeys.items():
-            ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
+            ind = self.lFiltKeys.InsertStringItem(ind+1, key)
             self.lFiltKeys.SetStringItem(ind, 1, '%3.2f' % value[0])
             self.lFiltKeys.SetStringItem(ind, 2, '%3.2f' % value[1])
 
@@ -162,7 +163,7 @@ class FilterPanel(wx.Panel):
 
             self.filterKeys[key] = [minVal, maxVal]
 
-            ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
+            ind = self.lFiltKeys.InsertStringItem(sys.maxsize, key)
             self.lFiltKeys.SetStringItem(ind, 1, '%3.2f' % minVal)
             self.lFiltKeys.SetStringItem(ind, 2, '%3.2f' % maxVal)
 
@@ -184,7 +185,7 @@ class FilterPanel(wx.Panel):
         try:
             data = np.array(self.dataSource[key])
 
-            dlg = histLimits.HistLimitDialog(self, data, minVal, maxVal, title=key)
+            dlg = histLimits.HistLimitDialog(self, data, minVal, maxVal, title=key, action=self.notify, key=key)
             ret = dlg.ShowModal()
 
             if ret == wx.ID_OK:
@@ -213,6 +214,17 @@ class FilterPanel(wx.Panel):
                 self.lFiltKeys.SetStringItem(self.currentFilterItem, 2, '%3.2f' % maxVal)
 
             dlg.Destroy()
+
+        self.notify(key)
+
+    def notify(self, key, limits=None):
+        if limits is not None:
+            minVal, maxVal = limits
+
+            self.filterKeys[key] = [minVal, maxVal]
+
+            self.lFiltKeys.SetStringItem(self.currentFilterItem, 1, '%3.2f' % minVal)
+            self.lFiltKeys.SetStringItem(self.currentFilterItem, 2, '%3.2f' % maxVal)
 
         self.on_filter_changed.send(self)
 
@@ -280,12 +292,12 @@ class FilterPane(afp.foldingPane):
                 x1, y1 = self.visFr.glCanvas.selectionSettings.finish
 
             if not 'x' in self.filterKeys.keys():
-                indx = self.pFilter.lFiltKeys.InsertStringItem(sys.maxint, 'x')
+                indx = self.pFilter.lFiltKeys.InsertStringItem(sys.maxsize, 'x')
             else:
                 indx = [self.pFilter.lFiltKeys.GetItemText(i) for i in range(self.pFilter.lFiltKeys.GetItemCount())].index('x')
 
             if not 'y' in self.filterKeys.keys():
-                indy = self.pFilter.lFiltKeys.InsertStringItem(sys.maxint, 'y')
+                indy = self.pFilter.lFiltKeys.InsertStringItem(sys.maxsize, 'y')
             else:
                 indy = [self.pFilter.lFiltKeys.GetItemText(i) for i in range(self.pFilter.lFiltKeys.GetItemCount())].index('y')
 

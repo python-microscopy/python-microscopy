@@ -335,7 +335,8 @@ class FilenameParam(MDParam):
             #    self.OnChange()
 
             if not self.filename == self.default:
-                mdh[self.paramName] = self.filename
+                #mdh[self.paramName] = self.filename
+                self.retrieveValue(mdh, False)
 
             return True
         else:

@@ -4,7 +4,6 @@ Created on Sat May 14 14:54:52 2016
 
 @author: david
 """
-
 import wx
 import wx.py.shell
 
@@ -19,6 +18,8 @@ from PYME.LMVis import gl_render3D as gl_render
 #import sys
 
 import pylab
+
+from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
 from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
@@ -29,6 +30,8 @@ from PYME.LMVis import renderers
 
 import logging
 logger = logging.getLogger(__name__)
+
+import PYME.config
 
 #try importing our drift correction stuff
 HAVE_DRIFT_CORRECTION = False
@@ -49,7 +52,7 @@ from PYME.LMVis import quadTreeSettings
 from PYME.LMVis import triBlobs
 
 #from PYME.Analysis import MetadataTree
-
+import dispatch
 import numpy as np
 #import scipy.special
 
@@ -58,6 +61,7 @@ import numpy as np
 
 
 from PYME.LMVis import statusLog
+#from PYME.recipes import recipeGui
 
 class VisGUICore(object):
     def __init__(self, use_shaders=False):
@@ -77,12 +81,33 @@ class VisGUICore(object):
             win = self
         else:
             win = self.dsviewer
-            
-        self.glCanvas = gl_render.LMGLCanvas(win, use_shaders=use_shaders)
-        win.AddPage(page=self.glCanvas, caption='View')#, select=True)
-        self.glCanvas.cmap = pylab.cm.gist_rainbow #pylab.cm.hot
+
+        gl_pan = wx.Panel(win)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        
+        if not use_shaders:
+            self.glCanvas = gl_render.LMGLCanvas(gl_pan)
+        else:
+            from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
+            self.glCanvas = LMGLShaderCanvas(gl_pan)
+
+        sizer.Add(self.create_tool_bar(gl_pan), 0, wx.EXPAND, 0)
+        sizer.Add(self.glCanvas, 5, wx.EXPAND, 0)
+        gl_pan.SetSizerAndFit(sizer)
+        win.AddPage(page=gl_pan, caption='View')#, select=True)
+
+        self.glCanvas.setCMap(pylab.cm.gist_rainbow) #pylab.cm.hot
+
+        #self.rec_gui = recipeGui.
+        #win.AddPage(page=self.glCanvas, caption='View')#, select=True)
         
         self.refv = False
+        
+        self._legacy_layer = None
+        self._new_layers = PYME.config.get('VisGUI-new_layers', False)
+        
+        self.layer_added = dispatch.Signal()
         
         renderers.renderMetadataProviders.append(self.SaveMetadata)
         self.use_shaders = use_shaders
@@ -97,8 +122,18 @@ class VisGUICore(object):
             print((self.viewMode, self.pointDisplaySettings.colourDataKey))
             self.SetFit()
             
-            self.RefreshView()
-            self.displayPane.OnPercentileCLim(None)
+            if self._new_layers:
+                pass
+                # if self.pipeline.ready and not len(self.layers) > 0:
+                #     l = self.add_layer(method='points')
+                #     if 't' in self.pipeline.keys():
+                #         l.engine.set(vertexColour='t')
+                #     elif 'z' in self.pipeline.keys():
+                #         l.engine.set(vertexColour='t')
+            else:
+                self.RefreshView()
+                self.displayPane.OnPercentileCLim(None)
+                
             self.Refresh()
             self.Update()
             print('refreshed')
@@ -110,60 +145,64 @@ class VisGUICore(object):
 
         if HAVE_DRIFT_CORRECTION:
             self.driftPane = CreateDriftPane(sidePanel, self.pipeline.mapping, self.pipeline)
-            
-        self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
-        self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
-        self.displayPane.Bind(displayPane.EVT_DISPLAY_CHANGE, self.RefreshView)
+
+        if PYME.config.get('VisGUI-new_layers', False):
+            #self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
+            #self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
+            #self.displayPane.Bind(displayPane.EVT_DISPLAY_CHANGE, self.RefreshView)
         
-        if self.viewMode == 'quads':
-            quadTreeSettings.GenQuadTreePanel(self, sidePanel)
-
-        if self.viewMode == 'points' or self.viewMode == 'tracks':
-            pointSettingsPanel.GenPointsPanel(self, sidePanel)
-        if self.viewMode == 'pointsprites':
-            pointSettingsPanel.GenPointsPanel(self, sidePanel)
-        if self.viewMode == 'blobs':
-            triBlobs.GenBlobPanel(self, sidePanel)
-
-        if self.viewMode == 'interp_triangles':
-            pointSettingsPanel.GenPointsPanel(self, sidePanel,'Vertex Colours')
+        
+            from .layer_panel import CreateLayerPane
+            CreateLayerPane(sidePanel, self)
+            
+            from .view_clipping_pane import GenViewClippingPanel
+            GenViewClippingPanel(self, sidePanel)
+        else:
+            self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
+            self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
+            self.displayPane.Bind(displayPane.EVT_DISPLAY_CHANGE, self.RefreshView)
+            
+            if self.viewMode == 'quads':
+                quadTreeSettings.GenQuadTreePanel(self, sidePanel)
+    
+            if self.viewMode in ['points', 'tracks', 'pointsprites', 'shadedpoints']:
+                pointSettingsPanel.GenPointsPanel(self, sidePanel)
+            if self.viewMode == 'blobs':
+                triBlobs.GenBlobPanel(self, sidePanel)
+    
+            if self.viewMode == 'interp_triangles':
+                pointSettingsPanel.GenPointsPanel(self, sidePanel,'Vertex Colours')
 
         
         self.glCanvas.Refresh()
         
     def GenDataSourcePanel(self, pnl):
-        item = afp.foldingPane(pnl, -1, caption="Data Source", pinned = True)
-
-        #self.dsRadioIds = []
-        #self._ds_keys_by_id = {}
-        #for ds in self.pipeline.dataSources.keys():
-        #    rbid = wx.NewId()
-        #    self.dsRadioIds.append(rbid)
-        #    rb = wx.RadioButton(item, rbid, ds)
-        #    rb.SetValue(ds == self.pipeline.selectedDataSourceKey)
-
-        #    self._ds_keys_by_id[rbid] = ds
-
-        #    rb.Bind(wx.EVT_RADIOBUTTON, self.OnSourceChange)
+        from PYME.recipes.vertical_recipe_display import RecipeDisplayPanel
+        item = afp.foldingPane(pnl, -1, caption="Data Source")#, pinned = True)
         
         self.chSource = wx.Choice(item, -1, choices=[])
-        self.set_datasource_choices()
+        self.update_datasource_panel()
         self.chSource.Bind(wx.EVT_CHOICE, self.OnSourceChange)
-        self.pipeline.onRebuild.connect(self.set_datasource_choices)
+        self.pipeline.onRebuild.connect(self.update_datasource_panel)
             
-        item.AddNewElement(self.chSource)
+        item.AddNewElement(self.chSource, foldable=False)
+        
+        self.recipeView = RecipeDisplayPanel(item)
+        self.recipeView.SetRecipe(self.pipeline.recipe)
+        item.AddNewElement(self.recipeView)
 
         pnl.AddPane(item)
         
-    def set_datasource_choices(self, event=None, **kwargs):
-        dss = self.pipeline.dataSources.keys()
+    def update_datasource_panel(self, event=None, **kwargs):
+        dss = list(self.pipeline.dataSources.keys())
         self.chSource.SetItems(dss)
         if not self.pipeline.selectedDataSourceKey is None:
             self.chSource.SetStringSelection(self.pipeline.selectedDataSourceKey)
+
+        self.Layout()
         
 
     def OnSourceChange(self, event):
-        #self.pipeline.selectDataSource(self._ds_keys_by_id[event.GetId()])
         self.pipeline.selectDataSource(self.chSource.GetStringSelection())
         
         
@@ -191,12 +230,12 @@ class VisGUICore(object):
         else:
             parent = self
 
-        #ID_TOGGLE_SETTINGS = wx.NewId()
-
         self.AddMenuItem('File', '&Open', self.OnOpenFile)
         if not subMenu:
             self.AddMenuItem('File', "Open &Raw/Prebleach Data", self.OnOpenRaw)
             self.AddMenuItem('File', "Open Extra &Channel", self.OnOpenChannel)
+            
+        self.AddMenuItem('File', 'Save filtered localizations', self.OnSave)
         
         if not subMenu:
             self.AddMenuItem('File', itemType='separator')
@@ -207,54 +246,38 @@ class VisGUICore(object):
             self.AddMenuItem('File', "&Exit", self.OnQuit,id = wx.ID_EXIT)
 
 
-        self.AddMenuItem('View', '&Points', self.OnViewPoints, itemType='normal') #TODO - add radio type
-        if use_shaders:
-            self.AddMenuItem('View', '&Pointsprites', self.OnViewPointsprites)
-        self.AddMenuItem('View',  '&Triangles', self.OnViewTriangles)
-        self.AddMenuItem('View', '3D Triangles', self.OnViewTriangles3D)
-        self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
-        self.AddMenuItem('View', '&Voronoi', self.OnViewVoronoi)
-        self.AddMenuItem('View', '&Interpolated Triangles', self.OnViewInterpTriangles)
-        self.AddMenuItem('View', '&Blobs', self.OnViewBlobs)
-        self.AddMenuItem('View', '&Tracks', self.OnViewTracks)
-
-        #self.view_menu.Check(ID_VIEW_POINTS, True)
-        #self.view_menu.Enable(ID_VIEW_QUADS, False)
-
-        self.AddMenuItem('View', itemType='separator')
-        self.AddMenuItem('View', '&Fit\tF6', self.SetFit)
-        self.AddMenuItem('View', 'Fit &ROI\tF7', self.OnFitROI)
+        if not PYME.config.get('VisGUI-new_layers', False):
+            self.AddMenuItem('View', '&Points', self.OnViewPoints, itemType='normal') #TODO - add radio type
+            if use_shaders:
+                self.AddMenuItem('View', '&Pointsprites', self.OnViewPointsprites)
+                self.AddMenuItem('View', '&Shaded Points', self.OnViewShadedPoints)
+            
+            self.AddMenuItem('View',  '&Triangles', self.OnViewTriangles)
+            self.AddMenuItem('View', '3D Triangles', self.OnViewTriangles3D)
+            self.AddMenuItem('View', '&Quad Tree', self.OnViewQuads)
+            if not use_shaders:
+                self.AddMenuItem('View', '&Voronoi', self.OnViewVoronoi)
+                self.AddMenuItem('View', '&Interpolated Triangles', self.OnViewInterpTriangles)
+                self.AddMenuItem('View', '&Blobs', self.OnViewBlobs)
+                self.AddMenuItem('View', '&Tracks', self.OnViewTracks)
+    
+    
+            #self.view_menu.Check(ID_VIEW_POINTS, True)
+            #self.view_menu.Enable(ID_VIEW_QUADS, False)
+    
+            self.AddMenuItem('View', itemType='separator')
+        
+        self.AddMenuItem('View', '&Fit', self.SetFit)
+        self.AddMenuItem('View', 'Fit &ROI', self.OnFitROI)
 
         #this needs an ID as we bind to it elsewhere (in the filter panel)
         self.ID_VIEW_CLIP_ROI = wx.NewId()
         self.AddMenuItem('View', 'Clip to ROI\tF8', id=self.ID_VIEW_CLIP_ROI)
 
-        #self.AddMenuItem('View', itemType='separator')
-        #self.view_menu.AppendCheckItem(ID_TOGGLE_SETTINGS, "Show Settings")
-        #self.view_menu.Check(ID_TOGGLE_SETTINGS, True)
-
-    #     if not subMenu:        
-    #         self.view3d_menu = wx.Menu()
-    
-    # #        try: #stop us bombing on Mac
-    # #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_POINTS, '&Points')
-    # #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_TRIANGS, '&Triangles')
-    # #            self.view3d_menu.AppendRadioItem(ID_VIEW_3D_BLOBS, '&Blobs')
-    # #        except:
-    #         self.view3d_menu.Append(ID_VIEW_3D_POINTS, '&Points')
-    #         self.view3d_menu.Append(ID_VIEW_3D_TRIANGS, '&Triangles')
-    #         self.view3d_menu.Append(ID_VIEW_3D_BLOBS, '&Blobs')
-    
-    #         #self.view3d_menu.Enable(ID_VIEW_3D_TRIANGS, False)
-    #         self.view3d_menu.Enable(ID_VIEW_3D_BLOBS, False)
-    
-    #         #self.view_menu.Check(ID_VIEW_3D_POINTS, True)
-
-        #self.gen_menu = wx.Menu()
+        self.AddMenuItem('View', itemType='separator')
         
         renderers.init_renderers(self)
 
-        #self.extras_menu = wx.Menu()
         from PYME.LMVis import Extras
         Extras.InitPlugins(self)
         
@@ -267,22 +290,39 @@ class VisGUICore(object):
 
         if not subMenu:
             self.AddMenuItem('Help', "&About",)
-
-       # menu_bar = self.menubar
-
-
-        #return menu_bar
+            
+    def create_tool_bar(self, parent):
+        from .displayPane import DisplayPaneHorizontal
+        
+        return DisplayPaneHorizontal(parent, self.glCanvas, None)
+        
         
     def OnViewPoints(self,event):
         self.viewMode = 'points'
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewPointsprites(self, event):
         self.viewMode = 'pointsprites'
         # self.glCanvas.cmap = pylab.cm.hsv
+        self.RefreshView()
+        #self.CreateFoldPanel()
+        self.displayPane.OnPercentileCLim(None)
+
+    def OnViewShadedPoints(self,event):
+        NO_NORMALS_MSG = '''Shaded points is experimental and only works for datasets with point normals (xn, yn, zn) defined.
+        The assignment of normals requires a concept of a surface to which the point belongs, and is not trivial for most
+        localization datasets - i.e. this rendering mode is usually not applicable. Data with normals will typically be
+        the output of surface estimation routines, or derived from some external meshed dataset (e.g. the OpenGL teapot).'''
+        
+        if not 'xn' in self.pipeline.keys():
+            wx.MessageBox(NO_NORMALS_MSG, 'Cannot use shaded points for this data', style=wx.OK)
+            return
+        
+        self.viewMode = 'shadedpoints'
+        #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
         self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
@@ -334,26 +374,59 @@ class VisGUICore(object):
         filename = wx.FileSelector("Choose a file to open", 
                                    nameUtils.genResultDirectoryPath(), 
                                    default_extension='h5r', 
-                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv')
+                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv|HDF Tabular (*.hdf)|*.hdf')
 
         #print filename
         if not filename == '':
             self.OpenFile(filename)
             
+    def OnSave(self, event):
+        filename = wx.SaveFileSelector("Save pipeline output as ...", '.hdf')
+        if not filename == '':
+            self.pipeline.save_hdf(filename)
+            
     def RegenFilter(self):
         logger.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
         self.pipeline.Rebuild()
         
+    def add_pointcloud_layer(self, method='points', ds_name=''):
+        #from .layer_wrapper import LayerWrapper
+        from .layers.pointcloud import PointCloudRenderLayer
+        l = PointCloudRenderLayer(self.pipeline, method=method, dsname=ds_name)
+        self.add_layer(l)
+        return l
+
+    def add_layer(self, layer):
+        self.glCanvas.layers.append(layer)
+        self.glCanvas.recenter_bbox()
+        layer.on_update.connect(self.glCanvas.refresh)
+        self.glCanvas.refresh()
+    
+        self.layer_added.send(self)
+
+    
+    @property
+    def layers(self):
+        return self.glCanvas.layers
+        
     def RefreshView(self, event=None, **kwargs):
+        #self.CreateFoldPanel()
         if not self.pipeline.ready:
             return #get out of here
+        
+        if self._new_layers:
+            #refresh view no longer updates the display
+            
+            #FIXME - this doesn't belong here (used to be done in SetPoints)
+            self.glCanvas.view.translation[2] = self.pipeline['z'].mean()
+            return
+        
+        
 
         self.filterPane.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
 
         if len(self.pipeline['x']) == 0:
             self.glCanvas.setOverlayMessage('No data points - try adjusting the filter')
-            #wx.MessageBox('No data points - try adjusting the filter',
-            #              "len(filter['x']) ==0")
             return
         else:
             self.glCanvas.setOverlayMessage('')
@@ -364,7 +437,16 @@ class VisGUICore(object):
         #bCurr = wx.BusyCursor()
 
         #delete previous layers (new view)
-        self.glCanvas.layers = []
+        # self.glCanvas.layers = []
+        
+        # only delete the layer we created on the last call - leave other layers alone.
+        if self._legacy_layer:
+            try:
+                self.glCanvas.layers.remove(self._legacy_layer)
+            except ValueError:
+                pass
+            self._legacy_layer = None
+        
         self.glCanvas.pointSize = self.pointDisplaySettings.pointSize
 
         if self.pipeline.objects is None:
@@ -399,7 +481,16 @@ class VisGUICore(object):
                                       self.pipeline['y'],
                                       self.pipeline['z'],
                                       self.pointColour(), alpha=self.pointDisplaySettings.alpha, mode='pointsprites')
-                                    
+        elif self.viewMode == 'shadedpoints':
+            self.glCanvas.setPoints3D(self.pipeline['x'],
+                                      self.pipeline['y'],
+                                      self.pipeline['z'],
+                                      self.pointColour(),
+                                      alpha=self.pointDisplaySettings.alpha,
+                                      normal_x=self.pipeline['xn'],
+                                      normal_y=self.pipeline['yn'],
+                                      normal_z=self.pipeline['zn'],
+                                      mode='shadedpoints')
         elif self.viewMode == 'tracks':
             if 'setTracks3D' in dir(self.glCanvas) and 'z' in self.pipeline.keys():
                 self.glCanvas.setTracks3D(self.pipeline['x'], 
@@ -449,6 +540,9 @@ class VisGUICore(object):
 
             self.glCanvas.setBlobs(*self.pipeline.getBlobs())
             self.objCInd = self.glCanvas.c
+            
+        #save the new layer we created so we can remove it
+        self._legacy_layer = self.glCanvas.layers[-1]
 
         self.displayPane.hlCLim.SetData(self.glCanvas.c, self.glCanvas.clim[0], 
                                         self.glCanvas.clim[1])
@@ -465,12 +559,13 @@ class VisGUICore(object):
         xsc = self.pipeline.imageBounds.width()*1./self.glCanvas.Size[0]
         ysc = self.pipeline.imageBounds.height()*1./self.glCanvas.Size[1]
 
-        if xsc > ysc:
-            self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x1, 
-                                  self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y0 + xsc*self.glCanvas.Size[1])
-        else:
-            self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x0 + ysc*self.glCanvas.Size[0], 
-                                  self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y1)
+        if xsc != 0 and ysc != 0:
+            if xsc > ysc:
+                self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x1,
+                                      self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y0 + xsc*self.glCanvas.Size[1])
+            else:
+                self.glCanvas.setView(self.pipeline.imageBounds.x0, self.pipeline.imageBounds.x0 + ysc*self.glCanvas.Size[0],
+                                      self.pipeline.imageBounds.y0, self.pipeline.imageBounds.y1)
 
     def OnFitROI(self,event = None):
         if 'x' in self.pipeline.filterKeys.keys():
@@ -493,9 +588,6 @@ class VisGUICore(object):
             self.glCanvas.setView(xbounds[0], xbounds[0] + ysc*self.glCanvas.Size[0], 
                                   ybounds[0], ybounds[1])
 
-    #def OnGLViewChanged(self):
-    #    for genI in self.generatedImages:
-    #        genI.Refresh()
 
     def SetStatus(self, statusText):
         self.statusbar.SetStatusText(statusText, 0)
@@ -511,58 +603,75 @@ class VisGUICore(object):
         exposed / used when called from within a dsviewer module."""
         logger.debug('Calling AddMenuItem from visCore')
         self.dsviewer.AddMenuItem('Points>' + menuName, *args, **kwargs)
-
-    def OpenFile(self, filename):
-        args = {}
         
-        if os.path.splitext(filename)[1] =='.h5r':
+    def _create_base_layer(self):
+        if self.glCanvas._is_initialized and self._new_layers and len(self.layers) == 0:
+            #add a new layer
+            l = self.add_pointcloud_layer(method='points')
+            if 't' in self.pipeline.keys():
+                l.set(vertexColour='t')
+            elif 'z' in self.pipeline.keys():
+                l.set(vertexColour='z')
+                
+    def _populate_open_args(self, filename):
+        args = {}
+    
+        if os.path.splitext(filename)[1] == '.h5r':
             pass
         elif os.path.splitext(filename)[1] == '.hdf':
             pass
         elif os.path.splitext(filename)[1] == '.mat':
             from PYME.LMVis import importTextDialog
             from scipy.io import loadmat
-            
+        
             mf = loadmat(filename)
-
-            dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
-            ret = dlg.ShowModal()
-
-            if not ret == wx.ID_OK:
+            if not 'x' in mf.keys():
+                #bewersdorf style .mat where each variable is in a separate column
+                dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
+                ret = dlg.ShowModal()
+            
+                if not ret == wx.ID_OK:
+                    dlg.Destroy()
+                    return #we cancelled
+            
+                args['FieldNames'] = dlg.GetFieldNames()
+                args['VarName'] = dlg.GetVarName()
+                # args['PixelSize'] = dlg.GetPixelSize()
+        
+        
                 dlg.Destroy()
-                return #we cancelled
-                
-            args['FieldNames'] = dlg.GetFieldNames()
-            args['VarName'] = dlg.GetVarName()
-            args['PixelSize'] = dlg.GetPixelSize()
-            
-            
-            dlg.Destroy()
-
+    
         else: #assume it's a text file
             from PYME.LMVis import importTextDialog
-            
+        
             dlg = importTextDialog.ImportTextDialog(self, filename)
             ret = dlg.ShowModal()
-
+        
             if not ret == wx.ID_OK:
                 dlg.Destroy()
                 return #we cancelled
-                
+        
             args['FieldNames'] = dlg.GetFieldNames()
+            # remove trailing whitespace/line brake on last field name
+            args['FieldNames'][-1] = args['FieldNames'][-1].rstrip()
             args['SkipRows'] = dlg.GetNumberComments()
             args['PixelSize'] = dlg.GetPixelSize()
-            
+        
             #print 'Skipping %d rows' %args['SkipRows']
             dlg.Destroy()
+            
+        return args
+
+    def OpenFile(self, filename, recipe_callback=None):
+        args = self._populate_open_args(filename)
 
         print('Creating Pipeline')
         self.pipeline.OpenFile(filename, **args)
         print('Pipeline Created')
         
-        
         #############################
         #now do all the gui stuff
+        
         if isinstance(self, wx.Frame):
             #run this if only we are the main frame
             self.SetTitle('PYME Visualise - ' + filename)
@@ -572,7 +681,39 @@ class VisGUICore(object):
             self.CreateFoldPanel()
             print('Gui stuff done')
         
+        if recipe_callback:
+            recipe_callback()
+            
         self.SetFit()
         
+        
+        wx.CallLater(100, self._create_base_layer)
+        #wx.CallAfter(self.RefreshView)
+
+    def OpenChannel(self, filename, recipe_callback=None, channel_name=''):
+        args = self._populate_open_args(filename)
+    
+        print('Creating Pipeline')
+        self.pipeline.OpenChannel(filename, channel_name=channel_name, **args)
+        print('Pipeline Created')
+    
+        #############################
+        #now do all the gui stuff
+    
+        if isinstance(self, wx.Frame):
+            #run this if only we are the main frame
+            #self.SetTitle('PYME Visualise - ' + filename)
+            self._removeOldTabs()
+            self._createNewTabs()
+        
+            self.CreateFoldPanel()
+            print('Gui stuff done')
+    
+        if recipe_callback:
+            recipe_callback()
+    
+        self.SetFit()
+    
+        #wx.CallLater(100, self._create_base_layer)
         #wx.CallAfter(self.RefreshView)
         

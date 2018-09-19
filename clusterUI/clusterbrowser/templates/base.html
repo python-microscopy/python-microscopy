@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     {% block meta %}{% endblock %}
     <title>{% block title %}Title{% endblock %}</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
     {% load static %}
+    <link rel="stylesheet" href={% static "css/bootstrap.min.css"%}>
     <link rel="stylesheet" href="{% static "dashboard.css" %}"/>
     <link rel="stylesheet" href="{% static "cluster.css" %}"/>
     {% block styles %}{% endblock %}
@@ -25,16 +26,42 @@
           <a class="navbar-brand" href="#">PYME Storage &amp; Compute Cluster</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav navbar-right">
-            <li><a href="#">Dashboard</a></li>
-            <li><a href="#">Settings</a></li>
-            <li><a href="#">Profile</a></li>
-            <li><a href="#">Help</a></li>
-          </ul>
+{#          <ul class="nav navbar-nav">#}
+{#            <li><a href="#">Dashboard</a></li>#}
+{#            <li><a href="#">Settings</a></li>#}
+{#            <li><a href="#">Profile</a></li>#}
+{#            <li><a href="#">Help</a></li>#}
+{#              <li>#}
+{##}
+{#            </li>#}
+{#          </ul>#}
+
+
+        {% if user.is_authenticated %}
+            <p class="navbar-text navbar-right"> Browsing as <span class="username">{{ user.email }}</span>
+               - <a type="submit" href="/accounts/logout/?next={{ request.path }}">logout</a>&nbsp;&nbsp;</p>
+
+        {% else %}
+
+            <p class="navbar-text navbar-right"> Browsing as <span class="username">Guest</span>&nbsp;&nbsp;
+        <form class="nav navbar-form navbar-right" method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <input type="text" placeholder="Email" class="form-control" name="username">
+            </div>
+            <div class="form-group">
+                <input type="password" placeholder="Password" class="form-control" name="password">
+            </div>
+            <button type="submit" class="btn btn-small btn-success" value="login">Sign in </button>
+            <input type="hidden" name="next" value="{{ request.path }}" />
+        </form>
+        {% endif %}
+        </div>
           <!--<form class="navbar-form navbar-right">
             <input type="text" class="form-control" placeholder="Search...">
           </form>-->
-        </div>
+
     </div>
 
 </nav>
@@ -55,17 +82,65 @@
         </div>
 
         <div class="col-sm-9 col-sm-offset-3 col-md-9 col-md-offset-3 main">
+            <!-- Modal dialog for file selection-->
+            <div class="modal fade" id="file_select_modal" tabindex="-1" role="dialog" aria-labelledby="file_select_label">
+              <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="file_select_label">Select a file</h4>
+                  </div>
+                  <div class="modal-body">
+                    <div id="file_selector_tree" data-path=""></div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="file_select_ok">OK</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {% block content %}
             {% endblock %}
         </div>
     </div>
 </div>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src={% static "jquery.min.js" %}></script>
+<script src={% static "bootstrap.min.js" %} crossorigin="anonymous"></script>
+<script src={% static "jstree.min.js" %}></script>
 {% block scripts %}
 {% endblock %}
 <script>
+    function select_file(callback, message='Select a file', basedir=''){
+        $('#file_select_modal').modal('show');
+
+        $('#file_select_label').html(message);
+
+        var tree = $('#file_selector_tree').jstree({
+          'core' : {
+            'data' : {
+              'url' : '/files/_lite/',
+              'data' : function (node) {
+                  //console.log(node);
+                  try{ return { 'path' : node.data.path };}
+                  catch (err) { return {'path' : ''}}
+
+              }
+            }
+          }
+        });
+
+        $('#file_select_ok').click(function(){
+            $('#file_select_modal').modal('hide');
+            $('#file_select_ok').off('click');
+            var path = $('#file_selector_tree').jstree(true).get_selected(true)[0].data.path;
+            callback(path);
+        })
+
+    }
+
     function loadclusterload(){
         //console.log('about to reload')
         $('#load-content').load('/status/load/',function () {

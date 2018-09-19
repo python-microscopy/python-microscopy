@@ -116,7 +116,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
         self.selectHandlers = []
         
-        self.labelPens = [wx.Pen(wx.Colour(*pylab.cm.hsv(v, alpha=.5, bytes=True)), 2) for v in numpy.linspace(0, 1, 16)]
+        self.labelPens = [wx.Pen(wx.Colour(*[int(c) for c in pylab.cm.hsv(v, alpha=.5, bytes=True)]), 2) for v in numpy.linspace(0, 1, 16)]
 
 #        if not aspect is None:
 #            if scipy.isscalar(aspect):
@@ -133,25 +133,25 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         self.refrTimer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.OnRefrTimer)
 
-        wx.EVT_MOUSEWHEEL(self.imagepanel, self.OnWheel)
-        wx.EVT_KEY_DOWN(self.imagepanel, self.OnKeyPress)
+        self.imagepanel.Bind(wx.EVT_MOUSEWHEEL, self.OnWheel)
+        self.imagepanel.Bind(wx.EVT_KEY_DOWN, self.OnKeyPress)
         #wx.EVT_KEY_DOWN(self.Parent(), self.OnKeyPress)
-        wx.EVT_LEFT_DOWN(self.imagepanel, self.OnLeftDown)
-        wx.EVT_LEFT_UP(self.imagepanel, self.OnLeftUp)
-        
-        wx.EVT_MIDDLE_DOWN(self.imagepanel, self.OnMiddleDown)
-        wx.EVT_MIDDLE_UP(self.imagepanel, self.OnMiddleUp)
-        
-        wx.EVT_RIGHT_DOWN(self.imagepanel, self.OnRightDown)
-        wx.EVT_RIGHT_UP(self.imagepanel, self.OnRightUp)
-        
-        wx.EVT_MIDDLE_DCLICK(self.imagepanel, self.OnMiddleDClick)
+        self.imagepanel.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self.imagepanel.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
 
-        wx.EVT_MOTION(self.imagepanel, self.OnMotion)
+        self.imagepanel.Bind(wx.EVT_MIDDLE_DOWN, self.OnMiddleDown)
+        self.imagepanel.Bind(wx.EVT_MIDDLE_UP, self.OnMiddleUp)
+
+        self.imagepanel.Bind(wx.EVT_RIGHT_DOWN, self.OnRightDown)
+        self.imagepanel.Bind(wx.EVT_RIGHT_UP, self.OnRightUp)
+
+        self.imagepanel.Bind(wx.EVT_MIDDLE_DCLICK, self.OnMiddleDClick)
+
+        self.imagepanel.Bind(wx.EVT_MOTION, self.OnMotion)
 
         #
-        wx.EVT_ERASE_BACKGROUND(self.imagepanel, self.DoNix)
-        wx.EVT_ERASE_BACKGROUND(self, self.DoNix)
+        self.imagepanel.Bind(wx.EVT_ERASE_BACKGROUND, self.DoNix)
+        self.Bind(wx.EVT_ERASE_BACKGROUND, self.DoNix)
 
     def OnRefrTimer(self, event):
         self.Refresh()
@@ -551,6 +551,19 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         MemBitmap = self.GrabImage(fullImage)
         img = MemBitmap.ConvertToImage()
         img.SaveFile(filename, wx.BITMAP_TYPE_PNG)
+        
+    def GrabPNGToBuffer(self, fullImage=True):
+        '''Get PNG data in a buffer (rather than writing directly to file)'''
+        from PIL import Image
+        from io import BytesIO
+        
+        img =self.GrabImage(fullImage)
+        im1 = Image.frombytes(mode='RGB', size=tuple(img.GetSize()), data=img.ConvertToImage().GetData())
+        
+        out = BytesIO()
+        im1.save(out, format='PNG')
+        
+        return out.getvalue()
 
     def CopyImage(self, fullImage=True):
         """ Copies the currently displayed image to the clipboard"""

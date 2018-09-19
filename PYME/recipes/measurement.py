@@ -339,15 +339,16 @@ class Histogram(ModuleBase):
     nbins = Int(50)
     left = Float(0.)
     right = Float(1000)
+    normalize = Bool(False)
     
     def execute(self, namespace):        
         v = namespace[self.inputMeasurements][self.key]
         
         edges = np.linspace(self.left, self.right, self.nbins)
         
-        res = np.histogram(v, edges)[0]
+        res = np.histogram(v, edges, normed=self.normalize)[0]
         
-        res = pd.DataFrame({'bins' : edges, 'counts' : res})
+        res = pd.DataFrame({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
         if 'mdh' in dir(v):
             res.mdh = v.mdh
         
@@ -364,6 +365,7 @@ class ImageHistogram(ModuleBase):
     nbins = Int(50)
     left = Float(0.)
     right = Float(1000)
+    normalize = Bool(False)
     
     def execute(self, namespace):
         v = namespace[self.inputImage]
@@ -376,9 +378,9 @@ class ImageHistogram(ModuleBase):
         
         edges = np.linspace(self.left, self.right, self.nbins)
         
-        res = np.histogram(vals, edges)[0]
+        res = np.histogram(vals, edges, normed=self.normalize)[0]
         
-        res = pd.DataFrame({'bins' : edges, 'counts' : res})
+        res = pd.DataFrame({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
         if 'mdh' in dir(v):
             res.mdh = v.mdh
         
@@ -607,6 +609,7 @@ class Plot(ModuleBase):
     input3 = Input('')
     xkey = CStr('')
     ykey = CStr('')
+    type = Enum(['line', 'bar'])
     outputName = Output('outGraph')
     
     def execute(self, namespace):
@@ -629,7 +632,11 @@ class Plot(ModuleBase):
         
         pylab.figure()
         for meas in ms:
-            pylab.plot(meas[self.xkey], meas[self.ykey])
+            if self.type == 'bar':
+                xv = meas[self.xkey]
+                pylab.bar(xv, meas[self.ykey], align='center', width=(xv[1] - xv[0]))
+            else:
+                pylab.plot(meas[self.xkey], meas[self.ykey])
         
         pylab.grid()
         pylab.legend(labs)

@@ -7,11 +7,26 @@ def recipe_form(request):
     """stand in until we have a better recipe GUI"""
     return render(request, 'recipes/form_recipe.html', {})
 
+def recipe_standalone(request):
+    """This allows file selection with globs like bakeshop"""
+    return render(request, 'recipes/recipe_standalone.html', {})
+
+def get_input_glob(request):
+    from PYME.IO import clusterIO
+    
+    filepaths = clusterIO.cglob(request.GET.get('glob').encode().lstrip('/'))
+    
+    return render(request, 'recipes/input_list.html', {'filepaths' : filepaths})
+
 def run(request):
-    from PYME.ParallelTasks.HTTPTaskPusher import HTTPRecipePusher
+    from PYME import config
+    if config.get('PYMERuleserver-use', True):
+        from PYME.ParallelTasks.HTTPRulePusher import RecipePusher
+    else:
+        from PYME.ParallelTasks.HTTPTaskPusher import RecipePusher
     recipeURI = 'pyme-cluster:///' + request.POST.get('recipeURL').encode().lstrip('/')
 
-    pusher = HTTPRecipePusher(recipeURI=recipeURI)
+    pusher = RecipePusher(recipeURI=recipeURI)
 
 
     fileNames = request.POST.getlist('files', [])

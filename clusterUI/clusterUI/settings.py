@@ -27,6 +27,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 1025
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 
 # Application definition
 
@@ -41,6 +46,7 @@ INSTALLED_APPS = [
     'clusterstatus',
     'localization',
     'recipes',
+    'accounts',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -85,6 +91,7 @@ DATABASES = {
     }
 }
 
+AUTH_USER_MODEL = "accounts.User"
 
 # Password validation
 # https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators

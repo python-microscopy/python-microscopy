@@ -54,6 +54,7 @@ class mercuryJoystick:
 
 
 class mercuryStepper:
+    units_um = 1000
     def __init__(self, comPort=5, baud=9600, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S']):
         self.axes = axes
         self.steppers = steppers
@@ -93,6 +94,7 @@ class mercuryStepper:
         self.lock.release()
 
         self.poll = tPoll(self)
+        self.poll.daemon = True
         self.poll.start()
 
     def SetSoftLimits(self, axis, lims):
@@ -105,6 +107,7 @@ class mercuryStepper:
         
     def MoveTo(self, iChan, fPos, timeout=False):
         self.lock.acquire()
+        self._pause_joystick(False)
         tgt = fPos
         if (fPos >= self.minTravel[iChan]):
             if (fPos <= self.maxTravel[iChan]):
@@ -116,14 +119,17 @@ class mercuryStepper:
 
         self.onTarget = False
         m.MOV(self.connID, self.axes[iChan], [tgt])
-        self.last_poss[iChan] = tgt
+        #self.last_poss[iChan] = tgt
+
+        self._pause_joystick(True)
         self.lock.release()
 
     def GetPos(self, iChan=0):
-        self.lock.acquire()
-        ret = m.qPOS(self.connID, self.axes[iChan])[0]
-        self.lock.release()
-        return ret
+        # self.lock.acquire()
+        # ret = m.qPOS(self.connID, self.axes[iChan])[0]
+        # self.lock.release()
+        # return ret
+        return self.last_poss[iChan]
 
     def IsMoving(self, iChan=0):
         self.lock.acquire()
@@ -147,7 +153,17 @@ class mercuryStepper:
     def GetLastPos(self, iChan=0):
         return self.last_poss[iChan]
 
-    def SetJoystick(self, on = True, chans=[0,1]):
+    def _pause_joystick(self, on=False, chans=[0,1]):
+        if self.joystickOn:
+            if on:
+                #wait until our previous move is finished
+                timeout = time.time()+ 10
+                while (not sum(m.qONT(self.connID, ''.join(self.axes))) == len(self.axes)) and time.time() < timeout:
+                    time.sleep(0.5)
+            jv = [on for c in chans]
+            m.JON(self.connID, [c + 1 for c in chans], jv)
+
+    def SetJoystick(self, on=True, chans=[0,1]):
         self.lock.acquire()
         jv = [on for c in chans]
         m.JON(self.connID, [c + 1 for c in chans], jv)

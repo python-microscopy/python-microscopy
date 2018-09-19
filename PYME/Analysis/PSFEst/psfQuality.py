@@ -172,8 +172,8 @@ def crb3d(image, psft):
     
     zf = image.data.shape[2]/2
 
-    crb_3D = np.sqrt(psft.crb.sum(1))[(zf - dz):(zf + dz +1)].mean()
-    crb_3D_as = np.sqrt(psft.crb_as.sum(1))[(zf - dz):(zf + dz +1)].mean()
+    crb_3D = np.sqrt(psft.crb.sum(1))[int(zf - dz):int(zf + dz +1)].mean()
+    crb_3D_as = np.sqrt(psft.crb_as.sum(1))[int(zf - dz):int(zf + dz +1)].mean()
     
     print((crb_3D, crb_3D_as))
     

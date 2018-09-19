@@ -185,7 +185,7 @@ class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
 
 
         dc.ResetBoundingBox()
-        dc.BeginDrawing()
+        #dc.BeginDrawing()
         height = self.canvas.figure.bbox.height
         y1 = height - y1
         y0 = height - y0
@@ -202,7 +202,7 @@ class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
         else: dc.DrawRectangle(*lastrect)  #erase last
         self.lastrect = rect
         dc.DrawRectangle(*rect)
-        dc.EndDrawing()
+        #dc.EndDrawing()
 
     def set_status_bar(self, statbar):
         self.statbar = statbar

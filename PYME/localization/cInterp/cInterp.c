@@ -195,6 +195,8 @@ static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds
 
     float cx[4], cy[4], cz[4];
     
+    //printf("parsing python parameters\n");
+
     static char *kwlist[] = {"model", "x0","y0", "z0","nx","ny","dx", "dy", "dz", NULL};
     
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "Offfiifff", kwlist,
@@ -232,7 +234,7 @@ static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds
       return NULL;
     }
     
-    Py_BEGIN_ALLOW_THREADS;
+
     res = (float*) out->data;
 
     //Initialise our histogram
@@ -250,11 +252,51 @@ static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds
     ry = fmodf(y0+973*dy,dy)/dy;// - 0.5;
     rz = fmodf(z0+973*dz,dz)/dz;// - 0.5;
 
-    //calculate the spline coefficients    
+    //printf("calculating spline coefficients\n");
+    //calculate the spline coefficients
     splCoeff(rx, cx);
     splCoeff(ry, cy);
     splCoeff(rz, cz);
 
+    //printf("calculated spline coefficients\n");
+
+    if ((fx < 1) || ((fx + nx + 3) > sizeX)){
+        //x out of bounds
+        fprintf(stderr, "x out of bounds\n");
+
+        Py_DECREF(amod);
+        Py_DECREF(out);
+
+        PyErr_Format(PyExc_RuntimeError, "X coordinates out of range - fx = %d", fx);
+        return NULL;
+    }
+
+    if ((fy < 1) || ((fy + ny + 3) > sizeY)){
+        //x out of bounds
+        fprintf(stderr, "y out of bounds\n");
+
+        Py_DECREF(amod);
+        Py_DECREF(out);
+
+        PyErr_Format(PyExc_RuntimeError, "Y coordinates out of range - fy = %d", fy);
+        return NULL;
+    }
+
+    if ((fz < 1) || (fz +3 > sizeZ)){
+        //x out of bounds
+        fprintf(stderr, "z out of bounds\n");
+
+        Py_DECREF(amod);
+        Py_DECREF(out);
+
+        PyErr_Format(PyExc_RuntimeError, "Z coordinates out of range - fz = %d", fz);
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS;
+
+    //fprintf(stderr, "done interp prep work\n");
+    //fprintf(stderr, "done interp prep work\n");
 
     for (xi = fx; xi < (fx+nx); xi++)
       {            
@@ -278,7 +320,8 @@ static PyObject * InterpolateCS(PyObject *self, PyObject *args, PyObject *keywds
 	  }
        
       }
-    
+      //printf("done interpolation\n");
+
     Py_END_ALLOW_THREADS;
     Py_DECREF(amod);
     

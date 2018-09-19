@@ -106,8 +106,10 @@ class Surface(object):
         
     
     def parseLines(self, lines, glasses):
-        while (len(lines) > 0) and lines[0].startswith('  '):
+        self.lines = []
+        while (len(lines) > 0) and (lines[0].startswith('  ') or lines[0] == ''):
             l = lines.pop(0)
+            self.lines.append(l)
             l = l.lstrip()
             code = l[:4]
             data = l[5:]
@@ -140,12 +142,13 @@ class ZMX(object):
         
     def _parseZMX(self,data, glasses):
         lines = data.splitlines()
+        self.lines = list(lines)
         while len(lines) > 0:
             l = lines.pop(0)
             if l.startswith('SURF'):
                 self.surfaces.append(Surface(lines, glasses))  
                 
-    def toPyOptic(self, position, direction=[0,0,1], fb=None, flip = False, f = None):
+    def toPyOptic(self, position, direction=[0,0,1], fb=None, flip = False, f = None, orientation=[0,1,0]):
         from pyoptic import System as pyo
         #we're only interested in real surfaces
         surfs = self.surfaces[1:-1]
@@ -175,23 +178,42 @@ class ZMX(object):
                 #print(i)
                 s = surfs[i]
                 glass = self.surfaces[i].glass
-                outSurfs.append(pyo.SphericalSurface('ZMX_%d'%i, 1,np.ones(3)*float(s.diam[0]),pyo.Placement((z0 - 0)*d + pos,d),glass, -s.radius))
+                if s.radius is None:
+                    #planar
+                    outSurfs.append(pyo.PlaneSurface('ZMX_%d' % i, 1, np.ones(3) * float(s.diam[0]),
+                                                           pyo.Placement((z0 - 0) * d + pos, d), glass))
+                elif s.type == 'TOROIDAL':
+                    #cylindrical lens
+                    outSurfs.append(pyo.CylindricalSurface('ZMX_%d' % i, 1, np.ones(3) * float(s.diam[0]),
+                                                         pyo.Placement((z0 - 0) * d + pos, d), glass, -s.radius, orientation))
+                else:
+                    outSurfs.append(pyo.SphericalSurface('ZMX_%d'%i, 1,np.ones(3)*float(s.diam[0]),pyo.Placement((z0 - 0)*d + pos,d),glass, -s.radius))
                 #print((z0, s.disz))
                 z0 += self.surfaces[i].disz         
         else:
             for i, s in enumerate(surfs):
-                outSurfs.append(pyo.SphericalSurface('ZMX_%d'%i, 1,np.ones(3)*float(s.diam[0]),pyo.Placement((z0 - 0)*d + pos,d),s.glass, s.radius))
+                if s.radius is None:
+                    #planar
+                    outSurfs.append(pyo.PlaneSurface('ZMX_%d' % i, 1, np.ones(3) * float(s.diam[0]),
+                                                           pyo.Placement((z0 - 0) * d + pos, d), s.glass))
+                elif s.type == 'TOROIDAL':
+                    outSurfs.append(pyo.CylindricalSurface('ZMX_%d' % i, 1, np.ones(3) * float(s.diam[0]),
+                                                         pyo.Placement((z0 - 0) * d + pos, d), s.glass, s.radius, orientation))
+                else:
+                    outSurfs.append(pyo.SphericalSurface('ZMX_%d'%i, 1,np.ones(3)*float(s.diam[0]),pyo.Placement((z0 - 0)*d + pos,d),s.glass, s.radius))
                 #print((z0, s.disz))
                 z0 += s.disz
                 
             
         return outSurfs
         
+#keep glass database global (lets us read files with broken glass info if we have read good files first)
+glasses = {}
                 
 def readZar(filename):
     components = decompZar(filename)
     
-    glasses = {}
+    #glasses = {}
     
     #find all the glass catalogs    
     glass_cats = [n for n in components.keys() if n.endswith('.AGF')]

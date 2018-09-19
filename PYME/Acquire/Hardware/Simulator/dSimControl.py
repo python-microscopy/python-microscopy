@@ -27,11 +27,13 @@ import wx
 import wx.grid
 from . import fluor
 from . import wormlike2
+import json
 import pylab
 import scipy
 import numpy as np
 #import os
 from . import rend_im
+from EmpiricalHist import EmpiricalHist
 
 def create(parent):
     return dSimControl(parent)
@@ -52,6 +54,33 @@ def create(parent):
 ] = [wx.NewId() for _init_ctrls in range(28)]
 
 [wxID_DSIMCONTROLTREFRESH] = [wx.NewId() for _init_utils in range(1)]
+
+
+from PYME.recipes.traits import HasTraits, Float, Dict, Bool, List
+class PSFSettings(HasTraits):
+    wavelength_nm = Float(700.)
+    NA = Float(1.47)
+    vectorial = Bool(False)
+    zernike_modes = Dict()
+    zernike_modes_lower = Dict()
+    phases = List([0, .5, 1, 1.5])
+    four_pi = Bool(False)
+    
+    def default_traits_view(self):
+        from traitsui.api import View, Item, Group, ListEditor
+        #from PYME.ui.custom_traits_editors import CBEditor
+    
+        return View(Item(name='wavelength_nm'),
+                    Item(name='NA'),
+                    Item(name='vectorial'),
+                    Item(name='four_pi', label='4Pi'),
+                    Item(name='zernike_modes'),
+                    Item(name='zernike_modes_lower', visible_when='four_pi==True'),
+                    Item(name='phases', visible_when='four_pi==True', label='phases/pi'),
+                    resizable = True,
+                    buttons   = [ 'OK' ])
+        
+        
 
 class dSimControl(wx.Panel):
     def _init_coll_nTransitionTensor_Pages(self, parent):
@@ -77,6 +106,37 @@ class dSimControl(wx.Panel):
         self._init_utils()
         #self.SetClientSize(wx.Size(434, 610))
         vsizer= wx.BoxSizer(wx.VERTICAL)
+
+        ################ Splitter ######################
+
+        sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Image splitting & PSF'),
+                                    wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        hsizer.Add(wx.StaticText(self, -1, 'Number of channels: '), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
+        self.cNumSplitterChans = wx.Choice(self, -1, choices=['1', '2', '4'])
+        hsizer.Add(self.cNumSplitterChans, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
+        sbsizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+
+        self.gSplitter = wx.grid.Grid(self, -1)
+        self.setupSplitterGrid()
+        sbsizer.Add(self.gSplitter, 0, wx.RIGHT | wx.EXPAND, 2)
+
+        ############## PSF Settings ################
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.bSetTPSF = wx.Button(self, -1, 'Set Theoretical PSF')
+        self.bSetTPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSFModel)
+        hsizer.Add(self.bSetTPSF, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        self.bSetPSF = wx.Button(self, -1, 'Set Experimental PSF')
+        self.bSetPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSF)
+        hsizer.Add(self.bSetPSF, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        sbsizer.Add(hsizer, 0, wx.ALL | wx.ALIGN_RIGHT, 2)
+
+        vsizer.Add(sbsizer, 0, wx.ALL | wx.EXPAND, 2)
 
 
         ########### Fluorophore Positions ############        
@@ -143,77 +203,107 @@ class dSimControl(wx.Panel):
         
         
         vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
+        
+        
 
-        ################ Splitter ######################
-
-        sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Image splitting'),
-                                    wx.VERTICAL)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        hsizer.Add(wx.StaticText(self, -1, 'Number of channels: '),0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
-        self.cNumSplitterChans = wx.Choice(self, -1, choices=['1', '2', '4'])
-        hsizer.Add(self.cNumSplitterChans, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 10)
-        sbsizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
-
-        self.gSplitter = wx.grid.Grid(self, -1)
-        self.setupSplitterGrid()
-        sbsizer.Add(self.gSplitter, 0, wx.RIGHT|wx.EXPAND, 2)
-
-
-        vsizer.Add(sbsizer, 0, wx.ALL | wx.EXPAND, 2)
+        
         ################ Virtual Fluorophores ###########
         
         sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Generate Virtual Fluorophores'), 
                                   wx.VERTICAL)
-                                  
-        sbsizer2=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Transition Tensor'), 
-                                  wx.VERTICAL)
 
-        self.nTransitionTensor = wx.Notebook(self, -1)
-        #self.nTransitionTensor.SetLabel('Transition Probabilites')
+        self.nSimulationType = wx.Notebook(self, -1)
+
+        ######################## Based on first principles... #########
+        pFirstPrinciples = wx.Panel(self.nSimulationType, -1)
+        pFirstPrinciplesSizer = wx.BoxSizer(wx.VERTICAL)
+
+        sbsizer2 = wx.StaticBoxSizer(
+            wx.StaticBox(pFirstPrinciples, -1, 'Transition Tensor'),
+            wx.VERTICAL)
+
+        self.nTransitionTensor = wx.Notebook(pFirstPrinciples, -1)
+        # self.nTransitionTensor.SetLabel('Transition Probabilites')
 
         self.gSpontan = wx.grid.Grid(self.nTransitionTensor, -1)
         self.gSwitch = wx.grid.Grid(self.nTransitionTensor, -1)
         self.gProbe = wx.grid.Grid(self.nTransitionTensor, -1)
+
+        sbsizer2.Add(self.nTransitionTensor, 1, wx.EXPAND | wx.ALL, 2)
+        pFirstPrinciplesSizer.Add(sbsizer2, 1, wx.EXPAND | wx.ALL, 2)
+
+        sbsizer2 = wx.StaticBoxSizer(
+            wx.StaticBox(pFirstPrinciples, -1, 'Excitation Crossections'),
+            wx.HORIZONTAL)
+
+        sbsizer2.Add(wx.StaticText(pFirstPrinciples, -1, 'Switching Laser:'), 0,
+                     wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
+
+        self.tExSwitch = wx.TextCtrl(pFirstPrinciples, -1, value='1')
+        sbsizer2.Add(self.tExSwitch, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
+
+        sbsizer2.Add(
+            wx.StaticText(pFirstPrinciples, -1, '/mWs       Probe Laser:'), 0,
+            wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
+
+        self.tExProbe = wx.TextCtrl(pFirstPrinciples, -1, value='100')
+        sbsizer2.Add(self.tExProbe, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
+
+        sbsizer2.Add(wx.StaticText(pFirstPrinciples, -1, '/mWs'), 0,
+                     wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
+
+        pFirstPrinciplesSizer.Add(sbsizer2, 0, wx.EXPAND | wx.ALL, 2)
+
         
-        sbsizer2.Add(self.nTransitionTensor, 1, wx.EXPAND|wx.ALL, 2)
-        sbsizer.Add(sbsizer2, 1, wx.EXPAND|wx.ALL, 2)
-        
-        sbsizer2=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Excitation Crossections'), 
-                                  wx.HORIZONTAL)
-                                  
-        sbsizer2.Add(wx.StaticText(self, -1, 'Switching Laser:'), 0, 
-                     wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.tExSwitch = wx.TextCtrl(self, -1, value='1')
-        sbsizer2.Add(self.tExSwitch, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
-        
-        sbsizer2.Add(wx.StaticText(self, -1, '/mWs       Probe Laser:'), 0, 
-                     wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
-
-        self.tExProbe = wx.TextCtrl(self, -1, value='100')
-        sbsizer2.Add(self.tExProbe, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
-        
-        sbsizer2.Add(wx.StaticText(self, -1, '/mWs'), 0, 
-                     wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
-                                  
-        sbsizer.Add(sbsizer2, 0, wx.EXPAND|wx.ALL, 2)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL) 
-
-        self.bSetPSF = wx.Button(self, -1,'Set PSF')
-        self.bSetPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSF)
-        hsizer.Add(self.bSetPSF, 1, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 2)                         
-
-        self.bGenFlours = wx.Button(self, -1,'Go')
+        self.bGenFlours = wx.Button(pFirstPrinciples, -1, 'Go')
         self.bGenFlours.Bind(wx.EVT_BUTTON, self.OnBGenFloursButton)
-        hsizer.Add(self.bGenFlours, 1, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 2)
+        hsizer.Add(self.bGenFlours, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
 
-        
-        
-        sbsizer.Add(hsizer, 0, wx.ALL|wx.ALIGN_RIGHT, 2)
-        vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
+        pFirstPrinciplesSizer.Add(hsizer, 0, wx.ALL | wx.ALIGN_RIGHT, 2)
+        pFirstPrinciples.SetSizer(pFirstPrinciplesSizer)
+
+        ######################## Based on empirical data... #########
+
+        pEmpiricalModel = wx.Panel(self.nSimulationType, -1)
+        pEmpiricalModelSizer = wx.BoxSizer(wx.VERTICAL)
+
+        sbsizer2 = wx.StaticBoxSizer(wx.StaticBox(pEmpiricalModel, -1,
+                                                  'Load Dye Kinetics Histogram (JSON)'),
+                                     wx.HORIZONTAL)
+
+        self.stEmpiricalHist = wx.StaticText(pEmpiricalModel, -1, 'File: ')
+        sbsizer2.Add(self.stEmpiricalHist, 0, wx.ALL, 2)
+        sbsizer2.AddStretchSpacer()
+
+        self.bLoadEmpiricalHist = wx.Button(pEmpiricalModel, -1, 'Load')
+        self.bLoadEmpiricalHist.Bind(wx.EVT_BUTTON, self.OnBLoadEmpiricalHistButton)
+        sbsizer2.Add(self.bLoadEmpiricalHist, 0,
+                     wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT, 2)
+
+        pEmpiricalModelSizer.Add(sbsizer2, 0, wx.ALL | wx.EXPAND, 2)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.bGenEmpiricalHistFluors = wx.Button(pEmpiricalModel, -1, 'Go')
+        self.bGenEmpiricalHistFluors.Bind(wx.EVT_BUTTON, self.OnBGenEmpiricalHistFluorsButton)
+        hsizer.Add(self.bGenEmpiricalHistFluors, 1,
+                   wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT, 2)
+
+        pEmpiricalModelSizer.Add(hsizer, 0, wx.ALL | wx.ALIGN_RIGHT, 2)
+
+        pEmpiricalModel.SetSizer(pEmpiricalModelSizer)
+
+        self.nSimulationType.AddPage(imageId=-1, page=pFirstPrinciples,
+                                     select=True,
+                                     text='Theoretical State Model')
+        self.nSimulationType.AddPage(imageId=-1, page=pEmpiricalModel,
+                                     select=False,
+                                     text='Data Based Empirical Model')
+        sbsizer.Add(self.nSimulationType, 0, wx.ALL | wx.EXPAND, 2)
+
+        vsizer.Add(sbsizer, 0, wx.ALL | wx.EXPAND, 2)
 
         ######## Status #########
         
@@ -333,6 +423,7 @@ class dSimControl(wx.Panel):
 
         self.scope=scope
         self.points = []
+        self.EmpiricalHist = None
         self.tRefresh.Start(200)
         self.SetSizerAndFit(self.vsizer)
         
@@ -360,11 +451,11 @@ class dSimControl(wx.Panel):
 
         y_chan_size = YVals[-1] - YVals[0]
 
-        wc.xp -= wc.xp.mean() + XVals[x_chan_pixels/2]
-        wc.xp = np.mod(wc.xp, x_chan_size) - x_chan_size/2
+        wc.xp = wc.xp - wc.xp.mean() + x_chan_size/2
+        wc.xp = np.mod(wc.xp, x_chan_size) + XVals[0]
 
-        wc.yp -= wc.yp.mean() + YVals[y_pixels/2]
-        wc.yp = np.mod(wc.yp, y_chan_size) - y_chan_size/2
+        wc.yp = wc.yp - wc.yp.mean() + y_chan_size/2
+        wc.yp = np.mod(wc.yp, y_chan_size) + YVals[0]
 
         if self.cbFlatten.GetValue():
             wc.zp *= 0
@@ -378,7 +469,7 @@ class dSimControl(wx.Panel):
             if self.cbColour.GetValue():
                 self.points.append((wc.xp[i],wc.yp[i],wc.zp[i], float(i/((len(wc.xp) + 1)/3))))
             else:
-                self.points.append((wc.xp[i],wc.yp[i],wc.zp[i]))
+                self.points.append((wc.xp[i],wc.yp[i],wc.zp[i], 0))
 
         
         self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
@@ -408,15 +499,34 @@ class dSimControl(wx.Panel):
         pylab.save(fn, scipy.array(self.points))
         #self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
         #event.Skip()
+        
+    def OnBSetPSFModel(self, event=None):
+        psf_settings = PSFSettings()
+        psf_settings.configure_traits(kind='modal')
+        
+        z_modes = {int(k):float(v) for k, v in psf_settings.zernike_modes.items()}
+        
+        if psf_settings.four_pi:
+            z_modes_lower = {int(k): float(v) for k, v in psf_settings.zernike_modes_lower.items()}
+            phases = [np.pi*float(p) for p in psf_settings.phases]
+            
+            print z_modes, z_modes_lower, phases
+            rend_im.genTheoreticalModel4Pi(rend_im.mdh, phases=phases, zernikes=[z_modes, z_modes_lower],
+                                           lamb=psf_settings.wavelength_nm,
+                                           NA=psf_settings.NA, vectorial=psf_settings.vectorial)
+        else:
+            print('Setting PSF with zernike modes: %s' % z_modes)
+            rend_im.genTheoreticalModel(rend_im.mdh, zernikes=z_modes, lamb=psf_settings.wavelength_nm,
+                                        NA=psf_settings.NA, vectorial=psf_settings.vectorial)
 
     def OnBSetPSF(self, event):
         fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf|TIFF (*.tif)|*.tif')
         print(fn)
         if fn == '':
-            rend_im.genTheoreticalModel(rend_im.MetaData.TIRFDefault)
+            #rend_im.genTheoreticalModel(rend_im.mdh)
             return
         else:
-            rend_im.setModel(fn, rend_im.MetaData.TIRFDefault)
+            rend_im.setModel(fn, rend_im.mdh)
         #event.Skip()
 
     def OnBGenFloursButton(self, event):
@@ -481,3 +591,30 @@ class dSimControl(wx.Panel):
             labStr += "Num '%s' = %d\n" % (self.states[i], cts[i]) 
         self.stStatus.SetLabel(labStr)
         #event.Skip()
+
+    def OnBLoadEmpiricalHistButton(self, event):
+        fn = wx.FileSelector('Read point positions from file')
+        if fn is None:
+            print('No file selected')
+            return
+
+        with open(fn,'r') as f:
+            data = json.load(f)
+        self.EmpiricalHist = EmpiricalHist(**data[data.keys().pop()])
+
+        self.stEmpiricalHist.SetLabel('File: %s' % fn)
+
+    def OnBGenEmpiricalHistFluorsButton(self, event):
+        points_a = scipy.array(self.points).astype('f')
+        x = points_a[:, 0]
+        y = points_a[:, 1]
+        z = points_a[:, 2]
+
+        fluors = fluor.EmpiricalHistFluors(x, y, z,
+                                           histogram=self.EmpiricalHist,
+                                           activeState=self.activeState)
+
+        chan_z_offsets, chan_specs = self.getSplitterInfo()
+        self.scope.cam.setSplitterInfo(chan_z_offsets, chan_specs)
+
+        self.scope.cam.setFluors(fluors)

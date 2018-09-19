@@ -20,19 +20,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from pylab import *
+import numpy as np
 from . import edges
-from matplotlib import delaunay
+from matplotlib import tri
 
 #import segment
 def test():
-    x = rand(1e6)
+    x = np.random.rand(1e6)
     
-    y = rand(1e6)
+    y = np.random.rand(1e6)
     
     
     
-    T = delaunay.Triangulation(x,y)
+    T = tri.Triangulation(x,y)
     
     #ed = zeros((len(x)*1.5, 16), 'int32')
     

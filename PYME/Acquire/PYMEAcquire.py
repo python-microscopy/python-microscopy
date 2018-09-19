@@ -35,6 +35,8 @@ If run without an intialisation file it defaults to using simulated hardware.
 
 #!/usr/bin/python
 import wx
+import matplotlib
+#matplotlib.use('WXAgg')
 from PYME.Acquire import acquiremainframe
 #from PYME import mProfile
 
@@ -116,4 +118,5 @@ if __name__ == '__main__':
     fp = fProfile.thread_profiler()
     fp.profileOn()
     main()
+    fp.profileOff()
     #mProfile.report()

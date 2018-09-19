@@ -27,6 +27,7 @@ routines expect at least 'x' and 'y' to be defined as keys, and may also
 understand additional values, e.g. 'error_x' 
 """
 import types
+import six
 import numpy as np
 
 from numpy import * #to allow the use of sin cos etc in mappings
@@ -57,11 +58,26 @@ class TabularBase(object):
         return key, sl
 
     def to_recarray(self, keys=None):
+        """
+        Converts tabular data types into record arrays, which is useful for e.g. saving as an hdf table. In order to be
+        converted, the tabular data source must be able to be flattened.
+
+        Parameters
+        ----------
+        keys : list of fields to be copied into output. Defaults to all existing keys.
+
+        Returns
+        -------
+        numpy recarray version of self
+
+        """
         from numpy.core import records
         if keys is None:
             keys = self.keys()
 
-        return records.fromarrays([self.__getitem__(k) for k in keys], names = keys)
+        columns = [self.__getitem__(k) for k in keys]
+        dt = [(k, v.dtype, v.shape[1:]) for k, v in zip(keys, columns)]
+        return records.fromarrays(columns, names=keys, dtype=dt)
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
         from PYME.IO import h5rFile
@@ -71,6 +87,15 @@ class TabularBase(object):
 
             if metadata is not None:
                 f.updateMetadata(metadata)
+                
+    def keys(self):
+        raise NotImplementedError('Should be over-ridden in derived class')
+    
+    def __getitem__(self, keys):
+        raise NotImplementedError('Should be over-ridden in derived class')
+                
+    def __len__(self):
+        return len(self[self.keys()[0]])
         
     
 
@@ -145,7 +170,7 @@ class fitResultsSource(TabularBase):
 
 
     def keys(self):
-        return self._keys + self.transkeys.keys()
+        return self._keys + list(self.transkeys.keys())
 
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
@@ -160,23 +185,20 @@ class fitResultsSource(TabularBase):
         k = key.split('_')
 
         if len(k) == 1:  # TODO: evaluate why these are cast as floats
-            return self.fitResults[k[0]].astype('f')[sl]
+            return self.fitResults[k[0]][sl]
         elif len(k) == 2:
-            return self.fitResults[k[0]][k[1]].astype('f')[sl]
+            return self.fitResults[k[0]][k[1]][sl]
         elif len(k) == 3:
-            return self.fitResults[k[0]][k[1]][k[2]].astype('f')[sl]
+            return self.fitResults[k[0]][k[1]][k[2]][sl]
         else:
             raise KeyError("Don't know about deeper nesting yet")
 
-
-    def close(self):
-        self.h5f.close()
 
     def getInfo(self):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
-class h5rSource(TabularBase):
+class h5rSource(fitResultsSource):
     _name = "h5r Data Source"
     def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
@@ -208,31 +230,6 @@ class h5rSource(TabularBase):
         #sort by time
         if 'tIndex' in self._keys:
             self.fitResults.sort(order='tIndex')
-
-
-    def keys(self):
-        return self._keys + self.transkeys.keys()
-
-    def __getitem__(self, keys):
-        key, sl = self._getKeySlice(keys)
-            
-        #if we're using an alias replace with actual key
-        if key in self.transkeys.keys():
-            key = self.transkeys[key]
-
-        if not key in self._keys:
-            raise KeyError('Key not found - %s' % key)
-
-        k = key.split('_')
-        
-        if len(k) == 1:
-            return self.fitResults[k[0]][sl]
-        elif len(k) == 2:
-            return self.fitResults[k[0]][k[1]][sl]
-        elif len(k) == 3:
-            return self.fitResults[k[0]][k[1]][k[2]][sl]
-        else:
-            raise KeyError("Don't know about deeper nesting yet")
         
 
     def close(self):
@@ -422,7 +419,36 @@ class matfileSource(TabularBase):
 
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
+
+
+class matfileColumnSource(TabularBase):
+    _name = "Matlab Column Source"
+    
+    def __init__(self, filename):
+        """ Input filter for use with matlab data. Need to provide a variable name
+        and a list of column names
+        in the order that they appear in the file. Using 'x', 'y' and 'error_x'
+        for the position data and it's error should ensure that this functions
+        with the visualisation backends"""
         
+        import scipy.io
+        
+        self.res = scipy.io.loadmat(filename)  # TODO: evaluate why these are cast as floats
+        
+        self._keys = self.res.keys()
+    
+    def keys(self):
+        return self._keys
+    
+    def __getitem__(self, key):
+        key, sl = self._getKeySlice(key)
+        if not key in self._keys:
+            raise KeyError('Key (%s) not found' % key)
+        
+        return self.res[key][sl]
+    
+    def getInfo(self):
+        return 'Text Data Source\n\n %d points' % len(self.res['x'])
 
 class resultsFilter(TabularBase):
     _name = "Results Filter"
@@ -456,6 +482,68 @@ class resultsFilter(TabularBase):
         key, sl = self._getKeySlice(keys)
         return self.resultsSource[key][self.Index][sl]
 
+    def keys(self):
+        return self.resultsSource.keys()
+
+
+class randomSelectionFilter(TabularBase):
+    _name = "Random Selection Filter"
+    
+    def __init__(self, resultsSource, num_Samples):
+        """Class to permit filtering of fit results - masquarades
+        as a dictionary. Takes item ranges as keyword arguments, eg:
+        f = resultsFliter(source, x=[0,10], error_x=[0,5]) will return
+        an object that behaves like source, but with only those points with
+        an x value in the range [0, 10] and a x error in the range [0, 5].
+
+        The filter class does not have any explicit knowledge of the keys
+        supported by the underlying data source."""
+        
+        self.resultsSource = resultsSource
+        
+        #by default select everything
+        self.Index = np.random.choice(len(self.resultsSource[resultsSource.keys()[0]]), num_Samples)
+        
+    
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+        return self.resultsSource[key][self.Index][sl]
+    
+    def keys(self):
+        return self.resultsSource.keys()
+
+
+class idFilter(TabularBase):
+    _name = "Id Filter"
+    
+    def __init__(self, resultsSource, id_column, valid_ids):
+        """Class to permit filtering of fit results - masquarades
+        as a dictionary. Takes item ranges as keyword arguments, eg:
+        f = resultsFliter(source, x=[0,10], error_x=[0,5]) will return
+        an object that behaves like source, but with only those points with
+        an x value in the range [0, 10] and a x error in the range [0, 5].
+
+        The filter class does not have any explicit knowledge of the keys
+        supported by the underlying data source."""
+        
+        self.resultsSource = resultsSource
+        self.id_column = id_column
+        self.valid_ids = valid_ids
+        
+        #by default select everything
+        self.Index = np.zeros(self.resultsSource[resultsSource.keys()[0]].shape)
+        
+        for id in valid_ids:
+            self.Index += (self.resultsSource[id_column] == id)
+            
+            
+            
+        self.Index = self.Index > 0.5
+    
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+        return self.resultsSource[key][self.Index][sl]
+    
     def keys(self):
         return self.resultsSource.keys()
 
@@ -561,7 +649,7 @@ class mappingFilter(TabularBase):
             return self.resultsSource[keys]
 
     def keys(self):
-        return list(set(list(self.resultsSource.keys()) + self.mappings.keys() + self.new_columns.keys()))
+        return list(set(list(self.resultsSource.keys()) + list(self.mappings.keys()) + list(self.new_columns.keys())))
 
     def addVariable(self, name, value):
         """
@@ -610,7 +698,7 @@ class mappingFilter(TabularBase):
     def setMapping(self, key, mapping):
         if type(mapping) == types.CodeType:
             self.mappings[key] = mapping
-        elif type(mapping) == types.StringType:
+        elif isinstance(mapping, six.string_types):
             self.mappings[key] = compile(mapping, '/tmp/test1', 'eval')
         else:
             self.__dict__[key] = mapping
@@ -640,6 +728,17 @@ class mappingFilter(TabularBase):
 
         return eval(map)
 
+class _ChannelFilter(TabularBase):
+    def __init__(self, colour_filter, channel):
+        self.colour_filter = colour_filter
+        self.channel = channel
+        
+    def __getitem__(self, keys):
+        return self.colour_filter.get_channel_column(self.channel, keys)
+    
+    def keys(self):
+        return self.colour_filter.keys()
+
 class colourFilter(TabularBase):
     _name = "Colour Filter"
     def __init__(self, resultsSource, currentColour=None):
@@ -656,19 +755,21 @@ class colourFilter(TabularBase):
 
     @property
     def index(self):
+        return self._index(self.currentColour)
+        
+    def _index(self, channel):
         colChans = self.getColourChans()
-
-        if not self.currentColour in colChans:
+        if not channel in colChans:
             return np.ones(len(self.resultsSource[self.resultsSource.keys()[0]]), 'bool')
         else:
-            p_dye = self.resultsSource['p_%s' % self.currentColour]
+            p_dye = self.resultsSource['p_%s' % channel]
 
             p_other = 0 * p_dye
             p_tot = self.t_p_background * self.resultsSource['ColourNorm']
 
             for k in colChans:
                 p_tot += self.resultsSource['p_%s' % k]
-                if not self.currentColour == k:
+                if not channel == k:
                     p_other = np.maximum(p_other, self.resultsSource['p_%s' % k])
 
             p_dye = p_dye / p_tot
@@ -678,18 +779,25 @@ class colourFilter(TabularBase):
 
 
     def __getitem__(self, keys):
+        return self.get_channel_column(self.currentColour, keys)
+            
+    def get_channel_column(self, chan, keys):
         key, sl = self._getKeySlice(keys)
         colChans = self.getColourChans()
-
-        if not self.currentColour in colChans:
+    
+        if not chan in colChans:
             return self.resultsSource[keys]
         else:
             #chromatic shift correction
             #print self.currentColour
-            if  self.currentColour in self.chromaticShifts.keys() and key in self.chromaticShifts[self.currentColour].keys():
-                return self.resultsSource[key][self.index][sl] + self.chromaticShifts[self.currentColour][key]
+            if chan in self.chromaticShifts.keys() and key in self.chromaticShifts[chan].keys():
+                return self.resultsSource[key][self._index(chan)][sl] + self.chromaticShifts[chan][key]
             else:
-                return self.resultsSource[key][self.index][sl]
+                return self.resultsSource[key][self._index(chan)][sl]
+            
+    def get_channel_ds(self, chan):
+        return _ChannelFilter(self, chan)
+        
 
     @classmethod
     def get_colour_chans(cls, resultsSource):

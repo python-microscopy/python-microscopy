@@ -37,7 +37,7 @@ class motionFlagger:
 
         logging.debug('Adding menu items for event filters')
 
-        visFr.AddMenuItem('Extras', 'Identify transient frames', self.OnIDTransient,
+        visFr.AddMenuItem('Corrections', 'Identify transient frames', self.OnIDTransient,
                           helpText='Toss frames acquired during pifoc translation')
 
 

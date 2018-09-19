@@ -25,10 +25,14 @@ import os.path
 import wx
 import tables
 import numpy
+
+import warnings
+
 try:
-    import Image
-except ImportError:
     from PIL import Image
+except ImportError:
+    import Image
+    
 import os
 from PYME.IO.FileUtils import saveTiffStack
 from PYME.IO import MetaDataHandler
@@ -79,7 +83,7 @@ class H5Exporter(Exporter):
         self.complevel = complevel
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
-        h5out = tables.openFile(outFile,'w', chunk_cache_size=2**23)
+        h5out = tables.open_file(outFile,'w', chunk_cache_size=2**23)
         filters=tables.Filters(self.complevel,self.complib,shuffle=True)
 
         nframes = (zslice.stop - zslice.start)/zslice.step
@@ -91,7 +95,7 @@ class H5Exporter(Exporter):
         #atm = tables.UInt16Atom()
         atm = tables.Atom.from_dtype(data[xslice, yslice, 0].dtype)
 
-        ims = h5out.createEArray(h5out.root,'ImageData',atm,(0,xSize,ySize), filters=filters, expectedrows=nframes, chunkshape=(1,xSize,ySize))
+        ims = h5out.create_earray(h5out.root,'ImageData',atm,(0,xSize,ySize), filters=filters, expectedrows=nframes, chunkshape=(1,xSize,ySize))
 
         curFrame = 0
         for frameN in range(zslice.start,zslice.stop, zslice.step):
@@ -133,7 +137,7 @@ class H5Exporter(Exporter):
         outMDH.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
 
 
-        outEvents = h5out.createTable(h5out.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
+        outEvents = h5out.create_table(h5out.root, 'Events', SpoolEvent,filters=tables.Filters(complevel=5, shuffle=True))
 
         if not events is None:
             #copy events to results file
@@ -155,9 +159,10 @@ exporter(H5Exporter)
 #@exporter
 class TiffStackExporter(Exporter):
     extension = '*.tiff'
-    descr = 'TIFF (stack if 3D) - .tiff'
+    descr = 'TIFF [old style] - .tiff'
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
+        warnings.warn('export of old style tiffs should only be used in exceptional circumstances')
         #xmd = None
         if not metadata is None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
@@ -216,12 +221,14 @@ class OMETiffExporter(Exporter):
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         from PYME.contrib.gohlke import tifffile
         from PYME.IO import dataWrap
-
-        if data.dtype == 'bool':
-            dshape = data.shape
-            data = data.astype('u1').reshape(dshape) # reshape needed as final 1-sized dim seemed to be dropped
-
-        dw = dataWrap.ListWrap([data[xslice, yslice, zslice, i] for i in range(data.shape[3])])
+        
+        def _bool_to_uint8(data):
+            if data.dtype == 'bool':
+                return data.astype('uint8')
+            else:
+                return data
+        
+        dw = dataWrap.ListWrap([numpy.atleast_3d(_bool_to_uint8(data[xslice, yslice, zslice, i].squeeze())) for i in range(data.shape[3])])
         #xmd = None
         if not metadata is None:
             xmd = MetaDataHandler.OMEXMLMDHandler(mdToCopy=metadata)
@@ -327,6 +334,7 @@ class PSFExporter(Exporter):
 
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         #numpy.save(outFile, data[xslice, yslice, zslice])
+        warnings.warn('The .psf format is deprecated. Save PSFs as .tif instead')
         try:
             import cPickle
         except ImportError:
@@ -334,8 +342,7 @@ class PSFExporter(Exporter):
             import pickle as cPickle
             
         fid = open(outFile, 'wb')
-        proto = 0 # we are reverting to protocol type 0 as type 2 gives rise to crashes when run in workers
-        cPickle.dump((data[xslice, yslice, zslice], metadata.voxelsize), fid, protocol=proto)
+        cPickle.dump((data[xslice, yslice, zslice], metadata.voxelsize), fid, 2)
         fid.close()
 
         if progressCallback:
@@ -382,17 +389,17 @@ class TxtExporter(Exporter):
             fid.write('\n' + '\t'.join(['%f' % d[i] for d in dat]))
 
         fid.close()
-
+        
         # write metadata in xml file
         if not metadata is None:
             xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
             if not origName is None:
                 xmd.setEntry('cropping.originalFile', origName)
-
+    
             xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
             xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
             xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
-            
+    
             xmlFile = os.path.splitext(outFile)[0] + '.xml'
             xmd.writeXML(xmlFile)
 
@@ -519,15 +526,20 @@ def _getFilename(defaultExt = '*.tif'):
 
         return fname
 
-def CropExportData(vp, mdh=None, events=None, origName = None):
+def CropExportData(data, roi=None, mdh=None, events=None, origName = None):
     #if 'ds' in dir(vp.do):
-    ds = vp.do.ds
+    #ds = vp.do.ds
     #else:
     #    ds= vp.ds
 
     #if 'selection_begin_x' in dir(vp):
-    roi = [[vp.do.selection_begin_x, vp.do.selection_end_x + 1],
-              [vp.do.selection_begin_y, vp.do.selection_end_y +1], [0, ds.shape[2]]]
+    
+    # roi = [[vp.do.selection_begin_x, vp.do.selection_end_x + 1],
+    #           [vp.do.selection_begin_y, vp.do.selection_end_y +1], [0, ds.shape[2]]]
+    
+    if roi is None:
+        roi = [[0,data.shape[0]], [0,data.shape[1]], [0,data.shape[2]]]
+    
     #else:
     #   roi = [[0, ds.shape[0]],[0, ds.shape[1]],[0, ds.shape[2]]]
 
@@ -547,7 +559,7 @@ def CropExportData(vp, mdh=None, events=None, origName = None):
             ext = '*.ome.tif'        
         exp = exportersByExtension[ext]()
 
-        exp.Export(ds, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
+        exp.Export(data, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
 
     dlg.Destroy()
 

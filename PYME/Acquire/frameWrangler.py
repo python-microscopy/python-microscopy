@@ -35,6 +35,9 @@ import numpy as np
 import ctypes
 import sys
 
+import logging
+logger=logging.getLogger(__name__)
+
 if sys.platform == 'win32':
     memcpy = ctypes.cdll.msvcrt.memcpy
 elif sys.platform == 'darwin':
@@ -141,6 +144,7 @@ class FrameWrangler(wx.EvtHandler):
             
     def getFrame(self, colours=None):
         """Ask the camera to put a frame into our buffer"""
+        #logger.debug('acquire _current_frame_lock in getFrame()')
         with self._current_frame_lock:
             self._cf = np.empty([1, self.cam.GetPicWidth(), self.cam.GetPicHeight(),
 	                                ], dtype = 'uint16', order = self.order)
@@ -156,8 +160,9 @@ class FrameWrangler(wx.EvtHandler):
             #for newer cameras, we pass a numpy array object, and the camera code
             #copies the data into that array.
             self.cam.ExtractColor(cs,0)
-            
-            return self._cf
+
+        #logger.debug('release _current_frame_lock in getFrame()')
+        return self._cf
 
     def purge(self):
         """purge (and discard) all remaining frames in the camera buffer"""
@@ -388,11 +393,13 @@ class FrameWrangler(wx.EvtHandler):
 
         self.aqOn = False
 
+        #logger.debug('acquire _current_frame_lock in stop()')
         with self._current_frame_lock:
             try: #deal with Andor without breaking sensicam
                 self.cam.StopAq()
             except AttributeError:
                 pass
+        #logger.debug('release _current_frame_lock in stop()')
                 
         self.onStop.send_robust(self)
 
@@ -407,8 +414,10 @@ class FrameWrangler(wx.EvtHandler):
         
         self.onStart.send_robust(self)
 
+        #logger.debug('acquire _current_frame_lock in start')
         with self._current_frame_lock:
             self.cam.StartExposure()
+        #logger.debug('release _current_frame_lock in start')
 
         self.aqOn = True
 

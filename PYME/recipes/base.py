@@ -45,11 +45,16 @@ def register_module(moduleName):
     return c_decorate
 
 
-def register_legacy_module(moduleName):
+def register_legacy_module(moduleName, py_module=None):
     """Permits a module to be accessed by an old name"""
+    
     def c_decorate(cls):
-        py_module = cls.__module__.split('.')[-1]
-        full_module_name = '.'.join([py_module, moduleName])
+        if py_module is None:
+            py_module_ = cls.__module__.split('.')[-1]
+        else:
+            py_module_ = py_module
+            
+        full_module_name = '.'.join([py_module_, moduleName])
 
         _legacy_modules[full_module_name] = cls
         _legacy_modules[moduleName] = cls #allow access by non-hierarchical names for backwards compatibility
@@ -70,6 +75,8 @@ class ModuleBase(HasTraits):
     def remove_outputs(self):
         if not self.__dict__.get('_parent', None) is None:
             self._parent.pruneDependanciesFromNamespace(self.outputs)
+            
+            self._parent.invalidate_data()
 
     def outputs_in_namespace(self, namespace):
         keys = namespace.keys()
@@ -90,6 +97,9 @@ class ModuleBase(HasTraits):
     @property
     def outputs(self):
         return {v for k, v in self.get().items() if k.startswith('output')}
+    
+    def get_name(self):
+        return module_names[self.__class__]
 
     def trait_view(self, name=None, view_element=None):
         import traitsui.api as tui
@@ -109,18 +119,42 @@ class ModuleBase(HasTraits):
     @property
     def hide_in_overview(self):
         return []
-
-    @property
-    def pipeline_view(self):
+    
+    def get_params(self):
+        editable = self.class_editable_traits()
+        inputs = [tn for tn in editable if tn.startswith('input')]
+        outputs = [tn for tn in editable if tn.startswith('output')]
+        params = [tn for tn in editable if not (tn in inputs or tn in outputs or tn.startswith('_'))]
+        
+        return inputs, outputs, params
+        
+    def _pipeline_view(self, show_label=True):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
         import traitsui.api as tui
 
         modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
 
         hidden = self.hide_in_overview
+        
+        inputs, outputs, params = self.get_params()
 
-        params = [tn for tn in self.class_editable_traits() if not (tn.startswith('input') or tn.startswith('output') or tn in hidden)]
+        #params = [tn for tn in self.class_editable_traits() if not (tn.startswith('input') or tn.startswith('output') or tn in hidden)]
 
-        return tui.View(tui.Group([tui.Item(tn) for tn in params],label=modname))
+        if show_label:
+            return tui.View(tui.Group([tui.Item(tn) for tn in params],label=modname))
+        else:
+            return tui.View([tui.Item(tn) for tn in params])
+
+    @property
+    def pipeline_view(self):
+        return self._pipeline_view()
+
+    @property
+    def pipeline_view_min(self):
+        return self._pipeline_view(False)
 
 
     @property
@@ -134,13 +168,18 @@ class ModuleBase(HasTraits):
 
     @property
     def default_view(self):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
         from traitsui.api import View, Item, Group
         from PYME.ui.custom_traits_editors import CBEditor
 
-        editable = self.class_editable_traits()
-        inputs = [tn for tn in editable if tn.startswith('input')]
-        outputs = [tn for tn in editable if tn.startswith('output')]
-        params = [tn for tn in editable if not (tn in inputs or tn in outputs or tn.startswith('_'))]
+        #editable = self.class_editable_traits()
+        #inputs = [tn for tn in editable if tn.startswith('input')]
+        #outputs = [tn for tn in editable if tn.startswith('output')]
+        #params = [tn for tn in editable if not (tn in inputs or tn in outputs or tn.startswith('_'))]
+        inputs, outputs, params = self.get_params()
 
         return View([Item(tn, editor=CBEditor(choices=self._namespace_keys)) for tn in inputs] + [Item('_'),] +
                     [Item(tn) for tn in params] + [Item('_'),] +
@@ -165,6 +204,21 @@ class OutputModule(ModuleBase):
             return os.path.join(clusterIO.local_dataroot, out_filename.lstrip('/'))
         elif self.scheme == 'pyme-cluster:// - aggregate':
             raise RuntimeError('Aggregation not suported')
+        
+    def generate(self, namespace, recipe_context={}):
+        """
+        Function to be called from within dh5view (rather than batch processing). Some outputs are ignored, in which
+        case this function returns None.
+        
+        Parameters
+        ----------
+        namespace
+
+        Returns
+        -------
+
+        """
+        return None
 
 
     def execute(self, namespace):
@@ -174,14 +228,19 @@ class OutputModule(ModuleBase):
         """
         pass
 
-
+import dispatch
 class ModuleCollection(HasTraits):
     modules = List()
+    execute_on_invalidation = Bool(False)
     
     def __init__(self, *args, **kwargs):
         HasTraits.__init__(self, *args, **kwargs)
         
         self.namespace = {}
+        
+    def invalidate_data(self):
+        if self.execute_on_invalidation:
+            self.execute()
         
     def dependancyGraph(self):
         dg = {}
@@ -294,7 +353,11 @@ class ModuleCollection(HasTraits):
 
         for m in exec_order:
             if isinstance(m, ModuleBase) and not m.outputs_in_namespace(self.namespace):
-                m.execute(self.namespace)
+                try:
+                    m.execute(self.namespace)
+                except:
+                    logger.exception("Error in recipe module: %s" % m)
+                    raise
         
         if 'output' in self.namespace.keys():
             return self.namespace['output']
@@ -347,28 +410,32 @@ class ModuleCollection(HasTraits):
         import json
         return json.dumps(self.get_cleaned_module_list())
     
-    @classmethod
-    def from_module_list(cls, l):
-        c = cls()
-
+    def update_from_module_list(self, l):
         mc = []
-
+    
         if l is None:
             l = []
-
+    
         for mdd in l:
             mn, md = mdd.items()[0]
             try:
-                mod = all_modules[mn](c)
+                mod = all_modules[mn](self)
             except KeyError:
                 # still support loading old recipes which do not use hierarchical names
                 # also try and support modules which might have moved
-                mod = _legacy_modules[mn.split('.')[-1]](c)
-
+                mod = _legacy_modules[mn.split('.')[-1]](self)
+        
             mod.set(**md)
             mc.append(mod)
-
-        c.modules = mc
+    
+        self.modules = mc
+        self.invalidate_data()
+    
+    @classmethod
+    def from_module_list(cls, l):
+        c = cls()
+        c.update_from_module_list(l)
+                
         return c
 
     @classmethod
@@ -377,6 +444,17 @@ class ModuleCollection(HasTraits):
 
         l = yaml.load(data)
         return cls.from_module_list(l)
+    
+    def update_from_yaml(self, data):
+        import os
+        import yaml
+        
+        if os.path.isfile(data):
+            with open(data) as f:
+                data = f.read()
+    
+        l = yaml.load(data)
+        return self.update_from_module_list(l)
 
     @classmethod
     def fromJSON(cls, data):
@@ -421,6 +499,28 @@ class ModuleCollection(HasTraits):
         for mod in self.modules:
             if isinstance(mod, OutputModule):
                 mod.save(self.namespace, context)
+                
+    def gather_outputs(self, context={}):
+        """
+        Find all OutputModule instances and call their generate methods with the recipe context
+
+        Parameters
+        ----------
+        context : dict
+            A context dictionary used to substitute and create variable names.
+
+        """
+        
+        outputs = []
+        
+        for mod in self.modules:
+            if isinstance(mod, OutputModule):
+                out = mod.generate(self.namespace, context)
+                
+                if not out is None:
+                    outputs.append(out)
+                    
+        return outputs
 
     def loadInput(self, filename, key='input'):
         """Load input data from a file and inject into namespace
@@ -430,30 +530,45 @@ class ModuleCollection(HasTraits):
         """
         #modify this to allow for different file types - currently only supports images
         from PYME.IO import unifiedIO
-        if filename.endswith('.h5r'):
+        import os
+        extension = os.path.splitext(filename)[1]
+        if extension in ['.h5r', '.h5', '.hdf']:
             import tables
             from PYME.IO import MetaDataHandler
             from PYME.IO import tabular
 
             with unifiedIO.local_or_temp_filename(filename) as fn:
-                h5f = tables.open_file(fn)
+                h5f = tables.open_file(fn, mode='r')
 
                 key_prefix = '' if key == 'input' else key + '_'
 
-                mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
+                try:
+                    mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
+                except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
+                    logger.warning('No metadata found, proceeding with empty metadata')
+                    mdh = MetaDataHandler.NestedClassMDHandler()
                 for t in h5f.list_nodes('/'):
-                    if isinstance(t, tables.table.Table):
-                        tab = tabular.h5rSource(h5f, t.name)
+                    if isinstance(t, tables.VLArray):
+                        from PYME.IO.ragged import RaggedVLArray
+                        
+                        rag = RaggedVLArray(h5f, t.name)
+                        rag.mdh = mdh
+
+                        self.namespace[key_prefix + t.name] = rag
+
+                    elif isinstance(t, tables.table.Table):
+                        #  pipe our table into h5r or hdf source depending on the extension
+                        tab = tabular.h5rSource(h5f, t.name) if extension == '.h5r' else tabular.hdfSource(h5f, t.name)
                         tab.mdh = mdh
 
                         self.namespace[key_prefix + t.name] = tab
 
                         #logger.error('loading h5r not supported yet')
                         #raise NotImplementedError
-        elif filename.endswith('.csv'):
+        elif extension == '.csv':
             logger.error('loading .csv not supported yet')
             raise NotImplementedError
-        elif filename.endswith('.xls') or filename.endswith('.xlsx'):
+        elif extension in ['.xls', '.xlsx']:
             logger.error('loading .xls not supported yet')
             raise NotImplementedError
         else:
@@ -462,14 +577,23 @@ class ModuleCollection(HasTraits):
 
     @property
     def pipeline_view(self):
-        from traitsui.api import View, ListEditor, InstanceEditor, Item
-        #v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True, view='pipeline_view'), style='custom', show_label=False),
-        #            buttons=['OK', 'Cancel'])
-
-        return View(Item('modules', editor=ListEditor(style='custom', editor=InstanceEditor(view='pipeline_view'),
-                                                      mutable=False),
-                         style='custom', show_label=False),
-                    buttons=['OK', 'Cancel'])
+        import wx
+        if wx.GetApp() is None:
+            return None
+        else:
+            from traitsui.api import View, ListEditor, InstanceEditor, Item
+            #v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True, view='pipeline_view'), style='custom', show_label=False),
+            #            buttons=['OK', 'Cancel'])
+    
+            return View(Item('modules', editor=ListEditor(style='custom', editor=InstanceEditor(view='pipeline_view'),
+                                                          mutable=False),
+                             style='custom', show_label=False),
+                        buttons=['OK', 'Cancel'])
+        
+    def to_svg(self):
+        from . import recipeLayout
+        return recipeLayout.to_svg(self.dependancyGraph())
+        
 
         
 class Filter(ModuleBase):
@@ -480,6 +604,9 @@ class Filter(ModuleBase):
     processFramesIndividually = Bool(True)
     
     def filter(self, image):
+        #from PYME.util.shmarray import shmarray
+        #import multiprocessing
+        
         if self.processFramesIndividually:
             filt_ims = []
             for chanNum in range(image.data.shape[3]):

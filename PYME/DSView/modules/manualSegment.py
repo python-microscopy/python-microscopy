@@ -43,10 +43,28 @@ class manualSegment:
         
         dsviewer.AddMenuItem('Segmentation', 'Create mask', self.OnCreateMask)
         dsviewer.AddMenuItem('Segmentation', "Fill selection\tCtrl-F", self.FillSelection)
+        dsviewer.AddMenuItem('Segmentation', 'Multiply image with mask', self.OnMultiplyMask)
 
         #accel_tbl = wx.AcceleratorTable([(wx.ACCEL_CTRL,  ord('k'), PLOT_PROFILE )])
         #self.dsviewer.SetAcceleratorTable(accel_tbl)
+        
+    def OnMultiplyMask(self, event=None):
+        new_image = []
+        
+        mask = self.mask > 0.5 #generate a binary mask from labels
+        
+        for chNum in range(self.image.data.shape[3]):
+            new_image.append(mask*self.image.data[:,:,:,chNum])
 
+        im = ImageStack(new_image, titleStub='Masked image')
+        im.mdh.copyEntriesFrom(self.image.mdh)
+            
+        if self.dsviewer.mode == 'visGUI':
+            mode = 'visGUI'
+        else:
+            mode = 'lite'
+
+        self.dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
     def OnCreateMask(self, event=None):
         #lx, ly, hx, hy = self.do.GetSliceSelection()
@@ -108,19 +126,20 @@ class manualSegment:
 #        pylab.imshow(np.array(img))
 #        self.mask[x0:x1, y0:y1, self.do.zp] = np.array(img)
         
-            
+        from skimage import draw
         from shapely.geometry import Polygon, Point
-        
         p = Polygon(self.do.selection_trace)
-        x0, y0, x1, y1 = p.bounds
+        #x0, y0, x1, y1 = p.bounds
 
-        self.vmax += 1        
+        self.vmax += 1
+        rr, cc = draw.polygon(*np.array(self.do.selection_trace).T)
+        self.mask[rr,cc, self.do.zp] = self.vmax
         
-        for x in range(int(x0), int(x1)+1):
-            for y in range (int(y0), int(y1)+1):
-                if Point(x, y).within(p):
-                    self.mask[x,y,self.do.zp] = self.vmax
-        self.rois.append(p)            
+        # for x in range(int(x0), int(x1)+1):
+        #     for y in range (int(y0), int(y1)+1):
+        #         if Point(x, y).within(p):
+        #             self.mask[x,y,self.do.zp] = self.vmax
+        self.rois.append(p)
         self.dv.update()
         self.dv.Refresh()
     

@@ -51,7 +51,7 @@ class FitInfoPanel(wx.Panel):
 
         vsizer.Add(sFitRes, 0, wx.EXPAND|wx.LEFT|wx.TOP|wx.BOTTOM|wx.RIGHT, 5)
 
-        if self.mdh.getEntry('Analysis.FitModule') in ['LatGaussFitFR','LatGaussFitFRforZyla']:
+        if self.mdh.getEntry('Analysis.FitModule') == 'LatGaussFitFR':
             #we know what the fit parameters are, and how to convert to photons
             tPhotons = self.genGaussPhotonStats(None)
         else:
@@ -229,18 +229,20 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
         self.mdh = mdh
         
     def _extractROI(self, fri):
+        from PYME.IO.MetaDataHandler import get_camera_roi_origin
+        roi_x0, roi_y0 = get_camera_roi_origin(self.mdh)
+        
         if 'Splitter' in self.mdh['Analysis.FitModule']:
              # is a splitter fit
             if 'Splitter.Channel0ROI' in self.mdh.getEntryNames():
-                pseudo_roiposx = 1
-                pseudo_roiposy = 1 
                 x0, y0, w, h = self.mdh['Splitter.Channel0ROI']
-                x0 -= (pseudo_roiposx - 1)
-                y0 -= (pseudo_roiposy - 1)
+                
+                x0 -= roi_x0
+                y0 -= roi_y0
                 #g = self.data[x0:(x0+w), y0:(y0+h)]
                 x1, y1, w, h = self.mdh['Splitter.Channel1ROI']
-                x1 -= (pseudo_roiposx - 1)
-                y1 -= (pseudo_roiposy - 1)
+                x1 -= roi_x0
+                y1 -= roi_y0
                 #r = self.data[x0:(x0+w), y0:(y0+h)]
             else:
                 x0, y0 = 0,0
@@ -262,8 +264,8 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 vy = 1e3*self.mdh['voxelsize.y']
                 
                 #position in nm from camera origin
-                x_ = ((slux[0] + slux[1])/2. + self.mdh['Camera.ROIPosX'] - 1)*vx
-                y_ = ((sluy[0] + sluy[1])/2. + self.mdh['Camera.ROIPosY'] - 1)*vy
+                x_ = ((slux[0] + slux[1])/2. + roi_x0)*vx
+                y_ = ((sluy[0] + sluy[1])/2. + roi_y0)*vy
                 
                 #look up shifts
                 if not self.mdh.getOrDefault('Analysis.FitShifts', False):

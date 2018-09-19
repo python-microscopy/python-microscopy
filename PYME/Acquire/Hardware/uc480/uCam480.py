@@ -149,7 +149,7 @@ class uc480Camera:
             'xstep' : 4,
             'ymin' : 4,
             'ystep' : 2
-        }        
+        }
     }
 
     # this info is partly from the IDS datasheets that one can request for each camera model
@@ -305,7 +305,7 @@ class uc480Camera:
             else:
                 print 'Error %s: %d: %s' % [msg]+GetError(self.boardHandle)
 
-    def Init(self):        
+    def Init(self):
         #set up polling thread        
         self.doPoll = False
         self.pollLoopActive = True
@@ -787,7 +787,7 @@ class uc480Camera:
             mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
             mdh.setEntry('Camera.CycleTime', 1./self.GetFPS())
 
-            mdh.setEntry('Camera.HardwareGain', self.GetGain())            
+            mdh.setEntry('Camera.HardwareGain', self.GetGain())
             mdh.setEntry('Camera.HardwareGainFactor', self.GetGainFactor())
             mdh.setEntry('Camera.ElectronsPerCount', self.GetElectronsPerCount())
             mdh.setEntry('Camera.ADOffset', self.GetADOffset())
@@ -800,8 +800,11 @@ class uc480Camera:
 
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
+            mdh.setEntry('Camera.ROIOriginX', self.GetROIX1() - 1) #new 0 based version
+            mdh.setEntry('Camera.ROIOriginY', self.GetROIY1() - 1)
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1()+1)
             mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1()+1)
+            #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
 
             check_mapexists(mdh,type='dark')
             check_mapexists(mdh,type='variance')

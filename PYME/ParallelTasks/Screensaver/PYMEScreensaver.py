@@ -102,7 +102,7 @@ class MySaver(pyscr.Screensaver):
     
     def tick(self):
         #called when the timer tick ocours, set up with startTimer from above
-        self.dc.beginDrawing()
+        #self.dc.beginDrawing()
 
         w,h = self.dc.getSize()
         
@@ -132,7 +132,7 @@ class MySaver(pyscr.Screensaver):
         self.dc.drawRect((0,0), (w-1,h-1))
         #self.x += 1
         #self.dc.fillEllipse((50, 50), (60, 60))
-        self.dc.endDrawing()
+        #self.dc.endDrawing()
 
 #standard 'main' detection and startof screensaver
 if __name__ == '__main__':

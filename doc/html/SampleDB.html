@@ -1,34 +1,24 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>The Sample Database &mdash; PYME 17.01.27 documentation</title>
-    
+    <title>The Sample Database &#8212; PYME 18.06.19 documentation</title>
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '17.01.27',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PYME 17.01.27 documentation" href="index.html" />
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="PYME package" href="api/PYME.html" />
-    <link rel="prev" title="PYME Metadata" href="metadata.html" /> 
-  </head>
-  <body role="document">
+    <link rel="prev" title="TIFF support in PYME" href="tiff_handling.html" /> 
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -42,9 +32,9 @@
           <a href="api/PYME.html" title="PYME package"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="metadata.html" title="PYME Metadata"
+          <a href="tiff_handling.html" title="TIFF support in PYME"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.01.27 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 18.06.19 documentation</a> &#187;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/SampleDB.rst">Edit</a> &raquo;</li>
  
 
@@ -70,22 +60,21 @@
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="metadata.html"
-                        title="previous chapter">PYME Metadata</a></p>
+  <p class="topless"><a href="tiff_handling.html"
+                        title="previous chapter">TIFF support in PYME</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="api/PYME.html"
                         title="next chapter">PYME package</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -110,8 +99,8 @@ species and also strain (e.g. wistar for rats, HeLa, HEK293, etc for cultured ce
 <p>A <strong>Slide</strong> will have one or more <strong>Labelling</strong> s which represent, e.g. the expression of a fluorescent protein,
 antibody labelling with a given combination of primary and secondary antibodies, or FISH staining with a specific probe.
 Each <strong>Labelling</strong> has a <strong>Dye</strong> associated with it - the long name is what the manufacturer would call it e.g.
-&#8216;Alexa Fluor 647&#8217;. For fluorescent proteins, it should ideally include enough info to uniquely identify it. The short name
-is used for internal shorthand and as a key in other parts of our software. It should not include spaces - e.g. &#8216;A647&#8217;.
+‘Alexa Fluor 647’. For fluorescent proteins, it should ideally include enough info to uniquely identify it. The short name
+is used for internal shorthand and as a key in other parts of our software. It should not include spaces - e.g. ‘A647’.
 The <em>spectraDBName</em> is the name of the dye in the Chroma spectra viewer, to facilitate automatic retrieval of dye spectra.</p>
 <p>A <strong>Slide</strong> may have one or more images associated with it. Each image represents one <em>RAW</em> data acquisition, and may
 have multiple <strong>File</strong> s. One of these files will be the raw data, whilst others could be analysed results.</p>
@@ -127,41 +116,41 @@ be associated with a given Slide, Image, or File.</span></p>
 <div class="section" id="part-i-basic-setup">
 <h3>Part I - Basic Setup<a class="headerlink" href="#part-i-basic-setup" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic">
-<li><p class="first">Using <code class="docutils literal"><span class="pre">apt-get</span></code> or <code class="docutils literal"><span class="pre">synaptic</span></code> install <code class="docutils literal"><span class="pre">python-setuptools</span></code>, <code class="docutils literal"><span class="pre">python-scipy</span></code>, <code class="docutils literal"><span class="pre">python-matplotlib</span></code> and <code class="docutils literal"><span class="pre">python-tables</span></code> from the distribution packages</p>
+<li><p class="first">Using <code class="docutils literal notranslate"><span class="pre">apt-get</span></code> or <code class="docutils literal notranslate"><span class="pre">synaptic</span></code> install <code class="docutils literal notranslate"><span class="pre">python-setuptools</span></code>, <code class="docutils literal notranslate"><span class="pre">python-scipy</span></code>, <code class="docutils literal notranslate"><span class="pre">python-matplotlib</span></code> and <code class="docutils literal notranslate"><span class="pre">python-tables</span></code> from the distribution packages</p>
 </li>
-<li><p class="first">Get a copy of <code class="docutils literal"><span class="pre">python-microscopy</span></code> by cloning from the repository:</p>
-<div class="highlight-python"><div class="highlight"><pre>hg clone https://code.google.com/p/python-microscopy/
+<li><p class="first">Get a copy of <code class="docutils literal notranslate"><span class="pre">python-microscopy</span></code> by cloning from the repository:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">hg</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">code</span><span class="o">.</span><span class="n">google</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">p</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">microscopy</span><span class="o">/</span>
 </pre></div>
 </div>
 </li>
-<li><p class="first">Install Django from the distribution package archive - ie <code class="docutils literal"><span class="pre">sudo</span> <span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">python-django</span></code></p>
+<li><p class="first">Install Django from the distribution package archive - ie <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">python-django</span></code></p>
 </li>
-<li><p class="first">Make a new mysql user called <code class="docutils literal"><span class="pre">sample_db</span></code> with password <code class="docutils literal"><span class="pre">PYMEUSER</span></code> (can be modified in <code class="docutils literal"><span class="pre">SampleDB2/settings.py</span></code>).</p>
+<li><p class="first">Make a new mysql user called <code class="docutils literal notranslate"><span class="pre">sample_db</span></code> with password <code class="docutils literal notranslate"><span class="pre">PYMEUSER</span></code> (can be modified in <code class="docutils literal notranslate"><span class="pre">SampleDB2/settings.py</span></code>).</p>
 </li>
-<li><p class="first">Create a new mysql database called <code class="docutils literal"><span class="pre">sample_db</span></code> and grant the <code class="docutils literal"><span class="pre">sample_db</span></code> user all rights. <a class="footnote-reference" href="#id4" id="id2">[2]</a></p>
+<li><p class="first">Create a new mysql database called <code class="docutils literal notranslate"><span class="pre">sample_db</span></code> and grant the <code class="docutils literal notranslate"><span class="pre">sample_db</span></code> user all rights. <a class="footnote-reference" href="#id4" id="id2">[2]</a></p>
 </li>
-<li><p class="first">Open a terminal window and change to the <code class="docutils literal"><span class="pre">PYME/SampleDB2/</span></code> directory.</p>
+<li><p class="first">Open a terminal window and change to the <code class="docutils literal notranslate"><span class="pre">PYME/SampleDB2/</span></code> directory.</p>
 </li>
 <li><p class="first">Test the installation so far by entering:</p>
-<div class="highlight-python"><div class="highlight"><pre>python manage.py sql samples
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">manage</span><span class="o">.</span><span class="n">py</span> <span class="n">sql</span> <span class="n">samples</span>
 </pre></div>
 </div>
 <p>This should show the SQL which will be used to make the tables that <cite>SampleDB</cite> needs, and will only work if Django is installed and can connect to the database. If this fails, chase up the error messages.</p>
 </li>
 <li><p class="first">Create the tables by entering:</p>
-<div class="highlight-python"><div class="highlight"><pre>python manage.py syncdb
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">manage</span><span class="o">.</span><span class="n">py</span> <span class="n">syncdb</span>
 </pre></div>
 </div>
 <p>This will create all the database tables and prompt you for an admin username and password.</p>
 </li>
 <li><p class="first">Test the setup by running the development server:</p>
-<div class="highlight-python"><div class="highlight"><pre>python setup.py runserver
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">runserver</span>
 </pre></div>
 </div>
-<p>Now direct your browser to <code class="docutils literal"><span class="pre">localhost:8080</span></code> and you should get your first glimpse of the sample database. This will, however, only be visible on the local computer.</p>
+<p>Now direct your browser to <code class="docutils literal notranslate"><span class="pre">localhost:8080</span></code> and you should get your first glimpse of the sample database. This will, however, only be visible on the local computer.</p>
 </li>
 </ol>
-<p>Usernames, database names, and passwords can be customized for your site in <code class="docutils literal"><span class="pre">SampleDB2/settings.py</span></code> - for more details see the Django documentation.</p>
+<p>Usernames, database names, and passwords can be customized for your site in <code class="docutils literal notranslate"><span class="pre">SampleDB2/settings.py</span></code> - for more details see the Django documentation.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">These instructions follow my re-installation on Ubuntu 14.04 LTS, which ships with Django 1.6. Other versions of Django might not work.</p>
@@ -183,53 +172,53 @@ be associated with a given Slide, Image, or File.</span></p>
 <h3>Part II - Getting Apache to serve the SampleDB<a class="headerlink" href="#part-ii-getting-apache-to-serve-the-sampledb" title="Permalink to this headline">¶</a></h3>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">In its default state, the PYME SampleDB is not secure. Only use behind a firewall and do so at your own risk/discretion. The version of the Django <code class="docutils literal"><span class="pre">settings.py</span></code> in the python-microscopy repository has <code class="docutils literal"><span class="pre">DEBUG</span></code> set to <code class="docutils literal"><span class="pre">True</span></code>, which is a known security risk. In a controlled environment, this risk is probably acceptable in return for easier troubleshooting, but you have been warned!</p>
+<p class="last">In its default state, the PYME SampleDB is not secure. Only use behind a firewall and do so at your own risk/discretion. The version of the Django <code class="docutils literal notranslate"><span class="pre">settings.py</span></code> in the python-microscopy repository has <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, which is a known security risk. In a controlled environment, this risk is probably acceptable in return for easier troubleshooting, but you have been warned!</p>
 </div>
 <ol class="arabic">
-<li><p class="first">Create a directory <code class="docutils literal"><span class="pre">/var/www/SampleDB/static</span></code> for the static files (if you want to host the files from another directory, you will need to change <code class="docutils literal"><span class="pre">STATIC_ROOT</span></code> in <code class="docutils literal"><span class="pre">settings.py</span></code> and the apache .conf file detailed in step 3).</p>
+<li><p class="first">Create a directory <code class="docutils literal notranslate"><span class="pre">/var/www/SampleDB/static</span></code> for the static files (if you want to host the files from another directory, you will need to change <code class="docutils literal notranslate"><span class="pre">STATIC_ROOT</span></code> in <code class="docutils literal notranslate"><span class="pre">settings.py</span></code> and the apache .conf file detailed in step 3).</p>
 </li>
 <li><p class="first">Install the static files by calling:</p>
-<div class="highlight-python"><div class="highlight"><pre>sudo python manage.py collectstatic
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">python</span> <span class="n">manage</span><span class="o">.</span><span class="n">py</span> <span class="n">collectstatic</span>
 </pre></div>
 </div>
 </li>
-<li><p class="first">Create a new file in <code class="docutils literal"><span class="pre">/etc/apache2/conf-available</span></code> called <code class="docutils literal"><span class="pre">SampleDB.conf</span></code> with the following contents (alter the paths to reflect where you have extracted python-microscopy):</p>
-<div class="highlight-python"><div class="highlight"><pre>WSGIScriptAlias / /home/david/python-microscopy/PYME/SampleDB2/SampleDB2/wsgi.py
-WSGIPythonPath /home/david/python-microscopy/PYME/SampleDB2/
+<li><p class="first">Create a new file in <code class="docutils literal notranslate"><span class="pre">/etc/apache2/conf-available</span></code> called <code class="docutils literal notranslate"><span class="pre">SampleDB.conf</span></code> with the following contents (alter the paths to reflect where you have extracted python-microscopy):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">WSGIScriptAlias</span> <span class="o">/</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">david</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">microscopy</span><span class="o">/</span><span class="n">PYME</span><span class="o">/</span><span class="n">SampleDB2</span><span class="o">/</span><span class="n">SampleDB2</span><span class="o">/</span><span class="n">wsgi</span><span class="o">.</span><span class="n">py</span>
+<span class="n">WSGIPythonPath</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">david</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">microscopy</span><span class="o">/</span><span class="n">PYME</span><span class="o">/</span><span class="n">SampleDB2</span><span class="o">/</span>
 
-&lt;Directory /home/david/python-microscopy/PYME/SampleDB2/SampleDB2/&gt;
-&lt;Files wsgi.py&gt;
-Require all granted
-&lt;/Files&gt;
-&lt;/Directory&gt;
+<span class="o">&lt;</span><span class="n">Directory</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">david</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">microscopy</span><span class="o">/</span><span class="n">PYME</span><span class="o">/</span><span class="n">SampleDB2</span><span class="o">/</span><span class="n">SampleDB2</span><span class="o">/&gt;</span>
+<span class="o">&lt;</span><span class="n">Files</span> <span class="n">wsgi</span><span class="o">.</span><span class="n">py</span><span class="o">&gt;</span>
+<span class="n">Require</span> <span class="nb">all</span> <span class="n">granted</span>
+<span class="o">&lt;/</span><span class="n">Files</span><span class="o">&gt;</span>
+<span class="o">&lt;/</span><span class="n">Directory</span><span class="o">&gt;</span>
 
-Alias /media/ /var/www/SampleDB/static/
-&lt;Directory /var/www/SampleDB/static/&gt;
-Order deny,allow
-Allow from all
-&lt;/Directory&gt;
+<span class="n">Alias</span> <span class="o">/</span><span class="n">media</span><span class="o">/</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">www</span><span class="o">/</span><span class="n">SampleDB</span><span class="o">/</span><span class="n">static</span><span class="o">/</span>
+<span class="o">&lt;</span><span class="n">Directory</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">www</span><span class="o">/</span><span class="n">SampleDB</span><span class="o">/</span><span class="n">static</span><span class="o">/&gt;</span>
+<span class="n">Order</span> <span class="n">deny</span><span class="p">,</span><span class="n">allow</span>
+<span class="n">Allow</span> <span class="kn">from</span> <span class="nn">all</span>
+<span class="o">&lt;/</span><span class="n">Directory</span><span class="o">&gt;</span>
 </pre></div>
 </div>
 </li>
-<li><p class="first">Activate the newly created <code class="docutils literal"><span class="pre">SampleDB.conf</span></code> by calling:</p>
-<div class="highlight-python"><div class="highlight"><pre>sudo a2enconf SampleDB
-sudo service apache2 reload
+<li><p class="first">Activate the newly created <code class="docutils literal notranslate"><span class="pre">SampleDB.conf</span></code> by calling:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">a2enconf</span> <span class="n">SampleDB</span>
+<span class="n">sudo</span> <span class="n">service</span> <span class="n">apache2</span> <span class="n">reload</span>
 </pre></div>
 </div>
 </li>
 <li><p class="first">Verify that you can now see the server from another machine.</p>
 </li>
-<li><p class="first"><strong>[Optional but reccomended]</strong> Lock the server down. Edit <code class="docutils literal"><span class="pre">settings.py</span></code> to add your machine name to <code class="docutils literal"><span class="pre">ALLOWED_HOSTS</span></code> and then set <code class="docutils literal"><span class="pre">DEBUG</span></code> to <code class="docutils literal"><span class="pre">False</span></code>. Restart apache with <code class="docutils literal"><span class="pre">sudo</span> <span class="pre">service</span> <span class="pre">apache2</span> <span class="pre">reload</span></code> to make the changes take effect.</p>
+<li><p class="first"><strong>[Optional but reccomended]</strong> Lock the server down. Edit <code class="docutils literal notranslate"><span class="pre">settings.py</span></code> to add your machine name to <code class="docutils literal notranslate"><span class="pre">ALLOWED_HOSTS</span></code> and then set <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> to <code class="docutils literal notranslate"><span class="pre">False</span></code>. Restart apache with <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">service</span> <span class="pre">apache2</span> <span class="pre">reload</span></code> to make the changes take effect.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">This alone is not enough to make SampleDB secure. You would also want to look at changing the database passwords and the <code class="docutils literal"><span class="pre">SECRET_KEY</span></code> in <code class="docutils literal"><span class="pre">settings.py</span></code>, as well as potentially restricting access to MySQL to the local machine. Some items are stored in the database as pickles, which means that, although difficult to exploit, a database breach theoretically has the capablilty to allow remote code execution.</p>
+<p class="last">This alone is not enough to make SampleDB secure. You would also want to look at changing the database passwords and the <code class="docutils literal notranslate"><span class="pre">SECRET_KEY</span></code> in <code class="docutils literal notranslate"><span class="pre">settings.py</span></code>, as well as potentially restricting access to MySQL to the local machine. Some items are stored in the database as pickles, which means that, although difficult to exploit, a database breach theoretically has the capablilty to allow remote code execution.</p>
 </div>
 </li>
 </ol>
 </div>
 <div class="section" id="part-iii-letting-other-machines-know-where-to-find-the-sampledb">
 <h3>Part III - Letting other machines know where to find the SampleDB<a class="headerlink" href="#part-iii-letting-other-machines-know-where-to-find-the-sampledb" title="Permalink to this headline">¶</a></h3>
-<p>Letting other machines find the sample database is as simple as setting an environment variable: <code class="docutils literal"><span class="pre">PYME_DATABASE_HOST</span></code> to the hostname or IP address of the server.</p>
+<p>Letting other machines find the sample database is as simple as setting an environment variable: <code class="docutils literal notranslate"><span class="pre">PYME_DATABASE_HOST</span></code> to the hostname or IP address of the server.</p>
 </div>
 </div>
 </div>
@@ -253,17 +242,17 @@ sudo service apache2 reload
           <a href="api/PYME.html" title="PYME package"
              >next</a> |</li>
         <li class="right" >
-          <a href="metadata.html" title="PYME Metadata"
+          <a href="tiff_handling.html" title="TIFF support in PYME"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">PYME 17.01.27 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">PYME 18.06.19 documentation</a> &#187;</li>
 <li><a href="http://lmsrv1/docwiki/docs/pyme-docs/SampleDB.rst">Edit</a> &raquo;</li>
  
 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2016, David Baddeley.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+        &#169; Copyright 2016, David Baddeley.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.5.
     </div>
   </body>
 </html>

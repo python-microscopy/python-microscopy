@@ -27,12 +27,13 @@ class ParticleTracker:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        visFr.AddMenuItem('Extras', "&Track single molecule trajectories", self.OnTrackMolecules)
-        visFr.AddMenuItem('Extras', "Plot Mean Squared Displacement", self.OnCalcMSDs)
-        visFr.AddMenuItem('Extras', "Coalesce clumps", self.OnCoalesce)
+        visFr.AddMenuItem('Analysis>Tracking', "&Track single molecule trajectories", self.OnTrackMolecules)
+        visFr.AddMenuItem('Corrections>Chaining', "Find consecutive appearances", self.OnFindClumps)
+        visFr.AddMenuItem('Analysis>Tracking', "Plot Mean Squared Displacement", self.OnCalcMSDs)
+        visFr.AddMenuItem('Corrections>Chaining', "Clump consecutive appearances", self.OnCoalesce)
         visFr.AddMenuItem('Extras', "Calculate clump widths", self.OnCalcWidths)
 
-    def OnTrackMolecules(self, event):
+    def _OnTrackMolecules(self, event):
         import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
         #import PYME.Analysis.points.DeClump.deClump as deClump
         import PYME.Analysis.Tracking.trackUtils as trackUtils
@@ -51,8 +52,65 @@ class ParticleTracker:
             pipeline.Rebuild()
 
         dlg.Destroy()
+        
+    def OnFindClumps(self, event):
+        import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
+        #import PYME.Analysis.points.DeClump.deClump as deClump
+        import PYME.Analysis.Tracking.trackUtils as trackUtils
+
+        visFr = self.visFr
+        pipeline = visFr.pipeline
+
+        #bCurr = wx.BusyCursor()
+        dlg = deClumpGUI.deClumpDialog(None)
+
+        ret = dlg.ShowModal()
+
+        if ret == wx.ID_OK:
+            from PYME.recipes import tracking
+            recipe = self.visFr.pipeline.recipe
+    
+            recipe.add_module(tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey, outputName='with_clumps',
+                                                  timeWindow=dlg.GetClumpTimeWindow(),
+                                                  clumpRaduisVariable=dlg.GetClumpRadiusVariable(),
+                                                  clumpRadiusScale=dlg.GetClumpRadiusMultiplier()))
+    
+            recipe.execute()
+            self.visFr.pipeline.selectDataSource('with_clumps')
+            self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+
+        dlg.Destroy()
+
+    def OnTrackMolecules(self, event):
+        import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
+        #import PYME.Analysis.points.DeClump.deClump as deClump
+        import PYME.Analysis.Tracking.trackUtils as trackUtils
+
+        from PYME.recipes import tracking
+        recipe = self.visFr.pipeline.recipe
+    
+        visFr = self.visFr
+        pipeline = visFr.pipeline
+        
+        tracking_module = tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey,
+                                              outputName='with_tracks',
+                                    outputClumps = 'tracks',
+                                    timeWindow=5,
+                                    clumpRadiusVariable='1.0',
+                                    clumpRadiusScale=250.,
+                                    minClumpSize=50)
+    
+        if tracking_module.configure_traits(kind='modal'):
+            recipe.add_module(tracking_module)
+    
+            recipe.execute()
+            self.visFr.pipeline.selectDataSource('with_tracks')
+            self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+        
+        #dlg.Destroy()
 
     def OnCalcMSDs(self,event):
+        #TODO - move this logic to reports - like dh5view module
         import pylab
         from PYME.Analysis import _fithelpers as fh
         from PYME.Analysis.points.DistHist import msdHistogram
@@ -63,25 +121,25 @@ class ParticleTracker:
             
         pipeline = self.visFr.pipeline
 
-        clumps = set(pipeline.mapping['clumpIndex'])
+        clumps = set(pipeline['clumpIndex'])
 
         dt = pipeline.mdh.getEntry('Camera.CycleTime')
 
 
         Ds = np.zeros(len(clumps))
-        Ds_ =  np.zeros(pipeline.mapping['x'].shape)
+        Ds_ =  np.zeros(pipeline['x'].shape)
         alphas = np.zeros(len(clumps))
-        alphas_ =  np.zeros(pipeline.mapping['x'].shape)
+        alphas_ =  np.zeros(pipeline['x'].shape)
         error_Ds = np.zeros(len(clumps))
 
         pylab.figure()
 
         for i, ci in enumerate(clumps):
-            I = pipeline.mapping['clumpIndex'] == ci
+            I = pipeline['clumpIndex'] == ci
 
-            x = pipeline.mapping['x'][I]
-            y = pipeline.mapping['y'][I]
-            t = pipeline.mapping['t'][I]
+            x = pipeline['x'][I]
+            y = pipeline['y'][I]
+            t = pipeline['t'][I]
 
             nT = int((t.max() - t.min())/2)
 
@@ -113,7 +171,7 @@ class ParticleTracker:
 
         pipeline.Rebuild()
         
-    def OnCoalesce(self, event):
+    def _OnCoalesce(self, event):
         from PYME.IO import tabular
         from PYME.Analysis.points.DeClump import pyDeClump
         
@@ -123,6 +181,7 @@ class ParticleTracker:
         except KeyError:
             nphotons = None
             
+        #TODO - check what nPhotons is doing here!!!
         dclumped = pyDeClump.coalesceClumps(pipeline.selectedDataSource.resultsSource.fitResults,
                                             pipeline.selectedDataSource['clumpIndex'], nphotons)
         ds = tabular.fitResultsSource(dclumped)
@@ -130,6 +189,16 @@ class ParticleTracker:
         pipeline.addDataSource('Coalesced',  ds)
         pipeline.selectDataSource('Coalesced')
 
+        self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+        
+    def OnCoalesce(self, event):
+        from PYME.recipes import localisations
+        recipe = self.visFr.pipeline.recipe
+    
+        recipe.add_module(localisations.MergeClumps(recipe, inputName='with_clumps', outputName='coalesced'))
+    
+        recipe.execute()
+        self.visFr.pipeline.selectDataSource('coalesced')
         self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
     def OnCalcWidths(self,event):

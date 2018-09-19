@@ -143,6 +143,8 @@ class dec:
         #make things 1 dimensional
         #self.f = self.f.ravel()
         data = data.ravel()
+        
+        weights = weights / weights.mean()
 
         #print data.mean(), weights, lamb
         #print abs(self.H).sum()
@@ -161,7 +163,9 @@ class dec:
         while self.loopcount  < num_iters:
             self.loopcount += 1
             #the direction our prior/ Likelihood function wants us to go
-            pref = self.Lfunc(self.f - fdef);
+            pref = self.Lfunc(self.f - fdef)
+            
+            #print pref, self.f
 
             #the residuals
             #if you want to bodge non-gaussian noise you can multiply with
@@ -176,6 +180,8 @@ class dec:
             #is where this method departs from the classical conjugate gradient approach
             S[:,0] = self.Ahfunc(self.res)
             S[:,1] = -self.Lhfunc(pref)
+            
+            #print norm(S[:,0]), norm(S[:,1])
 
             #check to see if the two search directions are orthogonal
             #this can be used as a measure of convergence and a stopping criteria
@@ -191,6 +197,7 @@ class dec:
             (fnew, cpred, spred) = self.subsearch(self.f, self.res[self.mask], fdef, self.Afunc, self.Lfunc, lamb, S[:, 0:nsrch])
 
             #positivity constraint (not part of original algorithm & could be ommitted)
+            
             fnew = (fnew*(fnew > 0))
 
             #add last step to search directions, as per classical conj. gradient

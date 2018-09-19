@@ -14,6 +14,9 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
         
         self.additionalDims = dimOrder[2:len(data.shape)]
         
+        if len(self.data.shape) > 3:
+            self.sizeC = self.data.shape[3]
+        
         self.oldData = None
         self.oldSlice = None #buffer last lookup
     
@@ -63,6 +66,6 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
             return self.data.shape[0]
         else:
             if len(self.data.shape) > 2:
-                return self.data.shape[2]
+                return np.prod(self.data.shape[2:])
             else:
                 return 1

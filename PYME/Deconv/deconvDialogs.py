@@ -306,7 +306,7 @@ class DeconvSettingsDialog(wx.Dialog):
             
     def GetPSF(self, vshint = None):
         import numpy as np
-        from PYME.IO import load_psf
+        from PYME.IO.load_psf import load_psf
         from scipy import stats
         
         PSFMode = self.nb2.GetCurrentPage().PSFMode

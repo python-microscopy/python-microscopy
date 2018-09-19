@@ -57,29 +57,47 @@ fresultdtype=[('tIndex', '<i4'),
     #('coiR', [('sxl', '<f4'),('sxr', '<f4'),('syu', '<f4'),('syd', '<f4')]),
     ('resultCode', '<i4'),
     ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),
-    ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]), ('nchi2', '<f4')]
+    ('startParams', [('A', '<f4'),('x0', '<f4'),('y0', '<f4'),('z0', '<f4'), ('background', '<f4')]),
+    ('nchi2', '<f4'),
+    ('subtractedBackground', '<f4')]
 
-def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1):
+def PSFFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, startParams=None, nchi2=-1, background=0):
+    res = np.zeros(1, dtype=fresultdtype)
     if fitErr is None:
         fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
     if startParams is None:
         startParams = -5e3*np.ones(fitResults.shape, 'f')
+    
+    res['tIndex'] = metadata.tIndex
+    res['fitResults'].view('5f4')[0,:] = fitResults.astype('f')
+    res['fitError'].view('5f4')[0,:] = fitErr.astype('f')
+    res['resultCode'] = resultCode
+    res['slicesUsed'].view('9i4')[:] = np.array(fmtSlicesUsed(slicesUsed), dtype='i4').ravel() #fmtSlicesUsed(slicesUsed)
+    res['startParams'].view('5f4')[0,:] = startParams.astype('f')
+    res['nchi2'] = nchi2
+    res['subtractedBackground'] = background
+    
+    return res
 
-    tIndex = metadata.tIndex
-
-    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), startParams.astype('f'), nchi2)], dtype=fresultdtype)
+    #return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed), startParams.astype('f'), nchi2, background)], dtype=fresultdtype)
 
 
 def genFitImage(fitResults, metadata, fitfcn=f_Interp3d):
+    from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
     xslice = slice(*fitResults['slicesUsed']['x'])
     yslice = slice(*fitResults['slicesUsed']['y'])
-    rs =  (xslice.stop-xslice.start)/2
-    if xslice.step is not None:
-        rs /= xslice.step
-    # alternatively len(fitResults['slicesUsed']['x'])/2?
-    im = PSFFitFactory.evalModel(fitResults['fitResults'], metadata, np.mgrid[xslice].mean(), np.mgrid[yslice].mean(),roiHalfSize=rs)
+    
+    vx = 1e3*metadata.voxelsize.x
+    vy = 1e3*metadata.voxelsize.y
+    
+    #position in nm from camera origin
+    roi_x0, roi_y0 = get_camera_roi_origin(metadata)
+    x_ = (xslice.start + roi_x0)*vx
+    y_ = (yslice.start + roi_y0)*vy
+
+    im = PSFFitFactory._evalModel(fitResults['fitResults'], metadata, xslice, yslice, x_, y_)
     
     return im[0].squeeze()
 
@@ -106,7 +124,7 @@ class PSFFitFactory(FFBase.FFBase):
             self.solver = FitModelWeighted_
         
 
-        interpModule = metadata.Analysis.InterpModule
+        interpModule = metadata.getOrDefault('Analysis.InterpModule', 'CSInterpolator')
         self.interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + interpModule , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
 
         if 'Analysis.EstimatorModule' in metadata.getEntryNames():
@@ -126,12 +144,19 @@ class PSFFitFactory(FFBase.FFBase):
                     self.startPosEstimator.calibrate(self.interpolator, metadata)
             else:
                 self.interpolator.genTheoreticalModel(metadata)
-
+                
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5, model=f_Interp3d):
+        xs = slice(-roiHalfSize,roiHalfSize + 1)
+        ys = slice(-roiHalfSize,roiHalfSize + 1)
+
+        return cls._evalModel(params, md, xs, ys, x, y, model)
+
+    @classmethod
+    def _evalModel(cls, params, md, xs, ys, x, y, model=f_Interp3d):
         #generate grid to evaluate function on
         #setModel(md.PSFFile, md)
-        interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + md.Analysis.InterpModule , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
+        interpolator = __import__('PYME.localization.FitFactories.Interpolators.' + md.getOrDefault('Analysis.InterpModule', 'CSInterpolator') , fromlist=['PYME', 'localization', 'FitFactories', 'Interpolators']).interpolator
 
         if 'Analysis.EstimatorModule' in md.getEntryNames():
             estimatorModule = md.Analysis.EstimatorModule
@@ -145,7 +170,7 @@ class PSFFitFactory(FFBase.FFBase):
             print('model changed')
             startPosEstimator.splines.clear()
 
-        X, Y, Z, safeRegion = interpolator.getCoords(md, slice(x -roiHalfSize,x + roiHalfSize + 1), slice(y -roiHalfSize,y + roiHalfSize + 1), slice(0,1))
+        X, Y, Z, safeRegion = interpolator.getCoords(md, xs, ys, slice(0,1))
 
         return model(params, interpolator, X, Y, Z, safeRegion), X.ravel()[0], Y.ravel()[0], Z.ravel()[0]
         
@@ -184,7 +209,7 @@ class PSFFitFactory(FFBase.FFBase):
         #normalised Chi-squared
         nchi2 = (infodict['fvec']**2).sum()/(dataROI.size - res.size)
 
-        return PSFFitResultR(res, self.metadata,(xslice, yslice, zslice), resCode, fitErrors, np.array(startParameters), nchi2)
+        return PSFFitResultR(res, self.metadata,(xslice, yslice, zslice), resCode, fitErrors, np.array(startParameters), nchi2, np.mean(bgMean))
 
      
 
@@ -198,7 +223,7 @@ from PYME.localization.FitFactories import Interpolators
 from PYME.localization.FitFactories import zEstimators
 
 #set of parameters that this fit needs to know about
-PARAMETERS = [mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
+PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','CSInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
               mde.FilenameParam('PSFFile', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf|TIFF files|*.tif'),
               #mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
               #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),

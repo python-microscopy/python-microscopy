@@ -279,6 +279,9 @@ class eventLogPanel(wx.Panel):
         dc.SetFont(wx.NullFont)
 
     def OnPaint(self,event):
+        if not self.IsShownOnScreen():
+            return
+        
         DC = wx.PaintDC(self)
         #self.PrepareDC(DC)
 
@@ -288,12 +291,12 @@ class eventLogPanel(wx.Panel):
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
         try:
-            DC.BeginDrawing()
+            #DC.BeginDrawing()
 
             self.DoPaint(MemDC);
 
             DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
-            DC.EndDrawing()
+            #DC.EndDrawing()
         finally:
 
             del MemDC
@@ -342,7 +345,7 @@ class eventLogPanel(wx.Panel):
 
         self.lineColours = {}
         for k, c in zip(self.evKeyNames, colours):
-            self.lineColours[k] = wx.Colour(*(255*c))
+            self.lineColours[k] = wx.Colour(*[int(v) for v in (255*c)])
 
         if self.initialised:
             self.Refresh()
@@ -388,9 +391,9 @@ class eventLogTPanel(wx.Panel):
 
         wx.Panel.__init__(self, parent, size=size)
 
-        wx.EVT_PAINT(self, self.OnPaint)
-        wx.EVT_SIZE(self, self.OnSize)
-        wx.EVT_MOUSEWHEEL(self, self.OnWheel)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_MOUSEWHEEL, self.OnWheel)
 
         self.initialised = True
 
@@ -668,12 +671,12 @@ class eventLogTPanel(wx.Panel):
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
         try:
-            DC.BeginDrawing()
+            #DC.BeginDrawing()
 
             self.DoPaint(MemDC);
 
             DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
-            DC.EndDrawing()
+            #DC.EndDrawing()
         finally:
 
             del MemDC

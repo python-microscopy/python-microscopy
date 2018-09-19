@@ -6,7 +6,7 @@ Created on Mon May 25 17:15:01 2015
 """
 
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int,  File
+from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List
 
 #try:
 #    from traitsui.api import View, Item, Group
@@ -105,24 +105,56 @@ class LocalMaxima(Filter):
         im.mdh['LocalMaxima.threshold'] = self.threshold
         im.mdh['LocalMaxima.minDistance'] = self.minDistance
         
-@register_module('SVMSegment')         
-class svmSegment(Filter):
-    classifier = File('')
-    
-    def _loadClassifier(self):
-        from PYME.Analysis import svmSegment
-        if not '_cf' in dir(self):
-            self._cf = svmSegment.svmClassifier(filename=self.classifier)
-    
-    def applyFilter(self, data, chanNum, frNum, im):
-        self._loadClassifier()
         
-        return self._cf.classify(data.astype('f'))
+# from PYME.IO.DataSources import BaseDataSource
+# class _OpticFlowDataSource(BaseDataSource.BaseDataSource):
+#     def __init__(self, data, filterRadius, supportRadius, regularizationLambda):
+#         self.data = data
+#         self.filterRadius = filterRadius
+#         self.supportRadius = supportRadius
+#         self.regularizationLambda = regularizationLambda
+#
+#         self.additionalDims = data.additionalDims
+#         self.sizeC = data.sizeC
+#
+#     def _calc_frame_flow(self, data, i, chanNum):
+#
+#
+#     def getSlice(self, ind):
+#         """Return the nth 2D slice of the DataSource where the higher dimensions
+#         have been flattened.
+#
+#         equivalent to indexing contiguous 4D data with data[:,:,ind%data.shape[2], ind/data.shape[3]]
+#
+#         e.g. for a 100x100x50x2 DataSource, getSlice(20) would return data[:,:,20,0].squeeze()
+#         whereas getSlice(75) would return data[:,:,25, 1].squeeze()
+#         """
+#
+#         from PYME.Analysis import optic_flow
+#         dx, dy = 0, 0
+#
+#         print('OF %d' % ind)
+#
+#         if ind >= 1:
+#             dx, dy = optic_flow.reg_of(self.data.getSlice(ind-1).squeeze(), self.data.getSlice(ind).squeeze(),
+#                                        self.filterRadius, self.supportRadius, self.regularizationLambda)
+#         if (ind < (self.data.getNumSlices() - 1)):
+#             dx_, dy_ = optic_flow.reg_of(self.data.getSlice(ind).squeeze(), self.data.getSlice(ind+1).squeeze(),
+#                                          self.filterRadius, self.supportRadius, self.regularizationLambda)
+#             dx = dx + dx_
+#             dy = dy + dy_
+#
+#     def getSliceShape(self):
+#         """Return the 2D shape of a slice"""
+#         return self.data.getSliceShape()
+#
+#     def getNumSlices(self):
+#         """Return the number of 2D slices. This is the product of the
+#         dimensions > 2
+#         """
+#         raise self.data.getNumSlices
 
-    def completeMetadata(self, im):
-        im.mdh['SVMSegment.classifier'] = self.classifier
-        
-@register_module('OpticalFlow')         
+@register_module('OpticalFlow')
 class OpticalFlow(ModuleBase):
     filterRadius = Float(1)
     supportRadius = Float(10) 
@@ -131,34 +163,85 @@ class OpticalFlow(ModuleBase):
     outputNameX = Output('flow_x')
     outputNameY = Output('flow_y')
     
-    def calc_flow(self, data, chanNum):
+    def _calc_frame_flow(self, data, i, chanNum):
         from PYME.Analysis import optic_flow
+        dx, dy = 0, 0
+    
+        print('OF %d' % i)
+    
+        if i >= 1:
+            dx, dy = optic_flow.reg_of(data[:, :, i - 1, chanNum].squeeze(), data[:, :, i, chanNum].squeeze(),
+                                       self.filterRadius, self.supportRadius, self.regularizationLambda)
+        if (i < (data.shape[2] - 1)):
+            dx_, dy_ = optic_flow.reg_of(data[:, :, i, chanNum].squeeze(), data[:, :, i + 1, chanNum].squeeze(),
+                                         self.filterRadius, self.supportRadius, self.regularizationLambda)
+            dx = dx + dx_
+            dy = dy + dy_
+            
+        return dx, dy
+    
+    def calc_flow(self, data, chanNum):
         
         flow_x = []
         flow_y = []
         
         for i in range(0, data.shape[2]):
-            dx, dy = 0,0
-            
-            if i >=1:
-                dx, dy = optic_flow.reg_of(data[:,:,i-1, chanNum].squeeze(), data[:,:,i, chanNum].squeeze(), self.filterRadius, self.supportRadius, self.regularizationLambda)
-            if (i < (data.shape[2] - 1)):
-                dx_, dy_ = optic_flow.reg_of(data[:,:,i, chanNum].squeeze(), data[:,:,i+1, chanNum].squeeze(), self.filterRadius, self.supportRadius, self.regularizationLambda)
-                dx = dx + dx_
-                dy = dy + dy_
+            dx, dy = self._calc_frame_flow(data, i, chanNum)
 
             flow_x.append(np.atleast_3d(dx))
             flow_y.append(np.atleast_3d(dy))                
         
         
-        return np.concatenate(flow_x, 2),np.concatenate(flow_y, 2) 
+        return np.concatenate(flow_x, 2),np.concatenate(flow_y, 2)
+    
+    def _mp_calc_frame_flow(self, data_s, flow_x, flow_y, frames):
+        for i in frames:
+            dx, dy = self._calc_frame_flow(data_s, i, 0)
+        
+            flow_x[:, :, i] = dx
+            flow_y[:, :, i] = dy
+        
+
+    def calc_flow_mp(self, data, chanNum):
+        from PYME.util.shmarray import shmarray
+        import multiprocessing
+        
+        data_s = shmarray.zeros(list(data.shape[:3] + [1,]))
+        #print data_s.shape, data.shape
+        data_s[:,:,:,0] = data[:,:,:,chanNum]
+        
+        flow_x = shmarray.zeros(data.shape[:3])
+        flow_y = shmarray.zeros(data.shape[:3])
+        
+        nCPUs = multiprocessing.cpu_count()
+        
+        all_frames = range(0, data.shape[2])
+        tasks = [all_frames[i::nCPUs] for i in range(nCPUs)]
+
+        processes = [multiprocessing.Process(target=self._mp_calc_frame_flow, args=(data_s, flow_x, flow_y, frames))
+                     for frames in tasks]
+
+        for p in processes:
+            p.start()
+
+        for p in processes:
+            p.join()
+    
+    
+        return flow_x, flow_y
         
     def execute(self, namespace):
+        import multiprocessing
         image = namespace[self.inputName]
         flow_x = []
         flow_y = []
         for chanNum in range(image.data.shape[3]):
-            fx, fy = self.calc_flow(image.data, chanNum)
+            if False:#(image.data.shape[2] > 10) and not multiprocessing.current_process().daemon:
+                #use multiple processes for computation
+                fx, fy = self.calc_flow_mp(image.data, chanNum)
+            else:
+                fx, fy = self.calc_flow(image.data, chanNum)
+                
             flow_x.append(fx)
             flow_y.append(fy)
         
@@ -179,6 +262,418 @@ class OpticalFlow(ModuleBase):
     def completeMetadata(self, im):
         im.mdh['OpticalFlow.filterRadius'] = self.filterRadius
         im.mdh['OpticalFlow.supportRadius'] = self.supportRadius
+        
+@register_module('WavefrontDetection')
+class WavefrontDetection(ModuleBase):
+    """ Detect Ca2+ wavefronts by looking at the difference images between two consecutive frames.
+    
+    Wavefront position corresponds to the position of the transient maximum (i.e. the zero-crossing in the temporal
+    derivative), detected by finding all pixels where the magnitude of the temporal derivative is less than
+    `gradientThreshold`. An intensity threshold is also used to reject areas of the image where temporal changes are due
+    to noise alone.
+    
+    Works best on low-pass filtered data.
+    """
+    inputName = Input('input')
+    intensityThreshold = Float(50)
+    gradientThreshold = Float(0.5)
+    outputName = Output('wavefronts')
+    
+    def execute(self, namespace):
+        from skimage.morphology import skeletonize
+        img = namespace[self.inputName]
+        
+        data = img.data[:,:,:]
+        
+        out = np.zeros_like(data)
+        for i in range(1, data.shape[2]):
+            frnt_i = (np.abs(data[:,:,i] - data[:,:,(i-1)]) < self.gradientThreshold)*(data[:,:,i] > self.intensityThreshold)
+            out[:,:,i] = skeletonize(frnt_i.squeeze())
+            
+        im = ImageStack(out, titleStub=self.outputName)
+        im.mdh.copyEntriesFrom(img.mdh)
+        im.mdh['Parent'] = img.filename
+        
+        namespace[self.outputName] = im
+        
+@register_module('WavefrontVelocity')
+class WavefrontVelocity(ModuleBase):
+    """
+    Calculates wavefront velocity given a wavefront image and optic flow images
+    """
+    inputWavefronts = Input('wavefronts')
+    inputFlowX = Input('flow_x')
+    inputFlowY = Input('flow_y')
+    timeWindow = Int(5)
+    outputName = Output('wavefront_velocities')
+        
+        
+    
+    def execute(self, namespace):
+        from skimage.measure import profile_line
+        print('Calculating wavefront velocities')
+        wavefronts = namespace[self.inputWavefronts]
+        
+        waves = wavefronts.data
+        flow_x = namespace[self.inputFlowX].data
+        flow_y = namespace[self.inputFlowY].data
+        
+        velocities = np.zeros(waves.shape, 'f')
+        
+        wave_coords = []
+        #precompute arrays of wavefront coordinates
+        for i in range(waves.shape[2]):
+            if waves[:, :, i].max() > 0:
+                xp, yp = np.argwhere(waves[:, :, i].squeeze()).T
+        
+                xf = flow_x[:, :, i][xp, yp]
+                yf = flow_y[:, :, i][xp, yp]
+        
+                flow_m = np.sqrt(xf * xf + yf * yf)
+                xf = xf / flow_m
+                yf = yf / flow_m
+                
+                wave_coords.append([xp, yp, xf, yf])
+            else:
+                wave_coords.append([np.empty(0), np.empty(0), np.empty(0), np.empty(0)])
+                
+        for i in range(waves.shape[2]):
+            xp, yp, xf, yf = wave_coords[i]
+            print('WaveV: %d' % i)
+            #print(len(xp), xp, waves[:,:,i].max())
+            if len(xp) >0:
+                j_vals = range(max(i - self.timeWindow, 0), min(i + self.timeWindow + 1, waves.shape[2]))
+                A = np.vstack([j_vals, np.ones_like(j_vals)]).T
+                #A = np.ones_like(xp)[:,None,None]*A[None,:,:]
+                
+                ks = np.zeros([len(xp), len(j_vals)])
+                j0 = j_vals[0]
+                I = np.arange(len(xp))
+                for j in j_vals:
+                    xp_j, yp_j, xf_j, yf_j = wave_coords[j]
+                    if len(xp_j) > 0:
+                        k = xf*(-xp[:,None] + xp_j[None,:]) + yf*(-yp[:,None] + yp_j[None,:])
+                        km = np.sqrt(k*k)
+                        #print k
+                        #print km.argmin(1)
+                        #print k[I,km.argmin(1)]
+                        ks[:, j-j0] = k[I,km.argmin(1)]
+                    else:
+                        ks[:, j - j0] = np.nan #mask out our matrix for the missing data
+           
+                #print ks
+                vels = np.zeros_like(xp, 'f')
+                for k in range(len(xp)):
+                    kk = ks[k,:]
+                    #print kk
+                    vels[k] = np.linalg.lstsq(A[~np.isnan(kk),:], kk[~np.isnan(kk)])[0][0]
+                
+                #print vels.shape, velocities[xp,yp,i].shape
+                velocities[xp, yp, i] = vels[:,None]
+                
+        
+        
+        # for i in range(waves.shape[2]):
+        #     print(i)
+        #     if waves[:,:,i].max() > 0:
+        #         xp, yp = np.argwhere(waves[:,:,i].squeeze()).T
+        #
+        #         xf = flow_x[:,:, i][xp,yp]
+        #         yf = flow_y[:,:, i][xp,yp]
+        #
+        #         flow_m = np.sqrt(xf*xf + yf*yf)
+        #         xf = xf/flow_m
+        #         yf = yf/flow_m
+        #
+        #         j_vals= range(max(i-self.timeWindow, 0), min(i+ self.timeWindow + 1, waves.shape[2]))
+        #         A = np.vstack([j_vals, np.ones_like(j_vals)]).T
+        #
+        #         for x_k, y_k, xf_k, yf_k in zip(xp, yp, xf, yf):
+        #             prof = []
+        #             start, end = (x_k - 50 * xf_k, y_k - 50 * yf_k), (x_k + 50 * xf_k, y_k + 50 * yf_k)
+        #             for j in j_vals:
+        #                 prof.append(np.argmax(profile_line(waves[:,:,j], start, end)))
+        #
+        #             prof = np.array(prof, 'f')
+        #
+        #             #print j_vals, prof
+        #             m, c = np.linalg.lstsq(A[prof>0, :], prof[prof>0])[0]
+        #
+        #             velocities[x_k,y_k,i] = m
+
+        im = ImageStack(velocities, titleStub=self.outputName)
+        im.mdh.copyEntriesFrom(wavefronts.mdh)
+        im.mdh['Parent'] = wavefronts.filename
+
+        namespace[self.outputName] = im
+                
+
+class CaWave(object):
+    default_recipe = '''
+    - processing.OpticalFlow:
+        filterRadius: 10.0
+        inputName: intensity
+        outputNameX: flow_x
+        outputNameY: flow_y
+        regularizationLambda: 0.1
+        supportRadius: 30.0
+    - filters.GaussianFilter:
+        inputName: flow_x
+        outputName: flow_xf
+        processFramesIndividually: false
+        sigmaX: 1.0
+        sigmaY: 1.0
+        sigmaZ: 5.0
+    - filters.GaussianFilter:
+        inputName: flow_y
+        outputName: flow_yf
+        processFramesIndividually: false
+        sigmaX: 1.0
+        sigmaY: 1.0
+        sigmaZ: 5.0
+    - processing.WavefrontVelocity:
+        inputFlowX: flow_xf
+        inputFlowY: flow_yf
+        inputWavefronts: wavefronts
+        outputName: wavefront_velocities
+        timeWindow: 5
+    - measurement.ImageHistogram:
+        inputImage: wavefront_velocities
+        inputMask: wavefronts
+        left: 0.0
+        nbins: 50
+        outputName: velocity_histogram
+        right: 16.0
+        normalize: True
+    - processing.VectorfieldAngle:
+        inputX: flow_xf
+        inputY: flow_yf
+        inputZ: ''
+        outputPhi: phi
+        outputTheta: theta
+    - measurement.ImageHistogram:
+        inputImage: theta
+        inputMask: wavefronts
+        left: -3.15
+        nbins: 120
+        outputName: angle_hist
+        right: 3.15
+        normalize: True
+    '''
+    def __init__(self, wavefronts, intensity, trange, recipe=''):
+        from PYME.recipes.base import ModuleCollection
+        
+        self.trange = trange
+        
+        if recipe == '':
+            recipe = self.default_recipe
+        
+        self._mc = ModuleCollection.fromYAML(recipe)
+        
+        print('Executing wave sub-recipe')
+        
+        self._mc.execute(wavefronts=wavefronts, intensity=intensity)
+        
+        print('wave sub-recipe done')
+        
+    @property
+    def start_frame(self):
+        return int(self.trange[0])
+
+    @property
+    def end_frame(self):
+        return int(self.trange[1])
+        
+        
+    @property
+    def direction_plot(self):
+        import matplotlib.pyplot as plt
+        import mpld3
+        
+        plt.ioff()
+        f = plt.figure(figsize=(4, 3))
+    
+        bins = self._mc.namespace['angle_hist']['bins']
+        counts = self._mc.namespace['angle_hist']['counts']
+        
+        plt.polar(bins, counts)
+    
+        plt.title('Propagation direction')
+    
+        plt.tight_layout(pad=2)
+    
+        plt.ion()
+    
+        ret =  mpld3.fig_to_html(f)
+        
+        plt.close(f)
+        
+        return ret
+        
+    
+    @property
+    def direction_data(self):
+        import json
+    
+        return json.dumps(np.array([self._mc.namespace['angle_hist']['bins'],
+                                    self._mc.namespace['angle_hist']['counts']]).T.tolist())
+        
+    @property
+    def velocity_plot(self):
+        import matplotlib.pyplot as plt
+        import mpld3
+    
+        plt.ioff()
+        f = plt.figure(figsize=(4, 3))
+    
+        bins = self._mc.namespace['velocity_histogram']['bins']
+        counts = self._mc.namespace['velocity_histogram']['counts']
+    
+        plt.bar(bins, counts, width=(bins[1] - bins[0]))
+        plt.xlabel('Velocity [pixels/frame]')
+        plt.ylabel('Frequency')
+        plt.title('Velocity distribution')
+    
+        plt.tight_layout(pad=2)
+    
+        plt.ion()
+
+        ret = mpld3.fig_to_html(f)
+
+        plt.close(f)
+
+        return ret
+    
+    @property
+    def velocity_data(self):
+        import json
+        
+        return json.dumps(np.array([self._mc.namespace['velocity_histogram']['bins'], self._mc.namespace['velocity_histogram']['counts']]).T.tolist())
+    
+    @property
+    def wavefront_image(self):
+        import matplotlib.pyplot as plt
+        from io import BytesIO
+        
+        try:
+            from PIL import Image
+        except ImportError:
+            import Image
+        
+        wavefronts = self._mc.namespace['wavefronts'].data
+        
+        nFrames = wavefronts.getNumSlices()
+        
+        sx, sy = wavefronts.getSliceShape()
+        
+        out = np.zeros([sx, sy, 3])
+        
+        for i in range(nFrames):
+            c = np.array(plt.cm.jet(float(i)/float(nFrames))[:3])
+            #print c
+            #print out.shape, wavefronts.getSlice(i)[:,:,None].shape, c.shape
+            out += wavefronts.getSlice(i)[:,:,None]*c[None, None, :]
+            
+        
+        outf = BytesIO()
+        
+        Image.fromarray((255*out).astype('uint8')).save(outf, 'PNG')
+        
+        s =  outf.getvalue()
+        
+        outf.close()
+        return s
+            
+    
+    @property
+    def velocity_image(self):
+        import matplotlib.pyplot as plt
+        from io import BytesIO
+    
+        try:
+            from PIL import Image
+        except ImportError:
+            import Image
+    
+        wavefronts = self._mc.namespace['wavefronts'].data
+        velocities = self._mc.namespace['wavefront_velocities'].data
+        v_max =  float(velocities[:,:,:].max())
+    
+        nFrames = wavefronts.getNumSlices()
+    
+        sx, sy = wavefronts.getSliceShape()
+    
+        out = np.zeros([sx, sy, 3])
+    
+        for i in range(nFrames):
+            out += wavefronts.getSlice(i)[:, :, None] * plt.cm.jet(velocities.getSlice(i)/v_max)[:,:,:3]
+    
+        outf = BytesIO()
+    
+        Image.fromarray((255 * out).astype('uint8')).save(outf, 'PNG')
+    
+        s = outf.getvalue()
+    
+        outf.close()
+        return s
+        
+
+@register_module('FindCaWaves')
+class FindCaWaves(ModuleBase):
+    '''
+    Finds contiguous calcium wave events from detected wavefronts.
+    '''
+    inputWavefronts = Input('wavefronts')
+    inputIntensity = Input('intensity')
+    
+    waveRecipeFileName = CStr('')
+    
+    minWaveFrames = Int(5)
+    minActivePixels = Int(10)
+    
+    outputName = Output('waves')
+    
+    def execute(self, namespace):
+        from scipy import ndimage
+        from PYME.IO.DataSources import CropDataSource
+        print('Finding Ca Waves ...')
+        wavefronts = namespace[self.inputWavefronts] #segmented wavefront mask
+        intensity = namespace[self.inputIntensity]
+        wavefront_I = np.array([wavefronts.data.getSlice(i).sum() for i in range(wavefronts.data.getNumSlices())]).squeeze()
+        
+        
+        
+        #a wave is a contiguous region of non-zero wavefronts
+        wave_labels, nWaves = ndimage.label(wavefront_I > float(self.minActivePixels))
+        
+        print('Detected %d wave candidates' % nWaves)
+        
+        waves = []
+        
+        #print(wave_labels, nWaves)
+        
+        for i in range(nWaves):
+            wv_idx = np.argwhere(wave_labels == (i+1))
+            
+            print('wave%d: wave at %d-%d' % (i, wv_idx[0], wv_idx[-1]))
+            
+            if len(wv_idx) >= self.minWaveFrames:
+                
+                trange = (wv_idx[0], wv_idx[-1])
+                cropped_wavefronts = ImageStack(CropDataSource.DataSource(wavefronts.data, trange=trange),
+                                                mdh=getattr(wavefronts, 'mdh', None))
+                cropped_intensity = ImageStack(CropDataSource.DataSource(intensity.data, trange=trange),
+                                                mdh=getattr(intensity, 'mdh', None))
+                waves.append(CaWave(cropped_wavefronts, cropped_intensity, trange))
+                
+        
+        namespace[self.outputName] = waves
+                
+        
+        
+        
+            
+        
         
 @register_module('Gradient')         
 class Gradient2D(ModuleBase):   
@@ -406,6 +901,58 @@ class VectorfieldNorm(ModuleBase):
         im = ImageStack(norm, titleStub=self.outputName)
         im.mdh.copyEntriesFrom(mdh)
         namespace[self.outputName] = im
+        
+@register_module('VectorfieldAngle')
+class VectorfieldAngle(ModuleBase):
+    """Calculates the angle of a vector field.
+    
+    Theta is the angle in the x-y plane, and phi is the dip angle
+
+
+    Notes
+    -----
+
+    returns
+    .. math::
+
+        sqrt(x*x + y*y + z*z)
+
+    Also works for 2D vector fields if inputZ is an empty string.
+    """
+    inputX = Input('inp_x')
+    inputY = Input('inp_y')
+    inputZ = Input('inp_z')
+
+    outputTheta = Output('theta')
+    outputPhi = Output('phi')
+
+    def execute(self, namespace):
+        x = namespace[self.inputX].data[:,:,:,0].squeeze()
+        y = namespace[self.inputY].data[:, :, :, 0].squeeze()
+        
+        theta = np.angle(x + 1j*y)
+        
+        if self.inputZ == '':
+            z = 0
+            phi = 0*theta
+        else:
+            z = namespace[self.inputZ].data[:, :, :, 0].squeeze()
+            
+            r = np.sqrt(x*x + y*y)
+            
+            phi = np.angle(r + 1j*z)
+
+        mdh = namespace[self.inputX].mdh
+
+        
+
+        im = ImageStack(theta, titleStub=self.outputTheta)
+        im.mdh.copyEntriesFrom(mdh)
+        namespace[self.outputTheta] = im
+
+        im = ImageStack(phi, titleStub=self.outputPhi)
+        im.mdh.copyEntriesFrom(mdh)
+        namespace[self.outputPhi] = im
 
 
 @register_module('ProjectOnVector')         
@@ -644,6 +1191,113 @@ class Deconvolve(Filter):
         im.mdh['Deconvolution.ZPadding'] = self.zPadding
         
 
+@register_module('DeconvolveMotionCompensating')
+class DeconvolveMotionCompensating(Deconvolve):
+    method = Enum('Richardson-Lucy')
+    processFramesIndividually = Bool(True)
+    flowScale = Float(10)
+    inputFlowX = Input('flow_x')
+    inputFlowY = Input('flow_y')
+    
+    def execute(self, namespace):
+        self._flow_x = namespace[self.inputFlowX]
+        self._flow_y = namespace[self.inputFlowY]
+        namespace[self.outputName] = self.filter(namespace[self.inputName])
+    
+    def GetDec(self, dp, vshint):
+        """Get a (potentially cached) deconvolution object"""
+        from PYME.Deconv import richardsonLucyMVM
+        decKey = (self.psfType, self.psfFilename, self.lorentzianFWHM, self.beadDiameter, vshint, dp.shape, self.method)
+        
+        if not decKey in self._decCache.keys():
+            psf = self.GetPSF(vshint)[0]
+            
+            #create the right deconvolution object
+            if self.psfType == 'bead':
+                dc = richardsonLucyMVM.rlbead()
+            else:
+                dc = richardsonLucyMVM.dec_conv()
+            
+            #resize the PSF to fit, and do any required FFT planning etc ...
+            dc.psf_calc(np.atleast_3d(psf), np.atleast_3d(dp).shape)
+            
+            self._decCache[decKey] = dc
+        
+        return self._decCache[decKey]
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        from PYME.Analysis import optic_flow
+        d = np.atleast_3d(data.astype('f') - self.offset)
+    
+        #Pad the data (if desired)
+        if False: #self.padding > 0:
+            padsize = np.array([self.padding, self.padding, self.zPadding])
+            dp = np.ones(np.array(d.shape) + 2 * padsize, 'f') * d.mean()
+            weights = np.zeros_like(dp)
+            px, py, pz = padsize
+        
+            dp[px:-px, py:-py, pz:-pz] = d
+            weights[px:-px, py:-py, pz:-pz] = 1.
+            weights = weights.ravel()
+        else: #no padding
+            #dp = d
+            weights = 1
+    
+        #Get appropriate deconvolution object
+        rmv = self.GetDec(d, im.voxelsize)
+
+        #mFr = min(frNum + 2, im.data.shape[2] -1)
+        #if frNum < mFr:
+        #    dx, dy = optic_flow.reg_of(im.data[:,:,frNum,chanNum].squeeze().astype('f'), im.data[:,:,mFr, chanNum].squeeze().astype('f'),
+        #                               self.flowFilterRadius, self.flowSupportRadius, self.flowRegularizationLambda)
+        #else:
+        #    dx, dy = 0,0
+        
+        dx = self._flow_x.data[:,:,frNum].squeeze()
+        dy = self._flow_y.data[:, :, frNum].squeeze()
+        
+    
+        #run deconvolution
+        mFr = min(frNum + 5, im.data.shape[2])
+        data = np.atleast_3d([im.data[:,:,i, chanNum].astype('f').squeeze() for i in range(frNum,mFr)])
+        #print data.shape
+        print('MC Deconvolution - frame # %d' % frNum)
+        res = rmv.deconv(data,
+                         self.regularisationLambda, self.iterations, bg=0, vx = -dx*self.flowScale, vy = -dy*self.flowScale).squeeze().reshape(d.shape)
+    
+        #crop away the padding
+        if self.padding > 0:
+            res = res[px:-px, py:-py, pz:-pz]
+    
+        return res
+    
+    def default_traits_view(self):
+        from traitsui.api import View, Item, Group, ListEditor
+        from PYME.ui.custom_traits_editors import CBEditor
+
+        return View(Item(name='inputName', editor=CBEditor(choices=self._namespace_keys)),
+                    Item(name='outputName'),
+                    Group(Item(name='method'),
+                          Item(name='iterations'),
+                          Item(name='offset'),
+                          Item(name='padding'),
+                          Item(name='zPadding'),
+                          Item(name='regularisationLambda', visible_when='method=="ICTM"'),
+                          label='Deconvolution Parameters'),
+                    Group(Item(name='psfType'),
+                          Item(name='psfFilename', visible_when='psfType=="file"'),
+                          Item(name='lorentzianFWHM', visible_when='psfType=="Lorentzian"'),
+                          Item(name='gaussianFWHM', visible_when='psfType=="Gaussian"'),
+                          Item(name='beadDiameter', visible_when='psfType=="bead"'),
+                          label='PSF Parameters'),
+                    Group(
+                          Item(name='flowScale'),
+                          label='Flow estimation'),
+                    resizable = True,
+                    buttons   = [ 'OK' ])
+        
+        
+
     
 @register_module('DistanceTransform')     
 class DistanceTransform(Filter):    
@@ -789,8 +1443,106 @@ class Watershed(ModuleBase):
         else:
             mask = namespace[self.inputMask]
             namespace[self.outputName] = self.filter(image, markers, mask)
-
-
-
-
+            
+            
+@register_module('FlatfieldAndDarkCorrect')
+class FlatfiledAndDarkCorrect(ModuleBase):
+    inputImage = Input('input')
+    flatfieldFilename = CStr('')
+    darkFilename = CStr('')
+    outputName = Output('corrected')
+    
+    def execute(self, namespace):
+        from PYME.IO.DataSources import FlatFieldDataSource
+        #from PYME.IO import unifiedIO
+        from PYME.IO.image import ImageStack
+        image = namespace[self.inputImage]
         
+        flat = ImageStack(filename=self.flatfieldFilename).data[:,:,0].squeeze()
+        
+        if not self.darkFilename == '':
+            dark = ImageStack(filename=self.darkFilename).data[:,:,0].squeeze()
+        else:
+            dark = None
+        
+        ffd = FlatFieldDataSource.DataSource(image.data, image.mdh, flatfield=flat, dark=dark)
+
+        im = ImageStack(ffd, titleStub=self.outputName)
+        im.mdh.copyEntriesFrom(image.mdh)
+        im.mdh['Parent'] = image.filename
+        namespace[self.outputName] = im
+
+
+@register_module('BackgroundSubtractionMovingAverage')
+class BackgroundSubtractionMovingAverage(ModuleBase):
+    """
+    Estimates and subtracts the background of a series using a sliding window average on a per-pixel basis.
+
+    Parameters
+    ----------
+    input_name : Input
+        PYME.IO.ImageStack
+    window = List
+        Describes the window, much like range or numpy.arrange, format is [start, finish, stride]
+
+    Returns
+    -------
+    output_name = Output
+        PYME.IO.ImageStack of the background-subtracted 'input_name' series
+
+    Notes
+    -----
+
+    input and output images are the same size.
+
+    """
+
+    input_name = Input('input')
+    window = List([-32, 0, 1])
+    output_name = Output('background_subtracted')
+
+    percentile = 0
+
+    def execute(self, namespace):
+        from PYME.IO.DataSources import BGSDataSource
+        from PYME.IO.image import ImageStack
+        series = namespace[self.input_name]
+
+        bgs = BGSDataSource.DataSource(series.data, bgRange=self.window)
+        bgs.setBackgroundBufferPCT(self.percentile)
+
+        background = ImageStack(data=bgs, mdh=series.mdh)
+
+        background.mdh['Parent'] = series.filename
+        background.mdh['Processing.SlidingWindowBackground.Percentile'] = self.percentile
+        background.mdh['Processing.SlidingWindowBackground.Window'] = self.window
+
+        namespace[self.output_name] = background
+
+@register_module('BackgroundSubtractionMovingPercentile')
+class BackgroundSubtractionMovingPercentile(BackgroundSubtractionMovingAverage):
+    """
+    Estimates the background of a series using a sliding window and taking an (adjusted) percentile
+    (e.g. median at percentile = 0.5) over that window on a per-pixel basis.
+
+    Parameters
+    ----------
+    input_name : Input
+        PYME.IO.ImageStack
+    percentile : Float
+        Percentile to take as the background after sorting within the time window along each pixel
+    window = List
+        Describes the window, much like range or numpy.arrange, format is [start, finish, stride]
+
+    Returns
+    -------
+    output_name = Output
+        PYME.IO.ImageStack of the background-subtracted 'input_name' series
+
+    Notes
+    -----
+    The percentile background isn't a simple percentile, but is adjusted slightly - see PYME.IO.DataSource.BGSDataSource
+
+    input and output images are the same size.
+    """
+    percentile = Float(0.25)

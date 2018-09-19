@@ -19,7 +19,7 @@ def status(request):
 
     context = {'storage_nodes' : nodes, 'total_storage' : total_storage,
                'free_storage' : free_storage, 'used_storage' : total_storage-free_storage,
-               'percent_total_free' : int(100*float(free_storage)/total_storage)}
+               'percent_total_free' : int(100*float(free_storage+1)/(total_storage+1))}
 
     if '_ajax' in request.GET.keys():
         return render(request, 'clusterstatus/status_dash_content.html', context)
@@ -50,8 +50,14 @@ def queues(request):
     distNodes = distribution.getNodeInfo()
 
     #nodes = clusterIO.getStatus()
+    
+    queueInfo = []
+    
+    for distName, distURL in distributors.items():
+        queues = distribution.getQueueInfo(distURL)
+        keys = sorted(queues.keys())
+        queueInfo.append({'name':distName, 'queues': [(k, queues[k]) for k in keys]})
 
-    queueInfo = [{'name':distName, 'queues': distribution.getQueueInfo(distURL)} for distName, distURL in distributors.items()]
 
     #print queueInfo
 

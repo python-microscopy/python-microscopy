@@ -25,7 +25,7 @@ from scipy import ndimage
 import numpy
 from PYME.Analysis import binAvg
 
-def imageDensityAtDistance(A, mask, voxelsize = None, bins=100):
+def imageDensityAtDistance(A, mask, voxelsize = None, bins=100, roi_mask=None):
     """Calculates the distribution of a label at varying distances from a mask.
     Negative distances are on the inside of the mask.
 
@@ -38,7 +38,7 @@ def imageDensityAtDistance(A, mask, voxelsize = None, bins=100):
 
 
     Returns:
-    bn - integrated intensity in distance bin
+    bn - number of pixels in distance bin
     bm - mean intensity in distance bin
     bins - the bin edges
     """
@@ -54,8 +54,10 @@ def imageDensityAtDistance(A, mask, voxelsize = None, bins=100):
         bins = numpy.linspace(dt.min(), dt.max(), bins+1)
         
     #print bins
-
-    bn, bm, bs = binAvg.binAvg(dt, A, bins)
+    if not roi_mask is None:
+        bn, bm, bs = binAvg.binAvg(dt[roi_mask], A[roi_mask], bins)
+    else:
+        bn, bm, bs = binAvg.binAvg(dt, A, bins)
 
     return bn, bm, bins
 

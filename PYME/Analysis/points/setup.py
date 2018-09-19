@@ -37,7 +37,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('DistHist')
     config.add_subpackage('DeClump')
     config.add_subpackage('EdgeDB')
-    #config.add_subpackage('qHull')
+    config.add_subpackage('arcfit')
     config.add_subpackage('astigmatism')
     #config.add_subpackage('Colocalisation')
     #config.add_subpackage('Modules')

@@ -31,6 +31,7 @@ import PYME.version
 import PYME.misc.pyme_zeroconf as pzc
 
 import os
+import sys
 
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
@@ -159,4 +160,26 @@ def main():
         #del results
 
 if __name__ == '__main__':
-    main()
+    profile = False
+    if len(sys.argv) > 1 and sys.argv[1] == '-p':
+        print('profiling')
+        profile = True
+        from PYME.util.mProfile import mProfile
+        
+        mProfile.profileOn(['taskWorkerZC.py', ])
+    
+    if len(sys.argv) > 1 and sys.argv[1] == '-fp':
+        print('profiling')
+        #profile = True
+        from PYME.util.fProfile import fProfile
+        
+        tp = fProfile.thread_profiler()
+        tp.profileOn('.*taskWorkerZC.*|.*PYME.*', 'taskWorker_%d_prof.txt' % os.getpid())
+    
+    try:
+        main()
+    finally:
+        if profile:
+            print('Profile report')
+            mProfile.profileOff()
+            mProfile.report()

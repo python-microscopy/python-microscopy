@@ -8,10 +8,10 @@ import wx
 import PYME.ui.autoFoldPanel as afp
 
 try:
-    from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
+    from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, on_trait_change
     #from enthought.traits.ui.api import View, Item, EnumEditor, InstanceEditor, Group
 except ImportError:
-    from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
+    from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, on_trait_change
     #from traitsui.api import View, Item, EnumEditor, InstanceEditor, Group
 
 
@@ -81,16 +81,16 @@ class PointSettingsPanel(wx.Panel):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Colour:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.chPointColour = wx.Choice(self, -1, choices=colKeys, size=(100, -1))
+        self.chPointColour = wx.Choice(self, -1, choices=colKeys)
         
         currentCol = self.pointDisplaySettings.colourDataKey
         if currentCol in colKeys:
             self.chPointColour.SetSelection(colKeys.index(currentCol))
         
         
-        hsizer.Add(self.chPointColour, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(self.chPointColour, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
 
-        bsizer.Add(hsizer, 0, wx.ALL, 0)
+        bsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
         
         self.SetSizerAndFit(bsizer)
 
@@ -121,7 +121,10 @@ class PointSettingsPanel(wx.Panel):
         #self.glCanvas.Refresh()
 
     def OnPointAlphaChange(self, event):
-        self.pointDisplaySettings.alpha = float(self.tPointAlpha.GetValue())
+        try:
+            self.pointDisplaySettings.alpha = float(self.tPointAlpha.GetValue())
+        except ValueError:
+            pass  # do nothing, if value couldn't be parsed
         #self.glCanvas.Refresh()
 
     def OnChangePointColour(self, event):

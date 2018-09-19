@@ -115,13 +115,13 @@ def _add_eventvars_to_ds(ds, ev_mappings):
     if xm:
         scan_x = 1.e3 * xm(ds['t'] - .01)
         ds.addColumn('scanx', scan_x)
-        ds.setMapping('x', 'x + scanx')
+        #ds.setMapping('x', 'x + scanx')
 
     ym = ev_mappings.get('ym', None)
     if ym:
         scan_y = 1.e3 * ym(ds['t'] - .01)
         ds.addColumn('scany', scan_y)
-        ds.setMapping('y', 'y + scany')
+        #ds.setMapping('y', 'y + scany')
 
     driftx = ev_mappings.get('driftx', None)
     drifty = ev_mappings.get('drifty', None)
@@ -175,7 +175,9 @@ def _add_missing_ds_keys(mapped_ds, ev_mappings={}):
     if not 'z' in mapped_ds.keys():
         if 'fitResults_z0' in mapped_ds.keys():
             mapped_ds.setMapping('z', 'fitResults_z0 + foreShort*focus')
-        elif 'astigZ' in mapped_ds.keys():
+        elif 'astigmatic_z' in mapped_ds.keys():
+            mapped_ds.setMapping('z', 'astigmatic_z + foreShort*focus')
+        elif 'astigZ' in mapped_ds.keys():  # legacy handling
             mapped_ds.setMapping('z', 'astigZ + foreShort*focus')
         else:
             mapped_ds.setMapping('z', 'foreShort*focus')
@@ -197,33 +199,33 @@ def _processEvents(ds, events, mdh):
         for e in events:
             evKeyNames.add(e['EventName'])
 
-        if 'ProtocolFocus' in evKeyNames:
+        if b'ProtocolFocus' in evKeyNames:
             zm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'])
             ev_mappings['zm'] = zm
             eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
 
-        if 'ScannerXPos' in evKeyNames:
+        if b'ScannerXPos' in evKeyNames:
             x0 = 0
             if 'Positioning.Stage_X' in mdh.getEntryNames():
                 x0 = mdh.getEntry('Positioning.Stage_X')
-            xm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], x0, 'ScannerXPos', 0)
+            xm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], x0, b'ScannerXPos', 0)
             ev_mappings['xm'] = xm
             eventCharts.append(('XPos [um]', xm, 'ScannerXPos'))
 
-        if 'ScannerYPos' in evKeyNames:
+        if b'ScannerYPos' in evKeyNames:
             y0 = 0
             if 'Positioning.Stage_Y' in mdh.getEntryNames():
                 y0 = mdh.getEntry('Positioning.Stage_Y')
-            ym = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
+            ym = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), y0, b'ScannerYPos', 0)
             ev_mappings['ym'] = ym
             eventCharts.append(('YPos [um]', ym, 'ScannerYPos'))
 
-        if 'ShiftMeasure' in evKeyNames:
-            driftx = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
+        if b'ShiftMeasure' in evKeyNames:
+            driftx = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
                                                               0)
-            drifty = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
+            drifty = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
                                                               1)
-            driftz = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
+            driftz = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
                                                               2)
 
             ev_mappings['driftx'] = driftx
@@ -238,25 +240,36 @@ def _processEvents(ds, events, mdh):
             #self.ev_mappings = ev_mappings
     elif all(k in mdh.keys() for k in ['StackSettings.FramesPerStep', 'StackSettings.StepSize',
                                        'StackSettings.NumSteps', 'StackSettings.NumCycles']):
-        # if we dont have events file, see if we can use metadata to spoof focus
-        print('No events found, spoofing focus position using StackSettings metadata')
-        frames = np.arange(0, mdh['StackSettings.FramesPerStep'] * mdh['StackSettings.NumSteps'] * mdh[
-            'StackSettings.NumCycles'], mdh['StackSettings.FramesPerStep'])
-        position = np.arange(mdh.getOrDefault('Protocol.PiezoStartPos', 0),
-                             mdh.getOrDefault('Protocol.PiezoStartPos', 0) + mdh['StackSettings.NumSteps'] * mdh[
-                                 'StackSettings.StepSize'], mdh['StackSettings.StepSize'])
-        position = np.tile(position, mdh['StackSettings.NumCycles'])
-
-        zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
-        ev_mappings['zm'] = zm
-        eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
+        # TODO - Remove this code - anytime we get here it's generally the result of an error in the input data
+        # This should be handled upstream when spooling
+        logger.warning('Spoofing focus from metadata: this usually implies an error in the input data (missing events) and results might vary')
+        try:
+            # if we dont have events file, see if we can use metadata to spoof focus
+            print('No events found, spoofing focus position using StackSettings metadata')
+            frames = np.arange(0, mdh['StackSettings.FramesPerStep'] * mdh['StackSettings.NumSteps'] * mdh[
+                'StackSettings.NumCycles'], mdh['StackSettings.FramesPerStep'])
+            position = np.arange(mdh.getOrDefault('Protocol.PiezoStartPos', 0),
+                                 mdh.getOrDefault('Protocol.PiezoStartPos', 0) + mdh['StackSettings.NumSteps'] * mdh[
+                                     'StackSettings.StepSize'], mdh['StackSettings.StepSize'])
+            position = np.tile(position, mdh['StackSettings.NumCycles'])
+            
+            logger.debug('Spoofing focus events from metadata')
+            
+            if not len(position) == len(frames):
+                logger.error('Error spoofing focus events -  frames: %s, positions %s' % (frames, position))
+            else:
+                zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
+                ev_mappings['zm'] = zm
+                eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
+        except:
+            #It doesn't really matter if this fails, print our traceback anyway
+            logger.exception('Error trying to fudge focus positions')
 
     return ev_mappings, eventCharts
 
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
-        #self.dataSources = {}
-        self.recipe = ModuleCollection()
+        self.recipe = ModuleCollection(execute_on_invalidation=True)
 
         self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
@@ -268,15 +281,12 @@ class Pipeline:
 
         self.fluorSpecies = {}
         self.fluorSpeciesDyes = {}
-        #self.chromaticShifts = {}
-        #self.t_p_dye = 0.1
-        #self.t_p_other = 0.1
-        #self.t_p_background = .01
 
         self.blobSettings = BlobSettings()
         self.objects = None
 
         self.imageBounds = ImageBounds(0,0,0,0)
+        self.mdh = MetaDataHandler.NestedClassMDHandler()
         
         self.Triangles = None
         self.edb = None
@@ -284,6 +294,8 @@ class Pipeline:
         self.GeneratedMeasures = {}
         
         self.QTGoalPixelSize = 5
+        
+        self._extra_chan_num = 0
         
         self.filesToClose = []
 
@@ -298,7 +310,7 @@ class Pipeline:
         self.onKeysChanged = dispatch.Signal()
         
         self.ready = False
-        self.visFr = visFr
+        #self.visFr = visFr
 
         if not filename is None:
             self.OpenFile(filename)
@@ -320,6 +332,52 @@ class Pipeline:
     @property
     def dataSources(self):
         return self.recipe.namespace
+    
+    @property
+    def layer_datasources(self):
+        lds = {'output':self.colourFilter}
+        lds.update(self.dataSources)
+        return lds
+
+    @property
+    def layer_data_source_names(self):
+        """
+        Return a list of names of datasources we can use with dotted channel selection
+
+        There is a little bit of magic here as we augment the names with dotted names for colour channel selection
+        """
+        names = []#'']
+        for k, v in self.layer_datasources.items():
+            names.append(k)
+            if isinstance(v, tabular.colourFilter):
+                for c in v.getColourChans():
+                    names.append('.'.join([k, c]))
+    
+        return names
+    
+    def get_layer_data(self, dsname):
+        """
+        Returns layer data for a given name. The principle difference to just accessing self.dataSources directly is that
+        we do some magic relating to allow colour channels to be accessed with the dot notation e.g. dsname.colour_channel
+
+        """
+        if dsname == '':
+            return self
+    
+        parts = dsname.split('.')
+        if len(parts) == 2:
+            # special case - permit access to channels using dot notation
+            # NB: only works if our underlying datasource is a ColourFilter
+            ds, channel = parts
+            if ds == 'output':
+                return self.colourFilter.get_channel_ds(channel)
+            else:
+                return self.dataSources.get(ds, None).get_channel_ds(channel)
+        else:
+            if dsname =='output':
+                return self.colourFilter
+            else:
+                return self.dataSources.get(dsname, None)
 
     @property
     def selectedDataSource(self):
@@ -391,7 +449,7 @@ class Pipeline:
         else:
             raise RuntimeError("Length of new column doesn't match either the input or output lengths")
 
-    def addDataSource(self, dskey, ds):
+    def addDataSource(self, dskey, ds, add_missing_vars=True):
         """
         Add a new data source
 
@@ -411,8 +469,8 @@ class Pipeline:
             ds = tabular.mappingFilter(ds)
 
         #add keys which might not already be defined
-
-        _add_missing_ds_keys(ds,self.ev_mappings)
+        if add_missing_vars:
+            _add_missing_ds_keys(ds,self.ev_mappings)
 
         if getattr(ds, 'mdh', None) is None:
             try:
@@ -435,11 +493,13 @@ class Pipeline:
                 #keep raw measurements available
                 s.setMapping('x_raw', 'x')
                 s.setMapping('y_raw', 'y')
-                s.setMapping('z_raw', 'z')
+                
+                if 'z' in  s.keys():
+                    s.setMapping('z_raw', 'z')
                 
         if not self.selectedDataSource is None:
             #we can recycle the mapping object
-            if self.mapping:
+            if False:# self.mapping:
                 self.mapping.resultsSource = self.selectedDataSource
             else:
                 self.mapping = tabular.mappingFilter(self.selectedDataSource)
@@ -452,7 +512,9 @@ class Pipeline:
                 self.colourFilter = tabular.colourFilter(self.filter)
             else:
                 self.colourFilter.resultsSource = self.filter
-                
+
+            self._process_colour()
+            
             self.ready = True
 
         self.ClearGenerated()
@@ -463,12 +525,12 @@ class Pipeline:
         self.GeneratedMeasures = {}
         self.Quads = None
 
-        self.onRebuild.send(sender=self)
+        self.onRebuild.send_robust(sender=self)
 
         #check to see if any of the keys have changed - if so, fire a keys changed event so the GUI can update
         newKeys = self.keys()
         if not newKeys == self._keys:
-            self.onKeysChanged.send(sender=self)
+            self.onKeysChanged.send_robust(sender=self)
         
     def CloseFiles(self):
         while len(self.filesToClose) > 0:
@@ -542,7 +604,12 @@ class Pipeline:
                     break
 
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
-            ds = tabular.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
+            if 'VarName' in kwargs.keys():
+                #old style matlab import
+                ds = tabular.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
+            else:
+                ds = tabular.matfileColumnSource(filename)
+                
 
         elif os.path.splitext(filename)[1] == '.csv':
             #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter
@@ -556,6 +623,8 @@ class Pipeline:
                 ds = tabular.textfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
             else:
                 ds = tabular.textfileSource(filename, kwargs['FieldNames'])
+
+
 
         return ds
 
@@ -607,13 +676,7 @@ class Pipeline:
         #extract information from any events
         self.ev_mappings, self.eventCharts = _processEvents(mapped_ds, self.events, self.mdh)
 
-        #Retrieve or estimate image bounds
-        if False:#'imgBounds' in kwargs.keys():
-            self.imageBounds = kwargs['imgBounds']
-        elif (not ('scanx' in mapped_ds.keys() or 'scany' in mapped_ds.keys())) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
-            self.imageBounds = ImageBounds.extractFromMetadata(self.mdh)
-        else:
-            self.imageBounds = ImageBounds.estimateFromSource(mapped_ds)
+
 
         #Fit module specific filter settings        
         if 'Analysis.FitModule' in self.mdh.getEntryNames():
@@ -636,11 +699,56 @@ class Pipeline:
                 self.filterKeys['fitError_dx'] = (0,10)
                 self.filterKeys['fitError_dy'] = (0,10)
 
+        self._get_dye_ratios_from_metadata()
 
         self.addDataSource('Localizations', mapped_ds)
-        self.selectDataSource('Localizations') #NB - this rebuilds the pipeline
 
-        self._process_colour()
+        # Retrieve or estimate image bounds
+        if False:  # 'imgBounds' in kwargs.keys():
+            self.imageBounds = kwargs['imgBounds']
+        elif (not (
+                'scanx' in mapped_ds.keys() or 'scany' in mapped_ds.keys())) and 'Camera.ROIWidth' in self.mdh.getEntryNames():
+            self.imageBounds = ImageBounds.extractFromMetadata(self.mdh)
+        else:
+            self.imageBounds = ImageBounds.estimateFromSource(mapped_ds)
+
+        self.selectDataSource('Localizations') #NB - this rebuilds the pipeline
+        
+        #self._process_colour()
+
+    def OpenChannel(self, filename='', ds=None, channel_name='', **kwargs):
+        """Open a file - accepts optional keyword arguments for use with files
+        saved as .txt and .mat. These are:
+
+            FieldNames: a list of names for the fields in the text file or
+                        matlab variable.
+            VarName:    the name of the variable in the .mat file which
+                        contains the data.
+            SkipRows:   Number of header rows to skip for txt file data
+
+            PixelSize:  Pixel size if not in nm
+
+        """
+        if channel_name == '' or channel_name is None:
+            #select a channel name automatically
+            channel_name = 'Channel%d' % self._extra_chan_num
+            self._extra_chan_num += 1
+                
+        if ds is None:
+            #load from file
+            ds = self._ds_from_file(filename, **kwargs)
+    
+        #wrap the data source with a mapping so we can fiddle with things
+        #e.g. combining z position and focus
+        mapped_ds = tabular.mappingFilter(ds)
+    
+        if 'PixelSize' in kwargs.keys():
+            mapped_ds.addVariable('pixelSize', kwargs['PixelSize'])
+            mapped_ds.setMapping('x', 'x*pixelSize')
+            mapped_ds.setMapping('y', 'y*pixelSize')
+    
+    
+        self.addDataSource(channel_name, mapped_ds)
 
 
 
@@ -657,29 +765,39 @@ class Pipeline:
          All of these get munged into the p_dye type entries that the colour filter needs.
 
         """
-        if 'Sample.Labelling' in self.mdh.getEntryNames() and 'gFrac' in self.selectedDataSource.keys():
-            self.SpecFromMetadata()
-
-        if 'probe' in self.mapping.keys():
-            #non-ratiometric (i.e. sequential) colour
-            #color channel is given in 'probe' column
-            self.mapping.setMapping('ColourNorm', '1.0 + 0*probe')
-
-            for i in range(int(self['probe'].min()), int(self['probe'].max() + 1)):
-                self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
-
-        nSeqCols = self.mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
-        if nSeqCols > 1:
-            for i in range(nSeqCols):
-                self.mapping.setMapping('ColourNorm', '1.0 + 0*t')
-                cr = self.mdh['Protocol.ColorRange%d' % i]
-                self.mapping.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
-
-
-    def SpecFromMetadata(self):
-        labels = self.mdh.getEntry('Sample.Labelling')
-        seen_structures = []
+        #clear out old colour keys
+        for k in self.mapping.mappings.keys():
+            if k.startswith('p_'):
+                self.mapping.mappings.pop(k)
         
+        if 'gFrac' in self.selectedDataSource.keys():
+            #ratiometric
+            for structure, ratio in self.fluorSpecies.items():
+                if not ratio is None:
+                    self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
+        else:
+            if 'probe' in self.mapping.keys():
+                #non-ratiometric (i.e. sequential) colour
+                #color channel is given in 'probe' column
+                self.mapping.setMapping('ColourNorm', '1.0 + 0*probe')
+    
+                for i in range(int(self.mapping['probe'].min()), int(self.mapping['probe'].max() + 1)):
+                    self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
+    
+            nSeqCols = self.mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
+            if nSeqCols > 1:
+                for i in range(nSeqCols):
+                    self.mapping.setMapping('ColourNorm', '1.0 + 0*t')
+                    cr = self.mdh['Protocol.ColorRange%d' % i]
+                    self.mapping.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
+                
+        #self.ClearGenerated()
+
+
+    def _get_dye_ratios_from_metadata(self):
+        labels = self.mdh.getOrDefault('Sample.Labelling', [])
+        seen_structures = []
+
         for structure, dye in labels:
             if structure in seen_structures:
                 strucname = structure + '_1'
@@ -693,7 +811,7 @@ class Pipeline:
                 self.fluorSpecies[strucname] = ratio
                 self.fluorSpeciesDyes[strucname] = dye
                 #self.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
-                self.mapping.setMapping('p_%s' % strucname, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
+                #self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
                 
 
     def getNeighbourDists(self, forceRetriang = False):
@@ -706,11 +824,11 @@ class Pipeline:
         return self.GeneratedMeasures['neighbourDistances']
         
     def getTriangles(self, recalc = False):
-        from matplotlib import delaunay
+        from matplotlib import tri
         
         if self.Triangles is None or recalc:
             statTri = statusLog.StatusLogger("Generating Triangulation ...")
-            self.Triangles = delaunay.Triangulation(self.colourFilter['x'] + .1*np.random.normal(size=len(self.colourFilter['x'])), self.colourFilter['y']+ .1*np.random.normal(size=len(self.colourFilter['x'])))
+            self.Triangles = tri.Triangulation(self.colourFilter['x'] + .1*np.random.normal(size=len(self.colourFilter['x'])), self.colourFilter['y']+ .1*np.random.normal(size=len(self.colourFilter['x'])))
             
             #reset things which will have changed
             self.edb = None
@@ -739,14 +857,14 @@ class Pipeline:
             self.objIndices = edges.objectIndices(edb.segment(self.blobSettings.distThreshold), self.blobSettings.minSize)
             self.objects = [np.vstack((tri.x[oi], tri.y[oi])).T for oi in self.objIndices]
         else:
-            from matplotlib import delaunay
+            from matplotlib import tri
             
             ndists = self.getNeighbourDists()
             
             x_ = np.hstack([self['x'] + 0.5*ndists*np.random.normal(size=ndists.size) for i in range(self.blobSettings.jittering)])
             y_ = np.hstack([self['y'] + 0.5*ndists*np.random.normal(size=ndists.size) for i in range(self.blobSettings.jittering)])
 
-            T = delaunay.Triangulation(x_, y_)
+            T = tri.Triangulation(x_, y_)
             edb = edges.EdgeDB(T)
             
             objIndices = edges.objectIndices(edb.segment(self.blobSettings.distThreshold), self.blobSettings.minSize)
@@ -779,6 +897,11 @@ class Pipeline:
         return self.objectMeasures
         
     def save_txt(self, outFile, keys=None):
+        if outFile.endswith('.csv'):
+            delim = ', '
+        else:
+            delim = '\t'
+            
         if keys is None:
             keys = self.keys()
 
@@ -786,12 +909,18 @@ class Pipeline:
     
         of = open(outFile, 'w')
     
-        of.write('#' + '\t'.join(['%s' % k for k in keys]) + '\n')
+        of.write('#' + delim.join(['%s' % k for k in keys]) + '\n')
     
         for row in zip(*[self[k] for k in keys]):
-            of.write('\t'.join(['%e' % c for c in row]) + '\n')
+            of.write(delim.join(['%e' % c for c in row]) + '\n')
     
         of.close()
+        
+    def save_hdf(self, filename):
+        self.colourFilter.to_hdf(filename, tablename='Localizations', metadata=self.mdh)
+        
+    def to_recarray(self, keys=None):
+        return self.colourFilter.to_recarray(keys=keys)
         
     def toDataFrame(self, keys=None):
         import pandas as pd

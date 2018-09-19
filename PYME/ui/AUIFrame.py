@@ -22,6 +22,8 @@ class AUIFrame(wx.Frame):
         
         self.paneHooks = []
         self.pane0 = None
+        
+        self.adding_panes=False
 
         self._menus = {}
         # Menu Bar
@@ -81,6 +83,14 @@ class AUIFrame(wx.Frame):
         #self.Layout() 
         #self.OnSize(None)
         #self.OnSize(None)
+            
+    def DeletePage(self, page,  update=False):
+        if not page is None:
+            self._mgr.DetachPane(page)
+            page.Destroy()
+            
+        if update:
+            self._mgr.Update()
         
     def OnSize(self, event):
         #self.Layout()
@@ -97,7 +107,7 @@ class AUIFrame(wx.Frame):
         if pinfo.IsOk(): #we already have a sidepanel, clear
             self.sidePanel.Clear()
         else:
-            self.sidePanel = afp.foldPanel(self, -1, wx.DefaultPosition,size = wx.Size(180, 1000))
+            self.sidePanel = afp.foldPanel(self, -1, wx.DefaultPosition,size = wx.Size(220, 1000))
             pinfo = aui.AuiPaneInfo().Name("sidePanel").Left().CloseButton(False).CaptionVisible(False)
 
             self._mgr.AddPane(self.sidePanel, pinfo)

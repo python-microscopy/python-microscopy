@@ -41,7 +41,7 @@ for m in config.get_plugins('dsviewer'):
 
 
 def allmodules():
-    am = modLocations.keys()
+    am = list(modLocations.keys())
     am.sort()
     
     return am
@@ -55,7 +55,7 @@ modeModules = {
 'LM' : ['arrayView'] + liteModules + basemodules +  ['LMAnalysis'],
 'blob' : ['arrayView'] + liteModules + basemodules + ['blobFinding', 'psfExtraction'],
 'default' : ['arrayView'] + liteModules + basemodules,
-'psf'   :   ['arrayView'] + liteModules + ['deconvolution', 'psfTools'],
+'psf'   :   ['arrayView'] + liteModules + ['deconvolution', 'psfTools', 'metadataView'],
 'visGUI' : ['visgui'] + liteModules + ['coloc', 'vis3D'],
 'graph' : ['graphViewPanel', 'profileFitting'],
 'fgraph' : ['fastGraphPanel'],

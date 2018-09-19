@@ -25,6 +25,7 @@
 
 import os
 import subprocess
+import signal
 import sys
 import time
 
@@ -122,12 +123,23 @@ def main():
     parser.add_argument('NWorkers', type=int, nargs='?', default=cpuCount(),
                         help='Number of worker processes to use')
     parser.add_argument('-k', '--kill', dest='kill', default=False, action='store_true', help='Kill all existing workers without launching new ones')
-    parser.add_argument('--list', dest='list', default=False, action='store_true', help='list all current worker and server processes')
+    parser.add_argument('-p', '--profile', dest='profile', default=False, action='store_true')
+    parser.add_argument('-f', '--fprofile', dest='fprofile', default=False, action='store_true')
+    parser.add_argument('--list', dest='list', default=False, action='store_true',
+                        help='list all current worker and server processes')
+
     args = parser.parse_args()
     
     if args.local:
         SERVER_PROC = 'taskServerML.py'
         WORKER_PROC = 'taskWorkerML.py'
+        
+    if args.profile:
+        prof_args = '-p'
+    elif args.fprofile:
+        prof_args = '-fp'
+    else:
+        prof_args = ''
 
     numProcessors = args.NWorkers
     
@@ -140,9 +152,13 @@ def main():
             with open(serverlog('out'),"wb") as out, open(serverlog('err'),"wb") as err:
                 subprocess.Popen('python "%s\\%s.py"' % (fstub, SERVER_PROC), shell=True,
                                  stdout=out, stderr=err)
+            print('Launching server ...')
+            subprocess.Popen('python "%s\\%s.py" %s' % (fstub, SERVER_PROC, prof_args), shell=True)
 
             logger.info('Waiting for server to come up ...')
             time.sleep(10)
+            print('Waiting for server to come up ...')
+            time.sleep(5)
 
         if args.gui:
             logger.info('Launching task monitor ...')
@@ -163,12 +179,18 @@ def main():
                 if 'python' in p.name():
                     c = p.cmdline()
                     #print c, SERVER_PROC, WORKER_PROC
-                    if (SERVER_PROC in c[1] and args.run_server) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1] and args.gui):
+                    if (len(c) > 1) and (SERVER_PROC in c[1] and args.run_server) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1] and args.gui):
                         if args.list:
                             print('running %s' % c)
                         else:
-                            print('killing %s' % c)
-                            p.kill()
+                            #give process a chance of closing nicely
+                            print('closing %s' % c)
+                            p.send_signal(signal.SIGINT)
+                            time.sleep(1)
+    
+                            if p.is_running():
+                                print('killing %s' % c)
+                                p.kill()
             except (psutil.ZombieProcess, psutil.AccessDenied):
                 pass
 
@@ -178,7 +200,7 @@ def main():
         if args.run_server:
             logger.info('launching server...')
             with open(serverlog('out'),"wb") as out, open(serverlog('err'),"wb") as err:
-                subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub, SERVER_PROC)),
+                subprocess.Popen('%s %s.py %s' % (sys.executable, os.path.join(fstub, SERVER_PROC, prof_args)),
                                  shell=True, stdout=out, stderr=err)
             logger.info('waiting for server to come up...')
             time.sleep(10)
@@ -190,7 +212,7 @@ def main():
         logger.info('launching %d workers...' % numProcessors)
         for i in range(numProcessors):
             with open(workerlog(i,'out'),"wb") as out, open(workerlog(i,'err'),"wb") as err:
-                subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub,WORKER_PROC)),
+                subprocess.Popen('%s %s.py %s' % (sys.executable, os.path.join(fstub,WORKER_PROC, prof_args)),
                                  shell=True, stdout=out, stderr=err)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...

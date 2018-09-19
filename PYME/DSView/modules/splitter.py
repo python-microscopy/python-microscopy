@@ -88,9 +88,12 @@ class Unmixer:
                     chanROIs.append((x0, y0, w, h))
         else:
             #default to old splitter code
+            from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
-            ROIX1 = mdh.getEntry('Camera.ROIPosX')
-            ROIY1 = mdh.getEntry('Camera.ROIPosY')
+            roi_x0, roi_y0 = get_camera_roi_origin(mdh)
+
+            ROIX1 = roi_x0 + 1
+            ROIY1 = roi_y0 + 1
 
             ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
             ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')

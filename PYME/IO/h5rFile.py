@@ -14,13 +14,17 @@ tablesLock = threading.Lock()
 file_cache = {}
 
 
+openLock = threading.Lock()
+
 def openH5R(filename, mode='r'):
     key = (filename, mode)
-    if key in file_cache and file_cache[key].is_alive:
-        return file_cache[key]
-    else:
-        file_cache[key] = H5RFile(filename, mode)
-        return file_cache[key]
+    
+    with openLock:
+        if key in file_cache and file_cache[key].is_alive:
+            return file_cache[key]
+        else:
+            file_cache[key] = H5RFile(filename, mode)
+            return file_cache[key]
 
 
 
@@ -34,7 +38,7 @@ class H5RFile(object):
 
         logging.debug('pytables open call: %s' % filename)
         with tablesLock:
-            self._h5file = tables.openFile(filename, mode)
+            self._h5file = tables.open_file(filename, mode)
         logging.debug('pytables file open: %s' % filename)
 
         #metadata and events are created on demand
@@ -45,6 +49,7 @@ class H5RFile(object):
         # and our local thread
         self.appendQueueLock = threading.Lock()
         self.appendQueues = {}
+        #self.appendVLQueues = {}
 
         self.keepAliveTimeout = time.time() + KEEP_ALIVE_TIMEOUT
         self.useCount = 0
@@ -107,7 +112,11 @@ class H5RFile(object):
                 table.append(data)
             except AttributeError:
                 # we don't have a table with that name - create one
-                self._h5file.createTable(self._h5file.root, tablename, data,
+                if isinstance(data, basestring):
+                    table = self._h5file.create_vlarray(self._h5file.root, tablename, tables.VLStringAtom())
+                    table.append(data)
+                else:
+                    self._h5file.create_table(self._h5file.root, tablename, data,
                                                filters=tables.Filters(complevel=5, shuffle=True),
                                                expectedrows=500000)
 

@@ -23,15 +23,15 @@
 """
 This contains the bulk of the GUI code for the main window of PYMEAcquire.
 """
-import wx
-import wx.py.shell
-import wx.lib.agw.aui as aui
-
-import PYME.ui.autoFoldPanel as afp
+import logging
 import os
 import time
 
-import logging
+import PYME.ui.autoFoldPanel as afp
+import wx
+import wx.lib.agw.aui as aui
+import wx.py.shell
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ import PYME.DSView.displaySettingsPanel as disppanel
 from PYME.DSView import arrayViewPanel
 from PYME.DSView import dsviewer as dsviewer
 
-from PYME.Acquire import mytimer
+from PYME.ui import mytimer
 
 from PYME.Acquire.ui import positionUI
 from PYME.Acquire.ui import intsliders
@@ -112,6 +112,7 @@ class PYMEMainFrame(AUIFrame):
         self.toolPanels = []
         self.camPanels = []
         self.aqPanels = []
+        self.anPanels = []
         self.postInit = []
 
         self.initDone = False
@@ -272,9 +273,11 @@ class PYMEMainFrame(AUIFrame):
             #print(t)
             self.AddCamTool(*t)
             
-            
         for t in self.aqPanels:
             self.AddAqTool(*t)
+            
+        for t in self.anPanels:
+            self.AddTool(*t, panel=self.anPanel)
 
         #self.splash.Destroy()
 
@@ -358,62 +361,64 @@ class PYMEMainFrame(AUIFrame):
         
         aqinfo.dock_proportion  = int(aqinfo.dock_proportion*1.3)
 
+        
+        self.anPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
+                                    wx.Size(240, 1000))
+
+        self._mgr.AddPane(self.anPanel, aui.AuiPaneInfo().
+                          Name("anControls").Caption("Analysis").CloseButton(False), target=aqinfo)
 
 
-    def AddTool(self, panel, title, pinned=True):
+
+    def AddTool(self, pane, title, pinned=True, panel=None):
         """Adds a pane to the tools section of the GUI
         
         Parameters
         ----------
-        panel : an instance of a wx.Window derived class
+        pane : an instance of a wx.Window derived class
             The pane to add
         title : string
             The caption for the panel.
         """
-        item = afp.foldingPane(self.toolPanel, -1, caption=title, pinned = pinned)
-        panel.Reparent(item)
-        item.AddNewElement(panel)
-        self.toolPanel.AddPane(item)
+        
+        if panel is None:
+            panel = self.toolPanel
+        
+        item = afp.foldingPane(panel, -1, caption=title, pinned = pinned)
+        pane.Reparent(item)
+        item.AddNewElement(pane)
+        panel.AddPane(item)
 #        item = self.toolPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
 #        panel.Reparent(item)
 #        self.toolPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         #wx.LayoutAlgorithm().LayoutWindow(self, self._leftWindow1)
 
-    def AddCamTool(self, panel, title, pinned=True):
+    def AddCamTool(self, pane, title, pinned=True):
         """Adds a pane to the Camera section of the GUI
         
         Parameters
         ----------
-        panel : an instance of a wx.Window derived class
+        pane : an instance of a wx.Window derived class
             The pane to add
         title : string
             The caption for the panel.
         """
-        #item = self.camPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
-        item = afp.foldingPane(self.camPanel, -1, caption=title, pinned = pinned)
-        panel.Reparent(item)
-        item.AddNewElement(panel)
-        self.camPanel.AddPane(item)
-        #self.camPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
+        
+        self.AddTool(pane, title, pinned=pinned, panel=self.camPanel)
+        
 
-    def AddAqTool(self, panel, title, pinned=True):
+    def AddAqTool(self, pane, title, pinned=True):
         """Adds a pane to the Acquisition section of the GUI
         
         Parameters
         ----------
-        panel : an instance of a wx.Window derived class
+        pane : an instance of a wx.Window derived class
             The pane to add
         title : string
             The caption for the panel.
         """
-        item = afp.foldingPane(self.aqPanel, -1, caption=title, pinned = pinned)
-        panel.Reparent(item)
-        item.AddNewElement(panel)
-        self.aqPanel.AddPane(item)
-        #item = self.aqPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
-        #panel.Reparent(item)
-        #self.aqPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
-        #wx.LayoutAlgorithm().LayoutWindow(self, self._leftWindow1)
+        self.AddTool(pane, title, pinned=pinned, panel=self.aqPanel)
+        
 
     def OnFileOpenStack(self, event):
         #self.dv = dsviewer.DSViewFrame(self)

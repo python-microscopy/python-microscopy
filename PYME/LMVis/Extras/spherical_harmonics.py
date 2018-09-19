@@ -28,4 +28,4 @@ def calc_harmonic_representation(pipeline, mmax=5, zscale=5.0):
 
 
 def Plug(visFr):
-    visFr.AddMenuItem('Extras', 'Spherical harmonic approximation', lambda e : calc_harmonic_representation(visFr.pipeline))
+    visFr.AddMenuItem('Analysis', 'Spherical harmonic approximation', lambda e : calc_harmonic_representation(visFr.pipeline))

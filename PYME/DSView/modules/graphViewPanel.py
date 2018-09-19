@@ -34,6 +34,9 @@ from matplotlib.figure import Figure
 
 from PYME.DSView.displayOptions import DisplayOpts
 
+import logging
+logger = logging.getLogger(__file__)
+
         
 class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
     def __init__(self, canvas, wind):
@@ -185,7 +188,7 @@ class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
 
 
         dc.ResetBoundingBox()
-        dc.BeginDrawing()
+        #dc.BeginDrawing()
         height = self.canvas.figure.bbox.height
         y1 = height - y1
         y0 = height - y0
@@ -202,7 +205,7 @@ class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
         else: dc.DrawRectangle(*lastrect)  #erase last
         self.lastrect = rect
         dc.DrawRectangle(*rect)
-        dc.EndDrawing()
+        #dc.EndDrawing()
 
     def set_status_bar(self, statbar):
         self.statbar = statbar
@@ -211,10 +214,14 @@ class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
         if self.statbar is not None: self.statbar.set_function(s)
 
     def set_history_buttons(self):
-        can_backward = (self._views._pos > 0)
-        can_forward = (self._views._pos < len(self._views._elements) - 1)
-        self.EnableTool(self._NTB2_BACK, can_backward)
-        self.EnableTool(self._NTB2_FORWARD, can_forward)
+        try:
+            can_backward = (self._views._pos > 0)
+            can_forward = (self._views._pos < len(self._views._elements) - 1)
+            self.EnableTool(self._NTB2_BACK, can_backward)
+            self.EnableTool(self._NTB2_FORWARD, can_forward)
+        except:
+            logger.exception('Error setting history buttons')
+        
 
 
 class GraphViewPanel(wx.Panel):
@@ -222,7 +229,7 @@ class GraphViewPanel(wx.Panel):
         wx.Panel.__init__(self, parent)
 
         if (dstack is None and do is None):
-            dstack = scipy.zeros((10,10))
+            dstack = np.zeros((10,10))
 
         if do is None:
             self.do = DisplayOpts(dstack)

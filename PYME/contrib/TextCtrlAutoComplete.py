@@ -320,7 +320,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
 
             for numCol, colVal in enumerate(valRow):
                 if numCol == 0:
-                    index = self.dropdownlistbox.InsertImageStringItem(sys.maxint, colVal, -1)
+                    index = self.dropdownlistbox.InsertImageStringItem(sys.maxsize, colVal, -1)
                 self.dropdownlistbox.SetStringItem(index, numCol, colVal)
                 self.dropdownlistbox.SetItemData(index, numRow)
 
@@ -348,7 +348,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         self.dropdownlistbox.InsertColumn(0, "")
 
         for num, colVal in enumerate(self._choices):
-            index = self.dropdownlistbox.InsertImageStringItem(sys.maxint, colVal, -1)
+            index = self.dropdownlistbox.InsertImageStringItem(sys.maxsize, colVal, -1)
 
             self.dropdownlistbox.SetStringItem(index, 0, colVal)
             self.dropdownlistbox.SetItemData(index, num)

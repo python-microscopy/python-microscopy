@@ -1,0 +1,148 @@
+<html>
+  <head>
+  	 <!--<link href="http://twitter.github.io/bootstrap/assets/css/bootstrap.css" rel="stylesheet">-->
+	  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--<link href="http://twitter.github.io/bootstrap/assets/css/bootstrap-responsive.css" rel="stylesheet">-->
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+	  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      var chart;
+      var data;
+      var view;
+      function drawChart() {
+        var query = new google.visualization.Query(
+        'http://localhost:8080/ensembleDecay?{% for s in system.species %}{{s}}=' + {{s}}.value + '&{% endfor %}');
+
+        // Send the query with a callback function.
+        query.send(handleQueryResponse);
+		}
+		
+		function handleQueryResponse(response){
+		  if (response.isError()) {
+    		alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+    		return;
+  		  }
+        data = response.getDataTable();
+        view = new google.visualization.DataView(data);
+
+        var options = {
+          title: 'Ensemble concentration behaviour',
+          hAxis: {title: 'Time [s]'},
+          vAxis: {title: 'Concentration [mol/L]'},
+        };
+
+		  
+        chart = new google.visualization.ChartWrapper({
+        chartType: 'LineChart',
+        containerId: 'chart_div',
+        dataTable: view,
+        options: {
+          title: 'Ensemble concentration behaviour',
+          hAxis: {title: 'Time [s]'},
+          vAxis: {title: 'Concentration [mol/L]'},
+          series: {
+          		{% for spec in system.species %}
+                {{loop.index0}}: {
+                    // options for the first series
+                    targetAxisIndex: {% if spec in system.fluor_states %}0 {%else%} 1{%endif%}// use the left axis
+                },
+					{% endfor %}
+             
+            }
+        },
+        });
+        
+        chart.draw();
+      }
+
+    function drawBlinkChart() {
+        var query = new google.visualization.Query(
+        'http://localhost:8080/blinking?{% for s in system.species %}{{s}}=' + {{s}}.value + '&{% endfor %}');
+
+        // Send the query with a callback function.
+        query.send(handleQueryResponse2);
+		}
+		
+		function handleQueryResponse2(response){
+		  if (response.isError()) {
+    		alert('Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+    		return;
+  		  }
+        data = response.getDataTable();
+        view = new google.visualization.DataView(data);
+
+		  
+        chart = new google.visualization.ChartWrapper({
+        chartType: 'LineChart',
+        containerId: 'chart_div2',
+        dataTable: view,
+        options: {
+          title: 'Single molecule blinking',
+          hAxis: {title: 'Time [s]'},
+          vAxis: {title: 'State', direction: -1, maxValue: 4},
+          series: {
+             
+            }
+        },
+        });
+        
+        chart.draw();
+      }
+    </script>
+  </head>
+  <body>
+    <!--<h2>Dye switching simulation</h2>-->
+  	<div class="container-fluid">
+  	<div class="row">
+  	<div class="col-md-3">
+  	 <h3>Equations</h3>
+  	 <p></p>
+
+  	 <table class= "table table-condensed" style="font-size: small">
+  	 <tr><th>Equation</th><th>Rate constant [/s]</th></tr>
+       {#<tr>#} 
+  	 {% for reaction in system.reactions %}
+  	 <tr><td style="padding-right:10px; line-height: 12px">{{reaction.reaction_equation}}</td><td style="padding-right:10px; line-height: 12px">{{"%1.3g"|format(reaction.k_forward*1000000)}}</td></tr>
+       {#{% if loop.index is divisibleby 3 %}
+        </tr><tr>
+        {% endif %}#}
+  	 {%endfor %}
+        {#</tr>#}
+  	 
+  	 </table>
+
+  	 </div>
+  	 <div class="col-md-2">
+  	 <h3>Initial Concentrations</h3>
+  	 <p></p>
+  	 <form>
+  	 <table>
+  	 <tr><th></th><th>Concentration [Mol/L]</th></tr>
+  	 {% for s in system.species %}
+  	 <tr><td style="padding-right:20px">{{s}}</td><td><input class="input-small" type="text" id="{{s}}" value="{{system.initialConditions[s]|float}}"/></td></tr>
+  	 {% endfor %} 
+  	 </table>
+		 <br>
+  	 <input type="button" onclick="drawChart();" value="Ensemble">
+      <input type="button" onclick="drawBlinkChart();" value="Single Molecule">
+  	 </form>
+  	 </div>
+
+  	 <div class="col-md-7">
+  	 <!--<h3> Ensemble behaviour</h3>-->
+    <div id="chart_div" style="width: 50pc; height: 500px;"></div>
+    </div>
+    
+    <div class="col-md-12">
+  	 <!--<h3> Blinking</h3>-->
+    <div id="chart_div2" style="width: 80pc; height: 150px;"></div>
+    <p> <strong>States:</strong> 0: <strong>S0/S1</strong> (Bright), 1: <strong>T</strong>riplet, 2: <strong>R</strong>educed radical, 3: o<strong>X</strong>idised radical</p>
+    </div>
+    </div>
+    </div>
+</div>
+  </body>
+</html>

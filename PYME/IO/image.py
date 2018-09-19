@@ -193,7 +193,7 @@ class ImageStack(object):
             with different ROIs.
 
         """
-    def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image', haveGUI=True):
+    def __init__(self, data = None, mdh = None, filename = None, queueURI = None, events = [], titleStub='Untitled Image', haveGUI=True, load_prompt=None):
 
         global nUntitled
         self.data = data      #image data
@@ -206,7 +206,7 @@ class ImageStack(object):
         self.haveGUI = haveGUI
 
         #default 'mode' / image type - see PYME/DSView/modules/__init__.py        
-        self.mode = 'LM'
+        self.mode = 'default'
 
         self.saved = False
         self.volatile = False #is the data likely to change and need refreshing?
@@ -218,7 +218,7 @@ class ImageStack(object):
         
         if (data is None):
             #if we've supplied data, use that, otherwise load from file
-            self.Load(filename)
+            self.Load(filename, prompt=load_prompt)
 
         #do the necessary munging to get the data in the format we want it        
         self.SetData(self.data)
@@ -337,7 +337,7 @@ class ImageStack(object):
         if 'Origin.x' in self.mdh.getEntryNames():
             return self.mdh['Origin.x'], self.mdh['Origin.y'], self.mdh['Origin.z']
         
-        elif 'Camera.ROIPosX' in self.mdh.getEntryNames():
+        elif ('Camera.ROIPosX' in self.mdh.getEntryNames()) or ('Camera.ROIOriginX' in self.mdh.getEntryNames()):
             #has ROI information
             try:
                 voxx, voxy = 1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y']
@@ -345,8 +345,10 @@ class ImageStack(object):
                 voxx = self.pixelSize
                 voxy = voxx
             
-            ox = (self.mdh['Camera.ROIPosX'] - 1)*voxx
-            oy = (self.mdh['Camera.ROIPosY'] - 1)*voxy
+            roi_x0, roi_y0 = MetaDataHandler.get_camera_roi_origin(self.mdh)
+            
+            ox = (roi_x0)*voxx
+            oy = (roi_y0)*voxy
             
             oz = 0
             
@@ -413,6 +415,7 @@ class ImageStack(object):
         #self.timer.WantNotification.append(self.dsRefresh)
 
         self.events = self.dataSource.getEvents()
+        self.mode = 'LM'
 
     def _loadh5(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
@@ -446,7 +449,7 @@ class ImageStack(object):
         cand = os.path.sep.join(fns[:-2] + ['analysis',] + fns[-2:]) + 'r'
         print(cand)
         if False:#os.path.exists(cand):
-            h5Results = tables.openFile(cand)
+            h5Results = tables.open_file(cand)
 
             if 'FitResults' in dir(h5Results.root):
                 self.fitResults = h5Results.root.FitResults[:]
@@ -456,6 +459,8 @@ class ImageStack(object):
                 self.resultsMdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5Results))
 
         self.events = self.dataSource.getEvents()
+
+        self.mode = 'LM'
         
     def _loadHTTP(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
@@ -487,6 +492,8 @@ class ImageStack(object):
 
         self.events = self.dataSource.getEvents()
         
+        self.mode='LM'
+        
     def _loadClusterPZF(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class"""
@@ -511,7 +518,7 @@ class ImageStack(object):
 
         self.events = self.dataSource.getEvents()
 
-    
+        self.mode = 'LM'
 
     def _loadPSF(self, filename):
         """Load PYME .psf data.
@@ -532,6 +539,24 @@ class ImageStack(object):
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'psf'
+        
+    def _loadSF(self, filename):
+        self.mdh =MetaDataHandler.NestedClassMDHandler( MetaData.BareBones)
+        self.mdh.setEntry('chroma.ShiftFilename', filename)
+        dx, dy = numpy.load(filename)
+        self.mdh.setEntry('chroma.dx', dx)
+        self.mdh.setEntry('chroma.dy', dy)
+        
+        #Completely guessing dimensions as it it not logged in the file
+        x = numpy.linspace(0, 256*70, 256)
+        y = numpy.linspace(0, 512*70, 512)
+        xs, ys = numpy.meshgrid(x, y)
+        self.data = [dx.ev(xs.ravel(), ys.ravel()).reshape(xs.shape)[::-1,:].T, dy.ev(xs.ravel(), ys.ravel()).reshape(xs.shape)[::-1,:].T]
+        
+        from PYME.Analysis.points import twoColourPlot
+        twoColourPlot.PlotShiftField2(dx, dy, [256, 512])
+
+        self.mode = 'default'
         
     def _loadNPY(self, filename):
         """Load numpy .npy data.
@@ -735,7 +760,7 @@ class ImageStack(object):
 
     def _loadTiff(self, filename):
         #from PYME.IO.FileUtils import readTiff
-        from PYME.IO.DataSources import TiffDataSource
+        from PYME.IO.DataSources import TiffDataSource, BGSDataSource
 
         mdfn = self._findAndParseMetadata(filename)
 
@@ -743,6 +768,10 @@ class ImageStack(object):
         print(self.dataSource.shape)
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
+
+        if self.dataSource.getNumSlices() > 500: #this is likely to be a localization data set
+            #background subtraction in the GUI the same way as in the analysis
+            self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
 
         print(self.data.shape)
 
@@ -795,6 +824,10 @@ class ImageStack(object):
         
         if self.mdh.getOrDefault('ImageType', '') == 'PSF':
             self.mode = 'psf'
+        elif self.dataSource.getNumSlices() > 5000:
+            #likely to want to localize this
+            self.mode = 'LM'
+            
         
     def _loadBioformats(self, filename):
         #from PYME.IO.FileUtils import readTiff
@@ -858,7 +891,7 @@ class ImageStack(object):
 
         self.mode = 'default'
 
-    def Load(self, filename=None):
+    def Load(self, filename=None, prompt=None):
         """
         Load a file from disk / queue / cluster
 
@@ -901,8 +934,11 @@ class ImageStack(object):
             #    lastdir = fdialog.GetDirectory()
             #else:
                 #print succ
+            
+            if prompt is None:
+                prompt = 'Please select Data Stack to open ...'
 
-            filename = wx.FileSelector('Please select Data Stack to open ...',
+            filename = wx.FileSelector(prompt,
                                        wildcard='Image Data|*.h5;*.tif;*.lsm;*.kdf;*.md;*.psf;*.npy;*.dbl|All files|*.*', 
                                         default_path = lastdir)            
             
@@ -918,7 +954,7 @@ class ImageStack(object):
                 self._loadQueue(filename)
             elif filename.startswith('http://'):
                 self._loadHTTP(filename)
-            elif filename.startswith('PYME-CLUSTER://') or filename.startswith('pyme-cluster://'):
+            elif (filename.startswith('PYME-CLUSTER://') or filename.startswith('pyme-cluster://')) and not (filename.split('.')[-1] in ['psf', 'sf', 'md', 'npy', 'tif', 'tiff', 'lsm', 'dcimg']):
                 self._loadClusterPZF(filename)
             elif filename.endswith('.h5'):
                 self._loadh5(filename)
@@ -926,6 +962,8 @@ class ImageStack(object):
             #    self.LoadKdf(filename)
             elif filename.endswith('.psf'): #psf
                 self._loadPSF(filename)
+            elif filename.endswith('.sf'): #shift field
+                self._loadSF(filename)
             elif filename.endswith('.md'): #treat this as being an image series
                 self._loadImageSeries(filename)
             elif filename.endswith('.npy'): #treat this as being an image series
@@ -944,7 +982,7 @@ class ImageStack(object):
             self.filename = filename
             self.saved = True
 
-    def Save(self, filename=None, crop=False, view=None, progressCallback=None):
+    def Save(self, filename=None, crop=False, roi=None, progressCallback=None):
         """
         Saves an image to file.
 
@@ -971,7 +1009,7 @@ class ImageStack(object):
         ofn = self.filename
 
         if crop:
-            dataExporter.CropExportData(view, self.mdh, self.events, self.seriesName)
+            dataExporter.CropExportData(self.data, roi, self.mdh, self.events, self.seriesName)
         else:
             if 'defaultExt' in dir(self):
                 self.filename = dataExporter.ExportData(self.data, self.mdh, self.events, defaultExt=self.defaultExt, filename=filename, progressCallback=progressCallback)

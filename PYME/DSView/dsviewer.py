@@ -19,6 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+import os
+os.environ['ETS_TOOLKIT'] = 'wx'
 
 import wx
 import wx.lib.agw.aui as aui
@@ -29,7 +31,7 @@ matplotlib.use('WxAgg')
 
 import pylab
 pylab.ion()
-import modules
+from . import modules
 
 from PYME.DSView import splashScreen
 
@@ -48,7 +50,7 @@ from PYME.DSView.DisplayOptionsPanel import OptionsPanel
 #from PYME.DSView.OverlaysPanel import OverlayPanel
 from PYME.IO.image import ImageStack
 
-from PYME.Acquire.mytimer import mytimer
+from PYME.ui.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping
 
 from PYME.ui.AUIFrame import AUIFrame
@@ -143,14 +145,14 @@ class DSViewFrame(AUIFrame):
         self._menus['Processing'] = self.mProcessing
 
         # Menu Bar end
-        wx.EVT_MENU(self, wx.ID_OPEN, self.OnOpen)
-        wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
-        wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnExport)
-        wx.EVT_CLOSE(self, self.OnCloseWindow)
+        self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
+        self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.OnExport, id=wx.ID_SAVEAS)
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         
 
 		
-        self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
+        self.statusbar = self.CreateStatusBar(1, wx.STB_SIZEGRIP)
 
         self.panesToMinimise = []
 
@@ -312,7 +314,14 @@ class DSViewFrame(AUIFrame):
         ted.Destroy()
 
     def OnExport(self, event=None):
-        self.image.Save(crop = True, view = self.view)
+        bx = min(self.do.selection_begin_x, self.do.selection_end_x)
+        ex = max(self.do.selection_begin_x, self.do.selection_end_x)
+        by = min(self.do.selection_begin_y, self.do.selection_end_y)
+        ey = max(self.do.selection_begin_y, self.do.selection_end_y)
+        
+        roi = [[bx, ex + 1],[by, ey + 1], [0, self.image.data.shape[2]]]
+        
+        self.image.Save(crop = True, roi=roi)
 
     def OnCrop(self):
         pass
@@ -367,6 +376,10 @@ def OSXActivateKludge():
     """ % os.getpid()])
 
 class MyApp(wx.App):
+    def __init__(self, argv, *args, **kwargs):
+        self.argv = argv
+        wx.App.__init__(self, *args, **kwargs)
+        
     def OnInit(self):
         
         
@@ -382,7 +395,7 @@ class MyApp(wx.App):
         return True
         
     def LoadData(self):
-        import sys, os
+        import sys
         from optparse import OptionParser
 
         op = OptionParser(usage = 'usage: %s [options] [filename]' % sys.argv[0])
@@ -394,7 +407,7 @@ class MyApp(wx.App):
         op.add_option('-g', '--start-analysis', dest='start_analysis', action="store_true", help="Automatically start the analysis (where appropriate)", default=False)
         op.add_option('-r', '--recipe', dest='recipe_filename', help='Recipe to load', default=None)
 
-        options, args = op.parse_args()
+        options, args = op.parse_args(self.argv)
         
         try:
             #md = None
@@ -413,6 +426,7 @@ class MyApp(wx.App):
                 mode = im.mode
             else:
                 mode = options.mode
+                print('Mode: %s' % mode)
     
             vframe = DSViewFrame(im, None, im.filename, mode = mode)
             
@@ -448,15 +462,15 @@ class MyApp(wx.App):
 
 
 # end of class MyApp
-
-def main():
-    app = MyApp(0)
+import sys
+def main(argv=sys.argv[1:]):
+    app = MyApp(argv)
     print('Starting main loop')
     app.MainLoop()
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
 
 
 def View3D(data, titleStub='Untitled Image', mdh = None, mode='lite', 

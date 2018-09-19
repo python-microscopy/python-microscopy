@@ -6,7 +6,7 @@ Created on Sat May  9 12:23:57 2015
 @author: david
 """
 import matplotlib
-matplotlib.use('Cairo')
+matplotlib.use('Cairo', warn=False)
 
 from PYME.recipes import runRecipe
 from PYME.recipes import modules
@@ -22,7 +22,14 @@ NUM_PROCS = multiprocessing.cpu_count()
 def runRec(args):
     #print args
     try:
+        import matplotlib.pyplot as plt
+    
+        old_backend = plt.get_backend()
+        plt.switch_backend('SVG')
+        
         runRecipe.runRecipe(*args)
+        
+        plt.switch_backend(old_backend)
     except:
         traceback.print_exc()
     

@@ -73,6 +73,9 @@ except ImportError:
     
 import six
 
+import logging
+logger = logging.getLogger(__name__)
+
 #lists where bits of hardware can register the fact that they are capable of 
 #providing metadata, by appending a function with the signature:
 #genMetadata(MetaDataHandler)
@@ -85,6 +88,37 @@ def instanceinlist(cls, list):
             return True
 
     return False
+    
+    
+def get_camera_roi_origin(mdh):
+    """
+    helper function to allow us to transition to 0 based ROIs.
+    
+    Returns the first of these it finds:
+    - [Camera.ROIOriginX, Camera.ROIOriginY]
+    - [Camera.ROIPosX -1, Camera.ROIPosY-1]
+    - [0,0]
+    
+    NOTE: this is not yet widely supported in calling code (ie you should still write ROIPosX, ROIPosY, although it is
+    safe to write both the old and new versions.
+    
+    Parameters
+    ----------
+    mdh : metadata handler
+
+    Returns
+    -------
+    
+    ROIOriginX, ROIOriginY
+
+    """
+    
+    if 'Camera.ROIOriginX' in mdh.getEntryNames():
+        return mdh['Camera.ROIOriginX'], mdh['Camera.ROIOriginY']
+    elif 'Camera.ROIPosX' in mdh.getEntryNames():
+        return mdh['Camera.ROIPosX']-1, mdh['Camera.ROIPosY']-1
+    else:
+        return 0,0
     
 
 class MDHandlerBase(DictMixin):
@@ -309,7 +343,7 @@ class HDFMDHandler(MDHandlerBase):
         if self.h5file.__contains__('/MetaData'):
             self.md = self.h5file.root.MetaData
         else:
-            self.md = self.h5file.createGroup(self.h5file.root, 'MetaData')
+            self.md = self.h5file.create_group(self.h5file.root, 'MetaData')
 
         if not mdToCopy is None:
             self.copyEntriesFrom(mdToCopy)
@@ -320,8 +354,8 @@ class HDFMDHandler(MDHandlerBase):
         en = entPath[-1]
         ep = entPath[:-1]
 
-        currGroup = self.h5file._getOrCreatePath('/'.join(['', 'MetaData']+ ep), True)
-        currGroup._f_setAttr(en, value)
+        currGroup = self.h5file._get_or_create_path('/'.join(['', 'MetaData']+ ep), True)
+        currGroup._f_setattr(en, value)
         self.h5file.flush()
 
 
@@ -331,6 +365,9 @@ class HDFMDHandler(MDHandlerBase):
         ep = entPath[:-1]
 
         res =  self.h5file.get_node_attr('/'.join(['', 'MetaData']+ ep), en)
+        
+        if isinstance(res, bytes):
+            res = res.decode('ascii')
         
         #dodgy hack to get around a problem with zero length strings not
         #being picklable if they are numpy (rather than pure python) types
@@ -448,7 +485,7 @@ class SimpleMDHandler(NestedClassMDHandler):
 
     def __init__(self, filename = None, mdToCopy=None):
         if not filename is None:
-            from PYME.Acquire.ExecTools import _execfile
+            from PYME.util.execfile import _execfile
             import cPickle as pickle
             #loading an existing file
             md = self
@@ -569,7 +606,10 @@ class XMLMDHandler(MDHandlerBase):
             val = float(val)
         elif cls == 'pickle':
             #return None
-            val = pickle.loads(base64.b64decode(val))
+            try:
+                val = pickle.loads(base64.b64decode(val))
+            except:
+                logger.exception('Error loading metadata from pickle')
 
         return val
 
@@ -701,8 +741,9 @@ class OMEXMLMDHandler(XMLMDHandler):
             self.pixels.setAttribute('SizeT', str(SizeT))
             self.pixels.setAttribute('SizeC', str(SizeC))
             
-            self.pixels.setAttribute('PhysicalSizeX', '%3.4f' % self.getEntry('voxelsize.x'))
-            self.pixels.setAttribute('PhysicalSizeY', '%3.4f' % self.getEntry('voxelsize.y'))
+            if 'voxelsize.x' in self.getEntryNames():
+                self.pixels.setAttribute('PhysicalSizeX', '%3.4f' % self.getEntry('voxelsize.x'))
+                self.pixels.setAttribute('PhysicalSizeY', '%3.4f' % self.getEntry('voxelsize.y'))
     
         return self.doc.toprettyxml()
     

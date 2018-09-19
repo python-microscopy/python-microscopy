@@ -66,12 +66,15 @@ class FocusKeys:
             self.scope.zs.zPoss -= self.focusIncrement
             self.scope.frameWrangler.start()
         else:
-            if 'lastPos' in dir(self.piezo[0]):
-                p = self.piezo[0].lastPos
-            else:
-                p = self.piezo[0].GetPos(self.piezo[1])
-                
-            self.piezo[0].MoveTo(self.piezo[1], p - self.focusIncrement, False)
+            try:
+                self.piezo[0].MoveRel(self.piezo[1], -self.focusIncrement, False)
+            except AttributeError:
+                if 'lastPos' in dir(self.piezo[0]):
+                    p = self.piezo[0].lastPos
+                else:
+                    p = self.piezo[0].GetPos(self.piezo[1])
+
+                self.piezo[0].MoveTo(self.piezo[1], p - self.focusIncrement, False)
 
     def OnFocUp(self,event):
         if self.scope and 'zs' in dir(self.scope) and self.scope.zs.running:
@@ -80,12 +83,15 @@ class FocusKeys:
             self.scope.zs.zPoss += self.focusIncrement
             self.scope.frameWrangler.start()
         else:
-            if 'lastPos' in dir(self.piezo[0]):
-                p = self.piezo[0].lastPos
-            else:
-                p = self.piezo[0].GetPos(self.piezo[1])
-                
-            self.piezo[0].MoveTo(self.piezo[1], p + self.focusIncrement, False)
+            try:
+                self.piezo[0].MoveRel(self.piezo[1], self.focusIncrement, False)
+            except AttributeError:
+                if 'lastPos' in dir(self.piezo[0]):
+                    p = self.piezo[0].lastPos
+                else:
+                    p = self.piezo[0].GetPos(self.piezo[1])
+
+                self.piezo[0].MoveTo(self.piezo[1], p + self.focusIncrement, False)
 
     def OnSensDown(self,event):
         if self.focusIncrement > 0.05:
