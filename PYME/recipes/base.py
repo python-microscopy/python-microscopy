@@ -526,6 +526,7 @@ class ModuleCollection(HasTraits):
                     logger.warning('No metadata found, proceeding with empty metadata')
                     mdh = MetaDataHandler.NestedClassMDHandler()
                 for t in h5f.list_nodes('/'):
+                    # TODO - Add support for PZF in HDF
                     if isinstance(t, tables.VLArray):
                         from PYME.IO.ragged import RaggedVLArray
                         
@@ -541,8 +542,6 @@ class ModuleCollection(HasTraits):
 
                         self.namespace[key_prefix + t.name] = tab
 
-                        #logger.error('loading h5r not supported yet')
-                        #raise NotImplementedError
                     elif isinstance(t, tables.EArray):
                         # load using ImageStack._loadh5, which finds metdata
                         im = ImageStack(filename=filename, haveGUI=False)
