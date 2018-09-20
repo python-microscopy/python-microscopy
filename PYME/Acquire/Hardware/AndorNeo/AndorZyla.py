@@ -45,6 +45,27 @@ from PYME.Acquire import eventLog
 
 logger = logging.getLogger(__name__)
 
+def check_mapexists(mdh, type = 'dark'):
+    import os
+    import PYME.Analysis.gen_sCMOS_maps as gmaps
+    
+    if type == 'dark':
+        id = 'Camera.DarkMapID'
+    elif type == 'variance':
+        id = 'Camera.VarianceMapID'
+    elif type == 'flatfield':
+        id = 'Camera.FlatfieldMapID'
+    else:
+        raise RuntimeError('unknown map type %s' % type)
+        
+    mapPath = gmaps.mkDefaultPath(type,mdh,create=False)
+    if os.path.exists(mapPath):
+        mdh[id] = mapPath
+        return mapPath
+    else:
+        return None
+
+
 class AndorBase(SDK3Camera):
     numpy_frames=1
     MODE_CONTINUOUS = 1
@@ -674,6 +695,8 @@ class AndorBase(SDK3Camera):
             logger.debug("looking for variancemap at %s" % varfn)
             if os.path.exists(varfn):
                 mdh['Camera.VarianceMapID'] = varfn
+
+            check_mapexists(mdh,type='flatfield')
 
             if  self.StaticBlemishCorrection.isImplemented():
                 mdh.setEntry('Camera.StaticBlemishCorrection', self.StaticBlemishCorrection.getValue())

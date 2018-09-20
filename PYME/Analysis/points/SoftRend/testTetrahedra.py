@@ -24,7 +24,7 @@
 def run_t():
     from pylab import *
     from PYME.DSView.dsviewer import View3D
-    from PYME.LMVis import gen3DTriangs
+    from PYME.Analysis.points import gen3DTriangs
     
     x = 5e3*rand(1000)
     y = 2.5e3*rand(1000)

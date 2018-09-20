@@ -36,6 +36,10 @@ overall template for a configuration directory is as follows: ::
       |     |- a_protocol.py
       |     |- another_protocol.py
       |
+      |- customrecipes
+      |     |- myrecipe.yaml
+      |     |- myOtherRecipe.yaml
+      |
       |- init_scripts
             |- init_mymachine.py
             |- init_my_other_config.py
@@ -164,7 +168,9 @@ def get(key, default=None):
     """
     return config.get(key, default)
 
-
+import logging
+logger = logging.getLogger(__file__)
+logger.setLevel(logging.DEBUG)
 
 def get_plugins(application):
     """
@@ -203,6 +209,8 @@ def get_plugins(application):
             with open(fn, 'r') as f:
                 plugin_paths.extend(f.readlines())
 
+    logger.debug('plugin paths: ' +  str(plugin_paths))
+        
     return  list(set([p.strip() for p in plugin_paths if not p.strip() == '']))
 
 
@@ -213,7 +221,8 @@ def get_custom_protocols():
     Returns
     -------
 
-    A dictionary of {basename : full path} for any protocols found.
+    A dictionary of {basename : full path} for any protocols found. In the current implementation
+    custom protocols overwrite protocols of the same name in the PYME distribution.
 
     """
     import glob
@@ -221,7 +230,24 @@ def get_custom_protocols():
     for config_dir in config_dirs:
         prot_glob = os.path.join(config_dir, 'protocols/[a-zA-Z]*.py')
         prots.update({os.path.split(p)[-1] : p for p in glob.glob(prot_glob)})
+    return prots
 
+def get_custom_recipes():
+    """
+    Get a dictionary recording the locations of any custom recipes.
+
+    Returns
+    -------
+
+    A dictionary of {basename : full path} for any recipes found.
+
+    """
+    import glob
+    recipes = {}
+    for config_dir in config_dirs:
+        recip_glob = os.path.join(config_dir, 'customrecipes/[a-zA-Z]*.yaml')
+        recipes.update({os.path.split(p)[-1] : p for p in glob.glob(recip_glob)})
+    return recipes
 
 def get_init_filename(filename, legacy_scripts_directory=None):
     """

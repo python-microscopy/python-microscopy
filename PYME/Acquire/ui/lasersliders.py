@@ -175,7 +175,7 @@ class LaserSliders_(wx.Panel):
 
         #self.cam = cam
         self.lasers = [l for l in lasers if l.IsPowerControlable()]
-        self.laserNames=[l.GetName() for l in lasers]
+        self.laserNames=[l.GetName() for l in self.lasers]
         
         self.sliders = []
         self.labels = []
@@ -190,7 +190,8 @@ class LaserSliders_(wx.Panel):
             self.labels.append(l)
             sz.Add(l, 0, wx.ALL, 2)
             #if sys.platform == 'darwin': #sliders are subtly broken on MacOS, requiring workaround
-            sl = wx.Slider(self, -1, self.lasers[c].GetPower(), 0, 10, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            #sl = wx.Slider(self, -1, self.lasers[c].GetPower(), 0, 10, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            sl = wx.Slider(self, -1, self.lasers[c].GetPower(), 0, 100, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
             #else: #sane OS's
             #    sl = wx.Slider(self, -1, self.cam.laserPowers[c], 0, 1000, size=wx.Size(300,-1),style=wx.SL_HORIZONTAL|wx.SL_AUTOTICKS|wx.SL_LABELS)
 

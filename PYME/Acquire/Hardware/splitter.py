@@ -71,14 +71,14 @@ class Unmixer:
         if shiftfield:
             self.SetShiftField(shiftfield)
 
-    def SetShiftField(self, shiftField):
+    def SetShiftField(self, shiftField, scope):
         #self.shiftField = shiftField
         #self.shiftFieldname = sfname
     
         if self.axis == 'up_down':
             X, Y = numpy.ogrid[:512, :256]
         else:
-            X, Y = numpy.ogrid[:256, :512]
+            X, Y = numpy.ogrid[:scope.cam.GetPicWidth()/2, :scope.cam.GetPicHeight()]
 
         self.X2 = numpy.round(X - shiftField[0](X*70., Y*70.)/70.).astype('i')
         self.Y2 = numpy.round(Y - shiftField[1](X*70., Y*70.)/70.).astype('i')
@@ -96,8 +96,8 @@ class Unmixer:
                 Xn = self.X2[x1:x2, y1:(y1 + red_chan.shape[1])] - x1
                 Yn = self.Y2[x1:x2, y1:(y1 + red_chan.shape[1])] - y1
             else:
-                Xn = self.X2[x1:(x1 + red_chan.shape[0]), y1:y2] - x1
-                Yn = self.Y2[x1:(x1 + red_chan.shape[0]), y1:y2] - y1
+                Xn = self.X2[x1:(x1 + red_chan.shape[0]), y1:y2-1] - x1
+                Yn = self.Y2[x1:(x1 + red_chan.shape[0]), y1:y2-1] - y1
 
             #print Xn.shape
 
@@ -153,7 +153,7 @@ class Unmixer:
 
 
 class Splitter:
-    def __init__(self, parent, menu, scope, cam, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top', constrain=True, flip = True):
+    def __init__(self, parent, scope, cam, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top', constrain=True, flip = True):
         self.dir = dir
         self.scope = scope
         self.cam = cam
@@ -178,6 +178,7 @@ class Splitter:
 
         self.constrainROI = False
         self.flipView = False
+        self.f = None
         
         self.miConstrROI = parent.AddMenuItem('Splitter', 'Constrain ROI', self.OnConstrainROI, itemType = 'check')
         parent.AddMenuItem('Splitter', 'Flip view', self.OnFlipView)
@@ -190,7 +191,7 @@ class Splitter:
 #        idShiftfield = wx.NewId()
 #
 #        self.menu = wx.Menu(title = '')
-#        self.f = None
+        
 #
 #        self.menu.AppendCheckItem(idConstROI, 'Constrain ROI')
 #        wx.EVT_MENU(parent, idConstROI, self.OnConstrainROI)
@@ -253,10 +254,10 @@ class Splitter:
             self.parent.AddCamTool(self.o, 'Unmixing Settings')
             #self.f.SetSize((800,500))
             #self.f.Show()
-            cpinfo = aui.AuiPaneInfo().Name("unmixingDisplay").Caption("Unmixing").Bottom().CloseButton(True)
+            self.cpinfo = aui.AuiPaneInfo().Name("unmixingDisplay").Caption("Unmixing").Bottom().CloseButton(True)
             #cpinfo.dock_proportion  = int(cpinfo.dock_proportion*1.6)
 
-            self.parent._mgr.AddPane(self.f, cpinfo)
+            self.parent._mgr.AddPane(self.f, self.cpinfo)
             self.parent._mgr.Update()
         elif not self.f.IsShown():
             self.parent._mgr.ShowPane(self.f, True)
@@ -280,7 +281,7 @@ class Splitter:
     def SetShiftField(self, sfname):
         self.shiftField = numpy.load(sfname)
         self.shiftFieldName = sfname
-        self.unmixer.SetShiftField(self.shiftField)
+        self.unmixer.SetShiftField(self.shiftField, self.scope)
 
 
     def Unmix(self):
