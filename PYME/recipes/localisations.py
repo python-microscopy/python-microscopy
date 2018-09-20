@@ -442,11 +442,39 @@ class MeasureClusters3D(ModuleBase):
 
     Measures calculated (to be expanded)
     --------------------------------------
-        count: the number of points in the cluster
-        x, y, z: Center of mass positions, no weighting based on localization precision
-        gyrationRadius: AKA RMS distance to center of cluster - see also supplemental text of DOI: 10.1038/nature16496
-        axis0, axis1, axis2: principle axes of point cloud using SVD
-        sigma0, sigma1, sigma2: spread along each principle axis (the singular values/ sqrt(N-1))
+        count : int
+            Number of localizations (points) in the cluster
+        x : float
+            x center of mass
+        y : float
+            y center of mass
+        z : float
+            z center of mass
+        gyrationRadius : float
+            root mean square displacement to center of cluster, a measure of compaction or spatial extent see also
+            supplemental text of DOI: 10.1038/nature16496
+        axis0 : ndarray, shape (3,)
+            principle axis which accounts for the largest variance of the cluster, i.e. corresponds to the largest
+            eigenvalue
+        axis1 : ndarray, shape (3,)
+            next principle axis
+        axis2 : ndarray, shape (3,)
+            principle axis corresponding to the smallest eigenvalue
+        sigma0 : float
+            standard deviation along axis0
+        sigma1 : float
+            standard deviation along axis1
+        sigma2 : float
+            standard deviation along axis2
+        anisotropy : float
+            metric of anisotropy based on the spread along principle axes. Standard deviations of alpha * [1, 0, 0],
+            where alpha is a scalar, will result in an 'anisotropy' value of 1, i.e. maximally anisotropic. Completely
+            isotropic clusters will have equal standard deviations, i.e. alpha * [1, 1, 1], which corresponds to an
+            'anisotropy' value of 0. Intermediate cases result in values between 0 and 1.
+        theta : float
+            Azimuthal angle, in radians, along which the principle axis (axis0) points
+        phi : float
+            Zenith angle, in radians, along which the principle axis (axis0) points
 
     """
     inputName = Input('input')
