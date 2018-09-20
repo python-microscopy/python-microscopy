@@ -39,6 +39,8 @@ class PhoxxLaser(Laser):
         #self.isOn=False
         
         self.doPoll=True
+
+        self.qLock = threading.Lock()
         
         self.maxpower = maxpower
         
@@ -65,14 +67,7 @@ class PhoxxLaser(Laser):
         return self.isOn
 
     def TurnOn(self):
-        il, = self._query('GLF') # Get Latched Failure. 
-        self.ilbit = format(int(il,16), '#018b')[-10] #convert the response to 16-bit binary and take the interlock bit
-        print '647 laser interlock bit:' + self.ilbit
-        if self.ilbit == '1':
-            self.ser_port.write('?RsC\r') # reset controller to clear the interlock error
-            time.sleep(30) # wait until reset is finished
-            self.ser_port.flush()
-            self.ilbit = '0'
+        self._check_interlock()
 
         ret, = self._query('LOn')
         if not ret == '>':
@@ -80,13 +75,26 @@ class PhoxxLaser(Laser):
         self.isOn = True
 
     def TurnOff(self):
+        self._check_interlock()
         ret, = self._query('LOf')
         if not ret == '>':
             raise RuntimeError('Error turning laser on')
     
         self.isOn = False
 
+    def _check_interlock(self):
+        if self.ilbit == '1':
+            raise RuntimeError('Interlock failure - this should reset automatically')
+
+        il, = self._query('GLF') # Get Latched Failure. 
+        self.ilbit = format(int(il,16), '#018b')[-10] #convert the response to 16-bit binary and take the interlock bit
+        #print '647 laser interlock bit:' + self.ilbit
+
+        if self.ilbit == '1':
+            raise RuntimeError('Interlock failure - this should reset automatically')
+
     def SetPower(self, power):
+        self._check_interlock()
         if power < 0 or power > 1:
             raise RuntimeError('Error setting laser power: Power must be between 0 and 1')
         self.power = power
@@ -103,6 +111,7 @@ class PhoxxLaser(Laser):
         #    self.TurnOn() #turning on actually sets power
 
     def _getOutputPower(self):
+        self._check_interlock()
         pm = float(0xFFF)
         ret, = self._query('GLP')
         
@@ -113,14 +122,29 @@ class PhoxxLaser(Laser):
         if arg:
             s = s + arg
             
-        self.commandQueue.put('?%s\r' % s)
-        
-        cmr, vals = self._decodeResponse(self.replyQueue.get(timeout=3))
+        with self.qLock:
+            self.commandQueue.put('?%s\r' % s)
+            
+            cmr, vals = self._decodeResponse(self.replyQueue.get(timeout=3))
         
         if not cmd == cmr:
+            self._flush_queues()
             raise RuntimeError('Queried with %s but got response to %s' % (cmd, cmr))
             
         return vals
+
+    def _flush_queues(self):
+        with self.qLock:
+            try:
+                while True:
+                    self.commandQueue.get(False)
+            except Empty:
+                pass
+            try:
+                while True:
+                    self.replyQueue.get(False)
+            except Empty:
+                pass
     
     def _readline(self):
         s = []
@@ -133,6 +157,20 @@ class PhoxxLaser(Laser):
         
     def _poll(self):
         while self.doPoll:
+            if self.ilbit == '1':
+                print('Resetting 647 interlock')
+                self.ser_port.write('?RsC\r') # reset controller to clear the interlock error
+                time.sleep(30) # wait until reset is finished
+                self.ser_port.flush()
+                #flush our output queue
+                # try:
+                #     while True:
+                #         self.replyQueue.get(False)
+                # except Empty:
+                #     pass
+                self.ilbit = '0'
+                print('647 Interlock reset')
+
             #print 'p'
             try:
                 cmd = self.commandQueue.get(False)
@@ -155,6 +193,10 @@ class PhoxxLaser(Laser):
                 else: #adhoc
                     self._procAdHoc(ret)
                     #self.adhocQueue.put(ret)
+
+
+            
+
                     
     def _decodeResponse(self, resp):
         cmd = resp[1:4]
@@ -190,4 +232,7 @@ class PhoxxLaser(Laser):
 
     def GetPower(self):
         #return self.power
-        return self._getOutputPower()
+        try:
+            return self._getOutputPower()
+        except:
+            return 0
