@@ -8,6 +8,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
+# we are filtering warnings that tend to come up in running populate.py
+import warnings
+import exceptions
+warnings.filterwarnings("ignore", category=exceptions.RuntimeWarning, module='django.db.models.fields', lineno=900)
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -24,7 +29,10 @@ DEBUG = True
 
 TEMPLATE_DEBUG = DEBUG
 
-ALLOWED_HOSTS = ['DBSRV1', 'localhost']
+# needed to relax this so the site gets served without permission
+# errors, see also https://stackoverflow.com/questions/20321673/debugging-apache-django-wsgi-bad-request-400-error
+ALLOWED_HOSTS = ['phy-lmsrv2', 'localhost', 'phy-lmsrv2.ex.ac.uk',
+                 '.ex.ac.uk']
 
 
 # Application definition
