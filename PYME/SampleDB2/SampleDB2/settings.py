@@ -8,6 +8,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
+# we are filtering warnings that tend to come up in running populate.py
+import warnings
+import exceptions
+warnings.filterwarnings("ignore", category=exceptions.RuntimeWarning, module='django.db.models.fields', lineno=900)
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -24,7 +29,10 @@ DEBUG = True
 
 TEMPLATE_DEBUG = DEBUG
 
-ALLOWED_HOSTS = ['DBSRV1', 'localhost']
+# needed to relax this so the site gets served without permission
+# errors, see also https://stackoverflow.com/questions/20321673/debugging-apache-django-wsgi-bad-request-400-error
+ALLOWED_HOSTS = ['phy-lmsrv2', 'localhost', 'phy-lmsrv2.ex.ac.uk',
+                 '.ex.ac.uk']
 
 
 # Application definition
@@ -57,24 +65,25 @@ WSGI_APPLICATION = 'SampleDB2.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 
-DATABASE_HOST = 'DBSRV1'
+DATABASE_HOST = ''
 #look for database host in environment variable
-if 'PYME_DATABASE_HOST' in os.environ.keys():
-    DATABASE_HOST = os.environ['PYME_DATABASE_HOST']
+DATABASE_HOST = os.getenv('PYME_DATABASE_HOST','DBSRV1')
+DATABASE_USER = os.getenv('PYME_DATABASE_USER','sample_db')
+DATABASE_PWD = os.getenv('PYME_DATABASE_PWD','PYMEUSER')
 
 DATABASES = {
-    # 'default': {
-    #     'NAME': 'sample_db',
-    #     'HOST' : DATABASE_HOST,
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'USER': 'sample_db',
-    #     'PASSWORD': 'PYMEUSER',
-    #     'OPTIONS': {"connect_timeout": 5,},
-    # },
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+	'default': {
+        'NAME': 'sample_db',
+        'HOST' : DATABASE_HOST,
+        'ENGINE': 'django.db.backends.mysql',
+        'USER': DATABASE_USER,
+        'PASSWORD': DATABASE_PWD,
+        'OPTIONS': {"connect_timeout": 5,},
+    },
+    #'default': {
+    #    'ENGINE': 'django.db.backends.sqlite3',
+    #    'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    #}
 }
 
 # Internationalization

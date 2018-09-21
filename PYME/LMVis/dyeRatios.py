@@ -28,21 +28,29 @@ currently just uses values for the default splitter config"""
 ratios = {'A647':0.85, 'A680':0.87, 'A750': 0.11, 'A700': 0.3, 'CF770': 0.11}
 PRIRatios = {'A680':0.7, 'A750': 0.5}
 
-dichr_ratios = {'FF700-Di01': {'A647':0.3, 'A680':0.87,'A700':0.7, 'A750':.9}}
+dichr_ratios = {
+    # standard splitter for 680/750
+    'FF700-Di01' : {'A647':0.3, 'A680':0.87,'A700':0.7, 'A750':.9},
+    # Chroma splitter for 647/700 with Semrock SP01-785R in long arm
+    'T710LPXXR-785R' : {'A647': 0.79, 'ATTO655': 0.74, 'Atto655': 0.74, 'AT655': 0.74, 'AT700': 0.22, 'ATTO700':0.22, 'A700':0.43},
+    # Chroma splitter for 647/700 WITHOUT Semrock SP01-785R in long arm
+    'T710LPXXR' : {'A700' : 0.39, 'A647' : 0.73}
+    }
 
 def getRatio(dye, mdh=None):
-    if dye in ratios.keys():
         
-        if 'Analysis.FitModule' in mdh.getEntryNames() and mdh['Analysis.FitModule'].startswith('PRInterpFit'):
-            return PRIRatios[dye]
-        if 'Splitter.Dichroic' in mdh.getEntryNames():
-            dichroicName = mdh['Splitter.Dichroic']
-            if dichroicName in dichr_ratios.keys():
+    if 'Splitter.Dichroic' in mdh.getEntryNames():
+        dichroicName = mdh['Splitter.Dichroic']
+        if (dichroicName in dichr_ratios.keys()) and (dye in dichr_ratios[dichroicName].keys()):
                 return dichr_ratios[dichroicName][dye]
                 
+    # this path is likely never reached
+    if dye in ratios.keys():
+        if 'Analysis.FitModule' in mdh.getEntryNames() and mdh['Analysis.FitModule'].startswith('PRInterpFit'):
+            return PRIRatios[dye]
         if 'Splitter.TransmittedPathPosition' in mdh.getEntryNames() and mdh.getEntry('Splitter.TransmittedPathPosition') == 'Top':
             return 1 - ratios[dye]
         else:
             return ratios[dye]
     else:
-        return None
+        return None # default action

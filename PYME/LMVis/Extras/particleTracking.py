@@ -31,6 +31,7 @@ class ParticleTracker:
         visFr.AddMenuItem('Corrections>Chaining', "Find consecutive appearances", self.OnFindClumps)
         visFr.AddMenuItem('Analysis>Tracking', "Plot Mean Squared Displacement", self.OnCalcMSDs)
         visFr.AddMenuItem('Corrections>Chaining', "Clump consecutive appearances", self.OnCoalesce)
+        visFr.AddMenuItem('Extras', "Calculate clump widths", self.OnCalcWidths)
 
     def _OnTrackMolecules(self, event):
         import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
@@ -140,7 +141,7 @@ class ParticleTracker:
             y = pipeline['y'][I]
             t = pipeline['t'][I]
 
-            nT = (t.max() - t.min())/2
+            nT = int((t.max() - t.min())/2)
 
 
             h = msdHistogram(x, y, t, nT)
@@ -175,8 +176,14 @@ class ParticleTracker:
         from PYME.Analysis.points.DeClump import pyDeClump
         
         pipeline = self.visFr.pipeline
-        
-        dclumped = pyDeClump.coalesceClumps(pipeline.selectedDataSource.resultsSource.fitResults, pipeline.selectedDataSource['clumpIndex'])
+        try:
+            nphotons = pipeline.selectedDataSource['nPhotons']
+        except KeyError:
+            nphotons = None
+            
+        #TODO - check what nPhotons is doing here!!!
+        dclumped = pyDeClump.coalesceClumps(pipeline.selectedDataSource.resultsSource.fitResults,
+                                            pipeline.selectedDataSource['clumpIndex'], nphotons)
         ds = tabular.fitResultsSource(dclumped)
 
         pipeline.addDataSource('Coalesced',  ds)
@@ -194,7 +201,45 @@ class ParticleTracker:
         self.visFr.pipeline.selectDataSource('coalesced')
         self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
+    def OnCalcWidths(self,event):
+        from scipy.stats import binned_statistic
 
+        pipeline = self.visFr.pipeline
+ 
+        # clumps = set(pipeline.mapping['clumpIndex'])
+        bins = np.arange(pipeline.mapping['clumpIndex'].max()+1,dtype='float32')+0.5
+        xv, edges, binnumber = binned_statistic(pipeline.mapping['clumpIndex'], pipeline.mapping['x'], statistic=np.var, bins=bins)
+        xvars = xv[binnumber-1]
+        yv, edges, binnumber = binned_statistic(pipeline.mapping['clumpIndex'], pipeline.mapping['y'], statistic=np.var, bins=bins)
+        yvars = yv[binnumber-1]
+        
+        widths = np.sqrt(xvars+yvars)
+
+        # for i, ci in enumerate(clumps):
+        #     I = pipeline.mapping['clumpIndex'] == ci
+            
+        #     x = pipeline.mapping['x'][I]
+        #     y = pipeline.mapping['y'][I]
+            
+        #     if len(x) > 1:
+        #         #vx = x.var()
+        #         #vy = y.var()
+        #         vars[I] = 1.0 # math.sqrt(vx + vy)
+                
+        pipeline.selectedDataSource.clumpWidths = -1*np.ones(pipeline.selectedDataSource.clumpIndices.shape)
+        pipeline.selectedDataSource.clumpWidths[pipeline.filter.Index] = widths
+        pipeline.selectedDataSource.clumpWidthsX = -1*np.ones(pipeline.selectedDataSource.clumpIndices.shape)
+        pipeline.selectedDataSource.clumpWidthsX[pipeline.filter.Index] = np.sqrt(xvars)
+        pipeline.selectedDataSource.clumpWidthsY = -1*np.ones(pipeline.selectedDataSource.clumpIndices.shape)
+        pipeline.selectedDataSource.clumpWidthsY[pipeline.filter.Index] = np.sqrt(yvars)
+ 
+        pipeline.selectedDataSource.setMapping('clumpWidth', 'clumpWidths')
+        pipeline.selectedDataSource.setMapping('clumpWidthX', 'clumpWidthsX')
+        pipeline.selectedDataSource.setMapping('clumpWidthY', 'clumpWidthsY')
+         
+        self.visFr.RegenFilter()
+        self.visFr.CreateFoldPanel()
+ 
 
 def Plug(visFr):
     """Plugs this module into the gui"""

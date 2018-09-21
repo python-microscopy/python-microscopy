@@ -150,7 +150,7 @@ class FitInfoPanel(wx.Panel):
         self.stSliceNum.SetLabel(slN)
 
         self.stFitRes.SetLabel(self.genResultsText(index))
-        if self.mdh.getEntry('Analysis.FitModule') == 'LatGaussFitFR':
+        if self.mdh.getEntry('Analysis.FitModule') in ['LatGaussFitFR','LatGaussFitFRforZyla']:
             self.stPhotons.SetLabel(self.genGaussPhotonStats(index))
 
         self.fitViewPan.draw(index)

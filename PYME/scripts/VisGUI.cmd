@@ -1,3 +1,3 @@
 @echo off
 
-start "" "python.exe" "VisGUI.py" %*
+start  "python.exe" "VisGUI.py" %*

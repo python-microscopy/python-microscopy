@@ -195,7 +195,7 @@ def fITmod2(A, Ndet, lamb, tauI, a, Acrit, bg, N, t, Nco):
 #define decorator to apply each fit fuction independantly over each colour channel
 def applyByChannel(fcn):
     args = inspect.getargspec(fcn).args
-    def colfcnwrap(pipeline):
+    def colfcnwrap(pipeline, quiet = False):
         colourFilter = pipeline.colourFilter
         metadata = pipeline.mdh
         chans = colourFilter.getColourChans()
@@ -204,7 +204,8 @@ def applyByChannel(fcn):
             pylab.figure(os.path.split(pipeline.filename)[-1] + ' - ' + fcn.__name__)
     
         if len(chans) == 0:
-            fcn(colourFilter, metadata)
+            ret = fcn(colourFilter, metadata)
+            return [ret]
         else:
             curChan = colourFilter.currentColour
             
@@ -221,16 +222,21 @@ def applyByChannel(fcn):
                     if lab[i][0] in chanNames:
                         chanNames[chanNames.index(lab[i][0])] = lab[i][1]
     
+            ret = []
             for ch, i in zip(chans, range(len(chans))):
                 colourFilter.setColour(ch)
                 PL.ExtendContext({'chan': chanNames[i]})
                 if 'rng' in args:
-                    fcn(colourFilter, metadata, chanNames[i], i, rng)
+                    retc = fcn(colourFilter, metadata, chanNames[i], i, rng)
+                elif 'quiet' in args:
+                    retc = fcn(colourFilter, metadata, chanNames[i], i, rng, quiet=quiet)
                 else:
-                    fcn(colourFilter, metadata, chanNames[i], i)
+                    retc = fcn(colourFilter, metadata, chanNames[i], i)
                 PL.PopContext()
+                ret.append(retc)
             colourFilter.setColour(curChan)
-            
+            return ret
+
     return colfcnwrap
     
 ###############
@@ -291,6 +297,7 @@ def fitDecay(colourFilter, metadata, channame='', i=0):
     
         pylab.figtext(.4,.8 -.05*i, channame + '\t$\\tau = %3.2fs,\\;b = %3.2f$' % (res[0][1], b/res[0][0]), size=18, color=colours[i])
 
+    return 0
 
 @applyByChannel
 def fitOnTimes(colourFilter, metadata, channame='', i=0):    
@@ -330,11 +337,11 @@ def fitOnTimes(colourFilter, metadata, channame='', i=0):
         pylab.title('Event Duration - CAUTION: unreliable if $\\tau <\\sim$ exposure time')
     
         pylab.figtext(.6,.8 -.05*i, channame + '\t$\\tau = %3.4fs$' % (res[0][1], ), size=18, color=colours[i])
-
+    return 0
 
 
 @applyByChannel
-def fitFluorBrightness(colourFilter, metadata, channame='', i=0, rng = None):
+def fitFluorBrightness(colourFilter, metadata, channame='', i=0, rng = None, quiet = False):
     #nPh = (colourFilter['A']*2*math.pi*(colourFilter['sig']/(1e3*metadata.getEntry('voxelsize.x')))**2)
     #nPh = nPh*metadata.getEntry('Camera.ElectronsPerCount')/metadata.getEntry('Camera.TrueEMGain')
     nPh = getPhotonNums(colourFilter, metadata)
@@ -343,12 +350,13 @@ def fitFluorBrightness(colourFilter, metadata, channame='', i=0, rng = None):
         rng = nPh.mean()*6
         
     n, bins = np.histogram(nPh, np.linspace(0, rng, 100))
-
+    NEvents = len(colourFilter['t'])
     bins = bins[:-1]
 
     res = FitModel(fImod, [n.max(), bins[n.argmax()]/2, 100, nPh.mean()], n, bins)
     mse = (res[2]['fvec']**2).mean()
-    PL.AddRecord('/Photophysics/FluorBrightness/fImod', munge_res(fImod,res, mse=mse))
+    if not quiet:
+        PL.AddRecord('/Photophysics/FluorBrightness/fImod', munge_res(fImod,res, mse=mse))
 
     #figure()
     #semilogy()
@@ -362,7 +370,9 @@ def fitFluorBrightness(colourFilter, metadata, channame='', i=0, rng = None):
         pylab.title('Event Intensity - CAUTION - unreliable if evt. duration $>\\sim$ exposure time')
         #print res[0][2]
     
-        pylab.figtext(.4,.8 -.05*i, channame + '\t$N_{det} = %3.0f\\;\\lambda = %3.0f$' % (res[0][1], res[0][3]), size=18, color=colours[i])
+        pylab.figtext(.4,.8 -.05*i, channame + '\t$N_{det} = %3.0f\\;\\lambda = %3.0f$\n\t$Ph.mean = %3.0f$' % (res[0][1], res[0][3], nPh.mean()), size=18, color=colours[i])
+
+    return [channame, res[0][3], NEvents]
 
 @applyByChannel    
 def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
@@ -372,7 +382,8 @@ def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
     
     nPh = getPhotonNums(colourFilter, metadata)
     t = (colourFilter['t'].astype('f') - metadata['Protocol.DataStartsAt'])*metadata.getEntry('Camera.CycleTime')
-    
+    NEvents = len(t)
+
     if rng is None:
         rng = nPh.mean()*3
         
@@ -441,7 +452,9 @@ def fitFluorBrightnessT(colourFilter, metadata, channame='', i=0, rng = None):
         pylab.xlabel('Time [s]')
         
         pylab.figtext(.2,.7 , '$A = %3.0f\\;N_{det} = %3.2f\\;\\lambda = %3.0f\\;\\tau = %3.0f$\n$\\alpha = %3.3f\\;A_{crit} = %3.2f\\;N_{det_0} = %3.2f$' % (A, Ndet, lamb, tauI, a, Acrit, NDetM), size=18)
-        
+
+    return [channame, lamb, NEvents]
+
     #    f = figure()
     #    ax = Axes3D(f)
     #    for j in range(len(ybins) - 1):

@@ -266,6 +266,10 @@ class OptionsPanel(wx.Panel):
 
     def OnIsodataThresh(self, event):
         from PYME.Analysis import thresholding
+        
+        #FIXME: this injects something into do which is not usually there
+        #FIXME: this has nothing to do with the display (and shouldn't be injected)
+        self.do.ThreshMode = ['isodata',-1]
         for i, hClim in enumerate(self.hcs):
             t = thresholding.isodata_f(self.do.ds[:,:,:,i])
             hClim.SetValueAndFire((t,t))
@@ -273,6 +277,7 @@ class OptionsPanel(wx.Panel):
     def OnSignalFracThresh(self, event):
         from PYME.Analysis import thresholding
         frac = max(0., min(1., float(self.tPercThresh.GetValue())))
+        self.do.ThreshMode = ['fractional',frac]
         for i, hClim in enumerate(self.hcs):
             t = thresholding.signalFraction(self.do.ds[:,:,:,i], frac)
             hClim.SetValueAndFire((t,t))
