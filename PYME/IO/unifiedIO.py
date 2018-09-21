@@ -93,7 +93,7 @@ def openFile(filename, mode='rb'):
         s = clusterIO.getFile(sequenceName, clusterfilter)
         return BytesIO(s)
     else:
-        raise IOError('File does not exist or URI not understood')
+        raise IOError('File does not exist or URI not understood: %s' % filename)
 
 def read(filename):
     filename = nameUtils.getFullExistingFilename(filename)
@@ -111,4 +111,4 @@ def read(filename):
         s = clusterIO.getFile(sequenceName, clusterfilter)
         return s
     else:
-        raise IOError('File does not exist or URI not understood')
+        raise IOError('File does not exist or URI not understood: %s' % filename)

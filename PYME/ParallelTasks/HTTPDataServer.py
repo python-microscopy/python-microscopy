@@ -511,6 +511,16 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                     break
             else:
                 return self.list_directory(path)
+
+        
+        
+        if '.h5/' in path:
+            #special case - allow .h5 files to be treated as a directory
+            if path.endswith('.h5/'):
+                return self.list_h5(path)
+            else:
+                return self.get_h5_part(path)
+
         ctype = self.guess_type(path)
         try:
             # Always read in binary mode. Opening files in text mode may cause
@@ -531,6 +541,14 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         except:
             f.close()
             raise
+        
+    def _string_to_file(self, str):
+        f = BytesIO()
+        f.write(str)
+        length = f.tell()
+        f.seek(0)
+        
+        return f, length
 
     def list_directory(self, path):
         """Helper to produce a directory listing (absent index.html).
@@ -565,16 +583,49 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 js_dir = json.dumps(l2)
                 _dirCache[path] = (js_dir, time.time() + _dirCacheTimeout)
 
-        f = BytesIO()
-        f.write(js_dir)
-        length = f.tell()
-        f.seek(0)
+        f, length = self._string_to_file(js_dir)
+        
         self.send_response(200)
         encoding = sys.getfilesystemencoding()
         self.send_header("Content-type", "application/json; charset=%s" % encoding)
         self.send_header("Content-Length", str(length))
         self.end_headers()
         return f
+    
+    def list_h5(self, path):
+        from PYME.IO import h5File
+        with h5File.openH5(path.rstrip('/')) as h5f:
+            f, length = self._string_to_file(json.dumps(h5f.get_listing()))
+        
+        self.send_response(200)
+        encoding = sys.getfilesystemencoding()
+        self.send_header("Content-type", "application/json; charset=%s" % encoding)
+        self.send_header("Content-Length", str(length))
+        self.end_headers()
+        return f
+    
+    def get_h5_part(self, path):
+        from PYME.IO import h5File
+        ctype = self.guess_type(path)
+        try:
+            filename, part = path.split('.h5/')
+            
+            with h5File.openH5(filename + '.h5') as h5f:
+                f, length = self._string_to_file(h5f.get_file(part))
+
+                self.send_response(200)
+                self.send_header("Content-type", ctype)
+                self.send_header("Content-Length", length)
+                #self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+                self.end_headers()
+                return f
+                
+            
+        except IOError:
+            self.send_error(404, "File not found - %s, [%s]" % (self.path, path))
+            return None
+        
+        
 
     def log_request(self, code='-', size='-'):
         """Log an accepted request.

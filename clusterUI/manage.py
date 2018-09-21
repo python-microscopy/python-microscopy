@@ -10,8 +10,8 @@ if __name__ == "__main__":
 
     #prof = fProfile.thread_profiler()
     #prof.profileOn('.*clusterUI.*', '/home/ubuntu/clusterUI_prof.txt')
-    mProfile.profileOn(['clusterIO.py',])
+    #mProfile.profileOn(['clusterIO.py',])
     execute_from_command_line(sys.argv)
-    mProfile.profileOff()
-    mProfile.report(False, '/home/ubuntu/')
+    #mProfile.profileOff()
+    #mProfile.report(False, '/home/ubuntu/')
     #prof.profileOff()

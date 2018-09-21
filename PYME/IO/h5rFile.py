@@ -27,11 +27,10 @@ def openH5R(filename, mode='r'):
             return file_cache[key]
 
 
-
-KEEP_ALIVE_TIMEOUT = 20 #keep the file open for 20s after the last time it was used
-FLUSH_INTERVAL = config.get('h5r-flush_interval', 1)
-
 class H5RFile(object):
+    KEEP_ALIVE_TIMEOUT = 20 #keep the file open for 20s after the last time it was used
+    FLUSH_INTERVAL = config.get('h5r-flush_interval', 1)
+    
     def __init__(self, filename, mode='r'):
         self.filename = filename
         self.mode = mode
@@ -51,7 +50,7 @@ class H5RFile(object):
         self.appendQueues = {}
         #self.appendVLQueues = {}
 
-        self.keepAliveTimeout = time.time() + KEEP_ALIVE_TIMEOUT
+        self.keepAliveTimeout = time.time() + self.KEEP_ALIVE_TIMEOUT
         self.useCount = 0
         self.is_alive = True
 
@@ -72,7 +71,7 @@ class H5RFile(object):
 
     def __exit__(self, *args):
         with self.appendQueueLock:
-            self.keepAliveTimeout = time.time() + KEEP_ALIVE_TIMEOUT
+            self.keepAliveTimeout = time.time() + self.KEEP_ALIVE_TIMEOUT
             self.useCount -= 1
 
 
@@ -171,7 +170,7 @@ class H5RFile(object):
                         pass
 
                 curTime = time.time()
-                if (curTime - self._lastFlushTime) > FLUSH_INTERVAL:
+                if (curTime - self._lastFlushTime) > self.FLUSH_INTERVAL:
                     with tablesLock:
                         self._h5file.flush()
                     self._lastFlushTime = curTime
