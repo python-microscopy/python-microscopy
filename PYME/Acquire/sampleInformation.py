@@ -45,6 +45,7 @@ currentSlide = [None]
 
 WantSlideChangeNotification = []
 
+from PYME.IO import MetaDataHandler
 from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
 slideMD = NestedClassMDHandler()
@@ -519,3 +520,4 @@ def createImage(mdh, slide, comments=''):
     print('FIXME: create database entry for image')
     pass
 
+#MetaDataHandler.provideStartMetadata.append(lambda mdh: getSampleDataFailsafe)

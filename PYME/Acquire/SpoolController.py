@@ -181,13 +181,13 @@ class SpoolController(object):
                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
 
         #TODO - sample info is probably better handled with a metadata hook
-        if sampInf:
-            try:
-                sampleInformation.getSampleData(self, self.spooler.md)
-            except:
-                #the connection to the database will timeout if not present
-                #FIXME: catch the right exception (or delegate handling to sampleInformation module)
-                pass
+        #if sampInf:
+        #    try:
+        #        sampleInformation.getSampleData(self, self.spooler.md)
+        #    except:
+        #        #the connection to the database will timeout if not present
+        #        #FIXME: catch the right exception (or delegate handling to sampleInformation module)
+        #        pass
             
         self.spooler.onSpoolStop.connect(self.SpoolStopped)
         self.spooler.StartSpool()
