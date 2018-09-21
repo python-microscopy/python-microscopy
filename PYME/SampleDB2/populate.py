@@ -43,15 +43,15 @@ def addFiles(directory, extensions=['.h5r', '.h5']):
             if os.path.splitext(file)[1] in extensions:
                 filename = os.path.join(path, file)
                 #print filename
-                #try:
-                f = File.GetOrCreate(filename)
+                try:
+                    f = File.GetOrCreate(filename)
 
-                if f.filesize <=1: #was added before database updated
-                    f.filesize = os.path.getsize(filename)
-                    f.save()
-                #except ValueError as e:
-                #    print('Error is:')
-                #    print(e)
+                    if f.filesize <=1: #was added before database updated
+                        f.filesize = os.path.getsize(filename)
+                        f.save()
+                except ValueError as e:
+                    print('Error is:')
+                    print(e)
 
 
 if __name__ == '__main__':

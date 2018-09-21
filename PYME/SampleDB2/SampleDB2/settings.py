@@ -29,7 +29,10 @@ DEBUG = True
 
 TEMPLATE_DEBUG = DEBUG
 
-ALLOWED_HOSTS = ['phy-lmsrv2', 'localhost']
+# needed to relax this so the site gets served without permission
+# errors, see also https://stackoverflow.com/questions/20321673/debugging-apache-django-wsgi-bad-request-400-error
+ALLOWED_HOSTS = ['phy-lmsrv2', 'localhost', 'phy-lmsrv2.ex.ac.uk',
+                 '.ex.ac.uk']
 
 
 # Application definition
