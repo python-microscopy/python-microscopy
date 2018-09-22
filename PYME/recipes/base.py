@@ -547,8 +547,16 @@ class ModuleCollection(HasTraits):
                 except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
                     logger.warning('No metadata found, proceeding with empty metadata')
                     mdh = MetaDataHandler.NestedClassMDHandler()
+                
                 for t in h5f.list_nodes('/'):
-                    # TODO - Add support for PZF in HDF
+                    # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
+                    # PZF formatted image data, Image data which is not in an EArray, etc ...)
+                    # Note that EArray is only used for streaming data!
+                    # They should ideally be replaced with more comprehensive tests (potentially based on array or dataset
+                    # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
+                    # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
+                    # > 3D data?
+                    
                     if isinstance(t, tables.VLArray):
                         from PYME.IO.ragged import RaggedVLArray
                         
@@ -569,6 +577,7 @@ class ModuleCollection(HasTraits):
                         im = ImageStack(filename=filename, haveGUI=False)
                         # assume image is the main table in the file and give it the named key
                         self.namespace[key] = im
+                        
         elif extension == '.csv':
             logger.error('loading .csv not supported yet')
             raise NotImplementedError
