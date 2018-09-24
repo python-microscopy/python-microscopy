@@ -20,10 +20,33 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-"""Placeholder module for a more complicated storage of dye ratios, including
-different splitter configurations.
+"""
+Determine the splitting ratio for a given dye. Uses the following (in order of increasing precedence)
 
-currently just uses values for the default splitter config"""
+1) Hard coded values from this file
+2) Values from the `Splitter.Ratios` metadata key if set in the acquisition software
+3) Values contained in a json formatted file referenced by the PYME.config parameter `SplitterRatioDatabase`
+
+If supplied, the SplitterRatioDatabase should be the filename of a json file with a nested dictionary following the
+format given below:
+
+.. code-block:: json
+
+    {
+        "Microsocope_ID_1" : {
+            "DICHROIC_1" : { "Dye1" : ratio1, "Dye2" : ratio2, "Dye3" : ratio3},
+            "DICHROIC_2" : { "Dye1" : ratio1, "Dye2" : ratio2},
+        },
+        "Microscope_ID_2" : {
+            "DICHROIC_1" : { "Dye1" : ratio1, "Dye2" : ratio2, "Dye3" : ratio3},
+        },
+    }
+
+"""
+
+from PYME import config
+import os
+import json
 
 ratios = {'A647':0.85, 'A680':0.87, 'A750': 0.11, 'A700': 0.3, 'CF770': 0.11}
 PRIRatios = {'A680':0.7, 'A750': 0.5}
@@ -37,20 +60,48 @@ dichr_ratios = {
     'T710LPXXR' : {'A700' : 0.39, 'A647' : 0.73}
     }
 
+ratios_by_machine = {
+    'default' : dichr_ratios,
+}
+
+ratio_filename = config.get('SplitterRatioDatabase', None)
+if (not ratio_filename is None) and os.path.exists(ratio_filename):
+    with open(ratio_filename, 'r') as f:
+        ratios_by_machine.update(json.load(f))
+
+def get_ratios(dichroic=None, acquisition_machine='default'):
+    if dichroic is None:
+        return ratios
+    
+    return ratios_by_machine[acquisition_machine][dichroic]
+    
+
 def getRatio(dye, mdh=None):
+    #load defaults
+    split_ratios = get_ratios(mdh.getOrDefault('Splitter.Dichroic', None)).copy()
         
-    if 'Splitter.Dichroic' in mdh.getEntryNames():
-        dichroicName = mdh['Splitter.Dichroic']
-        if (dichroicName in dichr_ratios.keys()) and (dye in dichr_ratios[dichroicName].keys()):
-                return dichr_ratios[dichroicName][dye]
-                
-    # this path is likely never reached
-    if dye in ratios.keys():
-        if 'Analysis.FitModule' in mdh.getEntryNames() and mdh['Analysis.FitModule'].startswith('PRInterpFit'):
-            return PRIRatios[dye]
-        if 'Splitter.TransmittedPathPosition' in mdh.getEntryNames() and mdh.getEntry('Splitter.TransmittedPathPosition') == 'Top':
-            return 1 - ratios[dye]
+    #read from acquisition metadata if present
+    if 'Splitter.Ratios' in mdh.getEntryNames():
+        split_ratios.update(mdh['Splitter.Ratios'])
+
+    #finally try to update from database if we have both a machine name and a splitter name
+    try:
+        split_ratios.update(ratios_by_machine[mdh['Splitter.Dichroic']][mdh['MicroscopeName']])
+    except KeyError:
+        pass
+        
+    try:
+        #look up the dye
+        return split_ratios[dye]
+    
+    except KeyError:
+        # this path is likely never reached
+        if dye in ratios.keys():
+            if 'Analysis.FitModule' in mdh.getEntryNames() and mdh['Analysis.FitModule'].startswith('PRInterpFit'):
+                return PRIRatios[dye]
+            if 'Splitter.TransmittedPathPosition' in mdh.getEntryNames() and mdh.getEntry('Splitter.TransmittedPathPosition') == 'Top':
+                return 1 - ratios[dye]
+            else:
+                return ratios[dye]
         else:
-            return ratios[dye]
-    else:
-        return None # default action
+            return None # default action

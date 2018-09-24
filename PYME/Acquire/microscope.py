@@ -339,6 +339,8 @@ class microscope(object):
         self.lastFrameSaturated = False
         #self.cam.saturationIntervened = False
         
+        self.microscope_name = None
+        
         self.saturatedMessage = ''
 
         protocol.scope = self
@@ -457,6 +459,9 @@ class microscope(object):
             mdh['CameraOrientation.FlipY'] = self.cam.orientation['flipy']
         except AttributeError:
             pass
+        
+        if not self.microscope_name is None:
+            mdh['MicroscopeName'] = self.microscope_name
             
         mdh.update(self.state)
         mdh.copyEntriesFrom(self.mdh)

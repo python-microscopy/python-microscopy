@@ -26,6 +26,10 @@ from PYME.Acquire.ExecTools import joinBGInit, HWNotPresent, init_gui, init_hard
 import scipy
 import time
 
+# Set a microscope name which describes this hardware configuration (e.g. a room number or similar)
+# Used with the splitting ratio database and in other places where a microscope identifier is required.
+scope.microscope_name = 'PYMESimulator'
+
 @init_hardware('Fake Piezos')
 def pz(scope):
     from PYME.Acquire.Hardware.Simulator import fakePiezo

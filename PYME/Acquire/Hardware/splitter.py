@@ -213,10 +213,17 @@ class Splitter:
         
 
     def ProvideMetadata(self, mdh):
+        from PYME.LMVis import dyeRatios #TODO - move to somewhere common
+        
         if self.scope.cam == self.cam:#only if the currently selected camera is being split
             mdh.setEntry('Splitter.Dichroic', self.dichroic)
             mdh.setEntry('Splitter.TransmittedPathPosition', self.transLocOnCamera)
             mdh.setEntry('Splitter.Flip', self.flip)
+            
+            try:
+                mdh.setEntry('Splitter.Ratios', dyeRatios.get_ratios(self.dichroic, self.scope.microscope_name))
+            except (KeyError, AttributeError):
+                pass
             
             if self.dir == 'up_down':
                 mdh['Splitter.Channel0ROI'] = [0,0,self.cam.GetCCDWidth(), self.cam.GetCCDHeight()/2]
