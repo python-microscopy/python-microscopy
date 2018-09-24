@@ -747,15 +747,21 @@ class JoinChannels(ModuleBase):
         
         chans.append(np.atleast_3d(image.data[:,:,:,0]))
         
+        channel_names = [self.inputChan0,]
+        
         if not self.inputChan1 == '':
             chans.append(namespace[self.inputChan1].data[:,:,:,0])
+            channel_names.append(self.inputChan1)
         if not self.inputChan2 == '':
             chans.append(namespace[self.inputChan2].data[:,:,:,0])
+            channel_names.append(self.inputChan2)
         if not self.inputChan3 == '':
             chans.append(namespace[self.inputChan3].data[:,:,:,0])
+            channel_names.append(self.inputChan3)
         
         im = ImageStack(chans, titleStub = 'Composite Image')
         im.mdh.copyEntriesFrom(image.mdh)
+        im.names = channel_names
         im.mdh['Parent'] = image.filename
         
         return im
