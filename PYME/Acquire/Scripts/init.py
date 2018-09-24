@@ -139,7 +139,7 @@ def laser_controls(MainFrame, scope):
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):
     from PYME.Acquire.Hardware import focusKeys
-    fk = focusKeys.FocusKeys(MainFrame, None, scope.piezos[0])
+    fk = focusKeys.FocusKeys(MainFrame, scope.piezos[0])
 
 
 #InitGUI("""

@@ -115,7 +115,7 @@ class SpoolController(object):
 
 
     def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize,
-                      compressionSettings=HTTPSpooler.defaultCompSettings):
+                      compressionSettings=HTTPSpooler.defaultCompSettings, cluster_h5 = False):
         """Start spooling
         """
         import QueueSpooler, HTTPSpooler, HDFSpooler
@@ -167,12 +167,15 @@ class SpoolController(object):
                                                 fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
         elif self.spoolType == 'Cluster':
             #self.queueName = self.dirname + fn + '.h5'
-            self.queueName = getRelFilename(self.dirname + fn + '.pcs')
+            if cluster_h5:
+                self.queueName = getRelFilename(self.dirname + fn + '.h5')
+            else:
+                self.queueName = getRelFilename(self.dirname + fn + '.pcs')
             self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                frameShape = frameShape, protocol=protocol, 
                                                guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
-                                               compressionSettings=compressionSettings)
+                                               compressionSettings=compressionSettings, aggregate_h5=cluster_h5)
            
         else:
             self.spooler = HDFSpooler.Spooler(self.dirname + fn + '.h5', self.scope.frameWrangler.onFrame, 

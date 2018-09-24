@@ -87,7 +87,7 @@ def getRatio(dye, mdh=None):
     #finally try to update from database if we have both a machine name and a splitter name
     try:
         split_ratios.update(ratios_by_machine[mdh['Splitter.Dichroic']][mdh['MicroscopeName']])
-    except KeyError:
+    except (KeyError, AttributeError):
         pass
         
     try:

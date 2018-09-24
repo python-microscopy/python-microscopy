@@ -38,6 +38,10 @@ class DataSource(BaseDataSource):
         
         if 'PZFImageData' in dir(self.h5File.root):
             self.usePZFFormat = True
+            try:
+                self.framesize = self.h5File.root.PZFImageData.attrs.framesize
+            except AttributeError:
+                self.framesize = PZFFormat.loads(self.h5File.root.PZFImageData[0])[0].squeeze().shape
         else:
             self.usePZFFormat = False
 
@@ -56,7 +60,7 @@ class DataSource(BaseDataSource):
 
     def getSliceShape(self):
         if self.usePZFFormat:
-            return self.h5File.root.PZFImageData.attrs.framesize
+            return self.framesize
         else:
             return self.h5File.root.ImageData.shape[1:3]
 
@@ -67,7 +71,10 @@ class DataSource(BaseDataSource):
             return self.h5File.root.ImageData.shape[0]
 
     def getEvents(self):
-        return self.h5File.root.Events[:]
+        try:
+            return self.h5File.root.Events[:]
+        except AttributeError:
+            return []
 
     def release(self):
         self.h5File.close()

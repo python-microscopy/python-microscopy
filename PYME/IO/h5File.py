@@ -86,10 +86,15 @@ class H5File(h5rFile.H5RFile):
         
         
     def put_file(self, filename, data):
-        if filename == 'metadata.json':
+        if filename in ['metadata.json', 'Metadata']:
             self.updateMetadata(json.loads(data))
         elif filename == 'events.json':
             raise NotImplementedError('saving events not yet implemented')
+        
+        elif filename.startswith('frame'):
+            #FIXME - this will not preserve ordering
+            frame_num = int(filename[5:10])
+            self.appendToTable('PZFImageData', data)
         
         
             

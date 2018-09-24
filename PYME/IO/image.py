@@ -434,6 +434,7 @@ class ImageStack(object):
             self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(self.dataSource.h5File))
         else:
             self.mdh = MetaData.TIRFDefault
+            import wx
             wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
             print("ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well")
 
