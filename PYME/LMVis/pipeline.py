@@ -498,9 +498,13 @@ class Pipeline:
                     s.setMapping('z_raw', 'z')
                 
         if not self.selectedDataSource is None:
-            #we can recycle the mapping object
-            if False:# self.mapping:
-                self.mapping.resultsSource = self.selectedDataSource
+            if self.mapping:
+                # copy any mapping we might have made across to the new mapping filter (should fix drift correction)
+                # TODO - make drift correction a recipe module so that we don't need this code. Long term we should be
+                # ditching the mapping filter here.
+                old_mapping = self.mapping
+                self.mapping = tabular.mappingFilter(self.selectedDataSource)
+                self.mapping.mappings.update(old_mapping.mappings)
             else:
                 self.mapping = tabular.mappingFilter(self.selectedDataSource)
 
