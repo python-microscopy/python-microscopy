@@ -79,9 +79,66 @@ measurement_dtype = [('count', '<i4'),
                      ('gyrationRadius', '<f4'),
                      ('axis0', '<3f4'), ('axis1', '<3f4'), ('axis2', '<3f4'),
                      ('sigma0', '<f4'), ('sigma1', '<f4'), ('sigma2', '<f4'),
+                     ('anisotropy', '<f4'),
                      ('theta', '<f4'), ('phi', '<f4')]
 
 def measure_3d(x, y, z, output=None):
+    """
+    Calculates various metrics for a single cluster, whose 3D coordinates are input. 'output', an optional input
+    argument, allows one to use a single structured array to contain measures for multiple clusters. See
+    PYME.recipes.localisations.MeasureClusters3D
+
+    Parameters
+    ----------
+    x : ndarray
+        x-positions, typically in nanometers
+    y : ndarray
+        y-positions, typically in nanometers
+    z : ndarray
+        z-positions, typically in nanometers
+    output : dict-like
+        If present, output will have measurements written into it, otherwise a structured array will be created and
+        returned
+
+    Returns
+    -------
+    output : dict-like, structured ndarray
+        dict-like object, typically a structured ndarray containing the following measurements:
+        count : int
+            Number of localizations (points) in the cluster
+        x : float
+            x center of mass
+        y : float
+            y center of mass
+        z : float
+            z center of mass
+        gyrationRadius : float
+            root mean square displacement to center of cluster, a measure of compaction or spatial extent see also
+            supplemental text of DOI: 10.1038/nature16496
+        axis0 : ndarray, shape (3,)
+            principle axis which accounts for the largest variance of the cluster, i.e. corresponds to the largest
+            eigenvalue
+        axis1 : ndarray, shape (3,)
+            next principle axis
+        axis2 : ndarray, shape (3,)
+            principle axis corresponding to the smallest eigenvalue
+        sigma0 : float
+            standard deviation along axis0
+        sigma1 : float
+            standard deviation along axis1
+        sigma2 : float
+            standard deviation along axis2
+        anisotropy : float
+            metric of anisotropy based on the spread along principle axes. Standard deviations of alpha * [1, 0, 0],
+            where alpha is a scalar, will result in an 'anisotropy' value of 1, i.e. maximally anisotropic. Completely
+            isotropic clusters will have equal standard deviations, i.e. alpha * [1, 1, 1], which corresponds to an
+            'anisotropy' value of 0. Intermediate cases result in values between 0 and 1.
+        theta : float
+            Azimuthal angle, in radians, along which the principle axis (axis0) points
+        phi : float
+            Zenith angle, in radians, along which the principle axis (axis0) points
+
+    """
     if output is None:
         output = np.zeros(1, measurement_dtype)
     
@@ -102,16 +159,21 @@ def measure_3d(x, y, z, output=None):
     x_, y_, z_ = x - xc, y - yc, z - zc
     
     #radius of gyration
+    # TODO - can we kill the camelCase here?
     output['gyrationRadius'] = np.sqrt(np.mean(x_*x_ + y_*y_ + z_*z_))
 
     #principle axes
     u, s, v = np.linalg.svd(np.vstack([x_, y_, z_]).T)
 
-
+    standard_deviations = s / np.sqrt(N - 1)  # with bessel's correction
     for i in range(3):
         output['axis%d' % i] = v[i]
-        #std. deviation along axes
-        output['sigma%d' % i] = s[i]/np.sqrt(N-1)
+        # std. deviation along axes
+        output['sigma%d' % i] = standard_deviations[i]
+
+    # similar to Basser, P. J., et al. doi.org/10.1006/jmrb.1996.0086
+    # note that singular values are square roots of the eigenvalues. Use the sample standard deviation rather than pop.
+    output['anisotropy'] = np.sqrt(np.var(standard_deviations**2, ddof=1)) / (np.sqrt(3) * np.mean(standard_deviations**2))
     
     pa = v[0]
     #angle of principle axis
