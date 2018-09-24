@@ -745,7 +745,7 @@ class JoinChannels(ModuleBase):
 
         image = namespace[self.inputChan0]        
         
-        chans.append(image.data[:,:,:,0])
+        chans.append(np.atleast_3d(image.data[:,:,:,0]))
         
         if not self.inputChan1 == '':
             chans.append(namespace[self.inputChan1].data[:,:,:,0])
