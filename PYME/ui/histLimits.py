@@ -72,7 +72,7 @@ class HistLimitPanel(wx.Panel):
         self.Bind(wx.EVT_MOTION, self.OnMouseMove)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyPress)
         self.Bind(wx.EVT_RIGHT_UP, self.OnRightUp)
-        self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseScrollEvent)
+        #self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseScrollEvent)
 
     def OnMouseScrollEvent(self, evt):
         rot = evt.GetWheelRotation()
