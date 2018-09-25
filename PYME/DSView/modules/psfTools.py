@@ -343,7 +343,6 @@ class PSFTools(HasTraits):
         import mpld3
         import json
         from PYME.Analysis.PSFEst import extractImages
-        from PYME.Analysis import piecewiseMapping
         import wx
 
         # query user for type of calibration
@@ -364,35 +363,19 @@ class PSFTools(HasTraits):
 
         ps = self.image.pixelSize
 
-        objPositions = {}
+        obj_positions = {}
 
-        objPositions['x'] = ps*self.image.data.shape[0]*0.5*np.ones(self.image.data.shape[2])
-        objPositions['y'] = ps * self.image.data.shape[1] * 0.5 * np.ones(self.image.data.shape[2])
-        # note that we need to put this in the context of the stack from which it was extracted
-        frame_centre = int(round(self.image.mdh['PSFExtraction.Locations'][0][2]))  # take the frame number of (the first) PSF center
-        frame_offset = (self.image.data.shape[2] / 2)  # note that original shape was defined by 2*array(PSshape) + 1
-        objPositions['t'] = np.arange(frame_centre - frame_offset, frame_centre + frame_offset + 1)
-
-        # get z from events info if we can
-        try:
-            # note that GeneratePMFromEventList internally handles converting time stamps to frame numbers
-            zm = piecewiseMapping.GeneratePMFromEventList(self.image.events, self.image.mdh, self.image.mdh['StartTime'],
-                                                          self.image.mdh['Protocol.PiezoStartPos'])
-        except TypeError:
-            # try to spoof z focus based on metadata alone
-            from PYME.LMVis.pipeline import _spoof_focus_from_metadata
-            position, frames = _spoof_focus_from_metadata(self.image.mdh)
-            zm = piecewiseMapping.piecewiseMap(0, frames, position, xIsSecs=False)
-
-        z = zm(objPositions['t']) * 1e3  # convert from um to nm
-        objPositions['z'] = z - z.mean()
+        obj_positions['x'] = ps*self.image.data.shape[0]*0.5*np.ones(self.image.data.shape[2])
+        obj_positions['y'] = ps * self.image.data.shape[1] * 0.5 * np.ones(self.image.data.shape[2])
+        obj_positions['t'] = np.arange(self.image.data.shape[2])
+        z = np.arange(self.image.data.shape[2]) * self.image.mdh['voxelsize.z'] * 1.e3
+        obj_positions['z'] = z - z.mean()
 
         ptFitter = FitPoints()
         ptFitter.trait_set(roiHalfSize=11)
         ptFitter.trait_set(fitModule=fitMod)
-        # changing 't' as a hack because PYME.recipes.measurements.FitPoints only fits frames it can index with 't'
-        objPositions['t'] = np.arange(self.image.data.shape[2])
-        namespace = {'input' : self.image, 'objPositions' : objPositions}
+
+        namespace = {'input' : self.image, 'objPositions' : obj_positions}
 
         results = []
 
@@ -410,7 +393,7 @@ class PSFTools(HasTraits):
 
             results.append({'sigmax': abs(res['fitResults_sigmax'][valid]).tolist(),'error_sigmax': abs(res['fitError_sigmax'][valid]).tolist(),
                             'sigmay': abs(res['fitResults_sigmay'][valid]).tolist(), 'error_sigmay': abs(res['fitError_sigmay'][valid]).tolist(),
-                            'dsigma': dsigma[valid].tolist(), 'z': objPositions['z'][valid].tolist(), 'zCenter': objPositions['z'][dz]})
+                            'dsigma': dsigma[valid].tolist(), 'z': obj_positions['z'][valid].tolist(), 'zCenter': obj_positions['z'][dz]})
 
         #generate new tab to show results
         use_web_view = True
