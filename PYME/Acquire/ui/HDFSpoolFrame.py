@@ -201,6 +201,16 @@ class PanSpool(wx.Panel):
 
         vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
 
+        # spool to h5 on cluster
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.cbClusterh5 = wx.CheckBox(self, -1, 'Spool to h5 on cluster (cluster of 1)')
+        self.cbClusterh5.SetValue(False)
+
+        hsizer.Add(self.cbClusterh5, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
+
         self.SetSizerAndFit(vsizer)
 
     def __init__(self, parent, scope, **kwargs):
@@ -274,7 +284,8 @@ class PanSpool(wx.Panel):
         }
 
         try:
-            self.spoolController.StartSpooling(fn, stack=stack, compLevel = compLevel, compressionSettings=compSettings)
+            self.spoolController.StartSpooling(fn, stack=stack, compLevel = compLevel, compressionSettings=compSettings,
+                                               cluster_h5=self.cbClusterh5.GetValue())
         except IOError:
             ans = wx.MessageBox('A series with the same name already exists', 'Error', wx.OK)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)

@@ -45,6 +45,27 @@ from PYME.Acquire import eventLog
 
 logger = logging.getLogger(__name__)
 
+def check_mapexists(mdh, type = 'dark'):
+    import os
+    import PYME.Analysis.gen_sCMOS_maps as gmaps
+    
+    if type == 'dark':
+        id = 'Camera.DarkMapID'
+    elif type == 'variance':
+        id = 'Camera.VarianceMapID'
+    elif type == 'flatfield':
+        id = 'Camera.FlatfieldMapID'
+    else:
+        raise RuntimeError('unknown map type %s' % type)
+        
+    mapPath = gmaps.mkDefaultPath(type,mdh,create=False)
+    if os.path.exists(mapPath):
+        mdh[id] = mapPath
+        return mapPath
+    else:
+        return None
+
+
 class AndorBase(SDK3Camera):
     numpy_frames=1
     MODE_CONTINUOUS = 1
@@ -205,6 +226,8 @@ class AndorBase(SDK3Camera):
         
         self.nBuffers = 100
         self.defBuffers = 100
+
+        self._n_timeouts = 0
        
         
         #self.contMode = True
@@ -350,7 +373,10 @@ class AndorBase(SDK3Camera):
                 time.sleep(0.5)
             elif e.errNo == SDK3.AT_ERR_TIMEDOUT:
                 pass
-                #logger.debug('AT_ERR_TIMEOUT')
+                self._n_timeouts += 1
+                if self._n_timeouts > 10:
+                    self.hardware_overflowed = True
+                    logger.debug('AT_ERR_TIMEDOUT (_n_timeouts = %d)' % self._n_timeouts)
 
             return
         except SDK3.CameraError as e:
@@ -575,6 +601,7 @@ class AndorBase(SDK3Camera):
         self.tKin = 1.0 / self._frameRate
 
         self.hardware_overflowed = False
+        self._n_timeouts = 0
         #logger.debug('StartAq')
         eventLog.logEvent('StartAq', '')
         self._flush()
@@ -674,6 +701,8 @@ class AndorBase(SDK3Camera):
             logger.debug("looking for variancemap at %s" % varfn)
             if os.path.exists(varfn):
                 mdh['Camera.VarianceMapID'] = varfn
+
+            check_mapexists(mdh,type='flatfield')
 
             if  self.StaticBlemishCorrection.isImplemented():
                 mdh.setEntry('Camera.StaticBlemishCorrection', self.StaticBlemishCorrection.getValue())

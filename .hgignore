@@ -24,6 +24,7 @@ doc/api/*
 doc/html/*
 .idea
 */_deploy/*
+*Pyro_NS_URI
 *.sqlite3
 PYME/Acquire/Hardware/Simulator/illuminate.c
 cov_html/*

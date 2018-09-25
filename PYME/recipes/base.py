@@ -97,6 +97,9 @@ class ModuleBase(HasTraits):
     @property
     def outputs(self):
         return {v for k, v in self.get().items() if k.startswith('output')}
+    
+    def get_name(self):
+        return module_names[self.__class__]
 
     def trait_view(self, name=None, view_element=None):
         import traitsui.api as tui
@@ -116,15 +119,29 @@ class ModuleBase(HasTraits):
     @property
     def hide_in_overview(self):
         return []
+    
+    def get_params(self):
+        editable = self.class_editable_traits()
+        inputs = [tn for tn in editable if tn.startswith('input')]
+        outputs = [tn for tn in editable if tn.startswith('output')]
+        params = [tn for tn in editable if not (tn in inputs or tn in outputs or tn.startswith('_'))]
+        
+        return inputs, outputs, params
         
     def _pipeline_view(self, show_label=True):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
         import traitsui.api as tui
 
         modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
 
         hidden = self.hide_in_overview
+        
+        inputs, outputs, params = self.get_params()
 
-        params = [tn for tn in self.class_editable_traits() if not (tn.startswith('input') or tn.startswith('output') or tn in hidden)]
+        #params = [tn for tn in self.class_editable_traits() if not (tn.startswith('input') or tn.startswith('output') or tn in hidden)]
 
         if show_label:
             return tui.View(tui.Group([tui.Item(tn) for tn in params],label=modname))
@@ -151,13 +168,18 @@ class ModuleBase(HasTraits):
 
     @property
     def default_view(self):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
         from traitsui.api import View, Item, Group
         from PYME.ui.custom_traits_editors import CBEditor
 
-        editable = self.class_editable_traits()
-        inputs = [tn for tn in editable if tn.startswith('input')]
-        outputs = [tn for tn in editable if tn.startswith('output')]
-        params = [tn for tn in editable if not (tn in inputs or tn in outputs or tn.startswith('_'))]
+        #editable = self.class_editable_traits()
+        #inputs = [tn for tn in editable if tn.startswith('input')]
+        #outputs = [tn for tn in editable if tn.startswith('output')]
+        #params = [tn for tn in editable if not (tn in inputs or tn in outputs or tn.startswith('_'))]
+        inputs, outputs, params = self.get_params()
 
         return View([Item(tn, editor=CBEditor(choices=self._namespace_keys)) for tn in inputs] + [Item('_'),] +
                     [Item(tn) for tn in params] + [Item('_'),] +
@@ -508,7 +530,9 @@ class ModuleCollection(HasTraits):
         """
         #modify this to allow for different file types - currently only supports images
         from PYME.IO import unifiedIO
-        if filename.split('.')[-1] in ['h5r', 'h5', 'hdf']:
+        import os
+        extension = os.path.splitext(filename)[1]
+        if extension in ['.h5r', '.h5', '.hdf']:
             import tables
             from PYME.IO import MetaDataHandler
             from PYME.IO import tabular
@@ -523,7 +547,16 @@ class ModuleCollection(HasTraits):
                 except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
                     logger.warning('No metadata found, proceeding with empty metadata')
                     mdh = MetaDataHandler.NestedClassMDHandler()
+                
                 for t in h5f.list_nodes('/'):
+                    # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
+                    # PZF formatted image data, Image data which is not in an EArray, etc ...)
+                    # Note that EArray is only used for streaming data!
+                    # They should ideally be replaced with more comprehensive tests (potentially based on array or dataset
+                    # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
+                    # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
+                    # > 3D data?
+                    
                     if isinstance(t, tables.VLArray):
                         from PYME.IO.ragged import RaggedVLArray
                         
@@ -531,19 +564,24 @@ class ModuleCollection(HasTraits):
                         rag.mdh = mdh
 
                         self.namespace[key_prefix + t.name] = rag
-                        
-                    if isinstance(t, tables.table.Table):
-                        tab = tabular.h5rSource(h5f, t.name)
+
+                    elif isinstance(t, tables.table.Table):
+                        #  pipe our table into h5r or hdf source depending on the extension
+                        tab = tabular.h5rSource(h5f, t.name) if extension == '.h5r' else tabular.hdfSource(h5f, t.name)
                         tab.mdh = mdh
 
                         self.namespace[key_prefix + t.name] = tab
 
-                        #logger.error('loading h5r not supported yet')
-                        #raise NotImplementedError
-        elif filename.endswith('.csv'):
+                    elif isinstance(t, tables.EArray):
+                        # load using ImageStack._loadh5, which finds metdata
+                        im = ImageStack(filename=filename, haveGUI=False)
+                        # assume image is the main table in the file and give it the named key
+                        self.namespace[key] = im
+                        
+        elif extension == '.csv':
             logger.error('loading .csv not supported yet')
             raise NotImplementedError
-        elif filename.endswith('.xls') or filename.endswith('.xlsx'):
+        elif extension in ['.xls', '.xlsx']:
             logger.error('loading .xls not supported yet')
             raise NotImplementedError
         else:
@@ -552,14 +590,23 @@ class ModuleCollection(HasTraits):
 
     @property
     def pipeline_view(self):
-        from traitsui.api import View, ListEditor, InstanceEditor, Item
-        #v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True, view='pipeline_view'), style='custom', show_label=False),
-        #            buttons=['OK', 'Cancel'])
-
-        return View(Item('modules', editor=ListEditor(style='custom', editor=InstanceEditor(view='pipeline_view'),
-                                                      mutable=False),
-                         style='custom', show_label=False),
-                    buttons=['OK', 'Cancel'])
+        import wx
+        if wx.GetApp() is None:
+            return None
+        else:
+            from traitsui.api import View, ListEditor, InstanceEditor, Item
+            #v = tu.View(tu.Item('modules', editor=tu.ListEditor(use_notebook=True, view='pipeline_view'), style='custom', show_label=False),
+            #            buttons=['OK', 'Cancel'])
+    
+            return View(Item('modules', editor=ListEditor(style='custom', editor=InstanceEditor(view='pipeline_view'),
+                                                          mutable=False),
+                             style='custom', show_label=False),
+                        buttons=['OK', 'Cancel'])
+        
+    def to_svg(self):
+        from . import recipeLayout
+        return recipeLayout.to_svg(self.dependancyGraph())
+        
 
         
 class Filter(ModuleBase):
@@ -698,17 +745,23 @@ class JoinChannels(ModuleBase):
 
         image = namespace[self.inputChan0]        
         
-        chans.append(image.data[:,:,:,0])
+        chans.append(np.atleast_3d(image.data[:,:,:,0]))
+        
+        channel_names = [self.inputChan0,]
         
         if not self.inputChan1 == '':
             chans.append(namespace[self.inputChan1].data[:,:,:,0])
+            channel_names.append(self.inputChan1)
         if not self.inputChan2 == '':
             chans.append(namespace[self.inputChan2].data[:,:,:,0])
+            channel_names.append(self.inputChan2)
         if not self.inputChan3 == '':
             chans.append(namespace[self.inputChan3].data[:,:,:,0])
+            channel_names.append(self.inputChan3)
         
         im = ImageStack(chans, titleStub = 'Composite Image')
         im.mdh.copyEntriesFrom(image.mdh)
+        im.names = channel_names
         im.mdh['Parent'] = image.filename
         
         return im

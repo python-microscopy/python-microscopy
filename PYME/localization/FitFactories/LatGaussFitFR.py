@@ -91,10 +91,11 @@ fresultdtype=[('tIndex', '<i4'),
               ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
                               ('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
                               ('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])]),
-              ('subtractedBackground', '<f4')
+              ('subtractedBackground', '<f4'),
+              ('nchi2', '<f4')
               ]
 
-def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0):
+def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0, nchi2=-1):
     slicesUsed = fmtSlicesUsed(slicesUsed)
     
     res = np.zeros(1, dtype=fresultdtype)
@@ -113,7 +114,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
     res['slicesUsed'] = slicesUsed
     res['subtractedBackground'] = background
         
-    
+    res['nchi2'] = nchi2
     
     #res =  np.array([(metadata.tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed, background)], dtype=fresultdtype)
     #print res
@@ -167,8 +168,9 @@ class GaussianFitFactory(FFBase.FitFactory):
         except Exception:
             pass
 
+        nchi2 = (infodict['fvec']**2).sum()/(data.size - res.size)
         #package results
-        return GaussianFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors, bgm)
+        return GaussianFitResultR(res, self.metadata, (xslice, yslice, zslice), resCode, fitErrors, bgm, nchi2)
 
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):

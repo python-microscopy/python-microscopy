@@ -47,7 +47,9 @@ class cropper:
             #print sigmas
             #print self.images[0].img.shape
 
-        roi = [[self.do.selection_begin_x, self.do.selection_end_x + 1],[self.do.selection_begin_y, self.do.selection_end_y +1], [0, self.image.data.shape[2]]]
+        x0, x1, y0, y1, z0, z1 = self.do.sorted_selection
+        
+        roi = [[x0, x1 + 1],[y0, y1 +1], [0, self.image.data.shape[2]]]
 
         filt_ims = [np.atleast_3d(self.image.data[roi[0][0]:roi[0][1],roi[1][0]:roi[1][1],:,chanNum].squeeze()) for chanNum in range(self.image.data.shape[3])]
 

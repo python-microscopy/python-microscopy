@@ -224,6 +224,9 @@ class MessageOverlay(object):
             # glEnable(GL_BLEND)
             glColor3f(1, 1, 1)
             glRasterPos2f(self.x, self.y)
+            # on windows we must have a glutInit call
+            # on mac this seems not absolutely vital
+            GLUT.glutInit()
             for ch in self.message:
                 GLUT.glutBitmapCharacter(GLUT.GLUT_BITMAP_9_BY_15, ctypes.c_int(ord(ch)))
 

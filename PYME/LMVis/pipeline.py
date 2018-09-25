@@ -239,10 +239,11 @@ def _processEvents(ds, events, mdh):
             #self.eventCharts = eventCharts
             #self.ev_mappings = ev_mappings
     else:  # try to spoof focus position using metadata alone
-        logger.debug('No events found, spoofing focus position using StackSettings metadata')
+        logger.warning('Spoofing focus from metadata: this usually implies an error in the input data (missing events) and results might vary')
         try:
             position, frames = piecewiseMapping._spoof_focus_from_metadata(mdh)
         except RuntimeWarning as e:  # this occurs if the focus can't be accurately spoofed
+            logger.exception('Error trying to fudge focus positions')
             logger.error(str(e))
         else:  # no error, so we can map it
             zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
@@ -482,9 +483,13 @@ class Pipeline:
                     s.setMapping('z_raw', 'z')
                 
         if not self.selectedDataSource is None:
-            #we can recycle the mapping object
-            if False:# self.mapping:
-                self.mapping.resultsSource = self.selectedDataSource
+            if self.mapping:
+                # copy any mapping we might have made across to the new mapping filter (should fix drift correction)
+                # TODO - make drift correction a recipe module so that we don't need this code. Long term we should be
+                # ditching the mapping filter here.
+                old_mapping = self.mapping
+                self.mapping = tabular.mappingFilter(self.selectedDataSource)
+                self.mapping.mappings.update(old_mapping.mappings)
             else:
                 self.mapping = tabular.mappingFilter(self.selectedDataSource)
 
@@ -673,7 +678,12 @@ class Pipeline:
             
             if 'LatGaussFitFR' in fitModule:
                 mapped_ds.addColumn('nPhotons', getPhotonNums(mapped_ds, self.mdh))
-                
+
+            if 'SplitterFitFNR' in fitModule:
+                mapped_ds.addColumn('nPhotonsg', getPhotonNums({'A': mapped_ds['fitResults_Ag'], 'sig': mapped_ds['fitResults_sigma']}, self.mdh))
+                mapped_ds.addColumn('nPhotonsr', getPhotonNums({'A': mapped_ds['fitResults_Ar'], 'sig': mapped_ds['fitResults_sigma']}, self.mdh))
+                mapped_ds.setMapping('nPhotons', 'nPhotonsg+nPhotonsr')
+
             if fitModule == 'SplitterShiftEstFR':
                 self.filterKeys['fitError_dx'] = (0,10)
                 self.filterKeys['fitError_dy'] = (0,10)
@@ -775,13 +785,20 @@ class Pipeline:
 
     def _get_dye_ratios_from_metadata(self):
         labels = self.mdh.getOrDefault('Sample.Labelling', [])
+        seen_structures = []
 
         for structure, dye in labels:
+            if structure in seen_structures:
+                strucname = structure + '_1'
+            else:
+                strucname = structure
+            seen_structures.append(structure)
+            
             ratio = dyeRatios.getRatio(dye, self.mdh)
 
             if not ratio is None:
-                self.fluorSpecies[structure] = ratio
-                self.fluorSpeciesDyes[structure] = dye
+                self.fluorSpecies[strucname] = ratio
+                self.fluorSpeciesDyes[strucname] = dye
                 #self.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
                 #self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
                 

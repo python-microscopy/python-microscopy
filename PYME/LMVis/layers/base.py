@@ -24,6 +24,16 @@ import warnings
 from PYME.LMVis.shader_programs.ShaderProgramFactory import ShaderProgramFactory
 
 from PYME.recipes.traits import HasTraits, Bool, Instance
+import numpy as np
+
+try:
+    # Put this in a try-except clause as a) the quaternion module is not packaged yet and b) it has a dependency on a recent numpy version
+    # so we might not want to make it a dependency yet.
+    import quaternion
+    HAVE_QUATERNION = True
+except ImportError:
+    print('quaternion module not found, disabling custom clip plane orientations')
+    HAVE_QUATERNION = False
 
 class BaseEngine(object):
     def __init__(self):
@@ -45,6 +55,13 @@ class BaseEngine(object):
         self.shader_program.ymin, self.shader_program.ymax = gl_canvas.bounds['y'][0]
         self.shader_program.zmin, self.shader_program.zmax = gl_canvas.bounds['z'][0]
         self.shader_program.vmin, self.shader_program.vmax = gl_canvas.bounds['v'][0]
+        if False:#HAVE_QUATERNION:
+            self.shader_program.v_matrix[:3, :3] = quaternion.as_rotation_matrix(gl_canvas.view.clip_plane_orientation)
+            self.shader_program.v_matrix[3, :3] = -gl_canvas.view.clip_plane_position
+        else:
+            #use current view
+            self.shader_program.v_matrix[:,:] = gl_canvas.object_rotation_matrix
+            self.shader_program.v_matrix[3,:3] = -np.linalg.lstsq(gl_canvas.object_rotation_matrix[:3,:3], gl_canvas.view.translation)[0]
         
 
 class BaseLayer(HasTraits):

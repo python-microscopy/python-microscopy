@@ -105,7 +105,7 @@ def launch_localize(analysisMDH, seriesName):
     from PYME.IO import unifiedIO
 
     resultsFilename = verify_cluster_results_filename(genClusterResultFileName(seriesName))
-    logger.debug('Results file: ' + resultsFilename)
+    logger.info('Results file: ' + resultsFilename)
 
     resultsMdh = MetaDataHandler.NestedClassMDHandler()
     # NB - anything passed in analysis MDH will wipe out corresponding entries in the series metadata
@@ -159,8 +159,8 @@ class HTTPRulePusher(object):
         self.resultsURI = clusterResults.pickResultsServer('__aggregate_h5r/%s' % resultsFilename, serverfilter)
 
         resultsMDFilename = resultsFilename + '.json'
-        #self.results_md_uri = 'PYME-CLUSTER://%s/%s' % (serverfilter, resultsMDFilename)
-        self.results_md_uri = self.resultsURI + '.json'
+        self.results_md_uri = 'PYME-CLUSTER://%s/%s' % (serverfilter, resultsMDFilename)
+        #self.results_md_uri = self.resultsURI.replace('__aggregate_h5r/', '') + '.json'
 
         self.taskQueueURI = _getTaskQueueURI()
 

@@ -51,6 +51,8 @@ except:
 
 import logging
 
+logger = logging.getLogger(__name__)
+
 debug = True
 
 def debugPrint(msg):
@@ -285,7 +287,7 @@ class AnalysisController(object):
             return self.pushImagesDS(image)
 
     def pushImagesCluster(self, image):
-        from PYME.ParallelTasks import HTTPTaskPusher
+        from PYME.ParallelTasks import HTTPRulePusher
         #resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
         resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(image.seriesName))
         logging.debug('Results file: ' + resultsFilename)
@@ -295,7 +297,7 @@ class AnalysisController(object):
         self.resultsMdh = MetaDataHandler.NestedClassMDHandler(self.analysisMDH)
         self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
 
-        self.pusher = HTTPTaskPusher.HTTPTaskPusher(dataSourceID=image.seriesName,
+        self.pusher = HTTPRulePusher.HTTPRulePusher(dataSourceID=image.seriesName,
                                                metadata=self.resultsMdh, resultsFilename=resultsFilename)
 
         self.queueName = self.pusher.queueID
@@ -384,6 +386,7 @@ class AnalysisController(object):
                 taskQueueName = 'TaskQueues.%s' % compName   
                 self.tq = Pyro.core.getProxyForURI(_genURI(taskQueueName))
             except:
+                logger.exception('Error finding task queue, looking for a local queue instead')
                 taskQueueName = 'PrivateTaskQueues.%s' % compName
                 self.tq = Pyro.core.getProxyForURI('PYRONAME://' + _genURI(taskQueueName))
 
@@ -449,6 +452,7 @@ class FitDefaults(object):
     def OnPRI3D(self, event):
         self.analysisMDH['PRI.Axis'] = 'y'
         self.analysisMDH['Analysis.EstimatorModule'] = 'priEstimator'
+        self.analysisMDH['Analysis.ROISize'] = 9
 
         self.onMetaDataChange.send(self, mdh=self.analysisMDH)
 
@@ -465,10 +469,14 @@ class FitDefaults(object):
         itime = int(1000*self.analysisMDH['Camera.IntegrationTime'])
         darkpath = os.path.join(caldir,'dark_%dms.tif' % (itime))
         varpath = os.path.join(caldir,'variance_%dms.tif' % (itime))
+        flatpath = os.path.join(caldir,'flatfield.tif')
+        
         if os.path.exists(darkpath):
             self.analysisMDH['Camera.DarkMapID'] = darkpath
         if os.path.exists(varpath):
             self.analysisMDH['Camera.VarianceMapID'] = varpath
+        if os.path.exists(flatpath):
+            self.analysisMDH['Camera.FlatfieldMapID'] = flatpath
 
         self.onMetaDataChange.send(self, mdh=self.analysisMDH)
 
@@ -520,6 +528,9 @@ class LMAnalyser2(object):
         #if ('auto_start_analysis' in dir(dsviewer)) and dsviewer.auto_start_analysis:
         #    print 'Automatically starting analysis'
         #    wx.CallLater(50,self.OnGo)
+            
+    def toggle_new_style(self, event=None):
+        self.newStyleTaskDistribution = not(self.newStyleTaskDistribution)
 
     def SetFitInfo(self):
         self.view.pointMode = 'lm'
@@ -865,9 +876,6 @@ class LMAnalyser2(object):
             matplotlib.interactive(True)
         
         return ft, res
-
-
-
 
 
 

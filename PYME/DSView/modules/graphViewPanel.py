@@ -34,6 +34,9 @@ from matplotlib.figure import Figure
 
 from PYME.DSView.displayOptions import DisplayOpts
 
+import logging
+logger = logging.getLogger(__file__)
+
         
 class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
     def __init__(self, canvas, wind):
@@ -211,18 +214,22 @@ class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
         if self.statbar is not None: self.statbar.set_function(s)
 
     def set_history_buttons(self):
-        can_backward = (self._views._pos > 0)
-        can_forward = (self._views._pos < len(self._views._elements) - 1)
-        self.EnableTool(self._NTB2_BACK, can_backward)
-        self.EnableTool(self._NTB2_FORWARD, can_forward)
+        try:
+            can_backward = (self._views._pos > 0)
+            can_forward = (self._views._pos < len(self._views._elements) - 1)
+            self.EnableTool(self._NTB2_BACK, can_backward)
+            self.EnableTool(self._NTB2_FORWARD, can_forward)
+        except:
+            logger.exception('Error setting history buttons')
+        
 
 
 class GraphViewPanel(wx.Panel):
-    def __init__(self, parent, dstack = None, do = None, xvals=None, xlabel=''):
+    def __init__(self, parent, dstack = None, do = None, xvals=None, xlabel='',ylabel=''):
         wx.Panel.__init__(self, parent)
 
         if (dstack is None and do is None):
-            dstack = scipy.zeros((10,10))
+            dstack = np.zeros((10,10))
 
         if do is None:
             self.do = DisplayOpts(dstack)
@@ -234,6 +241,7 @@ class GraphViewPanel(wx.Panel):
 
         self.xvals = xvals
         self.xlabel = xlabel
+        self.ylabel = ylabel
             
         sizer1 = wx.BoxSizer(wx.VERTICAL)
 
@@ -284,7 +292,8 @@ class GraphViewPanel(wx.Panel):
         if self.do.ds.shape[3] > 1:
             self.axes.legend()
         self.axes.set_xlabel(self.xlabel)
-
+        self.axes.set_ylabel(self.ylabel)
+        
         self.canvas.draw()
 
     def _onSize( self, event ):
@@ -311,8 +320,14 @@ def Plug(dsviewer):
     else:
         xvals = None
         xlabel = ''
+
+    if 'ylabel' in dir(dsviewer.image):
+        ylabel = dsviewer.image.ylabel
+    else:
+        ylabel=''
+
         
-    dsviewer.gv = GraphViewPanel(dsviewer, do=dsviewer.do, xvals=xvals, xlabel=xlabel)
+    dsviewer.gv = GraphViewPanel(dsviewer, do=dsviewer.do, xvals=xvals, xlabel=xlabel,ylabel=ylabel)
     dsviewer.AddPage(dsviewer.gv, True, 'Graph View')
     
     dsviewer.gv.toolbar = MyNavigationToolbar(dsviewer.gv.canvas, dsviewer)

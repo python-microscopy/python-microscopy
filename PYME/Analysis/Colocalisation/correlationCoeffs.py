@@ -54,3 +54,9 @@ def thresholdedManders(A, B, tA, tB, roi_mask=None):
     MB = ((A > tA)*B).sum()/B.sum()
 
     return MA, MB
+
+def maskFractions(A, B, tA, tB):
+    FA = (A > tA).mean()
+    FB = (B > tB).mean()
+
+    return FA, FB

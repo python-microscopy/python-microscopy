@@ -64,10 +64,20 @@ class RecipePlugin(recipeGui.RecipeManager):
                 self.cannedIDs[ID] = r
                 #self.mRecipes.Append(ID, os.path.split(r)[1],"",  wx.ITEM_NORMAL)
                 #wx.EVT_MENU(dsviewer, ID, self.OnRunCanned)
-            
+
+        # custom recipes - load only, do not execute
+        import PYME.config
+        customRecipes = PYME.config.get_custom_recipes()
+        if len(customRecipes) > 0:
+            dsviewer.AddMenuItem('Recipes', '', itemType='separator')
+            for r in customRecipes:
+                ID = dsviewer.AddMenuItem('Recipes', r, self.OnLoadCustom).GetId()
+                self.cannedIDs[ID] = customRecipes[r]
+
         #dsviewer.menubar.Append(self.mRecipes, "Recipes")
         dsviewer.AddMenuItem('Recipes', '', itemType='separator')
         dsviewer.AddMenuItem('Recipes', "Save Results", self.OnSaveOutputs)
+        dsviewer.AddMenuItem('Recipes', "Save Results - Old Style", self.OnSaveOutputOld)
         
         #dsviewer.AddMenuItem('Recipes', '', itemType='separator')
         dsviewer.AddMenuItem('Recipes', "Load Previous Results", self.OnLoadOutputs)
@@ -162,6 +172,9 @@ class RecipePlugin(recipeGui.RecipeManager):
         self.LoadRecipe(self.cannedIDs[event.GetId()])
         self.RunCurrentRecipe()
         
+    def OnLoadCustom(self, event):
+        self.LoadRecipe(self.cannedIDs[event.GetId()])
+
     def OnSaveOutputs(self, event):
         self.activeRecipe.save()
         # from PYME.recipes import runRecipe
@@ -175,6 +188,19 @@ class RecipePlugin(recipeGui.RecipeManager):
             
         
             
+        self.activeRecipe.save()
+
+    def OnSaveOutputOld(self, event):
+        from PYME.recipes import runRecipe
+        
+        filename = wx.FileSelector('Save results as ...',
+                                   wildcard="CSV files (*.csv)|*.csv|Excell files (*.xlsx)|*.xlsx|HDF5 files (*.hdf)|*.hdf",
+                                   flags = wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+                                   
+        if not filename == '':
+            runRecipe.saveOutput(self.outp, filename)
+
+
     def OnLoadOutputs(self, event):
         import pandas
         from PYME.IO import tabular

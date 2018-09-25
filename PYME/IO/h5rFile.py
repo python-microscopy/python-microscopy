@@ -27,11 +27,10 @@ def openH5R(filename, mode='r'):
             return file_cache[key]
 
 
-
-KEEP_ALIVE_TIMEOUT = 20 #keep the file open for 20s after the last time it was used
-FLUSH_INTERVAL = config.get('h5r-flush_interval', 1)
-
 class H5RFile(object):
+    KEEP_ALIVE_TIMEOUT = 20 #keep the file open for 20s after the last time it was used
+    FLUSH_INTERVAL = config.get('h5r-flush_interval', 1)
+    
     def __init__(self, filename, mode='r'):
         self.filename = filename
         self.mode = mode
@@ -51,7 +50,7 @@ class H5RFile(object):
         self.appendQueues = {}
         #self.appendVLQueues = {}
 
-        self.keepAliveTimeout = time.time() + KEEP_ALIVE_TIMEOUT
+        self.keepAliveTimeout = time.time() + self.KEEP_ALIVE_TIMEOUT
         self.useCount = 0
         self.is_alive = True
 
@@ -60,6 +59,8 @@ class H5RFile(object):
         self._pollThread = threading.Thread(target=self._pollQueues)
         self._pollThread.daemon = False #make sure we finish and close the fiels properly on exit
         self._pollThread.start()
+        
+        self._pzf_index = None
 
         #logging.debug('H5RFile - poll thread started')
 
@@ -72,7 +73,7 @@ class H5RFile(object):
 
     def __exit__(self, *args):
         with self.appendQueueLock:
-            self.keepAliveTimeout = time.time() + KEEP_ALIVE_TIMEOUT
+            self.keepAliveTimeout = time.time() + self.KEEP_ALIVE_TIMEOUT
             self.useCount -= 1
 
 
@@ -119,6 +120,25 @@ class H5RFile(object):
                     self._h5file.create_table(self._h5file.root, tablename, data,
                                                filters=tables.Filters(complevel=5, shuffle=True),
                                                expectedrows=500000)
+                    
+            if (tablename == 'PZFImageData'):
+                from PYME.IO import PZFFormat
+                #special case  for pzf data - also build an index table
+                frameNum = PZFFormat.load_header(data)['FrameNum']
+                
+                #record a mapping from frame number to the row we added
+                idx_entry = np.array([frameNum, table.nrows -1], dtype='i4').view(dtype=[('FrameNum', 'i4'), ('Position', 'i4')])
+                
+                try:
+                    index = getattr(self._h5file.root, 'PZFImageIndex')
+                    index.append(idx_entry)
+                except AttributeError:
+                    self._h5file.create_table(self._h5file.root, 'PZFImageIndex', idx_entry,
+                                              filters=tables.Filters(complevel=5, shuffle=True),
+                                              expectedrows=50000)
+                    
+                self._pzf_index = None
+                    
 
     def appendToTable(self, tablename, data):
         #logging.debug('h5rfile - append to table: %s' % tablename)
@@ -171,7 +191,7 @@ class H5RFile(object):
                         pass
 
                 curTime = time.time()
-                if (curTime - self._lastFlushTime) > FLUSH_INTERVAL:
+                if (curTime - self._lastFlushTime) > self.FLUSH_INTERVAL:
                     with tablesLock:
                         self._h5file.flush()
                     self._lastFlushTime = curTime
@@ -184,15 +204,16 @@ class H5RFile(object):
         finally:
             logging.debug('H5RFile - closing: %s' % self.filename)
             #remove ourselves from the cache
-            try:
-                file_cache.pop((self.filename, self.mode))
-            except KeyError:
-                pass
-
-            self.is_alive = False
-            #finally, close the file
-            with tablesLock:
-                self._h5file.close()
+            with openLock:
+                try:
+                    file_cache.pop((self.filename, self.mode))
+                except KeyError:
+                    pass
+    
+                self.is_alive = False
+                #finally, close the file
+                with tablesLock:
+                    self._h5file.close()
 
             logging.debug('H5RFile - closed: %s' % self.filename)
 

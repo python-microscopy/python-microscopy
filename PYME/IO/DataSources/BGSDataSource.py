@@ -249,9 +249,9 @@ class DataSource(BaseDataSource):
             if len(bgi) > 0:
                 return sl - self.bBuffer.getBackground(bgi)
             else:
-                return sl
+                return sl.astype('f4')
         else:
-            return sl
+            return sl.astype('f4')
 
 
     def getSliceShape(self):

@@ -7,6 +7,10 @@
     <p><b>Creator:</b> {{object.creator}}</p>
     <p><b>Reference:</b> {{object.reference}}</p>
 
+    <h4>Sample</h4>
+    <p>Species: {{object.sample.species.speciesName}} - {{object.sample.species.strain}}</p>
+    <p>Sample Type: {{object.sample.sampleType}}</p>
+    
     <h4>Labelling</h4>
     <table>
     {% for lab in object.labelling.all %}

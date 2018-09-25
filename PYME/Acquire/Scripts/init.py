@@ -26,6 +26,10 @@ from PYME.Acquire.ExecTools import joinBGInit, HWNotPresent, init_gui, init_hard
 import scipy
 import time
 
+# Set a microscope name which describes this hardware configuration (e.g. a room number or similar)
+# Used with the splitting ratio database and in other places where a microscope identifier is required.
+scope.microscope_name = 'PYMESimulator'
+
 @init_hardware('Fake Piezos')
 def pz(scope):
     from PYME.Acquire.Hardware.Simulator import fakePiezo
@@ -77,6 +81,10 @@ def cam_controls(MainFrame, scope):
 @init_gui('Sample database')
 def samp_db(MainFrame, scope):
     from PYME.Acquire import sampleInformation
+    from PYME.IO import MetaDataHandler
+    
+    MetaDataHandler.provideStartMetadata.append(lambda mdh: sampleInformation.getSampleDataFailsafe(MainFrame, mdh))
+    
     sampPan = sampleInformation.slidePanel(MainFrame)
     MainFrame.camPanels.append((sampPan, 'Current Slide'))
 
@@ -131,7 +139,7 @@ def laser_controls(MainFrame, scope):
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):
     from PYME.Acquire.Hardware import focusKeys
-    fk = focusKeys.FocusKeys(MainFrame, None, scope.piezos[0])
+    fk = focusKeys.FocusKeys(MainFrame, scope.piezos[0])
 
 
 #InitGUI("""

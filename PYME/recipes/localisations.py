@@ -79,6 +79,8 @@ class DensityMapping(ModuleBase):
         inp = namespace[self.inputLocalizations]
         if not isinstance(inp, tabular.colourFilter):
             cf = tabular.colourFilter(inp, None)
+            
+            print('Created colour filter with chans: %s' % cf.getColourChans())
             cf.mdh = inp.mdh
         else:
             cf = inp
@@ -132,6 +134,44 @@ class Pipelineify(ModuleBase):
         mapped_ds.mdh = mdh
 
         namespace[self.outputLocalizations] = mapped_ds
+        
+@register_module("ProcessColour")
+class ProcessColour(ModuleBase):
+    input = Input('localizations')
+    output = Output('colour_mapped')
+    
+    
+    def execute(self, namespace):
+        input = namespace[self.input]
+        mdh = input.mdh
+        
+        output = tabular.mappingFilter(input)
+        output.mdh = mdh
+    
+        if 'gFrac' in output.keys():
+            #ratiometric
+            raise NotImplementedError('Ratiometric processing in recipes not implemented yet')
+            for structure, ratio in self.fluorSpecies.items():
+                if not ratio is None:
+                    self.mapping.setMapping('p_%s' % structure,
+                                            'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
+        else:
+            if 'probe' in output.keys():
+                #non-ratiometric (i.e. sequential) colour
+                #color channel is given in 'probe' column
+                output.setMapping('ColourNorm', '1.0 + 0*probe')
+                
+                for i in range(int(output['probe'].min()), int(output['probe'].max() + 1)):
+                    output.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
+            
+            nSeqCols = mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
+            if nSeqCols > 1:
+                for i in range(nSeqCols):
+                    output.setMapping('ColourNorm', '1.0 + 0*t')
+                    cr = mdh['Protocol.ColorRange%d' % i]
+                    output.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
+                    
+        namespace[self.output] = output
 
 @register_module('MergeClumps')
 class MergeClumps(ModuleBase):
@@ -204,11 +244,17 @@ class DBSCANClustering(ModuleBase):
     See `sklearn.cluster.dbscan` for more details about the underlying algorithm and parameter meanings.
 
     """
+    import multiprocessing
     inputName = Input('filtered')
 
     columns = ListStr(['x', 'y', 'z'])
     searchRadius = Float()
     minClumpSize = Int()
+    
+    #exposes sklearn parallelism. Recipe modules are generally assumed
+    #to be single-threaded. Enable at your own risk
+    multithreaded = Bool(False)
+    numberOfJobs = Int(max(multiprocessing.cpu_count()-1,1))
     
     clumpColumnName = CStr('dbscanClumpID')
 
@@ -221,7 +267,12 @@ class DBSCANClustering(ModuleBase):
         mapped = tabular.mappingFilter(inp)
 
         # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
-        core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
+        if self.multithreaded:
+            core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
+                                         self.searchRadius, self.minClumpSize, n_jobs=self.numberOfJobs)
+        else:
+            #NB try-catch from Christians multithreaded example removed as I think we should see failure here
+            core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
                                      self.searchRadius, self.minClumpSize)
 
         # shift dbscan labels up by one to match existing convention that a clumpID of 0 corresponds to unclumped
@@ -330,18 +381,27 @@ class LabelsFromImage(ModuleBase):
 
     Inputs
     ------
-    inputName: name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
-    inputImage: name of image input containing labels
+    inputName: Input
+        name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
+    inputImage: Input
+        name of image input containing labels
 
     Outputs
     -------
-    outputName: name of tabular output. A mapped version of the tabular input with 2 extra columns
-        objectID: Label number from image, mapped to each localization within that label
-        NEvents: Number of localizations within the label that a given localization belongs to
+    outputName: Output
+        name of tabular output. A mapped version of the tabular input with 2 extra columns
+    label_key_name : CStr
+        name of new column which will contain the label number from image, mapped to each localization within that label
+    label_count_key_name : CStr
+        name of new column which will contain the number of localizations within the label that a given localization
+        belongs to
 
     """
     inputName = Input('input')
     inputImage = Input('labeled')
+
+    label_key_name = CStr('objectID')
+    label_count_key_name = CStr('NEvents')
 
     outputName = Output('labeled_points')
 
@@ -356,8 +416,8 @@ class LabelsFromImage(ModuleBase):
         ids, numPerObject = cluster_morphology.get_labels_from_image(img, inp)
 
         labeled = tabular.mappingFilter(inp)
-        labeled.addColumn('objectID', ids)
-        labeled.addColumn('NEvents', numPerObject[ids - 1])
+        labeled.addColumn(self.label_key_name, ids)
+        labeled.addColumn(self.label_count_key_name, numPerObject[ids - 1])
 
         # propagate metadata, if present
         try:
@@ -393,11 +453,39 @@ class MeasureClusters3D(ModuleBase):
 
     Measures calculated (to be expanded)
     --------------------------------------
-        count: the number of points in the cluster
-        x, y, z: Center of mass positions, no weighting based on localization precision
-        gyrationRadius: AKA RMS distance to center of cluster - see also supplemental text of DOI: 10.1038/nature16496
-        axis0, axis1, axis2: principle axes of point cloud using SVD
-        sigma0, sigma1, sigma2: spread along each principle axis (the singular values/ sqrt(N-1))
+        count : int
+            Number of localizations (points) in the cluster
+        x : float
+            x center of mass
+        y : float
+            y center of mass
+        z : float
+            z center of mass
+        gyrationRadius : float
+            root mean square displacement to center of cluster, a measure of compaction or spatial extent see also
+            supplemental text of DOI: 10.1038/nature16496
+        axis0 : ndarray, shape (3,)
+            principle axis which accounts for the largest variance of the cluster, i.e. corresponds to the largest
+            eigenvalue
+        axis1 : ndarray, shape (3,)
+            next principle axis
+        axis2 : ndarray, shape (3,)
+            principle axis corresponding to the smallest eigenvalue
+        sigma0 : float
+            standard deviation along axis0
+        sigma1 : float
+            standard deviation along axis1
+        sigma2 : float
+            standard deviation along axis2
+        anisotropy : float
+            metric of anisotropy based on the spread along principle axes. Standard deviations of alpha * [1, 0, 0],
+            where alpha is a scalar, will result in an 'anisotropy' value of 1, i.e. maximally anisotropic. Completely
+            isotropic clusters will have equal standard deviations, i.e. alpha * [1, 1, 1], which corresponds to an
+            'anisotropy' value of 0. Intermediate cases result in values between 0 and 1.
+        theta : float
+            Azimuthal angle, in radians, along which the principle axis (axis0) points
+        phi : float
+            Zenith angle, in radians, along which the principle axis (axis0) points
 
     """
     inputName = Input('input')
@@ -427,7 +515,7 @@ class MeasureClusters3D(ModuleBase):
         unique_labels, counts = np.unique(labels, return_counts=True)
         
         #allocate memory to store results in
-        measurements = np.zeros(maxLabel+1, cmorph.measurement_dtype)
+        measurements = np.zeros(maxLabel, cmorph.measurement_dtype)
 
         # loop over labels, recalling that input is now sorted, and we know how many points are in each label.
         # Note that missing labels result in zeroed entries (i.e. the initial values are not changed).
@@ -440,8 +528,9 @@ class MeasureClusters3D(ModuleBase):
 
             # create x,y,z arrays for this cluster, and calculate center of mass
             x, y, z = x_vals[indi:indf], y_vals[indi:indf], z_vals[indi:indf]
-            
-            cmorph.measure_3d(x, y, z, output=measurements[label_num])
+
+            cluster_index = label_num - 1  # we ignore the unclustered points, and start labeling at 1
+            cmorph.measure_3d(x, y, z, output=measurements[cluster_index])
 
             indi = indf
 
@@ -628,29 +717,28 @@ class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong her
         
 
     """
-    inputName = Input('input')
+    input_name = Input('input')
     max_m_mode = Int(5)
     z_scale = Float(5.0)
     n_iterations = Int(2)
     init_tolerance = Float(0.3, desc='Fractional tolerance on radius used in first iteration')
-    outputName = Output('harmonicShell')
+    output_name = Output('harmonic_shell')
 
     def execute(self, namespace):
         import PYME.Analysis.points.spherical_harmonics as spharm
-        from PYME.IO.ragged import RaggedCache
         from PYME.IO import MetaDataHandler
 
-        inp = namespace[self.inputName]
+        inp = namespace[self.input_name]
 
-        modes, c, centre = spharm.sphere_expansion_clean(inp['x'], inp['y'], inp['z'] * self.z_scale,
-                                                               mmax=self.max_m_mode,
-                                                               centre_points=True,
-                                                               nIters=self.n_iterations,
-                                                               tol_init=self.init_tolerance)
+        modes, coefficients, centre = spharm.sphere_expansion_clean(inp['x'], inp['y'], inp['z'] * self.z_scale,
+                                                                    mmax=self.max_m_mode,
+                                                                    centre_points=True,
+                                                                    nIters=self.n_iterations,
+                                                                    tol_init=self.init_tolerance)
         
         mdh = MetaDataHandler.NestedClassMDHandler()
         try:
-            mdh.copyEntriesFrom(namespace[self.inputName].mdh)
+            mdh.copyEntriesFrom(namespace[self.input_name].mdh)
         except AttributeError:
             pass
         
@@ -658,9 +746,16 @@ class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong her
         mdh['Processing.SphericalHarmonicShell.MaxMMode'] = self.max_m_mode
         mdh['Processing.SphericalHarmonicShell.NIterations'] = self.n_iterations
         mdh['Processing.SphericalHarmonicShell.InitTolerance'] = self.init_tolerance
+        mdh['Processing.SphericalHarmonicShell.Centre'] = centre
 
-        namespace[self.outputName] = RaggedCache([{'z_scale': self.z_scale, 'centre': centre,
-                                                   'modes': modes, 'coeffs' : c},], mdh)
+        output_dtype = [('modes', '<2i4'), ('coefficients', '<f4')]
+        out = np.zeros(len(coefficients), dtype=output_dtype)
+        out['modes']= modes
+        out['coefficients'] = coefficients
+        out = tabular.recArrayInput(out)
+        out.mdh = mdh
+
+        namespace[self.output_name] = out
 
 @register_module('AddShellMappedCoordinates')
 class AddShellMappedCoordinates(ModuleBase): #FIXME - this likely doesnt belong here

@@ -28,6 +28,9 @@ import wx.lib.agw.aui as aui
 from PYME.LMVis.Extras.dockedPanel import DockedPanel
 from PYME.LMVis.views import VideoView
 
+from PIL import Image
+import os
+
 
 # noinspection PyUnusedLocal
 class VideoPanel(DockedPanel):
@@ -164,14 +167,23 @@ class VideoPanel(DockedPanel):
                 #return
                 save=False
 
+        #dir_name = None
         if save:
-            file_name = wx.FileSelector('Save video as avi named... ')
-            if file_name and not file_name.endswith('.avi'):
-                file_name = '{}.avi'.format(file_name)
+            #file_name = wx.FileSelector('Save video as avi named... ', flags=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+            #if file_name and not file_name.endswith('.avi'):
+            #    file_name = '{}.avi'.format(file_name)
+            dir_name = wx.DirSelector()
+            if dir_name == '':
+                return
+            
+            
         video = None
-        if not save or file_name:
+        if True:
             if save:
-                video = cv2.VideoWriter(file_name, -1, fps, (width, height))
+                pass
+                #video = cv2.VideoWriter(file_name, -1, fps, (width, height))
+            
+            f_no = 0
                 
             if not self.snapshots:
                 self.add_snapshot_to_list(self.get_canvas())
@@ -186,17 +198,22 @@ class VideoPanel(DockedPanel):
                         new_view = current_view + difference_view * step
                         self.get_canvas().set_view(new_view.normalize_view())
                         if save:
-                            snap = self.get_canvas().getIm()
-                            if snap.ndim == 3:
-                                video.write(cv2.cvtColor(cv2.flip(snap.transpose(1, 0, 2), 0), cv2.COLOR_RGB2BGR))
-                            else:
-                                video.write(cv2.flip(snap.transpose(1, 0, 2), 0))
+                            snap = self.get_canvas().getIm()#.astype('uint8')
+                            #print snap.shape, snap.dtype, snap.min(), snap.max()
+                            snap = (255*snap).astype('uint8').transpose(1, 0, 2)
+                            
+                            #if snap.ndim == 3:
+                            #    video.write(cv2.cvtColor(cv2.flip(snap.transpose(1, 0, 2), 0), cv2.COLOR_RGB2BGR))
+                            #else:
+                            #    video.write(cv2.flip(snap.transpose(1, 0, 2), 0))
+                            im = Image.fromarray(snap).save(os.path.join(dir_name, 'frame%04d.jpg' % f_no))
+                            f_no += 1
                         else:
                             sleep(2.0/steps)
                             self.get_canvas().OnDraw()
                     current_view = view
             if save:
-                video.release()
+                #video.release()
                 msg_text = 'Video generation finished'
                 msg = wx.MessageDialog(self, msg_text, 'Done', wx.OK | wx.ICON_INFORMATION)
                 msg.ShowModal()
