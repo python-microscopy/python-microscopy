@@ -58,7 +58,11 @@ class PhoxxLaser(Laser):
         
         #self.power = self._getOutputPower()
         time.sleep(1)
-        self.power = self._getOutputPower()
+        
+        try:
+            self.power = self._getOutputPower()
+        except RuntimeError:
+            self.power = 0
         
 
         Laser.__init__(self, name, turnOn)
