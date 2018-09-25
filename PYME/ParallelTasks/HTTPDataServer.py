@@ -656,7 +656,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         ctype = self.guess_type(path)
         try:
             filename, part = path.split('.h5')
-            part = part.rstrip('/').rstrip('\\')
+            part = part.lstrip('/').lstrip('\\')
             
             with h5File.openH5(filename + '.h5') as h5f:
                 f, length = self._string_to_file(h5f.get_file(part))
