@@ -10,7 +10,7 @@ from pylab import fftn, ifftn, fftshift, ifftshift
 import time
 from scipy import ndimage
 from PYME.Acquire import eventLog
-from PYME.gohlke import tifffile as tif
+#from PYME.gohlke import tifffile as tif
 
 import Pyro.core
 import Pyro.naming

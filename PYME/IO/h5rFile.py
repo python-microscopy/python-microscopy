@@ -59,6 +59,8 @@ class H5RFile(object):
         self._pollThread = threading.Thread(target=self._pollQueues)
         self._pollThread.daemon = False #make sure we finish and close the fiels properly on exit
         self._pollThread.start()
+        
+        self._pzf_index = None
 
         #logging.debug('H5RFile - poll thread started')
 
@@ -118,6 +120,25 @@ class H5RFile(object):
                     self._h5file.create_table(self._h5file.root, tablename, data,
                                                filters=tables.Filters(complevel=5, shuffle=True),
                                                expectedrows=500000)
+                    
+            if (tablename == 'PZFImageData'):
+                from PYME.IO import PZFFormat
+                #special case  for pzf data - also build an index table
+                frameNum = PZFFormat.load_header(data)['FrameNum']
+                
+                #record a mapping from frame number to the row we added
+                idx_entry = np.array([frameNum, table.nrows -1], dtype=[('FrameNum', 'i4'), ('Position', 'i4')])
+                
+                try:
+                    index = getattr(self._h5file.root, 'PZFImageIndex')
+                    index.append(idx_entry)
+                except AttributeError:
+                    self._h5file.create_table(self._h5file.root, 'PZFImageIndex', idx_entry,
+                                              filters=tables.Filters(complevel=5, shuffle=True),
+                                              expectedrows=50000)
+                    
+                    self._pzf_index = None
+                    
 
     def appendToTable(self, tablename, data):
         #logging.debug('h5rfile - append to table: %s' % tablename)

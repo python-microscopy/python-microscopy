@@ -21,6 +21,7 @@
 ##################
 
 import wx
+from PYME.ui import UI_MAXSIZE #hack for sys.maxsize bug
 import sys
 import PYME.ui.autoFoldPanel as afp
 import numpy as np
@@ -163,7 +164,7 @@ class FilterPanel(wx.Panel):
 
             self.filterKeys[key] = [minVal, maxVal]
 
-            ind = self.lFiltKeys.InsertStringItem(sys.maxsize, key)
+            ind = self.lFiltKeys.InsertStringItem(UI_MAXSIZE, key)
             self.lFiltKeys.SetStringItem(ind, 1, '%3.2f' % minVal)
             self.lFiltKeys.SetStringItem(ind, 2, '%3.2f' % maxVal)
 
@@ -292,12 +293,12 @@ class FilterPane(afp.foldingPane):
                 x1, y1 = self.visFr.glCanvas.selectionSettings.finish
 
             if not 'x' in self.filterKeys.keys():
-                indx = self.pFilter.lFiltKeys.InsertStringItem(sys.maxsize, 'x')
+                indx = self.pFilter.lFiltKeys.InsertStringItem(UI_MAXSIZE, 'x')
             else:
                 indx = [self.pFilter.lFiltKeys.GetItemText(i) for i in range(self.pFilter.lFiltKeys.GetItemCount())].index('x')
 
             if not 'y' in self.filterKeys.keys():
-                indy = self.pFilter.lFiltKeys.InsertStringItem(sys.maxsize, 'y')
+                indy = self.pFilter.lFiltKeys.InsertStringItem(UI_MAXSIZE, 'y')
             else:
                 indy = [self.pFilter.lFiltKeys.GetItemText(i) for i in range(self.pFilter.lFiltKeys.GetItemCount())].index('y')
 

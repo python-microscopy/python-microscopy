@@ -270,6 +270,9 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
     return header.tostring() + dataString
  
 
+def load_header(datastring):
+    return np.fromstring(datastring[:HEADER_LENGTH], header_dtype)
+
    
 def loads(datastring):
     """
@@ -290,7 +293,7 @@ def loads(datastring):
         The image header, as a numpy record array with the :const:`header_dtype` dtype.
 
     """
-    header = np.fromstring(datastring[:HEADER_LENGTH], header_dtype)
+    header = load_header(datastring)
     
     if not header['ID'] == FILE_FORMAT_ID:
         raise RuntimeError("Invalid format: This doesn't appear to be a PZF file")

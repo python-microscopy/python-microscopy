@@ -5,6 +5,8 @@ from PYME import config
 import numpy as np
 import traceback
 
+EVENTS_DTYPE = np.dtype([('EventDescr', 'S256'), ('EventName', 'S32'), ('Time', '<f8')])
+
 file_cache = {}
 
 openLock = threading.Lock()
@@ -35,6 +37,17 @@ class H5File(h5rFile.H5RFile):
         return image_data
     
     @property
+    def pzf_index(self):
+        if self._pzf_index is None:
+            try:
+                pi = getattr(self._h5file.root, 'PZFImageIndex')[:]
+                self._pzf_index = np.sort(pi, order='FrameNum')
+            except AttributeError:
+                pass
+            
+        return self._pzf_index
+    
+    @property
     def n_frames(self):
         nFrames = 0
         with h5rFile.tablesLock:
@@ -50,7 +63,9 @@ class H5File(h5rFile.H5RFile):
         
         listing = {}
         listing['metadata.json'] = cl.FileInfo(cl.FILETYPE_NORMAL, 0)
-        listing['events.json'] = cl.FileInfo(cl.FILETYPE_NORMAL, 0)
+        
+        if not getattr(self._h5file.root, 'Events', None) is None:
+            listing['events.json'] = cl.FileInfo(cl.FILETYPE_NORMAL, 0)
             
         if self.n_frames > 0:
             for i in range(self.n_frames):
@@ -74,7 +89,12 @@ class H5File(h5rFile.H5RFile):
         if filename == 'metadata.json':
             return self.mdh.to_JSON()
         elif filename == 'events.json':
-            raise NotImplementedError('reading events not yet implemented')
+            try:
+                events = self._h5file.root.Events
+                return json.dumps(zip(events['EventName'], events['EventDescr'], events['Time']))
+            except AttributeError:
+                raise IOError('File has no events')
+            #raise NotImplementedError('reading events not yet implemented')
         else:
             #names have the form "frameXXXXX.pzf, get frame num
             if not filename.startswith('frame'):
@@ -86,10 +106,17 @@ class H5File(h5rFile.H5RFile):
         
         
     def put_file(self, filename, data):
-        if filename in ['metadata.json', 'Metadata']:
+        if filename in ['metadata.json', 'MetaData']:
             self.updateMetadata(json.loads(data))
         elif filename == 'events.json':
-            raise NotImplementedError('saving events not yet implemented')
+            events = json.loads(data)
+            
+            events_array = np.empty(len(events), dtype=EVENTS_DTYPE)
+            
+            for j, ev in events:
+                events_array['EventName'][j], events_array['EventDescr'][j], events_array['Time'][j] = ev
+                
+            self.addEvents(events_array)
         
         elif filename.startswith('frame'):
             #FIXME - this will not preserve ordering

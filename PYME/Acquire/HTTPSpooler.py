@@ -66,6 +66,7 @@ class EventLogger:
 
         if timestamp is None:
             timestamp = sp.timeFcn()
+            
         self._events.append((eventName, eventDescr, timestamp))
         
     def to_JSON(self):

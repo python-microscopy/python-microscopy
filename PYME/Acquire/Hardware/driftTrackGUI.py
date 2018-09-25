@@ -16,7 +16,7 @@ from PYME.contrib.wxPlotPanel import PlotPanel
 from PYME.IO import MetaDataHandler
 from PYME.DSView import dsviewer as dsviewer
 import PYME.IO.image as im
-#import PYMEcs.Analysis.offlineTracker as otrack
+
 import os
 
 #TODO: these don't belong here!
@@ -135,6 +135,7 @@ class CalculateZfactorDialog(wx.Dialog):
 
     
     def OnPlot(self, event):
+        import PYMEcs.Analysis.offlineTracker as otrack
 
         ds = im.ImageStack(filename=self.Zfactorfilename)
         dataset = ds.data[:,:,:].squeeze()
