@@ -127,7 +127,7 @@ class H5RFile(object):
                 frameNum = PZFFormat.load_header(data)['FrameNum']
                 
                 #record a mapping from frame number to the row we added
-                idx_entry = np.array([frameNum, table.nrows -1], dtype=[('FrameNum', 'i4'), ('Position', 'i4')])
+                idx_entry = np.array([frameNum, table.nrows -1], dtype='i4').view(dtype=[('FrameNum', 'i4'), ('Position', 'i4')])
                 
                 try:
                     index = getattr(self._h5file.root, 'PZFImageIndex')
@@ -137,7 +137,7 @@ class H5RFile(object):
                                               filters=tables.Filters(complevel=5, shuffle=True),
                                               expectedrows=50000)
                     
-                    self._pzf_index = None
+                self._pzf_index = None
                     
 
     def appendToTable(self, tablename, data):
@@ -204,15 +204,16 @@ class H5RFile(object):
         finally:
             logging.debug('H5RFile - closing: %s' % self.filename)
             #remove ourselves from the cache
-            try:
-                file_cache.pop((self.filename, self.mode))
-            except KeyError:
-                pass
-
-            self.is_alive = False
-            #finally, close the file
-            with tablesLock:
-                self._h5file.close()
+            with openLock:
+                try:
+                    file_cache.pop((self.filename, self.mode))
+                except KeyError:
+                    pass
+    
+                self.is_alive = False
+                #finally, close the file
+                with tablesLock:
+                    self._h5file.close()
 
             logging.debug('H5RFile - closed: %s' % self.filename)
 

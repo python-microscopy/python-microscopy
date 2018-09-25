@@ -24,6 +24,7 @@
 from PYME.IO.FileUtils.nameUtils import getFullExistingFilename
 import tables
 from .BaseDataSource import BaseDataSource
+import numpy as np
 
 try:
     from PYME.IO import PZFFormat
@@ -35,6 +36,8 @@ class DataSource(BaseDataSource):
     def __init__(self, h5Filename, taskQueue=None):
         self.h5Filename = getFullExistingFilename(h5Filename)#convert relative path to full path
         self.h5File = tables.open_file(self.h5Filename)
+        
+        self._pzf_index = None
         
         if 'PZFImageData' in dir(self.h5File.root):
             self.usePZFFormat = True
@@ -48,7 +51,10 @@ class DataSource(BaseDataSource):
     def getSlice(self, ind):
         if self.usePZFFormat:
             if ind >= self.h5File.root.PZFImageData.shape[0]:
-                self.reloadData() #try 
+                self.reloadData() #try
+                
+            if not self.pzf_index is None:
+                ind = self.pzf_index['Position'][np.searchsorted(self.pzf_index['FrameNum'], ind)]
             
             return PZFFormat.loads(self.h5File.root.PZFImageData[ind])[0].squeeze() 
         else:       
@@ -56,6 +62,17 @@ class DataSource(BaseDataSource):
                     self.reloadData() #try reloading the data in case it's grown
             
             return self.h5File.root.ImageData[ind, :,:]
+
+    @property
+    def pzf_index(self):
+        if self._pzf_index is None:
+            try:
+                pi = getattr(self.h5File.root, 'PZFImageIndex')[:]
+                self._pzf_index = np.sort(pi, order='FrameNum')
+            except AttributeError:
+                pass
+    
+        return self._pzf_index
 
 
     def getSliceShape(self):

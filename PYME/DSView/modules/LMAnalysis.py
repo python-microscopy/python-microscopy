@@ -287,7 +287,7 @@ class AnalysisController(object):
             return self.pushImagesDS(image)
 
     def pushImagesCluster(self, image):
-        from PYME.ParallelTasks import HTTPTaskPusher
+        from PYME.ParallelTasks import HTTPRulePusher
         #resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
         resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(image.seriesName))
         logging.debug('Results file: ' + resultsFilename)
@@ -297,7 +297,7 @@ class AnalysisController(object):
         self.resultsMdh = MetaDataHandler.NestedClassMDHandler(self.analysisMDH)
         self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
 
-        self.pusher = HTTPTaskPusher.HTTPTaskPusher(dataSourceID=image.seriesName,
+        self.pusher = HTTPRulePusher.HTTPRulePusher(dataSourceID=image.seriesName,
                                                metadata=self.resultsMdh, resultsFilename=resultsFilename)
 
         self.queueName = self.pusher.queueID
@@ -528,6 +528,9 @@ class LMAnalyser2(object):
         #if ('auto_start_analysis' in dir(dsviewer)) and dsviewer.auto_start_analysis:
         #    print 'Automatically starting analysis'
         #    wx.CallLater(50,self.OnGo)
+            
+    def toggle_new_style(self, event=None):
+        self.newStyleTaskDistribution = not(self.newStyleTaskDistribution)
 
     def SetFitInfo(self):
         self.view.pointMode = 'lm'
@@ -873,9 +876,6 @@ class LMAnalyser2(object):
             matplotlib.interactive(True)
         
         return ft, res
-
-
-
 
 
 
