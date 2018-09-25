@@ -37,7 +37,8 @@ class filterer:
         dsviewer.AddMenuItem('Processing', 'Set Labels', self.OnSetLabels)        
         dsviewer.AddMenuItem('Processing', '&Watershed', self.OnLabelWatershed)        
         dsviewer.AddMenuItem('Processing', 'Mean Projection', self.OnMeanProject)
-        dsviewer.AddMenuItem('Processing', 'Max Projection', self.OnMaxProject)    
+        dsviewer.AddMenuItem('Processing', 'Max Projection', self.OnMaxProject)
+        dsviewer.AddMenuItem('Processing', 'Average Frames by Step', self.OnAverageFramesByStep)
 
     def OnGaussianFilter(self, event):
         import numpy as np
@@ -293,6 +294,28 @@ class filterer:
         for i in range(im.data.shape[3]):
             dv.do.Gains[i] = 1.0
 
+    def OnAverageFramesByStep(self, event):
+        """
+        Averages frames acquired at the same z-position, as determined by the associated events, or (fall-back)
+        metadata. See PYME.recipes.processing.AverageFramesByStep
+        Parameters
+        ----------
+        event : wx.Event
+
+        Returns
+        -------
+
+        """
+        from PYME.DSView import ViewIm3D
+        from PYME.recipes.base import ModuleCollection
+        from PYME.recipes.processing import AverageFramesByStep
+
+        rec = ModuleCollection()
+        rec.namespace['input'] = self.image
+        rec.add_module(AverageFramesByStep(rec, input_name='input', output_name='output'))
+        averaged = rec.execute()
+
+        ViewIm3D(averaged, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
 
 def Plug(dsviewer):
