@@ -51,6 +51,8 @@ except:
 
 import logging
 
+logger = logging.getLogger(__name__)
+
 debug = True
 
 def debugPrint(msg):
@@ -384,6 +386,7 @@ class AnalysisController(object):
                 taskQueueName = 'TaskQueues.%s' % compName   
                 self.tq = Pyro.core.getProxyForURI(_genURI(taskQueueName))
             except:
+                logger.exception('Error finding task queue, looking for a local queue instead')
                 taskQueueName = 'PrivateTaskQueues.%s' % compName
                 self.tq = Pyro.core.getProxyForURI('PYRONAME://' + _genURI(taskQueueName))
 
