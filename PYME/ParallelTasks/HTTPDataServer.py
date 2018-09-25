@@ -356,9 +356,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         from PYME.IO import MetaDataHandler
         from PYME.IO import h5File
 
-        path = self.translate_path(self.path.lstrip('/')[len('__aggregate_h5'):])
-        filename, tablename = path.split('.h5')
-        filename += '.h5'
+        #path = self.translate_path()
+        filename, tablename = self.path.lstrip('/')[len('__aggregate_h5'):].split('.h5')
+        filename = self.translate_path(filename + '.h5')
 
         data = self._get_data()
 
