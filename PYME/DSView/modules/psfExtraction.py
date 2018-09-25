@@ -315,7 +315,7 @@ class psfExtractor:
             self.write_metadata(mdh, 'Multiview')
             mdh['ImageType'] = 'PSF'
 
-            im = ImageStack(data=psfs, mdh=mdh, events=self.image.events, titleStub='Extracted PSF')
+            im = ImageStack(data=psfs, mdh=mdh, titleStub='Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
@@ -377,7 +377,7 @@ class psfExtractor:
 
             from PYME.DSView.dsviewer import ImageStack, ViewIm3D
 
-            im = ImageStack(data=psf, mdh=self.image.mdh, events=self.image.events, titleStub='Extracted PSF, Chan %i' % ii)
+            im = ImageStack(data=psf, mdh=self.image.mdh, titleStub='Extracted PSF, Chan %i' % ii)
             im.defaultExt = '*.psf' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
@@ -486,7 +486,7 @@ class psfExtractor:
             self.write_metadata(mdh, 'Split', offsetsAllChannel[:,2])
             mdh['ImageType'] = 'PSF'
 
-            im = ImageStack(data = psf, mdh = mdh, events=self.image.events, titleStub = 'Extracted PSF')
+            im = ImageStack(data = psf, mdh = mdh, titleStub = 'Extracted PSF')
             im.defaultExt = '*.psf' #we want to save as PSF by default
             ViewIm3D(im, mode='psf', parent=wx.GetTopLevelParent(self.dsviewer))
 
