@@ -1479,7 +1479,8 @@ class FlatfiledAndDarkCorrect(ModuleBase):
 @register_module('AverageFramesByStep')
 class AverageFramesByStep(ModuleBase):
     """
-    Averages frames acquired at the same z-position, as determined by the associated events, or (fall-back) metadata
+    Averages frames acquired at the same z-position, as determined by the associated events, or (fall-back) metadata.
+    Currently only compatible with single-color data.
 
     Parameters
     ----------
@@ -1531,6 +1532,7 @@ class AverageFramesByStep(ModuleBase):
             frames_to_average = np.empty((shape[0], shape[1], count[si], shape[3]), dtype=np.float32)
             for fi in range(count[si]): # finish out the "slice", grabbing 3D views to keep it multicolor compatible
                 # FIXME - BaseDataSource.getSlice() returns a single color, wrapping on dim 2, HOWEVER, this is not actually followed in many subclasses
+                # FIXME - this function will therefore only work for single-color data for the time being
                 # c_indices = np.arange(shape[3]) * shape[2]
                 # frames_to_average[:,:,fi,:] = np.stack([image_stack.data.getSlice(cind + ind) for cind in c_indices], axis=2)
                 frames_to_average[:,:,fi,:] = np.atleast_3d(image_stack.data.getSlice(I[start + fi]))  # sort and grab
