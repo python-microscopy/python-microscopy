@@ -226,6 +226,8 @@ class AndorBase(SDK3Camera):
         
         self.nBuffers = 100
         self.defBuffers = 100
+
+        self._n_timeouts = 0
        
         
         #self.contMode = True
@@ -371,7 +373,10 @@ class AndorBase(SDK3Camera):
                 time.sleep(0.5)
             elif e.errNo == SDK3.AT_ERR_TIMEDOUT:
                 pass
-                #logger.debug('AT_ERR_TIMEOUT')
+                self._n_timeouts += 1
+                if self._n_timeouts > 10:
+                    self.hardware_overflowed = True
+                    logger.debug('AT_ERR_TIMEDOUT (_n_timeouts = %d)' % self._n_timeouts)
 
             return
         except SDK3.CameraError as e:
@@ -596,6 +601,7 @@ class AndorBase(SDK3Camera):
         self.tKin = 1.0 / self._frameRate
 
         self.hardware_overflowed = False
+        self._n_timeouts = 0
         #logger.debug('StartAq')
         eventLog.logEvent('StartAq', '')
         self._flush()
