@@ -208,6 +208,8 @@ class Spooler(sp.Spooler):
     def StartSpool(self):
         sp.Spooler.StartSpool(self)
         
+        logger.debug('Starting spooling: %s' %self.seriesName)
+        
         if self._aggregate_h5:
             clusterIO.putFile('__aggregate_h5/' + self.seriesName + '/metadata.json', self.md.to_JSON(), serverfilter=self.clusterFilter)
         else:
