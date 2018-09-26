@@ -22,24 +22,39 @@ class ShellManager(object):
                               self.OnCalcHarmonicRepresentation)
 
     def OnCalcHarmonicRepresentation(self, wx_event):
-        recipe = ModuleCollection()
-        recipe.namespace['input'] = self.pipeline
+        recipe = self.pipeline.recipe
+        recipe.trait_set(execute_on_invalidation=False)
 
-        shell_fitter = SphericalHarmonicShell(recipe, input_name='input', output_name='harmonic_shell')
+        shell_fitter = SphericalHarmonicShell(recipe, input_name=self.pipeline.selectedDataSourceKey,
+                                              output_name='harmonic_shell')
+        distance_mapper = AddShellMappedCoordinates(recipe, inputName=self.pipeline.selectedDataSourceKey,
+                                                    inputSphericalHarmonics='harmonic_shell', outputName='shell_mapped')
         recipe.add_module(shell_fitter)
+        recipe.add_module(distance_mapper)
 
         if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
             return
 
-        recipe.execute()
+        try:
+            recipe.execute()
+        finally:  # make sure we leave things as we found them
+            recipe.trait_set(execute_on_invalidation=True)
         shell = recipe.namespace['harmonic_shell']
+        shell_mapped = recipe.namespace['shell_mapped']
         self._shells.append(shell)
 
         center = shell.mdh['Processing.SphericalHarmonicShell.Centre']
         z_scale = shell.mdh['Processing.SphericalHarmonicShell.ZScale']
         spharm.visualize_reconstruction(shell['modes'], shell['coefficients'], zscale=1. / z_scale)
         mlab.points3d(self.pipeline['x'] - center[0], self.pipeline['y'] - center[1],
-                      self.pipeline['z'] - center[2]/z_scale, mode='point')
+                      self.pipeline['z'] - center[2] / z_scale, mode='point')
+
+        self.pipeline.addDataSource('shell_mapped', shell_mapped)
+        self.pipeline.selectDataSource('shell_mapped')
+
+
+        self.vis_frame.RefreshView()
+        self.vis_frame.CreateFoldPanel()
 
 def Plug(vis_frame):
     vis_frame.shell_manager= ShellManager(vis_frame)
