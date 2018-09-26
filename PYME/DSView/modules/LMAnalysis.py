@@ -45,7 +45,7 @@ try:
 
     #test for a running task distributor
     distribURI = HTTPTaskPusher._getTaskQueueURI(0)
-    NEW_STYLE_DISTRIBUTION=False
+    NEW_STYLE_DISTRIBUTION=True
 except:
     NEW_STYLE_DISTRIBUTION=False
 
@@ -601,7 +601,7 @@ class LMAnalyser2(object):
         self._checkmap('DarkMapID')
         self._checkmap('VarianceMapID')
         self._checkmap('FlatfieldMapID')
-        if self.newStyleTaskDistribution:
+        if self.newStyleTaskDistribution and self.image.filename.startswith('PYME-CLUSTER'):
             self.analysisController.pushImagesCluster(self.image)
         else:
             self.analysisController.pushImages(self.image)
