@@ -1,31 +1,45 @@
 import PYME.Analysis.points.spherical_harmonics as spharm
+from PYME.recipes.localisations import SphericalHarmonicShell, AddShellMappedCoordinates
+from PYME.recipes.base import ModuleCollection
+from mayavi import mlab
+import logging
+
+logger=logging.getLogger(__name__)
 
 
+class ShellManager(object):
+    def __init__(self, vis_frame):
+        self.vis_frame = vis_frame
+        self.pipeline = vis_frame.pipeline
 
-def calc_harmonic_representation(pipeline, mmax=5, zscale=5.0):
-    """
+        self._shells = []
 
-    Parameters
-    ----------
-    pipeline : tabular
-        tabular object containing point data
-    mmax : int
-        maximum order to fit to
-    zscale : float
-        scaling factor in z to make flat nuclei appear more spherical (and hence fit with a smaller number of modes)
+        logging.debug('Adding menu items for spherical harmonic (shell) fitting')
 
-    Returns
-    -------
+        vis_frame.AddMenuItem('Analysis>Spherical Harmonic Fitting', itemType='separator')
 
-    """
-    from mayavi import mlab
-    modes, coeffs, centre = spharm.sphere_expansion_clean(pipeline['x'], pipeline['y'], zscale*pipeline['z'], mmax=mmax)
+        vis_frame.AddMenuItem('Analysis>Spherical Harmonic Fitting', 'Fit Spherical Harmonic Shell',
+                              self.OnCalcHarmonicRepresentation)
 
-    #print modes, coeffs, centre
+    def OnCalcHarmonicRepresentation(self, wx_event):
+        recipe = ModuleCollection()
+        recipe.namespace['input'] = self.pipeline
 
-    spharm.visualize_reconstruction(modes, coeffs, zscale=1./zscale)
-    mlab.points3d(pipeline['x'] - centre[0], pipeline['y'] - centre[1], pipeline['z'] - centre[2]/zscale, mode='point')
+        shell_fitter = SphericalHarmonicShell(recipe, input_name='input', output_name='harmonic_shell')
+        recipe.add_module(shell_fitter)
 
+        if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
+            return
 
-def Plug(visFr):
-    visFr.AddMenuItem('Analysis', 'Spherical harmonic approximation', lambda e : calc_harmonic_representation(visFr.pipeline))
+        recipe.execute()
+        shell = recipe.namespace['harmonic_shell']
+        self._shells.append(shell)
+
+        center = shell.mdh['Processing.SphericalHarmonicShell.Centre']
+        z_scale = shell.mdh['Processing.SphericalHarmonicShell.ZScale']
+        spharm.visualize_reconstruction(shell['modes'], shell['coefficients'], zscale=1. / z_scale)
+        mlab.points3d(self.pipeline['x'] - center[0], self.pipeline['y'] - center[1],
+                      self.pipeline['z'] - center[2]/z_scale, mode='point')
+
+def Plug(vis_frame):
+    vis_frame.shell_manager= ShellManager(vis_frame)
