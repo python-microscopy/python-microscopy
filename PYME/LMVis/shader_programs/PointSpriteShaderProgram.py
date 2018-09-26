@@ -119,7 +119,7 @@ class PointSpriteShaderProgram(GLProgram):
         self.ymin, self.ymax = clipping['y']
         self.zmin, self.zmax = clipping['z']
         self.vmin, self.vmax = clipping['v']
-        self.v_matrix = np.eye(4, 4, dtype='f')
+        
 
     def get_size_factor(self):
         warnings.warn("use size_factor attribute instead", DeprecationWarning)

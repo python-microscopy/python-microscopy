@@ -22,7 +22,7 @@ import os
 from PYME.LMVis.shader_programs.GLProgram import GLProgram
 from OpenGL.GL import *
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
-
+import numpy as np
 
 class GouraudShaderProgram(GLProgram):
     INPUT_LIGHT = b'inputLight'
@@ -47,10 +47,6 @@ class GouraudShaderProgram(GLProgram):
         self.set_shader_program(shader_program)
         self._shininess = 80
         
-        self.xmin, self.xmax = [-1e6, 1e6]
-        self.ymin, self.ymax = [-1e6, 1e6]
-        self.zmin, self.zmax = [-1e6, 1e6]
-        self.vmin, self.vmax = [-1e6, 1e6]
 
     def __enter__(self):
         self.get_shader_program().use()
@@ -70,6 +66,8 @@ class GouraudShaderProgram(GLProgram):
         glUniform1f(self.get_uniform_location('z_max'), float(self.zmax))
         glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
         glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
+
+        #glUniformMatrix4fv(self.get_uniform_location('clip_rotation_matrix'), 1, GL_FALSE, self.v_matrix)
         
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glDepthFunc(GL_LEQUAL)

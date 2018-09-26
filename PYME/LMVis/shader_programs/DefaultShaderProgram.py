@@ -44,7 +44,7 @@ class DefaultShaderProgram(GLProgram):
         self.ymin, self.ymax = clipping['y']
         self.zmin, self.zmax = clipping['z']
         self.vmin, self.vmax = clipping['v']
-        self.v_matrix = np.eye(4, 4, dtype='f')
+        
 
     def __enter__(self):
         #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
