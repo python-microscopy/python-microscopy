@@ -238,9 +238,9 @@ def distance_to_surface(position, centre, modes, coeffs, d_phi=0.1, z_scale=5.):
     x_shell, y_shell, z_shell = sph2cart(theta, phi, r)
 
     # center the position we're querying, remembering that the shell needs to be scaled inversely scaling in the fit
-    x -= centre[0]
-    y -= centre[1]
-    z -= centre[2]/z_scale
+    x = x[:] - centre[0]  # perform an implicit copy so we don't shift the input
+    y = y[:] - centre[1]
+    z = z[:] - centre[2]/z_scale
 
     # calculate the distance between all our points and the shell, remembering needs to be scaled inversely scaling in
     # the fit
