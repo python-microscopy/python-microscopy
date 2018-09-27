@@ -25,4 +25,7 @@ def test_principle_axes():
     np.testing.assert_array_almost_equal(np.array([output['sigma0'][0], output['sigma1'][0], output['sigma2'][0]]),
                                          np.array([np.std(x, ddof=1), 0, 0]))
 
+    np.testing.assert_array_almost_equal(np.array([output['sigma_x'][0], output['sigma_y'][0], output['sigma_z'][0]]),
+                                         np.array([np.std(x, ddof=1), 0, 0]))
+
     np.testing.assert_almost_equal(np.array([1, 0, 0]), output['axis0'][0])
