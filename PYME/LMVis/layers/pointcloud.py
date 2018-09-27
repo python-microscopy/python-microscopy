@@ -156,7 +156,10 @@ class PointCloudRenderLayer(EngineLayer):
         x, y = ds[self.x_key], ds[self.y_key]
         
         if not self.z_key is None:
-            z = ds[self.z_key]
+            try:
+                z = ds[self.z_key]
+            except KeyError:
+                z = 0*x
         else:
             z = 0 * x
         
