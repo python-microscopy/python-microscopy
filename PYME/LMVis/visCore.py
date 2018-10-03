@@ -199,7 +199,11 @@ class VisGUICore(object):
         if not self.pipeline.selectedDataSourceKey is None:
             self.chSource.SetStringSelection(self.pipeline.selectedDataSourceKey)
 
-        self.Layout()
+        try:
+            self.Layout()
+        except AttributeError:
+            logger.debug('No Layout method') 
+            pass
         
 
     def OnSourceChange(self, event):
