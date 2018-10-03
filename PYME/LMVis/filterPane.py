@@ -246,9 +246,9 @@ class FilterPane(afp.foldingPane):
 
         self.stFilterNumPoints = wx.StaticText(self, -1, '')
 
-        if not self.pipeline.filter is None:
-            self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
-
+        self.setEventNumbers()
+        self.pipeline.onRebuild.connect(self.setEventNumbers)
+        
         self.AddNewElement(self.stFilterNumPoints)
         #self._pnl.AddFoldPanelWindow(self, self.stFilterNumPoints, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
@@ -265,7 +265,10 @@ class FilterPane(afp.foldingPane):
         except AttributeError:
             pass
 
-
+    def setEventNumbers(self,**kwargs):
+        if not self.pipeline.filter is None:
+            self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
+        
     def OnFilterClipToSelection(self, event):
         if 'x' in self.filterKeys.keys() or 'y' in self.filterKeys.keys():
             if 'x' in self.filterKeys.keys():
