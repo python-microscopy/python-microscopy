@@ -208,8 +208,8 @@ def distance_to_surface(position, centre, modes, coeffs, d_phi=0.1, z_scale=5.):
 
     Parameters
     ----------
-    position : iterable
-        A single position in cartesian coordinates
+    position : list-like of ndarrays
+        Arrays of positions to query (in cartesian coordinates), i.e. [np.array(x), np.array(y), np.array(z)]
     centre : iterable
         Center of the spherical harmonic shell
     modes : list
@@ -231,20 +231,28 @@ def distance_to_surface(position, centre, modes, coeffs, d_phi=0.1, z_scale=5.):
 
     """
     x, y, z = position
+    n_points = len(x)
     phi, theta = np.mgrid[0:(np.pi + d_phi):d_phi, 0:(2 * np.pi + d_phi):d_phi]
 
     r = reconstruct_from_modes(modes, coeffs, theta, phi)
     x_shell, y_shell, z_shell = sph2cart(theta, phi, r)
 
     # center the position we're querying, remembering that the shell needs to be scaled inversely scaling in the fit
-    x -= centre[0]
-    y -= centre[1]
-    z -= centre[2]/z_scale
+    x = x[:] - centre[0]  # perform an implicit copy so we don't shift the input
+    y = y[:] - centre[1]
+    z = z[:] - centre[2]/z_scale
 
     # calculate the distance between all our points and the shell, remembering needs to be scaled inversely scaling in
     # the fit
-    dist = np.sqrt((x - x_shell) ** 2 + (y - y_shell) ** 2 + ((z - z_shell/z_scale) ** 2))
-    min_ind = np.argmin(dist.ravel())
+    dist = np.sqrt((x - x_shell[:,:,None]) ** 2 + (y - y_shell[:,:,None]) ** 2 + ((z - z_shell[:,:,None]/z_scale) ** 2))
 
-    return dist.ravel()[min_ind], (x_shell.ravel()[min_ind], y_shell.ravel()[min_ind], z_shell.ravel()[min_ind])
+    # unfortunately cannot currently specify two axes for numpy.argmin, so we'll have to flatten the first two dims
+    n_shell_coords = dist.shape[0] * dist.shape[1]
+    dist_flat = dist.reshape((n_shell_coords, n_points))
+    min_ind = np.argmin(dist_flat, axis=0)
+
+    p_ind = range(n_points)
+    return dist_flat[min_ind[p_ind], p_ind], (x_shell.reshape(n_shell_coords)[min_ind],
+                                              y_shell.reshape(n_shell_coords)[min_ind],
+                                              z_shell.reshape(n_shell_coords)[min_ind])
 
