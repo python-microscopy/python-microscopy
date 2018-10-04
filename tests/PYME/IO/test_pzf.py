@@ -78,6 +78,30 @@ def test_PZFFormat_lossy_uint16():
     #print(result.squeeze())
 
     assert np.allclose(result.squeeze(), test_quant.squeeze())
+    
+def test_PZFFormat_lossy_uint16_qs():
+    from PYME.IO import PZFFormat
+    test_data = np.random.poisson(100, 100).reshape(10,10).astype('uint16')
+    
+    qs = .2
+
+    result, header = PZFFormat.loads(PZFFormat.dumps(test_data,
+                                                     compression = PZFFormat.DATA_COMP_HUFFCODE,
+                                                     quantization = PZFFormat.DATA_QUANT_SQRT,
+                                                     quantizationOffset=0, quantizationScale=qs))
+
+    #print result
+    test_quant = ((np.floor(np.sqrt(test_data.astype('f')-.1)/qs).astype('i')*qs)**2).astype('i')
+
+    
+    print(test_data.min(), test_data.max(), result.min(), result.max(), test_quant.min(), test_quant.max())
+    
+    #print(test_quant.squeeze() - result.squeeze())
+    #print(test_data.squeeze())
+    #print(test_quant.squeeze())
+    #print(result.squeeze())
+
+    assert np.allclose(result.squeeze(), test_quant.squeeze())
 
 def test_PZFFormat_lossless_uint8():
     from PYME.IO import PZFFormat

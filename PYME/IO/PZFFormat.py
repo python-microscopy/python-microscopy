@@ -336,6 +336,7 @@ def loads(datastring):
         #logging.debug('Dequantizing')
 
         data = data*header['QuantScale']
+        #print('data dtype: %s' % data.dtype)
         data = (data*data + header['QuantOffset']).astype(DATA_FMTS[int(header['DataFormat'])])
     
     #print dimOrder, [w, h, d]
