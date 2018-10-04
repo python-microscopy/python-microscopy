@@ -301,7 +301,9 @@ class fitTask(taskDef.Task):
             drift_ind = self.index + self.md.getOrDefault('Analysis.DriftIndices', np.array([-10, 0, 10]))
         else:
             drift_ind = [0,0]
-        self.bufferLen = max(self.md['Analysis.BGRange'][1], drift_ind[-1]) - min(self.md['Analysis.BGRange'][0], drift_ind[0])
+        # a fix for Analysis.BGRange[0] == Analysis.BGRange[1], i.e. '0:0' as we tend to do in DNA-PAINT
+        # makes bufferLen at least 1
+        self.bufferLen = max(1,max(self.md['Analysis.BGRange'][1], drift_ind[-1]) - min(self.md['Analysis.BGRange'][0], drift_ind[0]))
         
     @property
     def fitMod(self):

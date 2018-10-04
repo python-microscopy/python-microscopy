@@ -792,27 +792,39 @@ class AddShellMappedCoordinates(ModuleBase): #FIXME - this likely doesnt belong 
     inputName = Input('points')
     inputSphericalHarmonics = Input('harmonicShell')
 
+    input_name_r = CStr('r')
+    input_name_theta = CStr('theta')
+    input_name_phi = CStr('phi')
+    input_name_r_norm = CStr('r_norm')
+    input_name_distance_to_shell = CStr('distance_to_shell')
+
     outputName = Output('shell_mapped')
 
     def execute(self, namespace):
-        import PYME.Analysis.points.spherical_harmonics as spharm
+        from PYME.Analysis.points import spherical_harmonics
         from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
         inp = namespace[self.inputName]
         mapped = tabular.mappingFilter(inp)
 
-        rep = namespace[self.inputSphericalHarmonics][0]
-        
-        x0, y0, z0 = rep['centre']
+        rep = namespace[self.inputSphericalHarmonics]
+
+        center = rep.mdh['Processing.SphericalHarmonicShell.Centre']
+        z_scale = rep.mdh['Processing.SphericalHarmonicShell.ZScale']
+        x0, y0, z0 = center
 
         # calculate theta, phi, and rad for each localization in the pipeline
-        theta, phi, datRad = spharm.cart2sph(inp['x'] - x0, inp['y'] - y0,
-                                             (inp['z'] - z0)/rep['z_scale'])
-
-        mapped.addColumn('r', datRad)
-        mapped.addColumn('theta', theta)
-        mapped.addColumn('phi', phi)
-        mapped.addColumn('r_norm', datRad / spharm.reconstruct_from_modes(rep['modes'],rep['coefficients'], theta, phi))
+        theta, phi, datRad = spherical_harmonics.cart2sph(inp['x'] - x0, inp['y'] - y0, (inp['z'] - z0)/z_scale)
+        # additionally calculate the cartesian distance
+        min_distance, nearest_point_on_shell = spherical_harmonics.distance_to_surface([inp['x'], inp['y'], inp['z']],
+                                                                                       center, rep['modes'],
+                                                                                       rep['coefficients'],
+                                                                                       z_scale=z_scale)
+        mapped.addColumn(self.input_name_r, datRad)
+        mapped.addColumn(self.input_name_theta, theta)
+        mapped.addColumn(self.input_name_phi, phi)
+        mapped.addColumn(self.input_name_r_norm, datRad / spherical_harmonics.reconstruct_from_modes(rep['modes'],rep['coefficients'], theta, phi))
+        mapped.addColumn(self.input_name_distance_to_shell, min_distance)
 
         try:
             # note that copying overwrites shared fields

@@ -79,6 +79,7 @@ measurement_dtype = [('count', '<i4'),
                      ('gyrationRadius', '<f4'),
                      ('axis0', '<3f4'), ('axis1', '<3f4'), ('axis2', '<3f4'),
                      ('sigma0', '<f4'), ('sigma1', '<f4'), ('sigma2', '<f4'),
+                     ('sigma_x', '<f4'), ('sigma_y', '<f4'), ('sigma_z', '<f4'),
                      ('anisotropy', '<f4'),
                      ('theta', '<f4'), ('phi', '<f4')]
 
@@ -156,14 +157,21 @@ def measure_3d(x, y, z, output=None):
     output['z'] = zc
     
     #find mean-subtracted points
-    x_, y_, z_ = x - xc, y - yc, z - zc
+    x_c, y_c, z_c = x - xc, y - yc, z - zc
+    xx_c = x_c * x_c
+    yy_c = y_c * y_c
+    zz_c = z_c * z_c
+    # calculate standard deviations along cartesian coords, including bessel's correction
+    output['sigma_x'] = np.sqrt(xx_c.sum() / (N - 1))
+    output['sigma_y'] = np.sqrt(yy_c.sum() / (N - 1))
+    output['sigma_z'] = np.sqrt(zz_c.sum() / (N - 1))
     
     #radius of gyration
     # TODO - can we kill the camelCase here?
-    output['gyrationRadius'] = np.sqrt(np.mean(x_*x_ + y_*y_ + z_*z_))
+    output['gyrationRadius'] = np.sqrt(np.mean(xx_c + yy_c + zz_c))
 
     #principle axes
-    u, s, v = np.linalg.svd(np.vstack([x_, y_, z_]).T)
+    u, s, v = np.linalg.svd(np.vstack([x_c, y_c, z_c]).T)
 
     standard_deviations = s / np.sqrt(N - 1)  # with bessel's correction
     for i in range(3):
