@@ -376,7 +376,7 @@ class UnifiedLoader(jinja2.BaseLoader):
 env = jinja2.Environment(loader=UnifiedLoader())
 from PYME.Analysis import graphing_filters #FIXME - move the filters somewhere better
 import base64
-from PYME.io import rgb_image
+from PYME.IO import rgb_image
 env.filters['movieplot'] = graphing_filters.movieplot2
 env.filters['plot'] = graphing_filters.plot
 env.filters['b64encode'] = base64.b64encode
