@@ -218,10 +218,6 @@ class RGBImageOutput(OutputModule):
         The storage method, one of 'File', 'pyme-cluster://' or 'pyme-cluster:// - aggregate`. File is the default
         and saves to a file on disk.
 
-    Notes
-    -----
-
-    This is a very thin wrapper which simply calls the `.save()` method on the `PYME.IO.image.ImageStack` object.
 
     pyme-cluster awareness
     ----------------------
