@@ -722,6 +722,11 @@ class ExtractChannel(ModuleBase):
         
         im = ImageStack(chan, titleStub = 'Filtered Image')
         im.mdh.copyEntriesFrom(image.mdh)
+        try:
+            im.mdh['ChannelNames'] = [image.mdh['ChannelNames'][self.channelToExtract]]
+        except KeyError:
+            logger.warn("Error setting channel name")
+
         im.mdh['Parent'] = image.filename
         
         return im
