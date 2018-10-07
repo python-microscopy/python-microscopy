@@ -21,20 +21,11 @@
 ##################
 #from PYME.LMVis.visHelpers import ImageBounds#, GeneratedImage
 from PYME.IO.image import GeneratedImage, ImageBounds
-from PYME.LMVis import genImageDialog
 from PYME.LMVis import visHelpers
-#from PYME.LMVis import imageView
 from PYME.LMVis import statusLog
 from PYME.IO import tabular
 
 from PYME.IO import MetaDataHandler
-
-try:
-    import wx
-    from PYME.DSView import ViewIm3D
-except SystemExit:
-    print('GUI load failed (probably OSX)')
-
 
 import pylab
 import numpy as np
@@ -170,6 +161,10 @@ class CurrentRenderer:
 
 
     def GenerateGUI(self, event=None):
+        import wx
+        from PYME.LMVis import genImageDialog
+        from PYME.DSView import ViewIm3D
+        
         dlg = genImageDialog.GenImageDialog(self.mainWind, mode=self.mode)
         ret = dlg.ShowModal()
 
@@ -248,6 +243,10 @@ class ColourRenderer(CurrentRenderer):
         return GeneratedImage(ims, imb, pixelSize, settings['zSliceThickness'], colours, mdh=mdh)
 
     def GenerateGUI(self, event=None):
+        import wx
+        from PYME.LMVis import genImageDialog
+        from PYME.DSView import ViewIm3D
+        
         jitVars = ['1.0']
         jitVars += self.colourFilter.keys()
 
