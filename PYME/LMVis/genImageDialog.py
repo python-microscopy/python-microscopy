@@ -130,7 +130,7 @@ class GenImageDialog(wx.Dialog):
 
             sizer2 = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Z range:'), wx.VERTICAL)
 
-            self.hZRange = histLimits.HistLimitPanel(self, -1, zvals[::max(len(zvals)/1e4, 1)], zvals.min() - 50, zvals.max() + 50, size=(150, 80))
+            self.hZRange = histLimits.HistLimitPanel(self, -1, zvals[::int(max(len(zvals)/1e4, 1))], zvals.min() - 50, zvals.max() + 50, size=(150, 80))
             self.hZRange.binSize = float(self.tZThickness.GetValue())
 
             self.tZThickness.Bind(wx.EVT_TEXT, self.OnZBinChange)
