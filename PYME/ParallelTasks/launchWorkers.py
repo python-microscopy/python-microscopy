@@ -150,10 +150,9 @@ def main():
         if args.run_server:
             logger.info('Launching server ...')
             with open(serverlog('out'),"wb") as out, open(serverlog('err'),"wb") as err:
-                subprocess.Popen('python "%s\\%s.py"' % (fstub, SERVER_PROC), shell=True,
+                subprocess.Popen('python "%s\\%s.py" %s' % (fstub, SERVER_PROC, prof_args), shell=True,
                                  stdout=out, stderr=err)
             print('Launching server ...')
-            subprocess.Popen('python "%s\\%s.py" %s' % (fstub, SERVER_PROC, prof_args), shell=True)
 
             logger.info('Waiting for server to come up ...')
             time.sleep(10)
