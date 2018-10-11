@@ -208,7 +208,7 @@ static PyObject * distanceHistogram3D(PyObject *self, PyObject *args, PyObject *
     PyArrayObject* az1=NULL;
     PyArrayObject* az2=NULL;
 
-    PyArrayObject* out;
+    PyArrayObject* out = NULL;
 
     double *px1;
     double *px2;
@@ -335,6 +335,209 @@ static PyObject * distanceHistogram3D(PyObject *self, PyObject *args, PyObject *
             id = (int)(d*rBinSize);
 
             if (id < nBins) res[id] += 1;
+
+
+	  }
+      }
+
+
+    Py_XDECREF(ax1);
+    Py_XDECREF(ax2);
+    Py_XDECREF(ay1);
+    Py_XDECREF(ay2);
+    Py_XDECREF(az1);
+    Py_XDECREF(az2);
+
+    return (PyObject*) out;
+
+fail:
+    Py_XDECREF(ax1);
+    Py_XDECREF(ax2);
+    Py_XDECREF(ay1);
+    Py_XDECREF(ay2);
+    Py_XDECREF(az1);
+    Py_XDECREF(az2);
+
+    Py_XDECREF(out);
+
+    return NULL;
+}
+
+
+static PyObject * vectDistanceHistogram3D(PyObject *self, PyObject *args, PyObject *keywds)
+{
+    int *res = 0;
+    int i1,i2;
+    //int size[2];
+
+    int x1_len;
+    int x2_len;
+    npy_intp outDimensions[3];
+    int id, j;
+
+    PyObject *ox1 =0;
+    PyObject *oy1=0;
+    PyObject *ox2 =0;
+    PyObject *oy2=0;
+    PyObject *oz1 =0;
+    PyObject *oz2=0;
+
+
+    PyArrayObject* ax1=NULL;
+    PyArrayObject* ay1=NULL;
+    PyArrayObject* ax2=NULL;
+    PyArrayObject* ay2=NULL;
+    PyArrayObject* az1=NULL;
+    PyArrayObject* az2=NULL;
+
+    PyArrayObject* out=NULL;
+
+    double *px1;
+    double *px2;
+    double *py1;
+    double *py2;
+    double *pz1;
+    double *pz2;
+
+    float d, dx, dy, x1, y1, z1, dz;
+    int r_id;
+    int unwrapped_size;
+
+    float theta, phi;
+
+    /*parameters*/
+    int n_bins_r = 100;
+    float bin_size_r = 1;
+    int n_bins_angle = 10;
+    float rBinSize = 1;
+    float bin_size_angle = 0;
+    float rBinAngle = 0;
+
+    /*End paramters*/
+
+
+
+
+    static char *kwlist[] = {"x1", "y1", "z1", "x2", "y2", "z2","n_bins_r","bin_size_r", "n_bins_angle", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOOOOO|ifi", kwlist,
+         &ox1, &oy1, &oz1, &ox2, &oy2, &oz2, &n_bins_r, &bin_size_r, &n_bins_angle))
+        return NULL;
+
+    bin_size_angle = M_PI/n_bins_angle;
+    rBinAngle = 1.0/bin_size_angle;
+    /* Do the calculations */
+
+    ax1 = (PyArrayObject *) PyArray_ContiguousFromObject(ox1, PyArray_DOUBLE, 0, 1);
+    if (ax1 == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad x1");
+      goto fail;
+    }
+
+    ay1 = (PyArrayObject *) PyArray_ContiguousFromObject(oy1, PyArray_DOUBLE, 0, 1);
+    if (ay1 == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad y1");
+      goto fail;
+    }
+
+    ax2 = (PyArrayObject *) PyArray_ContiguousFromObject(ox2, PyArray_DOUBLE, 0, 1);
+    if (ax2 == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad x2");
+      goto fail;
+    }
+
+    ay2 = (PyArrayObject *) PyArray_ContiguousFromObject(oy2, PyArray_DOUBLE, 0, 1);
+    if (ay2 == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad y2");
+      goto fail;
+    }
+
+    az1 = (PyArrayObject *) PyArray_ContiguousFromObject(oz1, PyArray_DOUBLE, 0, 1);
+    if (az1 == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad z1");
+      goto fail;
+    }
+
+    az2 = (PyArrayObject *) PyArray_ContiguousFromObject(oz2, PyArray_DOUBLE, 0, 1);
+    if (az2 == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Bad z2");
+      goto fail;
+    }
+
+
+    px1 = (double*)ax1->data;
+    py1 = (double*)ay1->data;
+    px2 = (double*)ax2->data;
+    py2 = (double*)ay2->data;
+
+    pz1 = (double*)PyArray_DATA(az1);
+    pz2 = (double*)PyArray_DATA(az2);
+
+    rBinSize = 1.0/bin_size_r;
+
+
+    x1_len = PyArray_Size((PyObject*)ax1);
+    x2_len = PyArray_Size((PyObject*)ax2);
+
+    outDimensions[0] = n_bins_r;
+    outDimensions[1] = n_bins_angle;
+    outDimensions[2] = n_bins_angle;
+
+    out = (PyArrayObject*) PyArray_SimpleNew(3,outDimensions,PyArray_INT);
+    if (out == NULL)
+    {
+      PyErr_Format(PyExc_RuntimeError, "Error allocating output array");
+      goto fail;
+    }
+
+    //Py_INCREF(out);
+
+    //fix strides
+    //out->strides[0] = sizeof(double);
+    //out->strides[1] = sizeof(double)*size[0];
+
+    res = (int*) out->data;
+
+    unwrapped_size = n_bins_r*n_bins_angle*n_bins_angle;
+
+    //Initialise our histogram
+    for (j =0; j < unwrapped_size; j++)
+    {
+        res[j] = 0;
+    }
+
+    for (i1 = 0; i1 < x1_len; i1++) //loop through the 1st set of points
+      {
+        x1 = (float) px1[i1];
+        y1 = (float) py1[i1];
+        z1 = (float) pz1[i1];
+        for (i2 = (i1+1); i2 < x2_len; i2++)
+	  {//loop through the second set of points - Note we only need to take the upper triangle of the distance matrix
+
+            //calculate the delta
+            dx = x1 - (float)px2[i2];
+            dy = y1 - (float)py2[i2];
+            dz = z1 - (float)pz2[i2];
+
+            //and the distance
+            d = sqrtf(dx*dx + dy*dy + dz*dz);
+
+            //calculate angles
+            theta = fmodf(atanf(dy/dx), M_PI);
+            //phi = fmodf(asinf(dz/d), M_PI);
+            phi = fmodf(atanf(dz/sqrtf(dx*dx + dy*dy)), M_PI);
+
+            //convert distance to bin index
+            r_id = (int)(d*rBinSize);
+            id = r_id*n_bins_angle*n_bins_angle + (int)(n_bins_angle*theta*rBinAngle) + (int)(phi*rBinAngle);
+
+            if (id < unwrapped_size) res[id] += 1;
 
 
 	  }
@@ -803,6 +1006,9 @@ static PyMethodDef distHistMethods[] = {
 #endif
     {"msdHistogram",  (PyCFunction)meanSquareDistHist, METH_VARARGS | METH_KEYWORDS,
     "calculate a histogram of msd vs time.\n. Arguments are: 'x', 'y', 't', 'nBins'= 1e3, 'binSize' = 1"},
+    {"vectDistanceHistogram3D",  (PyCFunction)vectDistanceHistogram3D, METH_VARARGS | METH_KEYWORDS,
+    "Generate a histogram of pairwise distances between two sets of points.\n. Arguments are: 'x1', 'y1', 'z1', 'x2', 'y2', 'z2', 'nBins'= 1e3, 'binSize' = 1"},
+
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
