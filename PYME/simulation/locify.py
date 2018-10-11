@@ -118,4 +118,52 @@ def eventify(x,y,meanIntensity, meanDuration, backGroundIntensity, meanEventNumb
 
     return evts
 
+def eventify2(x, y, meanIntensity, meanDuration, backGroundIntensity, meanEventNumber, sf=2, tm=2000, z=0,
+             z_err_scale=1.0):
+    #Is = np.random.exponential(meanIntensity, x.shape)
+    Ns = np.random.poisson(meanEventNumber, x.shape)
+
+    if np.isscalar(z):
+        z = z * np.ones_like(x)
+
+    evts = []
+    #t = 0
+
+    for x_i, y_i, z_i, N_i in zip(x, y, z, Ns):
+        for j in range(N_i):
+            duration = np.random.exponential(meanDuration)
+            t = np.random.exponential(tm)
+            
+            I_i = np.random.exponential(meanIntensity)
+        
+            #evts += [(x_i, y_i, I_i, t+k) for k in range(duration)] + [(x_i, y_i, I_i*(duration%1), t+floor(duration))]
+            evts.extend([FitResultR(x_i, y_i, z_i, I_i, t + k, backGroundIntensity, z_err_mult=z_err_scale) for k in
+                         range(int(np.floor(duration)))])
+            evts.append(FitResultR(x_i, y_i, z_i, I_i * (duration % 1), t + np.floor(duration), backGroundIntensity,
+                                   z_err_mult=z_err_scale))
+
+    evts = np.vstack(evts)
+
+    #xn, yn, In = evts[:,0], evts[:,1], evts[:,2]
+
+    In = evts['fitResults']['A']
+
+    detect = np.exp(-(In) ** 2 / (2 * sf ** 2 * backGroundIntensity)) < np.random.uniform(size=In.shape)
+
+    #xn = xn[detect]
+    #yn = yn[detect]
+    #In = In[detect]
+
+    evts = evts[detect]
+
+    s = evts['fitResults']['x0'].shape
+
+    evts['fitResults']['x0'] = evts['fitResults']['x0'] + evts['fitError']['x0'] * np.random.normal(size=s)
+    evts['fitResults']['y0'] = evts['fitResults']['y0'] + evts['fitError']['y0'] * np.random.normal(size=s)
+    evts['fitResults']['z0'] = evts['fitResults']['z0'] + evts['fitError']['z0'] * np.random.normal(size=s)
+
+    #filter
+
+    return evts
+
     #return xn, yn, In
