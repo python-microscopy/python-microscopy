@@ -102,8 +102,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self.MainWindow = self #so we can access from shell
         self.sh = wx.py.shell.Shell(id=-1,
                                     parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
-                                    startupScript=config.get('Visgui-startup-file'),
-              introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
+                                    startupScript=config.get('VisGUI-console-startup-file', None),
+              introText='PYME console - note that help, license etc below is for Python, not PySMI\n\n')
 
         #self._mgr.AddPane(self.sh, aui.AuiPaneInfo().
         #                  Name("Shell").Caption("Console").Centre().CloseButton(False).CaptionVisible(False))
