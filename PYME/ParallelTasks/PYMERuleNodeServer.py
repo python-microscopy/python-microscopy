@@ -101,7 +101,7 @@ def main():
 
     time.sleep(2)
     logging.debug('Launching worker processors')
-    numWorkers = config.get('numWorkers', cpu_count())
+    numWorkers = config.get('nodeserver-num_workers', cpu_count())
 
     workerProcs = [subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP', shell=True, stdin=subprocess.PIPE)
                    for i in range(numWorkers -1)]
