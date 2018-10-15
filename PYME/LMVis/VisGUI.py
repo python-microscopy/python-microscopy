@@ -38,6 +38,7 @@ import matplotlib
 matplotlib.use('wxagg')
 import pylab
 
+from PYME import config
 from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
@@ -100,7 +101,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         self.MainWindow = self #so we can access from shell
         self.sh = wx.py.shell.Shell(id=-1,
-              parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
+                                    parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
+                                    startupScript=config.get('Visgui-startup-file'),
               introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
 
         #self._mgr.AddPane(self.sh, aui.AuiPaneInfo().
@@ -116,17 +118,8 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         self.generatedImages = []
         
-#        if 'PYME_BUGGYOPENGL' in os.environ.keys():
-#            pylab.plot(pylab.randn(10))
-
         self.sh.Execute('from pylab import *')
         self.sh.Execute('from PYME.DSView.dsviewer import View3D')
-        # try:
-        #     import PYME.misc.shellutils
-        # except:
-        #     print 'could not import shellutils'
-        # else:
-        #     self.sh.Execute('import PYME.misc.shellutils as su')
         
         import os
         if os.getenv('PYMEGRAPHICSFIX'): # fix issue with graphics freezing on some machines (apparently matplotlib related)
