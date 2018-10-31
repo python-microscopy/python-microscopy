@@ -165,6 +165,20 @@ def laser_controls(MainFrame, scope):
     MainFrame.time1.WantNotification.append(lsf.update)
     MainFrame.camPanels.append((lsf, 'Laser Powers'))
 
+# @init_hardware('Line scanner')
+# def line_scanner(scope):
+#     from PYME.experimental import scanner_control
+#     scope.line_scanner = scanner_control.ScannerController()
+
+@init_gui('line scanner')
+def line_scanner_gui(MainFrame, scope):
+    from PYME.Acquire.ui import scanner_panel
+    from PYME.experimental import scanner_control
+
+    scope.line_scanner = scanner_control.ScannerController()
+    scp = scanner_panel.ScannerPanel(MainFrame.camPanel, scope.line_scanner)
+    MainFrame.camPanels.append((scp, 'Line Scanner'))
+
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):
     from PYME.Acquire.Hardware import focusKeys
