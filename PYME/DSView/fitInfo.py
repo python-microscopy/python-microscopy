@@ -247,6 +247,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
             else:
                 x0, y0 = 0,0
                 x1, y1 = 0, (self.mdh['Camera.ROIHeight'] + 1)/2
+                h = y1
                 
             slux = fri['slicesUsed']['x']
             sluy = fri['slicesUsed']['y']
@@ -289,7 +290,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
             if ('Splitter.Flip' in self.mdh.getEntryNames() and not self.mdh.getEntry('Splitter.Flip')):
                 sy1 = slice(y1 - y0 + sluy[0], y1 - y0 +sluy[1])
             else:
-                sy1 = slice(y1 - y0 + sluy[0], y1 - y0 +sluy[1]) #FIXME
+                sy1 = slice((y1 - y0) + h - y0 - sluy[0], (y1 - y0) + h - y0 -sluy[1], -1) #FIXME
                 
             print((slx, sx1, sly, sy1))
                 

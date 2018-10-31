@@ -119,7 +119,7 @@ def ChunkedHuffmanDecompress(datastring):
 #    pass
 
 FILE_FORMAT_ID = 'BD'
-FORMAT_VERSION = 2
+FORMAT_VERSION = 3
 
 DATA_FMT_UINT8 = 0
 DATA_FMT_UINT16 = 1
@@ -144,6 +144,13 @@ header_dtype = [('ID', 'S2'), ('Version', 'u1') , ('DataFormat', 'u1'), ('DataCo
                 ('DataQuantization', 'u1'),('DimOrder', 'S1'),('RESERVED0', 'S1'), ('SequenceID', 'i8'), 
                 ('FrameNum', 'u4'), ('Width', 'u4'), ('Height', 'u4'), ('Depth', 'u4'), 
                 ('FrameTimestamp', 'u8'), ('QuantOffset', 'f4'), ('QuantScale', 'f4')]
+
+#v3 increases header size to support arbitrary offsets to data so that data can be aligned.
+header_dtype_v3 = [('ID', 'S2'), ('Version', 'u1') , ('DataFormat', 'u1'), ('DataCompression', 'u1'),
+                ('DataQuantization', 'u1'),('DimOrder', 'S1'),('RESERVED0', 'S1'), ('SequenceID', 'i8'),
+                ('FrameNum', 'u4'), ('Width', 'u4'), ('Height', 'u4'), ('Depth', 'u4'),
+                ('FrameTimestamp', 'u8'), ('QuantOffset', 'f4'), ('QuantScale', 'f4'), ('DataOffset','u4'), ('RESERVED1', 'S12')]
+
 """
 numpy dtype used to define the file header struct.
 
@@ -171,7 +178,9 @@ deserving a bit more explanation:
                 
     
                 
-HEADER_LENGTH = np.zeros(1, header_dtype).nbytes            
+HEADER_LENGTH = np.zeros(1, header_dtype).nbytes
+
+HEADER_LENGTH_V3 = np.zeros(1, header_dtype_v3).nbytes
 
 def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_COMP_RAW, quantization=DATA_QUANT_NONE, quantizationOffset=0, quantizationScale=1):
     """Dump an image frame (supplied as a numpy array) into a string in PZF format.
@@ -209,14 +218,16 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
             .. math:: data_{quant} =  \\frac{\\sqrt{data - quantizationOffset}}{quantizationScale}
     """
     
-    header = np.zeros(1, header_dtype)
+    header = np.zeros(1, header_dtype_v3)
     
     header['ID'] = FILE_FORMAT_ID
     header['Version'] = FORMAT_VERSION
     
     header['FrameNum'] = frameNum
     header['SequenceID'] = sequenceID
-    header['FrameTimestamp'] = frameTimestamp 
+    header['FrameTimestamp'] = frameTimestamp
+    
+    header['DataOffset'] = HEADER_LENGTH_V3 #don't support padding on save yet
     
     if data.dtype == 'uint8':
         header['DataFormat'] = DATA_FMT_UINT8
@@ -271,7 +282,10 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
  
 
 def load_header(datastring):
-    return np.fromstring(datastring[:HEADER_LENGTH], header_dtype)
+    if (chr(datastring[2]) >= 3):
+        return np.fromstring(datastring[:HEADER_LENGTH_V3], header_dtype)
+    else:
+        return np.fromstring(datastring[:HEADER_LENGTH], header_dtype)
 
    
 def loads(datastring):
@@ -302,6 +316,9 @@ def loads(datastring):
         dimOrder = header['DimOrder'][0]
     else:
         dimOrder = 'C'
+
+    
+        
         
     w, h, d = header['Width'][0], header['Height'][0], header['Depth'][0]
 
@@ -311,7 +328,13 @@ def loads(datastring):
     else:
         outsize = w*h*d*DATA_FMTS_SIZES[int(header['DataFormat'])]
     
-    data_s = datastring[HEADER_LENGTH:]
+    
+    if header['Version'] >= 3:
+        data_offset = HEADER_LENGTH
+    else:
+        data_offset = header['DataOffset']
+        
+    data_s = datastring[data_offset:]
 
     #logging.debug('About to decompress')
     #logging.debug({k:header[0][k] for k in header.dtype.names})
