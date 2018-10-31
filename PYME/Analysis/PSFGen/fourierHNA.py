@@ -454,7 +454,22 @@ def get_bead_pupil(X, Y, beadsize):
     
     return bp
 
-def PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47, vectorial=False, apodization='sine', ns = None, output_shape=None, beadsize=0,**kwargs):
+
+def _crop_to_shape(p, output_shape):
+    #crop to output shape
+    if output_shape is None:
+        return p
+    else:
+        sx = output_shape[0]
+        sy = output_shape[1]
+        ox = np.ceil((p.shape[0] - sx) / 2.0)
+        oy = np.ceil((p.shape[1] - sy) / 2.0)
+        ex = ox + sx
+        ey = oy + sy
+        
+        return p[ox:ex, oy:ey, :]
+
+def _PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47, vectorial=False, apodization='sine', ns = None, output_shape=None, beadsize=0,**kwargs):
     pupil = pupil*_apodization_function(R, NA, n, apodization, ns=ns)
     
     if beadsize > 0:
@@ -517,29 +532,96 @@ def PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47,
         ps = np.concatenate([FP.propagate(pupil, z)[:, :, None] for z in zs], 2)
         p = abs(ps ** 2)
 
-    #crop to output shape
-    if output_shape is None:
-        return p
-    else:
-        sx = output_shape[0]
-        sy = output_shape[1]
-        ox = np.ceil((X.shape[0] - sx) / 2.0)
-        oy = np.ceil((X.shape[1] - sy) / 2.0)
-        ex = ox + sx
-        ey = oy + sy
+    return _crop_to_shape(p, output_shape)
 
-        return p[ox:ex, oy:ey, :]
+
+
+
+def E_field_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil, zs, n=1.51, NA=1.47, vectorial=False, apodization='sine',
+                                  ns=None, output_shape=None, beadsize=0, **kwargs):
+    pupil = pupil * _apodization_function(R, NA, n, apodization, ns=ns)
     
-    return p
+    if beadsize > 0:
+        pupil = pupil * get_bead_pupil(X, Y, beadsize)
+    
+    if vectorial:
+        if vectorial is True:
+            #use circular pol by default
+            a = 1
+            b = -1j
+        else:
+            #vectorial is a tuple of polarization components
+            a, b = vectorial
+        
+        phi = np.angle(u + 1j * v)
+        theta = np.arcsin(np.minimum(R, 1))
+        
+        ct = np.cos(theta)
+        st = np.sin(theta)
+        cp = np.cos(phi)
+        sp = np.sin(phi)
+        
+        #ax
+        fac = a * (ct * cp ** 2 + sp ** 2)
+        ps_x = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        #p = abs(ps ** 2)
+        
+        #ay
+        fac = a * (ct - 1) * cp * sp
+        ps_y = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        #p += abs(ps ** 2)
+        
+        #az
+        fac = -a * st * cp
+        ps_z = np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        #p += abs(ps ** 2)
+        
+        
+        #bx
+        fac = b * (ct - 1) * cp * sp
+        ps_x += np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        
+        #p = abs(ps_x ** 2)
+        
+        #by
+        fac = b * (ct * sp ** 2 + cp ** 2)
+        ps_y += np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        #p += abs(ps_y ** 2)
+        
+        #bz
+        fac = -b * st * sp
+        ps_z += np.concatenate([FP.propagate(pupil * fac, z)[:, :, None] for z in zs], 2)
+        #p += abs(ps_z ** 2)
+        
+        return _crop_to_shape(ps_x, output_shape), _crop_to_shape(ps_y, output_shape), _crop_to_shape(ps_z, output_shape)
+    
+    
+    else:
+        ###########
+        # Default scalar case
+        ps = np.concatenate([FP.propagate(pupil, z)[:, :, None] for z in zs], 2)
+        return _crop_to_shape(ps, output_shape)
 
 
-def EField_from_pupil_and_propagator(X, Y, R, FP, u, v, n, NA, pupil, zs, apodization='sine'):
+def EField_from_pupil_and_propagator(X, Y, R, FP, u, v, n, NA, pupil, zs, apodization='sine', ):
     pupil = pupil * _apodization_function(R, NA, n, apodization)
     
     ps = np.concatenate([FP.propagate(pupil, z)[:, :, None] for z in zs], 2)
     
     return ps
 
+def _psf_from_e_field(ef):
+    if len(ef) == 3: #vectorial
+        e_x, e_y, e_z = ef
+    
+        return np.abs(e_x ** 2) + np.abs(e_y ** 2) + np.abs(e_z ** 2)
+    else:
+        return np.abs(ef**2)
+
+
+def PSF_from_pupil_and_propagator(*args, **kwargs):
+    e_f = E_field_from_pupil_and_propagator(*args, **kwargs)
+    return _psf_from_e_field(e_f)
 
 def PsfFromPupil(pupil, zs, dx, **kwargs):
     dx = float(dx)
@@ -738,6 +820,32 @@ def GenZernikePSF(zs, zernikeCoeffs = [], **kwargs):
     return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=pupil, zs=zs, **kwargs)
     
     
+class FourierPSF(object):
+    def __init__(self, **kwargs):
+        self._kwargs = kwargs
+        
+    def _pupil(self, F, r, theta):
+        """override for derived classes"""
+        return F
+        
+    def e_field(self, zs):
+        kwargs = dict(self._kwargs)
+        X, Y, R, FP, F, u, v = widefield_pupil_and_propagator(**kwargs)
+
+        kwargs.pop('X', None)
+        kwargs.pop('Y', None)
+        
+        theta = np.angle(X + 1j * Y)
+        r = R / R[abs(F) > 0].max()
+        
+        F = self._pupil(F, r, theta)
+        
+        return E_field_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=F, zs=zs, **kwargs)
+    
+    def psf(self, zs):
+        return _psf_from_e_field(self.e_field(zs))
+        
+
 def GenZernikeDPSF(zs, zernikeCoeffs = {}, **kwargs):
     from PYME.misc import zernike
     X, Y, R, FP, F, u, v = widefield_pupil_and_propagator(**kwargs)
@@ -756,6 +864,21 @@ def GenZernikeDPSF(zs, zernikeCoeffs = {}, **kwargs):
     F = F*np.exp(-1j*ang)
         
     return PSF_from_pupil_and_propagator(X, Y, R, FP, u, v, pupil=F, zs=zs, **kwargs)
+
+
+class ZernikePSF(FourierPSF):
+    def __init__(self, zernikeCoeffs = {}, **kwargs):
+        FourierPSF.__init__(self, **kwargs)
+        
+        self.zernikeCoeffs = zernikeCoeffs
+        
+    def _pupil(self, F, r, theta):
+        from PYME.misc import zernike
+        ang = 0
+        for i, c in self.zernikeCoeffs.items():
+            ang = ang + c * zernike.zernike(i, r, theta)
+
+        return F * np.exp(-1j * ang)
 
 
 def GenZernikeDonutPSF(zs, zernikeCoeffs={}, spiral_amp=1.0, **kwargs):

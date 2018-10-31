@@ -309,6 +309,52 @@ class Annotater(object):
                     self._draw_line_segment(sp, ep, a['width'], label, output, X, Y)
                     
         return output
+    
+    def train_svm(self):
+        from PYME.Analysis import svmSegment
+    
+        #from PYME.IO.image import ImageStack
+        #from PYME.DSView import ViewIm3D
+    
+        if not 'cf' in dir(self):
+            self.cf = svmSegment.svmClassifier()
+            
+    
+        self.cf.train(self.dsviewer.image.data[:, :, self.do.zp, 0].squeeze(), self.rasterize(self.do.zp))
+        
+        self.svm_segment()
+
+    def svm_segment(self):
+        from PYME.IO.image import ImageStack
+        from PYME.DSView import ViewIm3D
+        import pylab
+        #sp = self.image.data.shape[:3]
+        #if len(sp)
+        lab2 = self.cf.classify(self.dsviewer.image.data[:, :, self.do.zp, 0].squeeze())#, self.image.labels[:,:,self.do.zp])
+        #self.vmax = 0
+        #self.image.labels = self.mask
+    
+        im = ImageStack(lab2, titleStub='Segmentation')
+        im.mdh.copyEntriesFrom(self.dsviewer.image.mdh)
+    
+        #im.mdh['Processing.CropROI'] = roi
+    
+        if self.dsviewer.mode == 'visGUI':
+            mode = 'visGUI'
+        else:
+            mode = 'lite'
+    
+        self.dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
+    
+        self.rois = []
+    
+        #set scaling to (0,10)
+        for i in range(im.data.shape[3]):
+            self.dv.do.Gains[i] = .1
+            self.dv.do.cmaps[i] = pylab.cm.labeled
+    
+        self.dv.Refresh()
+        self.dv.Update()
                     
 
 def Plug(dsviewer):

@@ -24,7 +24,7 @@
 import os
 
 
-class ShaderLoader:
+class ShaderLoader(object):
     """
     This class is used to load shader source code and deliver it to programs that need it.
 
@@ -50,9 +50,9 @@ class ShaderLoader:
             with open(path, 'r') as f:
                 self._code = f.read()
             return self._code
-        except IOError as (err_no, strerror):
+        except IOError as e:
             message = "File {} could not be read properly in folder: {}".format(path, os.getcwd())
-            raise GLShaderLoadException(err_no, strerror, message)
+            raise GLShaderLoadException(e.errno, e.strerror, message)
 
     def read_file_with_path(self, path, file_name):
         """

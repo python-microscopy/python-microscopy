@@ -43,7 +43,7 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
 
         self._resizeflag = False
 
-        #self.Bind(wx.EVT_IDLE, self._onIdle)
+        self.Bind(wx.EVT_IDLE, self._onIdle)
         self.Bind(wx.EVT_SIZE, self._onSize)
 
     def SetColor( self, rgbtuple=None ):
@@ -56,9 +56,9 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
         self.canvas.SetBackgroundColour( wx.Colour( *rgbtuple ) )
 
     def _onSize( self, event ):
-        #self._resizeflag = True
+        self._resizeflag = True
         #print 'Resizing Plot'
-        self._SetSize()
+        #self._SetSize()
 
     def _onIdle( self, evt ):
         if self._resizeflag:
@@ -72,8 +72,9 @@ flag, and the actual resizing of the figure is triggered by an Idle event."""
             self.canvas.SetSize( pixels )
             self.figure.set_size_inches( float( pixels[0] )/self.figure.get_dpi(),
                                          float( pixels[1] )/self.figure.get_dpi() )
-            try:                                 
-                self.draw()
+            try:
+                if self.IsShown():
+                    self.draw()
             except:
                 pass
 

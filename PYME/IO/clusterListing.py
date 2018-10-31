@@ -30,6 +30,9 @@ try:
         fpath = os.path.join(path, fn)
 
         finfo = file_info(fpath)
+        
+        if fpath.endswith('.h5'):
+            finfo= FileInfo(FILETYPE_SERIES|FILETYPE_SERIES_COMPLETE, finfo[1])
 
         if finfo[0] & FILETYPE_DIRECTORY:
             fn = fn + '/'
@@ -53,6 +56,9 @@ except ImportError: # coundir module is posix only, fall back to more naive meth
                 ftype |= FILETYPE_SERIES_COMPLETE
 
             return (fn + '/',  FileInfo(ftype, dirsize(fpath)))
+        
+        elif fpath.endswith('.h5'):
+            return (fn, FileInfo(FILETYPE_SERIES, os.path.getsize(fpath)))
         else:
             return (fn,  FileInfo(FILETYPE_NORMAL, os.path.getsize(fpath)))
 
@@ -161,6 +167,14 @@ class DirCache(object):
             self._cache[dirname] = (listing, time.time() + self._lifetime_s)
             self._purge_list.append(dirname)
             self._n += 1
+            
+    def invalidate_directory(self, dirname):
+        with self._lock:
+            try:
+                self._cache.pop(dirname)
+                self._purge_list.remove(dirname)
+            except KeyError:
+                logger.debug('%s not in directory cache' % dirname)
     
     def list_directory(self, dirname):
         #logging.debug('list_directory: %s' % dirname)

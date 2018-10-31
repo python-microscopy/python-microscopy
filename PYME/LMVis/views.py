@@ -24,10 +24,24 @@ from collections import OrderedDict
 import numpy
 import numpy as np
 
+try:
+    # Put this in a try-except clause as a) the quaternion module is not packaged yet and b) it has a dependency on a recent numpy version
+    # so we might not want to make it a dependency yet.
+    import quaternion
+    HAVE_QUATERNION = False#True
+except ImportError:
+    print('quaternion module not found, disabling custom clip plane orientations')
+    HAVE_QUATERNION = False
+
+
+clipping_dtype = [('x', '<f4', (2,)), ('y', '<f4', (2,)), ('z', '<f4', (2,)), ('v', '<f4', (2,))]
+dummy_clipping = np.array([-1e6, 1e6, -1e6, 1e6, -1e6, 1e6, -1e6, 1e6], 'f4').view(clipping_dtype)
+
+def_clip_plane_orientation = np.array([1,0,0,0], 'f8')#np.eye(4,4,dtype='f')
 
 class View(object):
     def __init__(self, view_id='id', vec_up=[0,1,0], vec_back = [0,0,1], vec_right = [1,0,0], translation= [0,0,0],
-                 scale=1, x_clip = [-1e6, 1e6], y_clip=[-1e6, 1e6], z_clip=[-1e6, 1e6], v_clip=[-1e6, 1e6], **kwargs):
+                 scale=1, clipping = dummy_clipping, clip_plane_orientation=def_clip_plane_orientation, clip_plane_position=[0,0,0],  **kwargs):
         """
         
         Parameters
@@ -46,6 +60,21 @@ class View(object):
         self.vec_right = np.array(vec_right)
         self.translation = np.array(translation)
         self.scale = scale
+        if isinstance(clipping, np.ndarray) and (clipping.dtype == clipping_dtype):
+            self.clipping = np.copy(clipping)
+        else:
+            self.clipping= np.array(clipping, 'f4').squeeze().view(clipping_dtype)
+            
+        if HAVE_QUATERNION:
+            if isinstance(clip_plane_orientation, quaternion.quaternion):
+                self.clip_plane_orientation = np.copy(clip_plane_orientation)
+            else:
+                self.clip_plane_orientation = quaternion.quaternion(*clip_plane_orientation)
+        else:
+            #this won't work properly, but will stop us firing an error
+            self.clip_plane_orientation = np.array(clip_plane_orientation, dtype='f8')
+            
+        self.clip_plane_position = np.array(clip_plane_position)
 
     @property
     def view_id(self):
@@ -82,7 +111,10 @@ class View(object):
                     self.vec_back + other.vec_back,
                     self.vec_right + other.vec_right,
                     self.translation + other.translation,
-                    self._zoom + other.zoom
+                    self.scale + other.scale,
+                    (self.clipping.view('8f4') + other.clipping.view('8f4')).squeeze(),
+                    self.clip_plane_orientation + other.clip_plane_orientation,
+                    self.clip_plane_position + other.clip_plane_position
                     )
 
     def __sub__(self, other):
@@ -91,7 +123,10 @@ class View(object):
                     self.vec_back - other.vec_back,
                     self.vec_right - other.vec_right,
                     self.translation - other.translation,
-                    self.scale - other.scale
+                    self.scale - other.scale,
+                    (self.clipping.view('8f4') - other.clipping.view('8f4')).squeeze(),
+                    self.clip_plane_orientation -self.clip_plane_orientation,
+                    self.clip_plane_position - other.clip_plane_position
                     )
 
     def __mul__(self, scalar):
@@ -100,7 +135,10 @@ class View(object):
                     self.vec_back * scalar,
                     self.vec_right * scalar,
                     self.translation * scalar,
-                    self.scale * scalar
+                    self.scale * scalar,
+                    (self.clipping.view('8f4') * scalar).squeeze(),
+                    self.clip_plane_orientation * scalar,
+                    self.clip_plane_position*scalar
                     )
 
     def __div__(self, scalar):
@@ -109,7 +147,10 @@ class View(object):
                     self.vec_back / scalar,
                     self.vec_right / scalar,
                     self.translation / scalar,
-                    self.scale / scalar
+                    self.scale / scalar,
+                    (self.clipping.view('8f4') /scalar).squeeze(),
+                    self.clip_plane_orientation / scalar,
+                    self.clip_plane_position / scalar
                     )
 
     def normalize_view(self):
@@ -130,6 +171,9 @@ class View(object):
         ordered_dict['vec_right'] = self.vec_right.tolist()
         ordered_dict['translation'] = self.translation.tolist()
         ordered_dict['scale'] = self.scale
+        ordered_dict['clipping'] = self.clipping.view('8f4').squeeze().tolist()
+        #ordered_dict['clip_plane_orientation'] = self.clip_plane_orientation.view('4f8').squeeze().tolist()
+        ordered_dict['clip_plane_position'] = self.clip_plane_position.tolist()
 
         return ordered_dict
 
@@ -146,12 +190,12 @@ class View(object):
         return cls.decode_json(view.to_json())
 
     
-
+#TOP = View()
 
 class VideoView(View):
     JSON_DURATION = 'duration'
     
-    def __init__(self, view_id='id', vec_up=[0,1,0], vec_back = [0,0,1], vec_right = [1,0,0], translation= [0,0,0], scale=1, duration = 1, **kwargs):
+    def __init__(self, view_id='id', vec_up=[0,1,0], vec_back = [0,0,1], vec_right = [1,0,0], translation= [0,0,0], scale=1, clipping=dummy_clipping, duration = 1, **kwargs):
         """
 
         Parameters
@@ -164,7 +208,7 @@ class VideoView(View):
         zoom        usually a scalar
         duration    duration of the view transition in seconds
         """
-        super(VideoView, self).__init__(view_id, vec_up, vec_back, vec_right, translation, scale, **kwargs)
+        super(VideoView, self).__init__(view_id, vec_up, vec_back, vec_right, translation, scale, clipping, **kwargs)
         self._duration = duration
     
     @property

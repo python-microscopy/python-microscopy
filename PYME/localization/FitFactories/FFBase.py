@@ -25,6 +25,8 @@ import numpy as np
 from . import fitCommon
 from scipy import ndimage
 
+from PYME.IO.MetaDataHandler import get_camera_roi_origin
+
 class FFBase(object):
     def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None):
         """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
@@ -116,8 +118,9 @@ class FFBase(object):
         vy = 1e3*self.metadata.voxelsize.y
         
         #position in nm from camera origin
-        x_ = (x + self.metadata.Camera.ROIPosX - 1)*vx
-        y_ = (y + self.metadata.Camera.ROIPosY - 1)*vy
+        roi_x0, roi_y0 = get_camera_roi_origin(self.metadata)
+        x_ = (x + roi_x0)*vx
+        y_ = (y + roi_y0)*vy
         
         
         #look up shifts
@@ -228,8 +231,9 @@ class FFBase(object):
         vy = 1e3 * self.metadata.voxelsize.y
     
         #position in nm from camera origin
-        x_ = (x + self.metadata.Camera.ROIPosX - 1) * vx
-        y_ = (y + self.metadata.Camera.ROIPosY - 1) * vy
+        roi_x0, roi_y0 = get_camera_roi_origin(self.metadata)
+        x_ = (x + roi_x0) * vx
+        y_ = (y + roi_y0) * vy
     
         #look up shifts
         if not self.metadata.getOrDefault('Analysis.FitShifts', False):

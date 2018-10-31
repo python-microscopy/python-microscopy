@@ -46,5 +46,6 @@ Image processing tasks
    :maxdepth: 1
 
    LocalisationAnalysis
+   PSFExtraction
    Recipes
    howtos/distancecolocalization

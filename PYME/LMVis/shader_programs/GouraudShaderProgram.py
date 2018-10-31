@@ -19,10 +19,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 import os
-from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, \
-    glUseProgram, glUniform4f, glUniform1f, glEnable, GL_DEPTH_TEST, glDisable, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH
+from PYME.LMVis.shader_programs.GLProgram import GLProgram
+from OpenGL.GL import *
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
-
+import numpy as np
 
 class GouraudShaderProgram(GLProgram):
     INPUT_LIGHT = b'inputLight'
@@ -31,8 +31,8 @@ class GouraudShaderProgram(GLProgram):
     view_vector = (0.0, 0.0, -1.0, 0.0)
 
     LIGHT_PROPS = {
-            'light_ambient': (0.02, 0.02, 0.02, 1.0),
-            'light_diffuse': (0.3, 0.3, 0.3, 1.0),
+            'light_ambient': (0.1, 0.1, 0.1, 1.0),
+            'light_diffuse': (0.6, 0.6, 0.6, 1.0),
             'light_specular': (0.3, 0.3, 0.3, 1.0),
             'light_position': lights_vector
     }
@@ -46,6 +46,7 @@ class GouraudShaderProgram(GLProgram):
         shader_program.link()
         self.set_shader_program(shader_program)
         self._shininess = 80
+        
 
     def __enter__(self):
         self.get_shader_program().use()
@@ -56,9 +57,28 @@ class GouraudShaderProgram(GLProgram):
         glUniform1f(location, self._shininess)
         location = self.get_uniform_location('view_vector')
         glUniform4f(location, *self.view_vector)
-        glEnable(GL_DEPTH_TEST)
+
+        glUniform1f(self.get_uniform_location('x_min'), float(self.xmin))
+        glUniform1f(self.get_uniform_location('x_max'), float(self.xmax))
+        glUniform1f(self.get_uniform_location('y_min'), float(self.ymin))
+        glUniform1f(self.get_uniform_location('y_max'), float(self.ymax))
+        glUniform1f(self.get_uniform_location('z_min'), float(self.zmin))
+        glUniform1f(self.get_uniform_location('z_max'), float(self.zmax))
+        glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
+        glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
+
+        #glUniformMatrix4fv(self.get_uniform_location('clip_rotation_matrix'), 1, GL_FALSE, self.v_matrix)
+        
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glDepthFunc(GL_LEQUAL)
+        glEnable(GL_DEPTH_TEST)
+        #glEnable(GL_CULL_FACE)
+        #glCullFace(GL_BACK)
+        
         glDisable(GL_POINT_SMOOTH)
+        #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        #glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
+        #glEnable(GL_BLEND)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(0)

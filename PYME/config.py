@@ -36,6 +36,10 @@ overall template for a configuration directory is as follows: ::
       |     |- a_protocol.py
       |     |- another_protocol.py
       |
+      |- customrecipes
+      |     |- myrecipe.yaml
+      |     |- myOtherRecipe.yaml
+      |
       |- init_scripts
             |- init_mymachine.py
             |- init_my_other_config.py
@@ -85,6 +89,72 @@ are also permitted to save configuration files in the ``.PYME`` directory.
 
 Functions
 =========
+
+
+Known Config Keys
+=================
+
+This is a non-exhaustive list of configuration keys - if adding a new key, please add it here.
+
+PYMEAcquire-extra_init_dir : default=None, a path to an extra directory to search for PYMEAcquire init files.
+
+SplitterRatioDatabase : default=None, path to a .json formatted file containing information about ratiometric splitting ratios
+
+VisGUI-console-startup-file : default=None, path to a script to run within the VisGUI interactive console on startup,
+    used to populate the console namespace with additional functions. Note that this script should not manipulate the
+    pipeline as this cannot be assumed to be loaded when the script runs.
+    
+dh5View-console-startup-file : default=None,   path to a script to run within the dh5View interactive console on startup,
+    used to populate the console namespace with additional functions. Note that this script should not manipulate the
+    data as this cannot be assumed to be loaded when the script runs.
+
+TaskServer.process_queues_in_order : default = True, an optimisation for old style task distribution so that it processes
+    series in the order that they were added to the queue (rather than the previous approach of choosing from a series
+    at random). Means that caches behave sensibly, rather than potentially getting scrambled when multiple analyses run
+    at once, but also means that you need to wait for previous series to finish before you get any results from the
+    current series if you are doing real time analysis and not keeping up.
+
+dataserver-root : what directory should PYMEDataSever serve. Overridden by the `--root` command line option. If undefined,
+    the current directory is served. Note that this is also used in `clusterIO` to allow short-circuit access to data on
+    the same node.
+    
+dataserver-filter : default = '', multi-cluster support. Specifies a cluster name / clusterfilter which identifies which
+    cluster PYMEDataServer should identify with. First part of the PYME-CLUSTER url. Overridden by the `--server-filter`
+    command line option.
+
+dataserver-port : default=8080, what port to run the PYMEDataServer on. Overridden by the --port command line option (e.g. if you want to run multiple servers on one machine).
+
+cluster-listing-no-countdir : default=False, hack to disable the loading of the low-level countdir module which allows rapid
+    directory statistics on posix systems. Needed on OSX if `dataserver-root` is a mapped network drive rather than a
+    physical disk
+
+h5r-flush_interval : default=1, how often (in s) should we call the .flush() method and write records from the HDF/pytables
+    caches to disk when writing h5r files.
+    
+
+nodeserver-chunksize : default=50, how many frames should we give a worker process at once (larger numbers = better
+    background cache performance, but potentially not distributing as widely). Should be larger than the number of
+    background frames when doing running average / percentile background subtraction [new style distribution].
+
+nodeserver-worker-get-timeout : default=60, a timeout (in s). When the worker asks for tasks, the nodeserver tries to
+    get nodeserver-chunksize tasks off its internal queue (which is filled by a separate thread which communicates with
+    the ruleserver). This timeout specifies how long should the nodeserver wait when accessing this queue in the hope of
+    finding a full chunk. If it times out, a partial chunk will be given to the worker. In practice, this timeout
+    behaviour is responsible for clearing the small tail of tasks at the end of a series. [new-style distribution].
+
+nodeserver-num_workers : default= CPU count. Number of workers to launch on an individual node.
+
+ruleserver-retries : default = 3. [new-style task distribution]. The number of times to retry a given task before it is deemed to have failed.
+
+
+Deprecated config options
+-------------------------
+
+distributor-* : parameters for a previous implementation of cluster-based task distribution. Largely irrelevant now we use PYMERuleServer
+
+VisGUI-new_layers : default = True, use the new-style layers view in VisGUI. Same as the --new_layers command line option.
+    Largely a remnant of when I was running layers and old style VisGUI in parallel.
+
 """
 import yaml
 import os
@@ -164,7 +234,9 @@ def get(key, default=None):
     """
     return config.get(key, default)
 
-
+import logging
+logger = logging.getLogger(__file__)
+logger.setLevel(logging.DEBUG)
 
 def get_plugins(application):
     """
@@ -203,6 +275,8 @@ def get_plugins(application):
             with open(fn, 'r') as f:
                 plugin_paths.extend(f.readlines())
 
+    logger.debug('plugin paths: ' +  str(plugin_paths))
+        
     return  list(set([p.strip() for p in plugin_paths if not p.strip() == '']))
 
 
@@ -213,7 +287,8 @@ def get_custom_protocols():
     Returns
     -------
 
-    A dictionary of {basename : full path} for any protocols found.
+    A dictionary of {basename : full path} for any protocols found. In the current implementation
+    custom protocols overwrite protocols of the same name in the PYME distribution.
 
     """
     import glob
@@ -221,7 +296,24 @@ def get_custom_protocols():
     for config_dir in config_dirs:
         prot_glob = os.path.join(config_dir, 'protocols/[a-zA-Z]*.py')
         prots.update({os.path.split(p)[-1] : p for p in glob.glob(prot_glob)})
+    return prots
 
+def get_custom_recipes():
+    """
+    Get a dictionary recording the locations of any custom recipes.
+
+    Returns
+    -------
+
+    A dictionary of {basename : full path} for any recipes found.
+
+    """
+    import glob
+    recipes = {}
+    for config_dir in config_dirs:
+        recip_glob = os.path.join(config_dir, 'customrecipes/[a-zA-Z]*.yaml')
+        recipes.update({os.path.split(p)[-1] : p for p in glob.glob(recip_glob)})
+    return recipes
 
 def get_init_filename(filename, legacy_scripts_directory=None):
     """

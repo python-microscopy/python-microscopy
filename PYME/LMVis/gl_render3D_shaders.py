@@ -29,9 +29,9 @@ import wx.glcanvas
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
-from PYME.LMVis.layers import AxesOverlayLayer, LUTOverlayLayer, Point3DRenderLayer, PointSpritesRenderLayer, \
-    QuadTreeRenderLayer, VertexRenderLayer, ScaleBarOverlayLayer, SelectionOverlayLayer, ShadedPointRenderLayer, \
-    TetrahedraRenderLayer
+from PYME.LMVis.layers import AxesOverlayLayer, LUTOverlayLayer, ScaleBarOverlayLayer, SelectionOverlayLayer
+    #QuadTreeRenderLayer, VertexRenderLayer, , ShadedPointRenderLayer, \
+    #TetrahedraRenderLayer
 
 from PYME.LMVis.gl_offScreenHandler import OffScreenHandler
 from wx.glcanvas import GLCanvas
@@ -89,21 +89,28 @@ class LMGLShaderCanvas(GLCanvas):
         print("New Canvas")
         attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
         GLCanvas.__init__(self, parent, -1, attribList=attribute_list)
-        wx.EVT_PAINT(self, self.OnPaint)
-        wx.EVT_SIZE(self, self.OnSize)
-        wx.EVT_MOUSEWHEEL(self, self.OnWheel)
-        wx.EVT_LEFT_DOWN(self, self.OnLeftDown)
-        wx.EVT_LEFT_UP(self, self.OnLeftUp)
-        wx.EVT_MIDDLE_DOWN(self, self.OnMiddleDown)
-        wx.EVT_MIDDLE_UP(self, self.OnMiddleUp)
-        wx.EVT_RIGHT_DOWN(self, self.OnMiddleDown)
-        wx.EVT_RIGHT_UP(self, self.OnMiddleUp)
-        wx.EVT_MOTION(self, self.OnMouseMove)
-        wx.EVT_KEY_DOWN(self, self.OnKeyPress)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_MOUSEWHEEL, self.OnWheel)
+        self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
+        self.Bind(wx.EVT_MIDDLE_DOWN, self.OnMiddleDown)
+        self.Bind(wx.EVT_MIDDLE_UP, self.OnMiddleUp)
+        self.Bind(wx.EVT_RIGHT_DOWN, self.OnMiddleDown)
+        self.Bind(wx.EVT_RIGHT_UP, self.OnMiddleUp)
+        self.Bind(wx.EVT_MOTION, self.OnMouseMove)
+        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyPress)
         # wx.EVT_MOVE(self, self.OnMove)
         self.gl_context = wx.glcanvas.GLContext(self)
         
-        self.bounds = {'x':[-1e6, 1e6], 'y':[-1e6, 1e6], 'z':[-1e6,1e6], 'v':[-1e6, 1e6]}
+        #self.bounds = {'x':[-1e6, 1e6], 'y':[-1e6, 1e6], 'z':[-1e6,1e6], 'v':[-1e6, 1e6]}
+        
+        # self.bounds = np.zeros(1, dtype=[('x', '2f4'), ('y', '2f4'), ('z', '2f4'), ('v', '2f4')])
+        # self.bounds['x'] = [-1e6, 1e6]
+        # self.bounds['y'] = [-1e6, 1e6]
+        # self.bounds['z'] = [-1e6, 1e6]
+        # self.bounds['v'] = [-1e6, 1e6]
+        #print self.bounds.shape
 
         self.nVertices = 0
         self.IScale = [1.0, 1.0, 1.0]
@@ -164,6 +171,8 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.on_screen = True
         self.view_port_size = (self.Size[0], self.Size[1])
+        
+        self._old_bbox = None
 
         return
     
@@ -186,6 +195,10 @@ class LMGLShaderCanvas(GLCanvas):
     def scale(self):
         warn('Use view.scale instead', DeprecationWarning)
         return self.view.scale
+    
+    @property
+    def bounds(self):
+        return self.view.clipping
 
     @property
     def scaleBarLength(self):
@@ -202,7 +215,7 @@ class LMGLShaderCanvas(GLCanvas):
             return
         wx.PaintDC(self)
         self.gl_context.SetCurrent(self)
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
 
         if not self._is_initialized:
             self.initialize()
@@ -234,6 +247,12 @@ class LMGLShaderCanvas(GLCanvas):
                 
         if nLayers > 0:
             #print('bbox: %s' % bb)
+            if not self._old_bbox is None and not np.allclose(self._old_bbox, bb):
+                #bbox has changed - update our cliping region
+                self.bounds['x'] = [bb[0]-1, bb[3]+1]
+                self.bounds['y'] = [bb[1]-1, bb[4]+1]
+                self.bounds['z'] = [bb[2]-1, bb[5]+1]
+            self._old_bbox = bb
             return bb
         else:
             return None
@@ -395,7 +414,7 @@ class LMGLShaderCanvas(GLCanvas):
         
         Returns
         -------
-        a 4x4 matrix describing the rotation of the pints within our 3D world
+        a 4x4 matrix describing the rotation of the points within our 3D world
         
         """
         if not self.displayMode == '2D':
@@ -462,7 +481,7 @@ class LMGLShaderCanvas(GLCanvas):
         self.view.vec_right = numpy.array([1, 0, 0])
         self.view.vec_back = numpy.array([0, 0, 1])
 
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
 
         self.layers.append(
             VertexRenderLayer(T.x[T.triangles], T.y[T.triangles], 0 * (T.x[T.triangles]), self.c,
@@ -499,7 +518,7 @@ class LMGLShaderCanvas(GLCanvas):
         self.sy = y.max() - y.min()
         self.sz = z.max() - z.min()
 
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
 
         if mode is 'pointsprites':
             self.layers.append(PointSpritesRenderLayer(x, y, z, self.c, self.cmap, self.clim, alpha, self.pointSize))
@@ -537,7 +556,7 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.c = numpy.vstack((c, c, c, c)).T.ravel()
 
-        self.SetCurrent()
+        self.SetCurrent(self.gl_context)
         self.layers.append(QuadTreeRenderLayer(xs.ravel(), ys.ravel(), 0 * xs.ravel(),
                                                self.c, self.cmap, self.clim, alpha=1))
         self.Refresh()
@@ -873,6 +892,8 @@ class LMGLShaderCanvas(GLCanvas):
         
     def recenter_bbox(self):
         bb = self.bbox
+        if bb is None:
+            return
         
         centre = 0.5*(bb[:3] + bb[3:])
         
@@ -888,6 +909,7 @@ class LMGLShaderCanvas(GLCanvas):
         return view
     
     def refresh(self, *args, **kwargs):
+        bb = self.bbox #force an update of our bounding box
         self.Refresh()
 
 

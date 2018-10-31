@@ -135,7 +135,7 @@ def _listSingleDir(dirurl, nRetries=1, timeout=5):
 
         dt = time.time() - t
         if not r.status_code == 200:
-            logger.debug('Request failed with error: %d' % r.status_code)
+            logger.debug('Request for %s failed with error: %d' % (url, r.status_code))
 
             #make sure we read a reply so that the far end doesn't hold the connection open
             dump = r.content
@@ -171,6 +171,7 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
     cache_key = serverfilter + '::' + filename
     try:
         locs, t = _locateCache[cache_key]
+        #logger.debug('Returning cached locs: %s' % locs)
         return locs
     except KeyError:
         locs = []
@@ -304,7 +305,20 @@ def listdir(dirname, serverfilter=''):
     return sorted(listdirectory(dirname, serverfilter).keys())
 
 def isdir(name, serverfilter=''):
-    return len(listdir(name, serverfilter)) > 0
+    name = name.rstrip('/')
+    if name in ['/', '']:
+        #special case for root dir
+        return True
+    
+    pn, n = os.path.split(name)
+    try:
+        d = listdirectory(pn)[n + '/']
+    except KeyError:
+        return False
+    
+    return d.type > 0
+    
+    #return len(listdir(name, serverfilter)) > 0
 
 def _cglob(url, timeout=2, nRetries=1):
 
@@ -415,8 +429,8 @@ def stat(name, serverfilter=''):
             r = stat_result(listing[fname + '/'])
         except:
             logger.exception('error stating: %s' % name)
-            print dirname, fname
-            print listing.keys()
+            #print dirname, fname
+            #print listing.keys()
             raise
     
     return r
@@ -482,6 +496,7 @@ def _chooseLocation(locs):
 
     """
 
+    #logger.debug('choosing location from: %s' % locs)
     cost = np.array([l[1] for l in locs])
 
     return locs[cost.argmin()][0]
@@ -711,7 +726,7 @@ def putFile(filename, data, serverfilter=''):
             #add file to location cache
             cache_key = serverfilter + '::' + filename
             t1 = time.time()
-            _locateCache[cache_key] = (url, t1)
+            _locateCache[cache_key] = ([(url, .1),], t1)
             
             #modify dir cache
             try:

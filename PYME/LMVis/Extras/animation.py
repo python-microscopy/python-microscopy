@@ -28,6 +28,9 @@ import wx.lib.agw.aui as aui
 from PYME.LMVis.Extras.dockedPanel import DockedPanel
 from PYME.LMVis.views import VideoView
 
+from PIL import Image
+import os
+
 
 # noinspection PyUnusedLocal
 class VideoPanel(DockedPanel):
@@ -44,12 +47,14 @@ class VideoPanel(DockedPanel):
 
         self.view_table.InsertColumn(0, 'id')
 
-        self.view_table.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
-        vertical_sizer.Add(self.view_table)
+        self.view_table.SetColumnWidth(0, 50)
+        vertical_sizer.Add(self.view_table, 0, wx.EXPAND, 0)
 
         self.create_buttons(vertical_sizer)
 
         self.SetSizerAndFit(vertical_sizer)
+        
+        self.next_view_id = 0
 
     def create_buttons(self, vertical_sizer):
         grid_sizer = wx.GridSizer(3, 3)
@@ -73,6 +78,7 @@ class VideoPanel(DockedPanel):
         self.Bind(wx.EVT_BUTTON, self.make, make_button)
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_edit)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select_view)
 
         # add_snapshot the buttons to the view
         grid_sizer.Add(add_button, flag=wx.EXPAND)
@@ -90,7 +96,9 @@ class VideoPanel(DockedPanel):
         self.refill()
 
     def add_snapshot(self, event):
-        vec_id = self.ask(self, message='Please enter view id')
+        #vec_id = self.ask(self, message='Please enter view id')
+        vec_id = 'view_%d' % self.next_view_id
+        self.next_view_id += 1
         if vec_id:
             duration = 3.0
             view = self.get_canvas().get_view(vec_id)
@@ -99,7 +107,8 @@ class VideoPanel(DockedPanel):
                                    view.vec_back,
                                    view.vec_right,
                                    view.translation,
-                                   view.zoom,
+                                   view.scale,
+                                   view.clipping,
                                    duration)
             self.add_snapshot_to_list(video_view)
 
@@ -117,7 +126,7 @@ class VideoPanel(DockedPanel):
         self.view_table.DeleteAllItems()
 
     def save(self, event):
-        file_name = wx.FileSelector('Save view as json named... ')
+        file_name = wx.FileSelector('Save view as json named... ', flags=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         if file_name:
             if not file_name.endswith('.json'):
                 file_name = '{}.json'.format(file_name)
@@ -135,6 +144,7 @@ class VideoPanel(DockedPanel):
 
     def make(self, event):
         self.play(True)
+        
 
     def run(self, event):
         self.play(False)
@@ -145,23 +155,36 @@ class VideoPanel(DockedPanel):
         self.get_canvas().displayMode = '3D'
         fps = 30.0
         file_name = None
-        try:
-            import cv2
-        except ImportError:
-            msg_text = 'OpenCV 2 is needed to create videos. Please install: \"conda install -c menpo opencv\"'
-            msg = wx.MessageDialog(self, msg_text, 'Missing package', wx.OK | wx.ICON_WARNING)
-            msg.ShowModal()
-            msg.Destroy()
-            return
-
+        
         if save:
-            file_name = wx.FileSelector('Save video as avi named... ')
-            if file_name and not file_name.endswith('.avi'):
-                file_name = '{}.avi'.format(file_name)
+            try:
+                import cv2
+            except ImportError:
+                msg_text = 'OpenCV 2 is needed to save videos. Please install: \"conda install -c menpo opencv\"'
+                msg = wx.MessageDialog(self, msg_text, 'Missing package', wx.OK | wx.ICON_WARNING)
+                msg.ShowModal()
+                msg.Destroy()
+                #return
+                save=False
+
+        #dir_name = None
+        if save:
+            #file_name = wx.FileSelector('Save video as avi named... ', flags=wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
+            #if file_name and not file_name.endswith('.avi'):
+            #    file_name = '{}.avi'.format(file_name)
+            dir_name = wx.DirSelector()
+            if dir_name == '':
+                return
+            
+            
         video = None
-        if not save or file_name:
+        if True:
             if save:
-                video = cv2.VideoWriter(file_name, -1, fps, (width, height))
+                pass
+                #video = cv2.VideoWriter(file_name, -1, fps, (width, height))
+            
+            f_no = 0
+                
             if not self.snapshots:
                 self.add_snapshot_to_list(self.get_canvas())
             current_view = None
@@ -173,23 +196,28 @@ class VideoPanel(DockedPanel):
                     difference_view = (view - current_view) / steps
                     for step in range(0, steps):
                         new_view = current_view + difference_view * step
-                        self.get_canvas().set_view(new_view)
+                        self.get_canvas().set_view(new_view.normalize_view())
                         if save:
-                            snap = self.get_canvas().getIm()
-                            if snap.ndim == 3:
-                                video.write(cv2.cvtColor(cv2.flip(snap.transpose(1, 0, 2), 0), cv2.COLOR_RGB2BGR))
-                            else:
-                                video.write(cv2.flip(snap.transpose(1, 0, 2), 0))
+                            snap = self.get_canvas().getIm()#.astype('uint8')
+                            #print snap.shape, snap.dtype, snap.min(), snap.max()
+                            snap = (255*snap).astype('uint8').transpose(1, 0, 2)
+                            
+                            #if snap.ndim == 3:
+                            #    video.write(cv2.cvtColor(cv2.flip(snap.transpose(1, 0, 2), 0), cv2.COLOR_RGB2BGR))
+                            #else:
+                            #    video.write(cv2.flip(snap.transpose(1, 0, 2), 0))
+                            im = Image.fromarray(snap).save(os.path.join(dir_name, 'frame%04d.jpg' % f_no))
+                            f_no += 1
                         else:
                             sleep(2.0/steps)
                             self.get_canvas().OnDraw()
                     current_view = view
             if save:
-                video.release()
-            msg_text = 'Video generation finished'
-            msg = wx.MessageDialog(self, msg_text, 'Done', wx.OK | wx.ICON_INFORMATION)
-            msg.ShowModal()
-            msg.Destroy()
+                #video.release()
+                msg_text = 'Video generation finished'
+                msg = wx.MessageDialog(self, msg_text, 'Done', wx.OK | wx.ICON_INFORMATION)
+                msg.ShowModal()
+                msg.Destroy()
 
     @staticmethod
     def ask(parent=None, message='', default_value=''):
@@ -215,6 +243,11 @@ class VideoPanel(DockedPanel):
 
         dlg.Destroy()
         self.refill()
+
+    def on_select_view(self, event):
+        snapshot = self.snapshots[self.view_table.GetFirstSelected()]
+
+        self.get_canvas().set_view(snapshot)
 
     def refill(self):
         self.clear_view()

@@ -2045,7 +2045,28 @@ static PyMethodDef gauss_appMethods[] = {
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
+#if PY_MAJOR_VERSION>=3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "gauss_app",     /* m_name */
+        "Fast gaussian models)",  /* m_doc */
+        -1,                  /* m_size */
+        gauss_appMethods,    /* m_methods */
+        NULL,                /* m_reload */
+        NULL,                /* m_traverse */
+        NULL,                /* m_clear */
+        NULL,                /* m_free */
+    };
 
+PyMODINIT_FUNC PyInit_gauss_app(void)
+{
+    PyObject *m;
+    m = PyModule_Create(&moduledef);
+    import_array();
+
+    return m;
+}
+#else
 PyMODINIT_FUNC initgauss_app(void)
 {
     PyObject *m;
@@ -2057,3 +2078,4 @@ PyMODINIT_FUNC initgauss_app(void)
     //Py_INCREF(SpamError);
     //PyModule_AddObject(m, "error", SpamError);
 }
+#endif

@@ -50,7 +50,7 @@ from PYME.DSView.DisplayOptionsPanel import OptionsPanel
 #from PYME.DSView.OverlaysPanel import OverlayPanel
 from PYME.IO.image import ImageStack
 
-from PYME.Acquire.mytimer import mytimer
+from PYME.ui.mytimer import mytimer
 from PYME.Analysis import piecewiseMapping
 
 from PYME.ui.AUIFrame import AUIFrame
@@ -106,7 +106,9 @@ class DSViewFrame(AUIFrame):
         self.do.Optimise()
 
         if self.image.mdh and 'ChannelNames' in self.image.mdh.getEntryNames():
-            self.do.names = self.image.mdh.getEntry('ChannelNames')
+            chan_names = self.image.mdh.getEntry('ChannelNames')
+            if len(chan_names) == self.image.data.shape[3]:
+                self.do.names = chan_names
 
         #self.vp = ArraySettingsAndViewPanel(self, self.image.data, wantUpdates=[self.update], mdh=self.image.mdh)
         #self.view = ArrayViewPanel(self, do=self.do)
@@ -145,10 +147,10 @@ class DSViewFrame(AUIFrame):
         self._menus['Processing'] = self.mProcessing
 
         # Menu Bar end
-        wx.EVT_MENU(self, wx.ID_OPEN, self.OnOpen)
-        wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
-        wx.EVT_MENU(self, wx.ID_SAVEAS, self.OnExport)
-        wx.EVT_CLOSE(self, self.OnCloseWindow)
+        self.Bind(wx.EVT_MENU, self.OnOpen, id=wx.ID_OPEN)
+        self.Bind(wx.EVT_MENU, self.OnSave, id=wx.ID_SAVE)
+        self.Bind(wx.EVT_MENU, self.OnExport, id=wx.ID_SAVEAS)
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         
 
 		
@@ -314,7 +316,14 @@ class DSViewFrame(AUIFrame):
         ted.Destroy()
 
     def OnExport(self, event=None):
-        self.image.Save(crop = True, view = self.view)
+        bx = min(self.do.selection_begin_x, self.do.selection_end_x)
+        ex = max(self.do.selection_begin_x, self.do.selection_end_x)
+        by = min(self.do.selection_begin_y, self.do.selection_end_y)
+        ey = max(self.do.selection_begin_y, self.do.selection_end_y)
+        
+        roi = [[bx, ex + 1],[by, ey + 1], [0, self.image.data.shape[2]]]
+        
+        self.image.Save(crop = True, roi=roi)
 
     def OnCrop(self):
         pass
@@ -388,7 +397,7 @@ class MyApp(wx.App):
         return True
         
     def LoadData(self):
-        import sys, os
+        import sys
         from optparse import OptionParser
 
         op = OptionParser(usage = 'usage: %s [options] [filename]' % sys.argv[0])
@@ -419,6 +428,7 @@ class MyApp(wx.App):
                 mode = im.mode
             else:
                 mode = options.mode
+                print('Mode: %s' % mode)
     
             vframe = DSViewFrame(im, None, im.filename, mode = mode)
             

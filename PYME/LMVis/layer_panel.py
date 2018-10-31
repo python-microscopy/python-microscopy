@@ -25,34 +25,68 @@ class LayerPane(afp.foldingPane):
         
         print('Image list size: %d' % self.il.GetImageCount())
         
-        pan = wx.Panel(self, -1)
+        self.pan = wx.Panel(self, -1)
+
+        self.vsizer = wx.BoxSizer(wx.VERTICAL)
         
-        vsizer = wx.BoxSizer(wx.VERTICAL)
-        
-        self.nb = wx.Notebook(pan, size=(150, 400))
+        self.nb = wx.Notebook(self.pan, size=(200, -1))
         self.nb.AssignImageList(self.il)
         
+        self.pages = []
+        
         self.update()
-            
-        vsizer.Add(self.nb, 1, wx.ALL|wx.EXPAND, 0)
+
+        self.vsizer.Add(self.nb, 1, wx.ALL|wx.EXPAND, 0)
         
-        bAddLayer = wx.Button(pan, -1, 'New', style=wx.BU_EXACTFIT)
-        bAddLayer.Bind(wx.EVT_BUTTON, lambda e : self.visFr.add_layer())
-        
-        vsizer.Add(bAddLayer, 0, wx.ALIGN_CENTRE, 0)
-        
-        pan.SetSizerAndFit(vsizer)
-        self.AddNewElement(pan)
+        bAddLayer = wx.Button(self.pan, -1, 'New', style=wx.BU_EXACTFIT)
+        bAddLayer.Bind(wx.EVT_BUTTON, lambda e : self.visFr.add_pointcloud_layer())
+
+        self.vsizer.Add(bAddLayer, 0, wx.ALIGN_CENTRE, 0)
+
+        self.pan.SetSizerAndFit(self.vsizer)
+        self.AddNewElement(self.pan)
         
         self.visFr.layer_added.connect(self.update)
         
         #self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
         
     def update(self, *args, **kwargs):
-        self.nb.DeleteAllPages()
+        
+        #self.nb.DeleteAllPages()
+        #for p in self.pages:
+            #p.control.Destroy()
+        #    p.dispose()
+        #    pass
+        
+        while (self.nb.GetPageCount() > 0):
+            pg = self.nb.RemovePage(0)
+
+        for p in self.pages:
+          p.control.Close()
+          #p.dispose()
+          pass
+        
+        self.pages = []
         for i, layer in enumerate(self.visFr.layers):
             page = layer.edit_traits(parent=self.nb, kind='subpanel')
+            self.pages.append(page)
             self.nb.AddPage(page.control, 'Layer %d' % i)
+
+        self.nb.InvalidateBestSize()
+
+        h = self.nb.GetBestSize().height
+        self.nb.SetMinSize((200, h))
+        
+        self.vsizer.Fit(self.pan)
+        self.pan.SetMinSize(self.pan.GetSize())
+        
+        self.sizer.Fit(self)
+
+        #print self.pan.GetBestSize(), self.pan.GetSize(), self.GetBestSize(), self.GetSize()
+        print('NB best size: ' +  repr(self.nb.GetBestSize()))
+        
+        self.GetParent().GetParent().Layout()
+         
             
         #self.nb.AddPage(wx.Panel(self.nb), 'New', imageId=0)
         

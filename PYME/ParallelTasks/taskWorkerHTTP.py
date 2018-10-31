@@ -27,6 +27,7 @@
 import random
 import time
 import os
+import platform
 
 #set us up to use a non-GUI backend for any plotting
 import matplotlib
@@ -160,8 +161,6 @@ class taskWorker(object):
 
             if isinstance(res, TaskError):
                 # failure
-                from PYME.IO import clusterResults
-                
                 clusterResults.fileResults(res.log_url, res.to_string())
                 
                 s = clusterIO._getSession(queueURL)
@@ -280,7 +279,11 @@ class taskWorker(object):
         localQueueName = 'PYMENodeServer: ' + compName
         while True:
             # turn in completed tasks
-            self._return_task_results()
+            try:
+                self._return_task_results()
+            except:
+                import traceback
+                logger.exception(traceback.format_exc())
 
             if not self._loop_alive:
                 break
@@ -336,7 +339,8 @@ class taskWorker(object):
                     recipe.execute()
 
                     #save results
-                    context = {'data_root' : clusterIO.local_dataroot,}
+                    context = {'data_root' : clusterIO.local_dataroot,
+                               'task_id' : taskDescr['id'].split('~')[0]}
 
                     #update context with file stub and input directory
                     try:
@@ -384,7 +388,8 @@ if __name__ == '__main__':
     else: 
         profile = False
         
-    signal.signal(signal.SIGHUP, on_SIGHUP)
+    if not platform.platform().startswith('Windows'):
+        signal.signal(signal.SIGHUP, on_SIGHUP)
     
     try:
         #main()

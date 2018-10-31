@@ -646,14 +646,34 @@ static PyMethodDef triRendMethods[] = {
 };
 
 
+
+#if PY_MAJOR_VERSION>=3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "triRend",     /* m_name */
+        "Render triangles (or tetrahedra)",  /* m_doc */
+        -1,                  /* m_size */
+        triRendMethods,    /* m_methods */
+        NULL,                /* m_reload */
+        NULL,                /* m_traverse */
+        NULL,                /* m_clear */
+        NULL,                /* m_free */
+    };
+
+PyMODINIT_FUNC PyInit_triRend(void)
+{
+    PyObject *m;
+    m = PyModule_Create(&moduledef);
+    import_array();
+
+    return m;
+}
+#else
 PyMODINIT_FUNC inittriRend(void)
 {
     PyObject *m;
 
     m = Py_InitModule("triRend", triRendMethods);
-    import_array()
-
-    //SpamError = PyErr_NewException("spam.error", NULL, NULL);
-    //Py_INCREF(SpamError);
-    //PyModule_AddObject(m, "error", SpamError);
+    import_array();
 }
+#endif

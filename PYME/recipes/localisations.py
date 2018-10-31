@@ -2,7 +2,6 @@ from .base import register_module, ModuleBase, Filter
 from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr
 
 import numpy as np
-import pandas as pd
 from PYME.IO import tabular
 from PYME.LMVis import renderers
 
@@ -80,6 +79,8 @@ class DensityMapping(ModuleBase):
         inp = namespace[self.inputLocalizations]
         if not isinstance(inp, tabular.colourFilter):
             cf = tabular.colourFilter(inp, None)
+            
+            print('Created colour filter with chans: %s' % cf.getColourChans())
             cf.mdh = inp.mdh
         else:
             cf = inp
@@ -133,100 +134,44 @@ class Pipelineify(ModuleBase):
         mapped_ds.mdh = mdh
 
         namespace[self.outputLocalizations] = mapped_ds
-
-
-@register_module('MultiviewFold') #FIXME - move to multi-view specific module and potentially rename
-class MultiviewFold(ModuleBase):
-    """Fold localizations from images which have been taken with an image splitting device but analysed without channel
-    awareness.
-
-    Images taken in this fashion will have the channels side by side. This module folds the x co-ordinate to overlay the
-    different channels, using the image metadata to determine the appropriate ROI boundaries. The current implementation
-    is somewhat limited as it only handles folding along the x axis, and assumes that ROI sizes and spacings are completely
-    uniform.
-    """
-    inputName = Input('localizations')
-    outputName = Output('folded')
-
-    def execute(self, namespace):
-        from PYME.Analysis.points import multiview
-
-        inp = namespace[self.inputName]
-
-        if 'mdh' not in dir(inp):
-            raise RuntimeError('Unfold needs metadata')
-
-        mapped = multiview.foldX(inp, inp.mdh)
-        mapped.mdh = inp.mdh
-
-        namespace[self.outputName] = mapped
-
-
-@register_module('MultiviewShiftCorrect') #FIXME - move to multi-view specific module and rename OR make consistent with existing shift correction
-class MultiviewShiftCorrect(ModuleBase):
-    """Applies chromatic shift correction to folded localization data that was acquired with an image splitting device,
-    but localized without splitter awareness."""
-    inputName = Input('folded')
-    shiftMapLocation = CStr('') #FIXME - change name to indicate that this is a filename/path/URL. Should probably be a File trait (or derived class which deals with clusterIO)
-    outputName = Output('registered')
-
-    def execute(self, namespace):
-        from PYME.Analysis.points import multiview
-        from PYME.IO import unifiedIO
-        import json
-
-        inp = namespace[self.inputName]
-
-        if 'mdh' not in dir(inp):
-            raise RuntimeError('ShiftCorrect needs metadata')
-
-        if self.shiftMapLocation == '':  # grab shftmap from the metadata
-            s = unifiedIO.read(inp.mdh['Shiftmap'])
-        else:
-            s = unifiedIO.read(self.shiftMapLocation)
-
-        shiftMaps = json.loads(s)
-
-        mapped = tabular.mappingFilter(inp)
-
-        dx, dy = multiview.calcShifts(mapped, shiftMaps)
-        mapped.addColumn('chromadx', dx)
-        mapped.addColumn('chromady', dy)
-
-        mapped.setMapping('x', 'x + chromadx')
-        mapped.setMapping('y', 'y + chromady')
-
-        mapped.mdh = inp.mdh
-
-        namespace[self.outputName] = mapped
-
-
-@register_module('MultiviewFindClumps') #FIXME - move to multi-view specific module and rename OR make consistent with existing clumping
-class MultiviewFindClumps(ModuleBase):
-    """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = Input('registered')
-    gapTolerance = Int(1, desc='Number of off-frames allowed to still be a single clump')
-    radiusScale = Float(2.0, desc='Factor by which error_x is multiplied to detect clumps. The default of 2-sigma means we link ~95% of the points which should be linked')
-    radius_offset = Float(0., desc='Extra offset (in nm) for cases where we want to link despite poor channel alignment')
-    probeAware = Bool(False, desc='''Use probe-aware clumping. NB this option does not work with standard methods of colour
-                                             specification, and splitting by channel and clumping separately is preferred''') 
-    outputName = Output('clumped')
-
-    def execute(self, namespace):
-        from PYME.Analysis.points import multiview
-
-        inp = namespace[self.inputName]
-
-        if self.probeAware and 'probe' in inp.keys(): #special case for using probe aware clumping NB this is a temporary fudge for non-standard colour handling
-            mapped = multiview.probeAwareFindClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset)
-        else: #default
-            mapped = multiview.findClumps(inp, self.gapTolerance, self.radiusScale, self.radius_offset)
         
-        if 'mdh' in dir(inp):
-            mapped.mdh = inp.mdh
-
-        namespace[self.outputName] = mapped
-
+@register_module("ProcessColour")
+class ProcessColour(ModuleBase):
+    input = Input('localizations')
+    output = Output('colour_mapped')
+    
+    
+    def execute(self, namespace):
+        input = namespace[self.input]
+        mdh = input.mdh
+        
+        output = tabular.mappingFilter(input)
+        output.mdh = mdh
+    
+        if 'gFrac' in output.keys():
+            #ratiometric
+            raise NotImplementedError('Ratiometric processing in recipes not implemented yet')
+            for structure, ratio in self.fluorSpecies.items():
+                if not ratio is None:
+                    self.mapping.setMapping('p_%s' % structure,
+                                            'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
+        else:
+            if 'probe' in output.keys():
+                #non-ratiometric (i.e. sequential) colour
+                #color channel is given in 'probe' column
+                output.setMapping('ColourNorm', '1.0 + 0*probe')
+                
+                for i in range(int(output['probe'].min()), int(output['probe'].max() + 1)):
+                    output.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
+            
+            nSeqCols = mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
+            if nSeqCols > 1:
+                for i in range(nSeqCols):
+                    output.setMapping('ColourNorm', '1.0 + 0*t')
+                    cr = mdh['Protocol.ColorRange%d' % i]
+                    output.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
+                    
+        namespace[self.output] = output
 
 @register_module('MergeClumps')
 class MergeClumps(ModuleBase):
@@ -240,7 +185,6 @@ class MergeClumps(ModuleBase):
 
         inp = namespace[self.inputName]
 
-        
         grouped = pyDeClump.mergeClumps(inp, labelKey=self.labelKey)
         try:
             grouped.mdh = inp.mdh
@@ -249,63 +193,6 @@ class MergeClumps(ModuleBase):
 
         namespace[self.outputName] = grouped
 
-
-@register_module('MultiviewMergeClumps') #FIXME - move to multi-view specific module and rename OR make consistent with existing clumping
-class MultiviewMergeClumps(ModuleBase):
-    """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = Input('clumped')
-    outputName = Output('merged')
-    labelKey = CStr('clumpIndex')
-
-    def execute(self, namespace):
-        from PYME.Analysis.points import multiview
-
-        inp = namespace[self.inputName]
-
-        try:
-            grouped = multiview.mergeClumps(inp, inp.mdh.getOrDefault('Multiview.NumROIs', 0), labelKey=self.labelKey)
-            grouped.mdh = inp.mdh
-        except AttributeError:
-            grouped = multiview.mergeClumps(inp, numChan=0, labelKey=self.labelKey)
-
-        namespace[self.outputName] = grouped
-
-
-@register_module('MapAstigZ') #FIXME - move to multi-view specific module and rename
-class MapAstigZ(ModuleBase):
-    """Create a new mapping object which derives mapped keys from original ones"""
-    inputName = Input('merged')
-    astigmatismMapLocation = CStr('') #FIXME - rename and possibly change type
-    outputName = Output('zmapped')
-
-    def execute(self, namespace):
-        from PYME.Analysis.points.astigmatism import astigTools
-        from PYME.IO import unifiedIO
-        import json
-
-        inp = namespace[self.inputName]
-
-        if 'mdh' not in dir(inp):
-            raise RuntimeError('MapAstigZ needs metadata')
-
-        if self.astigmatismMapLocation == '':  # grab calibration from the metadata
-            s = unifiedIO.read(inp.mdh['Analysis.AstigmatismMapID'])
-        else:
-            s = unifiedIO.read(self.astigmatismMapLocation)
-
-        astig_calibrations = json.loads(s)
-
-        mapped = tabular.mappingFilter(inp)
-
-        z, zerr = astigTools.lookup_astig_z(mapped, astig_calibrations, plot=False)
-
-        mapped.addColumn('astigZ', z)
-        mapped.addColumn('zLookupError', zerr)
-        mapped.setMapping('z', 'astigZ + z')
-
-        mapped.mdh = inp.mdh
-
-        namespace[self.outputName] = mapped
 
 @register_module('IDTransientFrames')
 class IDTransientFrames(ModuleBase): #FIXME - move to multi-view specific module and potentially rename (depending on whether we introduce scoping)
@@ -357,11 +244,17 @@ class DBSCANClustering(ModuleBase):
     See `sklearn.cluster.dbscan` for more details about the underlying algorithm and parameter meanings.
 
     """
+    import multiprocessing
     inputName = Input('filtered')
 
     columns = ListStr(['x', 'y', 'z'])
     searchRadius = Float()
     minClumpSize = Int()
+    
+    #exposes sklearn parallelism. Recipe modules are generally assumed
+    #to be single-threaded. Enable at your own risk
+    multithreaded = Bool(False)
+    numberOfJobs = Int(max(multiprocessing.cpu_count()-1,1))
     
     clumpColumnName = CStr('dbscanClumpID')
 
@@ -374,7 +267,12 @@ class DBSCANClustering(ModuleBase):
         mapped = tabular.mappingFilter(inp)
 
         # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
-        core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
+        if self.multithreaded:
+            core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
+                                         self.searchRadius, self.minClumpSize, n_jobs=self.numberOfJobs)
+        else:
+            #NB try-catch from Christians multithreaded example removed as I think we should see failure here
+            core_samp, dbLabels = dbscan(np.vstack([inp[k] for k in self.columns]).T,
                                      self.searchRadius, self.minClumpSize)
 
         # shift dbscan labels up by one to match existing convention that a clumpID of 0 corresponds to unclumped
@@ -483,18 +381,27 @@ class LabelsFromImage(ModuleBase):
 
     Inputs
     ------
-    inputName: name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
-    inputImage: name of image input containing labels
+    inputName: Input
+        name of tabular input containing positions ('x', 'y', and optionally 'z' columns should be present)
+    inputImage: Input
+        name of image input containing labels
 
     Outputs
     -------
-    outputName: name of tabular output. A mapped version of the tabular input with 2 extra columns
-        objectID: Label number from image, mapped to each localization within that label
-        NEvents: Number of localizations within the label that a given localization belongs to
+    outputName: Output
+        name of tabular output. A mapped version of the tabular input with 2 extra columns
+    label_key_name : CStr
+        name of new column which will contain the label number from image, mapped to each localization within that label
+    label_count_key_name : CStr
+        name of new column which will contain the number of localizations within the label that a given localization
+        belongs to
 
     """
     inputName = Input('input')
     inputImage = Input('labeled')
+
+    label_key_name = CStr('objectID')
+    label_count_key_name = CStr('NEvents')
 
     outputName = Output('labeled_points')
 
@@ -509,8 +416,8 @@ class LabelsFromImage(ModuleBase):
         ids, numPerObject = cluster_morphology.get_labels_from_image(img, inp)
 
         labeled = tabular.mappingFilter(inp)
-        labeled.addColumn('objectID', ids)
-        labeled.addColumn('NEvents', numPerObject[ids - 1])
+        labeled.addColumn(self.label_key_name, ids)
+        labeled.addColumn(self.label_count_key_name, numPerObject[ids - 1])
 
         # propagate metadata, if present
         try:
@@ -546,11 +453,39 @@ class MeasureClusters3D(ModuleBase):
 
     Measures calculated (to be expanded)
     --------------------------------------
-        count: the number of points in the cluster
-        x, y, z: Center of mass positions, no weighting based on localization precision
-        gyrationRadius: AKA RMS distance to center of cluster - see also supplemental text of DOI: 10.1038/nature16496
-        axis0, axis1, axis2: principle axes of point cloud using SVD
-        sigma0, sigma1, sigma2: spread along each principle axis (the singular values/ sqrt(N-1))
+        count : int
+            Number of localizations (points) in the cluster
+        x : float
+            x center of mass
+        y : float
+            y center of mass
+        z : float
+            z center of mass
+        gyrationRadius : float
+            root mean square displacement to center of cluster, a measure of compaction or spatial extent see also
+            supplemental text of DOI: 10.1038/nature16496
+        axis0 : ndarray, shape (3,)
+            principle axis which accounts for the largest variance of the cluster, i.e. corresponds to the largest
+            eigenvalue
+        axis1 : ndarray, shape (3,)
+            next principle axis
+        axis2 : ndarray, shape (3,)
+            principle axis corresponding to the smallest eigenvalue
+        sigma0 : float
+            standard deviation along axis0
+        sigma1 : float
+            standard deviation along axis1
+        sigma2 : float
+            standard deviation along axis2
+        anisotropy : float
+            metric of anisotropy based on the spread along principle axes. Standard deviations of alpha * [1, 0, 0],
+            where alpha is a scalar, will result in an 'anisotropy' value of 1, i.e. maximally anisotropic. Completely
+            isotropic clusters will have equal standard deviations, i.e. alpha * [1, 1, 1], which corresponds to an
+            'anisotropy' value of 0. Intermediate cases result in values between 0 and 1.
+        theta : float
+            Azimuthal angle, in radians, along which the principle axis (axis0) points
+        phi : float
+            Zenith angle, in radians, along which the principle axis (axis0) points
 
     """
     inputName = Input('input')
@@ -580,7 +515,7 @@ class MeasureClusters3D(ModuleBase):
         unique_labels, counts = np.unique(labels, return_counts=True)
         
         #allocate memory to store results in
-        measurements = np.zeros(maxLabel+1, cmorph.measurement_dtype)
+        measurements = np.zeros(maxLabel, cmorph.measurement_dtype)
 
         # loop over labels, recalling that input is now sorted, and we know how many points are in each label.
         # Note that missing labels result in zeroed entries (i.e. the initial values are not changed).
@@ -593,8 +528,9 @@ class MeasureClusters3D(ModuleBase):
 
             # create x,y,z arrays for this cluster, and calculate center of mass
             x, y, z = x_vals[indi:indf], y_vals[indi:indf], z_vals[indi:indf]
-            
-            cmorph.measure_3d(x, y, z, output=measurements[label_num])
+
+            cluster_index = label_num - 1  # we ignore the unclustered points, and start labeling at 1
+            cmorph.measure_3d(x, y, z, output=measurements[cluster_index])
 
             indi = indf
 
@@ -676,6 +612,91 @@ class FiducialCorrection(ModuleBase):
         namespace[self.outputFiducials] = out_f
 
 
+@register_module('AutocorrelationDriftCorrection')
+class AutocorrelationDriftCorrection(ModuleBase):
+    """
+    Perform drift correction using autocorrelation between subsets of the point data
+
+    Inputs
+    ------
+    inputName: name of tabular input containing positions ('x', 'y', and 't' columns should be present)
+    inputImage: name of image input containing labels
+    step : time step (in frames) with which to traverse the series
+    window: size of time window (in frames). A series of images will be generated from
+            multiple overlapping windows, spaced by `step` frames.
+    binsize: size of histogram bins in nm
+
+    Outputs
+    -------
+    outputName: name of tabular output. A mapped version of the tabular input with 2 extra columns
+        
+    """
+    inputName = Input('Localizations')
+    step = Int(200)
+    window = Int(500)
+    binsize = Float(30)
+    
+    outputName = Output('corrected_localizations')
+
+    def calcCorrDrift(self, x, y, t):
+        from scipy import ndimage
+    
+        tMax = int(t.max())
+    
+        bx = np.arange(x.min(), x.max() + self.binsize, self.binsize)
+        by = np.arange(y.min(), y.max() + self.binsize, self.binsize)
+    
+        tInd = t < self.window
+    
+        h1 = np.histogram2d(x[tInd], y[tInd], [bx, by])[0]
+        H1 = np.fftn(h1)
+    
+        shifts = []
+        tis = []
+    
+        for ti in range(0, tMax + 1, self.step):
+            tInd = (t >= ti) * (t < (ti + self.window))
+            h2 = np.histogram2d(x[tInd], y[tInd], [bx, by])[0]
+        
+            xc = abs(np.ifftshift(np.ifftn(H1 * np.ifftn(h2))))
+        
+            xct = (xc - xc.max() / 3) * (xc > xc.max() / 3)
+        
+            shifts.append(ndimage.measurements.center_of_mass(xct))
+            tis.append(ti + self.window / 2.)
+    
+        sha = np.array(shifts)
+    
+        return np.array(tis), self.binsize * (sha - sha[0])
+
+    def execute(self, namespace):
+        from PYME.IO import tabular
+        locs = namespace[self.inputName]
+        
+        t_shift, shifts = self.calcCorrDrift(locs['x'], locs['y'], locs['t'])
+        shx = shifts[:, 0]
+        shy = shifts[:, 1]
+
+        out = tabular.mappingFilter(locs)
+        t_out = out['t']
+        dx = np.interp(t_out, t_shift, shx)
+        dy = np.interp(t_out, t_shift, shy)
+        
+        
+        out.addColumn('dx', dx)
+        out.addColumn('dy', dy)
+        out.setMapping('x', 'x + dx')
+        out.setMapping('y', 'y + dy')
+        
+        # propagate metadata, if present
+        try:
+            out.mdh = locs.mdh
+        except AttributeError:
+            pass
+        
+        namespace[self.outputName] = out
+
+
 @register_module('SphericalHarmonicShell')
 class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong here
     """
@@ -696,29 +717,28 @@ class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong her
         
 
     """
-    inputName = Input('input')
+    input_name = Input('input')
     max_m_mode = Int(5)
     z_scale = Float(5.0)
     n_iterations = Int(2)
     init_tolerance = Float(0.3, desc='Fractional tolerance on radius used in first iteration')
-    outputName = Output('harmonicShell')
+    output_name = Output('harmonic_shell')
 
     def execute(self, namespace):
         import PYME.Analysis.points.spherical_harmonics as spharm
-        from PYME.IO.ragged import RaggedCache
         from PYME.IO import MetaDataHandler
 
-        inp = namespace[self.inputName]
+        inp = namespace[self.input_name]
 
-        modes, c, centre = spharm.sphere_expansion_clean(inp['x'], inp['y'], inp['z'] * self.z_scale,
-                                                               mmax=self.max_m_mode,
-                                                               centre_points=True,
-                                                               nIters=self.n_iterations,
-                                                               tol_init=self.init_tolerance)
+        modes, coefficients, centre = spharm.sphere_expansion_clean(inp['x'], inp['y'], inp['z'] * self.z_scale,
+                                                                    mmax=self.max_m_mode,
+                                                                    centre_points=True,
+                                                                    nIters=self.n_iterations,
+                                                                    tol_init=self.init_tolerance)
         
         mdh = MetaDataHandler.NestedClassMDHandler()
         try:
-            mdh.copyEntriesFrom(namespace[self.inputName].mdh)
+            mdh.copyEntriesFrom(namespace[self.input_name].mdh)
         except AttributeError:
             pass
         
@@ -726,9 +746,16 @@ class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong her
         mdh['Processing.SphericalHarmonicShell.MaxMMode'] = self.max_m_mode
         mdh['Processing.SphericalHarmonicShell.NIterations'] = self.n_iterations
         mdh['Processing.SphericalHarmonicShell.InitTolerance'] = self.init_tolerance
+        mdh['Processing.SphericalHarmonicShell.Centre'] = centre
 
-        namespace[self.outputName] = RaggedCache([{'z_scale': self.z_scale, 'centre': centre,
-                                                   'modes': modes, 'coeffs' : c},], mdh)
+        output_dtype = [('modes', '<2i4'), ('coefficients', '<f4')]
+        out = np.zeros(len(coefficients), dtype=output_dtype)
+        out['modes']= modes
+        out['coefficients'] = coefficients
+        out = tabular.recArrayInput(out)
+        out.mdh = mdh
+
+        namespace[self.output_name] = out
 
 @register_module('AddShellMappedCoordinates')
 class AddShellMappedCoordinates(ModuleBase): #FIXME - this likely doesnt belong here
@@ -765,27 +792,39 @@ class AddShellMappedCoordinates(ModuleBase): #FIXME - this likely doesnt belong 
     inputName = Input('points')
     inputSphericalHarmonics = Input('harmonicShell')
 
+    input_name_r = CStr('r')
+    input_name_theta = CStr('theta')
+    input_name_phi = CStr('phi')
+    input_name_r_norm = CStr('r_norm')
+    input_name_distance_to_shell = CStr('distance_to_shell')
+
     outputName = Output('shell_mapped')
 
     def execute(self, namespace):
-        import PYME.Analysis.points.spherical_harmonics as spharm
+        from PYME.Analysis.points import spherical_harmonics
         from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
         inp = namespace[self.inputName]
         mapped = tabular.mappingFilter(inp)
 
-        rep = namespace[self.inputSphericalHarmonics][0]
-        
-        x0, y0, z0 = rep['centre']
+        rep = namespace[self.inputSphericalHarmonics]
+
+        center = rep.mdh['Processing.SphericalHarmonicShell.Centre']
+        z_scale = rep.mdh['Processing.SphericalHarmonicShell.ZScale']
+        x0, y0, z0 = center
 
         # calculate theta, phi, and rad for each localization in the pipeline
-        theta, phi, datRad = spharm.cart2sph(inp['x'] - x0, inp['y'] - y0,
-                                             (inp['z'] - z0)/rep['z_scale'])
-
-        mapped.addColumn('r', datRad)
-        mapped.addColumn('theta', theta)
-        mapped.addColumn('phi', phi)
-        mapped.addColumn('r_norm', datRad / spharm.reconstruct_from_modes(rep['modes'],rep['coefficients'], theta, phi))
+        theta, phi, datRad = spherical_harmonics.cart2sph(inp['x'] - x0, inp['y'] - y0, (inp['z'] - z0)/z_scale)
+        # additionally calculate the cartesian distance
+        min_distance, nearest_point_on_shell = spherical_harmonics.distance_to_surface([inp['x'], inp['y'], inp['z']],
+                                                                                       center, rep['modes'],
+                                                                                       rep['coefficients'],
+                                                                                       z_scale=z_scale)
+        mapped.addColumn(self.input_name_r, datRad)
+        mapped.addColumn(self.input_name_theta, theta)
+        mapped.addColumn(self.input_name_phi, phi)
+        mapped.addColumn(self.input_name_r_norm, datRad / spherical_harmonics.reconstruct_from_modes(rep['modes'],rep['coefficients'], theta, phi))
+        mapped.addColumn(self.input_name_distance_to_shell, min_distance)
 
         try:
             # note that copying overwrites shared fields

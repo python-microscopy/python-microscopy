@@ -23,15 +23,15 @@
 """
 This contains the bulk of the GUI code for the main window of PYMEAcquire.
 """
-import wx
-import wx.py.shell
-import wx.lib.agw.aui as aui
-
-import PYME.ui.autoFoldPanel as afp
+import logging
 import os
 import time
 
-import logging
+import PYME.ui.autoFoldPanel as afp
+import wx
+import wx.lib.agw.aui as aui
+import wx.py.shell
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ import PYME.DSView.displaySettingsPanel as disppanel
 from PYME.DSView import arrayViewPanel
 from PYME.DSView import dsviewer as dsviewer
 
-from PYME.Acquire import mytimer
+from PYME.ui import mytimer
 
 from PYME.Acquire.ui import positionUI
 from PYME.Acquire.ui import intsliders
@@ -506,7 +506,7 @@ class PYMEMainFrame(AUIFrame):
         
         #print (self.scope.vp.selection_begin_x, self.scope.vp.selection_begin_y, self.scope.vp.selection_end_x, self.scope.vp.selection_end_y)
 
-        if 'validROIS' in dir(self.scope.cam):
+        if 'validROIS' in dir(self.scope.cam) and self.scope.cam.ROIsAreFixed():
             #special case for cameras with restricted ROIs - eg Neo
             #print('setting ROI')
             logging.debug('setting ROI')
@@ -544,6 +544,11 @@ class PYMEMainFrame(AUIFrame):
                     if self.scope.cam.splitting.lower() == 'left_right':
                         x1 = min(x1, self.scope.cam.GetCCDWidth() - x2)
                         x2 = max(x2, self.scope.cam.GetCCDWidth() - x1)
+
+                        if not self.scope.cam.splitterFlip:
+                            x1 = 0
+                            x2 = self.scope.cam.GetCCDWidth()
+
                     if self.scope.cam.splitting.lower() == 'up_down':
                         y1 = min(y1, self.scope.cam.GetCCDHeight() - y2)
                         y2 = max(y2, self.scope.cam.GetCCDHeight() - y1)

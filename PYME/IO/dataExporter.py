@@ -29,9 +29,10 @@ import numpy
 import warnings
 
 try:
-    import Image
-except ImportError:
     from PIL import Image
+except ImportError:
+    import Image
+    
 import os
 from PYME.IO.FileUtils import saveTiffStack
 from PYME.IO import MetaDataHandler
@@ -221,7 +222,13 @@ class OMETiffExporter(Exporter):
         from PYME.contrib.gohlke import tifffile
         from PYME.IO import dataWrap
         
-        dw = dataWrap.ListWrap([numpy.atleast_3d(data[xslice, yslice, zslice, i].squeeze()) for i in range(data.shape[3])])
+        def _bool_to_uint8(data):
+            if data.dtype == 'bool':
+                return data.astype('uint8')
+            else:
+                return data
+        
+        dw = dataWrap.ListWrap([numpy.atleast_3d(_bool_to_uint8(data[xslice, yslice, zslice, i].squeeze())) for i in range(data.shape[3])])
         #xmd = None
         if not metadata is None:
             xmd = MetaDataHandler.OMEXMLMDHandler(mdToCopy=metadata)
@@ -382,6 +389,19 @@ class TxtExporter(Exporter):
             fid.write('\n' + '\t'.join(['%f' % d[i] for d in dat]))
 
         fid.close()
+        
+        # write metadata in xml file
+        if not metadata is None:
+            xmd = MetaDataHandler.XMLMDHandler(mdToCopy=metadata)
+            if not origName is None:
+                xmd.setEntry('cropping.originalFile', origName)
+    
+            xmd.setEntry('cropping.xslice', xslice.indices(data.shape[0]))
+            xmd.setEntry('cropping.yslice', yslice.indices(data.shape[1]))
+            xmd.setEntry('cropping.zslice', zslice.indices(data.shape[2]))
+    
+            xmlFile = os.path.splitext(outFile)[0] + '.xml'
+            xmd.writeXML(xmlFile)
 
         if progressCallback:
             try:
@@ -506,15 +526,20 @@ def _getFilename(defaultExt = '*.tif'):
 
         return fname
 
-def CropExportData(vp, mdh=None, events=None, origName = None):
+def CropExportData(data, roi=None, mdh=None, events=None, origName = None):
     #if 'ds' in dir(vp.do):
-    ds = vp.do.ds
+    #ds = vp.do.ds
     #else:
     #    ds= vp.ds
 
     #if 'selection_begin_x' in dir(vp):
-    roi = [[vp.do.selection_begin_x, vp.do.selection_end_x + 1],
-              [vp.do.selection_begin_y, vp.do.selection_end_y +1], [0, ds.shape[2]]]
+    
+    # roi = [[vp.do.selection_begin_x, vp.do.selection_end_x + 1],
+    #           [vp.do.selection_begin_y, vp.do.selection_end_y +1], [0, ds.shape[2]]]
+    
+    if roi is None:
+        roi = [[0,data.shape[0]], [0,data.shape[1]], [0,data.shape[2]]]
+    
     #else:
     #   roi = [[0, ds.shape[0]],[0, ds.shape[1]],[0, ds.shape[2]]]
 
@@ -534,7 +559,7 @@ def CropExportData(vp, mdh=None, events=None, origName = None):
             ext = '*.ome.tif'        
         exp = exportersByExtension[ext]()
 
-        exp.Export(ds, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
+        exp.Export(data, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
 
     dlg.Destroy()
 

@@ -157,6 +157,8 @@ class Camera(object):
             # FOV
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY', self.GetROIY1())
+            mdh.setEntry('Camera.ROIOriginX', self.GetROIX1() - 1)
+            mdh.setEntry('Camera.ROIOriginY', self.GetROIY1() - 1)
             mdh.setEntry('Camera.ROIWidth',
                          self.GetROIX2() - self.GetROIX1())
             mdh.setEntry('Camera.ROIHeight',

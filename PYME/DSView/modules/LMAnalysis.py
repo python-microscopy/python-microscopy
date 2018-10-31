@@ -19,47 +19,39 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
-import wx
-import wx.lib.agw.aui as aui
-
 import os
-import numpy as np
-
-import Pyro.core
-from PYME.misc import pyro_tracebacks
 
 import PYME.localization.FitFactories
-from PYME.localization import remFitBuf
-from PYME.localization import MetaDataEdit as mde
-
-
-from PYME.IO import MetaDataHandler
-from PYME.IO.FileUtils import fileID
-from PYME.IO.FileUtils.nameUtils import genResultFileName, genClusterResultFileName
-
-from PYME.LMVis import progGraph as progGraph
-from PYME.LMVis import pipeline
-from PYME.IO import tabular
-
-import dispatch
-
 import PYME.ui.autoFoldPanel as afp
-
-from PYME.Acquire.mytimer import mytimer
-
+import Pyro.core
+import dispatch
+import numpy as np
+import wx
+import wx.lib.agw.aui as aui
 from PYME.DSView import fitInfo
 from PYME.DSView.OverlaysPanel import OverlayPanel
+from PYME.IO import MetaDataHandler
+from PYME.IO import tabular
+from PYME.IO.FileUtils import fileID
+from PYME.IO.FileUtils.nameUtils import genResultFileName, genClusterResultFileName
+from PYME.LMVis import pipeline
+from PYME.LMVis import progGraph as progGraph
+from PYME.localization import MetaDataEdit as mde
+from PYME.localization import remFitBuf
+from PYME.ui.mytimer import mytimer
 
 try:
     from PYME.ParallelTasks import HTTPTaskPusher
 
     #test for a running task distributor
     distribURI = HTTPTaskPusher._getTaskQueueURI(0)
-    NEW_STYLE_DISTRIBUTION=False
+    NEW_STYLE_DISTRIBUTION=True
 except:
     NEW_STYLE_DISTRIBUTION=False
 
 import logging
+
+logger = logging.getLogger(__name__)
 
 debug = True
 
@@ -120,6 +112,7 @@ class AnalysisSettingsView(object):
                       mde.BoolParam('Analysis.TrackFiducials', 'Track Fiducials', default=False),
                       mde.FloatParam('Analysis.FiducialThreshold', 'Fiducial Threshold', default=1.8),
                       mde.IntParam('Analysis.FiducialROISize', 'Fiducial ROI', default=11),
+                      mde.FloatParam('Analysis.FiducialSize', 'Fiducial Diameter [nm]', default=1000.),
     ]
     
     def __init__(self, dsviewer, analysisController, lmanal=None):
@@ -294,7 +287,7 @@ class AnalysisController(object):
             return self.pushImagesDS(image)
 
     def pushImagesCluster(self, image):
-        from PYME.ParallelTasks import HTTPTaskPusher
+        from PYME.ParallelTasks import HTTPRulePusher
         #resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
         resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(image.seriesName))
         logging.debug('Results file: ' + resultsFilename)
@@ -304,7 +297,7 @@ class AnalysisController(object):
         self.resultsMdh = MetaDataHandler.NestedClassMDHandler(self.analysisMDH)
         self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
 
-        self.pusher = HTTPTaskPusher.HTTPTaskPusher(dataSourceID=image.seriesName,
+        self.pusher = HTTPRulePusher.HTTPRulePusher(dataSourceID=image.seriesName,
                                                metadata=self.resultsMdh, resultsFilename=resultsFilename)
 
         self.queueName = self.pusher.queueID
@@ -393,6 +386,7 @@ class AnalysisController(object):
                 taskQueueName = 'TaskQueues.%s' % compName   
                 self.tq = Pyro.core.getProxyForURI(_genURI(taskQueueName))
             except:
+                logger.exception('Error finding task queue, looking for a local queue instead')
                 taskQueueName = 'PrivateTaskQueues.%s' % compName
                 self.tq = Pyro.core.getProxyForURI('PYRONAME://' + _genURI(taskQueueName))
 
@@ -458,6 +452,7 @@ class FitDefaults(object):
     def OnPRI3D(self, event):
         self.analysisMDH['PRI.Axis'] = 'y'
         self.analysisMDH['Analysis.EstimatorModule'] = 'priEstimator'
+        self.analysisMDH['Analysis.ROISize'] = 9
 
         self.onMetaDataChange.send(self, mdh=self.analysisMDH)
 
@@ -474,10 +469,14 @@ class FitDefaults(object):
         itime = int(1000*self.analysisMDH['Camera.IntegrationTime'])
         darkpath = os.path.join(caldir,'dark_%dms.tif' % (itime))
         varpath = os.path.join(caldir,'variance_%dms.tif' % (itime))
+        flatpath = os.path.join(caldir,'flatfield.tif')
+        
         if os.path.exists(darkpath):
             self.analysisMDH['Camera.DarkMapID'] = darkpath
         if os.path.exists(varpath):
             self.analysisMDH['Camera.VarianceMapID'] = varpath
+        if os.path.exists(flatpath):
+            self.analysisMDH['Camera.FlatfieldMapID'] = flatpath
 
         self.onMetaDataChange.send(self, mdh=self.analysisMDH)
 
@@ -523,11 +522,15 @@ class LMAnalyser2(object):
         dsviewer.updateHooks.append(self.update)
         dsviewer.statusHooks.append(self.GetStatusText)
 
-        self.dsviewer.AddMenuItem('View', "SubtractBackground", self.OnToggleBackground)
+        if 'bgRange' in dir(self.image.data):
+            self.dsviewer.AddMenuItem('View', "SubtractBackground", self.OnToggleBackground)
         
         #if ('auto_start_analysis' in dir(dsviewer)) and dsviewer.auto_start_analysis:
         #    print 'Automatically starting analysis'
         #    wx.CallLater(50,self.OnGo)
+            
+    def toggle_new_style(self, event=None):
+        self.newStyleTaskDistribution = not(self.newStyleTaskDistribution)
 
     def SetFitInfo(self):
         self.view.pointMode = 'lm'
@@ -598,7 +601,7 @@ class LMAnalyser2(object):
         self._checkmap('DarkMapID')
         self._checkmap('VarianceMapID')
         self._checkmap('FlatfieldMapID')
-        if self.newStyleTaskDistribution:
+        if self.newStyleTaskDistribution and self.image.filename.startswith('PYME-CLUSTER'):
             self.analysisController.pushImagesCluster(self.image)
         else:
             self.analysisController.pushImages(self.image)
@@ -780,12 +783,13 @@ class LMAnalyser2(object):
 
     def testFrame(self, gui=True):
         from pylab import *
+        from matplotlib import pyplot as plt
         #close('all')
         if self.image.dataSource.moduleName == 'TQDataSource':
             self.analysisController._checkTQ()
         if gui:    
             matplotlib.interactive(False)
-            figure()
+            plt.figure()
         
         zp = self.do.zp
 
@@ -803,40 +807,40 @@ class LMAnalyser2(object):
         res = ft(gui=gui,taskQueue=self.tq)
         
         if gui:
-            figure()
+            plt.figure()
             try:
                 d = ft.ofd.filteredData.T
                 #d = ft.data.squeeze().T
-                imshow(d, cmap=cm.hot, interpolation='nearest', hold=False, clim=(median(d.ravel()), d.max()))
-                plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
+                plt.imshow(d, cmap=plt.cm.hot, interpolation='nearest', hold=False, clim=(np.median(d.ravel()), d.max()))
+                plt.plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
                 if ft.driftEst:
-                     plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
+                    plt.plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
                 #if ft.fitModule in remFitBuf.splitterFitModules:
                 #        plot([p.x for p in ft.ofd], [d.shape[0] - p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
                 #axis('tight')
-                xlim(0, d.shape[1])
-                ylim(d.shape[0], 0)
-                xticks([])
-                yticks([])
+                plt.xlim(0, d.shape[1])
+                plt.ylim(d.shape[0], 0)
+                plt.xticks([])
+                plt.yticks([])
                 
                 
                     
                 vx = 1e3*self.image.mdh['voxelsize.x']
                 vy = 1e3*self.image.mdh['voxelsize.y']
-                plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', mew=2)
+                plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b', mew=2)
                 
                 if 'startParams' in res.results.dtype.names:
-                    plot(res.results['startParams']['x0']/vx, res.results['startParams']['y0']/vy, 'xc', mew=2)
+                    plt.plot(res.results['startParams']['x0']/vx, res.results['startParams']['y0']/vy, 'xc', mew=2)
                 
                 if 'tIm' in dir(ft.ofd):
-                    figure()
-                    imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest', hold=False)
+                    plt.figure()
+                    plt.imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest', hold=False)
                     #axis('tight')
-                    xlim(0, d.shape[1])
-                    ylim(d.shape[0], 0)
-                    xticks([])
-                    yticks([])
-                    plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
+                    plt.xlim(0, d.shape[1])
+                    plt.ylim(d.shape[0], 0)
+                    plt.xticks([])
+                    plt.yticks([])
+                    plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, '+b')
                     
                 #figure()
                 #imshow()
@@ -858,23 +862,20 @@ class LMAnalyser2(object):
                 else:
                     raise RuntimeError('Background format not understood')
                     
-                imshow(d, cmap=cm.jet, interpolation='nearest', clim = [0, d.max()])
-                xlim(0, d.shape[1])
-                ylim(d.shape[0], 0)
+                plt.imshow(d, cmap=plt.cm.jet, interpolation='nearest', clim = [0, d.max()])
+                plt.xlim(0, d.shape[1])
+                plt.ylim(d.shape[0], 0)
                 
                 vx = 1e3*self.image.mdh['voxelsize.x']
                 vy = 1e3*self.image.mdh['voxelsize.y']
-                plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, 'ow')
+                plt.plot(res.results['fitResults']['x0']/vx, res.results['fitResults']['y0']/vy, 'ow')
                 pass
-                    
-            show()
+
+            plt.show()
     
             matplotlib.interactive(True)
         
         return ft, res
-
-
-
 
 
 

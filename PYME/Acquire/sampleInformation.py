@@ -45,6 +45,7 @@ currentSlide = [None]
 
 WantSlideChangeNotification = []
 
+from PYME.IO import MetaDataHandler
 from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
 slideMD = NestedClassMDHandler()
@@ -115,7 +116,7 @@ class VirtList(wx.ListCtrl):
 #        else:
 #            self.qs = models.Slide.objects.filter(creator__contains=creator, reference__contains=reference).order_by('-timestamp')
         
-        r = requests.get(('http://%s/api/num_matching_slides?creator=%s&reference=%s&structure=%s'%(dbhost, creator, reference, structure)).encode(), timeout=.1)
+        r = requests.get(('http://%s/api/num_matching_slides?creator=%s&reference=%s&structure=%s'%(dbhost, creator, reference, structure)).encode(), timeout=.5)
         resp = r.json()        
         
         self.SetItemCount(resp['num_matches'])
@@ -124,7 +125,7 @@ class VirtList(wx.ListCtrl):
         try:
             return self._slideCache[index]
         except KeyError:
-            r = requests.get(('http://%s/api/get_slide_info?creator=%s&reference=%s&structure=%s&index=%d'%(dbhost, self.creator, self.reference, self.structure, index)).encode(), timeout=.1)
+            r = requests.get(('http://%s/api/get_slide_info?creator=%s&reference=%s&structure=%s&index=%d'%(dbhost, self.creator, self.reference, self.structure, index)).encode(), timeout=.5)
             resp = r.json()
             
             self._slideCache[index] = resp
@@ -333,7 +334,7 @@ class SampleInfoDialog(wx.Dialog):
 #        else:
 #            choices = list(set([e.reference for e in models.Slide.objects.filter(reference__startswith=slref, creator=cname)]))
             
-        r = requests.get(('http://%s/api/get_slide_choices?slref=%s&cname=%s'%(dbhost, slref, cname)).encode(), timeout=.1)
+        r = requests.get(('http://%s/api/get_slide_choices?slref=%s&cname=%s'%(dbhost, slref, cname)).encode(), timeout=.5)
         choices = r.json()
 
         if choices != current_choices:
@@ -348,7 +349,7 @@ class SampleInfoDialog(wx.Dialog):
 
         #choices = list(set([e.structure for e in models.Labelling.objects.filter(structure__startswith=sname)]))
         
-        r = requests.get(('http://%s/api/get_structure_choices?sname=%s'%(dbhost, sname)).encode(), timeout=.1)
+        r = requests.get(('http://%s/api/get_structure_choices?sname=%s'%(dbhost, sname)).encode(), timeout=.5)
         choices = r.json()
 
         if choices != current_choices:
@@ -360,7 +361,7 @@ class SampleInfoDialog(wx.Dialog):
         current_choices = self.tDye.GetChoices()
 
         #choices = list(set([e.label for e in models.Labelling.objects.filter(label__startswith=dname)]))
-        r = requests.get(('http://%s/api/get_dye_choices?dname=%s'%(dbhost, dname)).encode(), timeout=.1)
+        r = requests.get(('http://%s/api/get_dye_choices?dname=%s'%(dbhost, dname)).encode(), timeout=.5)
         choices = r.json()
 
         if choices != current_choices:
@@ -500,6 +501,17 @@ def getSampleData(parent, mdh):
             currentSlide[0] = None
 
         dlg.Destroy()
+        
+# this func is the external interface
+# and should really learn properly to handle failing to make contact
+# with the database (server)
+def getSampleDataFailsafe(parent, mdh):
+    try:
+        getSampleData(parent, mdh)
+    except:
+        #the connection to the database will timeout if not present
+        #FIXME: catch the right exception (or delegate handling to sampleInformation module)
+        pass
 
 def createImage(mdh, slide, comments=''):
     #im = models.Image.GetOrCreate(mdh.getEntry('imageID'), nameUtils.getUsername(), slide, mdh.getEntry('StartTime'))
@@ -508,3 +520,4 @@ def createImage(mdh, slide, comments=''):
     print('FIXME: create database entry for image')
     pass
 
+#MetaDataHandler.provideStartMetadata.append(lambda mdh: getSampleDataFailsafe)

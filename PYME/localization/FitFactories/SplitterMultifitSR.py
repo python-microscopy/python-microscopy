@@ -176,7 +176,7 @@ class GaussianFitFactory:
              self.C = C.astype('int')
             
 
-    def FindAndFit(self, threshold=2):
+    def FindAndFit(self, threshold=2, gui=False):
         #average in z
         data = self.data
 
@@ -260,6 +260,12 @@ class GaussianFitFactory:
             
         #objSlices = ndimage.find_objects(labels)
         
+        if gui:
+            import matplotlib.pyplot as plt
+            plt.imshow(data.T,interpolation='nearest')
+            plt.figure()
+            plt.imshow(mask.T, interpolation='nearest')
+
         if nlabels == 0:
             #the frame is empty
             resList = np.empty(0, FitResultsDType)
@@ -280,7 +286,7 @@ class GaussianFitFactory:
             imO = data[os]
             if imO.size > 5:
                 imOs = imO.sum()
-                d_m = dataMean[os].ravel()
+                d_m = data[os].ravel()
                 s_m = sigma[os].ravel()
                 C_m = self.C[os].ravel()
                 X_m = self.X[os].ravel()

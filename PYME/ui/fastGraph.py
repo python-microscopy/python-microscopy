@@ -210,12 +210,12 @@ class FastGraphPanel(wx.Panel):
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
         try:
-            DC.BeginDrawing()
+            #DC.BeginDrawing()
 
             self.DoPaint(MemDC);
 
             DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
-            DC.EndDrawing()
+            #DC.EndDrawing()
         finally:
 
             del MemDC

@@ -24,9 +24,9 @@
 import scipy
 #from scipy.signal import interpolate
 import scipy.ndimage as ndimage
-from pylab import *
+#from pylab import *
 #import copy_reg
-import numpy
+#import numpy as np
 import types
 
 import PYME.Analysis.points.twoColour as twoColour
@@ -56,7 +56,7 @@ def f_gauss2d2c(p, X, Y):
     g = genGauss(X,Y,Ag,x0 + d_x,y0 + d_y,s,bG,0,0)
     g.strides = g.strides #Really dodgy hack to get around something which numpy is not doing right ....
     
-    return numpy.concatenate((g.reshape(g.shape + (1,)),r.reshape(g.shape + (1,))), 2)
+    return np.concatenate((g.reshape(g.shape + (1,)),r.reshape(g.shape + (1,))), 2)
 
 
         
@@ -76,7 +76,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
         slicesUsed = ((slicesUsed[0].start,slicesUsed[0].stop,replNoneWith1(slicesUsed[0].step)),(slicesUsed[1].start,slicesUsed[1].stop,replNoneWith1(slicesUsed[1].step)),(slicesUsed[2].start,slicesUsed[2].stop,replNoneWith1(slicesUsed[2].step)))
 
     if fitErr is None:
-        fitErr = -5e3*numpy.ones(fitResults.shape, 'f')
+        fitErr = -5e3*np.ones(fitResults.shape, 'f')
 
     #print slicesUsed
 
@@ -91,7 +91,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
     #print resultCode
 
 
-    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype)
+    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype)
 
 
 class GaussianFitFactory:

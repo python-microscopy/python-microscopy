@@ -50,6 +50,7 @@ def addFiles(directory, extensions=['.h5r', '.h5']):
                         f.filesize = os.path.getsize(filename)
                         f.save()
                 except ValueError as e:
+                    print('Error is:')
                     print(e)
 
 

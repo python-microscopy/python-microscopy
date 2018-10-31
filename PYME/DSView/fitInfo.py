@@ -150,7 +150,7 @@ class FitInfoPanel(wx.Panel):
         self.stSliceNum.SetLabel(slN)
 
         self.stFitRes.SetLabel(self.genResultsText(index))
-        if self.mdh.getEntry('Analysis.FitModule') == 'LatGaussFitFR':
+        if self.mdh.getEntry('Analysis.FitModule') in ['LatGaussFitFR','LatGaussFitFRforZyla']:
             self.stPhotons.SetLabel(self.genGaussPhotonStats(index))
 
         self.fitViewPan.draw(index)
@@ -229,20 +229,25 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
         self.mdh = mdh
         
     def _extractROI(self, fri):
+        from PYME.IO.MetaDataHandler import get_camera_roi_origin
+        roi_x0, roi_y0 = get_camera_roi_origin(self.mdh)
+        
         if 'Splitter' in self.mdh['Analysis.FitModule']:
              # is a splitter fit
             if 'Splitter.Channel0ROI' in self.mdh.getEntryNames():
                 x0, y0, w, h = self.mdh['Splitter.Channel0ROI']
-                x0 -= (self.mdh['Camera.ROIPosX'] - 1)
-                y0 -= (self.mdh['Camera.ROIPosY'] - 1)
+                
+                x0 -= roi_x0
+                y0 -= roi_y0
                 #g = self.data[x0:(x0+w), y0:(y0+h)]
                 x1, y1, w, h = self.mdh['Splitter.Channel1ROI']
-                x1 -= (self.mdh['Camera.ROIPosX'] - 1)
-                y1 -= (self.mdh['Camera.ROIPosY'] - 1)
+                x1 -= roi_x0
+                y1 -= roi_y0
                 #r = self.data[x0:(x0+w), y0:(y0+h)]
             else:
                 x0, y0 = 0,0
                 x1, y1 = 0, (self.mdh['Camera.ROIHeight'] + 1)/2
+                h = y1
                 
             slux = fri['slicesUsed']['x']
             sluy = fri['slicesUsed']['y']
@@ -260,8 +265,8 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 vy = 1e3*self.mdh['voxelsize.y']
                 
                 #position in nm from camera origin
-                x_ = ((slux[0] + slux[1])/2. + self.mdh['Camera.ROIPosX'] - 1)*vx
-                y_ = ((sluy[0] + sluy[1])/2. + self.mdh['Camera.ROIPosY'] - 1)*vy
+                x_ = ((slux[0] + slux[1])/2. + roi_x0)*vx
+                y_ = ((sluy[0] + sluy[1])/2. + roi_y0)*vy
                 
                 #look up shifts
                 if not self.mdh.getOrDefault('Analysis.FitShifts', False):
@@ -285,7 +290,7 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
             if ('Splitter.Flip' in self.mdh.getEntryNames() and not self.mdh.getEntry('Splitter.Flip')):
                 sy1 = slice(y1 - y0 + sluy[0], y1 - y0 +sluy[1])
             else:
-                sy1 = slice(y1 - y0 + sluy[0], y1 - y0 +sluy[1]) #FIXME
+                sy1 = slice((y1 - y0) + h - y0 - sluy[0], (y1 - y0) + h - y0 -sluy[1], -1) #FIXME
                 
             print((slx, sx1, sly, sy1))
                 

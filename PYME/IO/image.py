@@ -206,7 +206,7 @@ class ImageStack(object):
         self.haveGUI = haveGUI
 
         #default 'mode' / image type - see PYME/DSView/modules/__init__.py        
-        self.mode = 'LM'
+        self.mode = 'default'
 
         self.saved = False
         self.volatile = False #is the data likely to change and need refreshing?
@@ -337,7 +337,7 @@ class ImageStack(object):
         if 'Origin.x' in self.mdh.getEntryNames():
             return self.mdh['Origin.x'], self.mdh['Origin.y'], self.mdh['Origin.z']
         
-        elif 'Camera.ROIPosX' in self.mdh.getEntryNames():
+        elif ('Camera.ROIPosX' in self.mdh.getEntryNames()) or ('Camera.ROIOriginX' in self.mdh.getEntryNames()):
             #has ROI information
             try:
                 voxx, voxy = 1e3*self.mdh['voxelsize.x'], 1e3*self.mdh['voxelsize.y']
@@ -345,8 +345,10 @@ class ImageStack(object):
                 voxx = self.pixelSize
                 voxy = voxx
             
-            ox = (self.mdh['Camera.ROIPosX'] - 1)*voxx
-            oy = (self.mdh['Camera.ROIPosY'] - 1)*voxy
+            roi_x0, roi_y0 = MetaDataHandler.get_camera_roi_origin(self.mdh)
+            
+            ox = (roi_x0)*voxx
+            oy = (roi_y0)*voxy
             
             oz = 0
             
@@ -413,6 +415,7 @@ class ImageStack(object):
         #self.timer.WantNotification.append(self.dsRefresh)
 
         self.events = self.dataSource.getEvents()
+        self.mode = 'LM'
 
     def _loadh5(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
@@ -431,6 +434,7 @@ class ImageStack(object):
             self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(self.dataSource.h5File))
         else:
             self.mdh = MetaData.TIRFDefault
+            import wx
             wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
             print("ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well")
 
@@ -456,6 +460,8 @@ class ImageStack(object):
                 self.resultsMdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5Results))
 
         self.events = self.dataSource.getEvents()
+
+        self.mode = 'LM'
         
     def _loadHTTP(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
@@ -487,6 +493,8 @@ class ImageStack(object):
 
         self.events = self.dataSource.getEvents()
         
+        self.mode='LM'
+        
     def _loadClusterPZF(self, filename):
         """Load PYMEs semi-custom HDF5 image data format. Offloads all the
         hard work to the HDFDataSource class"""
@@ -511,7 +519,7 @@ class ImageStack(object):
 
         self.events = self.dataSource.getEvents()
 
-    
+        self.mode = 'LM'
 
     def _loadPSF(self, filename):
         """Load PYME .psf data.
@@ -753,7 +761,7 @@ class ImageStack(object):
 
     def _loadTiff(self, filename):
         #from PYME.IO.FileUtils import readTiff
-        from PYME.IO.DataSources import TiffDataSource
+        from PYME.IO.DataSources import TiffDataSource, BGSDataSource
 
         mdfn = self._findAndParseMetadata(filename)
 
@@ -761,6 +769,10 @@ class ImageStack(object):
         print(self.dataSource.shape)
         self.dataSource = BufferedDataSource.DataSource(self.dataSource, min(self.dataSource.getNumSlices(), 50))
         self.data = self.dataSource #this will get replaced with a wrapped version
+
+        if self.dataSource.getNumSlices() > 500: #this is likely to be a localization data set
+            #background subtraction in the GUI the same way as in the analysis
+            self.data = BGSDataSource.DataSource(self.dataSource) #this will get replaced with a wrapped version
 
         print(self.data.shape)
 
@@ -813,6 +825,10 @@ class ImageStack(object):
         
         if self.mdh.getOrDefault('ImageType', '') == 'PSF':
             self.mode = 'psf'
+        elif self.dataSource.getNumSlices() > 5000:
+            #likely to want to localize this
+            self.mode = 'LM'
+            
         
     def _loadBioformats(self, filename):
         #from PYME.IO.FileUtils import readTiff
@@ -967,7 +983,7 @@ class ImageStack(object):
             self.filename = filename
             self.saved = True
 
-    def Save(self, filename=None, crop=False, view=None, progressCallback=None):
+    def Save(self, filename=None, crop=False, roi=None, progressCallback=None):
         """
         Saves an image to file.
 
@@ -994,7 +1010,7 @@ class ImageStack(object):
         ofn = self.filename
 
         if crop:
-            dataExporter.CropExportData(view, self.mdh, self.events, self.seriesName)
+            dataExporter.CropExportData(self.data, roi, self.mdh, self.events, self.seriesName)
         else:
             if 'defaultExt' in dir(self):
                 self.filename = dataExporter.ExportData(self.data, self.mdh, self.events, defaultExt=self.defaultExt, filename=filename, progressCallback=progressCallback)

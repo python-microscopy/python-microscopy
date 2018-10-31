@@ -364,7 +364,7 @@ def main():
         print('profiling')
         profile = True
         from PYME.util.mProfile import mProfile
-        mProfile.profileOn(['taskServerMP.py', 'HDFTaskQueue.py', 'TaskQueue.py'])
+        mProfile.profileOn(['taskServerZC.py', 'HDFTaskQueue.py', 'TaskQueue.py'])
 
     if len(sys.argv) > 1 and sys.argv[1] == '-fp':
         print('profiling')

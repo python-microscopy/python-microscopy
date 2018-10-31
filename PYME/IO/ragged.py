@@ -1,3 +1,6 @@
+
+import six
+
 class RaggedBase(object):
     """Base class for ragged or free-form objects in recipes. Looks like a read-only list of
     arbitrary objects. Objects should be json serializable (ie simple combinations of base types)."""
@@ -34,13 +37,17 @@ class RaggedBase(object):
         import json
         return json.dumps([self._jsify(o) for o in self])
     
-    def to_hdf(self, filename, tablename, mode='w'):
-        #TODO - write me / re-evaluate. This should be cluster aware and use h5r file. Ragged array logic belomgs in h5rfile
+    def to_hdf(self, filename, tablename, mode='w', metadata=None):
+        #TODO - write me / re-evaluate. This should be cluster aware and use h5r file. Ragged array logic belongs in h5rfile
         from PYME.IO import h5rFile
         
         with h5rFile.H5RFile(filename, mode) as h5f:
             for item in self:
                 h5f.appendToTable(tablename, self._jsify(item))
+
+            # handle metadata
+            if metadata is not None:
+                h5f.updateMetadata(metadata)
 
 class RaggedCache(RaggedBase):
     def __init__(self, iterable=None, mdh=None):
@@ -69,12 +76,38 @@ class RaggedJSON(RaggedCache):
      
     
 class RaggedVLArray(RaggedBase):
-    def __init__(self, h5f, tablename):
-        RaggedBase.__init__(self)
-        
+    def __init__(self, h5f, tablename, mdh=None):
+        """
+        Ragged type which wraps an HDF table variable-length array
+        Parameters
+        ----------
+        h5f : HDF table or str
+            Either an open HDF table instance, or a str of the filepath to open one
+        tablename : str
+            Name of the table to open and wrap (beyond root, i.e. h5f.root.tablename
+        mdh : PYME.MetaDataHandler.MDHandlerBase or derived class
+            Metadata to initialize RaggedVLArray with. If None, will be initialized with blank metadata
+            
+        """
+        RaggedBase.__init__(self, mdh)
+
+        if isinstance(h5f, six.string_types):
+            import tables
+            h5f = tables.open_file(h5f)
+            self._h5file = h5f  # if we open it, grab a reference so we can close it later
+
         self._data = h5f.get_node(h5f.root, tablename)
-        
-        #raise NotImplementedError
+
+    def __del__(self):
+        """
+        Make sure we close our h5 file if we opened one. If it was created outside the scope of this class, it should be
+        handled elsewhere.
+
+        """
+        try:
+            self._h5file.close()
+        except AttributeError:
+            pass
     
     def __getitem__(self, item):
         import json

@@ -203,5 +203,56 @@ def visualize_reconstruction(modes, coeffs, d_phi=.1, zscale=1.0):
     mlab.figure()
     mlab.mesh(x1, y1, z1*zscale)
 
+def distance_to_surface(position, centre, modes, coeffs, d_phi=0.1, z_scale=5.):
+    """
 
+    Parameters
+    ----------
+    position : list-like of ndarrays
+        Arrays of positions to query (in cartesian coordinates), i.e. [np.array(x), np.array(y), np.array(z)]
+    centre : iterable
+        Center of the spherical harmonic shell
+    modes : list
+        List of (m, n) mode tuples
+    coeffs : list
+        List of coefficients corresponding to the list of modes
+    d_phi : float
+        Sets the step size in radians of theta and phi arrays used in reconstructing the spherical harmonic shell
+    z_scale : float
+        The scale parameter used multiplicatively on the z-positions when fitting the spherical harmonics to the
+        original point cloud.
+
+    Returns
+    -------
+    min_distance : float
+        minimum distance from 'position' (i.e. input coordinate) to the spherical harmonic surface
+    closest_point_on_surface : tuple of floats
+        returns the position in cartesian coordinates of the point on the surface closest to the input 'position'
+
+    """
+    x, y, z = position
+    n_points = len(x)
+    phi, theta = np.mgrid[0:(np.pi + d_phi):d_phi, 0:(2 * np.pi + d_phi):d_phi]
+
+    r = reconstruct_from_modes(modes, coeffs, theta, phi)
+    x_shell, y_shell, z_shell = sph2cart(theta, phi, r)
+
+    # center the position we're querying, remembering that the shell needs to be scaled inversely scaling in the fit
+    x = x[:] - centre[0]  # perform an implicit copy so we don't shift the input
+    y = y[:] - centre[1]
+    z = z[:] - centre[2]/z_scale
+
+    # calculate the distance between all our points and the shell, remembering needs to be scaled inversely scaling in
+    # the fit
+    dist = np.sqrt((x - x_shell[:,:,None]) ** 2 + (y - y_shell[:,:,None]) ** 2 + ((z - z_shell[:,:,None]/z_scale) ** 2))
+
+    # unfortunately cannot currently specify two axes for numpy.argmin, so we'll have to flatten the first two dims
+    n_shell_coords = dist.shape[0] * dist.shape[1]
+    dist_flat = dist.reshape((n_shell_coords, n_points))
+    min_ind = np.argmin(dist_flat, axis=0)
+
+    p_ind = range(n_points)
+    return dist_flat[min_ind[p_ind], p_ind], (x_shell.reshape(n_shell_coords)[min_ind],
+                                              y_shell.reshape(n_shell_coords)[min_ind],
+                                              z_shell.reshape(n_shell_coords)[min_ind])
 

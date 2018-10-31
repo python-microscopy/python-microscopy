@@ -51,6 +51,10 @@ class FilterTable(ModuleBase):
 
     @property
     def pipeline_view(self):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
         from traitsui.api import View, Group, Item
         from PYME.ui.custom_traits_editors import FilterEditor
 
@@ -60,6 +64,10 @@ class FilterTable(ModuleBase):
 
     @property
     def default_view(self):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
         from traitsui.api import View, Group, Item
         from PYME.ui.custom_traits_editors import CBEditor, FilterEditor
 
@@ -97,12 +105,16 @@ class FilterTableByIDs(ModuleBase):
         
     @property
     def _possible_ids(self):
-        ids = [id for id in set(self._ds[self.idColumnName]) if id > 0]
+        ids = [int(id) for id in set(self._ds[self.idColumnName]) if id > 0]
         
         return ids
 
     @property
     def pipeline_view(self):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
         from traitsui.api import View, Group, Item, TextEditor, SetEditor
 
         modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
@@ -113,6 +125,10 @@ class FilterTableByIDs(ModuleBase):
 
     @property
     def default_view(self):
+        import wx
+        if wx.GetApp() is None:
+            return None
+        
         from traitsui.api import View, Group, Item, TextEditor, SetEditor
         from PYME.ui.custom_traits_editors import CBEditor, FilterEditor
 

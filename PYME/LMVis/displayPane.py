@@ -31,6 +31,7 @@ import numpy as np
 from PYME.ui import histLimits
 
 import PYME.config
+from PYME.resources import getIconPath
 
 DisplayInvalidEvent, EVT_DISPLAY_CHANGE = wx.lib.newevent.NewCommandEvent()
 
@@ -373,16 +374,32 @@ class DisplayPaneHorizontal(wx.Panel):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.r3DMode = wx.RadioBox(self, choices=['2D', '3D'])
         self.r3DMode.Bind(wx.EVT_RADIOBOX, self.OnChange3D)
-        hsizer.Add(self.r3DMode, 0, wx.ALL| wx.ALIGN_CENTER_VERTICAL, 2)
+        hsizer.Add(self.r3DMode, 0, wx.LEFT|wx.RIGHT| wx.ALIGN_CENTER_VERTICAL, 2)
         
         hsizer.AddSpacer(10)
         
-        cbLUTDraw = wx.CheckBox(self, -1, 'Show LUT')
+        bTop = wx.BitmapButton(self, -1, wx.Bitmap(getIconPath('view-top.png')), style=wx.NO_BORDER|wx.BU_AUTODRAW, name='Top')
+        bTop.Bind(wx.EVT_BUTTON, self.OnViewTop)
+        hsizer.Add(bTop, 0, wx.LEFT|wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
+        bFront = wx.BitmapButton(self, -1, wx.Bitmap(getIconPath('view-front.png')), style=wx.NO_BORDER|wx.BU_AUTODRAW, name='Front')
+        bFront.Bind(wx.EVT_BUTTON, self.OnViewFront)
+        hsizer.Add(bFront, 0, wx.LEFT|wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
+        bRight = wx.BitmapButton(self, -1, wx.Bitmap(getIconPath('view-right.png')), style=wx.NO_BORDER|wx.BU_AUTODRAW, name='Right')
+        bRight.Bind(wx.EVT_BUTTON, self.OnViewRight)
+        hsizer.Add(bRight, 0, wx.LEFT|wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 0)
+        
+        
+        hsizer.AddSpacer(10)
+        
+        cbLUTDraw = wx.ToggleButton(self, -1, 'LUT', style=wx.BU_EXACTFIT)
+        #cbLUTDraw.SetBitmap(wx.Bitmap(getIconPath('LUT.png')))
+        #cbLUTDraw = wx.BitmapToggleButton(self, -1, wx.Bitmap(getIconPath('LUT.png')))
         cbLUTDraw.SetValue(self.glCanvas.LUTDraw)
         
-        cbLUTDraw.Bind(wx.EVT_CHECKBOX, self.OnLUTDrawCB)
+        #cbLUTDraw.Bind(wx.EVT_CHECKBOX, self.OnLUTDrawCB)
+        cbLUTDraw.Bind(wx.EVT_TOGGLEBUTTON, self.OnLUTDrawCB)
         
-        hsizer.Add(cbLUTDraw, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        hsizer.Add(cbLUTDraw, 0, wx.LEFT|wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
 
         hsizer.AddSpacer(10)
         
@@ -426,4 +443,22 @@ class DisplayPaneHorizontal(wx.Panel):
     
     def OnChange3D(self, event):
         self.glCanvas.displayMode = self.r3DMode.GetString(self.r3DMode.GetSelection())
+        self.glCanvas.Refresh()
+        
+    def OnViewTop(self, event):
+        self.glCanvas.view.vec_up=np.array([0,1,0])
+        self.glCanvas.view.vec_back = np.array([0,0,1])
+        self.glCanvas.view.vec_right = np.array([1,0,0])
+        self.glCanvas.Refresh()
+        
+    def OnViewFront(self, event):
+        self.glCanvas.view.vec_up=np.array([0,0,-1])
+        self.glCanvas.view.vec_back = np.array([0,1,0])
+        self.glCanvas.view.vec_right = np.array([1,0,0])
+        self.glCanvas.Refresh()
+        
+    def OnViewRight(self, event):
+        self.glCanvas.view.vec_up=np.array([1,0,0])
+        self.glCanvas.view.vec_back = np.array([0,1,0])
+        self.glCanvas.view.vec_right = np.array([0,0,1])
         self.glCanvas.Refresh()

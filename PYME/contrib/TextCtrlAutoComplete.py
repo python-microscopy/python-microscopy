@@ -11,6 +11,7 @@ Contributed to the wxPython project under the wxPython project's license.
 """
 
 import locale, wx, sys
+from PYME.ui import UI_MAXSIZE #hack for sys.maxsize bug
 
 from io import BytesIO
 from six.moves import xrange
@@ -320,7 +321,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
 
             for numCol, colVal in enumerate(valRow):
                 if numCol == 0:
-                    index = self.dropdownlistbox.InsertImageStringItem(sys.maxint, colVal, -1)
+                    index = self.dropdownlistbox.InsertImageStringItem(UI_MAXSIZE, colVal, -1)
                 self.dropdownlistbox.SetStringItem(index, numCol, colVal)
                 self.dropdownlistbox.SetItemData(index, numRow)
 
@@ -348,7 +349,7 @@ class TextCtrlAutoComplete (wx.TextCtrl, listmix.ColumnSorterMixin ):
         self.dropdownlistbox.InsertColumn(0, "")
 
         for num, colVal in enumerate(self._choices):
-            index = self.dropdownlistbox.InsertImageStringItem(sys.maxint, colVal, -1)
+            index = self.dropdownlistbox.InsertImageStringItem(UI_MAXSIZE, colVal, -1)
 
             self.dropdownlistbox.SetStringItem(index, 0, colVal)
             self.dropdownlistbox.SetItemData(index, num)

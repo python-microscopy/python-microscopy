@@ -21,22 +21,11 @@
 ##################
 #from PYME.LMVis.visHelpers import ImageBounds#, GeneratedImage
 from PYME.IO.image import GeneratedImage, ImageBounds
-from PYME.LMVis import genImageDialog
 from PYME.LMVis import visHelpers
-#from PYME.LMVis import imageView
 from PYME.LMVis import statusLog
 from PYME.IO import tabular
 
 from PYME.IO import MetaDataHandler
-
-try:
-    import wx
-    from PYME.DSView import ViewIm3D
-except SystemExit:
-    print('GUI load failed (probably OSX)')
-
-from PYME.Analysis.points.QuadTree import QTrend
-
 
 import pylab
 import numpy as np
@@ -158,6 +147,7 @@ class CurrentRenderer:
         if 'imageID' in self.pipeline.mdh.getEntryNames():
             mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
         mdh['Rendering.SourceFilename'] = getattr(self.pipeline, 'filename', '')
+        mdh['Rendering.NEventsRendered'] = len(self.pipeline[self.pipeline.keys()[0]]) # in future good to use colourfilter for per channel info?
 
         for cb in renderMetadataProviders:
             cb(mdh)
@@ -171,6 +161,10 @@ class CurrentRenderer:
 
 
     def GenerateGUI(self, event=None):
+        import wx
+        from PYME.LMVis import genImageDialog
+        from PYME.DSView import ViewIm3D
+        
         dlg = genImageDialog.GenImageDialog(self.mainWind, mode=self.mode)
         ret = dlg.ShowModal()
 
@@ -203,7 +197,7 @@ class ColourRenderer(CurrentRenderer):
         if 'imageID' in self.pipeline.mdh.getEntryNames():
             mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
         mdh['Rendering.SourceFilename'] = getattr(self.pipeline, 'filename', '')
-
+        mdh['Rendering.NEventsRendered'] = len(self.pipeline[self.pipeline.keys()[0]]) # in future good to use colourfilter for per channel info?
         mdh.Source = MetaDataHandler.NestedClassMDHandler(self.pipeline.mdh)
 
         for cb in renderMetadataProviders:
@@ -249,6 +243,10 @@ class ColourRenderer(CurrentRenderer):
         return GeneratedImage(ims, imb, pixelSize, settings['zSliceThickness'], colours, mdh=mdh)
 
     def GenerateGUI(self, event=None):
+        import wx
+        from PYME.LMVis import genImageDialog
+        from PYME.DSView import ViewIm3D
+        
         jitVars = ['1.0']
         jitVars += self.colourFilter.keys()
 
@@ -473,6 +471,7 @@ class QuadTreeRenderer(ColourRenderer):
     mode = 'quadtree'
 
     def genIm(self, settings, imb, mdh):
+        from PYME.Analysis.points.QuadTree import QTrend
         pixelSize = settings['pixelSize']
 
         if not pylab.mod(pylab.log2(pixelSize/self.visFr.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size

@@ -30,15 +30,23 @@ def get_free_space(folder):
     """
     if platform.system() == 'Windows':
         free_bytes = ctypes.c_ulonglong(0)
-        ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(folder), None, None, ctypes.pointer(free_bytes))
+        total_bytes = ctypes.c_ulonglong(0)
+        ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(folder), None, ctypes.pointer(total_bytes), ctypes.pointer(free_bytes))
         return free_bytes.value
     else:
         stats = os.statvfs(folder)
         return stats.f_bfree*stats.f_frsize
 
 def disk_usage(folder):
-    stats = os.statvfs(folder)
-    total = stats.f_blocks * stats.f_frsize
-    free = stats.f_bavail * stats.f_frsize
+    if platform.system() == 'Windows':
+        free_bytes = ctypes.c_ulonglong(0)
+        total_bytes = ctypes.c_ulonglong(0)
+        ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(folder), None, ctypes.pointer(total_bytes), ctypes.pointer(free_bytes))
+        free = free_bytes.value
+        total = total_bytes.value
+    else:
+        stats = os.statvfs(folder)
+        total = stats.f_blocks * stats.f_frsize
+        free = stats.f_bavail * stats.f_frsize
     used = total - free
     return total, used, free

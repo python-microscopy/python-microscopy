@@ -25,11 +25,20 @@ def drift_correct(pipeline):
     import numpy as np
     import matplotlib.pyplot as plt
     #pipeline=visgui.pipeline
-    
+
+    dialog = wx.TextEntryDialog(None, 'Diameter (nm): ', 'Enter Fiducial Size', str(pipeline.mdh.getOrDefault('Analysis.FiducialSize', 1000)))
+
+    sig = [330., 370.]
+
+    if dialog.ShowModal() == wx.ID_OK:
+        size = float(dialog.GetValue())
+        sigE = np.sqrt((size/(np.sqrt(2)*2.35))**2 + 135.**2)  # Expected std of the bead + expected std of psf
+        sig = [0.95*sigE, 1.05*sigE]
+
     recipe = pipeline.recipe
 
     recipe.add_module(FilterTable(recipe, inputName='Fiducials',
-                                  outputName='filtered_fiducials', filters={'error_x': [0, 10], 'sig': [330., 370.]}))
+                                  outputName='filtered_fiducials', filters={'error_x': [0, 10], 'sig': sig}))
     
     recipe.add_module(DBSCANClustering(recipe,inputName='filtered_fiducials', outputName='clumped_fiducials', columns=['x', 'y'],
                                        searchRadius=500, minClumpSize=10, clumpColumnName='fiducialID'))
@@ -172,15 +181,30 @@ def fiducial_diagnosis(pipeline):
     #plt.hist(x_c - x_c.mean())
     
     
+def drift_auto_corr(visFr):
+    from PYME.recipes import localisations
+    recipe = visFr.pipeline.recipe
+    
+    pipeline = visFr.pipeline
+    
+    m = localisations.AutocorrelationDriftCorrection(recipe, inputName=pipeline.selectedDataSourceKey,
+                                                     outputName='corrected_localizations')
+    
+    if m.configure_traits(kind='modal'):
+        recipe.add_module(m)
+        
+        recipe.execute()
+        pipeline.selectDataSource('corrected_localizations')
+        visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
-    
-    
+
 def Plug(visFr):
     def correct():
         drift_correct(visFr.pipeline)
         visFr.CreateFoldPanel()
     
-    visFr.AddMenuItem('Extras>Fiducials', 'Correct', lambda e : correct())
-    visFr.AddMenuItem('Extras>Fiducials', 'Display correction residuals', lambda e: fiducial_diagnosis(visFr.pipeline))
-    visFr.AddMenuItem('Extras>Fiducials', 'Manual selection', lambda e: manual_selection(visFr.pipeline))
-    visFr.AddMenuItem('Extras>Fiducials', 'Load fiducial fits from 2nd file', lambda e: load_fiducial_info_from_second_file(visFr.pipeline))
+    visFr.AddMenuItem('Corrections>Fiducials', 'Correct', lambda e : correct())
+    visFr.AddMenuItem('Corrections>Fiducials', 'Display correction residuals', lambda e: fiducial_diagnosis(visFr.pipeline))
+    visFr.AddMenuItem('Corrections>Fiducials', 'Manual selection', lambda e: manual_selection(visFr.pipeline))
+    visFr.AddMenuItem('Corrections>Fiducials', 'Load fiducial fits from 2nd file', lambda e: load_fiducial_info_from_second_file(visFr.pipeline))
+    visFr.AddMenuItem('Corrections', 'Autocorrelation based drift correction', lambda e : drift_auto_corr(visFr))

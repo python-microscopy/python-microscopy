@@ -181,9 +181,9 @@ class VisGUICore(object):
         item = afp.foldingPane(pnl, -1, caption="Data Source")#, pinned = True)
         
         self.chSource = wx.Choice(item, -1, choices=[])
-        self.set_datasource_choices()
+        self.update_datasource_panel()
         self.chSource.Bind(wx.EVT_CHOICE, self.OnSourceChange)
-        self.pipeline.onRebuild.connect(self.set_datasource_choices)
+        self.pipeline.onRebuild.connect(self.update_datasource_panel)
             
         item.AddNewElement(self.chSource, foldable=False)
         
@@ -193,11 +193,17 @@ class VisGUICore(object):
 
         pnl.AddPane(item)
         
-    def set_datasource_choices(self, event=None, **kwargs):
-        dss = self.pipeline.dataSources.keys()
+    def update_datasource_panel(self, event=None, **kwargs):
+        dss = list(self.pipeline.dataSources.keys())
         self.chSource.SetItems(dss)
         if not self.pipeline.selectedDataSourceKey is None:
             self.chSource.SetStringSelection(self.pipeline.selectedDataSourceKey)
+
+        try:
+            self.Layout()
+        except AttributeError:
+            logger.debug('No Layout method') 
+            pass
         
 
     def OnSourceChange(self, event):
@@ -271,6 +277,8 @@ class VisGUICore(object):
         #this needs an ID as we bind to it elsewhere (in the filter panel)
         self.ID_VIEW_CLIP_ROI = wx.NewId()
         self.AddMenuItem('View', 'Clip to ROI\tF8', id=self.ID_VIEW_CLIP_ROI)
+
+        self.AddMenuItem('View', itemType='separator')
         
         renderers.init_renderers(self)
 
@@ -370,7 +378,7 @@ class VisGUICore(object):
         filename = wx.FileSelector("Choose a file to open", 
                                    nameUtils.genResultDirectoryPath(), 
                                    default_extension='h5r', 
-                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv')
+                                   wildcard='PYME Results Files (*.h5r)|*.h5r|Tab Formatted Text (*.txt)|*.txt|Matlab data (*.mat)|*.mat|Comma separated values (*.csv)|*.csv|HDF Tabular (*.hdf)|*.hdf')
 
         #print filename
         if not filename == '':
@@ -385,15 +393,21 @@ class VisGUICore(object):
         logger.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
         self.pipeline.Rebuild()
         
-    def add_layer(self, method='points', ds_name='', **method_args):
-        from .layer_wrapper import LayerWrapper
-        l = LayerWrapper(self.pipeline, method=method, ds_name=ds_name, method_args = method_args)
-        self.glCanvas.layers.append(l)
-        self.glCanvas.recenter_bbox()
-        l.on_update.connect(self.glCanvas.refresh)
-        
-        self.layer_added.send(self)
+    def add_pointcloud_layer(self, method='points', ds_name=''):
+        #from .layer_wrapper import LayerWrapper
+        from .layers.pointcloud import PointCloudRenderLayer
+        l = PointCloudRenderLayer(self.pipeline, method=method, dsname=ds_name)
+        self.add_layer(l)
         return l
+
+    def add_layer(self, layer):
+        self.glCanvas.layers.append(layer)
+        self.glCanvas.recenter_bbox()
+        layer.on_update.connect(self.glCanvas.refresh)
+        self.glCanvas.refresh()
+    
+        self.layer_added.send(self)
+
     
     @property
     def layers(self):
@@ -597,11 +611,11 @@ class VisGUICore(object):
     def _create_base_layer(self):
         if self.glCanvas._is_initialized and self._new_layers and len(self.layers) == 0:
             #add a new layer
-            l = self.add_layer(method='points')
+            l = self.add_pointcloud_layer(method='points')
             if 't' in self.pipeline.keys():
-                l.engine.set(vertexColour='t')
+                l.set(vertexColour='t')
             elif 'z' in self.pipeline.keys():
-                l.engine.set(vertexColour='z')
+                l.set(vertexColour='z')
                 
     def _populate_open_args(self, filename):
         args = {}
@@ -615,20 +629,21 @@ class VisGUICore(object):
             from scipy.io import loadmat
         
             mf = loadmat(filename)
+            if not 'x' in mf.keys():
+                #bewersdorf style .mat where each variable is in a separate column
+                dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
+                ret = dlg.ShowModal()
+            
+                if not ret == wx.ID_OK:
+                    dlg.Destroy()
+                    return #we cancelled
+            
+                args['FieldNames'] = dlg.GetFieldNames()
+                args['VarName'] = dlg.GetVarName()
+                # args['PixelSize'] = dlg.GetPixelSize()
         
-            dlg = importTextDialog.ImportMatDialog(self, [k for k in mf.keys() if not k.startswith('__')])
-            ret = dlg.ShowModal()
         
-            if not ret == wx.ID_OK:
                 dlg.Destroy()
-                return #we cancelled
-        
-            args['FieldNames'] = dlg.GetFieldNames()
-            args['VarName'] = dlg.GetVarName()
-            # args['PixelSize'] = dlg.GetPixelSize()
-        
-        
-            dlg.Destroy()
     
         else: #assume it's a text file
             from PYME.LMVis import importTextDialog

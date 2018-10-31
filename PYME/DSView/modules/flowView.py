@@ -14,7 +14,7 @@ import numpy as np
 #import pandas as pd
 import pylab
 
-from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, on_trait_change
+from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, on_trait_change
 from traitsui.api import View, Item, Group     
 
 class FlowView(HasTraits):    

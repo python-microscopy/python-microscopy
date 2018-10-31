@@ -21,27 +21,28 @@
 #
 ##################
 
-from numpy import *
-import delaunay
+import numpy as np
+from matplotlib import tri
 from PYME.Analysis.points import gen3DTriangs
 from PYME.Analysis.points import moments
+from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
 def getPrincipalAxis(obj_c, numIters=10):
     """PCA via e.m. (ala wikipedia)"""
     X = obj_c.T
-    p = random.rand(2)
+    p = np.random.rand(2)
     
     for i in range(numIters):
-        t = (dot(p, X) * X).sum(1)
-        p = t / linalg.norm(t)
+        t = (np.dot(p, X) * X).sum(1)
+        p = t / np.linalg.norm(t)
 
     return p
 
 def measureAligned(object, measurements = {}):
-    obj_c = (object - mean(object, 0))
+    obj_c = (object - np.mean(object, 0))
 
-    A = matrix(obj_c[:,0]).T
-    b = matrix(obj_c[:,1]).T
+    A = np.matrix(obj_c[:,0]).T
+    b = np.matrix(obj_c[:,1]).T
 
     #majorAxisGradient = float((linalg.inv(A.T*A)*A.T)*b)
 
@@ -52,15 +53,15 @@ def measureAligned(object, measurements = {}):
 
     majorAxis = getPrincipalAxis(obj_c)
 
-    measurements['majorAxisAngle'] = arccos(majorAxis[0])
+    measurements['majorAxisAngle'] = np.arccos(majorAxis[0])
 
-    minorAxis = majorAxis[::-1]*array([-1, 1])
+    minorAxis = majorAxis[::-1]*np.array([-1, 1])
 
     nx = (obj_c*majorAxis).sum(1)
     ny = (obj_c*minorAxis).sum(1)
 
-    measurements['stdMajor'] = std(nx)
-    measurements['stdMinor'] = std(ny)
+    measurements['stdMajor'] = np.std(nx)
+    measurements['stdMinor'] = np.std(ny)
 
     measurements['lengthMajor'] = nx.max() - nx.min()
     measurements['lengthMinor'] = ny.max() - ny.min()
@@ -71,7 +72,7 @@ measureDType = [('objID', 'i4'),('xPos', 'f4'), ('yPos', 'f4'), ('NEvents', 'i4'
     ('Perimeter', 'f4'), ('majorAxisAngle', 'f4'), ('stdMajor', 'f4'), ('stdMinor', 'f4'),
     ('lengthMajor', 'f4'), ('lengthMinor', 'f4'), ('moments', '25f4'), ('momentErrors', '25f4')]
 
-def measure(object, sizeCutoff, measurements = zeros(1, dtype=measureDType)):
+def measure(object, sizeCutoff, measurements = np.zeros(1, dtype=measureDType)):
     #measurements = {}
 
     measurements['NEvents'] = object.shape[0]
@@ -79,7 +80,7 @@ def measure(object, sizeCutoff, measurements = zeros(1, dtype=measureDType)):
     measurements['yPos'] = object[:,1].mean()
 
     if object.shape[0] > 3:
-        T = delaunay.Triangulation(object.ravel(),2)
+        T = tri.Triangulation(object.ravel(),2)
         P, A, triI = gen3DTriangs.gen2DTriangsTF(T, sizeCutoff)
 
         if not len(P) == 0:
@@ -107,7 +108,7 @@ def measure(object, sizeCutoff, measurements = zeros(1, dtype=measureDType)):
 
 
 def measureObjects(objects, sizeCutoff):
-    measurements = zeros(len(objects), dtype=measureDType)
+    measurements = np.zeros(len(objects), dtype=measureDType)
 
     for i, obj in enumerate(objects):
         measure(obj, sizeCutoff, measurements[i])
@@ -121,12 +122,12 @@ def measureObjectsByID(filter, sizeCutoff, ids):
 
     #ids = set(ids)
 
-    measurements = zeros(len(ids), dtype=measureDType)
+    measurements = np.zeros(len(ids), dtype=measureDType)
 
     for j,i in enumerate(ids):
         if not i == 0:
             ind = id == i
-            obj = vstack([x[ind],y[ind]]).T
+            obj = np.vstack([x[ind],y[ind]]).T
             #print obj.shape
             measure(obj, sizeCutoff, measurements[j])
             measurements[j]['objID'] = i
@@ -134,9 +135,9 @@ def measureObjectsByID(filter, sizeCutoff, ids):
     return measurements
 
 def calcEdgeDists(objects, objMeasures):
-    T = delaunay.Triangulation(array([objMeasures['xPos'], objMeasures['yPos']]).T,2)
+    T = tri.Triangulation(np.array([objMeasures['xPos'], objMeasures['yPos']]).T,2)
 
-    va = array(T.set)
+    va = np.array(T.set)
     objInd = {}
 
     #dictionary mapping vertices to indicex
@@ -153,11 +154,56 @@ def calcEdgeDists(objects, objMeasures):
             dx = o[:,0][:,None] - objects[iN][:,0][None,:]
             dy = o[:,1][:,None] - objects[iN][:,1][None,:]
 
-            d = sqrt(dx**2 + dy**2)
+            d = np.sqrt(dx**2 + dy**2)
 
-            ed = min(ed, d.min())
+            ed = np.min(ed, d.min())
 
         minEdgeDists.append(ed)
 
-    return array(minEdgeDists)
+    return np.array(minEdgeDists)
 
+def get_labels_from_image(inp, img):
+    """
+
+    Parameters
+    ----------
+    inp: PYME.IO.tabular
+        localizations to query membership in labels from corresponding image
+    img: image.ImageStack
+        image containing labels to apply to localizations
+
+    Returns
+    -------
+    ids: ndarray
+        Label number from image, mapped to each localization within that label
+    numPerObject: ndarray
+        Number of localizations within the label that a given localization belongs to
+
+    """
+    im_ox, im_oy, im_oz = img.origin
+
+    # account for ROIs
+    try:
+        p_ox, p_oy = tuple(np.array(get_camera_roi_origin(inp.mdh)) * inp.mdh['voxelsize.x'] * 1e3)
+    except AttributeError:
+        raise UserWarning('get_labels_from_image requires metadata')
+
+    pixX = np.round((inp['x'] + p_ox - im_ox) / img.pixelSize).astype('i')
+    pixY = np.round((inp['y'] + p_oy - im_oy) / img.pixelSize).astype('i')
+    pixZ = np.round((inp['z'] - im_oz) / img.sliceSize).astype('i')
+
+    if img.data.shape[2] == 1:
+        # disregard z for 2D images
+        pixZ = np.zeros_like(pixX)
+
+    ind = (pixX < img.data.shape[0]) * (pixY < img.data.shape[1]) * (pixX >= 0) * (pixY >= 0) * (pixZ >= 0) * (
+        pixZ < img.data.shape[2])
+
+    ids = np.zeros_like(pixX)
+
+    # assume there is only one channel
+    ids[ind] = np.atleast_3d(img.data[:, :, :, 0].squeeze())[pixX[ind], pixY[ind], pixZ[ind]].astype('i')
+
+    numPerObject, b = np.histogram(ids, np.arange(ids.max() + 1.5) + .5)
+
+    return ids, numPerObject

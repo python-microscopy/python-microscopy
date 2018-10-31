@@ -30,7 +30,7 @@ class FakePiezo(PiezoBase):
         self.max_travel = maxtravel
         self.curpos = maxtravel/2.0
         
-    def MoveTo(self, iChannel, fPos, bTimeOut=True):
+    def MoveTo(self, iChannel, fPos, bTimeOut=True, vel=1.0):
         if (fPos >= 0):
             if (fPos <= self.max_travel):
                 self.curpos=fPos

@@ -29,7 +29,7 @@ from PYME.DSView.displayOptions import DisplayOpts
 
 
 class GraphViewPanel(fastGraph.FastGraphPanel):
-    def __init__(self, parent, dstack = None, do = None, xvals=None, xlabel=''):
+    def __init__(self, parent, dstack = None, do = None, xvals=None, xlabel='',ylabel=''):
         
 
         if (dstack is None and do is None):
@@ -72,7 +72,12 @@ def Plug(dsviewer):
     else:
         xvals = None
         xlabel = ''
+
+    if 'ylabel' in dir(dsviewer.image):
+        ylabel = dsviewer.image.ylabel
+    else:
+        ylabel=''
         
-    dsviewer.gv = GraphViewPanel(dsviewer, do=dsviewer.do, xvals=xvals, xlabel=xlabel)
+    dsviewer.gv = GraphViewPanel(dsviewer, do=dsviewer.do, xvals=xvals, xlabel=xlabel, ylabel=ylabel)
     dsviewer.AddPage(dsviewer.gv, True, 'Graph View')
     

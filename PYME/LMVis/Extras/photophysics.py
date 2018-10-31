@@ -27,8 +27,8 @@ class DecayAnalyser:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        visFr.AddMenuItem('Extras>Photophysics', "Estimate decay lifetimes", self.OnCalcDecays)
-        visFr.AddMenuItem('Extras>Photophysics', "Retrieve Intensity steps", self.OnRetrieveIntensitySteps)
+        visFr.AddMenuItem('Analysis>Photophysics', "Estimate decay lifetimes", self.OnCalcDecays)
+        visFr.AddMenuItem('Analysis>Photophysics', "Retrieve Intensity steps", self.OnRetrieveIntensitySteps)
 
     def OnCalcDecays(self, event):
         from PYME.Analysis.BleachProfile import kinModels

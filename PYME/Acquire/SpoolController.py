@@ -9,6 +9,9 @@ Created on Sat May 28 20:42:16 2016
 #import datetime
 from PYME.Acquire import HDFSpooler
 from PYME.Acquire import QueueSpooler, HTTPSpooler
+# TODO: change to use a metadata handler / provideStartMetadata hook
+#   MetaDataHandler.provideStartMetadata from the init file when
+#   loading the sampleinfo interface, see Acquire/Scripts/init.py
 try:
     from PYME.Acquire import sampleInformation
     sampInf = True
@@ -112,7 +115,7 @@ class SpoolController(object):
 
 
     def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize,
-                      compressionSettings=HTTPSpooler.defaultCompSettings):
+                      compressionSettings=HTTPSpooler.defaultCompSettings, cluster_h5 = False):
         """Start spooling
         """
         import QueueSpooler, HTTPSpooler, HDFSpooler
@@ -164,12 +167,15 @@ class SpoolController(object):
                                                 fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
         elif self.spoolType == 'Cluster':
             #self.queueName = self.dirname + fn + '.h5'
-            self.queueName = getRelFilename(self.dirname + fn + '.pcs')
+            if cluster_h5:
+                self.queueName = getRelFilename(self.dirname + fn + '.h5')
+            else:
+                self.queueName = getRelFilename(self.dirname + fn + '.pcs')
             self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                frameShape = frameShape, protocol=protocol, 
                                                guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
                                                fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames,
-                                               compressionSettings=compressionSettings)
+                                               compressionSettings=compressionSettings, aggregate_h5=cluster_h5)
            
         else:
             self.spooler = HDFSpooler.Spooler(self.dirname + fn + '.h5', self.scope.frameWrangler.onFrame, 
@@ -177,14 +183,14 @@ class SpoolController(object):
                                               guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
 
-       
-        if sampInf:
-            try:
-                sampleInformation.getSampleData(self, self.spooler.md)
-            except:
-                #the connection to the database will timeout if not present
-                #FIXME: catch the right exception (or delegate handling to sampleInformation module)
-                pass
+        #TODO - sample info is probably better handled with a metadata hook
+        #if sampInf:
+        #    try:
+        #        sampleInformation.getSampleData(self, self.spooler.md)
+        #    except:
+        #        #the connection to the database will timeout if not present
+        #        #FIXME: catch the right exception (or delegate handling to sampleInformation module)
+        #        pass
             
         self.spooler.onSpoolStop.connect(self.SpoolStopped)
         self.spooler.StartSpool()

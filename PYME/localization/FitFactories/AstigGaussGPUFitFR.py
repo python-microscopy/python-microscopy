@@ -32,6 +32,8 @@
 
 
 from PYME.Analysis._fithelpers import *
+import logging
+logger = logging.getLogger(__name__)
 
 ##################
 # Model Function, only for reference in this case.
@@ -124,7 +126,11 @@ class GaussianFitFactory:
         if not np.isscalar(varmap):
             self.varmap = varmap.astype(np.float32)  # np.ascontiguousarray(varmap)
         else:
-            self.varmap = varmap*np.ones_like(self.data)
+            if varmap == 0:
+                self.varmap = np.ones_like(self.data)
+                logger.error('Variance map not found and read noise defaulted to 0; changing to 1 to avoid x/0.')
+            else:
+                self.varmap = varmap*np.ones_like(self.data)
 
         flatmap = cameraMaps.getFlatfieldMap(self.metadata)
         if not np.isscalar(flatmap):

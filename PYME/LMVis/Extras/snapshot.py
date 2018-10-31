@@ -22,7 +22,7 @@ import PIL
 
 from PYME.LMVis.Extras.animation import VideoPanel
 from scipy.misc import toimage
-from wx import wx
+import wx
 from OpenGL.GL import GL_LUMINANCE, GL_RGB
 
 #FIXME - does this shadow / duplicate existing functionality?
@@ -48,4 +48,4 @@ def save_snapshot(canvas):
 
 
 def Plug(vis_fr):
-    vis_fr.AddMenuItem('Extras', 'Save Snapshot', lambda e: save_snapshot(vis_fr.glCanvas))
+    vis_fr.AddMenuItem('View', 'Save Snapshot', lambda e: save_snapshot(vis_fr.glCanvas))

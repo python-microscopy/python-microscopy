@@ -6,7 +6,7 @@ Created on Sat May  9 12:23:57 2015
 @author: david
 """
 import matplotlib
-matplotlib.use('Cairo')
+matplotlib.use('Cairo', warn=False)
 
 from PYME.recipes import runRecipe
 from PYME.recipes import modules
@@ -20,7 +20,7 @@ import multiprocessing
 NUM_PROCS = multiprocessing.cpu_count()
 
 def runRec(args):
-    print args
+    #print args
     try:
         import matplotlib.pyplot as plt
     

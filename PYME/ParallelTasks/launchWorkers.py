@@ -25,10 +25,14 @@
 
 import os
 import subprocess
+import signal
 import sys
 import time
 
 #import Pyro.naming
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 def cpuCount():
     """
@@ -55,6 +59,22 @@ def cpuCount():
         return num
     else:
         raise NotImplementedError('cannot determine number of cpus')
+
+
+ext = {
+    'out' : 'stdout',
+    'err' : 'stderr'}
+
+def serverlog(mode='out'):
+    import tempfile
+    tmpdir = tempfile.gettempdir()
+    return os.path.join(tmpdir,'PYMEserver.%s' % (ext[mode]))
+
+
+def workerlog(num,mode='out'):
+    import tempfile
+    tmpdir = tempfile.gettempdir()
+    return os.path.join(tmpdir,'PYMEworker-%d.%s' % (num,ext[mode]))
 
 
 #get rid of any previously started queues etc...
@@ -103,59 +123,96 @@ def main():
     parser.add_argument('NWorkers', type=int, nargs='?', default=cpuCount(),
                         help='Number of worker processes to use')
     parser.add_argument('-k', '--kill', dest='kill', default=False, action='store_true', help='Kill all existing workers without launching new ones')
+    parser.add_argument('-p', '--profile', dest='profile', default=False, action='store_true')
+    parser.add_argument('-f', '--fprofile', dest='fprofile', default=False, action='store_true')
+    parser.add_argument('--list', dest='list', default=False, action='store_true',
+                        help='list all current worker and server processes')
+
     args = parser.parse_args()
     
     if args.local:
         SERVER_PROC = 'taskServerML.py'
         WORKER_PROC = 'taskWorkerML.py'
+        
+    if args.profile:
+        prof_args = '-p'
+    elif args.fprofile:
+        prof_args = '-fp'
+    else:
+        prof_args = ''
 
     numProcessors = args.NWorkers
     
     if sys.platform == 'win32':
-        if args.kill:
-            raise RuntimeError('Kill functionality not supported on windows. Close the window that the previous launchWorkers instance was run from instead')
+        if args.kill or args.list:
+            raise RuntimeError('Kill (or process list) functionality not supported on windows. Close the window that the previous launchWorkers instance was run from instead')
 
         if args.run_server:
+            logger.info('Launching server ...')
+            with open(serverlog('out'),"wb") as out, open(serverlog('err'),"wb") as err:
+                subprocess.Popen('python "%s\\%s.py" %s' % (fstub, SERVER_PROC, prof_args), shell=True,
+                                 stdout=out, stderr=err)
             print('Launching server ...')
-            subprocess.Popen('python "%s\\%s.py"' % (fstub, SERVER_PROC), shell=True)
 
+            logger.info('Waiting for server to come up ...')
+            time.sleep(10)
             print('Waiting for server to come up ...')
             time.sleep(5)
 
         if args.gui:
-            print('Launching task monitor ...')
+            logger.info('Launching task monitor ...')
             subprocess.Popen('python "%s\\fitMonP.py"' % fstub, shell=True)
     
-        print('Launching %d workers ...' % numProcessors)
+        logger.info('Launching %d workers ...' % numProcessors)
         for i in range(numProcessors):
-            subprocess.Popen('python "%s\\%s.py"' % (fstub, WORKER_PROC), shell=True)
+            with open(workerlog(i,'out'),"wb") as out, open(workerlog(i,'err'),"wb") as err:
+                subprocess.Popen('python "%s\\%s.py"' % (fstub, WORKER_PROC), shell=True,
+                                 stdout=out, stderr=err)
+    # OSX
     elif sys.platform == 'darwin':
         import psutil
-        
+
         #kill off previous workers and servers
         for p in psutil.process_iter():
             try:
                 if 'python' in p.name():
                     c = p.cmdline()
                     #print c, SERVER_PROC, WORKER_PROC
-                    if (SERVER_PROC in c[1] and args.run_server) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1] and args.gui):
-                        print('killing %s' % c)
-                        p.kill()
+                    if (len(c) > 1) and (SERVER_PROC in c[1] and args.run_server) or (WORKER_PROC in c[1]) or ('fitMonP' in c[1] and args.gui):
+                        if args.list:
+                            print('running %s' % c)
+                        else:
+                            #give process a chance of closing nicely
+                            print('closing %s' % c)
+                            p.send_signal(signal.SIGINT)
+                            time.sleep(1)
+    
+                            if p.is_running():
+                                print('killing %s' % c)
+                                p.kill()
             except (psutil.ZombieProcess, psutil.AccessDenied):
                 pass
 
-        if args.kill:
+        if args.kill or args.list:
             return
 
         if args.run_server:
-            subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub, SERVER_PROC)), shell=True)
-
+            logger.info('launching server...')
+            with open(serverlog('out'),"wb") as out, open(serverlog('err'),"wb") as err:
+                subprocess.Popen('%s %s.py %s' % (sys.executable, os.path.join(fstub, SERVER_PROC), prof_args),
+                                 shell=True, stdout=out, stderr=err)
+            logger.info('waiting for server to come up...')
             time.sleep(10)
         if args.gui:
-            subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,'fitMonP.py')), shell=True)
+            logger.info('launching Task Monitor...')
+            subprocess.Popen('%s %s' % (sys.executable, os.path.join(fstub,'fitMonP.py')),
+                             shell=True)
     
+        logger.info('launching %d workers...' % numProcessors)
         for i in range(numProcessors):
-            subprocess.Popen('%s %s.py' % (sys.executable, os.path.join(fstub,WORKER_PROC)), shell=True)
+            with open(workerlog(i,'out'),"wb") as out, open(workerlog(i,'err'),"wb") as err:
+                subprocess.Popen('%s %s.py %s' % (sys.executable, os.path.join(fstub,WORKER_PROC), prof_args),
+                                 shell=True, stdout=out, stderr=err)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...
         if args.run_server:

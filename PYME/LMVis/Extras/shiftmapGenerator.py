@@ -29,9 +29,9 @@ class ShiftmapGenerator:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        visFr.AddMenuItem('Extras>Shiftmaps', "Calculate &Shiftmap", self.OnGenShiftmap)
-        visFr.AddMenuItem('Extras>Shiftmaps', "Calculate Shiftmap (model based)", self.OnGenShiftmapQuad)
-        visFr.AddMenuItem('Extras>Shiftmaps', "Calculate 3D Shiftmap (model based)", self.OnGenShiftmapQuadz)
+        visFr.AddMenuItem('Corrections>Shiftmaps', "Calculate &Shiftmap", self.OnGenShiftmap)
+        visFr.AddMenuItem('Corrections>Shiftmaps', "Calculate Shiftmap (model based)", self.OnGenShiftmapQuad)
+        visFr.AddMenuItem('Corrections>Shiftmaps', "Calculate 3D Shiftmap (model based)", self.OnGenShiftmapQuadz)
 
     def OnGenShiftmap(self, event):
         from PYME.Analysis.points import twoColour, twoColourPlot
@@ -39,13 +39,15 @@ class ShiftmapGenerator:
         pipeline = self.visFr.pipeline
 
         vs = [pipeline.mdh['voxelsize.x']*1e3, pipeline.mdh['voxelsize.y']*1e3, 200.]        
+        x0 = (pipeline.mdh['Camera.ROIPosX']-1)*vs[0]
+        y0 = (pipeline.mdh['Camera.ROIPosY']-1)*vs[1]
         
         lx = len(pipeline.filter['x'])
         bbox = None#[0,(pipeline.mdh['Camera.ROIWidth'] + 1)*vs[0], 0,(pipeline.mdh['Camera.ROIHeight'] + 1)*vs[1]]
-        dx, dy, spx, spy, good = twoColour.genShiftVectorFieldSpline(pipeline.filter['x']+.1*pylab.randn(lx), pipeline.filter['y']+.1*pylab.randn(lx), pipeline.filter['fitResults_dx'], pipeline.filter['fitResults_dy'], pipeline.filter['fitError_dx'], pipeline.filter['fitError_dy'], bbox=bbox)
+        dx, dy, spx, spy, good = twoColour.genShiftVectorFieldSpline(x0+pipeline.filter['x']+.1*pylab.randn(lx), y0+pipeline.filter['y']+.1*pylab.randn(lx), pipeline.filter['fitResults_dx'], pipeline.filter['fitResults_dy'], pipeline.filter['fitError_dx'], pipeline.filter['fitError_dy'], bbox=bbox)
         #twoColourPlot.PlotShiftField(dx, dy, spx, spy)
         twoColourPlot.PlotShiftField2(spx, spy, pipeline.mdh['Splitter.Channel0ROI'][2:], voxelsize=vs)
-        twoColourPlot.PlotShiftResiduals(pipeline['x'][good], pipeline['y'][good], pipeline['fitResults_dx'][good], pipeline['fitResults_dy'][good], spx, spy)
+        twoColourPlot.PlotShiftResiduals(x0 + pipeline['x'][good], y0 + pipeline['y'][good], pipeline['fitResults_dx'][good], pipeline['fitResults_dy'][good], spx, spy)
 
         from six.moves import cPickle
 
@@ -64,13 +66,16 @@ class ShiftmapGenerator:
             
     def OnGenShiftmapQuad(self, event):
         from PYME.Analysis.points import twoColour, twoColourPlot
+        from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
         pipeline = self.visFr.pipeline
 
-        vs = [pipeline.mdh['voxelsize.x']*1e3, pipeline.mdh['voxelsize.y']*1e3, 200.] 
+        vs = [pipeline.mdh['voxelsize.x']*1e3, pipeline.mdh['voxelsize.y']*1e3, 200.]
         
-        x0 = (pipeline.mdh['Camera.ROIPosX'] -1)*vs[0]
-        y0 = (pipeline.mdh['Camera.ROIPosY'] -1)*vs[1]
+        roi_x0, roi_y0 = get_camera_roi_origin(pipeline.mdh)
+        
+        x0 = (roi_x0)*vs[0]
+        y0 = (roi_y0)*vs[1]
         
         lx = len(pipeline.filter['x'])
         bbox = None#[0,(pipeline.mdh['Camera.ROIWidth'] + 1)*vs[0], 0,(pipeline.mdh['Camera.ROIHeight'] + 1)*vs[1]]

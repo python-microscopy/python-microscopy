@@ -173,6 +173,16 @@ class DisplayOpts(object):
         self.selection_end_y = e_y
         self.selection_end_z = e_z
         
+    @property
+    def selection(self):
+        return self.selection_begin_x, self.selection_end_x, self.selection_begin_y, self.selection_end_y, self.selection_begin_z, self.selection_end_z
+    
+    @property
+    def sorted_selection(self):
+        return sorted([self.selection_begin_x, self.selection_end_x]) + \
+               sorted([self.selection_begin_y, self.selection_end_y]) + \
+               sorted([self.selection_begin_z, self.selection_end_z])
+        
     def EndSelection(self):
         self.on_selection_end.send(self)
 

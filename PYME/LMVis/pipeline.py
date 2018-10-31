@@ -175,7 +175,9 @@ def _add_missing_ds_keys(mapped_ds, ev_mappings={}):
     if not 'z' in mapped_ds.keys():
         if 'fitResults_z0' in mapped_ds.keys():
             mapped_ds.setMapping('z', 'fitResults_z0 + foreShort*focus')
-        elif 'astigZ' in mapped_ds.keys():
+        elif 'astigmatic_z' in mapped_ds.keys():
+            mapped_ds.setMapping('z', 'astigmatic_z + foreShort*focus')
+        elif 'astigZ' in mapped_ds.keys():  # legacy handling
             mapped_ds.setMapping('z', 'astigZ + foreShort*focus')
         else:
             mapped_ds.setMapping('z', 'foreShort*focus')
@@ -197,33 +199,33 @@ def _processEvents(ds, events, mdh):
         for e in events:
             evKeyNames.add(e['EventName'])
 
-        if 'ProtocolFocus' in evKeyNames:
+        if b'ProtocolFocus' in evKeyNames:
             zm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'])
             ev_mappings['zm'] = zm
             eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
 
-        if 'ScannerXPos' in evKeyNames:
+        if b'ScannerXPos' in evKeyNames:
             x0 = 0
             if 'Positioning.Stage_X' in mdh.getEntryNames():
                 x0 = mdh.getEntry('Positioning.Stage_X')
-            xm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], x0, 'ScannerXPos', 0)
+            xm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], x0, b'ScannerXPos', 0)
             ev_mappings['xm'] = xm
             eventCharts.append(('XPos [um]', xm, 'ScannerXPos'))
 
-        if 'ScannerYPos' in evKeyNames:
+        if b'ScannerYPos' in evKeyNames:
             y0 = 0
             if 'Positioning.Stage_Y' in mdh.getEntryNames():
                 y0 = mdh.getEntry('Positioning.Stage_Y')
-            ym = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), y0, 'ScannerYPos', 0)
+            ym = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), y0, b'ScannerYPos', 0)
             ev_mappings['ym'] = ym
             eventCharts.append(('YPos [um]', ym, 'ScannerYPos'))
 
-        if 'ShiftMeasure' in evKeyNames:
-            driftx = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
+        if b'ShiftMeasure' in evKeyNames:
+            driftx = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
                                                               0)
-            drifty = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
+            drifty = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
                                                               1)
-            driftz = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, 'ShiftMeasure',
+            driftz = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh.getEntry('StartTime'), 0, b'ShiftMeasure',
                                                               2)
 
             ev_mappings['driftx'] = driftx
@@ -238,23 +240,30 @@ def _processEvents(ds, events, mdh):
             #self.ev_mappings = ev_mappings
     elif all(k in mdh.keys() for k in ['StackSettings.FramesPerStep', 'StackSettings.StepSize',
                                        'StackSettings.NumSteps', 'StackSettings.NumCycles']):
-        # if we dont have events file, see if we can use metadata to spoof focus
-        print('No events found, spoofing focus position using StackSettings metadata')
-        frames = np.arange(0, mdh['StackSettings.FramesPerStep'] * mdh['StackSettings.NumSteps'] * mdh[
-            'StackSettings.NumCycles'], mdh['StackSettings.FramesPerStep'])
-        position = np.arange(mdh.getOrDefault('Protocol.PiezoStartPos', 0),
-                             mdh.getOrDefault('Protocol.PiezoStartPos', 0) + mdh['StackSettings.NumSteps'] * mdh[
-                                 'StackSettings.StepSize'], mdh['StackSettings.StepSize'])
-        position = np.tile(position, mdh['StackSettings.NumCycles'])
-        
-        logger.debug('Spoofing focus events from metadata')
-        
-        if not len(position) == len(frames):
-            logger.error('Error spoofing focus events -  frames: %s, positions %s' % (frames, position))
-        else:
-            zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
-            ev_mappings['zm'] = zm
-            eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
+        # TODO - Remove this code - anytime we get here it's generally the result of an error in the input data
+        # This should be handled upstream when spooling
+        logger.warning('Spoofing focus from metadata: this usually implies an error in the input data (missing events) and results might vary')
+        try:
+            # if we dont have events file, see if we can use metadata to spoof focus
+            print('No events found, spoofing focus position using StackSettings metadata')
+            frames = np.arange(0, mdh['StackSettings.FramesPerStep'] * mdh['StackSettings.NumSteps'] * mdh[
+                'StackSettings.NumCycles'], mdh['StackSettings.FramesPerStep'])
+            position = np.arange(mdh.getOrDefault('Protocol.PiezoStartPos', 0),
+                                 mdh.getOrDefault('Protocol.PiezoStartPos', 0) + mdh['StackSettings.NumSteps'] * mdh[
+                                     'StackSettings.StepSize'], mdh['StackSettings.StepSize'])
+            position = np.tile(position, mdh['StackSettings.NumCycles'])
+            
+            logger.debug('Spoofing focus events from metadata')
+            
+            if not len(position) == len(frames):
+                logger.error('Error spoofing focus events -  frames: %s, positions %s' % (frames, position))
+            else:
+                zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
+                ev_mappings['zm'] = zm
+                eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
+        except:
+            #It doesn't really matter if this fails, print our traceback anyway
+            logger.exception('Error trying to fudge focus positions')
 
     return ev_mappings, eventCharts
 
@@ -301,7 +310,7 @@ class Pipeline:
         self.onKeysChanged = dispatch.Signal()
         
         self.ready = False
-        self.visFr = visFr
+        #self.visFr = visFr
 
         if not filename is None:
             self.OpenFile(filename)
@@ -329,6 +338,46 @@ class Pipeline:
         lds = {'output':self.colourFilter}
         lds.update(self.dataSources)
         return lds
+
+    @property
+    def layer_data_source_names(self):
+        """
+        Return a list of names of datasources we can use with dotted channel selection
+
+        There is a little bit of magic here as we augment the names with dotted names for colour channel selection
+        """
+        names = []#'']
+        for k, v in self.layer_datasources.items():
+            names.append(k)
+            if isinstance(v, tabular.colourFilter):
+                for c in v.getColourChans():
+                    names.append('.'.join([k, c]))
+    
+        return names
+    
+    def get_layer_data(self, dsname):
+        """
+        Returns layer data for a given name. The principle difference to just accessing self.dataSources directly is that
+        we do some magic relating to allow colour channels to be accessed with the dot notation e.g. dsname.colour_channel
+
+        """
+        if dsname == '':
+            return self
+    
+        parts = dsname.split('.')
+        if len(parts) == 2:
+            # special case - permit access to channels using dot notation
+            # NB: only works if our underlying datasource is a ColourFilter
+            ds, channel = parts
+            if ds == 'output':
+                return self.colourFilter.get_channel_ds(channel)
+            else:
+                return self.dataSources.get(ds, None).get_channel_ds(channel)
+        else:
+            if dsname =='output':
+                return self.colourFilter
+            else:
+                return self.dataSources.get(dsname, None)
 
     @property
     def selectedDataSource(self):
@@ -449,9 +498,13 @@ class Pipeline:
                     s.setMapping('z_raw', 'z')
                 
         if not self.selectedDataSource is None:
-            #we can recycle the mapping object
-            if False:# self.mapping:
-                self.mapping.resultsSource = self.selectedDataSource
+            if self.mapping:
+                # copy any mapping we might have made across to the new mapping filter (should fix drift correction)
+                # TODO - make drift correction a recipe module so that we don't need this code. Long term we should be
+                # ditching the mapping filter here.
+                old_mapping = self.mapping
+                self.mapping = tabular.mappingFilter(self.selectedDataSource)
+                self.mapping.mappings.update(old_mapping.mappings)
             else:
                 self.mapping = tabular.mappingFilter(self.selectedDataSource)
 
@@ -555,7 +608,12 @@ class Pipeline:
                     break
 
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
-            ds = tabular.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
+            if 'VarName' in kwargs.keys():
+                #old style matlab import
+                ds = tabular.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
+            else:
+                ds = tabular.matfileColumnSource(filename)
+                
 
         elif os.path.splitext(filename)[1] == '.csv':
             #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter
@@ -569,6 +627,8 @@ class Pipeline:
                 ds = tabular.textfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
             else:
                 ds = tabular.textfileSource(filename, kwargs['FieldNames'])
+
+
 
         return ds
 
@@ -633,7 +693,12 @@ class Pipeline:
             
             if 'LatGaussFitFR' in fitModule:
                 mapped_ds.addColumn('nPhotons', getPhotonNums(mapped_ds, self.mdh))
-                
+
+            if 'SplitterFitFNR' in fitModule:
+                mapped_ds.addColumn('nPhotonsg', getPhotonNums({'A': mapped_ds['fitResults_Ag'], 'sig': mapped_ds['fitResults_sigma']}, self.mdh))
+                mapped_ds.addColumn('nPhotonsr', getPhotonNums({'A': mapped_ds['fitResults_Ar'], 'sig': mapped_ds['fitResults_sigma']}, self.mdh))
+                mapped_ds.setMapping('nPhotons', 'nPhotonsg+nPhotonsr')
+
             if fitModule == 'SplitterShiftEstFR':
                 self.filterKeys['fitError_dx'] = (0,10)
                 self.filterKeys['fitError_dy'] = (0,10)
@@ -720,7 +785,7 @@ class Pipeline:
                 #color channel is given in 'probe' column
                 self.mapping.setMapping('ColourNorm', '1.0 + 0*probe')
     
-                for i in range(int(self['probe'].min()), int(self['probe'].max() + 1)):
+                for i in range(int(self.mapping['probe'].min()), int(self.mapping['probe'].max() + 1)):
                     self.mapping.setMapping('p_chan%d' % i, '1.0*(probe == %d)' % i)
     
             nSeqCols = self.mdh.getOrDefault('Protocol.NumberSequentialColors', 1)
@@ -735,13 +800,20 @@ class Pipeline:
 
     def _get_dye_ratios_from_metadata(self):
         labels = self.mdh.getOrDefault('Sample.Labelling', [])
+        seen_structures = []
 
         for structure, dye in labels:
+            if structure in seen_structures:
+                strucname = structure + '_1'
+            else:
+                strucname = structure
+            seen_structures.append(structure)
+            
             ratio = dyeRatios.getRatio(dye, self.mdh)
 
             if not ratio is None:
-                self.fluorSpecies[structure] = ratio
-                self.fluorSpeciesDyes[structure] = dye
+                self.fluorSpecies[strucname] = ratio
+                self.fluorSpeciesDyes[strucname] = dye
                 #self.mapping.setMapping('p_%s' % structure, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (ratio, 1-ratio))
                 #self.mapping.setMapping('p_%s' % structure, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
                 
@@ -829,6 +901,11 @@ class Pipeline:
         return self.objectMeasures
         
     def save_txt(self, outFile, keys=None):
+        if outFile.endswith('.csv'):
+            delim = ', '
+        else:
+            delim = '\t'
+            
         if keys is None:
             keys = self.keys()
 
@@ -836,10 +913,10 @@ class Pipeline:
     
         of = open(outFile, 'w')
     
-        of.write('#' + '\t'.join(['%s' % k for k in keys]) + '\n')
+        of.write('#' + delim.join(['%s' % k for k in keys]) + '\n')
     
         for row in zip(*[self[k] for k in keys]):
-            of.write('\t'.join(['%e' % c for c in row]) + '\n')
+            of.write(delim.join(['%e' % c for c in row]) + '\n')
     
         of.close()
         

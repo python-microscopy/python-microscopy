@@ -126,12 +126,13 @@ class ScaleBoxOverlayLayer(OverlayLayer):
             self._flips[2] = not self._flips[2]
 
     def render(self, gl_canvas):
-        if self._show:
+        if self._show and self.visible: #handle old _show as well as the standard .visible
             bbox = gl_canvas.bbox
     
             if bbox is None:
                 return
             
+            self._clear_shader_clipping()
             with self.shader_program:
                 glDisable(GL_LIGHTING)
                 glColor4fv(self._color)

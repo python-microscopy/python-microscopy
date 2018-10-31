@@ -21,11 +21,11 @@ else:
 
 
 try:
-    from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, \
-        ListInstance, on_trait_change
+    from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, CStr, Bool, Int, \
+        on_trait_change
     #from enthought.traits.ui.api import View, Item, EnumEditor, InstanceEditor, Group
 except ImportError:
-    from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, ListInstance, \
+    from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, \
         on_trait_change
     #from traitsui.api import View, Item, EnumEditor, InstanceEditor, Group
 
@@ -62,19 +62,24 @@ class ClippingPanel(wx.Panel):
         #self.data_limits = data_limits
         #self.view_limits = view_lim
         
+        #print 'r', self.view_limits, self.view_limits[0]
+        
         self.view_limits[0] = max(self.view_limits[0], self.data_limits[0])
         self.view_limits[1] = min(self.view_limits[1], self.data_limits[1])
+
+        #print 'm', self.view_limits, self.view_limits[0]
         
         self.textSize = 10
-        
-        wx.EVT_PAINT(self, self.OnPaint)
-        wx.EVT_SIZE(self, self.OnSize)
-        wx.EVT_LEFT_DOWN(self, self.OnLeftDown)
-        wx.EVT_LEFT_UP(self, self.OnLeftUp)
-        wx.EVT_MOTION(self, self.OnMouseMove)
+
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
+        self.Bind(wx.EVT_MOTION, self.OnMouseMove)
         #wx.EVT_KEY_DOWN(self, self.OnKeyPress)
         #wx.EVT_RIGHT_UP(self, self.OnRightUp)
-        wx.EVT_MOUSEWHEEL(self, self.OnMouseScrollEvent)
+        self.Bind(wx.EVT_MOUSEWHEEL, self.OnMouseScrollEvent)
+        self.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
     
     @property
     def data_limits(self):
@@ -87,17 +92,23 @@ class ClippingPanel(wx.Panel):
         
         
         if self.axis == 'x':
-            return bb[0], bb[3]
+            return bb[0]-1, bb[3]+1
         elif self.axis == 'y':
-            return bb[1], bb[4]
+            return bb[1]-1, bb[4]+1
         elif self.axis == 'z':
-            return bb[2], bb[5]
+            return bb[2]-1, bb[5]+1
         else:
             return 0, 1
         
     @property
     def view_limits(self):
-        return self.glcanvas.bounds[self.axis]
+        #print 'q', self.glcanvas.bounds
+        #print self.glcanvas.bounds[self.axis]
+        vl = self.glcanvas.bounds[self.axis][0]
+        #print vl
+        return vl
+        
+        
         #return max(vl[0], self.data_limits[0]), min(vl[1], self.data_limits[1])
         
     def _get_coords(self):
@@ -181,12 +192,12 @@ class ClippingPanel(wx.Panel):
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
         try:
-            DC.BeginDrawing()
+            #DC.BeginDrawing()
         
             self.DoPaint(MemDC)
         
             DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
-            DC.EndDrawing()
+            #DC.EndDrawing()
         finally:
         
             del MemDC
@@ -200,18 +211,21 @@ class ClippingPanel(wx.Panel):
         rot = evt.GetWheelRotation()
         # shift_offset = self.hstep
         shift_offset = (self.view_limits[1] - self.view_limits[0]) * SCROLL_FACTOR
-        if rot > 0:
-            delta = shift_offset
-        else:
-            delta = -shift_offset
+        # if rot > 0:
+        #     delta = shift_offset
+        # else:
+        #     delta = -shift_offset
+        delta = max(min(rot*shift_offset,  self.data_limits[1] - self.view_limits[1]), self.data_limits[0] - self.view_limits[0])
         self.view_limits[0] += delta
         self.view_limits[1] += delta
+        
+        #print('clip scroll - delta = %g, rot = %g' % (delta, rot))
         
         self.Refresh()
         self.Update()
         self.glcanvas.refresh()
         evt = LimitChangeEvent(self.GetId(), upper=self.view_limits[1], lower=self.view_limits[0])
-        self.ProcessEvent(evt)
+        #self.ProcessEvent(evt)
 
 
     def OnLeftDown(self, event):
@@ -249,6 +263,23 @@ class ClippingPanel(wx.Panel):
         self.Refresh()
         self.Update()
         event.Skip()
+        
+    def OnDoubleClick(self, event):
+        dlg = wx.TextEntryDialog(self, 'Clipping range [nm]', 'Restrict clipping to a given range', '200')
+        if (dlg.ShowModal() == wx.ID_OK):
+            clip_size = float(dlg.GetValue())
+            
+            vc = 0.5*(self.view_limits[0] + self.view_limits[1])
+            
+            self.view_limits[0] = vc - 0.5*clip_size
+            self.view_limits[1] = vc + 0.5*clip_size
+
+            self.Refresh()
+            self.Update()
+            self.glcanvas.refresh()
+            
+            
+        dlg.Destroy()
 
 
     def OnMouseMove(self, event):
@@ -331,7 +362,7 @@ class ViewClippingPanel(wx.Panel):
 
 
 
-def GenViewClippingPanel(visgui, pnl, title='Clipping'):
+def GenViewClippingPanel(visgui, pnl, title='View Clipping'):
     """Generate a ponts pane and insert into the given panel"""
     item = afp.foldingPane(pnl, -1, caption=title, pinned=True)
     

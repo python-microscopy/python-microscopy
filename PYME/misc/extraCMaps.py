@@ -30,7 +30,7 @@ def regCmap(cmap):
 
 if not 'cmapnames' in dir(pylab.cm):
     if 'cmap_d' in dir(pylab.cm):
-        pylab.cm.cmapnames = pylab.cm.cmap_d.keys()
+        pylab.cm.cmapnames = list(pylab.cm.cmap_d.keys())
     else:
         pylab.cm.cmapnames = pylab.cm._cmapnames
 
@@ -54,7 +54,7 @@ _hsv_part = {'red':   ((0., 1., 1.),(0.25, 1.000000, 1.000000),
 
 ndat = {'r':_r, 'g':_g, 'b':_b, 'c':_c, 'm':_m, 'y':_y, 'hsp': _hsv_part}
 
-ncmapnames = ndat.keys()
+ncmapnames = list(ndat.keys())
 pylab.cm.cmapnames += ncmapnames
 for cmapname in ncmapnames:
     pylab.cm.__dict__[cmapname] = colors.LinearSegmentedColormap(cmapname, ndat[cmapname], pylab.cm.LUTSIZE)
@@ -80,5 +80,49 @@ flow_gray.name = 'flow_gray'
 
 regCmap(flow_gray)
 
+
+
+def grey_overflow(underflowcol = 'magenta', overflowcol = 'lime', percentage=5, greystart=0.1):
+    if percentage < 1:
+        percentage = 1
+    if percentage > 15:
+        percentage = 15
+
+    ucolrgb = colors.hex2color(colors.cnames[underflowcol])
+    ocolrgb = colors.hex2color(colors.cnames[overflowcol])
+    p = 0.01 * percentage
+
+    def r(rgb):
+        return rgb[0]
+
+    def g(rgb):
+        return rgb[1]
+
+    def b(rgb):
+        return rgb[2]
+    
+    grey_data = {'red':   [(0, r(ucolrgb), r(ucolrgb)),
+                          (p, r(ucolrgb), greystart),
+                          (1.0-p, 1.0, r(ocolrgb)),
+                          (1.0, r(ocolrgb), r(ocolrgb))],
+                'green': [(0, g(ucolrgb), g(ucolrgb)),
+                          (p, g(ucolrgb), greystart),
+                          (1.0-p, 1.0, g(ocolrgb)),
+                          (1.0, g(ocolrgb), g(ocolrgb))],
+                'blue':  [(0, b(ucolrgb), b(ucolrgb)),
+                          (p, b(ucolrgb), greystart),
+                          (1.0-p, 1.0, b(ocolrgb)),
+                          (1.0, b(ocolrgb), b(ocolrgb))]}
+
+    cm_grey2 = colors.LinearSegmentedColormap('grey_overflow', grey_data)
+    return cm_grey2
+
+regCmap(grey_overflow(percentage=2.5,greystart=0.125))
+
+try:
+    import PYMEcs.experimental.ExtraCmaps as ec
+    regCmap(ec.hot_overflow(overflowcol='cyan',percentage=2.5))
+except:
+    pass
 
 pylab.cm.cmapnames.sort()

@@ -217,14 +217,14 @@ class MyViewPanel(viewpanel.ViewPanel):
         MemDC = wx.MemoryDC()
         OldBitmap = MemDC.SelectObject(MemBitmap)
         try:
-            DC.BeginDrawing()
+            #DC.BeginDrawing()
             #Perform(WM_ERASEBKGND, MemDC, MemDC);
             #Message.DC := MemDC;
             self.DoPaint(MemDC);
             #Message.DC := 0;
             #DC.BlitXY(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
             DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
-            DC.EndDrawing()
+            #DC.EndDrawing()
         finally:
             #MemDC.SelectObject(OldBitmap)
             del MemDC

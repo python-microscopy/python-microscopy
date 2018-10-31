@@ -20,12 +20,18 @@
 #
 import abc
 from OpenGL.GL import *
-
+import numpy as np
 
 class GLProgram(object):
 
     def __init__(self):
         self._shader_program = None
+
+        self.xmin, self.xmax = [-1e6, 1e6]
+        self.ymin, self.ymax = [-1e6, 1e6]
+        self.zmin, self.zmax = [-1e6, 1e6]
+        self.vmin, self.vmax = [-1e6, 1e6]
+        self.v_matrix = np.eye(4, 4, dtype='f')
 
     @abc.abstractmethod
     def __enter__(self):

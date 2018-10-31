@@ -34,6 +34,7 @@ from PYME.localization import ofind
     #cost is not in the ffts
 from PYME.localization import ofind_xcorr
 from PYME.localization import ofind_pri
+from PYME.localization import splitting
 
 from PYME.IO import buffers
 from PYME.IO.image import ImageStack
@@ -56,6 +57,7 @@ splitterFitModules = ['SplitterFitFR', 'SplitterFitFNR','SplitterFitQR', 'Splitt
 #from pylab import *
 
 import copy
+from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
 def tqPopFcn(workerN, NWorkers, NTasks):
     #let each task work on its own chunk of data ->
@@ -103,7 +105,8 @@ class BufferManager(object):
                     # NB: The GPU version should result in a uniform background but will NOT completely remove the background. As such it will only work 
                     # for fits which have a constant background as a fit parameter, and not those which assume that background subtraction reduces the 
                     # background to zero (as is the case for our CPU based background estimation). Use with caution.
-                    self.bBuffer = GPUPercentileBuffer(self.dBuffer, md['Analysis.PCTBackground'], dark_map=cameraMaps.getDarkMap(md))
+                    self.bBuffer = GPUPercentileBuffer(self.dBuffer, md['Analysis.PCTBackground'],
+                                                       buffer_length=bufferLen, dark_map=cameraMaps.getDarkMap(md))
                 else: 
                     # use our default CPU implementation
                     self.bBuffer = buffers.backgroundBufferM(self.dBuffer, md['Analysis.PCTBackground'])
@@ -126,8 +129,9 @@ class CameraInfoManager(object):
 
     def _parseROI(self, md):
         """Extract ROI coordinates from metadata"""
-        x0 = (md['Camera.ROIPosX'] - 1)
-        y0 = (md['Camera.ROIPosY'] - 1)
+        
+        x0, y0 = get_camera_roi_origin(md)
+
         x1 = x0 + md['Camera.ROIWidth']
         y1 = y0 + md['Camera.ROIHeight']
 
@@ -157,7 +161,7 @@ class CameraInfoManager(object):
         except KeyError: 
             #cache miss
             x0, y0, x1, y1 = ROI
-            mp = self._fetchMap(md, mapName)[x0:x1, y0:y1]
+            mp = self._fetchMap(md, mapName)[x0:x1, y0:y1].astype('f') #everything should be float (rather than double)
             
             self._cache[mapKey] = mp
 
@@ -291,13 +295,16 @@ class fitTask(taskDef.Task):
         self.SNThreshold = self.md.getOrDefault('Analysis.SNRThreshold', True)
         
         self.driftEst = self.md.getOrDefault('Analysis.TrackFiducials', False)
-                 
-        self.bufferLen = 50 #12
-        if self.driftEst: 
-            #increase the buffer length as we're going to look forward as well
-            self.bufferLen = 50 #17
 
-        self._get_bgindices()
+        self._get_bgindices()  # NB - this injects Analysis.BGRange into metadata if not already present
+        #  make sure that our buffer is large enough for drift correction or background subtraction
+        if self.driftEst:
+            drift_ind = self.index + self.md.getOrDefault('Analysis.DriftIndices', np.array([-10, 0, 10]))
+        else:
+            drift_ind = [0,0]
+        # a fix for Analysis.BGRange[0] == Analysis.BGRange[1], i.e. '0:0' as we tend to do in DNA-PAINT
+        # makes bufferLen at least 1
+        self.bufferLen = max(1,max(self.md['Analysis.BGRange'][1], drift_ind[-1]) - min(self.md['Analysis.BGRange'][0], drift_ind[0]))
         
     @property
     def fitMod(self):
@@ -324,120 +331,14 @@ class fitTask(taskDef.Task):
                                max(self.index + self.md['Analysis.BGRange'][1], self.md.getOrDefault('EstimatedLaserOnFrameNo', 0)))
             
     def __mapSplitterCoords(self, x,y):
-        vx = self.md['voxelsize.x']*1e3
-        vy = self.md['voxelsize.y']*1e3
-        
-        x0 = (self.md['Camera.ROIPosX'] - 1)
-        y0 = (self.md['Camera.ROIPosY'] - 1)
-        
-        if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-            xg, yg, w, h = self.md['Splitter.Channel0ROI']            
-            xr, yr, w, h = self.md['Splitter.Channel1ROI']
-
-            w2 = w - x0
-            h2 = h - y0
-        else:
-            xg,yg, w, h = 0,0,self.data.shape[0], self.data.shape[1]
-            xr, yr = w,h
-            
-        ch1 = (x>=(xr - x0))&(y >= (yr - y0))
-            
-        xn = x - ch1*(xr-xg)
-        yn = y - ch1*(yr-yg)
-        
-        if not (('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip'))):          
-            yn += ch1*(h - y0 - 2*yn)
-            
-        #chromatic shift
-        if 'chroma.dx' in self.md.getEntryNames():
-            dx = self.md['chroma.dx'].ev((xn+x0)*vx, (yn+y0)*vy)/vx
-            dy = self.md['chroma.dy'].ev((xn+x0)*vy, (yn+y0)*vy)/vy
-        
-            xn += dx*ch1
-            yn += dy*ch1
-       
-        return np.clip(xn, 0, w2-1), np.clip(yn, 0, h2-1)
+        return splitting.map_splitter_coords(self.md, self.data.shape, x, y)
         
     def __remapSplitterCoords(self, x,y):
-        vx = self.md['voxelsize.x']*1e3
-        vy = self.md['voxelsize.y']*1e3
-        
-        x0 = (self.md['Camera.ROIPosX'] - 1)
-        y0 = (self.md['Camera.ROIPosY'] - 1)
-        
-        if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-            xg, yg, w, h = self.md['Splitter.Channel0ROI']            
-            xr, yr, w, h = self.md['Splitter.Channel1ROI']
-        else:
-            xg,yg, w, h = 0,0,self.data.shape[0], self.data.shape[1]
-            xr, yr = w,h
-            
-        xn = x + (xr - xg)
-        yn = y + (yr - yg)
-        
-        if not (('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip'))):          
-            yn = (h-y0 - y) + yr - yg
-            
-        #chromatic shift
-        if 'chroma.dx' in self.md.getEntryNames():
-            dx = self.md['chroma.dx'].ev((x+x0)*vx, (y+y0)*vy)/vx
-            dy = self.md['chroma.dy'].ev((x+x0)*vx, (y+y0)*vy)/vy
-        
-            xn -= dx
-            yn -= dy
-       
-        return xn, yn
+        return splitting.remap_splitter_coords(self.md, self.data.shape, x, y)
         
     def _getSplitterROIs(self):
         if not '_splitterROICache' in dir(self):
-            x0 = (self.md['Camera.ROIPosX'] - 1)
-            y0 = (self.md['Camera.ROIPosY'] - 1)  
-            
-            if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-                xg, yg, wg, hg = self.md['Splitter.Channel0ROI']                       
-                xr, yr, wr, hr = self.md['Splitter.Channel1ROI']
-                #print 'Have splitter ROIs'
-            else:
-                xg = 0
-                yg = 0
-                wg = self.data.shape[0]
-                hg = self.data.shape[1]/2
-                
-                xr = 0
-                yr = hg
-                wr = self.data.shape[0]
-                hr = self.data.shape[1]/2
-                
-            def _bdsClip(x, w, x0, iw):
-                x -= x0
-                if (x < 0):
-                    w += x
-                    x = 0
-                if ((x + w) > iw):
-                    w -= (x + w) - iw
-                    
-                return x, w
-            
-            #print yr, hr
-                
-            xg, wg = _bdsClip(xg, wg, x0, self.data.shape[0])
-            xr, wr = _bdsClip(xr, wr, 0, self.data.shape[0])
-            yg, hg = _bdsClip(yg, hg, y0, self.data.shape[1])
-            yr, hr = _bdsClip(yr, hr, 0, self.data.shape[1])
-                
-            w = min(wg, wr)
-            h = min(hg, hr)
-            
-            #print yr, hr
-                    
-            if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
-                step = 1
-                self._splitterROICache = (slice(xg, xg+w, 1), slice(xr, xr+w, 1),slice(yg, yg+h, 1),slice(yr, yr+h, step))
-            else:
-                step = -1
-                self._splitterROICache = (slice(xg, xg+w, 1), slice(xr, xr+w, 1),slice(yg, yg+h, 1),slice(yr+h, yr -1, step))
-                
-            
+            self._splitterROICache = splitting.get_splitter_rois(self.md, self.data.shape)
             
         return self._splitterROICache
         
@@ -555,7 +456,8 @@ class fitTask(taskDef.Task):
             self.driftEstInd = self.index + self.md.getOrDefault('Analysis.DriftIndices', np.array([-10, 0, 10]))        
             self.calObjThresh = self.md.getOrDefault('Analysis.FiducialThreshold', 6)
             fiducialROISize = self.md.getOrDefault('Analysis.FiducialROISize', 11)
-            self._findFiducials(sfunc, debounce)
+            fiducialSize = self.md.getOrDefault('Analysis.FiducalSize', 1000.)
+            self._findFiducials(sfunc, debounce, fiducialSize)
                 
         
         #####################################################################
@@ -614,7 +516,7 @@ class fitTask(taskDef.Task):
 
     @classmethod
     def calcSigma(cls, md, data):
-        var = np.atleast_3d(cameraMaps.getVarianceMap(md))
+        var = np.atleast_3d(cameraMaps.getVarianceMap(md)) # this must be float type!! Should we enforce with an 'astype' call?
         return np.sqrt(var + (float(md.Camera.NoiseFactor)**2)*(float(md.Camera.ElectronsPerCount)*float(md.Camera.TrueEMGain)*np.maximum(data, 1.0) + float(md.Camera.TrueEMGain)*float(md.Camera.TrueEMGain)))/float(md.Camera.ElectronsPerCount)
     
     def calcThreshold(self):
@@ -629,7 +531,7 @@ class fitTask(taskDef.Task):
 
 
     
-    def _findFiducials(self, sfunc, debounce): 
+    def _findFiducials(self, sfunc, debounce, fiducalSize):
         ####################################################
         # Find Fiducials
 
@@ -646,7 +548,8 @@ class fitTask(taskDef.Task):
         
         #self.mIm = numpy.absolute(self.mIm)
         #if not 'PSFFile' in self.md.getEntryNames():
-        self.ofdDr = ofind.ObjectIdentifier(self.mIm, filterRadiusLowpass=5, filterRadiusHighpass=9)
+        fid_scale = max((fiducalSize/100.)*0.5, 0)
+        self.ofdDr = ofind.ObjectIdentifier(self.mIm, filterRadiusLowpass=(1 + fid_scale), filterRadiusHighpass=(3 + fid_scale))
         #else:
         #    self.ofdDr = ofind_xcorr.ObjectIdentifier(self.mIm, self.md.getEntry('PSFFile'), 7, 3e-2)
             

@@ -36,7 +36,7 @@ import  wx
 from six.moves import xrange
 
 #python 3 compatibility
-cmp = lambda(x, y): (x > y) - (x < y)
+cmp = lambda x, y: (x > y) - (x < y)
 
 #----------------------------------------------------------------------------
 

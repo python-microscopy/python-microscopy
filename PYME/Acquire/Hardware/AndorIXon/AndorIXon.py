@@ -61,13 +61,24 @@ noiseProperties = {
         'ADOffset' : 203,
         'DefaultEMGain' : 90,
         'SaturationThreshold' : 5.4e4#(2**16 -1)
-        },    
+        },
+7546 : {
+        #  preamp: currently using most sensitive setting (default according to docs)
+        # if I understand the code correctly the fastest Horizontal Shift Speed will be selected
+        # which should be 17 MHz for this camera; therefore using 17 MHz data
+        'ReadNoise' : 85.23,
+        'ElectronsPerCount' : 4.82,
+        'NGainStages' : 536, # relevant?
+        'ADOffset' : 150, # from test measurement at EMGain 85 (realgain ~30)
+        'DefaultEMGain' : 85, # we start carefully and can bumb this later to be in the vicinity of 30
+        'SaturationThreshold' : (2**16 -1) # this cam has 16 bit data
+    },
 }
 
 preamp_gains = {
     1823 : 0,
     5414 : 0,
-    7863 : 3,
+    7863 : 2,
 }
 
 class iXonCamera:
@@ -195,7 +206,9 @@ class iXonCamera:
 
         #FIXME - do something about selecting A/D channel
         
-        self.preampGain = preamp_gains[self.GetSerialNumber()] #gain of "3"
+        #set the preamp gain if we have data for our camera, otherwise default to highest
+        # NOTE: this is important as other software may have left it in an undefined state
+        self.preampGain = preamp_gains.get(self.GetSerialNumber(), 2) #gain of "3"
         ret = ac.SetPreAmpGain(self.preampGain)
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting Preamp gain: %s' % ac.errorCodes[ret])
@@ -722,6 +735,12 @@ class iXonCamera:
         self.__selectCamera()
         ac.SetBaselineClamp(int(state))
 
+    def GetBaselineClamp(self):
+        self.__selectCamera()
+        state = ac.GetBaselineClamp.argtypes[0]._type_()
+        ac.GetBaselineClamp(byref(state))
+        return state.value == 1
+
     def SetFan(self, state):
         self.__selectCamera()
         ac.SetFanMode(state)
@@ -756,6 +775,8 @@ class iXonCamera:
 
             mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
             mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
+            mdh.setEntry('Camera.ROIOriginX', self.GetROIX1()-1)
+            mdh.setEntry('Camera.ROIOriginY', self.GetROIY1()-1)
             mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
             mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
             mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())

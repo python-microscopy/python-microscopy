@@ -27,8 +27,8 @@ class ParticleTracker:
     def __init__(self, visFr):
         self.visFr = visFr
 
-        visFr.AddMenuItem('Extras', "Get segmented IDs from image", self.OnGetIDs)
-        visFr.AddMenuItem('Extras', "Measure objects", self.OnMeasure)
+        visFr.AddMenuItem('Analysis', "Get segmented IDs from image", self.OnGetIDs)
+        visFr.AddMenuItem('Analysis', "Measure objects", self.OnMeasure)
 
 
     def OnGetIDs(self, event):
@@ -50,7 +50,7 @@ class ParticleTracker:
 
         """
         from PYME.IO import image
-        from PYME.Analysis.points import objectMeasurements
+        from PYME.Analysis.points import objectMeasure
 
         visFr = self.visFr
         pipeline = visFr.pipeline
@@ -64,7 +64,7 @@ class ParticleTracker:
         if dlg.ShowModal() == wx.ID_OK:
             img = image.openImages[dlg.GetStringSelection()]
 
-            ids, numPerObject = objectMeasurements.getIDs(pipeline, img)
+            ids, numPerObject = objectMeasure.get_labels_from_image(pipeline, img)
 
             pipeline.addColumn('objectID', ids)
             pipeline.addColumn('NEvents', numPerObject[ids-1])

@@ -38,6 +38,7 @@ import matplotlib
 matplotlib.use('wxagg')
 import pylab
 
+from PYME import config
 from PYME.misc import extraCMaps
 from PYME.IO.FileUtils import nameUtils
 
@@ -70,7 +71,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     with the LMDisplay module used for online display and has been factored out into the visCore module"""
     def __init__(self, parent, filename=None, id=wx.ID_ANY, 
                  title="PYME Visualise", pos=wx.DefaultPosition,
-                 size=(700,650), style=wx.DEFAULT_FRAME_STYLE, use_shaders=False, cmd_args=None):
+                 size=(900,750), style=wx.DEFAULT_FRAME_STYLE, use_shaders=False, cmd_args=None):
 
         AUIFrame.__init__(self, parent, id, title, pos, size, style)
         
@@ -100,8 +101,9 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         self.MainWindow = self #so we can access from shell
         self.sh = wx.py.shell.Shell(id=-1,
-              parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
-              introText='Python SMI bindings - note that help, license etc below is for Python, not PySMI\n\n')
+                                    parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
+                                    startupScript=config.get('VisGUI-console-startup-file', None),
+              introText='PYME console - note that help, license etc below is for Python, not PySMI\n\n')
 
         #self._mgr.AddPane(self.sh, aui.AuiPaneInfo().
         #                  Name("Shell").Caption("Console").Centre().CloseButton(False).CaptionVisible(False))
@@ -116,11 +118,13 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         self.generatedImages = []
         
-#        if 'PYME_BUGGYOPENGL' in os.environ.keys():
-#            pylab.plot(pylab.randn(10))
-
         self.sh.Execute('from pylab import *')
         self.sh.Execute('from PYME.DSView.dsviewer import View3D')
+        
+        import os
+        if os.getenv('PYMEGRAPHICSFIX'): # fix issue with graphics freezing on some machines (apparently matplotlib related)
+            self.sh.Execute('plot()')
+            self.sh.Execute('close()')
 
         #self.workspace = workspaceTree.WorkWrap(self.__dict__)
         ##### Make certain things visible in the workspace tree
@@ -159,7 +163,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         
         
         self.paneHooks.append(self.GenPanels)
-        #self.CreateFoldPanel()
+        self.CreateFoldPanel()
 
         if not filename is None:
     
@@ -170,7 +174,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
                     from PYME.recipes import modules
                     self.pipeline.recipe.update_from_yaml(recipe)
                     self.recipeView.SetRecipe(self.pipeline.recipe)
-                    self.set_datasource_choices()
+                    self.update_datasource_panel()
             
             wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)
             #self.refv = False
@@ -306,14 +310,15 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         
                     
     def _createNewTabs(self):
-        #print 'md'
+        logger.debug('Creating tabs')
+        self.adding_panes = True
         self.mdp = MetadataTree.MetadataPanel(self, self.pipeline.mdh, editable=False)
-        self.AddPage(self.mdp, caption='Metadata')
+        self.AddPage(self.mdp, caption='Metadata', select=False, update=False)
         
         #print 'cp'        
         if 'gFrac' in self.pipeline.filter.keys():
             self.colp = colourPanel.colourPanel(self, self.pipeline, self)
-            self.AddPage(self.colp, caption='Colour', update=False)
+            self.AddPage(self.colp, caption='Colour', select=False, update=False)
             
         #print 'ev'
         if not self.pipeline.events is None:
@@ -323,9 +328,10 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     
             self.elv.SetCharts(self.pipeline.eventCharts)
             
-            self.AddPage(self.elv, caption='Events', update=False)
-            
-        #print 'ud'
+            self.AddPage(self.elv, caption='Events', select=False, update=False)
+
+        logger.debug('Finished creating tabs')
+        self.adding_panes = False
         self._mgr.Update()
             
         
@@ -380,7 +386,6 @@ class VisGuiApp(wx.App):
         
         
     def OnInit(self):
-        wx.InitAllImageHandlers()
         self.main = VisGUIFrame(None, self.filename, use_shaders=self.use_shaders, cmd_args=self.cmd_args)
         self.main.Show()
         self.SetTopWindow(self.main)
@@ -401,8 +406,8 @@ def parse():
                         help='switch shaders on(default: off)')
     parser.add_argument('--no-shaders', dest="use_shaders", action='store_false',
                         default=True, help='switch shaders off(default: off)')
-    parser.add_argument('--new-layers', dest='new_layers', action='store_true', default=False)
-    parser.add_argument('--no-layers', dest='new_layers', action='store_false', default=False)
+    parser.add_argument('--new-layers', dest='new_layers', action='store_true', default=True)
+    parser.add_argument('--no-layers', dest='new_layers', action='store_false', default=True)
     args = parser.parse_args()
     return args
     

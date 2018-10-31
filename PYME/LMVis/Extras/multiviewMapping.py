@@ -24,8 +24,6 @@
 
 import wx
 import numpy as np
-from PYME.Analysis.points.DeClump import pyDeClump
-
 import os
 from PYME.IO.FileUtils import nameUtils
 import json
@@ -59,145 +57,10 @@ def plotFolded(X, Y, multiviewChannels, title=''):
     plt.legend()
     return
 
-def correlative_shift(x0, y0, which_channel, pix_size_nm=115.):
-    """
-    Laterally shifts all channels to the first using cross correlations
-
-    Parameters
-    ----------
-    x0 : ndarray
-        array of localization x positions; not yet registered
-    y0 : ndarray
-        array of localization y positions; not yet registered
-    which_channel : ndarray
-        contains the channel ID for each localization
-    pix_size_nm : float
-        size of pixels to be used in generating 2D histograms which the correlations are then performed on
-
-    Returns
-    -------
-    x : ndarray
-        array of localization x positions registered to the first channel
-    y : ndarray
-        array of localization y positions registered to the first channel
-    """
-    from scipy.signal import fftconvolve  # , correlate2d
-    from skimage import filters
-
-    x, y = np.copy(x0), np.copy(y0)
-    # determine number of ~pixel size bins for histogram
-    bin_count = round((x.max() - x.min()) / pix_size_nm)  # assume square FOV (NB - after folding)
-    # make sure bin_count is odd so its possible to have zero shift
-    if bin_count % 2 == 0:
-        bin_count += 1
-    center = np.floor(float(bin_count) / 2)
-
-    # generate first channel histogram
-    channels = iter(np.unique(which_channel))
-    first_chan = channels.next()
-    mask = which_channel == first_chan
-    first_channel, r_bins, c_bins = np.histogram2d(x[mask], y[mask], bins=(bin_count, bin_count))
-    first_channel = first_channel >= filters.threshold_otsu(first_channel)
-    first_channel = filters.gaussian(first_channel.astype(float))
-
-    # loop through channels, skipping the first
-    for chan in channels:
-        # generate 2D histogram
-        mask = which_channel == chan
-        counts = np.histogram2d(x[mask], y[mask], bins=(r_bins, c_bins))[0]
-        counts = counts >= filters.threshold_otsu(counts)
-        counts = filters.gaussian(counts.astype(float))
 
 
-        # cross-correlate this channel with the first, make it binary
-        # cross_cor = correlate2d(first_channel, counts, mode='same', boundary='symm')
-        cross_cor = fftconvolve(first_channel, counts[::-1, ::-1], mode='same')
 
-        r_off, c_off = np.unravel_index(np.argmax(cross_cor), cross_cor.shape)
-
-        # shift r and c positions
-        r_shift = (center - r_off) * pix_size_nm
-        c_shift = (center - c_off) * pix_size_nm
-
-        x[mask] -= c_shift
-        y[mask] -= r_shift
-
-    return x, y
-
-def pairMolecules(tIndex, x0, y0, whichChan, deltaX=[None], appearIn=np.arange(4), nFrameSep=5, returnPaired=True,
-                  pix_size_nm=115.):
-    """
-    pairMolecules uses pyDeClump functions to group localization clumps into molecules for registration.
-
-    Parameters
-    ----------
-    tIndex: from fitResults
-    x0: ndarray
-        x positions of localizations AFTER having been folded into the first channel
-    y0: ndarray
-        y positions of localizations
-    whichChan: ndarray
-        contains channel assignments for each localization
-    deltaX: list
-        distance within which neighbors will be clumped is set by 2*deltaX[i])**2. If None, will default to 100 nm
-    appearIn: list
-        a clump must have localizations in each of these channels in order to be a keep-clump
-    nFrameSep: int
-        number of frames a molecule is allowed to blink off and still be clumped as the same molecule
-    returnPaired: bool
-        flag to return a boolean array where True indicates that the molecule is a member of a
-        clump whose members span the appearIn channels.
-
-    Returns
-    -------
-    assigned: ndarray
-        clump assignments for each localization. Note that molecules whose whichChan entry is set to a
-        negative value will not be clumped, i.e. they will have a unique value in assigned.
-    keep: ndarray
-        a boolean vector encoding which molecules are in kept clumps
-
-    Notes
-    -----
-    Outputs are of length #molecules, and the keep vector that is returned needs to be applied
-    as: xkept = x[keep] in order to only look at kept molecules.
-
-    """
-    # take out any large linear shifts for the sake of easier pairing
-    x, y = correlative_shift(x0, y0, whichChan, pix_size_nm)
-    # group within a certain distance, potentially based on localization uncertainty
-    if not deltaX[0]:
-        deltaX = 100.*np.ones_like(x)
-    # group localizations
-    assigned = pyDeClump.findClumps(tIndex.astype(np.int32), x, y, deltaX, nFrameSep)
-    # print assigned.min()
-
-    # only look at clumps with localizations from each channel
-    clumps = np.unique(assigned)
-
-    # Note that this will never be a keep clump if an ignore channel is present...
-    keptClumps = [np.array_equal(np.unique(whichChan[assigned == clumps[ii]]), appearIn) for ii in range(len(clumps))]
-    #keptClumps = [(len(np.unique(whichChan[assigned == clumps[ii]])) >= appearances) for ii in range(len(clumps))]
-
-   # don't clump molecules from the wrong channel (done by parsing modified whichChan to this function)
-    ignoreChan = whichChan < 0
-    numClump = np.max(assigned)
-    igVec = np.arange(numClump + 1, numClump + 1 + sum(ignoreChan))
-    # give ignored channel localizations unique clump assignments
-    assigned[ignoreChan] = igVec
-
-    if returnPaired:
-        keptMoles = []
-        # np.array_equal(clumps, np.arange(1, np.max(assigned) + 1)) evaluates to True
-        # TODO: speed up following loop - quite slow for large N
-        for elem in assigned:
-            keptMoles.append(elem in clumps[np.where(keptClumps)])
-        keep = np.where(keptMoles)
-        return assigned, keep
-    else:
-        return assigned
-
-
-class multiviewMapper:
+class MultiviewMapper:
     """
 
     multiviewMapper provides methods for registering multiview channels as acquired in multicolor or biplane imaging.
@@ -212,27 +75,29 @@ class multiviewMapper:
     def __init__(self, visFr):
         self.visFr = visFr
         self.pipeline = visFr.pipeline
+
+        # the following parameters are defaults which get (potentially) overridden by dialogs
         self.clump_gap_tolerance = 1 # the number of frames that can be skipped for a clump to still be considered a single clump
         self.clump_radius_scale = 2.0 # the factor with which to multiply error_x by to determine a radius in which points belong to the same clump
         self.clump_radius_offset = 150. # an offset in nm to add to the the clump detection radius (useful for detection before shift correction)
 
         logging.debug('Adding menu items for multi-view manipulation')
 
-        visFr.AddMenuItem('Multiview', 'Calibrate Shifts', self.OnCalibrateShifts,
+        visFr.AddMenuItem('Corrections>Multiview', 'Calibrate Shifts', self.OnCalibrateShifts,
                           helpText='Extract a shift field from bead measurements')
 
-        visFr.AddMenuItem('Multiview', itemType='separator')
+        visFr.AddMenuItem('Corrections>Multiview', itemType='separator')
 
-        visFr.AddMenuItem('Multiview', 'Fold Channels', self.OnFold)
-        visFr.AddMenuItem('Multiview', 'Shift correct folded channels', self.OnCorrectFolded)
+        visFr.AddMenuItem('Corrections>Multiview', 'Fold Channels', self.OnFold)
+        visFr.AddMenuItem('Corrections>Multiview', 'Shift correct folded channels', self.OnShiftCorrectFolded)
 
-        visFr.AddMenuItem('Multiview', 'Find points from same molecule', self.OnFindClumps)
-        visFr.AddMenuItem('Multiview', 'Group found points', self.OnMergeClumps)
+        visFr.AddMenuItem('Corrections>Multiview', 'Find points from same molecule', self.OnFindClumps)
+        visFr.AddMenuItem('Corrections>Multiview', 'Group found points', self.OnMergeClumps)
 
-        visFr.AddMenuItem('Multiview', 'Map astigmatic Z', self.OnMapZ,
+        visFr.AddMenuItem('Corrections>Multiview', 'Map astigmatic Z', self.OnMapAstigmaticZ,
                           helpText='Look up z value for astigmatic 3D, using a multi-view aware correction')
 
-        visFr.AddMenuItem('Multiview', 'Check astigmatic PSF Calibration', self.OnCheckAstigCalibration)
+        visFr.AddMenuItem('Corrections>Multiview', 'Check astigmatic PSF Calibration', self.OnCheckAstigmatismCalibration)
 
     def OnFold(self, event=None):
         """
@@ -251,19 +116,19 @@ class multiviewMapper:
 
         """
 
-        from PYME.recipes.localisations import MultiviewFold
+        from PYME.recipes.multiview import Fold
         from PYME.recipes.tablefilters import FilterTable
 
         recipe = self.pipeline.recipe
         #TODO - move me to building the pipeline
         recipe.add_module(FilterTable(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='filtered_input',
                                       filters={'error_x':[0, 30.], 'error_y':[0,30.]}))
-        recipe.add_module(MultiviewFold(recipe, inputName='filtered_input',
-                                                      outputName='folded'))
+        recipe.add_module(Fold(recipe, input_name='filtered_input',
+                                                      output_name='folded'))
         recipe.execute()
         self.pipeline.selectDataSource('folded')
 
-    def OnCorrectFolded(self, event=None):
+    def OnShiftCorrectFolded(self, event=None):
         """
         Applies chromatic shift correction to folded localization data that was acquired with an
         image splitting device, but localized without splitter awareness.
@@ -279,7 +144,7 @@ class multiviewMapper:
 
         """
 
-        from PYME.recipes.localisations import MultiviewShiftCorrect
+        from PYME.recipes.multiview import ShiftCorrect
         pipeline = self.pipeline
         recipe = self.pipeline.recipe
 
@@ -295,8 +160,8 @@ class multiviewMapper:
             else:
                 raise RuntimeError('Shiftmaps not found in metadata and could not be loaded from file')
 
-        recipe.add_module(MultiviewShiftCorrect(recipe, inputName=pipeline.selectedDataSourceKey,
-                          shiftMapLocation=fpath, outputName='shift_corrected'))
+        recipe.add_module(ShiftCorrect(recipe, input_name=pipeline.selectedDataSourceKey,
+                          shift_map_path=fpath, output_name='shift_corrected'))
         recipe.execute()
         self.pipeline.selectDataSource('shift_corrected')
 
@@ -315,129 +180,75 @@ class multiviewMapper:
         -----
 
         """
-        from PYME.Analysis.points import twoColour
-        from PYME.Analysis.points import multiview
-        pipeline = self.pipeline
+        from PYME.recipes.multiview import CalibrateShifts
 
+        recipe = self.pipeline.recipe
+        # hold off auto-running the recipe until we configure things
+        recipe.trait_set(execute_on_invalidation=False)
         try:
-            numChan = pipeline.mdh['Multiview.NumROIs']
-        except AttributeError:
-            raise AttributeError('You are either not looking at multiview Data, or your metadata is incomplete')
+            calibration_module = CalibrateShifts(recipe, input_name=self.pipeline.selectedDataSourceKey,
+                                             output_name='shiftmap')
 
-        rad_dlg = wx.NumberEntryDialog(None, 'Search Radius In Pixels', 'rad [pix]', 'rad [pix]', 1, 0, 9e9)
-        rad_dlg.ShowModal()
-        clumpRad = rad_dlg.GetValue()*1e3*pipeline.mdh['voxelsize.x']  # clump folded data within X pixels
-        # fold x position of channels into the first
-        multiview.foldX(pipeline.selectedDataSource, pipeline.mdh, inject=True, chroma_mappings=True)
+            recipe.add_module(calibration_module)
+            if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
+                return
 
-        plotFolded(pipeline['x'], pipeline['y'], pipeline['multiviewChannel'], 'Raw')
-        # sort in frame order
-        I = pipeline['tIndex'].argsort()
-        xsort, ysort = pipeline['x'][I], pipeline['y'][I]
-        chanSort = pipeline['multiviewChannel'][I]
-
-        clumpID, keep = pairMolecules(pipeline['tIndex'][I], xsort, ysort, chanSort, clumpRad*np.ones_like(xsort),
-                                      appearIn=np.arange(numChan), nFrameSep=pipeline['tIndex'].max(),
-                                      pix_size_nm=1e3*pipeline.mdh['voxelsize.x'])
+            recipe.execute()
+            sm = recipe.namespace['shiftmap']
+        finally:  # make sure that we configure the pipeline recipe as it was
+            recipe.trait_set(execute_on_invalidation=True)
 
 
-        # only look at the ones which showed up in all channels
-        x = xsort[keep]
-        y = ysort[keep]
-        Chan = chanSort[keep]
-        clumpID = clumpID[keep]
-
-        # Generate raw shift vectors (map of displacements between channels) for each channel
-        molList = np.unique(clumpID)
-        numMoles = len(molList)
-
-        dx = np.zeros((numChan - 1, numMoles))
-        dy = np.zeros_like(dx)
-        dxErr = np.zeros_like(dx)
-        dyErr = np.zeros_like(dx)
-        xClump, yClump, xStd, yStd, xShifted, yShifted = [], [], [], [], [], []
-        shiftWallet = {}
-        # dxWallet, dyWallet = {}, {}
-        for ii in range(numChan):
-            chanMask = (Chan == ii)
-            xChan = np.zeros(numMoles)
-            yChan = np.zeros(numMoles)
-            xChanStd = np.zeros(numMoles)
-            yChanStd = np.zeros(numMoles)
-
-
-            for ind in range(numMoles):
-                # merge clumps within channels
-                clumpMask = np.where(np.logical_and(chanMask, clumpID == molList[ind]))
-                xChan[ind] = x[clumpMask].mean()
-                yChan[ind] = y[clumpMask].mean()
-                xChanStd[ind] = x[clumpMask].std()
-                yChanStd[ind] = y[clumpMask].std()
-
-            xClump.append(xChan)
-            yClump.append(yChan)
-            xStd.append(xChanStd)
-            yStd.append(yChanStd)
-
-            if ii > 0:
-                dx[ii - 1, :] = xClump[0] - xClump[ii]
-                dy[ii - 1, :] = yClump[0] - yClump[ii]
-                dxErr[ii - 1, :] = np.sqrt(xStd[ii]**2 + xStd[0]**2)
-                dyErr[ii - 1, :] = np.sqrt(yStd[ii]**2 + yStd[0]**2)
-                # generate shiftmap between ii-th channel and the 0th channel
-                dxx, dyy, spx, spy, good = twoColour.genShiftVectorFieldQ(xClump[0], yClump[0], dx[ii-1, :], dy[ii-1, :], dxErr[ii-1, :], dyErr[ii-1, :])
-                # store shiftmaps in multiview shiftWallet
-                shiftWallet['Chan0%s.X' % ii], shiftWallet['Chan0%s.Y' % ii] = spx.__dict__, spy.__dict__
-                # dxWallet['Chan0%s' % ii], dyWallet['Chan0%s' % ii] = dxx, dyy
-
-                # shift the clumps for plotting
-                xShifted.append(xClump[ii] + spx(xClump[ii], yClump[ii]))
-                yShifted.append(yClump[ii] + spy(xClump[ii], yClump[ii]))
-            else:
-                xShifted.append(xClump[ii])
-                yShifted.append(yClump[ii])
-
-
-        shiftWallet['shiftModel'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
-
-        multiview.applyShiftmaps(pipeline.selectedDataSource, shiftWallet)
-
-        plotFolded(pipeline['x'], pipeline['y'],
-                            pipeline['multiviewChannel'], 'All beads after Registration')
-
-        cStack = []
-        for ci in range(len(xShifted)):
-            cStack.append(ci*np.ones(len(xShifted[ci])))
-        cStack = np.hstack(cStack)
-
-        # calculate standard deviation within clump before and after shift
-        unRegStd = np.empty((numMoles, 2))
-        regStd = np.empty_like(unRegStd)
-        for mi in range(numMoles):
-            # TODO: pull inline loops out, this is just being lazy
-            unRegStd[mi, :] = np.std([xClump[cc][mi] for cc in range(numChan)]), np.std([yClump[cc][mi] for cc in range(numChan)])
-            regStd[mi, :] = np.std([xShifted[cc][mi] for cc in range(numChan)]), np.std([yShifted[cc][mi] for cc in range(numChan)])
-
-        print('Avg std(X) within clumps: unreg= %f, reg =  %f' % (unRegStd[:, 0].mean(), regStd[:, 0].mean()))
-        print('Avg std(Y) within clumps: unreg= %f, reg = %f' % (unRegStd[:, 1].mean(), regStd[:, 1].mean()))
-
-        plotFolded(np.hstack(xClump), np.hstack(yClump), cStack, 'Unregistered Clumps')
-
-        plotFolded(np.hstack(xShifted), np.hstack(yShifted), cStack, 'Registered Clumps')
-
-        # save shiftmaps
-        #FIXME - Getting the filename through the title is super fragile - should not use pipeline.filename (or similar) instead
+        # save the file
         defFile = os.path.splitext(os.path.split(self.pipeline.filename)[-1])[0] + 'MultiView.sf'
 
         fdialog = wx.FileDialog(None, 'Save shift field as ...',
-            wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
+                                wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE,
+                                defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()
 
-            fid = open(fpath, 'wb')
-            json.dump(shiftWallet, fid)
-            fid.close()
+            sm.to_hdf(fpath, tablename='shift_map', metadata=sm.mdh)
+
+        # multiview.applyShiftmaps(pipeline.selectedDataSource, shiftWallet)
+        #
+        # plotFolded(pipeline['x'], pipeline['y'],
+        #                     pipeline['multiviewChannel'], 'All beads after Registration')
+        #
+        # cStack = []
+        # for ci in range(len(xShifted)):
+        #     cStack.append(ci*np.ones(len(xShifted[ci])))
+        # cStack = np.hstack(cStack)
+        #
+        # # calculate standard deviation within clump before and after shift
+        # unRegStd = np.empty((numMoles, 2))
+        # regStd = np.empty_like(unRegStd)
+        # for mi in range(numMoles):
+        #     # TODO: pull inline loops out, this is just being lazy
+        #     unRegStd[mi, :] = np.std([xClump[cc][mi] for cc in range(numChan)]), np.std([yClump[cc][mi] for cc in range(numChan)])
+        #     regStd[mi, :] = np.std([xShifted[cc][mi] for cc in range(numChan)]), np.std([yShifted[cc][mi] for cc in range(numChan)])
+        #
+        # print('Avg std(X) within clumps: unreg= %f, reg =  %f' % (unRegStd[:, 0].mean(), regStd[:, 0].mean()))
+        # print('Avg std(Y) within clumps: unreg= %f, reg = %f' % (unRegStd[:, 1].mean(), regStd[:, 1].mean()))
+        #
+        # plotFolded(np.hstack(xClump), np.hstack(yClump), cStack, 'Unregistered Clumps')
+        #
+        # plotFolded(np.hstack(xShifted), np.hstack(yShifted), cStack, 'Registered Clumps')
+        #
+        # # save shiftmaps
+        # #FIXME - Getting the filename through the title is super fragile - should not use pipeline.filename (or similar) instead
+        # defFile = os.path.splitext(os.path.split(self.pipeline.filename)[-1])[0] + 'MultiView.sf'
+        #
+        # fdialog = wx.FileDialog(None, 'Save shift field as ...',
+        #     wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
+        # succ = fdialog.ShowModal()
+        # if (succ == wx.ID_OK):
+        #     fpath = fdialog.GetPath()
+        #
+        #     fid = open(fpath, 'wb')
+        #     json.dump(shiftWallet, fid)
+        #     fid.close()
 
     def OnFindClumps(self, event=None):
         """
@@ -458,11 +269,11 @@ class multiviewMapper:
         -----
 
         """
-        from PYME.recipes.localisations import MultiviewFindClumps
+        from PYME.recipes.multiview import FindClumps
         recipe = self.pipeline.recipe
-        recipe.add_module(MultiviewFindClumps(recipe, inputName=self.pipeline.selectedDataSourceKey, outputName='with_clumps',
-                                     gapTolerance=self.clump_gap_tolerance, radiusScale=self.clump_radius_scale,
-                                     radius_offset=self.clump_radius_offset, probeAware=True))
+        recipe.add_module(FindClumps(recipe, input_name=self.pipeline.selectedDataSourceKey, output_name='with_clumps',
+                                     time_gap_tolerance=self.clump_gap_tolerance, radius_scale=self.clump_radius_scale,
+                                     radius_offset=self.clump_radius_offset, probe_aware=True))
         recipe.execute()
         self.pipeline.selectDataSource('with_clumps')
 
@@ -483,7 +294,7 @@ class multiviewMapper:
         -----
 
         """
-        from PYME.recipes.localisations import MultiviewFindClumps, MultiviewMergeClumps
+        from PYME.recipes.multiview import MergeClumps
 
         if not 'clumpIndex' in self.pipeline.keys():
             logger.debug('No clumps found - running FindClumps')
@@ -491,7 +302,7 @@ class multiviewMapper:
 
         recipe = self.pipeline.recipe
 
-        recipe.add_module(MultiviewMergeClumps(recipe, inputName='with_clumps', outputName='clumped'))
+        recipe.add_module(MergeClumps(recipe, input_name='with_clumps', output_name='clumped'))
 
         recipe.execute()
         self.pipeline.selectDataSource('clumped')
@@ -501,7 +312,7 @@ class multiviewMapper:
         # refresh the Colour choice selection in the GUI
         #self.visFr.CreateFoldPanel()
 
-    def OnMapZ(self, event=None, useMD = True):
+    def OnMapAstigmaticZ(self, event=None, useMD = True):
         """
 
         Uses sigmax and sigmay values from astigmatic fits to look up a z-position using calibration curves.
@@ -518,7 +329,7 @@ class multiviewMapper:
 
         """
 
-        from PYME.recipes.localisations import MapAstigZ
+        from PYME.recipes.multiview import MapAstigZ
         #from PYME.IO import unifiedIO
         pipeline = self.pipeline
 
@@ -547,15 +358,30 @@ class multiviewMapper:
                 return
 
         recipe = self.pipeline.recipe
-        recipe.add_module(MapAstigZ(recipe, inputName=self.pipeline.selectedDataSourceKey,
-                                    astigmatismMapLocation=pathToMap, outputName='z_mapped'))
-        recipe.execute()
+        # hold off auto-running the recipe until we configure things
+        recipe.trait_set(execute_on_invalidation=False)
+        try:
+            mapping_module = MapAstigZ(recipe, input_name=self.pipeline.selectedDataSourceKey,
+                                       astigmatism_calibration_location=pathToMap, output_name='z_mapped')
+
+            recipe.add_module(mapping_module)
+            if not recipe.configure_traits(view=recipe.pipeline_view, kind='modal'):
+                return
+
+            # FIXME - figure out why configuring just the new module doesn't give us an OK button
+            # if not mapping_module.configure_traits(view=mapping_module.pipeline_view):
+            #     return #handle cancel
+            # recipe.add_module(mapping_module)
+
+            recipe.execute()
+        finally:  # make sure that we configure the pipeline recipe as it was
+            recipe.trait_set(execute_on_invalidation=True)
         self.pipeline.selectDataSource('z_mapped')
 
         self.visFr.RefreshView()
         self.visFr.CreateFoldPanel()
 
-    def OnCheckAstigCalibration(self, event=None):
+    def OnCheckAstigmatismCalibration(self, event=None):
         """
         For use with dyes on a coverslip.
         NB localizations from transient frames should be filtered prior to calling this function
@@ -621,4 +447,4 @@ class multiviewMapper:
 
 def Plug(visFr):
     """Plugs this module into the gui"""
-    visFr.multiview = multiviewMapper(visFr)
+    visFr.multiview = MultiviewMapper(visFr)

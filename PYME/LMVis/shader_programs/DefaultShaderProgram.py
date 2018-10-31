@@ -19,12 +19,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 import os
+import numpy as np
 
 from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
     glPolygonMode, GL_FILL, GL_FRONT_AND_BACK, glEnable, GL_BLEND, GL_SRC_ALPHA, GL_DST_ALPHA, glBlendFunc, \
     glBlendEquation, GL_FUNC_ADD, GL_DEPTH_TEST, glDepthFunc, GL_LEQUAL, GL_POINT_SMOOTH, GL_ONE_MINUS_SRC_ALPHA, \
     GL_TRUE, glDepthMask, glClearDepth, glClear, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, glDisable, GL_ONE, GL_ZERO, \
-    glUniform4f, glUniform1f
+    glUniform4f, glUniform1f, glUniformMatrix4fv, GL_FALSE
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
@@ -43,13 +44,16 @@ class DefaultShaderProgram(GLProgram):
         self.ymin, self.ymax = clipping['y']
         self.zmin, self.zmax = clipping['z']
         self.vmin, self.vmax = clipping['v']
+        
 
     def __enter__(self):
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        #glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
         glEnable(GL_BLEND)
         glDepthMask(GL_TRUE)
-        glEnable(GL_DEPTH_TEST)
-        glDepthFunc(GL_LEQUAL)
+        glDisable(GL_DEPTH_TEST)
+        #glDepthFunc(GL_LEQUAL)
         glEnable(GL_POINT_SMOOTH)
         self.get_shader_program().use()
         glUniform1f(self.get_uniform_location('x_min'), float(self.xmin))
@@ -60,6 +64,7 @@ class DefaultShaderProgram(GLProgram):
         glUniform1f(self.get_uniform_location('z_max'), float(self.zmax))
         glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
         glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
+        glUniformMatrix4fv(self.get_uniform_location('clip_rotation_matrix'), 1,GL_FALSE, self.v_matrix)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
     def __exit__(self, exc_type, exc_val, exc_tb):

@@ -27,6 +27,7 @@ routines expect at least 'x' and 'y' to be defined as keys, and may also
 understand additional values, e.g. 'error_x' 
 """
 import types
+import six
 import numpy as np
 
 from numpy import * #to allow the use of sin cos etc in mappings
@@ -169,7 +170,7 @@ class fitResultsSource(TabularBase):
 
 
     def keys(self):
-        return self._keys + self.transkeys.keys()
+        return self._keys + list(self.transkeys.keys())
 
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
@@ -184,23 +185,20 @@ class fitResultsSource(TabularBase):
         k = key.split('_')
 
         if len(k) == 1:  # TODO: evaluate why these are cast as floats
-            return self.fitResults[k[0]].astype('f')[sl]
+            return self.fitResults[k[0]][sl]
         elif len(k) == 2:
-            return self.fitResults[k[0]][k[1]].astype('f')[sl]
+            return self.fitResults[k[0]][k[1]][sl]
         elif len(k) == 3:
-            return self.fitResults[k[0]][k[1]][k[2]].astype('f')[sl]
+            return self.fitResults[k[0]][k[1]][k[2]][sl]
         else:
             raise KeyError("Don't know about deeper nesting yet")
 
-
-    def close(self):
-        self.h5f.close()
 
     def getInfo(self):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
-class h5rSource(TabularBase):
+class h5rSource(fitResultsSource):
     _name = "h5r Data Source"
     def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
@@ -232,31 +230,6 @@ class h5rSource(TabularBase):
         #sort by time
         if 'tIndex' in self._keys:
             self.fitResults.sort(order='tIndex')
-
-
-    def keys(self):
-        return self._keys + self.transkeys.keys()
-
-    def __getitem__(self, keys):
-        key, sl = self._getKeySlice(keys)
-            
-        #if we're using an alias replace with actual key
-        if key in self.transkeys.keys():
-            key = self.transkeys[key]
-
-        if not key in self._keys:
-            raise KeyError('Key not found - %s' % key)
-
-        k = key.split('_')
-        
-        if len(k) == 1:
-            return self.fitResults[k[0]][sl]
-        elif len(k) == 2:
-            return self.fitResults[k[0]][k[1]][sl]
-        elif len(k) == 3:
-            return self.fitResults[k[0]][k[1]][k[2]][sl]
-        else:
-            raise KeyError("Don't know about deeper nesting yet")
         
 
     def close(self):
@@ -446,7 +419,36 @@ class matfileSource(TabularBase):
 
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
+
+
+class matfileColumnSource(TabularBase):
+    _name = "Matlab Column Source"
+    
+    def __init__(self, filename):
+        """ Input filter for use with matlab data. Need to provide a variable name
+        and a list of column names
+        in the order that they appear in the file. Using 'x', 'y' and 'error_x'
+        for the position data and it's error should ensure that this functions
+        with the visualisation backends"""
         
+        import scipy.io
+        
+        self.res = scipy.io.loadmat(filename)  # TODO: evaluate why these are cast as floats
+        
+        self._keys = self.res.keys()
+    
+    def keys(self):
+        return self._keys
+    
+    def __getitem__(self, key):
+        key, sl = self._getKeySlice(key)
+        if not key in self._keys:
+            raise KeyError('Key (%s) not found' % key)
+        
+        return self.res[key][sl]
+    
+    def getInfo(self):
+        return 'Text Data Source\n\n %d points' % len(self.res['x'])
 
 class resultsFilter(TabularBase):
     _name = "Results Filter"
@@ -647,7 +649,7 @@ class mappingFilter(TabularBase):
             return self.resultsSource[keys]
 
     def keys(self):
-        return list(set(list(self.resultsSource.keys()) + self.mappings.keys() + self.new_columns.keys()))
+        return list(set(list(self.resultsSource.keys()) + list(self.mappings.keys()) + list(self.new_columns.keys())))
 
     def addVariable(self, name, value):
         """
@@ -696,7 +698,7 @@ class mappingFilter(TabularBase):
     def setMapping(self, key, mapping):
         if type(mapping) == types.CodeType:
             self.mappings[key] = mapping
-        elif type(mapping) == types.StringType:
+        elif isinstance(mapping, six.string_types):
             self.mappings[key] = compile(mapping, '/tmp/test1', 'eval')
         else:
             self.__dict__[key] = mapping

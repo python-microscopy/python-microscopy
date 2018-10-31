@@ -21,8 +21,8 @@
 #
 ##################
 
-from scipy import * 
-from scipy.linalg import *
+#from scipy import *
+#from scipy.linalg import *
 from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
 from scipy import ndimage
 import fftw3f
@@ -33,8 +33,10 @@ fftwWisdom.load_wisdom()
 #import cDec
 #from PYME import pad
 import numpy
+import numpy as np
+import matplotlib.pyplot as plt
 
-from pylab import *
+#from pylab import *
 
 from wiener import resizePSF
 
@@ -69,13 +71,13 @@ class dec:
         """minimise in subspace - this is the bit which gets called on each iteration
         to work out what the next step is going to be. See Inverse Problems text for details.
         """
-        nsrch = size(S,1)
+        nsrch = np.size(S,1)
         pref = Lfunc(f0-fdef)
-        w0 = dot(pref, pref)
-        c0 = dot(res,res)
+        w0 = np.dot(pref, pref)
+        c0 = np.dot(res,res)
 
-        AS = zeros((size(res), nsrch), 'f')
-        LS = zeros((size(pref), nsrch), 'f')
+        AS = np.zeros((np.size(res), nsrch), 'f')
+        LS = np.zeros((np.size(pref), nsrch), 'f')
 
         for k in range(nsrch):
             AS[:,k] = Afunc(S[:,k])[self.mask]
@@ -93,28 +95,28 @@ class dec:
         
         
 
-        Hc = dot(transpose(AS), AS)
-        Hw = dot(transpose(LS), LS)
-        Gc = dot(transpose(AS), res)
-        Gw = dot(transpose(-LS), pref)
+        Hc = np.dot(AS.T, AS)
+        Hw = np.dot(LS.T, LS)
+        Gc = np.dot(AS.T, res)
+        Gw = np.dot(-LS.T, pref)
         
         #print Hc, Hw, Gc, Gw
 
-        c = solve(Hc + lam2*Hw, Gc + lam2*Gw)
+        c = np.linalg.solve(Hc + lam2*Hw, Gc + lam2*Gw)
         #print c
 
-        cpred = c0 + dot(dot(transpose(c), Hc), c) - dot(transpose(c), Gc)
-        wpred = w0 + dot(dot(transpose(c), Hw), c) - dot(transpose(c), Gw)
+        cpred = c0 + np.dot(np.dot(c.T, Hc), c) - np.dot(c.T, Gc)
+        wpred = w0 + np.dot(np.dot(c.T, Hw), c) - np.dot(c.T, Gw)
 
-        fnew = f0 + dot(S, c) - self.k
+        fnew = f0 + np.dot(S, c) - self.k
         
         if show_plots:
-            figure(3)
-            clf()
-            plot(f0)
-            plot(res)
-            plot(fnew - f0)
-            plot(fnew)
+            plt.figure(3)
+            plt.clf()
+            plt.plot(f0)
+            plt.plot(res)
+            plt.plot(fnew - f0)
+            plt.plot(fnew)
 
         return (fnew, cpred, wpred)
 
@@ -170,10 +172,10 @@ class dec:
         #print abs(self.Ht).sum()
 
         #use 0 as the default solution - should probably be refactored like the starting guess
-        fdef = zeros(self.f.shape, 'f')
+        fdef = np.zeros(self.f.shape, 'f')
 
         #initial search directions
-        S = zeros((size(self.f), 3), 'f')
+        S = np.zeros((np.size(self.f), 3), 'f')
 
         #number of search directions
         nsrch = 2
@@ -214,13 +216,13 @@ class dec:
 
             #check to see if the two search directions are orthogonal
             #this can be used as a measure of convergence and a stopping criteria
-            test = 1 - abs(dot(S[:,0], S[:,1])/(norm(S[:,0])*norm(S[:,1])))
+            test = 1 - abs(np.dot(S[:,0], S[:,1])/(np.linalg.norm(S[:,0])*np.linalg.norm(S[:,1])))
 
             #print & log some statistics
             print(('Test Statistic %f' % (test,)))
             self.tests.append(test)
-            self.ress.append(norm(self.res))
-            self.prefs.append(norm(pref))
+            self.ress.append(np.linalg.norm(self.res))
+            self.prefs.append(np.linalg.norm(pref))
 
             #minimise along search directions to find new estimate
             (fnew, cpred, spred) = self.subsearch(self.f, self.res[self.mask], fdef, self.Afunc, self.Lfunc, lamb2, S[:, 0:nsrch])
@@ -251,23 +253,23 @@ class dec:
             #plot(self.f)
             
             if show_plots:
-                figure(2)
-                clf()
-                plot(self.f)
-                plot(fn)
-                plot(fn1)
+                plt.figure(2)
+                plt.clf()
+                plt.plot(self.f)
+                plt.plot(fn)
+                plt.plot(fn1)
                 raw_input()
             
             #v.view.Redraw()
             #raw_input()
 
-        return real(self.fs)
+        return np.real(self.fs)
         
     def sim_pic(self,data,alpha):
         """Do the forward transform to simulate a picture. Currently with 4Pi cruft."""
         self.alpha = alpha
-        self.e1 = fftshift(exp(1j*self.alpha))
-        self.e2 = fftshift(exp(2j*self.alpha))
+        self.e1 = fftshift(np.exp(1j*self.alpha))
+        self.e2 = fftshift(np.exp(2j*self.alpha))
         
         return self.Afunc(data)
 
@@ -356,7 +358,7 @@ class dec_conv(dec):
             r += ifftshift(self._r)
 
         #d = real(d);
-        return ravel(r)
+        return np.ravel(r)
 
     def Ahfunc(self, f):
         """Conjugate transform - convolve with conj. PSF"""
@@ -379,7 +381,7 @@ class dec_conv(dec):
             self._plan_F_r()
             r[:,:,i] = ifftshift(self._r)
 
-        return ravel(r)/self.shape[-1]
+        return np.ravel(r)/self.shape[-1]
         
 
 
@@ -410,20 +412,20 @@ class dec_bead(dec):
 
     def Afunc(self, f):
         """Forward transform - convolve with the PSF"""
-        fs = reshape(f, (self.height, self.width, self.depth))
+        fs = np.reshape(f, (self.height, self.width, self.depth))
 
         d = ndimage.convolve(fs, self.g)
 
         #d = real(d);
-        return ravel(d)
+        return np.ravel(d)
 
     def Ahfunc(self, f):
         """Conjugate transform - convolve with conj. PSF"""
-        fs = reshape(f, (self.height, self.width, self.depth))
+        fs = np.reshape(f, (self.height, self.width, self.depth))
 
         d = ndimage.correlate(fs, self.g)
         
-        return ravel(d)
+        return np.ravel(d)
 
 #from scipy import ndimage    
 
@@ -439,7 +441,7 @@ def calc_gauss_weights(sigma):
     sd = sd * sd
     # calculate the kernel:
     for ii in range(1, lw + 1):
-        tmp = math.exp(-0.5 * float(ii * ii) / sd)
+        tmp = np.exp(-0.5 * float(ii * ii) / sd)
         weights[lw + ii] = tmp
         weights[lw - ii] = tmp
         sum += 2.0 * tmp
@@ -504,7 +506,7 @@ class dec_gauss(dec):
 
     def Afunc(self, f):
         """Forward transform - convolve with the PSF"""
-        fs = reshape(f, (self.height, self.width, self.depth))
+        fs = np.reshape(f, (self.height, self.width, self.depth))
 
         #d = ndimage.gaussian_filter(fs, self.sigma)
         mode = _ni_support._extend_mode_to_code("reflect")
@@ -519,7 +521,7 @@ class dec_gauss(dec):
         #ndimage.uniform_filter(output, self.oversamp, output=output)
 
         #d = real(d);
-        return ravel(output)#[::oversamp,::oversamp,:])
+        return np.ravel(output)#[::oversamp,::oversamp,:])
         
     Ahfunc=Afunc
 #    def Ahfunc(self, f):

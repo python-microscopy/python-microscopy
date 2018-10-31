@@ -99,7 +99,7 @@ class ViewPanel(DockedPanel):
         else:
             old_view = self.get_canvas().get_view()
             self.alternate = not self.alternate
-            new_view = View(old_view.view_id, vec_up, vec_back, vec_right, old_view.translation, old_view.zoom)
+            new_view = View(old_view.view_id, vec_up, vec_back, vec_right, old_view.translation, old_view.scale)
             self.get_canvas().set_view(new_view)
 
     def save_view(self):
@@ -120,4 +120,6 @@ class ViewPanel(DockedPanel):
 
 
 def Plug(vis_fr):
-    DockedPanel.add_menu_item(vis_fr, 'Saved Views', ViewPanel, 'view_panel')
+    print('Saved Views are deprecated -  use the ones with animation instead and remove me!')
+    pass
+    #DockedPanel.add_menu_item(vis_fr, 'Saved Views', ViewPanel, 'view_panel')

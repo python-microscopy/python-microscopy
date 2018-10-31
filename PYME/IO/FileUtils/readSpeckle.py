@@ -26,7 +26,7 @@ def readSpeckles(filename):
         return [np.array(s) for s in speckles]
 
 
-def gen_traces_from_speckles(speckles, leadFrames=10, followFrames=50, seriesLength=1000000):
+def gen_traces_from_speckles(speckles, leadFrames=10, followFrames=50, seriesLength=1000000, clipRegion=[0,0,512,512]):
     """ Generate pseudo particle trajectories from speckle data.
 
      These trajectories look like they were generated using the normal particle tracking methods, but are centered
@@ -52,6 +52,8 @@ def gen_traces_from_speckles(speckles, leadFrames=10, followFrames=50, seriesLen
     point_dtype = np.dtype([('x_pixels', 'f4'), ('y_pixels', 'f4'), ('t', 'i4'), ('clumpIndex', 'i4')])
 
     extended_speckles = []
+    
+    x0, y0, x1, y1 = clipRegion
 
     for i, speck in enumerate(speckles):
         y_, x_, t_ = speck.T
@@ -59,14 +61,15 @@ def gen_traces_from_speckles(speckles, leadFrames=10, followFrames=50, seriesLen
         trace_end = int(min(t_[-1] + followFrames, seriesLength))
 
         xm, ym = x_.mean(), y_.mean()
-
-        for j in range(trace_start, trace_end):
-            s_ = np.zeros(1, dtype=point_dtype)
-            s_['x_pixels'] = xm
-            s_['y_pixels'] = ym
-            s_['t'] = j
-            s_['clumpIndex'] = i
-            extended_speckles.append(s_)
+        
+        if (xm >= x0) and (ym >= y0) and (xm < x1) and (ym < y1):
+            for j in range(trace_start, trace_end):
+                s_ = np.zeros(1, dtype=point_dtype)
+                s_['x_pixels'] = xm
+                s_['y_pixels'] = ym
+                s_['t'] = j
+                s_['clumpIndex'] = i
+                extended_speckles.append(s_)
 
     sp = np.hstack(extended_speckles)
 

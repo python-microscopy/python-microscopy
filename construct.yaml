@@ -54,6 +54,8 @@ license_file: LICENSE
 
 attempt_hardlinks: True
 
+ignore_duplicate_files: True
+
 # default install prefix
 #default_prefix: /opt/example
 

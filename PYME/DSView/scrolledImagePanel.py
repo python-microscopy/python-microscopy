@@ -35,8 +35,8 @@ class ImagePanel(wx.Panel):
         self.frameNum = 0
 
 
-        wx.EVT_PAINT(self, self.OnPaint)
-        wx.EVT_ERASE_BACKGROUND(self, self.DoNix)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_ERASE_BACKGROUND, self.DoNix)
 
     def DoNix(self, event):
         pass
@@ -102,7 +102,7 @@ class ScrolledImagePanel(wx.Panel):
         self.scrollX.Bind(wx.EVT_COMMAND_SCROLL, self.OnScrollX)
         self.scrollY.Bind(wx.EVT_COMMAND_SCROLL, self.OnScrollY)
 
-        wx.EVT_SIZE(self, self.OnSize)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
 
 
     def CalcUnscrolledPosition(self, x, y):

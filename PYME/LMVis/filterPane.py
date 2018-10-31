@@ -21,6 +21,7 @@
 ##################
 
 import wx
+from PYME.ui import UI_MAXSIZE #hack for sys.maxsize bug
 import sys
 import PYME.ui.autoFoldPanel as afp
 import numpy as np
@@ -58,7 +59,7 @@ class FilterPanel(wx.Panel):
         #GUI stuff
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.lFiltKeys = wx.ListCtrl(self, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER, size=(-1, 30*(len(self.filterKeys.keys())+1)))
+        self.lFiltKeys = wx.ListCtrl(self, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER, size=(-1, 30*(max(len(self.filterKeys.keys())+1, 5))))
 
         self.lFiltKeys.InsertColumn(0, 'Key')
         self.lFiltKeys.InsertColumn(1, 'Min')
@@ -95,8 +96,9 @@ class FilterPanel(wx.Panel):
 
     def populate(self):
         self.lFiltKeys.DeleteAllItems()
+        ind = 0
         for key, value in self.filterKeys.items():
-            ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
+            ind = self.lFiltKeys.InsertStringItem(ind+1, key)
             self.lFiltKeys.SetStringItem(ind, 1, '%3.2f' % value[0])
             self.lFiltKeys.SetStringItem(ind, 2, '%3.2f' % value[1])
 
@@ -162,7 +164,7 @@ class FilterPanel(wx.Panel):
 
             self.filterKeys[key] = [minVal, maxVal]
 
-            ind = self.lFiltKeys.InsertStringItem(sys.maxint, key)
+            ind = self.lFiltKeys.InsertStringItem(UI_MAXSIZE, key)
             self.lFiltKeys.SetStringItem(ind, 1, '%3.2f' % minVal)
             self.lFiltKeys.SetStringItem(ind, 2, '%3.2f' % maxVal)
 
@@ -244,9 +246,9 @@ class FilterPane(afp.foldingPane):
 
         self.stFilterNumPoints = wx.StaticText(self, -1, '')
 
-        if not self.pipeline.filter is None:
-            self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
-
+        self.setEventNumbers()
+        self.pipeline.onRebuild.connect(self.setEventNumbers)
+        
         self.AddNewElement(self.stFilterNumPoints)
         #self._pnl.AddFoldPanelWindow(self, self.stFilterNumPoints, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
 
@@ -263,7 +265,10 @@ class FilterPane(afp.foldingPane):
         except AttributeError:
             pass
 
-
+    def setEventNumbers(self,**kwargs):
+        if not self.pipeline.filter is None:
+            self.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
+        
     def OnFilterClipToSelection(self, event):
         if 'x' in self.filterKeys.keys() or 'y' in self.filterKeys.keys():
             if 'x' in self.filterKeys.keys():
@@ -291,12 +296,12 @@ class FilterPane(afp.foldingPane):
                 x1, y1 = self.visFr.glCanvas.selectionSettings.finish
 
             if not 'x' in self.filterKeys.keys():
-                indx = self.pFilter.lFiltKeys.InsertStringItem(sys.maxint, 'x')
+                indx = self.pFilter.lFiltKeys.InsertStringItem(UI_MAXSIZE, 'x')
             else:
                 indx = [self.pFilter.lFiltKeys.GetItemText(i) for i in range(self.pFilter.lFiltKeys.GetItemCount())].index('x')
 
             if not 'y' in self.filterKeys.keys():
-                indy = self.pFilter.lFiltKeys.InsertStringItem(sys.maxint, 'y')
+                indy = self.pFilter.lFiltKeys.InsertStringItem(UI_MAXSIZE, 'y')
             else:
                 indy = [self.pFilter.lFiltKeys.GetItemText(i) for i in range(self.pFilter.lFiltKeys.GetItemCount())].index('y')
 
