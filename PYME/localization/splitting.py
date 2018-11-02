@@ -110,3 +110,39 @@ def remap_splitter_coords(md, data_shape, x, y):
         yn -= dy
 
     return xn, yn
+
+def split_image(md, img):
+    xgs, xrs, ygs, yrs = get_splitter_rois(md, img.shape)
+    g = img[xgs, ygs]
+    r = img[xrs, yrs]
+
+    # print xgs, xrs, ygs, yrs, g.shape, r.shape
+
+    return np.concatenate((g.reshape(g.shape[0], -1, 1), r.reshape(g.shape[0], -1, 1)), 2)
+
+def get_shifts(md, data_shape, x, y):
+    x = round(x)
+    y = round(y)
+
+    # pixel size in nm
+    vx = 1e3 * md.voxelsize.x
+    vy = 1e3 * md.voxelsize.y
+
+    # position in nm from camera origin
+    roi_x0, roi_y0 = get_camera_roi_origin(md)
+    x_ = (x + roi_x0) * vx
+    y_ = (y + roi_y0) * vy
+
+    # look up shifts
+    if not md.getOrDefault('Analysis.FitShifts', False):
+        DeltaX = md.chroma.dx.ev(x_, y_)
+        DeltaY = md.chroma.dy.ev(x_, y_)
+    else:
+        DeltaX = 0
+        DeltaY = 0
+
+    # find shift in whole pixels
+    dxp = int(DeltaX / vx)
+    dyp = int(DeltaY / vy)
+
+    return DeltaX, DeltaY, dxp, dxy
