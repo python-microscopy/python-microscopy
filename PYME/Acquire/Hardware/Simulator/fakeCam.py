@@ -119,6 +119,8 @@ class NoiseMaker:
 class compThread(threading.Thread):
     def __init__(self,XVals, YVals,zPiezo, zOffset, fluors, noisemaker, laserPowers, intTime, contMode = True,
                  bufferlength=100, biplane = False, biplane_z = 500, xpiezo=None, ypiezo=None, illumFcn = 'ConstIllum'):
+        #TODO - Do we need to change the default buffer length. This shouldn't really be an issue as we pause the simulation the buffer starts to fill up.
+        
         threading.Thread.__init__(self)
         self.XVals = XVals
         self.YVals = YVals
@@ -228,6 +230,12 @@ class compThread(threading.Thread):
                                                                   position=[xp,yp,zPos], illuminationFunction=self.illumFcn,
                                                                   ChanXOffsets=self.ChanXOffsets, ChanZOffsets=self.ChanZOffsets,
                                                                   ChanSpecs=self.ChanSpecs)
+            
+            # Bennet's empirical code modified this to set numSubSteps to 1. This breaks normal simulation (the current default of 10 substeps
+            # is the bare minimum to get somewhat realistic behaviour, although there are still artifacts at numSubsteps=10).
+            # TODO - is a numSubSteps of 1 important for the empirical simulation? I would imagine that the emprical code
+            # should also use substepping (for much the same reason - to simulate sub frame on-times).
+            
             r_i = r_i[:,:]
             _im = self.noiseMaker.noisify(r_i)
             self.im = _im.astype('uint16')

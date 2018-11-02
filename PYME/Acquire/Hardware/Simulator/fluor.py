@@ -193,7 +193,7 @@ class EmpiricalHistFluors(fluors):
         self.fl['state'][:] = initialState
         self.fl['spec'][:] = spectralSig
 
-        self.laserPowers = 1.0
+        self.laserPowers = [1.0,1.0]
         self.expTime = 0.01
 
         self.activeState = activeState
@@ -203,8 +203,12 @@ class EmpiricalHistFluors(fluors):
         self.doPoll = True
 
         # initialize the state vector
-        self.state_curr = np.ones(self.fl['state'].shape)
-        self.times = np.zeros_like(self.state_curr)
+        self.state_curr = self.fl['state'].copy() #np.ones(self.fl['state'].shape)
+        self.times = np.zeros_like(self.state_curr, dtype='f4')
+        self.active_time = np.zeros_like(self.state_curr, dtype=float)
+        
+        self.count_on = []
+        self.count_off = []
 
         self.threadPoll = threading.Thread(target=self._calculate_times)
         self.threadPoll.start()
@@ -213,24 +217,29 @@ class EmpiricalHistFluors(fluors):
     def _calculate_times(self):
         while self.doPoll:
             # make sure we're not overfilling the queue
-            if self.stateQueue.qsize() >= 2./self.expTime:
+            if self.stateQueue.qsize() >= 1.0e6/self.expTime:
                 time.sleep(.1)
 
             #print(self.times[0:19])
 
             # Add the new state to the queue
-            self.stateQueue.put(self.state_curr)
+            self.stateQueue.put(self.times*(self.state_curr == self.activeState))
 
             # calculate on time, off time
             # compute state vector, toss it in the queue
 
             # update the states
             self.times = np.subtract(self.times, self.expTime)
-            new_locs = self.times <= 0
-            trans_locs = (self.times > 0) & (self.times < self.expTime)
-            self.state_curr[new_locs] = 1 - np.round(self.state_curr[
-                                                           new_locs])
-            self.state_curr[trans_locs] = self.times[trans_locs]/self.expTime
+            new_locs = self.times < 0
+            
+            #trans_locs = (self.times > 0) & (self.times < self.expTime)
+            
+            #self.state_curr[new_locs] = 1 - np.round(self.state_curr[new_locs])
+            
+            #casting to bool and then back might not be necessary
+            self.state_curr[new_locs] = ~self.state_curr[new_locs].astype(bool)
+            
+            #self.state_curr[trans_locs] = self.times[trans_locs]/self.expTime
             #print(self.state_curr[trans_locs].dtype)
 
             # find the current active states
@@ -238,39 +247,49 @@ class EmpiricalHistFluors(fluors):
             idxs_off = (self.state_curr != self.activeState) & new_locs
 
             # Calculate how long these suckers will be on
-            if any(idxs_on):
-                r_on = np.random.rand(sum(idxs_on.astype(int)))
-                self.times[idxs_on] = self.histogram.get_time_splined(
-                    self.laserPowers, r_on, 'on')
-            if any(idxs_off) > 0:
-                r_off = np.random.rand(sum(idxs_off.astype(int)))
-                self.times[idxs_off] = self.histogram.get_time_splined(
-                    self.laserPowers, r_off, 'off')
+            #if any(idxs_on):
+            r_on = np.random.rand(sum(idxs_on.astype(int)))
+            self.times[idxs_on] = self.histogram.get_time_splined(self.laserPowers[1], r_on, 'on')
+            
+            self.count_on.extend(self.times[idxs_on].toList()) #FIXME - What is this used for??? this will be really slow!
+            
+           
+            #if any(idxs_off) > 0:
+            r_off = np.random.rand(sum(idxs_off.astype(int)))
+            self.times[idxs_off] = self.histogram.get_time_splined(self.laserPowers[1], r_off, 'off')
+            
+            self.count_off.extend(self.times[idxs_off].tolist()) #FIXME - this will be really slow
 
 
     def illuminate(self, laserPowers, expTime, position=[0, 0, 0],
                    illuminationFunction = 'ConstIllum'):
 
         # Restart simulation on parameter changes
-        if laserPowers[1] != self.laserPowers*1e3/self.histogram.prange('on')[-1] or expTime != self.expTime:
-            self.laserPowers = laserPowers[1]/1e3*\
-                               self.histogram.prange('on')[-1]
+        if not np.isclose(laserPowers[1], self.laserPowers[1]*1e3/self.histogram.prange('on')[-1], atol=1) or (expTime != self.expTime):
+            #TODO - tolerance copied from Rollins/Marin branch - does a tolerance of 1 make sense??
+            self.laserPowers = [p/(1e3*self.histogram.prange('on')[-1]) for p in laserPowers]
             self.expTime = expTime
+            self.count_on = []
+            self.count_off = []
+            print('exptime', self.expTime)
             with self.stateQueue.mutex:
                 self.stateQueue.queue.clear()
             time.sleep(.5)
 
         #print(self.laserPowers)
+        
+        dose = 1e5*self.expTime #TODO - I assume this is the photon count. Break out as a parameter???
 
         # Grab a state off the queue and display
-        curr_state = self.stateQueue.get()
-        self.fl['state'] = curr_state == self.activeState
+        #curr_state = self.stateQueue.get()
+        active_time = self.stateQueue.get().copy()
+        
+        self.fl['state'] = active_time > 0
 
-        ilFrac = illuminationFunctions[illuminationFunction](self.fl,
-                                                             position)*expTime*\
-                                                             laserPowers[1]*90
-
-        return curr_state*ilFrac
+        ilFrac = illuminationFunctions[illuminationFunction](self.fl,position) #*expTime*\laserPowers[1]*90
+        
+        return np.minimum(active_time, self.expTime)*ilFrac*dose
 
     def __del__(self):
         self.doPoll = False
+        self.threadPoll.join()
