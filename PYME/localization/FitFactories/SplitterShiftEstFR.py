@@ -183,8 +183,8 @@ class GaussianFitFactory:
         #if (z == None): # use position of maximum intensity
         #    z = self.data[x,y,:].argmax()
 
-        x = round(x)
-        y = round(y)
+        x = int(round(x))
+        y = int(round(y))
 
         return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
                     max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]

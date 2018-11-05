@@ -138,10 +138,10 @@ def GaussianFitResultR(fitResults, startParams, metadata, slicesUsed=None, resul
 
 
 class GaussianFitFactory(FFBase.FitFactory):
-    def __init__(self, data, metadata, fitfcn=f_gaussAstigBead, background=None, noiseSigma=None):
+    def __init__(self, data, metadata, fitfcn=f_gaussAstigBead, background=None, noiseSigma=None, **kwargs):
         """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. """
-        FFBase.FitFactory.__init__(self, data, metadata, fitfcn, background, noiseSigma)
+        FFBase.FitFactory.__init__(self, data, metadata, fitfcn, background, noiseSigma, **kwargs)
 
         self.solver = FitModelWeighted
         try:  # check if bead diameter is stored in the metadata

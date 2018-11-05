@@ -40,8 +40,8 @@ fresultdtype=[('tIndex', '<i4'), ('x', '<f4'), ('y', '<f4'),
 
 
 class GaussianFitFactory(FFBase.FFBase):
-    def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None):
-        super(GaussianFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma)
+    def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None, **kwargs):
+        super(GaussianFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma, **kwargs)
         
         
     def FromPoint(self, x, y, z=None, roiHalfSize=7, axialHalfSize=15):

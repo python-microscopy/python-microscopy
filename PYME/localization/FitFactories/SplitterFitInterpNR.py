@@ -177,8 +177,8 @@ def genFitImage(fitResults, metadata):
     return np.hstack([im[:,:,0], im[:,:,1]]).squeeze()
 
 class InterpFitFactory(InterpFitR.PSFFitFactory):
-    def __init__(self, data, metadata, fitfcn=f_Interp3d2c, background=None, noiseSigma=None):
-       super(InterpFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma) 
+    def __init__(self, data, metadata, fitfcn=f_Interp3d2c, background=None, noiseSigma=None, **kwargs):
+       super(InterpFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma, **kwargs)
                 
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):

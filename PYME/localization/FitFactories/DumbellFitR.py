@@ -79,7 +79,7 @@ def FitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None
 		
 
 class DumbellFitFactory(FFBase.FitFactory):
-    def __init__(self, data, metadata, fitfcn=f_dumbell, background=None, noiseSigma=None):
+    def __init__(self, data, metadata, fitfcn=f_dumbell, background=None, noiseSigma=None, **kwargs):
         """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. """
         FFBase.FitFactory.__init__(self, data, metadata, fitfcn, background, noiseSigma)

@@ -331,10 +331,14 @@ class fitTask(taskDef.Task):
                                max(self.index + self.md['Analysis.BGRange'][1], self.md.getOrDefault('EstimatedLaserOnFrameNo', 0)))
             
     def __mapSplitterCoords(self, x,y):
-        return splitting.map_splitter_coords(self.md, self.data.shape, x, y)
+        #return splitting.map_splitter_coords(self.md, self.data.shape, x, y)
+        xgs, xrs, ygs, yrs = self._getSplitterROIs()
+        return splitting.map_splitter_coords_(x, y,[xgs, xrs], [ygs, yrs], yrs.step < 0)
         
     def __remapSplitterCoords(self, x,y):
-        return splitting.remap_splitter_coords(self.md, self.data.shape, x, y)
+        #return splitting.remap_splitter_coords(self.md, self.data.shape, x, y)
+        xgs, xrs, ygs, yrs = self._getSplitterROIs()
+        return splitting.remap_splitter_coords_(x, y, [xgs, xrs], [ygs, yrs], quadrant=1, flip=(yrs.step < 0))
         
     def _getSplitterROIs(self):
         if not '_splitterROICache' in dir(self):
@@ -346,6 +350,8 @@ class fitTask(taskDef.Task):
         xgs, xrs, ygs, yrs = self._getSplitterROIs()
         g = img[xgs, ygs]
         r = img[xrs, yrs]
+        
+        self.roi_offset = [xgs.start, ygs.start]
         
         #print xgs, xrs, ygs, yrs, g.shape, r.shape
         
@@ -360,6 +366,8 @@ class fitTask(taskDef.Task):
         md.tIndex = self.index
         md.taskQueue = taskQueue
         md.dataSourceID = self.dataSourceID
+        
+        self.roi_offset = [0,0]
 
         #logging.debug('dataSourceID: %s, cachedDSID: %s', md.dataSourceID, bufferManager.dataSourceID)
 
@@ -477,7 +485,7 @@ class fitTask(taskDef.Task):
 
         #########################################################
         #Create a fit 'factory'
-        fitFac = self.fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma = self.sigma)
+        fitFac = self.fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma = self.sigma, roi_offset = self.roi_offset)
         
         #perform fit for each point that we detected
         if 'FromPoints' in dir(self.fitMod):
@@ -499,7 +507,7 @@ class fitTask(taskDef.Task):
         #Fit Fiducials NOTE: This is potentially broken        
         self.drRes = []
         if self.driftEst:
-            fitFac = self.fitMod.FitFactory(self.data, md, noiseSigma = self.sigma)
+            fitFac = self.fitMod.FitFactory(self.data, md, noiseSigma = self.sigma, roi_offset = self.roi_offset)
             nToFit = min(10,len(self.ofdDr)) #don't bother fitting lots of calibration objects 
             if 'FitResultsDType' in dir(self.fitMod):
                 self.drRes = numpy.empty(nToFit, self.fitMod.FitResultsDType)

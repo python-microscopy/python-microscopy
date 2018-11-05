@@ -240,20 +240,27 @@ class fitDispPanel(wxPlotPanel.PlotPanel):
                 x0 -= roi_x0
                 y0 -= roi_y0
                 #g = self.data[x0:(x0+w), y0:(y0+h)]
-                x1, y1, w, h = self.mdh['Splitter.Channel1ROI']
+                x1, y1, w1, h1 = self.mdh['Splitter.Channel1ROI']
                 x1 -= roi_x0
                 y1 -= roi_y0
                 #r = self.data[x0:(x0+w), y0:(y0+h)]
+                
+                h_ = min(y0 + h - max(y0, 0), min(y1 + h1, self.ds.shape[1]) - y1)
+                
             else:
                 x0, y0 = 0,0
                 x1, y1 = 0, (self.mdh['Camera.ROIHeight'] + 1)/2
                 h = y1
+                h_ = h
                 
             slux = fri['slicesUsed']['x']
             sluy = fri['slicesUsed']['y']
             
             slx = slice(slux[0], slux[1])
             sly = slice(sluy[0], sluy[1])
+             
+            if False: #self.mdh.get('Splitter.Flip', True):
+                sly = slice(sluy[0] + h - h_, sluy[1] + h - h_)
             
             #sx0 = slice(x0+ slux[0], x0+slux[1])
             #sy0 = slice(y0+ sluy[0], y0+sluy[1])

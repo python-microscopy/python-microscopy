@@ -97,7 +97,7 @@ def Gauss3dFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitE
     return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype)
 
 class Gauss3dFitFactory:
-    def __init__(self, data, metadata, background=None):
+    def __init__(self, data, metadata, background=None, **kwargs):
         self.data = data
         self.metadata = metadata
         self.background = background

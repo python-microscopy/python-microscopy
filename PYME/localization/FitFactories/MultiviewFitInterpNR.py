@@ -237,8 +237,8 @@ def genFitImage(fitResults, metadata):
     return np.hstack([im[:,:,0], im[:,:,1]]).squeeze()
 
 class InterpFitFactory(InterpFitR.PSFFitFactory):
-    def __init__(self, data, metadata, fitfcn=f_Interp3Dmultiview, background=None, noiseSigma=None, nViews=4):
-        super(InterpFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma)
+    def __init__(self, data, metadata, fitfcn=f_Interp3Dmultiview, background=None, noiseSigma=None, nViews=4, **kwargs):
+        super(InterpFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma, **kwargs)
         
         self.nViews = nViews
         self.rdtype = fresult_dtype(nViews)
