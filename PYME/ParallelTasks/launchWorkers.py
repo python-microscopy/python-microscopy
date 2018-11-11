@@ -152,12 +152,8 @@ def main():
             with open(serverlog('out'),"wb") as out, open(serverlog('err'),"wb") as err:
                 subprocess.Popen('python "%s\\%s.py" %s' % (fstub, SERVER_PROC, prof_args), shell=True,
                                  stdout=out, stderr=err)
-            print('Launching server ...')
-
             logger.info('Waiting for server to come up ...')
             time.sleep(10)
-            print('Waiting for server to come up ...')
-            time.sleep(5)
 
         if args.gui:
             logger.info('Launching task monitor ...')
