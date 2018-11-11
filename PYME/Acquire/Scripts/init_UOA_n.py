@@ -182,13 +182,13 @@ def line_scanner_gui(MainFrame, scope):
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):
     from PYME.Acquire.Hardware import focusKeys
-    fk = focusKeys.FocusKeys(MainFrame, None, scope.piezos[0])
+    fk = focusKeys.FocusKeys(MainFrame, scope.piezos[0])
 
 #splitter
 @init_gui('Splitter')
 def splitter(MainFrame, scope):
     from PYME.Acquire.Hardware import splitter
-    splt = splitter.Splitter(MainFrame, None, scope, scope.cam, flipChan = 1, dichroic = 'Unspecified' , transLocOnCamera = 'Top', flip=True, dir='up_down', constrain=False)
+    splt = splitter.Splitter(MainFrame, scope, scope.cam, flipChan = 1, dichroic = 'Unspecified' , transLocOnCamera = 'Top', flip=True, dir='up_down', constrain=False)
 
 
 #InitGUI("""
