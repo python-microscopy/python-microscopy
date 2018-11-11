@@ -260,7 +260,7 @@ class GaussianFitFactory(FFBase.FFBase):
         #(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
         buf = numpy.zeros(dataROI.size)
         #(res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splitGaussWeightedMisfit, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr)
-        (res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splWrap, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
+        (res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splWrap, startParameters, dataROI.astype('d'), sigma.astype('d'), Xg, Yg, Xr, Yr, buf) # make splWrap needs double data arguments!
 
         fitErrors=None
         try:       
