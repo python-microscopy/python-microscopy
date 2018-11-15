@@ -303,12 +303,18 @@ class FakeCamera:
     MODE_CONTINUOUS=True
     MODE_SINGLE_SHOT=False
     
-    def __init__(self, XVals, YVals, noiseMaker, zPiezo, zOffset=50.0, fluors=None, laserPowers=[0,50], xpiezo=None, ypiezo=None, illumFcn = 'ConstIllum'):
-        self.XVals = XVals
-        self.YVals = YVals
-
-        self.ROIx = (0,len(XVals))
-        self.ROIy = (0,len(YVals))
+    def __init__(self, XVals, YVals, noiseMaker, zPiezo, zOffset=50.0, fluors=None, laserPowers=[0,50], xpiezo=None, ypiezo=None, illumFcn = 'ConstIllum', pixel_size_nm=70.):
+        if np.isscalar(XVals):
+            self.SetSensorDimensions(XVals, YVals, pixel_size_nm, restart=False)
+            self.pixel_size_nm = pixel_size_nm
+        else:
+            self.XVals = XVals
+            self.YVals = YVals
+    
+            self.ROIx = (0,len(XVals))
+            self.ROIy = (0,len(YVals))
+            
+            self.pixel_size_nm = XVals[1] - XVals[0]
 
         self.zPiezo=zPiezo
         self.xPiezo = xpiezo
@@ -327,8 +333,9 @@ class FakeCamera:
         self.compT = None #thread which is currently being computed
         #self.compT = None #finished thread holding image (c.f. camera buffer)
 
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.laserPowers, intTime=self.intTime, xpiezo=self.xPiezo, ypiezo=self.yPiezo, illumFcn=self.illumFcn)
-        self.compT.start()
+        #self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.laserPowers, intTime=self.intTime, xpiezo=self.xPiezo, ypiezo=self.yPiezo, illumFcn=self.illumFcn)
+        #self.compT.start()
+        self._restart_compT()
 
         self.contMode = True
         self.shutterOpen = True
@@ -354,21 +361,17 @@ class FakeCamera:
     def setFluors(self, fluors):
         self.fluors = fluors
 
-        running = self.compT.aqRunning
-
-        self.compT.kill = True
-
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime, xpiezo=self.xPiezo, ypiezo=self.yPiezo, illumFcn=self.illumFcn)
-
-        try:
-            self.compT.setSplitterInfo(self._chan_z_offsets, self._chan_specs)
-        except AttributeError:
-            pass
-
-        self.compT.start()
-
-        self.compT.aqRunning = running
+        self._restart_compT()
         
+    def SetSensorDimensions(self, x_size=256, y_size=256, pixel_size_nm=70., restart=True):
+        self.XVals = pixel_size_nm*np.arange(0.0, float(x_size))
+        self.YVals = pixel_size_nm * np.arange(0.0, float(y_size))
+            
+        self.ROIx = (0, len(self.XVals))
+        self.ROIy = (0, len(self.YVals))
+        
+        if restart:
+            self._restart_compT()
 
     def GetCamType(*args): 
         raise Exception('Not implemented yet!!')
@@ -454,18 +457,32 @@ class FakeCamera:
     def SetROI(self, x1, y1, x2, y2):
         self.ROIx = (x1, x2)
         self.ROIy = (y1, y2)
-
-        running = self.compT.aqRunning
-
-        self.compT.kill = True
-        while self.compT.isAlive():
-            time.sleep(0.01)
+        
+        self._restart_compT()
+        
+    def _restart_compT(self):
+        try:
+            running = self.compT.aqRunning
+            self.compT.kill = True
+            while self.compT.isAlive():
+                time.sleep(0.01)
+                
+        except AttributeError:
+            running = False
 
         #print (self.fluors.fl['state'] == 2).sum()
         #print running
         #print self.compT.laserPowers
 
-        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset, self.fluors, self.noiseMaker, laserPowers=self.compT.laserPowers, intTime=self.intTime, xpiezo=self.xPiezo, ypiezo=self.yPiezo, illumFcn=self.illumFcn)
+        self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]],
+                                self.zPiezo, self.zOffset, self.fluors, self.noiseMaker, laserPowers=self.laserPowers,
+                                intTime=self.intTime, xpiezo=self.xPiezo, ypiezo=self.yPiezo, illumFcn=self.illumFcn)
+        
+        try:
+            self.compT.setSplitterInfo(self._chan_z_offsets, self._chan_specs)
+        except AttributeError:
+            pass
+        
         self.compT.start()
 
         #print (self.fluors.fl['state'] == 2).sum()

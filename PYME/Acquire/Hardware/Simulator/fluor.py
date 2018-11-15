@@ -55,12 +55,13 @@ def registerIllumFcn(fcn):
 def ConstIllum(fluors, position):
     return 1.0
 
-def createSimpleTransitionMatrix(pPA=[1e6,.1,0] , pOnDark=[0,0,.1], pDarkOn=[0,.001,0], pOnBleach=[0,0,0]):
+def createSimpleTransitionMatrix(pPA=[1e6,.1,0] , pOnDark=[0,0,.1], pDarkOn=[0,.001,0], pOnBleach=[0,0,0], pCagedBlinked = [0,0,0]):
     M = zeros((states.n,states.n,len(pPA)), 'f')
     M[states.caged, states.active, :] = pPA
     M[states.active, states.blinked, :] = pOnDark
     M[states.blinked, states.active, :] = pDarkOn
     M[states.active, states.bleached,:] = pOnBleach
+    M[states.caged, states.blinked, :] = pCagedBlinked
     return M
 
 class fluorophore:
@@ -119,12 +120,12 @@ class fluors:
     if HAVE_ILLUMINATE_MOD:
         #use faster cythoned version of function if available
         def illuminate(self,laserPowers, expTime, position=[0,0,0], illuminationFunction = 'ConstIllum'):
-            dose = (np.concatenate(([1],laserPowers),0)*expTime).astype('f')
+            dose = (np.concatenate(([1.0],laserPowers),0)*expTime).astype('f')
             ilFrac = illuminationFunctions[illuminationFunction](self.fl, position)
             return illuminate.illuminate(self.transitionTensor, self.fl, self.fl['state'], self.fl['abcosthetas'], dose, ilFrac, self.activeState)
     else:
         def illuminate(self, laserPowers, expTime, position=[0,0,0], illuminationFunction = 'ConstIllum'):
-            dose = concatenate(([1],laserPowers),0)*expTime
+            dose = concatenate(([1.0],laserPowers),0)*expTime
             #grab transition matrix
             transMat = self.transitionTensor[self.fl['state'],:,:].copy()
             
