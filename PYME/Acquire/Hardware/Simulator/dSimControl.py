@@ -141,7 +141,7 @@ class dSimControl(afp.foldPanel):
         ############## PSF Settings ################
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.st_psf = wx.StaticText(pane, -1, 'PSF: Theoretical widefield')
+        self.st_psf = wx.StaticText(pane, -1, 'PSF: Default widefield')
         hsizer.Add(self.st_psf, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 4)
         
         hsizer.AddStretchSpacer()
@@ -275,7 +275,7 @@ class dSimControl(afp.foldPanel):
 
         hsizer.Add(self.cModelPresets, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
         
-        pFirstPrinciplesSizer.Add(hsizer, 0, wx.ALL, 2)
+        sbsizer2.Add(hsizer, 0, wx.ALL, 2)
         
         self.gSpontan = wx.grid.Grid(self.nTransitionTensor, -1)
         self.gSwitch = wx.grid.Grid(self.nTransitionTensor, -1)
@@ -291,7 +291,7 @@ class dSimControl(afp.foldPanel):
         pFirstPrinciplesSizer.Add(sbsizer2, 1, wx.EXPAND | wx.ALL, 2)
 
         sbsizer2 = wx.StaticBoxSizer(
-            wx.StaticBox(pFirstPrinciples, -1, 'Excitation Crossections'),
+            wx.StaticBox(pFirstPrinciples, -1, 'Excitation Crossections (Fluorophore Brightness)'),
             wx.HORIZONTAL)
 
         sbsizer2.Add(wx.StaticText(pFirstPrinciples, -1, 'Switching Laser:'), 0,
@@ -301,13 +301,13 @@ class dSimControl(afp.foldPanel):
         sbsizer2.Add(self.tExSwitch, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
 
         sbsizer2.Add(
-            wx.StaticText(pFirstPrinciples, -1, '/mWs       Probe Laser:'), 0,
+            wx.StaticText(pFirstPrinciples, -1, 'photons/mWs     Probe Laser:'), 0,
             wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
 
         self.tExProbe = wx.TextCtrl(pFirstPrinciples, -1, value='100')
         sbsizer2.Add(self.tExProbe, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
 
-        sbsizer2.Add(wx.StaticText(pFirstPrinciples, -1, '/mWs'), 0,
+        sbsizer2.Add(wx.StaticText(pFirstPrinciples, -1, 'photons/mWs'), 0,
                      wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
         
         self.sbsizer2 = sbsizer2
@@ -593,14 +593,18 @@ class dSimControl(afp.foldPanel):
             z_modes_lower = {int(k): float(v) for k, v in psf_settings.zernike_modes_lower.items()}
             phases = [np.pi*float(p) for p in psf_settings.phases]
             
-            print z_modes, z_modes_lower, phases
+            #print z_modes, z_modes_lower, phases
             rend_im.genTheoreticalModel4Pi(rend_im.mdh, phases=phases, zernikes=[z_modes, z_modes_lower],
                                            lamb=psf_settings.wavelength_nm,
                                            NA=psf_settings.NA, vectorial=psf_settings.vectorial)
+            
+            self.st_psf.SetLabelText('PSF: 4Pi %s [%1.2f NA @ %d nm, zerns=%s]' % ('vectorial' if  psf_settings.vectorial else 'scalar',psf_settings.NA, psf_settings.wavelength_nm, z_modes))
         else:
             print('Setting PSF with zernike modes: %s' % z_modes)
             rend_im.genTheoreticalModel(rend_im.mdh, zernikes=z_modes, lamb=psf_settings.wavelength_nm,
                                         NA=psf_settings.NA, vectorial=psf_settings.vectorial)
+
+            self.st_psf.SetLabelText('PSF: Widefield %s [%1.2f NA @ %d nm, zerns=%s]' % ('vectorial' if  psf_settings.vectorial else 'scalar',psf_settings.NA, psf_settings.wavelength_nm, z_modes))
 
     def OnBSetPSF(self, event):
         fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf|TIFF (*.tif)|*.tif')
@@ -610,6 +614,7 @@ class dSimControl(afp.foldPanel):
             return
         else:
             rend_im.setModel(fn, rend_im.mdh)
+            self.st_psf.SetLabelText('PSF: Experimental [%s]' % fn)
         #event.Skip()
 
     def OnBGenFloursButton(self, event):
