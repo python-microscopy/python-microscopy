@@ -13,6 +13,7 @@
 #include "Python.h"
 //#include <complex.h>
 #include <stdlib.h>
+#define _USE_MATH_DEFINES //make M_PI available under msvcc
 #include <math.h>
 #include "numpy/arrayobject.h"
 #include <stdio.h>

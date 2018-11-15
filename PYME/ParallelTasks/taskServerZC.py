@@ -394,7 +394,7 @@ def main():
     tq = TaskQueueSet(process_queues_in_order=config.get('TaskServer.process_queues_in_order', True))
     uri=daemon.connect(tq,taskQueueName)
     
-    #print uri, type(uri)
+    logging.debug('taskserver URI -> %s, %s' % (uri,type(uri)))
 
     tw = TaskWatcher(tq)
     tw.start()

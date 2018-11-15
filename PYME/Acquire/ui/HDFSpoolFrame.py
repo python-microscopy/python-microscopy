@@ -364,9 +364,9 @@ class PanSpool(wx.Panel):
         #print 'Protocol choice: ', ret, wx.ID_OK
         if ret == wx.ID_OK:
             pname = pDlg.GetStringSelection()
-            self.stAqProtocol.SetLabel(pname)
-            
             self.spoolController.SetProtocol(pname)
+            # do this after setProtocol so that an error in SetProtocol avoids setting the new name
+            self.stAqProtocol.SetLabel(pname)
 
         pDlg.Destroy()
 
