@@ -47,6 +47,42 @@ else: #linux
 from PYME.Acquire.Hardware import EMCCDTheory
 from PYME.Acquire.Hardware import ccdCalibrator
 
+def generate_camera_maps(size_x = 1024, size_y = 1024, seed=100, read_median=1.38, offset=100):
+    """
+    Generate camera maps for sCMOS simulation, using a constant random seed so that the maps are reproducible
+    
+    The use (and parameterization) of pareto distributions is designed to match the distribution of values observed in
+    actual camera maps. Note that the pareto gives a somewhat better match than lognormal.
+    
+    Parameters
+    ----------
+    size_x
+    size_y
+    seed
+    read_median
+    offset
+
+    Returns
+    -------
+
+    """
+    
+    np.random.seed(seed)
+    
+    #Variance
+    s = 2.0
+    #var = (np.random.lognormal(np.log(read_median), s, [size_x, size_y]))**2
+    var = (read_median/(2**(1./s)) * (1 + np.random.pareto(s, [size_x, size_y]))) ** 2
+    
+    #the dark map has 3 components - a pareto distributed base distribution, a small ammount of Gaussian spread, and Gaussian distributed fixed pattern
+    # line noise
+    dark = offset + np.random.pareto(2.7, [size_x, size_y]) + np.random.normal(0, 1.8, [size_x, size_y]) + np.random.normal(0, 0.35, [size_x,])[:,None]
+    
+    flatfield = np.ones_like(dark)
+    
+    np.random.seed()
+    return {'variance': var, 'dark':dark, 'flat' : flatfield}
+
 class NoiseMaker:
     def __init__(self, QE=.8, electronsPerCount=27.32, readoutNoise=109.8, EMGain=0, background=0., floor=967, shutterOpen = True,
                  numGainElements=536, vbreakdown=6.6, temperature = -70., fast_read_approx=True):

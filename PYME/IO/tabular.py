@@ -28,6 +28,7 @@ understand additional values, e.g. 'error_x'
 """
 import types
 import six
+import warnings
 import numpy as np
 
 from numpy import * #to allow the use of sin cos etc in mappings
@@ -701,6 +702,7 @@ class mappingFilter(TabularBase):
         elif isinstance(mapping, six.string_types):
             self.mappings[key] = compile(mapping, '/tmp/test1', 'eval')
         else:
+            warnings.warn('setMapping should not be used to add a variable/data column', DeprecationWarning)
             self.__dict__[key] = mapping
 
     def getMappedResults(self, key, sl):
