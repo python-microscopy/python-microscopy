@@ -426,7 +426,7 @@ class VisGUICore(object):
             return
         
         
-
+        #FIXME - this should be handled within the filter pane
         self.filterPane.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
 
         if len(self.pipeline['x']) == 0:
@@ -676,6 +676,8 @@ class VisGUICore(object):
         #############################
         #now do all the gui stuff
         
+        self.update_datasource_panel()
+        
         if isinstance(self, wx.Frame):
             #run this if only we are the main frame
             self.SetTitle('PYME Visualise - ' + filename)
@@ -704,14 +706,16 @@ class VisGUICore(object):
         #############################
         #now do all the gui stuff
     
-        if isinstance(self, wx.Frame):
-            #run this if only we are the main frame
-            #self.SetTitle('PYME Visualise - ' + filename)
-            self._removeOldTabs()
-            self._createNewTabs()
+        # if isinstance(self, wx.Frame):
+        #     #run this if only we are the main frame
+        #     #self.SetTitle('PYME Visualise - ' + filename)
+        #     self._removeOldTabs()
+        #     self._createNewTabs()
+        #
+        #     self.CreateFoldPanel()
+        #     print('Gui stuff done')
         
-            self.CreateFoldPanel()
-            print('Gui stuff done')
+        self.update_datasource_panel()
     
         if recipe_callback:
             recipe_callback()

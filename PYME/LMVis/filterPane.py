@@ -93,6 +93,12 @@ class FilterPanel(wx.Panel):
 
         vsizer.Add(self.lFiltKeys, 1, wx.ALL|wx.EXPAND, 0)
         self.SetSizerAndFit(vsizer)
+        
+    def update(self, filter_keys, data_source):
+        self.filterKeys = filter_keys
+        self._dataSource = data_source
+        
+        self.populate()
 
     def populate(self):
         self.lFiltKeys.DeleteAllItems()
@@ -106,6 +112,9 @@ class FilterPanel(wx.Panel):
     def dataSource(self):
         if self._dataSource is None:
             return None
+        elif callable(self._dataSource):
+            #support passing data source as a callable
+            return self._dataSource()
         else:
             return self._dataSource
 
@@ -259,11 +268,17 @@ class FilterPane(afp.foldingPane):
 
         self.bClipToSelection.Bind(wx.EVT_BUTTON, self.OnFilterClipToSelection)
         
+        pipeline.onRebuild.connect(self.update)
+        
         
         try:        
             visFr.Bind(wx.EVT_MENU, self.OnFilterClipToSelection, id=visFr.ID_VIEW_CLIP_ROI)
         except AttributeError:
             pass
+        
+    def update(self, *args, **kwargs):#, filter_keys):
+        #self.filterKeys = filter_keys
+        self.pFilter.update(self.filterKeys, self.pipeline.selectedDataSource)
 
     def setEventNumbers(self,**kwargs):
         if not self.pipeline.filter is None:

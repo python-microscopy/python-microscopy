@@ -125,6 +125,9 @@ class _HistLimitsEditor (Editor):
                                    
         self.control.Bind(histLimits.EVT_LIMIT_CHANGE, self.limits_changed)
         
+        if not self.factory.update_signal is None:
+            self.factory.update_signal.connect(self.n_update)
+        
         return
 
 
@@ -135,6 +138,9 @@ class _HistLimitsEditor (Editor):
         self.value = list(self.control.GetValue())
         print(self.value)
         return
+    
+    def n_update(self, *args, **kwargs):
+        self.update_editor()
 
 
     def update_editor ( self ):
@@ -142,7 +148,9 @@ class _HistLimitsEditor (Editor):
         Updates the editor when the object trait changes externally to the
         editor.
         """
+        import traceback
         print('hl update')
+        #print traceback.print_stack()
         if self.value:
             self.control.SetData(self.factory.data(), *self.value)
             self.control.SetValue(self.value)
@@ -162,3 +170,4 @@ class HistLimitsEditor(BasicEditorFactory):
     klass = _HistLimitsEditor
 
     data = Instance(object)
+    update_signal = Instance(object)
