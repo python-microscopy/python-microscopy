@@ -1504,40 +1504,39 @@ class AverageFramesByStep(ModuleBase):
         image_stack = namespace[self.input_name]
 
         # get z from events if we can
-        frame = np.arange(image_stack.data.shape[2])
+        frames = np.arange(image_stack.data.shape[2], dtype=int)
         try:
             # note that GeneratePMFromEventList internally handles converting time stamps to frame numbers
-            zm = piecewiseMapping.GeneratePMFromEventList(image_stack.events, image_stack.mdh,
+            z_mapping = piecewiseMapping.GeneratePMFromEventList(image_stack.events, image_stack.mdh,
                                                           image_stack.mdh['StartTime'],
                                                           image_stack.mdh['Protocol.PiezoStartPos'])
         except TypeError:
             # try to spoof z focus based on metadata alone
             position, frames = piecewiseMapping._spoof_focus_from_metadata(image_stack.mdh)
-            zm = piecewiseMapping.piecewiseMap(0, frames, position, xIsSecs=False)
+            z_mapping = piecewiseMapping.piecewiseMap(0, frames, position, xIsSecs=False)
 
         # make sure everything is sorted. We'll carry the args to sort, rather than creating another full array
-        I = np.argsort(zm(frame))
-        z = zm(frame)[I]
-        z, count = np.unique(z, return_counts=True)
+        frames_z_sorted = np.argsort(z_mapping(frames))
+        z = z_mapping(frames)[frames_z_sorted]
+        z_steps, count = np.unique(z, return_counts=True)
 
-        shape = image_stack.data.shape
-        n_steps = len(z)
+        n_steps = len(z_steps)
         logger.debug('Averaged stack size: %d' % n_steps)
-        data_avg = np.empty((shape[0], shape[1], n_steps, shape[3]), dtype=np.float32)
-        start = 0
-        for si in range(n_steps):
-            # slicing in time won't generally work with ImageStacks. Create the array to be averaged explicitly rather
-            # than through slicing
-            frames_to_average = np.empty((shape[0], shape[1], count[si], shape[3]), dtype=np.float32)
-            for fi in range(count[si]): # finish out the "slice", grabbing 3D views to keep it multicolor compatible
-                # FIXME - BaseDataSource.getSlice() returns a single color, wrapping on dim 2, HOWEVER, this is not actually followed in many subclasses
-                # c_indices = np.arange(shape[3]) * shape[2]
-                # frames_to_average[:,:,fi,:] = np.stack([image_stack.data.getSlice(cind + ind) for cind in c_indices], axis=2)
-                frames_to_average[:,:,fi,:] = np.atleast_3d(image_stack.data.getSlice(I[start + fi]))  # sort and grab
-            data_avg[:,:,si,:] = np.mean(frames_to_average, axis=2)
-            start += count[si]
 
-        averaged = ImageStack(data_avg, mdh=image_stack.mdh)
+        new_stack = []
+        for ci in range(image_stack.data.shape[3]):
+            data_avg = np.zeros((image_stack.data.shape[0], image_stack.data.shape[1], n_steps))
+            start = 0
+            for si in range(n_steps):
+                for fi in range(count[si]):
+                    # sum frames from this step directly into the output array
+                    data_avg[:, :, si] += image_stack.data[:, :, frames_z_sorted[start + fi], ci].squeeze()
+                # data_avg[:, :, si] /= count[si]  # complete the average at this step
+                start += count[si]
+            # complete the average for this color channel and append to output
+            new_stack.append(data_avg / count[None, None, :])
+
+        averaged = ImageStack(new_stack, mdh=image_stack.mdh)
 
         # fudge metadata, leaving breadcrumbs
         averaged.mdh['Processing.AverageFramesByStep.OriginalFramesPerStep'] = image_stack.mdh['StackSettings.FramesPerStep']
