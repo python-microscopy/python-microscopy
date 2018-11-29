@@ -1479,7 +1479,7 @@ class FlatfiledAndDarkCorrect(ModuleBase):
 @register_module('AverageFramesByStep')
 class AverageFramesByStep(ModuleBase):
     """
-    Averages frames acquired at the same z-position, as determined by the associated events, or (fall-back) metadata
+    Averages frames acquired at the same z-position, as determined by the associated events, or (fall-back) metadata.
 
     Parameters
     ----------
