@@ -282,8 +282,8 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
  
 
 def load_header(datastring):
-    if (chr(datastring[2]) >= 3):
-        return np.fromstring(datastring[:HEADER_LENGTH_V3], header_dtype)
+    if (ord(datastring[2]) >= 3):
+        return np.fromstring(datastring[:HEADER_LENGTH_V3], header_dtype_v3)
     else:
         return np.fromstring(datastring[:HEADER_LENGTH], header_dtype)
 
@@ -329,10 +329,10 @@ def loads(datastring):
         outsize = w*h*d*DATA_FMTS_SIZES[int(header['DataFormat'])]
     
     
-    if header['Version'] >= 3:
+    if header['Version'] < 3:
         data_offset = HEADER_LENGTH
     else:
-        data_offset = header['DataOffset']
+        data_offset = int(header['DataOffset'])
         
     data_s = datastring[data_offset:]
 
