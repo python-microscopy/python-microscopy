@@ -398,11 +398,13 @@ class VisGUICore(object):
         logger.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
         self.pipeline.Rebuild()
         
-    def add_pointcloud_layer(self, method='points', ds_name=''):
+    def add_pointcloud_layer(self, method='points', ds_name='output'):
         #from .layer_wrapper import LayerWrapper
         from .layers.pointcloud import PointCloudRenderLayer
         l = PointCloudRenderLayer(self.pipeline, method=method, dsname=ds_name)
         self.add_layer(l)
+
+        logger.debug('Added layer, datasouce=%s' % l.dsname)
         return l
 
     def add_layer(self, layer):
