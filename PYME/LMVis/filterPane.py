@@ -90,8 +90,11 @@ class FilterPanel(wx.Panel):
         self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnFilterItemSelected)
         self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.OnFilterItemDeselected)
         self.lFiltKeys.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.OnFilterEdit)
+        
 
         vsizer.Add(self.lFiltKeys, 1, wx.ALL|wx.EXPAND, 0)
+        self.stNumFiltered = wx.StaticText(self, -1, '')
+        vsizer.Add(self.stNumFiltered, 0, wx.ALL | wx.EXPAND, 2)
         self.SetSizerAndFit(vsizer)
         
     def update(self, filter_keys, data_source):
@@ -240,7 +243,7 @@ class FilterPanel(wx.Panel):
 
 class FilterPane(afp.foldingPane):
     def __init__(self, panel, filterKeys, pipeline, visFr):
-        afp.foldingPane.__init__(self, panel, -1, caption="Filter", pinned = False)
+        afp.foldingPane.__init__(self, panel, -1, caption="Output Filter", pinned = False)
 
         self.filterKeys = filterKeys
         self.pipeline = pipeline

@@ -37,8 +37,12 @@ def drift_correct(pipeline):
 
     recipe = pipeline.recipe
 
-    recipe.add_module(FilterTable(recipe, inputName='Fiducials',
-                                  outputName='filtered_fiducials', filters={'error_x': [0, 10], 'sig': sig}))
+    filt_fiducials = FilterTable(recipe, inputName='Fiducials',
+                                  outputName='filtered_fiducials', filters={'error_x': [0, 10], 'sig': sig})
+    
+    filt_fiducials.configure_traits(kind='modal')
+    #print('Adding fiducial filter module')
+    recipe.add_module(filt_fiducials)
     
     recipe.add_module(DBSCANClustering(recipe,inputName='filtered_fiducials', outputName='clumped_fiducials', columns=['x', 'y'],
                                        searchRadius=500, minClumpSize=10, clumpColumnName='fiducialID'))

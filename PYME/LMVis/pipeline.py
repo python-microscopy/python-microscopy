@@ -270,6 +270,7 @@ def _processEvents(ds, events, mdh):
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
         self.recipe = ModuleCollection(execute_on_invalidation=True)
+        self.recipe.recipe_executed.connect(self.Rebuild)
 
         self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
@@ -716,7 +717,11 @@ class Pipeline:
         else:
             self.imageBounds = ImageBounds.estimateFromSource(mapped_ds)
 
-        self.selectDataSource('Localizations') #NB - this rebuilds the pipeline
+        from PYME.recipes.tablefilters import FilterTable
+        self.recipe.add_module(FilterTable(self.recipe, inputName='Localizations', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items()}))
+        self.recipe.execute()
+        self.filterKeys = {}
+        self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
         
         #self._process_colour()
 

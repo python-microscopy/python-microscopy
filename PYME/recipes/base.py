@@ -238,6 +238,8 @@ class ModuleCollection(HasTraits):
         
         self.namespace = {}
         
+        self.recipe_executed = dispatch.Signal()
+        
     def invalidate_data(self):
         if self.execute_on_invalidation:
             self.execute()
@@ -358,6 +360,8 @@ class ModuleCollection(HasTraits):
                 except:
                     logger.exception("Error in recipe module: %s" % m)
                     raise
+        
+        self.recipe_executed.send_robust(self)
         
         if 'output' in self.namespace.keys():
             return self.namespace['output']
