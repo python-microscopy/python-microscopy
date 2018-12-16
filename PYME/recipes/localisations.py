@@ -59,7 +59,10 @@ class DensityMapping(ModuleBase):
      """
     inputLocalizations = Input('localizations')
     outputImage = Output('output')
-    renderingModule = Enum(renderers.RENDERERS.keys())
+    
+    available_renderers = sorted(renderers.RENDERERS.keys())
+    
+    renderingModule = Enum(available_renderers)#, default_value='Jittered Triangulation')
 
     pixelSize = Float(5)
     jitterVariable = CStr('1.0')
@@ -68,7 +71,7 @@ class DensityMapping(ModuleBase):
     jitterScaleZ = Float(1.0)
     MCProbability = Float(1.0)
     numSamples = Int(10)
-    colours = List(['none'])
+    colours = ListStr(['none',])
     zBoundsMode = Enum(['manual', 'min-max'])
     zBounds = ListFloat([-500, 500])
     zSliceThickness = Float(50.0)
@@ -92,6 +95,33 @@ class DensityMapping(ModuleBase):
         renderer = renderers.RENDERERS[str(self.renderingModule)](None, cf)
 
         namespace[self.outputImage] = renderer.Generate(self.get())
+
+    @property
+    def default_view(self):
+        from traitsui.api import View, Group, Item, TextEditor, CSVListEditor
+        from PYME.ui.custom_traits_editors import CBEditor
+    
+        return View(Item('inputLocalizations', editor=CBEditor(choices=self._namespace_keys)),
+                    Item('_'),
+                    Item('renderingModule'),
+                    Item('pixelSize'),
+                    Item('colours', style='text'),#editor=CSVListEditor()),
+                    Item('softRender'),
+                    Group(
+                        Item('jitterVariable'),
+                        Item('jitterScale'),
+                        Item('jitterVariableZ', visible_when='"3D" in renderingModule'),
+                        Item('jitterScaleZ', visible_when='"3D" in renderingModule'),
+                        Item('numSamples', visible_when='"Triangulation" in renderingModule'),
+                        Item('MCProbability', visible_when='"Triangulation" in renderingModule'),
+                        label='Jittering/Gaussian Size', visible_when='not (("Histogram" in renderingModule) or (renderingModule=="Current"))'),
+                    Group(
+                        Item('zSliceThickness'),
+                        Item('zBoundsMode'),
+                        Item('zBounds', visible_when='zBoundsMode=="manual"'),
+                        label='3D', visible_when='"3D" in renderingModule'),
+                    Item('_'),
+                    Item('outputImage'), buttons=['OK'])
 
 @register_module('AddPipelineDerivedVars')
 class Pipelineify(ModuleBase):

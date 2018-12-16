@@ -8,6 +8,9 @@ Created on Mon Jun  8 16:06:17 2015
 import os
 os.environ['ETS_TOOLKIT'] = 'wx'
 
+import matplotlib
+matplotlib.use('WxAgg')
+
 import wx
 from PYME.recipes import recipeGui
 

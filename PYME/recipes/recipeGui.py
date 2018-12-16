@@ -81,8 +81,8 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         
         #print pix_per_col, fontSize
         
-        TW = textwrap.TextWrapper(width=int(1.8*pix_per_col/fontSize), subsequent_indent='  ')
-        TW2 = textwrap.TextWrapper(width=int(1.3*pix_per_col/fontSize), subsequent_indent='  ')
+        TW = textwrap.TextWrapper(width=max(int(1.8*pix_per_col/fontSize), 10), subsequent_indent='  ')
+        TW2 = textwrap.TextWrapper(width=max(int(1.3*pix_per_col/fontSize), 10), subsequent_indent='  ')
     
         cols = {}
 
@@ -275,6 +275,7 @@ class RecipeView(wx.Panel):
         self.recipes = recipes
         recipes.recipeView = self
         hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        
         vsizer = wx.BoxSizer(wx.VERTICAL)
         
         self.recipePlot = RecipePlotPanel(self, recipes, size=(-1, 400))
@@ -302,11 +303,13 @@ class RecipeView(wx.Panel):
         self.bSaveRecipe.Bind(wx.EVT_BUTTON, self.recipes.OnSaveRecipe)
         
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+        
+        
         hsizer1.Add(vsizer, 1, wx.EXPAND|wx.ALL, 2)
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
         
-        self.tRecipeText = wx.TextCtrl(self, -1, '', size=(250, -1),
+        self.tRecipeText = wx.TextCtrl(self, -1, '', size=(350, -1),
                                        style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
                                        
         vsizer.Add(self.tRecipeText, 1, wx.ALL, 2)
@@ -455,6 +458,7 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         self.recipeView = RecipeView(self, self.rm)
         
         hsizer.Add(self.recipeView, 1, wx.ALL|wx.EXPAND, 2)
+        
         vsizer1.Add(hsizer, 1, wx.ALL|wx.EXPAND, 2)
         
         hsizer1 = wx.BoxSizer(wx.HORIZONTAL)

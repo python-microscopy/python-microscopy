@@ -72,6 +72,18 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
         self.input_target_panes = {}
         self.output_source_panes = {}
         self.data_panes = {}
+        
+        #what data do we already have in the namespace?
+        self.input_datasources = list(self.recipe.namespace.keys())
+        
+        for node in self.ordered:
+            if isinstance(node, ModuleBase):
+                for op in node.outputs:
+                    try:
+                        #this is obviously not an input - remove from list of input data
+                        self.input_datasources.remove(op)
+                    except ValueError:
+                        pass
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.AddSpacer(20)
@@ -114,6 +126,7 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
 
                     for yp, xp, op in zip(op_y, op_x, outputs):
                         self.output_source_panes[op] = (item, xp, yp)
+                        
                         #self.output_positions[op] = lambda : (item.GetPosition()[0] + item.GetSize()[0] + 5 + xp, item.GetPosition()[1] + yp*item.GetSize()[1])
         
             else:
@@ -146,8 +159,12 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
 
                     item = afp.foldingPane(self.fp, -1, caption=None, pinned=True, folded=False, padding=0)
                     st = wx.StaticText(item, -1, node)
-                    st.SetLabelMarkup(
-                        "<span foreground='#%02x%02x%02x'>%s</span>" % (tuple(255 * self._col(node)[:3]) + (node,)))
+                    if node in self.input_datasources:
+                        st.SetLabelMarkup(
+                            "<u><span foreground='#%02x%02x%02x' weight='bold' background='#D0D0D0'>%s</span></u>" % (tuple(255 * self._col(node)[:3]) + (node,)))
+                    else:
+                        st.SetLabelMarkup(
+                            "<span foreground='#%02x%02x%02x'>%s</span>" % (tuple(255 * self._col(node)[:3]) + (node,)))
                     item.AddNewElement(st, foldable=False)
                     self.fp.AddPane(item)
 
@@ -155,6 +172,7 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
                     #self.data_positions[node] = lambda : (item.GetPosition()[0] + x_0, item.GetPosition()[1] + 0.5 * item.GetSize()[1])
                 
         
+        print('Input datasources: ',  self.input_datasources)
         
         self.fp.fold_signal.connect(self._refr)
         self.SetSizerAndFit(hsizer)

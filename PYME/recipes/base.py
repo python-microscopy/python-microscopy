@@ -388,18 +388,22 @@ class ModuleCollection(HasTraits):
         l = []
         for mod in self.modules:
             #l.append({mod.__class__.__name__: mod.get()})
+            
+            ct = mod.class_traits()
 
             mod_traits_cleaned = {}
             for k, v in mod.get().items():
                 if not k.startswith('_'): #don't save private data - this is usually used for caching etc ..,
-                    if isinstance(v, dict) and not type(v) == dict:
-                        v = dict(v)
-                    elif isinstance(v, list) and not type(v) == list:
-                        v = list(v)
-                    elif isinstance(v, set) and not type(v) == set:
-                        v = set(v)
-
-                    mod_traits_cleaned[k] = v
+                    if (not (v == ct[k].default)) or (k.startswith('input')) or (k.startswith('output')):
+                        #don't save defaults
+                        if isinstance(v, dict) and not type(v) == dict:
+                            v = dict(v)
+                        elif isinstance(v, list) and not type(v) == list:
+                            v = list(v)
+                        elif isinstance(v, set) and not type(v) == set:
+                            v = set(v)
+    
+                        mod_traits_cleaned[k] = v
 
             l.append({module_names[mod.__class__]: mod_traits_cleaned})
 
