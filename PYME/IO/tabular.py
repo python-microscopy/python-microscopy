@@ -42,7 +42,17 @@ class TabularBase(object):
         if keys is None:
             keys = self.keys()
         
-        d = {k: self.__getitem__(k) for k in keys}
+        d = {}
+        
+        for k in keys:
+            v = self.__getitem__(k)
+            if np.ndim(v) == 1:
+                d[k] = v
+            else:
+                v1 = np.empty(len(v), 'O')
+                for i in range(len(v)):
+                    v1[i] = v[i]
+                d[k] = v1
         
         return pd.DataFrame(d)
         
@@ -77,13 +87,22 @@ class TabularBase(object):
             keys = self.keys()
 
         columns = [self.__getitem__(k) for k in keys]
-        dt = [(k, v.dtype, v.shape[1:]) for k, v in zip(keys, columns)]
-        return records.fromarrays(columns, names=keys, dtype=dt)
+        
+        filtered_cols = [i for i, v in enumerate(columns) if not v.dtype == 'O']
+        
+        cols = [columns[i] for i in filtered_cols]
+        keys_ = [keys[i] for i in filtered_cols]
+        
+        
+        dt = [(k, v.dtype, v.shape[1:]) for k, v in zip(keys_, cols)]
+        
+        #print(dt)
+        return records.fromarrays(cols, names=keys_, dtype=dt)
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
         from PYME.IO import h5rFile
 
-        with h5rFile.H5RFile(filename, 'a') as f:
+        with h5rFile.openH5R(filename, 'a') as f:
             f.appendToTable(tablename, self.to_recarray(keys))
 
             if metadata is not None:
