@@ -238,6 +238,7 @@ class ModuleCollection(HasTraits):
         
         self.namespace = {}
         
+        self.recipe_changed = dispatch.Signal()
         self.recipe_executed = dispatch.Signal()
         
     def invalidate_data(self):
@@ -437,6 +438,8 @@ class ModuleCollection(HasTraits):
             mc.append(mod)
     
         self.modules = mc
+        
+        self.recipe_changed.send_robust(self)
         self.invalidate_data()
     
     @classmethod
@@ -472,6 +475,7 @@ class ModuleCollection(HasTraits):
 
     def add_module(self, module):
         self.modules.append(module)
+        self.recipe_changed.send_robust(self)
         
     @property
     def inputs(self):

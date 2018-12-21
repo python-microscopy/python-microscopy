@@ -199,13 +199,13 @@ def drift_auto_corr(visFr):
         
         recipe.execute()
         pipeline.selectDataSource('corrected_localizations')
-        visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+        #visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
 
 def Plug(visFr):
     def correct():
         drift_correct(visFr.pipeline)
-        visFr.CreateFoldPanel()
+        #visFr.CreateFoldPanel()
     
     visFr.AddMenuItem('Corrections>Fiducials', 'Correct', lambda e : correct())
     visFr.AddMenuItem('Corrections>Fiducials', 'Display correction residuals', lambda e: fiducial_diagnosis(visFr.pipeline))

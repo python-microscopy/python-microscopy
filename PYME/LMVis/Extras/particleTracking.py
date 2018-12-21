@@ -77,7 +77,7 @@ class ParticleTracker:
     
             recipe.execute()
             self.visFr.pipeline.selectDataSource('with_clumps')
-            self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+            #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
         dlg.Destroy()
 
@@ -105,7 +105,7 @@ class ParticleTracker:
     
             recipe.execute()
             self.visFr.pipeline.selectDataSource('with_tracks')
-            self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+            #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
         
         #dlg.Destroy()
 
@@ -189,7 +189,7 @@ class ParticleTracker:
         pipeline.addDataSource('Coalesced',  ds)
         pipeline.selectDataSource('Coalesced')
 
-        self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+        #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
         
     def OnCoalesce(self, event):
         from PYME.recipes import localisations
@@ -199,9 +199,10 @@ class ParticleTracker:
     
         recipe.execute()
         self.visFr.pipeline.selectDataSource('coalesced')
-        self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+        #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
     def OnCalcWidths(self,event):
+        #FIXME - this is probably broken on modern VisGUI
         from scipy.stats import binned_statistic
 
         pipeline = self.visFr.pipeline
@@ -238,7 +239,7 @@ class ParticleTracker:
         pipeline.selectedDataSource.setMapping('clumpWidthY', 'clumpWidthsY')
          
         self.visFr.RegenFilter()
-        self.visFr.CreateFoldPanel()
+        #self.visFr.CreateFoldPanel()
  
 
 def Plug(visFr):

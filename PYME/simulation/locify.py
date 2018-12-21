@@ -83,7 +83,7 @@ def FitResultR(x,y,z,I,t, b2, z_err_mult=3):
 
     return np.array([(t, np.array([I/(2*np.pi), x, y, z, 110.], 'f'), np.array([r_I/(2*np.pi), err_x, err_x, err_z, err_x], 'f'))], dtype=fresultdtype)
 
-def eventify(x,y,meanIntensity, meanDuration, backGroundIntensity, meanEventNumber, sf = 2, tm=2000, z=0, z_err_scale=1.0):
+def _eventify(x,y,meanIntensity, meanDuration, backGroundIntensity, meanEventNumber, sf = 2, tm=2000, z=0, z_err_scale=1.0):
     Is = np.random.exponential(meanIntensity, x.shape)
     Ns = np.random.poisson(meanEventNumber, x.shape)
     
@@ -126,9 +126,16 @@ def eventify(x,y,meanIntensity, meanDuration, backGroundIntensity, meanEventNumb
 
     return evts
 
+def eventify(*args, **kwargs):
+    return eventify2(*args, paint_mode=False, **kwargs)
+
+
 def eventify2(x, y, meanIntensity, meanDuration, backGroundIntensity, meanEventNumber, sf=2, tm=10000, z=0,
-             z_err_scale=1.0):
-    #Is = np.random.exponential(meanIntensity, x.shape)
+             z_err_scale=1.0, paint_mode=True):
+    """ PAINT version of eventify """
+    
+    
+    #Is =
     Ns = np.random.poisson(meanEventNumber, x.shape)
 
     if np.isscalar(z):
@@ -140,8 +147,13 @@ def eventify2(x, y, meanIntensity, meanDuration, backGroundIntensity, meanEventN
     for x_i, y_i, z_i, N_i in zip(x, y, z, Ns):
         duration = np.random.exponential(meanDuration, size=N_i)
         n_frames = np.ceil(duration).astype('i')
-        Is = np.random.exponential(meanIntensity, size=N_i)
-        ts = 2*tm*np.random.uniform(size=N_i)
+        
+        if paint_mode:
+            Is = np.random.exponential(meanIntensity, size=N_i)
+            ts = 2*tm*np.random.uniform(size=N_i)
+        else:
+            Is = np.random.exponential(meanIntensity)*np.ones(N_i)
+            ts = np.random.exponential(tm, size=N_i)
         
         evts_i = np.empty(n_frames.sum(), dtype=fresultdtype)
         

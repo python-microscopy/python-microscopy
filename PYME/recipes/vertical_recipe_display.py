@@ -39,7 +39,7 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
         
     def SetRecipe(self, recipe):
         self.recipe = recipe
-        
+        self.recipe.recipe_changed.connect(self._layout)
         self._layout()
 
     def _refr(self, **kwargs):
@@ -52,7 +52,7 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
         self.GetParent().GetParent().Layout()
         self.Refresh()
         
-    def _layout(self):
+    def _layout(self, *args, **kwargs):
         self.DestroyChildren()
 
         from matplotlib import pyplot as plt

@@ -358,6 +358,7 @@ class MultiviewMapper:
                 return
 
         recipe = self.pipeline.recipe
+        
         # hold off auto-running the recipe until we configure things
         recipe.trait_set(execute_on_invalidation=False)
         try:
@@ -376,10 +377,11 @@ class MultiviewMapper:
             recipe.execute()
         finally:  # make sure that we configure the pipeline recipe as it was
             recipe.trait_set(execute_on_invalidation=True)
+        
         self.pipeline.selectDataSource('z_mapped')
 
-        self.visFr.RefreshView()
-        self.visFr.CreateFoldPanel()
+        self.visFr.RefreshView() #TODO - is this needed?
+        #self.visFr.CreateFoldPanel()
 
     def OnCheckAstigmatismCalibration(self, event=None):
         """

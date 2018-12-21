@@ -228,7 +228,9 @@ class Generator(HasTraits):
             pass
 
         pipeline.Rebuild()
-        self.visFr.CreateFoldPanel()
+        if len(self.visFr.layers) < 1:
+            self.visFr.add_pointcloud_layer() #TODO - move this logic so that layer added automatically when datasource is added?
+        #self.visFr.CreateFoldPanel()
         self.visFr.SetFit()
 
 

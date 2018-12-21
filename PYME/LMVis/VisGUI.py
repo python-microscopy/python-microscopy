@@ -54,6 +54,7 @@ logger = logging.getLogger(__name__)
 
 
 from PYME.ui import MetadataTree
+from PYME.recipes import recipeGui
 
 import numpy as np
 
@@ -164,16 +165,19 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         
         self.paneHooks.append(self.GenPanels)
         self.CreateFoldPanel()
+        
+        self._recipe_manager = recipeGui.PipelineRecipeManager(self.pipeline)
+        self._recipe_editor = recipeGui.RecipeView(self, self._recipe_manager)
+        self.AddPage(page=self._recipe_editor, select=False, caption='Pipeline Recipe')
 
         if not filename is None:
-    
             def _recipe_callback():
                 recipe = getattr(self.cmd_args, 'recipe', None)
                 print('Using recipe: %s' % recipe)
                 if recipe:
                     from PYME.recipes import modules
                     self.pipeline.recipe.update_from_yaml(recipe)
-                    self.recipeView.SetRecipe(self.pipeline.recipe)
+                    #self.recipeView.SetRecipe(self.pipeline.recipe)
                     self.update_datasource_panel()
             
             wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)

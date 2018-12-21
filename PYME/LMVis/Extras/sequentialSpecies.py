@@ -109,7 +109,7 @@ class TimedSpecies:
                 if len(self.timedSpecies.keys()) > 0:
                     pipeline.mdh.setEntry('TimedSpecies', speclist)
                     self.visFr.RegenFilter()
-                    self.visFr.CreateFoldPanel()
+                    self.visFr.CreateFoldPanel() #TODO - do we need this?
 
     def SaveMetadata(self,mdh):
         mdh['TimedSpecies'] = self.timedSpecies
