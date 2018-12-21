@@ -50,11 +50,13 @@ from PYME.LMVis import colourPanel
 from PYME.LMVis import pipeline
 
 import logging
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
 from PYME.ui import MetadataTree
 from PYME.recipes import recipeGui
+from PYME.recipes import modules #force modules (including 3rd party) to load
 
 import numpy as np
 

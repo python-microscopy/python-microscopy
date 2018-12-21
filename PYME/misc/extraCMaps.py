@@ -104,23 +104,16 @@ def Yellow(data):
     z = np.ones_like(data)
     return np.stack([z, z, 0*z, z], -1)
 
+@register_cmap('labeled')
 def labeled(data):
     return (data > 0).reshape(list(data.shape) +  [1])*pylab.cm.gist_rainbow(data % 1)
 
-labeled.name = 'labeled'
-
-regCmap(labeled)
-
+@register_cmap('flow_gray')
 def flow_gray(data):
     v = ((data > 0)*(data < 1)).reshape(list(data.shape) +  [1])*pylab.cm.gray(data)
     v += (data == 0).reshape(list(data.shape) + [1]) * pylab.array([0, 1., 0, 0]).reshape(list(pylab.ones(data.ndim) + [3]))
     v += (data == 1).reshape(list(data.shape) + [1]) * pylab.array([1., 0, 1., 0]).reshape(list(pylab.ones(data.ndim) + [3]))
     return v
-
-flow_gray.name = 'flow_gray'
-
-regCmap(flow_gray)
-
 
 
 def grey_overflow(underflowcol = 'magenta', overflowcol = 'lime', percentage=5, greystart=0.1):

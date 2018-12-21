@@ -2,9 +2,9 @@ from .base import register_module, register_legacy_module, ModuleBase, Filter
 from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr, ListInt
 
 import numpy as np
-import pandas as pd
+#import pandas as pd
 from PYME.IO import tabular
-from PYME.LMVis import renderers
+#from PYME.LMVis import renderers
 
 @register_module('Mapping')
 class Mapping(ModuleBase):

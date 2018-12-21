@@ -34,14 +34,15 @@ logger = logging.getLogger(__name__)
 import PYME.config
 
 #try importing our drift correction stuff
+# disabled as drift correction now available in a recipe friendly way
 HAVE_DRIFT_CORRECTION = False
-try:
-    from PYMEnf.DriftCorrection.driftGUI import CreateDriftPane
-    HAVE_DRIFT_CORRECTION = True
-    #from PYMEnf.DriftCorrection import driftGUI
-    #renderers.renderMetadataProviders.append(driftGUI.dp.SaveMetadata)
-except:
-    pass
+#try:
+#    from PYMEnf.DriftCorrection.driftGUI import CreateDriftPane
+#    HAVE_DRIFT_CORRECTION = True
+#    #from PYMEnf.DriftCorrection import driftGUI
+#    #renderers.renderMetadataProviders.append(driftGUI.dp.SaveMetadata)
+#except:
+#    pass
 
 from PYME.LMVis.colourFilterGUI import CreateColourFilterPane
 from PYME.LMVis import displayPane
