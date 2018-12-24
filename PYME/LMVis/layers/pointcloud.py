@@ -256,7 +256,7 @@ class PointCloudRenderLayer(EngineLayer):
                      Item('method'),
                      Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.on_update), show_label=False), ]),
-                     Group([Item('cmap', label='LUT'), Item('alpha'), Item('point_size'), Item('visible')])], )
+                     Group(Item('cmap', label='LUT'), Item('alpha'), Item('point_size'), Item('visible'))], )
         #buttons=['OK', 'Cancel'])
 
     def default_traits_view(self):

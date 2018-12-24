@@ -142,8 +142,8 @@ class VisGUICore(object):
     def GenPanels(self, sidePanel):    
         self.GenDataSourcePanel(sidePanel)
         
-        if HAVE_DRIFT_CORRECTION:
-            self.driftPane = CreateDriftPane(sidePanel, self.pipeline.mapping, self.pipeline)
+        #if HAVE_DRIFT_CORRECTION:
+        #    self.driftPane = CreateDriftPane(sidePanel, self.pipeline.mapping, self.pipeline)
 
         self.filterPane = CreateFilterPane(sidePanel, self.pipeline.filterKeys, self.pipeline, self)
 
@@ -156,8 +156,9 @@ class VisGUICore(object):
             from .layer_panel import CreateLayerPane
             CreateLayerPane(sidePanel, self)
             
-            from .view_clipping_pane import GenViewClippingPanel
-            GenViewClippingPanel(self, sidePanel)
+            if self.use_shaders:
+                from .view_clipping_pane import GenViewClippingPanel
+                GenViewClippingPanel(self, sidePanel)
         else:
             self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
             self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
@@ -607,8 +608,8 @@ class VisGUICore(object):
     def SaveMetadata(self, mdh):
         mdh['Filter.Keys'] = self.pipeline.filterKeys      
         
-        if HAVE_DRIFT_CORRECTION and 'x' in self.pipeline.mapping.mappings.keys(): #drift correction has been applied
-            self.driftPane.dp.SaveMetadata(mdh)
+        #if HAVE_DRIFT_CORRECTION and 'x' in self.pipeline.mapping.mappings.keys(): #drift correction has been applied
+        #    self.driftPane.dp.SaveMetadata(mdh)
 
     def AddMenuItem(self, menuName, *args, **kwargs):
         """ Add a menu item. Calls AUIFrame.AddMenuItem. Should be over-ridden when called from VisGUI, and only

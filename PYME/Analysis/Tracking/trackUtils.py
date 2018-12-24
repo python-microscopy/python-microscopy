@@ -316,6 +316,9 @@ class TrackManager(object):
 
 def findTracks(pipeline, rad_var='error_x', multiplier='2.0', nFrames=20):
     import PYME.Analysis.points.DeClump.deClump as deClump
+    import warnings
+    
+    warnings.warn('deprecated, use findTracks2 instead', DeprecationWarning)
     
     if rad_var == '1.0':
         delta_x = 0*pipeline['x'] + multiplier

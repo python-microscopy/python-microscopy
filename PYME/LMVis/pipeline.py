@@ -429,6 +429,8 @@ class Pipeline:
             The default value to pad with if we've given an output-sized array
 
         """
+        import warnings
+        warnings.warn('Deprecated. You should not add columns to the pipeline as this injects data and is not captured by the recipe', DeprecationWarning)
 
         ds_len = len(self.selectedDataSource[self.selectedDataSource.keys()[0]])
         val_len = len(values)

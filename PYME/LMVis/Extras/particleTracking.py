@@ -33,25 +33,25 @@ class ParticleTracker:
         visFr.AddMenuItem('Corrections>Chaining', "Clump consecutive appearances", self.OnCoalesce)
         visFr.AddMenuItem('Extras', "Calculate clump widths", self.OnCalcWidths)
 
-    def _OnTrackMolecules(self, event):
-        import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
-        #import PYME.Analysis.points.DeClump.deClump as deClump
-        import PYME.Analysis.Tracking.trackUtils as trackUtils
-
-        visFr = self.visFr
-        pipeline = visFr.pipeline
-
-        #bCurr = wx.BusyCursor()
-        dlg = deClumpGUI.deClumpDialog(None)
-
-        ret = dlg.ShowModal()
-
-        if ret == wx.ID_OK:
-            trackUtils.findTracks(pipeline, dlg.GetClumpRadiusVariable(),dlg.GetClumpRadiusMultiplier(), dlg.GetClumpTimeWindow())
-
-            pipeline.Rebuild()
-
-        dlg.Destroy()
+    # def _OnTrackMolecules(self, event):
+    #     import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
+    #     #import PYME.Analysis.points.DeClump.deClump as deClump
+    #     import PYME.Analysis.Tracking.trackUtils as trackUtils
+    #
+    #     visFr = self.visFr
+    #     pipeline = visFr.pipeline
+    #
+    #     #bCurr = wx.BusyCursor()
+    #     dlg = deClumpGUI.deClumpDialog(None)
+    #
+    #     ret = dlg.ShowModal()
+    #
+    #     if ret == wx.ID_OK:
+    #         trackUtils.findTracks(pipeline, dlg.GetClumpRadiusVariable(),dlg.GetClumpRadiusMultiplier(), dlg.GetClumpTimeWindow())
+    #
+    #         pipeline.Rebuild()
+    #
+    #     dlg.Destroy()
         
     def OnFindClumps(self, event):
         import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI

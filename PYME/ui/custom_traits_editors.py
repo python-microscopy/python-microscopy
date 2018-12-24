@@ -107,6 +107,93 @@ class FilterEditor(BasicEditorFactory):
     klass = _FilterEditor
 
     datasource = Instance(tabular.TabularBase)
+
+
+
+from . import editList
+
+class DictFloatEditList(editList.EditListCtrl):
+    def __init__(self, parent, value_dict, editor):
+        editList.EditListCtrl.__init__(self, parent, -1, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.SUNKEN_BORDER, size=(-1, 100))
+        self.value_dict = value_dict
+        self._editor = editor
+        
+        self.InsertColumn(0, 'Parameter')
+        self.InsertColumn(1, 'Value')
+
+        self.makeColumnEditable(1)
+        self.populate()
+
+        self.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._on_values_change)
+        
+    def _on_values_change(self, event):
+        keys = self.value_dict.keys()
+    
+        k = keys[event.m_itemIndex]
+    
+        self.value_dict[k] = float(event.m_item.GetText())
+        
+        self._editor.value = self.value_dict
+        
+    def populate(self, value_dict=None):
+        from PYME.ui import UI_MAXSIZE
+        
+        if not value_dict is None:
+            self.value_dict = value_dict
+        
+        self.DeleteAllItems()
+        
+        for k in self.value_dict.keys():
+            ind = self.InsertStringItem(UI_MAXSIZE, k)
+            self.SetStringItem(ind, 1, '%1.3g' % self.value_dict[k])
+
+        self.SetColumnWidth(0, 80)
+        self.SetColumnWidth(1, 80)
+        
+
+class _DictFloatEditor(Editor):
+    """
+    Simple Traits UI date editor.  Shows a text box, and a date-picker widget.
+    """
+    
+    def init(self, parent):
+        """
+        Finishes initializing the editor by creating the underlying widget.
+        """
+        #from PYME.LMVis.filterPane import FilterPanel
+        
+        
+        self.control = DictFloatEditList(parent, value_dict=self.value, editor=self)
+        return
+    
+    def update_editor(self):
+        """
+        Updates the editor when the object trait changes externally to the
+        editor.
+        """
+        if self.value:
+            self.control.populate(self.value)
+            #choices = [self.control.GetString(n) for n in range(self.control.GetCount())]
+            #try:
+            #    n = choices.index(self.value)
+            #    self.control.SetSelection(n)
+            #except ValueError:
+            #    self.control.SetValue(self.value)
+        
+        return
+    
+    def dispose(self):
+        self.control = None
+        
+        print('Disposing of DictFloatEditor')
+        
+        super(Editor, self).dispose()
+
+
+class DictFloatEditor(BasicEditorFactory):
+    klass = _DictFloatEditor
+    
+    #datasource = Instance(tabular.TabularBase)
     
 class _HistLimitsEditor (Editor):
     """
