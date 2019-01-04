@@ -72,7 +72,7 @@ class ParticleTracker:
     
             recipe.add_module(tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey, outputName='with_clumps',
                                                   timeWindow=dlg.GetClumpTimeWindow(),
-                                                  clumpRaduisVariable=dlg.GetClumpRadiusVariable(),
+                                                  clumpRadiusVariable=dlg.GetClumpRadiusVariable(),
                                                   clumpRadiusScale=dlg.GetClumpRadiusMultiplier()))
     
             recipe.execute()

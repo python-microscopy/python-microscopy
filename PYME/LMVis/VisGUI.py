@@ -171,6 +171,9 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self._recipe_manager = recipeGui.PipelineRecipeManager(self.pipeline)
         self._recipe_editor = recipeGui.RecipeView(self, self._recipe_manager)
         self.AddPage(page=self._recipe_editor, select=False, caption='Pipeline Recipe')
+        
+        self.AddMenuItem('Recipe', 'Reconstruct from open image', self.reconstruct_pipeline_from_open_image)
+        self.AddMenuItem('Recipe', 'Reconstruct from image file', self.reconstruct_pipeline_from_image_file)
 
         if not filename is None:
             def _recipe_callback():
@@ -190,7 +193,29 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         nb = self._mgr.GetNotebooks()[0]
         nb.SetSelection(0)
         
+    def reconstruct_pipeline_from_image(self, image):
+        self._recipe_manager.load_recipe_from_mdh(image.mdh)
+        self.pipeline.selectDataSource(image.mdh['Pipeline.SelectedDataSource'])
+        
+    def reconstruct_pipeline_from_open_image(self, event=None):
+        from PYME.IO import image
+        names = image.openImages.keys()
     
+        dlg = wx.SingleChoiceDialog(self.dsviewer, 'Select an image', 'Reconstruct pipeline from image', names)
+    
+        if dlg.ShowModal() == wx.ID_OK:
+            #store a copy in the image for measurements etc ...
+        
+            im = image.openImages[names[dlg.GetSelection()]]
+            
+            self.reconstruct_pipeline_from_image(im)
+            
+    def reconstruct_pipeline_from_image_file(self, event=None, filename=None):
+        from PYME.DSView import ImageStack
+        im = ImageStack(filename=filename)
+
+        self.reconstruct_pipeline_from_image(im)
+        
 
     def OnMove(self, event):
         self.Refresh()
@@ -431,7 +456,7 @@ def main():
         main_(args.file, use_shaders=args.use_shaders, args=args)
     else:
         #time.sleep(1)
-        visFr = VisGUIFrame(None, filename, False)
+        visFr = VisGUIFrame(None, args.file, args.use_shaders)
         visFr.Show()
         visFr.RefreshView()
         

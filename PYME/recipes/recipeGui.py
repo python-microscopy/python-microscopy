@@ -451,6 +451,9 @@ class PipelineRecipeManager(RecipeManager):
     
     def LoadRecipeText(self, s, filename=''):
         self.pipeline.recipe.update_from_yaml(s)
+        
+    def load_recipe_from_mdh(self, mdh):
+        self.LoadRecipeText(mdh['Pipeline.Recipe'])
 
 class dt(wx.FileDropTarget):
     def __init__(self, window):

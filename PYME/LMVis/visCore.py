@@ -606,7 +606,14 @@ class VisGUICore(object):
         self.statusbar.SetStatusText(statusText, 0)
         
     def SaveMetadata(self, mdh):
-        mdh['Filter.Keys'] = self.pipeline.filterKeys      
+        mdh['Filter.Keys'] = self.pipeline.filterKeys
+        
+        recipe = getattr(self.pipeline, 'recipe', None)
+        
+        if not recipe is None:
+            mdh['Pipeline.Recipe'] = recipe.toYAML()
+            mdh['Pipeline.SelectedDataSource'] = self.pipeline.selectedDataSourceKey
+            
         
         #if HAVE_DRIFT_CORRECTION and 'x' in self.pipeline.mapping.mappings.keys(): #drift correction has been applied
         #    self.driftPane.dp.SaveMetadata(mdh)
