@@ -1520,7 +1520,7 @@ class AverageFramesByZStep(ModuleBase):
             z_mapping = piecewiseMapping.GeneratePMFromEventList(image_stack.events, image_stack.mdh,
                                                           image_stack.mdh['StartTime'],
                                                           image_stack.mdh['Protocol.PiezoStartPos'])
-            z_vals = z_mapping[frames]
+            z_vals = z_mapping(frames)
         else:
             #z values are provided as input
             z_vals = namespace[self.input_zvals][self.z_column_name]
