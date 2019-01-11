@@ -89,6 +89,61 @@ class ModuleBase(HasTraits):
         into which it writes outputs
         """
         pass
+    
+    def apply(self, *args, **kwargs):
+        """
+        Execute this module on the given input without the need for creating a recipe. Creates a namespace, populates it,
+        runs the module, and returns a dictionary of outputs.
+        
+        If a module has a single input, you can provide the input directly as the first and only argument. If the module
+        supports multiple inputs, they must be specified using keyword arguments.
+        
+        NOTE: Use the trait names as keys.
+        
+        If the module has only one output, using apply_simple() will automatically pull it out of the namespace and return it.
+        
+        Parameters
+        ----------
+        args
+        kwargs
+
+        Returns
+        -------
+
+        """
+        namespace = {}
+        
+        if (len(self.inputs) == 1) and (len(args) == 1):
+            namespace[self.inputs[0]] = args[0]
+        elif (len(args) > 0):
+            raise RuntimeError('This module has multiple inputs, please use keyword arguments')
+        else:
+            for k, v in kwargs.items():
+                namespace[getattr(self, k)] = v
+                
+        self.execute(namespace)
+        
+        return {k : namespace[k] for k in self.outputs}
+    
+    def apply_simple(self, *args, **kwargs):
+        """
+        See documentaion for apply above - this allows single output modules to be used as though they were functions.
+        
+        
+        Parameters
+        ----------
+        args
+        kwargs
+
+        Returns
+        -------
+
+        """
+        if (len(self.outputs) > 1):
+            raise RuntimeError('Module has multiple outputs - use apply instead')
+        
+        return self.apply(*args, **kwargs)[self.outputs[0]]
+            
 
     @property
     def inputs(self):
