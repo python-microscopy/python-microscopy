@@ -309,7 +309,7 @@ class filterer:
         from PYME.DSView import ViewIm3D
         from PYME.recipes.processing import AverageFramesByStep
 
-        averaged = AverageFramesByStep().apply_simple(input_name=self.image)
+        averaged = AverageFramesByStep().apply_simple(input_image=self.image)
 
         ViewIm3D(averaged, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
