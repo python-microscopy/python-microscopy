@@ -66,6 +66,8 @@ def find_and_add_zRange(astig_library, rough_knot_spacing=50.):
         The astigmatism calibration list which is taken as an input is modified in place and returned.
 
     """
+    #TODO - move this to an astigmatism calibration module. This doesn't belong here.
+    
     import scipy.interpolate as terp
     # from scipy.stats import mode
     for ii in range(len(astig_library)):
@@ -337,6 +339,7 @@ class PSFTools(HasTraits):
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
     def OnCalibrateAstigmatism(self, event):
+        #TODO - move all non-GUI logic for this out of this file?
         from PYME.recipes.measurement import FitPoints
         from PYME.IO.FileUtils import nameUtils
         import matplotlib.pyplot as plt
