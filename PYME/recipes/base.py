@@ -142,7 +142,7 @@ class ModuleBase(HasTraits):
         if (len(self.outputs) > 1):
             raise RuntimeError('Module has multiple outputs - use apply instead')
         
-        return self.apply(*args, **kwargs)[self.outputs[0]]
+        return self.apply(*args, **kwargs)[next(iter(self.outputs))]
             
 
     @property
