@@ -32,7 +32,7 @@ def drift_correct(pipeline):
 
     if dialog.ShowModal() == wx.ID_OK:
         size = float(dialog.GetValue())
-        sigE = np.sqrt((size/(np.sqrt(2)*2.35))**2 + 135.**2)  # Expected std of the bead + expected std of psf
+        sigE = float(np.sqrt((size/(np.sqrt(2)*2.35))**2 + 135.**2))  # Expected std of the bead + expected std of psf
         sig = [0.95*sigE, 1.05*sigE]
 
     recipe = pipeline.recipe
