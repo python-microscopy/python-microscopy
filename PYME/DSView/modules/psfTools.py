@@ -408,7 +408,7 @@ class PSFTools(HasTraits):
             except NotImplementedError:
                 use_web_view = False
 
-        # find reasonable z range for each channel, inject 'zRange' into the results
+        # find reasonable z range for each channel, inject 'zRange' into the results. FIXME - injection is bad
         results = find_and_add_zRange(results)
 
         #do plotting
