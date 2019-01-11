@@ -1483,7 +1483,7 @@ class AverageFramesByZStep(ModuleBase):
 
     Inputs
     ------
-    input_name : string
+    input_image : string
         name of an ImageStack instance, with metadata / events describing which frames were taken at which z-position.
         
     input_zvals : string
@@ -1495,22 +1495,22 @@ class AverageFramesByZStep(ModuleBase):
 
     Returns
     -------
-    output_name : traits.Output
+    output : traits.Output
         ImageStack instance, where frames taken at the same z-position have been averaged together.
     Notes
     -----
     """
 
-    input_name = Input('input')
+    input_image = Input('input')
     input_zvals = Input('') #if undefined, use events
     z_column_name = CStr('z')
-    output_name = Output('averaged_by_frame')
+    output = Output('averaged_by_frame')
 
     def execute(self, namespace):
         from PYME.Analysis import piecewiseMapping
         from scipy.stats import mode
 
-        image_stack = namespace[self.input_name]
+        image_stack = namespace[self.input_image]
 
         if self.input_zvals == '':
             # z from events if we can
@@ -1555,7 +1555,7 @@ class AverageFramesByZStep(ModuleBase):
         #averaged.mdh['StackSettings.NumCycles'] = 1
         averaged.mdh['StackSettings.StepSize'] = abs(mode(np.diff(z))[0][0])
 
-        namespace[self.output_name] = averaged
+        namespace[self.output] = averaged
 
 @register_module('BackgroundSubtractionMovingAverage')
 class BackgroundSubtractionMovingAverage(ModuleBase):
