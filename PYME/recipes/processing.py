@@ -1476,15 +1476,22 @@ class FlatfiledAndDarkCorrect(ModuleBase):
         namespace[self.outputName] = im
 
 
-@register_module('AverageFramesByStep')
-class AverageFramesByStep(ModuleBase):
+@register_module('AverageFramesByZStep')
+class AverageFramesByZStep(ModuleBase):
     """
     Averages frames acquired at the same z-position, as determined by the associated events, or (fall-back) metadata.
 
+    Inputs
+    ------
+    input_name : string
+        name of an ImageStack instance, with metadata / events describing which frames were taken at which z-position.
+        
+    input_zvals : string
+        name of a table mapping frames to z values. If empty, the image events are used
+        
     Parameters
-    ----------
-    input_name : traits.Input
-        ImageStack instance, with metadata / events describing which frames were taken at which z-position.
+    __________
+    
 
     Returns
     -------
@@ -1495,6 +1502,8 @@ class AverageFramesByStep(ModuleBase):
     """
 
     input_name = Input('input')
+    input_zvals = Input('') #if undefined, use events
+    z_column_name = CStr('z')
     output_name = Output('averaged_by_frame')
 
     def execute(self, namespace):
@@ -1503,21 +1512,22 @@ class AverageFramesByStep(ModuleBase):
 
         image_stack = namespace[self.input_name]
 
-        # get z from events if we can
-        frames = np.arange(image_stack.data.shape[2], dtype=int)
-        try:
+        if self.input_zvals == '':
+            # z from events if we can
+            frames = np.arange(image_stack.data.shape[2], dtype=int)
+            
             # note that GeneratePMFromEventList internally handles converting time stamps to frame numbers
             z_mapping = piecewiseMapping.GeneratePMFromEventList(image_stack.events, image_stack.mdh,
                                                           image_stack.mdh['StartTime'],
                                                           image_stack.mdh['Protocol.PiezoStartPos'])
-        except TypeError:
-            # try to spoof z focus based on metadata alone
-            position, frames = piecewiseMapping._spoof_focus_from_metadata(image_stack.mdh)
-            z_mapping = piecewiseMapping.piecewiseMap(0, frames, position, xIsSecs=False)
+            z_vals = z_mapping[frames]
+        else:
+            #z values are provided as input
+            z_vals = namespace[self.input_zvals][self.z_column_name]
 
         # make sure everything is sorted. We'll carry the args to sort, rather than creating another full array
-        frames_z_sorted = np.argsort(z_mapping(frames))
-        z = z_mapping(frames)[frames_z_sorted]
+        frames_z_sorted = np.argsort(z_vals)
+        z = z_vals[frames_z_sorted]
         z_steps, count = np.unique(z, return_counts=True)
 
         n_steps = len(z_steps)
@@ -1539,10 +1549,10 @@ class AverageFramesByStep(ModuleBase):
         averaged = ImageStack(new_stack, mdh=image_stack.mdh)
 
         # fudge metadata, leaving breadcrumbs
-        averaged.mdh['Processing.AverageFramesByStep.OriginalFramesPerStep'] = image_stack.mdh['StackSettings.FramesPerStep']
-        averaged.mdh['StackSettings.FramesPerStep'] = 1
+        #averaged.mdh['Processing.AverageFramesByStep.OriginalFramesPerStep'] = image_stack.mdh['StackSettings.FramesPerStep'] - This is not normally defined
+        #averaged.mdh['StackSettings.FramesPerStep'] = 1
         averaged.mdh['StackSettings.NumSteps'] = n_steps
-        averaged.mdh['StackSettings.NumCycles'] = 1
+        #averaged.mdh['StackSettings.NumCycles'] = 1
         averaged.mdh['StackSettings.StepSize'] = abs(mode(np.diff(z))[0][0])
 
         namespace[self.output_name] = averaged
