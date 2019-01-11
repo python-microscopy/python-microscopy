@@ -32,13 +32,17 @@ def drift_correct(pipeline):
 
     if dialog.ShowModal() == wx.ID_OK:
         size = float(dialog.GetValue())
-        sigE = np.sqrt((size/(np.sqrt(2)*2.35))**2 + 135.**2)  # Expected std of the bead + expected std of psf
+        sigE = float(np.sqrt((size/(np.sqrt(2)*2.35))**2 + 135.**2))  # Expected std of the bead + expected std of psf
         sig = [0.95*sigE, 1.05*sigE]
 
     recipe = pipeline.recipe
 
-    recipe.add_module(FilterTable(recipe, inputName='Fiducials',
-                                  outputName='filtered_fiducials', filters={'error_x': [0, 10], 'sig': sig}))
+    filt_fiducials = FilterTable(recipe, inputName='Fiducials',
+                                  outputName='filtered_fiducials', filters={'error_x': [0, 10], 'sig': sig})
+    
+    filt_fiducials.configure_traits(kind='modal')
+    #print('Adding fiducial filter module')
+    recipe.add_module(filt_fiducials)
     
     recipe.add_module(DBSCANClustering(recipe,inputName='filtered_fiducials', outputName='clumped_fiducials', columns=['x', 'y'],
                                        searchRadius=500, minClumpSize=10, clumpColumnName='fiducialID'))
@@ -195,13 +199,13 @@ def drift_auto_corr(visFr):
         
         recipe.execute()
         pipeline.selectDataSource('corrected_localizations')
-        visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+        #visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
 
 def Plug(visFr):
     def correct():
         drift_correct(visFr.pipeline)
-        visFr.CreateFoldPanel()
+        #visFr.CreateFoldPanel()
     
     visFr.AddMenuItem('Corrections>Fiducials', 'Correct', lambda e : correct())
     visFr.AddMenuItem('Corrections>Fiducials', 'Display correction residuals', lambda e: fiducial_diagnosis(visFr.pipeline))

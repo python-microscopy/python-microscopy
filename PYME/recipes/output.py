@@ -218,10 +218,6 @@ class RGBImageOutput(OutputModule):
         The storage method, one of 'File', 'pyme-cluster://' or 'pyme-cluster:// - aggregate`. File is the default
         and saves to a file on disk.
 
-    Notes
-    -----
-
-    This is a very thin wrapper which simply calls the `.save()` method on the `PYME.IO.image.ImageStack` object.
 
     pyme-cluster awareness
     ----------------------
@@ -237,33 +233,17 @@ class RGBImageOutput(OutputModule):
     scaling = Enum(['min-max', 'percentile'])
     scaling_factor = Float(0.95)
     zoom = Int(1)
+    colorblindFriendly = Bool(False)
     
     def generate(self, namespace, recipe_context={}):
-        from scipy import ndimage
+        from PYME.IO.rgb_image import image_to_rgb, image_to_cmy
         im = namespace[self.inputName]
         
-        
-        data = np.zeros([im.data.shape[0]/self.zoom, im.data.shape[1]/self.zoom, 3], dtype='uint8')
-        
-        for i in range(min(3, im.data.shape[3])):
-            chan_i = ndimage.zoom(im.data[:,:,:, i].mean(2).squeeze(), 1./self.zoom)
+        if self.colorblindFriendly:
+            return image_to_cmy(im, zoom=self.zoom, scaling=self.scaling, scaling_factor=self.scaling_factor)
+        else:
+            return image_to_rgb(im, zoom=self.zoom, scaling=self.scaling, scaling_factor=self.scaling_factor)
             
-            if self.scaling == 'min-max':
-                chan_i = chan_i - chan_i.min()
-                chan_i = (255*chan_i/chan_i.max()).astype('uint8')
-            elif self.scaling == 'percentile':
-                lb = np.percentile(chan_i, 100*(1-self.scaling_factor))
-                ub = np.percentile(chan_i, 100 * self.scaling_factor)
-                chan_i = (255*np.minimum(np.maximum(chan_i - lb, 0)/float(ub-lb), 1)).astype('uint8')
-                
-            data[:,:,i] = chan_i
-            
-        if im.data.shape[3] == 1:
-            #make greyscale if a single colour channel
-            data[:,:,1] = data[:,:,0]
-            data[:,:,2] = data[:,:,0]
-            
-        return data
                 
     
     def save(self, namespace, context={}):
@@ -396,9 +376,11 @@ class UnifiedLoader(jinja2.BaseLoader):
 env = jinja2.Environment(loader=UnifiedLoader())
 from PYME.Analysis import graphing_filters #FIXME - move the filters somewhere better
 import base64
+from PYME.IO import rgb_image
 env.filters['movieplot'] = graphing_filters.movieplot2
 env.filters['plot'] = graphing_filters.plot
 env.filters['b64encode'] = base64.b64encode
+env.filters['base64_image'] = rgb_image.base64_image
 
 def round_sf(num, sf=3):
     import math

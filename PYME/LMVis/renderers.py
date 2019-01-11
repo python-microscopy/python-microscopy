@@ -21,22 +21,13 @@
 ##################
 #from PYME.LMVis.visHelpers import ImageBounds#, GeneratedImage
 from PYME.IO.image import GeneratedImage, ImageBounds
-from PYME.LMVis import genImageDialog
 from PYME.LMVis import visHelpers
-#from PYME.LMVis import imageView
 from PYME.LMVis import statusLog
 from PYME.IO import tabular
 
 from PYME.IO import MetaDataHandler
 
-try:
-    import wx
-    from PYME.DSView import ViewIm3D
-except SystemExit:
-    print('GUI load failed (probably OSX)')
-
-
-import pylab
+#import pylab
 import numpy as np
 
 renderMetadataProviders = []
@@ -156,7 +147,7 @@ class CurrentRenderer:
         if 'imageID' in self.pipeline.mdh.getEntryNames():
             mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
         mdh['Rendering.SourceFilename'] = getattr(self.pipeline, 'filename', '')
-        mdh['Rendering.NEventsRendered'] = self.pipeline.filter.Index.sum() # in future good to use colourfilter for per channel info?
+        mdh['Rendering.NEventsRendered'] = len(self.pipeline[self.pipeline.keys()[0]]) # in future good to use colourfilter for per channel info?
 
         for cb in renderMetadataProviders:
             cb(mdh)
@@ -170,6 +161,10 @@ class CurrentRenderer:
 
 
     def GenerateGUI(self, event=None):
+        import wx
+        from PYME.LMVis import genImageDialog
+        from PYME.DSView import ViewIm3D
+        
         dlg = genImageDialog.GenImageDialog(self.mainWind, mode=self.mode)
         ret = dlg.ShowModal()
 
@@ -185,8 +180,9 @@ class CurrentRenderer:
         return imf
 
     def genIm(self, dlg, imb, mdh):
+        import matplotlib.pyplot as plt
         oldcmap = self.visFr.glCanvas.cmap
-        self.visFr.glCanvas.setCMap(pylab.cm.gray)
+        self.visFr.glCanvas.setCMap(plt.cm.gray)
         im = self.visFr.glCanvas.getIm(dlg.getPixelSize())
 
         self.visFr.glCanvas.setCMap(oldcmap)
@@ -202,7 +198,7 @@ class ColourRenderer(CurrentRenderer):
         if 'imageID' in self.pipeline.mdh.getEntryNames():
             mdh['Rendering.SourceImageID'] = self.pipeline.mdh['imageID']
         mdh['Rendering.SourceFilename'] = getattr(self.pipeline, 'filename', '')
-        mdh['Rendering.NEventsRendered'] = self.pipeline.filter.Index.sum() # in future good to use colourfilter for per channel info?
+        mdh['Rendering.NEventsRendered'] = len(self.pipeline[self.pipeline.keys()[0]]) # in future good to use colourfilter for per channel info?
         mdh.Source = MetaDataHandler.NestedClassMDHandler(self.pipeline.mdh)
 
         for cb in renderMetadataProviders:
@@ -248,6 +244,10 @@ class ColourRenderer(CurrentRenderer):
         return GeneratedImage(ims, imb, pixelSize, settings['zSliceThickness'], colours, mdh=mdh)
 
     def GenerateGUI(self, event=None):
+        import wx
+        from PYME.LMVis import genImageDialog
+        from PYME.DSView import ViewIm3D
+        
         jitVars = ['1.0']
         jitVars += self.colourFilter.keys()
 
@@ -475,16 +475,16 @@ class QuadTreeRenderer(ColourRenderer):
         from PYME.Analysis.points.QuadTree import QTrend
         pixelSize = settings['pixelSize']
 
-        if not pylab.mod(pylab.log2(pixelSize/self.visFr.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
+        if not np.mod(np.log2(pixelSize/self.visFr.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
                 self.visFr.QTGoalPixelSize = pixelSize
                 self.visFr.Quads = None
 
         self.visFr.GenQuads()
 
         qtWidth = self.visFr.Quads.x1 - self.visFr.Quads.x0
-        qtWidthPixels = pylab.ceil(qtWidth/pixelSize)
+        qtWidthPixels = np.ceil(qtWidth/pixelSize)
 
-        im = pylab.zeros((qtWidthPixels, qtWidthPixels))
+        im = np.zeros((qtWidthPixels, qtWidthPixels))
         QTrend.rendQTa(im, self.visFr.Quads)
 
         return im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]

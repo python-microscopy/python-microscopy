@@ -48,10 +48,13 @@ pz.join() #piezo must be there before we start camera
 def cm(scope):
     import numpy as np
     from PYME.Acquire.Hardware.Simulator import fakeCam
-    scope.register_camera(fakeCam.FakeCamera(70*np.arange(0.0, 4*256.0),
-                                             70*np.arange(0.0, 256.0),
+    scope.register_camera(fakeCam.FakeCamera(256, #70*np.arange(0.0, 4*256.0),
+                                             256, #70*np.arange(0.0, 256.0),
                                              fakeCam.NoiseMaker(),
-                                             scope.fakePiezo, xpiezo = scope.fakeXPiezo, ypiezo = scope.fakeYPiezo),'Fake Camera')
+                                             scope.fakePiezo, xpiezo = scope.fakeXPiezo,
+                                             ypiezo = scope.fakeYPiezo,
+                                             pixel_size_nm=70.,
+                                             ),'Fake Camera')
 
 #scope.EnableJoystick = 'foo'
 
@@ -71,6 +74,8 @@ def sim_controls(MainFrame, scope):
     from PYME.Acquire.Hardware.Simulator import dSimControl
     dsc = dSimControl.dSimControl(MainFrame, scope)
     MainFrame.AddPage(page=dsc, select=False, caption='Simulation Settings')
+    
+    scope.dsc = dsc
 
 @init_gui('Camera controls')
 def cam_controls(MainFrame, scope):

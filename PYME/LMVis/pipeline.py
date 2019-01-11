@@ -236,25 +236,32 @@ def _processEvents(ds, events, mdh):
             eventCharts.append(('Y Drift [px]', drifty, 'ShiftMeasure'))
             eventCharts.append(('Z Drift [px]', driftz, 'ShiftMeasure'))
 
-            #self.eventCharts = eventCharts
-            #self.ev_mappings = ev_mappings
-    else:  # try to spoof focus position using metadata alone
+            # self.eventCharts = eventCharts
+            # self.ev_mappings = ev_mappings
+    elif all(k in mdh.keys() for k in ['StackSettings.FramesPerStep', 'StackSettings.StepSize',
+                                       'StackSettings.NumSteps', 'StackSettings.NumCycles']):
+        # TODO - Remove this code - anytime we get here it's generally the result of an error in the input data
+        # This should be handled upstream when spooling
         logger.warning('Spoofing focus from metadata: this usually implies an error in the input data (missing events) and results might vary')
         try:
-            position, frames = piecewiseMapping._spoof_focus_from_metadata(mdh)
-        except RuntimeWarning as e:  # this occurs if the focus can't be accurately spoofed
-            logger.exception('Error trying to fudge focus positions')
-            logger.error(str(e))
-        else:  # no error, so we can map it
+            # if we dont have events file, see if we can use metadata to spoof focus
+            from PYME.experimental import labview_spooling_hacks
+
+            position, frames = labview_spooling_hacks.spoof_focus_from_metadata(mdh)
             zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
             ev_mappings['zm'] = zm
             eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
+
+        except:
+            # It doesn't really matter if this fails, print our traceback anyway
+            logger.exception('Error trying to fudge focus positions')
 
     return ev_mappings, eventCharts
 
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
         self.recipe = ModuleCollection(execute_on_invalidation=True)
+        self.recipe.recipe_executed.connect(self.Rebuild)
 
         self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
@@ -413,6 +420,8 @@ class Pipeline:
             The default value to pad with if we've given an output-sized array
 
         """
+        import warnings
+        warnings.warn('Deprecated. You should not add columns to the pipeline as this injects data and is not captured by the recipe', DeprecationWarning)
 
         ds_len = len(self.selectedDataSource[self.selectedDataSource.keys()[0]])
         val_len = len(values)
@@ -701,7 +710,11 @@ class Pipeline:
         else:
             self.imageBounds = ImageBounds.estimateFromSource(mapped_ds)
 
-        self.selectDataSource('Localizations') #NB - this rebuilds the pipeline
+        from PYME.recipes.tablefilters import FilterTable
+        self.recipe.add_module(FilterTable(self.recipe, inputName='Localizations', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in mapped_ds.keys()}))
+        self.recipe.execute()
+        self.filterKeys = {}
+        self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
         
         #self._process_colour()
 

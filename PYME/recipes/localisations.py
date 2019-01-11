@@ -59,7 +59,10 @@ class DensityMapping(ModuleBase):
      """
     inputLocalizations = Input('localizations')
     outputImage = Output('output')
-    renderingModule = Enum(renderers.RENDERERS.keys())
+    
+    available_renderers = sorted(renderers.RENDERERS.keys())
+    
+    renderingModule = Enum(available_renderers)#, default_value='Jittered Triangulation')
 
     pixelSize = Float(5)
     jitterVariable = CStr('1.0')
@@ -68,7 +71,7 @@ class DensityMapping(ModuleBase):
     jitterScaleZ = Float(1.0)
     MCProbability = Float(1.0)
     numSamples = Int(10)
-    colours = List(['none'])
+    colours = ListStr(['none',])
     zBoundsMode = Enum(['manual', 'min-max'])
     zBounds = ListFloat([-500, 500])
     zSliceThickness = Float(50.0)
@@ -92,6 +95,33 @@ class DensityMapping(ModuleBase):
         renderer = renderers.RENDERERS[str(self.renderingModule)](None, cf)
 
         namespace[self.outputImage] = renderer.Generate(self.get())
+
+    @property
+    def default_view(self):
+        from traitsui.api import View, Group, Item, TextEditor, CSVListEditor
+        from PYME.ui.custom_traits_editors import CBEditor
+    
+        return View(Item('inputLocalizations', editor=CBEditor(choices=self._namespace_keys)),
+                    Item('_'),
+                    Item('renderingModule'),
+                    Item('pixelSize'),
+                    Item('colours', style='text'),#editor=CSVListEditor()),
+                    Item('softRender'),
+                    Group(
+                        Item('jitterVariable'),
+                        Item('jitterScale'),
+                        Item('jitterVariableZ', visible_when='"3D" in renderingModule'),
+                        Item('jitterScaleZ', visible_when='"3D" in renderingModule'),
+                        Item('numSamples', visible_when='"Triangulation" in renderingModule'),
+                        Item('MCProbability', visible_when='"Triangulation" in renderingModule'),
+                        label='Jittering/Gaussian Size', visible_when='not (("Histogram" in renderingModule) or (renderingModule=="Current"))'),
+                    Group(
+                        Item('zSliceThickness'),
+                        Item('zBoundsMode'),
+                        Item('zBounds', visible_when='zBoundsMode=="manual"'),
+                        label='3D', visible_when='"3D" in renderingModule'),
+                    Item('_'),
+                    Item('outputImage'), buttons=['OK'])
 
 @register_module('AddPipelineDerivedVars')
 class Pipelineify(ModuleBase):
@@ -792,27 +822,39 @@ class AddShellMappedCoordinates(ModuleBase): #FIXME - this likely doesnt belong 
     inputName = Input('points')
     inputSphericalHarmonics = Input('harmonicShell')
 
+    input_name_r = CStr('r')
+    input_name_theta = CStr('theta')
+    input_name_phi = CStr('phi')
+    input_name_r_norm = CStr('r_norm')
+    input_name_distance_to_shell = CStr('distance_to_shell')
+
     outputName = Output('shell_mapped')
 
     def execute(self, namespace):
-        import PYME.Analysis.points.spherical_harmonics as spharm
+        from PYME.Analysis.points import spherical_harmonics
         from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
         inp = namespace[self.inputName]
         mapped = tabular.mappingFilter(inp)
 
-        rep = namespace[self.inputSphericalHarmonics][0]
-        
-        x0, y0, z0 = rep['centre']
+        rep = namespace[self.inputSphericalHarmonics]
+
+        center = rep.mdh['Processing.SphericalHarmonicShell.Centre']
+        z_scale = rep.mdh['Processing.SphericalHarmonicShell.ZScale']
+        x0, y0, z0 = center
 
         # calculate theta, phi, and rad for each localization in the pipeline
-        theta, phi, datRad = spharm.cart2sph(inp['x'] - x0, inp['y'] - y0,
-                                             (inp['z'] - z0)/rep['z_scale'])
-
-        mapped.addColumn('r', datRad)
-        mapped.addColumn('theta', theta)
-        mapped.addColumn('phi', phi)
-        mapped.addColumn('r_norm', datRad / spharm.reconstruct_from_modes(rep['modes'],rep['coefficients'], theta, phi))
+        theta, phi, datRad = spherical_harmonics.cart2sph(inp['x'] - x0, inp['y'] - y0, (inp['z'] - z0)/z_scale)
+        # additionally calculate the cartesian distance
+        min_distance, nearest_point_on_shell = spherical_harmonics.distance_to_surface([inp['x'], inp['y'], inp['z']],
+                                                                                       center, rep['modes'],
+                                                                                       rep['coefficients'],
+                                                                                       z_scale=z_scale)
+        mapped.addColumn(self.input_name_r, datRad)
+        mapped.addColumn(self.input_name_theta, theta)
+        mapped.addColumn(self.input_name_phi, phi)
+        mapped.addColumn(self.input_name_r_norm, datRad / spherical_harmonics.reconstruct_from_modes(rep['modes'],rep['coefficients'], theta, phi))
+        mapped.addColumn(self.input_name_distance_to_shell, min_distance)
 
         try:
             # note that copying overwrites shared fields

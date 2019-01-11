@@ -113,8 +113,13 @@ class EmpiricalHist:
 
         # Estimate smooth histograms
         self.hist = {}
-        self.hist['on'] = self.estimate_hist('on')
-        self.hist['off'] = self.estimate_hist('off')
+        
+        # TODO - why are we disabling histogram smoothing
+        #self.hist['on'] = self.estimate_hist('on')
+        #self.hist['off'] = self.estimate_hist('off')
+
+        self.hist['on'] = self._hist['on']
+        self.hist['off'] = self._hist['off']
 
         self.cumhist = {}
         self.cumhist['on'] = np.cumsum(self.hist['on'], axis=0)/\
@@ -122,6 +127,22 @@ class EmpiricalHist:
         self.cumhist['off'] = np.cumsum(self.hist['off'], axis=0)/\
                                         np.sum(self.hist['off'], axis=0)
 
+        # self.cumhist['on'] += .1
+        # self.cumhist['off'] += .1
+        ltest = 0
+        print('cumhist on', self.cumhist['on'])
+        print('cumhist off', self.cumhist['off'])
+        # plt.figure()
+        # # plt.plot(np.logspace(0, 1.49136169383, num=19), self.cumhist['on'])
+        # plt.plot(np.linspace(1, 31, num=19), self.cumhist['on'])
+        
+        # plt.plot(self.cumhist['on'][:, 0])
+        # plt.scatter(np.arange(0,29,1), np.ones(29)/2)
+        #
+        # plt.figure()
+        # plt.plot(np.logspace(0, 4.92471852852, num=29), self.cumhist['off'])
+        # plt.scatter(np.logspace(-.60205999132, 4.92471852852, num=29), np.ones(29)/2)
+        
         # Spline fits of smooth cumulative histograms
         # self._spline = {}
         # self._spline['on'] = None
@@ -180,34 +201,52 @@ class EmpiricalHist:
         """
 
         # Which power are we looking at?
-        p_int = np.digitize(powr, self.prange(key), right=True)
+        #p_int = np.digitize(powr, self.prange(key), right=True)
 
+        p_int = np.searchsorted(self.prange(key), powr, side='right')
+        if p_int >= len(self.prange(key)):
+            p_int = len(self.prange(key)) - 1
+            
         # print(p_int)
         # print(self.cumhist[key][:, p_int])
         # print(prob)
         # print(np.digitize(prob, self.cumhist[key][:, p_int]))
 
         # Get the time bin
-        t_int = np.digitize(prob, self.cumhist[key][:, p_int], right=True)
+        #t_int = np.digitize(prob, self.cumhist[key][:, p_int], right=True)
+
+        curr_hist = self.cumhist[key][:, p_int]
+        t_int = np.searchsorted(curr_hist, prob, side='right')
 
         # print(self.trange(key)[t_int])
 
         # now return the time
         return self.trange(key)[t_int]
 
-    def get_time_splined(self, powr, prob, key):
+    def get_time_splined(self, powr, prob, key, ltest=0):
         """
         Return time estimate for a given power and cumulative probability
         using 1D spline.
         """
+        
+        #FIXME - Do we need ltest?????
 
         # Which power are we looking at?
-        p_int = np.digitize(powr, self.prange(key), right=True)
+        #p_int = np.digitize(powr, self.prange(key), right=True)
+
+        curr_hist = self.prange(key)
+        p_int = np.searchsorted(self.prange(key), powr, side='right')
+        
+        if p_int >= len(curr_hist):
+            p_int = len(curr_hist) - 1
 
         p_raw = self.cumhist[key][:, p_int]
-        p_spline = interp1d(p_raw, self.trange(key), fill_value='extrapolate')
+        #p_spline = interp1d(p_raw, self.trange(key), fill_value='extrapolate')
 
-        return p_spline(prob)
+        #return p_spline(prob)
+
+        p_spline = np.interp(prob, p_raw, self.trange(key))
+        return p_spline
 
 
         # def generate_spline(self, key):

@@ -196,8 +196,8 @@ def genFitImage(fitResults, metadata):
 
 
 class GaussianFitFactory(FFBase.FFBase):
-    def __init__(self, data, metadata, fitfcn=f_gauss2d, background=None, noiseSigma=None):
-        super(GaussianFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma)
+    def __init__(self, data, metadata, fitfcn=f_gauss2d, background=None, noiseSigma=None, **kwargs):
+        super(GaussianFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma, **kwargs)
         
         if False:#'D' in dir(fitfcn): #function has jacobian
             self.solver = FitModelWeightedJac

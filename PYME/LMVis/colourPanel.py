@@ -109,8 +109,8 @@ class colourPlotPanel(wxPlotPanel.PlotPanel):
             x.sort()
             y.sort()
 
-            xl = x[.997*len(x)]
-            yl = y[.997*len(x)]
+            xl = x[int(.997*len(x))]
+            yl = y[int(.997*len(x))]
 
             self.subplot1.set_xlim((0, xl))
             self.subplot1.set_ylim((0, yl))

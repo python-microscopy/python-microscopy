@@ -27,6 +27,7 @@
 import random
 import time
 import os
+import platform
 
 #set us up to use a non-GUI backend for any plotting
 import matplotlib
@@ -387,7 +388,8 @@ if __name__ == '__main__':
     else: 
         profile = False
         
-    signal.signal(signal.SIGHUP, on_SIGHUP)
+    if not platform.platform().startswith('Windows'):
+        signal.signal(signal.SIGHUP, on_SIGHUP)
     
     try:
         #main()

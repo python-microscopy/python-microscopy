@@ -372,7 +372,7 @@ class deconvolver:
         decMDH['Deconvolution.OriginalFile'] = self.image.filename
         decMDH['Deconvolution.Method'] = 'Wiener'
         
-        im = numpy.zeros(self.image.data.shape, 'f4')
+        im = numpy.zeros(self.image.data.shape[:3], 'f4')
 
         decView = View3D(im, 'Deconvolution Result', mdh=decMDH, parent=self.dsviewer)
 
@@ -477,7 +477,7 @@ class WienerDeconvolver(wx.Panel):
         
         
     def _doDeconv(self, off, lamb):
-        self.destImage.data[:] = self.dw.deconv(self.sourceImage.data[:,:,:].astype('f') - off, lamb, True)
+        self.destImage.data[:] = self.dw.deconv(self.sourceImage.data[:,:,:,0].squeeze().astype('f') - off, lamb, True)
     
     def OnCalculate(self, event=None):
         if self.havePSF and not self.decT:

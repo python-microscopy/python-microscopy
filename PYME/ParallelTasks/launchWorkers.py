@@ -150,15 +150,10 @@ def main():
         if args.run_server:
             logger.info('Launching server ...')
             with open(serverlog('out'),"wb") as out, open(serverlog('err'),"wb") as err:
-                subprocess.Popen('python "%s\\%s.py"' % (fstub, SERVER_PROC), shell=True,
+                subprocess.Popen('python "%s\\%s.py" %s' % (fstub, SERVER_PROC, prof_args), shell=True,
                                  stdout=out, stderr=err)
-            print('Launching server ...')
-            subprocess.Popen('python "%s\\%s.py" %s' % (fstub, SERVER_PROC, prof_args), shell=True)
-
             logger.info('Waiting for server to come up ...')
             time.sleep(10)
-            print('Waiting for server to come up ...')
-            time.sleep(5)
 
         if args.gui:
             logger.info('Launching task monitor ...')
@@ -200,7 +195,7 @@ def main():
         if args.run_server:
             logger.info('launching server...')
             with open(serverlog('out'),"wb") as out, open(serverlog('err'),"wb") as err:
-                subprocess.Popen('%s %s.py %s' % (sys.executable, os.path.join(fstub, SERVER_PROC, prof_args)),
+                subprocess.Popen('%s %s.py %s' % (sys.executable, os.path.join(fstub, SERVER_PROC), prof_args),
                                  shell=True, stdout=out, stderr=err)
             logger.info('waiting for server to come up...')
             time.sleep(10)
@@ -212,7 +207,7 @@ def main():
         logger.info('launching %d workers...' % numProcessors)
         for i in range(numProcessors):
             with open(workerlog(i,'out'),"wb") as out, open(workerlog(i,'err'),"wb") as err:
-                subprocess.Popen('%s %s.py %s' % (sys.executable, os.path.join(fstub,WORKER_PROC, prof_args)),
+                subprocess.Popen('%s %s.py %s' % (sys.executable, os.path.join(fstub,WORKER_PROC), prof_args),
                                  shell=True, stdout=out, stderr=err)
     else: #operating systems which can launch python scripts directly
         #get rid of any previously started queues etc...

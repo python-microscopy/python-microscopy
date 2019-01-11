@@ -45,7 +45,7 @@ try:
 
     #test for a running task distributor
     distribURI = HTTPTaskPusher._getTaskQueueURI(0)
-    NEW_STYLE_DISTRIBUTION=False
+    NEW_STYLE_DISTRIBUTION=True
 except:
     NEW_STYLE_DISTRIBUTION=False
 
@@ -301,6 +301,7 @@ class AnalysisController(object):
                                                metadata=self.resultsMdh, resultsFilename=resultsFilename)
 
         self.queueName = self.pusher.queueID
+        self.results_filename = resultsFilename
 
         debugPrint('Queue created')
 
@@ -507,7 +508,7 @@ class LMAnalyser2(object):
 
         #a timer object to update for us
         self.timer = mytimer()
-        self.timer.Start(1000)
+        self.timer.Start(5000)
 
         self.numAnalysed = 0
         self.numEvents = 0
@@ -601,7 +602,7 @@ class LMAnalyser2(object):
         self._checkmap('DarkMapID')
         self._checkmap('VarianceMapID')
         self._checkmap('FlatfieldMapID')
-        if self.newStyleTaskDistribution:
+        if self.newStyleTaskDistribution and self.image.filename.startswith('PYME-CLUSTER'):
             self.analysisController.pushImagesCluster(self.image)
         else:
             self.analysisController.pushImages(self.image)
@@ -688,6 +689,38 @@ class LMAnalyser2(object):
             self.dsviewer.statusbar.SetBackgroundColour(wx.GREEN)
             self.dsviewer.statusbar.Refresh()
 
+        self.progPan.draw()
+        self.progPan.Refresh()
+        self.dsviewer.Refresh()
+        self.dsviewer.update()
+
+    def analysis_refresh_bruteforce(self):
+        """Refresh points display from cluster-based analysis. This works in the crudest possible way by simply repeatedly
+        re-reading the results file. This should also work for old style analysis, with the same caveats (below) about IO.
+        
+        WARNING: This has potential performance implications as there wll be significant IO overhead to doing it this way!!!
+                 Files should be closed when spooling is complete.
+        
+        TODO: - Allow incremental update (as is done in analRefresh above). Will probably need modification of PYMEDataServer.
+              - Stop updates when spooling is complete (HOW? Check file size?)
+              - What is the effect of the caches in clusterIO? Do we actually get the updated file?
+              - Make sure this only gets called at a reasonable rate.
+              - Add logic to call this (and make sure that self.results_filename is defined)
+        
+        """
+        from PYME.IO import unifiedIO
+        
+        try:
+            with unifiedIO.local_or_temp_filename(self.results_filename) as fn: #download a copy of the file if needed, so that we can pass pytables a local filename
+                self.dsviewer.pipeline.OpenFile(fn)
+                self.numEvents = len(self.dsviewer.pipeline.selectedDataSoure['x'])
+                
+                #populate the fitResults member TODO - is this actually needed?
+                self.fitResults = self.dsviewer.pipeline.selectedDataSoure.resultsSource.fitResults #FIXME - this is really fragile!
+                
+        except IOError:
+            pass
+    
         self.progPan.draw()
         self.progPan.Refresh()
         self.dsviewer.Refresh()

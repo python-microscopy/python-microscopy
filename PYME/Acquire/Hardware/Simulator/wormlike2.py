@@ -24,11 +24,16 @@
 
 from scipy import *
 
+import numpy as np
+
 def bareDNA(kbp, steplength=10):
     return wormlikeChain(kbp, steplength, lengthPerKbp=.34e3, persistLength=75.0)
 
 def fibre30nm(kbp, steplength=10):
     return wormlikeChain(kbp, steplength, lengthPerKbp=10.0, persistLength=150.0)
+
+def fibre10nm(kbp, steplength=10):
+    return wormlikeChain(kbp, steplength, lengthPerKbp=57.0, persistLength=75.0)
     
 def wiglyFibre(length, persistLength, steplength=10):
     return wormlikeChain(length, steplength, lengthPerKbp=1., persistLength=persistLength)
@@ -71,12 +76,15 @@ class wormlikeChain:
             sk = sk/dot(sk, sk.T)
     
             sn = cos(theta[i])*so + sin(theta[i])*sin(phi[i])*sh + sin(theta[i])*cos(phi[i])*sk
-
-            snn = sqrt((sn * sn).sum())
+            snn = np.sqrt((sn * sn).sum())
+            sn /= snn
             
-            xs[i] = steplength*sn[0]/snn
-            ys[i] = steplength*sn[1]/snn
-            zs[i] = steplength*sn[2]/snn
+            sh_n = cos(theta[i])*(cos(phi[i])*sh + sin(phi[i])*sk) + sin(theta[i])*sn
+            sk_n = cos(theta[i])*(cos(phi[i])*sh + sin(phi[i])*sk) + sin(theta[i])*sn
+            
+            xs[i] = steplength*sn[0]
+            ys[i] = steplength*sn[1]
+            zs[i] = steplength*sn[2]
     
             so = sn;
             #i/numsteps

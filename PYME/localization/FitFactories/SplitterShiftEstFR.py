@@ -95,7 +95,7 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 
 
 class GaussianFitFactory:
-    def __init__(self, data, metadata, fitfcn=f_gauss2d2c, background=None, noiseSigma=None):
+    def __init__(self, data, metadata, fitfcn=f_gauss2d2c, background=None, noiseSigma=None, **kwargs):
         """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. """
         self.data = data
@@ -183,8 +183,8 @@ class GaussianFitFactory:
         #if (z == None): # use position of maximum intensity
         #    z = self.data[x,y,:].argmax()
 
-        x = round(x)
-        y = round(y)
+        x = int(round(x))
+        y = int(round(y))
 
         return self[max((x - roiHalfSize), 0):min((x + roiHalfSize + 1),self.data.shape[0]), 
                     max((y - roiHalfSize), 0):min((y + roiHalfSize + 1), self.data.shape[1]), 0:2]

@@ -28,7 +28,7 @@ from scipy import ndimage
 from PYME.IO.MetaDataHandler import get_camera_roi_origin
 
 class FFBase(object):
-    def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None):
+    def __init__(self, data, metadata, fitfcn=None, background=None, noiseSigma=None, roi_offset=[0,0]):
         """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. """
         self.data = data
@@ -36,6 +36,7 @@ class FFBase(object):
         self.metadata = metadata
         self.fitfcn = fitfcn #allow model function to be specified (to facilitate changing between accurate and fast exponential approwimations)
         self.noiseSigma = noiseSigma
+        self.roi_offset = roi_offset # offset (x, y) from camera ROI to permit best common ROI for both channels when splitting
         
     def getROIAtPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
         """Helper fcn to extract ROI from frame at given x,y, point.
@@ -54,6 +55,11 @@ class FFBase(object):
 
         x = int(round(x))
         y = int(round(y))
+
+        #pixel size in nm
+        vx = 1e3 * self.metadata.voxelsize.x
+        vy = 1e3 * self.metadata.voxelsize.y
+        
         roiHalfSize = int(roiHalfSize)
         
         if (z is None): # use position of maximum intensity
@@ -70,8 +76,8 @@ class FFBase(object):
         dataMean = dataROI.mean(2)
 
         #generate grid to evaluate function on        
-        X = 1e3*self.metadata.voxelsize.x*np.mgrid[xslice]
-        Y = 1e3*self.metadata.voxelsize.y*np.mgrid[yslice]
+        X = vx*(np.mgrid[xslice] + self.roi_offset[0])
+        Y = vy*(np.mgrid[yslice] + self.roi_offset[1])
 	
         #estimate errors in data
         nSlices = dataROI.shape[2]
@@ -188,8 +194,8 @@ class FFBase(object):
  
 
         #generate grid to evaluate function on        
-        Xg = vx*np.mgrid[xslice]
-        Yg = vy*np.mgrid[yslice]
+        Xg = vx*(np.mgrid[xslice] + self.roi_offset[0])
+        Yg = vy*(np.mgrid[yslice] + self.roi_offset[1])
 
         #generate a corrected grid for the red channel
         #note that we're cheating a little here - for shifts which are slowly
@@ -299,8 +305,8 @@ class FFBase(object):
             bgROI = np.zeros_like(dataROI)
     
         #generate grid to evaluate function on
-        Xg = vx * np.mgrid[xslice]
-        Yg = vy * np.mgrid[yslice]
+        Xg = vx * (np.mgrid[xslice] + self.roi_offset[0])
+        Yg = vy * (np.mgrid[yslice] + self.roi_offset[1])
     
         #generate a corrected grid for the red channel
         #note that we're cheating a little here - for shifts which are slowly

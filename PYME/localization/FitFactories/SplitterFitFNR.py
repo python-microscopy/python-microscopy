@@ -81,7 +81,9 @@ fresultdtype=[('tIndex', '<i4'),
               ('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'), ('br', '<f4')]),
               ('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'), ('br', '<f4')]),
               ('startParams', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('bg', '<f4'), ('br', '<f4')]), 
-              ('subtractedBackground', [('g','<f4'),('r','<f4')]), ('nchi2', '<f4'),
+              ('subtractedBackground', [('g','<f4'),('r','<f4')]),
+              ('sumIntensity', [('g','<f4'),('r','<f4')]),
+              ('nchi2', '<f4'),
               ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 
@@ -96,7 +98,7 @@ fresultdtype=[('tIndex', '<i4'),
 #
 #    return numpy.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), background, resultCode, fmtSlicesUsed(slicesUsed))], dtype=fresultdtype) 
 
-def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=-5e3, nchi2=-1, background=0):
+def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resultCode=-1, fitErr=-5e3, nchi2=-1, background=0, sumIntensity = 0):
     fr = np.zeros(1, dtype=fresultdtype)
     
     n = len(fitResults)
@@ -114,6 +116,7 @@ def GaussianFitResultR(fitResults, metadata, startParams, slicesUsed=None, resul
         fr['fitError'].view('7f4')[:n] = fitErr
         
     fr['subtractedBackground'].view('2f4')[:] = background
+    fr['sumIntensity'].view('2f4')[:] = sumIntensity
     slu = np.array(fmtSlicesUsed(slicesUsed), dtype='i4')
     #print slu.shape, fr['slicesUsed'].view('12i4').shape, slu.dtype, slu.ravel().shape
     fr['slicesUsed'].view('6i4')[:] = slu.ravel()
@@ -188,8 +191,8 @@ def genFitImage(fitResults, metadata):
 
 
 class GaussianFitFactory(FFBase.FFBase):
-    def __init__(self, data, metadata, fitfcn=genSplitGaussInArrayPVec, background=None, noiseSigma=None):
-        super(GaussianFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma)
+    def __init__(self, data, metadata, fitfcn=genSplitGaussInArrayPVec, background=None, noiseSigma=None, **kwargs):
+        super(GaussianFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma, **kwargs)
         
         #if False:#'D' in dir(fitfcn): #function has jacobian
         #    self.solver = FitModelWeightedJac
@@ -260,7 +263,7 @@ class GaussianFitFactory(FFBase.FFBase):
         #(res, cov_x, infodict, mesg, resCode) = self.solver(self.fitfcn, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
         buf = numpy.zeros(dataROI.size)
         #(res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splitGaussWeightedMisfit, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr)
-        (res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splWrap, startParameters, dataROI, sigma, Xg, Yg, Xr, Yr, buf)
+        (res, cov_x, infodict, mesg, resCode) = FitWeightedMisfitFcn(splWrap, startParameters, dataROI.astype('d'), sigma.astype('d'), Xg, Yg, Xr, Yr, buf) # make splWrap needs double data arguments!
 
         fitErrors=None
         try:       
@@ -275,8 +278,10 @@ class GaussianFitFactory(FFBase.FFBase):
             bgs = bgROI.mean(0).mean(0)
         else:
             bgs = bgROI
+            
+        sI = dataROI.mean(0).mean(0)
 
-        return GaussianFitResultR(res, self.metadata, startParameters,(xslice, yslice), resCode, fitErrors, nchi2, bgs)
+        return GaussianFitResultR(res, self.metadata, startParameters,(xslice, yslice), resCode, fitErrors, nchi2, bgs, sI)
 
     
         

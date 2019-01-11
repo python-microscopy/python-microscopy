@@ -530,7 +530,7 @@ class Measure2D(ModuleBase):
                 else:
                     l = [getattr(r, key) for r in self.measures[sl]]
                     
-                    if np.isscalar(l[0]):
+                    if not (('image' in key) or (key == 'coords')):#np.isscalar(l[0]):
                         a = np.array(l)
                         return a
                     else:
@@ -674,7 +674,8 @@ class AddMetadataToMeasurements(ModuleBase):
                 v = img.mdh[mdk]
             res[k] = np.array([v]*nEntries)
         
-        res = pd.DataFrame(res)
+        #res = pd.DataFrame(res)
+        res = tabular.mappingFilter(res)
         #if 'mdh' in dir(meas):
         res.mdh = img.mdh
         

@@ -89,6 +89,61 @@ class ModuleBase(HasTraits):
         into which it writes outputs
         """
         pass
+    
+    def apply(self, *args, **kwargs):
+        """
+        Execute this module on the given input without the need for creating a recipe. Creates a namespace, populates it,
+        runs the module, and returns a dictionary of outputs.
+        
+        If a module has a single input, you can provide the input directly as the first and only argument. If the module
+        supports multiple inputs, they must be specified using keyword arguments.
+        
+        NOTE: Use the trait names as keys.
+        
+        If the module has only one output, using apply_simple() will automatically pull it out of the namespace and return it.
+        
+        Parameters
+        ----------
+        args
+        kwargs
+
+        Returns
+        -------
+
+        """
+        namespace = {}
+        
+        if (len(self.inputs) == 1) and (len(args) == 1):
+            namespace[self.inputs[0]] = args[0]
+        elif (len(args) > 0):
+            raise RuntimeError('This module has multiple inputs, please use keyword arguments')
+        else:
+            for k, v in kwargs.items():
+                namespace[getattr(self, k)] = v
+                
+        self.execute(namespace)
+        
+        return {k : namespace[k] for k in self.outputs}
+    
+    def apply_simple(self, *args, **kwargs):
+        """
+        See documentaion for apply above - this allows single output modules to be used as though they were functions.
+        
+        
+        Parameters
+        ----------
+        args
+        kwargs
+
+        Returns
+        -------
+
+        """
+        if (len(self.outputs) > 1):
+            raise RuntimeError('Module has multiple outputs - use apply instead')
+        
+        return self.apply(*args, **kwargs)[self.outputs[0]]
+            
 
     @property
     def inputs(self):
@@ -238,6 +293,9 @@ class ModuleCollection(HasTraits):
         
         self.namespace = {}
         
+        self.recipe_changed = dispatch.Signal()
+        self.recipe_executed = dispatch.Signal()
+        
     def invalidate_data(self):
         if self.execute_on_invalidation:
             self.execute()
@@ -359,6 +417,8 @@ class ModuleCollection(HasTraits):
                     logger.exception("Error in recipe module: %s" % m)
                     raise
         
+        self.recipe_executed.send_robust(self)
+        
         if 'output' in self.namespace.keys():
             return self.namespace['output']
             
@@ -384,18 +444,22 @@ class ModuleCollection(HasTraits):
         l = []
         for mod in self.modules:
             #l.append({mod.__class__.__name__: mod.get()})
+            
+            ct = mod.class_traits()
 
             mod_traits_cleaned = {}
             for k, v in mod.get().items():
                 if not k.startswith('_'): #don't save private data - this is usually used for caching etc ..,
-                    if isinstance(v, dict) and not type(v) == dict:
-                        v = dict(v)
-                    elif isinstance(v, list) and not type(v) == list:
-                        v = list(v)
-                    elif isinstance(v, set) and not type(v) == set:
-                        v = set(v)
-
-                    mod_traits_cleaned[k] = v
+                    if (not (v == ct[k].default)) or (k.startswith('input')) or (k.startswith('output')):
+                        #don't save defaults
+                        if isinstance(v, dict) and not type(v) == dict:
+                            v = dict(v)
+                        elif isinstance(v, list) and not type(v) == list:
+                            v = list(v)
+                        elif isinstance(v, set) and not type(v) == set:
+                            v = set(v)
+    
+                        mod_traits_cleaned[k] = v
 
             l.append({module_names[mod.__class__]: mod_traits_cleaned})
 
@@ -429,6 +493,8 @@ class ModuleCollection(HasTraits):
             mc.append(mod)
     
         self.modules = mc
+        
+        self.recipe_changed.send_robust(self)
         self.invalidate_data()
     
     @classmethod
@@ -464,6 +530,7 @@ class ModuleCollection(HasTraits):
 
     def add_module(self, module):
         self.modules.append(module)
+        self.recipe_changed.send_robust(self)
         
     @property
     def inputs(self):
@@ -722,6 +789,11 @@ class ExtractChannel(ModuleBase):
         
         im = ImageStack(chan, titleStub = 'Filtered Image')
         im.mdh.copyEntriesFrom(image.mdh)
+        try:
+            im.mdh['ChannelNames'] = [image.mdh['ChannelNames'][self.channelToExtract]]
+        except KeyError:
+            logger.warn("Error setting channel name")
+
         im.mdh['Parent'] = image.filename
         
         return im

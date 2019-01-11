@@ -110,8 +110,8 @@ def getDataErrors(im, metadata):
 
 
 class PSFFitFactory(FFBase.FFBase):
-    def __init__(self, data, metadata, fitfcn=f_Interp3d, background=None, noiseSigma=None):
-        super(PSFFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma)
+    def __init__(self, data, metadata, fitfcn=f_Interp3d, background=None, noiseSigma=None, **kwargs):
+        super(PSFFitFactory, self).__init__(data, metadata, fitfcn, background, noiseSigma, **kwargs)
         
         #if type(fitfcn) == types.FunctionType: #single function provided - use numerically estimated jacobian
         #    self.solver = FitModelWeighted_

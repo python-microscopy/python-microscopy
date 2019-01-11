@@ -23,7 +23,7 @@
 import wx
 import numpy as np
 
-class ParticleTracker:
+class ObjectMeasurer:
     def __init__(self, visFr):
         self.visFr = visFr
 
@@ -49,7 +49,7 @@ class ParticleTracker:
             NEvents: Number of localizations within the label that a given localization belongs to
 
         """
-        from PYME.IO import image
+        from PYME.IO import image, tabular
         from PYME.Analysis.points import objectMeasure
 
         visFr = self.visFr
@@ -101,6 +101,7 @@ class ParticleTracker:
                 pipeline.colourFilter.setColour(ch)
                 #fitDecayChan(colourFilter, metadata, chanNames[i], i)
                 pipeline.objectMeasures[chanNames[i]] = objectMeasure.measureObjectsByID(pipeline.colourFilter, 10,ids)
+            
             pipeline.colourFilter.setColour(curChan)
 
 
@@ -109,4 +110,4 @@ class ParticleTracker:
 
 def Plug(visFr):
     """Plugs this module into the gui"""
-    ParticleTracker(visFr)
+    ObjectMeasurer(visFr)

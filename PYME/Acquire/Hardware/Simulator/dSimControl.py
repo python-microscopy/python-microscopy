@@ -35,6 +35,11 @@ import numpy as np
 from . import rend_im
 from EmpiricalHist import EmpiricalHist
 
+import PYME.ui.autoFoldPanel as afp
+
+import logging
+logger = logging.getLogger(__name__)
+
 def create(parent):
     return dSimControl(parent)
 
@@ -82,7 +87,7 @@ class PSFSettings(HasTraits):
         
         
 
-class dSimControl(wx.Panel):
+class dSimControl(afp.foldPanel):
     def _init_coll_nTransitionTensor_Pages(self, parent):
         # generated method, don't edit
 
@@ -102,84 +107,111 @@ class dSimControl(wx.Panel):
 
     def _init_ctrls(self, prnt):
         # generated method, don't edit
-        wx.Panel.__init__(self, id=-1, parent=prnt)#, size=wx.Size(442, 637))
+        #wx.Panel.__init__(self, id=-1, parent=prnt)#, size=wx.Size(442, 637))
         self._init_utils()
         #self.SetClientSize(wx.Size(434, 610))
-        vsizer= wx.BoxSizer(wx.VERTICAL)
+        #vsizer= wx.BoxSizer(wx.VERTICAL)
 
         ################ Splitter ######################
 
-        sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Image splitting & PSF'),
-                                    wx.VERTICAL)
+        item = afp.foldingPane(self, -1, caption="Virtual Hardware", pinned=True)
+
+        #sbsizer = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Image splitting & PSF'),
+        #                            wx.VERTICAL)
+        
+        pane = wx.Panel(item, -1)
+        
+        sbsizer = wx.BoxSizer(wx.VERTICAL)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        hsizer.Add(wx.StaticText(self, -1, 'Number of channels: '), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
-        self.cNumSplitterChans = wx.Choice(self, -1, choices=['1', '2', '4'])
+        hsizer.Add(wx.StaticText(pane, -1, 'Number of detection channels: '), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
+        self.cNumSplitterChans = wx.Choice(pane, -1, choices=['1 - Standard', '2 - Ratiometric/Biplane', '4 - HT / 4Pi-SMS'])
+        self.cNumSplitterChans.Bind(wx.EVT_CHOICE, self.OnNumChannelsChanged)
         hsizer.Add(self.cNumSplitterChans, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
         sbsizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
 
-        self.gSplitter = wx.grid.Grid(self, -1)
+        self.gSplitter = wx.grid.Grid(pane, -1)
         self.setupSplitterGrid()
+        self.OnNumChannelsChanged()
         sbsizer.Add(self.gSplitter, 0, wx.RIGHT | wx.EXPAND, 2)
+        
+        sbsizer.AddSpacer(8)
 
         ############## PSF Settings ################
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.bSetTPSF = wx.Button(self, -1, 'Set Theoretical PSF')
+        self.st_psf = wx.StaticText(pane, -1, 'PSF: Default widefield')
+        hsizer.Add(self.st_psf, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 4)
+        
+        hsizer.AddStretchSpacer()
+
+        self.bSetTPSF = wx.Button(pane, -1, 'Set Theoretical')
         self.bSetTPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSFModel)
         hsizer.Add(self.bSetTPSF, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
 
-        self.bSetPSF = wx.Button(self, -1, 'Set Experimental PSF')
+        self.bSetPSF = wx.Button(pane, -1, 'Set Experimental')
         self.bSetPSF.Bind(wx.EVT_BUTTON, self.OnBSetPSF)
         hsizer.Add(self.bSetPSF, 1, wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 2)
 
-        sbsizer.Add(hsizer, 0, wx.ALL | wx.ALIGN_RIGHT, 2)
+        sbsizer.Add(hsizer, 0, wx.ALL, 2)
 
-        vsizer.Add(sbsizer, 0, wx.ALL | wx.EXPAND, 2)
+        sbsizer.AddSpacer(8)
+
+        pane.SetSizerAndFit(sbsizer)
+
+        item.AddNewElement(pane)
+        self.AddPane(item)
+
+        #vsizer.Add(sbsizer, 0, wx.ALL | wx.EXPAND, 2)
 
 
         ########### Fluorophore Positions ############        
-        sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Fluorophore Postions'), 
-                                  wx.VERTICAL)        
+        #sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Fluorophore Postions'),
+        #                          wx.VERTICAL)
+
+        item = afp.foldingPane(self, -1, caption='Fluorophore Postions', pinned=True)
+        pane = wx.Panel(item, -1)
+        sbsizer = wx.BoxSizer(wx.VERTICAL)
+        
         hsizer=wx.BoxSizer(wx.HORIZONTAL)
 
-        self.tNumFluorophores = wx.TextCtrl(self, -1, value='10000', size=(60, -1))
+        self.tNumFluorophores = wx.TextCtrl(pane, -1, value='10000', size=(60, -1))
         hsizer.Add(self.tNumFluorophores, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        hsizer.Add(wx.StaticText(self,-1,'fluorophores distributed evenly along'), 
+        hsizer.Add(wx.StaticText(pane,-1,'fluorophores distributed evenly along'),
                    0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.tKbp = wx.TextCtrl(self, -1, size=(60, -1), value='200000')
+        self.tKbp = wx.TextCtrl(pane, -1, size=(60, -1), value='200000')
         hsizer.Add(self.tKbp, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
         
-        hsizer.Add(wx.StaticText(self,-1,'nm'), 
+        hsizer.Add(wx.StaticText(pane,-1,'nm'),
                    0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
                    
         hsizer.AddStretchSpacer()
 
-        self.bGenWormlike = wx.Button(self, -1,'Generate')
+        self.bGenWormlike = wx.Button(pane, -1,'Generate')
         self.bGenWormlike.Bind(wx.EVT_BUTTON, self.OnBGenWormlikeButton)
         hsizer.Add(self.bGenWormlike, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
         
         sbsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 2)
         hsizer=wx.BoxSizer(wx.HORIZONTAL)
         
-        hsizer.Add(wx.StaticText(self,-1,'Persistence length [nm]:'), 
+        hsizer.Add(wx.StaticText(pane,-1,'Persistence length [nm]:'),
                    0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
-        self.tPersist = wx.TextCtrl(self, -1, size=(60, -1), value='1500')
+        self.tPersist = wx.TextCtrl(pane, -1, size=(60, -1), value='1500')
         hsizer.Add(self.tPersist, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
         
-        hsizer.Add(wx.StaticText(self,-1,'Z scale:'), 
+        hsizer.Add(wx.StaticText(pane,-1,'Z scale:'),
                    0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
-        self.tZScale = wx.TextCtrl(self, -1, size=(60, -1), value='1.0')
+        self.tZScale = wx.TextCtrl(pane, -1, size=(60, -1), value='1.0')
         hsizer.Add(self.tZScale, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.cbFlatten = wx.CheckBox(self, -1, 'flatten (set z to 0)')
+        self.cbFlatten = wx.CheckBox(pane, -1, 'flatten (set z to 0)')
         self.cbFlatten.SetValue(False)
         hsizer.Add(self.cbFlatten, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.cbColour = wx.CheckBox(self, -1, u'colourful')
+        self.cbColour = wx.CheckBox(pane, -1, u'colourful')
         self.cbColour.SetValue(False)
         hsizer.Add(self.cbColour, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
         
@@ -187,32 +219,39 @@ class dSimControl(wx.Panel):
         
         hsizer=wx.BoxSizer(wx.HORIZONTAL)
         
-        self.stCurObjPoints = wx.StaticText(self, -1, 'Current object has 0 points')
+        self.stCurObjPoints = wx.StaticText(pane, -1, 'Current object has NO points')
+        self.stCurObjPoints.SetForegroundColour(wx.RED)
         hsizer.Add(self.stCurObjPoints, 0, wx.ALL, 2)
         hsizer.AddStretchSpacer()
 
-        self.bLoadPoints = wx.Button(self, -1,'Load From File')
+        self.bLoadPoints = wx.Button(pane, -1,'Load From File')
         self.bLoadPoints.Bind(wx.EVT_BUTTON, self.OnBLoadPointsButton)
         hsizer.Add(self.bLoadPoints, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.bSavePoints = wx.Button(self, -1,'Save To File')
+        self.bSavePoints = wx.Button(pane, -1,'Save To File')
         self.bSavePoints.Bind(wx.EVT_BUTTON, self.OnBSavePointsButton)
         hsizer.Add(self.bSavePoints, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
         
         sbsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 2)
-        
-        
-        vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
+
+        pane.SetSizerAndFit(sbsizer)
+        item.AddNewElement(pane)
+        self.AddPane(item)
+        #vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
         
         
 
         
         ################ Virtual Fluorophores ###########
         
-        sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Generate Virtual Fluorophores'), 
-                                  wx.VERTICAL)
+        #sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Generate Virtual Fluorophores'),
+        #                          wx.VERTICAL)
+        
+        item = afp.foldingPane(self, -1, caption='Fluorophore switching model', pinned=True)
+        pane = wx.Panel(item, -1)
+        sbsizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.nSimulationType = wx.Notebook(self, -1)
+        self.nSimulationType = wx.Notebook(pane, -1)
 
         ######################## Based on first principles... #########
         pFirstPrinciples = wx.Panel(self.nSimulationType, -1)
@@ -225,15 +264,34 @@ class dSimControl(wx.Panel):
         self.nTransitionTensor = wx.Notebook(pFirstPrinciples, -1)
         # self.nTransitionTensor.SetLabel('Transition Probabilites')
 
+        #pFirstPrinciplesSizer.Add(wx.StaticText(pFirstPrinciples, -1, "A 4-state 1st order kinetic model, this allows simulation of all common modalities (PALM, STORM, PAINT, etc ...) with suitable parameter choices"), 0, wx.ALL, 2)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        
+        hsizer.Add(wx.StaticText(pFirstPrinciples, -1, 'Generate matrix for:'), 0, wx.ALL|wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        
+        self.cModelPresets = wx.Choice(pFirstPrinciples, -1, choices=['STORM', 'PALM', 'PAINT'])
+        self.cModelPresets.Bind(wx.EVT_CHOICE, self.OnModelPresets)
+
+        hsizer.Add(self.cModelPresets, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        
+        sbsizer2.Add(hsizer, 0, wx.ALL, 2)
+        
         self.gSpontan = wx.grid.Grid(self.nTransitionTensor, -1)
         self.gSwitch = wx.grid.Grid(self.nTransitionTensor, -1)
         self.gProbe = wx.grid.Grid(self.nTransitionTensor, -1)
+
+        self._init_coll_nTransitionTensor_Pages(self.nTransitionTensor)
+
+        self.setupGrid(self.gSpontan, self.states, self.stateTypes)
+        self.setupGrid(self.gSwitch, self.states, self.stateTypes)
+        self.setupGrid(self.gProbe, self.states, self.stateTypes)
 
         sbsizer2.Add(self.nTransitionTensor, 1, wx.EXPAND | wx.ALL, 2)
         pFirstPrinciplesSizer.Add(sbsizer2, 1, wx.EXPAND | wx.ALL, 2)
 
         sbsizer2 = wx.StaticBoxSizer(
-            wx.StaticBox(pFirstPrinciples, -1, 'Excitation Crossections'),
+            wx.StaticBox(pFirstPrinciples, -1, 'Excitation Crossections (Fluorophore Brightness)'),
             wx.HORIZONTAL)
 
         sbsizer2.Add(wx.StaticText(pFirstPrinciples, -1, 'Switching Laser:'), 0,
@@ -243,14 +301,16 @@ class dSimControl(wx.Panel):
         sbsizer2.Add(self.tExSwitch, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
 
         sbsizer2.Add(
-            wx.StaticText(pFirstPrinciples, -1, '/mWs       Probe Laser:'), 0,
+            wx.StaticText(pFirstPrinciples, -1, 'photons/mWs     Probe Laser:'), 0,
             wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
 
         self.tExProbe = wx.TextCtrl(pFirstPrinciples, -1, value='100')
         sbsizer2.Add(self.tExProbe, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
 
-        sbsizer2.Add(wx.StaticText(pFirstPrinciples, -1, '/mWs'), 0,
+        sbsizer2.Add(wx.StaticText(pFirstPrinciples, -1, 'photons/mWs'), 0,
                      wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
+        
+        self.sbsizer2 = sbsizer2
 
         pFirstPrinciplesSizer.Add(sbsizer2, 0, wx.EXPAND | wx.ALL, 2)
 
@@ -303,28 +363,39 @@ class dSimControl(wx.Panel):
                                      text='Data Based Empirical Model')
         sbsizer.Add(self.nSimulationType, 0, wx.ALL | wx.EXPAND, 2)
 
-        vsizer.Add(sbsizer, 0, wx.ALL | wx.EXPAND, 2)
+        #vsizer.Add(sbsizer, 0, wx.ALL | wx.EXPAND, 2)
+        pane.SetSizerAndFit(sbsizer)
+        item.AddNewElement(pane)
+        self.AddPane(item)
 
         ######## Status #########
         
-        sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Status'), 
-                                  wx.VERTICAL)
+        #sbsizer=wx.StaticBoxSizer(wx.StaticBox(self, -1, 'Status'),
+        #                          wx.VERTICAL)
 
-        self.stStatus = wx.StaticText(self, -1,
+        item = afp.foldingPane(self, -1, caption='Status', pinned=True)
+        pane = wx.Panel(item, -1)
+        sbsizer = wx.BoxSizer(wx.VERTICAL)
+
+        self.stStatus = wx.StaticText(pane, -1,
               label='hello\nworld\n\n\nfoo')
         sbsizer.Add(self.stStatus, 0, wx.ALL|wx.EXPAND, 2)
 
-        self.bPause = wx.Button(self, -1,'Pause')
+        self.bPause = wx.Button(pane, -1,'Pause')
         self.bPause.Bind(wx.EVT_BUTTON, self.OnBPauseButton)
         sbsizer.Add(self.bPause, 0, wx.ALL|wx.ALIGN_RIGHT, 2)
+
+        pane.SetSizerAndFit(sbsizer)
+        item.AddNewElement(pane)
+        self.AddPane(item)
         
-        vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
+        #vsizer.Add(sbsizer, 0, wx.ALL|wx.EXPAND, 2)
         
-        self.vsizer = vsizer
+        #self.vsizer = vsizer
 
 
 
-        self._init_coll_nTransitionTensor_Pages(self.nTransitionTensor)
+        
 
     def setupGrid(self, grid, states, stateTypes):
         nStates = len(states)
@@ -350,6 +421,10 @@ class dSimControl(wx.Panel):
                     grid.SetReadOnly(j, i)
                     grid.SetCellBackgroundColour(j, i, wx.LIGHT_GREY)
                     grid.SetCellTextColour(j, i, wx.LIGHT_GREY)
+                    
+        grid.SetMinSize(grid.BestSize)
+        #print grid.BestSize, grid.MinSize
+        #grid.GetParent().GetParent().Layout()
                     
     
     def fillGrids(self, vals):
@@ -394,7 +469,7 @@ class dSimControl(wx.Panel):
             #grid.SetCellTextColour(i, i, wx.LIGHT_GREY)
 
     def getSplitterInfo(self):
-        nChans = int(self.cNumSplitterChans.GetStringSelection())
+        nChans = int(self.cNumSplitterChans.GetStringSelection()[0])
 
         zOffsets = [float(self.gSplitter.GetCellValue(1, i)) for i in range(nChans)]
         specChans = [int(self.gSplitter.GetCellValue(0, i)) for i in range(nChans)]
@@ -404,15 +479,19 @@ class dSimControl(wx.Panel):
         
     
     def __init__(self, parent, scope=None, states=['Caged', 'On', 'Blinked', 'Bleached'], stateTypes=[fluor.FROM_ONLY, fluor.ALL_TRANS, fluor.ALL_TRANS, fluor.TO_ONLY], startVals=None, activeState=fluor.states.active):
-        self._init_ctrls(parent)
+        afp.foldPanel.__init__(self, parent, -1)
+        #self._init_ctrls(parent)
         
         self.states = states
         self.stateTypes = stateTypes
         self.activeState = activeState
+        self.scope = scope
+
+        self._init_ctrls(parent)
         
-        self.setupGrid(self.gSpontan, states, stateTypes)
-        self.setupGrid(self.gSwitch, states, stateTypes)
-        self.setupGrid(self.gProbe, states, stateTypes)
+        # self.setupGrid(self.gSpontan, states, stateTypes)
+        # self.setupGrid(self.gSwitch, states, stateTypes)
+        # self.setupGrid(self.gProbe, states, stateTypes)
         
         if (startVals is None): #use defaults
             startVals = fluor.createSimpleTransitionMatrix()
@@ -421,11 +500,11 @@ class dSimControl(wx.Panel):
         
         self.spectralSignatures = scipy.array([[1, 0.3], [.7, .7], [0.2, 1]])
 
-        self.scope=scope
+        
         self.points = []
         self.EmpiricalHist = None
         self.tRefresh.Start(200)
-        self.SetSizerAndFit(self.vsizer)
+        #self.SetSizerAndFit(self.vsizer)
         
 
     def OnBGenWormlikeButton(self, event):
@@ -444,7 +523,7 @@ class dSimControl(wx.Panel):
 
         #numChans = 1 + int(self.cbColour.GetValue())
 
-        numChans = int(self.cNumSplitterChans.GetStringSelection())
+        numChans = int(self.cNumSplitterChans.GetStringSelection()[0])
 
         x_chan_pixels = x_pixels/numChans
         x_chan_size = XVals[x_chan_pixels-1] - XVals[0]
@@ -473,6 +552,8 @@ class dSimControl(wx.Panel):
 
         
         self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
+        self.stCurObjPoints.SetForegroundColour("dark green")
+        self.scope.cam.setFluors(None)
         #event.Skip()
 
     def OnBLoadPointsButton(self, event):
@@ -487,6 +568,8 @@ class dSimControl(wx.Panel):
             self.points = np.loadtxt(fn)
 
         self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
+        self.stCurObjPoints.SetForegroundColour("dark green")
+        self.scope.cam.setFluors(None)
         #event.Skip()
 
     def OnBSavePointsButton(self, event):
@@ -510,14 +593,18 @@ class dSimControl(wx.Panel):
             z_modes_lower = {int(k): float(v) for k, v in psf_settings.zernike_modes_lower.items()}
             phases = [np.pi*float(p) for p in psf_settings.phases]
             
-            print z_modes, z_modes_lower, phases
+            #print z_modes, z_modes_lower, phases
             rend_im.genTheoreticalModel4Pi(rend_im.mdh, phases=phases, zernikes=[z_modes, z_modes_lower],
                                            lamb=psf_settings.wavelength_nm,
                                            NA=psf_settings.NA, vectorial=psf_settings.vectorial)
+            
+            self.st_psf.SetLabelText('PSF: 4Pi %s [%1.2f NA @ %d nm, zerns=%s]' % ('vectorial' if  psf_settings.vectorial else 'scalar',psf_settings.NA, psf_settings.wavelength_nm, z_modes))
         else:
             print('Setting PSF with zernike modes: %s' % z_modes)
             rend_im.genTheoreticalModel(rend_im.mdh, zernikes=z_modes, lamb=psf_settings.wavelength_nm,
                                         NA=psf_settings.NA, vectorial=psf_settings.vectorial)
+
+            self.st_psf.SetLabelText('PSF: Widefield %s [%1.2f NA @ %d nm, zerns=%s]' % ('vectorial' if  psf_settings.vectorial else 'scalar',psf_settings.NA, psf_settings.wavelength_nm, z_modes))
 
     def OnBSetPSF(self, event):
         fn = wx.FileSelector('Read PSF from file', default_extension='psf', wildcard='PYME PSF Files (*.psf)|*.psf|TIFF (*.tif)|*.tif')
@@ -527,9 +614,14 @@ class dSimControl(wx.Panel):
             return
         else:
             rend_im.setModel(fn, rend_im.mdh)
+            self.st_psf.SetLabelText('PSF: Experimental [%s]' % fn)
         #event.Skip()
 
     def OnBGenFloursButton(self, event):
+        if (len(self.points) == 0):
+            wx.MessageBox( 'No fluorophore positions - either generate of load a set of positions', 'Error',wx.OK | wx.ICON_HAND)
+            return
+        
         transTens = self.getTensorFromGrids()
         exCrosses = [float(self.tExSwitch.GetValue()), float(self.tExProbe.GetValue())]
         #fluors = [fluor.fluorophore(x, y, z, transTens, exCrosses, activeState=self.activeState) for (x,y,z) in self.points]
@@ -592,6 +684,56 @@ class dSimControl(wx.Panel):
         self.stStatus.SetLabel(labStr)
         #event.Skip()
 
+    def OnNumChannelsChanged(self, event=None):
+        n_chans = int(self.cNumSplitterChans.GetStringSelection()[0])
+
+        
+        #print n_chans
+        
+        for i in range(4):
+            if i < n_chans:
+                #enable
+                for j in range(2):
+                    self.gSplitter.SetReadOnly(j, i, False)
+                    #self.gSplitter.SetCellBackgroundColour(i, j, wx.LIGHT_GREY)
+                    self.gSplitter.SetCellTextColour(j, i, wx.BLACK)
+            else:
+                #disable
+                for j in range(2):
+                    self.gSplitter.SetReadOnly(j, i)
+                    #self.gSplitter.SetCellBackgroundColour(i, j, wx.LIGHT_GREY)
+                    self.gSplitter.SetCellTextColour(j, i, wx.LIGHT_GREY)
+                    
+        self.gSplitter.Refresh()
+        
+        try:
+            self.scope.frameWrangler.stop()
+            self.scope.cam.SetSensorDimensions(n_chans*len(self.scope.cam.YVals), len(self.scope.cam.YVals), self.scope.cam.pixel_size_nm)
+            self.scope.frameWrangler.Prepare()
+            self.scope.frameWrangler.start()
+        except AttributeError:
+            logger.exception('Error setting new camera dimensions')
+            pass
+        
+    def OnModelPresets(self, event=None):
+        model = self.cModelPresets.GetStringSelection()
+        
+        if (model == 'STORM'): #default, STORM, no bleaching
+            dlg = STORMPresetDialog(self, title='Specify transition rates for STORM/dSTORM')
+        elif (model == 'PALM'): # PALM
+            dlg = PALMPresetDialog(self, title='Specify transition rates for PALM')
+        else:
+            dlg = PAINTPresetDialog(self, title='Specify transition rates for PAINT')
+            
+        if (dlg.ShowModal() == wx.ID_OK):
+            trans_matrix = dlg.get_trans_tensor()
+
+            self.fillGrids(trans_matrix)
+        
+        dlg.Destroy()
+         
+            
+    
     def OnBLoadEmpiricalHistButton(self, event):
         fn = wx.FileSelector('Read point positions from file')
         if fn is None:
@@ -618,3 +760,162 @@ class dSimControl(wx.Panel):
         self.scope.cam.setSplitterInfo(chan_z_offsets, chan_specs)
 
         self.scope.cam.setFluors(fluors)
+
+
+class PAINTPresetDialog(wx.Dialog):
+    def __init__(self, *args, **kwargs):
+        wx.Dialog.__init__(self, *args, **kwargs)
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Unbinding rate [per s]:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        self.tOnDark = wx.TextCtrl(self, -1, '1.0')
+        hsizer.Add(self.tOnDark, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Binding rate [per s]:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL,
+                   2)
+        self.tDarkOn = wx.TextCtrl(self, -1, '0.001')
+        hsizer.Add(self.tDarkOn, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+        
+        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        # hsizer.Add(wx.StaticText(self, -1, 'UV induced Dark-On rate [per mWs]:'), 0,
+        #            wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        # self.tDarkOnUV = wx.TextCtrl(self, -1, '0.001')
+        # hsizer.Add(self.tDarkOnUV, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        # sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+        
+        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        # hsizer.Add(wx.StaticText(self, -1, 'Bleaching rate [per mWs]:'), 0,
+        #            wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        # self.tOnBleach = wx.TextCtrl(self, -1, '0')
+        # hsizer.Add(self.tOnBleach, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        # sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+
+        btnsizer = self.CreateButtonSizer(wx.OK)#wx.StdDialogButtonSizer()
+
+        #self.bOK = wx.Button(self, wx.ID_OK, "OK")
+        #btnsizer.AddButton(self.bOK)
+
+        sizer.Add(btnsizer, 0, wx.TOP | wx.EXPAND, 2)
+        
+        self.SetSizerAndFit(sizer)
+    
+    def get_trans_tensor(self):
+        return fluor.createSimpleTransitionMatrix(pPA=[0, 0, 0],
+                                                  pOnDark=[float(self.tOnDark.GetValue()), 0, 0],
+                                                  pDarkOn=[float(self.tDarkOn.GetValue()),0, 0],
+                                                  pOnBleach=[0, 0, 0],
+                                                  pCagedBlinked=[1e9,0,0])
+
+
+class STORMPresetDialog(wx.Dialog):
+    def __init__(self, *args, **kwargs):
+        wx.Dialog.__init__(self, *args, **kwargs)
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'On-Dark rate [per mWs]:'), 0, wx.ALL|wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        self.tOnDark = wx.TextCtrl(self,-1, '0.1')
+        hsizer.Add(self.tOnDark, 0, wx.ALL|wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Spontaneous Dark-On rate [per s]:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        self.tDarkOn = wx.TextCtrl(self, -1, '0.001')
+        hsizer.Add(self.tDarkOn, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'UV induced Dark-On rate [per mWs]:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL,2)
+        self.tDarkOnUV = wx.TextCtrl(self, -1, '0.001')
+        hsizer.Add(self.tDarkOnUV, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Bleaching rate [per mWs]:'), 0,
+                   wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        self.tOnBleach = wx.TextCtrl(self, -1, '0.03')
+        hsizer.Add(self.tOnBleach, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+        
+        btnsizer = self.CreateButtonSizer(wx.OK)#wx.StdDialogButtonSizer()
+        
+        #self.bOK = wx.Button(self, wx.ID_OK, "OK")
+        #btnsizer.AddButton(self.bOK)
+        
+        sizer.Add(btnsizer, 0, wx.TOP|wx.EXPAND, 2)
+        
+        self.SetSizerAndFit(sizer)
+        
+    def get_trans_tensor(self):
+        return fluor.createSimpleTransitionMatrix(pPA=[1e9,0,0] ,
+                                                  pOnDark=[0,0,float(self.tOnDark.GetValue())],
+                                                  pDarkOn=[float(self.tDarkOn.GetValue()),float(self.tDarkOnUV.GetValue()),0],
+                                                  pOnBleach=[0,0,float(self.tOnBleach.GetValue())])
+
+
+class PALMPresetDialog(wx.Dialog):
+    def __init__(self, *args, **kwargs):
+        wx.Dialog.__init__(self, *args, **kwargs)
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Photoactivation rate [per mWs]:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        self.tPhotoactivation = wx.TextCtrl(self, -1, '0.001')
+        hsizer.Add(self.tPhotoactivation, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Photoactivation rate (readout laser) [per mWs]:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        self.tPhotoactivationReadout = wx.TextCtrl(self, -1, '0')
+        hsizer.Add(self.tPhotoactivationReadout, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Bleaching rate [per mWs]:'), 0,
+                   wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        self.tOnBleach = wx.TextCtrl(self, -1, '0.03')
+        hsizer.Add(self.tOnBleach, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'On-Dark rate (blinking) [per mWs]:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        self.tOnDark = wx.TextCtrl(self, -1, '0')
+        hsizer.Add(self.tOnDark, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'Spontaneous Dark-On rate (blinking) [per s]:'), 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL,
+                   2)
+        self.tDarkOn = wx.TextCtrl(self, -1, '0')
+        hsizer.Add(self.tDarkOn, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+        
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(self, -1, 'UV induced Dark-On rate (blinking) [per mWs]:'), 0,
+                   wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        self.tDarkOnUV = wx.TextCtrl(self, -1, '0')
+        hsizer.Add(self.tDarkOnUV, 0, wx.ALL | wx.ALIGN_CENTRE_HORIZONTAL, 2)
+        sizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+
+        btnsizer = self.CreateButtonSizer(wx.OK)#wx.StdDialogButtonSizer()
+
+        #self.bOK = wx.Button(self, wx.ID_OK, "OK")
+        #btnsizer.AddButton(self.bOK)
+
+        sizer.Add(btnsizer, 0, wx.TOP | wx.EXPAND, 2)
+        
+        self.SetSizerAndFit(sizer)
+    
+    def get_trans_tensor(self):
+        return fluor.createSimpleTransitionMatrix(pPA=[0, float(self.tPhotoactivation.GetValue()), float(self.tPhotoactivationReadout.GetValue())],
+                                                  pOnDark=[0, 0, float(self.tOnDark.GetValue())],
+                                                  pDarkOn=[float(self.tDarkOn.GetValue()),
+                                                           float(self.tDarkOnUV.GetValue()), 0],
+                                                  pOnBleach=[0, 0, float(self.tOnBleach.GetValue())])

@@ -28,12 +28,16 @@ understand additional values, e.g. 'error_x'
 """
 import types
 import six
+import warnings
 import numpy as np
 
 from numpy import * #to allow the use of sin cos etc in mappings
 from PYME.Analysis.piecewise import * #allow piecewise linear mappings
 
 import tables
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TabularBase(object):
     def toDataFrame(self, keys=None):
@@ -41,7 +45,17 @@ class TabularBase(object):
         if keys is None:
             keys = self.keys()
         
-        d = {k: self.__getitem__(k) for k in keys}
+        d = {}
+        
+        for k in keys:
+            v = self.__getitem__(k)
+            if np.ndim(v) == 1:
+                d[k] = v
+            else:
+                v1 = np.empty(len(v), 'O')
+                for i in range(len(v)):
+                    v1[i] = v[i]
+                d[k] = v1
         
         return pd.DataFrame(d)
         
@@ -76,13 +90,22 @@ class TabularBase(object):
             keys = self.keys()
 
         columns = [self.__getitem__(k) for k in keys]
-        dt = [(k, v.dtype, v.shape[1:]) for k, v in zip(keys, columns)]
-        return records.fromarrays(columns, names=keys, dtype=dt)
+        
+        filtered_cols = [i for i, v in enumerate(columns) if not v.dtype == 'O']
+        
+        cols = [columns[i] for i in filtered_cols]
+        keys_ = [keys[i] for i in filtered_cols]
+        
+        
+        dt = [(k, v.dtype, v.shape[1:]) for k, v in zip(keys_, cols)]
+        
+        #print(dt)
+        return records.fromarrays(cols, names=keys_, dtype=dt)
 
     def to_hdf(self, filename, tablename='Data', keys=None, metadata=None):
         from PYME.IO import h5rFile
 
-        with h5rFile.H5RFile(filename, 'a') as f:
+        with h5rFile.openH5R(filename, 'a') as f:
             f.appendToTable(tablename, self.to_recarray(keys))
 
             if metadata is not None:
@@ -211,10 +234,15 @@ class h5rSource(fitResultsSource):
         else:
             self.h5f = tables.open_file(h5fFile)
         
-        if not tablename in dir(self.h5f.root):
-            raise RuntimeError('Was expecting to find a "%s" table' % tablename)
-
-        self.fitResults = getattr(self.h5f.root, tablename)[:]
+        #if not tablename in dir(self.h5f.root):
+        #    raise RuntimeError('Was expecting to find a "%s" table' % tablename)
+        
+        try:
+            self.fitResults = getattr(self.h5f.root, tablename)[:]
+        except:
+            logger.exception('Was expecting to find a "%s" table' % tablename)
+            raise
+            
 
         #allow access using unnested original names
         self._keys = unNestNames(getattr(self.h5f.root, tablename).description._v_nested_names)
@@ -450,7 +478,26 @@ class matfileColumnSource(TabularBase):
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
 
-class resultsFilter(TabularBase):
+
+class SelectionFilter(TabularBase):
+    _name = "Selection Filter"
+    
+    def __init__(self, resultsSource, index):
+        """ A filter which relies on a supplied index (either integer or boolean)"""
+        
+        self.resultsSource = resultsSource
+        
+        self.Index = index
+    
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+        return self.resultsSource[key][self.Index][sl]
+    
+    def keys(self):
+        return self.resultsSource.keys()
+
+
+class resultsFilter(SelectionFilter):
     _name = "Results Filter"
     def __init__(self, resultsSource, **kwargs):
         """Class to permit filtering of fit results - masquarades
@@ -478,15 +525,7 @@ class resultsFilter(TabularBase):
             self.Index *= (self.resultsSource[k] > range[0])*(self.resultsSource[k] < range[1])
                 
 
-    def __getitem__(self, keys):
-        key, sl = self._getKeySlice(keys)
-        return self.resultsSource[key][self.Index][sl]
-
-    def keys(self):
-        return self.resultsSource.keys()
-
-
-class randomSelectionFilter(TabularBase):
+class randomSelectionFilter(SelectionFilter):
     _name = "Random Selection Filter"
     
     def __init__(self, resultsSource, num_Samples):
@@ -502,18 +541,10 @@ class randomSelectionFilter(TabularBase):
         self.resultsSource = resultsSource
         
         #by default select everything
-        self.Index = np.random.choice(len(self.resultsSource[resultsSource.keys()[0]]), num_Samples)
-        
-    
-    def __getitem__(self, keys):
-        key, sl = self._getKeySlice(keys)
-        return self.resultsSource[key][self.Index][sl]
-    
-    def keys(self):
-        return self.resultsSource.keys()
+        self.Index = np.random.choice(len(self.resultsSource[resultsSource.keys()[0]]), num_Samples, replace=False)
 
 
-class idFilter(TabularBase):
+class idFilter(SelectionFilter):
     _name = "Id Filter"
     
     def __init__(self, resultsSource, id_column, valid_ids):
@@ -539,13 +570,6 @@ class idFilter(TabularBase):
             
             
         self.Index = self.Index > 0.5
-    
-    def __getitem__(self, keys):
-        key, sl = self._getKeySlice(keys)
-        return self.resultsSource[key][self.Index][sl]
-    
-    def keys(self):
-        return self.resultsSource.keys()
 
 
 class concatenateFilter(TabularBase):
@@ -669,6 +693,10 @@ class mappingFilter(TabularBase):
         #setattr(self, name, float(value))
 
         self.variables[name] = float(value)
+        
+    def set_variables(self, **kwargs):
+        for k, v in kwargs.items():
+            self.variables[k] = float(v)
 
     def addColumn(self, name, values):
         """
@@ -701,6 +729,7 @@ class mappingFilter(TabularBase):
         elif isinstance(mapping, six.string_types):
             self.mappings[key] = compile(mapping, '/tmp/test1', 'eval')
         else:
+            warnings.warn('setMapping should not be used to add a variable/data column', DeprecationWarning)
             self.__dict__[key] = mapping
 
     def getMappedResults(self, key, sl):

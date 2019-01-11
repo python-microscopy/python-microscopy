@@ -28,7 +28,7 @@ from scipy import ndimage
 def facsPlotScatter(x, y, nbins=None, ms=1):
     if nbins is None:
         nbins = 0.25*np.sqrt(len(x))
-    n, xedge, yedge = plt.histogram2d(x, y, bins = [nbins,nbins], range=[(min(x), max(x)), (min(y), max(y))])
+    n, xedge, yedge = np.histogram2d(x, y, bins = [nbins,nbins], range=[(min(x), max(x)), (min(y), max(y))])
 
     dx = np.diff(xedge[:2])
     dy = np.diff(yedge[:2])

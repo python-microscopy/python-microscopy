@@ -292,9 +292,12 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         from PYME.IO import MetaDataHandler
         from PYME.IO import h5rFile
 
-        path = self.translate_path(self.path.lstrip('/')[len('__aggregate_h5r'):])
-        filename, tablename = path.split('.h5r')
-        filename += '.h5r'
+        # path = self.translate_path(self.path.lstrip('/')[len('__aggregate_h5r'):])
+        # filename, tablename = path.split('.h5r')
+        # filename += '.h5r'
+
+        filename, tablename = self.path.lstrip('/')[len('__aggregate_h5r'):].split('.h5r')
+        filename = self.translate_path(filename + '.h5r')
 
         data = self._get_data()
 
@@ -356,9 +359,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         from PYME.IO import MetaDataHandler
         from PYME.IO import h5File
 
-        path = self.translate_path(self.path.lstrip('/')[len('__aggregate_h5'):])
-        filename, tablename = path.split('.h5')
-        filename += '.h5'
+        #path = self.translate_path()
+        filename, tablename = self.path.lstrip('/')[len('__aggregate_h5'):].split('.h5')
+        filename = self.translate_path(filename + '.h5')
 
         data = self._get_data()
 
@@ -558,9 +561,9 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         
         
-        if '.h5/' in path:
+        if '.h5/' in self.path:
             #special case - allow .h5 files to be treated as a directory
-            if path.endswith('.h5/'):
+            if self.path.endswith('.h5/'):
                 return self.list_h5(path)
             else:
                 return self.get_h5_part(path)
@@ -638,7 +641,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     
     def list_h5(self, path):
         from PYME.IO import h5File
-        with h5File.openH5(path.rstrip('/')) as h5f:
+        with h5File.openH5(path.rstrip('/').rstrip('\\')) as h5f:
             f, length = self._string_to_file(json.dumps(h5f.get_listing()))
         
         self.send_response(200)
@@ -652,7 +655,8 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         from PYME.IO import h5File
         ctype = self.guess_type(path)
         try:
-            filename, part = path.split('.h5/')
+            filename, part = path.split('.h5')
+            part = part.lstrip('/').lstrip('\\')
             
             with h5File.openH5(filename + '.h5') as h5f:
                 f, length = self._string_to_file(h5f.get_file(part))

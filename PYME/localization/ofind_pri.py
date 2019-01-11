@@ -24,6 +24,7 @@
 #import scipy
 import numpy
 import math
+import numpy as np
 from scipy import ndimage
 from scipy.ndimage import _nd_image, _ni_support
 from scipy.spatial import ckdtree
@@ -177,13 +178,14 @@ class ObjectIdentifier(list):
         
         data = data - data.mean()
 
-        output, a = _ni_support._get_output(None, data)
+        # output, a = _ni_support._get_output(None, data)
+        a = np.zeros(data.shape, dtype=data.dtype.name)
         if self.PRIaxis == 'x':
-            _nd_image.correlate1d(data, weightsLowpass, 0, output, mode, 0,0)
-            _nd_image.correlate1d(output, weightsHighpass, 1, output, mode, 0,0)
+            _nd_image.correlate1d(data, weightsLowpass, 0, a, mode, 0,0)
+            _nd_image.correlate1d(a, weightsHighpass, 1, a, mode, 0,0)
         else:
-            _nd_image.correlate1d(data, weightsHighpass, 0, output, mode, 0,0)
-            _nd_image.correlate1d(output, weightsLowpass, 1, output, mode, 0,0)
+            _nd_image.correlate1d(data, weightsHighpass, 0, a, mode, 0,0)
+            _nd_image.correlate1d(a, weightsLowpass, 1, a, mode, 0,0)
         #print numpy.absolute(a - a_).mean()
 
         #lowpass filter again to find background

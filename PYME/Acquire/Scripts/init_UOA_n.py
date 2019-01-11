@@ -144,11 +144,14 @@ def power_meter(scope):
 @init_hardware('Lasers & Shutters')
 def lasers(scope):
     from PYME.Acquire.Hardware import ioslave
+    from PYME.Acquire.Hardware import phoxxLaser
 
     slave = ioslave.IOSlave('COM6')
-
     scope.l671 = ioslave.DigitalShutter('l671', scopeState = scope.state, ios=slave, pin=13)
-    scope.lasers = [scope.l671]
+
+    scope.l642 = phoxxLaser.PhoxxLaser('l642', portname='COM7', scopeState=scope.state)
+    scope.CleanupFunctions.append(scope.l642.Close)
+    scope.lasers = [scope.l642, scope.l671]
 
 @init_gui('Laser controls')
 def laser_controls(MainFrame, scope):
@@ -162,16 +165,30 @@ def laser_controls(MainFrame, scope):
     MainFrame.time1.WantNotification.append(lsf.update)
     MainFrame.camPanels.append((lsf, 'Laser Powers'))
 
+# @init_hardware('Line scanner')
+# def line_scanner(scope):
+#     from PYME.experimental import scanner_control
+#     scope.line_scanner = scanner_control.ScannerController()
+
+@init_gui('line scanner')
+def line_scanner_gui(MainFrame, scope):
+    from PYME.Acquire.ui import scanner_panel
+    from PYME.experimental import scanner_control
+
+    scope.line_scanner = scanner_control.ScannerController()
+    scp = scanner_panel.ScannerPanel(MainFrame.camPanel, scope.line_scanner)
+    MainFrame.camPanels.append((scp, 'Line Scanner'))
+
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):
     from PYME.Acquire.Hardware import focusKeys
-    fk = focusKeys.FocusKeys(MainFrame, None, scope.piezos[0])
+    fk = focusKeys.FocusKeys(MainFrame, scope.piezos[0])
 
 #splitter
 @init_gui('Splitter')
 def splitter(MainFrame, scope):
     from PYME.Acquire.Hardware import splitter
-    splt = splitter.Splitter(MainFrame, None, scope, scope.cam, flipChan = 1, dichroic = 'Unspecified' , transLocOnCamera = 'Top', flip=True, dir='up_down', constrain=False)
+    splt = splitter.Splitter(MainFrame, scope, scope.cam, flipChan = 1, dichroic = 'Unspecified' , transLocOnCamera = 'Top', flip=True, dir='up_down', constrain=False)
 
 
 #InitGUI("""

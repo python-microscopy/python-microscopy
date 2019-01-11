@@ -122,10 +122,10 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
 		
 
 class GaussianFitFactory(FFBase.FitFactory):
-    def __init__(self, data, metadata, fitfcn=f_gauss2d, background=None, noiseSigma=None):
+    def __init__(self, data, metadata, fitfcn=f_gauss2d, background=None, noiseSigma=None, **kwargs):
         """Create a fit factory which will operate on image data (data), potentially using voxel sizes etc contained in
         metadata. """
-        FFBase.FitFactory.__init__(self, data, metadata, fitfcn, background, noiseSigma)
+        FFBase.FitFactory.__init__(self, data, metadata, fitfcn, background, noiseSigma, **kwargs)
 
         if False:#'D' in dir(fitfcn): #function has jacobian
             self.solver = FitModelWeightedJac

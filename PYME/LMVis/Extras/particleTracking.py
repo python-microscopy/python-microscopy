@@ -33,25 +33,25 @@ class ParticleTracker:
         visFr.AddMenuItem('Corrections>Chaining', "Clump consecutive appearances", self.OnCoalesce)
         visFr.AddMenuItem('Extras', "Calculate clump widths", self.OnCalcWidths)
 
-    def _OnTrackMolecules(self, event):
-        import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
-        #import PYME.Analysis.points.DeClump.deClump as deClump
-        import PYME.Analysis.Tracking.trackUtils as trackUtils
-
-        visFr = self.visFr
-        pipeline = visFr.pipeline
-
-        #bCurr = wx.BusyCursor()
-        dlg = deClumpGUI.deClumpDialog(None)
-
-        ret = dlg.ShowModal()
-
-        if ret == wx.ID_OK:
-            trackUtils.findTracks(pipeline, dlg.GetClumpRadiusVariable(),dlg.GetClumpRadiusMultiplier(), dlg.GetClumpTimeWindow())
-
-            pipeline.Rebuild()
-
-        dlg.Destroy()
+    # def _OnTrackMolecules(self, event):
+    #     import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
+    #     #import PYME.Analysis.points.DeClump.deClump as deClump
+    #     import PYME.Analysis.Tracking.trackUtils as trackUtils
+    #
+    #     visFr = self.visFr
+    #     pipeline = visFr.pipeline
+    #
+    #     #bCurr = wx.BusyCursor()
+    #     dlg = deClumpGUI.deClumpDialog(None)
+    #
+    #     ret = dlg.ShowModal()
+    #
+    #     if ret == wx.ID_OK:
+    #         trackUtils.findTracks(pipeline, dlg.GetClumpRadiusVariable(),dlg.GetClumpRadiusMultiplier(), dlg.GetClumpTimeWindow())
+    #
+    #         pipeline.Rebuild()
+    #
+    #     dlg.Destroy()
         
     def OnFindClumps(self, event):
         import PYME.Analysis.points.DeClump.deClumpGUI as deClumpGUI
@@ -72,12 +72,12 @@ class ParticleTracker:
     
             recipe.add_module(tracking.FindClumps(recipe, inputName=pipeline.selectedDataSourceKey, outputName='with_clumps',
                                                   timeWindow=dlg.GetClumpTimeWindow(),
-                                                  clumpRaduisVariable=dlg.GetClumpRadiusVariable(),
+                                                  clumpRadiusVariable=dlg.GetClumpRadiusVariable(),
                                                   clumpRadiusScale=dlg.GetClumpRadiusMultiplier()))
     
             recipe.execute()
             self.visFr.pipeline.selectDataSource('with_clumps')
-            self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+            #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
         dlg.Destroy()
 
@@ -105,7 +105,7 @@ class ParticleTracker:
     
             recipe.execute()
             self.visFr.pipeline.selectDataSource('with_tracks')
-            self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+            #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
         
         #dlg.Destroy()
 
@@ -189,7 +189,7 @@ class ParticleTracker:
         pipeline.addDataSource('Coalesced',  ds)
         pipeline.selectDataSource('Coalesced')
 
-        self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+        #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
         
     def OnCoalesce(self, event):
         from PYME.recipes import localisations
@@ -199,9 +199,10 @@ class ParticleTracker:
     
         recipe.execute()
         self.visFr.pipeline.selectDataSource('coalesced')
-        self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
+        #self.visFr.CreateFoldPanel() #TODO: can we capture this some other way?
 
     def OnCalcWidths(self,event):
+        #FIXME - this is probably broken on modern VisGUI
         from scipy.stats import binned_statistic
 
         pipeline = self.visFr.pipeline
@@ -238,7 +239,7 @@ class ParticleTracker:
         pipeline.selectedDataSource.setMapping('clumpWidthY', 'clumpWidthsY')
          
         self.visFr.RegenFilter()
-        self.visFr.CreateFoldPanel()
+        #self.visFr.CreateFoldPanel()
  
 
 def Plug(visFr):

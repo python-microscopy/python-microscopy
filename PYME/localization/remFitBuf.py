@@ -34,6 +34,7 @@ from PYME.localization import ofind
     #cost is not in the ffts
 from PYME.localization import ofind_xcorr
 from PYME.localization import ofind_pri
+from PYME.localization import splitting
 
 from PYME.IO import buffers
 from PYME.IO.image import ImageStack
@@ -301,7 +302,9 @@ class fitTask(taskDef.Task):
             drift_ind = self.index + self.md.getOrDefault('Analysis.DriftIndices', np.array([-10, 0, 10]))
         else:
             drift_ind = [0,0]
-        self.bufferLen = max(self.md['Analysis.BGRange'][1], drift_ind[-1]) - min(self.md['Analysis.BGRange'][0], drift_ind[0])
+        # a fix for Analysis.BGRange[0] == Analysis.BGRange[1], i.e. '0:0' as we tend to do in DNA-PAINT
+        # makes bufferLen at least 1
+        self.bufferLen = max(1,max(self.md['Analysis.BGRange'][1], drift_ind[-1]) - min(self.md['Analysis.BGRange'][0], drift_ind[0]))
         
     @property
     def fitMod(self):
@@ -328,118 +331,18 @@ class fitTask(taskDef.Task):
                                max(self.index + self.md['Analysis.BGRange'][1], self.md.getOrDefault('EstimatedLaserOnFrameNo', 0)))
             
     def __mapSplitterCoords(self, x,y):
-        vx = self.md['voxelsize.x']*1e3
-        vy = self.md['voxelsize.y']*1e3
-        
-        x0, y0 = get_camera_roi_origin(self.md)
-        
-        if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-            xg, yg, w, h = self.md['Splitter.Channel0ROI']            
-            xr, yr, w, h = self.md['Splitter.Channel1ROI']
-
-            w2 = w - x0
-            h2 = h - y0
-        else:
-            xg,yg, w, h = 0,0,self.data.shape[0], self.data.shape[1]
-            xr, yr = w,h
-            
-        ch1 = (x>=(xr - x0))&(y >= (yr - y0))
-            
-        xn = x - ch1*(xr-xg)
-        yn = y - ch1*(yr-yg)
-        
-        if not (('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip'))):          
-            yn += ch1*(h - y0 - 2*yn)
-            
-        #chromatic shift
-        if 'chroma.dx' in self.md.getEntryNames():
-            dx = self.md['chroma.dx'].ev((xn+x0)*vx, (yn+y0)*vy)/vx
-            dy = self.md['chroma.dy'].ev((xn+x0)*vy, (yn+y0)*vy)/vy
-        
-            xn += dx*ch1
-            yn += dy*ch1
-       
-        return np.clip(xn, 0, w2-1), np.clip(yn, 0, h2-1)
+        #return splitting.map_splitter_coords(self.md, self.data.shape, x, y)
+        xgs, xrs, ygs, yrs = self._getSplitterROIs()
+        return splitting.map_splitter_coords_(x, y,[xgs, xrs], [ygs, yrs], yrs.step < 0)
         
     def __remapSplitterCoords(self, x,y):
-        vx = self.md['voxelsize.x']*1e3
-        vy = self.md['voxelsize.y']*1e3
-        
-
-        x0, y0 = get_camera_roi_origin(self.md)
-        
-        if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-            xg, yg, w, h = self.md['Splitter.Channel0ROI']            
-            xr, yr, w, h = self.md['Splitter.Channel1ROI']
-        else:
-            xg,yg, w, h = 0,0,self.data.shape[0], self.data.shape[1]
-            xr, yr = w,h
-            
-        xn = x + (xr - xg)
-        yn = y + (yr - yg)
-        
-        if not (('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip'))):          
-            yn = (h-y0 - y) + yr - yg
-            
-        #chromatic shift
-        if 'chroma.dx' in self.md.getEntryNames():
-            dx = self.md['chroma.dx'].ev((x+x0)*vx, (y+y0)*vy)/vx
-            dy = self.md['chroma.dy'].ev((x+x0)*vx, (y+y0)*vy)/vy
-        
-            xn -= dx
-            yn -= dy
-       
-        return xn, yn
+        #return splitting.remap_splitter_coords(self.md, self.data.shape, x, y)
+        xgs, xrs, ygs, yrs = self._getSplitterROIs()
+        return splitting.remap_splitter_coords_(x, y, [xgs, xrs], [ygs, yrs], quadrant=1, flip=(yrs.step < 0))
         
     def _getSplitterROIs(self):
         if not '_splitterROICache' in dir(self):
-            x0, y0 = get_camera_roi_origin(self.md)
-            
-            if 'Splitter.Channel0ROI' in self.md.getEntryNames():
-                xg, yg, wg, hg = self.md['Splitter.Channel0ROI']                       
-                xr, yr, wr, hr = self.md['Splitter.Channel1ROI']
-                #print 'Have splitter ROIs'
-            else:
-                xg = 0
-                yg = 0
-                wg = self.data.shape[0]
-                hg = self.data.shape[1]/2
-                
-                xr = 0
-                yr = hg
-                wr = self.data.shape[0]
-                hr = self.data.shape[1]/2
-                
-            def _bdsClip(x, w, x0, iw):
-                x -= x0
-                if (x < 0):
-                    w += x
-                    x = 0
-                if ((x + w) > iw):
-                    w -= (x + w) - iw
-                    
-                return x, w
-            
-            #print yr, hr
-                
-            xg, wg = _bdsClip(xg, wg, x0, self.data.shape[0])
-            xr, wr = _bdsClip(xr, wr, 0, self.data.shape[0])
-            yg, hg = _bdsClip(yg, hg, y0, self.data.shape[1])
-            yr, hr = _bdsClip(yr, hr, 0, self.data.shape[1])
-                
-            w = min(wg, wr)
-            h = min(hg, hr)
-            
-            #print yr, hr
-                    
-            if ('Splitter.Flip' in self.md.getEntryNames() and not self.md.getEntry('Splitter.Flip')):
-                step = 1
-                self._splitterROICache = (slice(xg, xg+w, 1), slice(xr, xr+w, 1),slice(yg, yg+h, 1),slice(yr, yr+h, step))
-            else:
-                step = -1
-                self._splitterROICache = (slice(xg, xg+w, 1), slice(xr, xr+w, 1),slice(yg, yg+h, 1),slice(yr+h, yr -1, step))
-                
-            
+            self._splitterROICache = splitting.get_splitter_rois(self.md, self.data.shape)
             
         return self._splitterROICache
         
@@ -447,6 +350,8 @@ class fitTask(taskDef.Task):
         xgs, xrs, ygs, yrs = self._getSplitterROIs()
         g = img[xgs, ygs]
         r = img[xrs, yrs]
+        
+        self.roi_offset = [xgs.start, ygs.start]
         
         #print xgs, xrs, ygs, yrs, g.shape, r.shape
         
@@ -461,6 +366,8 @@ class fitTask(taskDef.Task):
         md.tIndex = self.index
         md.taskQueue = taskQueue
         md.dataSourceID = self.dataSourceID
+        
+        self.roi_offset = [0,0]
 
         #logging.debug('dataSourceID: %s, cachedDSID: %s', md.dataSourceID, bufferManager.dataSourceID)
 
@@ -578,7 +485,7 @@ class fitTask(taskDef.Task):
 
         #########################################################
         #Create a fit 'factory'
-        fitFac = self.fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma = self.sigma)
+        fitFac = self.fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma = self.sigma, roi_offset = self.roi_offset)
         
         #perform fit for each point that we detected
         if 'FromPoints' in dir(self.fitMod):
@@ -600,7 +507,7 @@ class fitTask(taskDef.Task):
         #Fit Fiducials NOTE: This is potentially broken        
         self.drRes = []
         if self.driftEst:
-            fitFac = self.fitMod.FitFactory(self.data, md, noiseSigma = self.sigma)
+            fitFac = self.fitMod.FitFactory(self.data, md, noiseSigma = self.sigma, roi_offset = self.roi_offset)
             nToFit = min(10,len(self.ofdDr)) #don't bother fitting lots of calibration objects 
             if 'FitResultsDType' in dir(self.fitMod):
                 self.drRes = numpy.empty(nToFit, self.fitMod.FitResultsDType)

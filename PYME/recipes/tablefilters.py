@@ -2,9 +2,9 @@ from .base import register_module, register_legacy_module, ModuleBase, Filter
 from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr, ListInt
 
 import numpy as np
-import pandas as pd
+#import pandas as pd
 from PYME.IO import tabular
-from PYME.LMVis import renderers
+#from PYME.LMVis import renderers
 
 @register_module('Mapping')
 class Mapping(ModuleBase):
@@ -49,8 +49,10 @@ class FilterTable(ModuleBase):
         except:
             return None
 
-    @property
-    def pipeline_view(self):
+    #@property
+    #def pipeline_view(self):
+        
+    def _pipeline_view(self, show_label=True):
         import wx
         if wx.GetApp() is None:
             return None
@@ -59,8 +61,11 @@ class FilterTable(ModuleBase):
         from PYME.ui.custom_traits_editors import FilterEditor
 
         modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
-
-        return View(Group(Item('filters', editor=FilterEditor(datasource=self._ds)), label=modname))
+        
+        if show_label:
+            return View(Group(Item('filters', editor=FilterEditor(datasource=self._ds), show_label=False), label=modname))
+        else:
+            return  View(Item('filters', editor=FilterEditor(datasource=self._ds), show_label=False))
 
     @property
     def default_view(self):
@@ -73,7 +78,7 @@ class FilterTable(ModuleBase):
 
         return View(Item('inputName', editor=CBEditor(choices=self._namespace_keys)),
                     Item('_'),
-                    Item('filters', editor=FilterEditor(datasource=self._ds)),
+                    Item('filters', editor=FilterEditor(datasource=self._ds), show_label=False),
                     Item('_'),
                     Item('outputName'), buttons=['OK'])
 
@@ -109,8 +114,8 @@ class FilterTableByIDs(ModuleBase):
         
         return ids
 
-    @property
-    def pipeline_view(self):
+    #@property
+    def _pipeline_view(self, show_label=True):
         import wx
         if wx.GetApp() is None:
             return None
@@ -119,9 +124,12 @@ class FilterTableByIDs(ModuleBase):
 
         modname = ','.join(self.inputs) + ' -> ' + self.__class__.__name__ + ' -> ' + ','.join(self.outputs)
 
-        return View(Group(Item('idColumnName'),
-                          Item('ids', editor=SetEditor(values=self._possible_ids)),
-                          label=modname))
+        if show_label:
+            return View(Group(Item('idColumnName'),
+                              Item('ids', editor=SetEditor(values=self._possible_ids)),label=modname))
+        else:
+            return View(Group(Item('idColumnName'),
+                              Item('ids', editor=SetEditor(values=self._possible_ids))))
 
     @property
     def default_view(self):

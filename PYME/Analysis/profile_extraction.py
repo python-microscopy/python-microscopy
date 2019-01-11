@@ -52,8 +52,8 @@ def extract_profile(image, x0, y0, x1, y1, width=1):
     d__y = abs(d_y) + 1
     
     #if (self.do.slice == self.do.SLICE_XY):
-    ims = image[(min(x0, x1) - d__x):(max(x0, x1) + d__x + 1),
-          (min(y0, y1) - d__y):(max(y0, y1) + d__y + 1)].squeeze()
+    ims = image[int(min(x0, x1) - d__x):int(max(x0, x1) + d__x + 1),
+          int(min(y0, y1) - d__y):int(max(y0, y1) + d__y + 1)].squeeze()
     
     splf = ndimage.spline_filter(ims)
     
