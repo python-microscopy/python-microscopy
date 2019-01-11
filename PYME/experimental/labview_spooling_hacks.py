@@ -8,7 +8,7 @@ import numpy as np
 import six
 import sys
 
-def _spoof_focus_from_metadata(mdh):
+def spoof_focus_from_metadata(mdh):
     """
     Only to be used if events cannot be found, as this is substantially less fool-proof than relying on ProtocolFocus
     events. Throws a RuntimeWarning if focus cannot be accurately spoofed.

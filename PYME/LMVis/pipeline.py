@@ -247,7 +247,7 @@ def _processEvents(ds, events, mdh):
             # if we dont have events file, see if we can use metadata to spoof focus
             from PYME.experimental import labview_spooling_hacks
             
-            position, frames = labview_spooling_hacks._spoof_focus_from_metadata(mdh)
+            position, frames = labview_spooling_hacks.spoof_focus_from_metadata(mdh)
             zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
             ev_mappings['zm'] = zm
             eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
