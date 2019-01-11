@@ -720,7 +720,7 @@ class Pipeline:
             self.imageBounds = ImageBounds.estimateFromSource(mapped_ds)
 
         from PYME.recipes.tablefilters import FilterTable
-        self.recipe.add_module(FilterTable(self.recipe, inputName='Localizations', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items()}))
+        self.recipe.add_module(FilterTable(self.recipe, inputName='Localizations', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in mapped_ds.keys()}))
         self.recipe.execute()
         self.filterKeys = {}
         self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
