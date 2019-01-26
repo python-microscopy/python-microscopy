@@ -18,7 +18,10 @@ import numpy as np
 from scipy import ndimage
 from PYME.IO.image import ImageStack
 
-@register_module('SimpleThreshold') 
+import logging
+logger=logging.getLogger(__name__)
+
+@register_module('SimpleThreshold')
 class SimpleThreshold(Filter):
     threshold = Float(0.5)
     
@@ -1472,6 +1475,87 @@ class FlatfiledAndDarkCorrect(ModuleBase):
         im.mdh['Parent'] = image.filename
         namespace[self.outputName] = im
 
+
+@register_module('AverageFramesByZStep')
+class AverageFramesByZStep(ModuleBase):
+    """
+    Averages frames acquired at the same z-position, as determined by the associated events, or (fall-back) metadata.
+
+    Inputs
+    ------
+    input_image : string
+        name of an ImageStack instance, with metadata / events describing which frames were taken at which z-position.
+        
+    input_zvals : string
+        name of a table mapping frames to z values. If empty, the image events are used
+        
+    Parameters
+    __________
+    
+
+    Returns
+    -------
+    output : traits.Output
+        ImageStack instance, where frames taken at the same z-position have been averaged together.
+    Notes
+    -----
+    """
+
+    input_image = Input('input')
+    input_zvals = Input('') #if undefined, use events
+    z_column_name = CStr('z')
+    output = Output('averaged_by_frame')
+
+    def execute(self, namespace):
+        from PYME.Analysis import piecewiseMapping
+        from scipy.stats import mode
+
+        image_stack = namespace[self.input_image]
+
+        if self.input_zvals == '':
+            # z from events if we can
+            frames = np.arange(image_stack.data.shape[2], dtype=int)
+            
+            # note that GeneratePMFromEventList internally handles converting time stamps to frame numbers
+            z_mapping = piecewiseMapping.GeneratePMFromEventList(image_stack.events, image_stack.mdh,
+                                                          image_stack.mdh['StartTime'],
+                                                          image_stack.mdh['Protocol.PiezoStartPos'])
+            z_vals = z_mapping(frames)
+        else:
+            #z values are provided as input
+            z_vals = namespace[self.input_zvals][self.z_column_name]
+
+        # make sure everything is sorted. We'll carry the args to sort, rather than creating another full array
+        frames_z_sorted = np.argsort(z_vals)
+        z = z_vals[frames_z_sorted]
+        z_steps, count = np.unique(z, return_counts=True)
+
+        n_steps = len(z_steps)
+        logger.debug('Averaged stack size: %d' % n_steps)
+
+        new_stack = []
+        for ci in range(image_stack.data.shape[3]):
+            data_avg = np.zeros((image_stack.data.shape[0], image_stack.data.shape[1], n_steps))
+            start = 0
+            for si in range(n_steps):
+                for fi in range(count[si]):
+                    # sum frames from this step directly into the output array
+                    data_avg[:, :, si] += image_stack.data[:, :, frames_z_sorted[start + fi], ci].squeeze()
+                # data_avg[:, :, si] /= count[si]  # complete the average at this step
+                start += count[si]
+            # complete the average for this color channel and append to output
+            new_stack.append(data_avg / count[None, None, :])
+
+        averaged = ImageStack(new_stack, mdh=image_stack.mdh)
+
+        # fudge metadata, leaving breadcrumbs
+        #averaged.mdh['Processing.AverageFramesByStep.OriginalFramesPerStep'] = image_stack.mdh['StackSettings.FramesPerStep'] - This is not normally defined
+        #averaged.mdh['StackSettings.FramesPerStep'] = 1
+        averaged.mdh['StackSettings.NumSteps'] = n_steps
+        #averaged.mdh['StackSettings.NumCycles'] = 1
+        averaged.mdh['StackSettings.StepSize'] = abs(mode(np.diff(z))[0][0])
+
+        namespace[self.output] = averaged
 
 @register_module('BackgroundSubtractionMovingAverage')
 class BackgroundSubtractionMovingAverage(ModuleBase):

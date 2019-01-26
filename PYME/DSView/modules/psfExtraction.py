@@ -495,6 +495,7 @@ class psfExtractor:
         mdh['PSFExtraction.ROI'] = [int(s) for s in self.tPSFROI.GetValue().split(',')]
         mdh['PSFExtraction.Blur'] = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
         mdh['PSFExtraction.Type'] = self.chType.GetStringSelection()
+        mdh['PSFExtraction.Locations'] = self.PSFLocs
 #        mdh['PSF_Extraction.Normalize'] = self.chNormalize.GetStringSelection()
         if axialshift is not None:
             try:

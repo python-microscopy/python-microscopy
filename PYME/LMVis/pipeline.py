@@ -236,8 +236,8 @@ def _processEvents(ds, events, mdh):
             eventCharts.append(('Y Drift [px]', drifty, 'ShiftMeasure'))
             eventCharts.append(('Z Drift [px]', driftz, 'ShiftMeasure'))
 
-            #self.eventCharts = eventCharts
-            #self.ev_mappings = ev_mappings
+            # self.eventCharts = eventCharts
+            # self.ev_mappings = ev_mappings
     elif all(k in mdh.keys() for k in ['StackSettings.FramesPerStep', 'StackSettings.StepSize',
                                        'StackSettings.NumSteps', 'StackSettings.NumCycles']):
         # TODO - Remove this code - anytime we get here it's generally the result of an error in the input data
@@ -246,14 +246,14 @@ def _processEvents(ds, events, mdh):
         try:
             # if we dont have events file, see if we can use metadata to spoof focus
             from PYME.experimental import labview_spooling_hacks
-            
+
             position, frames = labview_spooling_hacks.spoof_focus_from_metadata(mdh)
             zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
             ev_mappings['zm'] = zm
             eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
-                
+
         except:
-            #It doesn't really matter if this fails, print our traceback anyway
+            # It doesn't really matter if this fails, print our traceback anyway
             logger.exception('Error trying to fudge focus positions')
 
     return ev_mappings, eventCharts
