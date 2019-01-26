@@ -564,6 +564,7 @@ class Pipeline:
                         self.selectDataSource('Fiducials')
 
             except: #fallback to catch series that only have drift data
+                logger.exception('No fitResults table found')
                 ds = tabular.h5rDSource(filename)
                 self.filesToClose.append(ds.h5f)
 
@@ -582,6 +583,7 @@ class Pipeline:
             #recipe output - handles generically formatted .h5
             import tables
             h5f = tables.open_file(filename)
+            self.filesToClose.append(h5f)
 
             for t in h5f.list_nodes('/'):
                 if isinstance(t, tables.table.Table):

@@ -293,12 +293,20 @@ class ModuleCollection(HasTraits):
         
         self.namespace = {}
         
+        # we open hdf files and don't necessarily read their contents into memory - these need to be closed when we
+        # either delete the recipe, or clear the namespace
+        self._open_input_files = []
+        
         self.recipe_changed = dispatch.Signal()
         self.recipe_executed = dispatch.Signal()
         
     def invalidate_data(self):
         if self.execute_on_invalidation:
             self.execute()
+            
+    def clear(self):
+        self.namespace.clear()
+        
         
     def dependancyGraph(self):
         dg = {}
@@ -605,45 +613,46 @@ class ModuleCollection(HasTraits):
             from PYME.IO import tabular
 
             with unifiedIO.local_or_temp_filename(filename) as fn:
-                h5f = tables.open_file(fn, mode='r')
-
-                key_prefix = '' if key == 'input' else key + '_'
-
-                try:
-                    mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
-                except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
-                    logger.warning('No metadata found, proceeding with empty metadata')
-                    mdh = MetaDataHandler.NestedClassMDHandler()
-                
-                for t in h5f.list_nodes('/'):
-                    # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
-                    # PZF formatted image data, Image data which is not in an EArray, etc ...)
-                    # Note that EArray is only used for streaming data!
-                    # They should ideally be replaced with more comprehensive tests (potentially based on array or dataset
-                    # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
-                    # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
-                    # > 3D data?
+                with tables.open_file(fn, mode='r') as h5f:
+                    #make sure our hdf file gets closed
                     
-                    if isinstance(t, tables.VLArray):
-                        from PYME.IO.ragged import RaggedVLArray
+                    key_prefix = '' if key == 'input' else key + '_'
+    
+                    try:
+                        mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
+                    except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
+                        logger.warning('No metadata found, proceeding with empty metadata')
+                        mdh = MetaDataHandler.NestedClassMDHandler()
+                    
+                    for t in h5f.list_nodes('/'):
+                        # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
+                        # PZF formatted image data, Image data which is not in an EArray, etc ...)
+                        # Note that EArray is only used for streaming data!
+                        # They should ideally be replaced with more comprehensive tests (potentially based on array or dataset
+                        # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
+                        # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
+                        # > 3D data?
                         
-                        rag = RaggedVLArray(h5f, t.name)
-                        rag.mdh = mdh
-
-                        self.namespace[key_prefix + t.name] = rag
-
-                    elif isinstance(t, tables.table.Table):
-                        #  pipe our table into h5r or hdf source depending on the extension
-                        tab = tabular.h5rSource(h5f, t.name) if extension == '.h5r' else tabular.hdfSource(h5f, t.name)
-                        tab.mdh = mdh
-
-                        self.namespace[key_prefix + t.name] = tab
-
-                    elif isinstance(t, tables.EArray):
-                        # load using ImageStack._loadh5, which finds metdata
-                        im = ImageStack(filename=filename, haveGUI=False)
-                        # assume image is the main table in the file and give it the named key
-                        self.namespace[key] = im
+                        if isinstance(t, tables.VLArray):
+                            from PYME.IO.ragged import RaggedVLArray
+                            
+                            rag = RaggedVLArray(h5f, t.name, copy=True) #force an in-memory copy so we can close the hdf file properly
+                            rag.mdh = mdh
+    
+                            self.namespace[key_prefix + t.name] = rag
+    
+                        elif isinstance(t, tables.table.Table):
+                            #  pipe our table into h5r or hdf source depending on the extension
+                            tab = tabular.h5rSource(h5f, t.name) if extension == '.h5r' else tabular.hdfSource(h5f, t.name)
+                            tab.mdh = mdh
+    
+                            self.namespace[key_prefix + t.name] = tab
+    
+                        elif isinstance(t, tables.EArray):
+                            # load using ImageStack._loadh5, which finds metdata
+                            im = ImageStack(filename=filename, haveGUI=False)
+                            # assume image is the main table in the file and give it the named key
+                            self.namespace[key] = im
                         
         elif extension == '.csv':
             logger.error('loading .csv not supported yet')
@@ -871,7 +880,15 @@ class Divide(ArithmaticFilter):
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
         
-        return data0/data1  
+        return data0/data1
+    
+@register_module('Pow')
+class Pow(Filter):
+    "Raise an image to a given power (can be fractional for sqrt)"
+    power = Float(2)
+    
+    def applyFilter(self, data, chanNum, i, image0):
+        return np.power(data, self.power)
         
 @register_module('Scale')    
 class Scale(Filter):

@@ -221,31 +221,50 @@ class fitResultsSource(TabularBase):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
-class h5rSource(fitResultsSource):
-    _name = "h5r Data Source"
+class BaseHDFSource(fitResultsSource):
     def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
         component. Takes either an open h5r file or a string filename to be
         opened."""
         self.tablename = tablename
-
+        
         if type(h5fFile) == tables.file.File:
-            self.h5f = h5fFile
+            h5f = h5fFile
+            self._own_file = False #did we open the file
         else:
-            self.h5f = tables.open_file(h5fFile)
+            h5f = tables.open_file(h5fFile)
+            self.h5f = h5f
+            self._own_file = True
         
         #if not tablename in dir(self.h5f.root):
-        #    raise RuntimeError('Was expecting to find a "%s" table' % tablename)
+        
         
         try:
-            self.fitResults = getattr(self.h5f.root, tablename)[:]
-        except:
+            self.fitResults = getattr(h5f.root, tablename)[:]
+        except (AttributeError, tables.NoSuchNodeError):
             logger.exception('Was expecting to find a "%s" table' % tablename)
             raise
-            
-
+        
         #allow access using unnested original names
-        self._keys = unNestNames(getattr(self.h5f.root, tablename).description._v_nested_names)
+        self._keys = unNestNames(getattr(h5f.root, tablename).description._v_nested_names)
+        
+        #close the hdf file (if we opened it)
+        #if self._own_file:
+        #    h5f.close()
+        
+        #or shorter aliases
+        
+    def close(self):
+        if self._own_file:
+            self.h5f.close()
+            
+    def __del__(self):
+        self.close()
+
+class h5rSource(BaseHDFSource):
+    _name = "h5r Data Source"
+    def __init__(self, h5fFile, tablename='FitResults'):
+        BaseHDFSource.__init__(self, h5fFile, tablename)
         #or shorter aliases
         self.transkeys = {'A' : 'fitResults_A', 'x' : 'fitResults_x0',
                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
@@ -259,9 +278,6 @@ class h5rSource(fitResultsSource):
         if 'tIndex' in self._keys:
             self.fitResults.sort(order='tIndex')
         
-
-    def close(self):
-        self.h5f.close()
 
     def getInfo(self):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
@@ -283,23 +299,7 @@ class hdfSource(h5rSource):
     _name = "hdf Data Source"
 
     def __init__(self, h5fFile, tablename='FitResults'):
-        """ Data source for use with h5r files as saved by the PYME analysis
-        component. Takes either an open h5r file or a string filename to be
-        opened."""
-        self.tablename = tablename
-
-        if type(h5fFile) == tables.file.File:
-            self.h5f = h5fFile
-        else:
-            self.h5f = tables.open_file(h5fFile)
-
-        if not tablename in dir(self.h5f.root):
-            raise RuntimeError('Was expecting to find a "%s" table' % tablename)
-
-        self.fitResults = getattr(self.h5f.root, tablename)[:]
-
-        #allow access using unnested original names
-        self._keys = unNestNames(getattr(self.h5f.root, tablename).description._v_nested_names)
+        BaseHDFSource.__init__(self, h5fFile, tablename)
         #or shorter aliases
 
         #sort by time
@@ -317,9 +317,6 @@ class hdfSource(h5rSource):
 
         return self.fitResults[key][sl]
 
-
-    def close(self):
-        self.h5f.close()
 
     def getInfo(self):
         return 'PYME hdf Data Source\n\n %d points' % self.fitResults.shape[0]

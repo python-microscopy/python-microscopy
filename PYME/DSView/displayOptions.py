@@ -323,8 +323,8 @@ class DisplayOpts(object):
             for i in range(len(self.Chans)):
                 dss = self.ds[:,:,self.zp,self.Chans[i]]
                 dss = dss[np.isnan(dss) ==0]
-                self.Offs[i] = dss.min()
-                self.Gains[i] = 1.0/(dss.max() - self.Offs[i]+ 1e-3)
+                self.Offs[i] = float(dss.min())
+                self.Gains[i] = 1.0/(float(dss.max()) - self.Offs[i]+ 1e-3)
                 
         #print self.Offs, self.Gains
 
