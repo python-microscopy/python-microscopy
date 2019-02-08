@@ -76,6 +76,9 @@ class DensityMapping(ModuleBase):
     zBounds = ListFloat([-500, 500])
     zSliceThickness = Float(50.0)
     softRender = Bool(True)
+    xyBoundsMode = Enum(['estimate', 'inherit', 'metadata', 'manual'])
+    manualXYBounds = ListFloat([0,0,5e3, 5e3])
+    
 
     def execute(self, namespace):
         from PYME.IO.image import ImageBounds
@@ -87,10 +90,22 @@ class DensityMapping(ModuleBase):
             cf.mdh = inp.mdh
         else:
             cf = inp
-
-        cf.imageBounds = ImageBounds.estimateFromSource(inp)
+            
+        #default to taking min and max localizations as image bounds
+        imb = ImageBounds.estimateFromSource(inp)
+        
         if self.zBoundsMode == 'min-max':
-            self.zBounds[0], self.zBounds[1] = float(cf.imageBounds.z0), float(cf.imageBounds.z1)
+            self.zBounds[0], self.zBounds[1] = float(imb.z0), float(imb.z1)
+        
+        if (self.xyBoundsMode == 'inherit') and not (getattr(inp, 'imageBounds', None) is None):
+            imb = inp.imageBounds
+        elif self.xyBoundsMode == 'metadata':
+            imb = ImageBounds.extractFromMetadata(inp.mdh)
+        elif self.xyBoundsMode == 'manual':
+            imb.x0, imb.y0, imb.x1, imb.y1 = self.manualXYBounds
+            
+        cf.imageBounds = imb
+        
 
         renderer = renderers.RENDERERS[str(self.renderingModule)](None, cf)
 
@@ -120,6 +135,11 @@ class DensityMapping(ModuleBase):
                         Item('zBoundsMode'),
                         Item('zBounds', visible_when='zBoundsMode=="manual"'),
                         label='3D', visible_when='"3D" in renderingModule'),
+                    Group(
+                        Item('xyBoundsMode'),
+                        Item('manualXYBounds', visible_when='xyBoundsMode=="manual"'),
+                        label='Output Image Size',
+                    ),
                     Item('_'),
                     Item('outputImage'), buttons=['OK'])
 
@@ -679,7 +699,7 @@ class AutocorrelationDriftCorrection(ModuleBase):
         tInd = t < self.window
     
         h1 = np.histogram2d(x[tInd], y[tInd], [bx, by])[0]
-        H1 = np.fftn(h1)
+        H1 = np.fft.fftn(h1)
     
         shifts = []
         tis = []
@@ -688,7 +708,7 @@ class AutocorrelationDriftCorrection(ModuleBase):
             tInd = (t >= ti) * (t < (ti + self.window))
             h2 = np.histogram2d(x[tInd], y[tInd], [bx, by])[0]
         
-            xc = abs(np.ifftshift(np.ifftn(H1 * np.ifftn(h2))))
+            xc = abs(np.fft.ifftshift(np.fft.ifftn(H1 * np.fft.ifftn(h2))))
         
             xct = (xc - xc.max() / 3) * (xc > xc.max() / 3)
         
