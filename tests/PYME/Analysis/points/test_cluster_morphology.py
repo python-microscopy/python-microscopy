@@ -55,6 +55,6 @@ def test_labels_from_image():
 
     # now test minimum counts, throwing out the smaller label
     ids, counts_per_label = cluster_morphology.get_labels_from_image(image_stack, points, (im == 1).sum() + 1)
-    assert not np.any(ids == 2)
-    assert counts_per_label[0] == (im == 2).sum()
-    assert (ids == 1).sum() == (im==2).sum()
+    assert not np.any(ids == 1)
+    assert (ids == 2).sum() == (im==2).sum()
+
