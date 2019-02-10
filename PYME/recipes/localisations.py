@@ -445,6 +445,8 @@ class LabelsFromImage(ModuleBase):
     label_count_key_name : CStr
         name of new column which will contain the number of localizations within the label that a given localization
         belongs to
+    minimum_localizations: Int
+        threshold for the number of localizations required to propagate a label through to localizations
 
     """
     inputName = Input('input')
@@ -452,6 +454,8 @@ class LabelsFromImage(ModuleBase):
 
     label_key_name = CStr('objectID')
     label_count_key_name = CStr('NEvents')
+
+    minimum_localizations = Int(1)
 
     outputName = Output('labeled_points')
 
@@ -461,9 +465,8 @@ class LabelsFromImage(ModuleBase):
 
         inp = namespace[self.inputName]
         img = namespace[self.inputImage]
-        #img = image.openImages[dlg.GetStringSelection()]
 
-        ids, numPerObject = cluster_morphology.get_labels_from_image(img, inp)
+        ids, numPerObject = cluster_morphology.get_labels_from_image(img, inp, minimum_localizations=self.minimum_localizations)
 
         labeled = tabular.mappingFilter(inp)
         labeled.addColumn(self.label_key_name, ids)
