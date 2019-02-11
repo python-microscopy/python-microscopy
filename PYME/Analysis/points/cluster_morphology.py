@@ -22,7 +22,7 @@
 
 import numpy as np
 
-def get_labels_from_image(label_image, points):
+def get_labels_from_image(label_image, points, minimum_localizations=1):
     """
     Function to extract labels from a segmented image (2D or 3D) at given locations. 
 
@@ -69,6 +69,15 @@ def get_labels_from_image(label_image, points):
 
     # assume there is only one channel
     ids[ind] = np.atleast_3d(label_data[:, :, :, 0].squeeze())[pixX[ind], pixY[ind], pixZ[ind]].astype('i')
+
+    # check if we keep all labels
+    if minimum_localizations > 1:  # skip if we don't need this
+        labels, counts = np.unique(ids, return_counts=True)
+        labels, counts = labels[1:], counts[1:]  # ignore unlabeled points, or zero-label
+        for label, count in zip(labels, counts):
+            label_mask = ids == label
+            if count < minimum_localizations:
+                ids[label_mask] = 0
 
     numPerObject, b = np.histogram(ids, np.arange(ids.max() + 1.5) + .5)
 
