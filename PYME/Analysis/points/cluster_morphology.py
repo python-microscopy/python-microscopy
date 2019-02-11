@@ -75,9 +75,8 @@ def get_labels_from_image(label_image, points, minimum_localizations=1):
         labels, counts = np.unique(ids, return_counts=True)
         labels, counts = labels[1:], counts[1:]  # ignore unlabeled points, or zero-label
         for label, count in zip(labels, counts):
-            label_mask = ids == label
             if count < minimum_localizations:
-                ids[label_mask] = 0
+                ids[ids == label] = 0
 
     numPerObject, b = np.histogram(ids, np.arange(ids.max() + 1.5) + .5)
 
