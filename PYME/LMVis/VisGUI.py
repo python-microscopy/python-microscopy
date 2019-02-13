@@ -74,7 +74,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     with the LMDisplay module used for online display and has been factored out into the visCore module"""
     def __init__(self, parent, filename=None, id=wx.ID_ANY, 
                  title="PYME Visualise", pos=wx.DefaultPosition,
-                 size=(900,750), style=wx.DEFAULT_FRAME_STYLE, use_shaders=False, cmd_args=None):
+                 size=(900,750), style=wx.DEFAULT_FRAME_STYLE, use_shaders=True, cmd_args=None, pipeline_vars = {}):
 
         AUIFrame.__init__(self, parent, id, title, pos, size, style)
         
@@ -82,6 +82,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self._flags = 0
         
         self.pipeline = pipeline.Pipeline(visFr=self)
+        self.pipeline.dataSources.update(pipeline_vars)
         
         #self.Quads = None
                
@@ -467,3 +468,16 @@ if __name__ == '__main__':
     #mProfile.report()
 
 
+def ipython_visgui(filename=None, **kwargs):
+    import PYME.config
+    
+    if wx.GetApp() is None:
+        raise RuntimeError('No wx App instance found. Start one using the `\%gui wx` magic in ipython before running this command')
+
+    PYME.config.config['VisGUI-new_layers'] = True
+    
+    visFr = VisGUIFrame(None, filename=filename, pipeline_vars = kwargs)
+    visFr.Show()
+    return visFr
+    
+    
