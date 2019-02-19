@@ -28,10 +28,19 @@ import time
 
 @init_hardware('Z Piezo')
 def pz(scope):
-    from PYME.Acquire.Hardware.Piezos import piezo_e816
+    from PYME.Acquire.Hardware.Piezos import piezo_e816, offsetPiezo
 
-    scope.piFoc = piezo_e816.piezo_e816T('COM1', 400, -0.399)
+    scope._piFoc = piezo_e816.piezo_e816T('COM1', 400, -0.399)
+    scope.hardwareChecks.append(scope._piFoc.OnTarget)
+    scope.CleanupFunctions.append(scope._piFoc.close)
+
+    scope.piFoc = offsetPiezo.piezoOffsetProxy(scope._piFoc)
     scope.register_piezo(scope.piFoc, 'z', needCamRestart=True)
+
+    # server so drift correction can connect to the piezo
+    pst = offsetPiezo.ServerThread(scope.piFoc)
+    pst.start()
+    scope.CleanupFunctions.append(pst.cleanup)
     
 @init_hardware('XY Stage')
 def stage(scope):
@@ -202,6 +211,13 @@ def action_manager(MainFrame, scope):
     
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
+
+@init_gui('Drift tracking')
+def drift_tracking(MainFrame, scope):
+    import subprocess
+    import sys
+    from PYME.Acquire import PYMEAcquire
+    scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking" -m "compact"' % (sys.executable, PYMEAcquire.__file__))
 
 
 #must be here!!!

@@ -94,6 +94,13 @@ def main():
                       help="Read initialisation from file [defaults to init.py]",
                       metavar="FILE", default='init.py')
 
+    parser.add_option("-m", "--gui_mode", dest="gui_mode", default='default',
+                      help="GUI mode for PYMEAcquire - either default or 'compact'")
+
+    parser.add_option("-t", "--title", dest="window_title", default='PYME Acquire',
+                      help="Set the PYMEAcquire display name (useful when running multiple copies - e.g. for drift tracking)")
+
+
     (options, args) = parser.parse_args()
     
     # continue to support loading scripts from the PYMEAcquire/Scripts directory

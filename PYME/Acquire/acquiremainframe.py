@@ -97,7 +97,7 @@ class PYMEMainFrame(AUIFrame):
     def __init__(self, parent, options = None):
         AUIFrame.__init__(self, id=wx.ID_ANY, name='smiMainFrame',
               parent=parent, pos=wx.Point(20, 20), size=wx.Size(600, 800),
-              style=wx.DEFAULT_FRAME_STYLE, title='PYME Acquire')    
+              style=wx.DEFAULT_FRAME_STYLE, title= getattr(options, 'window_title', 'PYME Acquire'))
         
         self._create_menu()
         self.options = options
@@ -128,7 +128,7 @@ class PYMEMainFrame(AUIFrame):
               introText='Python SMI bindings - note that help, license etc below is for Python, not PYME\n\n')
         self.AddPage(self.sh, caption='Console')
 
-        self.CreateToolPanel()
+        self.CreateToolPanel(getattr(options, 'gui_mode', 'default'))
 
         self.SetSize((1030, 895))
 
@@ -333,7 +333,7 @@ class PYMEMainFrame(AUIFrame):
             self._mgr.Update()
 
 
-    def CreateToolPanel(self):
+    def CreateToolPanel(self, mode='default'):
         self.camPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
                                      wx.Size(240,1000))
 
@@ -344,28 +344,31 @@ class PYMEMainFrame(AUIFrame):
         
         self.toolPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
                                      wx.Size(240,1000))
-#        self.toolPanel = fpb.FoldPanelBar(self, -1, wx.DefaultPosition,
-#                                     wx.Size(240,200))#, fpb.FPB_DEFAULT_STYLE,0)
 
-        self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
+        if mode == 'compact':
+            self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
+                              Name("hardwareControls").Caption("Hardware").CloseButton(False).BestSize(240, 250), target=cpinfo)
+        else:
+            self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
                           Name("hardwareControls").Caption("Hardware").Layer(2).Position(1).Right().CloseButton(False).BestSize(240, 250))
 
 
         self.aqPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
                                      wx.Size(240,1000))
 
-        aqinfo = aui.AuiPaneInfo().Name("aqControls").Caption("Acquisition").Layer(2).Position(0).Right().CloseButton(False)
-        
-        self._mgr.AddPane(self.aqPanel, aqinfo)
+        if mode == 'compact':
+            self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
+                              Name("aqControls").Caption("Acquisition").CloseButton(False), target=cpinfo)
+        else:
+            aqinfo = aui.AuiPaneInfo().Name("aqControls").Caption("Acquisition").Layer(2).Position(0).Right().CloseButton(False)
+            self._mgr.AddPane(self.aqPanel, aqinfo)
+            aqinfo.dock_proportion  = int(aqinfo.dock_proportion*1.3)
 
         
-        aqinfo.dock_proportion  = int(aqinfo.dock_proportion*1.3)
-
-        
-        self.anPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
+            self.anPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
                                     wx.Size(240, 1000))
 
-        self._mgr.AddPane(self.anPanel, aui.AuiPaneInfo().
+            self._mgr.AddPane(self.anPanel, aui.AuiPaneInfo().
                           Name("anControls").Caption("Analysis").CloseButton(False), target=aqinfo)
 
 
