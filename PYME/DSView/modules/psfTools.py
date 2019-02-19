@@ -66,13 +66,18 @@ def find_and_add_zRange(astig_library, rough_knot_spacing=50.):
         The astigmatism calibration list which is taken as an input is modified in place and returned.
 
     """
+    #TODO - move this to an astigmatism calibration module. This doesn't belong here.
+    
     import scipy.interpolate as terp
-    from scipy.stats import mode
+    # from scipy.stats import mode
     for ii in range(len(astig_library)):
-        # find region of dsigma which is monotonic (smooth a bit, too)
-        dz_mode = mode(np.diff(astig_library[ii]['z']))[0][0]
-        smoothing_factor = int(rough_knot_spacing / dz_mode)
-        knots = astig_library[ii]['z'][1:-1:smoothing_factor]
+        # figure out where to place knots. Note that we subsample our z-positions so we satisfy Schoenberg-Whitney
+        # conditions, i.e. that our spline has adequate support
+        z_steps = np.unique(astig_library[ii]['z'])
+        dz_med = np.median(np.diff(z_steps))
+        smoothing_factor = int(rough_knot_spacing / dz_med)
+        knots = z_steps[1:-1:smoothing_factor]
+        # make the spline
         dsig = terp.LSQUnivariateSpline(astig_library[ii]['z'], astig_library[ii]['dsigma'], knots)
 
         # mask where the sign is the same as the center
@@ -334,6 +339,7 @@ class PSFTools(HasTraits):
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
     def OnCalibrateAstigmatism(self, event):
+        #TODO - move all non-GUI logic for this out of this file?
         from PYME.recipes.measurement import FitPoints
         from PYME.IO.FileUtils import nameUtils
         import matplotlib.pyplot as plt
@@ -360,19 +366,19 @@ class PSFTools(HasTraits):
 
         ps = self.image.pixelSize
 
-        objPositions = {}
+        obj_positions = {}
 
-        objPositions['x'] = ps*self.image.data.shape[0]*0.5*np.ones(self.image.data.shape[2])
-        objPositions['y'] = ps * self.image.data.shape[1] * 0.5 * np.ones(self.image.data.shape[2])
-        objPositions['t'] = np.arange(self.image.data.shape[2])
+        obj_positions['x'] = ps*self.image.data.shape[0]*0.5*np.ones(self.image.data.shape[2])
+        obj_positions['y'] = ps * self.image.data.shape[1] * 0.5 * np.ones(self.image.data.shape[2])
+        obj_positions['t'] = np.arange(self.image.data.shape[2])
         z = np.arange(self.image.data.shape[2]) * self.image.mdh['voxelsize.z'] * 1.e3
-        objPositions['z'] = z - z.mean()
+        obj_positions['z'] = z - z.mean()
 
         ptFitter = FitPoints()
         ptFitter.trait_set(roiHalfSize=11)
         ptFitter.trait_set(fitModule=fitMod)
 
-        namespace = {'input' : self.image, 'objPositions' : objPositions}
+        namespace = {'input' : self.image, 'objPositions' : obj_positions}
 
         results = []
 
@@ -390,7 +396,7 @@ class PSFTools(HasTraits):
 
             results.append({'sigmax': abs(res['fitResults_sigmax'][valid]).tolist(),'error_sigmax': abs(res['fitError_sigmax'][valid]).tolist(),
                             'sigmay': abs(res['fitResults_sigmay'][valid]).tolist(), 'error_sigmay': abs(res['fitError_sigmay'][valid]).tolist(),
-                            'dsigma': dsigma[valid].tolist(), 'z': objPositions['z'][valid].tolist(), 'zCenter': objPositions['z'][dz]})
+                            'dsigma': dsigma[valid].tolist(), 'z': obj_positions['z'][valid].tolist(), 'zCenter': obj_positions['z'][dz]})
 
         #generate new tab to show results
         use_web_view = True
@@ -402,8 +408,7 @@ class PSFTools(HasTraits):
             except NotImplementedError:
                 use_web_view = False
 
-        # find reasonable z range for each channel
-        # FIXME - it is somewhat non-obvious that we are effectively injecting the 'zRange' variable into the results here
+        # find reasonable z range for each channel, inject 'zRange' into the results. FIXME - injection is bad
         results = find_and_add_zRange(results)
 
         #do plotting

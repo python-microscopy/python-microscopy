@@ -107,7 +107,7 @@ class AUIFrame(wx.Frame):
         if pinfo.IsOk(): #we already have a sidepanel, clear
             self.sidePanel.Clear()
         else:
-            self.sidePanel = afp.foldPanel(self, -1, wx.DefaultPosition,size = wx.Size(220, 1000))
+            self.sidePanel = afp.foldPanel(self, -1, wx.DefaultPosition,size = wx.Size(270, 1000))
             pinfo = aui.AuiPaneInfo().Name("sidePanel").Left().CloseButton(False).CaptionVisible(False)
 
             self._mgr.AddPane(self.sidePanel, pinfo)

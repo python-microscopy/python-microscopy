@@ -28,6 +28,9 @@ import os
 from PYME.IO.DataSources import UnsplitDataSource
 import numpy as np
 #from PYME.DSView.arrayViewPanel import *
+
+import logging
+logger=logging.getLogger(__name__)
         
 global_shiftfield = None                               
     
@@ -120,7 +123,12 @@ class Unmixer:
         im = ImageStack(usds, titleStub = '%s - unsplit' % fns)
         im.mdh.copyEntriesFrom(self.image.mdh)
         im.mdh['Parent'] = self.image.filename
-        
+        # grab events from the first data source TODO - do this need to be smarter?
+        try:
+            im.events = usds[0].getEvents()
+        except:
+            logger.warning('No Events found when coalescing UnsplitDataSource')
+
         if 'fitResults' in dir(self.image):
             im.fitResults = self.image.fitResults
         #im.mdh['Processing.GaussianFilter'] = sigmas

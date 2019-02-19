@@ -49,7 +49,29 @@ class ClusterAnalyser:
         visFr.AddMenuItem('Analysis>Clustering', 'Measure Clusters', self.OnMeasureClusters,
                           helpText='')
 
+        visFr.AddMenuItem('Analysis>Clustering', 'Test Ring Probability', self.OnRingTest,
+                          helpText='')
 
+
+    def OnRingTest(self, event=None):
+        from PYME.Analysis.points import rings
+        from PYME.IO import tabular
+        pipeline = self.visFr.pipeline
+        
+        res, p_ring, ratio = rings.radial_analysis_tabular(pipeline, 'dbscanClumpID', disp='simple', error_multiplier=2.0)
+        
+        rings.do_summary_plots(res)
+        
+        #dirty copy of the pipeline output
+        t1 = tabular.mappingFilter({k:pipeline[k] for k in pipeline.keys()})
+        
+        #fixme (unclear how to make recipe module due to plotting)
+        t1.addColumn('p_ring', p_ring)
+        t1.addColumn('ring_ratio', np.log10(ratio))
+        
+        pipeline.addDataSource('ring_mapped', t1, False)
+        pipeline.selectDataSource('ring_mapped')
+    
     def OnClumpDBSCAN(self, event=None):
         """
         Runs sklearn DBSCAN clustering algorithm on pipeline filtered results using the GUI defined in the DBSCAN
@@ -61,13 +83,16 @@ class ClusterAnalyser:
 
         """
         from PYME.recipes import localisations
+        
+        pipeline = self.visFr.pipeline
+        recipe = pipeline.recipe
 
-        clumper = localisations.DBSCANClustering()
+        clumper = localisations.DBSCANClustering(recipe, inputName=pipeline.selectedDataSourceKey,outputName='dbscanClumped')
         if clumper.configure_traits(kind='modal'):
-            namespace = {clumper.inputName: self.pipeline}
-            clumper.execute(namespace)
+            recipe.add_module(clumper)
+            recipe.execute()
 
-            self.pipeline.addColumn(clumper.outputName, namespace[clumper.outputName]['dbscanClumpID'])
+            pipeline.selectDataSource(clumper.outputName)
 
     def OnNearestNeighbor(self, event=None):
         """

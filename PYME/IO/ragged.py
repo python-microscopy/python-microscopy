@@ -76,7 +76,7 @@ class RaggedJSON(RaggedCache):
      
     
 class RaggedVLArray(RaggedBase):
-    def __init__(self, h5f, tablename, mdh=None):
+    def __init__(self, h5f, tablename, mdh=None, copy=False):
         """
         Ragged type which wraps an HDF table variable-length array
         Parameters
@@ -88,6 +88,8 @@ class RaggedVLArray(RaggedBase):
         mdh : PYME.MetaDataHandler.MDHandlerBase or derived class
             Metadata to initialize RaggedVLArray with. If None, will be initialized with blank metadata
             
+        copy: load entire data into memory so we can close the original file
+            
         """
         RaggedBase.__init__(self, mdh)
 
@@ -95,8 +97,17 @@ class RaggedVLArray(RaggedBase):
             import tables
             h5f = tables.open_file(h5f)
             self._h5file = h5f  # if we open it, grab a reference so we can close it later
+            self._own_hdf = True
+        else:
+            self._own_hdf = False
 
         self._data = h5f.get_node(h5f.root, tablename)
+        
+        if copy:
+            self._data = self._data[:]
+            if self._own_hdf:
+                self._h5file.close()
+                
 
     def __del__(self):
         """
@@ -105,7 +116,8 @@ class RaggedVLArray(RaggedBase):
 
         """
         try:
-            self._h5file.close()
+            if self._own_hdf:
+                self._h5file.close()
         except AttributeError:
             pass
     

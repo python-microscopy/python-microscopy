@@ -236,8 +236,8 @@ def _processEvents(ds, events, mdh):
             eventCharts.append(('Y Drift [px]', drifty, 'ShiftMeasure'))
             eventCharts.append(('Z Drift [px]', driftz, 'ShiftMeasure'))
 
-            #self.eventCharts = eventCharts
-            #self.ev_mappings = ev_mappings
+            # self.eventCharts = eventCharts
+            # self.ev_mappings = ev_mappings
     elif all(k in mdh.keys() for k in ['StackSettings.FramesPerStep', 'StackSettings.StepSize',
                                        'StackSettings.NumSteps', 'StackSettings.NumCycles']):
         # TODO - Remove this code - anytime we get here it's generally the result of an error in the input data
@@ -245,24 +245,15 @@ def _processEvents(ds, events, mdh):
         logger.warning('Spoofing focus from metadata: this usually implies an error in the input data (missing events) and results might vary')
         try:
             # if we dont have events file, see if we can use metadata to spoof focus
-            print('No events found, spoofing focus position using StackSettings metadata')
-            frames = np.arange(0, mdh['StackSettings.FramesPerStep'] * mdh['StackSettings.NumSteps'] * mdh[
-                'StackSettings.NumCycles'], mdh['StackSettings.FramesPerStep'])
-            position = np.arange(mdh.getOrDefault('Protocol.PiezoStartPos', 0),
-                                 mdh.getOrDefault('Protocol.PiezoStartPos', 0) + mdh['StackSettings.NumSteps'] * mdh[
-                                     'StackSettings.StepSize'], mdh['StackSettings.StepSize'])
-            position = np.tile(position, mdh['StackSettings.NumCycles'])
-            
-            logger.debug('Spoofing focus events from metadata')
-            
-            if not len(position) == len(frames):
-                logger.error('Error spoofing focus events -  frames: %s, positions %s' % (frames, position))
-            else:
-                zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
-                ev_mappings['zm'] = zm
-                eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
+            from PYME.experimental import labview_spooling_hacks
+
+            position, frames = labview_spooling_hacks.spoof_focus_from_metadata(mdh)
+            zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
+            ev_mappings['zm'] = zm
+            eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
+
         except:
-            #It doesn't really matter if this fails, print our traceback anyway
+            # It doesn't really matter if this fails, print our traceback anyway
             logger.exception('Error trying to fudge focus positions')
 
     return ev_mappings, eventCharts
@@ -270,6 +261,7 @@ def _processEvents(ds, events, mdh):
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
         self.recipe = ModuleCollection(execute_on_invalidation=True)
+        self.recipe.recipe_executed.connect(self.Rebuild)
 
         self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
@@ -428,6 +420,8 @@ class Pipeline:
             The default value to pad with if we've given an output-sized array
 
         """
+        import warnings
+        warnings.warn('Deprecated. You should not add columns to the pipeline as this injects data and is not captured by the recipe', DeprecationWarning)
 
         ds_len = len(self.selectedDataSource[self.selectedDataSource.keys()[0]])
         val_len = len(values)
@@ -570,6 +564,7 @@ class Pipeline:
                         self.selectDataSource('Fiducials')
 
             except: #fallback to catch series that only have drift data
+                logger.exception('No fitResults table found')
                 ds = tabular.h5rDSource(filename)
                 self.filesToClose.append(ds.h5f)
 
@@ -588,6 +583,7 @@ class Pipeline:
             #recipe output - handles generically formatted .h5
             import tables
             h5f = tables.open_file(filename)
+            self.filesToClose.append(h5f)
 
             for t in h5f.list_nodes('/'):
                 if isinstance(t, tables.table.Table):
@@ -716,7 +712,11 @@ class Pipeline:
         else:
             self.imageBounds = ImageBounds.estimateFromSource(mapped_ds)
 
-        self.selectDataSource('Localizations') #NB - this rebuilds the pipeline
+        from PYME.recipes.tablefilters import FilterTable
+        self.recipe.add_module(FilterTable(self.recipe, inputName='Localizations', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in mapped_ds.keys()}))
+        self.recipe.execute()
+        self.filterKeys = {}
+        self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
         
         #self._process_colour()
 

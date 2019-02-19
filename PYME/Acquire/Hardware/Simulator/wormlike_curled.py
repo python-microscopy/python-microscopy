@@ -26,6 +26,9 @@ from scipy import *
 def bareDNA(kbp, steplength=10):
     return wormlikeChain(kbp, steplength, lengthPerKbp=.34e3, persistLength=75.0)
 
+def fibre10nm(kbp, steplength=10):
+    return wormlikeChain(kbp, steplength, lengthPerKbp=57.0, persistLength=75.0)
+
 def fibre30nm(kbp, steplength=10):
     return wormlikeChain(kbp, steplength, lengthPerKbp=10.0, persistLength=150.0)
 
@@ -75,7 +78,7 @@ class wormlikeChain:
             ys[i] = steplength*sn[1]/snn
             zs[i] = steplength*sn[2]/snn
     
-            so = sn;
+            so = sn
             #i/numsteps
 
 

@@ -562,6 +562,8 @@ class TextEditMixin:
 
     def OpenEditor(self, col, row):
         """ Opens an editor at the current position. """
+        
+        #print('OpenEditor: %d, %d' % (col, row))
 
         # give the derived class a chance to Allow/Veto this edit.
         evt = wx.ListEvent(wx.wxEVT_COMMAND_LIST_BEGIN_LABEL_EDIT, self.GetId())
@@ -573,6 +575,7 @@ class TextEditMixin:
         evt.m_item.SetData(item.GetData()) 
         evt.m_item.SetText(item.GetText()) 
         ret = self.GetEventHandler().ProcessEvent(evt)
+        #print ret, evt.IsAllowed()
         if ret and not evt.IsAllowed():
             return   # user code doesn't allow the edit.
 

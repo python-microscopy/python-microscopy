@@ -34,14 +34,15 @@ logger = logging.getLogger(__name__)
 import PYME.config
 
 #try importing our drift correction stuff
+# disabled as drift correction now available in a recipe friendly way
 HAVE_DRIFT_CORRECTION = False
-try:
-    from PYMEnf.DriftCorrection.driftGUI import CreateDriftPane
-    HAVE_DRIFT_CORRECTION = True
-    #from PYMEnf.DriftCorrection import driftGUI
-    #renderers.renderMetadataProviders.append(driftGUI.dp.SaveMetadata)
-except:
-    pass
+#try:
+#    from PYMEnf.DriftCorrection.driftGUI import CreateDriftPane
+#    HAVE_DRIFT_CORRECTION = True
+#    #from PYMEnf.DriftCorrection import driftGUI
+#    #renderers.renderMetadataProviders.append(driftGUI.dp.SaveMetadata)
+#except:
+#    pass
 
 from PYME.LMVis.colourFilterGUI import CreateColourFilterPane
 from PYME.LMVis import displayPane
@@ -140,11 +141,11 @@ class VisGUICore(object):
             
     def GenPanels(self, sidePanel):    
         self.GenDataSourcePanel(sidePanel)
+        
+        #if HAVE_DRIFT_CORRECTION:
+        #    self.driftPane = CreateDriftPane(sidePanel, self.pipeline.mapping, self.pipeline)
 
         self.filterPane = CreateFilterPane(sidePanel, self.pipeline.filterKeys, self.pipeline, self)
-
-        if HAVE_DRIFT_CORRECTION:
-            self.driftPane = CreateDriftPane(sidePanel, self.pipeline.mapping, self.pipeline)
 
         if PYME.config.get('VisGUI-new_layers', False):
             #self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
@@ -155,8 +156,9 @@ class VisGUICore(object):
             from .layer_panel import CreateLayerPane
             CreateLayerPane(sidePanel, self)
             
-            from .view_clipping_pane import GenViewClippingPanel
-            GenViewClippingPanel(self, sidePanel)
+            if self.use_shaders:
+                from .view_clipping_pane import GenViewClippingPanel
+                GenViewClippingPanel(self, sidePanel)
         else:
             self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
             self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
@@ -178,18 +180,23 @@ class VisGUICore(object):
         
     def GenDataSourcePanel(self, pnl):
         from PYME.recipes.vertical_recipe_display import RecipeDisplayPanel
-        item = afp.foldingPane(pnl, -1, caption="Data Source")#, pinned = True)
+        item = afp.foldingPane(pnl, -1, caption="Data Pipeline", pinned = True)
+
+        self.recipeView = RecipeDisplayPanel(item)
+        self.recipeView.SetRecipe(self.pipeline.recipe)
+        item.AddNewElement(self.recipeView)
         
-        self.chSource = wx.Choice(item, -1, choices=[])
+        pan = wx.Panel(item, -1)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'output:'), 0, wx.ALL, 2)
+        self.chSource = wx.Choice(pan, -1, choices=[])
+        hsizer.Add(self.chSource, 1, wx.ALL|wx.EXPAND, 2)
+        pan.SetSizerAndFit(hsizer)
         self.update_datasource_panel()
         self.chSource.Bind(wx.EVT_CHOICE, self.OnSourceChange)
         self.pipeline.onRebuild.connect(self.update_datasource_panel)
             
-        item.AddNewElement(self.chSource, foldable=False)
-        
-        self.recipeView = RecipeDisplayPanel(item)
-        self.recipeView.SetRecipe(self.pipeline.recipe)
-        item.AddNewElement(self.recipeView)
+        item.AddNewElement(pan, foldable=False)
 
         pnl.AddPane(item)
         
@@ -393,11 +400,13 @@ class VisGUICore(object):
         logger.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
         self.pipeline.Rebuild()
         
-    def add_pointcloud_layer(self, method='points', ds_name=''):
+    def add_pointcloud_layer(self, method='points', ds_name='output'):
         #from .layer_wrapper import LayerWrapper
         from .layers.pointcloud import PointCloudRenderLayer
         l = PointCloudRenderLayer(self.pipeline, method=method, dsname=ds_name)
         self.add_layer(l)
+
+        logger.debug('Added layer, datasouce=%s' % l.dsname)
         return l
 
     def add_layer(self, layer):
@@ -426,7 +435,7 @@ class VisGUICore(object):
             return
         
         
-
+        #FIXME - this should be handled within the filter pane
         self.filterPane.stFilterNumPoints.SetLabel('%d of %d events' % (len(self.pipeline.filter['x']), len(self.pipeline.selectedDataSource['x'])))
 
         if len(self.pipeline['x']) == 0:
@@ -597,10 +606,17 @@ class VisGUICore(object):
         self.statusbar.SetStatusText(statusText, 0)
         
     def SaveMetadata(self, mdh):
-        mdh['Filter.Keys'] = self.pipeline.filterKeys      
+        mdh['Filter.Keys'] = self.pipeline.filterKeys
         
-        if HAVE_DRIFT_CORRECTION and 'x' in self.pipeline.mapping.mappings.keys(): #drift correction has been applied
-            self.driftPane.dp.SaveMetadata(mdh)
+        recipe = getattr(self.pipeline, 'recipe', None)
+        
+        if not recipe is None:
+            mdh['Pipeline.Recipe'] = recipe.toYAML()
+            mdh['Pipeline.SelectedDataSource'] = self.pipeline.selectedDataSourceKey
+            
+        
+        #if HAVE_DRIFT_CORRECTION and 'x' in self.pipeline.mapping.mappings.keys(): #drift correction has been applied
+        #    self.driftPane.dp.SaveMetadata(mdh)
 
     def AddMenuItem(self, menuName, *args, **kwargs):
         """ Add a menu item. Calls AUIFrame.AddMenuItem. Should be over-ridden when called from VisGUI, and only
@@ -676,6 +692,8 @@ class VisGUICore(object):
         #############################
         #now do all the gui stuff
         
+        self.update_datasource_panel()
+        
         if isinstance(self, wx.Frame):
             #run this if only we are the main frame
             self.SetTitle('PYME Visualise - ' + filename)
@@ -704,14 +722,16 @@ class VisGUICore(object):
         #############################
         #now do all the gui stuff
     
-        if isinstance(self, wx.Frame):
-            #run this if only we are the main frame
-            #self.SetTitle('PYME Visualise - ' + filename)
-            self._removeOldTabs()
-            self._createNewTabs()
+        # if isinstance(self, wx.Frame):
+        #     #run this if only we are the main frame
+        #     #self.SetTitle('PYME Visualise - ' + filename)
+        #     self._removeOldTabs()
+        #     self._createNewTabs()
+        #
+        #     self.CreateFoldPanel()
+        #     print('Gui stuff done')
         
-            self.CreateFoldPanel()
-            print('Gui stuff done')
+        self.update_datasource_panel()
     
         if recipe_callback:
             recipe_callback()

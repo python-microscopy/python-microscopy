@@ -24,6 +24,7 @@
 from numpy import *
 import numpy as np
 import sys
+import six
 
 def timeToFrames(t, events, mdh):
     cycTime = mdh.getEntry('Camera.CycleTime')

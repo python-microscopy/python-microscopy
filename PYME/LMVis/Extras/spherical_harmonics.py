@@ -54,7 +54,7 @@ class ShellManager(object):
 
 
         self.vis_frame.RefreshView()
-        self.vis_frame.CreateFoldPanel()
+        #self.vis_frame.CreateFoldPanel()
 
 def Plug(vis_frame):
     vis_frame.shell_manager= ShellManager(vis_frame)

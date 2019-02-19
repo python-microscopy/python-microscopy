@@ -89,6 +89,61 @@ class ModuleBase(HasTraits):
         into which it writes outputs
         """
         pass
+    
+    def apply(self, *args, **kwargs):
+        """
+        Execute this module on the given input without the need for creating a recipe. Creates a namespace, populates it,
+        runs the module, and returns a dictionary of outputs.
+        
+        If a module has a single input, you can provide the input directly as the first and only argument. If the module
+        supports multiple inputs, they must be specified using keyword arguments.
+        
+        NOTE: Use the trait names as keys.
+        
+        If the module has only one output, using apply_simple() will automatically pull it out of the namespace and return it.
+        
+        Parameters
+        ----------
+        args
+        kwargs
+
+        Returns
+        -------
+
+        """
+        namespace = {}
+        
+        if (len(self.inputs) == 1) and (len(args) == 1):
+            namespace[self.inputs[0]] = args[0]
+        elif (len(args) > 0):
+            raise RuntimeError('This module has multiple inputs, please use keyword arguments')
+        else:
+            for k, v in kwargs.items():
+                namespace[getattr(self, k)] = v
+                
+        self.execute(namespace)
+        
+        return {k : namespace[k] for k in self.outputs}
+    
+    def apply_simple(self, *args, **kwargs):
+        """
+        See documentaion for apply above - this allows single output modules to be used as though they were functions.
+        
+        
+        Parameters
+        ----------
+        args
+        kwargs
+
+        Returns
+        -------
+
+        """
+        if (len(self.outputs) > 1):
+            raise RuntimeError('Module has multiple outputs - use apply instead')
+        
+        return self.apply(*args, **kwargs)[next(iter(self.outputs))]
+            
 
     @property
     def inputs(self):
@@ -238,9 +293,20 @@ class ModuleCollection(HasTraits):
         
         self.namespace = {}
         
+        # we open hdf files and don't necessarily read their contents into memory - these need to be closed when we
+        # either delete the recipe, or clear the namespace
+        self._open_input_files = []
+        
+        self.recipe_changed = dispatch.Signal()
+        self.recipe_executed = dispatch.Signal()
+        
     def invalidate_data(self):
         if self.execute_on_invalidation:
             self.execute()
+            
+    def clear(self):
+        self.namespace.clear()
+        
         
     def dependancyGraph(self):
         dg = {}
@@ -359,6 +425,8 @@ class ModuleCollection(HasTraits):
                     logger.exception("Error in recipe module: %s" % m)
                     raise
         
+        self.recipe_executed.send_robust(self)
+        
         if 'output' in self.namespace.keys():
             return self.namespace['output']
             
@@ -384,18 +452,22 @@ class ModuleCollection(HasTraits):
         l = []
         for mod in self.modules:
             #l.append({mod.__class__.__name__: mod.get()})
+            
+            ct = mod.class_traits()
 
             mod_traits_cleaned = {}
             for k, v in mod.get().items():
                 if not k.startswith('_'): #don't save private data - this is usually used for caching etc ..,
-                    if isinstance(v, dict) and not type(v) == dict:
-                        v = dict(v)
-                    elif isinstance(v, list) and not type(v) == list:
-                        v = list(v)
-                    elif isinstance(v, set) and not type(v) == set:
-                        v = set(v)
-
-                    mod_traits_cleaned[k] = v
+                    if (not (v == ct[k].default)) or (k.startswith('input')) or (k.startswith('output')):
+                        #don't save defaults
+                        if isinstance(v, dict) and not type(v) == dict:
+                            v = dict(v)
+                        elif isinstance(v, list) and not type(v) == list:
+                            v = list(v)
+                        elif isinstance(v, set) and not type(v) == set:
+                            v = set(v)
+    
+                        mod_traits_cleaned[k] = v
 
             l.append({module_names[mod.__class__]: mod_traits_cleaned})
 
@@ -429,6 +501,8 @@ class ModuleCollection(HasTraits):
             mc.append(mod)
     
         self.modules = mc
+        
+        self.recipe_changed.send_robust(self)
         self.invalidate_data()
     
     @classmethod
@@ -464,6 +538,7 @@ class ModuleCollection(HasTraits):
 
     def add_module(self, module):
         self.modules.append(module)
+        self.recipe_changed.send_robust(self)
         
     @property
     def inputs(self):
@@ -538,45 +613,46 @@ class ModuleCollection(HasTraits):
             from PYME.IO import tabular
 
             with unifiedIO.local_or_temp_filename(filename) as fn:
-                h5f = tables.open_file(fn, mode='r')
-
-                key_prefix = '' if key == 'input' else key + '_'
-
-                try:
-                    mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
-                except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
-                    logger.warning('No metadata found, proceeding with empty metadata')
-                    mdh = MetaDataHandler.NestedClassMDHandler()
-                
-                for t in h5f.list_nodes('/'):
-                    # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
-                    # PZF formatted image data, Image data which is not in an EArray, etc ...)
-                    # Note that EArray is only used for streaming data!
-                    # They should ideally be replaced with more comprehensive tests (potentially based on array or dataset
-                    # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
-                    # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
-                    # > 3D data?
+                with tables.open_file(fn, mode='r') as h5f:
+                    #make sure our hdf file gets closed
                     
-                    if isinstance(t, tables.VLArray):
-                        from PYME.IO.ragged import RaggedVLArray
+                    key_prefix = '' if key == 'input' else key + '_'
+    
+                    try:
+                        mdh = MetaDataHandler.NestedClassMDHandler(MetaDataHandler.HDFMDHandler(h5f))
+                    except tables.FileModeError:  # Occurs if no metadata is found, since we opened the table in read-mode
+                        logger.warning('No metadata found, proceeding with empty metadata')
+                        mdh = MetaDataHandler.NestedClassMDHandler()
+                    
+                    for t in h5f.list_nodes('/'):
+                        # FIXME - The following isinstance tests are not very safe (and badly broken in some cases e.g.
+                        # PZF formatted image data, Image data which is not in an EArray, etc ...)
+                        # Note that EArray is only used for streaming data!
+                        # They should ideally be replaced with more comprehensive tests (potentially based on array or dataset
+                        # dimensionality and/or data type) - i.e. duck typing. Our strategy for images in HDF should probably
+                        # also be improved / clarified - can we use hdf attributes to hint at the data intent? How do we support
+                        # > 3D data?
                         
-                        rag = RaggedVLArray(h5f, t.name)
-                        rag.mdh = mdh
-
-                        self.namespace[key_prefix + t.name] = rag
-
-                    elif isinstance(t, tables.table.Table):
-                        #  pipe our table into h5r or hdf source depending on the extension
-                        tab = tabular.h5rSource(h5f, t.name) if extension == '.h5r' else tabular.hdfSource(h5f, t.name)
-                        tab.mdh = mdh
-
-                        self.namespace[key_prefix + t.name] = tab
-
-                    elif isinstance(t, tables.EArray):
-                        # load using ImageStack._loadh5, which finds metdata
-                        im = ImageStack(filename=filename, haveGUI=False)
-                        # assume image is the main table in the file and give it the named key
-                        self.namespace[key] = im
+                        if isinstance(t, tables.VLArray):
+                            from PYME.IO.ragged import RaggedVLArray
+                            
+                            rag = RaggedVLArray(h5f, t.name, copy=True) #force an in-memory copy so we can close the hdf file properly
+                            rag.mdh = mdh
+    
+                            self.namespace[key_prefix + t.name] = rag
+    
+                        elif isinstance(t, tables.table.Table):
+                            #  pipe our table into h5r or hdf source depending on the extension
+                            tab = tabular.h5rSource(h5f, t.name) if extension == '.h5r' else tabular.hdfSource(h5f, t.name)
+                            tab.mdh = mdh
+    
+                            self.namespace[key_prefix + t.name] = tab
+    
+                        elif isinstance(t, tables.EArray):
+                            # load using ImageStack._loadh5, which finds metdata
+                            im = ImageStack(filename=filename, haveGUI=False)
+                            # assume image is the main table in the file and give it the named key
+                            self.namespace[key] = im
                         
         elif extension == '.csv':
             logger.error('loading .csv not supported yet')
@@ -804,7 +880,15 @@ class Divide(ArithmaticFilter):
     
     def applyFilter(self, data0, data1, chanNum, i, image0):
         
-        return data0/data1  
+        return data0/data1
+    
+@register_module('Pow')
+class Pow(Filter):
+    "Raise an image to a given power (can be fractional for sqrt)"
+    power = Float(2)
+    
+    def applyFilter(self, data, chanNum, i, image0):
+        return np.power(data, self.power)
         
 @register_module('Scale')    
 class Scale(Filter):

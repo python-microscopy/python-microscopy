@@ -126,11 +126,11 @@ class DCIMGFile(object):
         # read the 1st session header  - vormat varies depending on file format
         if info['format_version'] == 7: 
             session_head = np.fromstring(header[info['session0_offset']:(info['session0_offset']+SESSION_HEADER_BYTES)], 
-                                        dtype=SESSION_HEADER_DTYPE)
+                                        dtype=SESSION_HEADER_DTYPE)[0]
 
         elif info['format_version'] == 0x1000000:
             session_head = np.fromstring(header[info['session0_offset']:(info['session0_offset']+SESSION_HEADER_BYTES_INT2P24)],
-                                    dtype=SESSION_HEADER_DTYPE_INT2P24)           
+                                    dtype=SESSION_HEADER_DTYPE_INT2P24)[0]
 
             # each image include data and 32 bytes footer
         else:

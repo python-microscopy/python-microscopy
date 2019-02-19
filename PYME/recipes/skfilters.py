@@ -92,6 +92,10 @@ for filtName in skFilterNames:
                         argTypes[a] = 'string'
                     elif isinstance(ad, dict):
                         argTypes[a] = 'dict'
+                    elif isinstance(ad, bool):
+                        argTypes[a] = 'bool'
+                    elif isinstance(ad, int):
+                        argTypes[a] = 'int'
             
             #disregard parameters which need another image for now        
             args = [a for a in args if not argTypes[a] in ['image', 'dict']]
@@ -106,6 +110,10 @@ for filtName in skFilterNames:
                 paramString += '%s = Float(%s)\n    ' % (a, argDefaults[a])
             elif argTypes[a] == 'string':
                 paramString += '%s = CStr("%s")\n    ' % (a, argDefaults[a])
+            elif argTypes[a] == 'bool':
+                paramString += '%s = Bool(%s)\n    ' % (a, argDefaults[a])
+            elif argTypes[a] == 'int':
+                paramString += '%s = Int(%s)\n    ' % (a, argDefaults[a])
 
         doc = filt.__doc__
                 

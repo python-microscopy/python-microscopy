@@ -50,10 +50,13 @@ from PYME.LMVis import colourPanel
 from PYME.LMVis import pipeline
 
 import logging
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
 from PYME.ui import MetadataTree
+from PYME.recipes import recipeGui
+from PYME.recipes import modules #force modules (including 3rd party) to load
 
 import numpy as np
 
@@ -71,7 +74,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
     with the LMDisplay module used for online display and has been factored out into the visCore module"""
     def __init__(self, parent, filename=None, id=wx.ID_ANY, 
                  title="PYME Visualise", pos=wx.DefaultPosition,
-                 size=(900,750), style=wx.DEFAULT_FRAME_STYLE, use_shaders=False, cmd_args=None):
+                 size=(900,750), style=wx.DEFAULT_FRAME_STYLE, use_shaders=True, cmd_args=None, pipeline_vars = {}):
 
         AUIFrame.__init__(self, parent, id, title, pos, size, style)
         
@@ -79,6 +82,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         self._flags = 0
         
         self.pipeline = pipeline.Pipeline(visFr=self)
+        self.pipeline.dataSources.update(pipeline_vars)
         
         #self.Quads = None
                
@@ -164,16 +168,22 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         
         self.paneHooks.append(self.GenPanels)
         self.CreateFoldPanel()
+        
+        self._recipe_manager = recipeGui.PipelineRecipeManager(self.pipeline)
+        self._recipe_editor = recipeGui.RecipeView(self, self._recipe_manager)
+        self.AddPage(page=self._recipe_editor, select=False, caption='Pipeline Recipe')
+        
+        self.AddMenuItem('Recipe', 'Reconstruct from open image', self.reconstruct_pipeline_from_open_image)
+        self.AddMenuItem('Recipe', 'Reconstruct from image file', self.reconstruct_pipeline_from_image_file)
 
         if not filename is None:
-    
             def _recipe_callback():
                 recipe = getattr(self.cmd_args, 'recipe', None)
                 print('Using recipe: %s' % recipe)
                 if recipe:
                     from PYME.recipes import modules
                     self.pipeline.recipe.update_from_yaml(recipe)
-                    self.recipeView.SetRecipe(self.pipeline.recipe)
+                    #self.recipeView.SetRecipe(self.pipeline.recipe)
                     self.update_datasource_panel()
             
             wx.CallLater(50,self.OpenFile,filename, recipe_callback=_recipe_callback)
@@ -184,7 +194,29 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         nb = self._mgr.GetNotebooks()[0]
         nb.SetSelection(0)
         
+    def reconstruct_pipeline_from_image(self, image):
+        self._recipe_manager.load_recipe_from_mdh(image.mdh)
+        self.pipeline.selectDataSource(image.mdh['Pipeline.SelectedDataSource'])
+        
+    def reconstruct_pipeline_from_open_image(self, event=None):
+        from PYME.IO import image
+        names = image.openImages.keys()
     
+        dlg = wx.SingleChoiceDialog(self.dsviewer, 'Select an image', 'Reconstruct pipeline from image', names)
+    
+        if dlg.ShowModal() == wx.ID_OK:
+            #store a copy in the image for measurements etc ...
+        
+            im = image.openImages[names[dlg.GetSelection()]]
+            
+            self.reconstruct_pipeline_from_image(im)
+            
+    def reconstruct_pipeline_from_image_file(self, event=None, filename=None):
+        from PYME.DSView import ImageStack
+        im = ImageStack(filename=filename)
+
+        self.reconstruct_pipeline_from_image(im)
+        
 
     def OnMove(self, event):
         self.Refresh()
@@ -425,7 +457,7 @@ def main():
         main_(args.file, use_shaders=args.use_shaders, args=args)
     else:
         #time.sleep(1)
-        visFr = VisGUIFrame(None, filename, False)
+        visFr = VisGUIFrame(None, args.file, args.use_shaders)
         visFr.Show()
         visFr.RefreshView()
         
@@ -436,3 +468,16 @@ if __name__ == '__main__':
     #mProfile.report()
 
 
+def ipython_visgui(filename=None, **kwargs):
+    import PYME.config
+    
+    if wx.GetApp() is None:
+        raise RuntimeError('No wx App instance found. Start one using the `\%gui wx` magic in ipython before running this command')
+
+    PYME.config.config['VisGUI-new_layers'] = True
+    
+    visFr = VisGUIFrame(None, filename=filename, pipeline_vars = kwargs)
+    visFr.Show()
+    return visFr
+    
+    

@@ -141,7 +141,7 @@ class LayerWrapper(HasTraits):
                      #Item('engine.color_key', editor=CBEditor(choices=self.datasource.keys())),
                      
                      Group([Item('clim', editor = HistLimitsEditor(data=self._get_cdata), show_label=False),]),
-                     Group([Item('cmap', label='LUT') ,Item('alpha'), Item('visible')])],)
+                     Group([Item('cmap', label='LUT') ,Item('alpha'), Item('visible')], orientation='horizontal', layout='flow')],)
                     #buttons=['OK', 'Cancel'])
 
     def default_traits_view(self):

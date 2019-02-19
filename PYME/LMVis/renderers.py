@@ -27,7 +27,7 @@ from PYME.IO import tabular
 
 from PYME.IO import MetaDataHandler
 
-import pylab
+#import pylab
 import numpy as np
 
 renderMetadataProviders = []
@@ -180,8 +180,9 @@ class CurrentRenderer:
         return imf
 
     def genIm(self, dlg, imb, mdh):
+        import matplotlib.pyplot as plt
         oldcmap = self.visFr.glCanvas.cmap
-        self.visFr.glCanvas.setCMap(pylab.cm.gray)
+        self.visFr.glCanvas.setCMap(plt.cm.gray)
         im = self.visFr.glCanvas.getIm(dlg.getPixelSize())
 
         self.visFr.glCanvas.setCMap(oldcmap)
@@ -474,16 +475,16 @@ class QuadTreeRenderer(ColourRenderer):
         from PYME.Analysis.points.QuadTree import QTrend
         pixelSize = settings['pixelSize']
 
-        if not pylab.mod(pylab.log2(pixelSize/self.visFr.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
+        if not np.mod(np.log2(pixelSize/self.visFr.QTGoalPixelSize), 1) == 0:#recalculate QuadTree to get right pixel size
                 self.visFr.QTGoalPixelSize = pixelSize
                 self.visFr.Quads = None
 
         self.visFr.GenQuads()
 
         qtWidth = self.visFr.Quads.x1 - self.visFr.Quads.x0
-        qtWidthPixels = pylab.ceil(qtWidth/pixelSize)
+        qtWidthPixels = np.ceil(qtWidth/pixelSize)
 
-        im = pylab.zeros((qtWidthPixels, qtWidthPixels))
+        im = np.zeros((qtWidthPixels, qtWidthPixels))
         QTrend.rendQTa(im, self.visFr.Quads)
 
         return im[(imb.x0/pixelSize):(imb.x1/pixelSize),(imb.y0/pixelSize):(imb.y1/pixelSize)]

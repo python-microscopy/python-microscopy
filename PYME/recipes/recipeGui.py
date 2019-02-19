@@ -81,8 +81,8 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
         
         #print pix_per_col, fontSize
         
-        TW = textwrap.TextWrapper(width=int(1.8*pix_per_col/fontSize), subsequent_indent='  ')
-        TW2 = textwrap.TextWrapper(width=int(1.3*pix_per_col/fontSize), subsequent_indent='  ')
+        TW = textwrap.TextWrapper(width=max(int(1.8*pix_per_col/fontSize), 10), subsequent_indent='  ')
+        TW2 = textwrap.TextWrapper(width=max(int(1.3*pix_per_col/fontSize), 10), subsequent_indent='  ')
     
         cols = {}
 
@@ -221,6 +221,7 @@ class ModuleSelectionDialog(wx.Dialog):
 
         self.bOK = wx.Button(self.pan, wx.ID_OK, 'Add')
         self.bOK.Enable(False)
+        
         #self.bOK.Bind(wx.EVT_BUTTON, self.OnOK)
 
         sbsizer.AddButton(self.bOK)
@@ -248,6 +249,7 @@ class ModuleSelectionDialog(wx.Dialog):
         #print mn
         if not mn is None:
             self.bOK.Enable(True)
+            self.bOK.SetDefault()
 
             doc = modules.base.all_modules[mn].__doc__
             if doc:
@@ -275,6 +277,7 @@ class RecipeView(wx.Panel):
         self.recipes = recipes
         recipes.recipeView = self
         hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        
         vsizer = wx.BoxSizer(wx.VERTICAL)
         
         self.recipePlot = RecipePlotPanel(self, recipes, size=(-1, 400))
@@ -302,11 +305,13 @@ class RecipeView(wx.Panel):
         self.bSaveRecipe.Bind(wx.EVT_BUTTON, self.recipes.OnSaveRecipe)
         
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+        
+        
         hsizer1.Add(vsizer, 1, wx.EXPAND|wx.ALL, 2)
         
         vsizer = wx.BoxSizer(wx.VERTICAL)
         
-        self.tRecipeText = wx.TextCtrl(self, -1, '', size=(250, -1),
+        self.tRecipeText = wx.TextCtrl(self, -1, '', size=(350, -1),
                                        style=wx.TE_MULTILINE|wx.TE_PROCESS_ENTER)
                                        
         vsizer.Add(self.tRecipeText, 1, wx.ALL, 2)
@@ -354,10 +359,14 @@ class RecipeView(wx.Panel):
             modName = dlg.GetSelectedModule()
             
             c = mods[modName](self.recipes.activeRecipe)
-            self.recipes.activeRecipe.modules.append(c)
+            
+            if c.configure_traits(kind='modal'):
+                self.recipes.activeRecipe.add_module(c)
+                self.recipes.activeRecipe.invalidate_data()
+                wx.CallLater(10, self.update)
+                
         dlg.Destroy()
         
-        self.configureModule(c)
         
     def OnPick(self, event):
         k = event.artist._data
@@ -430,6 +439,21 @@ class RecipeManager(object):
         except AttributeError:
             pass
 
+class PipelineRecipeManager(RecipeManager):
+    """Version of recipe manager for use with the VisGUI pipeline. Updates the existing recipe rather than replacing
+    with a completely new one"""
+    def __init__(self, pipeline):
+        self.pipeline = pipeline
+        
+    @property
+    def activeRecipe(self):
+        return self.pipeline.recipe
+    
+    def LoadRecipeText(self, s, filename=''):
+        self.pipeline.recipe.update_from_yaml(s)
+        
+    def load_recipe_from_mdh(self, mdh):
+        self.LoadRecipeText(mdh['Pipeline.Recipe'])
 
 class dt(wx.FileDropTarget):
     def __init__(self, window):
@@ -455,6 +479,7 @@ class BatchFrame(wx.Frame, wx.FileDropTarget):
         self.recipeView = RecipeView(self, self.rm)
         
         hsizer.Add(self.recipeView, 1, wx.ALL|wx.EXPAND, 2)
+        
         vsizer1.Add(hsizer, 1, wx.ALL|wx.EXPAND, 2)
         
         hsizer1 = wx.BoxSizer(wx.HORIZONTAL)

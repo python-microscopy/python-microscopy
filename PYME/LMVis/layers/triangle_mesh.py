@@ -64,8 +64,11 @@ class TriangleRenderLayer(EngineLayer):
     clim = ListFloat([0, 1], desc='How our variable should be scaled prior to colour mapping')
     alpha = Float(1.0, desc='Face tranparency')
     method = Enum(*ENGINES.keys(), desc='Method used to display faces')
+    normal_mode = Enum(['Per vertex', 'Per face'])
+    dsname = CStr('output', desc='Name of the datasource within the pipeline to use as a source of triangles (should be a TriangularMesh object)')
+    _datasource_choices = List()
 
-    def __init__(self, pipeline, method='wireframe', datasource=None, **kwargs):
+    def __init__(self, pipeline, method='wireframe', dsname='', **kwargs):
         self._pipeline = pipeline
         self.engine = None
         self.cmap = 'gist_rainbow'
@@ -87,14 +90,14 @@ class TriangleRenderLayer(EngineLayer):
         # define responses to changes in various traits
         self.on_trait_change(self._update, 'vertexColour')
         self.on_trait_change(lambda: self.on_update.send(self), 'visible')
-        self.on_trait_change(self.update, 'cmap, clim, alpha, datasource')
+        self.on_trait_change(self.update, 'cmap, clim, alpha, datasource, normal_mode')
         self.on_trait_change(self._set_method, 'method')
 
         # update any of our traits which were passed as command line arguments
         self.set(**kwargs)
 
         # update datasource and method
-        self.datasource = datasource
+        self.dsname = dsname
         if self.method == method:
             #make sure we still call _set_method even if we start with the default method
             self._set_method()
@@ -106,13 +109,13 @@ class TriangleRenderLayer(EngineLayer):
         if not self._pipeline is None:
             self._pipeline.onRebuild.connect(self.update)
 
-    # @property
-    # def datasource(self):
-    #     """
-    #     Return the datasource we are connected to (does not go through the pipeline for triangles_mesh).
-    #     """
-    #     #return self._pipeline.get_layer_data(self.dsname)
-    #     return self.datasource
+    @property
+    def datasource(self):
+        """
+        Return the datasource we are connected to (does not go through the pipeline for triangles_mesh).
+        """
+        return self._pipeline.get_layer_data(self.dsname)
+        #return self.datasource
 
     def _set_method(self):
         self.engine = ENGINES[self.method]()
@@ -133,6 +136,9 @@ class TriangleRenderLayer(EngineLayer):
         # self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
+        from PYME.experimental import triangular_mesh
+        self._datasource_choices = [k for k, v in self._pipeline.dataSources.items() if isinstance(v, triangular_mesh.TriangularMesh)]
+        
         if not (self.engine is None or self.datasource is None):
             print ('lw update')
             self.update_from_datasource(self.datasource)
@@ -149,19 +155,28 @@ class TriangleRenderLayer(EngineLayer):
         Parameters
         ----------
         ds :
-            Binary STL file read in via load_stl_binary()
+            PYME.experimental.triangular_mesh.TriangularMesh object
 
         Returns
         -------
         None
         """
+        #t = ds.vertices[ds.faces]
+        #n = ds.vertex_normals[ds.faces]
+        
+        x, y, z = ds.vertices[ds.faces].reshape(-1, 3).T
+        
+        if self.normal_mode == 'Per vertex':
+            xn, yn, zn = ds.vertex_normals[ds.faces].reshape(-1, 3).T
+        else:
+            xn, yn, zn = np.repeat(ds.face_normals.T, 3, axis=1)
 
         # Concatenate vertices, interleave, restore to 3x(3N) points (3xN triangles),
         # and assign the points to x, y, z vectors
-        x, y, z = np.hstack((ds['vertex0'], ds['vertex1'], ds['vertex2'])).reshape(-1, 3).T
-
+        #x, y, z = np.hstack((ds['vertex0'], ds['vertex1'], ds['vertex2'])).reshape(-1, 3).T
+        
         # We copy the normals 3 times per triangle to get 3x(3N) normals to match the vertices shape
-        xn, yn, zn = np.repeat(ds['normal'].T, 3, axis=1)
+        #xn, yn, zn = np.repeat(ds['normal'].T, 3, axis=1)
         #xn, yn, zn = np.repeat(ds['normal'], 3, axis=1).reshape(-1, 3).T
 
         # Pass the restructured data to update_data
@@ -272,8 +287,9 @@ class TriangleRenderLayer(EngineLayer):
         from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor
         from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
 
-        return View([#Group([Item('datasource', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
+        return View([Group([Item('datasource', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
                      Item('method'),
+                     Item('normal_mode', visible_when='method=="shaded"'),
                      #Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
                      #Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ]),
                      Group([Item('cmap', label='LUT'), Item('alpha'), Item('visible')])

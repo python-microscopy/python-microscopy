@@ -23,10 +23,20 @@
 import matplotlib.colors as colors
 #import matplotlib as mpl
 import pylab
+import numpy as np
 
 def regCmap(cmap):
     pylab.cm.__dict__[cmap.name] = cmap
     pylab.cm.cmapnames.append(cmap.name)
+    
+#define a decorator
+def register_cmap(name):
+    def _reg_cmap(func):
+        func.name = name
+        regCmap(func)
+        return func
+    
+    return _reg_cmap
 
 if not 'cmapnames' in dir(pylab.cm):
     if 'cmap_d' in dir(pylab.cm):
@@ -63,23 +73,47 @@ for cmapname in ncmapnames:
     ndat[cmapname_r] = cmapdat_r
     pylab.cm.__dict__[cmapname_r] = colors.LinearSegmentedColormap(cmapname_r, cmapdat_r, pylab.cm.LUTSIZE)
 
+#solid colour colormaps for VisGUI multichannel and isosurface display
+@register_cmap('R')
+def Red(data):
+    z = np.ones_like(data)
+    return np.stack([z, 0*z, 0*z, z], -1)
+
+@register_cmap('G')
+def Green(data):
+    z = np.ones_like(data)
+    return np.stack([0*z, z, 0*z, z], -1)
+
+@register_cmap('B')
+def Blue(data):
+    z = np.ones_like(data)
+    return np.stack([0*z, 0*z, z, z], -1)
+
+@register_cmap('C')
+def Cyan(data):
+    z = np.ones_like(data)
+    return np.stack([0*z, z, z, z], -1)
+
+@register_cmap('M')
+def Magenta(data):
+    z = np.ones_like(data)
+    return np.stack([z, 0*z, z, z], -1)
+
+@register_cmap('Y')
+def Yellow(data):
+    z = np.ones_like(data)
+    return np.stack([z, z, 0*z, z], -1)
+
+@register_cmap('labeled')
 def labeled(data):
     return (data > 0).reshape(list(data.shape) +  [1])*pylab.cm.gist_rainbow(data % 1)
 
-labeled.name = 'labeled'
-
-regCmap(labeled)
-
+@register_cmap('flow_gray')
 def flow_gray(data):
     v = ((data > 0)*(data < 1)).reshape(list(data.shape) +  [1])*pylab.cm.gray(data)
     v += (data == 0).reshape(list(data.shape) + [1]) * pylab.array([0, 1., 0, 0]).reshape(list(pylab.ones(data.ndim) + [3]))
     v += (data == 1).reshape(list(data.shape) + [1]) * pylab.array([1., 0, 1., 0]).reshape(list(pylab.ones(data.ndim) + [3]))
     return v
-
-flow_gray.name = 'flow_gray'
-
-regCmap(flow_gray)
-
 
 
 def grey_overflow(underflowcol = 'magenta', overflowcol = 'lime', percentage=5, greystart=0.1):

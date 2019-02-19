@@ -1158,7 +1158,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                         ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_):step,y0_:(y0_+sY_):step,int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
         #XZ
         elif self.do.slice == DisplayOpts.SLICE_XZ:
-            ima = numpy.zeros((numpy.ceil(min(sY_, self.do.ds.shape[2])/fstep), numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep), 3), 'uint8')
+            ima = numpy.zeros((int(numpy.ceil(min(sY_, self.do.ds.shape[2])/fstep)), int(numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep)), 3), 'uint8')
 
             for chan, offset, gain, cmap in self.do.GetActiveChans():#in zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
                 if not cmap == labeled:
@@ -1170,7 +1170,7 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         #YZ
         elif self.do.slice == DisplayOpts.SLICE_YZ:
-            ima = numpy.zeros((numpy.ceil(min(sY_, self.do.ds.shape[2])/fstep), numpy.ceil(min(sX_, self.do.ds.shape[1])/fstep), 3), 'uint8')
+            ima = numpy.zeros((int(numpy.ceil(min(sY_, self.do.ds.shape[2])/fstep)), int(numpy.ceil(min(sX_, self.do.ds.shape[1])/fstep)), 3), 'uint8')
 
             for chan, offset, gain, cmap in self.do.GetActiveChans():#zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps):
                 if not cmap == labeled:

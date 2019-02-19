@@ -148,13 +148,22 @@ class ZMX(object):
             if l.startswith('SURF'):
                 self.surfaces.append(Surface(lines, glasses))  
                 
+    
     def toPyOptic(self, position, direction=[0,0,1], fb=None, flip = False, f = None, orientation=[0,1,0]):
         from pyoptic import System as pyo
-        #we're only interested in real surfaces
-        surfs = self.surfaces[1:-1]
-        
+
         d = np.array(direction)
         pos = np.array(position)
+
+        plc = pyo.Placement(pos, d)
+        
+        return self.to_pyoptic(plc, fb, flip, f, orientation)
+    
+    def to_pyoptic(self, placement, fb=None, flip = False, f = None, orientation=[0,1,0]):
+        from pyoptic import System as pyo
+    
+        #we're only interested in real surfaces
+        surfs = self.surfaces[1:-1]
         
         l = sum([s.disz for s in surfs[:-1]])
         #print(l)
@@ -171,6 +180,8 @@ class ZMX(object):
         
         outSurfs = []
         
+        
+        
         if flip:
             z0 = -z0 - l
             i_s = range(len(surfs))
@@ -181,13 +192,14 @@ class ZMX(object):
                 if s.radius is None:
                     #planar
                     outSurfs.append(pyo.PlaneSurface('ZMX_%d' % i, 1, np.ones(3) * float(s.diam[0]),
-                                                           pyo.Placement((z0 - 0) * d + pos, d), glass))
+                                                           pyo.OffsetPlacement(placement, (z0 - 0)), glass))
                 elif s.type == 'TOROIDAL':
                     #cylindrical lens
                     outSurfs.append(pyo.CylindricalSurface('ZMX_%d' % i, 1, np.ones(3) * float(s.diam[0]),
-                                                         pyo.Placement((z0 - 0) * d + pos, d), glass, -s.radius, orientation))
+                                                         pyo.OffsetPlacement(placement, (z0 - 0)), glass, -s.radius, orientation))
                 else:
-                    outSurfs.append(pyo.SphericalSurface('ZMX_%d'%i, 1,np.ones(3)*float(s.diam[0]),pyo.Placement((z0 - 0)*d + pos,d),glass, -s.radius))
+                    outSurfs.append(pyo.SphericalSurface('ZMX_%d'%i, 1,np.ones(3)*float(s.diam[0]),
+                                                         pyo.OffsetPlacement(placement, (z0 - 0)),glass, -s.radius))
                 #print((z0, s.disz))
                 z0 += self.surfaces[i].disz         
         else:
@@ -195,12 +207,13 @@ class ZMX(object):
                 if s.radius is None:
                     #planar
                     outSurfs.append(pyo.PlaneSurface('ZMX_%d' % i, 1, np.ones(3) * float(s.diam[0]),
-                                                           pyo.Placement((z0 - 0) * d + pos, d), s.glass))
+                                                           pyo.OffsetPlacement(placement, (z0 - 0)), s.glass))
                 elif s.type == 'TOROIDAL':
                     outSurfs.append(pyo.CylindricalSurface('ZMX_%d' % i, 1, np.ones(3) * float(s.diam[0]),
-                                                         pyo.Placement((z0 - 0) * d + pos, d), s.glass, s.radius, orientation))
+                                                         pyo.OffsetPlacement(placement, (z0 - 0)), s.glass, s.radius, orientation))
                 else:
-                    outSurfs.append(pyo.SphericalSurface('ZMX_%d'%i, 1,np.ones(3)*float(s.diam[0]),pyo.Placement((z0 - 0)*d + pos,d),s.glass, s.radius))
+                    outSurfs.append(pyo.SphericalSurface('ZMX_%d'%i, 1,np.ones(3)*float(s.diam[0]),
+                                                         pyo.OffsetPlacement(placement, (z0 - 0)),s.glass, s.radius))
                 #print((z0, s.disz))
                 z0 += s.disz
                 
