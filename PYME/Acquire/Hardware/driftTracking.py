@@ -71,9 +71,13 @@ class correlator(Pyro.core.ObjBase):
         self.deltaZ = 0.2 #z increment used for calibration
         self.stackHalfSize = 35
         self.NCalibStates = 2*self.stackHalfSize + 1
+        self.calibState = 0
 
         self.tracking = False
         self.lockActive = False
+
+        self.lockFocus = False
+        self.logShifts = True
         
         self._last_target_z = -1
         #self.initialise()
@@ -179,7 +183,10 @@ class correlator(Pyro.core.ObjBase):
         return self.lockFocus
 
     def get_history(self, length=1000):
-        return self.history[-length:]
+        try:
+            return self.history[-length:]
+        except AttributeError:
+            return []
 
     def get_calibration_state(self):
         """ Returns the current calibration state as a tuple:

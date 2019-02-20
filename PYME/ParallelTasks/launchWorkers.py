@@ -115,7 +115,7 @@ def main():
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', '--local', dest='local', action='store_true',
+    parser.add_argument('-l', '--local', dest='local', action='store_true', default=False,
                         help='run in local only mode')
     parser.add_argument('-w', '--no-server', dest='run_server', action='store_false',default=True,
                         help='Only launch the workers (no server)')

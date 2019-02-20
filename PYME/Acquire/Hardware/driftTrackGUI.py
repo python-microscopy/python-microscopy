@@ -19,6 +19,9 @@ import PYME.IO.image as im
 
 import os
 
+import logging
+logger = logging.getLogger(__name__)
+
 #TODO: these don't belong here!
 def YesNo(parent, question, caption = 'Yes or no?'):
     dlg = wx.MessageDialog(parent, question, caption, wx.YES_NO | wx.ICON_QUESTION)
@@ -221,9 +224,9 @@ class DriftTrackingControl(wx.Panel):
         self.cbLock = wx.CheckBox(self, -1, 'Lock')
         self.cbLock.Bind(wx.EVT_CHECKBOX, self.OnCBLock)
         hsizer.Add(self.cbLock, 0, wx.ALL, 2)
-        self.bSaveHist = wx.Button(self, -1, 'Save Hist')
-        hsizer.Add(self.bSaveHist, 0, wx.ALL, 2) 
-        self.bSaveHist.Bind(wx.EVT_BUTTON, self.OnBSaveHist)        
+        #self.bSaveHist = wx.Button(self, -1, 'Save Hist')
+        #hsizer.Add(self.bSaveHist, 0, wx.ALL, 2)
+        #self.bSaveHist.Bind(wx.EVT_BUTTON, self.OnBSaveHist)
         self.cbLockActive = wx.CheckBox(self, -1, 'Lock Active')
         self.cbLockActive.Enable(False)
         hsizer.Add(self.cbLockActive, 0, wx.ALL, 2)        
@@ -233,9 +236,9 @@ class DriftTrackingControl(wx.Panel):
         self.bSetPostion = wx.Button(self, -1, 'Set focus to current')
         hsizer.Add(self.bSetPostion, 0, wx.ALL, 2) 
         self.bSetPostion.Bind(wx.EVT_BUTTON, self.OnBSetPostion)
-        self.bSaveCalib = wx.Button(self, -1, 'Save Cal')
-        hsizer.Add(self.bSaveCalib, 0, wx.ALL, 2) 
-        self.bSaveCalib.Bind(wx.EVT_BUTTON, self.OnBSaveCalib)
+        #self.bSaveCalib = wx.Button(self, -1, 'Save Cal')
+        #hsizer.Add(self.bSaveCalib, 0, wx.ALL, 2)
+        #self.bSaveCalib.Bind(wx.EVT_BUTTON, self.OnBSaveCalib)
         sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -253,36 +256,36 @@ class DriftTrackingControl(wx.Panel):
         self.bSetTolerance.Bind(wx.EVT_BUTTON, self.OnBSetTolerance)
         sizer_1.Add(hsizer,0, wx.EXPAND, 0)
 
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, "Z-factor:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.tZfactor = wx.TextCtrl(self, -1, '%3.1f'% self.dt.Zfactor, size=[30,-1])
-        hsizer.Add(self.tZfactor, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.bSetZfactor = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
-        hsizer.Add(self.bSetZfactor, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
-        self.bSetZfactor.Bind(wx.EVT_BUTTON, self.OnBSetZfactor)
-        self.bCalcZfactor = wx.Button(self, -1, 'Calculate Z-factor', style=wx.BU_EXACTFIT)
-        hsizer.Add(self.bCalcZfactor, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
-        self.bCalcZfactor.Bind(wx.EVT_BUTTON, self.OnBCalculateZfactor)
-        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        # hsizer.Add(wx.StaticText(self, -1, "Z-factor:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        # self.tZfactor = wx.TextCtrl(self, -1, '%3.1f'% self.dt.Zfactor, size=[30,-1])
+        # hsizer.Add(self.tZfactor, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        # self.bSetZfactor = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
+        # hsizer.Add(self.bSetZfactor, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        # self.bSetZfactor.Bind(wx.EVT_BUTTON, self.OnBSetZfactor)
+        # self.bCalcZfactor = wx.Button(self, -1, 'Calculate Z-factor', style=wx.BU_EXACTFIT)
+        # hsizer.Add(self.bCalcZfactor, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        # self.bCalcZfactor.Bind(wx.EVT_BUTTON, self.OnBCalculateZfactor)
+        # sizer_1.Add(hsizer,0, wx.EXPAND, 0)
         
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, "feedback delay [frames]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.tMinDelay = wx.TextCtrl(self, -1, '%d' % (self.dt.minDelay), size=[30,-1])
-        hsizer.Add(self.tMinDelay, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.bSetMinDelay = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
-        hsizer.Add(self.bSetMinDelay, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
-        self.bSetMinDelay.Bind(wx.EVT_BUTTON, self.OnBSetMinDelay)
-        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
-        
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, "Plot Interval [frames]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.tPlotInterval = wx.TextCtrl(self, -1, '%d' % (self.plotInterval), size=[30,-1])
-        hsizer.Add(self.tPlotInterval, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.bSetPlotInterval = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
-        hsizer.Add(self.bSetPlotInterval, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2) 
-        self.bSetPlotInterval.Bind(wx.EVT_BUTTON, self.OnBSetPlotInterval)
-        sizer_1.Add(hsizer,0, wx.EXPAND, 0)
-        
+        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        # hsizer.Add(wx.StaticText(self, -1, "feedback delay [frames]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        # self.tMinDelay = wx.TextCtrl(self, -1, '%d' % (self.dt.minDelay), size=[30,-1])
+        # hsizer.Add(self.tMinDelay, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        # self.bSetMinDelay = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
+        # hsizer.Add(self.bSetMinDelay, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        # self.bSetMinDelay.Bind(wx.EVT_BUTTON, self.OnBSetMinDelay)
+        # sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        #
+        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        # hsizer.Add(wx.StaticText(self, -1, "Plot Interval [frames]:"), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        # self.tPlotInterval = wx.TextCtrl(self, -1, '%d' % (self.plotInterval), size=[30,-1])
+        # hsizer.Add(self.tPlotInterval, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        # self.bSetPlotInterval = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
+        # hsizer.Add(self.bSetPlotInterval, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+        # self.bSetPlotInterval.Bind(wx.EVT_BUTTON, self.OnBSetPlotInterval)
+        # sizer_1.Add(hsizer,0, wx.EXPAND, 0)
+        #
         
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.stError = wx.StaticText(self, -1, 'Error:\n\n', size=[200,-1])
@@ -383,21 +386,27 @@ class DriftTrackingControl(wx.Panel):
             calibState, NStates = self.dt.get_calibration_state()
             self.gCalib.SetRange(NStates + 1)
             self.gCalib.SetValue(calibState)
-            t, dx, dy, dz, corr, corrmax,poffset,pos = self.dt.get_history(1)[-1]
-            self.stError.SetLabel(("Error: x = %s nm y = %s nm\n" +
-                                  "z = %s nm noffs = %s nm c/cm = %4.2f") %
-                                  ("{:>+3.2f}".format(dx), "{:>+3.2f}".format(dy),
-                                   "{:>+6.1f}".format(1e3*dz), "{:>+6.1f}".format(1e3*poffset),
-                                   corr/corrmax))
+
+            try:
+                t, dx, dy, dz, corr, corrmax,poffset,pos = self.dt.get_history(1)[-1]
+                self.stError.SetLabel(("Error: x = %s nm y = %s nm\n" +
+                                      "z = %s nm noffs = %s nm c/cm = %4.2f") %
+                                      ("{:>+3.2f}".format(dx), "{:>+3.2f}".format(dy),
+                                       "{:>+6.1f}".format(1e3*dz), "{:>+6.1f}".format(1e3*poffset),
+                                       corr/corrmax))
+
+            except IndexError:
+                pass
+
             self.cbLock.SetValue(self.dt.get_focus_lock())
             self.cbTrack.SetValue(self.dt.is_tracking())
             self.cbLockActive.SetValue(self.dt.lockActive)
             
-            if (len(self.dt.get_history(0)) % self.plotInterval == 0) and self.showPlots:
+            if (len(self.dt.get_history(0)) > 0) and (len(self.dt.get_history(0)) % self.plotInterval == 0) and self.showPlots:
                 self.trackPlot.draw()
         except AttributeError:
-            print "AttrErr"
+            logger.exception('error in refresh')
             pass
         except IndexError:
-            print "IndexErr"
+            logger.exception('error in refresh')
             pass
