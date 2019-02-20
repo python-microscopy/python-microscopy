@@ -180,10 +180,19 @@ class OptionsPanel(wx.Panel):
             self.cbShowThreshold.Bind(wx.EVT_CHECKBOX, self.OnShowThreshold)
             ssizer.Add(self.cbShowThreshold, 0, wx.ALL, 5)
 
+            
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
             self.bIsodataThresh = wx.Button(self, -1, 'Isodata')
             self.bIsodataThresh.Bind(wx.EVT_BUTTON, self.OnIsodataThresh)
             self.bIsodataThresh.Enable(False)
-            ssizer.Add(self.bIsodataThresh, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
+            hsizer.Add(self.bIsodataThresh, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+
+            self.bLIsodataThresh = wx.Button(self, -1, 'Isodata (logbins)')
+            self.bLIsodataThresh.Bind(wx.EVT_BUTTON, lambda e : self.OnIsodataThresh(e, bin_spacing='log'))
+            self.bLIsodataThresh.Enable(False)
+            hsizer.Add(self.bLIsodataThresh, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+            
+            ssizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 5)
 
 
             hsizer=wx.BoxSizer(wx.HORIZONTAL)
@@ -260,18 +269,21 @@ class OptionsPanel(wx.Panel):
             hClim.SetThresholdMode(tMode)
 
         self.bIsodataThresh.Enable(tMode)
+        self.bLIsodataThresh.Enable(tMode)
         self.tPercThresh.Enable(tMode)
         self.bPercThresh.Enable(tMode)
 
 
-    def OnIsodataThresh(self, event):
+    def OnIsodataThresh(self, event=None, bin_spacing='linear'):
         from PYME.Analysis import thresholding
         
         #FIXME: this injects something into do which is not usually there
         #FIXME: this has nothing to do with the display (and shouldn't be injected)
         self.do.ThreshMode = ['isodata',-1]
+        
+        
         for i, hClim in enumerate(self.hcs):
-            t = thresholding.isodata_f(self.do.ds[:,:,:,i])
+            t = thresholding.isodata_f(self.do.ds[:,:,:,i], bin_spacing=bin_spacing)
             hClim.SetValueAndFire((t,t))
 
     def OnSignalFracThresh(self, event):

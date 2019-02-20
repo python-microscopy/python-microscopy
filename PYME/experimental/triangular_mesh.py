@@ -22,6 +22,9 @@ class TriangularMesh(object):
 
         # Call from_np_stl on the file stream
         return cls.from_np_stl(triangles_stl)
+    
+    def __copy__(self):
+        return type(self)(np.copy(self.vertices), np.copy(self.faces))
 
     @classmethod
     def from_np_stl(cls, triangles_stl):

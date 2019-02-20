@@ -22,8 +22,9 @@
 ##################
 
 import numpy
+import warnings
 
-def isodata_f(img, nbins=255):
+def isodata_f(img, nbins=255, bin_spacing='linear', tol=1e-5):
     """calculate isodata threshold - does iterations on histogrammed data rather than
     raw data to improve speed
     
@@ -31,28 +32,51 @@ def isodata_f(img, nbins=255):
     nbins - the number of bins used for the histogram
     """
 
-    N, bins = numpy.histogram(img, nbins)
+    im_mean = img.mean()
+    if bin_spacing=='log':
+        bins = numpy.logspace(numpy.log10(img.min()+im_mean), numpy.log10(img.max()+im_mean), nbins) - im_mean
+    elif (bin_spacing == 'adaptive'):
+        imr = img.ravel()
+        imr = imr[imr>0]
+        imr.sort()
+        bins = imr[::(len(imr)/nbins)]
+        #print bins
+        nbins = len(bins)
+    else:
+        im_max = img.max()
+        
+        if im_max > 50*im_mean:
+            warnings.warn(RuntimeWarning('''Maximum value in image > 50*mean.
+            All data will be concentrated in the lowest few bins and thresholding will be unreliable.
+            Try running with bin_spacing='log' or bin_spacing='adaptive' '''))
+        
+        bins = numpy.linspace(img.min(), img.max(), nbins)
+
+    N, bins = numpy.histogram(img, bins)
+    
+        
     
 #    #calculate bin centres
-#    bin_mids = 0.5*(bins[:-1] + bins[1:])
+    bin_mids = 0.5*(bins[:-1] + bins[1:])
     
     #precalculate bin weightings
-    bw = N*numpy.arange(len(N))
+    bw = N*bin_mids#numpy.arange(len(N))
 
     #start off with the largest possible delta
-    delta = nbins
+    delta = bin_mids[-1] #nbins
 
     #start off with threshold at middle of range
-    t = delta/2
+    t = bin_mids[nbins/2] #delta/2.
 
-    while delta > 0:
+    while delta > tol:
         #new threshold = mean of the two segment means
-        tn = (bw[:t].sum()/N[:t].sum() + bw[t:].sum()/N[t:].sum())/2
+        t_i = numpy.searchsorted(bin_mids, t)
+        tn = (bw[:t_i].sum()/N[:t_i].sum() + bw[t_i:].sum()/N[t_i:].sum())/2
 
         delta = abs(tn - t)
         t = tn
 
-    return bins[t]
+    return t#bins[t]
 
 
 def isodata(img, tol = 1e-3):

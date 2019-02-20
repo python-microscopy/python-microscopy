@@ -462,8 +462,8 @@ def _crop_to_shape(p, output_shape):
     else:
         sx = output_shape[0]
         sy = output_shape[1]
-        ox = np.ceil((p.shape[0] - sx) / 2.0)
-        oy = np.ceil((p.shape[1] - sy) / 2.0)
+        ox = int(np.ceil((p.shape[0] - sx) / 2.0))
+        oy = int(np.ceil((p.shape[1] - sy) / 2.0))
         ex = ox + sx
         ey = oy + sy
         

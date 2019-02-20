@@ -90,7 +90,7 @@ class TriangleRenderLayer(EngineLayer):
         # define responses to changes in various traits
         self.on_trait_change(self._update, 'vertexColour')
         self.on_trait_change(lambda: self.on_update.send(self), 'visible')
-        self.on_trait_change(self.update, 'cmap, clim, alpha, datasource, normal_mode')
+        self.on_trait_change(self.update, 'cmap, clim, alpha, dsname, normal_mode')
         self.on_trait_change(self._set_method, 'method')
 
         # update any of our traits which were passed as command line arguments
