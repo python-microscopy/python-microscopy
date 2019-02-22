@@ -1341,7 +1341,6 @@ class BinaryErosion(Filter):
 
 @register_module('BinaryFillHoles')         
 class BinaryFillHoles(Filter):
-    # iterations = Int(1)
     radius = Float(1)
     
     def applyFilter(self, data, chanNum, frNum, im):
@@ -1355,7 +1354,6 @@ class BinaryFillHoles(Filter):
         
 @register_module('GreyDilation')      
 class GreyDilation(Filter):
-    # iterations = Int(1)
     radius = Float(1)
     
     def applyFilter(self, data, chanNum, frNum, im):
@@ -1369,7 +1367,6 @@ class GreyDilation(Filter):
 
 @register_module('GreyErosion')         
 class GreyErosion(Filter):
-    # iterations = Int(1)
     radius = Float(1)
     
     def applyFilter(self, data, chanNum, frNum, im):
