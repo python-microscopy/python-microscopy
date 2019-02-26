@@ -223,6 +223,52 @@ class ProcessColour(ModuleBase):
                     
         namespace[self.output] = output
 
+
+@register_module('TimeBlocks')
+class TimeBlocks(ModuleBase):
+    """
+
+    Divides series into alternating time blocks to generate 2 fake colour channels for Fourier Ring / Fourier shell correlation.
+     
+    This is probably a better approach than taking random subsets as the later will tend to generate unrealistically high
+    correlation values for repeated localizations.
+    
+    Adapted from Christian Soeller's 'splitRender' implementation.
+    """
+    input = Input('localizations')
+    output = Output('time_blocks')
+    
+    block_size = Int(100)
+    
+    def execute(self, namespace):
+        input = namespace[self.input]
+        mdh = input.mdh
+    
+        output = tabular.mappingFilter(input)
+        output.mdh = mdh
+        
+        output.addColumn('block_id', np.mod((output['t']/self.block_size).astype('int'),2))
+
+        channel_names = [k for k in input.keys() if k.startswith('p_')]
+        
+        if len(channel_names) == 0:
+            #single channel data - no channels defined.
+            output.setMapping('ColourNorm', '1.0 + 0*t')
+            output.setMapping('p_block0', '1.0*block_id')
+            output.setMapping('p_block1', '1.0 - block_id')
+        else:
+            #have colour channels - subdivide them
+            for k in channel_names:
+                output.setMapping('%s_block0' % k, '%k*block_id')
+                output.setMapping('%s_block1' % k, '%k*(1.0 - block_id)')
+            
+            #hide original channel names
+            output.hidden_columns.extend(channel_names)
+        
+
+        namespace[self.output] = output
+    
+
 @register_module('MergeClumps')
 class MergeClumps(ModuleBase):
     """Create a new mapping object which derives mapped keys from original ones"""
