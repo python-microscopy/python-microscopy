@@ -52,6 +52,28 @@ class FractionalThreshold(Filter):
 
     def completeMetadata(self, im):
         im.mdh['Processing.FractionalThreshold'] = self.fractionThreshold
+        
+@register_module('Threshold')
+class Threshold(Filter):
+    """ catch all class for automatic thresholding
+    
+    """
+    
+    method = Enum(['isodata', 'otsu'])
+    n_histogram_bins = Int(255)
+    bin_spacing = Enum(['linear', 'log', 'adaptive'])
+    
+    def applyFilter(self, data, chanNum, frNum, im):
+        from PYME.Analysis import thresholding
+        
+        if self.method == 'isodata':
+            threshold = thresholding.isodata_f(data, nbins=self.n_histogram_bins, bin_spacing=self.bin_spacing)
+        elif self.method =='otsu':
+            threshold = thresholding.otsu(data, nbins=self.n_histogram_bins, bin_spacing=self.bin_spacing)
+
+        mask = data > threshold
+        return mask
+    
  
 @register_module('Label')        
 class Label(Filter):

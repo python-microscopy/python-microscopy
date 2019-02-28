@@ -22,7 +22,31 @@
 ##################
 
 import numpy
+import numpy as np
 import warnings
+
+def _histogram(img, nbins=255, bin_spacing='linear'):
+    im_mean = img.mean()
+    if bin_spacing == 'log':
+        bins = np.logspace(np.log10(img.min() + im_mean), np.log10(img.max() + im_mean), nbins) - im_mean
+    elif (bin_spacing == 'adaptive'):
+        imr = img.ravel()
+        imr = imr[imr > 0]
+        imr.sort()
+        bins = imr[::(len(imr) / nbins)]
+        #print bins
+        #nbins = len(bins)
+    else:
+        im_max = img.max()
+        
+        if im_max > 50 * im_mean:
+            warnings.warn(RuntimeWarning('''Maximum value in image > 50*mean.
+                All data will be concentrated in the lowest few bins and thresholding will be unreliable.
+                Try running with bin_spacing='log' or bin_spacing='adaptive' '''))
+        
+        bins = np.linspace(img.min(), img.max(), nbins)
+    
+    return np.histogram(img, bins)
 
 def isodata_f(img, nbins=255, bin_spacing='linear', tol=1e-5):
     """calculate isodata threshold - does iterations on histogrammed data rather than
@@ -32,29 +56,8 @@ def isodata_f(img, nbins=255, bin_spacing='linear', tol=1e-5):
     nbins - the number of bins used for the histogram
     """
 
-    im_mean = img.mean()
-    if bin_spacing=='log':
-        bins = numpy.logspace(numpy.log10(img.min()+im_mean), numpy.log10(img.max()+im_mean), nbins) - im_mean
-    elif (bin_spacing == 'adaptive'):
-        imr = img.ravel()
-        imr = imr[imr>0]
-        imr.sort()
-        bins = imr[::(len(imr)/nbins)]
-        #print bins
-        nbins = len(bins)
-    else:
-        im_max = img.max()
-        
-        if im_max > 50*im_mean:
-            warnings.warn(RuntimeWarning('''Maximum value in image > 50*mean.
-            All data will be concentrated in the lowest few bins and thresholding will be unreliable.
-            Try running with bin_spacing='log' or bin_spacing='adaptive' '''))
-        
-        bins = numpy.linspace(img.min(), img.max(), nbins)
-
-    N, bins = numpy.histogram(img, bins)
-    
-        
+    N, bins = _histogram(img, nbins, bin_spacing)
+    nbins = len(bins)
     
 #    #calculate bin centres
     bin_mids = 0.5*(bins[:-1] + bins[1:])
@@ -101,6 +104,73 @@ def isodata(img, tol = 1e-3):
         tn = t
 
     return t
+
+def otsu(image, nbins=256, bin_spacing = 'linear'):
+    """Return threshold value based on Otsu's method.
+    
+    Adapted from the skimage implmentation to allow non-linear bins
+    
+    Parameters
+    ----------
+    image : (N, M) ndarray
+        Grayscale input image.
+    nbins : int, optional
+        Number of bins used to calculate histogram. This value is ignored for
+        integer arrays.
+    Returns
+    -------
+    threshold : float
+        Upper threshold value. All pixels with an intensity higher than
+        this value are assumed to be foreground.
+    Raises
+    ------
+    ValueError
+         If `image` only contains a single grayscale value.
+    References
+    ----------
+    .. [1] Wikipedia, https://en.wikipedia.org/wiki/Otsu's_Method
+    Examples
+    --------
+    >>> from skimage.data import camera
+    >>> image = camera()
+    >>> thresh = threshold_otsu(image)
+    >>> binary = image <= thresh
+    Notes
+    -----
+    The input image must be grayscale.
+    """
+    if len(image.shape) > 2 and image.shape[-1] in (3, 4):
+        msg = "threshold_otsu is expected to work correctly only for " \
+              "grayscale images; image shape {0} looks like an RGB image"
+        warnings.warn(RuntimeWarning(msg.format(image.shape)))
+
+    # Check if the image is multi-colored or not
+    if image.min() == image.max():
+        raise ValueError("threshold_otsu is expected to work with images "
+                         "having more than one color. The input image seems "
+                         "to have just one color {0}.".format(image.min()))
+
+    hist, bins = _histogram(image.ravel(), nbins, bin_spacing)
+    # calculate bin centres
+    bin_centers = 0.5 * (bins[:-1] + bins[1:])
+    
+    hist = hist.astype(float)
+
+    # class probabilities for all possible thresholds
+    weight1 = np.cumsum(hist)
+    weight2 = np.cumsum(hist[::-1])[::-1]
+    # class means for all possible thresholds
+    mean1 = np.cumsum(hist * bin_centers) / weight1
+    mean2 = (np.cumsum((hist * bin_centers)[::-1]) / weight2[::-1])[::-1]
+
+    # Clip ends to align class 1 and class 2 variables:
+    # The last value of `weight1`/`mean1` should pair with zero values in
+    # `weight2`/`mean2`, which do not exist.
+    variance12 = weight1[:-1] * weight2[1:] * (mean1[:-1] - mean2[1:]) ** 2
+
+    idx = np.argmax(variance12)
+    threshold = bin_centers[:-1][idx]
+    return threshold
 
 def signalFraction(img, frac, nbins = 5000):
     """ threshold to include a certain fraction of the total signal"""
