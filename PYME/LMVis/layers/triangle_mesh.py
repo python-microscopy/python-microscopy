@@ -287,7 +287,7 @@ class TriangleRenderLayer(EngineLayer):
         from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor
         from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
 
-        return View([Group([Item('datasource', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
+        return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
                      Item('method'),
                      Item('normal_mode', visible_when='method=="shaded"'),
                      #Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
