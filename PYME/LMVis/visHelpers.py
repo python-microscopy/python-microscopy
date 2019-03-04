@@ -25,6 +25,7 @@
 from __future__ import print_function
 import scipy
 import numpy
+import numpy as np
 import numpy.ctypeslib
 
 from PYME.Analysis.points.SoftRend import RenderTetrahedra
@@ -46,85 +47,9 @@ try:
 except:
     multiProc = False
 
-#def as_mp_shared(x):
-#    a = multiprocessing.sharedctypes.RawArray('d', x.size)
-#    a2 = numpy.ctypeslib.as_array(a)
-#    a2[:] = x[:]
-#    return a
-
-
-#if sys.platform == 'win32':
-#    multiProc = False
-
-
-
 
 class dummy:
     pass
-
-#from PYME.IO.image import ImageStack
-#def GeneratedImage(img, imgBounds, pixelSize, sliceSize, channelNames):
-#    image = ImageStack(img)
-#    image.pixelSize = pixelSize
-#    image.sliceSize = sliceSize
-#    image.imgBounds = imgBounds
-#    image.names = channelNames
-#
-#    return image
-
-#class GeneratedImage(object):
-#    def __init__(self, img, imgBounds, pixelSize, sliceSize=0):
-#        self.img = img
-#        self.imgBounds = imgBounds
-#
-#        self.pixelSize = pixelSize
-#        self.sliceSize = sliceSize
-#
-#    def save(self, filename):
-#        if len(self.img.shape) == 2:
-#            self.save2D(filename)
-#        else:
-#            self.save3D(filename)
-#
-#    def save2D(self, filename):
-#        import Image
-#        #save using PIL - because we're using float pretty much only tif will work
-#        im = Image.fromarray(self.img.astype('f'), 'F')
-#
-#        im.tag = dummy()
-#        #set up resolution data - unfortunately in cm as TIFF standard only supports cm and inches
-#        #res_ = int(1e-2/(self.pixelSize*1e-9))
-#        #use ImageJ scale definitions
-#        res_ = int(1.e6/(self.pixelSize))
-#        im.tag.tagdata={296:(1,), 282:(res_,1000000), 283:(res_,1000000), 270:'unit=nm\nspacing=%3.1d\n'%self.pixelSize}
-#
-#        im.save(filename)
-#
-#    def save3D(self, filename):
-##        import Image
-##        command = ["tiffcp"]
-##        # add options here, if any (e.g. for compression)
-##
-##        #im = im.astype('uint16')
-##        #im = im.astype('>u2').astype('<u2')
-##
-##        for i in range(self.img.shape[2]):
-##            framefile = "/tmp/frame%d.tif" % i
-##
-##            im = Image.fromarray(self.img[:,:,i].astype('f'), 'F')
-##            im.save(framefile)
-##            command.append(framefile)
-##
-##        command.append(filename)
-##        subprocess.call(command)
-##
-##        # remove frame files here
-##        subprocess.call('rm /tmp/frame*.tif', shell=True)
-#
-#        #from PYME.IO.FileUtils import saveTiffStack
-#
-#        saveTiffStack.saveTiffMultipage(self.img, filename)
-
         
 
 def genEdgeDB(T):
@@ -150,42 +75,10 @@ def genEdgeDB(T):
 mpT = {}
 
 def calcNeighbourDistPart(di, x, y, edb, nStart, nEnd):
-    #global T
-    #global edb
-   
-    #di = shmarray.zeros(nEnd - nStart)
-
     for i in range(nStart, nEnd):
-        #incidentEdges = T.edge_db[edb[i][0]]
-        #neighbourPoints = edb[i][1]
-        #neighbours = edb.getVertexNeighbours(i)
+
         dist = edb.getVertexEdgeLengths(i)
 
-        #print edb.edgeArray[i, 0]
-        #print neighbours
-
-        #incidentEdges = T.edge_db[edb[neighbourPoints[0]][0]]
-        #for j in range(1, len(neighbourPoints)):
-        #    incidentEdges = scipy.vstack((incidentEdges, T.edge_db[edb[neighbourPoints[j]][0]]))
-        #dx = scipy.diff(T.x[incidentEdges])
-        #dy = scipy.diff(T.y[incidentEdges])
-
-        #dx = x[neighbours] - x[i]
-        #dy = y[neighbours] - y[i]
-
-        #print dx
-
-
-#        xv = T.x[incidentEdges]
-#        dx = xv[:,1] - xv[:,0]
-#        yv = T.y[incidentEdges]
-#        dy = yv[:,1] - yv[:,0]
-
-        #dist = (dx**2 + dy**2)
-
-        #dist = scipy.sqrt(dist)
-
-        #di[i] = scipy.mean(scipy.sqrt(dist))
         di[i] = scipy.mean(dist)
 
     #return di
@@ -224,17 +117,9 @@ def calcNeighbourDistPart(di, x, y, edb, nStart, nEnd):
 #else:
 def calcNeighbourDists(T):
     from PYME.Analysis.points import EdgeDB
-    #edb = genEdgeDB(T)
 
     edb = EdgeDB.EdgeDB(T)
-
-    #N = len(T.x)
-    #di = numpy.zeros(N)
-
-    #calcNeighbourDistPart(di, T.x, T.y, edb, 0, N)
-
     return edb.getNeighbourDists()
-
 
 
 
@@ -378,23 +263,6 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None):
         print('Some thing is wrong - we should already have allocated memory')
         im = numpy.zeros((sizeX, sizeY))
 
-#    for i in range(xs.shape[0]):
-#        xi = xs[i, :]
-#        yi = ys[i, :]
-#
-#        #if (xi > 0).all() and (xi< (sizeX - 1)).all() and (yi > 0).all() and (yi< (sizeY-1)).all():
-#        drawTriang(im, xi[0], yi[0], xi[1], yi[1], xi[2], yi[2], c[i])
-
-#    import threading
-#    N = xs.shape[0]
-#    t1 = threading.Thread(target=drawTriangles, args = (im, xs[:(N/2),:], ys[:(N/2),:], c[:(N/2)]))
-#    t2 = threading.Thread(target=drawTriangles, args = (im, xs[(N/2):,:], ys[(N/2):,:], c[(N/2):]))
-#
-#    t1.start()
-#    t2.start()
-#
-#    t1.join()
-#    t2.join()
     drawTriangles(im, xs, ys, c)
 
     return im
@@ -443,41 +311,19 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
         im = numpy.zeros((sizeX, sizeY))
         im1 = numpy.zeros_like(im)
 
-#    for i in range(xs.shape[0]):
-#        xi = xs[i, :]
-#        yi = ys[i, :]
-#
-#        #if (xi > 0).all() and (xi< (sizeX - 1)).all() and (yi > 0).all() and (yi< (sizeY-1)).all():
-#        drawTriang(im, xi[0], yi[0], xi[1], yi[1], xi[2], yi[2], c[i])
-
-#    import threading
-#    N = xs.shape[0]
-#    t1 = threading.Thread(target=drawTriangles, args = (im, xs[:(N/2),:], ys[:(N/2),:], c[:(N/2)]))
-#    t2 = threading.Thread(target=drawTriangles, args = (im, xs[(N/2):,:], ys[(N/2):,:], c[(N/2):]))
-#
-#    t1.start()
-#    t2.start()
-#
-#    t1.join()
-#    t2.join()
     drawTriangles(im, xs, ys, c*c*c)
     drawTriangles(im1, xs, ys, c*c*c*c)
 
     return im, im1
 
-jParms = {}
 
-def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
+def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, seed=None):
     from matplotlib import tri
+    np.random.seed(seed)
+    
     for i in range(n):
-        #global jParms
-        #locals().update(jParms)
-        scipy.random.seed()
-
         Imc = scipy.rand(len(x)) < mcp
         
-        #print x[0], y[0]
-        #print len(jsig), type(jsig)
         if isinstance(jsig, numpy.ndarray):
             print((jsig.shape, Imc.shape))
             jsig2 = jsig[Imc]
@@ -485,39 +331,42 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
             jsig2 - float(jsig)
         T = tri.Triangulation(x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum()))
 
-        #return T
         rendTri(T, imageBounds, pixelSize, im=im)
         
-        im [:20, 0] += scipy.rand(20)
+        im [:20, 0] += scipy.rand(20) #Create signature for ImageID - TODO - this might mess with histogram
+        
+    #reseed the random number generator so that anything subsequent does not become deterministic (if we specified seeds)
+    np.random.seed(None)
 
 
 
-
-#if multiProc:
-def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
-    #import threading
+def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None):
+    sizeX = int((imageBounds.x1 - imageBounds.x0) / pixelSize)
+    sizeY = int((imageBounds.y1 - imageBounds.y0) / pixelSize)
+    
     if multiProc and not multiprocessing.current_process().daemon:
-        sizeX = int((imageBounds.x1 - imageBounds.x0)/pixelSize)
-        sizeY = int((imageBounds.y1 - imageBounds.y0)/pixelSize)
-
         im = shmarray.zeros((sizeX, sizeY))
-        #print im.min(), im.max()
 
         x = shmarray.create_copy(x)
         y = shmarray.create_copy(y)
         if type(jsig) == numpy.ndarray:
             jsig = shmarray.create_copy(jsig)
 
-        #pool = multiprocessing.Pool()
-
-        #Ts = pool.map(gJitTriang, range(n))
-
         nCPUs = multiprocessing.cpu_count()
 
+        # generate tasks for each CPU. The tasks array contains the number of iterations that that CPU should perform
         tasks = (n/nCPUs)*numpy.ones(nCPUs, 'i')
         tasks[:(n%nCPUs)] += 1
 
-        processes = [multiprocessing.Process(target = rendJitTri, args=(im, x, y, jsig, mcp, imageBounds, pixelSize, nIt)) for nIt in tasks]
+        # this makes following seed generation deterministic (i.e. we only need to save one seed, not an array of seeds)
+        # NOTE: this will only be repeatable for the same number of CPUs (although I guess this could be spoofed if needed)
+        np.random.seed(seed)
+        # generate an array of seeds the same size as the tasks
+        seeds = np.random.randint(0, np.iinfo(np.uint32).max, len(tasks))
+        # return us to randomness
+        np.random.seed(None)
+
+        processes = [multiprocessing.Process(target = rendJitTri, args=(im, x, y, jsig, mcp, imageBounds, pixelSize, nIt, s)) for nIt, s in zip(tasks, seeds)]
 
         for p in processes:
             p.start()
@@ -525,24 +374,10 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize):
         for p in processes:
             p.join()
 
-        #print im.min(), im.max()
         return im/n
     else:
-        from matplotlib import tri
-
-        sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
-        sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
-
         im = numpy.zeros((sizeX, sizeY))
-
-        for i in range(n):
-            Imc = scipy.rand(len(x)) < mcp
-            if type(jsig) == numpy.ndarray:
-                #print jsig.shape, Imc.shape
-                jsig = jsig[Imc]
-            T = tri.Triangulation(x[Imc] +  jsig*scipy.randn(Imc.sum()), y[Imc] +  jsig*scipy.randn(Imc.sum()))
-            rendTri(T, imageBounds, pixelSize, im=im)
-
+        rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n, seed=seed)
         return im/n
 
 ###########
