@@ -1,6 +1,6 @@
 # name and version (required)
 name: python-microscopy
-version: 19.03.
+version: 19.03.05
 
 # channels to pull packages from
 channels: &id1
@@ -23,7 +23,8 @@ specs:
 exclude:
   #- openssl                           [unix]
   - readline                          [unix]
-  - tk                                [unix]
+  - tk                                
+  - pyqt
   #- python
 
 # explicitly listed packages
