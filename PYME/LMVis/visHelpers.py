@@ -319,6 +319,20 @@ def _rend_jit_tri_geometric(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, se
     
     #reseed the random number generator so that anything subsequent does not become deterministic (if we specified seeds)
     np.random.seed(None)
+    
+def _generate_subprocess_seeds(n_procs = 1, mdh=None, seed=None):
+    # this makes following seed generation deterministic (i.e. we only need to save one seed, not an array of seeds)
+    # NOTE: this will only be repeatable for the same number of CPUs (although I guess this could be spoofed if needed)
+    np.random.seed(seed)
+    # generate an array of seeds the same size as the tasks
+    seeds = np.random.randint(0, np.iinfo(np.uint32).max, n_procs)
+    if not mdh is None:
+        mdh['Rendering.RandomSeeds'] = [int(s) for s in seeds]
+    # return us to randomness
+    np.random.seed(None)
+    
+    return seeds
+    
 
 def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None, geometric_mean=True, mdh=None):
     sizeX = int((imageBounds.x1 - imageBounds.x0) / pixelSize)
@@ -343,15 +357,7 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None, geometric_
         tasks = (n/nCPUs)*numpy.ones(nCPUs, 'i')
         tasks[:(n%nCPUs)] += 1
 
-        # this makes following seed generation deterministic (i.e. we only need to save one seed, not an array of seeds)
-        # NOTE: this will only be repeatable for the same number of CPUs (although I guess this could be spoofed if needed)
-        np.random.seed(seed)
-        # generate an array of seeds the same size as the tasks
-        seeds = np.random.randint(0, np.iinfo(np.uint32).max, len(tasks))
-        if not mdh is None:
-            mdh['Rendering.RandomSeeds'] = [int(s) for s in seeds]
-        # return us to randomness
-        np.random.seed(None)
+        seeds = _generate_subprocess_seeds(len(tasks), mdh, seed)
 
         processes = [multiprocessing.Process(target = fcn, args=(im, x, y, jsig, mcp, imageBounds, pixelSize, nIt, s)) for nIt, s in zip(tasks, seeds)]
 
@@ -363,13 +369,9 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None, geometric_
 
     else:
         im = numpy.zeros((sizeX, sizeY))
+
+        seeds = _generate_subprocess_seeds(1, mdh, seed)
         
-        np.random.seed(seed)
-        seeds = np.random.randint(0, np.iinfo(np.uint32).max, 1)
-        np.random.seed(None)
-        
-        if not mdh is None:
-            mdh['Rendering.RandomSeeds'] = [int(s) for s in seeds]
         fcn(im, x, y, jsig, mcp, imageBounds, pixelSize, n, seed=seeds[0])
     
     
