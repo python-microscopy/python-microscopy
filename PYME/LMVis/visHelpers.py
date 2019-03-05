@@ -390,9 +390,9 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seeds=None, geometric
         # passed explicitly. Rendering with explicitly passed seeds will be deterministic, but performance will not be
         # optimal unless n_seeds = n_CPUs
         seeds = _generate_subprocess_seeds(multiprocessing.cpu_count(), mdh, seeds)
-        tasks = _iterations_per_task(n, len(seeds))
+        iterations = _iterations_per_task(n, len(seeds))
 
-        processes = [multiprocessing.Process(target = fcn, args=(im, x, y, jsig, mcp, imageBounds, pixelSize, nIt, s)) for nIt, s in zip(tasks, seeds)]
+        processes = [multiprocessing.Process(target = fcn, args=(im, x, y, jsig, mcp, imageBounds, pixelSize, nIt, s)) for nIt, s in zip(iterations, seeds)]
 
         for p in processes:
             p.start()
@@ -406,9 +406,9 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seeds=None, geometric
         # Technically we could just call fcn( ....,n), but we replicate the logic above and divide into groups of tasks
         # so that we can reproduce a previously generated image
         seeds = _generate_subprocess_seeds(1, mdh, seeds)
-        tasks = _iterations_per_task(n, len(seeds))
+        iterations = _iterations_per_task(n, len(seeds))
         
-        for nIt, s in zip(tasks, seeds):
+        for nIt, s in zip(iterations, seeds):
             # NB - in normal usage, this loop only evaluates once, with nIt=n
             fcn(im, x, y, jsig, mcp, imageBounds, pixelSize, nIt, seed=s)
     
