@@ -406,7 +406,7 @@ class TriangleRenderer(ColourRenderer):
             status = statusLog.StatusLogger("Rendering triangles ...")
             return visHelpers.rendJitTriang(self.colourFilter['x'],self.colourFilter['y'],
                                             settings['numSamples'], jitVals, settings['MCProbability'],imb, pixelSize,
-                                            geometric_mean=settings.get('geometricMean', False))
+                                            geometric_mean=settings.get('geometricMean', False), mdh=mdh)
         else:
             return self.visFr.glCanvas.genJitTim(settings['numSamples'],self.colourFilter['x'],
                                                  self.colourFilter['y'], jitVals,

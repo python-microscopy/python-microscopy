@@ -320,7 +320,7 @@ def _rend_jit_tri_geometric(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, se
     #reseed the random number generator so that anything subsequent does not become deterministic (if we specified seeds)
     np.random.seed(None)
 
-def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None, geometric_mean=True):
+def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None, geometric_mean=True, mdh=None):
     sizeX = int((imageBounds.x1 - imageBounds.x0) / pixelSize)
     sizeY = int((imageBounds.y1 - imageBounds.y0) / pixelSize)
     
@@ -348,6 +348,8 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None, geometric_
         np.random.seed(seed)
         # generate an array of seeds the same size as the tasks
         seeds = np.random.randint(0, np.iinfo(np.uint32).max, len(tasks))
+        if not mdh is None:
+            mdh['Rendering.RandomSeeds'] = [int(s) for s in seeds]
         # return us to randomness
         np.random.seed(None)
 
@@ -361,7 +363,14 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None, geometric_
 
     else:
         im = numpy.zeros((sizeX, sizeY))
-        fcn(im, x, y, jsig, mcp, imageBounds, pixelSize, n, seed=seed)
+        
+        np.random.seed(seed)
+        seeds = np.random.randint(0, np.iinfo(np.uint32).max, 1)
+        np.random.seed(None)
+        
+        if not mdh is None:
+            mdh['Rendering.RandomSeeds'] = [int(s) for s in seeds]
+        fcn(im, x, y, jsig, mcp, imageBounds, pixelSize, n, seed=seeds[0])
     
     
     if geometric_mean:

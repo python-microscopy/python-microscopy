@@ -23,7 +23,7 @@ specs:
 exclude:
   #- openssl                           [unix]
   - readline                          [unix]
-  - tk                                
+  - tk
   - pyqt
   #- python
 

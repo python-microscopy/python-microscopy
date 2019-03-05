@@ -122,8 +122,8 @@ class DataSource(BaseDataSource):
         
         res =  self.bff.read(c, z, t, rescale=False).squeeze()
         if res.ndim == 3:
-            print res.shape
-            print self.chanNum
+            print(res.shape)
+            print(self.chanNum)
             res = res[:,:,self.chanNum]
             #res = res[0,self.chanNum, :,:].squeeze()
         #print res.shape
