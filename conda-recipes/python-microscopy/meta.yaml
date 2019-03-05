@@ -211,7 +211,7 @@ requirements:
   # recipe
 
 about:
-  home: https://code.google.com/p/python-microscopy
+  home: http://www.python-microscopy.org
   license: GPL
   summary: super-resolution microscopy and image processing tools
 
