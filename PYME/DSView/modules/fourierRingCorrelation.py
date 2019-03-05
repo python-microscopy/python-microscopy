@@ -165,31 +165,6 @@ class RingCorrelator:
         plt.show()
         
         
-        
-#        im = ImageStack(plots, titleStub='Radial Distribution')
-#        im.xvals = bins[:-1]
-#
-#
-#        im.xlabel = 'Distance [nm]'
-#
-#        im.ylabel = 'Fraction'
-#        im.defaultExt = '.txt'
-#
-#        im.mdh['voxelsize.x'] = (bins[1] - bins[0])*1e-3
-#        im.mdh['ChannelNames'] = pnames
-#        im.mdh['Profile.XValues'] = im.xvals
-#        im.mdh['Profile.XLabel'] = im.xlabel
-#        im.mdh['Profile.YLabel'] = im.ylabel
-#        
-#        im.mdh['Colocalisation.Channels'] = names
-#        im.mdh['Colocalisation.Thresholds'] = [tA, tB]
-#        im.mdh['Colocalisation.Pearson'] = pearson
-#        im.mdh['Colocalisation.Manders'] = [MA, MB]
-#
-#        im.mdh['OriginalImage'] = self.image.filename
-#
-#        ViewIm3D(im, mode='graph')
-
 
 
 def Plug(dsviewer):

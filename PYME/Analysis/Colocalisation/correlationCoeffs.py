@@ -60,3 +60,27 @@ def maskFractions(A, B, tA, tB):
     FB = (B > tB).mean()
 
     return FA, FB
+
+def mutual_information(X, Y, roi_mask=None, nbins=256, bits=False):
+    if not roi_mask is None:
+        X = X[roi_mask]
+        Y = Y[roi_mask]
+
+    h = np.histogram2d(X.ravel(), Y.ravel(), bins=nbins)[0]
+    
+    pxy = h/float(h.sum())
+    
+    px = pxy.sum(axis=1)
+    py = pxy.sum(axis=0)
+    
+    px_py = px[:,None]*py[None,:]
+    
+    # pxy == 0 doesn't contribute to the sum, avoid problems with log by masking these out
+    m = pxy > 0
+    
+    if bits:
+        # return as 'bits' of entropy (i.e. calculate log base 2)
+        return np.sum(pxy[m] * np.log2(pxy[m] / px_py[m]))
+    else:
+        return np.sum(pxy[m]*np.log(pxy[m]/px_py[m]))
+    
