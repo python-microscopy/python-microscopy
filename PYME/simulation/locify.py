@@ -32,7 +32,7 @@ def locify(im, pixelSize=1, pointsPerPixel=0.1):
 
     #generate a number of candidate points based on uniform labelling
     #which will be accepted/rejected later
-    numPoints = xmax*ymax*zmax*pointsPerPixel
+    numPoints = int(xmax*ymax*zmax*pointsPerPixel)
 
     x = xmax*rand(numPoints) - .5
     y = ymax*rand(numPoints) - .5
