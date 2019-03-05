@@ -320,21 +320,56 @@ def _rend_jit_tri_geometric(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, se
     #reseed the random number generator so that anything subsequent does not become deterministic (if we specified seeds)
     np.random.seed(None)
     
-def _generate_subprocess_seeds(n_procs = 1, mdh=None, seed=None):
-    # this makes following seed generation deterministic (i.e. we only need to save one seed, not an array of seeds)
-    # NOTE: this will only be repeatable for the same number of CPUs (although I guess this could be spoofed if needed)
-    np.random.seed(seed)
-    # generate an array of seeds the same size as the tasks
-    seeds = np.random.randint(0, np.iinfo(np.uint32).max, n_procs)
+def _generate_subprocess_seeds(preferred_n_tasks = 1, mdh=None, seeds=None):
+    """
+    Generate seeds for each rendering task, or pass through a given array of seeds for deterministically recreating a
+    previous rendering.
+    
+    Parameters
+    ----------
+    preferred_n_tasks : Number of tasks to generate seeds for (if seeds==None). Generally the number of processor cores.
+    mdh : [optional] metadata handler to store seeds to
+    seeds : [optional] supplied seeds if we want to strictly reconstruct a previously generated image
+
+    Returns
+    -------
+    
+    seeds : an array of seeds
+
+    """
+    if seeds is None:
+        seeds = np.random.randint(0, np.iinfo(np.uint32).max, preferred_n_tasks)
+    
     if not mdh is None:
         mdh['Rendering.RandomSeeds'] = [int(s) for s in seeds]
-    # return us to randomness
-    np.random.seed(None)
-    
+   
     return seeds
+
+def _iterations_per_task(n, nTasks):
+    """
+    Divide the iterations to be performed (deterministically) across tasks.
+     
+    Parameters
+    ----------
+    n : int, the number of iterations
+    nTasks : the number of tasks
+
+    Returns
+    -------
+    
+    an array with the number of iterations performed for each task
+
+    """
     
 
-def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None, geometric_mean=True, mdh=None):
+    # generate tasks for each seed. The tasks array contains the number of iterations that that CPU should perform
+    tasks = (n / nTasks) * numpy.ones(nTasks, 'i')
+    tasks[:(n % nTasks)] += 1
+    
+    return tasks
+    
+
+def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seeds=None, geometric_mean=True, mdh=None):
     sizeX = int((imageBounds.x1 - imageBounds.x0) / pixelSize)
     sizeY = int((imageBounds.y1 - imageBounds.y0) / pixelSize)
     
@@ -351,13 +386,11 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None, geometric_
         if type(jsig) == numpy.ndarray:
             jsig = shmarray.create_copy(jsig)
 
-        nCPUs = multiprocessing.cpu_count()
-
-        # generate tasks for each CPU. The tasks array contains the number of iterations that that CPU should perform
-        tasks = (n/nCPUs)*numpy.ones(nCPUs, 'i')
-        tasks[:(n%nCPUs)] += 1
-
-        seeds = _generate_subprocess_seeds(len(tasks), mdh, seed)
+        # We will generate 1 process for each seed, defaulting to generating a seed for each CPU core if seeds are not
+        # passed explicitly. Rendering with explicitly passed seeds will be deterministic, but performance will not be
+        # optimal unless n_seeds = n_CPUs
+        seeds = _generate_subprocess_seeds(multiprocessing.cpu_count(), mdh, seeds)
+        tasks = _iterations_per_task(n, len(seeds))
 
         processes = [multiprocessing.Process(target = fcn, args=(im, x, y, jsig, mcp, imageBounds, pixelSize, nIt, s)) for nIt, s in zip(tasks, seeds)]
 
@@ -370,10 +403,14 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None, geometric_
     else:
         im = numpy.zeros((sizeX, sizeY))
 
-        seeds = _generate_subprocess_seeds(1, mdh, seed)
+        # Technically we could just call fcn( ....,n), but we replicate the logic above and divide into groups of tasks
+        # so that we can reproduce a previously generated image
+        seeds = _generate_subprocess_seeds(1, mdh, seeds)
+        tasks = _iterations_per_task(n, len(seeds))
         
-        fcn(im, x, y, jsig, mcp, imageBounds, pixelSize, n, seed=seeds[0])
-    
+        for nIt, s in zip(tasks, seeds):
+            # NB - in normal usage, this loop only evaluates once, with nIt=n
+            fcn(im, x, y, jsig, mcp, imageBounds, pixelSize, nIt, seed=s)
     
     if geometric_mean:
         return (1.e6/(im/n + 1))*(im > n)
