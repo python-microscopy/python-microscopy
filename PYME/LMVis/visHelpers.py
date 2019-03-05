@@ -221,100 +221,54 @@ def rendGaussProd(x,y, sx, imageBounds, pixelSize):
 
 
 
-def rendTri(T, imageBounds, pixelSize, c=None, im=None):
+def rendTri(T, imageBounds, pixelSize, c=None, im=None, geometric_mean=False):
     from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
     xs = T.x[T.triangles]
     ys = T.y[T.triangles]
 
-    a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
-    b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
-    b2 = numpy.vstack((xs[:,1] - xs[:,2], ys[:,1] - ys[:,2])).T
+    a01 = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
+    a02 = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
+    a12 = numpy.vstack((xs[:,1] - xs[:,2], ys[:,1] - ys[:,2])).T
 
-    #area of triangle
-    #c = 0.5*numpy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*numpy.sqrt((a*a).sum(1))
-
-    #c = 0.5*numpy.sqrt((b*b).sum(1)*(a*a).sum(1) - ((a*b).sum(1)**2))
-
-    #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+    a_ = ((a01 * a01).sum(1))
+    b_ = ((a02 * a02).sum(1))
+    b2_ = ((a12 * a12).sum(1))
 
     if c is None:
-        if True: #numpy.version.version > '1.2':
-            #previous comparison fails on numpy > 1.10.X - drop support for numpy versions older than 1.2
-            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
-        else:
-            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
+        # We didn't pass anything in for c - use 1/ area of triangle
+        
+        # use the median edge length^2 as a proxy for area (this avoids "slithers" getting really bright)
+        c = 0.5*numpy.median([b_, a_, b2_], 0)
+ 
+        #c_neighbours = c[T.triangle_neighbors].sum(1)
+        #c = 1.0/(c + c_neighbours + 1)
+        
+        #c = numpy.maximum(c, pixelsize**2) #try to avoid spikes
 
-    a_ = ((a*a).sum(1))
-    b_ = ((b*b).sum(1))
-    b2_ = ((b2*b2).sum(1))
-    #c_neighbours = c[T.triangle_neighbors].sum(1)
-    #c = 1.0/(c + c_neighbours + 1)
-    #c = numpy.maximum(c, self.pixelsize**2)
-    c = 1.0/(c + 1)
-    #print c, a.shape, b.shape, xs.shape, T.x.shape
 
-    sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
-    sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
-
-    xs = (xs - imageBounds.x0)/pixelSize
-    ys = (ys - imageBounds.y0)/pixelSize
-
+    # Changed pre-factor 4/3/2019 so that image is calibrated in localizations/um^2 rather than
+    # localizations per nm^2 in the hope that this will play better with other software (e.g. ImageJ)
+    if geometric_mean:
+        # calculate the mean areas first, then invert
+        c = c
+    else:
+        # default - arithmetic mean (of density)
+        c = 1e6/(c + 1)
+    
     if im is None:
         print('Some thing is wrong - we should already have allocated memory')
+        sizeX = (imageBounds.x1 - imageBounds.x0) / pixelSize
+        sizeY = (imageBounds.y1 - imageBounds.y0) / pixelSize
+        
         im = numpy.zeros((sizeX, sizeY))
+
+    xs = (xs - imageBounds.x0) / pixelSize
+    ys = (ys - imageBounds.y0) / pixelSize
 
     drawTriangles(im, xs, ys, c)
 
     return im
     
-def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
-    from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
-    xs = T.x[T.triangles]
-    ys = T.y[T.triangles]
-
-    a = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
-    b = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
-    b2 = numpy.vstack((xs[:,1] - xs[:,2], ys[:,1] - ys[:,2])).T
-
-    #area of triangle
-    #c = 0.5*numpy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*numpy.sqrt((a*a).sum(1))
-
-    #c = 0.5*numpy.sqrt((b*b).sum(1)*(a*a).sum(1) - ((a*b).sum(1)**2))
-
-    #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
-    
-    c = numpy.abs(a[:,0]*b[:,1] + a[:,1]*b[:,0])
-
-    if c is None:
-        if numpy.version.version > '1.2':
-            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
-        else:
-            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
-            
-        #c = c*c/1e6
-
-    a_ = ((a*a).sum(1))
-    b_ = ((b*b).sum(1))
-    b2_ = ((b2*b2).sum(1))
-    #c_neighbours = c[T.triangle_neighbors].sum(1)
-    #c = 1.0/(c + c_neighbours + 1)
-    #c = numpy.maximum(c, self.pixelsize**2)
-    #c = 1.0/(c + 1)
-
-    sizeX = (imageBounds.x1 - imageBounds.x0)/pixelSize
-    sizeY = (imageBounds.y1 - imageBounds.y0)/pixelSize
-
-    xs = (xs - imageBounds.x0)/pixelSize
-    ys = (ys - imageBounds.y0)/pixelSize
-
-    if im is None:
-        im = numpy.zeros((sizeX, sizeY))
-        im1 = numpy.zeros_like(im)
-
-    drawTriangles(im, xs, ys, c*c*c)
-    drawTriangles(im1, xs, ys, c*c*c*c)
-
-    return im, im1
 
 
 def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, seed=None):
@@ -331,18 +285,49 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, seed=None):
             jsig2 - float(jsig)
         T = tri.Triangulation(x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum()))
 
-        rendTri(T, imageBounds, pixelSize, im=im)
+        rendTri(T, imageBounds, pixelSize, im=im, geometric_mean=False)
         
-        im [:20, 0] += scipy.rand(20) #Create signature for ImageID - TODO - this might mess with histogram
+    im [:20, 0] += scipy.rand(20) #Create signature for ImageID - TODO - this might mess with histogram
         
     #reseed the random number generator so that anything subsequent does not become deterministic (if we specified seeds)
     np.random.seed(None)
 
 
+def _rend_jit_tri_geometric(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, seed=None):
+    from matplotlib import tri
+    np.random.seed(seed)
 
-def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None):
+    #im_ = numpy.zeros(im.shape, 'f')
+    
+    for i in range(n):
+        #im_ *= 0
+        #im_ = numpy.zeros(im.shape, 'f')
+        Imc = scipy.rand(len(x)) < mcp
+        
+        if isinstance(jsig, numpy.ndarray):
+            print((jsig.shape, Imc.shape))
+            jsig2 = jsig[Imc]
+        else:
+            jsig2 - float(jsig)
+        T = tri.Triangulation(x[Imc] + jsig2 * scipy.randn(Imc.sum()), y[Imc] + jsig2 * scipy.randn(Imc.sum()))
+        
+        rendTri(T, imageBounds, pixelSize, im=im, geometric_mean=True)
+        
+        #im[:] = (im + (im_))# + 1e9*(im_ <=0)))[:]
+    
+    im[:20, 0] += scipy.rand(20) #Create signature for ImageID - TODO - this might mess with histogram
+    
+    #reseed the random number generator so that anything subsequent does not become deterministic (if we specified seeds)
+    np.random.seed(None)
+
+def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None, geometric_mean=True):
     sizeX = int((imageBounds.x1 - imageBounds.x0) / pixelSize)
     sizeY = int((imageBounds.y1 - imageBounds.y0) / pixelSize)
+    
+    if geometric_mean:
+        fcn = _rend_jit_tri_geometric
+    else:
+        fcn = rendJitTri
     
     if multiProc and not multiprocessing.current_process().daemon:
         im = shmarray.zeros((sizeX, sizeY))
@@ -366,7 +351,7 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None):
         # return us to randomness
         np.random.seed(None)
 
-        processes = [multiprocessing.Process(target = rendJitTri, args=(im, x, y, jsig, mcp, imageBounds, pixelSize, nIt, s)) for nIt, s in zip(tasks, seeds)]
+        processes = [multiprocessing.Process(target = fcn, args=(im, x, y, jsig, mcp, imageBounds, pixelSize, nIt, s)) for nIt, s in zip(tasks, seeds)]
 
         for p in processes:
             p.start()
@@ -374,14 +359,68 @@ def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seed=None):
         for p in processes:
             p.join()
 
-        return im/n
     else:
         im = numpy.zeros((sizeX, sizeY))
-        rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n, seed=seed)
+        fcn(im, x, y, jsig, mcp, imageBounds, pixelSize, n, seed=seed)
+    
+    
+    if geometric_mean:
+        return (1.e6/(im/n + 1))*(im > n)
+    else:
         return im/n
 
 ###########
 #with weighted averaging
+
+def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
+    from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
+    xs = T.x[T.triangles]
+    ys = T.y[T.triangles]
+    
+    a = numpy.vstack((xs[:, 0] - xs[:, 1], ys[:, 0] - ys[:, 1])).T
+    b = numpy.vstack((xs[:, 0] - xs[:, 2], ys[:, 0] - ys[:, 2])).T
+    b2 = numpy.vstack((xs[:, 1] - xs[:, 2], ys[:, 1] - ys[:, 2])).T
+    
+    #area of triangle
+    #c = 0.5*numpy.sqrt((b*b).sum(1) - ((a*b).sum(1)**2)/(a*a).sum(1))*numpy.sqrt((a*a).sum(1))
+    
+    #c = 0.5*numpy.sqrt((b*b).sum(1)*(a*a).sum(1) - ((a*b).sum(1)**2))
+    
+    #c = numpy.maximum(((b*b).sum(1)),((a*a).sum(1)))
+    
+    c = numpy.abs(a[:, 0] * b[:, 1] + a[:, 1] * b[:, 0])
+    
+    if c is None:
+        if numpy.version.version > '1.2':
+            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
+        else:
+            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)])
+            
+            #c = c*c/1e6
+    
+    a_ = ((a * a).sum(1))
+    b_ = ((b * b).sum(1))
+    b2_ = ((b2 * b2).sum(1))
+    #c_neighbours = c[T.triangle_neighbors].sum(1)
+    #c = 1.0/(c + c_neighbours + 1)
+    #c = numpy.maximum(c, self.pixelsize**2)
+    #c = 1.0/(c + 1)
+    
+    sizeX = (imageBounds.x1 - imageBounds.x0) / pixelSize
+    sizeY = (imageBounds.y1 - imageBounds.y0) / pixelSize
+    
+    xs = (xs - imageBounds.x0) / pixelSize
+    ys = (ys - imageBounds.y0) / pixelSize
+    
+    if im is None:
+        im = numpy.zeros((sizeX, sizeY))
+        im1 = numpy.zeros_like(im)
+    
+    drawTriangles(im, xs, ys, c * c * c)
+    drawTriangles(im1, xs, ys, c * c * c * c)
+    
+    return im, im1
+
 def rendJitTri2(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
     from matplotlib import tri
     for i in range(n):
