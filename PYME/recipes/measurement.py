@@ -94,7 +94,6 @@ class FitDumbells(ModuleBase):
 @register_module('DetectPoints2D')
 class DetectPoints2D(ModuleBase):
     """
-    Note - image series should already be camera corrected (see Processing.FlatfieldAndDarkCorrect)
 
     Parameters
     ----------
@@ -120,6 +119,8 @@ class DetectPoints2D(ModuleBase):
 
     Notes
     -----
+
+    Input image series should already be camera corrected (see Processing.FlatfieldAndDarkCorrect)
 
     """
 
