@@ -91,9 +91,10 @@ class FitDumbells(ModuleBase):
         
         namespace[self.outputName] = res
 
-@register_module('DetectPoints')
-class DetectPoints(ModuleBase):
+@register_module('DetectPoints2D')
+class DetectPoints2D(ModuleBase):
     """
+    Note - image series should already be camera corrected (see Processing.FlatfieldAndDarkCorrect)
 
     Parameters
     ----------
@@ -109,6 +110,8 @@ class DetectPoints(ModuleBase):
     debounce_radius : Int
         Radius is pixels to check for other detected points. If multiple points are found within this radius of each
         the most-point-like based on our filtering will be preserved and the other(s) will be removed
+    edge_mask_width : Int
+        Thickness of border region to exclude detecting points from.
 
     Returns
     -------
@@ -125,34 +128,20 @@ class DetectPoints(ModuleBase):
     threshold = Float(1.)
     debounce_radius = Int(4)
     snr_threshold = Bool(True)
+    edge_mask_width = Int(5)
 
     output_name = Output('candidate_points')
 
     def execute(self, namespace):
         from PYME.localization.ofind import ObjectIdentifier
-        from PYME.localization.remFitBuf import fitTask, CameraInfoManager
+        from PYME.localization.remFitBuf import fitTask
 
         im_stack = namespace[self.input_name]
-        # set metadata entries needed for detection in case they are missing
-        # FIXME - note these can still be replaced with zeros with the following copy...
-        mdh = MetaDataHandler.NestedClassMDHandler()
-        mdh['Camera.ADOffset'] = im_stack.data.getSlice(0).min()
-        mdh['Camera.TrueEMGain'] = 1.0
-        mdh['Camera.ElectronsPerCount'] = 1.0
-        mdh['Camera.ReadNoise'] = 1.0
-        mdh['Camera.NoiseFactor'] = 1.0
-
-        mdh.copyEntriesFrom(im_stack.mdh)
-
-        # make sure we don't go off the edge
-        mask_edge_width = self.debounce_radius + 1
-
-        camera_manager = CameraInfoManager()
 
         x, y, t = [], [], []
         # note that ObjectIdentifier is only 2D-aware
         for ti in range(im_stack.data.shape[2]):
-            frame = camera_manager.correctImage(im_stack.mdh, im_stack.data.getSlice(ti))
+            frame = im_stack.data.getSlice(ti)
             finder = ObjectIdentifier(frame * (frame > 0))
 
             if self.snr_threshold:  # calculate a per-pixel threshold based on an estimate of the SNR
@@ -161,7 +150,7 @@ class DetectPoints(ModuleBase):
             else:
                 threshold = self.threshold
 
-            finder.FindObjects(threshold, 0, debounceRadius=self.debounce_radius, maskEdgeWidth=mask_edge_width)
+            finder.FindObjects(threshold, 0, debounceRadius=self.debounce_radius, maskEdgeWidth=self.edge_mask_width)
 
             x.append(finder.x[:])
             y.append(finder.y[:])
@@ -170,12 +159,13 @@ class DetectPoints(ModuleBase):
         out = tabular.resultsFilter({'x': np.concatenate(x, axis=0), 'y': np.concatenate(y, axis=0),
                                      't': np.concatenate(t, axis=0)})
 
-        out.mdh = mdh
+        out.mdh = MetaDataHandler.NestedClassMDHandler()
+        out.mdh.copyEntriesFrom(im_stack.mdh)
 
-        out.mdh['Analysis.SNRThreshold'] = self.snr_threshold
-        out.mdh['Analysis.DetectionThreshold'] = self.threshold
-        out.mdh['Analysis.DebounceRadius'] = self.debounce_radius
-        out.mdh['Analysis.MaskEdgeWidth'] = mask_edge_width
+        out.mdh['Processing.DetectPoints2D.SNRThreshold'] = self.snr_threshold
+        out.mdh['Processing.DetectPoints2D.DetectionThreshold'] = self.threshold
+        out.mdh['Processing.DetectPoints2D.DebounceRadius'] = self.debounce_radius
+        out.mdh['Processing.DetectPoints2D.MaskEdgeWidth'] = self.edge_mask_width
 
         namespace[self.output_name] = out
 
