@@ -30,6 +30,8 @@ from PYME.LMVis.triBlobs import BlobSettings
 from PYME.Analysis import piecewiseMapping
 from PYME.IO import MetaDataHandler
 
+import warnings
+
 #from traits.api import HasTraits
 #from traitsui.api import View
 from PYME.recipes.base import ModuleCollection
@@ -271,8 +273,7 @@ class Pipeline:
         self.colourFilter = None
         self.events = None
 
-        self.fluorSpecies = {}
-        self.fluorSpeciesDyes = {}
+        self.colour_mapper = None
 
         self.blobSettings = BlobSettings()
         self.objects = None
@@ -316,11 +317,25 @@ class Pipeline:
 
     def keys(self):
         return self.colourFilter.keys()
+    
+    #compatibility redirects
+    @property
+    def fluorSpecies(self):
+        warnings.warn(DeprecationWarning('Use colour_mapper.species_ratios instead'))
+        return self.colour_mapper.species_ratios
+    
+    @property
+    def fluorSpeciesDyes(self):
+        warnings.warn(DeprecationWarning('Use colour_mapper.species_dyes instead'))
+        return self.colour_mapper.species_dyes
+        
 
     @property
     def chromaticShifts(self):
         return self.colourFilter.chromaticShifts
 
+    #end compatibility redirects
+    
     @property
     def dataSources(self):
         return self.recipe.namespace
@@ -511,7 +526,7 @@ class Pipeline:
             else:
                 self.colourFilter.resultsSource = self.filter
 
-            self._process_colour()
+            #self._process_colour()
             
             self.ready = True
 
@@ -712,8 +727,13 @@ class Pipeline:
         else:
             self.imageBounds = ImageBounds.estimateFromSource(mapped_ds)
 
+        from PYME.recipes.localisations import ProcessColour
         from PYME.recipes.tablefilters import FilterTable
-        self.recipe.add_module(FilterTable(self.recipe, inputName='Localizations', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in mapped_ds.keys()}))
+        
+        self.colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
+        #we keep a copy of this so that the colour panel can find it.
+        self.recipe.add_module(self.colour_mapper)
+        self.recipe.add_module(FilterTable(self.recipe, inputName='colour_mapped', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in mapped_ds.keys()}))
         self.recipe.execute()
         self.filterKeys = {}
         self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
@@ -770,6 +790,7 @@ class Pipeline:
 
         """
         #clear out old colour keys
+        warnings.warn(DeprecationWarning('This should not be called (colour now handled by the ProcessColour recipe module)'))
         for k in self.mapping.mappings.keys():
             if k.startswith('p_'):
                 self.mapping.mappings.pop(k)

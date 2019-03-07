@@ -295,7 +295,7 @@ class colourPanel(wx.Panel):
             if key == "":
                 return
 
-            self.pipeline.fluorSpecies[key] = val
+            self.pipeline.colour_mapper.species_ratios[key] = float(val)
 
             ind = self.lFluorSpecies.InsertStringItem(UI_MAXSIZE, key)
             self.lFluorSpecies.SetStringItem(ind,1, '%3.2f' % val)
@@ -368,7 +368,7 @@ class colourPanel(wx.Panel):
 
         for g, i in zip(guesses, range(n)):
             key = '%c' % (65 + i)
-            self.pipeline.fluorSpecies[key] = g
+            self.pipeline.colour_mapper.species_ratios[key] = float(g)
             ind = self.lFluorSpecies.InsertStringItem(UI_MAXSIZE, key)
             self.lFluorSpecies.SetStringItem(ind,1, '%3.3f' % g)
             self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(g)))[:3])))
@@ -378,7 +378,7 @@ class colourPanel(wx.Panel):
             #self.pipeline.mapping.setMapping('p_%s' % key, '(1.0/(ColourNorm*2*numpy.pi*fitError_Ag*fitError_Ar))*exp(-(fitResults_Ag - %f*A)**2/(2*fitError_Ag**2) - (fitResults_Ar - %f*A)**2/(2*fitError_Ar**2))' % (val, 1-val))
             #self.pipeline.mapping.setMapping('p_%s' % key, 'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % val)
             
-            self.pipeline.Rebuild()
+        self.pipeline.Rebuild()
 
         try:
             self.visFr.UpdatePointColourChoices()
@@ -401,7 +401,7 @@ class colourPanel(wx.Panel):
             ratio = dyeRatios.getRatio(dye, mdh)
 
             if not ratio is None:
-                self.pipeline.fluorSpecies[structure] = ratio
+                self.pipeline.colour_mapper.species_ratios[structure] = float(ratio)
                 ind = self.lFluorSpecies.InsertStringItem(UI_MAXSIZE, structure)
                 self.lFluorSpecies.SetStringItem(ind,1, '%3.3f' % ratio)
                 self.lFluorSpecies.SetItemTextColour(ind, wx.Colour(*((128*numpy.array(cm.jet_r(ratio)))[:3])))

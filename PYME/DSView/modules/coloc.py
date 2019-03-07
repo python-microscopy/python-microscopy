@@ -486,8 +486,15 @@ class colocaliser:
     
         #print FRC[:monotone], FRC[:(monotone+1)]
     
-        intercept = np.interp(1.0 - 1 / 7.0, 1 - FRC[:monotone], rB[:monotone])
+        intercept_m = np.interp(1.0 - 1 / 7.0, 1 - FRC[:monotone], rB[:monotone])
     
+        print('Intercept_m= %3.2f (%3.2f nm)' % (intercept_m, voxelsize[0] / intercept_m))
+
+        from scipy import ndimage
+        f_s = np.sign(FRC - 1. / 7.)
+
+        intercept = np.interp(0.0, - ndimage.gaussian_filter(f_s, 10), rB[:-1])
+
         print('Intercept= %3.2f (%3.2f nm)' % (intercept, voxelsize[0] / intercept))
     
         xt = np.array([10., 15, 20, 30, 40, 50, 70, 90, 120, 150, 200, 300, 500])
@@ -501,20 +508,21 @@ class colocaliser:
         plt.xlabel('Resolution [nm]')
     
         plt.ylabel('FRC')
+        
+        plt.plot([intercept, intercept], [0,1], '--')
     
         plt.figtext(0.5, 0.5, 'FRC intercept at %3.1f nm' % (voxelsize[0] / intercept))
     
-        plt.figure()
-        
-        from scipy import ndimage
-        f_s = np.sign(FRC-1./7.)
-        plt.plot(rB[:-1], FRC-1./7.)
-        plt.plot(rB[:-1], f_s)
-        plt.plot(rB[:-1], ndimage.gaussian_filter(f_s, 1))
-        plt.plot(rB[:-1], ndimage.gaussian_filter(f_s, 5))
-        plt.plot(rB[:-1], ndimage.gaussian_filter(f_s, 10))
-        
-        plt.show()
+        # plt.figure()
+        #
+        #
+        # plt.plot(rB[:-1], FRC-1./7.)
+        # plt.plot(rB[:-1], f_s)
+        # plt.plot(rB[:-1], ndimage.gaussian_filter(f_s, 1))
+        # plt.plot(rB[:-1], ndimage.gaussian_filter(f_s, 5))
+        # plt.plot(rB[:-1], ndimage.gaussian_filter(f_s, 10))
+        #
+        # plt.show()
         
         
 
