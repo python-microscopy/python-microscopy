@@ -714,7 +714,7 @@ class Pipeline:
                 self.filterKeys['fitError_dx'] = (0,10)
                 self.filterKeys['fitError_dy'] = (0,10)
 
-        self._get_dye_ratios_from_metadata()
+        #self._get_dye_ratios_from_metadata()
 
         self.addDataSource('Localizations', mapped_ds)
 
@@ -820,6 +820,7 @@ class Pipeline:
 
 
     def _get_dye_ratios_from_metadata(self):
+        warnings.warn(DeprecationWarning('This should not be called (colour now handled by the ProcessColour recipe module)'))
         labels = self.mdh.getOrDefault('Sample.Labelling', [])
         seen_structures = []
 
