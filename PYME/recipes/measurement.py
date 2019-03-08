@@ -91,6 +91,85 @@ class FitDumbells(ModuleBase):
         
         namespace[self.outputName] = res
 
+@register_module('DetectPoints2D')
+class DetectPoints2D(ModuleBase):
+    """
+
+    Parameters
+    ----------
+    input_name : Input
+        PYME.IO.ImageStack
+    snr_threshold : Bool
+        How should we interpret the threshold? If True, the signal-to-noise (SNR) is estimated at each pixel, and the threshold 
+        applied at each pixel is this estimate multiplied by the 'threshold' parameter. If False, the threshold parameter is used
+        directly.
+    threshold : Float
+        The intensity threshold applied during detection if 'snr_threshold' is False, otherwise this scalar is first
+        multiplied by the SNR estimate at each pixel before the threshold is applied
+    debounce_radius : Int
+        Radius is pixels to check for other detected points. If multiple points are found within this radius the brightest 
+        will be preserved and the other(s) will be removed
+    edge_mask_width : Int
+        Thickness of border region to exclude detecting points from.
+
+    Returns
+    -------
+    output_name : Output
+        PYME.IO.tabular containing x and y coordinates of each point, as well as the frame index they were detected on
+
+    Notes
+    -----
+
+    Input image series should already be camera corrected (see Processing.FlatfieldAndDarkCorrect)
+
+    """
+
+    input_name = Input('input')
+
+    threshold = Float(1.)
+    debounce_radius = Int(4)
+    snr_threshold = Bool(True)
+    edge_mask_width = Int(5)
+
+    output_name = Output('candidate_points')
+
+    def execute(self, namespace):
+        from PYME.localization.ofind import ObjectIdentifier
+        from PYME.localization.remFitBuf import fitTask
+
+        im_stack = namespace[self.input_name]
+
+        x, y, t = [], [], []
+        # note that ObjectIdentifier is only 2D-aware
+        for ti in range(im_stack.data.shape[2]):
+            frame = im_stack.data.getSlice(ti)
+            finder = ObjectIdentifier(frame * (frame > 0))
+
+            if self.snr_threshold:  # calculate a per-pixel threshold based on an estimate of the SNR
+                sigma = fitTask.calcSigma(im_stack.mdh, frame).squeeze()
+                threshold = sigma * self.threshold
+            else:
+                threshold = self.threshold
+
+            finder.FindObjects(threshold, 0, debounceRadius=self.debounce_radius, maskEdgeWidth=self.edge_mask_width)
+
+            x.append(finder.x[:])
+            y.append(finder.y[:])
+            t.append(ti * np.ones_like(finder.x[:]))
+
+        # FIXME - make a dict source so we don't abuse the mapping filter for everything
+        out = tabular.mappingFilter({'x': np.concatenate(x, axis=0), 'y': np.concatenate(y, axis=0),
+                                     't': np.concatenate(t, axis=0)})
+
+        out.mdh = MetaDataHandler.NestedClassMDHandler()
+        out.mdh.copyEntriesFrom(im_stack.mdh)
+
+        out.mdh['Processing.DetectPoints2D.SNRThreshold'] = self.snr_threshold
+        out.mdh['Processing.DetectPoints2D.DetectionThreshold'] = self.threshold
+        out.mdh['Processing.DetectPoints2D.DebounceRadius'] = self.debounce_radius
+        out.mdh['Processing.DetectPoints2D.MaskEdgeWidth'] = self.edge_mask_width
+
+        namespace[self.output_name] = out
 
 @register_module('FitPoints')
 class FitPoints(ModuleBase):
