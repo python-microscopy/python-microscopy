@@ -100,15 +100,15 @@ class DetectPoints2D(ModuleBase):
     input_name : Input
         PYME.IO.ImageStack
     snr_threshold : Bool
-        Flag to set whether the threshold used is a scalar (False) or an array (True). If True, the signal-to-noise
-        (SNR) is estimated at each pixel, and the threshold applied at each pixel is a 'threshold' multiple of this SNR
-        estimate
+        How should we interpret the threshold? If True, the signal-to-noise (SNR) is estimated at each pixel, and the threshold 
+        applied at each pixel is this estimate multiplied by the 'threshold' parameter. If False, the threshold parameter is used
+        directly.
     threshold : Float
         The intensity threshold applied during detection if 'snr_threshold' is False, otherwise this scalar is first
         multiplied by the SNR estimate at each pixel before the threshold is applied
     debounce_radius : Int
-        Radius is pixels to check for other detected points. If multiple points are found within this radius of each
-        the most-point-like based on our filtering will be preserved and the other(s) will be removed
+        Radius is pixels to check for other detected points. If multiple points are found within this radius the brightest 
+        will be preserved and the other(s) will be removed
     edge_mask_width : Int
         Thickness of border region to exclude detecting points from.
 
@@ -157,7 +157,8 @@ class DetectPoints2D(ModuleBase):
             y.append(finder.y[:])
             t.append(ti * np.ones_like(finder.x[:]))
 
-        out = tabular.resultsFilter({'x': np.concatenate(x, axis=0), 'y': np.concatenate(y, axis=0),
+        # FIXME - make a dict source so we don't abuse the mapping filter for everything
+        out = tabular.mappingFilter({'x': np.concatenate(x, axis=0), 'y': np.concatenate(y, axis=0),
                                      't': np.concatenate(t, axis=0)})
 
         out.mdh = MetaDataHandler.NestedClassMDHandler()
