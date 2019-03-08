@@ -207,6 +207,10 @@ class ProcessColour(ModuleBase):
         seen_structures = []
     
         for structure, dye in labels:
+            #info might be unicode - encode to a standard string to keep traits happy
+            structure = structure.encode()
+            dye = dye.encode()
+            
             if structure in seen_structures:
                 strucname = structure + '_1'
             else:
