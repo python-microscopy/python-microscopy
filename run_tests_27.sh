@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+#magic to make sure we can access anaconda
+if [-e ~/anaconda/bin/activate]
+then
+    source ~/anaconda/bin/activate
+else
+    source ~/anaconda2/bin/activate
+fi
+
 exit_code=0
 
 if [[ `conda env list` = *"pm_test_27"* ]]
