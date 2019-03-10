@@ -12,8 +12,8 @@ fi
 if [ $? -eq 0 ]
 then
     oldenv=$CONDA_DEFAULT_ENV
-    source deactivate
-    source activate pm_test_27
+    #conda deactivate
+    conda activate pm_test_27
     if [ $? -eq 0 ]
     then
         #pwd
@@ -27,8 +27,8 @@ then
         else
             exit_code=$?
         fi
-        source deactivate
-        source activate $oldenv
+        #conda deactivate
+        conda activate $oldenv
     else
         exit_code=$?
     fi
