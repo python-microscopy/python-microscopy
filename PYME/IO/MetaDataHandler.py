@@ -564,7 +564,7 @@ class XMLMDHandler(MDHandlerBase):
             node.setAttribute('value', value)
         elif isinstance(value, unicode):
             node.setAttribute('class', 'unicode')
-            node.setAttribute('value', value)
+            node.setAttribute('value', value.encode('utf-8'))
         elif np.isscalar(value):
             node.setAttribute('class', 'float')
             node.setAttribute('value', str(value)) 
@@ -604,6 +604,8 @@ class XMLMDHandler(MDHandlerBase):
                 val = int(val)
         elif cls == 'float':
             val = float(val)
+        elif cls == 'unicode':
+            val = val.decode('utf8')
         elif cls == 'pickle':
             #return None
             try:
