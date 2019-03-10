@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #magic to make sure we can access anaconda
-if [-e ~/anaconda/bin/activate]
+if [ -e ~/anaconda/bin/activate ]
 then
     source ~/anaconda/bin/activate
 else
