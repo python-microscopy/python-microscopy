@@ -831,7 +831,7 @@ def main(protocol="HTTP/1.0"):
     try:
         ip_addr = socket.gethostbyname(socket.gethostname())
     except:
-        ip_addr = socket.gethostbyname(socket.gethostbyname() + '.local')
+        ip_addr = socket.gethostbyname(socket.gethostname() + '.local')
     
 
     ns = pzc.getNS('_pyme-http')
