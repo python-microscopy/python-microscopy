@@ -12,7 +12,7 @@ import requests
 import time
 import numpy as np
 import threading
-import httplib
+import http.client as httplib
 
 import socket
 import os

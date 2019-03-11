@@ -1,1 +1,1 @@
-from fProfile import *
+from .fProfile import *

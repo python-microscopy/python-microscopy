@@ -9,7 +9,7 @@ def gen_image(p=.95, disp=False):
     y = np.mod(wc.yp, 66)
     #mtim, xb, yb = np.histogram2d(x, y, [arange(0, 64), arange(0, 64)])
 
-    print 'Density = ', (1-p)/(.07**2), '/um^2'
+    print('Density = ', (1-p)/(.07**2), '/um^2')
     mt = (np.random.rand(len(x)) > p)
     m = np.histogram2d(x[mt], y[mt], [np.arange(0, 64), np.arange(0, 64)])[0].astype('f')
     
