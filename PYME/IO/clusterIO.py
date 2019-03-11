@@ -95,7 +95,7 @@ _fileCache = _LimitedSizeDict(size_limit=100)
 #use one session for each server (to allow http keep-alives)
 sessions = {}
 def _getSession(url):
-    servinfo = url.split('/')[2]
+    servinfo = url.split(b'/')[2]
     try:
         session = sessions[servinfo]
     except KeyError:

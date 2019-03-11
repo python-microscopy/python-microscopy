@@ -25,10 +25,10 @@ from scipy.linalg import *
 from scipy import ndimage
 import numpy
 from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
-import fftw3f
-import fftwWisdom
+import PYME.misc.fftw_compat as fftw3f
+from . import fftwWisdom
 
-from wiener import resizePSF
+from .wiener import resizePSF
 
 fftwWisdom.load_wisdom()
 #import weave

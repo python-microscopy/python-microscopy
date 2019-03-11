@@ -17,7 +17,7 @@ compatibility features have been added to python3 since the initial version we w
 not support earlier versions of python 3.
 
 To date we have spent roughly a full week on migration, and addressed most of the errors which come up through static analysis,
-but much remains to be done. At this point, PYME will build under python 3 is currently passing 42 of 46 tests although
+but much remains to be done. At this point, PYME will build under python 3 and is currently passing 42 of 46 tests although
 the test coverage is currently abysmal.
 
 The following tasks need to be addressed (in order of importance) before further progress can be made:
@@ -37,6 +37,7 @@ The following tasks need to be addressed (in order of importance) before further
 - Check for and correct relative module imports
 - Build a conda module for dispatch on python3
 - Fix all c coded modules to use new init methods
+- Find an alternative to / port PyFFTW3 to python3
 
 We will probably discover more as we progress.
 

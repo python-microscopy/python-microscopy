@@ -161,7 +161,7 @@ class __interpolator:
         return psc, voxelsize
 
     def genTheoreticalModel(self, md):
-        from PYME.Analysis.PSFGen.ps_app import *
+        from PYME.Analysis.PSFGen.ps_app import genWidefieldPSF
 
         if not self.dx == md.voxelsize.x*1e3 and not self.dy == md.voxelsize.y*1e3 and not self.dz == md.voxelsize.z*1e3:
 

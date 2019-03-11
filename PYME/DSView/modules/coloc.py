@@ -271,8 +271,8 @@ class colocaliser:
         pA = bmAA / bmAA[bnAA > 1].mean()
         #print p
         #pylab.bar(binsA[:-1], p, binsA[1] - binsA[0])
-        pylab.plot(binsA[:-1], p, lw=2, drawstyle='steps')
-        pylab.plot(binsA[:-1], pA, 'k--', drawstyle='steps')#, binsA[1] - binsA[0])
+        pylab.plot(binsA[1:], p, lw=2, drawstyle='steps')
+        pylab.plot(binsA[1:], pA, 'k--', drawstyle='steps')#, binsA[1] - binsA[0])
         pylab.xlabel('Distance from edge of %s [nm]' % nameA)
         pylab.ylabel('Relative enrichment')# % nameB)
         
@@ -291,11 +291,11 @@ class colocaliser:
         pA = pA / pA.sum()
         
         #find the distance at which 50% of the labelling is included
-        d_50 = interpolate.interp1d(np.cumsum(p), binsA[:-1])(.5)
+        d_50 = interpolate.interp1d(np.cumsum(p), binsA[1:])(.5)
         
         #pylab.bar(binsA[:-1], p, binsA[1] - binsA[0])
-        pylab.plot(binsA[:-1], np.cumsum(p), lw=2)
-        pylab.plot(binsA[:-1], np.cumsum(pA), 'k--')
+        pylab.plot(binsA[1:], np.cumsum(p), lw=2)
+        pylab.plot(binsA[1:], np.cumsum(pA), 'k--')
         
         pylab.plot([bins[0], d_50], [.5,.5], 'r:')
         pylab.plot([d_50, d_50], [0, .5], 'r:')
@@ -316,8 +316,8 @@ class colocaliser:
         p = bmB / bmB[bnB > 1].mean()
         pA = bmBB / bmBB[bnBB > 1].mean()
         #pylab.bar(binsB[:-1], p, binsB[1] - binsB[0])
-        pylab.plot(binsB[:-1], p, lw=2, drawstyle='steps')
-        pylab.plot(binsA[:-1], pA, 'k--', drawstyle='steps')
+        pylab.plot(binsB[1:], p, lw=2, drawstyle='steps')
+        pylab.plot(binsA[1:], pA, 'k--', drawstyle='steps')
         pylab.xlabel('Distance from edge of %s [nm]' % nameB)
         pylab.ylabel('Relative enrichment')# of %s' % nameA)
 
@@ -336,11 +336,11 @@ class colocaliser:
         pA = pA / pA.sum()
 
         #find the distance at which 50% of the labelling is included
-        d_50 = interpolate.interp1d(np.cumsum(p), binsA[:-1])(.5)
+        d_50 = interpolate.interp1d(np.cumsum(p), binsA[1:])(.5)
         
         #pylab.bar(binsB[:-1], p, binsB[1] - binsB[0])
-        pylab.plot(binsA[: -1], np.cumsum(p), lw=2)
-        pylab.plot(binsA[:-1], np.cumsum(pA), 'k--')
+        pylab.plot(binsA[1:], np.cumsum(p), lw=2)
+        pylab.plot(binsA[1:], np.cumsum(pA), 'k--')
 
         pylab.plot([bins[0], d_50], [.5, .5], 'r:')
         pylab.plot([d_50, d_50], [0, .5], 'r:')

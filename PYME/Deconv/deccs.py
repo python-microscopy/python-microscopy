@@ -25,8 +25,8 @@
 #from scipy.linalg import *
 from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
 from scipy import ndimage
-import fftw3f
-import fftwWisdom
+import PYME.misc.fftw_compat as fftw3f
+from . import fftwWisdom
 
 fftwWisdom.load_wisdom()
 #import weave
