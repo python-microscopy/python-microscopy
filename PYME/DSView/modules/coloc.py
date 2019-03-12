@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+from __future__ import print_function
 import numpy
 import numpy as np
 import wx
@@ -221,10 +222,10 @@ class colocaliser:
                     MBzs.append(MBz)
                     FAzs.append(FAz)
                     FBzs.append(FBz)
-                    
-                print "M(A->B) ",MAzs
-                print "M(B->A) ",MBzs
-                print "Species A: %s, Species B: %s" %(nameA,nameB)
+
+                print("M(A->B) %s" % MAzs)
+                print("M(B->A) %s" % MBzs)
+                print("Species A: %s, Species B: %s" %(nameA,nameB))
     
                 pylab.figure()
                 pylab.subplot(211)

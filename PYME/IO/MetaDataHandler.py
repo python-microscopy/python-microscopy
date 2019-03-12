@@ -149,7 +149,7 @@ class MDHandlerBase(DictMixin):
         """
         raise NotImplementedError('getEntry must be overridden in derived classes')
         
-    def setEntry(self, name):
+    def setEntry(self, name, value):
         """Sets the entry for a given name.
         
         Parameters
@@ -282,6 +282,7 @@ class MDHandlerBase(DictMixin):
             import pickle
             
         import numpy as np
+        
         s = ['#PYME Simple Metadata v1\n']
 
         for en in self.getEntryNames():
@@ -486,7 +487,11 @@ class SimpleMDHandler(NestedClassMDHandler):
     def __init__(self, filename = None, mdToCopy=None):
         if not filename is None:
             from PYME.util.execfile import _execfile
-            import cPickle as pickle
+            try:
+                import cPickle as pickle
+            except ImportError:
+                import pickle
+                
             #loading an existing file
             md = self
             fn = __file__
@@ -536,6 +541,7 @@ class XMLMDHandler(MDHandlerBase):
             import pickle
         
         import numpy as np
+        
         entPath = entryName.split('.')
 
         node = self.md

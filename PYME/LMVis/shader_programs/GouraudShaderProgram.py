@@ -50,7 +50,7 @@ class GouraudShaderProgram(GLProgram):
 
     def __enter__(self):
         self.get_shader_program().use()
-        for name, value in GouraudShaderProgram.LIGHT_PROPS.iteritems():
+        for name, value in GouraudShaderProgram.LIGHT_PROPS.items():
             location = self.get_uniform_location(name)
             glUniform4f(location, *value)
         location = self.get_uniform_location('shininess')

@@ -10,3 +10,17 @@ def test_IO_imports():
     from PYME.IO import ragged, tabular, unifiedIO, countdir
     
     #from PYME.IO import clusterDuplication #Known failure due to dependence on pyro
+    
+def test_DSView_imports():
+    from PYME.DSView import arrayViewPanel, displayOptions, displaySettingsPanel, DisplayOptionsPanel
+    from PYME.DSView import dsviewer, eventLogViewer, fitInfo, logparser, overlays, OverlaysPanel
+    from PYME.DSView import scrolledImagePanel, splashScreen, voxSizeDialog
+    
+    from PYME.DSView import htmlServe # known fail due to cherrypy changes
+
+def test_DSView_modules_imports():
+    from PYME.DSView import modules
+    
+    #import all modules
+    for modName, ml in modules.modLocations.items():
+        __import__('.'.join(ml) + '.' + modName, fromlist=ml)

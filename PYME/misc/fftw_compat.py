@@ -3,7 +3,7 @@ Compatibility shim to translate between pyfftw3 and pyfftw calls
 """
 
 try:
-    from pyfftw3 import *
+    from fftw3f import Plan, create_aligned_array
 except ImportError:
     import pyfftw
     from pyfftw import empty_aligned as create_aligned_array
