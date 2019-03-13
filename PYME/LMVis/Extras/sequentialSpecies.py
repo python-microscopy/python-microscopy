@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import wx
 import numpy as np
 
@@ -77,7 +79,7 @@ class SpeciesDialog(wx.Dialog):
                 speclist.append({'name'   : sname,
                                  't_start': float(specstrings[1].GetValue()),
                                  't_end'  : float(specstrings[2].GetValue())})
-        print speclist
+        print(speclist)
         return speclist
 
 from PYME.LMVis import renderers
