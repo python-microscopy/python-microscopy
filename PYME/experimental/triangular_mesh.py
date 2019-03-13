@@ -37,7 +37,7 @@ class TriangularMesh(object):
         vertices, faces_raw = np.unique(vertices_raw, 
                                         return_inverse=True, 
                                         axis=0)
-        faces = faces_raw.reshape(faces_raw.shape[0] / 3, 3, order='F')
+        faces = faces_raw.reshape(faces_raw.shape[0] // 3, 3, order='F')
 
         return cls(vertices, faces)
         
