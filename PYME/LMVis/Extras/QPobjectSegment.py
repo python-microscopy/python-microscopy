@@ -25,7 +25,10 @@ import wx
 import numpy as np
 import matplotlib.pylab as plt
 from scipy.optimize import curve_fit
-import StringIO
+try:
+    import StringIO
+except ImportError:
+    from io import StringIO
 
 def cumuexpfit(t,tau):
     return 1-np.exp(-t/tau)

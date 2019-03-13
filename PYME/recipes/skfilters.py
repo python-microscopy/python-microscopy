@@ -13,6 +13,12 @@ import numpy as np
 import skimage.filters as skf
 import inspect
 
+# Hack for python2/3 unicode/str
+# https://stackoverflow.com/questions/19877306/nameerror-global-name-unicode-is-not-defined-in-python-3
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
+
 """Automagically generate filter objects for all skimage filters"""
 
 class SKFilter(Filter):

@@ -21,6 +21,8 @@
 #
 ##################
 
+from __future__ import print_function
+
 import wx
 import numpy as np
 import matplotlib.pylab as plt
@@ -49,7 +51,7 @@ def scatterdens(x,y,subsample=1.0, s=40, **kwargs):
         
     estimator = gaussian_kde([xs,ys]) 
     density = estimator.evaluate([xf,yf])
-    print "density min, max: %f, %f" % (density.min(), density.max())
+    print("density min, max: %f, %f" % (density.min(), density.max()))
     plt.scatter(xf,yf,c=density,marker='o',linewidth='0',zorder=3,s=s,**kwargs)
     return estimator
 
