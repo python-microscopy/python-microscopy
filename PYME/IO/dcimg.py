@@ -66,7 +66,7 @@ class DCIMGFile(object):
         ind : int
             The index of the frame to retrieve
         """
-        frame_wo_footer = self.frames_with_footer[0:(self._info['bytes_per_image']/self._info['bytes_per_pixel']), ind]
+        frame_wo_footer = self.frames_with_footer[0:(int(self._info['bytes_per_image']/self._info['bytes_per_pixel'])), ind]
         frame_data = frame_wo_footer.reshape([self._info['num_columns'], self._info['num_rows']], order='F')
 
         return frame_data
@@ -80,7 +80,7 @@ class DCIMGFile(object):
     def _parse_header(self, header):
         info = {}
 
-        if not header.startswith('DCIMG'):
+        if not header.startswith(b'DCIMG'):
             raise RuntimeError("Not a valid DCIMG file")
 
         # the file header starts with an itentifying string and then seems to consist (mostly) of uint32 integers, aligned on 
