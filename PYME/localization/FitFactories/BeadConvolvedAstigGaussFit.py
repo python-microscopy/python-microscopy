@@ -27,7 +27,7 @@ from scipy.signal import convolve2d
 #  Model functions
 
 # define factor by which to interpolate grid for evaluating numerical convolutions. Note the data is never interpolated
-interp_factor = 5
+INTERP_FACTOR = 5
 
 def bead(X, Y, beadDiam):
     """
@@ -47,9 +47,9 @@ def f_gaussAstigBead(p, X, Y, beadDiam):
     A, x0, y0, sx, sy, c, b_x, b_y = p
 
     # interpolate, as the bead diameter will usually be roughly the size of a pixel
-    step = (X[1]-X[0])/float(interp_factor)  # NB this assumes X and Y spacing is equal, i.e. square pixels
-    xx = np.arange(X[0] - interp_factor*step, X[-1] + (interp_factor + 1)*step, step)
-    yy = np.arange(Y[0] - interp_factor*step, Y[-1] + (interp_factor + 1)*step, step)
+    step = (X[1]-X[0])/float(INTERP_FACTOR)  # NB this assumes X and Y spacing is equal, i.e. square pixels
+    xx = np.arange(X[0] - INTERP_FACTOR*step, X[-1] + (INTERP_FACTOR + 1)*step, step)
+    yy = np.arange(Y[0] - INTERP_FACTOR*step, Y[-1] + (INTERP_FACTOR + 1)*step, step)
 
     gauss = A * np.exp(-(xx[:, None] - x0) ** 2 / (2 * sx ** 2) - (yy[None, :] - y0) ** 2 / (2 * sy ** 2)) + c + b_x * xx[:,None] + b_y * yy[None,:]
     # how many steps to include beadDiam
@@ -58,7 +58,7 @@ def f_gaussAstigBead(p, X, Y, beadDiam):
 
     model = convolve2d(gauss, beadProj, mode='same')
 
-    return model[interp_factor:-interp_factor:interp_factor, interp_factor:-interp_factor:interp_factor]
+    return model[INTERP_FACTOR:-INTERP_FACTOR:INTERP_FACTOR, INTERP_FACTOR:-INTERP_FACTOR:INTERP_FACTOR]
 
 def f_rotGaussAstigBead(p, X, Y, beadDiam, theta = 0):
     """
@@ -68,9 +68,9 @@ def f_rotGaussAstigBead(p, X, Y, beadDiam, theta = 0):
     A, x0, y0, sx, sy, c, b_x, b_y = p
 
     # interpolate, as the bead diameter will usually be roughly the size of a pixel
-    step = (X[1]-X[0])/float(interp_factor)  # NB this assumes X and Y spacing is equal, i.e. square pixels
-    xx = np.arange(X[0] - interp_factor*step, X[-1] + (interp_factor + 1)*step, step)
-    yy = np.arange(Y[0] - interp_factor*step, Y[-1] + (interp_factor + 1)*step, step)
+    step = (X[1]-X[0])/float(INTERP_FACTOR)  # NB this assumes X and Y spacing is equal, i.e. square pixels
+    xx = np.arange(X[0] - INTERP_FACTOR*step, X[-1] + (INTERP_FACTOR + 1)*step, step)
+    yy = np.arange(Y[0] - INTERP_FACTOR*step, Y[-1] + (INTERP_FACTOR + 1)*step, step)
 
     #gauss = A * np.exp(-(xx[:, None] - x0) ** 2 / (2 * sx ** 2) - (yy[None, :] - y0) ** 2 / (2 * sy ** 2)) + c + b_x * xx[:,None] + b_y * yy[None,:]
     alpha = (np.cos(theta)**2)/(2*sx**2) + (np.sin(theta)**2)/(2*sy**2)
@@ -83,7 +83,7 @@ def f_rotGaussAstigBead(p, X, Y, beadDiam, theta = 0):
 
     model = convolve2d(rotGauss, beadProj, mode='same')
 
-    return model[interp_factor:-interp_factor:interp_factor, interp_factor:-interp_factor:interp_factor]
+    return model[INTERP_FACTOR:-INTERP_FACTOR:INTERP_FACTOR, INTERP_FACTOR:-INTERP_FACTOR:INTERP_FACTOR]
 
 
 
