@@ -53,6 +53,8 @@ except ImportError:
 # import time
 
 from warnings import warn
+import logging
+logger = logging.getLogger(__name__)
 
 import sys
 
@@ -869,13 +871,17 @@ class LMGLShaderCanvas(GLCanvas):
         self.on_screen = True
         return snap
 
-    def getIm(self, pixel_size=None, mode=GL_RGB):
-
-        if pixel_size is None or abs(1 - pixel_size) < 0.001:  # use current pixel size
+    def getIm(self, pixel_size=None, mode=GL_RGB, image_bounds=None):
+        if ((pixel_size is None) or (abs(1 - pixel_size) < 0.001) and image_bounds is None):  # use current pixel size
             return self.getSnapshot(mode=mode)
         else:
-            self.view_port_size = (int(round(self.Size[0] * pixel_size)), int(round(self.Size[1] * pixel_size)))
+            # set size before moving the view, since self.setView includes a self.Refresh() call
+            self.view_port_size = (int((image_bounds.x1 - image_bounds.x0) / pixel_size),
+                                   int((image_bounds.y1 - image_bounds.y0) / pixel_size))
+            logging.debug('viewport size %s' % (self.view_port_size,))
+            self.setView(image_bounds.x0, image_bounds.x1, image_bounds.y0, image_bounds.y1)
             snap = self.getSnapshot(mode=mode)
+            assert(self.pixelsize == pixel_size)
             self.view_port_size = self.Size
             return snap
 

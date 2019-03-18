@@ -46,10 +46,6 @@ try:
     multiProc = True
 except:
     multiProc = False
-
-
-class dummy:
-    pass
         
 
 def genEdgeDB(T):
@@ -128,14 +124,36 @@ def Gauss2D(Xv,Yv, A,x0,y0,s):
     r = genGauss(Xv,Yv,A,x0,y0,s,0,0,0)
     return r
 
-def rendGauss(x,y, sx, imageBounds, pixelSize):
+def rendGauss(x, y, sx, imageBounds, pixelSize):
+    """
+
+    Parameters
+    ----------
+    x : ndarray
+        x positions [nm]
+    y : ndarray
+        y positions [nm]
+    sx : ndarray
+        (gaussian) lateral width (sigma) [nm]
+    imageBounds : PYME.IO.ImageBounds
+        ImageBounds instance - range in each dimension should be an integer multiple of pixelSize. ImageBounds (x0, y0)
+        and (x1, y1) correspond to the inside edge of the outer pixels.
+    pixelSize : float
+        size of pixels to be rendered [nm]
+
+    Returns
+    -------
+    im : ndarray
+        2D Gaussian rendering. Note that im[0, 0] is centered at 0.5 * [pixelSize, pixelSize] (FIXME)
+
+    """
     sx = numpy.maximum(sx, pixelSize)
     fuzz = 3*scipy.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*roiSize
 
-    X = numpy.arange(imageBounds.x0 - fuzz,imageBounds.x1 + fuzz, pixelSize)
-    Y = numpy.arange(imageBounds.y0 - fuzz,imageBounds.y1 + fuzz, pixelSize)
+    X = numpy.arange(imageBounds.x0 - fuzz,imageBounds.x1 + fuzz, pixelSize) + 0.5*pixelSize
+    Y = numpy.arange(imageBounds.y0 - fuzz,imageBounds.y1 + fuzz, pixelSize) + 0.5*pixelSize
 
     #print X
     
@@ -223,8 +241,8 @@ def rendGaussProd(x,y, sx, imageBounds, pixelSize):
 
 def rendTri(T, imageBounds, pixelSize, c=None, im=None, geometric_mean=False):
     from PYME.Analysis.points.SoftRend import drawTriang, drawTriangles
-    xs = T.x[T.triangles]
-    ys = T.y[T.triangles]
+    xs = T.x[T.triangles]  # x posititions of vertices [nm], dimensions (# triangles, 3)
+    ys = T.y[T.triangles]  # y posititions of vertices [nm], dimensions (# triangles, 3)
 
     a01 = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
     a02 = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
@@ -262,9 +280,13 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None, geometric_mean=False):
         
         im = numpy.zeros((sizeX, sizeY))
 
+    # convert vertices [nm] to pixel position in output image (still floating point)
     xs = (xs - imageBounds.x0) / pixelSize
     ys = (ys - imageBounds.y0) / pixelSize
 
+    # NOTE 1: drawTriangles truncates co-ordinates to the nearest pixel on the left.
+    # NOTE 2: this truncation means that nothing is drawn for triangles < 1 pixel
+    # NOTE 3: triangles which would intersect with the edge of the image are discarded
     drawTriangles(im, xs, ys, c)
 
     return im
@@ -282,12 +304,12 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, seed=None):
             print((jsig.shape, Imc.shape))
             jsig2 = jsig[Imc]
         else:
-            jsig2 - float(jsig)
+            jsig2 = float(jsig)
         T = tri.Triangulation(x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum()))
 
         rendTri(T, imageBounds, pixelSize, im=im, geometric_mean=False)
         
-    im [:20, 0] += scipy.rand(20) #Create signature for ImageID - TODO - this might mess with histogram
+    im [:20, 0] += scipy.rand(20) #Create signature for ImageID - TODO - fix fileID code so that this is not necessary
         
     #reseed the random number generator so that anything subsequent does not become deterministic (if we specified seeds)
     np.random.seed(None)
@@ -308,14 +330,14 @@ def _rend_jit_tri_geometric(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, se
             print((jsig.shape, Imc.shape))
             jsig2 = jsig[Imc]
         else:
-            jsig2 - float(jsig)
+            jsig2 = float(jsig)
         T = tri.Triangulation(x[Imc] + jsig2 * scipy.randn(Imc.sum()), y[Imc] + jsig2 * scipy.randn(Imc.sum()))
         
         rendTri(T, imageBounds, pixelSize, im=im, geometric_mean=True)
         
         #im[:] = (im + (im_))# + 1e9*(im_ <=0)))[:]
     
-    im[:20, 0] += scipy.rand(20) #Create signature for ImageID - TODO - this might mess with histogram
+    im[:20, 0] += scipy.rand(20) #Create signature/watermark for ImageID - TODO - fix fileID code so that this is no longer necessary
     
     #reseed the random number generator so that anything subsequent does not become deterministic (if we specified seeds)
     np.random.seed(None)
@@ -370,6 +392,39 @@ def _iterations_per_task(n, nTasks):
     
 
 def rendJitTriang(x,y,n,jsig, mcp, imageBounds, pixelSize, seeds=None, geometric_mean=True, mdh=None):
+    """
+
+    Parameters
+    ----------
+    x : ndarray
+        x positions [nm]
+    y : ndarray
+        y positions [nm]
+    n : number of jittered renderings to average into final rendering
+    jsig : ndarray (or scalar float)
+        standard deviations [nm] of normal distributions to sample when jittering for each point
+    mcp : float
+        Monte Carlo sampling probability (0, 1]
+    imageBounds : PYME.IO.ImageBounds
+        ImageBounds instance - range in each dimension should ideally be an integer multiple of pixelSize.
+    pixelSize : float
+        size of pixels to be rendered [nm]
+    seeds : ndarray
+        [optional] supplied seeds if we want to strictly reconstruct a previously generated image
+    geometric_mean : bool
+        [optional] Flag to scale intensity by geometric mean (True) or [localizations / um^2] (False)
+    mdh: PYME.IO.MetaDataHandler.MDHandlerBase or subclass
+        [optional] metadata handler to store seeds to
+
+    Returns
+    -------
+    im : ndarray
+        2D Jittered Triangulation rendering.
+
+    Notes
+    -----
+    Triangles which reach outside of the image bounds are dropped and not included in the rendering.
+    """
     sizeX = int((imageBounds.x1 - imageBounds.x0) / pixelSize)
     sizeY = int((imageBounds.y1 - imageBounds.y0) / pixelSize)
     
@@ -480,7 +535,7 @@ def rendJitTri2(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, n=1):
             print((jsig.shape, Imc.shape))
             jsig2 = jsig[Imc]
         else:
-            jsig2 - float(jsig)
+            jsig2 = float(jsig)
             
         T = tri.Triangulation(x[Imc] +  jsig2*scipy.randn(Imc.sum()), y[Imc] +  jsig2*scipy.randn(Imc.sum()))
 
@@ -545,20 +600,21 @@ def rendJTet(im, x,y,z,jsig, jsigz, mcp, n):
 
 #if multiProc:
 
-def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=100):
+def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, sliceSize=100):
+    # FIXME - signature now differs from visHelpersMin
+    
     #import gen3DTriangs
-    sizeX = (imageBounds.x1 - imageBounds.x0) / pixelSize
-    sizeY = (imageBounds.y1 - imageBounds.y0) / pixelSize
+    sizeX = int((imageBounds.x1 - imageBounds.x0) / pixelSize)
+    sizeY = int((imageBounds.y1 - imageBounds.y0) / pixelSize)
+    sizeZ = int((imageBounds.z1 - imageBounds.z0) / sliceSize)
 
+    # convert from [nm] to [pixels]
     x = (x - imageBounds.x0) / pixelSize
     y = (y - imageBounds.y0) / pixelSize
+    z = (z - imageBounds.z0) / sliceSize
 
     jsig = jsig / pixelSize
     jsigz = jsigz / sliceSize
-
-    z = (z - zb[0]) / sliceSize
-
-    sizeZ = floor((zb[1] + sliceSize - zb[0]) / sliceSize)
     
     
     if multiProc and not multiprocessing.current_process().daemon:
@@ -599,17 +655,17 @@ def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, zb,sliceSize=10
 
 
 def rendHist(x,y, imageBounds, pixelSize):
-    X = numpy.arange(imageBounds.x0,imageBounds.x1, pixelSize)
-    Y = numpy.arange(imageBounds.y0,imageBounds.y1, pixelSize)
+    X = numpy.arange(imageBounds.x0, imageBounds.x1 + 1.01*pixelSize, pixelSize)
+    Y = numpy.arange(imageBounds.y0, imageBounds.y1 + 1.01*pixelSize, pixelSize)
     
     im, edx, edy = scipy.histogram2d(x,y, bins=(X,Y))
 
     return im
 
-def rendHist3D(x,y,z, imageBounds, pixelSize, zb,sliceSize=100):
-    X = numpy.arange(imageBounds.x0,imageBounds.x1, pixelSize)
-    Y = numpy.arange(imageBounds.y0,imageBounds.y1, pixelSize)
-    Z = numpy.arange(zb[0], zb[1] + sliceSize, sliceSize)
+def rendHist3D(x,y,z, imageBounds, pixelSize,sliceSize=100):
+    X = numpy.arange(imageBounds.x0, imageBounds.x1 + 1.01*pixelSize, pixelSize)
+    Y = numpy.arange(imageBounds.y0, imageBounds.y1 + 1.01*pixelSize, pixelSize)
+    Z = numpy.arange(imageBounds.z0,imageBounds.z1 + 1.01*sliceSize, sliceSize)
 
     im, ed = scipy.histogramdd([x,y, z], bins=(X,Y,Z))
 

@@ -34,7 +34,7 @@ from PYME.Analysis._fithelpers import FitModelWeighted, FitModelWeightedJac
 def f_gauss2dSlow(p, X, Y):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""
     A, x0, y0, s, b, b_x, b_y = p
-    return A*np.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*X + b_y*Y
+    return A*np.exp(-((X-x0)**2 + (Y - y0)**2)/(2*s**2)) + b + b_x*(X -x0) + b_y*(Y-y0)
 
 def f_gauss2d(p, X, Y):
     """2D Gaussian model function with linear background - parameter vector [A, x0, y0, sigma, background, lin_x, lin_y]"""

@@ -70,7 +70,31 @@ class CurrentRenderer:
         if not self.visFr is None:
             self.visFr.AddMenuItem('Generate', self.name, self.GenerateGUI)
 
-    def _getImBounds(self, zmin=None, zmax=None):
+    def _get_image_bounds(self, pixel_size, slice_size=None, zmin=None, zmax=None):
+        """
+        Returns the image bounds for the image to be generated, rounded to the nearest pixel.
+        
+        Generates the image bounds as follows:
+        
+        - Takes image bounds from pipeline (these will either come from the ROI metadata (if present), or have been
+         estimated from the maximum extent of localizations in the pipeline.
+        
+        - Clips these to the currently displayed region
+        
+        - Clips again to any ROI the user has set
+        
+        
+        Parameters
+        ----------
+        pixel_size : float - pixel size in nm
+        slice_size : float - z slice thickness in nm
+        zmin : float [optional] - lower z bound
+        zmax : float [optional] - upper z bound
+
+        Returns
+        -------
+
+        """
         if self.visFr is None:
             x0, y0, x1, y1, z0, z1 = self.pipeline.imageBounds.bounds
             
@@ -95,8 +119,6 @@ class CurrentRenderer:
             y0 = max(y0, self.pipeline.filterKeys['y'][0])
             y1 = min(y1, self.pipeline.filterKeys['y'][1])
 
-        #imb = ImageBounds(self.glCanvas.xmin,self.glCanvas.ymin,self.glCanvas.xmax,self.glCanvas.ymax)
-
         if not zmin is None:
             z0 = zmin
         else:
@@ -106,7 +128,13 @@ class CurrentRenderer:
             z1 = zmax
         else:
             z1 = 0
-        
+
+        # extent x1, y1, and z1 if necessary to make sure that bound ranges are integer multiples of pixel or slice size
+        x1 = x0 + (np.ceil((x1 - x0) / pixel_size) * pixel_size)
+        y1 = y0 + (np.ceil((y1 - y0) / pixel_size) * pixel_size)
+        if slice_size is not None and (z0 != z1):
+            z1 = z0 + (np.ceil((z1 - z0) / slice_size) * slice_size)
+
         return ImageBounds(x0, y0, x1, y1, z0, z1)
 
     def _getDefaultJitVar(self, jitVars):
@@ -154,8 +182,7 @@ class CurrentRenderer:
 
         pixelSize = settings['pixelSize']
 
-        imb = self._getImBounds()
-
+        imb = self._get_image_bounds(pixelSize)  # get image bounds at integer multiple of pixel size
         im = self.genIm(settings, imb, mdh)
         return GeneratedImage(im, imb, pixelSize, 0, ['Image'], mdh=mdh)
 
@@ -179,15 +206,15 @@ class CurrentRenderer:
         dlg.Destroy()
         return imf
 
-    def genIm(self, dlg, imb, mdh):
+    def genIm(self, settings, imb, mdh):
         import matplotlib.pyplot as plt
         oldcmap = self.visFr.glCanvas.cmap
         self.visFr.glCanvas.setCMap(plt.cm.gray)
-        im = self.visFr.glCanvas.getIm(dlg.getPixelSize())
+        im = self.visFr.glCanvas.getIm(settings['pixelSize'], image_bounds=imb)
 
         self.visFr.glCanvas.setCMap(oldcmap)
 
-        return im
+        return np.atleast_3D(im)
 
 class ColourRenderer(CurrentRenderer):
     """Base class for all other renderers which know about the colour filter"""
@@ -205,10 +232,12 @@ class ColourRenderer(CurrentRenderer):
             cb(mdh)
 
         pixelSize = settings['pixelSize']
+        sliceThickness = settings['zSliceThickness']
 
         status = statusLog.StatusLogger('Generating %s Image ...' % self.name)
-        
-        imb = self._getImBounds(*settings.get('zBounds', [None, None]))
+
+        # get image bounds at integer multiple of pixel size
+        imb = self._get_image_bounds(pixelSize, sliceThickness, *settings.get('zBounds', [None, None]))
 
         #record the pixel origin in nm from the corner of the camera for futrue overlays
         if 'Source.Camera.ROIPosX' in mdh.getEntryNames():
@@ -241,7 +270,7 @@ class ColourRenderer(CurrentRenderer):
 
         self.colourFilter.setColour(oldC)
 
-        return GeneratedImage(ims, imb, pixelSize, settings['zSliceThickness'], colours, mdh=mdh)
+        return GeneratedImage(ims, imb, pixelSize, sliceThickness, colours, mdh=mdh)
 
     def GenerateGUI(self, event=None):
         import wx
