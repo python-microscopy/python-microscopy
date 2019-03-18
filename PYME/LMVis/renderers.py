@@ -493,7 +493,7 @@ class Triangle3DRenderer(TriangleRenderer):
 
         return visHelpers.rendJitTet(self.colourFilter['x'],self.colourFilter['y'],
                                      self.colourFilter['z'], settings['numSamples'], jitVals, jitValsZ,
-                                     settings['MCProbability'], imb, pixelSize, settings['zBounds'], settings['zSliceThickness'])
+                                     settings['MCProbability'], imb, pixelSize, settings['zSliceThickness'])
 
 class QuadTreeRenderer(ColourRenderer):
     """2D quadtree rendering"""

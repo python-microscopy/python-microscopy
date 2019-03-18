@@ -147,36 +147,41 @@ def rendGauss(x, y, sx, imageBounds, pixelSize):
         2D Gaussian rendering. Note that im[0, 0] is centered at 0.5 * [pixelSize, pixelSize] (FIXME)
 
     """
+    
+    # choose a ROI size that is appropriate, and generate a padded image to render into
     sx = numpy.maximum(sx, pixelSize)
     fuzz = 3*scipy.median(sx)
     roiSize = int(fuzz/pixelSize)
     fuzz = pixelSize*roiSize
 
+    # FIXME - do we need the half pixel offset
     X = numpy.arange(imageBounds.x0 - fuzz,imageBounds.x1 + fuzz, pixelSize) + 0.5*pixelSize
     Y = numpy.arange(imageBounds.y0 - fuzz,imageBounds.y1 + fuzz, pixelSize) + 0.5*pixelSize
-
-    #print X
     
     im = scipy.zeros((len(X), len(Y)), 'f')
-
-    #record our image resolution so we can plot pts with a minimum size equal to res (to avoid missing small pts)
-    delX = scipy.absolute(X[1] - X[0]) 
     
     for i in range(len(x)):
+        # FIXME - argmin() involves a search (expensive) - we should be able to get the nearest pixel as something like
+        # ix = np.round(x[i] - X[0])/pixelSize
         ix = scipy.absolute(X - x[i]).argmin()
         iy = scipy.absolute(Y - y[i]).argmin()
 
-        #sxi =  max(sx[i], delX)
         sxi = sx[i]
         
         imp = Gauss2D(X[(ix - roiSize):(ix + roiSize + 1)], Y[(iy - roiSize):(iy + roiSize + 1)],1/sxi, x[i],y[i],sxi)
         im[(ix - roiSize):(ix + roiSize + 1), (iy - roiSize):(iy + roiSize + 1)] += imp
 
+    # clip to final image size
     im = im[roiSize:-roiSize, roiSize:-roiSize]
 
     return im
     
 def rendGaussProd(x,y, sx, imageBounds, pixelSize):
+    """ EXPERIMENTAL code to try and generate a log-likelihood rendering
+    
+    WARNING - needs lots of revision
+    """
+    
     sx = numpy.maximum(sx, pixelSize)
     fuzz = 6*scipy.median(sx)
     roiSize = int(fuzz/pixelSize)
