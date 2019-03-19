@@ -10,14 +10,9 @@ from scipy import ndimage
 
 
 import numpy as np
+import six
 import skimage.filters as skf
 import inspect
-
-# Hack for python2/3 unicode/str
-# https://stackoverflow.com/questions/19877306/nameerror-global-name-unicode-is-not-defined-in-python-3
-import sys
-if sys.version_info[0] >= 3:
-    unicode = str
 
 """Automagically generate filter objects for all skimage filters"""
 
@@ -94,7 +89,7 @@ for filtName in skFilterNames:
                     argDefaults[a] = ad
                     if ad is None:
                         argTypes[a] = 'image'
-                    elif isinstance(ad, str) or isinstance(ad, unicode):
+                    elif isinstance(ad, six.string_types):
                         argTypes[a] = 'string'
                     elif isinstance(ad, dict):
                         argTypes[a] = 'dict'

@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import wx
 import numpy as np
 
