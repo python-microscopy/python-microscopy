@@ -21,6 +21,8 @@
 #
 ##################
 
+""" HIGHLY experimental (and buggy) deconvolution with sparseness prior"""
+
 #from scipy import * 
 #from scipy.linalg import *
 from scipy.fftpack import fftn, ifftn, fftshift, ifftshift

@@ -146,6 +146,13 @@ def rendGauss(x, y, sx, imageBounds, pixelSize):
     im : ndarray
         2D Gaussian rendering. Note that im[0, 0] is centered at 0.5 * [pixelSize, pixelSize] (FIXME)
 
+    TODOS:
+    
+    - speed improvements? Parallelisation?
+    - variable ROI size? We currently base our ROI size on the median localization/jitter error, with the parts of the
+    Gaussians which extend past the ROI being dropped. This is usually not an issue, but could become one if we have a
+    large range of localization precisions (or if we are using something else - e.g. neighbour distances - as sigma).
+    
     """
     
     # choose a ROI size that is appropriate, and generate a padded image to render into
@@ -162,7 +169,7 @@ def rendGauss(x, y, sx, imageBounds, pixelSize):
     
     for i in range(len(x)):
         # FIXME - argmin() involves a search (expensive) - we should be able to get the nearest pixel as something like
-        # ix = np.round(x[i] - X[0])/pixelSize
+        # ix = int(np.round((x[i] - X[0])/pixelSize))
         ix = scipy.absolute(X - x[i]).argmin()
         iy = scipy.absolute(Y - y[i]).argmin()
 
@@ -249,17 +256,15 @@ def rendTri(T, imageBounds, pixelSize, c=None, im=None, geometric_mean=False):
     xs = T.x[T.triangles]  # x posititions of vertices [nm], dimensions (# triangles, 3)
     ys = T.y[T.triangles]  # y posititions of vertices [nm], dimensions (# triangles, 3)
 
-    a01 = numpy.vstack((xs[:,0] - xs[:,1], ys[:,0] - ys[:,1])).T
-    a02 = numpy.vstack((xs[:,0] - xs[:,2], ys[:,0] - ys[:,2])).T
-    a12 = numpy.vstack((xs[:,1] - xs[:,2], ys[:,1] - ys[:,2])).T
-
-    a_ = ((a01 * a01).sum(1))
-    b_ = ((a02 * a02).sum(1))
-    b2_ = ((a12 * a12).sum(1))
-
     if c is None:
         # We didn't pass anything in for c - use 1/ area of triangle
-        
+        a01 = numpy.vstack((xs[:, 0] - xs[:, 1], ys[:, 0] - ys[:, 1])).T
+        a02 = numpy.vstack((xs[:, 0] - xs[:, 2], ys[:, 0] - ys[:, 2])).T
+        a12 = numpy.vstack((xs[:, 1] - xs[:, 2], ys[:, 1] - ys[:, 2])).T
+
+        a_ = ((a01 * a01).sum(1))
+        b_ = ((a02 * a02).sum(1))
+        b2_ = ((a12 * a12).sum(1))
         # use the median edge length^2 as a proxy for area (this avoids "slithers" getting really bright)
         c = 0.5*numpy.median([b_, a_, b2_], 0)
  
