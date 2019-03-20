@@ -4,7 +4,7 @@ Created on Sun Feb 14 10:07:11 2016
 
 @author: david
 """
-
+import six
 import PYME.misc.pyme_zeroconf as pzc
 #import urllib
 import socket
@@ -12,7 +12,11 @@ import requests
 import time
 import numpy as np
 import threading
-import http.client as httplib
+
+if six.PY2:
+    import httplib
+else:
+    import http.client as httplib
 
 import socket
 import os
@@ -22,10 +26,28 @@ USE_RAW_SOCKETS = True
 from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
 
-from PYME import config
-local_dataroot = config.get('dataserver-root')
-local_serverfilter = config.get('dataserver-filter', '')
 
+def to_bytes(input):
+    """
+    Helper function for python3k to force urls etc to byte strings
+
+    Parameters
+    ----------
+    input
+
+    Returns
+    -------
+
+    """
+    if isinstance(input, str):
+        return input.encode('utf8')
+    else:
+        return input
+
+
+from PYME import config
+local_dataroot = to_bytes(config.get(b'dataserver-root'))
+local_serverfilter = to_bytes(config.get(b'dataserver-filter', b''))
 
 import sys
 
@@ -151,7 +173,7 @@ def _listSingleDir(dirurl, nRetries=1, timeout=5):
     return dirL, dt
 
 
-def locateFile(filename, serverfilter='', return_first_hit=False):
+def locateFile(filename, serverfilter=b'', return_first_hit=False):
     """
     Searches the cluster to find which server(s) a given file is stored on
 
@@ -168,7 +190,11 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
     -------
 
     """
-    cache_key = serverfilter + '::' + filename
+    
+    filename = to_bytes(filename)
+    serverfilter = to_bytes(serverfilter)
+    
+    cache_key = serverfilter + b'::' + filename
     try:
         locs, t = _locateCache[cache_key]
         #logger.debug('Returning cached locs: %s' % locs)
@@ -176,10 +202,10 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
     except KeyError:
         locs = []
 
-        dirname = '/'.join(filename.split('/')[:-1])
+        dirname = b'/'.join(filename.split(b'/')[:-1])
         fn = filename.split('/')[-1]
         if (len(dirname) >= 1):
-            dirname += '/'
+            dirname += b'/'
 
         servers = []
         localServers = []
@@ -197,7 +223,7 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
                     Total number of nodes: %d
                     ''' % (name, len(services)))
                 else:
-                    dirurl = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
+                    dirurl = b'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
     
                     if compName in name:
                         localServers.append(dirurl)
@@ -253,7 +279,7 @@ def locateFile(filename, serverfilter='', return_first_hit=False):
 _pool = None
 
 _list_dir_lock = threading.Lock()
-def listdirectory(dirname, serverfilter='', timeout=5):
+def listdirectory(dirname, serverfilter=b'', timeout=5):
     """Lists the contents of a directory on the cluster.
 
     Returns a dictionary mapping filenames to clusterListing.FileInfo named tuples.
@@ -261,6 +287,9 @@ def listdirectory(dirname, serverfilter='', timeout=5):
     global _pool
     from . import clusterListing as cl
     from multiprocessing.pool import ThreadPool
+
+    dirname = to_bytes(dirname)
+    serverfilter = to_bytes(serverfilter)
 
     with _list_dir_lock:
         if _pool is None:
@@ -270,10 +299,10 @@ def listdirectory(dirname, serverfilter='', timeout=5):
     
         urls = []
     
-        dirname = dirname.lstrip('/')
+        dirname = dirname.lstrip(b'/')
     
-        if not dirname.endswith('/'):
-            dirname = dirname + '/'
+        if not dirname.endswith(b'/'):
+            dirname = dirname + b'/'
     
         services = get_ns().get_advertised_services()
         for name, info in services:
@@ -288,7 +317,7 @@ def listdirectory(dirname, serverfilter='', timeout=5):
                     ''' % (name, len(services)))
                     
                 else:
-                    urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
+                    urls.append(b'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
     
         listings = _pool.map(_listSingleDir, urls)
     
@@ -304,15 +333,18 @@ def listdir(dirname, serverfilter=''):
 
     return sorted(listdirectory(dirname, serverfilter).keys())
 
-def isdir(name, serverfilter=''):
-    name = name.rstrip('/')
-    if name in ['/', '']:
+def isdir(name, serverfilter=b''):
+    name = to_bytes(name)
+    serverfilter = to_bytes(serverfilter)
+    
+    name = name.rstrip(b'/')
+    if name in [b'/', '']:
         #special case for root dir
         return True
     
     pn, n = os.path.split(name)
     try:
-        d = listdirectory(pn)[n + '/']
+        d = listdirectory(pn, serverfilter)[n + b'/']
     except KeyError:
         return False
     
@@ -356,9 +388,13 @@ def _cglob(url, timeout=2, nRetries=1):
     
     return list(matches)
     
-def cglob(pattern, serverfilter=''):
+def cglob(pattern, serverfilter=b''):
     global _pool
     from multiprocessing.pool import ThreadPool
+
+    pattern = to_bytes(pattern)
+    serverfilter = to_bytes(serverfilter)
+    
     with _list_dir_lock:
         if _pool is None:
             _pool = ThreadPool(10)
@@ -378,7 +414,7 @@ def cglob(pattern, serverfilter=''):
                     ''' % (name, len(services)))
                 
                 else:
-                    urls.append('http://%s:%d/__glob?pattern=%s' % (socket.inet_ntoa(info.address), info.port, pattern))
+                    urls.append(b'http://%s:%d/__glob?pattern=%s' % (socket.inet_ntoa(info.address), info.port, pattern))
         
         matches = _pool.map(_cglob, urls)
         
@@ -411,14 +447,17 @@ class stat_result(object):
 
 def stat(name, serverfilter=''):
     from . import clusterListing as cl
+
+    name = to_bytes(name)
+    serverfilter = to_bytes(serverfilter)
     
-    rname = name.rstrip('/')
+    rname = name.rstrip(b'/')
     dirname, fname = os.path.split(rname)
     
     listing = listdirectory(dirname, serverfilter)
     #print name, listing
     
-    if fname == '':
+    if fname == b'':
         #special case for the root directory
         return stat_result(cl.FileInfo(cl.FILETYPE_DIRECTORY, 0))
     
@@ -426,7 +465,7 @@ def stat(name, serverfilter=''):
         r = stat_result(listing[fname])
     except KeyError:
         try:
-            r = stat_result(listing[fname + '/'])
+            r = stat_result(listing[fname + b'/'])
         except:
             logger.exception('error stating: %s' % name)
             #print dirname, fname
@@ -444,17 +483,20 @@ def walk(top, topdown=True, on_error=None, followlinks=False, serverfilter=''):
 
     """
 
+    top = to_bytes(top)
+    serverfilter = to_bytes(serverfilter)
+
     # islink, join, isdir = path.islink, path.join, path.isdir
     def islink(name):
         # cluster does not currently have the concept of symlinks
         return False
 
     def join(*args):
-        j = '/'.join(args)
-        return j.replace('//', '/')
+        j = b'/'.join(args)
+        return j.replace(b'//', b'/')
 
     def isdir(name):
-        return name.endswith('/')
+        return name.endswith(b'/')
 
     # We may not have read permission for top, in which case we can't
     # get a list of the files the directory contains.  os.path.walk
@@ -503,16 +545,21 @@ def _chooseLocation(locs):
 
 
 def parseURL(URL):
-    scheme, body = URL.split('://')
-    parts = body.split('/')
+    URL = to_bytes(URL)
+    
+    scheme, body = URL.split(b'://')
+    parts = body.split(b'/')
 
     serverfilter = parts[0]
-    filename = '/'.join(parts[1:])
+    filename = b'/'.join(parts[1:])
 
     return filename, serverfilter
 
 
 def isLocal(filename, serverfilter):
+    filename = to_bytes(filename)
+    serverfilter = to_bytes(serverfilter)
+    
     if serverfilter == local_serverfilter and local_dataroot:
         #look for the file in the local server folder (short-circuit the server)
         localpath = os.path.join(local_dataroot, filename)
@@ -521,13 +568,16 @@ def isLocal(filename, serverfilter):
         return False
 
 def get_local_path(filename, serverfilter):
+    filename = to_bytes(filename)
+    serverfilter = to_bytes(serverfilter)
+    
     if serverfilter == local_serverfilter and local_dataroot:
         #look for the file in the local server folder (short-circuit the server)
         localpath = os.path.join(local_dataroot, filename)
         if os.path.exists(localpath):
             return localpath
 
-def getFile(filename, serverfilter='', numRetries=3, use_file_cache=True):
+def getFile(filename, serverfilter=b'', numRetries=3, use_file_cache=True):
     """
     Get a file from the cluster.
     
@@ -550,6 +600,8 @@ def getFile(filename, serverfilter='', numRetries=3, use_file_cache=True):
     -------
 
     """
+    filename = to_bytes(filename)
+    serverfilter = to_bytes(serverfilter)
     
     if use_file_cache:
         try:
@@ -620,11 +672,11 @@ _lastwritespeed = {}
 
 
 def _netloc(info):
-    return '%s:%s' % (socket.inet_ntoa(info.address), info.port)
+    return to_bytes('%s:%s' % (socket.inet_ntoa(info.address), info.port))
 
 
 _choose_server_lock = threading.Lock()
-def _chooseServer(serverfilter='', exclude_netlocs=[]):
+def _chooseServer(serverfilter=b'', exclude_netlocs=[]):
     """chose a server to save to by minimizing a cost function
 
     currently takes the server which has been waiting longest
@@ -632,8 +684,8 @@ def _chooseServer(serverfilter='', exclude_netlocs=[]):
     TODO: add free disk space and improve metrics/weightings
 
     """
-    serv_candidates = [(k, v) for k, v in get_ns().get_advertised_services() if
-                       (serverfilter in k) and not (_netloc(v) in exclude_netlocs)]
+    serv_candidates = [(to_bytes(k), to_bytes(v)) for k, v in get_ns().get_advertised_services() if
+                       (serverfilter in to_bytes(k)) and not (_netloc(v) in exclude_netlocs)]
 
     with _choose_server_lock:
         t = time.time()
@@ -665,12 +717,14 @@ def _chooseServer(serverfilter='', exclude_netlocs=[]):
         return name, info
 
 
-def mirrorFile(filename, serverfilter=''):
+def mirrorFile(filename, serverfilter=b''):
     """Copies a given file to another server on the cluster (chosen by algorithm)
 
     The actual copy is performed peer to peer.
     """
-
+    filename = to_bytes(filename)
+    serverfilter = to_bytes(serverfilter)
+    
     locs = locateFile(filename, serverfilter)
 
     # where is the data currently located - exclude these from destinations
@@ -682,7 +736,7 @@ def mirrorFile(filename, serverfilter=''):
     # and a source to copy from
     sourceUrl = _chooseLocation(locs)
 
-    url = 'http://%s:%d/%s?MirrorSource=%s' % (socket.inet_ntoa(destInfo.address), destInfo.port, filename, sourceUrl)
+    url = b'http://%s:%d/%s?MirrorSource=%s' % (socket.inet_ntoa(destInfo.address), destInfo.port, filename, sourceUrl)
     url = url.encode()
     s = _getSession(url)
     r = s.put(url, timeout=1)
@@ -699,6 +753,10 @@ def putFile(filename, data, serverfilter=''):
     TODO - Add retry with a different server on failure
     """
     from . import clusterListing as cl
+
+    filename = to_bytes(filename)
+    serverfilter = to_bytes(serverfilter)
+    
     success = False
     nAttempts = 0
     
@@ -724,14 +782,14 @@ def putFile(filename, data, serverfilter=''):
             success = True
 
             #add file to location cache
-            cache_key = serverfilter + '::' + filename
+            cache_key = serverfilter + b'::' + filename
             t1 = time.time()
             _locateCache[cache_key] = ([(url, .1),], t1)
             
             #modify dir cache
             try:
                 dirurl, fn = os.path.split(url)
-                dirurl = dirurl + '/'
+                dirurl = dirurl + b'/'
                 dirL, rt, dt = _dirCache[dirurl]
                 if (t - rt) > DIR_CACHE_TIME:
                     pass #cache entry is expired
@@ -805,6 +863,9 @@ if USE_RAW_SOCKETS:
 
         TODO - Add retry with a different server on failure
         """
+
+        files = [to_bytes(f) for f in files]
+        serverfilter = to_bytes(serverfilter)
         
         nRetries = 0
         nChunksRemaining = len(files)
@@ -829,7 +890,7 @@ if USE_RAW_SOCKETS:
                 rs = []
         
                 #nChunksRemaining = len(files)
-                connection = 'keep-alive'
+                connection = b'keep-alive'
                 #pipeline the sends
                 
                 nChunksSpooled = 0
@@ -837,10 +898,10 @@ if USE_RAW_SOCKETS:
                     filename, data = files[-nChunksRemaining]
                     dl = len(data)
                     if nChunksRemaining <= 1:
-                        connection = 'close'
+                        connection = b'close'
         
                     
-                    header = 'PUT /%s HTTP/1.1\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n' % (filename, connection, dl)
+                    header = b'PUT /%s HTTP/1.1\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n' % (filename, connection, dl)
                     s.sendall(header)
                     s.sendall(data)
         
@@ -860,7 +921,7 @@ if USE_RAW_SOCKETS:
                 #         logging.debug(('Response %d - status: %d' % (i,status)) + ' msg: ' + msg)
                 #         raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, msg))
 
-                fp = s.makefile('rb', 65536)
+                fp = s.makefile(b'rb', 65536)
                 try:
                     for i in range(nChunksSpooled):
                         status, reason, msg = _parse_response(fp)
@@ -919,10 +980,13 @@ else:
 
         TODO - Add retry with a different server on failure
         """
+        files = [to_bytes(f) for f in files]
+        serverfilter = to_bytes(serverfilter)
+        
         name, info = _chooseServer(serverfilter)
 
         for filename, data in files:
-            url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
+            url = b'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
 
             t = time.time()
             #_last_access_time[name] = t
@@ -941,12 +1005,14 @@ else:
 _cached_status = None
 _cached_status_expiry = 0
 _status_lock = threading.Lock()
-def getStatus(serverfilter=''):
+def getStatus(serverfilter=b''):
     """Lists the contents of a directory on the cluster. Similar to os.listdir,
         but directories are indicated by a trailing slash
         """
     import json
     global _cached_status, _cached_status_expiry
+
+    serverfilter = to_bytes(serverfilter)
 
     with _status_lock:
         t = time.time()
@@ -955,7 +1021,7 @@ def getStatus(serverfilter=''):
         
             for name, info in get_ns().get_advertised_services():
                 if serverfilter in name:
-                    surl = 'http://%s:%d/__status' % (socket.inet_ntoa(info.address), info.port)
+                    surl = b'http://%s:%d/__status' % (socket.inet_ntoa(info.address), info.port)
                     url = surl.encode()
                     s = _getSession(url)
                     try:
