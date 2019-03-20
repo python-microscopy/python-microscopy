@@ -370,7 +370,7 @@ def _generate_subprocess_seeds(preferred_n_tasks = 1, mdh=None, seeds=None):
 
     """
     if seeds is None:
-        seeds = np.random.randint(0, np.iinfo(np.uint32).max, preferred_n_tasks)
+        seeds = np.random.randint(0, np.iinfo(np.int32).max, preferred_n_tasks)
     
     if not mdh is None:
         mdh['Rendering.RandomSeeds'] = [int(s) for s in seeds]

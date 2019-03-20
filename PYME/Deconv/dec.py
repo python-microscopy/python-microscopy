@@ -305,6 +305,28 @@ class ClassicMappingNP(DeconvMappingBase):
         d = ifftshift(ifftn(F*self.Ht))
         d = np.real(d)
         return np.ravel(d)
+    
+    def Lfunc(self, f):
+        """convolve with an approximate 2nd derivative likelihood operator in 3D.
+        i.e. [[[0,0,0][0,1,0][0,0,0]],[[0,1,0][1,-6,1][0,1,0]],[[0,0,0][0,1,0][0,0,0]]]
+        """
+        #make our data 3D again
+        fs = np.reshape(f, (self.height, self.width, self.depth))
+        a = -6*fs
+
+        a[:,:,0:-1] += fs[:,:,1:]
+        a[:,:,1:] += fs[:,:,0:-1]
+
+        a[:,0:-1,:] += fs[:,1:,:]
+        a[:,1:,:] += fs[:,0:-1,:]
+
+        a[0:-1,:,:] += fs[1:,:,:]
+        a[1:,:,:] += fs[0:-1,:,:]
+
+        #flatten data again
+        return np.ravel(np.cast['f'](a))
+
+    Lhfunc=Lfunc
 
 class dec_conv_slow(ICTMDeconvolution, ClassicMappingNP):
     def __init__(self, *args, **kwargs):

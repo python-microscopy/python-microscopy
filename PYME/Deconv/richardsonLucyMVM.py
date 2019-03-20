@@ -52,6 +52,7 @@ class MotionCompensatingRichardsonLucy(richardsonLucyMV.MultiviewRichardsonLucy)
     """
     
     def pd(self, g, velx, vely, tvals):
+        """ remap image according to deformation field """
         g_ = g.reshape(self.dataShape[0], self.dataShape[1], -1)
         velx_ = velx.reshape(self.dataShape)
         vely_ = vely.reshape(self.dataShape)
@@ -131,9 +132,6 @@ class MotionCompensatingRichardsonLucy(richardsonLucyMV.MultiviewRichardsonLucy)
         #self.f = self.f.ravel()
         views = [d.ravel() for d in views]
         self.views = views
-        #data = data.ravel()
-        #weights = weights.ravel()
-        #print 'dc3'
 
         if not np.shape(vx) == self.dataShape:
             self.vx = vx*np.ones_like(views[0]) #- 1.0#1.0
@@ -143,11 +141,8 @@ class MotionCompensatingRichardsonLucy(richardsonLucyMV.MultiviewRichardsonLucy)
             self.vy = vy #.ravel()
 
         self.xv, self.yv = np.mgrid[0.:self.dataShape[0], 0.:self.dataShape[1]]
-        #self.xv, self.yv = xv.ravel(), yv.ravel()
 
         mask = 1 - weights
-        
-        #print data.sum(), self.f.sum()
 
         self.loopcount=0
         
