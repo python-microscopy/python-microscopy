@@ -573,7 +573,8 @@ class Pipeline:
                 if 'DriftResults' in ds.h5f.root:
                     driftDS = tabular.h5rDSource(ds.h5f)
                     self.driftInputMapping = tabular.mappingFilter(driftDS)
-                    self.dataSources['Fiducials'] = self.driftInputMapping
+                    #self.dataSources['Fiducials'] = self.driftInputMapping
+                    self.addDataSource('Fiducials', self.driftInputMapping)
 
                     if len(ds['x']) == 0:
                         self.selectDataSource('Fiducials')
@@ -584,7 +585,8 @@ class Pipeline:
                 self.filesToClose.append(ds.h5f)
 
                 self.driftInputMapping = tabular.mappingFilter(ds)
-                self.dataSources['Fiducials'] = self.driftInputMapping
+                #self.dataSources['Fiducials'] = self.driftInputMapping
+                self.addDataSource('Fiducials', self.driftInputMapping)
                 #self.selectDataSource('Fiducials')
 
             #catch really old files which don't have any metadata
