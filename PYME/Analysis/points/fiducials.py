@@ -42,7 +42,10 @@ def extractAverageTrajectory(pipeline, clumpRadiusVar='error_x', clumpRadiusMult
     t = pipeline['t'].astype('i')
     x = pipeline['x'].astype('f4')
     y = pipeline['y'].astype('f4')
-    z = pipeline.get('z', 0*x).astype('f4')
+    try:
+        z = pipeline['z'].astype('f4')
+    except:
+        z = np.zeros_like(x)
         
     delta_x = delta_x.astype('f4')
     
