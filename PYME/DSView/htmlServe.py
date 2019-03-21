@@ -6,27 +6,29 @@ Created on Thu Apr 16 19:23:43 2015
 """
 import cherrypy
 
+from distutils.version import LooseVersion
 
-##########
-# Monkey Patch cherrypy to allow us to use default automatically selected ports
-# The unpatched version will wait until it gets a timeout, and then kill the program
-# if we try and open with port=0
-# here, we replace force the wait look to return immediately if we're using automatic
-# port selection
-#####
-from cherrypy.process import servers
-
-f1 = servers.wait_for_occupied_port
-
-def f2(host, port, timeout=None):
-    if port == 0:
-        return
-    else:
-        return f1(host, port, timeout)
-   
-servers.wait_for_occupied_port = f2
-
-## End Monkey patch
+if LooseVersion(cherrypy.__version__) < LooseVersion('8.7.0'):
+    ##########
+    # Monkey Patch cherrypy to allow us to use default automatically selected ports
+    # The unpatched version will wait until it gets a timeout, and then kill the program
+    # if we try and open with port=0
+    # here, we replace force the wait look to return immediately if we're using automatic
+    # port selection
+    #####
+    from cherrypy.process import servers
+    
+    f1 = servers.wait_for_occupied_port
+    
+    def f2(host, port, timeout=None):
+        if port == 0:
+            return
+        else:
+            return f1(host, port, timeout)
+       
+    servers.wait_for_occupied_port = f2
+    
+    ## End Monkey patch
 
 
 #open on localhost, on whichever port the OS gives us (by calling with socket_port = 0)
