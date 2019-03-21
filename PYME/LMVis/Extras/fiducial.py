@@ -151,9 +151,15 @@ def fiducial_diagnosis(pipeline):
     a1 = plt.axes()
     plt.title('Y residuals')
     plt.grid()
+    
     f2 = plt.figure()
-    plt.title('X residuuals')
+    plt.title('X residuals')
     a2 = plt.axes()
+    plt.grid()
+
+    f3 = plt.figure()
+    plt.title('Z residuals')
+    a3 = plt.axes()
     plt.grid()
 
     for i in range(1, ci.max()):
@@ -165,10 +171,15 @@ def fiducial_diagnosis(pipeline):
             
             ym= fids['y'][fid_m].mean()
             xm = fids['x'][fid_m].mean()
+            zm = fids['z'][fid_m].mean()
+            
             a1.plot(fids['t'][mask], fids['y'][mask] - ym + f_id * 50,
                  color=plt.cm.hsv( (i % 20.0)/20.))
 
             a2.plot(fids['t'][mask], fids['x'][mask] - xm + f_id * 50,
+                    color=plt.cm.hsv((i % 20.0) / 20.))
+
+            a3.plot(fids['t'][mask], fids['z'][mask] - zm + f_id * 50,
                     color=plt.cm.hsv((i % 20.0) / 20.))
     
     plt.figure()
