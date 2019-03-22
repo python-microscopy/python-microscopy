@@ -10,7 +10,7 @@ cd tests
 pytest -v --html=tests_py27.html --cov=..\PYME --cov-report html:cov_html .
 cd ..
 
-conda activate %oldenv%
+call conda activate %oldenv%
 
 
 
