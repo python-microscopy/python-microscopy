@@ -1,19 +1,23 @@
 package:
   name: netifaces
-  version: !!str 0.10.6
+  version: !{{ GIT_DESCRIBE_TAG }}
 
-#build:
-#  noarch_python: True
+source:
+  #git_rev: v0.13.1
+  git_url: https://github.com/al45tair/netifaces
+
+build:
+  script: python setup.py install
 
 requirements:
   build:
     - python
-    - pip
+    - cython #easy way of making sure we have a c compiler - FIXME
 
   run:
     - python
 
 about:
-  home: https://bitbucket.org/al45tair/netifaces
+  home: https://github.org/al45tair/netifaces
   license: MIT License
   summary: Portable network interface information.
