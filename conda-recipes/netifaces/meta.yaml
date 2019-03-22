@@ -1,6 +1,6 @@
 package:
   name: netifaces
-  version: !{{ GIT_DESCRIBE_TAG }}
+  version: {{ GIT_DESCRIBE_TAG }}
 
 source:
   #git_rev: v0.13.1
