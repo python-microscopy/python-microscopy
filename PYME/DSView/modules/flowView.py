@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Wed Mar 11 21:15:36 2015
@@ -15,7 +16,7 @@ import numpy as np
 import pylab
 
 from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, CStr, Bool, Int, on_trait_change
-from traitsui.api import View, Item, Group     
+    
 
 class FlowView(HasTraits):    
     showFlow = Bool(True)
@@ -28,7 +29,10 @@ class FlowView(HasTraits):
     flowVectThresh = Float(0)
     flowVectType = Enum('Arrows', 'Bicolour')
     
-    traits_view = View(Item('showFlow'),
+    
+    def default_traits_view( self ):
+        from traitsui.api import View, Item, Group
+        traits_view = View(Item('showFlow'),
                              Item('flowImageName'),
                              Item('flowVectWidth'),
                              Item('flowVectSpacing'),
@@ -37,6 +41,8 @@ class FlowView(HasTraits):
                              Item('flowVectThresh'),
                              Item('flowVectType'),
                     )
+        
+        return traits_view
     
     def __init__(self, dsviewer):
         HasTraits.__init__(self)
