@@ -20,7 +20,11 @@ def test_DSView_imports():
 
 def test_DSView_modules_imports():
     from PYME.DSView import modules
+
+    modLocations = {}
+    for m in modules.localmodules:
+        modLocations[m] = ['PYME', 'DSView', 'modules']
     
     #import all modules
-    for modName, ml in modules.modLocations.items():
+    for modName, ml in modLocations.items():
         __import__('.'.join(ml) + '.' + modName, fromlist=ml)
