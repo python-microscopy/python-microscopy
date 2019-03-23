@@ -33,40 +33,38 @@ import sys
 
 fakeShutters = fakeShutters
 
-def GetComputerName():
-    if sys.platform == 'win32':
-        return os.environ['COMPUTERNAME']
-    else:
-        return os.uname()[1]
 
-InitBG('HamamatsuORCA', """
-from PYME.Acquire.Hardware.HamamatsuDCAM import HamamatsuORCA
-scope.cam = HamamatsuORCA.HamamatsuORCA(0)
-scope.cameras['HamamatsuORCA'] = scope.cam
+@init_hardware('HamamatsuORCA')
+def orca_cam(scope):
+    from PYME.Acquire.Hardware.HamamatsuDCAM import HamamatsuORCA
+    cam = HamamatsuORCA.HamamatsuORCA(0)
 
-#time.sleep(5)
-""")
+    # for some reason the init code was called from the GUI init in the initial init_orca.py - I'm not sure why
+    # it would make more sense to call it here (try uncommenting this an commenting out the corresponding line in
+    # the GUI init below
+    #cam.Init()
+    
+    scope.register_camera(cam, 'sCMOS')
 
-InitGUI("""
-scope.camControls['HamamatsuORCA'] = wx.Panel(MainFrame)
-camPanels.append((scope.camControls['HamamatsuORCA'], 'ORCA Properties'))
-""")
 
-#setup for the channels to aquire - b/w camera, no shutters
-class chaninfo:
-    names = ['bw']
-    cols = [1] #1 = b/w, 2 = R, 4 = G1, 8 = G2, 16 = B
-    #hw = [fakeShutters.CH1] #unimportant - as we have no shutters
-    itimes = [100]
 
-scope.chaninfo = chaninfo
-#scope.shutters = fakeShutters
+@init_gui('sCMOS Camera controls')
+def orca_cam_controls(MainFrame, scope):
+    import wx
+    # Generate an empty, dummy control panel
+    # TODO - adapt PYME.Acquire.Hardware.AndorNeo.ZylaControlPanel or similar to allow options to be set.
+    # As it stands, we just use the default gain and readout settings.
+    scope.camControls['HamamatsuORCA'] = wx.Panel(MainFrame)
+    MainFrame.camPanels.append((scope.camControls['HamamatsuORCA'], 'ORCA Properties'))
+    
+    # for some reason the camera init was performed in the GUI callback in the original file - I'm not sure why
+    # try commenting this out and uncommenting the line in the hardware init above.
+    scope.cameras['sCMOS'].Init()
 
-InitGUI("""scope.cam.Init()""")
+
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread
 
-#scope.SetCamera('A')
 
 time.sleep(.5)
 scope.initDone = True
