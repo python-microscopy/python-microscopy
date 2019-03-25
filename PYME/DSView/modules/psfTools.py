@@ -30,12 +30,12 @@ env = Environment(loader=PackageLoader('PYME.DSView.modules', 'templates'))
 #from PYME.IO.image import ImageStack
 try:
     from enthought.traits.api import HasTraits, Float, Int, Bool
-    from enthought.traits.ui.api import View, Item
-    from enthought.traits.ui.menu import OKButton
+    #from enthought.traits.ui.api import View, Item
+    #from enthought.traits.ui.menu import OKButton
 except ImportError:
     from traits.api import HasTraits, Float, Int, Bool
-    from traitsui.api import View, Item
-    from traitsui.menu import OKButton
+    #from traitsui.api import View, Item
+    #from traitsui.menu import OKButton
 
 from graphViewPanel import *
 from PYME.Analysis.PSFEst import psfQuality
@@ -284,12 +284,18 @@ class PSFTools(HasTraits):
     iterations = Int(50)
     intermediateUpdates = Bool(False)
     
-    view = View(Item('wavelength'),
+    def default_traits_view( self ):
+        from traitsui.api import View, Item
+        from traitsui.menu import OKButton
+        
+        view = View(Item('wavelength'),
                 Item('NA'),
                 Item('pupilSize'),
                 Item('iterations'), 
                 Item('intermediateUpdates'),
                 buttons=[OKButton])
+        
+        return view
     
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer

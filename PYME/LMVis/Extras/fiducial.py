@@ -26,19 +26,25 @@ def drift_correct(pipeline):
     import matplotlib.pyplot as plt
     #pipeline=visgui.pipeline
 
-    dialog = wx.TextEntryDialog(None, 'Diameter (nm): ', 'Enter Fiducial Size', str(pipeline.mdh.getOrDefault('Analysis.FiducialSize', 1000)))
+    filters = {'error_x': [0, 10]}
+    if 'sig' in pipeline.keys():
+        dialog = wx.TextEntryDialog(None, 'Diameter (nm): ', 'Enter Fiducial Size', str(pipeline.mdh.getOrDefault('Analysis.FiducialSize', 1000)))
 
-    sig = [330., 370.]
+        sig = [330., 370.]
 
-    if dialog.ShowModal() == wx.ID_OK:
-        size = float(dialog.GetValue())
-        sigE = float(np.sqrt((size/(np.sqrt(2)*2.35))**2 + 135.**2))  # Expected std of the bead + expected std of psf
-        sig = [0.95*sigE, 1.05*sigE]
+        if dialog.ShowModal() == wx.ID_OK:
+            size = float(dialog.GetValue())
+            sigE = float(np.sqrt((size/(np.sqrt(2)*2.35))**2 + 135.**2))  # Expected std of the bead + expected std of psf
+            sig = [0.95*sigE, 1.05*sigE]
+
+        filters['sig'] = sig
+
+    if 'fitError_z0' in pipeline.keys():
+        filters['fitError_z0'] = [0,30]
 
     recipe = pipeline.recipe
-
     filt_fiducials = FilterTable(recipe, inputName='Fiducials',
-                                  outputName='filtered_fiducials', filters={'error_x': [0, 10], 'sig': sig})
+                                  outputName='filtered_fiducials', filters=filters)
     
     filt_fiducials.configure_traits(kind='modal')
     #print('Adding fiducial filter module')

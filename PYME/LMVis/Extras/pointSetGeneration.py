@@ -24,10 +24,10 @@
 import wx
 try:
     from enthought.traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
-    from enthought.traits.ui.api import View, Item, EnumEditor, InstanceEditor
+    #from enthought.traits.ui.api import View, Item, EnumEditor, InstanceEditor
 except ImportError:
     from traits.api import HasTraits, Float, File, BaseEnum, Enum, List, Instance, Str
-    from traitsui.api import View, Item, EnumEditor, InstanceEditor
+    #from traitsui.api import View, Item, EnumEditor, InstanceEditor
     
 from PYME.IO import image
 
@@ -88,7 +88,7 @@ class WRDictEnum (BaseEnum):
     #    return ' or '.join( [ repr( x ) for x in self.values ] )
 
     def create_editor ( self):
-        #from enthought.traits.ui.api import EnumEditor
+        from traitsui.api import EnumEditor
         #print dict(self.wrdict.items())
 
         ed = EnumEditor( values   = self,
@@ -152,8 +152,10 @@ class Generator(HasTraits):
     sources = List([WormlikeSource(), ImageSource(), FileSource()])
 
     source = Instance(PointSource)
-
-    traits_view = View( Item( 'source',
+    
+    def default_traits_view( self ):
+        from traitsui.api import View, Item, EnumEditor, InstanceEditor
+        traits_view = View( Item( 'source',
                             label= 'Point source',
                             editor =
                             InstanceEditor(name = 'sources',
@@ -168,6 +170,8 @@ class Generator(HasTraits):
                         Item('backgroundIntensity'),
                         
                         buttons = ['OK'])
+        
+        return traits_view
 
     def __init__(self, visFr = None):
         self.visFr = visFr
