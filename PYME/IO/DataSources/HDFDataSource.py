@@ -38,8 +38,9 @@ class DataSource(BaseDataSource):
         self.h5File = tables.open_file(self.h5Filename)
         
         self._pzf_index = None
+
         
-        if 'PZFImageData' in dir(self.h5File.root):
+        if getattr(self.h5File.root, 'PZFImageIndex', False):
             self.usePZFFormat = True
             try:
                 self.framesize = self.h5File.root.PZFImageData.attrs.framesize
