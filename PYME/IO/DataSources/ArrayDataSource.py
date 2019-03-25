@@ -53,7 +53,12 @@ class ArrayDataSource(BaseDataSource): #permit indexing with more dimensions lar
         return r
     
     def getSlice(self, ind):
-        return self[:, :, ind].squeeze()
+        if len(self.data.shape) == 3:
+            #3D
+            return self[:, :, ind].squeeze()
+        elif len(self.data.shape) == 4:
+            #4D. getSlice should collapse last 2 dimensions
+            return self[:,:,ind % self.data.shape[2], ind // self.data.shape[2]].squeeze()
     
     def getSliceShape(self):
         if self.dim_1_is_z:
