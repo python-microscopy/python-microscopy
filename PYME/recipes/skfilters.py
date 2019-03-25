@@ -10,6 +10,7 @@ from scipy import ndimage
 
 
 import numpy as np
+import six
 import skimage.filters as skf
 import inspect
 
@@ -88,7 +89,7 @@ for filtName in skFilterNames:
                     argDefaults[a] = ad
                     if ad is None:
                         argTypes[a] = 'image'
-                    elif isinstance(ad, str) or isinstance(ad, unicode):
+                    elif isinstance(ad, six.string_types):
                         argTypes[a] = 'string'
                     elif isinstance(ad, dict):
                         argTypes[a] = 'dict'
