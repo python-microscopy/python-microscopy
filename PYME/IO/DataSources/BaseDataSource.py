@@ -112,6 +112,7 @@ class BaseDataSource(object):
                     indices = np.arange(*keys[2].indices(self.shape[2])) + c_i*self.shape[2]
                 elif self.additionalDims == 'CT' or self.additionalDims == 'C':
                     indices = np.arange(*keys[2].indices(self.shape[2]))*self.shape[3] + c_i
+                    
 
                 r.append(np.concatenate([np.atleast_2d(self.getSlice(i)[keys[0], keys[1]])[:,:,None] for i in indices], 2))
 

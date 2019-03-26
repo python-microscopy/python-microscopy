@@ -36,6 +36,7 @@ class DataSource(BaseDataSource):
     def __init__(self, filename, taskQueue=None, chanNum = 0):
         self.filename = getFullExistingFilename(filename)#convert relative path to full path
         self.chanNum = chanNum
+        self.RGB = False
         
         #self.data = readTiff.read3DTiff(self.filename)
 
@@ -66,15 +67,24 @@ class DataSource(BaseDataSource):
         print((self.filename))
         
         tf = tifffile.TIFFfile(self.filename)
+        
+        print(tf.series[0].shape)
 
         self.im = tf.series[0].pages
         if tf.is_ome:
+            print('Detected OME TIFF')
             sh = dict(zip(tf.series[0].axes, tf.series[0].shape))
+            print('sh = %s' % sh)
             self.sizeC = sh['C']
             
             axisOrder = tf.series[0].axes[::-1]
             
             self.additionalDims = ''.join([a for a in axisOrder[2:] if sh[a] > 1])
+        elif tf.is_rgb:
+            print('Detected RGB TIFF')
+            self.sizeC = 3
+            self.RGB = True
+            self.additionalDims = 'C'
             
             
                 
@@ -85,10 +95,15 @@ class DataSource(BaseDataSource):
         #ima = np.array(im.getdata()).newbyteorder(self.endedness)
         #return ima.reshape((self.im.size[1], self.im.size[0]))
         #return self.data[:,:,ind]
+        if self.RGB:
+            return self.im[0].asarray(False, False)[0, 0, :,:,ind].squeeze()
+        
         res =  self.im[ind].asarray(False, False)
         #if res.ndim == 3:
         #print res.shape
         #print self.chanNum
+        
+        
         res = res[0,self.chanNum, :,:].squeeze()
         #print res.shape
         return res
@@ -97,11 +112,16 @@ class DataSource(BaseDataSource):
         #return (self.im.size[1], self.im.size[0])
         if len(self.im[0].shape) == 2:
             return self.im[0].shape
+        elif self.RGB:
+            return self.im[0].shape[:2]
         else:
-            return self.im[0].shape[1:3]
+            return self.im[0].shape[1:3] #FIXME - when is this used?
         #return self.data.shape[:2]
 
     def getNumSlices(self):
+        if self.RGB:
+            return len(self.im)*3
+        
         return len(self.im)
 
     def getEvents(self):

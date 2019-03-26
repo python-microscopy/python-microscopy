@@ -895,7 +895,7 @@ class ImageStack(object):
 
         self.mode = 'default'
 
-    def Load(self, filename=None, prompt=None):
+    def Load(self, filename=None, prompt=None, haveGUI = False):
         """
         Load a file from disk / queue / cluster
 
@@ -985,14 +985,29 @@ class ImageStack(object):
                     # we don't have bioformats - check to see if the file is in a format which we could also read
                     # natively (.tiff)
                     logger.exception('Error importing bioformats - try installing python-bioformats')
+                    
                     if os.path.splitext(filename)[1] in ['.tiff']:
                         logger.warning('Loading .tiff with internal code not bioformats, is this really what you wanted?\n\
                                        The .tiff extension is normally used in PYME to force bioformats loading of TIFF \
                                        files which would not load correctly using the internal TIFF handling code. \
                                        Normal TIFF files should use the .tif extension instead.')
                         print('WARNING: Could not load bioformats, falling back to internal TIFF code for .tiff')
+                        
+                        if haveGUI:
+                            import wx
+                            wx.MessageBox("Bioformats could not be loaded, trying to load .tiff using native TIFF loader.\n\
+                                          This might not work as expected as the .tiff format is typically used for TIFFs\
+                                          which don\'t load properly using the native code.\n\
+                                          Try installing python-bioformats as detailed in step 4 of the installation instructions \
+                                          (http://python-microscopy.org/doc/Installation/InstallationWithAnaconda.html", 'WARNING', wx.OK)
+                        
                         self._loadTiff(filename)
                     else:
+                        if haveGUI:
+                            import wx
+                            wx.MessageBox('No native support for file type, and Bioformats could not be loaded. \n\
+                            Try installing python-bioformats as detailed in step 4 of the installation instructions \
+                            (http://python-microscopy.org/doc/Installation/InstallationWithAnaconda.html', 'WARNING', wx.OK)
                         raise
             
     
