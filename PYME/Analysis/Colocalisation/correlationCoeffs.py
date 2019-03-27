@@ -55,6 +55,28 @@ def thresholdedManders(A, B, tA, tB, roi_mask=None):
 
     return MA, MB
 
+
+def maskManders(A, B, mA, mB, roi_mask=None):
+    """Manders, as practically used with threshold determined masks
+    
+    like thresholdedManders, but we pass already thresholded masks in to start with
+    """
+    A = A.astype('f')
+    B = B.astype('f')
+    if not roi_mask is None:
+        A = A[roi_mask]
+        B = B[roi_mask]
+        mA = mA[roi_mask]
+        mB = mB[roi_mask]
+        
+        
+        #print A.shape, B.shape, tA, tB, A.sum(), (B>tB).sum()
+    
+    MA = (mB * A).sum() / A.sum()
+    MB = (mA * B).sum() / B.sum()
+    
+    return MA, MB
+
 def maskFractions(A, B, tA, tB):
     FA = (A > tA).mean()
     FB = (B > tB).mean()

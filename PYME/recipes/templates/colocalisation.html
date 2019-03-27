@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Colocalisation ({{ filestub }})</title>
+</head>
+<body>
+
+<h1>Colocalisation</h1>
+
+<table>
+    <tr><td>Pearson</td> <td>Manders A</td> <td>Manders B</td></tr>
+    <tr><td>{{ namespace.coloc.pearson }}</td><td>{{ namespace.coloc.manders_A }}</td><td>{{ namespace.coloc.manders_B }}</td></tr>
+</table>
+
+<h3>Channel 0 vs mask(Channel 1)</h3>
+
+{{ namespace.chan0_plot.as_html() }}
+
+<h3>Channel 1 vs mask(Channel 0)</h3>
+
+{{ namespace.chan1_plot.as_html() }}
+
+</body>
+</html>

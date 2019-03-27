@@ -77,10 +77,12 @@ def image_enrichment_and_fraction_at_distance(A, mask, voxelsize = None, bins=10
     total = bmA * bnA
     enclosed_signal = np.cumsum(total / total.sum())
     
-    return binsA, enrichment, enclosed_signal
+    enclosed_area = np.cumsum(bnA.astype('f')/bnA.sum())
+    
+    return binsA, enrichment, enclosed_signal, enclosed_area
 
 
-def plot_image_dist_coloc_figure(bins, enrichment_BA, enrichment_AA, enclosed_BA, enclosed_AA, pearson=None, MA=None,
+def plot_image_dist_coloc_figure(bins, enrichment_BA, enrichment_AA, enclosed_BA, enclosed_AA, enclosed_area, pearson=None, MA=None,
                                  MB=None, nameA='A', nameB = 'B'):
     import matplotlib.pyplot as plt
     import scipy.interpolate
@@ -94,19 +96,26 @@ def plot_image_dist_coloc_figure(bins, enrichment_BA, enrichment_AA, enclosed_BA
     
     plt.subplot(211)
     plt.plot(bins[1:], enrichment_BA, lw=2, drawstyle='steps')
-    plt.plot(bins[1:], enrichment_AA, 'k--', drawstyle='steps')#, binsA[1] - binsA[0])
+    if not enrichment_AA is None:
+        plt.plot(bins[1:], enrichment_AA, 'k--', drawstyle='steps')#, binsA[1] - binsA[0])
+        
     plt.xlabel('Distance from edge of %s [nm]' % nameA)
     plt.ylabel('Relative enrichment')# % nameB)
     
-    plt.legend([nameB, nameA + ' (control)'], fontsize='medium', frameon=False)
     
-    plt.plot([bins[0], bins[-1]], [1, 1], '--r')
+    
+    plt.plot([bins[0], bins[-1]], [1, 1], 'k:')
     plt.grid()
     plt.xlim([bins[0], bins[-1]])
+
+    plt.legend([nameB, nameA + ' (control)', 'uniform'], fontsize='medium', frameon=False)
     
     plt.subplot(212)
     plt.plot(bins[1:], enclosed_BA, lw=2)
-    plt.plot(bins[1:], enclosed_AA, 'k--')
+    if not enclosed_AA is None:
+        plt.plot(bins[1:], enclosed_AA, 'k--')
+
+    plt.plot(bins[1:], enclosed_area, 'k:')
     
     plt.plot([bins[0], d_50], [.5, .5], 'r:')
     plt.plot([d_50, d_50], [0, .5], 'r:')

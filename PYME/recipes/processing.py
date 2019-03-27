@@ -1497,7 +1497,115 @@ class FlatfiledAndDarkCorrect(ModuleBase):
         im.mdh['Parent'] = image.filename
         namespace[self.outputName] = im
 
+@register_module('Colocalisation')
+class Colocalisation(ModuleBase):
+    """
+    Calculate thresholded manders and Pearsons coefficients
+    
+    
+    """
+    inputImageA = Input('chan0')
+    inputMaskA = Input('mask0')
+    inputImageB = Input('chan1')
+    inputMaskB = Input('mask1')
+    outputTable = Output('coloc')
+    
+    def execute(self, namespace):
+        from PYME.Analysis.Colocalisation import correlationCoeffs
+        from PYME.IO import tabular
+        
+        imA = namespace[self.inputImageA].data[:,:,:,0]
+        imB = namespace[self.inputImageB].data[:,:,:,0]
+        mA = namespace[self.inputMaskA].data[:,:,:,0]
+        mB = namespace[self.inputMaskB].data[:,:,:,0]
 
+        print('Calculating Pearson and Manders coefficients ...')
+        pearson = correlationCoeffs.pearson(imA, imB)
+        MA, MB = correlationCoeffs.maskManders(imA, imB, mA, mB)
+        
+        out = tabular.mappingFilter({'pearson' : pearson, 'manders_A' : MA, 'manders_B' : MB})
+        
+        namespace[self.outputTable] = out
+          
+
+
+@register_module('ColocalisationEDT')
+class ColocalisationEDT(ModuleBase):
+    """
+    Perform distance-transform based colocalisation of an image with a mask. Returns the relative
+    enrichment, and the total signal contained within a given distance from a mask.
+    
+    Parameters
+    ===========
+    
+    inputImage : an intensity image
+    mask : a mask (usually derived from a different channel)
+    inputImageB : [optional] the intensity image for the channel used to create the mask. If present, this is used to
+                    assess the colocalisation of the mask channel with itself as a control.
+    outputTable : table into which to save results
+    
+    minimumDistance, maximumDistance, binSize : float, nm the range of distances to calculate the histogram over
+                    
+    
+    Notes
+    ======
+    
+    - If the input image has multiple colour channels, the 0th channel will be taken (i.e. split channels first)
+    - To do colocalisation both ways between two images, you will need two copies of this module
+    
+    TODO: handle channel names appropriately
+    """
+    inputImage = Input('input')
+    inputMask = Input('mask')
+    inputImageB = Input('')
+    outputTable = Output('edt_coloc')
+    outputPlot = Output('coloc_plot')
+    
+    minimumDistanceNM = Float(-500.)
+    maximumDistanceNM = Float(2000.)
+    binSizeNM = Float(100.)
+    
+    
+    def execute(self, namespace):
+        from PYME.IO import tabular
+        from PYME.Analysis.Colocalisation import edtColoc
+        from PYME.recipes.graphing import Plot
+        
+        bins = np.arange(float(self.minimumDistanceNM), float(self.maximumDistanceNM), float(self.binSizeNM))
+
+        im = namespace[self.inputImage]
+        m_im = namespace[self.inputMask]
+        mask = m_im.data[:,:,:,0].squeeze()
+        
+        imA = im.data[:,:,:,0].squeeze()
+        voxelsize = im.voxelsize[:imA.ndim]
+
+        bins_, enrichment, enclosed, enclosed_area = edtColoc.image_enrichment_and_fraction_at_distance(imA, mask, voxelsize,
+                                                                                               bins)
+        
+        out = tabular.mappingFilter({'bins' : bins, 'enrichment' : enrichment, 'enclosed' : enclosed})
+        out.mdh = getattr(im, 'mdh', None)
+        
+        if not self.inputImageB == '':
+            imB = namespace[self.inputImageB].data[:,:, :,0].squeeze()
+            bins_, enrichment_m, enclosed_m, _ = edtColoc.image_enrichment_and_fraction_at_distance(imB, mask, voxelsize,
+                                                                                             bins)
+            out.addColumn('enrichment_m', enrichment_m)
+            out.addColumn('enclosed_m', enclosed_m)
+            
+        else:
+            enrichment_m = None
+            enclosed_m = None
+
+        namespace[self.outputTable] = out
+        namespace[self.outputPlot] = Plot(lambda: edtColoc.plot_image_dist_coloc_figure(bins, enrichment, enrichment_m,
+                                                                                        enclosed, enclosed_m,
+                                                                                        enclosed_area,
+                                                                                        nameA=m_im.names[0],
+                                                                                        nameB=im.names[0]))
+
+        
+        
 @register_module('AverageFramesByZStep')
 class AverageFramesByZStep(ModuleBase):
     """

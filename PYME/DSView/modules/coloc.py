@@ -153,10 +153,7 @@ class colocaliser:
         from scipy import interpolate
         voxelsize = [1e3*self.image.mdh.getEntry('voxelsize.x') ,1e3*self.image.mdh.getEntry('voxelsize.y'), 1e3*self.image.mdh.getEntry('voxelsize.z')]
         
-        try:
-            names = self.image.mdh.getEntry('ChannelNames')
-        except:
-            names = ['Channel %d' % n for n in range(self.image.data.shape[3])]
+        names = self.image.names
             
         if not getattr(self.image, 'labels', None) is None:
             have_mask = True
@@ -257,18 +254,18 @@ class colocaliser:
         #bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize, bins, roi_mask=mask)
         #bnAA, bmAA, binsA = edtColoc.imageDensityAtDistance(imA, imA > tA, voxelsize, bins, roi_mask=mask)
         
-        bins_, enrichment_BA, enclosed_BA = edtColoc.image_enrichment_and_fraction_at_distance(imB, imA > tA, voxelsize,
+        bins_, enrichment_BA, enclosed_BA, enclosed_area_A = edtColoc.image_enrichment_and_fraction_at_distance(imB, imA > tA, voxelsize,
                                                                                                bins, roi_mask=mask)
-        bins_, enrichment_AA, enclosed_AA = edtColoc.image_enrichment_and_fraction_at_distance(imA, imA > tA, voxelsize,
+        bins_, enrichment_AA, enclosed_AA, _ = edtColoc.image_enrichment_and_fraction_at_distance(imA, imA > tA, voxelsize,
                                                                                                bins, roi_mask=mask)
         
         print('Performing distance transform (reversed) ...')
         #bnB, bmB, binsB = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize, bins, roi_mask=mask)
         #bnBB, bmBB, binsB = edtColoc.imageDensityAtDistance(imB, imB > tB, voxelsize, bins, roi_mask=mask)
 
-        bins_, enrichment_AB, enclosed_AB = edtColoc.image_enrichment_and_fraction_at_distance(imA, imB > tB, voxelsize,
+        bins_, enrichment_AB, enclosed_AB, enclosed_area_B = edtColoc.image_enrichment_and_fraction_at_distance(imA, imB > tB, voxelsize,
                                                                                                bins, roi_mask=mask)
-        bins_, enrichment_BB, enclosed_BB = edtColoc.image_enrichment_and_fraction_at_distance(imB, imB > tB, voxelsize,
+        bins_, enrichment_BB, enclosed_BB, _ = edtColoc.image_enrichment_and_fraction_at_distance(imB, imB > tB, voxelsize,
                                                                                                bins, roi_mask=mask)
         
         #print binsB, bmB
@@ -290,7 +287,7 @@ class colocaliser:
         pnames.append('Enrichment of %s at distance from mask(%s)' % (nameB, nameA))
         
             
-        edtColoc.plot_image_dist_coloc_figure(bins_, enrichment_BA, enrichment_AA, enclosed_BA, enclosed_AA, pearson, MA, MB, nameA, nameB)
+        edtColoc.plot_image_dist_coloc_figure(bins_, enrichment_BA, enrichment_AA, enclosed_BA, enclosed_AA, enclosed_area_A, pearson, MA, MB, nameA, nameB)
 
         plots.append(enclosed_AB.reshape(-1, 1, 1))
         pnames.append('Frac. %s from mask(%s)' % (nameA, nameB))
@@ -298,7 +295,7 @@ class colocaliser:
         plots.append(enrichment_AB.reshape(-1, 1, 1))
         pnames.append('Enrichment of %s at distance from mask(%s)' % (nameA, nameB))
 
-        edtColoc.plot_image_dist_coloc_figure(bins_, enrichment_AB, enrichment_BB, enclosed_AB, enclosed_BB, pearson,
+        edtColoc.plot_image_dist_coloc_figure(bins_, enrichment_AB, enrichment_BB, enclosed_AB, enclosed_BB, enclosed_area_B, pearson,
                                               MA, MB, nameB, nameA)
         
         pylab.show()
