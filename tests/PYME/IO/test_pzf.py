@@ -100,6 +100,8 @@ def test_PZFFormat_lossy_uint16_qs():
     #print(test_data.squeeze())
     #print(test_quant.squeeze())
     #print(result.squeeze())
+    
+    print(result.squeeze() - test_quant.squeeze())
 
     assert np.allclose(result.squeeze(), test_quant.squeeze())
 
