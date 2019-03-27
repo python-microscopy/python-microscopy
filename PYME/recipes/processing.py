@@ -1545,6 +1545,19 @@ class ColocalisationEDT(ModuleBase):
     outputTable : table into which to save results
     
     minimumDistance, maximumDistance, binSize : float, nm the range of distances to calculate the histogram over
+    
+    
+    Outputs
+    =======
+    
+    outputTable : a table containing the following columns:
+            'bins' : the right hand edges of the histogram bins (as suitable for the cdf plots)
+            'enrichment' : the enrichment of the label at a given distance from the mask (when compared to a uniform spatial distribution)
+            'enclosed' : the fraction of the signal enclosed within a given distance from the mask
+            'enclosed_area' : the fraction of the total area enclosed within a given radius. This gives you the curve you
+                              would see if the label was randomly distributed.
+            'enrichment_m' : enrichment of the mask source channel (if provided) at a given distance from the mask. This is a control for the thresholding
+            'enclosed_m' : fraction of mask source channel signal (if provided) within a given distance from the mask. This is a control for the thresholding.
                     
     
     Notes
@@ -1553,7 +1566,7 @@ class ColocalisationEDT(ModuleBase):
     - If the input image has multiple colour channels, the 0th channel will be taken (i.e. split channels first)
     - To do colocalisation both ways between two images, you will need two copies of this module
     
-    TODO: handle channel names appropriately
+    TODO: handle channel names appropriately, support for ROI masks
     """
     inputImage = Input('input')
     inputMask = Input('mask')
@@ -1583,7 +1596,7 @@ class ColocalisationEDT(ModuleBase):
         bins_, enrichment, enclosed, enclosed_area = edtColoc.image_enrichment_and_fraction_at_distance(imA, mask, voxelsize,
                                                                                                bins)
         
-        out = tabular.mappingFilter({'bins' : bins, 'enrichment' : enrichment, 'enclosed' : enclosed})
+        out = tabular.mappingFilter({'bins' : bins[1:], 'enrichment' : enrichment, 'enclosed' : enclosed, 'enclosed_area' : enclosed_area})
         out.mdh = getattr(im, 'mdh', None)
         
         if not self.inputImageB == '':
