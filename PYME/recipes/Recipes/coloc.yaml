@@ -1,0 +1,43 @@
+- base.ExtractChannel:
+    inputName: input
+    outputName: chan0
+- base.ExtractChannel:
+    channelToExtract: 1
+    inputName: input
+    outputName: chan1
+- processing.Threshold:
+    inputName: chan0
+    outputName: mask0
+    processFramesIndividually: false
+- processing.Threshold:
+    inputName: chan1
+    outputName: mask1
+    processFramesIndividually: false
+- processing.ColocalisationEDT:
+    inputImage: chan0
+    inputImageB: chan1
+    inputMask: mask1
+    outputPlot: chan0_plot
+    outputTable: chan0_edt_coloc
+- processing.ColocalisationEDT:
+    inputImage: chan1
+    inputImageB: chan0
+    inputMask: mask0
+    outputPlot: chan1_plot
+    outputTable: chan1_edt_coloc
+- output.ReportOutput:
+    filePattern: '{output_dir}/{file_stub}.html'
+    inputName: chan0_plot
+    template: templates/colocalisation.html
+- output.CSVOutput:
+    filePattern: '{output_dir}/{file_stub}_chan0.csv'
+    inputName: chan0_edt_coloc
+- output.CSVOutput:
+    filePattern: '{output_dir}/{file_stub}_chan1.csv'
+    inputName: chan1_edt_coloc
+- processing.Colocalisation:
+    inputImageA: chan0
+    inputImageB: chan1
+    inputMaskA: mask0
+    inputMaskB: mask1
+    outputTable: coloc
