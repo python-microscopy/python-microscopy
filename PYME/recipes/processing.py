@@ -1508,6 +1508,7 @@ class Colocalisation(ModuleBase):
     inputMaskA = Input('mask0')
     inputImageB = Input('chan1')
     inputMaskB = Input('mask1')
+    roiMask = Input('')
     outputTable = Output('coloc')
     
     def execute(self, namespace):
@@ -1518,10 +1519,15 @@ class Colocalisation(ModuleBase):
         imB = namespace[self.inputImageB].data[:,:,:,0]
         mA = namespace[self.inputMaskA].data[:,:,:,0]
         mB = namespace[self.inputMaskB].data[:,:,:,0]
+        
+        if not self.roiMask == '':
+            roi_mask = namespace[self.roiMask][:,:,:,0].squeeze() > 0.5
+        else:
+            roi_mask = None
 
         print('Calculating Pearson and Manders coefficients ...')
-        pearson = correlationCoeffs.pearson(imA, imB)
-        MA, MB = correlationCoeffs.maskManders(imA, imB, mA, mB)
+        pearson = correlationCoeffs.pearson(imA, imB, roi_mask=roi_mask)
+        MA, MB = correlationCoeffs.maskManders(imA, imB, mA, mB, roi_mask=roi_mask)
         
         out = tabular.mappingFilter({'pearson' : pearson, 'manders_A' : MA, 'manders_B' : MB})
         
@@ -1571,6 +1577,7 @@ class ColocalisationEDT(ModuleBase):
     inputImage = Input('input')
     inputMask = Input('mask')
     inputImageB = Input('')
+    roiMask = Input('')
     outputTable = Output('edt_coloc')
     outputPlot = Output('coloc_plot')
     
@@ -1588,13 +1595,18 @@ class ColocalisationEDT(ModuleBase):
 
         im = namespace[self.inputImage]
         m_im = namespace[self.inputMask]
-        mask = m_im.data[:,:,:,0].squeeze()
+        mask = m_im.data[:,:,:,0].squeeze() > 0.5
+        
+        if not self.roiMask == '':
+            roi_mask = namespace[self.roiMask][:,:,:,0].squeeze() > 0.5
+        else:
+            roi_mask = None
         
         imA = im.data[:,:,:,0].squeeze()
         voxelsize = im.voxelsize[:imA.ndim]
 
         bins_, enrichment, enclosed, enclosed_area = edtColoc.image_enrichment_and_fraction_at_distance(imA, mask, voxelsize,
-                                                                                               bins)
+                                                                                               bins, roi_mask=roi_mask)
         
         out = tabular.mappingFilter({'bins' : bins[1:], 'enrichment' : enrichment, 'enclosed' : enclosed, 'enclosed_area' : enclosed_area})
         out.mdh = getattr(im, 'mdh', None)
@@ -1602,7 +1614,7 @@ class ColocalisationEDT(ModuleBase):
         if not self.inputImageB == '':
             imB = namespace[self.inputImageB].data[:,:, :,0].squeeze()
             bins_, enrichment_m, enclosed_m, _ = edtColoc.image_enrichment_and_fraction_at_distance(imB, mask, voxelsize,
-                                                                                             bins)
+                                                                                             bins, roi_mask=roi_mask)
             out.addColumn('enrichment_m', enrichment_m)
             out.addColumn('enclosed_m', enclosed_m)
             
