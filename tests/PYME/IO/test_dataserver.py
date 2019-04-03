@@ -26,7 +26,7 @@ def teardown_module():
     #time.sleep(1)
     proc.kill()
     
-    shutil.rmtree(tmp_root)
+    #shutil.rmtree(tmp_root)
     
     
 def test_put():

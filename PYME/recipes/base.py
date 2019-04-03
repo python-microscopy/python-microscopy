@@ -458,16 +458,20 @@ class ModuleCollection(HasTraits):
             mod_traits_cleaned = {}
             for k, v in mod.get().items():
                 if not k.startswith('_'): #don't save private data - this is usually used for caching etc ..,
-                    if (not (v == ct[k].default)) or (k.startswith('input')) or (k.startswith('output')):
-                        #don't save defaults
-                        if isinstance(v, dict) and not type(v) == dict:
-                            v = dict(v)
-                        elif isinstance(v, list) and not type(v) == list:
-                            v = list(v)
-                        elif isinstance(v, set) and not type(v) == set:
-                            v = set(v)
-    
-                        mod_traits_cleaned[k] = v
+                    try:
+                        if (not (v == ct[k].default)) or (k.startswith('input')) or (k.startswith('output')):
+                            #don't save defaults
+                            if isinstance(v, dict) and not type(v) == dict:
+                                v = dict(v)
+                            elif isinstance(v, list) and not type(v) == list:
+                                v = list(v)
+                            elif isinstance(v, set) and not type(v) == set:
+                                v = set(v)
+        
+                            mod_traits_cleaned[k] = v
+                    except KeyError:
+                        # for some reason we have a trait that shouldn't be here
+                        pass
 
             l.append({module_names[mod.__class__]: mod_traits_cleaned})
 

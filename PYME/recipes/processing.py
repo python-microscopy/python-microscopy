@@ -1508,7 +1508,7 @@ class Colocalisation(ModuleBase):
     inputMaskA = Input('mask0')
     inputImageB = Input('chan1')
     inputMaskB = Input('mask1')
-    roiMask = Input('')
+    inputRoiMask = Input('')
     outputTable = Output('coloc')
     
     def execute(self, namespace):
@@ -1577,7 +1577,7 @@ class ColocalisationEDT(ModuleBase):
     inputImage = Input('input')
     inputMask = Input('mask')
     inputImageB = Input('')
-    roiMask = Input('')
+    inputRoiMask = Input('')
     outputTable = Output('edt_coloc')
     outputPlot = Output('coloc_plot')
     
