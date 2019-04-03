@@ -4,9 +4,10 @@
 copy "%RECIPE_DIR%"\libpython27.a "%PREFIX%"\libs
 
 "%PYTHON%" setup.py build --compiler=mingw32
-"%PYTHON%" setup.py install 
+if errorlevel 1 exit /B 1
 
-if errorlevel 1 exit 1
+"%PYTHON%" setup.py install
+if errorlevel 1 exit /B 1
 
 :: Add more build steps here, if they are necessary.
 
