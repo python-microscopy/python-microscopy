@@ -1521,7 +1521,7 @@ class Colocalisation(ModuleBase):
         mB = namespace[self.inputMaskB].data[:,:,:,0]
         
         if not self.roiMask == '':
-            roi_mask = namespace[self.roiMask][:,:,:,0].squeeze() > 0.5
+            roi_mask = namespace[self.roiMask].data[:,:,:,0].squeeze() > 0.5
         else:
             roi_mask = None
 
@@ -1598,7 +1598,7 @@ class ColocalisationEDT(ModuleBase):
         mask = m_im.data[:,:,:,0].squeeze() > 0.5
         
         if not self.roiMask == '':
-            roi_mask = namespace[self.roiMask][:,:,:,0].squeeze() > 0.5
+            roi_mask = namespace[self.roiMask].data[:,:,:,0].squeeze() > 0.5
         else:
             roi_mask = None
         
