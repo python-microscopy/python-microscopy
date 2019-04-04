@@ -1517,11 +1517,22 @@ class Colocalisation(ModuleBase):
         
         imA = namespace[self.inputImageA].data[:,:,:,0]
         imB = namespace[self.inputImageB].data[:,:,:,0]
+        if not np.all(imB.shape == imA.shape):
+            raise RuntimeError('imageB (shape=%s) not the same size as image data (shape=%s)' % (imB.shape, imA.shape))
+
         mA = namespace[self.inputMaskA].data[:,:,:,0]
+        if not np.all(mA.shape == imA.shape):
+            raise RuntimeError('maskA (shape=%s) not the same size as image data (shape=%s)' % (mA.shape, imA.shape))
+        
         mB = namespace[self.inputMaskB].data[:,:,:,0]
+        if not np.all(mB.shape == imA.shape):
+            raise RuntimeError('maskB (shape=%s) not the same size as image data (shape=%s)' % (mB.shape, imA.shape))
         
         if not self.roiMask == '':
             roi_mask = namespace[self.roiMask].data[:,:,:,0].squeeze() > 0.5
+            if not np.all(roi_mask.shape == imA.shape):
+                raise RuntimeError('ROI mask (shape=%s) not the same size as image data (shape=%s)' % (roi_mask.shape, imA.shape))
+
         else:
             roi_mask = None
 
@@ -1594,16 +1605,22 @@ class ColocalisationEDT(ModuleBase):
         bins = np.arange(float(self.minimumDistanceNM), float(self.maximumDistanceNM), float(self.binSizeNM))
 
         im = namespace[self.inputImage]
+        imA = im.data[:, :, :, 0].squeeze()
+        voxelsize = im.voxelsize[:imA.ndim]
+        
         m_im = namespace[self.inputMask]
         mask = m_im.data[:,:,:,0].squeeze() > 0.5
+
+        if not np.all(mask.shape == imA.shape):
+            raise RuntimeError('Mask (shape=%s) not the same size as image data (shape=%s)' % (mask.shape, imA.shape))
         
         if not self.roiMask == '':
             roi_mask = namespace[self.roiMask].data[:,:,:,0].squeeze() > 0.5
+            if not np.all(roi_mask.shape == imA.shape):
+                raise RuntimeError('ROI mask (shape=%s) not the same size as image data (shape=%s)' % (roi_mask.shape, imA.shape))
         else:
             roi_mask = None
         
-        imA = im.data[:,:,:,0].squeeze()
-        voxelsize = im.voxelsize[:imA.ndim]
 
         bins_, enrichment, enclosed, enclosed_area = edtColoc.image_enrichment_and_fraction_at_distance(imA, mask, voxelsize,
                                                                                                bins, roi_mask=roi_mask)
@@ -1613,6 +1630,10 @@ class ColocalisationEDT(ModuleBase):
         
         if not self.inputImageB == '':
             imB = namespace[self.inputImageB].data[:,:, :,0].squeeze()
+            if not np.all(imB.shape == imA.shape):
+                raise RuntimeError(
+                    'ImageB (shape=%s) not the same size as image data (shape=%s)' % (imB.shape, imA.shape))
+            
             bins_, enrichment_m, enclosed_m, _ = edtColoc.image_enrichment_and_fraction_at_distance(imB, mask, voxelsize,
                                                                                              bins, roi_mask=roi_mask)
             out.addColumn('enrichment_m', enrichment_m)
