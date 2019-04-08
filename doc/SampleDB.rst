@@ -78,7 +78,7 @@ Usernames, database names, and passwords can be customized for your site in ``Sa
 .. [#] steps 2&3 can be combined in phpmyadmin by checking a box during the user creation process
 
 Part II - Getting Apache to serve the SampleDB
------------------------------------------------
+----------------------------------------------
 
 .. warning :: In its default state, the PYME SampleDB is not secure. Only use behind a firewall and do so at your own risk/discretion. The version of the Django ``settings.py`` in the python-microscopy repository has ``DEBUG`` set to ``True``, which is a known security risk. In a controlled environment, this risk is probably acceptable in return for easier troubleshooting, but you have been warned! 
 

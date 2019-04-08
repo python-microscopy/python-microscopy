@@ -1,76 +1,180 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Acquisition Protocols &#8212; PYME 18.06.19 documentation</title>
-    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Acquisition Protocols &mdash; PYME 19.02.27 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="dh5view - Image Data Analysis and Viewing" href="Analysis.html" />
     <link rel="prev" title="Simulator" href="Simulator.html" /> 
-  </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="Analysis.html" title="dh5view - Image Data Analysis and Viewing"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="Simulator.html" title="Simulator"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">PYME 18.06.19 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="PYMEAcquire.html" accesskey="U"><strong>PYMEAcquire</strong> - Instrument control and simulation</a> &#187;</li>
-<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Protocols.rst">Edit</a> &raquo;</li>
- 
+</head>
 
-      </ul>
-    </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-            <p class="logo"><a href="index.html">
-              <img class="logo" src="_static/pymeLogo.png" alt="Logo"/>
-            </a></p>
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="Simulator.html"
-                        title="previous chapter">Simulator</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="Analysis.html"
-                        title="next chapter"><strong>dh5view</strong> - Image Data Analysis and Viewing</a></p>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    </div>
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PYME
+          
+
+          
+            
+            <img src="_static/pymeLogo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                19.02.27
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
 </div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Installation/InstallationWithAnaconda.html">Installation of PYME on 64 bit Windows, OSX, or Linux</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Installation/InstallationFromSource.html">Installation for development or instrument control</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="PYMEAcquire.html"><strong>PYMEAcquire</strong> - Instrument control and simulation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ConfiguringPYMEAcquire.html">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AcquireBasicUsage.html">Basic Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BasicAcquisition.html">Simple dSTORM/RPM walkthrough</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Simulator.html">Simulator</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Acquisition Protocols</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Analysis.html"><strong>dh5view</strong> - Image Data Analysis and Viewing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="VisGUI.html"><strong>VisGUI</strong> - Visualising Localization Data Sets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="component_programs.html">Common Tasks</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Development / Hacking</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="hacking.html">Extending PYME and writing plugins</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hacking.html#technical-details">Technical Details</a></li>
+<li class="toctree-l1"><a class="reference internal" href="hacking.html#api-documentation">API Documentation</a></li>
+</ul>
+
+            
+          
         </div>
       </div>
+    </nav>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PYME</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="PYMEAcquire.html"><strong>PYMEAcquire</strong> - Instrument control and simulation</a> &raquo;</li>
+        
+      <li>Acquisition Protocols</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
             
   <div class="section" id="acquisition-protocols">
 <span id="protocols"></span><h1>Acquisition Protocols<a class="headerlink" href="#acquisition-protocols" title="Permalink to this headline">¶</a></h1>
@@ -80,36 +184,52 @@ numbers.</p>
 </div>
 
 
+           </div>
+           
           </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Analysis.html" class="btn btn-neutral float-right" title="dh5view - Image Data Analysis and Viewing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Simulator.html" class="btn btn-neutral float-left" title="Simulator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, David Baddeley
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="Analysis.html" title="dh5view - Image Data Analysis and Viewing"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="Simulator.html" title="Simulator"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">PYME 18.06.19 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="PYMEAcquire.html" ><strong>PYMEAcquire</strong> - Instrument control and simulation</a> &#187;</li>
-<li><a href="http://lmsrv1/docwiki/docs/pyme-docs/Protocols.rst">Edit</a> &raquo;</li>
- 
 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-        &#169; Copyright 2016, David Baddeley.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.7.5.
-    </div>
-  </body>
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
 </html>

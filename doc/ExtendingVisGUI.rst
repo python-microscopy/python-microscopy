@@ -1,7 +1,7 @@
 .. _extendingvisgui:
 
 Extending VisGUI
-################
+****************
 
 
 The VisGUI pipeline

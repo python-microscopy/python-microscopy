@@ -1,7 +1,7 @@
 .. _installationFromSource:
 
 Installation for development or instrument control
-##################################################
+**************************************************
 
 If you want to contribute to PYMEs development, or you want to use PYME in a context (e.g. instrument control) which
 requires modification to some of the scripts you will want to have the PYME sources somewhere you can easily find, modify

@@ -1,19 +1,89 @@
 [31;01m/Users/david/python-microscopy/doc/Technical.rst:4: WARNING: toctree contains reference to nonexisting document u'FitModules'[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.Analysis.multicolourMeta'; the following exception was raised:
-cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.Analysis.points.twoColDep'; the following exception was raised:
-No module named LatGaussFitFRTC[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.DSView.modules.LMAnalysis'; the following exception was raised:
-cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.DSView.modules.LMDisplay'; the following exception was raised:
-cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.DSView.modules.annotation'; the following exception was raised:
-cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.DSView.modules.flowView'; the following exception was raised:
-cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.DSView.modules.particleTracking'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'sampleInformationDjangoDirect' from module u'PYME.Acquire'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/Acquire/sampleInformationDjangoDirect.py", line 32, in <module>
+    from PYME.SampleDB2 import populate #just to setup the Django environment
+  File "/Users/david/python-microscopy/PYME/SampleDB2/populate.py", line 36, in <module>
+    from samples.models import File
+  File "/Users/david/python-microscopy/PYME/SampleDB2/samples/models.py", line 33, in <module>
+    class Species(models.Model):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/models/base.py", line 139, in __new__
+    new_class.add_to_class('_meta', Options(meta, **kwargs))
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/models/base.py", line 324, in add_to_class
+    value.contribute_to_class(cls, name)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/models/options.py", line 250, in contribute_to_class
+    self.db_table = truncate_name(self.db_table, connection.ops.max_name_length())
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/__init__.py", line 36, in __getattr__
+    return getattr(connections[DEFAULT_DB_ALIAS], item)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/utils.py", line 240, in __getitem__
+    backend = load_backend(db['ENGINE'])
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/utils.py", line 111, in load_backend
+    return import_module('%s.base' % backend_name)
+  File "/Users/david/anaconda/lib/python2.7/importlib/__init__.py", line 37, in import_module
+    __import__(name)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/backends/mysql/base.py", line 27, in <module>
+    raise ImproperlyConfigured("Error loading MySQLdb module: %s" % e)
+ImproperlyConfigured: Error loading MySQLdb module: No module named MySQLdb
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'rollins' from module u'PYME.Analysis.BleachProfile'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/Analysis/BleachProfile/rollins.py", line 22, in <module>
+    from PYME.recipes.traits import Int # FIXME - ditto - is this needed?
+  File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
+    class Input(CStr):
+NameError: name 'CStr' is not defined
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'fourierHNA' from module u'PYME.Analysis.PSFGen'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'fourierHNA2' from module u'PYME.Analysis.PSFGen'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'genCRBcurves' from module u'PYME.Analysis.PSFGen'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'multicolourMeta' from module u'PYME.Analysis'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/Analysis/multicolourMeta.py", line 23, in <module>
+    from PYME.SampleDB2 import populateStats
+  File "/Users/david/python-microscopy/PYME/SampleDB2/populateStats.py", line 36, in <module>
+    from samples.models import File
+  File "/Users/david/python-microscopy/PYME/SampleDB2/samples/models.py", line 33, in <module>
+    class Species(models.Model):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/models/base.py", line 139, in __new__
+    new_class.add_to_class('_meta', Options(meta, **kwargs))
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/models/base.py", line 324, in add_to_class
+    value.contribute_to_class(cls, name)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/models/options.py", line 250, in contribute_to_class
+    self.db_table = truncate_name(self.db_table, connection.ops.max_name_length())
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/__init__.py", line 36, in __getattr__
+    return getattr(connections[DEFAULT_DB_ALIAS], item)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/utils.py", line 240, in __getitem__
+    backend = load_backend(db['ENGINE'])
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/utils.py", line 111, in load_backend
+    return import_module('%s.base' % backend_name)
+  File "/Users/david/anaconda/lib/python2.7/importlib/__init__.py", line 37, in import_module
+    __import__(name)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/django/db/backends/mysql/base.py", line 27, in <module>
+    raise ImproperlyConfigured("Error loading MySQLdb module: %s" % e)
+ImproperlyConfigured: Error loading MySQLdb module: No module named MySQLdb
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'twoColDep' from module u'PYME.Analysis.points'; the following exception was raised:
+No module named LatGaussFitFRTC[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'LMAnalysis' from module u'PYME.DSView.modules'; the following exception was raised:
+cannot import name Float[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'LMDisplay' from module u'PYME.DSView.modules'; the following exception was raised:
+cannot import name Float[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'annotation' from module u'PYME.DSView.modules'; the following exception was raised:
+cannot import name Float[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'flowView' from module u'PYME.DSView.modules'; the following exception was raised:
+cannot import name Float[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'particleTracking' from module u'PYME.DSView.modules'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/DSView/modules/particleTracking.py", line 20, in <module>
     from PYME.recipes.tracking import TrackFeatures
@@ -25,15 +95,15 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.DSView.modules.psfGeneration'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'psfGeneration' from module u'PYME.DSView.modules'; the following exception was raised:
 cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.DSView.modules.psfTools'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'psfTools' from module u'PYME.DSView.modules'; the following exception was raised:
 cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.DSView.modules.pupilTools'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'pupilTools' from module u'PYME.DSView.modules'; the following exception was raised:
 cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.DSView.modules.recipes'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'recipes' from module u'PYME.DSView.modules'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/DSView/modules/recipes.py", line 30, in <module>
     from PYME.recipes import recipeGui
@@ -47,21 +117,79 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.IO.DataSources.BGSDataSourceX'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'dec' from module u'PYME.Deconv'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'deccs' from module u'PYME.Deconv.experimental'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'deccs2' from module u'PYME.Deconv.experimental'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'deccs_mc' from module u'PYME.Deconv.experimental'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'fftwWisdom' from module u'PYME.Deconv'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'richardsonLucy' from module u'PYME.Deconv'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'richardsonLucyMV' from module u'PYME.Deconv'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'richardsonLucyMVM' from module u'PYME.Deconv'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'richardsonLucyMVM2' from module u'PYME.Deconv'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'tq_block_dec' from module u'PYME.Deconv'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'wiener' from module u'PYME.Deconv'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'BGSDataSourceX' from module u'PYME.IO.DataSources'; the following exception was raised:
 No module named BGSDataSourceX[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.IO.FileUtils.h5rFormatDef'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'h5rFormatDef' from module u'PYME.IO.FileUtils'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/IO/FileUtils/h5rFormatDef.py", line 29, in <module>
     h5ResultsFile = tables.open_file(resultsFilename, 'w')
 NameError: name 'resultsFilename' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.Extras.extra_layers'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'animation' from module u'PYME.LMVis.Extras'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
-  File "/Users/david/python-microscopy/PYME/LMVis/Extras/extra_layers.py", line 1, in <module>
+  File "/Users/david/python-microscopy/PYME/LMVis/Extras/animation.py", line 29, in <module>
+    from PYME.LMVis.views import VideoView
+  File "/Users/david/python-microscopy/PYME/LMVis/views.py", line 30, in <module>
+    import quaternion
+  File "/Users/david/anaconda/lib/python2.7/site-packages/quaternion/__init__.py", line 13, in <module>
+    from .quaternion_time_series import slerp, squad, integrate_angular_velocity, minimal_rotation
+  File "/Users/david/anaconda/lib/python2.7/site-packages/quaternion/quaternion_time_series.py", line 8, in <module>
+    from quaternion.numba_wrapper import njit
+  File "/Users/david/anaconda/lib/python2.7/site-packages/quaternion/numba_wrapper.py", line 8, in <module>
+    from numba import njit, jit, vectorize, int64, float64, complex128
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/__init__.py", line 11, in <module>
+    from . import config, errors, _runtests as runtests, types
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 338, in <module>
+    _env_reloader = _EnvReloader()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 76, in __init__
+    self.reset()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 80, in reset
+    self.update(force=True)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 109, in update
+    self.process_environ(new_environ)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 258, in process_environ
+    ENABLE_AVX = _readenv("NUMBA_ENABLE_AVX", int, avx_default)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 117, in _readenv
+    return default() if callable(default) else default
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 254, in avx_default
+    cpu_name = ll.get_host_cpu_name()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/llvmlite/binding/targets.py", line 87, in get_host_cpu_name
+    return str(out)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/llvmlite/binding/ffi.py", line 175, in __str__
+    assert s is not None
+AssertionError
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'extra_layers' from module u'PYME.LMVis.Extras'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/Extras/extra_layers.py", line 2, in <module>
     from PYME.LMVis.layers.octree import OctreeRenderLayer
   File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
     from .AxesOverlayLayer import AxesOverlayLayer
@@ -75,9 +203,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.Extras.fiducial'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'fiducial' from module u'PYME.LMVis.Extras'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/Extras/fiducial.py", line 1, in <module>
     from PYME.recipes.localisations import FiducialCorrection, DBSCANClustering
@@ -89,33 +217,169 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.Extras.pointSetGeneration'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'pointSetGeneration' from module u'PYME.LMVis.Extras'; the following exception was raised:
 cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.Extras.surface_fitting'; the following exception was raised:
-cannot import name HasPrivateTraits[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.VisGUI'; the following exception was raised:
-cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.gl_render3D_shaders'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'saved_views' from module u'PYME.LMVis.Extras'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
-  File "/Users/david/python-microscopy/PYME/LMVis/gl_render3D_shaders.py", line 32, in <module>
-    from PYME.LMVis.layers import AxesOverlayLayer, LUTOverlayLayer, Point3DRenderLayer, PointSpritesRenderLayer, \
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
-    from .AxesOverlayLayer import AxesOverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/AxesOverlayLayer.py", line 21, in <module>
-    from PYME.LMVis.layers.OverlayLayer import OverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/OverlayLayer.py", line 23, in <module>
-    from PYME.LMVis.layers.base import SimpleLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/base.py", line 26, in <module>
-    from PYME.recipes.traits import HasTraits, Bool, Instance
+  File "/Users/david/python-microscopy/PYME/LMVis/Extras/saved_views.py", line 26, in <module>
+    from PYME.LMVis.views import View
+  File "/Users/david/python-microscopy/PYME/LMVis/views.py", line 30, in <module>
+    import quaternion
+  File "/Users/david/anaconda/lib/python2.7/site-packages/quaternion/__init__.py", line 13, in <module>
+    from .quaternion_time_series import slerp, squad, integrate_angular_velocity, minimal_rotation
+  File "/Users/david/anaconda/lib/python2.7/site-packages/quaternion/quaternion_time_series.py", line 8, in <module>
+    from quaternion.numba_wrapper import njit
+  File "/Users/david/anaconda/lib/python2.7/site-packages/quaternion/numba_wrapper.py", line 8, in <module>
+    from numba import njit, jit, vectorize, int64, float64, complex128
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/__init__.py", line 11, in <module>
+    from . import config, errors, _runtests as runtests, types
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 338, in <module>
+    _env_reloader = _EnvReloader()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 76, in __init__
+    self.reset()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 80, in reset
+    self.update(force=True)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 109, in update
+    self.process_environ(new_environ)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 258, in process_environ
+    ENABLE_AVX = _readenv("NUMBA_ENABLE_AVX", int, avx_default)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 117, in _readenv
+    return default() if callable(default) else default
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 254, in avx_default
+    cpu_name = ll.get_host_cpu_name()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/llvmlite/binding/targets.py", line 87, in get_host_cpu_name
+    return str(out)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/llvmlite/binding/ffi.py", line 175, in __str__
+    assert s is not None
+AssertionError
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'snapshot' from module u'PYME.LMVis.Extras'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/Extras/snapshot.py", line 23, in <module>
+    from PYME.LMVis.Extras.animation import VideoPanel
+  File "/Users/david/python-microscopy/PYME/LMVis/Extras/animation.py", line 29, in <module>
+    from PYME.LMVis.views import VideoView
+  File "/Users/david/python-microscopy/PYME/LMVis/views.py", line 30, in <module>
+    import quaternion
+  File "/Users/david/anaconda/lib/python2.7/site-packages/quaternion/__init__.py", line 13, in <module>
+    from .quaternion_time_series import slerp, squad, integrate_angular_velocity, minimal_rotation
+  File "/Users/david/anaconda/lib/python2.7/site-packages/quaternion/quaternion_time_series.py", line 8, in <module>
+    from quaternion.numba_wrapper import njit
+  File "/Users/david/anaconda/lib/python2.7/site-packages/quaternion/numba_wrapper.py", line 8, in <module>
+    from numba import njit, jit, vectorize, int64, float64, complex128
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/__init__.py", line 11, in <module>
+    from . import config, errors, _runtests as runtests, types
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 338, in <module>
+    _env_reloader = _EnvReloader()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 76, in __init__
+    self.reset()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 80, in reset
+    self.update(force=True)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 109, in update
+    self.process_environ(new_environ)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 258, in process_environ
+    ENABLE_AVX = _readenv("NUMBA_ENABLE_AVX", int, avx_default)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 117, in _readenv
+    return default() if callable(default) else default
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 254, in avx_default
+    cpu_name = ll.get_host_cpu_name()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/llvmlite/binding/targets.py", line 87, in get_host_cpu_name
+    return str(out)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/llvmlite/binding/ffi.py", line 175, in __str__
+    assert s is not None
+AssertionError
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'spherical_harmonics' from module u'PYME.LMVis.Extras'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/Extras/spherical_harmonics.py", line 2, in <module>
+    from PYME.recipes.localisations import SphericalHarmonicShell, AddShellMappedCoordinates
+  File "/Users/david/python-microscopy/PYME/recipes/localisations.py", line 1, in <module>
+    from .base import register_module, ModuleBase, Filter
+  File "/Users/david/python-microscopy/PYME/recipes/base.py", line 11, in <module>
+    from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, on_trait_change, Input, Output
   File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layer_wrapper'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'surface_fitting' from module u'PYME.LMVis.Extras'; the following exception was raised:
+cannot import name HasPrivateTraits[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'VisGUI' from module u'PYME.LMVis'; the following exception was raised:
+cannot import name Float[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'gl_offScreenHandler' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/gl_offScreenHandler.py", line 21, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'gl_render' from module u'PYME.LMVis'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/gl_render.py", line 28, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'gl_render3D' from module u'PYME.LMVis'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/gl_render3D.py", line 29, in <module>
+    from OpenGL import GLUT
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GLUT/__init__.py", line 2, in <module>
+    from OpenGL.raw.GLUT import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/raw/GLUT/__init__.py", line 6, in <module>
+    from OpenGL.raw.GLUT.constants import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/raw/GLUT/constants.py", line 7, in <module>
+    from OpenGL import platform, arrays
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'gl_render3D_shaders' from module u'PYME.LMVis'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/gl_render3D_shaders.py", line 29, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'layer_wrapper' from module u'PYME.LMVis'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/layer_wrapper.py", line 1, in <module>
     from . import layers
@@ -131,9 +395,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'layers' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
     from .AxesOverlayLayer import AxesOverlayLayer
@@ -147,9 +411,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.AxesOverlayLayer'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'layers.AxesOverlayLayer' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
     from .AxesOverlayLayer import AxesOverlayLayer
@@ -163,9 +427,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.LUTOverlayLayer'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'layers.LUTOverlayLayer' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
     from .AxesOverlayLayer import AxesOverlayLayer
@@ -179,9 +443,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.OverlayLayer'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'layers.OverlayLayer' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
     from .AxesOverlayLayer import AxesOverlayLayer
@@ -195,9 +459,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.Point3DRenderLayer'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'layers.QuadTreeRenderLayer' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
     from .AxesOverlayLayer import AxesOverlayLayer
@@ -211,9 +475,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.PointSpriteRenderLayer'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'layers.ScaleBarOverlayLayer' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
     from .AxesOverlayLayer import AxesOverlayLayer
@@ -227,9 +491,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.QuadTreeRenderLayer'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'layers.ScaleBoxOverlayLayer' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
     from .AxesOverlayLayer import AxesOverlayLayer
@@ -243,9 +507,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.ScaleBarOverlayLayer'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'layers.SelectionOverlayLayer' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
     from .AxesOverlayLayer import AxesOverlayLayer
@@ -259,9 +523,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.ScaleBoxOverlayLayer'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'layers.base' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
     from .AxesOverlayLayer import AxesOverlayLayer
@@ -275,9 +539,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.SelectionOverlayLayer'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'layers.octree' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
     from .AxesOverlayLayer import AxesOverlayLayer
@@ -291,9 +555,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.ShadedPointRenderLayer'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'layers.pointcloud' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
     from .AxesOverlayLayer import AxesOverlayLayer
@@ -307,9 +571,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.TetrahedraRenderLayer'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'layers.triangle_mesh' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
     from .AxesOverlayLayer import AxesOverlayLayer
@@ -323,167 +587,243 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.VertexRenderLayer'; the following exception was raised:
-Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
-    __import__(modname)
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
-    from .AxesOverlayLayer import AxesOverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/AxesOverlayLayer.py", line 21, in <module>
-    from PYME.LMVis.layers.OverlayLayer import OverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/OverlayLayer.py", line 23, in <module>
-    from PYME.LMVis.layers.base import SimpleLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/base.py", line 26, in <module>
-    from PYME.recipes.traits import HasTraits, Bool, Instance
-  File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
-    class Input(CStr):
-NameError: name 'CStr' is not defined
-[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.base'; the following exception was raised:
-Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
-    __import__(modname)
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
-    from .AxesOverlayLayer import AxesOverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/AxesOverlayLayer.py", line 21, in <module>
-    from PYME.LMVis.layers.OverlayLayer import OverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/OverlayLayer.py", line 23, in <module>
-    from PYME.LMVis.layers.base import SimpleLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/base.py", line 26, in <module>
-    from PYME.recipes.traits import HasTraits, Bool, Instance
-  File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
-    class Input(CStr):
-NameError: name 'CStr' is not defined
-[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.octree'; the following exception was raised:
-Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
-    __import__(modname)
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
-    from .AxesOverlayLayer import AxesOverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/AxesOverlayLayer.py", line 21, in <module>
-    from PYME.LMVis.layers.OverlayLayer import OverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/OverlayLayer.py", line 23, in <module>
-    from PYME.LMVis.layers.base import SimpleLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/base.py", line 26, in <module>
-    from PYME.recipes.traits import HasTraits, Bool, Instance
-  File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
-    class Input(CStr):
-NameError: name 'CStr' is not defined
-[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.pointcloud'; the following exception was raised:
-Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
-    __import__(modname)
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
-    from .AxesOverlayLayer import AxesOverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/AxesOverlayLayer.py", line 21, in <module>
-    from PYME.LMVis.layers.OverlayLayer import OverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/OverlayLayer.py", line 23, in <module>
-    from PYME.LMVis.layers.base import SimpleLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/base.py", line 26, in <module>
-    from PYME.recipes.traits import HasTraits, Bool, Instance
-  File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
-    class Input(CStr):
-NameError: name 'CStr' is not defined
-[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.layers.triangle_mesh'; the following exception was raised:
-Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
-    __import__(modname)
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
-    from .AxesOverlayLayer import AxesOverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/AxesOverlayLayer.py", line 21, in <module>
-    from PYME.LMVis.layers.OverlayLayer import OverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/OverlayLayer.py", line 23, in <module>
-    from PYME.LMVis.layers.base import SimpleLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/base.py", line 26, in <module>
-    from PYME.recipes.traits import HasTraits, Bool, Instance
-  File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
-    class Input(CStr):
-NameError: name 'CStr' is not defined
-[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.pipeline'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'pipeline' from module u'PYME.LMVis'; the following exception was raised:
 cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.pointSettingsPanel'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'pointSettingsPanel' from module u'PYME.LMVis'; the following exception was raised:
 cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.quadTreeSettings'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'quadTreeSettings' from module u'PYME.LMVis'; the following exception was raised:
 cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.tests.gl_test_apps'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'DefaultShaderProgram' from module u'PYME.LMVis.shader_programs'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/DefaultShaderProgram.py", line 24, in <module>
+    from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/GLProgram.py", line 22, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'GLProgram' from module u'PYME.LMVis.shader_programs'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/GLProgram.py", line 22, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'GouraudShaderProgram' from module u'PYME.LMVis.shader_programs'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/GouraudShaderProgram.py", line 22, in <module>
+    from PYME.LMVis.shader_programs.GLProgram import GLProgram
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/GLProgram.py", line 22, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'PointSpriteShaderProgram' from module u'PYME.LMVis.shader_programs'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/PointSpriteShaderProgram.py", line 23, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'WireFrameShaderProgram' from module u'PYME.LMVis.shader_programs'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/WireFrameShaderProgram.py", line 23, in <module>
+    from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glPolygonMode, \
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/GLProgram.py", line 22, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'shader_program' from module u'PYME.LMVis.shader_programs'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/shader_program.py", line 24, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'gl_test_apps' from module u'PYME.LMVis.tests'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/tests/gl_test_apps.py", line 29, in <module>
     from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
-  File "/Users/david/python-microscopy/PYME/LMVis/gl_render3D_shaders.py", line 32, in <module>
-    from PYME.LMVis.layers import AxesOverlayLayer, LUTOverlayLayer, Point3DRenderLayer, PointSpritesRenderLayer, \
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
-    from .AxesOverlayLayer import AxesOverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/AxesOverlayLayer.py", line 21, in <module>
-    from PYME.LMVis.layers.OverlayLayer import OverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/OverlayLayer.py", line 23, in <module>
-    from PYME.LMVis.layers.base import SimpleLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/base.py", line 26, in <module>
-    from PYME.recipes.traits import HasTraits, Bool, Instance
-  File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
-    class Input(CStr):
-NameError: name 'CStr' is not defined
+  File "/Users/david/python-microscopy/PYME/LMVis/gl_render3D_shaders.py", line 29, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.triBlobs'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'triBlobs' from module u'PYME.LMVis'; the following exception was raised:
 cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.view_clipping_pane'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'view_clipping_pane' from module u'PYME.LMVis'; the following exception was raised:
 cannot import name Float[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.LMVis.visCore'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'views' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
-  File "/Users/david/python-microscopy/PYME/LMVis/visCore.py", line 22, in <module>
-    from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
-  File "/Users/david/python-microscopy/PYME/LMVis/gl_render3D_shaders.py", line 32, in <module>
-    from PYME.LMVis.layers import AxesOverlayLayer, LUTOverlayLayer, Point3DRenderLayer, PointSpritesRenderLayer, \
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
-    from .AxesOverlayLayer import AxesOverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/AxesOverlayLayer.py", line 21, in <module>
-    from PYME.LMVis.layers.OverlayLayer import OverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/OverlayLayer.py", line 23, in <module>
-    from PYME.LMVis.layers.base import SimpleLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/base.py", line 26, in <module>
-    from PYME.recipes.traits import HasTraits, Bool, Instance
-  File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
-    class Input(CStr):
-NameError: name 'CStr' is not defined
+  File "/Users/david/python-microscopy/PYME/LMVis/views.py", line 30, in <module>
+    import quaternion
+  File "/Users/david/anaconda/lib/python2.7/site-packages/quaternion/__init__.py", line 13, in <module>
+    from .quaternion_time_series import slerp, squad, integrate_angular_velocity, minimal_rotation
+  File "/Users/david/anaconda/lib/python2.7/site-packages/quaternion/quaternion_time_series.py", line 8, in <module>
+    from quaternion.numba_wrapper import njit
+  File "/Users/david/anaconda/lib/python2.7/site-packages/quaternion/numba_wrapper.py", line 8, in <module>
+    from numba import njit, jit, vectorize, int64, float64, complex128
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/__init__.py", line 11, in <module>
+    from . import config, errors, _runtests as runtests, types
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 338, in <module>
+    _env_reloader = _EnvReloader()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 76, in __init__
+    self.reset()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 80, in reset
+    self.update(force=True)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 109, in update
+    self.process_environ(new_environ)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 258, in process_environ
+    ENABLE_AVX = _readenv("NUMBA_ENABLE_AVX", int, avx_default)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 117, in _readenv
+    return default() if callable(default) else default
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numba/config.py", line 254, in avx_default
+    cpu_name = ll.get_host_cpu_name()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/llvmlite/binding/targets.py", line 87, in get_host_cpu_name
+    return str(out)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/llvmlite/binding/ffi.py", line 175, in __str__
+    assert s is not None
+AssertionError
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.dataBrowser.manage'; the following exception was raised:
-cannot import name execute_manager[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.dataBrowser.urls'; the following exception was raised:
-No module named defaults[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.localization.FitFactories.LatGaussFitlmR'; the following exception was raised:
-No module named levmar_gfit[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.misc.VolProj'; the following exception was raised:
-cannot import name Instance[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.misc.calenderApi'; the following exception was raised:
-No module named gflags[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.misc.hillcurve'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'visCore' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/visCore.py", line 16, in <module>
+    from PYME.LMVis import gl_render3D as gl_render
+  File "/Users/david/python-microscopy/PYME/LMVis/gl_render3D.py", line 29, in <module>
+    from OpenGL import GLUT
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GLUT/__init__.py", line 2, in <module>
+    from OpenGL.raw.GLUT import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/raw/GLUT/__init__.py", line 6, in <module>
+    from OpenGL.raw.GLUT.constants import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/raw/GLUT/constants.py", line 7, in <module>
+    from OpenGL import platform, arrays
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'manage' from module u'PYME.dataBrowser'; the following exception was raised:
+cannot import name execute_manager[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'urls' from module u'PYME.dataBrowser'; the following exception was raised:
+No module named defaults[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'LatGaussFitlmR' from module u'PYME.localization.FitFactories'; the following exception was raised:
+No module named levmar_gfit[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'fitTestJig' from module u'PYME.localization.Test'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'fitTestJigSCMOS' from module u'PYME.localization.Test'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'fitTestJigWC' from module u'PYME.localization.Test'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'autopsf' from module u'PYME.localization'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'autopsf.autopsf' from module u'PYME.localization'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'autopsf.roifit' from module u'PYME.localization'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'ofind_xcorr_fw' from module u'PYME.localization'; the following exception was raised:
+cannot import name util[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'VolProj' from module u'PYME.misc'; the following exception was raised:
+cannot import name Instance[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'aligned_array' from module u'PYME.misc'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'calenderApi' from module u'PYME.misc'; the following exception was raised:
+No module named gflags[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'fftw_compat' from module u'PYME.misc'; the following exception was raised:
+No module named pyfftw[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'hillcurve' from module u'PYME.misc'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/misc/hillcurve.py", line 43, in <module>
     ratio_control, stress_control = loadtxt('control.csv').T
-  File "/Users/david/anaconda/lib/python2.7/site-packages/numpy/lib/npyio.py", line 803, in loadtxt
-    fh = iter(open(fname, 'U'))
-IOError: [Errno 2] No such file or directory: 'control.csv'
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numpy/lib/npyio.py", line 917, in loadtxt
+    fh = np.lib._datasource.open(fname, 'rt', encoding=encoding)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numpy/lib/_datasource.py", line 260, in open
+    return ds.open(path, mode, encoding=encoding, newline=newline)
+  File "/Users/david/anaconda/lib/python2.7/site-packages/numpy/lib/_datasource.py", line 616, in open
+    raise IOError("%s not found." % path)
+IOError: control.csv not found.
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.misc.memmap'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'memmap' from module u'PYME.misc'; the following exception was raised:
 No module named guppy[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.misc.tempDB'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'tempDB' from module u'PYME.misc'; the following exception was raised:
 No module named MySQLdb[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.misc.tempLoggerDB'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'tempLoggerDB' from module u'PYME.misc'; the following exception was raised:
 No module named MySQLdb[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.bakeshop'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'bakeshop' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
-  File "/Users/david/python-microscopy/PYME/recipes/bakeshop.py", line 12, in <module>
+  File "/Users/david/python-microscopy/PYME/recipes/bakeshop.py", line 15, in <module>
     from PYME.recipes import recipeGui
   File "/Users/david/python-microscopy/PYME/recipes/recipeGui.py", line 21, in <module>
     from PYME.recipes import modules
@@ -495,9 +835,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.base'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'base' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/base.py", line 11, in <module>
     from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, on_trait_change, Input, Output
@@ -505,11 +845,11 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.batchProcess'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'batchProcess' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
-  File "/Users/david/python-microscopy/PYME/recipes/batchProcess.py", line 11, in <module>
+  File "/Users/david/python-microscopy/PYME/recipes/batchProcess.py", line 8, in <module>
     from PYME.recipes import runRecipe
   File "/Users/david/python-microscopy/PYME/recipes/runRecipe.py", line 9, in <module>
     from PYME.recipes import modules
@@ -521,9 +861,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.filters'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'filters' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/filters.py", line 7, in <module>
     from .base import register_module, ModuleBase, Filter
@@ -533,9 +873,31 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.localisations'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'fudges' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/recipes/fudges.py", line 9, in <module>
+    from .base import register_module, ModuleBase, Filter
+  File "/Users/david/python-microscopy/PYME/recipes/base.py", line 11, in <module>
+    from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, on_trait_change, Input, Output
+  File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
+    class Input(CStr):
+NameError: name 'CStr' is not defined
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'html_recipe_editor' from module u'PYME.recipes'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/recipes/html_recipe_editor.py", line 5, in <module>
+    from .traits import HasTraits, Int, Str
+  File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
+    class Input(CStr):
+NameError: name 'CStr' is not defined
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'localisations' from module u'PYME.recipes'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/localisations.py", line 1, in <module>
     from .base import register_module, ModuleBase, Filter
@@ -545,9 +907,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.machine_learning'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'machine_learning' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/machine_learning.py", line 1, in <module>
     from .base import ModuleBase, register_module, Filter
@@ -557,9 +919,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.measurement'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'measurement' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/measurement.py", line 9, in <module>
     from .base import ModuleBase, register_module, Filter
@@ -569,9 +931,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.modules'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'modules' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/modules.py", line 12, in <module>
     from . import base
@@ -581,9 +943,21 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.output'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'multiview' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/recipes/multiview.py", line 1, in <module>
+    from .base import register_module, ModuleBase, Filter
+  File "/Users/david/python-microscopy/PYME/recipes/base.py", line 11, in <module>
+    from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, on_trait_change, Input, Output
+  File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
+    class Input(CStr):
+NameError: name 'CStr' is not defined
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'output' from module u'PYME.recipes'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/output.py", line 1, in <module>
     from .base import register_module, ModuleBase, OutputModule
@@ -593,9 +967,21 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.processing'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'pointcloud' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/recipes/pointcloud.py", line 1, in <module>
+    from .base import register_module, ModuleBase, Filter
+  File "/Users/david/python-microscopy/PYME/recipes/base.py", line 11, in <module>
+    from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, on_trait_change, Input, Output
+  File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
+    class Input(CStr):
+NameError: name 'CStr' is not defined
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'processing' from module u'PYME.recipes'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/processing.py", line 8, in <module>
     from .base import ModuleBase, register_module, Filter
@@ -605,9 +991,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.recipeGui'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'recipeGui' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/recipeGui.py", line 21, in <module>
     from PYME.recipes import modules
@@ -619,9 +1005,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.runRecipe'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'runRecipe' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/runRecipe.py", line 9, in <module>
     from PYME.recipes import modules
@@ -633,9 +1019,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.skfilters'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'skfilters' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/skfilters.py", line 7, in <module>
     from .base import register_module, ModuleBase, Filter
@@ -645,9 +1031,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.tablefilters'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'tablefilters' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/tablefilters.py", line 1, in <module>
     from .base import register_module, register_legacy_module, ModuleBase, Filter
@@ -657,9 +1043,9 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.tracking'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'tracking' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/tracking.py", line 7, in <module>
     from .base import register_module, ModuleBase,Filter
@@ -669,27 +1055,96 @@ Traceback (most recent call last):
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.recipes.traits'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'traits' from module u'PYME.recipes'; the following exception was raised:
 Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 152, in import_module
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/recipes/traits.py", line 10, in <module>
     class Input(CStr):
 NameError: name 'CStr' is not defined
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.ui.custom_traits_editors'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'custom_traits_editors' from module u'PYME.ui'; the following exception was raised:
 cannot import name List[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYME.util.install_dependencies'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'install_dependencies' from module u'PYME.util'; the following exception was raised:
 No module named apt[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/Contributing.rst: WARNING: document isn't included in any toctree[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/Installation/Installation.rst: WARNING: document isn't included in any toctree[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/Installation/InstallationWithAnacondaNoConsole.rst: WARNING: document isn't included in any toctree[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/Technical.rst: WARNING: document isn't included in any toctree[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst: WARNING: document isn't included in any toctree[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/cluster/clusterFilesystem.rst: WARNING: document isn't included in any toctree[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/cluster/cluster_install.rst: WARNING: document isn't included in any toctree[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/dh5view.rst: WARNING: document isn't included in any toctree[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.PSFGen.fourierHNA.FourierPropagatorClipHNA.propagate'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.PSFGen.fourierHNA.FourierPropagatorHNA.propagate'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.PSFGen.fourierHNA.FourierPropagatorHNA.propagate_r'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.misc.shellutils.rst:48: WARNING: Citation [Rd75597b4d042-2] is not referenced.[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.MultiPointScanner.PointScanner.stop'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.pointScanner.PointScanner.stop'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.pointScanner.PointScanner3D.stop'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBSetSpoolDirButton'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStartSpoolButton'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStartStackButton'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.Tick'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.UpdateFreeSpace'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBSetSpoolDirButton'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStartSpoolButton'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStartStackButton'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.Tick'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.UpdateFreeSpace'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.QueueAction'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.Tick'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.QueueAction'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.Tick'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.HDFSpooler.EventLogger.logEvent'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.HDFSpooler.EventLogger.logEvent'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.HDFSpooler.Spooler.OnFrame'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.HDFSpooler.Spooler.StopSpool'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.SpoolController.SpoolController.LaunchAnalysis'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.SpoolController.SpoolController.SetProtocol'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.SpoolController.SpoolController.SetSpoolDir'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.SpoolController.SpoolController.SetSpoolMethod'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.SpoolController.SpoolController.StartSpooling'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.SpoolController.SpoolController.StopSpooling'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Spooler.EventLogger.logEvent'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Spooler.Spooler.OnFrame'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Spooler.Spooler.doStartLog'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Spooler.Spooler.doStopLog'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Spooler.Spooler.fakeTime'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Spooler.Spooler.OnFrame'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Spooler.Spooler.doStartLog'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Spooler.Spooler.doStopLog'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Spooler.Spooler.fakeTime'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.AddAqTool'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.AddCamTool'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.acquiremainframe.PYMEMainFrame.AddTool'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.frameWrangler.FrameWrangler.Notify'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.frameWrangler.FrameWrangler.Prepare'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.frameWrangler.FrameWrangler.checkHardware'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.frameWrangler.FrameWrangler.getFrame'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.frameWrangler.FrameWrangler.getReqMemChans'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.frameWrangler.FrameWrangler.onExpReady'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.frameWrangler.FrameWrangler.purge'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.frameWrangler.FrameWrangler.start'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.frameWrangler.FrameWrangler.stop'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.StateHandler.setValue'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.StateManager.registerChangeListener'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.StateManager.registerHandler'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.StateManager.setItem'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.StateManager.setItems'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.StateManager.update'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.AddVoxelSizeSetting'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.GenStartMetadata'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.GetActiveCameraName'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.GetPixelSize'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.PanCamera'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.SetVoxelSize'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.genStatus'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.register_piezo'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.satCheck'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.startFrameWrangler'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.turnAllLasersOff'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.stackSettings.StackSettings.SetDirection'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.Tracking.tracking.Tracker.calcLinkageMatrix'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin2Model.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3Model.ev'[39;49;00m
@@ -701,6 +1156,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.points.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.linModel.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.OnApplyShiftmap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.RemapData'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.filtering.filterer.OnAverageFramesByStep'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.graphViewPanel.MyNavigationToolbar.draw_rubberband'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.psfExtractor.OnCalibrateMultiview'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.pupilView.MyNavigationToolbar.draw_rubberband'[39;49;00m
@@ -711,28 +1167,23 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.IO.DataSources.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getNumSlices'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.IO.DataSources.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getSlice'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.IO.DataSources.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getSliceShape'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.animation.VideoPanel.on_edit'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnClumpDBSCAN'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnFindMixedClusters'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnMeasureClusters'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnNearestNeighbor'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.flagZMotionArtifacts.motionFlagger.OnIDTransient'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnCalibrateShifts'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnCheckAstigCalibration'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnCorrectFolded'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnFindClumps'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnFold'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnMapZ'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnMergeClumps'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.objectMeasurements.ParticleTracker.OnGetIDs'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnCalibrateShifts'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnCheckAstigmatismCalibration'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnFindClumps'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnFold'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnMapAstigmaticZ'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnMergeClumps'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnShiftCorrectFolded'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.objectMeasurements.ObjectMeasurer.OnGetIDs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.scaleBox.ScaleBoxPanel.pick_color'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.PointSpriteShaderProgram.GaussTexture.bind_texture'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.PointSpriteShaderProgram.GaussTexture.load_texture'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.ShaderProgramFactory.ShaderProgramFactory.get_program'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file_with_path'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_program.ShaderProgram.add_shader'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_program.ShaderProgram.add_shader'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.HarmonicCellBackground.get_coordinates'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.add'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.add_probe'[39;49;00m
@@ -741,24 +1192,24 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.add_probe'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.translate'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObjectContainer.translate'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.gl_render.LMGLCanvas.setPercentileCLim'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.gl_render3D.LMGLCanvas.setPoints'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.progGraph.progPanel.draw'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.animation.VideoPanel.on_edit'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnClumpDBSCAN'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnFindMixedClusters'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnMeasureClusters'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnNearestNeighbor'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.flagZMotionArtifacts.motionFlagger.OnIDTransient'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnCalibrateShifts'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnCheckAstigCalibration'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnCorrectFolded'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnFindClumps'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnFold'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnMapZ'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnMergeClumps'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.objectMeasurements.ParticleTracker.OnGetIDs'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnCalibrateShifts'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnCheckAstigmatismCalibration'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnFindClumps'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnFold'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnMapAstigmaticZ'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnMergeClumps'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnShiftCorrectFolded'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.objectMeasurements.ObjectMeasurer.OnGetIDs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.scaleBox.ScaleBoxPanel.pick_color'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.shader_programs.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.ShaderProgramFactory.ShaderProgramFactory.get_program'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.shader_programs.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.shader_programs.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file_with_path'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.tests.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.HarmonicCellBackground.get_coordinates'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.tests.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.add'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.tests.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.add_probe'[39;49;00m
@@ -767,6 +1218,39 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.tests.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.add_probe'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.tests.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.translate'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.tests.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObjectContainer.translate'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CSInterpolator.CSInterpolator.getCoords'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CSInterpolator.CSInterpolator.interp'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CSInterpolator.CSInterpolator.interpG'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CubeSInterpolatorP.CSInterpolator.getCoords'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CubeSInterpolatorP.CSInterpolator.interp'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CubicSplineInterpolator.CubicSplineInterpolator.getCoords'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CubicSplineInterpolator.CubicSplineInterpolator.interp'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.LinearInterpolator.LinearInterpolator.getCoords'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.LinearInterpolator.LinearInterpolator.interp'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.LinearInterpolator.LinearInterpolator.interpG'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.LinearPInterpolatorP.LinearInterpolator.getCoords'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.LinearPInterpolatorP.LinearInterpolator.interp'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FindAndFit'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitFactory.evalModel'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.DumbellFitR.DumbellFitFactory.evalModel'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.FFBase.FFBase.FromPoint'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.FFBase.FFBase.FromPoints'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.FFBase.FFBase.getMultiviewROIAtPoint'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.FFBase.FFBase.getROIAtPoint'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.FFBase.FFBase.getSplitROIAtPoint'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.GaussFitConstrR.GaussianFitFactory.evalModel'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.LatGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind.ObjectIdentifier.FindObjects'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind3d.ObjectIdentifier.FindObjects'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_nofilt.ObjectIdentifier.FindObjects'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_pri.ObjectIdentifier.FindObjects'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_split.ObjectIdentifier.FindObjects'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_xcorr.ObjectIdentifier.FindObjects'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.BufferManager.updateBuffers'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getDarkMap'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getFlatfieldMap'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getVarianceMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CSInterpolator.CSInterpolator.getCoords'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CSInterpolator.CSInterpolator.interp'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CSInterpolator.CSInterpolator.interpG'[39;49;00m
@@ -790,8 +1274,14 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.FFBase.FFBase.getSplitROIAtPoint'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.GaussFitConstrR.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.LatGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.misc.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.seek'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.misc.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.tell'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.misc.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.pyme_zeroconf.PatchedServiceInfo.request'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.misc.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.pyme_zeroconf.PatchedServiceInfo.request'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.recipes.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.as_html'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.recipes.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.plot'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.recipes.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.as_html'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.recipes.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.plot'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.ui.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.ui.AUIFrame.AUIFrame.AddMenuItem'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.ui.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.ui.AUIFrame.AUIFrame.AddPage'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.ui.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.ui.AUIFrame.AUIFrame.CreateFoldPanel'[39;49;00m
@@ -873,9 +1363,6 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.startFrameWrangler'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.microscope.microscope.turnAllLasersOff'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.stackSettings.StackSettings.SetDirection'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.PSFGen.fourierHNA.FourierPropagatorClipHNA.propagate'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.PSFGen.fourierHNA.FourierPropagatorHNA.propagate'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.PSFGen.fourierHNA.FourierPropagatorHNA.propagate_r'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.Tracking.tracking.Tracker.calcLinkageMatrix'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin2Model.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3Model.ev'[39;49;00m
@@ -883,6 +1370,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.linModel.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.OnApplyShiftmap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.RemapData'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.filtering.filterer.OnAverageFramesByStep'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.graphViewPanel.MyNavigationToolbar.draw_rubberband'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.psfExtractor.OnCalibrateMultiview'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.pupilView.MyNavigationToolbar.draw_rubberband'[39;49;00m
@@ -893,109 +1381,6 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.arrayViewPanel.ArrayViewPanel.GrabPNGToBuffer'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.dsviewer.DSViewFrame.LoadModule'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.fitInfo.fitDispPanel.draw'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec.deconvp'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec.sim_pic'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec.startGuess'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec.subsearch'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec_4pi.psf_calc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec_bead.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec_bead.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec_bead.Lfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec_bead.Lhfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec_conv.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec_conv.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec_conv.Lfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec_conv.Lhfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.dec_conv.psf_calc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs.dec.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs.dec.sim_pic'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs.dec.startGuess'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs.dec.subsearch'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs.dec_bead.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs.dec_bead.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs.dec_conv.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs.dec_conv.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs.dec_conv.psf_calc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs.dec_gauss.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs.dec_gauss.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec.sim_pic'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec.startGuess'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec.subsearch'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_bead.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_bead.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_conv.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_conv.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_conv.Ahfuncs'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_conv.psf_calc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_gauss.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_gauss.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_sparse.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_sparse.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_sparse.Ahfuncs'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_sparse.psf_calc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_subsamp.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_subsamp.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs2.dec_subsamp.Ahfuncs'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs_mc.dec.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs_mc.dec.sim_pic'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs_mc.dec.startGuess'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs_mc.dec.subsearch'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs_mc.dec_bead.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs_mc.dec_bead.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs_mc.dec_conv.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs_mc.dec_conv.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs_mc.dec_conv.psf_calc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs_mc.dec_gauss.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.deccs_mc.dec_gauss.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.dec_conv.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.dec_conv.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.dec_conv.Lfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.dec_conv.Lhfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.dec_conv.psf_calc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.dec_conv_slow.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.dec_conv_slow.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.dec_conv_slow.Lfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.dec_conv_slow.Lhfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.dec_conv_slow.psf_calc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.rlbead.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.rlbead.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.rldec.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.rldec.deconvp'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucy.rldec.startGuess'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.dec_conv.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.dec_conv.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.dec_conv.Lfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.dec_conv.Lhfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.dec_conv.psf_calc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.dec_conv_slow.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.dec_conv_slow.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.dec_conv_slow.Lfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.dec_conv_slow.Lhfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.dec_conv_slow.psf_calc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.rlbead.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.rlbead.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.rldec.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.rldec.deconvp'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.rldec.startGuess'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.dec_conv.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.dec_conv.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.dec_conv.Lfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.dec_conv.Lhfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.dec_conv.psf_calc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.dec_conv_slow.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.dec_conv_slow.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.dec_conv_slow.Lfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.dec_conv_slow.Lhfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.dec_conv_slow.psf_calc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.rlbead.Afunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.rlbead.Ahfunc'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.rldec.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.rldec.deconvp'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.rldec.startGuess'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.psf_calc'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getEvents'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getNumSlices'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getSlice'[39;49;00m
@@ -1020,28 +1405,23 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.TabularBase.to_recarray'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addColumn'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addVariable'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.animation.VideoPanel.on_edit'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnClumpDBSCAN'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnFindMixedClusters'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnMeasureClusters'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnNearestNeighbor'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.flagZMotionArtifacts.motionFlagger.OnIDTransient'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnCalibrateShifts'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnCheckAstigCalibration'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnCorrectFolded'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnFindClumps'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnFold'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnMapZ'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.multiviewMapper.OnMergeClumps'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.objectMeasurements.ParticleTracker.OnGetIDs'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnCalibrateShifts'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnCheckAstigmatismCalibration'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnFindClumps'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnFold'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnMapAstigmaticZ'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnMergeClumps'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnShiftCorrectFolded'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.objectMeasurements.ObjectMeasurer.OnGetIDs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.scaleBox.ScaleBoxPanel.pick_color'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.PointSpriteShaderProgram.GaussTexture.bind_texture'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.PointSpriteShaderProgram.GaussTexture.load_texture'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.ShaderProgramFactory.ShaderProgramFactory.get_program'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file_with_path'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_program.ShaderProgram.add_shader'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_program.ShaderProgram.add_shader'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.HarmonicCellBackground.get_coordinates'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.add'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.add_probe'[39;49;00m
@@ -1050,8 +1430,6 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.add_probe'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.translate'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObjectContainer.translate'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.gl_render.LMGLCanvas.setPercentileCLim'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.gl_render3D.LMGLCanvas.setPoints'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.progGraph.progPanel.draw'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.ParallelTasks.DSTaskQueue.DSTaskQueue.getQueueData'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.ParallelTasks.DSTaskQueue.DSTaskQueue.getTask'[39;49;00m
@@ -1222,31 +1600,24 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.FFBase.FFBase.getSplitROIAtPoint'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.GaussFitConstrR.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.LatGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.Test.fitTestJigSCMOS.fitTestJig.error'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.Test.fitTestJigSCMOS.fitTestJig.evalParams'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.Test.fitTestJigSCMOS.fitTestJig.fromMDFile'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.Test.fitTestJigSCMOS.fitTestJig.plotRes'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.Test.fitTestJigSCMOS.fitTestJig.plotResSimp'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.Test.fitTestJigSCMOS.fitTestJig.runTests'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.Test.fitTestJigSCMOS.fitTestJig.error'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.Test.fitTestJigSCMOS.fitTestJig.evalParams'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.Test.fitTestJigSCMOS.fitTestJig.fromMDFile'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.Test.fitTestJigSCMOS.fitTestJig.plotRes'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.Test.fitTestJigSCMOS.fitTestJig.plotResSimp'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.Test.fitTestJigSCMOS.fitTestJig.runTests'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind3d.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_nofilt.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_pri.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_split.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_xcorr.ObjectIdentifier.FindObjects'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_xcorr_fw.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.BufferManager.updateBuffers'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getDarkMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getFlatfieldMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getVarianceMap'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.seek'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.tell'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.pyme_zeroconf.PatchedServiceInfo.request'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.pyme_zeroconf.PatchedServiceInfo.request'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.as_html'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.plot'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.as_html'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.plot'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.ui.AUIFrame.AUIFrame.AddMenuItem'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.ui.AUIFrame.AUIFrame.AddPage'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.ui.AUIFrame.AUIFrame.CreateFoldPanel'[39;49;00m
