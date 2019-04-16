@@ -52,8 +52,9 @@ class EventLogger:
     def logEvent(self, eventName, eventDescr = '', timestamp=None):
         """Log an event. Should be overriden in derived classes.
         
-        .. note:: In addition to the name and description, timing information is recorded
-        for each event.
+        .. note::
+        
+          In addition to the name and description, timing information is recorded for each event.
           
         Parameters
         ----------

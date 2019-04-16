@@ -1528,8 +1528,8 @@ class Colocalisation(ModuleBase):
         if not np.all(mB.shape == imA.shape):
             raise RuntimeError('maskB (shape=%s) not the same size as image data (shape=%s)' % (mB.shape, imA.shape))
         
-        if not self.roiMask == '':
-            roi_mask = namespace[self.roiMask].data[:,:,:,0].squeeze() > 0.5
+        if not self.inputRoiMask == '':
+            roi_mask = namespace[self.inputRoiMask].data[:,:,:,0].squeeze() > 0.5
             if not np.all(roi_mask.shape == imA.shape):
                 raise RuntimeError('ROI mask (shape=%s) not the same size as image data (shape=%s)' % (roi_mask.shape, imA.shape))
 

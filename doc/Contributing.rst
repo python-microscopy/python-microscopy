@@ -1,10 +1,10 @@
-Contributing
-************
+Contributing changes back to PYME
+*********************************
 
-Roadmap
-=======
+Roadmap / Future directions
+===========================
 
-PYME has grown to be a rather large project with a huge number of dependencies. This is starting to make maintenance
+**PYME is a moving target**. It has grown to be a rather large project with a huge number of dependencies. This is starting to make maintenance
 time consuming and makes it hard to quickly merge new functionality. We intend to split the project into a GUI
 independent core, and have the various GUIs interface with this. We also envisage splitting off some of the functionally
 distinct modules. The exact restructuring has yet to be decided, but at this point we encourage separation of GUI and
@@ -19,11 +19,9 @@ dependencies we use will ever be supported. For this reason we will also continu
 compatibility features have been added to python3 since the initial version we will require at least python 3.6 and wil
 not support earlier versions of python 3.
 
-To date we have spent roughly a full week on migration, and addressed most of the errors which come up through static analysis,
-but much remains to be done. At this point, PYME will build under python 3 and is currently passing 42 of 46 tests although
-the test coverage is currently abysmal.
+An up to date account of migration progress can be found at https://bitbucket.org/david_baddeley/python-microscopy/issues/69/python-3-compatibility
 
-The following tasks need to be addressed (in order of importance) before further progress can be made:
+A slightly out of date list of tasks is given below:
 
 - find (or create) a reliable anaconda package for wxpython on python3 and add it to our channel. *NEW: An early wx build for python 3 suitable for testing
   is available by running `conda install -c newville wxpython-phoenix`*
@@ -40,7 +38,6 @@ The following tasks need to be addressed (in order of importance) before further
 - Check for and correct relative module imports
 - Build a conda module for dispatch on python3
 - Fix all c coded modules to use new init methods
-- Find an alternative to / port PyFFTW3 to python3
 
 We will probably discover more as we progress.
 

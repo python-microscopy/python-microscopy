@@ -144,8 +144,8 @@ class ICTMDeconvolution(object):
         #self.f = self.f.ravel()
         data = data.ravel()
         
-        weights = weights / weights.mean()
-
+        if not np.isscalar(weights):
+            weights = weights / weights.mean()
 
         #use 0 as the default solution - should probably be refactored like the starting guess
         fdef = np.zeros(self.f.shape, 'f')

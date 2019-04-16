@@ -3,9 +3,9 @@
 Setting up PYME cluster hardware and software
 *********************************************
 
-This document details the steps to set up a linux cluster for high-thoughput analysis of full data rate sCMOS data.
-If you want to use the cluster code to analyse data from more conventional PALM/STORM experiments, see the
-'Cluster of one' docs as well (to be written).
+This document details the steps to set up a linux cluster for data analysis. In this document we focus on high-thoughput
+analysis of full data rate (800MB/s) sCMOS data, although the same infrastructure can be used for conventional PALM/STORM
+experiments, see the 'Cluster of one' docs for key differences.
 
 Recommended Hardware configuration
 ==================================
@@ -20,7 +20,7 @@ Instrument computer
 
 * >=32GB RAM
 
-* a 10GBE network card for connection to the cluster
+* a 10GbE network card for connection to the cluster
 
 * running a 64 bit version of either linux or windows
 
@@ -29,11 +29,9 @@ Instrument computer
 Network switch
 --------------
 
-* a dedicated switch with at least 1 10GB uplink port and sufficient downstream ports for the cluster
+* a dedicated switch with at least 1 10Gb uplink port and sufficient downstream ports for the cluster
 
-* downstream ports may be 1GBE, but backplane bandwidth should be at least 10GB, preferably higher
-
-* In practice this means an 'enterprise class' switch, not the cheapest 10 port switch you can get
+* downstream ports may be 1GbE, but backplane bandwidth should be at least 10Gb, preferably higher [#switch]_
 
 Cluster nodes
 -------------
@@ -44,14 +42,14 @@ Our development cluster has 10 nodes, in general nodes should have:
 
 * >= 32 GB RAM
 
-* a 1GBE network connection [#network]_
+* a 1GbE network connection [#network]_
 
 * enough hard-drives to reach the desired storage capacity. A strong recommendation would be to go with the largest drives
-  you can get and to configure them using LVM so that the storage can be easily expanded by adding additional drives
+  you can get and to configure them using LVM so that the storage can be easily expanded by adding additional drives.
 
 * ideally a (small) SSD boot/OS drive. Python code runs significantly faster off a SSD than a hard drive.
 
-* [optional] a CUDA compatible GPU with compute capacity >=5.2
+* a CUDA compatible GPU with compute capacity >=5.2 [can be omitted for moderate throughput analysis]
 
 * 64 bit linux
 
@@ -104,18 +102,18 @@ On each node:
      file system.
 
      ``dataserver-filter`` lets you specify a filter that will allow multiple distinct clusters to run on the same network.
-     The default value of "" will match all running servers. This is appropriate in the recommended case where the cluster
+     The default value of ``""`` will match all running servers. This is appropriate in the recommended case where the cluster
      is isolated from the general network behind a dedicated switch. If this is not possible, setting ``dataserver-filter``
      is recommended (the typical use case here would be a "Cluster of One" on an acquisition computer for standard low
      throughput analysis).
 
      **Use with** ``dataserver-filter`` **set to anything other than** ``""`` **is not well tested.**
 
-#. *Optional - enable GPU fitting (PYME will allow CPU fitting in the absence of these steps)*
+#. *Optional, but strongly recommended for high-throughput - enable GPU fitting (PYME will allow CPU based fitting in the absence of these steps)*
 
-   #. Install CUDA (PYME will allow CPU based fitting in the absence of CUDA and warpdrive)
+   #. Install CUDA
 
-   #. Install ``pyme-warp-drive`` following instructions at ``github.com/bewersdorflab/pyme-warp-drive``
+   #. Install ``pyme-warp-drive`` following instructions at ``https://github.com/barentine/pyme-warp-drive``
 
 
 
@@ -125,7 +123,7 @@ On the master/interface node:
 -----------------------------
 
 The master node runs 3 extra server processes that do not run on standard cluster nodes - a Web UI to the cluster,
-a task scheduler for distributed compute tasks, and, optionally, a webDAV server to permit the cluster to be mapped as
+a task scheduler for distributed compute tasks, and, optionally, a WebDAV server to permit the cluster to be mapped as
 a drive on windows or OSX. It is also reasonable to use the master node as a gateway/proxy into the cluster, in which
 case it should have 2 network interfaces. In our installs to date the master node is one of the standard cluster nodes,
 just running the extra processes but it could also be a standalone machine.
@@ -203,6 +201,8 @@ On the instrument computer
 
 .. rubric:: Footnotes
 
-.. [#network] 1GBE is sufficient if there are enough nodes. On new hardware, it might be possible to get enough
-  compute power using fewer nodes and 10 GBE connections should be considered if the number of nodes is < 6. It might
-  also be worth considering 10GBE for the 'master' node.
+.. [#switch] In practice this means an 'enterprise class' switch, not the cheapest 10 port switch you can get
+
+.. [#network] 1GbE is sufficient if there are enough nodes. On new hardware, it might be possible to get enough
+  compute power using fewer nodes and 10 GbE connections should be considered if the number of nodes is < 6. It might
+  also be worth considering 10GbE for the 'master' node.

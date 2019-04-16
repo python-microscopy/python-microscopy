@@ -30,7 +30,9 @@ def imageDensityAtDistance(A, mask, voxelsize = None, bins=100, roi_mask=None):
     """Calculates the distribution of a label at varying distances from a mask.
     Negative distances are on the inside of the mask.
 
-    Parameters:
+    Parameters
+    -----------
+        
     A - intensity image
     mask - binary mask
     voxelsize - size of the pixels/voxels - should be either a constant, or an iterable
@@ -38,7 +40,9 @@ def imageDensityAtDistance(A, mask, voxelsize = None, bins=100, roi_mask=None):
     bins - either a number of bins, or an array of bin edges
 
 
-    Returns:
+    Returns
+    --------
+        
     bn - number of pixels in distance bin
     bm - mean intensity in distance bin
     bins - the bin edges

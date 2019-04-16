@@ -1,5 +1,6 @@
 Extending PYME and writing plugins
 **********************************
+
 .. toctree::
    :maxdepth: 1
 
