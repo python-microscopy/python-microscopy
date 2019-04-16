@@ -1515,8 +1515,8 @@ class Colocalisation(ModuleBase):
         from PYME.Analysis.Colocalisation import correlationCoeffs
         from PYME.IO import tabular
         
-        imA = namespace[self.inputImageA].data[:,:,:,0]
-        imB = namespace[self.inputImageB].data[:,:,:,0]
+        imA = namespace[self.inputImageA].data[:,:,:,0].squeeze()
+        imB = namespace[self.inputImageB].data[:,:,:,0].squeeze()
         if not np.all(imB.shape == imA.shape):
             raise RuntimeError('imageB (shape=%s) not the same size as image data (shape=%s)' % (imB.shape, imA.shape))
 
