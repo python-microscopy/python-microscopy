@@ -1520,11 +1520,11 @@ class Colocalisation(ModuleBase):
         if not np.all(imB.shape == imA.shape):
             raise RuntimeError('imageB (shape=%s) not the same size as image data (shape=%s)' % (imB.shape, imA.shape))
 
-        mA = namespace[self.inputMaskA].data[:,:,:,0]
+        mA = namespace[self.inputMaskA].data[:,:,:,0].squeeze()
         if not np.all(mA.shape == imA.shape):
             raise RuntimeError('maskA (shape=%s) not the same size as image data (shape=%s)' % (mA.shape, imA.shape))
         
-        mB = namespace[self.inputMaskB].data[:,:,:,0]
+        mB = namespace[self.inputMaskB].data[:,:,:,0].squeeze()
         if not np.all(mB.shape == imA.shape):
             raise RuntimeError('maskB (shape=%s) not the same size as image data (shape=%s)' % (mB.shape, imA.shape))
         
@@ -1614,8 +1614,8 @@ class ColocalisationEDT(ModuleBase):
         if not np.all(mask.shape == imA.shape):
             raise RuntimeError('Mask (shape=%s) not the same size as image data (shape=%s)' % (mask.shape, imA.shape))
         
-        if not self.roiMask == '':
-            roi_mask = namespace[self.roiMask].data[:,:,:,0].squeeze() > 0.5
+        if not self.inputRoiMask == '':
+            roi_mask = namespace[self.inputRoiMask].data[:,:,:,0].squeeze() > 0.5
             if not np.all(roi_mask.shape == imA.shape):
                 raise RuntimeError('ROI mask (shape=%s) not the same size as image data (shape=%s)' % (roi_mask.shape, imA.shape))
         else:

@@ -74,7 +74,7 @@ class ModuleBase(HasTraits):
     @on_trait_change('anytrait')
     def remove_outputs(self):
         if not self.__dict__.get('_parent', None) is None:
-            self._parent.pruneDependanciesFromNamespace(self.outputs)
+            self._parent.prune_dependencies_from_namespace(self.outputs)
             
             self._parent.invalidate_data()
 
@@ -371,10 +371,13 @@ class ModuleCollection(HasTraits):
         return downstream
         
         
-    def pruneDependanciesFromNamespace(self, keys_to_prune):
+    def prune_dependencies_from_namespace(self, keys_to_prune, keep_passed_keys = False):
         rdg = self.reverseDependancyGraph()
         
-        downstream = list(keys_to_prune) + list(self._getAllDownstream(rdg, list(keys_to_prune)))
+        if keep_passed_keys:
+            downstream = list(self._getAllDownstream(rdg, list(keys_to_prune)))
+        else:
+            downstream = list(keys_to_prune) + list(self._getAllDownstream(rdg, list(keys_to_prune)))
         
         #print downstream
         
@@ -407,7 +410,7 @@ class ModuleCollection(HasTraits):
                 if not (self.namespace[k] == v):
                     #input has changed
                     print('pruning: ', k)
-                    self.pruneDependanciesFromNamespace([k])
+                    self.prune_dependencies_from_namespace([k])
             except KeyError:
                 #key wasn't in namespace previously
                 print('KeyError')
