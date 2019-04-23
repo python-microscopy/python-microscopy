@@ -1,6 +1,8 @@
 from __future__ import print_function
 import numpy as np
 import os
+import logging
+logger = logging.getLogger(__name__)
 
 """This is a reverse-engineered reader for DCIMG files, based very loosely on:
 https://github.com/StuartLittlefair/dcimg/blob/master/dcimg/Raw.py
@@ -67,9 +69,8 @@ class DCIMGFile(object):
             The index of the frame to retrieve
         """
         frame_wo_footer = self.frames_with_footer[0:(int(self._info['bytes_per_image']/self._info['bytes_per_pixel'])), ind]
-        frame_data = frame_wo_footer.reshape([self._info['num_columns'], self._info['num_rows']], order='F')
-
-        return frame_data
+        raw_frame_data = frame_wo_footer.reshape([self._info['num_columns_raw'], self._info['num_rows']], order='F')
+        return raw_frame_data[self._info['row_offset']:, :]  # drop pixels outside defined FOV
 
     def get_slice_shape(self):
         return (self._info['num_columns'], self._info['num_rows'])
@@ -151,6 +152,14 @@ class DCIMGFile(object):
         except ValueError:
             info['bytes_per_frame'] = session_head['bytes_per_image']
 
+        # depending on ROI position and size, dcimg occasionally contain extra bytes per 'row', though this ends up as
+        # per column once we convert from fortran ordering. You have to drop the first 'row_offset' rows of a 2D image,
+        # i.e. image = raw[row_offset:, :]
+        info['num_columns_raw'] = info['bytes_per_row'] / info['bytes_per_pixel']
+        info['row_offset'] = 0
+        if info['bytes_per_row'] % info['num_columns'] != 0:
+            logger.debug('Handling %d extra bytes per row.' % info['bytes_per_row'] % info['num_columns'])
+            info['row_offset'] = info['num_columns_raw'] - info['num_columns']
 
         return info
 
