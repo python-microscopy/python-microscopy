@@ -757,7 +757,6 @@ class AutocorrelationDriftCorrection(ModuleBase):
     Inputs
     ------
     inputName: name of tabular input containing positions ('x', 'y', and 't' columns should be present)
-    inputImage: name of image input containing labels
     step : time step (in frames) with which to traverse the series
     window: size of time window (in frames). A series of images will be generated from
             multiple overlapping windows, spaced by `step` frames.
