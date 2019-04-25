@@ -144,7 +144,7 @@ class CameraInfoManager(object):
             varmap = md.taskQueue.getQueueData(md.dataSourceID, 'MAP',  mapName)
         except:
             fn = getFullExistingFilename(mapName)
-            varmap = ImageStack(filename=fn).data[:,:,0].squeeze() #this should handle .tif, .h5, and a few others
+            varmap = ImageStack(filename=fn, haveGUI=False).data[:,:,0].squeeze() #this should handle .tif, .h5, and a few others
 
         return varmap
 

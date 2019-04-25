@@ -29,7 +29,7 @@ import sys
 if sys.platform == 'darwin':#MacOS
     linkArgs = []
 else:
-    linkArgs = ['-static-libgcc']
+    linkArgs = ['-static-libgcc', '-lm']
 
 def configuration(parent_package = '', top_path = None):
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
