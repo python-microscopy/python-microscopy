@@ -49,5 +49,17 @@ def view_svg(request):
 
     return HttpResponse(svg, content_type='image/svg+xml')
 
+def extra_inputs(request):
+    from PYME.IO import unifiedIO
+    from PYME.recipes.modules import ModuleCollection
+
+    recipeURI = 'pyme-cluster:///' + request.GET.get('recipeURL').encode().lstrip('/')
+
+    recipe = ModuleCollection.fromYAML(unifiedIO.read(recipeURI))
+    
+    file_inputs = [repr(c) + k for c, k in recipe.file_inputs]
+    
+    return render(request, 'recipes/extra_inputs.html', {'file_inputs': file_inputs})
+
 
 

@@ -12,3 +12,6 @@ class Input(CStr):
 
 class Output(CStr):
     pass
+
+class Unifile(CStr):
+    pass

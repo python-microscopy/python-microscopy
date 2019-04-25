@@ -1,0 +1,21 @@
+{% for file_input in file_inputs %}
+    <div class="form-group">
+            <label class="control-label" for="{% file_input %}">{% file_input %}</label>
+            <div class="input-group">
+                <span class="input-group-addon">pyme-cluster:///</span>
+                <input type="text" class="form-control" id="{% file_input %}" name="{% file_input %}URL">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="select_{% file_input %}">select</button>
+                </span>
+            </div>
+        </div>
+
+    <script>
+    $('#select_{% file_input %}').click(function(){
+        select_file(function(path){
+       $('#{% file_input %}URL').val(path)
+        }, 'Select a file')
+    });
+    </script>
+
+{% endfor %}

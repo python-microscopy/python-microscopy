@@ -153,6 +153,10 @@ class ModuleBase(HasTraits):
     def outputs(self):
         return {v for k, v in self.get().items() if k.startswith('output')}
     
+    @property
+    def file_inputs(self):
+        return [(self, k) for k, v in self.get().items() if v == '{USERFILE}']
+    
     def get_name(self):
         return module_names[self.__class__]
 
@@ -567,6 +571,12 @@ class ModuleCollection(HasTraits):
         for mod in self.modules:
             op.update(set(mod.outputs))
         return op
+    
+    @property
+    def file_inputs(self):
+        out = []
+        for mod in self.modules:
+            out += mod.file_inputs()
 
     def save(self, context={}):
         """
