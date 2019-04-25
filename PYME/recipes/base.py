@@ -8,7 +8,7 @@ Created on Mon May 25 17:02:04 2015
 """
 #import wx
 
-from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, on_trait_change, Input, Output
+from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, File, on_trait_change, Input, Output
     
     #for some reason traitsui raises SystemExit when called from sphinx on OSX
     #This is due to the framework build problem of anaconda on OSX, and also
@@ -155,7 +155,19 @@ class ModuleBase(HasTraits):
     
     @property
     def file_inputs(self):
-        return [(self, k) for k, v in self.get().items() if v == '{USERFILE}']
+        """
+        Allows templated file names which will be substituted when a user runs the recipe
+        
+        Any key of the form {USERFILEXXXXXX} where XXXXXX is a unique name for this input will then give rise to a
+        file input box and will be replaced by the file path / URI in the recipe.
+        
+        Returns
+        -------
+        
+        any inputs which should be substituted
+
+        """
+        return [v for k, v in self.get().items() if isinstance(v, (CStr, File)) and v.startswith('{USERFILE')]
     
     def get_name(self):
         return module_names[self.__class__]

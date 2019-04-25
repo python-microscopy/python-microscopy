@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Run recipe{% endblock %}
+{% block meta %}
+{#<meta http-equiv="refresh" content="2">#}
+{% endblock %}
+{% block analysis_active_class %}active{% endblock %}
+{% block content %}
+    <form class="form" id="form_recipe" action="/recipes/run_template/" method="post">
+
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label class="control-label" for="inputRecipeURL">Recipe</label>
+            <div class="input-group">
+                <span class="input-group-addon">pyme-cluster:///</span>
+                <input type="text" class="form-control" id="inputRecipeURL" name="recipeURL">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="select_recipe">select</button>
+                </span>
+            </div>
+        </div>
+
+        <div id="recipe_image"></div> <!--placeholder for recipe image -->
+
+        <div> id="recipe_extra_inputs"</div> <!--placeholder for extra inputs -->
+
+        <div class="form-group">
+            <label class="control-label" for="inputFileGlob">Input glob</label>
+            <div class="input-group">
+                <span class="input-group-addon">pyme-cluster:///</span>
+                <input type="text" class="form-control" id="inputFileGlob" name="inputGlob">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="inputGlob">find matching files</button>
+                </span>
+            </div>
+        </div>
+
+
+        <div id="recipe_input_list"></div>
+
+{#        <div class="form-group">#}
+{#            <label class="control-label" for="recipeOutputPath">Output path</label>#}
+{#            <div class="input-group">#}
+{#                <span class="input-group-addon">pyme-cluster:///</span>#}
+{#                <input type="text" class="form-control" id="recipeOutputPAth" name="recipeOutputPath">#}
+{#                <span class="input-group-btn">#}
+{#                    <button class="btn btn-default" type="button" id="select_output">select</button>#}
+{#                </span>#}
+{#            </div>#}
+{#        </div>#}
+
+        <div class="form-group pull-right">
+            <input type="submit" value="Launch recipe" class="btn btn-primary"/>
+        </div>
+    </form>
+
+    <script>
+
+    </script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+$('#select_recipe').click(function(){
+   select_file(function(path){
+       $('#inputRecipeURL').val(path);
+       $('#recipe_image').html('<img src="/recipes/svg/?recipeURL=' + path + '">');
+       $('#recipe_extra_inputs').load('/recipes/extra_inputs/?recipeURL=' + path, function () {
+                //alert( "Load was performed." );
+                // $(this).unwrap();
+                //console.log('load performed')
+            });
+   }, 'Select a recipe (*.yaml)')
+});
+
+var find_files_matching_glob = function () {
+    var glob =  $('#inputFileGlob').val();
+
+    $('#recipe_input_list').load('/recipes/find_inputs?glob=' + glob)
+};
+
+$('#inputGlob').click(find_files_matching_glob);
+
+/*var findSelectedFiles = function () {
+    f = $('#form_recipe');
+    $('.cu-hidden-filename').remove();
+    var fileNames=[];
+    $('.cu-selected').each(function(index, item){
+        var sn = item.getAttribute('data-cu-filename');
+        if (sn != null) {
+            fileNames.push(sn);
+            f.append('<input name="files" class="cu-hidden-filename" type="hidden" value="' + sn + '">')
+        }
+    });
+    console.log(fileNames);
+};
+
+$('#form_recipe').submit(findSelectedFiles);*/
+
+</script>
+{% endblock %}
