@@ -7,6 +7,7 @@ Created on Mon May 25 17:02:04 2015
 @author: david
 """
 #import wx
+import six
 
 from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, File, on_trait_change, Input, Output
     
@@ -167,7 +168,8 @@ class ModuleBase(HasTraits):
         any inputs which should be substituted
 
         """
-        return [v for k, v in self.get().items() if isinstance(v, (CStr, File)) and v.startswith('{USERFILE')]
+        #print(self.get().items())
+        return [v for k, v in self.get().items() if isinstance(v, six.string_types) and v.startswith('{USERFILE')]
     
     def get_name(self):
         return module_names[self.__class__]
@@ -588,7 +590,9 @@ class ModuleCollection(HasTraits):
     def file_inputs(self):
         out = []
         for mod in self.modules:
-            out += mod.file_inputs()
+            out += mod.file_inputs
+            
+        return out
 
     def save(self, context={}):
         """
