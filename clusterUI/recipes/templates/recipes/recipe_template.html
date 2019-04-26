@@ -5,6 +5,7 @@
 {% endblock %}
 {% block analysis_active_class %}active{% endblock %}
 {% block content %}
+    <h2>Run a recipe on files selected using a glob</h2>
     <form class="form" id="form_recipe" action="/recipes/run_template/" method="post">
 
         {% csrf_token %}
@@ -20,9 +21,15 @@
             </div>
         </div>
 
-        <div id="recipe_image"></div> <!--placeholder for recipe image -->
+        <div id="recipe_image" style="overflow: scroll"></div> <!--placeholder for recipe image -->
+
+        <br>
 
         <div id="recipe_extra_inputs"></div> <!--placeholder for extra inputs -->
+
+        <br>
+
+        <h4>Choose files to run on</h4>
 
         <div class="form-group">
             <label class="control-label" for="inputFileGlob">Input glob</label>
@@ -65,7 +72,7 @@
 $('#select_recipe').click(function(){
    select_file(function(path){
        $('#inputRecipeURL').val(path);
-       $('#recipe_image').html('<img src="/recipes/svg/?recipeURL=' + path + '">');
+       $('#recipe_image').html('<img src="/recipes/svg/?recipeURL=' + path + '" style="width:100pc">');
        $('#recipe_extra_inputs').load('/recipes/extra_inputs/?recipeURL=' + path, function () {
                 //alert( "Load was performed." );
                 // $(this).unwrap();

@@ -169,7 +169,7 @@ class ModuleBase(HasTraits):
 
         """
         #print(self.get().items())
-        return [v for k, v in self.get().items() if isinstance(v, six.string_types) and v.startswith('{USERFILE')]
+        return [v.lstrip('{').rstrip('}') for k, v in self.get().items() if isinstance(v, six.string_types) and v.startswith('{USERFILE')]
     
     def get_name(self):
         return module_names[self.__class__]

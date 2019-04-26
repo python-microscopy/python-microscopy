@@ -58,7 +58,7 @@ def run_template(request):
     
     for file_input in recipe.file_inputs:
         input_url = 'pyme-cluster:///' + request.POST.get('%sURL' % file_input).encode().lstrip('/')
-        recipe_text.replace(file_input, input_url)
+        recipe_text.replace('{'+file_input +'}', input_url)
 
     pusher = RecipePusher(recipe=recipe_text)
     
