@@ -10,6 +10,33 @@ class TriangularMesh(object):
         self._face_indices = None
         self._face_areas = None
 
+        self.vertex_properties = ['x', 'y', 'z']
+
+    def keys(self):
+        return list(self.vertex_properties)
+
+    def __getitem__(self, k):
+        # this defers evaluation of the properties until we actually access them, as opposed to the mappings which
+        # stored the values on class creation.
+        try:
+            res = getattr(self, k)
+        except AttributeError:
+            raise KeyError('Key %s not defined' % k)
+        
+        return res
+
+    @property
+    def x(self):
+        return self.vertices[:, 0]
+
+    @property
+    def y(self):
+        return self.vertices[:, 1]
+
+    @property
+    def z(self):
+        return self.vertices[:, 2]
+
     @classmethod
     def from_stl(cls, filename):
         """

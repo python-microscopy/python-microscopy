@@ -181,7 +181,7 @@ class TriangleRenderLayer(EngineLayer):
         #elif self.vertexColour == 'vertex_index':
         #    c = np.arange(0, len(x))
         else:
-            c = ds[self.vertexColour]
+            c = ds[self.vertexColour][ds.faces].ravel()
             clim = self.clim
             
             
