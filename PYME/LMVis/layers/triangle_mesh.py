@@ -59,7 +59,7 @@ class TriangleRenderLayer(EngineLayer):
     Layer for viewing triangle meshes.
     """
     # properties to show in the GUI. Note that we also inherit 'visible' from BaseLayer
-    vertexColour = CStr('', desc='Name of variable used to colour our points')
+    vertexColour = CStr('constant', desc='Name of variable used to colour our points')
     cmap = Enum(*cm.cmapnames, default='gist_rainbow', desc='Name of colourmap used to colour faces')
     clim = ListFloat([0, 1], desc='How our variable should be scaled prior to colour mapping')
     alpha = Float(1.0, desc='Face tranparency')
@@ -67,6 +67,7 @@ class TriangleRenderLayer(EngineLayer):
     normal_mode = Enum(['Per vertex', 'Per face'])
     dsname = CStr('output', desc='Name of the datasource within the pipeline to use as a source of triangles (should be a TriangularMesh object)')
     _datasource_choices = List()
+    _datasource_keys = List()
 
     def __init__(self, pipeline, method='wireframe', dsname='', **kwargs):
         self._pipeline = pipeline
@@ -130,14 +131,17 @@ class TriangleRenderLayer(EngineLayer):
         return cdata
 
     def _update(self, *args, **kwargs):
-        pass
-        #cdata = self._get_cdata()
-        #self.clim = [float(cdata.min()), float(cdata.max())]
-        # self.update(*args, **kwargs)
+        #pass
+        cdata = self._get_cdata()
+        self.clim = [float(cdata.min()), float(cdata.max())]
+        self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
         from PYME.experimental import triangular_mesh
         self._datasource_choices = [k for k, v in self._pipeline.dataSources.items() if isinstance(v, triangular_mesh.TriangularMesh)]
+        
+        if not self.datasource is None:
+            self._datasource_keys = ['constant',] + sorted(self.datasource.keys())
         
         if not (self.engine is None or self.datasource is None):
             print ('lw update')
@@ -170,6 +174,17 @@ class TriangleRenderLayer(EngineLayer):
             xn, yn, zn = ds.vertex_normals[ds.faces].reshape(-1, 3).T
         else:
             xn, yn, zn = np.repeat(ds.face_normals.T, 3, axis=1)
+            
+        if self.vertexColour in ['', 'constant']:
+            c = 255 * np.ones(len(x))
+            clim = [0, 1]
+        #elif self.vertexColour == 'vertex_index':
+        #    c = np.arange(0, len(x))
+        else:
+            c = ds[self.vertexColour]
+            clim = self.clim
+            
+            
 
         # Concatenate vertices, interleave, restore to 3x(3N) points (3xN triangles),
         # and assign the points to x, y, z vectors
@@ -180,9 +195,9 @@ class TriangleRenderLayer(EngineLayer):
         #xn, yn, zn = np.repeat(ds['normal'], 3, axis=1).reshape(-1, 3).T
 
         # Pass the restructured data to update_data
-        self.update_data(x, y, z, cmap=getattr(cm, self.cmap), clim=self.clim, alpha=self.alpha, xn=xn, yn=yn, zn=zn)
+        self.update_data(x, y, z, c, cmap=getattr(cm, self.cmap), clim=clim, alpha=self.alpha, xn=xn, yn=yn, zn=zn)
 
-    def update_data(self, x=None, y=None, z=None, cmap=None, clim=None, alpha=1.0, xn=None, yn=None, zn=None):
+    def update_data(self, x=None, y=None, z=None, colors=None, cmap=None, clim=None, alpha=1.0, xn=None, yn=None, zn=None):
         """
         Feeds new vertex, normal, color, and transparency information about mesh triangles to VisGUI.
 
@@ -228,8 +243,8 @@ class TriangleRenderLayer(EngineLayer):
             self._bbox = None
 
         # TODO: This temporarily sets all triangles to the color red. User should be able to select color.
-        color = 255  # pink
-        colors = np.ones(vertices.shape[0]) * color  # vector of pink
+        if colors is None:
+            colors = np.ones(vertices.shape[0]) * 255  # vector of pink
 
         if clim is not None and colors is not None:
             cs_ = ((colors - clim[0]) / (clim[1] - clim[0]))
@@ -290,8 +305,8 @@ class TriangleRenderLayer(EngineLayer):
         return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
                      Item('method'),
                      Item('normal_mode', visible_when='method=="shaded"'),
-                     #Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
-                     #Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ]),
+                     Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
+                     Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ], visible_when='vertexColour != "constant"'),
                      Group([Item('cmap', label='LUT'), Item('alpha'), Item('visible')])
                      ], )
         # buttons=['OK', 'Cancel'])
