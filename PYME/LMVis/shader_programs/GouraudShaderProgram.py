@@ -72,6 +72,7 @@ class GouraudShaderProgram(GLProgram):
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_DEPTH_TEST)
+        glDisable(GL_BLEND) #turn off alpha - as we don't sort triangles we don't want to do anything fancy here
         #glEnable(GL_CULL_FACE)
         #glCullFace(GL_BACK)
         
