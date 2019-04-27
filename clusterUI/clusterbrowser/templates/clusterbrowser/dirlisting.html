@@ -16,7 +16,12 @@
         <li class="toggle-control" id="upload_form_toggle"><a href="#" onclick="togglePanel('#upload_form')"><span
                 class="glyphicon glyphicon-cloud-upload"></span>&nbsp;&nbsp;Upload Files</a></li>
     </ul>
-    <h5>Selected Files</h5>
+
+    <div class="panel panel-info hidden" id="selected_files_options">
+    <div class="panel-heading">
+    <h5 class="panel-title">Selected Files</h5>
+        </div>
+        <div class="panel-body">
     <ul class="nav nav-sidebar">
         <li class="toggle-control" id="recipe_form_toggle"><a href="#" onclick="on_recipe_settings()"><span
                 class="glyphicon glyphicon-list-alt"></span>&nbsp;&nbsp;Run Recipe</a></li>
@@ -24,6 +29,8 @@
                                                                     onclick="on_analysis_settings()"><span
                 class="glyphicon glyphicon-fire"></span>&nbsp;&nbsp;Localize molecules</a></li>
     </ul>
+        </div>
+    </div>
     <hr>
 {% endblock %}
 
@@ -118,25 +125,38 @@
             $(id + '_toggle').addClass('active');
         }
 
+        function show_hide_selected_functions(){
+            if ($('.cu-selected').length > 0) {
+                $('#selected_files_options').removeClass('hidden').addClass('show');
+            } else {
+                $('#selected_files_options').removeClass('show').addClass('hidden');
+            }
+        }
+
         function toggleSelection(id){
             //console.log('toggling selection:' + id)
             $(id).toggleClass('cu-selected');
+            show_hide_selected_functions();
         }
 
         function selectAllSeries(){
             $('tr.series').addClass('cu-selected');
+            show_hide_selected_functions();
         }
 
         function clearSelection(){
             $('tr.series').removeClass('cu-selected');
+            show_hide_selected_functions();
         }
 
         function clearFileSelection(){
             $('tr.file').removeClass('cu-selected');
+            show_hide_selected_functions();
         }
 
         function selectAllFiles(){
             $('tr.file').addClass('cu-selected');
+            show_hide_selected_functions();
         }
 
 
