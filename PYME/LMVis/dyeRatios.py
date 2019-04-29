@@ -48,6 +48,9 @@ from PYME import config
 import os
 import json
 
+import logging
+logger = logging.getLogger(__name__)
+
 ratios = {'A647':0.85, 'A680':0.87, 'A750': 0.11, 'A700': 0.3, 'CF770': 0.11}
 PRIRatios = {'A680':0.7, 'A750': 0.5}
 
@@ -75,7 +78,11 @@ def get_ratios(dichroic=None, acquisition_machine='default'):
     if dichroic is None:
         return ratios
     
-    return ratios_by_machine[acquisition_machine][dichroic]
+    try:
+        return ratios_by_machine[acquisition_machine][dichroic]
+    except KeyError:
+        logger.warning('Unknown dichroic "%s"' % dichroic)
+        return {}
     
 
 def getRatio(dye, mdh=None):
