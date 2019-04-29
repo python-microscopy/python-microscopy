@@ -322,7 +322,7 @@ class RecipePusher(object):
         if self.recipeURI:
             task = task % ('"taskdefRef" : "%s"' % self.recipeURI)
         else:
-            task = task % ('"taskdef" : "%s"' % self.recipe_text)
+            task = task % ('"taskdef" : {"recipe": "%s"}' % self.recipe_text)
 
         return task
 
