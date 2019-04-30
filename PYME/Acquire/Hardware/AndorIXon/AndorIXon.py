@@ -104,7 +104,7 @@ class iXonCamera:
 #        'SaturationThreshold' : (2**14 -1)
 #        }
         self.initialised = False
-        self.active = True
+        self.active = False
 
         self.boardHandle = ac.GetCameraHandle.argtypes[1]._type_()
 

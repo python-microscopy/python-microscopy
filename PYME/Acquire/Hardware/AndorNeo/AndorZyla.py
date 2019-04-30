@@ -238,7 +238,7 @@ class AndorBase(SDK3Camera):
 
         self.hardware_overflowed=False
         
-        self.active = True
+        self.active = False
         #register as a provider of metadata
         MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
         
@@ -290,6 +290,8 @@ class AndorBase(SDK3Camera):
         self.pollLoopActive = True
         self.pollThread = threading.Thread(target = self._pollLoop)
         self.pollThread.start()
+
+        #self.active = True
         
         
     #Neo buffer helper functions    
