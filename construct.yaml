@@ -1,12 +1,13 @@
 # name and version (required)
 name: python-microscopy
-version: 18.05.12
+version: 19.03.05
 
 # channels to pull packages from
 channels: &id1
   - http://repo.anaconda.com/pkgs/main/
   - http://repo.anaconda.com/pkgs/free/
   - https://conda.anaconda.org/david_baddeley
+  - http://repo.anaconda.com/pkgs/msys2
 
 # specifications
 specs:
@@ -14,13 +15,16 @@ specs:
   - python-microscopy #=18.05.12
   - conda
   - wxpython <3.9
+  - console_shortcut [win]
+  - menuinst [win]
   #- sample                            [osx]
 
 # exclude these packages (list of names)
 exclude:
   #- openssl                           [unix]
   - readline                          [unix]
-  - tk                                [unix]
+  - tk
+  - pyqt
   #- python
 
 # explicitly listed packages

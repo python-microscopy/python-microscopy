@@ -3,7 +3,7 @@ import numpy as np
 import PYME.experimental._octree as octree
 from PYME.experimental import dual_marching_cubes
 
-import triangular_mesh
+from PYME.experimental import triangular_mesh
 
 def _generate_test_sphere():
     """

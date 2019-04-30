@@ -20,7 +20,6 @@ Subpackages
     PYME.LMVis
     PYME.ParallelTasks
     PYME.contrib
-    PYME.dataBrowser
     PYME.localization
     PYME.misc
     PYME.recipes

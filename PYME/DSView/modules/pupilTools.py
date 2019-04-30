@@ -28,12 +28,12 @@ from six.moves import xrange
 
 try:
     from enthought.traits.api import HasTraits, Float, Int, CStr, Bool
-    from enthought.traits.ui.api import View, Item
-    from enthought.traits.ui.menu import OKButton
+    #from enthought.traits.ui.api import View, Item
+    #from enthought.traits.ui.menu import OKButton
 except ImportError:
     from traits.api import HasTraits, Float, Int, CStr, Bool
-    from traitsui.api import View, Item
-    from traitsui.menu import OKButton
+    #from traitsui.api import View, Item
+    #from traitsui.menu import OKButton
 
 class ZernikeView(wx.ScrolledWindow):
     def __init__(self, dsviewer):
@@ -107,14 +107,21 @@ class PupilTools(HasTraits):
     apodization = CStr('sine')
     vectorial = Bool(False)
     
-    view = View(Item('wavelength'),
-                Item('NA'),
-                Item('zSpacing'),
-                Item('sizeZ'),
-                Item('sizeX'),
-                Item('apodization'),
-                Item('vectorial'),
-                buttons=[OKButton])
+
+    def default_traits_view( self ):
+        from traitsui.api import View, Item
+        from traitsui.menu import OKButton
+        
+        view = View(Item('wavelength'),
+                    Item('NA'),
+                    Item('zSpacing'),
+                    Item('sizeZ'),
+                    Item('sizeX'),
+                    Item('apodization'),
+                    Item('vectorial'),
+                    buttons=[OKButton])
+        
+        return view
 
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer

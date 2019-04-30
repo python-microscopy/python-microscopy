@@ -21,4 +21,4 @@
 #
 ##################
 
-from cInterp import *
+from .cInterp import *

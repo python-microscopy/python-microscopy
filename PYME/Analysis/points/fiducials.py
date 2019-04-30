@@ -42,6 +42,11 @@ def extractAverageTrajectory(pipeline, clumpRadiusVar='error_x', clumpRadiusMult
     t = pipeline['t'].astype('i')
     x = pipeline['x'].astype('f4')
     y = pipeline['y'].astype('f4')
+    try:
+        z = pipeline['z'].astype('f4')
+    except:
+        z = np.zeros_like(x)
+        
     delta_x = delta_x.astype('f4')
     
     I = np.argsort(t)
@@ -63,6 +68,7 @@ def extractAverageTrajectory(pipeline, clumpRadiusVar='error_x', clumpRadiusMult
     
     x_f = []
     y_f = []
+    z_f = []
     clump_sizes = []
     
     t_f = np.arange(0, tMax + 1, dtype='i')
@@ -76,6 +82,7 @@ def extractAverageTrajectory(pipeline, clumpRadiusVar='error_x', clumpRadiusMult
             
             if clump_size > 50:
                 y_i = y[clump_mask]
+                z_i = z[clump_mask]
                 t_i = t[clump_mask].astype('i')
                 
                 x_i_f = np.NaN * np.ones_like(t_f)
@@ -83,16 +90,21 @@ def extractAverageTrajectory(pipeline, clumpRadiusVar='error_x', clumpRadiusMult
                 
                 y_i_f = np.NaN * np.ones_like(t_f)
                 y_i_f[t_i] = y_i - y_i.mean()
+
+                z_i_f = np.NaN * np.ones_like(t_f)
+                z_i_f[t_i] = z_i - z_i.mean()
                 
                 #clumps.append((x_i_f, y_i_f))
                 x_f.append(x_i_f)
                 y_f.append(y_i_f)
+                z_f.append(z_i_f)
                 clump_sizes.append(len(x_i))
     
     #re-order to start with the largest clump
     clumpOrder = np.argsort(clump_sizes)[::-1]
     x_f = np.array(x_f)[clumpOrder, :]
     y_f = np.array(y_f)[clumpOrder, :]
+    z_f = np.array(z_f)[clumpOrder, :]
     
     def _mf(p, meas):
         '''calculate the offset between trajectories'''
@@ -123,7 +135,8 @@ def extractAverageTrajectory(pipeline, clumpRadiusVar='error_x', clumpRadiusMult
     
     x_corr = _align(x_f)
     y_corr = _align(y_f)
+    z_corr = _align(z_f)
     
-    filtered_corr = FILTER_FUNCS[filter](t_f, {'x': x_corr, 'y': y_corr}, filterScale)
+    filtered_corr = FILTER_FUNCS[filter](t_f, {'x': x_corr, 'y': y_corr, 'z': z_corr}, filterScale)
     
     return t_f, filtered_corr, clumpIndex

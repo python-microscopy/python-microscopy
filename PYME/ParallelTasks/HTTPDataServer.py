@@ -828,7 +828,11 @@ def main(protocol="HTTP/1.0"):
 
     sa = httpd.socket.getsockname()
 
-    ip_addr = socket.gethostbyname(socket.gethostname())
+    try:
+        ip_addr = socket.gethostbyname(socket.gethostname())
+    except:
+        ip_addr = socket.gethostbyname(socket.gethostname() + '.local')
+    
 
     ns = pzc.getNS('_pyme-http')
     ns.register_service('PYMEDataServer [%s]: ' % options.server_filter + procName, ip_addr, sa[1])

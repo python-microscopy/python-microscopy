@@ -1,7 +1,7 @@
 .. _installationanaconda:
 
 Installation of PYME on 64 bit Windows, OSX, or Linux
-#####################################################
+*****************************************************
 
 PYME requires python (version 2.7) and a number of additional scientific packages.
 Although it is possible to install all packages individually, and then install PYME,

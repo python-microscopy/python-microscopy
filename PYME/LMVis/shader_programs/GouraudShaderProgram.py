@@ -50,7 +50,7 @@ class GouraudShaderProgram(GLProgram):
 
     def __enter__(self):
         self.get_shader_program().use()
-        for name, value in GouraudShaderProgram.LIGHT_PROPS.iteritems():
+        for name, value in GouraudShaderProgram.LIGHT_PROPS.items():
             location = self.get_uniform_location(name)
             glUniform4f(location, *value)
         location = self.get_uniform_location('shininess')
@@ -72,6 +72,7 @@ class GouraudShaderProgram(GLProgram):
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
         glDepthFunc(GL_LEQUAL)
         glEnable(GL_DEPTH_TEST)
+        glDisable(GL_BLEND) #turn off alpha - as we don't sort triangles we don't want to do anything fancy here
         #glEnable(GL_CULL_FACE)
         #glCullFace(GL_BACK)
         

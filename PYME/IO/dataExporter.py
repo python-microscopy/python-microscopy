@@ -212,7 +212,7 @@ class TiffStackExporter(Exporter):
             except:
                 pass
 
-exporter(TiffStackExporter)
+#exporter(TiffStackExporter)
 
 class OMETiffExporter(Exporter):
     extension = '*.tif'

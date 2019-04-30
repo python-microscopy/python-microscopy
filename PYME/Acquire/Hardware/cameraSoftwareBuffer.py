@@ -34,7 +34,6 @@ except ImportError:
 import time
 
 from threading import Thread
-from fftw3f import create_aligned_array
 
 from PYME.Acquire.Hardware.Camera import Camera
 

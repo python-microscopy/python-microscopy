@@ -38,7 +38,7 @@ import time
 import traceback
 from PYME.IO.FileUtils import nameUtils
 
-from fftw3f import create_aligned_array
+from PYME.misc.aligned_array import create_aligned_array
 
 from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog

@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+from __future__ import print_function
 import numpy
 import numpy as np
 import wx
@@ -27,32 +28,33 @@ import pylab
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
 class ColocSettingsDialog(wx.Dialog):
-    def __init__(self, parent, pxSize=100, names = [], have_mask=False, z_size=1, coloc_vs_z=False):
+    def __init__(self, parent, pxSize=100, names = [], have_mask=False, z_size=1, coloc_vs_z=False, show_bins=True):
         wx.Dialog.__init__(self, parent, title='Colocalisation Settings')
         self.zsize = z_size
         
         sizer1 = wx.BoxSizer(wx.VERTICAL)
         
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'Minimum Distance:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
-        self.tMin = wx.TextCtrl(self, -1, '-500')
-        hsizer.Add(self.tMin, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        
-        sizer1.Add(hsizer, 0, wx.EXPAND)
-        
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'Maximum Distance:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
-        self.tMax = wx.TextCtrl(self, -1, '2000')
-        hsizer.Add(self.tMax, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        
-        sizer1.Add(hsizer, 0, wx.EXPAND)
-        
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(self, -1, 'Bin Size:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
-        self.tStep = wx.TextCtrl(self, -1, '%d' % (2*pxSize))
-        hsizer.Add(self.tStep, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        
-        sizer1.Add(hsizer, 0, wx.EXPAND)
+        if show_bins:
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            hsizer.Add(wx.StaticText(self, -1, 'Minimum Distance:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
+            self.tMin = wx.TextCtrl(self, -1, '-500')
+            hsizer.Add(self.tMin, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+            
+            sizer1.Add(hsizer, 0, wx.EXPAND)
+            
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            hsizer.Add(wx.StaticText(self, -1, 'Maximum Distance:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
+            self.tMax = wx.TextCtrl(self, -1, '2000')
+            hsizer.Add(self.tMax, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+            
+            sizer1.Add(hsizer, 0, wx.EXPAND)
+            
+            hsizer = wx.BoxSizer(wx.HORIZONTAL)
+            hsizer.Add(wx.StaticText(self, -1, 'Bin Size:'), 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL,5)
+            self.tStep = wx.TextCtrl(self, -1, '%d' % (2*pxSize))
+            hsizer.Add(self.tStep, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+            
+            sizer1.Add(hsizer, 0, wx.EXPAND)
         
         if have_mask:
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -137,18 +139,12 @@ class colocaliser:
 
         self.image = dsviewer.image
         
-        PROC_COLOCALISE = wx.NewId()
-        PROC_COLOCALISE_EDT = wx.NewId()
-        PROC_COLOCALISE_EDT_ZC = wx.NewId()
-        
         dsviewer.mProcessing.AppendSeparator()
-        dsviewer.mProcessing.Append(PROC_COLOCALISE, "&Colocalisation", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(PROC_COLOCALISE_EDT, "EDT Colocalisation", "", wx.ITEM_NORMAL)
-        dsviewer.mProcessing.Append(PROC_COLOCALISE_EDT_ZC, "EDT Colocalisation (z cropped)", "", wx.ITEM_NORMAL)
+        dsviewer.AddMenuItem('Processing', "&Colocalisation", self.OnColocBasic)
+        dsviewer.AddMenuItem('Processing', "EDT Colocalisation", self.OnColoc)
+        dsviewer.AddMenuItem('Processing', "EDT Colocalisation (z cropped)", lambda e: self.OnColoc(restrict_z=True))
+        dsviewer.AddMenuItem('Processing', 'FRC', self.OnFRC)
     
-        wx.EVT_MENU(dsviewer, PROC_COLOCALISE, self.OnColocBasic)
-        wx.EVT_MENU(dsviewer, PROC_COLOCALISE_EDT, self.OnColoc)
-        wx.EVT_MENU(dsviewer, PROC_COLOCALISE_EDT_ZC, lambda e: self.OnColoc(restrict_z=True))
 
 
     
@@ -157,10 +153,7 @@ class colocaliser:
         from scipy import interpolate
         voxelsize = [1e3*self.image.mdh.getEntry('voxelsize.x') ,1e3*self.image.mdh.getEntry('voxelsize.y'), 1e3*self.image.mdh.getEntry('voxelsize.z')]
         
-        try:
-            names = self.image.mdh.getEntry('ChannelNames')
-        except:
-            names = ['Channel %d' % n for n in range(self.image.data.shape[3])]
+        names = self.image.names
             
         if not getattr(self.image, 'labels', None) is None:
             have_mask = True
@@ -226,10 +219,10 @@ class colocaliser:
                     MBzs.append(MBz)
                     FAzs.append(FAz)
                     FBzs.append(FBz)
-                    
-                print "M(A->B) ",MAzs
-                print "M(B->A) ",MBzs
-                print "Species A: %s, Species B: %s" %(nameA,nameB)
+
+                print("M(A->B) %s" % MAzs)
+                print("M(B->A) %s" % MBzs)
+                print("Species A: %s, Species B: %s" %(nameA,nameB))
     
                 pylab.figure()
                 pylab.subplot(211)
@@ -258,106 +251,52 @@ class colocaliser:
                 pylab.show()
 
         print('Performing distance transform ...')
-        bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize, bins, roi_mask=mask)
-        bnAA, bmAA, binsA = edtColoc.imageDensityAtDistance(imA, imA > tA, voxelsize, bins, roi_mask=mask)
-        print('Performing distance transform (reversed) ...') 
-        bnB, bmB, binsB = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize, bins, roi_mask=mask)
-        bnBB, bmBB, binsB = edtColoc.imageDensityAtDistance(imB, imB > tB, voxelsize, bins, roi_mask=mask)
+        #bnA, bmA, binsA = edtColoc.imageDensityAtDistance(imB, imA > tA, voxelsize, bins, roi_mask=mask)
+        #bnAA, bmAA, binsA = edtColoc.imageDensityAtDistance(imA, imA > tA, voxelsize, bins, roi_mask=mask)
+        
+        bins_, enrichment_BA, enclosed_BA, enclosed_area_A = edtColoc.image_enrichment_and_fraction_at_distance(imB, imA > tA, voxelsize,
+                                                                                               bins, roi_mask=mask)
+        bins_, enrichment_AA, enclosed_AA, _ = edtColoc.image_enrichment_and_fraction_at_distance(imA, imA > tA, voxelsize,
+                                                                                               bins, roi_mask=mask)
+        
+        print('Performing distance transform (reversed) ...')
+        #bnB, bmB, binsB = edtColoc.imageDensityAtDistance(imA, imB > tB, voxelsize, bins, roi_mask=mask)
+        #bnBB, bmBB, binsB = edtColoc.imageDensityAtDistance(imB, imB > tB, voxelsize, bins, roi_mask=mask)
+
+        bins_, enrichment_AB, enclosed_AB, enclosed_area_B = edtColoc.image_enrichment_and_fraction_at_distance(imA, imB > tB, voxelsize,
+                                                                                               bins, roi_mask=mask)
+        bins_, enrichment_BB, enclosed_BB, _ = edtColoc.image_enrichment_and_fraction_at_distance(imB, imB > tB, voxelsize,
+                                                                                               bins, roi_mask=mask)
         
         #print binsB, bmB
         
         plots = []
         pnames = []
         
-        pylab.figure()
-        pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f' % (pearson, MA, MB))
-        pylab.subplot(211)
-        p = bmA/bmA[bnA > 1].mean()
-        pA = bmAA / bmAA[bnAA > 1].mean()
-        #print p
-        #pylab.bar(binsA[:-1], p, binsA[1] - binsA[0])
-        pylab.plot(binsA[:-1], p, lw=2, drawstyle='steps')
-        pylab.plot(binsA[:-1], pA, 'k--', drawstyle='steps')#, binsA[1] - binsA[0])
-        pylab.xlabel('Distance from edge of %s [nm]' % nameA)
-        pylab.ylabel('Relative enrichment')# % nameB)
         
-        pylab.legend([nameB, nameA + ' (control)'], fontsize='medium', frameon=False)
-        
-        pylab.plot([binsA[0], binsA[-1]], [1,1], '--r')
-        pylab.grid()
-        pylab.xlim([bins[0], bins[-1]])
-        plots.append(p.reshape(-1, 1,1))
-        pnames.append('Dens. %s from %s' % (nameB, nameA))
+        # B from mA
+        ####################
+        plots_ = {}
 
-        pylab.subplot(212)
-        fA = bmA * bnA
-        p = fA / fA.sum()
-        pA = bmAA * bnAA
-        pA = pA / pA.sum()
-        
-        #find the distance at which 50% of the labelling is included
-        d_50 = interpolate.interp1d(np.cumsum(p), binsA[:-1])(.5)
-        
-        #pylab.bar(binsA[:-1], p, binsA[1] - binsA[0])
-        pylab.plot(binsA[:-1], np.cumsum(p), lw=2)
-        pylab.plot(binsA[:-1], np.cumsum(pA), 'k--')
-        
-        pylab.plot([bins[0], d_50], [.5,.5], 'r:')
-        pylab.plot([d_50, d_50], [0, .5], 'r:')
-        
-        pylab.text(d_50 + 150, .45, '50%% of %s is within %d nm' % (nameB, d_50))
-        
-        pylab.xlabel('Distance from edge of %s [nm]' % nameA)
-        pylab.ylabel('Fraction of %s enclosed' % nameB)
-        pylab.grid()
-        pylab.xlim([bins[0], bins[-1]])
-        plots.append(np.cumsum(p).reshape(-1, 1, 1))
-        pnames.append('Frac. %s from %s' % (nameB, nameA))
 
-        pylab.figure()
-        pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f' % (pearson, MA, MB))
-        pylab.subplot(211)
+        #plots_['Frac. %s from mask(%s)' % (nameB, nameA)] =
+        plots.append(enclosed_BA.reshape(-1, 1, 1))
+        pnames.append('Frac. %s from mask(%s)' % (nameB, nameA))
 
-        p = bmB / bmB[bnB > 1].mean()
-        pA = bmBB / bmBB[bnBB > 1].mean()
-        #pylab.bar(binsB[:-1], p, binsB[1] - binsB[0])
-        pylab.plot(binsB[:-1], p, lw=2, drawstyle='steps')
-        pylab.plot(binsA[:-1], pA, 'k--', drawstyle='steps')
-        pylab.xlabel('Distance from edge of %s [nm]' % nameB)
-        pylab.ylabel('Relative enrichment')# of %s' % nameA)
-
-        pylab.legend([nameA, nameB + ' (control)'], fontsize='medium', frameon=False)
+        plots.append(enrichment_BA.reshape(-1, 1, 1))
+        pnames.append('Enrichment of %s at distance from mask(%s)' % (nameB, nameA))
         
-        pylab.plot([binsA[0], binsA[-1]], [1, 1], '--r')
-        pylab.grid()
-        pylab.xlim([bins[0], bins[-1]])
-        plots.append(p.reshape(-1, 1, 1))
-        pnames.append('Dens. %s from %s' % (nameA, nameB))
+            
+        edtColoc.plot_image_dist_coloc_figure(bins_, enrichment_BA, enrichment_AA, enclosed_BA, enclosed_AA, enclosed_area_A, pearson, MA, MB, nameA, nameB)
 
-        pylab.subplot(212)
-        fB = bmB*bnB
-        p = fB/fB.sum()
-        pA = bmBB * bnBB
-        pA = pA / pA.sum()
+        plots.append(enclosed_AB.reshape(-1, 1, 1))
+        pnames.append('Frac. %s from mask(%s)' % (nameA, nameB))
 
-        #find the distance at which 50% of the labelling is included
-        d_50 = interpolate.interp1d(np.cumsum(p), binsA[:-1])(.5)
-        
-        #pylab.bar(binsB[:-1], p, binsB[1] - binsB[0])
-        pylab.plot(binsA[: -1], np.cumsum(p), lw=2)
-        pylab.plot(binsA[:-1], np.cumsum(pA), 'k--')
+        plots.append(enrichment_AB.reshape(-1, 1, 1))
+        pnames.append('Enrichment of %s at distance from mask(%s)' % (nameA, nameB))
 
-        pylab.plot([bins[0], d_50], [.5, .5], 'r:')
-        pylab.plot([d_50, d_50], [0, .5], 'r:')
-
-        pylab.text(d_50 + 150, .45, '50%% of %s is within %d nm' % (nameA, d_50))
-        
-        pylab.xlabel('Distance from edge of %s [nm]' % nameB)
-        pylab.ylabel('Fraction of %s' % nameA)
-        pylab.grid()
-        pylab.xlim([bins[0], bins[-1]])
-        plots.append(np.cumsum(p).reshape(-1, 1,1))
-        pnames.append('Frac. %s from %s' % (nameA, nameB))
+        edtColoc.plot_image_dist_coloc_figure(bins_, enrichment_AB, enrichment_BB, enclosed_AB, enclosed_BB, enclosed_area_B, pearson,
+                                              MA, MB, nameB, nameA)
         
         pylab.show()
         
@@ -398,10 +337,9 @@ class colocaliser:
         except:
             names = ['Channel %d' % n for n in range(self.image.data.shape[3])]
         
-        dlg = ColocSettingsDialog(self.dsviewer, voxelsize[0], names)
+        dlg = ColocSettingsDialog(self.dsviewer, voxelsize[0], names, show_bins=False)
         dlg.ShowModal()
         
-        bins = dlg.GetBins()
         chans = dlg.GetChans()
         dlg.Destroy()
 
@@ -417,18 +355,17 @@ class colocaliser:
         nameA = names[chans[0]]
         nameB = names[chans[1]]
 
-        voxelsize = voxelsize[:imA.ndim] #trunctate to number of dimensions
-
         print('Calculating Pearson and Manders coefficients ...')        
         pearson = correlationCoeffs.pearson(imA, imB)
         MA, MB = correlationCoeffs.thresholdedManders(imA, imB, tA, tB)
+        mutual_information = correlationCoeffs.mutual_information(imA, imB)
         
         I1 = imA.ravel()
         I2 = imB.ravel()
         h1 = np.histogram2d(np.clip(I1/I1.mean(), 0, 100), np.clip(I2/I2.mean(), 0, 100), 200)
 
         pylab.figure()
-        pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f' % (pearson, MA, MB))
+        pylab.figtext(.1, .95, 'Pearson: %2.2f   M1: %2.2f M2: %2.2f    MI: %2.3f' % (pearson, MA, MB, mutual_information))
         pylab.subplot(111)
         
         pylab.imshow(np.log10(h1[0] + .1).T)
@@ -437,6 +374,100 @@ class colocaliser:
 
         
         pylab.show()
+
+    def OnFRC(self, event):
+        import matplotlib.pyplot as plt
+        from PYME.Analysis import binAvg
+        voxelsize = self.image.voxelsize
+
+        try:
+            names = self.image.mdh.getEntry('ChannelNames')
+        except:
+            names = ['Channel %d' % n for n in range(self.image.data.shape[3])]
+
+        dlg = ColocSettingsDialog(self.dsviewer, voxelsize[0], names, show_bins=False)
+        dlg.ShowModal()
+
+        chans = dlg.GetChans()
+        dlg.Destroy()
+    
+        #assume we have exactly 2 channels #FIXME - add a selector
+        #grab image data
+        imA = self.image.data[:, :, :, chans[0]].squeeze()
+        imB = self.image.data[:, :, :, chans[1]].squeeze()
+    
+        X, Y = np.mgrid[0:float(imA.shape[0]), 0:float(imA.shape[1])]
+        X = X / X.shape[0]
+        Y = Y / X.shape[1]
+        X = (X - .5)
+        Y = Y - .5
+        R = np.sqrt(X ** 2 + Y ** 2)
+    
+        H1 = np.fft.fftn(imA)
+        H2 = np.fft.fftn(imB)
+    
+        #rB = np.linspace(0,R.max())
+        rB = np.linspace(0, 0.5, 100)
+    
+        bn, bm, bs = binAvg.binAvg(R, np.fft.fftshift(H1 * H2.conjugate()).real, rB)
+    
+        bn1, bm1, bs1 = binAvg.binAvg(R, np.fft.fftshift((H1 * H1.conjugate()).real), rB)
+        bn2, bm2, bs2 = binAvg.binAvg(R, np.fft.fftshift((H2 * H2.conjugate()).real), rB)
+    
+        plt.figure()
+    
+        ax = plt.gca()
+    
+        #FRC
+        FRC = bm / np.sqrt(bm1 * bm2)
+        ax.plot(rB[:-1], FRC)
+    
+        #noise envelope???????????
+        ax.plot(rB[:-1], 2. / np.sqrt(bn / 2), ':')
+    
+        dfrc = np.diff(FRC)
+        monotone = np.where(dfrc > 0)[0][0] + 1
+    
+        #print FRC[:monotone], FRC[:(monotone+1)]
+    
+        intercept_m = np.interp(1.0 - 1 / 7.0, 1 - FRC[:monotone], rB[:monotone])
+    
+        print('Intercept_m= %3.2f (%3.2f nm)' % (intercept_m, voxelsize[0] / intercept_m))
+
+        from scipy import ndimage
+        f_s = np.sign(FRC - 1. / 7.)
+
+        intercept = np.interp(0.0, - ndimage.gaussian_filter(f_s, 10), rB[:-1])
+
+        print('Intercept= %3.2f (%3.2f nm)' % (intercept, voxelsize[0] / intercept))
+    
+        xt = np.array([10., 15, 20, 30, 40, 50, 70, 90, 120, 150, 200, 300, 500])
+        rt = voxelsize[0] / xt
+    
+        plt.xticks(rt[::-1], ['%d' % xi for xi in xt[::-1]], rotation='vertical')
+    
+        ax.plot([0, rt[0]], np.ones(2) / 7.0)
+    
+        plt.grid()
+        plt.xlabel('Resolution [nm]')
+    
+        plt.ylabel('FRC')
+        
+        plt.plot([intercept, intercept], [0,1], '--')
+    
+        plt.figtext(0.5, 0.5, 'FRC intercept at %3.1f nm' % (voxelsize[0] / intercept))
+    
+        # plt.figure()
+        #
+        #
+        # plt.plot(rB[:-1], FRC-1./7.)
+        # plt.plot(rB[:-1], f_s)
+        # plt.plot(rB[:-1], ndimage.gaussian_filter(f_s, 1))
+        # plt.plot(rB[:-1], ndimage.gaussian_filter(f_s, 5))
+        # plt.plot(rB[:-1], ndimage.gaussian_filter(f_s, 10))
+        #
+        # plt.show()
+        
         
 
 

@@ -1,7 +1,7 @@
 import numpy as np
 from copy import deepcopy
 
-import marching_cubes
+from . import marching_cubes
 
 
 class DualMarchingCubes(marching_cubes.MarchingCubes):

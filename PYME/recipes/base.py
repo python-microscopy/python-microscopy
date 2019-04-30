@@ -7,8 +7,9 @@ Created on Mon May 25 17:02:04 2015
 @author: david
 """
 #import wx
+import six
 
-from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, on_trait_change, Input, Output
+from PYME.recipes.traits import HasTraits, Float, List, Bool, Int, CStr, Enum, File, on_trait_change, Input, Output
     
     #for some reason traitsui raises SystemExit when called from sphinx on OSX
     #This is due to the framework build problem of anaconda on OSX, and also
@@ -74,7 +75,7 @@ class ModuleBase(HasTraits):
     @on_trait_change('anytrait')
     def remove_outputs(self):
         if not self.__dict__.get('_parent', None) is None:
-            self._parent.pruneDependanciesFromNamespace(self.outputs)
+            self._parent.prune_dependencies_from_namespace(self.outputs)
             
             self._parent.invalidate_data()
 
@@ -152,6 +153,23 @@ class ModuleBase(HasTraits):
     @property
     def outputs(self):
         return {v for k, v in self.get().items() if k.startswith('output')}
+    
+    @property
+    def file_inputs(self):
+        """
+        Allows templated file names which will be substituted when a user runs the recipe
+        
+        Any key of the form {USERFILEXXXXXX} where XXXXXX is a unique name for this input will then give rise to a
+        file input box and will be replaced by the file path / URI in the recipe.
+        
+        Returns
+        -------
+        
+        any inputs which should be substituted
+
+        """
+        #print(self.get().items())
+        return [v.lstrip('{').rstrip('}') for k, v in self.get().items() if isinstance(v, six.string_types) and v.startswith('{USERFILE')]
     
     def get_name(self):
         return module_names[self.__class__]
@@ -371,10 +389,13 @@ class ModuleCollection(HasTraits):
         return downstream
         
         
-    def pruneDependanciesFromNamespace(self, keys_to_prune):
+    def prune_dependencies_from_namespace(self, keys_to_prune, keep_passed_keys = False):
         rdg = self.reverseDependancyGraph()
         
-        downstream = list(keys_to_prune) + list(self._getAllDownstream(rdg, list(keys_to_prune)))
+        if keep_passed_keys:
+            downstream = list(self._getAllDownstream(rdg, list(keys_to_prune)))
+        else:
+            downstream = list(keys_to_prune) + list(self._getAllDownstream(rdg, list(keys_to_prune)))
         
         #print downstream
         
@@ -407,7 +428,7 @@ class ModuleCollection(HasTraits):
                 if not (self.namespace[k] == v):
                     #input has changed
                     print('pruning: ', k)
-                    self.pruneDependanciesFromNamespace([k])
+                    self.prune_dependencies_from_namespace([k])
             except KeyError:
                 #key wasn't in namespace previously
                 print('KeyError')
@@ -458,16 +479,20 @@ class ModuleCollection(HasTraits):
             mod_traits_cleaned = {}
             for k, v in mod.get().items():
                 if not k.startswith('_'): #don't save private data - this is usually used for caching etc ..,
-                    if (not (v == ct[k].default)) or (k.startswith('input')) or (k.startswith('output')):
-                        #don't save defaults
-                        if isinstance(v, dict) and not type(v) == dict:
-                            v = dict(v)
-                        elif isinstance(v, list) and not type(v) == list:
-                            v = list(v)
-                        elif isinstance(v, set) and not type(v) == set:
-                            v = set(v)
-    
-                        mod_traits_cleaned[k] = v
+                    try:
+                        if (not (v == ct[k].default)) or (k.startswith('input')) or (k.startswith('output')):
+                            #don't save defaults
+                            if isinstance(v, dict) and not type(v) == dict:
+                                v = dict(v)
+                            elif isinstance(v, list) and not type(v) == list:
+                                v = list(v)
+                            elif isinstance(v, set) and not type(v) == set:
+                                v = set(v)
+        
+                            mod_traits_cleaned[k] = v
+                    except KeyError:
+                        # for some reason we have a trait that shouldn't be here
+                        pass
 
             l.append({module_names[mod.__class__]: mod_traits_cleaned})
 
@@ -560,6 +585,14 @@ class ModuleCollection(HasTraits):
         for mod in self.modules:
             op.update(set(mod.outputs))
         return op
+    
+    @property
+    def file_inputs(self):
+        out = []
+        for mod in self.modules:
+            out += mod.file_inputs
+            
+        return out
 
     def save(self, context={}):
         """
@@ -799,8 +832,8 @@ class ExtractChannel(ModuleBase):
         im = ImageStack(chan, titleStub = 'Filtered Image')
         im.mdh.copyEntriesFrom(image.mdh)
         try:
-            im.mdh['ChannelNames'] = [image.mdh['ChannelNames'][self.channelToExtract]]
-        except KeyError:
+            im.mdh['ChannelNames'] = [image.names[self.channelToExtract],]
+        except (KeyError, AttributeError):
             logger.warn("Error setting channel name")
 
         im.mdh['Parent'] = image.filename

@@ -27,6 +27,7 @@ import PYME.version
 #traitsui causes lots of crashes when imported without a GUI. Circumvent it by 
 from PYME.misc import mock_traitsui
 sys.modules['traitsui.api'] = mock_traitsui
+sys.modules['traitsui.wx'] = mock.Mock()
 
 from PYME.misc import mock_traits
 sys.modules['traits.api'] = mock_traits
@@ -38,6 +39,10 @@ sys.modules['ctypes'] = mock_ctypes
 sys.modules['Image'] = mock.Mock()
 sys.modules['ImageFile'] = mock.Mock()
 sys.modules['ImagePalette'] = mock.Mock()
+
+sys.modules['skimage'] = mock.Mock()
+sys.modules['pyfftw'] = mock.Mock()
+sys.modules['quaternion'] = mock.Mock()
     
 import wx
 import wx.py.shell
@@ -58,7 +63,7 @@ wx.Dialog = mClass
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.mathjax', 'sphinx.ext.autosummary','numpydoc'] #, 'sphinx.ext.napoleon']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.mathjax', 'sphinx.ext.autosummary', 'numpydoc'] # 'sphinx.ext.napoleon']#,
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -135,7 +140,9 @@ todo_include_todos = True
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-html_theme = 'sphinxdoc'#'default'
+#html_theme = 'sphinxdoc'#'default'
+html_theme = 'sphinx_rtd_theme'#'default'
+
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

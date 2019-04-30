@@ -3,7 +3,7 @@
 {% block meta %}
 {#<meta http-equiv="refresh" content="2">#}
 {% endblock %}
-{% block analysis_active_class %}active{% endblock %}
+{% block recipe_active_class %}active{% endblock %}
 {% block content %}
     <form class="form" id="form_recipe" action="/recipes/run/" method="post">
 
@@ -20,7 +20,7 @@
             </div>
         </div>
 
-        <div id="recipe_image"></div>
+        <div id="recipe_image"></div> <!--placeholder for recipe image -->
 
         <div class="form-group">
             <label class="control-label" for="inputFileGlob">Input glob</label>
@@ -32,6 +32,7 @@
                 </span>
             </div>
         </div>
+
 
         <div id="recipe_input_list"></div>
 
@@ -63,6 +64,11 @@ $('#select_recipe').click(function(){
    select_file(function(path){
        $('#inputRecipeURL').val(path);
        $('#recipe_image').html('<img src="/recipes/svg/?recipeURL=' + path + '">');
+       //$('#recipe_extra_inputs').load('/recipes/extra_inputs/?recipeURL=' + path, function () {
+                //alert( "Load was performed." );
+                // $(this).unwrap();
+                //console.log('load performed')
+       //     });
    }, 'Select a recipe (*.yaml)')
 });
 

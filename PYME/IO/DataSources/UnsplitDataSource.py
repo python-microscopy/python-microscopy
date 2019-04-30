@@ -19,6 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+from __future__ import print_function
 import numpy
 from .BaseDataSource import BaseDataSource
 
@@ -83,7 +84,7 @@ class DataSource(BaseDataSource):
         #Yn = self.Y2[x1:x2, y1:(y1 + self.sliceShape[1])] - y1
 
         #print Xn.shape
-        print self.sliceShape
+        print(self.sliceShape)
 
         self.Xn = numpy.maximum(numpy.minimum(Xn, self.sliceShape[0]-1), 0)
         self.Yn = numpy.maximum(numpy.minimum(Yn, self.sliceShape[1]-1), 0)

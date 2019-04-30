@@ -26,7 +26,8 @@ from PYME.ui import histLimits
 
 
 class GenImageDialog(wx.Dialog):
-    def __init__(self, parent, mode='current', defaultPixelSize=5.0, jitterVariables = [], jitterVarDefault=0, mcProbDefault = 1.0, colours = [], zvals=None, jitterVarDefaultZ=0):
+    def __init__(self, parent, mode='current', defaultPixelSize=5.0, jitterVariables = [], jitterVarDefault=0,
+                 mcProbDefault = 1.0, colours = [], zvals=None, jitterVarDefaultZ=0, geometric_mean=False):
         wx.Dialog.__init__(self, parent, title='Generate Image ...')
 
         pixelSzs = ['%3.2f' % (defaultPixelSize*2**n) for n in range(6)]
@@ -107,9 +108,17 @@ class GenImageDialog(wx.Dialog):
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
             sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+            self.cbTriangGeometric = wx.CheckBox(self, -1, 'Geometric mean')
+            self.cbTriangGeometric.SetValue(geometric_mean)
+            sizer2.Add(self.cbTriangGeometric, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+            
             #sizer2.Add(wx.StaticText(self, -1, 'Use software rendereing:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
         if False: #mode in ['triangles', 'trianglesw']:
+            sizer2 = wx.BoxSizer(wx.HORIZONTAL)
             self.cbTriangSoftRender = wx.CheckBox(self, -1, 'Use software rendering')
             self.cbTriangSoftRender.SetValue(True)
             sizer2.Add(self.cbTriangSoftRender, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
@@ -239,6 +248,12 @@ class GenImageDialog(wx.Dialog):
             return self.cbTriangSoftRender.GetValue()
         except AttributeError:
             return True
+        
+    def getGeometricMean(self):
+        try:
+            return self.cbTriangGeometric.GetValue()
+        except AttributeError:
+            return False
 
     def get_settings(self):
         return {
@@ -252,5 +267,6 @@ class GenImageDialog(wx.Dialog):
             'colours' : self.getColour(),
             'zBounds' : self.getZBounds(),
             'zSliceThickness' : self.getZSliceThickness(),
-            'softRender' : self.getSoftRender()
+            'softRender' : self.getSoftRender(),
+            'geometricMean': self.getGeometricMean(),
         }

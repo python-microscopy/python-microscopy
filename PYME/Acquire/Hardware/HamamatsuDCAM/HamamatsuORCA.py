@@ -28,7 +28,6 @@
 ################
 
 from .HamamatsuDCAM import *
-from fftw3f import create_aligned_array
 
 
 # C11440-22CU DCAM_IDPROP variables

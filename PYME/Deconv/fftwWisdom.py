@@ -21,20 +21,37 @@
 
 #
 ################
-
-
-import fftw3f
 import os
 
-WISDOMFILE = os.path.join(os.path.split(__file__)[0], 'fftw_wisdom')
-
-def load_wisdom():
-    if os.path.exists(WISDOMFILE):
-        f = open(WISDOMFILE, 'r')
-        fftw3f.import_wisdom_from_string(f.read())
-        f.close()
+try:
+    import fftw3f
     
-def save_wisdom():
-    f = open(WISDOMFILE, 'w')
-    f.write(fftw3f.export_wisdom_to_string())
-    f.close()
+    WISDOMFILE = os.path.join(os.path.split(__file__)[0], 'fftw_wisdom')
+    
+    def load_wisdom():
+        if os.path.exists(WISDOMFILE):
+            f = open(WISDOMFILE, 'r')
+            fftw3f.import_wisdom_from_string(f.read())
+            f.close()
+        
+    def save_wisdom():
+        f = open(WISDOMFILE, 'w')
+        f.write(fftw3f.export_wisdom_to_string())
+        f.close()
+        
+except ImportError:
+    import pyfftw
+    import pickle
+    
+    WISDOMFILE = os.path.join(os.path.split(__file__)[0], 'fftw_wisdom.pkl')
+    
+    def load_wisdom():
+        if os.path.exists(WISDOMFILE):
+            with open(WISDOMFILE, 'rb') as f:
+                pyfftw.import_wisdom(pickle.load(f))
+    
+    
+    def save_wisdom():
+        with open(WISDOMFILE, 'wb') as f:
+            pickle.dump(f, pyfftw.export_wisdom())
+        

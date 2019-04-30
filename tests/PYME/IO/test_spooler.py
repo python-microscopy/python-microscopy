@@ -20,6 +20,7 @@ def setup_module():
     tmp_root = os.path.join(tempfile.gettempdir(), 'PYMEDataServer_TEST')
     if not os.path.exists(tmp_root):
         os.makedirs(tmp_root)
+        
     port_start = 8100
     for i in range(10):
         proc = subprocess.Popen('python -m PYME.ParallelTasks.HTTPDataServer -r %s -f TEST -t -p %d --timeout-test=0.5' % (tmp_root, port_start + i), stderr= sys.stderr, shell=True)

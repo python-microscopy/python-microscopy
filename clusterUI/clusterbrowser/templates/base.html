@@ -71,8 +71,14 @@
         <div class="col-sm-3 col-md-3 sidebar">
             <ul class="nav nav-sidebar">
                 <li class="{% block status_active_class %}{% endblock %}"><a href="/status/"><span class="glyphicon glyphicon-signal"></span>&nbsp;&nbsp;Cluster Status</a></li>
+                <li class="{% block analysis_active_class %}{% endblock %}"><a href="/status/queues/"><span class="glyphicon glyphicon-tasks"></span>&nbsp;&nbsp;Active Analysis Tasks</a></li>
                 <li class="{% block files_active_class %}{% endblock %}"><a href="/files/"><span class="glyphicon glyphicon-floppy-disk"></span>&nbsp;&nbsp;Files</a></li>
-                <li class="{% block analyis_active_class %}{% endblock %}"><a href="/status/queues/"><span class="glyphicon glyphicon-tasks"></span>&nbsp;&nbsp;Analysis Tasks</a></li>
+                <li class="dropdown {% block recipe_active_class %}{% endblock %}"><a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" ><span class="glyphicon glyphicon-list-alt"></span>&nbsp;&nbsp;Recipes <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li class="{% block standalone_recipe_active_class %}{% endblock %}"><a href="/recipes/standalone/">&nbsp;&nbsp;Standalone</a></li>
+                        <li class="{% block recipe_template_active_class %}{% endblock %}"><a href="/recipes/template/">&nbsp;&nbsp;Templated</a></li>
+                    </ul>
+                </li>
             </ul>
             {% block sidebar %}
             {% endblock %}

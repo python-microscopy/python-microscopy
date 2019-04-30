@@ -27,12 +27,12 @@ import wx.grid
 
 try:
     from enthought.traits.api import HasTraits, Float, Int, List, Instance, Property
-    from enthought.traits.ui.api import View, Item, InstanceEditor
-    from enthought.traits.ui.menu import OKButton
+    #from enthought.traits.ui.api import View, Item, InstanceEditor
+    #from enthought.traits.ui.menu import OKButton
 except ImportError:
     from traits.api import HasTraits, Float, Int, List, Instance, Property
-    from traitsui.api import View, Item, InstanceEditor
-    from traitsui.menu import OKButton
+    #from traitsui.api import View, Item, InstanceEditor
+    #from traitsui.menu import OKButton
 
 from PYME.Analysis.PSFGen import fourierHNA
 from PYME.IO import image
@@ -87,7 +87,11 @@ class PupilGenerator(HasTraits):
     
     pupil = None
     
-    view = View(Item( 'basePupil',
+    def default_traits_view( self ):
+        from traitsui.api import View, Item, InstanceEditor
+        from traitsui.menu import OKButton
+        
+        view = View(Item( 'basePupil',
                             label= 'Pupil source',
                             editor =
                             InstanceEditor(name = 'pupils',
@@ -102,6 +106,8 @@ class PupilGenerator(HasTraits):
                 Item('_'),
                 Item('aberations'),
                 buttons=[OKButton])
+        
+        return view
                 
     def GetPupil(self):
         u, v, R, pupil = self.basePupil.GeneratePupil(self.pixelSize, self.pupilSizeX, self.wavelength, self.NA, self.n)

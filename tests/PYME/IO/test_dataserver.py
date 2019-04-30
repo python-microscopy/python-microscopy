@@ -12,6 +12,10 @@ tmp_root = None
 def setup_module():
     global proc, tmp_root
     tmp_root = os.path.join(tempfile.gettempdir(), 'PYMEDataServer_TEST')
+    if os.path.exists(tmp_root):
+        print('Removing existing temp spooler dir')
+        shutil.rmtree(tmp_root)
+        
     os.makedirs(tmp_root)
     proc = subprocess.Popen('python -m PYME.ParallelTasks.HTTPDataServer  -r %s -f TEST' % tmp_root , shell=True)
     
@@ -22,7 +26,7 @@ def teardown_module():
     #time.sleep(1)
     proc.kill()
     
-    shutil.rmtree(tmp_root)
+    #shutil.rmtree(tmp_root)
     
     
 def test_put():

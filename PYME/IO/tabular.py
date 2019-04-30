@@ -654,6 +654,7 @@ class mappingFilter(TabularBase):
         self.mappings = {}
         self.new_columns = {}
         self.variables = {}
+        self.hidden_columns = []
 
         for k in kwargs.keys():
             v = kwargs[k]
@@ -670,7 +671,7 @@ class mappingFilter(TabularBase):
             return self.resultsSource[keys]
 
     def keys(self):
-        return list(set(list(self.resultsSource.keys()) + list(self.mappings.keys()) + list(self.new_columns.keys())))
+        return list(set(list(self.resultsSource.keys()) + list(self.mappings.keys()) + list(self.new_columns.keys())).difference(self.hidden_columns))
 
     def addVariable(self, name, value):
         """

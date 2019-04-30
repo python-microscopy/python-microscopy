@@ -5,9 +5,6 @@ Created on Sat May  9 12:23:57 2015
 
 @author: david
 """
-import matplotlib
-matplotlib.use('Cairo', warn=False)
-
 from PYME.recipes import runRecipe
 from PYME.recipes import modules
 import os
@@ -76,6 +73,10 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS):
 
 
 def main():
+    # set matplotlib backend for offline figure generation #TODO - move this further down (ie. to the figure generation code itself)?
+    import matplotlib
+    matplotlib.use('Cairo', warn=False)
+    
     #start by finding out what recipe we're using - different recipes can have different options    
     ap = ArgumentParser()#usage = 'usage: %(prog)s [options] recipe.yaml')
     ap.add_argument('recipe')

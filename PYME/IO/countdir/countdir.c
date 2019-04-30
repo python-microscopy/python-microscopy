@@ -171,7 +171,31 @@ static PyMethodDef countdirMethods[] = {
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
+#if PY_MAJOR_VERSION>=3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "countdir",     /* m_name */
+        "fast count of nuber of files in directory",  /* m_doc */
+        -1,                  /* m_size */
+        countdirMethods,    /* m_methods */
+        NULL,                /* m_reload */
+        NULL,                /* m_traverse */
+        NULL,                /* m_clear */
+        NULL,                /* m_free */
+    };
+
+PyMODINIT_FUNC PyInit_countdir(void)
+{
+    PyObject *m;
+    m = PyModule_Create(&moduledef);
+
+    return m;
+}
+#else
+
 PyMODINIT_FUNC initcountdir(void)
 {
     (void) Py_InitModule("countdir", countdirMethods);
 }
+
+#endif

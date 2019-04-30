@@ -4,7 +4,7 @@ PYME Cluster File System
 ************************
 
 PYME includes support for a very simple clustered "file system", designed to support real time streaming and analysis of
- localization data. The main design goals of this file system are:
+localization data. The main design goals of this file system are:
 
 - high *write* performance to allow streaming from sCMOS cameras
 - good read performance for *node local* data access during analysis
@@ -30,8 +30,11 @@ Implementation
 
 The underlying filesystem protocol is based on HTTP, allowing existing HTTP protocol libraries to be used and clients to
 easily be written in a variety of different languages. At it's most basic level, we simply run an HTTP server on each
-machine with storage and the
+machine with storage and a client library (clusterIO) presents a merge of the directory structures on all of the nodes.
+In this sense, the file system behaves very much like linux UnionFS. Writes are performed using the HTTP PUT verb, to the
+node whose prior write time is earliest (resulting in a crude form of load balancing).
 
+Cluster nodes are automatically discovered using the mDNS (zeroconf) protocol. Nodes announce themselves using the "
 
 .. rubric:: Footnotes
 

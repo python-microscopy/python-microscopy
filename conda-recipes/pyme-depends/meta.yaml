@@ -132,7 +132,7 @@ requirements:
     - matplotlib
     - wxpython  <3.9 [py2k]
     #- wxpython-phoenix < 3.9 [py3k]
-    - wxpython [py3k]
+    - wxpython [py3k] #FIXME - there are still some issues with display logic on wx=4.x
     - pytables <=3.4.2
     - pyopengl
     - traits
@@ -143,10 +143,12 @@ requirements:
 
     - toposort
     - networkx
-    - pyro
 
     #FIXME for py3k
+    - pyro [py2k]
+
     - pyfftw3 [py2k]
+    - pyfftw [py3k]
 
     - mpld3
     - python.app      [osx]
@@ -167,6 +169,7 @@ requirements:
     - ujson
     - jinja2
     - dispatch
+    - pycairo
     - pymecompress
     - six
     - future

@@ -627,7 +627,28 @@ static PyMethodDef cInterpMethods[] = {
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
+#if PY_MAJOR_VERSION>=3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "cInterp",     /* m_name */
+        "fast interpolation",  /* m_doc */
+        -1,                  /* m_size */
+        cInterpMethods,    /* m_methods */
+        NULL,                /* m_reload */
+        NULL,                /* m_traverse */
+        NULL,                /* m_clear */
+        NULL,                /* m_free */
+    };
 
+PyMODINIT_FUNC PyInit_cInterp(void)
+{
+    PyObject *m;
+    m = PyModule_Create(&moduledef);
+    import_array();
+
+    return m;
+}
+#else
 PyMODINIT_FUNC initcInterp(void)
 {
     PyObject *m;
@@ -639,3 +660,4 @@ PyMODINIT_FUNC initcInterp(void)
     //Py_INCREF(SpamError);
     //PyModule_AddObject(m, "error", SpamError);
 }
+#endif

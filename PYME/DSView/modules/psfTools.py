@@ -30,12 +30,12 @@ env = Environment(loader=PackageLoader('PYME.DSView.modules', 'templates'))
 #from PYME.IO.image import ImageStack
 try:
     from enthought.traits.api import HasTraits, Float, Int, Bool
-    from enthought.traits.ui.api import View, Item
-    from enthought.traits.ui.menu import OKButton
+    #from enthought.traits.ui.api import View, Item
+    #from enthought.traits.ui.menu import OKButton
 except ImportError:
     from traits.api import HasTraits, Float, Int, Bool
-    from traitsui.api import View, Item
-    from traitsui.menu import OKButton
+    #from traitsui.api import View, Item
+    #from traitsui.menu import OKButton
 
 from graphViewPanel import *
 from PYME.Analysis.PSFEst import psfQuality
@@ -284,12 +284,18 @@ class PSFTools(HasTraits):
     iterations = Int(50)
     intermediateUpdates = Bool(False)
     
-    view = View(Item('wavelength'),
+    def default_traits_view( self ):
+        from traitsui.api import View, Item
+        from traitsui.menu import OKButton
+        
+        view = View(Item('wavelength'),
                 Item('NA'),
                 Item('pupilSize'),
                 Item('iterations'), 
                 Item('intermediateUpdates'),
                 buttons=[OKButton])
+        
+        return view
     
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
@@ -396,7 +402,7 @@ class PSFTools(HasTraits):
 
             results.append({'sigmax': abs(res['fitResults_sigmax'][valid]).tolist(),'error_sigmax': abs(res['fitError_sigmax'][valid]).tolist(),
                             'sigmay': abs(res['fitResults_sigmay'][valid]).tolist(), 'error_sigmay': abs(res['fitError_sigmay'][valid]).tolist(),
-                            'dsigma': dsigma[valid].tolist(), 'z': obj_positions['z'][valid].tolist(), 'zCenter': obj_positions['z'][dz]})
+                            'dsigma': dsigma[valid].tolist(), 'z': obj_positions['z'][valid].tolist(), 'zCenter': obj_positions['z'][int(dz)]})
 
         #generate new tab to show results
         use_web_view = True

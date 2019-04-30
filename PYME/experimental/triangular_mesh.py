@@ -10,6 +10,33 @@ class TriangularMesh(object):
         self._face_indices = None
         self._face_areas = None
 
+        self.vertex_properties = ['x', 'y', 'z']
+
+    def keys(self):
+        return list(self.vertex_properties)
+
+    def __getitem__(self, k):
+        # this defers evaluation of the properties until we actually access them, as opposed to the mappings which
+        # stored the values on class creation.
+        try:
+            res = getattr(self, k)
+        except AttributeError:
+            raise KeyError('Key %s not defined' % k)
+        
+        return res
+
+    @property
+    def x(self):
+        return self.vertices[:, 0]
+
+    @property
+    def y(self):
+        return self.vertices[:, 1]
+
+    @property
+    def z(self):
+        return self.vertices[:, 2]
+
     @classmethod
     def from_stl(cls, filename):
         """
@@ -22,6 +49,9 @@ class TriangularMesh(object):
 
         # Call from_np_stl on the file stream
         return cls.from_np_stl(triangles_stl)
+    
+    def __copy__(self):
+        return type(self)(np.copy(self.vertices), np.copy(self.faces))
 
     @classmethod
     def from_np_stl(cls, triangles_stl):
@@ -34,7 +64,7 @@ class TriangularMesh(object):
         vertices, faces_raw = np.unique(vertices_raw, 
                                         return_inverse=True, 
                                         axis=0)
-        faces = faces_raw.reshape(faces_raw.shape[0] / 3, 3, order='F')
+        faces = faces_raw.reshape(faces_raw.shape[0] // 3, 3, order='F')
 
         return cls(vertices, faces)
         
@@ -129,33 +159,52 @@ class TriangularMesh(object):
         self._face_indices = [list(f) for f in self._face_indices]
         self._neighbors = [list(n) for n in self._neighbors]
 
-    def add_vertex(self, face_index):
+    def add_vertex(self, face_indices):
         """
-        Add a vertex at the centroid of self.faces[face_index].
-        
+        Add a vertex(es) at the centroid of self.faces[face_index].
+
         Parameters
         ----------
-            face_index : int
-                Index of mesh face where we wish to add a point.
+            face_indices : int or array
+                Index(es) of mesh face where we wish to add a point.
 
         Returns
         -------
             None
         """
-        # Current faces/vertices
-        f = self.faces[face_index]
-        v = self.vertices[f]
-
-        # New faces/vertices
-        nv = np.mean(v, axis=0)
-        niv = self.vertices.shape[0]
-        nf = np.array([[f[0], niv, f[2]],
-                       [f[0], f[1], niv],
-                       [f[1], f[2], niv]])
+    
+        # If we have an integer, wrap it in a list so we can loop
+        if type(face_indices) == int:
+            face_indices = [face_indices]
+    
+        # If we have an empty list, alert and exit
+        if len(face_indices) == 0:
+            raise ValueError('No faces to subdivide.')
+    
+        new_vertices = np.copy(self.vertices)
+        new_faces = np.array([0, 0, 0])
+    
+        # Loop over all faces we're passed
+        for face_index in face_indices:
+            # Current faces/vertices
+            f = self.faces[face_index]
+            v = self.vertices[f]
         
+            # New faces/vertices
+            nv = np.mean(v, axis=0)
+            niv = new_vertices.shape[0]
+            nf = np.array([[f[0], niv, f[2]],
+                           [f[0], f[1], niv],
+                           [f[1], f[2], niv]])
+        
+            # Keep a running list of the vertices we've added
+            new_vertices = np.vstack([new_vertices, nv])
+            new_faces = np.vstack([new_faces, nf])
+    
         # Update
-        self.vertices = np.vstack([self.vertices, nv])
-        self.faces = np.vstack([self.faces[0:face_index,:], self.faces[(face_index+1):,:], nf])
+        self.vertices = new_vertices
+        new_face_indices = set(range(self.faces.shape[0])) - set(face_indices)
+        self.faces = np.vstack([self.faces[list(new_face_indices), :], new_faces[1:, ]])
 
     def to_stl(self, filename):
         """

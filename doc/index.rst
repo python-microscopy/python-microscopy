@@ -6,76 +6,40 @@
 .. _pymemaindocs:
 
 PYME's Documentation
-====================
+####################
 
-Thank you for your interest in PYME. I'll be the first to admit that the documentation 
-could use a lot of work, but this takes time and I hope there is enough here to get you started. Some
-aspects are currently pretty specific to our internal workflows, but I have left
-them in in the hope that they are nonetheless useful. The documentation is aimed
-at end users, with a reasonably modest level of computer ability, and there is
-currently no API documentation. If you want to extend or otherwise hack PYME I'd 
-recommend getting in touch with me and I'll tell you what bits of the API are
-fairly mature, what is on the TODO list for restructuring, and what is deprecated.
-I might even be persuaded to write some more docs.
+Welcome to the documentation for the python-microscopy environment, set of tools for optical microscopy, and in particular
+localization - based super-resolution microscopy.
 
-Installation:
-#############
+This documentation is currently very much a work in progress and is far from being complete. The API documentation, in
+particular could use a lot of work. Hopefully it's enough to get you started, however.
+
+
 .. toctree::
+   :caption: Installation
    :maxdepth: 1
 
-   Installation/InstallationWithAnaconda   
+   Installation/InstallationWithAnaconda
    Installation/InstallationFromSource
 
-Component programs/tasks:
-#########################
 .. toctree::
+   :caption: User Guide
    :maxdepth: 2
 
    PYMEAcquire
-
-.. toctree::
-   :maxdepth: 3
-
    Analysis
+   VisGUI
+   component_programs
+
+
 
 .. toctree::
+   :caption: Development / Hacking
    :maxdepth: 2
 
-   VisGUI
+   hacking
 
 
-Hacking PYME
-############
-
-Extending PYME and writing plugins
-**********************************
-.. toctree::
-   :maxdepth: 1
-
-   DataModel
-   WritingRecipeModules
-   ExtendingDsviewer
-   ExtendingVisGUI
-   api/PYME.config
-   ModifyingPYMEAcquire
-
-
-Technical Details:
-******************
-.. toctree::
-   :maxdepth: 1
-   
-   DataFormats
-   metadata
-   tiff_handling
-   SampleDB
-
-API Documentation:
-******************
-.. toctree::
-   :maxdepth: 1
-
-   api/PYME
 
 
 .. Indices and tables

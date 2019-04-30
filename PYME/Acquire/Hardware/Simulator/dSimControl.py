@@ -127,6 +127,7 @@ class dSimControl(afp.foldPanel):
 
         hsizer.Add(wx.StaticText(pane, -1, 'Number of detection channels: '), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
         self.cNumSplitterChans = wx.Choice(pane, -1, choices=['1 - Standard', '2 - Ratiometric/Biplane', '4 - HT / 4Pi-SMS'])
+        self.cNumSplitterChans.SetSelection(0)
         self.cNumSplitterChans.Bind(wx.EVT_CHOICE, self.OnNumChannelsChanged)
         hsizer.Add(self.cNumSplitterChans, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
         sbsizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)

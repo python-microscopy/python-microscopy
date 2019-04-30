@@ -16,7 +16,7 @@ np.seterr(divide='ignore', invalid='ignore')
 #         return False
 
 
-class DeconvEmpiricalHist(dec.dec):
+class DeconvEmpiricalHist(dec.ICTMDeconvolution):
     def set_size(self, data_size):
         self.height = data_size[0]
         self.width = data_size[1]

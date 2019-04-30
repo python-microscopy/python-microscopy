@@ -187,7 +187,7 @@ class FFBase(object):
                 bgROI = self.background[xslice, yslice, 0:2]
                 bgROI[:,:,1] = self.background[xslice2, yslice2, 1]
             else:
-                bgROI = np.zeros_like(dataROI) + self.background
+                bgROI = np.zeros_like(dataROI) + (self.background if self.background else 0)
         else:
             bgROI = np.zeros_like(dataROI)
 

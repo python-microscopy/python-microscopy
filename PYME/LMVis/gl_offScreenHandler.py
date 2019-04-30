@@ -61,6 +61,8 @@ class OffScreenHandler(object):
         frame_buffer_object = glGenFramebuffers(1)
         render_buffer = glGenRenderbuffers(1)
         glBindRenderbuffer(GL_RENDERBUFFER, render_buffer)
+        if any([self._viewport_size[ind] >= GL_MAX_RENDERBUFFER_SIZE for ind in range(2)]):
+            raise RuntimeError('Both width and height (%d, %d) must be smaller than GL_MAX_RENDERBUFFER_SIZE: %d' % (self._viewport_size[0], self._viewport_size[1], GL_MAX_RENDERBUFFER_SIZE))
         if self._mode == GL_RGB:
             glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB8, self._viewport_size[0], self._viewport_size[1])
         else:

@@ -1,7 +1,7 @@
 .. _configuringpymeacquire:
 
 Configuring PYME Acquire
-########################
+************************
 
 Specifying your Hardware
 ========================

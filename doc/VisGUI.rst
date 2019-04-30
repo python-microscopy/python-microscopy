@@ -35,7 +35,7 @@ Once loaded the columns are accessed by semi-descriptive names, with the names *
 :note: the program will not work if either *x* or *y* is undefined
 
 .h5r format
----------------
+-----------
 
 Loading .h5r formatted files is pretty much a no-brainer. All parameters such as column names are read out of the file for you, as well as acquisition meta-data.
 
@@ -169,7 +169,7 @@ After an image has been generated, it should pop up in a new window. All image w
 The image viewer is designed to view multi-colour images, in which case the individual channels will appear as separate tabs, in addition to a composite tab in which the channels are overlaid. When dealing with single channel data, only one tab is displayed.
 
 Saving images
-'''''''''''''
+-------------
 
 The generated images have three save options, all of which can be accessed from the **File** menu. The one you will generally want is **Save Channel** which saves the entire current channel/image as a single, floating point, TIFF without any colormap or scaling applied. The other two options allow a multi-channel image to be saved as a TIFF stack [#]_  (**Save Multi-channel**), and allows for exporting exactly what is currently shown in the window (complete with colour maps, scaling, and zoom) as a variety of formats (**Export Current View**).
 

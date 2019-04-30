@@ -671,7 +671,11 @@ class LMAnalyser2(object):
                 else:
                     self.fitResults = np.concatenate((self.fitResults, newResults))
                     self.ds.setResults(self.fitResults)
-                    self.dsviewer.pipeline.Rebuild()
+                    #self.dsviewer.pipeline.Rebuild()
+                    self.dsviewer.pipeline.recipe.prune_dependencies_from_namespace(['Localizations',], True)
+                    #logger.debug('Namespace keys (should just be Localizations): %s' % self.dsviewer.pipeline.recipe.namespace.keys())
+                    self.dsviewer.pipeline.recipe.invalidate_data()
+                    #self.dsviewer.pipeline.Rebuild()
                     
                 
                 self.progPan.fitResults = self.fitResults

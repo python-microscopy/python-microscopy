@@ -91,8 +91,7 @@ class ShiftCorrect(ModuleBase):
 
         try:  # try loading shift map as hdf file
             with unifiedIO.local_or_temp_filename(loc) as f:
-                h5f = tables.open_file(f, mode='r')
-                shift_map_source = tabular.hdfSource(h5f, 'shift_map')
+                shift_map_source = tabular.hdfSource(f, 'shift_map')
                 shift_map_source.mdh = HDFMDHandler(shift_map_source.h5f)
 
             # build dict of dicts so we can easily rebuild shiftfield objects in multiview.calc_shifts_for_points

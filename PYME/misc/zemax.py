@@ -239,7 +239,21 @@ def readZar(filename):
     zmxs = [ZMX(components[n], glasses) for n in components.keys() if (n.endswith('.ZMX') or n.endswith('.zmx'))]
     
     return zmxs, glasses
-            
+
+
+def read_cached_zar(filename):
+    import shelve
+    #rom PYME.misc import zemax
     
+    shv = shelve.open('lensdb.shv')
+    try:
+        lens = shv[filename]
+    except KeyError:
+        lens = readZar(filename)[0][0]
+        shv[filename] = lens
+    
+    shv.close()
+    
+    return lens
     
     

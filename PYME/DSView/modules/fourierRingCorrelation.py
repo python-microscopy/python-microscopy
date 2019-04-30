@@ -21,7 +21,7 @@
 ##################
 import numpy as np
 import wx
-import pylab
+#import pylab
 
 from PYME.DSView.dsviewer import ViewIm3D, ImageStack
 
@@ -99,6 +99,7 @@ class RingCorrelator:
 
     
     def OnColoc(self, event):
+        import matplotlib.pyplot as plt
         from PYME.Analysis import binAvg        
         voxelsize = self.image.voxelsize
 
@@ -110,62 +111,60 @@ class RingCorrelator:
         X, Y = np.mgrid[0:float(imA.shape[0]), 0:float(imA.shape[1])]
         X = X/X.shape[0]
         Y = Y/X.shape[1]
-        X = X - .5
+        X = (X - .5)
         Y = Y - .5
         R = np.sqrt(X**2 + Y**2)
 
-        H1 = pylab.fftn(imA)
-        H2 = pylab.fftn(imB)
+        H1 = np.fft.fftn(imA)
+        H2 = np.fft.fftn(imB)
         
-        rB = np.linspace(0,R.max())
+        #rB = np.linspace(0,R.max())
+        rB = np.linspace(0, 0.5, 100)
+    
+        bn, bm, bs = binAvg.binAvg(R, np.fft.fftshift(H1*H2.conjugate()).real, rB)
         
-        bn, bm, bs = binAvg.binAvg(R, pylab.fftshift(H1*H2.conjugate()), rB)
-        
-        bn1, bm1, bs1 = binAvg.binAvg(R, pylab.fftshift(abs(H1*H1)), rB)
-        bn2, bm2, bs2 = binAvg.binAvg(R, pylab.fftshift(abs(H2*H2)), rB)
+        bn1, bm1, bs1 = binAvg.binAvg(R, np.fft.fftshift((H1*H1.conjugate()).real), rB)
+        bn2, bm2, bs2 = binAvg.binAvg(R, np.fft.fftshift((H2*H2.conjugate()).real), rB)
        
-       
-        
 
-        pylab.figure()
+        plt.figure()
         
-        ax = pylab.gca()
+        ax = plt.gca()
         
-        ax.plot(rB[:-1], bm/np.sqrt(bm1*bm2))
-        ax.plot(rB[:-1], 2./np.sqrt(bn/2))
+        #FRC
+        FRC = bm/np.sqrt(bm1*bm2)
+        ax.plot(rB[:-1], FRC)
         
-        xt = np.array([10., 15, 20, 30, 50, 80, 100, 150])
+        #noise envelope???????????
+        ax.plot(rB[:-1], 2./np.sqrt(bn/2), ':')
+        
+        dfrc = np.diff(FRC)
+        monotone = np.where(dfrc > 0)[0][0] + 1
+        
+        #print FRC[:monotone], FRC[:(monotone+1)]
+        
+        intercept = np.interp(1.0 - 1/7.0, 1-FRC[:monotone], rB[:monotone])
+        
+        print('Intercept= %3.2f (%3.2f nm)' % (intercept, voxelsize[0]/intercept))
+        
+        xt = np.array([10.,  15, 20, 30, 40, 50, 70, 90, 120, 150, 200, 300, 500])
         rt = voxelsize[0]/xt
         
-        pylab.xticks(rt[::-1],['%d' % xi for xi in xt[::-1]])
-        
-        
-        pylab.show()
-        
-#        im = ImageStack(plots, titleStub='Radial Distribution')
-#        im.xvals = bins[:-1]
-#
-#
-#        im.xlabel = 'Distance [nm]'
-#
-#        im.ylabel = 'Fraction'
-#        im.defaultExt = '.txt'
-#
-#        im.mdh['voxelsize.x'] = (bins[1] - bins[0])*1e-3
-#        im.mdh['ChannelNames'] = pnames
-#        im.mdh['Profile.XValues'] = im.xvals
-#        im.mdh['Profile.XLabel'] = im.xlabel
-#        im.mdh['Profile.YLabel'] = im.ylabel
-#        
-#        im.mdh['Colocalisation.Channels'] = names
-#        im.mdh['Colocalisation.Thresholds'] = [tA, tB]
-#        im.mdh['Colocalisation.Pearson'] = pearson
-#        im.mdh['Colocalisation.Manders'] = [MA, MB]
-#
-#        im.mdh['OriginalImage'] = self.image.filename
-#
-#        ViewIm3D(im, mode='graph')
+        plt.xticks(rt[::-1],['%d' % xi for xi in xt[::-1]], rotation='vertical')
 
+        ax.plot([0, rt[0]], np.ones(2)/7.0)
+        
+        plt.grid()
+        plt.xlabel('Resolution [nm]')
+        
+        plt.ylabel('FRC')
+        
+        plt.figtext(0.5, 0.5, 'FRC intercept at %3.1f nm' % (voxelsize[0]/intercept))
+        
+        
+        plt.show()
+        
+        
 
 
 def Plug(dsviewer):

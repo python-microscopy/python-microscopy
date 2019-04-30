@@ -26,19 +26,25 @@ def drift_correct(pipeline):
     import matplotlib.pyplot as plt
     #pipeline=visgui.pipeline
 
-    dialog = wx.TextEntryDialog(None, 'Diameter (nm): ', 'Enter Fiducial Size', str(pipeline.mdh.getOrDefault('Analysis.FiducialSize', 1000)))
+    filters = {'error_x': [0, 10]}
+    if 'sig' in pipeline.keys():
+        dialog = wx.TextEntryDialog(None, 'Diameter (nm): ', 'Enter Fiducial Size', str(pipeline.mdh.getOrDefault('Analysis.FiducialSize', 1000)))
 
-    sig = [330., 370.]
+        sig = [330., 370.]
 
-    if dialog.ShowModal() == wx.ID_OK:
-        size = float(dialog.GetValue())
-        sigE = float(np.sqrt((size/(np.sqrt(2)*2.35))**2 + 135.**2))  # Expected std of the bead + expected std of psf
-        sig = [0.95*sigE, 1.05*sigE]
+        if dialog.ShowModal() == wx.ID_OK:
+            size = float(dialog.GetValue())
+            sigE = float(np.sqrt((size/(np.sqrt(2)*2.35))**2 + 135.**2))  # Expected std of the bead + expected std of psf
+            sig = [0.95*sigE, 1.05*sigE]
+
+        filters['sig'] = sig
+
+    if 'fitError_z0' in pipeline.keys():
+        filters['fitError_z0'] = [0,30]
 
     recipe = pipeline.recipe
-
     filt_fiducials = FilterTable(recipe, inputName='Fiducials',
-                                  outputName='filtered_fiducials', filters={'error_x': [0, 10], 'sig': sig})
+                                  outputName='filtered_fiducials', filters=filters)
     
     filt_fiducials.configure_traits(kind='modal')
     #print('Adding fiducial filter module')
@@ -151,9 +157,15 @@ def fiducial_diagnosis(pipeline):
     a1 = plt.axes()
     plt.title('Y residuals')
     plt.grid()
+    
     f2 = plt.figure()
-    plt.title('X residuuals')
+    plt.title('X residuals')
     a2 = plt.axes()
+    plt.grid()
+
+    f3 = plt.figure()
+    plt.title('Z residuals')
+    a3 = plt.axes()
     plt.grid()
 
     for i in range(1, ci.max()):
@@ -165,10 +177,15 @@ def fiducial_diagnosis(pipeline):
             
             ym= fids['y'][fid_m].mean()
             xm = fids['x'][fid_m].mean()
+            zm = fids['z'][fid_m].mean()
+            
             a1.plot(fids['t'][mask], fids['y'][mask] - ym + f_id * 50,
                  color=plt.cm.hsv( (i % 20.0)/20.))
 
             a2.plot(fids['t'][mask], fids['x'][mask] - xm + f_id * 50,
+                    color=plt.cm.hsv((i % 20.0) / 20.))
+
+            a3.plot(fids['t'][mask], fids['z'][mask] - zm + f_id * 50,
                     color=plt.cm.hsv((i % 20.0) / 20.))
     
     plt.figure()

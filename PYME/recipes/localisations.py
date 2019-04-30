@@ -1,5 +1,5 @@
 from .base import register_module, ModuleBase, Filter
-from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrList, ListFloat, ListStr
+from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List, DictStrStr, DictStrFloat, DictStrList, ListFloat, ListStr
 
 import numpy as np
 from PYME.IO import tabular
@@ -190,20 +190,55 @@ class ProcessColour(ModuleBase):
     input = Input('localizations')
     output = Output('colour_mapped')
     
+    # ratios  & dyes for ratiometric colour - maps species name to floating point ratio
+    # Note that these get filled in automatically from the metadata but will get saved with the recipe when the recipe
+    # is saved. If you want a generic recipe, you will need to manually remove the dye entries from the .yaml file
+    # TODO - do this automatically somehow?
+    # TODO - default is to override saved values with those from metadata. Change this?
+    species_ratios = DictStrFloat()
+    species_dyes = DictStrStr()
+    
+    ratios_from_metadata = Bool(True)
+
+    def _get_dye_ratios_from_metadata(self, mdh):
+        from PYME.LMVis import dyeRatios
+        
+        labels = mdh.getOrDefault('Sample.Labelling', [])
+        seen_structures = []
+    
+        for structure, dye in labels:
+            #info might be unicode - encode to a standard string to keep traits happy
+            structure = structure.encode()
+            dye = dye.encode()
+            
+            if structure in seen_structures:
+                strucname = structure + '_1'
+            else:
+                strucname = structure
+            seen_structures.append(structure)
+        
+            ratio = dyeRatios.getRatio(dye, mdh)
+        
+            if not ratio is None:
+                self.species_ratios[strucname] = ratio
+                self.species_dyes[strucname] = dye
     
     def execute(self, namespace):
         input = namespace[self.input]
         mdh = input.mdh
+        
+        if self.ratios_from_metadata:
+            self._get_dye_ratios_from_metadata(mdh)
         
         output = tabular.mappingFilter(input)
         output.mdh = mdh
     
         if 'gFrac' in output.keys():
             #ratiometric
-            raise NotImplementedError('Ratiometric processing in recipes not implemented yet')
-            for structure, ratio in self.fluorSpecies.items():
+            #raise NotImplementedError('Ratiometric processing in recipes not implemented yet')
+            for structure, ratio in self.species_ratios.items():
                 if not ratio is None:
-                    self.mapping.setMapping('p_%s' % structure,
+                    output.setMapping('p_%s' % structure,
                                             'exp(-(%f - gFrac)**2/(2*error_gFrac**2))/(error_gFrac*sqrt(2*numpy.pi))' % ratio)
         else:
             if 'probe' in output.keys():
@@ -222,6 +257,55 @@ class ProcessColour(ModuleBase):
                     output.setMapping('p_chan%d' % i, '(t>= %d)*(t<%d)' % cr)
                     
         namespace[self.output] = output
+
+
+@register_module('TimeBlocks')
+class TimeBlocks(ModuleBase):
+    """
+
+    Divides series into alternating time blocks to generate 2 fake colour channels for Fourier Ring / Fourier shell correlation.
+     
+    This is probably a better approach than taking random subsets as the later will tend to generate unrealistically high
+    correlation values for repeated localizations.
+    
+    Adapted from Christian Soeller's 'splitRender' implementation.
+    """
+    input = Input('localizations')
+    output = Output('time_blocks')
+    
+    block_size = Int(100)
+    
+    def execute(self, namespace):
+        input = namespace[self.input]
+        mdh = input.mdh
+    
+        output = tabular.mappingFilter(input)
+        output.mdh = mdh
+        
+        output.addColumn('block_id', np.mod((output['t']/self.block_size).astype('int'),2))
+
+        channel_names = [k for k in input.keys() if k.startswith('p_')]
+        
+        print(channel_names)
+        print(input.keys())
+        
+        if len(channel_names) == 0:
+            #single channel data - no channels defined.
+            output.setMapping('ColourNorm', '1.0 + 0*t')
+            output.setMapping('p_block0', '1.0*block_id')
+            output.setMapping('p_block1', '1.0 - block_id')
+        else:
+            #have colour channels - subdivide them
+            for k in channel_names:
+                output.setMapping('%s_block0' % k, '%s*block_id' % k)
+                output.setMapping('%s_block1' % k, '%s*(1.0 - block_id)' % k)
+            
+            #hide original channel names
+            output.hidden_columns.extend(channel_names)
+        
+
+        namespace[self.output] = output
+    
 
 @register_module('MergeClumps')
 class MergeClumps(ModuleBase):
@@ -673,7 +757,6 @@ class AutocorrelationDriftCorrection(ModuleBase):
     Inputs
     ------
     inputName: name of tabular input containing positions ('x', 'y', and 't' columns should be present)
-    inputImage: name of image input containing labels
     step : time step (in frames) with which to traverse the series
     window: size of time window (in frames). A series of images will be generated from
             multiple overlapping windows, spaced by `step` frames.

@@ -357,8 +357,10 @@ def loads(datastring):
     if header['DataQuantization'] == DATA_QUANT_SQRT:
         #un-quantize data
         #logging.debug('Dequantizing')
+        
+        print(data.max())
 
-        data = data*header['QuantScale']
+        data = data.astype('f')*header['QuantScale']
         #print('data dtype: %s' % data.dtype)
         data = (data*data + header['QuantOffset']).astype(DATA_FMTS[int(header['DataFormat'])])
     

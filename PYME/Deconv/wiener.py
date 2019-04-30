@@ -26,8 +26,8 @@ from scipy import ndimage
 import numpy
 from scipy.fftpack import fftn, ifftn, fftshift, ifftshift
 import scipy
-import fftw3f
-import fftwWisdom
+import PYME.misc.fftw_compat as fftw3f
+from . import fftwWisdom
 
 fftwWisdom.load_wisdom()
 

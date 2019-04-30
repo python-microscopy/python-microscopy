@@ -11,7 +11,7 @@ make more sense in the long term
 @author: david
 """
 
-import clusterIO
+from . import clusterIO
 import Pyro.core
 
 import PYME.misc.pyme_zeroconf as pzc

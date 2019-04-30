@@ -30,6 +30,8 @@ from PYME.LMVis.triBlobs import BlobSettings
 from PYME.Analysis import piecewiseMapping
 from PYME.IO import MetaDataHandler
 
+import warnings
+
 #from traits.api import HasTraits
 #from traitsui.api import View
 from PYME.recipes.base import ModuleCollection
@@ -271,8 +273,7 @@ class Pipeline:
         self.colourFilter = None
         self.events = None
 
-        self.fluorSpecies = {}
-        self.fluorSpeciesDyes = {}
+        self.colour_mapper = None
 
         self.blobSettings = BlobSettings()
         self.objects = None
@@ -316,11 +317,25 @@ class Pipeline:
 
     def keys(self):
         return self.colourFilter.keys()
+    
+    #compatibility redirects
+    @property
+    def fluorSpecies(self):
+        warnings.warn(DeprecationWarning('Use colour_mapper.species_ratios instead'))
+        return self.colour_mapper.species_ratios
+    
+    @property
+    def fluorSpeciesDyes(self):
+        warnings.warn(DeprecationWarning('Use colour_mapper.species_dyes instead'))
+        return self.colour_mapper.species_dyes
+        
 
     @property
     def chromaticShifts(self):
         return self.colourFilter.chromaticShifts
 
+    #end compatibility redirects
+    
     @property
     def dataSources(self):
         return self.recipe.namespace
@@ -492,7 +507,7 @@ class Pipeline:
                     s.setMapping('z_raw', 'z')
                 
         if not self.selectedDataSource is None:
-            if self.mapping:
+            if not self.mapping is None:
                 # copy any mapping we might have made across to the new mapping filter (should fix drift correction)
                 # TODO - make drift correction a recipe module so that we don't need this code. Long term we should be
                 # ditching the mapping filter here.
@@ -506,12 +521,12 @@ class Pipeline:
             self.filter = tabular.resultsFilter(self.mapping, **self.filterKeys)
 
             #we can also recycle the colour filter
-            if not self.colourFilter:
+            if self.colourFilter is None:
                 self.colourFilter = tabular.colourFilter(self.filter)
             else:
                 self.colourFilter.resultsSource = self.filter
 
-            self._process_colour()
+            #self._process_colour()
             
             self.ready = True
 
@@ -558,7 +573,8 @@ class Pipeline:
                 if 'DriftResults' in ds.h5f.root:
                     driftDS = tabular.h5rDSource(ds.h5f)
                     self.driftInputMapping = tabular.mappingFilter(driftDS)
-                    self.dataSources['Fiducials'] = self.driftInputMapping
+                    #self.dataSources['Fiducials'] = self.driftInputMapping
+                    self.addDataSource('Fiducials', self.driftInputMapping)
 
                     if len(ds['x']) == 0:
                         self.selectDataSource('Fiducials')
@@ -569,7 +585,8 @@ class Pipeline:
                 self.filesToClose.append(ds.h5f)
 
                 self.driftInputMapping = tabular.mappingFilter(ds)
-                self.dataSources['Fiducials'] = self.driftInputMapping
+                #self.dataSources['Fiducials'] = self.driftInputMapping
+                self.addDataSource('Fiducials', self.driftInputMapping)
                 #self.selectDataSource('Fiducials')
 
             #catch really old files which don't have any metadata
@@ -699,7 +716,7 @@ class Pipeline:
                 self.filterKeys['fitError_dx'] = (0,10)
                 self.filterKeys['fitError_dy'] = (0,10)
 
-        self._get_dye_ratios_from_metadata()
+        #self._get_dye_ratios_from_metadata()
 
         self.addDataSource('Localizations', mapped_ds)
 
@@ -712,8 +729,13 @@ class Pipeline:
         else:
             self.imageBounds = ImageBounds.estimateFromSource(mapped_ds)
 
+        from PYME.recipes.localisations import ProcessColour
         from PYME.recipes.tablefilters import FilterTable
-        self.recipe.add_module(FilterTable(self.recipe, inputName='Localizations', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in mapped_ds.keys()}))
+        
+        self.colour_mapper = ProcessColour(self.recipe, input='Localizations', output='colour_mapped')
+        #we keep a copy of this so that the colour panel can find it.
+        self.recipe.add_module(self.colour_mapper)
+        self.recipe.add_module(FilterTable(self.recipe, inputName='colour_mapped', outputName='filtered_localizations', filters={k:list(v) for k, v in self.filterKeys.items() if k in mapped_ds.keys()}))
         self.recipe.execute()
         self.filterKeys = {}
         self.selectDataSource('filtered_localizations') #NB - this rebuilds the pipeline
@@ -770,6 +792,7 @@ class Pipeline:
 
         """
         #clear out old colour keys
+        warnings.warn(DeprecationWarning('This should not be called (colour now handled by the ProcessColour recipe module)'))
         for k in self.mapping.mappings.keys():
             if k.startswith('p_'):
                 self.mapping.mappings.pop(k)
@@ -799,6 +822,7 @@ class Pipeline:
 
 
     def _get_dye_ratios_from_metadata(self):
+        warnings.warn(DeprecationWarning('This should not be called (colour now handled by the ProcessColour recipe module)'))
         labels = self.mdh.getOrDefault('Sample.Labelling', [])
         seen_structures = []
 

@@ -1,4 +1,7 @@
 TIFF support in PYME
+********************
+
+Default TIFF support
 ====================
 
 PYME supports the TIFF file format, with some peculiarities as described below. In general, we expect TIFF files to
@@ -42,7 +45,7 @@ etc ..).
     software support.
 
 Deprecated `.tiff` format saving
-********************************
+================================
 
 In addition to the default `.tif` format, using the `.tiff` extension will force PYME to use legacy TIFF export
 code that was written before we adopted the OME TIFF standard. The main differences to the standard `.tif` export
@@ -60,14 +63,14 @@ are:
 
 
 Deprecated TIFF series (.xml) saving
-************************************
+====================================
 
 There is additionally support for saving image stacks as a folder containing series of individual TIFF files and
 an XML metadata file. Like the `.tiff` legacy format, **this shouldn't normally be used**, but may be useful when
 exporting data for exceptionally picky subsequent analysis programs.
 
 Exporting images for use in reports and publications
-----------------------------------------------------
+====================================================
 
 Saving as `.tif` is not the way you should export data for inclusion in a figure as the default PYME `.tif` format
 is unreadable in most publishing programs. Instead you should export the image that is displayed (complete with

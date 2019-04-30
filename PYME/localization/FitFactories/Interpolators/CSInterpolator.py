@@ -20,8 +20,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from baseInterpolator import __interpolator
+from .baseInterpolator import __interpolator
 from numpy import *
+import numpy as np
 from scipy import ndimage
 from PYME.localization.cInterp import cInterp
 
@@ -30,7 +31,7 @@ class CSInterpolator(__interpolator):
         """function which is called after model loading and can be
         overridden to allow for interpolation specific precomputations"""
          #compute the gradient of the PSF for interpolated jacobians
-        self.gradX, self.gradY, self.gradZ = gradient(self.interpModel)
+        self.gradX, self.gradY, self.gradZ = np.gradient(self.interpModel)
         self.gradX /= self.dx
         self.gradY /= self.dy
         self.gradZ /= self.dz

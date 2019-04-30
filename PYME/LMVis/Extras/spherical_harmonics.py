@@ -1,7 +1,7 @@
 import PYME.Analysis.points.spherical_harmonics as spharm
 from PYME.recipes.localisations import SphericalHarmonicShell, AddShellMappedCoordinates
 from PYME.recipes.base import ModuleCollection
-from mayavi import mlab
+
 import logging
 
 logger=logging.getLogger(__name__)
@@ -22,6 +22,7 @@ class ShellManager(object):
                               self.OnCalcHarmonicRepresentation)
 
     def OnCalcHarmonicRepresentation(self, wx_event):
+        from mayavi import mlab
         recipe = self.pipeline.recipe
         recipe.trait_set(execute_on_invalidation=False)
 

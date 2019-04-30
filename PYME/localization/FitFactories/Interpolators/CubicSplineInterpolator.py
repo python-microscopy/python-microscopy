@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from baseInterpolator import __interpolator
+from .baseInterpolator import __interpolator
 from numpy import *
 from scipy import ndimage
 

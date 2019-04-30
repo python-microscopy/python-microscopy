@@ -37,4 +37,4 @@ arbitrary pupils and / or aberrations expressed as in terms of Zernike modes.
 phase extraction.
 """
 
-from ps_app import *
+from .ps_app import *

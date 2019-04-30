@@ -526,6 +526,29 @@ static PyMethodDef ps_appMethods[] = {
 };
 
 
+#if PY_MAJOR_VERSION>=3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "ps_app",     /* m_name */
+        "Gibson & Lanni PSF approximation",  /* m_doc */
+        -1,                  /* m_size */
+        ps_appMethods,    /* m_methods */
+        NULL,                /* m_reload */
+        NULL,                /* m_traverse */
+        NULL,                /* m_clear */
+        NULL,                /* m_free */
+    };
+
+PyMODINIT_FUNC PyInit_ps_app(void)
+{
+    PyObject *m;
+    m = PyModule_Create(&moduledef);
+    import_array();
+
+    return m;
+}
+#else
+
 PyMODINIT_FUNC initps_app(void)
 {
     PyObject *m;
@@ -537,3 +560,5 @@ PyMODINIT_FUNC initps_app(void)
     //Py_INCREF(SpamError);
     //PyModule_AddObject(m, "error", SpamError);
 }
+
+#endif

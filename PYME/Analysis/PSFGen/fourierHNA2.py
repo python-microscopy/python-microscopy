@@ -26,7 +26,7 @@ import numpy as np
 from pylab import ifftshift, ifftn, fftn, fftshift
 import warnings
 
-import fftw3f
+import PYME.misc.fftw_compat as fftw3f
 from PYME.Deconv import fftwWisdom
 
 fftwWisdom.load_wisdom()

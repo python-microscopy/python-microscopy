@@ -149,7 +149,7 @@ class MDHandlerBase(DictMixin):
         """
         raise NotImplementedError('getEntry must be overridden in derived classes')
         
-    def setEntry(self, name):
+    def setEntry(self, name, value):
         """Sets the entry for a given name.
         
         Parameters
@@ -282,6 +282,7 @@ class MDHandlerBase(DictMixin):
             import pickle
             
         import numpy as np
+        
         s = ['#PYME Simple Metadata v1\n']
 
         for en in self.getEntryNames():
@@ -486,7 +487,11 @@ class SimpleMDHandler(NestedClassMDHandler):
     def __init__(self, filename = None, mdToCopy=None):
         if not filename is None:
             from PYME.util.execfile import _execfile
-            import cPickle as pickle
+            try:
+                import cPickle as pickle
+            except ImportError:
+                import pickle
+                
             #loading an existing file
             md = self
             fn = __file__
@@ -513,11 +518,11 @@ class XMLMDHandler(MDHandlerBase):
         if not filename is None:
             #loading an existing file
             self.doc = parse(filename)
-            self.md = self.doc.documentElement.getElementsByTagName('MetaData')[0]
+            self.md = self.doc.documentElement.getElementsByTagName(b'MetaData')[0]
         else:
             #creating a new document
-            self.doc = getDOMImplementation().createDocument(None, 'PYMEImageData', None)
-            self.md = self.doc.createElement('MetaData')
+            self.doc = getDOMImplementation().createDocument(None, b'PYMEImageData', None)
+            self.md = self.doc.createElement(b'MetaData')
             self.doc.documentElement.appendChild(self.md)
 
         if not mdToCopy is None:
@@ -536,6 +541,7 @@ class XMLMDHandler(MDHandlerBase):
             import pickle
         
         import numpy as np
+        
         entPath = entryName.split('.')
 
         node = self.md
@@ -554,24 +560,24 @@ class XMLMDHandler(MDHandlerBase):
         #typ = type(value) #.__name__
         
         if isinstance(value, float):
-            node.setAttribute('class', 'float')
-            node.setAttribute('value', str(value))
+            node.setAttribute(b'class', b'float')
+            node.setAttribute(b'value', str(value).encode('utf-8'))
         elif isinstance(value, int):
-            node.setAttribute('class', 'int')
-            node.setAttribute('value', str(value))
-        elif isinstance(value, str):
-            node.setAttribute('class', 'str')
-            node.setAttribute('value', value)
-        elif isinstance(value, unicode):
-            node.setAttribute('class', 'unicode')
-            node.setAttribute('value', value)
+            node.setAttribute(b'class', b'int')
+            node.setAttribute(b'value', str(value).encode('utf-8'))
+        elif isinstance(value, six.binary_type):
+            node.setAttribute(b'class', 'str')
+            node.setAttribute(b'value', value)
+        elif isinstance(value, six.text_type):
+            node.setAttribute(b'class', b'unicode')
+            node.setAttribute(b'value', value.encode('utf-8'))
         elif np.isscalar(value):
-            node.setAttribute('class', 'float')
-            node.setAttribute('value', str(value)) 
+            node.setAttribute(b'class', b'float')
+            node.setAttribute(b'value', str(value).encode('utf-8'))
         else: #pickle more complicated structures
-            node.setAttribute('class', 'pickle')
+            node.setAttribute(b'class', b'pickle')
             print((value, pickle.dumps(value)))
-            node.setAttribute('value', base64.b64encode((pickle.dumps(value))))
+            node.setAttribute(b'value', base64.b64encode((pickle.dumps(value))))
 
 
     def getEntry(self,entryName):
@@ -587,29 +593,31 @@ class XMLMDHandler(MDHandlerBase):
             el = [e for e in node.childNodes if e.nodeName == entPath[0]]
             if len(el) == 0:
                 #node not there
-                raise RuntimeError('Requested node not found')
+                raise RuntimeError(u'Requested node not found')
             else:
                 node = el[0]
 
             entPath.pop(0)
 
-        cls = node.getAttribute('class')
-        val = node.getAttribute('value')
+        cls = node.getAttribute(b'class')
+        val = node.getAttribute(b'value')
         
-        if val == 'True': #booleans get cls 'int'
+        if val == b'True': #booleans get cls 'int'
                 val = True
-        elif val == 'False':
+        elif val == b'False':
                 val = False
-        elif cls == 'int':
+        elif cls == b'int':
                 val = int(val)
-        elif cls == 'float':
+        elif cls == b'float':
             val = float(val)
-        elif cls == 'pickle':
+        elif cls == b'unicode':
+            val = val.decode('utf8')
+        elif cls == b'pickle':
             #return None
             try:
                 val = pickle.loads(base64.b64decode(val))
             except:
-                logger.exception('Error loading metadata from pickle')
+                logger.exception(u'Error loading metadata from pickle')
 
         return val
 

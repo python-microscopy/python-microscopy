@@ -1,7 +1,10 @@
-Roadmap
-=======
+Contributing changes back to PYME
+*********************************
 
-PYME has grown to be a rather large project with a huge number of dependencies. This is starting to make maintenance
+Roadmap / Future directions
+===========================
+
+**PYME is a moving target**. It has grown to be a rather large project with a huge number of dependencies. This is starting to make maintenance
 time consuming and makes it hard to quickly merge new functionality. We intend to split the project into a GUI
 independent core, and have the various GUIs interface with this. We also envisage splitting off some of the functionally
 distinct modules. The exact restructuring has yet to be decided, but at this point we encourage separation of GUI and
@@ -16,11 +19,9 @@ dependencies we use will ever be supported. For this reason we will also continu
 compatibility features have been added to python3 since the initial version we will require at least python 3.6 and wil
 not support earlier versions of python 3.
 
-To date we have spent roughly a full week on migration, and addressed most of the errors which come up through static analysis,
-but much remains to be done. At this point, PYME will build under python 3 is currently passing 42 of 46 tests although
-the test coverage is currently abysmal.
+An up to date account of migration progress can be found at https://bitbucket.org/david_baddeley/python-microscopy/issues/69/python-3-compatibility
 
-The following tasks need to be addressed (in order of importance) before further progress can be made:
+A slightly out of date list of tasks is given below:
 
 - find (or create) a reliable anaconda package for wxpython on python3 and add it to our channel. *NEW: An early wx build for python 3 suitable for testing
   is available by running `conda install -c newville wxpython-phoenix`*
@@ -44,10 +45,26 @@ Coding style
 ============
 
 The coding style in PYME as it stands is fairly inconsistent. I'd like to improve on this. New code should:
+
 - follow PEP8 where possible
 - use Numpy style docstrings
 - have strong model-view separation
 - be written so as to be compatible with both python 2.7 and python > 3.6.
+
+This **DOES NOT** mean that changes to existing variable names to follow PEP8 are welcome. Changes to existing variable
+names incurs a significant proof-reading cost for very little benefit, adding significant "noise" to pull requests. A
+personal aesthetic preference for a particular style does not justify changes to otherwise functioning code. The
+exception here is classes and functions which form part of our "API" (i.e. might be called from user code / new code)
+where a good case can be made for conversion to PEP8 in order to present a consistent interface. The bar for such API
+changes however is high in order not to break existing code. Such changes:
+
+- Should be discussed in advance (both to identify areas - potentially in projects other than the core PYME - where the API is
+  used and also to decide if further refactoring / changes to the API should occur at the same time. There are multiple
+  places in PYME where the API has evolved and might no longer be the most logical way of calling things. If we are
+  putting the effort into changing all our calls, we might as well get the API right at the same time.)
+- Should be in a separate PR which only deals with re-naming
+- Must consider how the code might be used (e.g. several people use bits of PYME from ipython notebooks) and provide
+  backwards compatible fallbacks (along with deprecation warnings) where appropriate
 
 Pull requests
 =============
@@ -59,6 +76,9 @@ Pull requests are always welcomed, but to increase the chances of speedy review 
 - Provide some context about what part(s) of the code are affected.
 - Describe what the problem was, and why this is the best solution (I might ultimately disagree, but knowing the
   intent is really useful).
+
+Pull requests which change existing variable names for the hell of it (see above) are likely to be rejected even if they
+include useful new functionality or bugfixes as the maintenance burden of such changes is high.
 
 When to include code in PYME and when to write an extension module?
 ===================================================================

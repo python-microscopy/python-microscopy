@@ -24,8 +24,8 @@ def test_PZFFormat_raw_uint16():
 
     result, header = PZFFormat.loads(PZFFormat.dumps(test_data))
 
-    print test_data, result.squeeze()
-    print header, result.dtype
+    print(test_data, result.squeeze())
+    print(header, result.dtype)
 
     assert np.allclose(result.squeeze(), test_data.squeeze())
     
@@ -36,7 +36,7 @@ def test_PZFFormat_raw_uint16_F():
     result, header = PZFFormat.loads(PZFFormat.dumps(test_data))
 
     #print result
-    print header, result.dtype
+    print(header, result.dtype)
 
     assert np.allclose(result.squeeze(), test_data.squeeze())
 
@@ -100,6 +100,8 @@ def test_PZFFormat_lossy_uint16_qs():
     #print(test_data.squeeze())
     #print(test_quant.squeeze())
     #print(result.squeeze())
+    
+    print(result.squeeze() - test_quant.squeeze())
 
     assert np.allclose(result.squeeze(), test_quant.squeeze())
 
