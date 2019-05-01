@@ -325,7 +325,7 @@ class RecipePusher(object):
         if self.output_dir is None:
             output_dir_n = ''
         else:
-            output_dir_n = '"output_dir": %s,' % self.output_dir
+            output_dir_n = '"output_dir": "%s",' % self.output_dir
         
         if self.recipeURI:
             task = task % ('"taskdefRef" : "%s"' % self.recipeURI, output_dir_n)
