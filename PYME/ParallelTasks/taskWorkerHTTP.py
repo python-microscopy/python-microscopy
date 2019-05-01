@@ -350,6 +350,11 @@ class taskWorker(object):
                     except KeyError:
                         pass
 
+                    try:
+                        context['output_dir'] = taskDescr['output_dir']
+                    except KeyError:
+                        pass
+
                     #print taskDescr['inputs']
                     #print context
 
