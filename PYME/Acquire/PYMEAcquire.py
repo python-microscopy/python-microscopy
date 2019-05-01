@@ -122,8 +122,8 @@ def main():
 if __name__ == '__main__':
     from PYME.util import mProfile, fProfile
     #mProfile.profileOn(['acquiremainframe.py', 'microscope.py', 'frameWrangler.py', 'fakeCam.py', 'rend_im.py'])
-    fp = fProfile.thread_profiler()
-    fp.profileOn()
+    #fp = fProfile.thread_profiler()
+    #fp.profileOn()
     main()
-    fp.profileOff()
+    #fp.profileOff()
     #mProfile.report()

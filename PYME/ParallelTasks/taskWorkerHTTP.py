@@ -349,6 +349,11 @@ class taskWorker(object):
                         context['input_dir'] = unifiedIO.dirname(principle_input)
                     except KeyError:
                         pass
+                    
+                    try:
+                        context['output_dir'] = taskDescr['output_dir']
+                    except KeyError:
+                        pass
 
                     try:
                         context['output_dir'] = taskDescr['output_dir']
