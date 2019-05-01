@@ -51,6 +51,7 @@ def run_template(request):
         from PYME.ParallelTasks.HTTPTaskPusher import RecipePusher
         
     recipeURI = 'pyme-cluster:///' + request.POST.get('recipeURL').encode().lstrip('/')
+    output_directory = 'pyme-cluster:///' + request.POST.get('recipeOutputPath').encode().lstrip('/')
 
 
     recipe_text = unifiedIO.read(recipeURI)
@@ -58,9 +59,9 @@ def run_template(request):
     
     for file_input in recipe.file_inputs:
         input_url = 'pyme-cluster:///' + request.POST.get('%sURL' % file_input).encode().lstrip('/')
-        recipe_text.replace('{'+file_input +'}', input_url)
+        recipe_text = recipe_text.replace('{'+file_input +'}', input_url)
 
-    pusher = RecipePusher(recipe=recipe_text)
+    pusher = RecipePusher(recipe=recipe_text, output_dir=output_directory)
     
     fileNames = request.POST.getlist('files', [])
     pusher.fileTasksForInputs(input=fileNames)
