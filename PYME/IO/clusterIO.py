@@ -173,7 +173,7 @@ def _listSingleDir(dirurl, nRetries=1, timeout=5):
     return dirL, dt
 
 
-def locateFile(filename, serverfilter=b'', return_first_hit=False):
+def locateFile(filename, serverfilter=local_serverfilter, return_first_hit=False):
     """
     Searches the cluster to find which server(s) a given file is stored on
 
@@ -279,7 +279,7 @@ def locateFile(filename, serverfilter=b'', return_first_hit=False):
 _pool = None
 
 _list_dir_lock = threading.Lock()
-def listdirectory(dirname, serverfilter=b'', timeout=5):
+def listdirectory(dirname, serverfilter=local_serverfilter, timeout=5):
     """Lists the contents of a directory on the cluster.
 
     Returns a dictionary mapping filenames to clusterListing.FileInfo named tuples.
@@ -326,14 +326,14 @@ def listdirectory(dirname, serverfilter=b'', timeout=5):
     
         return dirlist
 
-def listdir(dirname, serverfilter=''):
+def listdir(dirname, serverfilter=local_serverfilter):
     """Lists the contents of a directory on the cluster. Similar to os.listdir,
     but directories are indicated by a trailing slash
     """
 
     return sorted(listdirectory(dirname, serverfilter).keys())
 
-def isdir(name, serverfilter=b''):
+def isdir(name, serverfilter=local_serverfilter):
     name = to_bytes(name)
     serverfilter = to_bytes(serverfilter)
     
@@ -388,7 +388,7 @@ def _cglob(url, timeout=2, nRetries=1):
     
     return list(matches)
     
-def cglob(pattern, serverfilter=b''):
+def cglob(pattern, serverfilter=local_serverfilter):
     global _pool
     from multiprocessing.pool import ThreadPool
 
@@ -424,7 +424,7 @@ def cglob(pattern, serverfilter=b''):
     return list(set(matches))
     
 
-def exists(name, serverfilter=''):
+def exists(name, serverfilter=local_serverfilter):
 #    if name.endswith('/'):
 #        name = name[:-1]
 #        trailing = '/'
@@ -445,7 +445,7 @@ class stat_result(object):
         self.st_mtime = self.st_ctime
         self.type = file_info.type
 
-def stat(name, serverfilter=''):
+def stat(name, serverfilter=local_serverfilter):
     from . import clusterListing as cl
 
     name = to_bytes(name)
@@ -475,7 +475,7 @@ def stat(name, serverfilter=''):
     return r
 
 
-def walk(top, topdown=True, on_error=None, followlinks=False, serverfilter=''):
+def walk(top, topdown=True, on_error=None, followlinks=False, serverfilter=local_serverfilter):
     """Directory tree generator. Adapted from the os.walk 
     function in the python std library.
 
@@ -577,7 +577,7 @@ def get_local_path(filename, serverfilter):
         if os.path.exists(localpath):
             return localpath
 
-def getFile(filename, serverfilter=b'', numRetries=3, use_file_cache=True):
+def getFile(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True):
     """
     Get a file from the cluster.
     
@@ -676,7 +676,7 @@ def _netloc(info):
 
 
 _choose_server_lock = threading.Lock()
-def _chooseServer(serverfilter=b'', exclude_netlocs=[]):
+def _chooseServer(serverfilter=local_serverfilter, exclude_netlocs=[]):
     """chose a server to save to by minimizing a cost function
 
     currently takes the server which has been waiting longest
@@ -717,7 +717,7 @@ def _chooseServer(serverfilter=b'', exclude_netlocs=[]):
         return name, info
 
 
-def mirrorFile(filename, serverfilter=b''):
+def mirrorFile(filename, serverfilter=local_serverfilter):
     """Copies a given file to another server on the cluster (chosen by algorithm)
 
     The actual copy is performed peer to peer.
@@ -747,7 +747,7 @@ def mirrorFile(filename, serverfilter=b''):
     r.close()
 
 
-def putFile(filename, data, serverfilter=''):
+def putFile(filename, data, serverfilter=local_serverfilter):
     """put a file to a server in the cluster (chosen by algorithm)
 
     TODO - Add retry with a different server on failure
@@ -858,7 +858,7 @@ if USE_RAW_SOCKETS:
         return status, reason, data
                 
     
-    def putFiles(files, serverfilter=''):
+    def putFiles(files, serverfilter=local_serverfilter):
         """put a bunch of files to a single server in the cluster (chosen by algorithm)
 
         TODO - Add retry with a different server on failure
@@ -975,7 +975,7 @@ if USE_RAW_SOCKETS:
 
             #r.close()
 else:
-    def putFiles(files, serverfilter=''):
+    def putFiles(files, serverfilter=local_serverfilter):
         """put a bunch of files to a single server in the cluster (chosen by algorithm)
 
         TODO - Add retry with a different server on failure
@@ -1005,7 +1005,7 @@ else:
 _cached_status = None
 _cached_status_expiry = 0
 _status_lock = threading.Lock()
-def getStatus(serverfilter=b''):
+def getStatus(serverfilter=local_serverfilter):
     """Lists the contents of a directory on the cluster. Similar to os.listdir,
         but directories are indicated by a trailing slash
         """

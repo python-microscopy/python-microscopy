@@ -126,7 +126,7 @@ def launch_localize(analysisMDH, seriesName):
 
 
 class HTTPRulePusher(object):
-    def __init__(self, dataSourceID, metadata, resultsFilename, queueName = None, startAt = 10, dataSourceModule=None, serverfilter=''):
+    def __init__(self, dataSourceID, metadata, resultsFilename, queueName = None, startAt = 10, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter):
         """
         Create a pusher and push tasks for each frame in a series. For use with the new cluster distribution architecture
 
