@@ -270,6 +270,28 @@ static PyMethodDef astiglookupMethods[] = {
 };
 
 
+#if PY_MAJOR_VERSION>=3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "astiglookup",     /* m_name */
+        "major refactoring of the Analysis tree",  /* m_doc */
+        -1,                  /* m_size */
+        astiglookupMethods,    /* m_methods */
+        NULL,                /* m_reload */
+        NULL,                /* m_traverse */
+        NULL,                /* m_clear */
+        NULL,                /* m_free */
+    };
+
+PyMODINIT_FUNC PyInit_astiglookup(void)
+{
+	PyObject *m;
+    // m = PyModule_Create("edgeDB", edgeDBMethods);
+    m = PyModule_Create(&moduledef);
+    import_array()
+    return m;
+}
+#else
 PyMODINIT_FUNC initastiglookup(void)
 {
     PyObject *m;
@@ -281,3 +303,4 @@ PyMODINIT_FUNC initastiglookup(void)
     //Py_INCREF(SpamError);
     //PyModule_AddObject(m, "error", SpamError);
 }
+#endif

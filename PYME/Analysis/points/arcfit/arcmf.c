@@ -544,7 +544,29 @@ static PyMethodDef arcmfMethods[] = {
 
 #pragma GCC diagnostic pop
 
+#if PY_MAJOR_VERSION>=3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "arcmf",     /* m_name */
+        "major refactoring of the Analysis tree",  /* m_doc */
+        -1,                  /* m_size */
+        arcmfMethods,    /* m_methods */
+        NULL,                /* m_reload */
+        NULL,                /* m_traverse */
+        NULL,                /* m_clear */
+        NULL,                /* m_free */
+    };
 
+PyMODINIT_FUNC PyInit_arcmf(void)
+{
+	PyObject *m;
+    // m = PyModule_Create("edgeDB", edgeDBMethods);
+    m = PyModule_Create(&moduledef);
+    import_array()
+    return m;
+}
+
+#else
 PyMODINIT_FUNC initarcmf(void)
 {
     PyObject *m;
@@ -556,4 +578,4 @@ PyMODINIT_FUNC initarcmf(void)
     //Py_INCREF(SpamError);
     //PyModule_AddObject(m, "error", SpamError);
 }
-
+#endif

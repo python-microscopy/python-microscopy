@@ -720,7 +720,29 @@ static PyMethodDef edgeDBMethods[] = {
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
+#if PY_MAJOR_VERSION>=3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "edgeDB",     /* m_name */
+        "major refactoring of the Analysis tree",  /* m_doc */
+        -1,                  /* m_size */
+        edgeDBMethods,    /* m_methods */
+        NULL,                /* m_reload */
+        NULL,                /* m_traverse */
+        NULL,                /* m_clear */
+        NULL,                /* m_free */
+    };
 
+PyMODINIT_FUNC PyInit_edgeDB(void)
+{
+	PyObject *m;
+    // m = PyModule_Create("edgeDB", edgeDBMethods);
+    m = PyModule_Create(&moduledef);
+    import_array()
+    return m;
+}
+
+#else
 PyMODINIT_FUNC initedgeDB(void)
 {
     PyObject *m;
@@ -732,3 +754,4 @@ PyMODINIT_FUNC initedgeDB(void)
     //Py_INCREF(SpamError);
     //PyModule_AddObject(m, "error", SpamError);
 }
+#endif
