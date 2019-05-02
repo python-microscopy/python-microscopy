@@ -17,7 +17,7 @@ def file(request, filename):
     elif type in  ['tiff', 'h5']:
         from PYME.IO import image
         import tempfile
-        img = image.ImageStack(filename='pyme-cluster:///%s' % filename.rstrip('/'), haveGUI=False)
+        img = image.ImageStack(filename='pyme-cluster://%s/%s' % (clusterIO.local_serverfilter, filename.rstrip('/')), haveGUI=False)
 
         if type == 'tiff':
             ext = '.tif'
@@ -65,7 +65,7 @@ def _get_listing(filename):
             complete = (file_info.type & cl.FILETYPE_SERIES_COMPLETE) > 0
             nFrames = file_info.size - 3 #assume we have metadata.json, events.json, and final_metadata.json - all others are  frames
             series.append({'name': fn, 'numFrames': nFrames, 'complete': complete,
-                           'cluster_uri': ('pyme-cluster:///' + filename + fn).rstrip('/')})
+                           'cluster_uri': (('pyme-cluster://%s/' % clusterIO.local_serverfilter) + filename + fn).rstrip('/')})
 
         elif file_info.type & cl.FILETYPE_DIRECTORY:
             dirs.append({'name': fn, 'numFiles': file_info.size})
