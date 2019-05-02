@@ -6,6 +6,7 @@ import os
 from PYME.IO.clusterExport import ImageFrameSource, MDSource
 from PYME.IO import MetaDataHandler
 from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
+from PYME.IO import clusterIO
 from PYME.Analysis import MetaData
 from PYME.Acquire import HTTPSpooler
 from PYME.ParallelTasks import HTTPRulePusher  # HTTPTaskPusher
@@ -168,7 +169,7 @@ class DCIMGSpoolShim(object):
             self.mdh.setEntry('Analysis.TrackFiducials', False)
             self.mdh.setEntry('Analysis.subtractBackground', True)
             self.mdh.setEntry('Analysis.GPUPCTBackground', True)
-            cluster_filename = 'pyme-cluster:///' + self.spooler.seriesName
+            cluster_filename = 'pyme-cluster://%s/%s' % (clusterIO.local_serverfilter, self.spooler.seriesName)
             # HTTPTaskPusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
             HTTPRulePusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
 

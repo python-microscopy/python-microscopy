@@ -839,6 +839,7 @@ class microscope(object):
         self.cameras[name] = cam
         if self.cam is None:
             self.cam = cam
+            cam.SetActive(True)
 
     def __del__(self):
         self.settingsDB.close()

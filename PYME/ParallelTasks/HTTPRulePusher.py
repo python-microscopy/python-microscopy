@@ -126,7 +126,7 @@ def launch_localize(analysisMDH, seriesName):
 
 
 class HTTPRulePusher(object):
-    def __init__(self, dataSourceID, metadata, resultsFilename, queueName = None, startAt = 10, dataSourceModule=None, serverfilter=''):
+    def __init__(self, dataSourceID, metadata, resultsFilename, queueName = None, startAt = 10, dataSourceModule=None, serverfilter=clusterIO.local_serverfilter):
         """
         Create a pusher and push tasks for each frame in a series. For use with the new cluster distribution architecture
 
@@ -283,7 +283,7 @@ class HTTPRulePusher(object):
 
 
 class RecipePusher(object):
-    def __init__(self, recipe=None, recipeURI=None):
+    def __init__(self, recipe=None, recipeURI=None, output_dir = None):
         from PYME.recipes.modules import ModuleCollection
         if recipe:
             if isinstance(recipe, string_types):
@@ -302,6 +302,8 @@ class RecipePusher(object):
                 from PYME.IO import unifiedIO
                 self.recipeURI = recipeURI
                 self.recipe = ModuleCollection.fromYAML(unifiedIO.read(recipeURI))
+                
+        self.output_dir = output_dir
 
         self.taskQueueURI = _getTaskQueueURI()
 
@@ -316,13 +318,20 @@ class RecipePusher(object):
         task = '''{"id": "{{ruleID}}~{{taskID}}",
               "type": "recipe",
               "inputs" : {{taskInputs}},
+              %s,
               %s
               }'''
 
-        if self.recipeURI:
-            task = task % ('"taskdefRef" : "%s"' % self.recipeURI)
+        if self.output_dir is None:
+            output_dir_n = ''
         else:
-            task = task % ('"taskdef" : {"recipe": "%s"}' % self.recipe_text)
+            output_dir_n = '"output_dir": "%s",' % self.output_dir
+        
+        if self.recipeURI:
+            task = task % ('"taskdefRef" : "%s"' % self.recipeURI, output_dir_n)
+        else:
+            task = task % ('"taskdef" : {"recipe": "%s"}' % self.recipe_text, output_dir_n)
+            
 
         return task
 
