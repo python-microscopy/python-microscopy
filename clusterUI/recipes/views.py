@@ -53,17 +53,18 @@ def run_template(request):
     else:
         from PYME.ParallelTasks.HTTPTaskPusher import RecipePusher
         
-    recipeURI = ('pyme-cluster://%s/' % server_filter) + request.POST.get('recipeURL').encode().lstrip('/')
+    recipeURI = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeURL').encode().lstrip('/'))
+    output_directory = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeOutputPath').encode().lstrip('/'))
 
 
     recipe_text = unifiedIO.read(recipeURI)
     recipe = ModuleCollection.fromYAML(recipe_text)
     
     for file_input in recipe.file_inputs:
-        input_url = ('pyme-cluster://%s/' % server_filter) + request.POST.get('%sURL' % file_input).encode().lstrip('/')
-        recipe_text.replace('{'+file_input +'}', input_url)
+        input_url = 'pyme-cluster://%s/%s' %(server_filter,  request.POST.get('%sURL' % file_input).encode().lstrip('/'))
+        recipe_text = recipe_text.replace('{'+file_input +'}', input_url)
 
-    pusher = RecipePusher(recipe=recipe_text)
+    pusher = RecipePusher(recipe=recipe_text, output_dir=output_directory)
     
     fileNames = request.POST.getlist('files', [])
     pusher.fileTasksForInputs(input=fileNames)
@@ -75,7 +76,6 @@ def view_svg(request):
     from PYME.IO import unifiedIO
     from PYME.recipes.modules import ModuleCollection
     from PYME.recipes import recipeLayout
-    from PYME import config
 
     recipeURI = ('pyme-cluster://%s/' % server_filter) + request.GET.get('recipeURL').encode().lstrip('/')
 
@@ -88,7 +88,6 @@ def view_svg(request):
 def extra_inputs(request):
     from PYME.IO import unifiedIO
     from PYME.recipes.modules import ModuleCollection
-    from PYME import config
 
     recipeURI = ('pyme-cluster://%s/' % server_filter) + request.GET.get('recipeURL').encode().lstrip('/')
 

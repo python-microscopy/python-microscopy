@@ -68,7 +68,7 @@ class ShiftCorrect(ModuleBase):
     -----
     """
     input_name = Input('folded')
-    shift_map_path = File('')
+    shift_map_path = CStr('')
     output_name = Output('registered')
 
     def execute(self, namespace):
@@ -238,7 +238,7 @@ class MapAstigZ(ModuleBase):
     """
     input_name = Input('merged')
 
-    astigmatism_calibration_location = File('')
+    astigmatism_calibration_location = CStr('')
     rough_knot_spacing = Float(50.)
 
     output_name = Output('zmapped')
