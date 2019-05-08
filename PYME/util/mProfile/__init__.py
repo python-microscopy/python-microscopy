@@ -1,1 +1,1 @@
-from mProfile import *
+from .mProfile import *

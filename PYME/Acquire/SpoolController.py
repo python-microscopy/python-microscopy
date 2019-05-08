@@ -7,8 +7,8 @@ Created on Sat May 28 20:42:16 2016
 
 
 #import datetime
-from PYME.Acquire import HDFSpooler
-from PYME.Acquire import QueueSpooler, HTTPSpooler
+#from PYME.Acquire import HDFSpooler, QueueSpooler
+from PYME.Acquire import HTTPSpooler
 # TODO: change to use a metadata handler / provideStartMetadata hook
 #   MetaDataHandler.provideStartMetadata from the init file when
 #   loading the sampleinfo interface, see Acquire/Scripts/init.py
@@ -118,7 +118,7 @@ class SpoolController(object):
                       compressionSettings=HTTPSpooler.defaultCompSettings, cluster_h5 = False):
         """Start spooling
         """
-        import QueueSpooler, HTTPSpooler, HDFSpooler
+        #import QueueSpooler, HTTPSpooler, HDFSpooler
 
         if fn in ['', None]: #sanity checking
             fn = self.seriesName
@@ -160,12 +160,14 @@ class SpoolController(object):
         frameShape = (self.scope.cam.GetPicWidth(), self.scope.cam.GetPicHeight())
         
         if self.spoolType == 'Queue':
+            from PYME.Acquire import QueueSpooler
             self.queueName = getRelFilename(self.dirname + fn + '.h5')
             self.spooler = QueueSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                 frameShape = frameShape, protocol=protocol, 
                                                 guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
                                                 fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
         elif self.spoolType == 'Cluster':
+            from PYME.Acquire import HTTPSpooler
             #self.queueName = self.dirname + fn + '.h5'
             if cluster_h5:
                 self.queueName = getRelFilename(self.dirname + fn + '.h5')
@@ -178,6 +180,7 @@ class SpoolController(object):
                                                compressionSettings=compressionSettings, aggregate_h5=cluster_h5)
            
         else:
+            from PYME.Acquire import HDFSpooler
             self.spooler = HDFSpooler.Spooler(self.dirname + fn + '.h5', self.scope.frameWrangler.onFrame, 
                                               frameShape = frameShape, protocol=protocol, 
                                               guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 

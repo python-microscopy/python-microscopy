@@ -160,9 +160,11 @@ class Parser:
                 self.cover_flag = False
         self.out.write('\n</pre>')
 
-    def __call__(self, toktype, toktext, (srow,scol), (erow,ecol), line):
+    def __call__(self, toktype, toktext, start, end, line):
         """ Token handler.
         """
+        srow, scol = start
+        erow, ecol = end
         if 0:
             print("type", toktype, token.tok_name[toktype], "text", toktext,)
             print("start", srow,scol, "end", erow,ecol, "<br>")
