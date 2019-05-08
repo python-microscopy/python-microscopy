@@ -33,7 +33,6 @@ import scipy
 import numpy as np
 #import os
 from . import rend_im
-from EmpiricalHist import EmpiricalHist
 
 import PYME.ui.autoFoldPanel as afp
 
@@ -736,6 +735,7 @@ class dSimControl(afp.foldPanel):
             
     
     def OnBLoadEmpiricalHistButton(self, event):
+        from . import EmpiricalHist
         fn = wx.FileSelector('Read point positions from file')
         if fn is None:
             print('No file selected')

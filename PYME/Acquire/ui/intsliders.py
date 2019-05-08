@@ -60,7 +60,9 @@ class IntegrationSliders_(wx.Panel):
             sl_val = wx.ComboBox(self, -1, choices = timeChoices, value = '%d' % self.chaninfo.itimes[c], size=(65, -1), style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
  
             #sl.SetSize((800,20))
-            sl.SetTickFreq(100,1)
+            if wx.version() < '4':
+                sl.SetTickFreq(100,1)
+                # TODO - fix this for new wx
 
             if nsliders > 1:
                 sz = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.chaninfo.names[c] + " (ms)"), wx.HORIZONTAl)
@@ -145,7 +147,10 @@ class IntegrationSliders(wx.Panel):
         sl_val = wx.ComboBox(self, -1, choices = timeChoices, value = '%d' % itime, size=(65, -1), style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
  
         #sl.SetSize((800,20))
-        sl.SetTickFreq(100,1)
+
+        if wx.version() < '4':
+            sl.SetTickFreq(100, 1)
+            # TODO - fix this for new wx
 
         if nsliders > 1:
             sz = wx.StaticBoxSizer(wx.StaticBox(self, -1, self.chaninfo.names[c] + " (ms)"), wx.HORIZONTAl)

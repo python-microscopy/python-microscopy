@@ -199,7 +199,7 @@ class seqPanel(wx.Panel):
             
         self.stackSettings = self.scope.stackSettings
         
-        self.scanDirs = self.scope.positioning.keys()
+        self.scanDirs = list(self.scope.positioning.keys())
 
         self.chPiezo.SetItems(self.scanDirs)
 

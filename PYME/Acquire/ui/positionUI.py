@@ -41,7 +41,7 @@ class PositionSliders(wx.Panel):
         #self.panel_1 = wx.Panel(self, -1)
         self.sliders = []
         self.sliderLabels = []
-        self.piezoNames = self.scope.positioning.keys()
+        self.piezoNames = list(self.scope.positioning.keys())
         #self.SetTitle("Piezo Control")
         #sizer_1 = wx.BoxSizer(wx.VERTICAL)
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
@@ -85,7 +85,7 @@ class PositionSliders(wx.Panel):
 
         #sizer_2.AddSpacer(1)
 
-        wx.EVT_SCROLL(self,self.onSlide)
+        self.Bind(wx.EVT_SCROLL, self.onSlide)
 
 
         #self.SetAutoLayout(1)

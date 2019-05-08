@@ -8,7 +8,7 @@ except ImportError:
     import pyfftw
     from pyfftw import empty_aligned as create_aligned_array
     
-    class Plan(pyfftw.FFTW):
+    class Plan(object):
         def __init__(self, A, B, direction, flags = [], nthreads=1):
             
             if direction == 'forward':
@@ -21,8 +21,8 @@ except ImportError:
                 if f == 'measure':
                     out_flags.append('FFTW_MEASURE')
 
-            pyfftw.FFTW.__init__(self, A, B, direction=dir, axes=range(A.ndim), threads=nthreads,  flags = out_flags)
+            self._plan = pyfftw.FFTW(A, B, direction=dir, axes=[int(i) for i in range(A.ndim)], threads=int(nthreads),  flags = out_flags)
             
         def __call__(self):
-            self.execute()
+            self._plan.execute()
             

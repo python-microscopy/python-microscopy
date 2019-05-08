@@ -116,7 +116,7 @@ def genTheoreticalModel(md, zernikes={}, **kwargs):
         for i in range(1, len(interpModel_by_chan)):
             interpModel_by_chan[i] = None
 
-        interpModel_by_chan[0] = np.maximum(im/im[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
+        interpModel_by_chan[0] = np.maximum(im/im[:,:,int(len(IntZVals)/2)].sum(), 0) #normalise to 1 and clip
         
         
 def genTheoreticalModel4Pi(md, zernikes=[{},{}], phases=[0, np.pi/2, np.pi, 3*np.pi/2], **kwargs):

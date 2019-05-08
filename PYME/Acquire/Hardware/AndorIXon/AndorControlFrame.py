@@ -70,13 +70,13 @@ class AndorPanel(wx.Panel):
 
         self.rbSingleShot = wx.RadioButton(cp, -1, 'Single Shot')
         self.rbSingleShot.SetValue(False)
-        self.rbSingleShot.SetToolTipString('Allows multiple channels with different integration times and good shutter synchronisation')
+        #self.rbSingleShot.SetToolTipString('Allows multiple channels with different integration times and good shutter synchronisation')
         self.rbSingleShot.Bind(wx.EVT_RADIOBUTTON,self.OnRbSingleShotRadiobutton)
         sbAqMode.Add(self.rbSingleShot, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.rbContin = wx.RadioButton(cp, -1, 'Continuous')
         self.rbContin.SetValue(True)
-        self.rbContin.SetToolTipString('Allows fastest speeds, albeit without good syncronisation (fixable) or integration time flexibility')
+        #self.rbContin.SetToolTipString('Allows fastest speeds, albeit without good syncronisation (fixable) or integration time flexibility')
         self.rbContin.Bind(wx.EVT_RADIOBUTTON, self.OnRbContinRadiobutton)
         sbAqMode.Add(self.rbContin, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -147,7 +147,7 @@ class AndorPanel(wx.Panel):
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
         self.tCCDTemp = wx.TextCtrl(self, -1, '0', size=(30, -1))
-        hsizer2.Add(self.tCCDTemp, 1, wx.wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer2.Add(self.tCCDTemp, 1, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         sbCooling.Add(hsizer2, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
         self.bSetTemp = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)

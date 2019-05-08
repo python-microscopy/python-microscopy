@@ -22,6 +22,8 @@
 #
 ################
 import os
+import logging
+logger = logging.getLogger(__name__)
 
 try:
     import fftw3f
@@ -47,11 +49,14 @@ except ImportError:
     
     def load_wisdom():
         if os.path.exists(WISDOMFILE):
-            with open(WISDOMFILE, 'rb') as f:
-                pyfftw.import_wisdom(pickle.load(f))
+            try:
+                with open(WISDOMFILE, 'rb') as f:
+                    pyfftw.import_wisdom(pickle.load(f))
+            except:
+                logger.exception('Error loading wisdom')
     
     
     def save_wisdom():
         with open(WISDOMFILE, 'wb') as f:
-            pickle.dump(f, pyfftw.export_wisdom())
+            pickle.dump(pyfftw.export_wisdom(), f)
         
