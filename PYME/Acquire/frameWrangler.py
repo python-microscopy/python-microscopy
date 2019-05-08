@@ -390,7 +390,6 @@ class FrameWrangler(wx.EvtHandler):
         "Stop sequence aquisition"
 
         self.timer.Stop()
-
         self.aqOn = False
 
         #logger.debug('acquire _current_frame_lock in stop()')

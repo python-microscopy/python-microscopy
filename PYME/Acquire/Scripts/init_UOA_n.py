@@ -31,7 +31,7 @@ def pz(scope):
     from PYME.Acquire.Hardware.Piezos import piezo_e816, offsetPiezo
 
     scope._piFoc = piezo_e816.piezo_e816T('COM1', 400, -0.399)
-    scope.hardwareChecks.append(scope._piFoc.OnTarget)
+    #scope.hardwareChecks.append(scope._piFoc.OnTarget)
     scope.CleanupFunctions.append(scope._piFoc.close)
 
     scope.piFoc = offsetPiezo.piezoOffsetProxy(scope._piFoc)

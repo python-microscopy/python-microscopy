@@ -12,7 +12,7 @@ class StripTiler(object):
 
     def _slow_step(self, step):
         if step is None:
-            return 5 #default of 5 um strip widths - FIXME change this to use currently set ROI and pixel size
+            return 30 #default of 30 um strip widths - FIXME change this to use currently set ROI and pixel size
         else:
             return step
 
@@ -58,12 +58,14 @@ class StripTiler(object):
             else:
                 fe, fs = self.fast_max, self.fast_min
 
-            self.scope.pa.stop()
+            #self.scope.pa.stop()
+            print('Moving to %f, %f' % (fs, slow_v))
             fast_pz.MoveTo(fast_chan, fs/mult)
             slow_pz.MoveTo(slow_chan, slow_v/smult)
+
+            # wait for the slow axis to get there
+            print('waiting for stage [slow move]')
             while not slow_pz.onTarget:
-                #wait for the slow axis to get there
-                print('waiting for stage')
                 time.sleep(0.1)
 
             if self.log_events:
@@ -71,12 +73,20 @@ class StripTiler(object):
                 eventLog.logEvent('ScannerXPos', '%3.6f' % slow_v)
                 eventLog.logEvent('ScannerYPos', '%3.6f' % fs)
 
-            self.scope.pa.start()
+            #self.scope.pa.start()
+
+            print('Slow move done, making fast move')
 
             #start the move with acquisition running
             fast_pz.MoveTo(fast_chan, fe/mult)
 
+            print('waiting for stage [fast move]')
+            while not fast_pz.onTarget:
+                #wait for the fast axis to get there
+                time.sleep(.1)
+
         fast_pz.SetVelocity(fast_chan, old_vel) #restore old velocity
+        print('Scan complete')
 
     def start(self):
         self._movement_thread = threading.Thread(target=self._thread_target)
