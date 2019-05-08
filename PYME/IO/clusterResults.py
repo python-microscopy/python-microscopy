@@ -60,7 +60,7 @@ def fileFormattedResults(URI, data, mimetype=None, compression=True):
         raise RuntimeError('Unknown protocol %s' % URI.split(':')[0])
 
 _loc_cache = {}
-def pickResultsServer(filename, serverfilter=''):
+def pickResultsServer(filename, serverfilter=clusterIO.local_serverfilter):
     #logging.debug('pickResultsServer - input: ' + filename)
     if filename.startswith('__aggregate_txt/'):
         fn = filename[len('__aggregate_txt/'):]

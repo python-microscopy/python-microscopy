@@ -13,7 +13,7 @@
         <div class="form-group">
             <label class="control-label" for="inputRecipeURL">Recipe</label>
             <div class="input-group">
-                <span class="input-group-addon">pyme-cluster:///</span>
+                <span class="input-group-addon">pyme-cluster://{{ clusterfilter }}/</span>
                 <input type="text" class="form-control" id="inputRecipeURL" name="recipeURL">
                 <span class="input-group-btn">
                     <button class="btn btn-default" type="button" id="select_recipe">select</button>
@@ -34,7 +34,7 @@
         <div class="form-group">
             <label class="control-label" for="inputFileGlob">Input glob</label>
             <div class="input-group">
-                <span class="input-group-addon">pyme-cluster:///</span>
+                <span class="input-group-addon">pyme-cluster://{{ clusterfilter }}/</span>
                 <input type="text" class="form-control" id="inputFileGlob" name="inputGlob">
                 <span class="input-group-btn">
                     <button class="btn btn-default" type="button" id="inputGlob">find matching files</button>
@@ -45,16 +45,16 @@
 
         <div id="recipe_input_list"></div>
 
-{#        <div class="form-group">#}
-{#            <label class="control-label" for="recipeOutputPath">Output path</label>#}
-{#            <div class="input-group">#}
-{#                <span class="input-group-addon">pyme-cluster:///</span>#}
-{#                <input type="text" class="form-control" id="recipeOutputPAth" name="recipeOutputPath">#}
-{#                <span class="input-group-btn">#}
-{#                    <button class="btn btn-default" type="button" id="select_output">select</button>#}
-{#                </span>#}
-{#            </div>#}
-{#        </div>#}
+        <div class="form-group">
+            <label class="control-label" for="recipeOutputPath">Output directory</label>
+            <div class="input-group">
+                <span class="input-group-addon">pyme-cluster:///</span>
+                <input type="text" class="form-control" id="recipeOutputPath" name="recipeOutputPath">
+                <!--<span class="input-group-btn">-->
+                    <!--<button class="btn btn-default" type="button" id="select_output">select</button>-->
+                <!--</span>-->
+            </div>
+        </div>
 
         <div class="form-group pull-right">
             <input type="submit" value="Launch recipe" class="btn btn-primary"/>

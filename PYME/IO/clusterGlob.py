@@ -20,7 +20,7 @@ except NameError:
 
 __all__ = ["glob", "iglob"]
 
-def glob(pathname, serverfilter='', include_scheme=False):
+def glob(pathname, serverfilter=clusterIO.local_serverfilter, include_scheme=False):
     """Return a list of paths matching a pathname pattern.
 
     The pattern may contain simple shell-style wildcards a la
@@ -31,7 +31,7 @@ def glob(pathname, serverfilter='', include_scheme=False):
     """
     return list(iglob(pathname, serverfilter, include_scheme))
 
-def iglob(pathname, serverfilter='', include_scheme=False):
+def iglob(pathname, serverfilter=clusterIO.local_serverfilter, include_scheme=False):
     """Return an iterator which yields the paths matching a pathname pattern.
 
     The pattern may contain simple shell-style wildcards a la
@@ -75,7 +75,7 @@ def iglob(pathname, serverfilter='', include_scheme=False):
 # They return a list of basenames. `glob1` accepts a pattern while `glob0`
 # takes a literal basename (so it only has to check for its existence).
 
-def glob1(dirname, pattern, serverfilter=''):
+def glob1(dirname, pattern, serverfilter=clusterIO.local_serverfilter):
     if not dirname:
         dirname = '/'
     #if isinstance(pattern, _unicode) and not isinstance(dirname, unicode):
@@ -90,7 +90,7 @@ def glob1(dirname, pattern, serverfilter=''):
         names = filter(lambda x: x[0] != '.', names)
     return fnmatch.filter(names, pattern)
 
-def glob0(dirname, basename, serverfilter=''):
+def glob0(dirname, basename, serverfilter=clusterIO.local_serverfilter):
     if basename == '':
         # `os.path.split()` returns an empty basename for paths ending with a
         # directory separator.  'q*x/' should match only directories.

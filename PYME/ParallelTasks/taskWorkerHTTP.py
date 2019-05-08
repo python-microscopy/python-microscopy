@@ -109,7 +109,7 @@ Traceback:
     @property
     def log_url(self):
         rule_id = self.taskDescr['id'].split('~')[0]
-        return 'PYME-CLUSTER:///__aggregate_txt/LOGS/rules/%s.log' % rule_id
+        return 'PYME-CLUSTER://%s/__aggregate_txt/LOGS/rules/%s.log' % (clusterIO.local_serverfilter, rule_id)
         
     def to_string(self):
         rule_id, task_id = self.taskDescr['id'].split('~')
@@ -347,6 +347,11 @@ class taskWorker(object):
                         principle_input = taskDescr['inputs']['input'] #default input
                         context['file_stub'] = os.path.splitext(os.path.basename(principle_input))[0]
                         context['input_dir'] = unifiedIO.dirname(principle_input)
+                    except KeyError:
+                        pass
+
+                    try:
+                        context['output_dir'] = unifiedIO.dirname(taskDescr['output_dir'])
                     except KeyError:
                         pass
 

@@ -32,7 +32,7 @@ ns = pzc.getNS('_pyme-pyro')
 TARGETCOPIES = 2
 
 
-def duplicateFiles(targetNCopies=TARGETCOPIES, serverfilter=''):
+def duplicateFiles(targetNCopies=TARGETCOPIES, serverfilter=clusterIO.local_serverfilter):
     """walks the cluster and mirrors any files with a count less than the target
     
     for high duplication targets (e.g. NCopies = 3), each pass will only
@@ -61,7 +61,7 @@ class DupManager(Pyro.core.ObjBase):
     We use the "Bully" algorithm for leader election
     """
     
-    def __init__(self, targetNCopies=TARGETCOPIES, serverfilter=''):
+    def __init__(self, targetNCopies=TARGETCOPIES, serverfilter=clusterIO.local_serverfilter):
         Pyro.core.ObjBase.__init__(self)
         self._targetNCopies = targetNCopies
         self._serverfilter = serverfilter

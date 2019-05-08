@@ -2,7 +2,7 @@ from . import clusterIO
 import os
 
 
-def upload_directory(in_dir, target_dir, serverfilter=''):
+def upload_directory(in_dir, target_dir, serverfilter=clusterIO.local_serverfilter):
     if not os.path.isdir(in_dir):
         raise RuntimeError('Expected to be given the name of a directory to upload')
     
@@ -23,7 +23,7 @@ def upload_directory(in_dir, target_dir, serverfilter=''):
     os.path.walk(in_dir, _visit, None)
     
     
-def upload_glob(in_glob, target_dir, serverfilter=''):
+def upload_glob(in_glob, target_dir, serverfilter=clusterIO.local_serverfilter):
     import glob
     inputs = glob.glob(in_glob)
 
