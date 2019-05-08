@@ -10,13 +10,13 @@ class ScannerPanel(wx.Panel):
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Scan Frequency:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        self.tScanFreq = wx.TextCtrl(self, -1, '500')
+        self.tScanFreq = wx.TextCtrl(self, -1, '500', style=wx.TE_PROCESS_ENTER)
         hsizer.Add(self.tScanFreq, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Scan Amplitude:'), 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
-        self.tScanAmp = wx.TextCtrl(self, -1, '0.03')
+        self.tScanAmp = wx.TextCtrl(self, -1, '0.03', style=wx.TE_PROCESS_ENTER)
         hsizer.Add(self.tScanAmp, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
 

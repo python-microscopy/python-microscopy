@@ -153,7 +153,8 @@ class Unmixer:
 
 
 class Splitter:
-    def __init__(self, parent, scope, cam, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top', constrain=True, flip = True):
+    def __init__(self, parent, scope, cam, dir='up_down', flipChan=1, dichroic = 'Unspecified', transLocOnCamera = 'Top',
+                 constrain=True, flip = True, cam_name=''):
         self.dir = dir
         self.scope = scope
         self.cam = cam
@@ -179,11 +180,16 @@ class Splitter:
         self.constrainROI = False
         self.flipView = False
         self.f = None
+
+        if not cam_name == '':
+            suff = ' [%s]' %cam_name
+        else:
+            suff = ''
         
-        self.miConstrROI = parent.AddMenuItem('Splitter', 'Constrain ROI', self.OnConstrainROI, itemType = 'check')
-        parent.AddMenuItem('Splitter', 'Flip view', self.OnFlipView)
-        parent.AddMenuItem('Splitter', 'Unmix\tF7', self.OnUnmix)
-        parent.AddMenuItem('Splitter', 'SetShiftField', self.OnSetShiftField)
+        self.miConstrROI = parent.AddMenuItem('Splitter', 'Constrain ROI%s' % suff, self.OnConstrainROI, itemType = 'check')
+        parent.AddMenuItem('Splitter', 'Flip view%s' % suff, self.OnFlipView)
+        parent.AddMenuItem('Splitter', 'Unmix%s\tF7' % suff, self.OnUnmix)
+        parent.AddMenuItem('Splitter', 'SetShiftField%s' % suff, self.OnSetShiftField)
 
 #        idConstROI = wx.NewId()
 #        idFlipView = wx.NewId()
