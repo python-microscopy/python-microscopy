@@ -165,9 +165,9 @@ def baseconvert(number,todigits):
         res=todigits[0]
     
     while x>0:
-        digit = x % len(todigits)
+        digit = int(x % len(todigits))
         res = todigits[digit] + res
-        x /= len(todigits)
+        x = int(x/len(todigits))
 
     return res
     

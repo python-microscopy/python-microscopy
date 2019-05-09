@@ -26,7 +26,7 @@ import tables
 from PYME.IO import MetaDataHandler
 
 
-#import time
+import time
 
 #from PYME.Acquire import eventLog
 import PYME.Acquire.Spooler as sp
@@ -119,6 +119,11 @@ class Spooler(sp.Spooler):
         
     def OnFrame(self, sender, frameData, **kwargs):
         """Called on each frame"""
+
+        if not self.watchingFrames:
+            # drop frames if we've already stopped spooling. TODO - do we also need to check if disconnect works?
+            return
+        
         #print 'f'
         if frameData.shape[0] == 1:
             self.imageData.append(frameData)

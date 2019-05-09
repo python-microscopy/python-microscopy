@@ -36,7 +36,7 @@ import os
 import glob
 
 from PYME.IO import PZFFormat
-
+import sys
 
 
 [wxID_FRSPOOL, wxID_FRSPOOLBSETSPOOLDIR, wxID_FRSPOOLBSTARTSPOOL, 
@@ -155,8 +155,19 @@ class PanSpool(wx.Panel):
         #queues etcc        
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.rbQueue = wx.RadioBox(self, -1,'Spool to:', choices=['File', 'Queue', 'Cluster'])
-        self.rbQueue.SetSelection(1)
+        if int(sys.version[0]) >= 3:
+            # we are dropping support for old style queue spooling with Py3k
+            spool_choices = ['File',  'Cluster']
+        else:
+            spool_choices = ['File', 'Queue', 'Cluster']
+            
+        self.rbQueue = wx.RadioBox(self, -1,'Spool to:', choices=spool_choices)
+
+        if int(sys.version[0]) >= 3:
+            #spool to disk from python3k for now (as cluster spooling doesn't work yet)
+            self.rbQueue.SetSelection(0)
+        else:
+            self.rbQueue.SetSelection(1)
         
         self.rbQueue.Bind(wx.EVT_RADIOBOX, self.OnSpoolMethodChanged)
 
@@ -241,6 +252,9 @@ class PanSpool(wx.Panel):
         self.stSpoolDirName.SetLabel(self.spoolController.dirname)
         self.tcSpoolFile.SetValue(self.spoolController.seriesName)
         self.UpdateFreeSpace()
+
+        #update the spool method (specifically so that the default in the GUI and spool controller match)
+        self.spoolController.SetSpoolMethod(self.rbQueue.GetStringSelection())
         
 
 

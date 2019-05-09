@@ -40,9 +40,13 @@ global timeFcn
 timeFcn = time.time
 
 import dispatch
+import uuid
 
 from PYME.Acquire import eventLog
 from PYME.Acquire import protocol as p
+
+import logging
+logger = logging.getLogger(__name__)
 
 class EventLogger:
     """Event logging backend base class"""
@@ -109,6 +113,8 @@ class Spooler:
         #    timeFcn = self.fakeTime
 
         self._last_gui_update = 0
+        
+        self._spooler_uuid = uuid.uuid4()
             
         if not fakeCamCycleTime is None:
             self.fakeCamCycleTime = fakeCamCycleTime
@@ -126,12 +132,14 @@ class Spooler:
 
         self.protocol.Init(self)
    
-        self.frameSource.connect(self.OnFrame)
+        self.frameSource.connect(self.OnFrame, dispatch_uid=self._spooler_uuid)
         self.spoolOn = True
        
     def StopSpool(self):
         #try:
-        self.frameSource.disconnect(self.OnFrame)
+        logger.debug('Disconnecting from frame source')
+        self.frameSource.disconnect(self.OnFrame, dispatch_uid=self._spooler_uuid)
+        logger.debug('Frame source should be disconnected')
         
         #there is a race condition on disconnect - ignore any additional frames
         self.watchingFrames = False 
