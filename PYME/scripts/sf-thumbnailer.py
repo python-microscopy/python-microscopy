@@ -30,7 +30,7 @@
 import sys
 import gnomevfs
 
-import cPickle
+from six.moves import cPickle
 
 import matplotlib
 matplotlib.use('Agg')

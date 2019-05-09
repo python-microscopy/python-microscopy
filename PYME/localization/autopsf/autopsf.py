@@ -7,6 +7,8 @@ import numpy as np
 
 from PYME.IO import MetaDataHandler
 
+import six
+
 USE_MULTIPROC = True
 
 
@@ -167,10 +169,10 @@ class ZernikePSFModel(object):
                 estimator = 'PYME.localization.FitFactories.zEstimators.genericEstimator'
             else:
                 estimator = 'PYME.localization.FitFactories.zEstimators.genericDualEstimator'
-        elif not isinstance(estimator, basestring):
+        elif not isinstance(estimator, six.string_types):
             estimator = estimator.__name__
         
-        if not isinstance(interpolator, basestring):
+        if not isinstance(interpolator, six.string_types):
             interpolator = interpolator.__name__
         
         self.roiSize = int(0.5 * (data['data'].shape[1] - 1))
@@ -198,7 +200,7 @@ class ZernikePSFModel(object):
         return fullResult
     
     def saveResultsToFile(self, filename):
-        import cPickle as pickle
+        from six.moves import cPickle as pickle
         #        filename = basePath + "_liveExtract_" + str(int(time.time()))
         #        if path.exists(filename):
         #            numerate = 0

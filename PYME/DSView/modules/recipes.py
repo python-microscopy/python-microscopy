@@ -147,6 +147,8 @@ class RecipePlugin(recipeGui.RecipeManager):
                 _display_output_image(self.outp)
             elif not self.outp is None:
                 from PYME.IO import tabular
+                import six
+                
                 cache = tabular.cachingResultsFilter(self.outp)
                 self.dsviewer.pipeline.OpenFile(ds = cache)
                 self.dsviewer.pipeline.filterKeys = {}
@@ -157,7 +159,7 @@ class RecipePlugin(recipeGui.RecipeManager):
             for out_ in self.activeRecipe.gather_outputs():
                 if isinstance(out_, ImageStack):
                     _display_output_image(out_)
-                elif isinstance(out_, basestring):
+                elif isinstance(out_, six.string_types):
                     _display_output_report(out_)
                     
                 

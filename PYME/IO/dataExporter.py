@@ -335,11 +335,8 @@ class PSFExporter(Exporter):
     def Export(self, data, outFile, xslice, yslice, zslice, metadata=None, events = None, origName=None, progressCallback=None):
         #numpy.save(outFile, data[xslice, yslice, zslice])
         warnings.warn('The .psf format is deprecated. Save PSFs as .tif instead')
-        try:
-            import cPickle
-        except ImportError:
-            #py3
-            import pickle as cPickle
+        
+        from six.moves import cPickle
             
         fid = open(outFile, 'wb')
         cPickle.dump((data[xslice, yslice, zslice], metadata.voxelsize), fid, 2)

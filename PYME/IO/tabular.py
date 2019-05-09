@@ -148,11 +148,10 @@ class randomSource(TabularBase):
     def getInfo(self):
         return 'Random Data Source\n\n %d points' % len(self.x)
 
-
 def unNestNames(nameList, parent=''):
     unList = []
     for n in nameList:
-        if isinstance(n, str):
+        if isinstance(n, six.string_types):
             unList.append(parent + n)
         else:
             unList += unNestNames(n[1], parent + n[0] + '_')
@@ -162,7 +161,7 @@ def unNestDtype(descr, parent=''):
     unList = []
     for n in descr:
         #print n, n.__class__, len(n)
-        if isinstance(n, tuple) and len(n) == 2 and isinstance(n[1],str):
+        if isinstance(n, tuple) and len(n) == 2 and isinstance(n[1],six.string_types):
             unList.append(parent + n[0])
         else:
             unList += unNestDtype(n[1], parent + n[0] + '_')

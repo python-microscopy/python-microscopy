@@ -117,16 +117,20 @@ def fileResults(URI, data_raw):
     if URI.endswith('.csv') or URI.endswith('.txt') or URI.endswith('.log'):
         output_format = 'text/csv'
 
-        if isinstance(data_raw, str):
+        if isinstance(data_raw, bytes):
             data = data_raw
+        elif isinstance(data_raw, str):
+            data = data_raw.encode()
         else:
             df = pd.DataFrame(data_raw)
             data = df.to_csv()
 
     elif URI.endswith('.json'):
         output_format = 'text/json'
-        if isinstance(data_raw, str):
+        if isinstance(data_raw, bytes):
             data = data_raw
+        elif isinstance(data_raw, str):
+            data = data_raw.encode()
         else:
             df = pd.DataFrame(data_raw)
             data = df.to_json()
