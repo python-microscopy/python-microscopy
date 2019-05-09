@@ -47,6 +47,9 @@ def fileFormattedResults(URI, data, mimetype=None, compression=True):
         logging.debug('fileFormattedResults - URI: ' + URI)
         #logging.debug('data: ' + data)
         #logging.debug('type(data) = %s, len(data) = %d' % (type(data), len(data)))
+        if not isinstance(URI, bytes):
+            URI = URI.encode()
+            
         s = clusterIO._getSession(URI)
         
         if compression:

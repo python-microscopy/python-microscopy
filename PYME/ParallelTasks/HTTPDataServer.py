@@ -28,6 +28,7 @@ from PYME.misc.computerName import GetComputerName
 compName = GetComputerName()
 import os
 import html
+import sys
 
 import errno
 def makedirs_safe(dir):
@@ -591,6 +592,8 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         
     def _string_to_file(self, str):
         f = BytesIO()
+        if not isinstance(str, bytes):
+            str = str.encode()
         f.write(str)
         length = f.tell()
         f.seek(0)
@@ -764,7 +767,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 'code': code,
                 'message': html.escape(message),
                 'explain': explain
-            })
+            }).encode()
             self.send_header("Content-Type", self.error_content_type)
             self.send_header("Content-Length", str(len(content)))
 
@@ -811,7 +814,9 @@ def main(protocol="HTTP/1.0"):
         profileOutDir = options.root + '/LOGS/%s/mProf' % compName
 
     
-    #change to the dataserver root if given
+    logger.info('========================================\nPYMEDataServer, running on python %s\n' % sys.version)
+    
+    #change to the dataserver root if given'
     logger.info('Serving from directory: %s' % options.root)
     os.chdir(options.root)
 
@@ -854,7 +859,7 @@ def main(protocol="HTTP/1.0"):
     sp.start()
 
 
-    print ("Serving HTTP on %s port %d ..." % (ip_addr, sa[1]))
+    logger.info("Serving HTTP on %s port %d ..." % (ip_addr, sa[1]))
     try:
         httpd.serve_forever()
     finally:

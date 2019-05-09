@@ -39,6 +39,7 @@ def to_bytes(input):
     -------
 
     """
+    
     if isinstance(input, str):
         return input.encode('utf8')
     else:
@@ -46,8 +47,8 @@ def to_bytes(input):
 
 
 from PYME import config
-local_dataroot = to_bytes(config.get(b'dataserver-root'))
-local_serverfilter = to_bytes(config.get(b'dataserver-filter', b''))
+local_dataroot = (config.get('dataserver-root'))
+local_serverfilter = (config.get('dataserver-filter', ''))
 
 import sys
 
@@ -139,6 +140,7 @@ def _listSingleDir(dirurl, nRetries=1, timeout=5):
         #logger.debug('dir cache miss')
         # t = time.time()
         url = dirurl.encode()
+        print(url)
         haveResult = False
         nTries = 0
         while nTries < nRetries and not haveResult:
@@ -191,10 +193,10 @@ def locateFile(filename, serverfilter=local_serverfilter, return_first_hit=False
 
     """
     
-    filename = to_bytes(filename)
-    serverfilter = to_bytes(serverfilter)
+    filename = (filename)
+    serverfilter = (serverfilter)
     
-    cache_key = serverfilter + b'::' + filename
+    cache_key = serverfilter + '::' + filename
     try:
         locs, t = _locateCache[cache_key]
         #logger.debug('Returning cached locs: %s' % locs)
@@ -202,10 +204,10 @@ def locateFile(filename, serverfilter=local_serverfilter, return_first_hit=False
     except KeyError:
         locs = []
 
-        dirname = b'/'.join(filename.split(b'/')[:-1])
+        dirname = '/'.join(filename.split('/')[:-1])
         fn = filename.split('/')[-1]
         if (len(dirname) >= 1):
-            dirname += b'/'
+            dirname += '/'
 
         servers = []
         localServers = []
@@ -223,7 +225,7 @@ def locateFile(filename, serverfilter=local_serverfilter, return_first_hit=False
                     Total number of nodes: %d
                     ''' % (name, len(services)))
                 else:
-                    dirurl = b'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
+                    dirurl = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname)
     
                     if compName in name:
                         localServers.append(dirurl)
@@ -288,8 +290,8 @@ def listdirectory(dirname, serverfilter=local_serverfilter, timeout=5):
     from . import clusterListing as cl
     from multiprocessing.pool import ThreadPool
 
-    dirname = to_bytes(dirname)
-    serverfilter = to_bytes(serverfilter)
+    dirname = (dirname)
+    serverfilter = (serverfilter)
 
     with _list_dir_lock:
         if _pool is None:
@@ -299,10 +301,10 @@ def listdirectory(dirname, serverfilter=local_serverfilter, timeout=5):
     
         urls = []
     
-        dirname = dirname.lstrip(b'/')
+        dirname = dirname.lstrip('/')
     
-        if not dirname.endswith(b'/'):
-            dirname = dirname + b'/'
+        if not dirname.endswith('/'):
+            dirname = dirname + '/'
     
         services = get_ns().get_advertised_services()
         for name, info in services:
@@ -317,7 +319,7 @@ def listdirectory(dirname, serverfilter=local_serverfilter, timeout=5):
                     ''' % (name, len(services)))
                     
                 else:
-                    urls.append(b'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
+                    urls.append('http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, dirname))
     
         listings = _pool.map(_listSingleDir, urls)
     
@@ -334,17 +336,17 @@ def listdir(dirname, serverfilter=local_serverfilter):
     return sorted(listdirectory(dirname, serverfilter).keys())
 
 def isdir(name, serverfilter=local_serverfilter):
-    name = to_bytes(name)
-    serverfilter = to_bytes(serverfilter)
+    name = (name)
+    serverfilter = (serverfilter)
     
-    name = name.rstrip(b'/')
-    if name in [b'/', '']:
+    name = name.rstrip('/')
+    if name in ['/', '']:
         #special case for root dir
         return True
     
     pn, n = os.path.split(name)
     try:
-        d = listdirectory(pn, serverfilter)[n + b'/']
+        d = listdirectory(pn, serverfilter)[n + '/']
     except KeyError:
         return False
     
@@ -392,8 +394,8 @@ def cglob(pattern, serverfilter=local_serverfilter):
     global _pool
     from multiprocessing.pool import ThreadPool
 
-    pattern = to_bytes(pattern)
-    serverfilter = to_bytes(serverfilter)
+    pattern = (pattern)
+    serverfilter = (serverfilter)
     
     with _list_dir_lock:
         if _pool is None:
@@ -414,7 +416,7 @@ def cglob(pattern, serverfilter=local_serverfilter):
                     ''' % (name, len(services)))
                 
                 else:
-                    urls.append(b'http://%s:%d/__glob?pattern=%s' % (socket.inet_ntoa(info.address), info.port, pattern))
+                    urls.append('http://%s:%d/__glob?pattern=%s' % (socket.inet_ntoa(info.address), info.port, pattern))
         
         matches = _pool.map(_cglob, urls)
         
@@ -448,16 +450,16 @@ class stat_result(object):
 def stat(name, serverfilter=local_serverfilter):
     from . import clusterListing as cl
 
-    name = to_bytes(name)
-    serverfilter = to_bytes(serverfilter)
+    name = (name)
+    serverfilter = (serverfilter)
     
-    rname = name.rstrip(b'/')
+    rname = name.rstrip('/')
     dirname, fname = os.path.split(rname)
     
     listing = listdirectory(dirname, serverfilter)
     #print name, listing
     
-    if fname == b'':
+    if fname == '':
         #special case for the root directory
         return stat_result(cl.FileInfo(cl.FILETYPE_DIRECTORY, 0))
     
@@ -465,7 +467,7 @@ def stat(name, serverfilter=local_serverfilter):
         r = stat_result(listing[fname])
     except KeyError:
         try:
-            r = stat_result(listing[fname + b'/'])
+            r = stat_result(listing[fname + '/'])
         except:
             logger.exception('error stating: %s' % name)
             #print dirname, fname
@@ -483,8 +485,8 @@ def walk(top, topdown=True, on_error=None, followlinks=False, serverfilter=local
 
     """
 
-    top = to_bytes(top)
-    serverfilter = to_bytes(serverfilter)
+    top = (top)
+    serverfilter = (serverfilter)
 
     # islink, join, isdir = path.islink, path.join, path.isdir
     def islink(name):
@@ -492,11 +494,11 @@ def walk(top, topdown=True, on_error=None, followlinks=False, serverfilter=local
         return False
 
     def join(*args):
-        j = b'/'.join(args)
-        return j.replace(b'//', b'/')
+        j = '/'.join(args)
+        return j.replace('//', '/')
 
     def isdir(name):
-        return name.endswith(b'/')
+        return name.endswith('/')
 
     # We may not have read permission for top, in which case we can't
     # get a list of the files the directory contains.  os.path.walk
@@ -545,20 +547,20 @@ def _chooseLocation(locs):
 
 
 def parseURL(URL):
-    URL = to_bytes(URL)
+    URL = (URL)
     
-    scheme, body = URL.split(b'://')
-    parts = body.split(b'/')
+    scheme, body = URL.split('://')
+    parts = body.split('/')
 
     serverfilter = parts[0]
-    filename = b'/'.join(parts[1:])
+    filename = '/'.join(parts[1:])
 
     return filename, serverfilter
 
 
 def isLocal(filename, serverfilter):
-    filename = to_bytes(filename)
-    serverfilter = to_bytes(serverfilter)
+    filename = (filename)
+    serverfilter = (serverfilter)
     
     if serverfilter == local_serverfilter and local_dataroot:
         #look for the file in the local server folder (short-circuit the server)
@@ -568,8 +570,8 @@ def isLocal(filename, serverfilter):
         return False
 
 def get_local_path(filename, serverfilter):
-    filename = to_bytes(filename)
-    serverfilter = to_bytes(serverfilter)
+    filename = (filename)
+    serverfilter = (serverfilter)
     
     if serverfilter == local_serverfilter and local_dataroot:
         #look for the file in the local server folder (short-circuit the server)
@@ -600,8 +602,8 @@ def getFile(filename, serverfilter=local_serverfilter, numRetries=3, use_file_ca
     -------
 
     """
-    filename = to_bytes(filename)
-    serverfilter = to_bytes(serverfilter)
+    #filename = (filename)
+    #serverfilter = (serverfilter)
     
     if use_file_cache:
         try:
@@ -612,7 +614,7 @@ def getFile(filename, serverfilter=local_serverfilter, numRetries=3, use_file_ca
     #look for the file in the local server folder (short-circuit the server)
     localpath = get_local_path(filename, serverfilter)
     if localpath:
-        with open(localpath, 'rb') as f:
+        with open(localpath, 'r') as f:
             return f.read()
     
     locs = locateFile(filename, serverfilter, return_first_hit=True)
@@ -632,7 +634,7 @@ def getFile(filename, serverfilter=local_serverfilter, numRetries=3, use_file_ca
         raise IOError("Specified file could not be found: %s" % filename)
 
 
-    url = _chooseLocation(locs).encode()
+    url = _chooseLocation(locs)#.encode()
     haveResult = False
     nTries = 0
     while nTries < numRetries and not haveResult:
@@ -672,7 +674,7 @@ _lastwritespeed = {}
 
 
 def _netloc(info):
-    return to_bytes('%s:%s' % (socket.inet_ntoa(info.address), info.port))
+    return ('%s:%s' % (socket.inet_ntoa(info.address), info.port))
 
 
 _choose_server_lock = threading.Lock()
@@ -684,8 +686,8 @@ def _chooseServer(serverfilter=local_serverfilter, exclude_netlocs=[]):
     TODO: add free disk space and improve metrics/weightings
 
     """
-    serv_candidates = [(to_bytes(k), to_bytes(v)) for k, v in get_ns().get_advertised_services() if
-                       (serverfilter in to_bytes(k)) and not (_netloc(v) in exclude_netlocs)]
+    serv_candidates = [((k), (v)) for k, v in get_ns().get_advertised_services() if
+                       (serverfilter in (k)) and not (_netloc(v) in exclude_netlocs)]
 
     with _choose_server_lock:
         t = time.time()
@@ -722,8 +724,8 @@ def mirrorFile(filename, serverfilter=local_serverfilter):
 
     The actual copy is performed peer to peer.
     """
-    filename = to_bytes(filename)
-    serverfilter = to_bytes(serverfilter)
+    filename = (filename)
+    serverfilter = (serverfilter)
     
     locs = locateFile(filename, serverfilter)
 
@@ -736,7 +738,7 @@ def mirrorFile(filename, serverfilter=local_serverfilter):
     # and a source to copy from
     sourceUrl = _chooseLocation(locs)
 
-    url = b'http://%s:%d/%s?MirrorSource=%s' % (socket.inet_ntoa(destInfo.address), destInfo.port, filename, sourceUrl)
+    url = 'http://%s:%d/%s?MirrorSource=%s' % (socket.inet_ntoa(destInfo.address), destInfo.port, filename, sourceUrl)
     url = url.encode()
     s = _getSession(url)
     r = s.put(url, timeout=1)
@@ -754,8 +756,11 @@ def putFile(filename, data, serverfilter=local_serverfilter):
     """
     from . import clusterListing as cl
 
-    filename = to_bytes(filename)
-    serverfilter = to_bytes(serverfilter)
+    if not isinstance(data, bytes):
+        raise TypeError('data should be bytes (not a unicode string)')
+    
+    #filename = (filename)
+    #serverfilter = (serverfilter)
     
     success = False
     nAttempts = 0
@@ -765,6 +770,7 @@ def putFile(filename, data, serverfilter=local_serverfilter):
         name, info = _chooseServer(serverfilter)
     
         url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
+        print(repr(url))
     
         t = time.time()
     
@@ -782,7 +788,7 @@ def putFile(filename, data, serverfilter=local_serverfilter):
             success = True
 
             #add file to location cache
-            cache_key = serverfilter + b'::' + filename
+            cache_key = serverfilter + '::' + filename
             t1 = time.time()
             _locateCache[cache_key] = ([(url, .1),], t1)
             
@@ -817,6 +823,7 @@ def putFile(filename, data, serverfilter=local_serverfilter):
 if USE_RAW_SOCKETS:
     def _read_status(fp):
         line = fp.readline()
+        #print('STATUS: %s' % line)
         try:
             [version, status, reason] = line.split(None, 2)
         except ValueError:
@@ -832,6 +839,7 @@ if USE_RAW_SOCKETS:
     def _parse_response(fp):
         '''A striped down version of httplib.HttpResponse.begin'''
         
+        headers = {}
         # read until we get a non-100 response
         while True:
             version, status, reason = _read_status(fp)
@@ -845,15 +853,45 @@ if USE_RAW_SOCKETS:
                 skip = skip.strip()
                 if not skip:
                     break
+            
+        # read the rest of the headers
+        n_headers = 0
+        while True:
+            line = fp.readline(_MAXLINE +1)
+            if len(line) > _MAXLINE:
+                raise httplib.LineTooLong("header line")
+            line = line.strip()
+            #print(line)
+            
+            if line in (b'\r\n', b'\n', b''):
+                break
+                
+            n_headers += 1
+            if n_headers > httplib._MAXHEADERS:
+                raise httplib.HTTPException("got more than %d headers" % httplib._MAXHEADERS)
+            
+            key, value = line.split(b': ')
+            
+            headers[key.strip().lower()] = value.strip()
+                
+                
+        #print(headers)
                     
-        msg = httplib.HTTPMessage(fp, 0)
-        msg.fp = None #force the message to relinquish it's file pointer
+        #if six.PY2:
+        #    msg = httplib.HTTPMessage(fp, 0)
+        #    msg.fp = None #force the message to relinquish it's file pointer
+        #    length = msg.getheader('content-length')
+        #else:
+        #    # noting that httplib here is actually http.client
+        #    msg = httplib.parse_headers(fp)
+            
+        length = int(headers.get(b'content-length', 0))
         
-        length = msg.getheader('content-length')
-        if length:
-            data = fp.read(int(length))
+        
+        if length > 0:
+            data = fp.read(length)
         else:
-            data = ''
+            data = b''
         
         return status, reason, data
                 
@@ -864,8 +902,8 @@ if USE_RAW_SOCKETS:
         TODO - Add retry with a different server on failure
         """
 
-        files = [to_bytes(f) for f in files]
-        serverfilter = to_bytes(serverfilter)
+        files = [(f) for f in files]
+        serverfilter = (serverfilter)
         
         nRetries = 0
         nChunksRemaining = len(files)
@@ -901,7 +939,7 @@ if USE_RAW_SOCKETS:
                         connection = b'close'
         
                     
-                    header = b'PUT /%s HTTP/1.1\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n' % (filename, connection, dl)
+                    header = b'PUT /%s HTTP/1.1\r\nConnection: %s\r\nContent-Length: %d\r\n\r\n' % (filename.encode(), connection, dl)
                     s.sendall(header)
                     s.sendall(data)
         
@@ -921,7 +959,7 @@ if USE_RAW_SOCKETS:
                 #         logging.debug(('Response %d - status: %d' % (i,status)) + ' msg: ' + msg)
                 #         raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, msg))
 
-                fp = s.makefile(b'rb', 65536)
+                fp = s.makefile('rb', 65536)
                 try:
                     for i in range(nChunksSpooled):
                         status, reason, msg = _parse_response(fp)
@@ -980,13 +1018,13 @@ else:
 
         TODO - Add retry with a different server on failure
         """
-        files = [to_bytes(f) for f in files]
-        serverfilter = to_bytes(serverfilter)
+        files = [(f) for f in files]
+        serverfilter = (serverfilter)
         
         name, info = _chooseServer(serverfilter)
 
         for filename, data in files:
-            url = b'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
+            url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
 
             t = time.time()
             #_last_access_time[name] = t
@@ -1012,7 +1050,7 @@ def getStatus(serverfilter=local_serverfilter):
     import json
     global _cached_status, _cached_status_expiry
 
-    serverfilter = to_bytes(serverfilter)
+    serverfilter = (serverfilter)
 
     with _status_lock:
         t = time.time()
@@ -1021,7 +1059,7 @@ def getStatus(serverfilter=local_serverfilter):
         
             for name, info in get_ns().get_advertised_services():
                 if serverfilter in name:
-                    surl = b'http://%s:%d/__status' % (socket.inet_ntoa(info.address), info.port)
+                    surl = 'http://%s:%d/__status' % (socket.inet_ntoa(info.address), info.port)
                     url = surl.encode()
                     s = _getSession(url)
                     try:
