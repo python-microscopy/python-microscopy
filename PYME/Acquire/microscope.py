@@ -725,6 +725,7 @@ class microscope(object):
             The co-ordinates (in pixels) of the ROI, in the form (x0, y0, x1, y1)       
         
         """
+        logger.debug('Setting camera ROI')
         self.cam.SetROI(*ROI)
         
     def _GetActiveCameraROI(self):

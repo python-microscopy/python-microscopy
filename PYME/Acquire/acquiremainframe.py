@@ -505,6 +505,7 @@ class PYMEMainFrame(AUIFrame):
 
 
     def OnMCamRoi(self, event):
+        logging.debug('Stopping frame wrangler to set ROI')
         self.scope.frameWrangler.stop()
         
         #print (self.scope.vp.selection_begin_x, self.scope.vp.selection_begin_y, self.scope.vp.selection_end_x, self.scope.vp.selection_end_y)
@@ -527,19 +528,11 @@ class PYMEMainFrame(AUIFrame):
         
         else:
             if (self.roi_on):
-#                x1 = self.scope.cam.GetROIX1()
-#                y1 = self.scope.cam.GetROIY1()
-#                x2 = self.scope.cam.GetROIX2()
-#                y2 = self.scope.cam.GetROIY2()
-                
                 x1, y1, x2, y2 = self.scope.state['Camera.ROI']
-    
-                #self.scope.cam.SetROI(0,0, self.scope.cam.GetCCDWidth(), self.scope.cam.GetCCDHeight())
+
                 self.scope.state['Camera.ROI'] = (0,0, self.scope.cam.GetCCDWidth(), self.scope.cam.GetCCDHeight())
-                #self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Set ROI\tF8')
                 self.roi_on = False
             else:
-    
                 x1, y1, x2, y2 = self.vp.do.GetSliceSelection()
     
                 #if we're splitting colours/focal planes across the ccd, then only allow symetric ROIs
@@ -562,7 +555,7 @@ class PYMEMainFrame(AUIFrame):
                         
                 #self.scope.cam.SetROI(x1,y1,x2,y2)
                 self.scope.state['Camera.ROI'] = (x1,y1,x2,y2)
-                #self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMROI, 'Clear ROI\tF8')
+
                 self.roi_on = True
     
                 x1 = 0
@@ -571,7 +564,7 @@ class PYMEMainFrame(AUIFrame):
                 y2 = self.scope.cam.GetPicHeight()
 
             
-        logging.debug('about to set COC')
+        logging.debug('Preparing frame wrangler for new ROI size')
         #self.scope.cam.SetCOC()
         #self.scope.cam.GetStatus()
         self.scope.frameWrangler.Prepare()
@@ -579,6 +572,7 @@ class PYMEMainFrame(AUIFrame):
         
         self.vp.do.SetSelection((x1,y1,0), (x2,y2,0))
 
+        logging.debug('Restarting frame wrangler with new ROI')
         self.scope.frameWrangler.start()
         self.vp.Refresh()
         self.vp.GetParent().Refresh()

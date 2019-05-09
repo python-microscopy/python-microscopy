@@ -31,7 +31,7 @@ def pz(scope):
     from PYME.Acquire.Hardware.Piezos import piezo_e816, offsetPiezo
 
     scope._piFoc = piezo_e816.piezo_e816T('COM1', 400, -0.399)
-    scope.hardwareChecks.append(scope._piFoc.OnTarget)
+    #scope.hardwareChecks.append(scope._piFoc.OnTarget)
     scope.CleanupFunctions.append(scope._piFoc.close)
 
     scope.piFoc = offsetPiezo.piezoOffsetProxy(scope._piFoc)
@@ -197,7 +197,10 @@ def focus_keys(MainFrame, scope):
 @init_gui('Splitter')
 def splitter(MainFrame, scope):
     from PYME.Acquire.Hardware import splitter
-    splt = splitter.Splitter(MainFrame, scope, scope.cam, flipChan = 1, dichroic = 'Unspecified' , transLocOnCamera = 'Top', flip=True, dir='up_down', constrain=False)
+    splt1 = splitter.Splitter(MainFrame, scope, scope.cameras['EMCCD'], flipChan = 1, dichroic = 'Unspecified' ,
+                              transLocOnCamera = 'Top', flip=True, dir='up_down', constrain=False, cam_name='EMCCD')
+    splt2 = splitter.Splitter(MainFrame, scope, scope.cameras['sCMOS'], flipChan = 1, dichroic = 'FF700-Di01' ,
+                              transLocOnCamera = 'Right', flip=False, dir='left_right', constrain=False, cam_name='sCMOS')
 
 
 #InitGUI("""

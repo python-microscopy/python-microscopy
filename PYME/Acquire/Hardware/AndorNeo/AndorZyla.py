@@ -235,6 +235,7 @@ class AndorBase(SDK3Camera):
         
         self._temp = 0
         self._frameRate = 0
+        self._frame_wait_time = 100
 
         self.hardware_overflowed=False
         
@@ -300,7 +301,7 @@ class AndorBase(SDK3Camera):
         self._flush()
         bufSize = self.ImageSizeBytes.getValue()
         vRed = int(self.SensorHeight.getValue()/self.AOIHeight.getValue())
-        self.nBuffers = vRed*self.defBuffers
+        self.nBuffers = min(vRed*self.defBuffers, 1000)
         
         if not self.contMode:
             self.nBuffers = 5
@@ -343,24 +344,30 @@ class AndorBase(SDK3Camera):
         
     def _queueBuffers(self):
         #self.camLock.acquire()
-        while not self.buffersToQueue.empty():
-            buf = self.buffersToQueue.get(block=False)
+        n_queued = 0 #number queued in this pass. Restrict this so that we don't spend all our time queuing buffers
+        while (n_queued < 30) and (not self.buffersToQueue.empty()):
             try:
-                #print np.base_repr(buf.ctypes.data, 16)
-                SDK3.QueueBuffer(self.handle, buf.ctypes.data_as(SDK3.POINTER(SDK3.AT_U8)), buf.nbytes)
-                self.queuedBuffers.put(buf)
-            except SDK3.CameraError as e:
-                traceback.print_exc()
-                if not SDK3.errorCodes[e.errNo] == 'AT_ERR_INVALIDSIZE':
-                    raise
-            #self.fLog.write('%f\tq\n' % time.time())
-            self.nQueued += 1
+                buf = self.buffersToQueue.get(block=False)
+                try:
+                    #print np.base_repr(buf.ctypes.data, 16)
+                    SDK3.QueueBuffer(self.handle, buf.ctypes.data_as(SDK3.POINTER(SDK3.AT_U8)), buf.nbytes)
+                    self.queuedBuffers.put(buf)
+                except SDK3.CameraError as e:
+                    traceback.print_exc()
+                    if not SDK3.errorCodes[e.errNo] == 'AT_ERR_INVALIDSIZE':
+                        raise
+                #self.fLog.write('%f\tq\n' % time.time())
+                self.nQueued += 1
+                n_queued += 1
+            except Queue.Empty:
+                logger.exception('Buffer Queue Empty')
+                pass
         #self.camLock.release()
         
     def _pollBuffer(self):
         try:
             #self.fLog.write('%f\tp\n' % time.time())
-            pData, lData = SDK3.WaitBuffer(self.handle, 100)
+            pData, lData = SDK3.WaitBuffer(self.handle, self._frame_wait_time)
             #self.fLog.write('%f\tb\n' % time.time())
         except SDK3.TimeoutError as e:
             #Both AT_ERR_TIMEDOUT and AT_ERR_NODATA
@@ -372,7 +379,7 @@ class AndorBase(SDK3Camera):
             if e.errNo == SDK3.AT_ERR_NODATA:
                 logger.debug('AT_ERR_NODATA')
                 # if we had no data, wait a little before trying again
-                time.sleep(0.5)
+                time.sleep(0.1)
             elif e.errNo == SDK3.AT_ERR_TIMEDOUT:
                 pass
                 self._n_timeouts += 1
@@ -410,12 +417,12 @@ class AndorBase(SDK3Camera):
         #self.fLog = open('poll.txt', 'w')
         while self.pollLoopActive:
             self._queueBuffers()
-            if self.doPoll: #only poll if an acquisition is running
+            if self.doPoll and (self.nQueued > 0): #only poll if an acquisition is running
                 self._pollBuffer()
             else:
                 #print 'w',
-                time.sleep(.05)
-            time.sleep(.0005)
+                time.sleep(.01)
+            time.sleep(.0001)
             #self.fLog.flush()
         #self.fLog.close()
         
@@ -453,7 +460,8 @@ class AndorBase(SDK3Camera):
         SDK3.ConvertBuffer(buf.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), chSlice.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)), xs, ys, a_s, dt, 'Mono16')
         
         #recycle buffer
-        self._queueBuffer(buf)
+        if self.doPoll:
+            self._queueBuffer(buf)
         
 #    def SetContinuousMode(self, value=True):
 #        if value:
@@ -602,6 +610,8 @@ class AndorBase(SDK3Camera):
         self._frameRate = self.FrameRate.getValue()
         self.tKin = 1.0 / self._frameRate
 
+        self._frame_wait_time = ctypes.c_uint(int(max(2*1000*self.tKin, 100)))
+
         self.hardware_overflowed = False
         self._n_timeouts = 0
         #logger.debug('StartAq')
@@ -618,7 +628,11 @@ class AndorBase(SDK3Camera):
         if self.CameraAcquiring.getValue():
             self.AcquisitionStop()
 
-        #self._flush()
+        #self._flush() #TODO - should we be calling this?
+
+        #flush at least the buffers to queue (so that we don't queue buffers of the wrong size)
+        while not self.buffersToQueue.empty():
+            self.buffersToQueue.get()
 
         #logger.debug('StopAq : done')
         
