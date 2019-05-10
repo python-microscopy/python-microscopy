@@ -23,7 +23,7 @@ import os
 
 import PYME.localization.FitFactories
 import PYME.ui.autoFoldPanel as afp
-import Pyro.core
+#import Pyro.core
 import dispatch
 import numpy as np
 import wx
@@ -380,6 +380,7 @@ class AnalysisController(object):
             self.tq = None
         
         if self.tq is None:
+            import Pyro.core
             from PYME.misc.computerName import GetComputerName
             compName = GetComputerName()
             
@@ -819,7 +820,8 @@ class LMAnalyser2(object):
                 analysisMDH[maptype] = '' # unset the map ID in this case
 
     def testFrame(self, gui=True):
-        from pylab import *
+        #from pylab import *
+        import matplotlib
         from matplotlib import pyplot as plt
         #close('all')
         if self.image.dataSource.moduleName == 'TQDataSource':

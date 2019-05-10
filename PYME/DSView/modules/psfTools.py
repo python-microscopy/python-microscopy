@@ -37,7 +37,7 @@ except ImportError:
     #from traitsui.api import View, Item
     #from traitsui.menu import OKButton
 
-from graphViewPanel import *
+from .graphViewPanel import *
 from PYME.Analysis.PSFEst import psfQuality
 
 def remove_newlines(s):
