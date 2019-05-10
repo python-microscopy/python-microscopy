@@ -11,7 +11,7 @@ class ComPort:
             try:
                 self.pnum = int(port)
             except TypeError:
-                print "could not parse port name: ", port
+                print("could not parse port name: %s" % port)
 
         self.pname = 'COM%d' % self.pnum
         self.doc = doc

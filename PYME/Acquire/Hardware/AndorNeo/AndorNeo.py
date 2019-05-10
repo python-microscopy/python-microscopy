@@ -160,20 +160,20 @@ class AndorBase(SDK3Camera):
         try:
             self.SetEMGain(0) # note that this sets 'high dynamic range' mode
         except:
-            print "error setting gain mode"
+            print("error setting gain mode")
             pass
         # spurious noise filter off by default
         try:
             self.SpuriousNoiseFilter.setValue(0) # this will also fail with the SimCams
         except:
-            print "error disabling spurios noise filter"
+            print("error disabling spurios noise filter")
             pass
 
         # Static Blemish Correction off by default
         try:
             self.StaticBlemishCorrection.setValue(0) # this will also fail with the SimCams
         except:
-            print "error disabling Static Blemish Correction"
+            print("error disabling Static Blemish Correction")
             pass
         
         self.SensorCooling.setValue(True)

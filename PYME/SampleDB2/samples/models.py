@@ -296,7 +296,7 @@ class File(models.Model):
                     if len(slide.labelling.all()) == 0 and 'Sample.Labelling' in mdh.getEntryNames():
                         dyes = Dye.objects.all()
                         print(Dye.DYE_NAMES)
-                        print ("dyes: ",dyes)
+                        print("dyes: ",dyes)
 
                         for struct, label in mdh.Sample.Labelling:
                             l = Labelling(slideID=slide, structure=struct, label=label)
@@ -311,13 +311,13 @@ class File(models.Model):
                                 l.dye
                             except:
                                 l.dye = Dye(shortName=n,longName=n)
-                                print "making new dye ", l.dye
+                                print("making new dye %s" %l.dye)
                                 l.dye.save()
                             print("dye is ",l.dye)
-                            print 'labelling dye id: ',l.dye_id
+                            print('labelling dye id: ',l.dye_id)
                             if l.dye_id is None:
                                 l.dye_id = l.dye.id
-                            print 'labelling dye id: ',l.dye_id
+                            print('labelling dye id: ',l.dye_id)
                             l.save()
                 else:
                     slide=None

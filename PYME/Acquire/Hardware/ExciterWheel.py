@@ -90,7 +90,7 @@ class FiltWheel(object):
     def DichroicSync(self):
         if self.DICHROIC_SYNC and self.dichroic.GetPosition()>=0:
             dname =  self.dichroic.GetFilter()
-            print dname
+            print(dname)
             fpair = [f for n, f in enumerate(self.filterpair) if f.filtercube == dname][0]
             
             if fpair.exciter in self.GetFilterNames():

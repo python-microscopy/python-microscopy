@@ -66,8 +66,8 @@ def calibrate(interpolator, md, roiSize=5):
     else:
         I = p.max(0)
             
-    sepr = I[(I.size/2):].argmax()
-    sepl = I[(I.size/2)::-1].argmax()
+    sepr = I[int(I.size/2):].argmax()
+    sepl = I[int(I.size/2)::-1].argmax()
     
     #print sepr, sepl
     
@@ -86,8 +86,8 @@ def calibrate(interpolator, md, roiSize=5):
     ps = numpy.array(ps)
     A, xp, yp, dw = ps.T
     
-    xp = xp - xp[z.size/2]
-    yp = yp - yp[z.size/2]
+    xp = xp - xp[int(z.size/2)]
+    yp = yp - yp[int(z.size/2)]
 
     rawMeas['A'] = A
     rawMeas['xp'] = xp
@@ -116,7 +116,7 @@ def calibrate(interpolator, md, roiSize=5):
     sgn = numpy.sign(d_dw)
 
     #take all bits having the same gradient sign as the central bit
-    mask = sgn == sgn[len(sgn)/2]
+    mask = sgn == sgn[int(len(sgn)/2)]
 
     zm = z[mask]
     dwm = dw2[mask]
@@ -166,7 +166,7 @@ def _calcParams(data, X, Y):
         else:
             x2 = max(0, xi - lobeSeparation)
             
-        y2 = data[x2,:].argmax()
+        y2 = data[int(x2),:].argmax()
             
         
     else:
@@ -179,7 +179,7 @@ def _calcParams(data, X, Y):
             
         #print y2, lobeSeparation
             
-        x2 = data[:,y2].argmax()
+        x2 = data[:,int(y2)].argmax()
     
 #    dr = data.squeeze()[(xi - 1):(xi+2), (yi - 1):(yi +2)]
 #    dr /= dr.sum()        

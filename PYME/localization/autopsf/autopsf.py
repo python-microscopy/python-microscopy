@@ -441,7 +441,7 @@ class ZernikePSFModel(object):
                 max_change = np.max(np.abs(coeff_history[nIt, chan] - coeff_history[nIt - 1, chan]))
                 zern_range_halfsize = max(float(np.clip(3.0 * max_change, 0.1, 1)), 0.5 * zern_test_values[-1])
                 
-                print 'range update:', max_change, zern_range_halfsize
+                print('range update: %f, %f' % (max_change, zern_range_halfsize))
                 return np.linspace(-zern_range_halfsize, zern_range_halfsize, n_test_values)
             else:
                 return zern_test_values
@@ -458,7 +458,7 @@ class ZernikePSFModel(object):
                     
                     nIt += 1
                     
-                    print zernike_coeffs_by_channel, nIt, self.ns
+                    print(zernike_coeffs_by_channel, nIt, self.ns)
         
         else:
             nIt = 0
@@ -471,7 +471,7 @@ class ZernikePSFModel(object):
                 
                 nIt += 1
                 
-                print zernike_coeffs_by_channel, nIt, self.ns
+                print(zernike_coeffs_by_channel, nIt, self.ns)
         
         if USE_MULTIPROC:
             for p in processes:

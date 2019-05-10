@@ -473,7 +473,7 @@ class psfExtractor:
             psf = numpy.concatenate(psfs, 0)
             offsetsAllChannel = numpy.asarray(offsetsAllChannel)
             offsetsAllChannel -= offsetsAllChannel[0]
-            print offsetsAllChannel
+            print(offsetsAllChannel)
 
 #            from pylab import *
 #            import cPickle

@@ -1071,7 +1071,7 @@ def main():
     # Get local IP address
     import socket
     myaddr = get_localip()
-    print 'PYMECluster WebDav Server run at '+myaddr+':'+str(srvport)+'...'
+    print('PYMECluster WebDav Server run at '+myaddr+':'+str(srvport)+'...')
     server_address = ('', srvport)
     # WebDav Auth User/Password file 
     # if not this file ,the auth function disable.

@@ -69,7 +69,7 @@ class MyFrame(wx.Frame):
             from PYME.misc import pyme_zeroconf 
             ns = pyme_zeroconf.getNS()
             time.sleep(15)
-            print ns.get_advertised_services()
+            print(ns.get_advertised_services())
 
             URI = ns.resolve(taskQueueName)
         except:

@@ -24,7 +24,7 @@ import numpy as np
 
 def pearson(X, Y, roi_mask=None):
     if not roi_mask is None:
-        print X.shape, roi_mask.shape
+        #print X.shape, roi_mask.shape
         X = X[roi_mask]
         Y = Y[roi_mask]
         

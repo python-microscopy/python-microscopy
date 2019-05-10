@@ -64,7 +64,7 @@ class DMDModeChooserPanel(wx.Panel):
         self.SetSizerAndFit(vsizer)
 
     def OnCDMD(self, event):
-        print "Set display mode to: " + self.cDMD.GetStringSelection()
+        print("Set display mode to: %s"  % self.cDMD.GetStringSelection())
 
     def OnBSetmodeButton(self, event):
         if self.cDMD.GetStringSelection() == 'Image Sequence':
@@ -104,7 +104,7 @@ class DMDTestPattern(wx.Panel):
         self.SetSizerAndFit(vsizer)
 
     def OnCDMDtp(self, event):
-        print "select pattern " + self.cDMDtp.GetStringSelection()
+        print ("select pattern %s" % self.cDMDtp.GetStringSelection())
 
     def OnBSendButton(self, event):
         self.lc.SetTestPattern(test_pattern.index(self.cDMDtp.GetStringSelection()))
