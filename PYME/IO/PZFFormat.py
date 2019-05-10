@@ -9,10 +9,13 @@ AVX capable processor, a throughput in excess of 800MB/s can be achieved.
 Most users will just want the :func:`dumps` and :func:`loads` functions
 """
 
-
 import numpy as np
+import six
 
-
+if six.PY2:
+    _ord = ord
+else:
+    _ord = lambda a : a
 
 from multiprocessing.pool import ThreadPool
 from multiprocessing import cpu_count
@@ -118,7 +121,7 @@ def ChunkedHuffmanDecompress(datastring):
 #except ImportError:
 #    pass
 
-FILE_FORMAT_ID = 'BD'
+FILE_FORMAT_ID = b'BD'
 FORMAT_VERSION = 3
 
 DATA_FMT_UINT8 = 0
@@ -257,11 +260,12 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
 
     if data.flags['F_CONTIGUOUS']:
         header['DimOrder'] = 'F'
-        d1 = np.frombuffer(data, data.dtype) #this will flatten without respecting order - we re-order later
+        d1 = data
+        #d1 = np.frombuffer(data, data.dtype) #this will flatten without respecting order - we re-order later
     else:
         # if the array is c-contiguous this will just pass through. If it is non contiguous (i.e. a wierd slice)
         # it will force it to be c-contiguous
-        d1 = np.frombuffer(np.ascontiguousarray(data), data.dtype)
+        d1 = np.ascontiguousarray(data)
     
     if compression == DATA_COMP_HUFFCODE:
         header['DataCompression'] = DATA_COMP_HUFFCODE
@@ -269,20 +273,22 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
         if quantization:
             dataString = bcl.HuffmanCompressQuant(d1, quantizationOffset, quantizationScale).tostring()
         else:
-            d2 = bcl.HuffmanCompress(d1.data)
+            d2 = bcl.HuffmanCompress(d1)
             dataString = d2.tostring()
     elif compression == DATA_COMP_HUFFCODE_CHUNKS:
         header['DataCompression'] = DATA_COMP_HUFFCODE_CHUNKS
         
         dataString = ChunkedHuffmanCompress(d1)
     else:
-        dataString = d1.tostring()
+        #print('saving raw')
+        #print(header['DimOrder'][0])
+        dataString = d1.tostring(order=header['DimOrder'][0])
         
     return header.tostring() + dataString
  
 
 def load_header(datastring):
-    if (ord(datastring[2]) >= 3):
+    if (_ord(datastring[2]) >= 3):
         return np.fromstring(datastring[:HEADER_LENGTH_V3], header_dtype_v3)
     else:
         return np.fromstring(datastring[:HEADER_LENGTH], header_dtype)
@@ -316,9 +322,8 @@ def loads(datastring):
         dimOrder = header['DimOrder'][0]
     else:
         dimOrder = 'C'
-
-    
         
+    #print(dimOrder)
         
     w, h, d = header['Width'][0], header['Height'][0], header['Depth'][0]
 
@@ -364,7 +369,7 @@ def loads(datastring):
         #print('data dtype: %s' % data.dtype)
         data = (data*data + header['QuantOffset']).astype(DATA_FMTS[int(header['DataFormat'])])
     
-    #print dimOrder, [w, h, d]
+    print(dimOrder, [w, h, d])
     data = data.view(DATA_FMTS[int(header['DataFormat'])]).reshape([w,h,d], order=dimOrder)
     
     return data, header
