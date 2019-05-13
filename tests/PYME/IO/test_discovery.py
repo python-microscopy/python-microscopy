@@ -23,7 +23,7 @@ def setup_module():
         srv_root = os.path.join(tmp_root, 'srv%d' % i)
         os.makedirs(srv_root)
         print('Launching server %d' % i)
-        proc = subprocess.Popen('python -m PYME.ParallelTasks.HTTPDataServer  -r %s -f TEST -p 808%d' % (srv_root, i) , shell=True)
+        proc = subprocess.Popen('python -m PYME.cluster.HTTPDataServer  -r %s -f TEST -p 808%d' % (srv_root, i) , shell=True)
         server_procs.append(proc)
         
     time.sleep(5)

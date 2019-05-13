@@ -22,7 +22,7 @@ def setup_module():
         shutil.rmtree(tmp_root)
         
     os.makedirs(tmp_root)
-    proc = subprocess.Popen('python -m PYME.ParallelTasks.HTTPDataServer  -r %s -f TEST' % tmp_root , shell=True)
+    proc = subprocess.Popen('python -m PYME.cluster.HTTPDataServer  -r %s -f TEST' % tmp_root , shell=True)
     
     
 def teardown_module():

@@ -65,7 +65,7 @@ def main():
         if not (len(sys.argv) == 2 and sys.argv[1] == '-n'):
             proc = subprocess.Popen('distributor -c %s' % confFile, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else:
-            proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            proc = subprocess.Popen('python -m PYME.cluster.distributor 1234', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         t_log_stderr = threading.Thread(target=log_stream, args=(proc.stderr, distLogErr))
         t_log_stderr.setDaemon(False)
@@ -78,7 +78,7 @@ def main():
         if not (len(sys.argv) == 2 and sys.argv[1] == '-n'):
             proc = subprocess.Popen('distributor -c %s' % confFile, shell=True)
         else:
-            proc = subprocess.Popen('python -m PYME.ParallelTasks.distributor 1234', shell=True)
+            proc = subprocess.Popen('python -m PYME.cluster.distributor 1234', shell=True)
 
     ns = pyme_zeroconf.getNS('_pyme-taskdist')
     ns.register_service('PYMEDistributor: ' + GetComputerName(), externalAddr, int(serverPort))
