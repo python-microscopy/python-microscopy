@@ -23,7 +23,6 @@ import os
 
 import PYME.localization.FitFactories
 import PYME.ui.autoFoldPanel as afp
-#import Pyro.core
 import dispatch
 import numpy as np
 import wx
@@ -41,7 +40,7 @@ from PYME.localization import remFitBuf
 from PYME.ui.mytimer import mytimer
 
 try:
-    from PYME.ParallelTasks import HTTPTaskPusher
+    from PYME.cluster import HTTPTaskPusher
 
     #test for a running task distributor
     distribURI = HTTPTaskPusher._getTaskQueueURI(0)
@@ -287,7 +286,7 @@ class AnalysisController(object):
             return self.pushImagesDS(image)
 
     def pushImagesCluster(self, image):
-        from PYME.ParallelTasks import HTTPRulePusher
+        from PYME.cluster import HTTPRulePusher
         #resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
         resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(image.seriesName))
         logging.debug('Results file: ' + resultsFilename)
@@ -298,7 +297,7 @@ class AnalysisController(object):
         self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
 
         self.pusher = HTTPRulePusher.HTTPRulePusher(dataSourceID=image.seriesName,
-                                               metadata=self.resultsMdh, resultsFilename=resultsFilename)
+                                                    metadata=self.resultsMdh, resultsFilename=resultsFilename)
 
         self.queueName = self.pusher.queueID
         self.results_filename = resultsFilename

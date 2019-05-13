@@ -47,9 +47,9 @@ def Plug(dsviewer):
 
         charts = []
 
-        if 'ProtocolFocus' in dsviewer.elv.evKeyNames:
+        if b'ProtocolFocus' in dsviewer.elv.evKeyNames:
             dsviewer.zm = piecewiseMapping.GeneratePMFromEventList(dsviewer.elv.eventSource, image.mdh, image.mdh.getEntry('StartTime'), image.mdh.getEntry('Protocol.PiezoStartPos'))
-            charts.append(('Focus [um]', dsviewer.zm, 'ProtocolFocus'))
+            charts.append(('Focus [um]', dsviewer.zm, b'ProtocolFocus'))
 
         if 'ScannerXPos' in dsviewer.elv.evKeyNames:
             x0 = 0

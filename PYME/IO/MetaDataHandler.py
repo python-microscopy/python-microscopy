@@ -282,15 +282,16 @@ class MDHandlerBase(DictMixin):
             import pickle
             
         import numpy as np
+        import six
         
         s = ['#PYME Simple Metadata v1\n']
 
         for en in self.getEntryNames():
             val = self.getEntry(en)
 
-            if val.__class__ in [str, unicode] or np.isscalar(val): #quote string
+            if isinstance(val, six.string_types) or np.isscalar(val): #quote string
                 val = repr(val)
-            elif not val.__class__ in [int, float, list, dict, tuple]: #not easily recovered from representation
+            elif not isinstance(val, (int, float, list, dict, tuple)): #not easily recovered from representation
                 val = "pickle.loads('''%s''')" % pickle.dumps(val).replace('\n', '\\n')
 
             s.append("md['%s'] = %s\n" % (en, val))

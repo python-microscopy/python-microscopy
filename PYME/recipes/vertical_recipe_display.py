@@ -141,7 +141,7 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
                         #print('Adding static text')
                         item = afp.foldingPane(self.fp, -1, caption=None, pinned=True, folded=False, padding=0)
                         st = wx.StaticText(item, -1, node)
-                        st.SetLabelMarkup("<span foreground='#%02x%02x%02x'>%s</span>" % (tuple(255*self._col(node)[:3]) + (node,)))
+                        st.SetLabelMarkup("<span foreground='#%02x%02x%02x'>%s</span>" % (tuple([int(v) for v in (255 * self._col(node)[:3])])  + (node,)))
                         item.AddNewElement(st, foldable=False)
                         self.fp.AddPane(item)
                         
@@ -161,10 +161,10 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
                     st = wx.StaticText(item, -1, node)
                     if node in self.input_datasources:
                         st.SetLabelMarkup(
-                            "<u><span foreground='#%02x%02x%02x' weight='bold' background='#D0D0D0'>%s</span></u>" % (tuple(255 * self._col(node)[:3]) + (node,)))
+                            "<u><span foreground='#%02x%02x%02x' weight='bold' background='#D0D0D0'>%s</span></u>" % (tuple([int(v) for v in (255 * self._col(node)[:3])])  + (node,)))
                     else:
                         st.SetLabelMarkup(
-                            "<span foreground='#%02x%02x%02x'>%s</span>" % (tuple(255 * self._col(node)[:3]) + (node,)))
+                            "<span foreground='#%02x%02x%02x'>%s</span>" % (tuple([int(v) for v in (255 * self._col(node)[:3])])  + (node,)))
                     item.AddNewElement(st, foldable=False)
                     self.fp.AddPane(item)
 

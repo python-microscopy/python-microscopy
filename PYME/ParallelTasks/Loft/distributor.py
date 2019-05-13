@@ -4,6 +4,7 @@ import requests
 import queue as Queue
 from six.moves import xrange
 import logging
+
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger('distributor')
 logger.setLevel(logging.DEBUG)
@@ -16,7 +17,7 @@ import os
 from PYME.misc import computerName
 from PYME import config
 #from PYME.IO import clusterIO
-from PYME.ParallelTasks import webframework
+from PYME.util import webframework
 import collections
 
 import numpy as np
@@ -434,7 +435,6 @@ class WFDistributor(webframework.APIHTTPServer, Distributor):
         self.daemon_threads = True
 
 def runCP(port):
-    import socket
     cherrypy.config.update({'server.socket_port': port,
                             'server.socket_host': '0.0.0.0',
                             'log.screen': False,
@@ -489,7 +489,8 @@ if __name__ == '__main__':
 
     if (len(sys.argv) == 3) and (sys.argv[2] == '-k'):
         profile = True
-        from PYME.util import mProfile
+        from PYME.util import mProfile, webframework
+
         mProfile.profileOn(['distributor.py',])
         profileOutDir = config.get('dataserver-root', os.curdir) + '/LOGS/%s/mProf' % computerName.GetComputerName()
     else:

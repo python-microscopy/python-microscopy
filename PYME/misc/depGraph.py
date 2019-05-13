@@ -10,6 +10,7 @@ import networkx as nx
 import pylab
 from scipy import optimize
 from six.moves import xrange
+import six
 
 def makeGraph(dg):
     G = nx.DiGraph()
@@ -81,7 +82,7 @@ def arrangeNodes(dg):
                 fd_ys = []
                 fd_ws = []
                 
-                if (isinstance(si, str) or isinstance(si, unicode)):
+                if (isinstance(si,six.string_types)):
                     pass
                     #we are a result node - look 1 step ahead
                     
@@ -332,7 +333,7 @@ def drawGraph(dg):
     
     cols = {}    
     for k, v in dg.items():
-        if not isinstance(k, str) or isinstance(k, unicode):
+        if not isinstance(k, six.string_types):
             yv0 = []
             yoff = .1*np.arange(len(v))
             yoff -= yoff.mean()
@@ -358,7 +359,7 @@ def drawGraph(dg):
                 pylab.plot([x0,x0+.5, x0+.5, x1], [y0,y0,y1+yo,y1+yo], c=cols[e], lw=2)
                 
     for k, v in ips.items():   
-        if not isinstance(k, str) or isinstance(k, unicode):
+        if not isinstance(k, six.string_types):
             s = k.__class__.__name__
             #pylab.plot(v[0], v[1], 'o', ms=5)
             rect = pylab.Rectangle([v[0], v[1]-.25], 1, .5, ec='k', fc=[.8,.8, 1], picker=True)
@@ -390,7 +391,7 @@ def drawGraph(dg):
     
     def OnPick(event):
         k = event.artist._data
-        if not isinstance(k, str) or isinstance(k, unicode):
+        if not isinstance(k, six.string_types):
             k.edit_traits()
         
     f.canvas.mpl_connect('pick_event', OnPick)

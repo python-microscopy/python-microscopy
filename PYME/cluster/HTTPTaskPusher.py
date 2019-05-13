@@ -4,19 +4,16 @@ Created on Thu Nov 26 23:59:45 2015
 
 @author: david
 """
-import time
-import numpy as np
-import threading
-import requests
-from PYME.IO import DataSources
-from PYME.IO import clusterResults
-from PYME.IO import clusterIO
-import json
-import socket
-import random
-
 import hashlib
+import json
+import random
+import socket
+import threading
+import time
 
+from PYME.IO import DataSources
+from PYME.IO import clusterIO
+from PYME.IO import clusterResults
 from PYME.misc import pyme_zeroconf as pzc
 from PYME.misc.computerName import GetComputerName
 from six import string_types
@@ -98,7 +95,6 @@ def launch_localize(analysisMDH, seriesName):
     """
     import logging
     import json
-    from PYME.ParallelTasks import HTTPTaskPusher
     from PYME.IO import MetaDataHandler
     from PYME.Analysis import MetaData
     from PYME.IO.FileUtils.nameUtils import genClusterResultFileName

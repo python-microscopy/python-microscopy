@@ -1,16 +1,15 @@
-from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
-from django.core.files.uploadhandler import TemporaryFileUploadHandler
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
-import django.forms
-
 import logging
+
+import django.forms
+from django.http import HttpResponseRedirect
+from django.shortcuts import render
+
 logger=logging.getLogger(__name__)
 
 import collections
 from PYME.localization import MetaDataEdit as mde
-import PYME.localization.FitFactories
-from PYME.ParallelTasks import HTTPTaskPusher, HTTPRulePusher
+from PYME.ParallelTasks import HTTPTaskPusher
+from PYME.cluster import HTTPRulePusher, HTTPTaskPusher
 
 FINDING_PARAMS = [#mde.ChoiceParam('Analysis.FitModule', 'Fit module:', default='LatGaussFitFR', choices=PYME.localization.FitFactories.resFitFactories),
                   mde.FloatParam('Analysis.DetectionThreshold', 'Detection threshold:', 1.0),
@@ -111,7 +110,6 @@ def localize(request, analysisModule='LatGaussFitFR'):
     import time
     from PYME import config
     USE_RULES = config.get('PYMERuleserver-use', True)
-    from PYME.Analysis import MetaData
 
     analysisModule = request.POST.get('Analysis.FitModule', analysisModule).encode()
 

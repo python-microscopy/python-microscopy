@@ -1,6 +1,7 @@
 import numpy as np
 from PYME.misc import depGraph
 from scipy import optimize
+import six
 
 def _path_lh(y, yprev, ygoal, yvs, ytol):
     d_yprev = (y - yprev) ** 2
@@ -43,7 +44,7 @@ def layout(dg):
 
     connecting_lines = []
     for k, deps in dg.items():
-        if not (isinstance(k, str) or isinstance(k, unicode)):
+        if not (isinstance(k, six.string_types)):
             #This is a processing node
             yv0 = []
 
@@ -435,7 +436,7 @@ def to_svg(dg):
         dwg.add(dwg.polyline(np.vstack([xv, yv]).T, style="stroke:%s;stroke-width:.02;fill:none;" % c))
 
     for k, v in node_positions.items():
-        if not (isinstance(k, str) or isinstance(k, unicode)):
+        if not (isinstance(k, six.string_types)):
             #node - draw a box
             #################
             s = k.__class__.__name__

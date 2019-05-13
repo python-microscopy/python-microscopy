@@ -2,12 +2,13 @@
 Drive a galvo scanner from a raspberry pi and expose a web interface
 '''
 
-from PYME.ParallelTasks import webframework
-import numpy as np
-import pygame
+import logging
 import sys
 
-import logging
+import numpy as np
+import pygame
+from PYME.util import webframework
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 

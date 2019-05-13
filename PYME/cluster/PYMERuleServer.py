@@ -1,18 +1,16 @@
-from PYME import config as conf
+import logging
+import logging.handlers
 import os
+import socket
+import time
+
 import yaml
+from PYME import config as conf
+from PYME.cluster import ruleserver
 from PYME.misc import pyme_zeroconf
 from PYME.misc.computerName import GetComputerName
-import subprocess
-import time
-import socket
-import sys
 
-from PYME.ParallelTasks import ruleserver
-
-import logging, logging.handlers
 logging.basicConfig()
-import threading
 #confFile = os.path.join(config.user_config_dir, 'distributor.yaml')
 
 LOG_STREAMS = True

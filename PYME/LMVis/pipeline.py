@@ -204,7 +204,7 @@ def _processEvents(ds, events, mdh):
         if b'ProtocolFocus' in evKeyNames:
             zm = piecewiseMapping.GeneratePMFromEventList(events, mdh, mdh['StartTime'], mdh['Protocol.PiezoStartPos'])
             ev_mappings['zm'] = zm
-            eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
+            eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
 
         if b'ScannerXPos' in evKeyNames:
             x0 = 0
@@ -252,7 +252,7 @@ def _processEvents(ds, events, mdh):
             position, frames = labview_spooling_hacks.spoof_focus_from_metadata(mdh)
             zm = piecewiseMapping.piecewiseMap(0, frames, position, mdh['Camera.CycleTime'], xIsSecs=False)
             ev_mappings['zm'] = zm
-            eventCharts.append(('Focus [um]', zm, 'ProtocolFocus'))
+            eventCharts.append(('Focus [um]', zm, b'ProtocolFocus'))
 
         except:
             # It doesn't really matter if this fails, print our traceback anyway

@@ -1,18 +1,21 @@
 #!/usr/bin/python
-from PYME import config as conf
+import logging
+import logging.handlers
 import os
 import shutil
+import socket
+import subprocess
+import tempfile
+import time
+
 import yaml
+from PYME import config as conf
 from PYME.misc import pyme_zeroconf
 from PYME.misc.computerName import GetComputerName
-import subprocess
-import time
-import socket
-import tempfile
-import logging, logging.handlers
+
 logging.basicConfig(level=logging.DEBUG)
 
-from PYME.ParallelTasks import distribution
+from PYME.cluster import distribution
 from multiprocessing import cpu_count
 import sys
 import threading

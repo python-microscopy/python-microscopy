@@ -1,18 +1,21 @@
 #!/usr/bin/python
-from PYME import config as conf
+import logging
+import logging.handlers
 import os
 import shutil
+import socket
+import subprocess
+import tempfile
+import time
+
 import yaml
+from PYME import config as conf
 from PYME.misc import pyme_zeroconf
 from PYME.misc.computerName import GetComputerName
-import subprocess
-import time
-import socket
-import tempfile
-import logging, logging.handlers
+
 logging.basicConfig(level=logging.DEBUG)
 
-from PYME.ParallelTasks import distribution
+from PYME.cluster import distribution
 from multiprocessing import cpu_count
 import sys
 import threading
@@ -103,12 +106,12 @@ def main():
     logging.debug('Launching worker processors')
     numWorkers = config.get('nodeserver-num_workers', cpu_count())
 
-    workerProcs = [subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP', shell=True, stdin=subprocess.PIPE)
+    workerProcs = [subprocess.Popen('python -m PYME.cluster.taskWorkerHTTP', shell=True, stdin=subprocess.PIPE)
                    for i in range(numWorkers -1)]
 
     #last worker has profiling enabled
     profiledir = os.path.join(nodeserver_log_dir, 'mProf')      
-    workerProcs.append(subprocess.Popen('python -m PYME.ParallelTasks.taskWorkerHTTP -p %s' % profiledir, shell=True,
+    workerProcs.append(subprocess.Popen('python -m PYME.cluster.taskWorkerHTTP -p %s' % profiledir, shell=True,
                                         stdin=subprocess.PIPE))
 
     try:

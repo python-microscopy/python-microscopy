@@ -415,7 +415,7 @@ class VisGUICore(object):
         layer.on_update.connect(self.glCanvas.refresh)
         self.glCanvas.refresh()
     
-        self.layer_added.send(self)
+        self.layer_added.send_robust(self)
 
     
     @property

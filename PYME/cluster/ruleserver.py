@@ -3,6 +3,7 @@ import threading
 import requests
 import queue as Queue
 from six.moves import xrange
+
 import logging
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger('ruleserver')
@@ -17,7 +18,7 @@ import os
 from PYME.misc import computerName
 from PYME import config
 #from PYME.IO import clusterIO
-from PYME.ParallelTasks import webframework
+from PYME.util import webframework
 import collections
 
 import uuid

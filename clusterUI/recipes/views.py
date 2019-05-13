@@ -1,6 +1,6 @@
-from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect
 from PYME import config
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render
 
 server_filter = config.get('dataserver-filter', '')
 
@@ -28,9 +28,9 @@ def get_input_glob(request):
 def run(request):
     from PYME import config
     if config.get('PYMERuleserver-use', True):
-        from PYME.ParallelTasks.HTTPRulePusher import RecipePusher
+        from PYME.cluster.HTTPRulePusher import RecipePusher
     else:
-        from PYME.ParallelTasks.HTTPTaskPusher import RecipePusher
+        from PYME.cluster.HTTPTaskPusher import RecipePusher
     recipeURI = ('pyme-cluster://%s/' % server_filter) + request.POST.get('recipeURL').encode().lstrip('/')
 
     pusher = RecipePusher(recipeURI=recipeURI)
@@ -49,9 +49,9 @@ def run_template(request):
     
     
     if config.get('PYMERuleserver-use', True):
-        from PYME.ParallelTasks.HTTPRulePusher import RecipePusher
+        from PYME.cluster.HTTPRulePusher import RecipePusher
     else:
-        from PYME.ParallelTasks.HTTPTaskPusher import RecipePusher
+        from PYME.cluster.HTTPTaskPusher import RecipePusher
         
     recipeURI = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeURL').encode().lstrip('/'))
     output_directory = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeOutputPath').encode().lstrip('/'))

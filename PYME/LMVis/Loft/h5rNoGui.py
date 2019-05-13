@@ -169,7 +169,7 @@ class Pipeline:
                 evKeyNames.add(e['EventName'])
 
 
-            if 'ProtocolFocus' in evKeyNames:
+            if b'ProtocolFocus' in evKeyNames:
                 self.zm = piecewiseMapping.GeneratePMFromEventList(self.events, self.mdh, self.mdh.getEntry('StartTime'), self.mdh.getEntry('Protocol.PiezoStartPos'))
                 self.z_focus = 1.e3*self.zm(self.selectedDataSource['t'])
                 #self.elv.SetCharts([('Focus [um]', self.zm, 'ProtocolFocus'),])

@@ -15,7 +15,7 @@ from PYME.misc import computerName
 from PYME import config
 from PYME.IO import clusterIO
 
-from PYME.ParallelTasks import webframework
+from PYME.util import webframework
 
 import ujson as json
 

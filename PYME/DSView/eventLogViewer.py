@@ -339,13 +339,15 @@ class eventLogPanel(wx.Panel):
         self.eventSource = eventSource
         self.evKeyNames = set()
         for e in self.eventSource:
-            self.evKeyNames.add(e['EventName'])
+            self.evKeyNames.add(bytes(e['EventName']))
 
         colours = 0.9*pylab.cm.gist_rainbow(np.arange(len(self.evKeyNames))/float(len(self.evKeyNames)))[:,:3]
 
         self.lineColours = {}
         for k, c in zip(self.evKeyNames, colours):
             self.lineColours[k] = wx.Colour(*[int(v) for v in (255*c)])
+            
+        #print(self.lineColours)
 
         if self.initialised:
             self.Refresh()

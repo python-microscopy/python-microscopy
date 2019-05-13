@@ -1,5 +1,5 @@
 from django.shortcuts import render
-import time
+
 
 # Create your views here.
 
@@ -44,7 +44,7 @@ _numCompleted = {}
 _lastTime = 0
 
 def queues(request):
-    from PYME.ParallelTasks import distribution
+    from PYME.cluster import distribution
     #from PYME.IO import clusterIO
     distributors = distribution.getDistributorInfo()
     distNodes = distribution.getNodeInfo()

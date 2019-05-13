@@ -29,6 +29,7 @@ from PYME.DSView import ViewIm3D
 
 from PYME.contrib import wxPlotPanel
 
+import six
 
 # try:
 #     from traitsui.api import Controller
@@ -96,7 +97,7 @@ class RecipePlotPanel(wxPlotPanel.PlotPanel):
                 
         #plot the boxes and the labels
         for k, v in node_positions.items():
-            if not (isinstance(k, str) or isinstance(k, unicode)):
+            if not (isinstance(k, six.string_types)):
                 #node - draw a box
                 #################
                 s = k.__class__.__name__
@@ -370,7 +371,7 @@ class RecipeView(wx.Panel):
         
     def OnPick(self, event):
         k = event.artist._data
-        if not (isinstance(k, str) or isinstance(k, unicode)):
+        if not (isinstance(k, six.string_types)):
             self.configureModule(k)
         else:
             outp = self.recipes.activeRecipe.namespace[k]

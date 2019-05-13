@@ -211,7 +211,7 @@ def getImageTags(filename):
                 for e in events:
                     evKeyNames.add(e['EventName'])
 
-                if 'ProtocolFocus' in evKeyNames:
+                if b'ProtocolFocus' in evKeyNames:
                     tags.append('Z-Stack')
 
             md = MetaDataHandler.HDFMDHandler(h5f)
