@@ -502,7 +502,7 @@ def _getFilename(defaultExt = '*.tif'):
                 defIndex = i
 
         fdialog = wx.FileDialog(None, 'Save file as ...',
-                wildcard='|'.join(wcs), style=wx.SAVE)#|wx.HIDE_READONLY)
+                wildcard='|'.join(wcs), style=wx.FD_SAVE)#|wx.HIDE_READONLY)
 
         fdialog.SetFilterIndex(defIndex)
 

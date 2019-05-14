@@ -319,7 +319,7 @@ class FilenameParam(MDParam):
         import wx,os
         fdialog = wx.FileDialog(None, self.prompt,
                     #defaultDir=os.path.split(self.image.filename)[0],
-                    wildcard=self.wildcard, style=wx.OPEN)
+                    wildcard=self.wildcard, style=wx.FD_OPEN)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             #self.ds = example.CDataStack(fdialog.GetPath().encode())

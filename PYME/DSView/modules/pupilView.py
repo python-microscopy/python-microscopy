@@ -125,7 +125,7 @@ class MyNavigationToolbar(NavigationToolbar2, aui.AuiToolBar):
         default_file = "image." + self.canvas.get_default_filetype()
         dlg = wx.FileDialog(self._parent, "Save to file", "", default_file,
                             filetypes,
-                            wx.SAVE|wx.OVERWRITE_PROMPT)
+                            wx.FD_SAVE|wx.FD_OVERWRITE_PROMPT)
         dlg.SetFilterIndex(filter_index)
         if dlg.ShowModal() == wx.ID_OK:
             dirname  = dlg.GetDirectory()

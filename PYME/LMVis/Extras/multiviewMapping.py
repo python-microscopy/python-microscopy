@@ -152,7 +152,7 @@ class MultiviewMapper:
             fpath = pipeline.mdh['FIXMEShiftmap'] #FIXME: break this for now
         else:
             fdialog = wx.FileDialog(None, 'Load shift field', wildcard='Shift Field file (*.sf)|*.sf',
-                                    style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
+                                    style=wx.FD_OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
             succ = fdialog.ShowModal()
 
             if (succ == wx.ID_OK):
@@ -203,7 +203,7 @@ class MultiviewMapper:
         defFile = os.path.splitext(os.path.split(self.pipeline.filename)[-1])[0] + 'MultiView.sf'
 
         fdialog = wx.FileDialog(None, 'Save shift field as ...',
-                                wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE,
+                                wildcard='Shift Field file (*.sf)|*.sf', style=wx.FD_SAVE,
                                 defaultDir=nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
@@ -342,7 +342,7 @@ class MultiviewMapper:
             pathToMap = stigLoc
         else:
             fdialog = wx.FileDialog(None, 'Load Astigmatism Calibration', wildcard='Astigmatism map (*.am)|*.am',
-                                    style=wx.OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
+                                    style=wx.FD_OPEN, defaultDir=nameUtils.genShiftFieldDirectoryPath())
             succ = fdialog.ShowModal()
             if (succ == wx.ID_OK):
                 fpath = fdialog.GetPath()

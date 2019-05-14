@@ -33,7 +33,7 @@ from PYME.IO.FileUtils import nameUtils
 def LoadShiftField(filename = None):
     if not filename:
         fdialog = wx.FileDialog(None, 'Select shift field',
-                wildcard='*.sf;*.h5;*.h5r', style=wx.OPEN)
+                wildcard='*.sf;*.h5;*.h5r', style=wx.FD_OPEN)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             filename = fdialog.GetPath().encode()
@@ -284,7 +284,7 @@ class Splitter:
 
     def OnSetShiftField(self, event):
         fdialog = wx.FileDialog(None, 'Select shift field',
-            wildcard='*.sf', style=wx.OPEN, defaultDir = nameUtils.genShiftFieldDirectoryPath())
+            wildcard='*.sf', style=wx.FD_OPEN, defaultDir = nameUtils.genShiftFieldDirectoryPath())
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             sfname = fdialog.GetPath().encode()

@@ -72,7 +72,7 @@ class visualiser:
         """Save last renderd scene as STL."""
         from tvtk.api import tvtk
         
-        fdialog = wx.FileDialog(None, 'Save 3D scene as ...', wildcard='*.stl', style=wx.SAVE)#|wx.HIDE_READONLY)
+        fdialog = wx.FileDialog(None, 'Save 3D scene as ...', wildcard='*.stl', style=wx.FD_SAVE)#|wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
         
         if (succ == wx.ID_OK):
@@ -89,7 +89,7 @@ class visualiser:
         except ImportError:
             wx.MessageBox('u3d export needs the vtku3dexporter module, which is not installed by default with PYME\n A conda-installable package is available for OSX.')
     
-        fdialog = wx.FileDialog(None, 'Save 3D scene as ...', wildcard='*.u3d', style=wx.SAVE)# | wx.HIDE_READONLY)
+        fdialog = wx.FileDialog(None, 'Save 3D scene as ...', wildcard='*.u3d', style=wx.FD_SAVE)# | wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
     
         if (succ == wx.ID_OK):
@@ -109,7 +109,7 @@ class visualiser:
         """Save last renderd scene as u3d."""
         from tvtk.api import tvtk
            
-        fdialog = wx.FileDialog(None, 'Save 3D scene as ...', wildcard='*.x3d', style=wx.SAVE)# | wx.HIDE_READONLY)
+        fdialog = wx.FileDialog(None, 'Save 3D scene as ...', wildcard='*.x3d', style=wx.FD_SAVE)# | wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
     
         if (succ == wx.ID_OK):

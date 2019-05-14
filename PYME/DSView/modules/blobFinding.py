@@ -315,7 +315,7 @@ class blobFinder:
         from six.moves import cPickle
         for k in self.shiftfields.keys():
             fdialog = wx.FileDialog(None, 'Save Positions ...',
-                wildcard='Shiftmap|*.sm', defaultFile=os.path.splitext(self.image.names[k])[0] + '.sm', style=wx.SAVE)
+                wildcard='Shiftmap|*.sm', defaultFile=os.path.splitext(self.image.names[k])[0] + '.sm', style=wx.FD_SAVE)
             succ = fdialog.ShowModal()
             if (succ == wx.ID_OK):
                 outFilename = fdialog.GetPath().encode()
@@ -327,7 +327,7 @@ class blobFinder:
 
     def savePositions(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Positions ...',
-            wildcard='Tab formatted text|*.txt', defaultFile=os.path.splitext(self.image.seriesName)[0] + '_pos.txt', style=wx.SAVE|wx.HIDE_READONLY)
+            wildcard='Tab formatted text|*.txt', defaultFile=os.path.splitext(self.image.seriesName)[0] + '_pos.txt', style=wx.FD_SAVE|wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             outFilename = fdialog.GetPath().encode()
@@ -345,7 +345,7 @@ class blobFinder:
 
     def saveFits(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Fit Results ...',
-            wildcard='Tab formatted text|*.txt', defaultFile=os.path.splitext(self.image.seriesName)[0] + '_fits.txt', style=wx.SAVE|wx.HIDE_READONLY)
+            wildcard='Tab formatted text|*.txt', defaultFile=os.path.splitext(self.image.seriesName)[0] + '_fits.txt', style=wx.FD_SAVE|wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             outFilename = fdialog.GetPath().encode()

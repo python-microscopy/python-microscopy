@@ -67,7 +67,7 @@ def _verifyResultsFilename(resultsFilename):
         while os.path.exists(os.path.join(di, stub + '_%d.h5r' % i)):
             i += 1
         fdialog = wx.FileDialog(None, 'Analysis file already exists, please select a new filename',
-                    wildcard='H5R files|*.h5r', defaultDir=di, defaultFile=stub + '_%d.h5r' % i, style=wx.SAVE)
+                    wildcard='H5R files|*.h5r', defaultDir=di, defaultFile=stub + '_%d.h5r' % i, style=wx.FD_SAVE)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             resultsFilename = fdialog.GetPath().encode()
