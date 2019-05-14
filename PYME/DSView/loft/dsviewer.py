@@ -41,7 +41,7 @@ class DSViewFrame(wx.Frame):
                     wildcard='*.kdf', style=wx.FD_OPEN|wx.HIDE_READONLY)
                 succ = fdialog.ShowModal()
                 if (succ == wx.ID_OK):
-                    self.ds = example.CDataStack(fdialog.GetPath().encode())
+                    self.ds = example.CDataStack(fdialog.GetPath())
                     self.SetTitle(fdialog.GetFilename())
                     self.saved = True
                     #fn =
@@ -91,7 +91,7 @@ class DSViewFrame(wx.Frame):
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()
             if os.path.splitext(fpath)[1] == '.kdf':
-                self.ds.SaveToFile(fdialog.GetPath().encode())
+                self.ds.SaveToFile(fdialog.GetPath())
             else:
                 #save using PIL
                 if self.ds.getNumChannels() == 1:

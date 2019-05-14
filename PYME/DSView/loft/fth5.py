@@ -45,7 +45,7 @@ def pushImagesHDF(startingAt=0, detThresh = .9, fitFcn = 'LatGaussFitFR'):
                     wildcard='H5R files|*.h5r', defaultDir=di, defaultFile=os.path.splitext(fn)[0] + '_1.h5r', style=wx.FD_SAVE)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            resultsFilename = fdialog.GetPath().encode()
+            resultsFilename = fdialog.GetPath()
         else:
             raise RuntimeError('Invalid results file - not running')
         seriesName = resultsFilename

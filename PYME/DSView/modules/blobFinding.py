@@ -318,7 +318,7 @@ class blobFinder:
                 wildcard='Shiftmap|*.sm', defaultFile=os.path.splitext(self.image.names[k])[0] + '.sm', style=wx.FD_SAVE)
             succ = fdialog.ShowModal()
             if (succ == wx.ID_OK):
-                outFilename = fdialog.GetPath().encode()
+                outFilename = fdialog.GetPath()
                 
                 fid = open(outFilename, 'wb')
                 cPickle.dump(self.shiftfields[k], fid, 2)
@@ -330,7 +330,7 @@ class blobFinder:
             wildcard='Tab formatted text|*.txt', defaultFile=os.path.splitext(self.image.seriesName)[0] + '_pos.txt', style=wx.FD_SAVE|wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            outFilename = fdialog.GetPath().encode()
+            outFilename = fdialog.GetPath()
 
             of = open(outFilename, 'w')
             of.write('\t'.join(self.objPosRA.dtype.names) + '\n')
@@ -348,7 +348,7 @@ class blobFinder:
             wildcard='Tab formatted text|*.txt', defaultFile=os.path.splitext(self.image.seriesName)[0] + '_fits.txt', style=wx.FD_SAVE|wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            outFilename = fdialog.GetPath().encode()
+            outFilename = fdialog.GetPath()
 
             of = open(outFilename, 'w')
             of.write('\t'.join(self.objFitRes['fitResults'].dtype.names) + '\n')

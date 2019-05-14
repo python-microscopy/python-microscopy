@@ -508,7 +508,7 @@ def _getFilename(defaultExt = '*.tif'):
 
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            fname = fdialog.GetPath().encode()
+            fname = fdialog.GetPath()
 
             #we decide which exporter to use based on extension. Ensure that we have one (some platforms do not
             #automatically add to path.

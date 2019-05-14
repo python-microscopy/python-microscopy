@@ -70,7 +70,7 @@ def _verifyResultsFilename(resultsFilename):
                     wildcard='H5R files|*.h5r', defaultDir=di, defaultFile=stub + '_%d.h5r' % i, style=wx.FD_SAVE)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            resultsFilename = fdialog.GetPath().encode()
+            resultsFilename = fdialog.GetPath()
         else:
             raise RuntimeError('Invalid results file - not running')
             

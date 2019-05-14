@@ -36,7 +36,7 @@ def LoadShiftField(filename = None):
                 wildcard='*.sf;*.h5;*.h5r', style=wx.FD_OPEN)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            filename = fdialog.GetPath().encode()
+            filename = fdialog.GetPath()
         else:
             return None
 
@@ -287,7 +287,7 @@ class Splitter:
             wildcard='*.sf', style=wx.FD_OPEN, defaultDir = nameUtils.genShiftFieldDirectoryPath())
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            sfname = fdialog.GetPath().encode()
+            sfname = fdialog.GetPath()
             
             self.SetShiftField(sfname)
 

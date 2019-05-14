@@ -76,7 +76,7 @@ class visualiser:
         succ = fdialog.ShowModal()
         
         if (succ == wx.ID_OK):
-            fname = fdialog.GetPath().encode()
+            fname = fdialog.GetPath()
             tvtk.STLWriter(input=self.lastSurf.actor.mapper.input, file_name=fname).write()
 
         fdialog.Destroy()
@@ -93,7 +93,7 @@ class visualiser:
         succ = fdialog.ShowModal()
     
         if (succ == wx.ID_OK):
-            fname = fdialog.GetPath().encode()
+            fname = fdialog.GetPath()
             
             #tvtk.STLWriter(input=self.lastSurf.actor.mapper.input, file_name=fname).write()
             render_window = tvtk.to_vtk(self.dsviewer.f3d.scene.render_window)
@@ -113,7 +113,7 @@ class visualiser:
         succ = fdialog.ShowModal()
     
         if (succ == wx.ID_OK):
-            fname = fdialog.GetPath().encode()
+            fname = fdialog.GetPath()
         
             #tvtk.STLWriter(input=self.lastSurf.actor.mapper.input, file_name=fname).write()
             render_window = self.dsviewer.f3d.scene.render_window

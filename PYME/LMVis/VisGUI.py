@@ -282,7 +282,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             wildcard='Numpy array|*.npy|Tab formatted text|*.txt', style=wx.FD_SAVE)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            outFilename = fdialog.GetPath().encode()
+            outFilename = fdialog.GetPath()
 
             if outFilename.endswith('.txt'):
                 of = open(outFilename, 'w')
