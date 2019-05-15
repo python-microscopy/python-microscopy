@@ -801,7 +801,7 @@ def main(protocol="HTTP/1.0"):
     default_root = config.get('dataserver-root', os.curdir)
     op.add_option('-r', '--root', dest='root', help="Root directory of virtual filesystem (default %s, see also 'dataserver-root' config entry)" % dataserver_root, default=default_root)
     op.add_option('-k', '--profile', dest='profile', help="Enable profiling", default=False, action="store_true")
-    default_server_filter = config.get('dataserver-filter', '')
+    default_server_filter = config.get('dataserver-filter', compName)
     op.add_option('-f', '--server-filter', dest='server_filter', help='Add a serverfilter for distinguishing between different clusters', default=default_server_filter)
     op.add_option('--timeout-test', dest='timeout_test', help='deliberately make requests timeout for testing error handling in calling modules', default=0)
 

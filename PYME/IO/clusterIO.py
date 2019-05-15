@@ -47,8 +47,9 @@ def to_bytes(input):
 
 
 from PYME import config
+from PYME.misc.computerName import GetComputerName
 local_dataroot = (config.get('dataserver-root'))
-local_serverfilter = (config.get('dataserver-filter', ''))
+local_serverfilter = (config.get('dataserver-filter', GetComputerName()))
 
 import sys
 
