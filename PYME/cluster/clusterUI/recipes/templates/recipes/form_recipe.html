@@ -1,0 +1,53 @@
+<div class="panel-heading"><span class="glyphicon glyphicon-list-alt"></span>&nbsp;&nbsp;Run recipe on selected files</div>
+<div class="panel-body">
+
+
+    <form class="form" id="form_recipe" action="/recipes/run/" method="post">
+
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label class="control-label" for="inputRecipeURL">Recipe</label>
+            <div class="input-group">
+                <span class="input-group-addon">pyme-cluster://{{ clusterfilter }}/</span>
+                <input type="text" class="form-control" id="inputRecipeURL" name="recipeURL">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="select_recipe">select</button>
+                </span>
+            </div>
+        </div>
+
+        <div id="recipe_image"></div>
+
+        <div class="form-group pull-right">
+            <input type="submit" value="Launch recipe with selected" class="btn btn-primary"/>
+        </div>
+    </form>
+
+    <script>
+        $('#select_recipe').click(function(){
+           select_file(function(path){
+               $('#inputRecipeURL').val(path);
+               $('#recipe_image').html('<img src="/recipes/svg/?recipeURL=' + path + '">');
+           }, 'Select a recipe (*.yaml)')
+        });
+
+
+        var findSelectedFiles = function () {
+            f = $('#form_recipe');
+            $('.cu-hidden-filename').remove();
+            var fileNames=[];
+            $('.cu-selected').each(function(index, item){
+                var sn = item.getAttribute('data-cu-filename');
+                if (sn != null) {
+                    fileNames.push(sn);
+                    f.append('<input name="files" class="cu-hidden-filename" type="hidden" value="' + sn + '">')
+                }
+            });
+            console.log(fileNames);
+        };
+
+        $('#form_recipe').submit(findSelectedFiles);
+    </script>
+
+</div>
