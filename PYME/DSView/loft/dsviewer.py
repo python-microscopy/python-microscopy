@@ -38,10 +38,10 @@ class DSViewFrame(wx.Frame):
         if (dstack is None):
             if (filename is None):
                 fdialog = wx.FileDialog(None, 'Please select Data Stack to open ...',
-                    wildcard='*.kdf', style=wx.OPEN|wx.HIDE_READONLY)
+                    wildcard='*.kdf', style=wx.FD_OPEN|wx.HIDE_READONLY)
                 succ = fdialog.ShowModal()
                 if (succ == wx.ID_OK):
-                    self.ds = example.CDataStack(fdialog.GetPath().encode())
+                    self.ds = example.CDataStack(fdialog.GetPath())
                     self.SetTitle(fdialog.GetFilename())
                     self.saved = True
                     #fn =
@@ -86,12 +86,12 @@ class DSViewFrame(wx.Frame):
         self.statusbar.SetStatusText('Slice No: (%d/%d)    x: %d  y: %d' % (self.ds.getZPos(), self.ds.getDepth(), self.ds.getXPos(), self.ds.getYPos()))
     def saveStack(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Data Stack as ...', defaultDir=self.filedir,
-            wildcard='KDF (*.kdf)|*.kdf|TIFF (*.tif)|*.tif', style=wx.SAVE|wx.HIDE_READONLY)
+            wildcard='KDF (*.kdf)|*.kdf|TIFF (*.tif)|*.tif', style=wx.FD_SAVE|wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()
             if os.path.splitext(fpath)[1] == '.kdf':
-                self.ds.SaveToFile(fdialog.GetPath().encode())
+                self.ds.SaveToFile(fdialog.GetPath())
             else:
                 #save using PIL
                 if self.ds.getNumChannels() == 1:

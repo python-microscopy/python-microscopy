@@ -139,7 +139,7 @@ class DMDStaticImage(wx.Panel):
 
     def OnBBrowseButton(self, event):
         dlg = wx.FileDialog(self, message="Open an Image...", defaultDir=os.getcwd(), 
-                            defaultFile="", style=wx.OPEN)
+                            defaultFile="", style=wx.FD_OPEN)
 
         if dlg.ShowModal() == wx.ID_OK:
             filename = dlg.GetPath()            
@@ -178,7 +178,7 @@ class DMDImageSeq(wx.Panel):
     def OnBBrowseButton(self, event):
         self.seq = []
         dlg = wx.FileDialog(self, message="Select image sequence...", defaultDir=os.getcwd(), 
-                            defaultFile="", style=wx.OPEN | wx.MULTIPLE | wx.CHANGE_DIR)
+                            defaultFile="", style=wx.FD_OPEN | wx.FD_MULTIPLE | wx.FD_CHANGE_DIR)
 
         if dlg.ShowModal() == wx.ID_OK:
             filelist = dlg.GetPaths()

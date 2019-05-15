@@ -128,7 +128,7 @@ class CalculateZfactorDialog(wx.Dialog):
 
     def OnSelect(self, event):
         dlg = wx.FileDialog(self, message="Open a Z-stack Image...", defaultDir=os.getcwd(), 
-                            defaultFile="", style=wx.OPEN)
+                            defaultFile="", style=wx.FD_OPEN)
 
         if dlg.ShowModal() == wx.ID_OK:
             self.Zfactorfilename = dlg.GetPath()

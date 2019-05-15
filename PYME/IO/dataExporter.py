@@ -502,13 +502,13 @@ def _getFilename(defaultExt = '*.tif'):
                 defIndex = i
 
         fdialog = wx.FileDialog(None, 'Save file as ...',
-                wildcard='|'.join(wcs), style=wx.SAVE)#|wx.HIDE_READONLY)
+                wildcard='|'.join(wcs), style=wx.FD_SAVE)#|wx.HIDE_READONLY)
 
         fdialog.SetFilterIndex(defIndex)
 
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            fname = fdialog.GetPath().encode()
+            fname = fdialog.GetPath()
 
             #we decide which exporter to use based on extension. Ensure that we have one (some platforms do not
             #automatically add to path.

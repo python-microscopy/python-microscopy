@@ -279,10 +279,10 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
    
     def OnSaveMeasurements(self, event):
         fdialog = wx.FileDialog(None, 'Save measurements ...',
-            wildcard='Numpy array|*.npy|Tab formatted text|*.txt', style=wx.SAVE)
+            wildcard='Numpy array|*.npy|Tab formatted text|*.txt', style=wx.FD_SAVE)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            outFilename = fdialog.GetPath().encode()
+            outFilename = fdialog.GetPath()
 
             if outFilename.endswith('.txt'):
                 of = open(outFilename, 'w')
