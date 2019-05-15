@@ -67,6 +67,8 @@ class ClusterOfOne(object):
             
             
     def shutdown(self):
+        logger.info('Shutting down cluster')
+        print('Shutting down cluster')
         self._kill_procs([self._node_server, self._rule_server, self._cluster_ui, self._data_server])
 
 
@@ -77,7 +79,7 @@ class ClusterOfOne(object):
         #wait for the rule server to come up before launching the node server
         time.sleep(5)
         self._launch_node_server()
-        self._launch_cluster_ui(gui=gui)
+        #self._launch_cluster_ui(gui=gui)
         
         
     def run(self):
@@ -96,7 +98,11 @@ class ClusterOfOne(object):
 def gui_main():
     import wx
     import PYME.resources
-    #import wx.adv
+    
+    if wx.__version__ > '4':
+        from wx.adv import TaskBarIcon, TBI_DOCK
+    else:
+        from wx import TaskBarIcon, TBI_DOCK
     
     cluster = ClusterOfOne()
     
@@ -104,12 +110,12 @@ def gui_main():
 
     ico = wx.Icon(PYME.resources.getIconPath('PYMELogo.png'))
     
-    class ClusterIcon(wx.TaskBarIcon):
+    class ClusterIcon(TaskBarIcon):
         TBMENU_CLUSTERUI = wx.NewId()
         TBMENU_CLOSE = wx.NewId()
         
         def __init__(self, frame):
-            wx.TaskBarIcon.__init__(self, wx.TBI_DOCK)
+            TaskBarIcon.__init__(self, TBI_DOCK)
             self.frame = frame
             
             

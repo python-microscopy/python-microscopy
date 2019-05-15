@@ -57,7 +57,7 @@ def local_or_temp_filename(url):
     if os.path.exists(filename):
         yield filename
     elif filename.startswith('pyme-cluster') or filename.startswith('PYME-CLUSTER'):
-        import clusterIO
+        from .import clusterIO
 
         sequenceName, clusterfilter = split_cluster_url(filename)
 
@@ -86,7 +86,7 @@ def openFile(filename, mode='rb'):
 
     elif filename.startswith('pyme-cluster') or filename.startswith('PYME-CLUSTER'):
         #TODO - add short-circuiting for local files
-        import clusterIO
+        from . import clusterIO
 
         sequenceName, clusterfilter = split_cluster_url(filename)
 
@@ -104,7 +104,7 @@ def read(filename):
         return s
 
     elif filename.startswith('pyme-cluster') or filename.startswith('PYME-CLUSTER'):
-        import clusterIO
+        from . import clusterIO
 
         sequenceName, clusterfilter = split_cluster_url(filename)
 

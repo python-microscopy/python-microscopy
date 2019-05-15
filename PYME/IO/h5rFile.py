@@ -7,6 +7,7 @@ from PYME import config
 import numpy as np
 import traceback
 import collections
+import six
 
 #global lock across all instances of the H5RFile class as we can have problems across files
 tablesLock = threading.Lock()
@@ -113,7 +114,7 @@ class H5RFile(object):
                 table.append(data)
             except AttributeError:
                 # we don't have a table with that name - create one
-                if isinstance(data, basestring):
+                if isinstance(data, six.string_types):
                     table = self._h5file.create_vlarray(self._h5file.root, tablename, tables.VLStringAtom())
                     table.append(data)
                 else:

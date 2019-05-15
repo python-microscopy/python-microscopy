@@ -119,6 +119,9 @@ _fileCache = _LimitedSizeDict(size_limit=100)
 #use one session for each server (to allow http keep-alives)
 sessions = {}
 def _getSession(url):
+    if not isinstance(url, bytes):
+        url = url.encode()
+        
     servinfo = url.split(b'/')[2]
     try:
         session = sessions[servinfo]

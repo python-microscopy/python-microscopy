@@ -491,7 +491,7 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 
         f = BytesIO()
-        f.write(json.dumps(status))
+        f.write(json.dumps(status).encode())
         length = f.tell()
         f.seek(0)
         self.send_response(200)

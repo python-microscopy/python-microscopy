@@ -397,6 +397,9 @@ if __name__ == '__main__':
         #main()
         tW = taskWorker()
         tW.loop_forever()
+    except KeyboardInterrupt:
+        #supress error message here -  we only want to know if something bad happened
+        pass
     finally:
         if profile:
             mProfile.report(display=False, profiledir=profileOutDir)

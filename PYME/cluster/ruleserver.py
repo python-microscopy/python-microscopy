@@ -288,7 +288,7 @@ class RuleServer(object):
                 nTasks = 0
                 ruleN = 0
                 
-                rules = self._rules.values()
+                rules = list(self._rules.values())
                 while ruleN < len(rules) and nTasks < self.MAX_ADVERTISEMENTS:
                     advert = rules[ruleN].advert
                     
@@ -327,7 +327,7 @@ class RuleServer(object):
         rule_info = json.loads(body)
         
         if ruleID is None:
-            ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().get_hex())
+            ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
         
         rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks), rule_timeout=float(timeout),
                              inputs_by_task=rule_info.get('inputsByTask', None))

@@ -363,13 +363,13 @@ def loads(datastring):
         #un-quantize data
         #logging.debug('Dequantizing')
         
-        print(data.max())
+        #print(data.max())
 
         data = data.astype('f')*header['QuantScale']
         #print('data dtype: %s' % data.dtype)
         data = (data*data + header['QuantOffset']).astype(DATA_FMTS[int(header['DataFormat'])])
     
-    print(dimOrder, [w, h, d])
+    #print(dimOrder, [w, h, d])
     data = data.view(DATA_FMTS[int(header['DataFormat'])]).reshape([w,h,d], order=dimOrder)
     
     return data, header

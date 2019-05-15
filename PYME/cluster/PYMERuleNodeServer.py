@@ -47,7 +47,7 @@ def main():
     #     if name.startswith('PYMEDistributor'):
     #         distributors.append('%s:%d' % (socket.inet_ntoa(info.address), info.port))
     
-    print distribution.getDistributorInfo().values()
+    print(distribution.getDistributorInfo().values())
 
     distributors = [u.lstrip('http://').rstrip('/') for u in distribution.getDistributorInfo().values()]
 
@@ -58,7 +58,7 @@ def main():
     #write a new config file for the nodeserver
     with tempfile.NamedTemporaryFile(suffix='.yaml', delete=False) as temp_conf_file:
         temp_conf_file_name = temp_conf_file.name
-        temp_conf_file.write(yaml.dump(config))
+        temp_conf_file.write(yaml.dump(config).encode())
 
     logging.debug('Config file: ' + temp_conf_file_name)
     

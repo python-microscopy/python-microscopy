@@ -30,6 +30,10 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
     def _gzip_compress(self, data):
         import gzip
         from io import BytesIO
+        
+        if not isinstance(data, bytes):
+            data = data.encode()
+        
         zbuf = BytesIO()
         zfile = gzip.GzipFile(mode='wb', fileobj=zbuf)#, compresslevel=9)
         zfile.write(data)
