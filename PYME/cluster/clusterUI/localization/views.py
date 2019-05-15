@@ -8,7 +8,7 @@ logger=logging.getLogger(__name__)
 
 import collections
 from PYME.localization import MetaDataEdit as mde
-from PYME.ParallelTasks import HTTPTaskPusher
+#from PYME.cluster import HTTPTaskPusher
 from PYME.cluster import HTTPRulePusher, HTTPTaskPusher
 
 FINDING_PARAMS = [#mde.ChoiceParam('Analysis.FitModule', 'Fit module:', default='LatGaussFitFR', choices=PYME.localization.FitFactories.resFitFactories),

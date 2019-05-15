@@ -89,7 +89,7 @@ def main():
     nodeserverLog.setLevel(logging.DEBUG)
     nodeserverLog.propagate=False
 
-    proc = subprocess.Popen('python -m PYME.ParallelTasks.rulenodeserver %s %s' % (distributors[0], serverPort), shell=True,
+    proc = subprocess.Popen('python -m PYME.cluster.rulenodeserver %s %s' % (distributors[0], serverPort), shell=True,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     t_log_stderr = threading.Thread(target=log_stream, args=(proc.stderr, nodeserverLog))

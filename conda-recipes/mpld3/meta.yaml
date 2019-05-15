@@ -1,0 +1,25 @@
+package:
+  name: mpld3
+  version: {{ GIT_DESCRIBE_TAG }}
+
+source:
+  #git_rev: v0.13.1
+  git_url: https://github.com/mpld3/mpld3.git
+
+build:
+  script: python setup.py install
+
+requirements:
+  build:
+    - python
+
+
+  run:
+    - python
+    - matplotlib
+    - jinja2
+
+about:
+  home: http://mpld3.github.io
+  license: BSD
+  summary: Matplotlib exporter for d3
