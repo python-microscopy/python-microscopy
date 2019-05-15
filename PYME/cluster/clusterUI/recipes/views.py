@@ -2,7 +2,8 @@ from PYME import config
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 
-server_filter = config.get('dataserver-filter', '')
+from PYME.misc.computerName import GetComputerName
+server_filter = config.get('dataserver-filter', GetComputerName())
 
 # Create your views here.
 
