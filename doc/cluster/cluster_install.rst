@@ -179,9 +179,12 @@ On the master node:
      WebDAV turns up the relevant instructions pretty quickly). Look at ``PYME/ParallelTasks/webdav.py`` for info on
      setting custom passwords.
 
+#. *[optional]* Install the svgwrite package to display recipes graphically in the cluster user interface. We do not
+   currently maintain a conda package for svgwrite, but it can be found in, e.g., the conda-forge channel.
+
 On each node:
 -------------
-6. Run ``PYMERuleNodeServer`` to launch the distributed analysis clients.
+7. Run ``PYMERuleNodeServer`` to launch the distributed analysis clients.
 
    .. note::
 
