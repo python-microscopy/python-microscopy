@@ -13,97 +13,80 @@ from PYME import config as conf
 from PYME.misc import pyme_zeroconf
 from PYME.misc.computerName import GetComputerName
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(name)s:%(levelname)s:%(message)s')
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.INFO)
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
+
 
 from PYME.cluster import distribution
+from PYME.cluster import rulenodeserver
 from multiprocessing import cpu_count
 import sys
 import threading
 
-
-LOG_STREAMS = True
-
-def log_stream(stream, logger):
-    while LOG_STREAMS:
-        line = stream.readline()
-        logger.debug(line.strip())
-
 def main():
-    global LOG_STREAMS
-    cluster_root = conf.get('dataserver-root', conf.user_config_dir)
-    
     confFile = os.path.join(conf.user_config_dir, 'nodeserver.yaml')
     with open(confFile) as f:
         config = yaml.load(f)
 
     serverAddr, serverPort = config['nodeserver']['http_endpoint'].split(':')
     externalAddr = socket.gethostbyname(socket.gethostname())
-
-    ns = pyme_zeroconf.getNS('_pyme-taskdist')
-    #
-    # #find distributor(s)
-    # distributors = []
-    # for name, info in ns.advertised_services.items():
-    #     if name.startswith('PYMEDistributor'):
-    #         distributors.append('%s:%d' % (socket.inet_ntoa(info.address), info.port))
     
     print(distribution.getDistributorInfo().values())
 
     distributors = [u.lstrip('http://').rstrip('/') for u in distribution.getDistributorInfo().values()]
-
-
-    #modify the configuration to reflect the discovered distributor(s)
-    config['nodeserver']['distributors'] = distributors
-
-    #write a new config file for the nodeserver
-    with tempfile.NamedTemporaryFile(suffix='.yaml', delete=False) as temp_conf_file:
-        temp_conf_file_name = temp_conf_file.name
-        temp_conf_file.write(yaml.dump(config).encode())
-
-    logging.debug('Config file: ' + temp_conf_file_name)
     
     #set up nodeserver logging
-    nodeserver_log_dir = os.path.join(cluster_root, 'LOGS', GetComputerName())
-    
-    #remove old log files
-    try:
-        os.remove(os.path.join(nodeserver_log_dir, 'nodeserver.log'))
-    except OSError:  # if we cant clear out old log files, we might not have a log directory set up
+    cluster_root = conf.get('dataserver-root')
+    if cluster_root:
+        nodeserver_log_dir = os.path.join(cluster_root, 'LOGS', GetComputerName())
+        
+        #remove old log files
         try:
-            if not os.path.exists(os.path.join(nodeserver_log_dir)):
-                os.makedirs(os.path.join(nodeserver_log_dir))  # NB - this will create all intermediate directories as well
-        except:  # throw error because the RotatingFileHandler will fail to initialize
-            raise IOError('Unable to initialize log files at %s' % nodeserver_log_dir)
-        pass
+            os.remove(os.path.join(nodeserver_log_dir, 'nodeserver.log'))
+        except OSError:  # if we cant clear out old log files, we might not have a log directory set up
+            try:
+                if not os.path.exists(os.path.join(nodeserver_log_dir)):
+                    os.makedirs(os.path.join(nodeserver_log_dir))  # NB - this will create all intermediate directories as well
+            except:  # throw error because the RotatingFileHandler will fail to initialize
+                raise IOError('Unable to initialize log files at %s' % nodeserver_log_dir)
+        
+        try:
+            shutil.rmtree(os.path.join(nodeserver_log_dir, 'taskWorkerHTTP'))
+        except:
+            pass
+        
+
+        nodeserver_log_handler = logging.handlers.RotatingFileHandler(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w', maxBytes=1e6,backupCount=0)
+        nodeserverLog = logging.getLogger('nodeserver')
+        nodeserverLog.setLevel(logging.DEBUG)
+        nodeserver_log_handler.setLevel(logging.DEBUG)
+        nodeserver_log_handler.setFormatter(formatter)
+        nodeserverLog.addHandler(nodeserver_log_handler)
+        nodeserverLog.addHandler(stream_handler)
+        
+        #nodeserverLog.propagate=False
+        
+    else:
+        nodeserver_log_dir = os.path.join(os.curdir, 'LOGS', GetComputerName())
+
+    #proc = subprocess.Popen('python -m PYME.cluster.rulenodeserver %s %s' % (distributors[0], serverPort), shell=True,
+    #                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    proc = rulenodeserver.ServerThread(distributors[0], serverPort, profile=False)
+    proc.start()
     
-    try:
-        shutil.rmtree(os.path.join(nodeserver_log_dir, 'taskWorkerHTTP'))
-    except:
-        pass
-    
-    #nodeserverLog = open(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w')
-    nodeserver_log_handler = logging.handlers.RotatingFileHandler(os.path.join(nodeserver_log_dir, 'nodeserver.log'), 'w', maxBytes=1e6,backupCount=0)
-    nodeserver_log_handler.setFormatter(logging.Formatter('%(message)s'))
-    nodeserverLog = logging.getLogger('nodeserver')
-    nodeserverLog.addHandler(nodeserver_log_handler)
-    nodeserverLog.setLevel(logging.DEBUG)
-    nodeserverLog.propagate=False
 
-    proc = subprocess.Popen('python -m PYME.cluster.rulenodeserver %s %s' % (distributors[0], serverPort), shell=True,
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    t_log_stderr = threading.Thread(target=log_stream, args=(proc.stderr, nodeserverLog))
-    t_log_stderr.setDaemon(False)
-    t_log_stderr.start()
-
-    t_log_stdout = threading.Thread(target=log_stream, args=(proc.stdout, nodeserverLog))
-    t_log_stdout.setDaemon(False)
-    t_log_stdout.start()
-
+    ns = pyme_zeroconf.getNS('_pyme-taskdist')
     ns.register_service('PYMENodeServer: ' + GetComputerName(), externalAddr, int(serverPort))
 
     time.sleep(2)
-    logging.debug('Launching worker processors')
+    logger.debug('Launching worker processors')
     numWorkers = config.get('nodeserver-num_workers', cpu_count())
 
     workerProcs = [subprocess.Popen('python -m PYME.cluster.taskWorkerHTTP', shell=True, stdin=subprocess.PIPE)
@@ -115,23 +98,16 @@ def main():
                                         stdin=subprocess.PIPE))
 
     try:
-        while not proc.poll():
+        while proc.is_alive():
             time.sleep(1)
 
-            #try to keep log size under control by doing crude rotation
-            #if nodeserverLog.tell() > 1e6:
-            #    nodeserverLog.seek(0)
-    except KeyboardInterrupt:
-        pass
     finally:
-        LOG_STREAMS = False
-        logging.info('Shutting down workers')
+        logger.info('Shutting down workers')
+        
         try:
             ns.unregister('PYMENodeServer: ' + GetComputerName())
         except:
             pass
-
-        os.unlink(temp_conf_file_name)
 
         
         for p in workerProcs:
@@ -150,13 +126,14 @@ def main():
             except:
                 pass
 
-        logging.info('Shutting down nodeserver')
-        try:
-            proc.kill()
-        except:
-            pass
+        logger.info('Shutting down nodeserver')
+        #try:
+        proc.shutdown()
+        proc.join()
+        #except:
+        #    pass
 
-        logging.info('Workers and nodeserver are shut down')
+        logger.info('Workers and nodeserver are shut down')
 
         sys.exit()
             

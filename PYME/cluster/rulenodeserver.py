@@ -4,9 +4,9 @@ import requests
 
 import queue as Queue
 import logging
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('nodeserver')
-logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.INFO)
 
 import time
 import sys
@@ -310,7 +310,7 @@ class NodeServer(object):
                 
                 
             try:
-                r = self.handinSession.post(self.distributor_url + 'handin', json=handins_by_rule.values())
+                r = self.handinSession.post(self.distributor_url + 'handin', json=list(handins_by_rule.values()))
                 resp = r.json()
                 if not resp['ok']:
                     raise RuntimeError('')
@@ -383,25 +383,45 @@ class WFNodeServer(webframework.APIHTTPServer, NodeServer):
 
 
 
+class ServerThread(threading.Thread):
+    def __init__(self, distributor, port, externalAddr=None, profile=False):
+        self.port = int(port)
+        self.distributor = distributor
+        self._profile = profile
+        
+        if externalAddr is None:
+            import socket
+            externalAddr = socket.gethostbyname(socket.gethostname())
+            
+        self.externalAddr = externalAddr
+        
+        threading.Thread.__init__(self)
+    
+    def run(self):
+        self.nodeserver = WFNodeServer('http://' + self.distributor + '/', port=self.port, ip_address=self.externalAddr)
 
-
-def run(distributor, port):
-    import socket
-
-    externalAddr = socket.gethostbyname(socket.gethostname())
-    nodeserver = WFNodeServer('http://' + distributor + '/', port = port, ip_address=externalAddr)
-
-    try:
-        logger.info('Starting nodeserver on %s:%d' % (externalAddr, port))
-        nodeserver.serve_forever()
-    finally:
-        nodeserver._do_poll = False
+        try:
+            logger.info('Starting nodeserver on %s:%d' % (self.externalAddr, self.port))
+            self.nodeserver.serve_forever()
+        except:
+            logger.exception('Error running nodeserver')
+        finally:
+            self.nodeserver._do_poll = False
+            logger.info('Shutting down ...')
+            self.nodeserver.shutdown()
+            self.nodeserver.server_close()
+    
+    def shutdown(self):
+        self.nodeserver._do_poll = False
         logger.info('Shutting down ...')
-        nodeserver.shutdown()
-        nodeserver.server_close()
-
+        self.nodeserver.shutdown()
+        logger.info('Closing server ...')
+        self.nodeserver.server_close()
 
 
 if __name__ == '__main__':
     distributor, port = sys.argv[1:]
-    run(distributor, int(port))
+    
+    st = ServerThread(distributor, int(port))
+    #note that we are running the run method in this thread, NOT starting a new thread. (i.e. we are calling run directly, not start)
+    st.run()

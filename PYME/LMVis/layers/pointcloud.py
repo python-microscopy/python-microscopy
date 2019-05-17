@@ -8,6 +8,9 @@ from pylab import cm
 import numpy as np
 import dispatch
 
+import logging
+logger = logging.getLogger(__name__)
+
 from OpenGL.GL import *
 
 class Points3DEngine(BaseEngine):
@@ -102,8 +105,11 @@ class PointCloudRenderLayer(EngineLayer):
         self.set(**kwargs)
         
         # update datasource name and method
+        #logger.debug('Setting dsname and method')
         self.dsname = dsname
         self.method = method
+        
+        self._set_method()
         
         # if we were given a pipeline, connect ourselves to the onRebuild signal so that we can automatically update
         # ourselves
@@ -119,6 +125,7 @@ class PointCloudRenderLayer(EngineLayer):
         return self._pipeline.get_layer_data(self.dsname)
 
     def _set_method(self):
+        #logger.debug('Setting layer method to %s' % self.method)
         self.engine = ENGINES[self.method]()
         self.update()
 
