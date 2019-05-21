@@ -1013,7 +1013,29 @@ static PyMethodDef distHistMethods[] = {
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
+#if PY_MAJOR_VERSION>=3
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "distHist",     /* m_name */
+        "",  /* m_doc */
+        -1,                  /* m_size */
+        distHistMethods,    /* m_methods */
+        NULL,                /* m_reload */
+        NULL,                /* m_traverse */
+        NULL,                /* m_clear */
+        NULL,                /* m_free */
+    };
 
+PyMODINIT_FUNC PyInit_distHist(void)
+{
+	PyObject *m;
+    // m = PyModule_Create("edgeDB", edgeDBMethods);
+    m = PyModule_Create(&moduledef);
+    import_array()
+    return m;
+}
+
+#else
 PyMODINIT_FUNC initdistHist(void)
 {
     PyObject *m;
@@ -1025,3 +1047,4 @@ PyMODINIT_FUNC initdistHist(void)
     //Py_INCREF(SpamError);
     //PyModule_AddObject(m, "error", SpamError);
 }
+#endif

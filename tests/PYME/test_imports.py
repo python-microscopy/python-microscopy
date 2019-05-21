@@ -33,6 +33,7 @@ def test_c_imports():
     from PYME.Analysis.points.EdgeDB.edgeDB import addEdges, segment,calcEdgeLengths,getVertexEdgeLengths,getVertexNeighbours
     from PYME.Analysis.points.arcfit.arcmf import arcmf, arcmft, quad_surf_mf_fpos, quad_surf_mf
     from PYME.Analysis.points.astigmatism.astiglookup import astig_lookup
+    from PYME.Analysis.points.DistHist.distHist import distanceHistogram, distanceHistogram3D, distanceProduct
     
     
 def test_LMVis_imports():
