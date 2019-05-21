@@ -1029,7 +1029,6 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC PyInit_distHist(void)
 {
 	PyObject *m;
-    // m = PyModule_Create("edgeDB", edgeDBMethods);
     m = PyModule_Create(&moduledef);
     import_array()
     return m;
@@ -1042,9 +1041,5 @@ PyMODINIT_FUNC initdistHist(void)
 
     m = Py_InitModule("distHist", distHistMethods);
     import_array()
-
-    //SpamError = PyErr_NewException("spam.error", NULL, NULL);
-    //Py_INCREF(SpamError);
-    //PyModule_AddObject(m, "error", SpamError);
 }
 #endif
