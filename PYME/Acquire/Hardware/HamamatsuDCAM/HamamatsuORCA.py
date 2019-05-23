@@ -78,7 +78,15 @@ noiseProperties = {
         'ADOffset': 100,
         'DefaultEMGain': 1,
         'SaturationThreshold': (2**16 - 1)
-        }
+        },
+'S/N: 720795' : { #FIXME - values are currently copied from above, and are probably wrong
+        'ReadNoise': 3.51,
+        'ElectronsPerCount': 0.47,
+        'NGainStages': 0,
+        'ADOffset': 100,
+        'DefaultEMGain': 1,
+        'SaturationThreshold': (2**16 - 1)
+        },
 }
 
 
@@ -160,13 +168,21 @@ class HamamatsuORCA(HamamatsuDCAM):
         return 0
 
     def SetROI(self, x1, y1, x2, y2):
+        print('Setting ROI: x0 %3.1f, y0 %3.1f, w %3.1f, h %3.1f' %(x1, y1, x2-x1, y2-y1))
+
+        #hamamatsu only supports ROI sizes (and positions) which are multiples of 4
+        x1 = 4*np.floor(x1/4)
+        y1 = 4*np.floor(y1/4)
+        w = 4*np.floor((x2-x1)/4)
+        h = 4*np.floor((y2-y1)/4)
+
         self.setCamPropValue('SUBARRAY HPOS', x1)
-        self.setCamPropValue('SUBARRAY HSIZE', x2-x1)
+        self.setCamPropValue('SUBARRAY HSIZE', w)
         self.setCamPropValue('SUBARRAY VPOS', y1)
-        self.setCamPropValue('SUBARRAY VSIZE', y2-y1)
+        self.setCamPropValue('SUBARRAY VSIZE', h)
 
         # If our ROI doesn't span the whole CCD, turn on subarray mode
-        if x2-x1 == self.GetCCDWidth() and y2-y1 == self.GetCCDHeight():
+        if w == self.GetCCDWidth() and h == self.GetCCDHeight():
             self.setCamPropValue('SUBARRAY MODE', DCAMPROP_MODE__OFF)
         else:
             self.setCamPropValue('SUBARRAY MODE', DCAMPROP_MODE__ON)
@@ -214,7 +230,7 @@ class HamamatsuORCA(HamamatsuDCAM):
         #print str(self.getCamPropValue('BUFFER FRAMEBYTES'))
         ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(
             ctypes.POINTER(ctypes.c_uint16)),
-            frame.buf,
+            ctypes.c_void_p(frame.buf),
             int(self.getCamPropValue('IMAGE FRAMEBYTES')))
         self.nReadOut += 1
 
@@ -242,7 +258,7 @@ class HamamatsuORCA(HamamatsuDCAM):
     def SetIntegTime(self, intTime):
         [lb, ub] = self.getCamPropRange('EXPOSURE TIME')
         newTime = np.clip(intTime, lb, ub)
-        print str(newTime)
+        print(str(newTime))
         self.setCamPropValue('EXPOSURE TIME', newTime)
 
     def GetCCDWidth(self):

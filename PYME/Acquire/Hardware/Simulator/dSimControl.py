@@ -525,7 +525,7 @@ class dSimControl(afp.foldPanel):
 
         numChans = int(self.cNumSplitterChans.GetStringSelection()[0])
 
-        x_chan_pixels = x_pixels/numChans
+        x_chan_pixels = int(x_pixels/numChans)
         x_chan_size = XVals[x_chan_pixels-1] - XVals[0]
 
         y_chan_size = YVals[-1] - YVals[0]

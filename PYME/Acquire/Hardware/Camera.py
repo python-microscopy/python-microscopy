@@ -500,7 +500,7 @@ class Camera(object):
         None
         """
 
-        if ~isinstance(active, bool):
+        if not isinstance(active, bool):
             raise TypeError("Active must be set to True or False.")
 
         self.active = active

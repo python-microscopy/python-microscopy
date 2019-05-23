@@ -185,6 +185,29 @@ class DCAMCAP_TRANSFERINFO(ctypes.Structure):
                 ("nNewestFrameIndex", ctypes.c_int32),
                 ("nFrameCount", ctypes.c_int32)]
 
+
+HDCAM = ctypes.c_void_p
+
+#Function prototypes
+####################
+dcam.dcamprop_getnextid.argtypes = [HDCAM, ctypes.c_void_p, ctypes.c_int32]
+dcam.dcamdev_getstring.argtypes = [HDCAM, ctypes.c_void_p]
+dcam.dcamprop_getname.argtypes = [HDCAM, ctypes.c_int32, ctypes.c_char_p, ctypes.c_int32]
+dcam.dcamprop_getattr.argtypes = [HDCAM, ctypes.c_void_p]
+dcam.dcamprop_getvalue.argtypes = [HDCAM, ctypes.c_int32, ctypes.c_void_p]
+dcam.dcamprop_setvalue.argtypes = [HDCAM, ctypes.c_int32, ctypes.c_double]
+dcam.dcamdev_close.argtypes = [HDCAM,]
+
+dcam.dcambuf_alloc.argtypes=[HDCAM,ctypes.c_int32]
+dcam.dcambuf_release.argtypes=[HDCAM,ctypes.c_int32]
+dcam.dcambuf_lockframe.argtypes=[HDCAM,ctypes.c_void_p]
+
+dcam.dcamcap_start.argtypes=[HDCAM,ctypes.c_int32]
+dcam.dcamcap_stop.argtypes=[HDCAM,]
+dcam.dcamcap_transferinfo.argtypes=[HDCAM,ctypes.c_void_p]
+
+dcam.dcamwait_start.argtypes=[ctypes.c_void_p,ctypes.c_void_p]
+
 class DCAMException(Exception):
     """
     Raises an Exception related to Hamamatsu DCAM.
@@ -293,7 +316,7 @@ class HamamatsuDCAM(Camera):
         param.iString = idStr
         dcam.dcamdev_getstring(self.handle, ctypes.byref(param))
 
-        return c_buf.value
+        return c_buf.value.decode()
 
     def getCamProperties(self):
         """
@@ -318,7 +341,7 @@ class HamamatsuDCAM(Camera):
                                                    ctypes.c_int32(text_len)),
                              "dcamprop_getname")
 
-            properties[text.value] = iProp.value
+            properties[text.value.decode()] = iProp.value
 
             if dcam.dcamprop_getnextid(self.handle, ctypes.byref(iProp),
                                        DCAMPROP_OPTION_SUPPORT) < 0:
