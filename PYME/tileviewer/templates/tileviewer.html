@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PYME Tile Viewer</title>
+</head>
+<body>
+
+<div id="openseadragon1" style="width: 800px; height: 600px;"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.4.0/openseadragon.min.js"></script>
+<script type="text/javascript">
+    var viewer = OpenSeadragon({
+        id:            "openseadragon1",
+        prefixUrl:     "/openseadragon/images/",
+        //navigatorSizeRatio: 0.25,
+        //wrapHorizontal:     true,
+        maxZoomPixelRatio: 10,
+        tileSources:   {
+            height: 12*128,
+            width:  12*128,
+            tileSize: 128,
+            minLevel: 0,
+            maxLevel: 4,
+
+            getTileUrl: function( level, x, y ){
+                return "get_tile?layer=" + (4-level) + "&x=" + x + "&y=" + y + "&vmin=1000&vmax=2000";
+            }
+    }
+    });
+</script>
+
+</body>
+</html>
