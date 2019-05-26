@@ -28,7 +28,7 @@
 ################
 
 from .HamamatsuDCAM import *
-
+from PYME.Acquire import eventLog
 
 # C11440-22CU DCAM_IDPROP variables
 # {'SUBARRAY VSIZE': 4202816, 'BUFFER TOP OFFSET BYTES': 4326224, 'IMAGE
@@ -166,6 +166,8 @@ class HamamatsuORCA(HamamatsuDCAM):
         self.checkStatus(dcam.dcambuf_alloc(self.handle, ctypes.c_int32(
             self.bs)),
                          "dcambuf_alloc")
+
+        eventLog.logEvent('StartAq', '')
 
         # Start the capture
         #print str(self.getCamPropValue('SENSOR MODE'))

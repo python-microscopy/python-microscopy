@@ -52,7 +52,7 @@ class BaseDataSource(object):
     def shape(self):
         """The 4D shape of the datasource"""
         #if self.type == 'DataSource':
-        return DefaultList(self.getSliceShape() + (self.getNumSlices()/self.sizeC,self.sizeC) )
+        return DefaultList(self.getSliceShape() + (int(self.getNumSlices()/self.sizeC),self.sizeC) )
         
     def getSlice(self, ind):
         """Return the nth 2D slice of the DataSource where the higher dimensions
