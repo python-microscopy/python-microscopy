@@ -325,7 +325,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     
     return P
 
-def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
+def create_pyramid_from_dataset(filename, outdir, tile_size=256, **kwargs):
     from PYME.IO import image
     dataset = image.ImageStack(filename=filename)
     
