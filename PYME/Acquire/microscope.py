@@ -379,8 +379,8 @@ class microscope(object):
         return res
         
     def SetPos(self, **kwargs):
-        for k, v in kwargs.items():
-            self.state['Positioning.%s' % k] = v
+        state_updates = {'Positioning.%s' % k : v for k, v in kwargs.items()}
+        self.state.setItems(state_updates)
             
     def GetPosRange(self):
         #Todo - fix to use positioning

@@ -151,8 +151,19 @@ class PointScanner:
             #self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[(callN % (self.imsize))/self.nx])
             
             #self.scope.SetPos(x=self.xp[callN % self.nx], y = self.yp[(callN % (self.imsize))/self.nx])
-            self.scope.state.setItems({'Positioning.x' : self.xp[callN % self.nx], 
-                                       'Positioning.y' : self.yp[int((callN % (self.imsize))/self.nx)]
+
+            x_i = callN % self.nx
+            y_i = int((callN % (self.imsize))/self.nx)
+
+            # do a bidirectional scan(faster)
+            if False: #((y_i) % 2):
+                #scan in reverse direction on odd runs
+                new_x = self.xp[(len(self.xp) - 1) - x_i]
+            else:
+                new_x = self.xp[x_i]
+
+            self.scope.state.setItems({'Positioning.x' : new_x,
+                                       'Positioning.y' : self.yp[y_i]
                                        }, stopCamera = True)
                                        
             #print 'SetP'
