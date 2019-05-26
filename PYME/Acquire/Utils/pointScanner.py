@@ -138,21 +138,21 @@ class PointScanner:
         #print self.callNum
         if (self.callNum % self.dwellTime) == 0:
             #record pixel in overview
-            callN = self.callNum/self.dwellTime
+            callN = int(self.callNum/self.dwellTime)
             if self.avg:
-                self.image[callN % self.nx, (callN % (self.image.size))/self.nx] = self.scope.currentFrame.mean() - self.background
+                self.image[callN % self.nx, int((callN % (self.image.size))/self.nx)] = self.scope.currentFrame.mean() - self.background
                 self.view.Refresh()
 
         if ((self.callNum +1) % self.dwellTime) == 0:
             #move piezo
-            callN = (self.callNum+1)/self.dwellTime
+            callN = int((self.callNum+1)/self.dwellTime)
             
             #self.xpiezo[0].MoveTo(self.xpiezo[1], self.xp[callN % self.nx])
             #self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[(callN % (self.imsize))/self.nx])
             
             #self.scope.SetPos(x=self.xp[callN % self.nx], y = self.yp[(callN % (self.imsize))/self.nx])
             self.scope.state.setItems({'Positioning.x' : self.xp[callN % self.nx], 
-                                       'Positioning.y' : self.yp[(callN % (self.imsize))/self.nx]
+                                       'Positioning.y' : self.yp[int((callN % (self.imsize))/self.nx)]
                                        }, stopCamera = True)
                                        
             #print 'SetP'
@@ -310,7 +310,7 @@ class PointScanner3D:
         
         if self.callNum > 0  and (self.callNum % self.dwellTime) == 0:
             #record pixel in overview
-            callN = self.callNum/self.dwellTime
+            callN = int(self.callNum/self.dwellTime)
 
             #vary z fastest
             iz = callN % self.nz
@@ -323,7 +323,7 @@ class PointScanner3D:
 
         if ((self.callNum +1) % self.dwellTime) == 0:
             #move piezo
-            callN = (self.callNum+1)/self.dwellTime
+            callN = int((self.callNum+1)/self.dwellTime)
 
             #vary z fastest
             iz = callN % self.nz
