@@ -1,9 +1,12 @@
 from PYME.util import webframework
 import jinja2
-from PYME.Analysis import deTile
+from PYME.Analysis import tile_pyramid
 import numpy as np
 import cherrypy
 from io import BytesIO
+import os
+
+from PYME.IO import MetaDataHandler
 
 #try:
 #    import Image
@@ -18,7 +21,9 @@ env = jinja2.Environment(
 
 class TileServer(object):
     def __init__(self, tile_dir, tile_size=256):
-        self._pyramid =deTile.ImagePyramid(tile_dir, pyramid_tile_size=tile_size)
+        self.mdh = MetaDataHandler.load_json(os.path.join(tile_dir, 'metadata.json'))
+        
+        self._pyramid =tile_pyramid.ImagePyramid(tile_dir, pyramid_tile_size=self.mdh['Pyramid.TileSize'])
 
     @cherrypy.expose
     def get_tile(self, layer, x, y, vmin=0, vmax=255):
@@ -37,7 +42,10 @@ class TileServer(object):
     
     @cherrypy.expose
     def index(self):
-        return env.get_template('tileviewer.html').render()
+        return env.get_template('tileviewer.html').render(tile_size=self.mdh['Pyramid.TileSize'],
+                                                          pyramid_width_px=self.mdh['Pyramid.PixelsX'],
+                                                          pyramid_height_px=self.mdh['Pyramid.PixelsY'],
+                                                          pyramid_depth=self.mdh['Pyramid.Depth'])
     
     
     
