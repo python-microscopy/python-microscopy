@@ -31,7 +31,9 @@ from .base_piezo import PiezoBase
 from PYME.Acquire.Hardware.GCS import gcs
 
 def get_connected_devices():
-    return gcs.EnumerateUSB('E816')
+    n, devs= gcs.EnumerateUSB('E-816')
+
+    return devs.split(b'\n')[:n]
 
 class piezo_e816(PiezoBase):
     def __init__(self, identifier=None, maxtravel = 12.00, Osen=None, hasTrigger=False):
@@ -60,7 +62,7 @@ class piezo_e816(PiezoBase):
 
         #self.ser_port.write('WTO A0\n')
         #self.ser_port.write('SVO A1\n')
-        gcs.SVO(self.id,'A', [1])
+        gcs.SVO(self.id,b'A', [1])
         
         self.lastPos = self.GetPos()
 
@@ -70,7 +72,7 @@ class piezo_e816(PiezoBase):
     def ReInit(self):
         #self.ser_port.write('WTO A0\n')
         #self.ser_port.write('SVO A1\n')
-        gcs.SVO('A', [1])
+        gcs.SVO(b'A', [1])
         self.lastPos = self.GetPos() 
         
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
@@ -78,15 +80,15 @@ class piezo_e816(PiezoBase):
             if (fPos >= 0):
                 if (fPos <= self.max_travel):
                     #self.ser_port.write('MOV A%3.4f\n' % fPos)
-                    gcs.MOV(self.id, 'A', [fPos])
+                    gcs.MOV(self.id, b'A', [fPos])
                     self.lastPos = fPos
                 else:
                     #self.ser_port.write('MOV A%3.4f\n' % self.max_travel)
-                    gcs.MOV(self.id, 'A', [self.max_travel])
+                    gcs.MOV(self.id, b'A', [self.max_travel])
                     self.lastPos = self.max_travel
             else:
                 #self.ser_port.write('MOV A%3.4f\n' % 0.0)
-                gcs.MOV(self.id, 'A', [0.0])
+                gcs.MOV(self.id, b'A', [0.0])
                 self.lastPos = 0.0
 
     def GetPos(self, iChannel=0):
@@ -97,19 +99,19 @@ class piezo_e816(PiezoBase):
             #self.ser_port.flushOutput()
             #time.sleep(0.05)
             #res = self.ser_port.readline()
-            return float(gcs.qPOS(self.id,'A')) + self.osen
+            return float(gcs.qPOS(self.id,b'A')[iChannel]) + self.osen
 
     def SetDriftCompensation(self, dc = True):
         with self.lock:
             if dc:
                 #self.ser_port.write('DCO A1\n')
                 #self.ser_port.flushOutput()
-                gcs.DCO('A', [1])
+                gcs.DCO(b'A', [1])
                 self.driftCompensation = True
             else:
                 #self.ser_port.write('DCO A0\n')
                 #self.ser_port.flushOutput()
-                gcs.DCO('A', [0])
+                gcs.DCO(b'A', [0])
                 self.driftCompensation = False
 
     def PopulateWaveTable(self,iChannel, data):
@@ -189,7 +191,7 @@ class piezo_e816(PiezoBase):
             #self.ser_port.flush()
 
             #verstring = self.ser_port.readline()
-            verstring = gcs.qIDN(self.id)
+            verstring = gcs.qIDN(self.id).decode()
             return float(re.findall(r'V(\d\.\d\d)', verstring)[0])
 
     def GetTargetPos(self,iChannel=0):
@@ -223,7 +225,7 @@ class piezo_e816T(PiezoBase):
 
         #self.ser_port.write('WTO A0\n')
         #self.ser_port.write('SVO A1\n')
-        gcs.SVO(self.id, 'A', [1])
+        gcs.SVO(self.id, b'A', [1])
 
         self.servo = True
         self.errCode = 0
@@ -239,7 +241,7 @@ class piezo_e816T(PiezoBase):
         self.position = np.array([0.])
         # self.velocity = np.array([self.maxvelocity, self.maxvelocity])
 
-        self.targetPosition = np.array([200.])
+        self.targetPosition = np.array([maxtravel / 2.0])
         # self.targetVelocity = self.velocity.copy()
 
         self.lastTargetPosition = self.position.copy()
@@ -257,7 +259,7 @@ class piezo_e816T(PiezoBase):
                 # check position
                 time.sleep(0.005)
 
-                self.position[0] = float(gcs.qPOS(self.id, 'A'))+ self.osen
+                self.position[0] = float(gcs.qPOS(self.id, b'A')[0])+ self.osen
 
                 self.errCode = int(gcs.qERR(self.id))
 
@@ -269,7 +271,7 @@ class piezo_e816T(PiezoBase):
                     # update our target position
                     pos = np.clip(self.targetPosition, 0, self.max_travel)
 
-                    gcs.MOV(self.id, 'A', pos[:1])
+                    gcs.MOV(self.id, b'A', pos[:1])
                     self.lastTargetPosition = pos.copy()
                     # print('p')
                     logging.debug('Moving piezo to target: %f' % (pos[0],))
@@ -317,7 +319,7 @@ class piezo_e816T(PiezoBase):
     def ReInit(self):
         with self.lock:
             #self.ser_port.write('WTO A0\n')
-            gcs.SVO('A', [1])
+            gcs.SVO(b'A', [1])
             time.sleep(1)
             self.lastPos = self.GetPos()
 
@@ -369,10 +371,10 @@ class piezo_e816T(PiezoBase):
     def SetDriftCompensation(self, dc=True):
         with self.lock:
             if dc:
-                gcs.DCO(self.id, 'A', 1)
+                gcs.DCO(self.id, b'A', 1)
                 self.driftCompensation = True
             else:
-                gcs.DCO(self.id, 'A', 0)
+                gcs.DCO(self.id, b'A', 0)
                 self.driftCompensation = False
 
     # def PopulateWaveTable(self, iChannel, data):

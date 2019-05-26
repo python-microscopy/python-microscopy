@@ -43,9 +43,9 @@ prefix =  'E816_'
 
 if plat.startswith('Windows'):
     if arch == '32bit':
-        gcs_dll = WinDLL(dll_prefix + 'GCS_DLL.dll')
+        gcs_dll = WinDLL(dll_prefix + 'DLL.dll')
     else:
-        gcs_dll = WinDLL(dll_prefix + 'GCS_DLL_x64.dll')
+        gcs_dll = WinDLL(dll_prefix + 'DLL_x64.dll')
     from ctypes.wintypes import ULONG, DWORD, BOOL, BYTE, WORD, UINT, HANDLE, HWND
 else:
     raise RuntimeError('Not a supported platform: %s' % plat)
@@ -72,19 +72,19 @@ ConnectRS232.__doc__ = \
 """int Mercury_ConnectRS232(int port, int baudrate)
 PI_Mercury_GCS_DLL.h:42"""
 
-TranslateError = getattr(gcs_dll, prefix + 'ConnectUSB')
-TranslateError.restype = c_int
-TranslateError.argtypes = [STRING]
-TranslateError.argnames = ['szDescription']
-TranslateError.__doc__ = \
+ConnectUSB = getattr(gcs_dll, prefix + 'ConnectUSB')
+ConnectUSB.restype = c_int
+ConnectUSB.argtypes = [STRING]
+ConnectUSB.argnames = ['szDescription']
+ConnectUSB.__doc__ = \
 """int Mercury_ConnectUSB(const char *szDescription)
 """
 
-TranslateError = getattr(gcs_dll, prefix + 'EnumerateUSB')
-TranslateError.restype = c_int
-TranslateError.argtypes = [STRING, c_int, STRING]
-TranslateError.argnames = ['szBuffer', 'maxlen', 'szFilter']
-TranslateError.__doc__ = \
+EnumerateUSB = getattr(gcs_dll, prefix + 'EnumerateUSB')
+EnumerateUSB.restype = c_int
+EnumerateUSB.argtypes = [STRING, c_int, STRING]
+EnumerateUSB.argnames = ['szBuffer', 'maxlen', 'szFilter']
+EnumerateUSB.__doc__ = \
 """int Mercury_EnumerateUSB(char * szBuffer, int iBufferSize, const char *szFilter)
 """
 
@@ -112,13 +112,13 @@ GetError.__doc__ = \
 """int Mercury_GetError(int ID)
 PI_Mercury_GCS_DLL.h:48"""
 
-SetErrorCheck = getattr(gcs_dll, prefix + 'SetErrorCheck')
-SetErrorCheck.restype = BOOL
-SetErrorCheck.argtypes = [c_int, BOOL]
-SetErrorCheck.argnames = ['ID', 'bErrorCheck']
-SetErrorCheck.__doc__ = \
-"""BOOL Mercury_SetErrorCheck(int ID, BOOL bErrorCheck)
-PI_Mercury_GCS_DLL.h:49"""
+# SetErrorCheck = getattr(gcs_dll, prefix + 'SetErrorCheck')
+# SetErrorCheck.restype = BOOL
+# SetErrorCheck.argtypes = [c_int, BOOL]
+# SetErrorCheck.argnames = ['ID', 'bErrorCheck']
+# SetErrorCheck.__doc__ = \
+# """BOOL Mercury_SetErrorCheck(int ID, BOOL bErrorCheck)
+# PI_Mercury_GCS_DLL.h:49"""
 
 TranslateError = getattr(gcs_dll, prefix + 'TranslateError')
 TranslateError.restype = BOOL
@@ -191,33 +191,33 @@ qPOS.__doc__ = \
 """BOOL Mercury_qPOS(int ID, unknown * szAxes, double * pdValarray)
 PI_Mercury_GCS_DLL.h:73"""
 
-POS = getattr(gcs_dll, prefix + 'POS')
-POS.restype = BOOL
-POS.argtypes = [c_int, STRING, POINTER(c_double)]
-POS.argnames = ['ID', 'szAxes', 'pdValarray']
-POS.__doc__ = \
-"""BOOL Mercury_POS(int ID, unknown * szAxes, unknown * pdValarray)
-PI_Mercury_GCS_DLL.h:74"""
+# POS = getattr(gcs_dll, prefix + 'POS')
+# POS.restype = BOOL
+# POS.argtypes = [c_int, STRING, POINTER(c_double)]
+# POS.argnames = ['ID', 'szAxes', 'pdValarray']
+# POS.__doc__ = \
+# """BOOL Mercury_POS(int ID, unknown * szAxes, unknown * pdValarray)
+# PI_Mercury_GCS_DLL.h:74"""
 
 
 
 
 
-SAI = getattr(gcs_dll, prefix + 'SAI')
-SAI.restype = BOOL
-SAI.argtypes = [c_int, STRING, STRING]
-SAI.argnames = ['ID', 'szOldAxes', 'szNewAxes']
-SAI.__doc__ = \
-"""BOOL Mercury_SAI(int ID, unknown * szOldAxes, unknown * szNewAxes)
-PI_Mercury_GCS_DLL.h:83"""
-
-qSAI = getattr(gcs_dll, prefix + 'qSAI')
-qSAI.restype = BOOL
-qSAI.argtypes = [c_int, STRING, c_int]
-qSAI.argnames = ['ID', 'axes', 'maxlen']
-qSAI.__doc__ = \
-"""BOOL Mercury_qSAI(int ID, char * axes, int maxlen)
-PI_Mercury_GCS_DLL.h:84"""
+# SAI = getattr(gcs_dll, prefix + 'SAI')
+# SAI.restype = BOOL
+# SAI.argtypes = [c_int, STRING, STRING]
+# SAI.argnames = ['ID', 'szOldAxes', 'szNewAxes']
+# SAI.__doc__ = \
+# """BOOL Mercury_SAI(int ID, unknown * szOldAxes, unknown * szNewAxes)
+# PI_Mercury_GCS_DLL.h:83"""
+#
+# qSAI = getattr(gcs_dll, prefix + 'qSAI')
+# qSAI.restype = BOOL
+# qSAI.argtypes = [c_int, STRING, c_int]
+# qSAI.argnames = ['ID', 'axes', 'maxlen']
+# qSAI.__doc__ = \
+# """BOOL Mercury_qSAI(int ID, char * axes, int maxlen)
+# PI_Mercury_GCS_DLL.h:84"""
 
 
 SVO = getattr(gcs_dll, prefix + 'SVO')
@@ -296,13 +296,13 @@ IsRunningMacro.__doc__ = \
 """BOOL Mercury_IsRunningMacro(int ID, BOOL * pbRunningMacro)
 PI_Mercury_GCS_DLL.h:142"""
 
-DEL = getattr(gcs_dll, prefix + 'DEL')
-DEL.restype = BOOL
-DEL.argtypes = [c_int, c_int]
-DEL.argnames = ['ID', 'nMilliSeconds']
-DEL.__doc__ = \
-"""BOOL Mercury_DEL(int ID, int nMilliSeconds)
-PI_Mercury_GCS_DLL.h:144"""
+# DEL = getattr(gcs_dll, prefix + 'DEL')
+# DEL.restype = BOOL
+# DEL.argtypes = [c_int, c_int]
+# DEL.argnames = ['ID', 'nMilliSeconds']
+# DEL.__doc__ = \
+# """BOOL Mercury_DEL(int ID, int nMilliSeconds)
+# PI_Mercury_GCS_DLL.h:144"""
 
 MAC_BEG = getattr(gcs_dll, prefix + 'MAC_BEG')
 MAC_BEG.restype = BOOL
@@ -351,17 +351,20 @@ __all__ = ['GcsGetAnswerSize',
            'ConnectRS232',
            'MVR', 'SVO', 'qIDN',
            'CloseConnection',
-           'MAC_END', 'POS',
-           'qSAI',
+           #'MAC_END',
+           #'POS',
+           #'qSAI',
            'MAC_NSTART', 'qSVO',
            'qMOV', 'qONT',
            'GcsGetAnswer',
-           'DEL', 'qMAC',
+           #'DEL', #'qMAC',
            'IsConnected', 'InterfaceSetupDlg',
            'GetError',
             'MAC_START',
             'qHLP',
-           'SetErrorCheck',
+           #'SetErrorCheck',
            'MAC_DEL',
-           'SAI', 'IsRunningMacro',
+
+           #'SAI',
+           'IsRunningMacro',
            'ConnectUSB', 'EnumerateUSB']
