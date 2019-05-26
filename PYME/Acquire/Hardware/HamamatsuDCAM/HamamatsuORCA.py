@@ -105,6 +105,7 @@ class HamamatsuORCA(HamamatsuDCAM):
         self.nReadOut = 0
 
         # initialize other properties needed
+        self.external_shutter = None
 
     def Init(self):
         HamamatsuDCAM.Init(self)
@@ -301,6 +302,21 @@ class HamamatsuORCA(HamamatsuDCAM):
         HamamatsuDCAM.GenStartMetadata(self, mdh)
         if self.active:
             mdh.setEntry('Camera.ADOffset', self.noiseProps['ADOffset'])
+
+    def SetShutter(self, mode):
+        """
+        This is a shim to use an external shutter, if ~assigned to the ORCA
+        Parameters
+        ----------
+        mode : bool
+            True (1) if open
+
+        Returns
+        -------
+        None
+        """
+        if self.external_shutter is not None:
+            self.external_shutter.SetShutter(mode)
 
     def Shutdown(self):
         # if self.initialized:
