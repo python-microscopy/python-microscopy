@@ -211,9 +211,17 @@ class dSimControl(afp.foldPanel):
         self.cbFlatten.SetValue(False)
         hsizer.Add(self.cbFlatten, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
 
-        self.cbColour = wx.CheckBox(pane, -1, u'colourful')
+        sbsizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 2)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.cbColour = wx.CheckBox(pane, -1, u'Colourful')
         self.cbColour.SetValue(False)
         hsizer.Add(self.cbColour, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 2)
+        
+        self.cbWrap = wx.CheckBox(pane, -1, u'Wrap at FOV edge')
+        self.cbWrap.SetValue(True)
+        hsizer.Add(self.cbWrap, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 2)
         
         sbsizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 2)
         
@@ -531,10 +539,11 @@ class dSimControl(afp.foldPanel):
         y_chan_size = YVals[-1] - YVals[0]
 
         wc.xp = wc.xp - wc.xp.mean() + x_chan_size/2
-        wc.xp = np.mod(wc.xp, x_chan_size) + XVals[0]
-
         wc.yp = wc.yp - wc.yp.mean() + y_chan_size/2
-        wc.yp = np.mod(wc.yp, y_chan_size) + YVals[0]
+
+        if self.cbWrap.GetValue():
+            wc.xp = np.mod(wc.xp, x_chan_size) + XVals[0]
+            wc.yp = np.mod(wc.yp, y_chan_size) + YVals[0]
 
         if self.cbFlatten.GetValue():
             wc.zp *= 0

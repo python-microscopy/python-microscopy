@@ -25,6 +25,7 @@ from PYME.Acquire.Hardware.Piezos.base_piezo import PiezoBase
 
 class FakePiezo(PiezoBase):
     gui_description = 'Fake %s-piezo'
+    units_um = 1.0
     
     def __init__(self, maxtravel = 100.00):
         self.max_travel = maxtravel

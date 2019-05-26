@@ -774,3 +774,19 @@ class OMEXMLMDHandler(XMLMDHandler):
 #    def __repr__(self):
 #        s = ['%s: %s' % (en, self.getEntry(en)) for en in self.getEntryNames()]
 #        return '<%s>:\n\n' % self.__class__.__name__ + '\n'.join(s)
+
+
+def from_json(json_string):
+    import json
+    mdh = NestedClassMDHandler()
+    mdh.update(json.loads(json_string))
+    
+    return mdh
+    
+def load_json(filename):
+    import json
+    from PYME.IO import unifiedIO
+    mdh = NestedClassMDHandler()
+    mdh.update(json.loads(unifiedIO.read(filename)))
+    
+    return mdh
