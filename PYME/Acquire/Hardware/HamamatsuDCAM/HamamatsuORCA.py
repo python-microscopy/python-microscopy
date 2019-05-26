@@ -119,6 +119,7 @@ class HamamatsuORCA(HamamatsuDCAM):
             self.waitstart.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY
             self.waitstart.timeout = DCAMWAIT_TIMEOUT_INFINITE
             self.setDefectCorrectMode(False)
+            self.enable_cooling(True)
             self.initialized = True
 
 
@@ -141,6 +142,13 @@ class HamamatsuORCA(HamamatsuDCAM):
         """
         onoff = 2.0 if on else 1.0
         self.setCamPropValue('DEFECT CORRECT MODE', onoff)
+
+    def enable_cooling(self, on=True):
+        #OFF =1 , ON = 2
+
+        onoff = 2.0 if on else 1.0
+        self.setCamPropValue('SENSOR COOLER', onoff)
+
         
     def GetAcquisitionMode(self):
         #FIXME - actually support both continuous and single shot modes
