@@ -46,7 +46,7 @@ class ImagePyramid(object):
 
         """
         
-        new_tile = np.zeros(self.tile_size * span)
+        new_tile = np.zeros([self.tile_size * span, self.tile_size * span])
         
         for i in range(span):
             for j in range(span):
@@ -54,6 +54,21 @@ class ImagePyramid(object):
                 if not subtile is None:
                     new_tile[(i * self.tile_size):((i + 1) * self.tile_size),
                     (j * self.tile_size):((j + 1) * self.tile_size)] = subtile
+                    
+        return new_tile
+    
+    def get_layer_tile_coords(self, level):
+        base_tile_dir = os.path.join(self.base_dir, '%d' % level)
+    
+        x_dirs = glob.glob(os.path.join(base_tile_dir, '*'))
+        base_tile_names = []
+    
+        for x_dir in x_dirs:
+            base_tile_names += glob.glob(os.path.join(x_dir, '*img.npy'))
+    
+        tile_coords = [np.array([int(s) for s in os.path.split(fn)[-1].split('_')[:2]]) for fn in base_tile_names]
+        
+        return tile_coords
     
     def _make_layer(self, inputLevel):
         from scipy import ndimage
@@ -62,15 +77,7 @@ class ImagePyramid(object):
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
         
-        base_tile_dir = os.path.join(self.base_dir, '%d' % inputLevel)
-        
-        x_dirs = glob.glob(os.path.join(base_tile_dir, '*'))
-        base_tile_names = []
-        
-        for x_dir in x_dirs:
-            base_tile_names += glob.glob(os.path.join(x_dir, '*img.npy'))
-        
-        tile_coords = [np.array([int(s) for s in os.path.split(fn)[-1].split('_')[:2]]) for fn in base_tile_names]
+        tile_coords = self.get_layer_tile_coords(inputLevel)
         
         print('tile_coords:', tile_coords)
         
