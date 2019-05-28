@@ -22,14 +22,12 @@
 ##################
 
 #!/usr/bin/python
-from PYME.Acquire.ExecTools import joinBGInit, HWNotPresent, init_gui, init_hardware
-import scipy
-import time
+from PYME.Acquire.ExecTools import joinBGInit, init_gui, init_hardware
 
 
 @init_hardware('XY Stage')  # FIXME - may need module-level locks if we add 'x' and 'y' of the xy stage as different piezos
 def mz_stage(scope):
-    from PYME.Acquire.Hardware.Piezos.marzhauser_tango import MarzhauserTangoXY, MarzHauserJoystick
+    from PYME.Acquire.Hardware.Tango.marzhauser_tango import MarzhauserTangoXY, MarzHauserJoystick
     scope.stage = MarzhauserTangoXY()  # FIXME - change to threaded
     # scope.stage.SetSoftLimits(0, [1.06, 20.7])
     # scope.stage.SetSoftLimits(1, [.8, 17.6])
