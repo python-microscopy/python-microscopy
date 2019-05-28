@@ -357,7 +357,7 @@ class HamamatsuORCA(HamamatsuDCAM):
 
 from PYME.Acquire.Hardware.Camera import MultiviewCamera
 
-class MultiviewOrca(HamamatsuORCA, MultiviewCamera):
+class MultiviewOrca(MultiviewCamera, HamamatsuORCA):
     def __init__(self, camNum, multiview_info):
         HamamatsuORCA.__init__(self, camNum)
         # default to the whole chip

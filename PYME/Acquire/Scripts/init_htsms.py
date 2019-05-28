@@ -78,11 +78,14 @@ def pz(scope):
 def orca_cam(scope):
     from PYME.Acquire.Hardware.HamamatsuDCAM.HamamatsuORCA import MultiviewOrca  # HamamatsuORCA
     # cam = HamamatsuORCA(0)
+    size = 240
     multiview_info = {
-        'Multiview.NumROIs': 2,
-        'Multiview.ROISize': (256, 256),
-        'Multiview.ROI0Origin': (530, 530),
-        'Multiview.ROI1Origin': (1000, 1000),
+        'Multiview.NumROIs': 4,
+        'Multiview.ROISize': (size, size),
+        'Multiview.ROI0Origin': (20, 1024 - int(size/2)),
+        'Multiview.ROI1Origin': (1024 - size, 1024 - int(size/2)),
+        'Multiview.ROI2Origin': (1024, 1024 - int(size/2)),
+        'Multiview.ROI3Origin': (2048 - 20 - size, 1024 - int(size/2)),
     }
     cam = MultiviewOrca(0, multiview_info)
 

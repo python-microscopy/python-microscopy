@@ -735,7 +735,7 @@ class MultiviewCamera(object):
 
             To implement a multiview camera, simply inherit both from the specific camera class you want as well as this
             class, e.g.
-            class MultiviewCoolCamera(CoolCamera, MultiviewCamera)
+            class MultiviewCoolCamera(MultiviewCamera, CoolCamera)
                 def __init__(self, whatever_cool_cam_needs, multiview_info)
                     CoolCamera.__init__(self, whatever_cool_cam_needs)
                     default_roi = dict(xi=0, xf=2048, yi=0, yf=2048)
