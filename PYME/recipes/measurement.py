@@ -784,9 +784,13 @@ class TilePhysicalCoords(ModuleBase):
         out = tabular.mappingFilter(meas)
         
         x_frame_um, y_frame_um =img.data.tile_coords_um[meas['t']].T
+        x_frame_px, y_frame_px = img.data.tile_coords[meas['t']].T
         
         out.addColumn('x_um', x_frame_um + img.mdh['voxelsize.x']*meas['x'])
         out.addColumn('y_um', y_frame_um + img.mdh['voxelsize.y']*meas['y'])
+
+        out.addColumn('x_px', x_frame_px + meas['x'])
+        out.addColumn('y_px', y_frame_px + meas['y'])
         
         out.mdh = meas.mdh
         
