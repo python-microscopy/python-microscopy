@@ -815,25 +815,29 @@ class MultiviewCamera(object):
             """
             # set the camera FOV to be just large enough so we do most of the cropping where it is already optimized
             self.x_origins, self.y_origins = zip(*[self.view_origins[view] for view in views])
-            x_min, x_max = min(self.x_origins), max(self.x_origins)
-            y_min, y_max = min(self.y_origins), max(self.y_origins)
+            chip_x_min, chip_x_max = min(self.x_origins), max(self.x_origins)
+            chip_y_min, chip_y_max = min(self.y_origins), max(self.y_origins)
 
-            width = x_max + self.size_x - x_min
-            height = y_max + self.size_y - y_min
+            chip_width = chip_x_max + self.size_x - chip_x_min
+            chip_height = chip_y_max + self.size_y - chip_y_min
 
-            self.chip_roi = [x_min, y_min, x_min + width, y_min + height]
+            self.chip_roi = [chip_x_min, chip_y_min, chip_x_min + chip_width, chip_y_min + chip_height]
             logger.debug('setting chip ROI')
             self.SetROI(*self.chip_roi)
 
             # hold an array for temporarily writing the roughly cropped chip
-            self.chip_data = np.empty((width, height), dtype='uint16', order='F')
+            self.chip_data = np.empty((chip_width, chip_height), dtype='uint16', order='F')
 
             # precalculate slices for each view
             self.view_slices, self.output_slices = [], []
             for x_ind, view in enumerate(views):
                 ox, oy = self.view_origins[view]
-                self.view_slices.append(np.r_[ox - x_min:ox - x_min + self.size_x + width, oy - y_min: oy - y_min + self.size_y - height])
-                self.output_slices.append(np.r_[self.size_x * x_ind, :])
+                # calculate the offset from the chip origin
+                oxp, oyp = ox - chip_x_min, oy - chip_y_min
+                # calculate the slices to pull out of roi on chip
+                self.view_slices.append(np.r_[oxp:oxp + self.size_x, oyp: oyp + self.size_y])
+                # calculate slices to write into out array
+                self.output_slices.append(np.r_[self.size_x * x_ind:self.size_x * (x_ind + 1), 0:self.size_y])
 
             # update our apparent height and widths, concatenating along 'x' or the 0th dim
             self._current_pic_width = len(views) * self.size_x
@@ -871,7 +875,7 @@ class MultiviewCamera(object):
 
             """
             if self.multiview_enabled:
-                logger.debug('pulling frame')
+                # logger.debug('pulling frame')
                 # pull data off the roughly cropped frame
                 self.camera_class.ExtractColor(self, self.chip_data, mode)
                 # extract the multiview frames from the cropped chip into our output
