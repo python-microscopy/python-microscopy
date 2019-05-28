@@ -29,6 +29,8 @@
 
 from .HamamatsuDCAM import *
 from PYME.Acquire import eventLog
+import logging
+logger = logging.getLogger(__name__)
 
 # C11440-22CU DCAM_IDPROP variables
 # {'SUBARRAY VSIZE': 4202816, 'BUFFER TOP OFFSET BYTES': 4326224, 'IMAGE
@@ -67,6 +69,10 @@ DCAMPROP_MODE__OFF = 1
 DCAMPROP_MODE__ON = 2
 
 DCAMPROP_SENSORMODE__PROGRESSIVE = 12
+
+DCAMPROP_TRIGGERSOURCE_INTERNAL = 1
+DCAMPROP_TRIGGERSOURCE_EXTERNAL = 2
+DCAMPROP_TRIGGERSOURCE_SOFTWARE = 3
 
 DCAMCAP_START_SEQUENCE = ctypes.c_int32(int("-1",0))
 
@@ -121,6 +127,7 @@ class HamamatsuORCA(HamamatsuDCAM):
             self.waitstart.timeout = DCAMWAIT_TIMEOUT_INFINITE
             self.setDefectCorrectMode(False)
             self.enable_cooling(True)
+            self._mode = self.MODE_CONTINUOUS
             self.initialized = True
 
 
@@ -153,7 +160,18 @@ class HamamatsuORCA(HamamatsuDCAM):
         
     def GetAcquisitionMode(self):
         #FIXME - actually support both continuous and single shot modes
-        return self.MODE_CONTINUOUS
+        #return self.MODE_CONTINUOUS
+        return self._mode
+
+    def SetAcquisitionMode(self, mode):
+        if mode in [self.MODE_CONTINUOUS, self.MODE_SOFTWARE_TRIGGER]:
+            self._mode = mode
+        else:
+            raise RuntimeError('Mode %d not supported' % mode)
+
+
+    def FireSoftwareTrigger(self):
+        self.checkStatus(dcam.dcamcap_firetrigger(self.handle, 0), 'dcamcap_firetrigger')
 
     def StartExposure(self):
         self.nReadOut = 0
@@ -167,6 +185,13 @@ class HamamatsuORCA(HamamatsuDCAM):
             self.bs)),
                          "dcambuf_alloc")
 
+        if self._mode == self.MODE_SOFTWARE_TRIGGER:
+            self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_SOFTWARE)
+        else:
+            #continuous mode, internal trigger
+            self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_INTERNAL)
+
+
         eventLog.logEvent('StartAq', '')
 
         # Start the capture
@@ -179,7 +204,7 @@ class HamamatsuORCA(HamamatsuDCAM):
         return 0
 
     def SetROI(self, x1, y1, x2, y2):
-        print('Setting ROI: x0 %3.1f, y0 %3.1f, w %3.1f, h %3.1f' %(x1, y1, x2-x1, y2-y1))
+        logger.debug('Setting ROI: x0 %3.1f, y0 %3.1f, w %3.1f, h %3.1f' %(x1, y1, x2-x1, y2-y1))
 
         #hamamatsu only supports ROI sizes (and positions) which are multiples of 4
         x1 = 4*np.floor(x1/4)
@@ -256,11 +281,14 @@ class HamamatsuORCA(HamamatsuDCAM):
         return ret
 
     def ExpReady(self):
-        self.checkStatus(dcam.dcamwait_start(self.waitopen.hdcamwait,
-                                             ctypes.byref(self.waitstart)),
-                         "dcamwait_start")
-        return self.waitstart.eventhappened == int(
-            DCAMWAIT_CAPEVENT_FRAMEREADY.value)
+        try:
+            self.checkStatus(dcam.dcamwait_start(self.waitopen.hdcamwait, ctypes.byref(self.waitstart)),
+                             "dcamwait_start")
+        except DCAMException as e:
+            logger.error(str(e))
+            return False
+
+        return self.waitstart.eventhappened == int(DCAMWAIT_CAPEVENT_FRAMEREADY.value)
         #return self.GetNumImsBuffered() > 0
 
     def GetBufferSize(self):
@@ -325,3 +353,13 @@ class HamamatsuORCA(HamamatsuDCAM):
             # self.checkStatus(dcam.dcamwait_close(self.waitopen.hdcamwait),
             #                "dcamwait_close")
         HamamatsuDCAM.Shutdown(self)
+
+
+from PYME.Acquire.Hardware.Camera import MultiviewCamera
+
+class MultiviewOrca(HamamatsuORCA, MultiviewCamera):
+    def __init__(self, camNum, multiview_info):
+        HamamatsuORCA.__init__(self, camNum)
+        # default to the whole chip
+        default_roi = dict(xi=0, xf=2048, yi=0, yf=2048)
+        MultiviewCamera.__init__(self, multiview_info, default_roi, HamamatsuORCA)
