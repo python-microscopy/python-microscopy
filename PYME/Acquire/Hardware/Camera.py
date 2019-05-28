@@ -835,9 +835,9 @@ class MultiviewCamera(object):
                 # calculate the offset from the chip origin
                 oxp, oyp = ox - chip_x_min, oy - chip_y_min
                 # calculate the slices to pull out of roi on chip
-                self.view_slices.append(np.r_[oxp:oxp + self.size_x, oyp: oyp + self.size_y])
+                self.view_slices.append(np.s_[oxp:oxp + self.size_x, oyp: oyp + self.size_y])
                 # calculate slices to write into out array
-                self.output_slices.append(np.r_[self.size_x * x_ind:self.size_x * (x_ind + 1), 0:self.size_y])
+                self.output_slices.append(np.s_[self.size_x * x_ind:self.size_x * (x_ind + 1), 0:self.size_y])
 
             # update our apparent height and widths, concatenating along 'x' or the 0th dim
             self._current_pic_width = len(views) * self.size_x
