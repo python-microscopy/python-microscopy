@@ -313,6 +313,8 @@ class piezo_e816T(PiezoBase):
         logging.info("Shutting down piezo")
         with self.lock:
             self.loopActive = False
+
+        time.sleep(0.5)
             # time.sleep(.01)
             # self.ser_port.close()
 
