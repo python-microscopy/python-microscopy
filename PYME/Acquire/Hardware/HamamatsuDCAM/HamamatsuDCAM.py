@@ -205,6 +205,7 @@ dcam.dcambuf_lockframe.argtypes=[HDCAM,ctypes.c_void_p]
 dcam.dcamcap_start.argtypes=[HDCAM,ctypes.c_int32]
 dcam.dcamcap_stop.argtypes=[HDCAM,]
 dcam.dcamcap_transferinfo.argtypes=[HDCAM,ctypes.c_void_p]
+dcam.dcamcap_firetrigger.argtypes=[HDCAM, ctypes.c_int32]
 
 dcam.dcamwait_start.argtypes=[ctypes.c_void_p,ctypes.c_void_p]
 
