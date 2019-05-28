@@ -561,6 +561,18 @@ class ImageStack(object):
         twoColourPlot.PlotShiftField2(dx, dy, [256, 512])
 
         self.mode = 'default'
+
+    def _load_supertile(self, filename):
+        from PYME.IO.DataSources import SupertileDatasource
+        
+        #strip leading supertile schema
+        if filename.upper().startswith('SUPERTILE:'):
+            filename = filename[10:]
+        
+        self.data = SupertileDatasource.DataSource(filename)
+        self.mdh = self.data.mdh
+    
+        self.mode = 'default'
         
     def _loadNPY(self, filename):
         """Load numpy .npy data.
@@ -960,6 +972,8 @@ class ImageStack(object):
                 self._loadHTTP(filename)
             elif (filename.startswith('PYME-CLUSTER://') or filename.startswith('pyme-cluster://')) and not (filename.split('.')[-1] in ['psf', 'sf', 'md', 'npy', 'tif', 'tiff', 'lsm', 'dcimg']):
                 self._loadClusterPZF(filename)
+            elif (filename.upper().startswith('SUPERTILE:')):
+                self._load_supertile(filename)
             elif filename.endswith('.h5'):
                 self._loadh5(filename)
             #elif filename.endswith('.kdf'):

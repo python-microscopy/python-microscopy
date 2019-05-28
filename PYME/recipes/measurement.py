@@ -759,7 +759,42 @@ class AddMetadataToMeasurements(ModuleBase):
         res.mdh = img.mdh
         
         namespace[self.outputName] = res
+        
+        
+@register_module('TilePhysicalCoords')
+class TilePhysicalCoords(ModuleBase):
+    """
+    Adds x_um and y_um columns to the results of Measure2D, performed on an Supertile image sequence, mapping the x and y
+    values (which are in pixels with respect to the current frame) to physical co-ordinates
+    
+    NOTE: inputImage must be a SupertileDatasource instance
+    
+    TODO: Does this belong here??
+    """
 
+    inputMeasurements = Input('measurements')
+    inputImage = Input('input')
+    
+    outputName = Output('meas_physical_coords')
+    
+    def execute(self, namespace):
+        meas = namespace[self.inputMeasurements]
+        img = namespace[self.inputImage]
+        
+        out = tabular.mappingFilter(meas)
+        
+        x_frame_um, y_frame_um =img.data.tile_coords_um[meas['t']].T
+        x_frame_px, y_frame_px = img.data.tile_coords[meas['t']].T
+        
+        out.addColumn('x_um', x_frame_um + img.mdh['voxelsize.x']*meas['x'])
+        out.addColumn('y_um', y_frame_um + img.mdh['voxelsize.y']*meas['y'])
+
+        out.addColumn('x_px', x_frame_px + meas['x'])
+        out.addColumn('y_px', y_frame_px + meas['y'])
+        
+        out.mdh = meas.mdh
+        
+        namespace[self.outputName] = out
 
 
 
