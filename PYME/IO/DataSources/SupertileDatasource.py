@@ -47,6 +47,9 @@ class DataSource(BaseDataSource):
         self.overlap = int(qp.get('overlap', [1])[0])
 
         self.mdh = MetaDataHandler.load_json(os.path.join(self.tile_base, 'metadata.json'))
+        
+        self.mdh['voxelsize.x'] = self.mdh['Pyramid.PixelSize']*(2**self.level)
+        self.mdh['voxelsize.y'] = self.mdh['voxelsize.x']
 
         self._pyr = ImagePyramid(self.tile_base, pyramid_tile_size=self.mdh['Pyramid.TileSize'])
         
@@ -68,7 +71,12 @@ class DataSource(BaseDataSource):
         yc = (yvs[None, :] * np.ones_like(xvs)[:, None]).ravel()
         
         return np.vstack([xc, yc]).T
+    
+    @property
+    def tile_coords_um(self):
+        px_size = self.mdh['voxelsize.x']
         
+        return px_size*self._pyr.tile_size*self.tile_coords
         
     
     def getSlice(self, ind):
