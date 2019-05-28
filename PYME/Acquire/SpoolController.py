@@ -226,7 +226,7 @@ class SpoolController(object):
     def LaunchAnalysis(self):
         """Launch analysis
         """
-        import QueueSpooler, HTTPSpooler
+        from PYME.Acquire import QueueSpooler, HTTPSpooler
         
         dh5view_cmd = 'dh5view'
         if sys.platform == 'win32':

@@ -40,6 +40,9 @@ class FakePiezo(PiezoBase):
         else:
             self.curpos=0
 
+    def MoveRel(self, iChannel, incr, bTimeOut=True):
+        self.MoveTo(iChannel, self.curpos+incr)
+
     def GetPos(self, iChannel=1):
         return self.curpos
 

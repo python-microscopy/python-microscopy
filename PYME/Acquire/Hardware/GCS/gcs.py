@@ -1,5 +1,5 @@
 import ctypes
-import GCS_DLL as _gcs
+from . import GCS_DLL as _gcs
 
 
 #class MercuryWrap:
@@ -153,14 +153,14 @@ ConnectUSB = _gcs.ConnectUSB
 
 def EnumerateUSB(filter=''):
     buff = ctypes.create_string_buffer(500)
-    num_devices = _gcs.EnumerateUSB(buff, len(buff), filter)
+    num_devices = _gcs.EnumerateUSB(buff, len(buff), filter.encode())
     
     return int(num_devices), buff.value
     
 
 IsRunningMacro = ValGetter(_gcs.IsRunningMacro)
 
-SetErrorCheck = _gcs.SetErrorCheck
+#SetErrorCheck = _gcs.SetErrorCheck
 GetError = _gcs.GetError
 TranslateError = StringGetter(_gcs.TranslateError)
 
@@ -170,25 +170,25 @@ GcsCommandset = NotImplemented(_gcs.GcsCommandset)
 
 InterfaceSetupDlg = NotImplemented(_gcs.InterfaceSetupDlg)
 
-AddStage = _gcs.AddStage
 
 
 
-DEL = _gcs.DEL
+
+#DEL = _gcs.DEL
 
 MAC_BEG = _gcs.MAC_BEG
 MAC_DEL = _gcs.MAC_DEL
-MAC_END = _gcs.MAC_END
+#MAC_END = _gcs.MAC_END
 MAC_NSTART = _gcs.MAC_NSTART
 MAC_START = _gcs.MAC_START
 
 MOV = AxesSetter(_gcs.MOV)
 
 MVR = AxesSetter(_gcs.MVR)
-POS = AxesSetter(_gcs.POS)
+#POS = AxesSetter(_gcs.POS)
 
 
-SAI = _gcs.SAI
+#SAI = _gcs.SAI
 SPA = AxesSetter(_gcs.SPA)
 SVO = AxesSetter(_gcs.SVO)
 
@@ -198,12 +198,12 @@ qHLP = StringGetter(_gcs.qHLP)
 
 qIDN = StringGetter(_gcs.qIDN)
 
-qMAC = NotImplemented(_gcs.qMAC)
+#qMAC = NotImplemented(_gcs.qMAC)
 qMOV = AxesGetter(_gcs.qMOV)
 qONT = AxesGetter(_gcs.qONT)
 qPOS = AxesGetter(_gcs.qPOS)
 
-qSAI = StringGetter(_gcs.qSAI)
+#qSAI = StringGetter(_gcs.qSAI)
 
 qSPA = NotImplemented(_gcs.qSPA)
 

@@ -49,8 +49,8 @@ class piezo_e816(PiezoBase):
         if self.GetFirmwareVersion() > 3.2:
             self.MAXWAVEPOINTS = 256
 
-        self.ser_port.write('WTO A0\n')
-        self.ser_port.write('SVO A1\n')
+        self.ser_port.write(b'WTO A0\n')
+        self.ser_port.write(b'SVO A1\n')
         
         self.lastPos = self.GetPos()
 
@@ -58,28 +58,28 @@ class piezo_e816(PiezoBase):
         self.hasTrigger = hasTrigger
 
     def ReInit(self):
-        self.ser_port.write('WTO A0\n')
-        self.ser_port.write('SVO A1\n')
+        self.ser_port.write(b'WTO A0\n')
+        self.ser_port.write(b'SVO A1\n')
         self.lastPos = self.GetPos() 
         
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
         with self.lock:
             if (fPos >= 0):
                 if (fPos <= self.max_travel):
-                    self.ser_port.write('MOV A%3.4f\n' % fPos)
+                    self.ser_port.write(b'MOV A%3.4f\n' % fPos)
                     self.lastPos = fPos
                 else:
-                    self.ser_port.write('MOV A%3.4f\n' % self.max_travel)
+                    self.ser_port.write(b'MOV A%3.4f\n' % self.max_travel)
                     self.lastPos = self.max_travel
             else:
-                self.ser_port.write('MOV A%3.4f\n' % 0.0)
+                self.ser_port.write(b'MOV A%3.4f\n' % 0.0)
                 self.lastPos = 0.0
 
     def GetPos(self, iChannel=0):
         with self.lock:
             self.ser_port.flushOutput()
             time.sleep(0.05)
-            self.ser_port.write('POS? A\n')
+            self.ser_port.write(b'POS? A\n')
             self.ser_port.flushOutput()
             time.sleep(0.05)
             res = self.ser_port.readline()
@@ -88,11 +88,11 @@ class piezo_e816(PiezoBase):
     def SetDriftCompensation(self, dc = True):
         with self.lock:
             if dc:
-                self.ser_port.write('DCO A1\n')
+                self.ser_port.write(b'DCO A1\n')
                 self.ser_port.flushOutput()
                 self.driftCompensation = True
             else:
-                self.ser_port.write('DCO A0\n')
+                self.ser_port.write(b'DCO A0\n')
                 self.ser_port.flushOutput()
                 self.driftCompensation = False
 
@@ -110,7 +110,7 @@ class piezo_e816(PiezoBase):
         time.sleep(0.05)
 
         for i, v in zip(range(self.numWavePoints), data):
-            self.ser_port.write('SWT A%d %3.4f\n' % (i, v))
+            self.ser_port.write(b'SWT A%d %3.4f\n' % (i, v))
             self.ser_port.flushOutput()
             time.sleep(0.01)
             res = self.ser_port.readline()
@@ -125,7 +125,7 @@ class piezo_e816(PiezoBase):
         time.sleep(0.05)
 
         for i in range(64):
-            self.ser_port.write('SWT? A%d\n' %i)
+            self.ser_port.write(b'SWT? A%d\n' %i)
             self.ser_port.flushOutput()
             time.sleep(0.05)
             res = self.ser_port.readline()
@@ -152,7 +152,7 @@ class piezo_e816(PiezoBase):
     #     self.ser_port.flushOutput()
 
     def StopWaveOutput(self, iChannel=0):
-        self.ser_port.write('WTO A0\n')
+        self.ser_port.write(b'WTO A0\n')
         self.ser_port.flushOutput()
 
     def GetControlReady(self):
@@ -169,10 +169,10 @@ class piezo_e816(PiezoBase):
     def GetFirmwareVersion(self):
         with self.lock:
             import re
-            self.ser_port.write('*IDN?\n')
+            self.ser_port.write(b'*IDN?\n')
             self.ser_port.flush()
 
-            verstring = self.ser_port.readline()
+            verstring = self.ser_port.readline().decode()
             return float(re.findall(r'V(\d\.\d\d)', verstring)[0])
 
     def GetTargetPos(self,iChannel=0):
@@ -199,8 +199,8 @@ class piezo_e816T(PiezoBase):
         #if self.GetFirmwareVersion() > 3.2:
         #    self.MAXWAVEPOINTS = 256
 
-        self.ser_port.write('WTO A0\n')
-        self.ser_port.write('SVO A1\n')
+        self.ser_port.write(b'WTO A0\n')
+        self.ser_port.write(b'SVO A1\n')
 
         self.servo = True
         self.errCode = 0
@@ -236,7 +236,7 @@ class piezo_e816T(PiezoBase):
 
                 # check position
                 time.sleep(0.005)
-                self.ser_port.write('POS? A\n')
+                self.ser_port.write(b'POS? A\n')
                 self.ser_port.flushOutput()
                 time.sleep(0.005)
                 res1 = self.ser_port.readline()
@@ -245,7 +245,7 @@ class piezo_e816T(PiezoBase):
                 self.position[0] = float(res1)+ self.osen
                 # self.position[1] = float(res2.split('=')[1])
 
-                self.ser_port.write('ERR?\n')
+                self.ser_port.write(b'ERR?\n')
                 self.ser_port.flushOutput()
                 self.errCode = int(self.ser_port.readline())
 
@@ -257,7 +257,7 @@ class piezo_e816T(PiezoBase):
                     # update our target position
                     pos = np.clip(self.targetPosition, 0, self.max_travel)
 
-                    self.ser_port.write('MOV A %3.9f\n' % (pos[0],))
+                    self.ser_port.write(b'MOV A %3.9f\n' % (pos[0],))
                     self.lastTargetPosition = pos.copy()
                     # print('p')
                     logging.debug('Moving piezo to target: %f' % (pos[0],))
@@ -306,8 +306,8 @@ class piezo_e816T(PiezoBase):
 
     def ReInit(self):
         with self.lock:
-            self.ser_port.write('WTO A0\n')
-            self.ser_port.write('SVO A1\n')
+            self.ser_port.write(b'WTO A0\n')
+            self.ser_port.write(b'SVO A1\n')
             time.sleep(1)
             self.lastPos = self.GetPos()
 
@@ -359,11 +359,11 @@ class piezo_e816T(PiezoBase):
     def SetDriftCompensation(self, dc=True):
         with self.lock:
             if dc:
-                self.ser_port.write('DCO A1\n')
+                self.ser_port.write(b'DCO A1\n')
                 self.ser_port.flushOutput()
                 self.driftCompensation = True
             else:
-                self.ser_port.write('DCO A0\n')
+                self.ser_port.write(b'DCO A0\n')
                 self.ser_port.flushOutput()
                 self.driftCompensation = False
 
@@ -442,9 +442,9 @@ class piezo_e816T(PiezoBase):
     def GetFirmwareVersion(self):
         import re
         with self.lock:
-            self.ser_port.write('*IDN?\n')
+            self.ser_port.write(b'*IDN?\n')
             self.ser_port.flush()
 
-            verstring = self.ser_port.readline()
+            verstring = self.ser_port.readline().decode()
             return float(re.findall(r'V(\d\.\d\d)', verstring)[0])
 

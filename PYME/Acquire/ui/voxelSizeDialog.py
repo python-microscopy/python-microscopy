@@ -29,7 +29,7 @@ class VoxelSizeDialog(wx.Dialog):
 
         sizer1 = wx.BoxSizer(wx.VERTICAL)
 
-        self.camNames = scope.cameras.keys()
+        self.camNames = list(scope.cameras.keys())
         self.vsChoices = []
         #self.vsChoiceIDs = []
         

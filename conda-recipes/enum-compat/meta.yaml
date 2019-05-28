@@ -5,10 +5,15 @@ package:
 #build:
 #  noarch_python: True
 
+source:
+  path: ./enum-compat/
+
+build:
+  script: python setup.py install
+
 requirements:
   build:
     - python
-    - pip
 
   run:
     - python

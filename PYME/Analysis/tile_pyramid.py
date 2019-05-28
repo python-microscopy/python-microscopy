@@ -56,6 +56,7 @@ class ImagePyramid(object):
                     (j * self.tile_size):((j + 1) * self.tile_size)] = subtile
                     
         return new_tile
+        print('Making layer %d' % (inputLevel+1))
     
     def get_layer_tile_coords(self, level):
         base_tile_dir = os.path.join(self.base_dir, '%d' % level)
@@ -79,12 +80,12 @@ class ImagePyramid(object):
         
         tile_coords = self.get_layer_tile_coords(inputLevel)
         
-        print('tile_coords:', tile_coords)
+        #print('tile_coords:', tile_coords)
         
         qsize = int(self.tile_size / 2)
         
         new_tile_coords = list(set([tuple(np.floor(tc / 2).astype('i').tolist()) for tc in tile_coords]))
-        print('new_tile_coords:', new_tile_coords)
+        #print('new_tile_coords:', new_tile_coords)
         
         for xc, yc in new_tile_coords:
             x_out_dir = os.path.join(out_dir, '%03d' % xc)
@@ -99,22 +100,22 @@ class ImagePyramid(object):
                 NW = self.get_tile(inputLevel, 2 * xc, 2 * yc)
                 if not NW is None:
                     tile[:qsize, :qsize] = ndimage.zoom(NW, .5)
-                    print(xc, yc, 'NW')
+                    #print(xc, yc, 'NW')
                 
                 NE = self.get_tile(inputLevel, (2 * xc) + 1, (2 * yc))
                 if not NE is None:
                     tile[qsize:, :qsize] = ndimage.zoom(NE, .5)
-                    print(xc, yc, 'NE')
+                    #print(xc, yc, 'NE')
                 
                 SW = self.get_tile(inputLevel, (2 * xc), (2 * yc) + 1)
                 if not SW is None:
                     tile[:qsize, qsize:] = ndimage.zoom(SW, .5)
-                    print(xc, yc, 'SW')
+                    #print(xc, yc, 'SW')
                 
                 SE = self.get_tile(inputLevel, (2 * xc) + 1, (2 * yc) + 1)
                 if not SE is None:
                     tile[qsize:, qsize:] = ndimage.zoom(SE, .5)
-                    print(xc, yc, 'SE')
+                    #print(xc, yc, 'SE')
                 
                 np.save(out_filename, tile)
         
@@ -170,9 +171,7 @@ class ImagePyramid(object):
         return mdh
     
     def add_base_tile(self, x, y, frame, weights):
-        print('add_base_tile(%f, %f, %s, %s)' % (x, y, repr(frame.shape), repr(weights.shape)))
-        
-        
+        print('add_base_tile(%d, %d)' % (x, y))
 
         frameSizeX, frameSizeY = frame.shape[:2]
         
@@ -180,8 +179,8 @@ class ImagePyramid(object):
         if not os.path.exists(out_folder):
             os.makedirs(out_folder)
         
-        tile_xs = range(int(np.floor(x / self.tile_size)), int(np.ceil((x + frameSizeX) / self.tile_size) + 1))
-        tile_ys = range(int(np.floor(y / self.tile_size)), int(np.ceil((y + frameSizeY) / self.tile_size) + 1))
+        tile_xs = range(int(np.floor(x / self.tile_size)), int(np.floor((x + frameSizeX) / self.tile_size) + 1))
+        tile_ys = range(int(np.floor(y / self.tile_size)), int(np.floor((y + frameSizeY) / self.tile_size) + 1))
         
         print('tile_xs: %s, tile_ys: %s' % (tile_xs, tile_ys))
 
@@ -209,13 +208,14 @@ class ImagePyramid(object):
                 xet = min(xst + (xe - xs),
                           self.tile_size) #min(frameSizeX - (tile_x + 1) * self.tile_size - x, 0) #FIXME
                 
-                ys, ye = max(tile_y * self.tile_size - y, 0), min((tile_y + 1) * self.tile_size - y,
+                ys, ye = max((tile_y * self.tile_size) - y, 0), min(((tile_y + 1) * self.tile_size) - y,
                                                                   frameSizeY)
                 
                 yst = max(y - tile_y * self.tile_size, 0)
                 yet = min(yst + (ye - ys), self.tile_size) #min(frameSizeY - (tile_y + 1) * self.tile_size - y,0) #FIXME
                 
-                print('tile[%d:%d, %d:%d] = frame[%d:%d, %d:%d]' % (xst, -xet, yst, -yet, xs, xe, ys, ye))
+                #print(tile_x, tile_y)
+                #print('tile[%d:%d, %d:%d] = frame[%d:%d, %d:%d]' % (xst, xet, yst, yet, xs, xe, ys, ye))
                 tile_[xst:xet, yst:yet] += frame[xs:xe, ys:ye]
                 occ_[xst:xet, yst:yet] += weights[xs:xe, ys:ye]
                 
@@ -260,12 +260,20 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     
     if mdh.getOrDefault('CameraOrientation.FlipY', False):
         yps = -yps
-    
+
+    rotate_cam = mdh.getOrDefault('CameraOrientation.Rotate', False)
+
     #give some room at the edges
     bufSize = 0
     if correlate:
         bufSize = 300
     
+
+    x0 = xps.min()
+    y0 = yps.min()
+    xps -= x0
+    yps -= y0
+
     #convert to pixels
     xdp = (bufSize + (xps / (mdh.getEntry('voxelsize.x'))).round()).astype('i')
     ydp = (bufSize + (yps / (mdh.getEntry('voxelsize.y'))).round()).astype('i')
@@ -295,9 +303,9 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     else:
         offset = 0.
 
-    P = ImagePyramid(out_folder, pyramid_tile_size, x0 = xps.min(), y0 = yps.min(), pixel_size=mdh.getEntry('voxelsize.x'))
+    P = ImagePyramid(out_folder, pyramid_tile_size, x0 = x0, y0 = y0, pixel_size=mdh.getEntry('voxelsize.x'))
     
-    for i in range(mdh.getEntry('Protocol.DataStartsAt'), numFrames):
+    for i in range(int(mdh.getEntry('Protocol.DataStartsAt')), numFrames):
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
             x_i = xdp[i]
             y_i = ydp[i]
@@ -309,22 +317,29 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
             
             if split:
                 d = np.concatenate(unmux.Unmix(d, mixmatrix, offset, [ROIX1, ROIY1, ROIX2, ROIY2]), 2)
-            
+
             d_weighted = weights * d
-            
-            P.add_base_tile(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
+
+
+            if rotate_cam:
+                print('adding base tile from frame %d [transposed]' % i)
+                P.add_base_tile(x_i, y_i, d_weighted.T.squeeze(), weights.T.squeeze())
+            else:
+                print('adding base tile from frame %d' % i)
+                P.add_base_tile(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
     
     P.update_pyramid()
     
     return P
 
-def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
+def create_pyramid_from_dataset(filename, outdir, tile_size=256, **kwargs):
     from PYME.IO import image
     dataset = image.ImageStack(filename=filename)
     
     xm, ym = get_position_from_events(dataset.events, dataset.mdh)
     
     print(xm(np.arange(dataset.data.shape[2])))
+    print(ym(np.arange(dataset.data.shape[2])))
     
     p = tile_pyramid(outdir, dataset.data, xm, ym, dataset.mdh, pyramid_tile_size=tile_size)
     
