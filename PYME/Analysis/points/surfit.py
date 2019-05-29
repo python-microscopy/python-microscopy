@@ -616,8 +616,8 @@ def fit_quad_surfaces_tr(data, kdt, ivals, results, radius=100, fitPos=True):
         #the fit so isolated points (usually noise) will not fit and will return None instead
         if not r == None:
             p, pt, N = r
-            res[i]['results'] = np.array(p, dtype='f4', order='C')
-            res[i]['pos'] = np.array(pt, order='C')
+            res[i]['results'].view('8f4')[:] = np.array(p, dtype='f4', order='C')
+            res[i]['pos'].view('3f4')[:] = np.array(pt, order='C')
             res[i]['N'] = N
         else:
             res[i]['N'] = 0
