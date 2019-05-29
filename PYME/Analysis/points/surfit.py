@@ -715,7 +715,7 @@ def fit_quad_surfaces_Pr(data, radius, fitPos=False, NFits=0):
     #nCPUth point. This was done as a simple way of allocating the tasks evenly, but might not be optimal in terms of e.g.
     #cache coherency. The process creation here will be significantly more efficient on *nix platforms which use copy on
     #write forking when compared to windows which will end up copying both the data and kdt structures
-    processes = [multiprocessing.Process(target=fit_quad_surfaces_tr, args=(data, kdt, fnums[i::nCPUs], results))
+    processes = [multiprocessing.Process(target=fit_quad_surfaces_tr, args=(data, kdt, fnums[i::nCPUs], results, radius))
                  for i in
                  range(nCPUs)]
     
@@ -748,6 +748,8 @@ def filter_quad_results(fits, data, radius=50, proj_threshold=0.85):
     
     filtered = []
     
+    
+    
     for i in range(len(fits)):
         N = normals[i]
         neighbour_normals = normals[kdt.query_ball_point(fits[i]['pos'].view('3f4'), radius)]
@@ -755,12 +757,14 @@ def filter_quad_results(fits, data, radius=50, proj_threshold=0.85):
         median_proj = np.median([np.abs(np.dot(N, n)) for n in neighbour_normals])
         if median_proj > proj_threshold: #aligned more or less the same way as the neighbours
             filtered.append(fits[i])
-            
+
+    print('n_fits: %d, n_filtered: %d' % (len(fits), len(filtered)))
+    
     return np.hstack(filtered)
         
         
 
-def reconstruct_quad_surfaces_Pr(fits, radius):
+def reconstruct_quad_surfaces_Pr(fits, radius, step=10.):
     """
     Reconstruct surfaces from fit results. This is a helper function which calls reconstruct_quad_surf
     repeatedly for each fit in the data set
@@ -777,22 +781,22 @@ def reconstruct_quad_surfaces_Pr(fits, radius):
     #res, pos, N = fits
     #print fits
     fits = fits.view(SURF_PATCH_DTYPE)
-    return np.hstack([reconstruct_quad_surf(fits[i]['results'].view('8f4'), fits[i]['pos'].view('3f4'), fits[i]['N'], radius=radius) for i in range(len(fits)) if fits[i]['N'] >= 1])
+    return np.hstack([reconstruct_quad_surf(fits[i]['results'].view('8f4'), fits[i]['pos'].view('3f4'), fits[i]['N'], radius=radius, step=step) for i in range(len(fits)) if fits[i]['N'] >= 1])
 
-def reconstruct_quad_surfaces_P_region_cropped(fits, radius, data, fit_radius=100.):
+def reconstruct_quad_surfaces_P_region_cropped(fits, radius, data, fit_radius=100., step=10.):
     from scipy.spatial import cKDTree
     #kdt = kdtree.KDTree(pts)
     kdt = cKDTree(data)
     
     res, pos, N = fits
-    return np.hstack([reconstruct_quad_surf_region_cropped(res[:,i], pos[:,i], N[i], kdt, data, radius=radius, fit_radius=fit_radius) for i in range(len(N)) if N[i] >= 1])
+    return np.hstack([reconstruct_quad_surf_region_cropped(res[:,i], pos[:,i], N[i], kdt, data, radius=radius, fit_radius=fit_radius, step=step) for i in range(len(N)) if N[i] >= 1])
 
 
-def reconstruct_quad_surfaces_Pr_region_cropped(fits, radius, data, fit_radius=100.):
+def reconstruct_quad_surfaces_Pr_region_cropped(fits, radius, data, fit_radius=100., step=10.):
     from scipy.spatial import cKDTree
     #kdt = kdtree.KDTree(pts)
     kdt = cKDTree(data)
 
     fits = fits.view(SURF_PATCH_DTYPE)
     return np.hstack([reconstruct_quad_surf_region_cropped(fits[i]['results'].view('8f4'), fits[i]['pos'].view('3f4'), fits[i]['N'], kdt, data, radius=radius,
-                                                           fit_radius=fit_radius) for i in range(len(fits)) if fits[i]['N'] >= 1])
+                                                           fit_radius=fit_radius, step=step) for i in range(len(fits)) if fits[i]['N'] >= 1])

@@ -9,10 +9,12 @@ class SurfaceFitter(HasPrivateTraits):
     limitReconstructionToSupportHull = Bool(False, desc='If enabled, this will clip each surface reconstruction to the convex hull of all the points used for the fit.\
      Useful for avoiding the generation of large surface patches from isolated antibodies, but also reduces the ability to paper over holes')
     normalAlignmentThreshold = Float(0.85)
+    reconstructionPointSpacing = Float(10., desc='Spacing of points used to reconstruct the surface')
 
     view = View(Item('fitInfluenceRadius'),
-                Item('reconstructionRadius'),
                 Item('constrainSurfaceToPoint'),
+                Item('reconstructionRadius'),
+                Item('reconstructionPointSpacing'),
                 Item('limitReconstructionToSupportHull'),
                 Item('normalAlignmentThreshold'),
                 buttons=[OKButton])
@@ -41,6 +43,10 @@ class SurfaceFitter(HasPrivateTraits):
         
         #print(len(f)) #, f.dtype
         
+        sfits = tabular.recArrayInput(f)
+        
+        pipeline.addDataSource('surf_fits', sfits, False)
+        
         #filter surfaces and throw out those which don't point the same way as their neighbours
         f = surfit.filter_quad_results(f, pts.T, self.fitInfluenceRadius,self.normalAlignmentThreshold)
 
@@ -48,9 +54,9 @@ class SurfaceFitter(HasPrivateTraits):
         #this adds virtual localizations spread evenly across each surface
         if self.limitReconstructionToSupportHull:
             xs, ys, zs, xn, yn, zn, N = surfit.reconstruct_quad_surfaces_Pr_region_cropped(f, self.reconstructionRadius, pts.T,
-                                                                           fit_radius=self.fitInfluenceRadius)
+                                                                           fit_radius=self.fitInfluenceRadius, step=self.reconstructionPointSpacing)
         else:
-            xs, ys, zs, xn, yn, zn, N = surfit.reconstruct_quad_surfaces_Pr(f, self.reconstructionRadius)
+            xs, ys, zs, xn, yn, zn, N = surfit.reconstruct_quad_surfaces_Pr(f, self.reconstructionRadius, step=self.reconstructionPointSpacing)
         
         #construct a new datasource with our augmented points
         ds = tabular.mappingFilter({'x': xs, 'y': ys, 'z' : zs,
