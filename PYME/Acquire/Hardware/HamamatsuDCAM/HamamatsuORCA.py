@@ -95,6 +95,9 @@ noiseProperties = {
         },
 }
 
+class DCAMZeroBufferedException(Exception):
+    pass
+
 
 class HamamatsuORCA(HamamatsuDCAM):
 
@@ -109,6 +112,14 @@ class HamamatsuORCA(HamamatsuDCAM):
         self.initialized = False
         self.bs = 0
         self.nReadOut = 0
+
+        self._n_frames_leftover = 0
+
+        self._aq_active = False
+
+        self._last_framestamp = None
+        self._last_camerastamp = None
+        self._last_timestamp = None
 
         # initialize other properties needed
         self.external_shutter = None
@@ -175,6 +186,7 @@ class HamamatsuORCA(HamamatsuDCAM):
 
     def StartExposure(self):
         self.nReadOut = 0
+        self._n_frames_leftover = 0
         self._frameRate = self.getCamPropValue('INTERNAL FRAME RATE')
         # From parent
         HamamatsuDCAM.StartExposure(self)
@@ -203,6 +215,7 @@ class HamamatsuORCA(HamamatsuDCAM):
                                             DCAMCAP_START_SEQUENCE),
                          "dcamcap_start")
 
+        self._aq_active = True
         return 0
 
     def SetROI(self, x1, y1, x2, y2):
@@ -238,6 +251,7 @@ class HamamatsuORCA(HamamatsuDCAM):
         return int(self.GetROIY1() + self.getCamPropValue('SUBARRAY VSIZE'))
 
     def StopAq(self):
+        self._aq_active = False
         # Stop the capture
         self.checkStatus(dcam.dcamcap_stop(self.handle), "dcamcap_stop")
 
@@ -258,8 +272,31 @@ class HamamatsuORCA(HamamatsuDCAM):
         #Setup frame struct to tell the camera what frame we want
         frame = DCAMBUF_FRAME()
         frame.size = ctypes.sizeof(frame)
-        frame.iFrame = tInfo.nNewestFrameIndex  # Latest frame. This may need to be handled
+        #frame.iFrame = tInfo.nNewestFrameIndex  # Latest frame. This may need to be handled
         # differently.
+        #frame.iFrame = ctypes.c_int32(self.nReadOut)
+
+        # infer the frame number of the oldest image
+        nframes_buffered = (tInfo.nFrameCount - self.nReadOut)
+
+        next_frame = (tInfo.nNewestFrameIndex - nframes_buffered + 1)
+
+        # Hamamatsu maintains a circular buffer, wrap around the end of the buffer if needed
+        if (next_frame < 0):
+            next_frame = self.bs + next_frame
+
+        #do some sanity checks on the things we've calculated and print some stuff if they look weird
+        if (nframes_buffered <1) or (tInfo.nNewestFrameIndex <0) or (next_frame < 0):
+            print(nframes_buffered, next_frame, tInfo.nNewestFrameIndex)
+
+        # if we've somehow got here but our calculations indicate that there are no new frames in the buffer, raise an
+        # exception
+        if nframes_buffered < 1:
+            print(self._last_timestamp, self._last_framestamp, self._last_camerastamp)
+            raise DCAMZeroBufferedException()
+
+        #tell DCAM which fram we want from the buffer
+        frame.iFrame = next_frame
 
         #lock / take ownership of the memory belonging to that frame
         self.checkStatus(dcam.dcambuf_lockframe(self.handle,
@@ -274,7 +311,14 @@ class HamamatsuORCA(HamamatsuDCAM):
             ctypes.POINTER(ctypes.c_uint16)),
             ctypes.c_void_p(frame.buf),
             self._image_frame_bytes)
+
         self.nReadOut += 1
+        self._n_frames_leftover = nframes_buffered -1
+
+        self._last_camerastamp = frame.camerastamp
+        self._last_framestamp = frame.framestamp
+        self._last_timestamp = (frame.timestamp_sec, frame.timestamp_usec)
+
 
     def GetNumImsBuffered(self):
         tInfo = DCAMCAP_TRANSFERINFO()
@@ -287,7 +331,19 @@ class HamamatsuORCA(HamamatsuDCAM):
         return ret
 
     def ExpReady(self):
+        if not self._aq_active:
+            return False
+
+        if self._n_frames_leftover > 1:
+            # if we somehow skipped events (i.e more than one frame came in between our last event and when we checked
+            # buffer levels in extractColour), short circuit and read out the buffered frames. Stop at 1 leftover frame
+            # as this possibly has an event waiting for it. It would appear that the DCAM api manages events by setting
+            # flags (i.e. we get one event if any number of frames arrive between the last event we waited for and our
+            # next wait call).
+            return True
         try:
+            # wait for a frame event - fired when the camera has a new frame. It would appear that one event gets fired
+            # regardless of the number of frames that arrive between our last wait call and the this one.
             self.checkStatus(dcam.dcamwait_start(self.waitopen.hdcamwait, ctypes.byref(self.waitstart)),
                              "dcamwait_start")
         except DCAMException as e:
