@@ -43,7 +43,8 @@ class SurfaceFitter(HasPrivateTraits):
         
         #print(len(f)) #, f.dtype
         
-        sfits = tabular.recArrayInput(f)
+        sfits = tabular.mappingFilter(tabular.recArrayInput(f))
+        sfits.setMapping('r', '1./(np.abs(A) + np.abs(B) + 1e-6)')
         
         pipeline.addDataSource('surf_fits', sfits, False)
         

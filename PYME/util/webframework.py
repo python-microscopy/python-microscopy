@@ -11,17 +11,21 @@ except ImportError:
     #py3
     # noinspection PyCompatibility
     import urllib.parse as urlparse
+
+import json
     
 import logging
 logger = logging.getLogger(__name__)
 
-def register_endpoint(path):
+def register_endpoint(path, output_is_json=True):
     def _reg_ep(func):
         #_endpoints[path] = func
         func._expose_path = path
+        func._jsonify = not output_is_json
         return func
 
     return _reg_ep
+        
 
 class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
     protocol_version='HTTP/1.1'
@@ -84,6 +88,9 @@ class JSONAPIRequestHandler(http.server.BaseHTTPRequestHandler):
             import traceback
             self.send_error(500, 'Server Error\n %s' % traceback.format_exc())
             return
+        
+        if handler._jsonify:
+            resp = json.dumps(resp)
         
         compress_output = 'gzip' in self.headers.get('Accept-Encoding', '')
 
