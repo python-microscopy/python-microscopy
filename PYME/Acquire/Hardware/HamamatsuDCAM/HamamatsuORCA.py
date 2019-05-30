@@ -87,7 +87,7 @@ noiseProperties = {
         },
 'S/N: 720795' : { #FIXME - values are currently copied from above, and are probably wrong
         'ReadNoise': 3.51,
-        'ElectronsPerCount': 0.47,
+        'ElectronsPerCount': 0.416613,
         'NGainStages': 0,
         'ADOffset': 100,
         'DefaultEMGain': 1,
@@ -185,6 +185,8 @@ class HamamatsuORCA(HamamatsuDCAM):
             self.bs)),
                          "dcambuf_alloc")
 
+        self._image_frame_bytes = int(self.getCamPropValue('IMAGE FRAMEBYTES'))
+
         if self._mode == self.MODE_SOFTWARE_TRIGGER:
             self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_SOFTWARE)
         else:
@@ -245,29 +247,33 @@ class HamamatsuORCA(HamamatsuDCAM):
                          "dcambuf_release")
 
     def ExtractColor(self, chSlice, mode):
-        # DCAM lockframe
-        # ctypes memcpy AndorNeo 251
-        #print "Frame rate: " + str(self._frameRate)
+        # Ask the camera what frames it has available
         tInfo = DCAMCAP_TRANSFERINFO()
         tInfo.size = ctypes.sizeof(tInfo)
         tInfo.transferkind = ctypes.c_int32(0)
         self.checkStatus(dcam.dcamcap_transferinfo(self.handle,
                                                    ctypes.addressof(tInfo)),
                          "dcamcap_transferinfo")
+
+        #Setup frame struct to tell the camera what frame we want
         frame = DCAMBUF_FRAME()
         frame.size = ctypes.sizeof(frame)
         frame.iFrame = tInfo.nNewestFrameIndex  # Latest frame. This may need to be handled
         # differently.
+
+        #lock / take ownership of the memory belonging to that frame
         self.checkStatus(dcam.dcambuf_lockframe(self.handle,
                                                 ctypes.addressof(frame)),
                          "dcambuf_lockframe")
 
         # uint_16 for this camera only DCAM_IDPROP_BITSPERCHANNEL
         #print str(self.getCamPropValue('BUFFER FRAMEBYTES'))
+
+        #copy into our local buffer
         ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(
             ctypes.POINTER(ctypes.c_uint16)),
             ctypes.c_void_p(frame.buf),
-            int(self.getCamPropValue('IMAGE FRAMEBYTES')))
+            self._image_frame_bytes)
         self.nReadOut += 1
 
     def GetNumImsBuffered(self):
@@ -355,11 +361,11 @@ class HamamatsuORCA(HamamatsuDCAM):
         HamamatsuDCAM.Shutdown(self)
 
 
-from PYME.Acquire.Hardware.Camera import MultiviewCamera
+from PYME.Acquire.Hardware.Camera import MultiviewCameraMixin
 
-class MultiviewOrca(MultiviewCamera, HamamatsuORCA):
+class MultiviewOrca(MultiviewCameraMixin, HamamatsuORCA):
     def __init__(self, camNum, multiview_info):
         HamamatsuORCA.__init__(self, camNum)
         # default to the whole chip
         default_roi = dict(xi=0, xf=2048, yi=0, yf=2048)
-        MultiviewCamera.__init__(self, multiview_info, default_roi, HamamatsuORCA)
+        MultiviewCameraMixin.__init__(self, multiview_info, default_roi, HamamatsuORCA)

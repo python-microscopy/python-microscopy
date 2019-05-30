@@ -723,7 +723,7 @@ class Camera(object):
     def StopLifePreview(*args):
         raise NotImplementedError("Deprecated.")
 
-class MultiviewCamera(object):
+class MultiviewCameraMixin(object):
         def __init__(self, multiview_info, default_roi, camera_class):
             """
             Used principally for cutting horizontally spaced ROIs out of a vertical band of the sCMOS chip, where there
@@ -783,7 +783,10 @@ class MultiviewCamera(object):
             pic_width: int
                 width of the concatenated multiview frame
             """
-            return self._current_pic_width
+            if self.multiview_enabled:
+                return self._current_pic_width
+            else:
+                return self.camera_class.GetPicWidth(self)
 
         def GetPicHeight(self):
             """
@@ -794,7 +797,10 @@ class MultiviewCamera(object):
             pic_height: int
                 height of the multiview frame
             """
-            return self._current_pic_height
+            if self.multiview_enabled:
+                return self._current_pic_height
+            else:
+                return self.camera_class.GetPicHeight(self)
 
         def enable_multiview(self, views):
             """
