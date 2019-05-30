@@ -52,7 +52,7 @@ class AnalysisSettingsPanel(wx.Panel):
         self._inChange = True
         self.analysisMDH['Analysis.FitModule'] = self.fitFactories[self.cFitType.GetSelection()]
         if self.mdhChangedSignal:
-            self.mdhChangedSignal.send(self, mdh=self.analysisMDH)
+            self.mdhChangedSignal.send_robust(self, mdh=self.analysisMDH)
         
         self._inChange = False
             

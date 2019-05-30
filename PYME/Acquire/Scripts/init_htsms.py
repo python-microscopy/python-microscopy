@@ -57,21 +57,6 @@ def pz(scope):
     #pst = offsetPiezo.ServerThread(scope.piFoc)
     #pst.start()
     #scope.CleanupFunctions.append(pst.cleanup)
-    
-# @init_hardware('XY Stage')
-# def stage(scope):
-#     from PYME.Acquire.Hardware.Mercury import mercuryStepper
-#     scope.stage = mercuryStepper.mercuryStepper(comPort=4, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S'])
-#     scope.stage.SetSoftLimits(0, [1.06, 20.7])
-#     scope.stage.SetSoftLimits(1, [.8, 17.6])
-#
-#     scope.register_piezo(scope.stage, 'x', needCamRestart=True, channel=0, multiplier=1)
-#     scope.register_piezo(scope.stage, 'y', needCamRestart=True, channel=1, multiplier=-1)
-#
-#     scope.joystick = scope.stage.joystick
-#     scope.joystick.Enable(True)
-#
-#     scope.CleanupFunctions.append(scope.stage.Cleanup)
 
 
 @init_hardware('HamamatsuORCA')
@@ -82,10 +67,10 @@ def orca_cam(scope):
     multiview_info = {
         'Multiview.NumROIs': 4,
         'Multiview.ROISize': (size, size),
-        'Multiview.ROI0Origin': (20, 1024 - int(size/2)),
-        'Multiview.ROI1Origin': (1024 - size, 1024 - int(size/2)),
-        'Multiview.ROI2Origin': (1024, 1024 - int(size/2)),
-        'Multiview.ROI3Origin': (2048 - 20 - size, 1024 - int(size/2)),
+        'Multiview.ROI0Origin': (104, 1024 - int(size/2)),
+        'Multiview.ROI1Origin': (844, 1024 - int(size/2)),
+        'Multiview.ROI2Origin': (1252, 1024 - int(size/2)),
+        'Multiview.ROI3Origin': (1724, 1024 - int(size/2)),
     }
     cam = MultiviewOrca(0, multiview_info)
 
@@ -96,6 +81,14 @@ def orca_cam(scope):
     # cam.Init()
 
     scope.register_camera(cam, 'HamamatsuORCA', rotate=True, flipx=True, flipy=False)
+
+    def set_camera_views(views):
+        if (views is None) or (len(views) == 0):
+            cam.disable_multiview()
+        else:
+            cam.enable_multiview(views)
+
+    scope.state.registerHandler('Camera.Views', lambda : cam.active_views, set_camera_views, True)
 
 
 @init_gui('sCMOS Camera controls')
@@ -112,6 +105,10 @@ def orca_cam_controls(MainFrame, scope):
     # for some reason the camera init was performed in the GUI callback in the original file - I'm not sure why
     # try commenting this out and uncommenting the line in the hardware init above.
     scope.cameras['HamamatsuORCA'].Init()
+
+    # from PYME.Acquire.ui import multiview_panel
+    # mvp = multiview_panel.MultiviewPanel(MainFrame, scope)
+    # MainFrame.camPanels.append((mvp, 'Multiview Panel'))
 
 
 # @init_gui('Sample database')
