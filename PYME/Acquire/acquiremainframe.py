@@ -125,7 +125,7 @@ class PYMEMainFrame(AUIFrame):
 
         self.sh = wx.py.shell.Shell(id=-1,
               parent=self, size=wx.Size(-1, -1), style=0, locals=self.__dict__,
-              introText='Python SMI bindings - note that help, license etc below is for Python, not PYME\n\n')
+              introText='PYMEAcquire - note that help, license etc below is for Python, not PYME\n\n')
         self.AddPage(self.sh, caption='Console')
 
         self.CreateToolPanel(getattr(options, 'gui_mode', 'default'))
@@ -176,11 +176,13 @@ class PYMEMainFrame(AUIFrame):
                 self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
         
     def _start_polling_camera(self):
+        self.scope.startFrameWrangler()
+    
+    def _add_live_view(self):
         """Gets called once during post-init to start pulling data from the
         camera
         
         """
-        self.scope.startFrameWrangler()
 
         if self.scope.cam.GetPicHeight() > 1:
             if 'vp' in dir(self):
@@ -224,6 +226,10 @@ class PYMEMainFrame(AUIFrame):
 
     def doPostInit(self):
         logger.debug('Starting post-init')
+        
+        if self.scope.cam.CamReady():# and ('chaninfo' in self.scope.__dict__)):
+            self._start_polling_camera()
+        
         for cm in self.postInit:
             logging.debug('Loading GUI component for %s' %cm.name)
             try:
@@ -248,7 +254,8 @@ class PYMEMainFrame(AUIFrame):
             #self.seq_d.Show()
 
         if self.scope.cam.CamReady():# and ('chaninfo' in self.scope.__dict__)):
-            self._start_polling_camera()
+            #self._start_polling_camera()
+            self._add_live_view()
             
 
             self.int_sl = intsliders.IntegrationSliders(self, self.scope)
