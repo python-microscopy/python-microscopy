@@ -106,6 +106,9 @@ def orca_cam_controls(MainFrame, scope):
     # try commenting this out and uncommenting the line in the hardware init above.
     scope.cameras['HamamatsuORCA'].Init()
 
+    MainFrame.AddMenuItem('Camera','Set Multiview', lambda e: scope.state.setItem('Camera.Views',[0,1,2,3]))
+    MainFrame.AddMenuItem('Camera', 'Clear Multiview', lambda e: scope.state.setItem('Camera.Views', []))
+
     # from PYME.Acquire.ui import multiview_panel
     # mvp = multiview_panel.MultiviewPanel(MainFrame, scope)
     # MainFrame.camPanels.append((mvp, 'Multiview Panel'))
