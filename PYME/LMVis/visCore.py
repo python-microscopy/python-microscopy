@@ -145,7 +145,7 @@ class VisGUICore(object):
         #if HAVE_DRIFT_CORRECTION:
         #    self.driftPane = CreateDriftPane(sidePanel, self.pipeline.mapping, self.pipeline)
 
-        self.filterPane = CreateFilterPane(sidePanel, self.pipeline.filterKeys, self.pipeline, self)
+        #self.filterPane = CreateFilterPane(sidePanel, self.pipeline.filterKeys, self.pipeline, self)
 
         if PYME.config.get('VisGUI-new_layers', False):
             #self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
@@ -182,21 +182,21 @@ class VisGUICore(object):
         from PYME.recipes.vertical_recipe_display import RecipeDisplayPanel
         item = afp.foldingPane(pnl, -1, caption="Data Pipeline", pinned = True)
 
-        self.recipeView = RecipeDisplayPanel(item)
-        self.recipeView.SetRecipe(self.pipeline.recipe)
-        item.AddNewElement(self.recipeView)
-        
         pan = wx.Panel(item, -1)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(pan, -1, 'output:'), 0, wx.ALL, 2)
         self.chSource = wx.Choice(pan, -1, choices=[])
-        hsizer.Add(self.chSource, 1, wx.ALL|wx.EXPAND, 2)
+        hsizer.Add(self.chSource, 1, wx.ALL | wx.EXPAND, 2)
         pan.SetSizerAndFit(hsizer)
         self.update_datasource_panel()
         self.chSource.Bind(wx.EVT_CHOICE, self.OnSourceChange)
         self.pipeline.onRebuild.connect(self.update_datasource_panel)
-            
+
         item.AddNewElement(pan, foldable=False)
+
+        self.recipeView = RecipeDisplayPanel(item)
+        self.recipeView.SetRecipe(self.pipeline.recipe)
+        item.AddNewElement(self.recipeView)
 
         pnl.AddPane(item)
         
