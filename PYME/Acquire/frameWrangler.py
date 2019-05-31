@@ -247,6 +247,7 @@ class FrameWrangler(wx.EvtHandler):
                         bufferOverflowing = self.cam.GetNumImsBuffered() >= (self.cam.GetBufferSize() - 2)
                     else:
                         bufferOverflowing = False
+
                     if bufferOverflowing:
                         self.bufferOverflowed = True
                         print('Warning: Camera buffer overflowing - purging buffer')

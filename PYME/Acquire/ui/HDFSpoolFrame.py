@@ -199,7 +199,7 @@ class PanSpool(wx.Panel):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Quantization offset:'), 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.tQuantizeOffset = wx.TextCtrl(self, -1, '0')
+        self.tQuantizeOffset = wx.TextCtrl(self, -1, 'auto')
         hsizer.Add(self.tQuantizeOffset, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
@@ -207,7 +207,8 @@ class PanSpool(wx.Panel):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(self, -1, 'Quantization scale:'), 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.tQuantizeScale = wx.TextCtrl(self, -1, '1.0')
+        self.tQuantizeScale = wx.TextCtrl(self, -1, '0.5')
+        self.tQuantizeScale.SetToolTip(wx.ToolTip('Quantization scale in units of sigma\n. The default of 0.5 will give a quantization interval that is half the std dev. of the expected Poisson noise in a pixel.'))
         hsizer.Add(self.tQuantizeScale, 1.0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
@@ -290,11 +291,24 @@ class PanSpool(wx.Panel):
         else:
             compLevel = 0
 
+
+        #try and set our quantization offset automatically as the AD offset of the camera
+        q_offset = self.tQuantizeOffset.GetValue()
+        if q_offset == 'auto':
+            #FIXME - add getter to camera???
+            q_offset = self.scope.cam.noiseProps['ADOffset']
+        else:
+            q_offset = float(q_offset)
+
+
+        #quantization scale in GUI is in units of sigma, convert to ADU
+        q_scale = float(self.tQuantizeScale.GetValue())/self.scope.cam.GetElectrPerCount()
+
         compSettings = {
             'compression' : PZFFormat.DATA_COMP_HUFFCODE if self.cbCompress.GetValue() else PZFFormat.DATA_COMP_RAW,
             'quantization' : PZFFormat.DATA_QUANT_SQRT if self.cbQuantize.GetValue() else PZFFormat.DATA_QUANT_NONE,
-            'quantizationOffset' : float(self.tQuantizeOffset.GetValue()),
-            'quantizationScale' : float(self.tQuantizeScale.GetValue())
+            'quantizationOffset' : q_offset,
+            'quantizationScale' : q_scale
         }
 
         try:
