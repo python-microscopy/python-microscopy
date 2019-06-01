@@ -24,7 +24,8 @@ from collections import OrderedDict
 import wx
 import wx.lib.newevent
 
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 import pylab
 import numpy as np
 

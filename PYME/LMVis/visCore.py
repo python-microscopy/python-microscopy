@@ -7,7 +7,8 @@ Created on Sat May 14 14:54:52 2016
 import wx
 import wx.py.shell
 
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 import wx.lib.agw.aui as aui
 
 #hacked so py2exe works
@@ -153,8 +154,9 @@ class VisGUICore(object):
             #self.displayPane.Bind(displayPane.EVT_DISPLAY_CHANGE, self.RefreshView)
         
         
-            from .layer_panel import CreateLayerPane
+            from .layer_panel import CreateLayerPane, CreateLayerPanel
             CreateLayerPane(sidePanel, self)
+            #CreateLayerPanel(self)
             
             if self.use_shaders:
                 from .view_clipping_pane import GenViewClippingPanel
@@ -196,9 +198,9 @@ class VisGUICore(object):
 
         self.recipeView = RecipeDisplayPanel(item)
         self.recipeView.SetRecipe(self.pipeline.recipe)
-        item.AddNewElement(self.recipeView)
+        item.AddNewElement(self.recipeView, priority=20)
 
-        pnl.AddPane(item)
+        pnl.AddPane(item, 20)
         
     def update_datasource_panel(self, event=None, **kwargs):
         dss = list(self.pipeline.dataSources.keys())

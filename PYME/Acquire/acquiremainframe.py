@@ -27,7 +27,8 @@ import logging
 import os
 import time
 
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 import wx
 import wx.lib.agw.aui as aui
 import wx.py.shell
@@ -243,15 +244,7 @@ class PYMEMainFrame(AUIFrame):
 
         logger.debug('Run all custom GUI init tasks')
             
-        if len(self.scope.positioning.keys()) > 0.5:
-            self.pos_sl = positionUI.PositionSliders(self.scope, self, self.scope.joystick)
-            self.time1.WantNotification.append(self.pos_sl.update)
-
-            self.AddTool(self.pos_sl, 'Positioning')
-
-            self.seq_d = seqdialog.seqPanel(self, self.scope)
-            self.AddAqTool(self.seq_d, 'Z-Stack')
-            #self.seq_d.Show()
+        
 
         if self.scope.cam.CamReady():# and ('chaninfo' in self.scope.__dict__)):
             #self._start_polling_camera()
@@ -266,23 +259,39 @@ class PYMEMainFrame(AUIFrame):
                 self.AddCamTool(self.pCamChoose, 'Camera Selection')
 
 
-            self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope)
-            self.AddAqTool(self.pan_spool, 'Spooling')
+            
 
         
+        
         self.time1.WantNotification.append(self.StatusBarUpdate)
-
-        for t in self.toolPanels:
-            #print(t)
-            self.AddTool(*t)
 
         for t in self.camPanels:
             #print(t)
             self.AddCamTool(*t)
+        
+        if len(self.scope.positioning.keys()) > 0.5:
+            self.pos_sl = positionUI.PositionSliders(self.scope, self, self.scope.joystick)
+            self.time1.WantNotification.append(self.pos_sl.update)
+
+            self.AddTool(self.pos_sl, 'Positioning')
+
+            self.seq_d = seqdialog.seqPanel(self, self.scope)
+            self.AddAqTool(self.seq_d, 'Z-Stack')
+            #self.seq_d.Show()
+        
+        for t in self.toolPanels:
+            #print(t)
+            self.AddTool(*t)
+            
+        if self.scope.cam.CamReady():
+            self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope)
+            self.AddAqTool(self.pan_spool, 'Sequence Spooling')
             
         for t in self.aqPanels:
             self.AddAqTool(*t)
             
+        
+        
         for t in self.anPanels:
             self.AddTool(*t, panel=self.anPanel)
 
@@ -349,15 +358,17 @@ class PYMEMainFrame(AUIFrame):
         
         self._mgr.AddPane(self.camPanel, cpinfo)
         
-        self.toolPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
-                                     wx.Size(240,1000))
-
-        if mode == 'compact':
-            self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
-                              Name("hardwareControls").Caption("Hardware").CloseButton(False).BestSize(240, 250), target=cpinfo)
-        else:
-            self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
-                          Name("hardwareControls").Caption("Hardware").Layer(2).Position(1).Right().CloseButton(False).BestSize(240, 250))
+        self.toolPanel = self.camPanel
+        
+        # self.toolPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
+        #                              wx.Size(240,1000))
+        #
+        # if mode == 'compact':
+        #     self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
+        #                       Name("hardwareControls").Caption("Hardware").CloseButton(False).BestSize(240, 250), target=cpinfo)
+        # else:
+        #     self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
+        #                   Name("hardwareControls").Caption("Hardware").Layer(2).Position(1).Right().CloseButton(False).BestSize(240, 250))
 
 
         self.aqPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
@@ -386,7 +397,7 @@ class PYMEMainFrame(AUIFrame):
         Parameters
         ----------
         pane : an instance of a wx.Window derived class
-            The pane to add
+            The pane to add. Optionally, a list of panes
         title : string
             The caption for the panel.
         """
@@ -394,10 +405,16 @@ class PYMEMainFrame(AUIFrame):
         if panel is None:
             panel = self.toolPanel
         
-        item = afp.foldingPane(panel, -1, caption=title, pinned = pinned)
-        pane.Reparent(item)
-        item.AddNewElement(pane)
-        panel.AddPane(item)
+        if isinstance(pane, afp.foldingPane):
+            pane.SetCaption(title).Pin(pinned)
+            pane.Reparent(panel)
+            panel.AddPane(pane)
+        else:
+            # a normal wx.Panel / wx.Window
+            item = afp.foldingPane(panel, -1, caption=title, pinned = pinned)
+            pane.Reparent(item)
+            item.AddNewElement(pane)
+            panel.AddPane(item)
 #        item = self.toolPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
 #        panel.Reparent(item)
 #        self.toolPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)

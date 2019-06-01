@@ -24,7 +24,8 @@
 
 import wx
 import sys
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 
 from PYME.ui import histLimits
 from PYME.LMVis import editFilterDialog
