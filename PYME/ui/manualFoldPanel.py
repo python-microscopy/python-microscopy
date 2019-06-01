@@ -574,7 +574,8 @@ class foldPanel(wx.Panel):
     def _collapse_old_frames(self):
         candidates = [p for p in self.panes if (p.foldable and not p.folded and (p._time_last_unfolded< (time.time()-1)))]
         
-        candidates[np.argmin([p._time_last_unfolded for p in candidates])].Fold()
+        if len(candidates) > 0:
+            candidates[np.argmin([p._time_last_unfolded for p in candidates])].Fold()
         
         self.Layout()
         self.Refresh()
