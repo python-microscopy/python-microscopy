@@ -140,7 +140,7 @@ class DCIMGFile(object):
         info['pixel_type'] = session_head['pixel_type']
         info['num_columns'] = session_head['num_columns']
         info['bytes_per_row'] = session_head['bytes_per_row']
-        info['bytes_per_pixel'] = info['bytes_per_row']/info['num_columns']
+        info['bytes_per_pixel'] = int(info['bytes_per_row']/info['num_columns'])
         info['num_rows'] = session_head['num_rows']
         info['session0_data'] = info['session0_offset'] + session_head['offset_to_data']
         #info['session0_footer'] = info['session0_offset'] + session_head['offset_to_footer']
@@ -155,7 +155,7 @@ class DCIMGFile(object):
         # depending on ROI position and size, dcimg occasionally contain extra bytes per 'row', though this ends up as
         # per column once we convert from fortran ordering. You have to drop the first 'row_offset' rows of a 2D image,
         # i.e. image = raw[row_offset:, :]
-        info['num_columns_raw'] = info['bytes_per_row'] / info['bytes_per_pixel']
+        info['num_columns_raw'] = int(info['bytes_per_row'] / info['bytes_per_pixel'])
         info['row_offset'] = 0
         if info['bytes_per_row'] % info['num_columns'] != 0:
             logger.debug('Handling %d extra bytes per row.' % info['bytes_per_row'] % info['num_columns'])
