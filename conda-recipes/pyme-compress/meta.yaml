@@ -152,7 +152,7 @@ requirements:
   # recipe
 
 about:
-  home: https://code.google.com/p/python-microscopy
+  home: bitbucket.org/david_baddeley/python-microscopy
   license: GPL
   summary: compression library for image data
 
