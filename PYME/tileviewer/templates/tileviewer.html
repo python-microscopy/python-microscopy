@@ -3,17 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <title>PYME Tile Viewer</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
 </head>
 <body>
+  	<div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Viewing tiled dataset: {{ tile_dir }}</h2>
+            </div>
+        </div>
+  	<div class="row">
+  	<div class="col-md-9">
+<div id="openseadragon1" style="width: 100%; height: 800px;"></div>
+    </div>
+        <div class="col-md-3">
+            <h3>ROIs to image</h3>
+            <p>Double click on image to add a ROI</p>
+            <div id="roi_list" style="overflow-y:scroll;max-height:720px"></div>
+        </div>
+    </div>
+    </div>
 
-<div id="openseadragon1" style="width: 800px; height: 600px;"></div>
+
+<script src="/static/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.4.0/openseadragon.min.js"></script>
+    <script src="/static/openseadragon-viewerinputhook.min.js"></script>
 <script type="text/javascript">
     var viewer = OpenSeadragon({
         id:            "openseadragon1",
-        prefixUrl:     "/openseadragon/images/",
+        prefixUrl:     "/static/images/osd_flat/",
         navigatorSizeRatio: 0.25,
         navigatorOpacity: 1.0,
+        //debugMode: true,
         //wrapHorizontal:     true,
         showNavigator: true,
         maxZoomPixelRatio: 10,
@@ -28,6 +49,39 @@
                 return "get_tile?layer=" + ({{ pyramid_depth }}-level) + "&x=" + x + "&y=" + y + "&vmin=970&vmax=1060";
             }
     }
+    });
+
+    viewer.addViewerInputHook({hooks: [
+        {tracker: 'viewer', handler: 'dblClickHandler', hookHandler: onViewerDblClick},
+        {tracker: 'viewer', handler: 'clickHandler', hookHandler: onViewerClick}
+    ]});
+
+
+    function onViewerClick(event) {
+        // Disable click zoom on the viewer using event.preventDefaultAction
+        event.preventDefaultAction = true;
+        event.stopBubbling = true;
+
+    }
+
+    function onViewerDblClick(event) {
+        // Disable click zoom on the viewer using event.preventDefaultAction
+        event.preventDefaultAction = true;
+        event.stopBubbling = true;
+
+        //console.log(event);
+        var c = viewer.viewport.viewportToImageCoordinates(viewer.viewport.pointFromPixel(event.position));
+        //console.log(c);
+
+        $.get( "/add_roi?x=" + c.x + "&y=" + c.y , function( data ) {
+        $( "#roi_list" ).html( data );
+        //alert( "Load was performed." );
+    });
+    }
+
+    $.get( "/roi_list", function( data ) {
+        $( "#roi_list" ).html( data );
+        //alert( "Load was performed." );
     });
 </script>
 
