@@ -25,6 +25,8 @@ import wx
 import math
 import six
 from wx.lib.agw.aui.aui_utilities import BitmapFromBits
+import time
+import numpy as np
 
 def ColourFromStyle(col):
     if isinstance(col, six.string_types):
@@ -140,29 +142,19 @@ class CaptionBar(wx.Window):
 
         self.pinButtonRect = (0,0,0,0)
 
-#        if foldIcons is None:
-#            foldIcons = wx.ImageList(16, 16)
-#
-#            bmp = ExpandedIcon.GetBitmap()
-#            foldIcons.Add(bmp)
-#            bmp = CollapsedIcon.GetBitmap()
-#            foldIcons.Add(bmp)
-#
-#        # set initial size
-#        if foldIcons:
-#            assert foldIcons.GetImageCount() > 1
-#            iconWidth, iconHeight = foldIcons.GetSize(0)
-
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_LEFT_UP, self.OnLeftClick)
-        self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnterLeave)
-        self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseEnterLeave)
+        #self.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnterLeave)
+        #self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseEnterLeave)
 
 #        self.Bind(wx.EVT_CHAR, self.OnChar)
 
 
+    def SetCaption(self, caption):
+        self.caption = caption
+    
     def OnPaint(self, event):
         dc = wx.PaintDC(self)
         gc = wx.GraphicsContext.Create(dc)
@@ -242,25 +234,13 @@ class CaptionBar(wx.Window):
     def OnLeftClick(self, event):
         if wx.Rect(*self.pinButtonRect).Inside(event.GetPosition()):
             self.parent.TogglePin()
+        else:
+            self.parent.ToggleFold()
 
 
     def OnSize(self, event):
         rect = self.GetRect()
         self.RefreshRect(rect)
-
-    def OnMouseEnterLeave(self, event):
-        #event.ResumePropagation(2)
-        #print event.ShouldPropagate()
-        #print 'mev'
-        event.SetEventObject(self.parent)
-        event.ResumePropagation(2)
-        event.Skip()
-        
-
-
-
-
-
 
 
 
@@ -315,6 +295,9 @@ class foldingPane(wx.Panel):
 
         #without any elements, folding isn't going to do anything
         self.foldable = False
+        
+        #keep track of the time we were last unfolded to see which pane to fold first
+        self._time_last_unfolded = 0
 
         self.sizer = wx.BoxSizer(self.orientation)
 
@@ -325,14 +308,22 @@ class foldingPane(wx.Panel):
             self.sizer.Add(self.stCaption, 0, wx.EXPAND, 0)
 
         self.SetSizer(self.sizer)
+        
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        
+    def SetCaption(self, caption):
+        self.caption = caption
+        self.stCaption.SetCaption(caption)
+        
+        return self
 
-    def AddNewElement(self, window, foldable=True, foldedWindow=None):
-        self.AddElement(foldElement(window, foldable, foldedWindow))
+    def AddNewElement(self, window, foldable=True, foldedWindow=None, priority=0):
+        self.AddElement(foldElement(window, foldable, foldedWindow), priority=priority)
 
-    def AddElement(self, element):
+    def AddElement(self, element, priority=0):
         self.elements.append(element)
         
-        self.sizer.Add(element.window, 0, self.sizerflags, self.padding)
+        self.sizer.Add(element.window, priority, self.sizerflags, self.padding)
         if element.foldable:
             self.foldable = True #we have at least one foldable element
             if element.foldedWindow:
@@ -353,18 +344,39 @@ class foldingPane(wx.Panel):
         self.Unfold()
         self.pinnedOpen = True
         self.stCaption.Refresh()
+        
 
     def UnPin(self):
         self.pinnedOpen = False
         self.stCaption.Refresh()
+        
+    def Pin(self, pin=True):
+        if pin:
+            self.PinOpen()
+        else:
+            self.UnPin()
+            
+        return self
 
     def TogglePin(self):
         if self.pinnedOpen:
             self.UnPin()
         else:
             self.PinOpen()
+            
+    def ToggleFold(self):
+        if self.folded:
+            self.Unfold()
+        else:
+            self.Fold()
+            
+        self.GetParent().fold1()
 
-    def Fold(self):
+        
+
+    def Fold(self, fold=True):
+        if not fold:
+            self.Unfold()
         #print 'foo'
         if not self.folded and not self.pinnedOpen:
             for element in self.elements:
@@ -376,16 +388,16 @@ class foldingPane(wx.Panel):
 
             self.folded = True
             self.stCaption.Refresh()
-            #self.Layout()
+            self.Layout()
             return True
         else:
             return False
-
             #self.Layout()
 
     def Unfold(self):
         #print 'bar'
         if self.folded:
+            self._time_last_unfolded = time.time()
             for element in self.elements:
                 #print 'bar'
                 if element.foldable:
@@ -396,12 +408,15 @@ class foldingPane(wx.Panel):
 
             self.folded = False
             self.stCaption.Refresh()
-            #self.Layout()
+            self.Layout()
             return True
         else:
             return False
 
             #self.Layout()
+    
+    def OnSize(self, event):
+        self.Layout()
 
 
 r_arrow = b'\xff\xff\xdf\xff\x9f\xff\x1f\xff\x5f\xfe\xdf\xfc\xdf\xf9\xdf\xf3\xdf' \
@@ -466,6 +481,7 @@ class collapsingPane(foldingPane):
     def OnFold(self, event):
         print('fold')
         if self.folded:
+            self.GetParent()._time_last_unfolded=time.time()
             self.Unfold()
             self.bFold.SetFolded(False)
         else:
@@ -474,7 +490,7 @@ class collapsingPane(foldingPane):
 
         #self.Layout()
         #self.Fit()
-        self.GetParent().GetParent().Layout()
+        self.GetParent().GetParent().fold1()
 
 
 
@@ -498,14 +514,20 @@ class foldPanel(wx.Panel):
             self.sizerflags = wx.EXPAND #| wx.BOTTOM
         else:
             self.sizerflags = wx.EXPAND #| wx.RIGHT
+            
+        self._stretch_sizer = kwargs.pop('bottom_spacer', True)
 
         self.priorities = []
         self.panes = []
 
         self.sizer = wx.BoxSizer(self.orientation)
         self.SetSizer(self.sizer)
+
+        self._in_fold1 = False
         
         self.fold_signal = dispatch.Signal()
+        
+        self.Bind(wx.EVT_SIZE, self.OnResize)
 
         #self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
 
@@ -513,8 +535,8 @@ class foldPanel(wx.Panel):
         self.panes.append(window)
         self.priorities.append(priority)
 
-        window.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnterPane)
-        window.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeavePane)
+        #window.Bind(wx.EVT_ENTER_WINDOW, self.OnMouseEnterPane)
+        #window.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeavePane)
 
         self.RegenSizer()
 
@@ -524,7 +546,8 @@ class foldPanel(wx.Panel):
         for pane, priority in zip(self.panes, self.priorities):
             self.sizer.Add(pane, priority, self.sizerflags, self.padding)
 
-        self.sizer.AddStretchSpacer()
+        if self._stretch_sizer:
+            self.sizer.AddStretchSpacer()
 
         self.sizer.Layout()
 
@@ -537,56 +560,31 @@ class foldPanel(wx.Panel):
         self.RegenSizer()
         
     def fold1(self):
-        print('fold1')
+        #print('fold1')
+        self._in_fold1 = True
         self.Layout()
+        #print(self.GetSize()[1], self.GetBestSize()[1])
+        if (self.GetBestSize()[1] > self.GetSize()[1]):
+            self._collapse_old_frames()
         self.fold_signal.send(sender=self)
+        
+        self._in_fold1 = False
         self.Refresh()
-
-    def OnMouseEnterPane(self, event):
-        pane = event.GetEventObject()
-
-
-#        ind = self.panes.index(pane)
-#        print pane.GetMaxSize()
-#        if self.orientation == wx.VERTICAL:
-#            sc = float(pane.GetMaxSize()[1])/pane.GetSize()[1]
-#        else:
-#            sc = float(pane.GetMaxSize()[0])/pane.GetSize()[0]
-#
-#        print sc
-#
-#        self.priorities[ind] = math.ceil(sc)
         
-        #if not pane.GetClientRect().Inside(event.GetPosition())
-        #print 'enter', pane
-        if pane.Unfold():
-             #only re-do layout if we change state
-             self.Layout()
-             self.fold_signal.send(sender=self)
-        #self.RegenSizer()
-
-    def OnMouseLeavePane(self, event):
-        pane = event.GetEventObject()
-        #ind = self.panes.index(event.GetEventObject())
-        #self.priorities[ind] = 1
-        #print pane.GetClientRect()
-        if wx.__version__ > '4':
-            inside = pane.GetClientRect().Contains(event.GetPosition())
-        else:
-            inside = pane.GetClientRect().Inside(event.GetPosition())
-            
-        if not inside:
-            if pane.Fold():
-                self.Layout()
-                self.fold_signal.send(sender=self)
-        #event.Skip()
+    def _collapse_old_frames(self):
+        candidates = [p for p in self.panes if (p.foldable and not p.folded and (p._time_last_unfolded< (time.time()-1)))]
         
-
-    def OnMouseLeave(self, event):
+        if len(candidates) > 0:
+            candidates[np.argmin([p._time_last_unfolded for p in candidates])].Fold()
+        
         self.Layout()
-        self.fold_signal.send(sender=self)
         self.Refresh()
-        #pass #self.RegenSizer()
+        
+    def OnResize(self, event):
+        if not self._in_fold1:
+            self.fold1()
+
+    
 
 if __name__ == "__main__":
     app = wx.PySimpleApp(0)

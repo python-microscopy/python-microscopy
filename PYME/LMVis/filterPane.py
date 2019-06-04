@@ -23,7 +23,8 @@
 import wx
 from PYME.ui import UI_MAXSIZE #hack for sys.maxsize bug
 import sys
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 import numpy as np
 import dispatch
 

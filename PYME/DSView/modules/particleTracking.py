@@ -11,7 +11,8 @@ import wx
 import wx.html2
 import wx.lib.mixins.listctrl as listmix
 
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 import numpy as np
 #import pandas as pd
 import matplotlib.pyplot as plt

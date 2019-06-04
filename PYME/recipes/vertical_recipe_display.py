@@ -1,11 +1,15 @@
 from . import recipeLayout
 import wx
 import numpy as np
+from PYME.IO import tabular
 
-class RecipeDisplayPanel(wx.ScrolledWindow):
+# class RecipeDisplayPanel(wx.ScrolledWindow):
+#     def __init__(self, *args, **kwargs):
+#         wx.ScrolledWindow.__init__(self, *args, **kwargs)
+
+class RecipeDisplayPanel(wx.Panel):
     def __init__(self, *args, **kwargs):
-        wx.ScrolledWindow.__init__(self, *args, **kwargs)
-        
+        wx.Panel.__init__(self, *args,**kwargs)
         self.recipe = None
 
         self.output_positions = {}
@@ -25,8 +29,8 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
         
         #self.SetMinSize((200, 500))
         
-        self.SetScrollRate(0, 20)
-        self.ShowScrollbars(wx.SHOW_SB_DEFAULT, wx.SHOW_SB_ALWAYS)
+        #self.SetScrollRate(0, 20)
+        #self.ShowScrollbars(wx.SHOW_SB_DEFAULT, wx.SHOW_SB_ALWAYS)
         
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
@@ -59,7 +63,8 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
         from .base import ModuleBase, OutputModule
         import textwrap
         
-        from PYME.ui import autoFoldPanel as afp
+        #from PYME.ui import autoFoldPanel as afp
+        import PYME.ui.manualFoldPanel as afp
 
         dg = self.recipe.dependancyGraph()
         rdg = self.recipe.reverseDependancyGraph()
@@ -141,7 +146,16 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
                         #print('Adding static text')
                         item = afp.foldingPane(self.fp, -1, caption=None, pinned=True, folded=False, padding=0)
                         st = wx.StaticText(item, -1, node)
-                        st.SetLabelMarkup("<span foreground='#%02x%02x%02x'>%s</span>" % (tuple([int(v) for v in (255 * self._col(node)[:3])])  + (node,)))
+                        
+                        node_col = tuple([int(v) for v in (255 * self._col(node)[:3])])
+
+                        evts = ''
+                        data = self.recipe.namespace.get(node, None)
+                        if isinstance(data, tabular.TabularBase):
+                            evts = ' [%d evts]' % len(data)
+                                
+                        st.SetLabelMarkup("<span foreground='#%02x%02x%02x'>%s%s</span>" % (node_col + (node,evts)))
+                            
                         item.AddNewElement(st, foldable=False)
                         self.fp.AddPane(item)
                         
@@ -159,12 +173,21 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
 
                     item = afp.foldingPane(self.fp, -1, caption=None, pinned=True, folded=False, padding=0)
                     st = wx.StaticText(item, -1, node)
+
+                    node_col = tuple([int(v) for v in (255 * self._col(node)[:3])])
+                    
+                    
+                    bg = ''
+                    evts = ''
+                    
                     if node in self.input_datasources:
-                        st.SetLabelMarkup(
-                            "<u><span foreground='#%02x%02x%02x' weight='bold' background='#D0D0D0'>%s</span></u>" % (tuple([int(v) for v in (255 * self._col(node)[:3])])  + (node,)))
-                    else:
-                        st.SetLabelMarkup(
-                            "<span foreground='#%02x%02x%02x'>%s</span>" % (tuple([int(v) for v in (255 * self._col(node)[:3])])  + (node,)))
+                        bg = " background='#D0D0D0'"
+
+                    data = self.recipe.namespace.get(node, None)
+                    if isinstance(data, tabular.TabularBase):
+                        evts = ' [%d evts]' % len(data)
+                       
+                    st.SetLabelMarkup("<u><span foreground='#%02x%02x%02x' weight='bold'%s>%s%s</span></u>" % (node_col + (bg, node,evts)))
                     item.AddNewElement(st, foldable=False)
                     self.fp.AddPane(item)
 
@@ -212,7 +235,7 @@ class RecipeDisplayPanel(wx.ScrolledWindow):
         #    return
 
         dc = wx.PaintDC(self)
-        self.PrepareDC(dc)
+        #self.PrepareDC(dc)
         #dc.BeginDrawing()
 
         x_0 = self.fp.Position[0]

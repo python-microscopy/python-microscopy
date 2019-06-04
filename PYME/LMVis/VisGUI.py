@@ -171,6 +171,10 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         
         self.paneHooks.append(self.GenPanels)
         self.CreateFoldPanel()
+
+        #from .layer_panel import CreateLayerPane, CreateLayerPanel
+        #CreateLayerPane(sidePanel, self)
+        #CreateLayerPanel(self)
         
         self._recipe_manager = recipeGui.PipelineRecipeManager(self.pipeline)
         self._recipe_editor = recipeGui.RecipeView(self, self._recipe_manager)

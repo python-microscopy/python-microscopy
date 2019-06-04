@@ -34,7 +34,8 @@ import numpy as np
 #import os
 from . import rend_im
 
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 
 import logging
 logger = logging.getLogger(__name__)

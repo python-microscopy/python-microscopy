@@ -5,7 +5,8 @@ Created on Sat May 14 11:20:11 2016
 @author: david
 """
 import wx
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 import numpy as np
 
 try:

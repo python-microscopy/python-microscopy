@@ -21,7 +21,8 @@
 ##################
 import os
 
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 import wx
 from PYME import resources
 from PYME.ui.mytimer import mytimer

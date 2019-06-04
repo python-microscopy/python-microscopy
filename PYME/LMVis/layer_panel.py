@@ -1,7 +1,8 @@
 import wx
 import wx.lib.newevent
 
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 import numpy as np
 
 from PYME.ui import histLimits
@@ -14,6 +15,13 @@ def CreateLayerPane(panel, visFr):
     pane = LayerPane(panel, visFr)
     panel.AddPane(pane)
     return pane
+
+def CreateLayerPanel(visFr):
+    import wx.lib.agw.aui as aui
+    pane = LayerPane(visFr, visFr)
+    pane.SetSize(pane.GetBestSize())
+    pinfo = aui.AuiPaneInfo().Name("optionsPanel").Right().Caption('Layers').CloseButton(False).MinimizeButton(True).MinimizeMode(aui.AUI_MINIMIZE_CAPT_SMART|aui.AUI_MINIMIZE_POS_RIGHT)#.CaptionVisible(False)
+    visFr._mgr.AddPane(pane, pinfo)
 
 class LayerPane(afp.foldingPane):
     def __init__(self, panel, visFr):
@@ -85,7 +93,10 @@ class LayerPane(afp.foldingPane):
         #print self.pan.GetBestSize(), self.pan.GetSize(), self.GetBestSize(), self.GetSize()
         print('NB best size: ' +  repr(self.nb.GetBestSize()))
         
-        self.GetParent().GetParent().Layout()
+        try:
+            self.GetParent().GetParent().Layout()
+        except AttributeError:
+            pass
          
             
         #self.nb.AddPage(wx.Panel(self.nb), 'New', imageId=0)

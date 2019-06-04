@@ -551,9 +551,6 @@ def CropExportData(data, roi=None, mdh=None, events=None, origName = None):
             return
 
         ext = '*' + os.path.splitext(filename)[1]
-        #deal with the special case of ome tiffs
-        if filename.endswith('ome.tif'):
-            ext = '*.ome.tif'        
         exp = exportersByExtension[ext]()
 
         exp.Export(data, filename, dlg.GetXSlice(), dlg.GetYSlice(), dlg.GetZSlice(),mdh, events, origName)
@@ -574,12 +571,9 @@ def ExportData(ds, mdh=None, events=None, origName = None, defaultExt = '*.tif',
 
         
     ext = '*' + os.path.splitext(filename)[1]
-    #deal with the special case of ome tiffs
-    if filename.endswith('ome.tif'):
-        ext = '*.ome.tif'
         
     if not ext in exportersByExtension.keys():
-        raise RuntimeError('No exporter found for %s files')
+        raise RuntimeError('No exporter found for %s files' % ext)
         #wx.MessageBox('No exporter found for %s files\n Try one of the following file types:\n%s' % (ext, ', '.join(exportersByExtension.keys())), "Error saving data", wx.OK|wx.ICON_HAND)
         return
 

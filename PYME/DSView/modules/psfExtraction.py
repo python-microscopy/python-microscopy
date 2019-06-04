@@ -20,7 +20,8 @@
 #
 ##################
 import wx
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 import numpy
 
 class psfExtractor:
