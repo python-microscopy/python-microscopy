@@ -154,7 +154,8 @@ class DCAMBUF_FRAME(ctypes.Structure):
                 ("height", ctypes.c_int32),
                 ("left", ctypes.c_int32),
                 ("top", ctypes.c_int32),
-                ("timestamp", ctypes.c_void_p),
+                ("timestamp_sec", ctypes.c_int32),
+                ("timestamp_usec", ctypes.c_int32),
                 ("framestamp", ctypes.c_int32),
                 ("camerastamp", ctypes.c_int32)]
 
