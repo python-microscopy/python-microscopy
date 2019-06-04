@@ -107,11 +107,11 @@ class OffsetPiezoClient(PiezoBase):
         return float(res.json())
 
     def GetMin(self, iChan=1):
-        res = requests.get(self.urlbase + '/GetMin?iChannel=%d' % (iChan,))
+        res = requests.get(self.urlbase + '/GetMin?iChan=%d' % (iChan,))
         return float(res.json())
 
     def GetMax(self, iChan=1):
-        res = requests.get(self.urlbase + '/GetMax?iChannel=%d' % (iChan,))
+        res = requests.get(self.urlbase + '/GetMax?iChan=%d' % (iChan,))
         return float(res.json())
 
     def GetFirmwareVersion(self):

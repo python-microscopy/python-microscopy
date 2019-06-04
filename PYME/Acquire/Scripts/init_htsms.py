@@ -43,14 +43,14 @@ def mz_stage(scope):
 
 @init_hardware('Z Piezo')
 def pz(scope):
-    from PYME.Acquire.Hardware.Piezos import piezo_e816_dll #, offsetPiezo
+    from PYME.Acquire.Hardware.Piezos import piezo_e816_dll, offsetPiezoREST
 
     scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100)
     #scope.hardwareChecks.append(scope._piFoc.OnTarget)
     scope.CleanupFunctions.append(scope._piFoc.close)
-    scope.piFoc = scope._piFoc
+    #scope.piFoc = scope._piFoc
 
-    #scope.piFoc = offsetPiezo.piezoOffsetProxy(scope._piFoc)
+    scope.piFoc = offsetPiezoREST.OffsetPiezoServer(scope._piFoc)
     scope.register_piezo(scope.piFoc, 'z', needCamRestart=False)
 
     # server so drift correction can connect to the piezo
@@ -171,7 +171,7 @@ def anal_settings(MainFrame, scope):
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):
     from PYME.Acquire.Hardware import focusKeys
-    fk = focusKeys.FocusKeys(MainFrame, scope.piezos[0])
+    fk = focusKeys.FocusKeys(MainFrame, scope.piFoc)
 
 #splitter
 # @init_gui('Splitter')
