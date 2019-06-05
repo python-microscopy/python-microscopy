@@ -130,29 +130,25 @@ def anal_settings(MainFrame, scope):
 
 
 
-# @init_hardware('Lasers & Shutters')
-# def lasers(scope):
-#     from PYME.Acquire.Hardware import ioslave
-#     from PYME.Acquire.Hardware import phoxxLaser
-#
-#     slave = ioslave.IOSlave('COM6')
-#     scope.l671 = ioslave.DigitalShutter('l671', scopeState = scope.state, ios=slave, pin=13)
-#
-#     scope.l642 = phoxxLaser.PhoxxLaser('l642', portname='COM7', scopeState=scope.state)
-#     scope.CleanupFunctions.append(scope.l642.Close)
-#     scope.lasers = [scope.l642, scope.l671]
-#
-# @init_gui('Laser controls')
-# def laser_controls(MainFrame, scope):
-#     from PYME.Acquire.ui import lasersliders
-#
-#     lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
-#     MainFrame.time1.WantNotification.append(lcf.update)
-#     MainFrame.camPanels.append((lcf, 'Laser Control'))
-#
-#     lsf = lasersliders.LaserSliders(MainFrame.toolPanel, scope.state)
-#     MainFrame.time1.WantNotification.append(lsf.update)
-#     MainFrame.camPanels.append((lsf, 'Laser Powers'))
+@init_hardware('Lasers & Shutters')
+def lasers(scope):
+    from PYME.Acquire.Hardware.Coherent import OBIS
+
+    scope.l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405')
+    scope.CleanupFunctions.append(scope.l405.Close())
+    scope.lasers = [scope.l405]
+
+@init_gui('Laser controls')
+def laser_controls(MainFrame, scope):
+    from PYME.Acquire.ui import lasersliders
+
+    lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
+    MainFrame.time1.WantNotification.append(lcf.update)
+    MainFrame.camPanels.append((lcf, 'Laser Control'))
+
+    lsf = lasersliders.LaserSliders(MainFrame.toolPanel, scope.state)
+    MainFrame.time1.WantNotification.append(lsf.update)
+    MainFrame.camPanels.append((lsf, 'Laser Powers'))
 
 # @init_hardware('Line scanner')
 # def line_scanner(scope):
