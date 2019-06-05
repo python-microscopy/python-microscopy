@@ -232,7 +232,7 @@ class PYMEMainFrame(AUIFrame):
             self._start_polling_camera()
         
         for cm in self.postInit:
-            logging.debug('Loading GUI component for %s' %cm.name)
+            logger.debug('Loading GUI component for %s' %cm.name)
             try:
                 cm.run(self, self.scope)
             except Exception as e:
