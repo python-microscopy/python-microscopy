@@ -61,8 +61,8 @@ def pz(scope):
 
 @init_hardware('HamamatsuORCA')
 def orca_cam(scope):
-    from PYME.Acquire.Hardware.HamamatsuDCAM.HamamatsuORCA import MultiviewOrca  # HamamatsuORCA
-    # cam = HamamatsuORCA(0)
+    from PYME.Acquire.Hardware.HamamatsuDCAM.HamamatsuORCA import MultiviewOrca
+
     size = 240
     multiview_info = {
         'Multiview.NumROIs': 4,
@@ -73,12 +73,7 @@ def orca_cam(scope):
         'Multiview.ROI3Origin': (1724, 1024 - int(size/2)),
     }
     cam = MultiviewOrca(0, multiview_info)
-
-
-    # for some reason the init code was called from the GUI init in the initial init_orca.py - I'm not sure why
-    # it would make more sense to call it here (try uncommenting this an commenting out the corresponding line in
-    # the GUI init below
-    # cam.Init()
+    cam.Init()
 
     scope.register_camera(cam, 'HamamatsuORCA', rotate=True, flipx=True, flipy=False)
 
@@ -101,10 +96,6 @@ def orca_cam_controls(MainFrame, scope):
     MainFrame.camPanels.append((scope.camControls['HamamatsuORCA'], 'ORCA Properties'))
 
     # TODO - add a ROI / Views panel
-
-    # for some reason the camera init was performed in the GUI callback in the original file - I'm not sure why
-    # try commenting this out and uncommenting the line in the hardware init above.
-    scope.cameras['HamamatsuORCA'].Init()
 
     MainFrame.AddMenuItem('Camera','Set Multiview', lambda e: scope.state.setItem('Camera.Views',[0,1,2,3]))
     MainFrame.AddMenuItem('Camera', 'Clear Multiview', lambda e: scope.state.setItem('Camera.Views', []))
@@ -133,10 +124,21 @@ def anal_settings(MainFrame, scope):
 @init_hardware('Lasers & Shutters')
 def lasers(scope):
     from PYME.Acquire.Hardware.Coherent import OBIS
+    from PYME.Acquire.Hardware.MPBCommunications import MPBCW
 
     scope.l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405')
     scope.CleanupFunctions.append(scope.l405.Close())
-    scope.lasers = [scope.l405]
+
+    scope.l488 = OBIS.CoherentOBISLaser('COM13', name='OBIS488')
+    scope.CleanupFunctions.append(scope.l488.Close())
+
+    scope.l560 = MPBCW.MPBCWLaser('COM11', name='MPB560', init_power=200)  # minimum power for our MPB lasers is 200 mW
+    scope.CleanupFunctions.append(scope.l560.Close())
+
+    scope.l642 = MPBCW.MPBCWLaser('COM12', name='MPB642', init_power=200)  # minimum power for our MPB lasers is 200 mW
+    scope.CleanupFunctions.append(scope.l642.Close())
+
+    scope.lasers = [scope.l405, scope.l488, scope.l560, scope.l642]
 
 @init_gui('Laser controls')
 def laser_controls(MainFrame, scope):
