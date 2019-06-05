@@ -506,22 +506,18 @@ class uc480Camera:
         raise Exception('Not implemented yet!!')
 
     def GetHorizBin(self):
-        return self.binning
-        #raise Exception, 'Not implemented yet!!'
+        return self.binX == 1
 
-    def GetHorzBinValue(*args):
-        #raise Exception, 'Not implemented yet!!'
+    def GetHorzBinValue(self):
         return self.binX
 
     def SetVertBin(self, val):
         raise Exception('Not implemented yet!!')
 
-    def GetVertBin(*args):
-        return 0
-        #raise Exception, 'Not implemented yet!!'
+    def GetVertBin(self):
+        return self.binY == 1
 
-    def GetVertBinValue(*args):
-        #raise Exception, 'Not implemented yet!!'
+    def GetVertBinValue(self):
         return self.binY
 
     def GetNumberChannels(*args):
@@ -700,7 +696,7 @@ class uc480Camera:
         pass
 
     def SetEMGain(self, gain):
-        raise Exception('Not implemented yet!!')
+        raise NotImplementedError()
 
     def GetEMGain(self):
         return self.EMGain
