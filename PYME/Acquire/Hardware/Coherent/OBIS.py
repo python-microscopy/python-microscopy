@@ -49,10 +49,10 @@ class CoherentOBISLaser(Laser):
 
         self.power = 0
         self.SetPower(init_power)
-        self.MAX_POWER = float(self._query('SOUR:POW:LIM:HIGH?'))
+        self.MAX_POWER = float(self._query(b'SOUR:POW:LIM:HIGH?'))
         self.isOn = False
 
-        self._query('SYST:COMM:HAND OFF')
+        self._query(b'SYST:COMM:HAND OFF')
 
         Laser.__init__(self, name, turnOn, **kwargs)
 
@@ -68,7 +68,7 @@ class CoherentOBISLaser(Laser):
         Get value from laser via serial port.
         """
         self._purge()
-        cmd = '?%s\r\n' % command
+        cmd = b'?%s\r\n' % command
         self.commandQueue.put(cmd)
 
         try:
@@ -94,7 +94,7 @@ class CoherentOBISLaser(Laser):
                 time.sleep(.1)
                 ret = self._readline(ser)
 
-                if not ret == '':
+                if not ret == b'':
                     self.replyQueue.put(ret)
 
             time.sleep(.05)
@@ -103,18 +103,20 @@ class CoherentOBISLaser(Laser):
         return self.com.readline()
 
     def IsOn(self):
+        # FIXME - would be nice to check
         return self.isOn
 
     def TurnOn(self):
-        self._query('SOUR:AM:STAT ON')
+        self._query(b'SOUR:AM:STAT ON')
         self.isOn = True
 
     def TurnOff(self):
-        self._query('SOUR:AM:STAT OFF')
+        self._query(b'SOUR:AM:STAT OFF')
+        # FIXME - would be nice to check this worked
         self.isOn = False
 
     def SetPower(self, power):
-        self._query('SOUR:POW:LEV:IMM:AMPL ' + str(power))
+        self._query(('SOUR:POW:LEV:IMM:AMPL ' + str(power)).encode())
         self.power = power
 
     def GetPower(self):

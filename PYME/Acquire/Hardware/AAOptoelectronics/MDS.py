@@ -68,7 +68,7 @@ class AAOptoMDS(object):
         Get value from RF driver via serial port.
         """
         self._purge()
-        cmd = '?%s\r\n' % command
+        cmd = b'?%s\r\n' % command
         self.commandQueue.put(cmd)
 
         try:
@@ -78,7 +78,7 @@ class AAOptoMDS(object):
             pass
 
     def _readline(self, ser, nLines=1):
-        ret = ''
+        ret = b''
         for n in range(nLines):
             time.sleep(.1)
             ret += ser.readline()
@@ -99,7 +99,7 @@ class AAOptoMDS(object):
                 # wait a little for reply
                 ret = self._readline(ser)
 
-                if not ret == '':
+                if not ret == b'':
                     self.replyQueue.put(ret)
 
             time.sleep(.05)

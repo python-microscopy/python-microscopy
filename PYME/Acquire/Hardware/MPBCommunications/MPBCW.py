@@ -49,7 +49,7 @@ class MPBCWLaser(Laser):
 
         self.power = 0
         self.SetPower(init_power)
-        self.MAX_POWER = float(self._query('getpowersetptlim 0').split()[1])
+        self.MAX_POWER = float(self._query(b'getpowersetptlim 0').split()[1])
         self.isOn = False
 
         Laser.__init__(self, name, turnOn, **kwargs)
@@ -66,7 +66,7 @@ class MPBCWLaser(Laser):
         Get value from laser via serial port.
         """
         self._purge()
-        cmd = '?%s\r\n' % command
+        cmd = b'?%s\r\n' % command
         self.commandQueue.put(cmd)
 
         line = self.replyQueue.get(timeout=3)
@@ -92,31 +92,33 @@ class MPBCWLaser(Laser):
                 time.sleep(.1)
                 ret = self._readline(ser)
 
-                if not ret == '':
+                if not ret == b'':
                     self.replyQueue.put(ret)
 
             time.sleep(.05)
 
     def IsOn(self):
+        # fixme - would be nice to check
         return self.isOn
 
     def TurnOn(self):
-        self._query('setldenable 1')
+        self._query(b'setldenable 1')
         self.isOn = True
 
     def TurnOff(self):
-        self._query('setldenable 0')
+        self._query(b'setldenable 0')
+        # fixme - would be nice to check that this worked
         self.isOn = False
 
     def SetPower(self, power):
-        self._query('setpower 2 ' + str(power))
+        self._query(('setpower 2 ' + str(power)).encode())
         self.power = power
 
     def GetPower(self):
         return self.power
 
     def GetRealPower(self):
-        return float(self._query('power 0').split('\r')[0])
+        return float(self._query(b'power 0').split(b'\r')[0])
 
     def Close(self):
         print('Shutting down %s' % self.name)
