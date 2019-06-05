@@ -1,6 +1,6 @@
 package:
   name: pyme-depends       # lower case name of package, may contain '-' but no spaces
-  version: 1.04    # version of package. Should use the PEP-386 verlib
+  version: 1.05    # version of package. Should use the PEP-386 verlib
                       # conventions. Note that YAML will interpret
                       # versions like 1.0 as floats, meaning that 1.0 will
                       # be the same as 1. To avoid this, always put the
@@ -170,7 +170,7 @@ requirements:
     - jinja2
     - dispatch
     - pycairo
-    - pymecompress
+    - pymecompress >=0.1.4
     - six
     - future
     - pywin32 [win]

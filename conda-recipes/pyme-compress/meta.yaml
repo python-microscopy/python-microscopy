@@ -1,6 +1,6 @@
 package:
   name: pymecompress       # lower case name of package, may contain '-' but no spaces
-  version: 0.1.3    # version of package. Should use the PEP-386 verlib
+  version: 0.1.4    # version of package. Should use the PEP-386 verlib
                       # conventions. Note that YAML will interpret
                       # versions like 1.0 as floats, meaning that 1.0 will
                       # be the same as 1. To avoid this, always put the
@@ -17,7 +17,7 @@ source:
 
 build:
   # The build number should be incremented for new builds of the same version
-  number: 1       # (defaults to 0)
+  number: 0       # (defaults to 0)
   #string: abc     # (defaults to default conda build string plus the build
                   # number)
                   # The build string cannot contain a dash '-' character
