@@ -759,13 +759,15 @@ class MultiviewCameraMixin(object):
             """
             self.camera_class = camera_class
             self.multiview_info = multiview_info
+
             self.n_views = multiview_info['Multiview.NumROIs']
             self.view_origins = [multiview_info['Multiview.ROI%dOrigin' % i] for i in range(self.n_views)]
-
             self.size_x, self.size_y = multiview_info['Multiview.ROISize']
 
+            self.view_centers = [(ox + int(0.5*self.size_x), oy + int(0.5*self.size_y)) for ox, oy in self.view_origins]
+
             self.multiview_enabled = False
-            self.active_views = None
+            self.active_views = []
 
             # set default width and height to return to when multiview is disabled
             self._default_chip_width = default_roi['xf'] - default_roi['xi']
@@ -773,6 +775,30 @@ class MultiviewCameraMixin(object):
             self.default_chip_roi = default_roi
             self._current_pic_width = self._default_chip_width
             self._current_pic_height = self._default_chip_height
+
+        def ChangeMultiviewROISize(self, x_size, y_size):
+            """
+            Changes the ROI size of the views. Currently they are all the same size
+            Parameters
+            ----------
+            x_size: int
+                first dimension size
+            y_size: int
+                second dimension size
+
+            Returns
+            -------
+            None
+            """
+            # shift the origins
+            self.view_origins = [(xc - int(0.5*x_size), yc - int(0.5*y_size)) for xc, yc in self.view_centers]
+            # store the new sizes
+            self.size_x, self.size_y = x_size, y_size
+
+            if self.multiview_enabled:
+                # re-set the slices for frame cropping
+                self.enable_multiview(self.active_views)
+
 
         def GetPicWidth(self):
             """
@@ -891,3 +917,25 @@ class MultiviewCameraMixin(object):
             else:
                 # skip extra cropping, extract the full chip directly into the output frame
                 self.camera_class.ExtractColor(self, output_frame, mode)
+
+        def GenStartMetadata(self, mdh):
+            """
+            Light shim to record multiview metadata, when appropriate
+
+            Parameters
+            ----------
+            mdh : MetaDataHandler
+                MetaDataHandler object for Camera.
+
+            Returns
+            -------
+            None
+            """
+            self.camera_class.GenStartMetadata(self, mdh)
+            # add in multiview info
+            if self.multiview_enabled:
+                mdh.setEntry('Multiview.NumROIs', self.n_views)
+                mdh.setEntry('Multiview.ROISize', [self.size_x, self.size_y])
+                mdh.setEntry('Multiview.ActiveViews', self.active_views)
+                for ind in range(self.n_views):
+                    mdh.setEntry('Multiview.ROI%dOrigin' % ind, self.view_origins[ind])

@@ -1,24 +1,24 @@
 package:
   name: enum-compat
-  version: !!str 0.0.2
+  version: {{ GIT_DESCRIBE_TAG }}
 
 #build:
 #  noarch_python: True
 
 source:
-  path: ./enum-compat/
+  git_url: https://github.com/jstasiak/enum-compat
 
 build:
-  script: python setup.py install
+  script: python setup.py install --single-version-externally-managed --record=record.txt
 
 requirements:
+  host:
+    - python
   build:
     - python
-
   run:
     - python
 
 about:
-  home: https://bitbucket.org/al45tair/netifaces
-  license: MIT License
-  summary: Portable network interface information.
+  home: github.com/jstasiak/enum-compat
+  summary: This is a virtual package, its whole purpose is to install enum34 on Python older than 3.4. On Python 3.4+ it’s a no-op.

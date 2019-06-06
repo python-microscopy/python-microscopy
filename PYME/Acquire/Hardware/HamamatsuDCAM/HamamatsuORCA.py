@@ -140,6 +140,7 @@ class HamamatsuORCA(HamamatsuDCAM):
             self.enable_cooling(True)
             self._mode = self.MODE_CONTINUOUS
             self.initialized = True
+            logger.debug('Hamamatsu Orca initialized')
 
 
     @property
