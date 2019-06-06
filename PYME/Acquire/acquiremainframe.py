@@ -285,7 +285,7 @@ class PYMEMainFrame(AUIFrame):
             
         if self.scope.cam.CamReady():
             self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope)
-            self.AddAqTool(self.pan_spool, 'Sequence Spooling')
+            self.AddAqTool(self.pan_spool, 'Blinking sequence')
             
         for t in self.aqPanels:
             self.AddAqTool(*t)
@@ -413,7 +413,7 @@ class PYMEMainFrame(AUIFrame):
             # a normal wx.Panel / wx.Window
             item = afp.foldingPane(panel, -1, caption=title, pinned = pinned)
             pane.Reparent(item)
-            item.AddNewElement(pane)
+            item.AddNewElement(pane, priority=1)
             panel.AddPane(item)
 #        item = self.toolPanel.AddFoldPanel(title, collapsed=False, foldIcons=self.Images)
 #        panel.Reparent(item)

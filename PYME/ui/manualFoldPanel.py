@@ -232,7 +232,7 @@ class CaptionBar(wx.Window):
 
 
     def OnLeftClick(self, event):
-        if wx.Rect(*self.pinButtonRect).Inside(event.GetPosition()):
+        if wx.Rect(*self.pinButtonRect).Contains(event.GetPosition()):
             self.parent.TogglePin()
         else:
             self.parent.ToggleFold()
@@ -282,6 +282,8 @@ class foldingPane(wx.Panel):
                 self.folded = False
         except KeyError:
             self.pinnedOpen = False
+
+        kwargs['style'] = kwargs.get('style', wx.BORDER_SIMPLE)
 
         
         wx.Panel.__init__(self, * args, ** kwargs)
@@ -456,6 +458,8 @@ class collapsingPane(foldingPane):
             caption = kwargs.pop('caption')
         except KeyError:
             caption = None
+            
+        kwargs['style'] = wx.BORDER_NONE
 
         #kwargs['folded'] = False
 

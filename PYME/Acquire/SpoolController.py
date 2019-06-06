@@ -203,7 +203,9 @@ class SpoolController(object):
         #return a function which can be called to indicate if we are done
         return lambda : not self.spooler.spoolOn
 
-        
+    @property
+    def rel_dirname(self):
+        return nameUtils.getRelFilename(self.dirname)
 
     def StopSpooling(self):
         """GUI callback to stop spooling."""
