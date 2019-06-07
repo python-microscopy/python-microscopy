@@ -188,7 +188,7 @@ class QPObjectSegmenter:
             plt.ylim(-0.2,1.2)
             plt.show()
             
-            outstr = StringIO()  # FIXME - not python 3 kosher
+            outstr = StringIO()
 
             analysis = {
                 'Nevents' : t.shape[0],
