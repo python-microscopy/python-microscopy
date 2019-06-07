@@ -54,7 +54,7 @@ class zScanner:
         self.onSingleFrame = dispatch.Signal()  #dispatched when a frame is ready
         
     def _endSingle(self, **kwargs):
-        print ('es')
+        print('es')
         self.Stop()
         #self.WantFrameNotification.remove(self._endSingle)
         self.onStack.disconnect(self._endSingle)

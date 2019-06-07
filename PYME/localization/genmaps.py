@@ -4,6 +4,7 @@ import numpy as np
 import PYME.IO.image as im
 import PYME.IO.dataExporter as dexp
 from PYME.IO.MetaDataHandler import NestedClassMDHandler
+from __future__ import print_function
 
 def saveasmap(array,filename,mdh=None):
     array.shape += (1,) * (4 - array.ndim) # ensure we have trailing dims making up to 4D
@@ -57,9 +58,9 @@ def listCalibrationDirs():
     rootdir = nameUtils.getCalibrationDir('')
     result = [y for x in os.walk(rootdir) for y in glob(os.path.join(x[0], '*.tif'))]
     if result is not None:
-        print 'List of installed maps:'
+        print('List of installed maps:')
         for m in result:
-            print m
+            print(m)
 
 
 # this function embeds the calculated maps into a full chipsize array
@@ -141,12 +142,12 @@ def main():
     if filename is None:
         op.error('need a file name if -l or --list not requested')
 
-    print >> sys.stderr, 'Opening image series...'
+    print('Opening image series...', file=sys.stderr)
     source = im.ImageStack(filename=filename)
 
     if args.install:
         if source.mdh.getOrDefault('Analysis.name','') != 'mean-variance':
-            print >> sys.stderr, 'Analysis.name is not equal to "mean-variance" - probably not a map'
+            print('Analysis.name is not equal to "mean-variance" - probably not a map', sys.stderr)
             sys.exit('aborting...')
             
         if source.mdh['Analysis.resultname'] == 'mean':
@@ -162,7 +163,7 @@ def main():
     if end < 0:
         end = int(source.dataSource.getNumSlices() + end)
 
-    print >> sys.stderr, 'Calculating mean and variance...'
+    print('Calculating mean and variance...', file=sys.stderr)
 
     m, ve = (None,None)
     if not args.uniform:
@@ -184,18 +185,18 @@ def main():
     mfull, vefull, basemdh = insertIntoFullMap(m, ve, source.mdh, chipsize=chipsize)
     #mfull, vefull, basemdh = (m, ve, source.mdh)
 
-    print >> sys.stderr, 'Saving results...'
+    print('Saving results...', file=sys.stderr)
 
     if args.dir is None:
-        print >> sys.stderr, 'installing in standard location...'
+        print('installing in standard location...', file=sys.stderr)
         mname = mkDefaultPath('dark',source.mdh)
         vname = mkDefaultPath('variance',source.mdh)
     else:
         mname = mkDestPath(args.dir,'dark',source.mdh)
         vname = mkDestPath(args.dir,'variance',source.mdh)
 
-    print  >> sys.stderr, 'dark map -> %s...' % mname
-    print  >> sys.stderr, 'var  map -> %s...' % vname
+    print('dark map -> %s...' % mname, file=sys.stderr)
+    print('var  map -> %s...' % vname, file=sys.stderr)
 
     commonMD = NestedClassMDHandler()
     commonMD.setEntry('Analysis.name', 'mean-variance')

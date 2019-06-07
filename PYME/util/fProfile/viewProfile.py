@@ -25,6 +25,6 @@ if __name__ == '__main__':
 
     httpd = socketserver.TCPServer(("127.0.0.1", PORT), Handler)
 
-    print ("Serving at http://127.0.0.1:%d/" %PORT)
+    print("Serving at http://127.0.0.1:%d/" %PORT)
     threading.Thread(target=launch_browser).start()
     httpd.serve_forever()

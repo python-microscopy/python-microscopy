@@ -207,7 +207,7 @@ def fitPtsAt(pts, kdt, ivals, res, pos, nPs):
     #kdt = kdtree.KDTree(pts)
     
     for i in ivals:
-        print i
+        print(i)
         r = fitPtA(kdt, pts, i)
         if not r == None:
             p3, po, Np = r
@@ -216,7 +216,7 @@ def fitPtsAt(pts, kdt, ivals, res, pos, nPs):
             nPs[i] = Np
         else:
             nPs[i] = 0
-        print 'f', i
+        print('f', i)
     
 def fitPtsAP(pts, NFits = 0):
     from scipy.spatial import cKDTree
@@ -244,12 +244,12 @@ def fitPtsAP(pts, NFits = 0):
     processes = [multiprocessing.Process(target = fitPtsAt, args=(pts, kdt, fnums[i::nCPUs], res, pos, nPs)) for i in range(nCPUs)]
 
     for p in processes:
-        print p
+        print(p)
         p.start()
     
 
     for p in processes:
-        print p
+        print(p)
         p.join()
         
 
@@ -652,11 +652,11 @@ def fit_quad_surfaces_P(data, radius, fitPos=False, NFits=0):
                  range(nCPUs)]
     
     for p in processes:
-        print p
+        print(p)
         p.start()
     
     for p in processes:
-        print p
+        print(p)
         p.join()
     
     return res, pos, nPs
@@ -721,12 +721,12 @@ def fit_quad_surfaces_Pr(data, radius, fitPos=False, NFits=0):
     
     #launch all the processes
     for p in processes:
-        print p
+        print(p)
         p.start()
     
     #wait for them to complete
     for p in processes:
-        print p
+        print(p)
         p.join()
     
     #each process should have written their results into our shared memory array, return this
