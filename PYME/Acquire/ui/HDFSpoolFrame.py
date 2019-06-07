@@ -49,66 +49,67 @@ import sys
 
 import  PYME.ui.manualFoldPanel as afp
 from . import seqdialog
+from . import AnalysisSettingsUI
 
 class PanSpool(afp.foldingPane):
     """A Panel containing the GUI controls for spooling"""
-    def _init_ctrls(self):
+    
+    def _protocol_pan(self):
         pan = wx.Panel(parent=self, style=wx.TAB_TRAVERSAL)
-
+    
         vsizer = wx.BoxSizer(wx.VERTICAL)
-
+    
         ### Aquisition Protocol
-        sbAP = wx.StaticBox(pan, -1,'Aquisition Protocol')
+        sbAP = wx.StaticBox(pan, -1, 'Aquisition Protocol')
         APSizer = wx.StaticBoxSizer(sbAP, wx.VERTICAL)
-        
+    
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.stAqProtocol = wx.StaticText(pan, -1,'<None>', size=wx.Size(136, -1))
-        hsizer.Add(self.stAqProtocol, 5,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 2)
-
+    
+        self.stAqProtocol = wx.StaticText(pan, -1, '<None>', size=wx.Size(136, -1))
+        hsizer.Add(self.stAqProtocol, 5, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 2)
+    
         self.bSetAP = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
         self.bSetAP.Bind(wx.EVT_BUTTON, self.OnBSetAqProtocolButton)
-
-        hsizer.Add(self.bSetAP, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-
-        APSizer.Add(hsizer, 0, wx.ALL|wx.EXPAND, 0)
-
+    
+        hsizer.Add(self.bSetAP, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+    
+        APSizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 0)
+    
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.rbNoSteps = wx.RadioButton(pan, -1, 'Standard', style=wx.RB_GROUP)
         self.rbNoSteps.Bind(wx.EVT_RADIOBUTTON, self.OnToggleZStepping)
-        hsizer.Add(self.rbNoSteps, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 2)
+        hsizer.Add(self.rbNoSteps, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 2)
         self.rbZStepped = wx.RadioButton(pan, -1, 'Z stepped')
         self.rbZStepped.Bind(wx.EVT_RADIOBUTTON, self.OnToggleZStepping)
         hsizer.Add(self.rbZStepped, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
-        
-        self.rbNoSteps.SetValue(True)
-
-        APSizer.Add(hsizer, 0, wx.TOP | wx.EXPAND, 4)
-        
-        self.seq_pan = seqdialog.seqPanel(pan, self.scope, mode='sequence')
-        APSizer.Add(self.seq_pan, 0, wx.ALL, 0)
-        self.seq_pan.Hide()
     
-        vsizer.Add(APSizer, 0, wx.TOP|wx.EXPAND, 4)
-
-        
-
-        
-
+        self.rbNoSteps.SetValue(True)
+    
+        APSizer.Add(hsizer, 0, wx.TOP | wx.EXPAND, 4)
+    
+        vsizer.Add(APSizer, 0, wx.TOP | wx.EXPAND, 4)
+    
+        pan.SetSizerAndFit(vsizer)
+        return pan
+    
+    def _spool_to_pan(self):
+        pan = wx.Panel(parent=self, style=wx.TAB_TRAVERSAL)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+    
         ###Spool directory
         sbSpoolDir = wx.StaticBox(pan, -1, 'Spool to:')
         spoolDirSizer = wx.StaticBoxSizer(sbSpoolDir, wx.VERTICAL)
-
+    
         #queues etcc
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
+    
         self.rbSpoolFile = wx.RadioButton(pan, -1, 'File', style=wx.RB_GROUP)
         self.rbSpoolFile.Bind(wx.EVT_RADIOBUTTON, self.OnSpoolMethodChanged)
         hsizer.Add(self.rbSpoolFile, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 2)
         self.rbSpoolCluster = wx.RadioButton(pan, -1, 'Cluster')
         self.rbSpoolCluster.Bind(wx.EVT_RADIOBUTTON, self.OnSpoolMethodChanged)
         hsizer.Add(self.rbSpoolCluster, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
-        
+    
         if int(sys.version[0]) < 3:
             self.rbSpoolQueue = wx.RadioButton(pan, -1, 'Queue')
             self.rbSpoolQueue.Bind(wx.EVT_RADIOBUTTON, self.OnSpoolMethodChanged)
@@ -116,175 +117,180 @@ class PanSpool(afp.foldingPane):
             self.rbSpoolQueue.SetValue(True)
         else:
             self.rbSpoolCluster.SetValue(True)
-
-        # if int(sys.version[0]) >= 3:
-        #     # we are dropping support for old style queue spooling with Py3k
-        #     spool_choices = ['File', 'Cluster']
-        # else:
-        #     spool_choices = ['File', 'Queue', 'Cluster']
-        #
-        # self.rbQueue = wx.RadioBox(pan, -1, '', choices=spool_choices)
-        #
-        # if int(sys.version[0]) >= 3:
-        #     #spool to disk from python3k for now (as cluster spooling doesn't work yet)
-        #     self.rbQueue.SetSelection(0)
-        # else:
-        #     self.rbQueue.SetSelection(1)
-        #
-        # self.rbQueue.Bind(wx.EVT_RADIOBOX, self.OnSpoolMethodChanged)
-        #
-        # hsizer.Add(self.rbQueue, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 0)
+    
         spoolDirSizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
-
+    
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         self.stSpoolDirName = wx.StaticText(pan, -1, 'Save images in: Blah Blah', size=wx.Size(136, -1))
         hsizer.Add(self.stSpoolDirName, 5, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 5)
-
+    
         self.bSetSpoolDir = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
         self.bSetSpoolDir.Bind(wx.EVT_BUTTON, self.OnBSetSpoolDirButton)
-
+    
         hsizer.Add(self.bSetSpoolDir, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-
+    
         spoolDirSizer.Add(hsizer, 0, wx.ALL | wx.EXPAND, 0)
-
+    
         self.stDiskSpace = wx.StaticText(pan, -1, 'Free space:')
         spoolDirSizer.Add(self.stDiskSpace, 0, wx.ALL | wx.EXPAND, 2)
-
+    
         vsizer.Add(spoolDirSizer, 0, wx.ALL | wx.EXPAND, 0)
-
+    
+        pan.SetSizerAndFit(vsizer)
+        return pan
+    
+    def _comp_pan(self, clp):
+        pan = wx.Panel(clp, -1)
+    
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+    
+        self.cbCompress = wx.CheckBox(pan, -1, 'Compression')
+        self.cbCompress.SetValue(True)
+    
+        hsizer.Add(self.cbCompress, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+    
+        self.cbQuantize = wx.CheckBox(pan, -1, 'Quantization')
+        self.cbQuantize.SetValue(True)
+    
+        hsizer.Add(self.cbQuantize, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+    
+        vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
+    
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Quantization offset:'), 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+    
+        self.tQuantizeOffset = wx.TextCtrl(pan, -1, 'auto')
+        hsizer.Add(self.tQuantizeOffset, 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+    
+        vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
+    
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(wx.StaticText(pan, -1, 'Quantization scale:'), 0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+    
+        self.tQuantizeScale = wx.TextCtrl(pan, -1, '0.5')
+        self.tQuantizeScale.SetToolTip(wx.ToolTip(
+            'Quantization scale in units of sigma\n. The default of 0.5 will give a quantization interval that is half the std dev. of the expected Poisson noise in a pixel.'))
+        hsizer.Add(self.tQuantizeScale, 1.0, wx.LEFT | wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
+    
+        vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
+    
+        # spool to h5 on cluster
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+    
+        self.cbClusterh5 = wx.CheckBox(pan, -1, 'Spool to h5 on cluster (cluster of 1)')
+        self.cbClusterh5.SetValue(False)
+    
+        hsizer.Add(self.cbClusterh5, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+    
+        vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
+    
+        pan.SetSizerAndFit(vsizer)
+        return pan
+    
+        
+    def _spool_pan(self):
+        pan = wx.Panel(parent=self, style=wx.TAB_TRAVERSAL)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+    
         ### Series Name & start button
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
+    
         #hsizer.Add(wx.StaticText(self, -1, 'Series: '), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
+    
         self.tcSpoolFile = wx.TextCtrl(pan, -1, 'dd_mm_series_a', size=wx.Size(100, -1))
         self.tcSpoolFile.Bind(wx.EVT_TEXT, self.OnTcSpoolFileText)
-
-        hsizer.Add(self.tcSpoolFile, 5,wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5)
-
-        self.bStartSpool = wx.Button(pan,-1,'Start',style=wx.BU_EXACTFIT)
+    
+        hsizer.Add(self.tcSpoolFile, 5, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.EXPAND, 5)
+    
+        self.bStartSpool = wx.Button(pan, -1, 'Start', style=wx.BU_EXACTFIT)
         self.bStartSpool.Bind(wx.EVT_BUTTON, self.OnBStartSpoolButton)
         self.bStartSpool.SetDefault()
-        hsizer.Add(self.bStartSpool, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-        
-
+        hsizer.Add(self.bStartSpool, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+    
         # self.bStartStack = wx.Button(pan,-1,'Z-Series',style=wx.BU_EXACTFIT)
         # self.bStartStack.Bind(wx.EVT_BUTTON, self.OnBStartStackButton)
         # hsizer.Add(self.bStartStack, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-
-        vsizer.Add(hsizer, 0, wx.LEFT|wx.RIGHT|wx.EXPAND, 0)
-
-        
-        
-
+    
+        vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
+    
         ### Spooling Progress
-
+    
         self.spoolProgPan = wx.Panel(pan, -1)
         vsizer_sp = wx.BoxSizer(wx.VERTICAL)
-
+    
         self.sbSpoolProgress = wx.StaticBox(self.spoolProgPan, -1, 'Spooling Progress')
         self.sbSpoolProgress.Enable(False)
-
+    
         spoolProgSizer = wx.StaticBoxSizer(self.sbSpoolProgress, wx.VERTICAL)
-
+    
         self.stSpoolingTo = wx.StaticText(self.spoolProgPan, -1, 'Spooling to .....')
         self.stSpoolingTo.Enable(False)
-
+    
         spoolProgSizer.Add(self.stSpoolingTo, 0, wx.ALL, 0)
-
+    
         self.stNImages = wx.StaticText(self.spoolProgPan, -1, 'NNNNN images spooled in MM minutes')
         self.stNImages.Enable(False)
-
+    
         spoolProgSizer.Add(self.stNImages, 0, wx.ALL, 0)
-
+    
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.bStopSpooling = wx.Button(self.spoolProgPan, -1, 'Stop',style=wx.BU_EXACTFIT)
+    
+        self.bStopSpooling = wx.Button(self.spoolProgPan, -1, 'Stop', style=wx.BU_EXACTFIT)
         self.bStopSpooling.Enable(False)
         self.bStopSpooling.Bind(wx.EVT_BUTTON, self.OnBStopSpoolingButton)
-
-        hsizer.Add(self.bStopSpooling, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.bAnalyse = wx.Button(self.spoolProgPan, -1, 'Analyse',style=wx.BU_EXACTFIT)
+    
+        hsizer.Add(self.bStopSpooling, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+    
+        self.bAnalyse = wx.Button(self.spoolProgPan, -1, 'Analyse', style=wx.BU_EXACTFIT)
         self.bAnalyse.Enable(False)
         self.bAnalyse.Bind(wx.EVT_BUTTON, self.OnBAnalyse)
-
-        hsizer.Add(self.bAnalyse, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        spoolProgSizer.Add(hsizer, 0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
-
-        vsizer_sp.Add(spoolProgSizer, 0, wx.ALL|wx.EXPAND, 0)
-        
+    
+        hsizer.Add(self.bAnalyse, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+    
+        spoolProgSizer.Add(hsizer, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0)
+    
+        vsizer_sp.Add(spoolProgSizer, 0, wx.ALL | wx.EXPAND, 0)
+    
         self.spoolProgPan.SetSizerAndFit(vsizer_sp)
-        
-        vsizer.Add(self.spoolProgPan, 0, wx.ALL|wx.EXPAND, 0)
-
-
-        
-        
-
-
+    
+        vsizer.Add(self.spoolProgPan, 0, wx.ALL | wx.EXPAND, 0)
+    
         pan.SetSizerAndFit(vsizer)
+        return pan
         
-        self.AddNewElement(pan)
+    
+    def _init_ctrls(self):
+        self.AddNewElement(self._protocol_pan())
 
-        
-        ### Queue & Compression
-
-        clp = afp.collapsingPane(self, caption='Compression and quantization ...')
-        pan = wx.Panel(clp, -1)
-        
-        vsizer = wx.BoxSizer(wx.VERTICAL)
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        #self.cbQueue = wx.CheckBox(self, -1,'Save to Queue')
-        #self.cbQueue.SetValue(True)
-
-        #hsizer.Add(self.cbQueue, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.cbCompress = wx.CheckBox(pan, -1, 'Compression')
-        self.cbCompress.SetValue(True)
-
-        hsizer.Add(self.cbCompress, 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.cbQuantize = wx.CheckBox(pan, -1, 'Quantization')
-        self.cbQuantize.SetValue(True)
-
-        hsizer.Add(self.cbQuantize, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-
-        vsizer.Add(hsizer, 0, wx.LEFT|wx.RIGHT|wx.EXPAND, 0)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'Quantization offset:'), 0, wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.tQuantizeOffset = wx.TextCtrl(pan, -1, 'auto')
-        hsizer.Add(self.tQuantizeOffset, 0, wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
-
-        vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
-
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'Quantization scale:'), 0, wx.LEFT|wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
-
-        self.tQuantizeScale = wx.TextCtrl(pan, -1, '0.5')
-        self.tQuantizeScale.SetToolTip(wx.ToolTip('Quantization scale in units of sigma\n. The default of 0.5 will give a quantization interval that is half the std dev. of the expected Poisson noise in a pixel.'))
-        hsizer.Add(self.tQuantizeScale, 1.0, wx.LEFT|wx.RIGHT | wx.ALIGN_CENTER_VERTICAL, 5)
-
-        vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
-
-        # spool to h5 on cluster
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        self.cbClusterh5 = wx.CheckBox(pan, -1, 'Spool to h5 on cluster (cluster of 1)')
-        self.cbClusterh5.SetValue(False)
-
-        hsizer.Add(self.cbClusterh5, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-
-        vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
-
-        pan.SetSizerAndFit(vsizer)
-
-        clp.AddNewElement(pan)
+        clp = afp.collapsingPane(self, caption='Z stepping ...')
+        clp.AddNewElement(seqdialog.seqPanel(clp, self.scope, mode='sequence'))
         self.AddNewElement(clp)
+        self.seq_pan = clp
+
+        self.AddNewElement(self._spool_to_pan())
+
+        ### Compression etc
+        clp = afp.collapsingPane(self, caption='Compression and quantization ...')
+        clp.AddNewElement(self._comp_pan(clp))
+        self.AddNewElement(clp)
+
+        #analysis settings
+        clp = afp.collapsingPane(self, caption='Real time analysis ...')
+
+        self.scope.analysisSettings = AnalysisSettingsUI.AnalysisSettings() #Move me???
+
+        clp.AddNewElement(AnalysisSettingsUI.AnalysisSettingsPanel(clp, self.scope.analysisSettings,
+                                                                   self.scope.analysisSettings.onMetadataChanged))
+        clp.AddNewElement(AnalysisSettingsUI.AnalysisDetailsPanel(clp, self.scope.analysisSettings,
+                                                                  self.scope.analysisSettings.onMetadataChanged))
+
+        self.AddNewElement(clp)
+
+        self.AddNewElement(self._spool_pan())
+
+        
+        
 
     def __init__(self, parent, scope, **kwargs):
         """Initialise the spooling panel.
@@ -345,15 +351,17 @@ class PanSpool(afp.foldingPane):
     def OnToggleZStepping(self, event):
         pan = event.GetEventObject().GetParent()
         if self.rbZStepped.GetValue():
-            self.seq_pan.Show()
+            if self.seq_pan.folded:
+                self.seq_pan.OnFold()
             
         else:
-            self.seq_pan.Hide()
+            if not self.seq_pan.folded:
+                self.seq_pan.OnFold()
 
-        pan.Layout()
-        pan.SetMinSize([pan.GetMinSize()[0], pan.GetBestSize()[1]])
-        self.Layout()
-        self.GetParent().Layout()
+        # pan.Layout()
+        # pan.SetMinSize([pan.GetMinSize()[0], pan.GetBestSize()[1]])
+        # self.Layout()
+        # self.GetParent().Layout()
             
             
 
@@ -381,13 +389,20 @@ class PanSpool(afp.foldingPane):
         q_offset = self.tQuantizeOffset.GetValue()
         if q_offset == 'auto':
             #FIXME - add getter to camera???
-            q_offset = self.scope.cam.noiseProps['ADOffset']
+            try:
+                q_offset = self.scope.cam.noiseProps['ADOffset']
+            except AttributeError:
+                ans = wx.MessageBox("Camera doesn't define noise properties, manually set the desired quantization offset" , 'Error', wx.OK)
         else:
             q_offset = float(q_offset)
 
 
         #quantization scale in GUI is in units of sigma, convert to ADU
-        q_scale = float(self.tQuantizeScale.GetValue())/self.scope.cam.GetElectrPerCount()
+        try:
+            q_scale = float(self.tQuantizeScale.GetValue())/self.scope.cam.GetElectrPerCount()
+        except AttributeError:
+            print("WARNING: Camera doesn't provide electrons per count, using qscale in units of ADUs instead")
+            q_scale = float(self.tQuantizeScale.GetValue())
 
         compSettings = {
             'compression' : PZFFormat.DATA_COMP_HUFFCODE if self.cbCompress.GetValue() else PZFFormat.DATA_COMP_RAW,

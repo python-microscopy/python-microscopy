@@ -372,9 +372,10 @@ class foldingPane(wx.Panel):
         else:
             self.Fold()
             
-        self.GetParent().fold1()
+        self.fold1()
 
-        
+    def fold1(self, pan=None):
+        self.GetParent().fold1(self)
 
     def Fold(self, fold=True):
         if not fold:
@@ -482,7 +483,7 @@ class collapsingPane(foldingPane):
 
         self.bFold.Bind(wx.EVT_LEFT_UP, self.OnFold)
 
-    def OnFold(self, event):
+    def OnFold(self, event=None):
         print('fold')
         if self.folded:
             self.GetParent()._time_last_unfolded=time.time()
@@ -494,7 +495,7 @@ class collapsingPane(foldingPane):
 
         #self.Layout()
         #self.Fit()
-        self.GetParent().GetParent().fold1()
+        self.fold1()
 
 
 
@@ -512,14 +513,15 @@ class foldPanel(wx.Panel):
         except KeyError:
             self.padding = 5
 
+        self._stretch_sizer = kwargs.pop('bottom_spacer', True)
+        self._one_pane_active = kwargs.pop('single_active_pane', False)
+
         wx.Panel.__init__(self, *args, **kwargs)
 
         if self.orientation == wx.VERTICAL:
             self.sizerflags = wx.EXPAND #| wx.BOTTOM
         else:
             self.sizerflags = wx.EXPAND #| wx.RIGHT
-            
-        self._stretch_sizer = kwargs.pop('bottom_spacer', True)
 
         self.priorities = []
         self.panes = []
@@ -563,24 +565,39 @@ class foldPanel(wx.Panel):
 
         self.RegenSizer()
         
-    def fold1(self):
+    def fold1(self, pan=None):
         #print('fold1')
         self._in_fold1 = True
         self.Layout()
         #print(self.GetSize()[1], self.GetBestSize()[1])
-        if (self.GetBestSize()[1] > self.GetSize()[1]):
-            self._collapse_old_frames()
+        
+        if self._one_pane_active and not (pan is None):
+            self._collapse_all_other_frames(pan)
+        else:
+            if (self.GetBestSize()[1] > self.GetSize()[1]):
+                self._collapse_old_frames(pan)
+        
+        
         self.fold_signal.send(sender=self)
         
         self._in_fold1 = False
         self.Refresh()
         
-    def _collapse_old_frames(self):
-        candidates = [p for p in self.panes if (p.foldable and not p.folded and (p._time_last_unfolded< (time.time()-1)))]
+    def _collapse_old_frames(self, pan=None):
+        candidates = [p for p in self.panes if (p.foldable and not p.folded and (not (p == pan)) and (p._time_last_unfolded< (time.time()-1)))]
         
         if len(candidates) > 0:
             candidates[np.argmin([p._time_last_unfolded for p in candidates])].Fold()
         
+        self.Layout()
+        self.Refresh()
+        
+    def _collapse_all_other_frames(self, pan=None):
+        candidates = [p for p in self.panes if (p.foldable and not p.folded and (not (p == pan)) and (p._time_last_unfolded < (time.time() - .1)))]
+        
+        for c in candidates:
+            c.Fold()
+            
         self.Layout()
         self.Refresh()
         

@@ -276,7 +276,7 @@ class PYMEMainFrame(AUIFrame):
             self.AddTool(self.pos_sl, 'Positioning')
 
             self.seq_d = seqdialog.seqPanel(self, self.scope)
-            self.AddAqTool(self.seq_d, 'Z-Stack')
+            self.AddAqTool(self.seq_d, 'Z-Stack', pinned=False)
             #self.seq_d.Show()
         
         for t in self.toolPanels:
@@ -285,7 +285,7 @@ class PYMEMainFrame(AUIFrame):
             
         if self.scope.cam.CamReady():
             self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope)
-            self.AddAqTool(self.pan_spool, 'Blinking sequence')
+            self.AddAqTool(self.pan_spool, 'Blinking sequence', pinned=False)
             
         for t in self.aqPanels:
             self.AddAqTool(*t)
@@ -353,7 +353,7 @@ class PYMEMainFrame(AUIFrame):
         self.camPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
                                      wx.Size(240,1000))
 
-        cpinfo = aui.AuiPaneInfo().Name("camControls").Caption("Camera").Layer(1).Right().CloseButton(False)
+        cpinfo = aui.AuiPaneInfo().Name("camControls").Caption("Hardware").Layer(1).Right().CloseButton(False)
         #cpinfo.dock_proportion  = int(cpinfo.dock_proportion*1.6)
         
         self._mgr.AddPane(self.camPanel, cpinfo)
@@ -372,22 +372,22 @@ class PYMEMainFrame(AUIFrame):
 
 
         self.aqPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
-                                     wx.Size(240,1000))
+                                     wx.Size(240,1000), single_active_pane=True)
 
         if mode == 'compact':
             self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
                               Name("aqControls").Caption("Acquisition").CloseButton(False), target=cpinfo)
         else:
-            aqinfo = aui.AuiPaneInfo().Name("aqControls").Caption("Acquisition").Layer(2).Position(0).Right().CloseButton(False)
+            aqinfo = aui.AuiPaneInfo().Name("aqControls").Caption("Acquisition Tasks").Layer(1).Position(0).Left().CloseButton(False)
             self._mgr.AddPane(self.aqPanel, aqinfo)
             aqinfo.dock_proportion  = int(aqinfo.dock_proportion*1.3)
 
         
-            self.anPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
-                                    wx.Size(240, 1000))
-
-            self._mgr.AddPane(self.anPanel, aui.AuiPaneInfo().
-                          Name("anControls").Caption("Analysis").CloseButton(False), target=aqinfo)
+            # self.anPanel = afp.foldPanel(self, -1, wx.DefaultPosition,
+            #                         wx.Size(240, 1000))
+            #
+            # self._mgr.AddPane(self.anPanel, aui.AuiPaneInfo().
+            #               Name("anControls").Caption("Analysis").CloseButton(False), target=aqinfo)
 
 
 

@@ -111,10 +111,10 @@ def orca_cam_controls(MainFrame, scope):
 #     sampPan = sampleInformation.slidePanel(MainFrame)
 #     MainFrame.camPanels.append((sampPan, 'Current Slide'))
 
-@init_gui('Analysis settings')
-def anal_settings(MainFrame, scope):
-    from PYME.Acquire.ui import AnalysisSettingsUI
-    AnalysisSettingsUI.Plug(scope, MainFrame)
+# @init_gui('Analysis settings')
+# def anal_settings(MainFrame, scope):
+#     from PYME.Acquire.ui import AnalysisSettingsUI
+#     AnalysisSettingsUI.Plug(scope, MainFrame)
 
 
 
