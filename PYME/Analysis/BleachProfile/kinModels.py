@@ -212,7 +212,7 @@ def fITmod2(A, Ndet, lamb, tauI, a, Acrit, bg, N, t, Nco):
 def applyByChannel(fcn):
     try:
         args = inspect.getfullargspec(fcn).args
-    except AttributeError:
+    except AttributeError:  # python 2
         args = inspect.getargspec(fcn).args
     def colfcnwrap(pipeline, quiet = False):
         colourFilter = pipeline.colourFilter
