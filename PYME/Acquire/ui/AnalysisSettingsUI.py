@@ -126,6 +126,10 @@ class AnalysisDetailsPanel(wx.Panel):
                                  mdhChangedSignal = self.mdhChangedSignal)
                 vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)
             vsizer.Fit(pan)
+            self.Layout()
+            self.SetMinSize([200, self.GetBestSize()[1]])
+            self.GetParent().Layout()
+            print('custom analysis settings populated')
                 
         except (KeyError, AttributeError):
             pass

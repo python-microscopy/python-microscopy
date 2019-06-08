@@ -177,7 +177,7 @@ class ActionPanel(wx.Panel):
         if not filename == '':
             rois = tabular.hdfSource(filename, tablename='roi_locations')
             
-            rois = [{'x' : x, 'y' :y } for x, y in zip(rois['x'], rois['y'])]
+            rois = [{'x' : x, 'y' :y } for x, y in zip(rois['x_um'], rois['y_um'])]
             
             self._add_ROIs(rois)
     
