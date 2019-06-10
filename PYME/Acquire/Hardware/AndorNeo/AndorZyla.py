@@ -301,7 +301,7 @@ class AndorBase(SDK3Camera):
         self._flush()
         bufSize = self.ImageSizeBytes.getValue()
         vRed = int(self.SensorHeight.getValue()/self.AOIHeight.getValue())
-        self.nBuffers = min(vRed*self.defBuffers, 1000)
+        self.nBuffers = min(vRed*self.defBuffers, 5000)
         
         if not self.contMode:
             self.nBuffers = 5
@@ -310,7 +310,11 @@ class AndorBase(SDK3Camera):
             #buf = np.empty(bufSize, 'uint8')
             buf = create_aligned_array(bufSize, 'uint8')
             self._queueBuffer(buf)
-            
+
+        #wait for the buffers to be queued - stops us from calling startAcquisition prematurely
+        while not self.buffersToQueue.empty():
+            time.sleep(0.01)
+
         self.doPoll = True
             
     def _flush(self):
