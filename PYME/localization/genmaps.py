@@ -147,7 +147,7 @@ def main():
 
     if args.install:
         if source.mdh.getOrDefault('Analysis.name','') != 'mean-variance':
-            print('Analysis.name is not equal to "mean-variance" - probably not a map', sys.stderr)
+            print('Analysis.name is not equal to "mean-variance" - probably not a map', file=sys.stderr)
             sys.exit('aborting...')
             
         if source.mdh['Analysis.resultname'] == 'mean':
