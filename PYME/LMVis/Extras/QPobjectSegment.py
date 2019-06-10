@@ -202,12 +202,12 @@ class QPObjectSegmenter:
                 self.visFr.analysisrecord = []
                 self.visFr.analysisrecord.append(analysis)
 
-            outstr.write(u"events: %d" % t.shape[0])
-            outstr.write(u"dark times: %d" % nts)
-            outstr.write(u"region: %d x %d nm (%d x %d pixel)" % (bbszx,bbszy,bbszx/voxx,bbszy/voxy))
-            outstr.write(u"centered at %d,%d (%d,%d pixels)" % (x.mean(),y.mean(),x.mean()/voxx,y.mean()/voxy))
-            outstr.write(u"darktime: %.1f (%.1f) frames - chisqr %.2f (%.2f)" % (popt[0],popth[0],chisqred,chisqredh))
-            outstr.write(u"qunits: %.2f (%.2f), eunits: %.2f" % (100.0/popt[0], 100.0/popth[0],t.shape[0]/500.0))
+            outstr.write(u"events: %d \n" % t.shape[0])
+            outstr.write(u"dark times: %d \n" % nts)
+            outstr.write(u"region: %d x %d nm (%d x %d pixel) \n" % (bbszx,bbszy,bbszx/voxx,bbszy/voxy))
+            outstr.write(u"centered at %d,%d (%d,%d pixels) \n" % (x.mean(),y.mean(),x.mean()/voxx,y.mean()/voxy))
+            outstr.write(u"darktime: %.1f (%.1f) frames - chisqr %.2f (%.2f) \n" % (popt[0],popth[0],chisqred,chisqredh))
+            outstr.write(u"qunits: %.2f (%.2f), eunits: %.2f \n" % (100.0/popt[0], 100.0/popth[0],t.shape[0]/500.0))
 
             labelstr = str(outstr.getvalue())
             plt.annotate(labelstr, xy=(0.5, 0.1), xycoords='axes fraction',
