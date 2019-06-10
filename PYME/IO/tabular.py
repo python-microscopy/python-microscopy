@@ -186,7 +186,7 @@ class fitResultsSource(TabularBase):
                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma',
                           'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0','t':'tIndex'}
 
-        for k in self.transkeys.keys():
+        for k in list(self.transkeys.keys()):
             if not self.transkeys[k] in self._keys:
                 self.transkeys.pop(k)
 
@@ -269,7 +269,7 @@ class h5rSource(BaseHDFSource):
                           'y' : 'fitResults_y0', 'sig' : 'fitResults_sigma', 
                           'error_x' : 'fitError_x0', 'error_y' : 'fitError_y0', 't':'tIndex'}
 
-        for k in self.transkeys.keys():
+        for k in list(self.transkeys.keys()):
             if not self.transkeys[k] in self._keys:
                 self.transkeys.pop(k)
 
