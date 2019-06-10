@@ -299,5 +299,10 @@ cdef class Octree:
             #TODO - update centroids
             
     def add_points(self, np.float32_t[:,:] pts):
+
+        # Double check for oversampling
+        if len(pts) < self._samples_per_node:
+            self._samples_per_node = len(pts)
+
         for pt in pts:
             self.add_point(pt)
