@@ -52,7 +52,7 @@ class AnalysisSettingsPanel(wx.Panel):
         self._inChange = True
         self.analysisMDH['Analysis.FitModule'] = self.fitFactories[self.cFitType.GetSelection()]
         if self.mdhChangedSignal:
-            self.mdhChangedSignal.send(self, mdh=self.analysisMDH)
+            self.mdhChangedSignal.send_robust(self, mdh=self.analysisMDH)
         
         self._inChange = False
             
@@ -126,6 +126,10 @@ class AnalysisDetailsPanel(wx.Panel):
                                  mdhChangedSignal = self.mdhChangedSignal)
                 vsizer.Add(pg, 0,wx.BOTTOM|wx.EXPAND, 5)
             vsizer.Fit(pan)
+            self.Layout()
+            self.SetMinSize([200, self.GetBestSize()[1]])
+            self.GetParent().Layout()
+            print('custom analysis settings populated')
                 
         except (KeyError, AttributeError):
             pass

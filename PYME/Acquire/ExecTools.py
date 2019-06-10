@@ -77,7 +77,7 @@ def setDefaultNamespace(locals, globals):
     defLocals = locals
     defGlobals = globals
 
-from PYME.util.execfile import *
+from PYME.util.execfile import _exec, _execfile
 
 def execBG(codeObj, localVars = defLocals, globalVars = defGlobals):
     """Executes a code object in a background thread, using the given namespace.
@@ -104,7 +104,7 @@ def execFileBG(filename, localVars = defLocals, globalVars = defGlobals):
     #fid.close()
 
     #execBG(checkFilename(filename), localVars, globalVars)
-    threading.Thread(target=execfile, args = (filename, localVars, globalVars)).start()
+    threading.Thread(target=execFile, args = (filename, localVars, globalVars)).start()
 
 def _bginit(name, codeObj):
     global defGlobals

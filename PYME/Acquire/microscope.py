@@ -379,8 +379,8 @@ class microscope(object):
         return res
         
     def SetPos(self, **kwargs):
-        for k, v in kwargs.items():
-            self.state['Positioning.%s' % k] = v
+        state_updates = {'Positioning.%s' % k : v for k, v in kwargs.items()}
+        self.state.setItems(state_updates)
             
     def GetPosRange(self):
         #Todo - fix to use positioning
@@ -835,7 +835,7 @@ class microscope(object):
         
     def register_camera(self, cam, name, port='', rotate=False, flipx=False, flipy=False):
         cam.port = port
-        cam.orentation = dict(rotate=rotate, flipx=flipx, flipy=flipy)
+        cam.orientation = dict(rotate=rotate, flipx=flipx, flipy=flipy)
         
         self.cameras[name] = cam
         if self.cam is None:

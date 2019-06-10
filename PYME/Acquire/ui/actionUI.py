@@ -93,6 +93,17 @@ class ActionPanel(wx.Panel):
         self.bAddAquisition.Bind(wx.EVT_BUTTON, self.OnAddSequence)
         hsizer.Add(self.bAddAquisition, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
 
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.bQueueROIsFromFile = wx.Button(self, -1, 'Queue ROIs from file')
+        self.bQueueROIsFromFile.Bind(wx.EVT_BUTTON, self.OnROIsFromFile)
+        hsizer.Add(self.bQueueROIsFromFile, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+
+        self.bQueueROIsFromTileviewer = wx.Button(self, -1, 'Queue ROIs from Tile Viewer')
+        self.bQueueROIsFromTileviewer.Bind(wx.EVT_BUTTON, self.OnROIsFromTileviewer)
+        hsizer.Add(self.bQueueROIsFromTileviewer, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 2)
 
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
 
@@ -138,6 +149,7 @@ class ActionPanel(wx.Panel):
 
         timeout = float(self.tTimeout.GetValue())
         self.actionManager.QueueAction(functionName, args, nice, timeout)
+        
 
     def OnAddSequence(self, event):
         nice = float(self.tNice.GetValue())
@@ -145,6 +157,36 @@ class ActionPanel(wx.Panel):
         args = {'maxFrames' : int(self.tNumFrames.GetValue())}
         timeout = float(self.tTimeout.GetValue())
         self.actionManager.QueueAction(functionName, args, nice, timeout)
+        
+    
+    def _add_ROIs(self, rois):
+        nice = float(self.tNice.GetValue())
+        timeout = float(self.tTimeout.GetValue()) #CHECKME - default here might be too short
+        
+        for roi in rois:
+            args = {'state' : {'Positioning.x': float(roi['x']), 'Positioning.y': float(roi['y'])}}
+            self.actionManager.QueueAction('state.upate', args, nice, timeout)
+            args = {'maxFrames': int(self.tNumFrames.GetValue())}
+            self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
+    
+    def OnROIsFromFile(self, event):
+        import wx
+        from PYME.IO import tabular
+
+        filename = wx.FileSelector("Load ROI Positions:", wildcard="*.hdf", flags=wx.FD_OPEN)
+        if not filename == '':
+            rois = tabular.hdfSource(filename, tablename='roi_locations')
+            
+            rois = [{'x' : x, 'y' :y } for x, y in zip(rois['x_um'], rois['y_um'])]
+            
+            self._add_ROIs(rois)
+    
+    def OnROIsFromTileviewer(self, event):
+        import requests
+        resp = requests.get('http://locahost:8979/GetROILocations')
+        
+        self._add_ROIs(resp.json())
+        
 
 
    

@@ -116,7 +116,7 @@ def genTheoreticalModel(md, zernikes={}, **kwargs):
         for i in range(1, len(interpModel_by_chan)):
             interpModel_by_chan[i] = None
 
-        interpModel_by_chan[0] = np.maximum(im/im[:,:,len(IntZVals)/2].sum(), 0) #normalise to 1 and clip
+        interpModel_by_chan[0] = np.maximum(im/im[:,:,int(len(IntZVals)/2)].sum(), 0) #normalise to 1 and clip
         
         
 def genTheoreticalModel4Pi(md, zernikes=[{},{}], phases=[0, np.pi/2, np.pi, 3*np.pi/2], **kwargs):
@@ -138,7 +138,7 @@ def genTheoreticalModel4Pi(md, zernikes=[{},{}], phases=[0, np.pi/2, np.pi, 3*np
             #interpModel = genWidefieldPSF(IntXVals, IntYVals, IntZVals, P ,1e3, 0, 0, 0, 2*pi/525, 1.47, 10e3).as
             im = fourierHNA.Gen4PiPSF(IntZVals, phi=phase, zernikeCoeffs=zernikes, X=IntXVals, Y=IntYVals, dx=1e3*md.voxelsize.x, **kwargs)
                                                                                                                   
-            zm =  len(IntZVals)/2
+            zm =  int(len(IntZVals)/2)
             norm = im[:,:,(zm-10):(zm+10)].sum(1).sum(0).max() #due to interference we can have slices with really low sum
             interpModel_by_chan[i] = np.maximum(im/norm, 0) #normalise to 1 and clip
 

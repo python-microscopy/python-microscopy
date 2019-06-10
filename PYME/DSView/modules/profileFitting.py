@@ -77,7 +77,8 @@ class fitter:
         pylab.show()
         
     def OnRawDecaySimp(self, event):
-        from pylab import *
+        #from pylab import *
+        import matplotlib.pyplot as plt
         I = self.image.data[:].squeeze()
         t = self.image.xvals
         
@@ -85,7 +86,7 @@ class fitter:
         
         #prebleach
         
-        figure()
+        plt.figure()
         bStart, bEnd = self.image.parent.mdh['Protocol.BleachFrames']
         
         Ib = 1.0*I[bStart:bEnd]
@@ -95,39 +96,39 @@ class fitter:
         Ib-= Ib.min()
         Ib /= Ib.max()
         tau_shelve = (Ib > 1./np.e).sum()*dt
-        plot(tb, Ib)
-        figtext(.7, .8, 'Tau = %3.4f s'%tau_shelve)
-        xlabel('Time [s]')
-        title('Prebleach Intensity')
+        plt.plot(tb, Ib)
+        plt.figtext(.7, .8, 'Tau = %3.4f s'%tau_shelve)
+        plt.xlabel('Time [s]')
+        plt.title('Prebleach Intensity')
         
         #total decay
-        figure()
+        plt.figure()
         multiplier = np.ones_like(I)
         multiplier[bStart:bEnd] = self.image.parent.mdh['Camera.TrueEMGain']
         
         pStart, pEnd = self.image.parent.mdh['Protocol.PrebleachFrames']
         
         multiplier[pStart:pEnd] = 100
-        
-        plot(I*multiplier)
+
+        plt.plot(I*multiplier)
         #figure()
         #plot(multiplier)
         
         #actual imaging
-        figure()
+        plt.figure()
         Ii = I[self.image.parent.mdh['Protocol.DataStartsAt']:]
         ti = t[self.image.parent.mdh['Protocol.DataStartsAt']:]
         
         Ii = Ii - self.image.parent.mdh['Camera.ADOffset']
         
         Ii = Ii/Ii.max()
-        
-        plot(ti, Ii)
+
+        plt.plot(ti, Ii)
         
         n100 = abs(ti-100).argmin()
         print((n100, Ii[n100]))
-        figtext(.5, .8, 'I100/Imax = %3.4f'%(Ii[n100]))
-        plot(ti[n100], Ii[n100], 'xr')
+        plt.figtext(.5, .8, 'I100/Imax = %3.4f'%(Ii[n100]))
+        plt.plot(ti[n100], Ii[n100], 'xr')
         
         
         

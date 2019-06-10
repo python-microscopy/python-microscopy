@@ -7,6 +7,8 @@ import numpy as np
 
 from PYME.IO import MetaDataHandler
 
+import six
+
 USE_MULTIPROC = True
 
 
@@ -167,10 +169,10 @@ class ZernikePSFModel(object):
                 estimator = 'PYME.localization.FitFactories.zEstimators.genericEstimator'
             else:
                 estimator = 'PYME.localization.FitFactories.zEstimators.genericDualEstimator'
-        elif not isinstance(estimator, basestring):
+        elif not isinstance(estimator, six.string_types):
             estimator = estimator.__name__
         
-        if not isinstance(interpolator, basestring):
+        if not isinstance(interpolator, six.string_types):
             interpolator = interpolator.__name__
         
         self.roiSize = int(0.5 * (data['data'].shape[1] - 1))
@@ -198,7 +200,7 @@ class ZernikePSFModel(object):
         return fullResult
     
     def saveResultsToFile(self, filename):
-        import cPickle as pickle
+        from six.moves import cPickle as pickle
         #        filename = basePath + "_liveExtract_" + str(int(time.time()))
         #        if path.exists(filename):
         #            numerate = 0
@@ -439,7 +441,7 @@ class ZernikePSFModel(object):
                 max_change = np.max(np.abs(coeff_history[nIt, chan] - coeff_history[nIt - 1, chan]))
                 zern_range_halfsize = max(float(np.clip(3.0 * max_change, 0.1, 1)), 0.5 * zern_test_values[-1])
                 
-                print 'range update:', max_change, zern_range_halfsize
+                print('range update: %f, %f' % (max_change, zern_range_halfsize))
                 return np.linspace(-zern_range_halfsize, zern_range_halfsize, n_test_values)
             else:
                 return zern_test_values
@@ -456,7 +458,7 @@ class ZernikePSFModel(object):
                     
                     nIt += 1
                     
-                    print zernike_coeffs_by_channel, nIt, self.ns
+                    print(zernike_coeffs_by_channel, nIt, self.ns)
         
         else:
             nIt = 0
@@ -469,7 +471,7 @@ class ZernikePSFModel(object):
                 
                 nIt += 1
                 
-                print zernike_coeffs_by_channel, nIt, self.ns
+                print(zernike_coeffs_by_channel, nIt, self.ns)
         
         if USE_MULTIPROC:
             for p in processes:

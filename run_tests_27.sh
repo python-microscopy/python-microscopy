@@ -5,7 +5,12 @@ if [ -e ~/anaconda/bin/activate ]
 then
     source ~/anaconda/bin/activate
 else
-    source ~/anaconda2/bin/activate
+    if [ -e ~/anaconda2/bin/activate ]
+    then
+        source ~/anaconda2/bin/activate
+    else
+        source ~/anaconda3/bin/activate
+    fi
 fi
 
 exit_code=0

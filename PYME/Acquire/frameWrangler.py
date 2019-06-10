@@ -111,7 +111,7 @@ class FrameWrangler(wx.EvtHandler):
         self._poll_camera = False
         
 
-    def Prepare(self, keepds=False):
+    def Prepare(self, keepds=True):
         """Prepare for acquisition by allocating the buffer which will store the
         data we recieve. The buffer stores a single frame, and all frames pass
         through this buffer. The current state of the buffer is accessible via
@@ -125,16 +125,24 @@ class FrameWrangler(wx.EvtHandler):
         
         #what byte-order does the camera use for its frames?
         try:
-            self.order = self.cam.order
+            if not (self.cam.order == self.order):
+                keepds = False
+                self.order = self.cam.order
         except AttributeError:
             # not all cameras expose the order property, use Fortran ordering
             # by default (i.e. x then y)
             # note: This has a lot to do with me liking to use the 0th 
             # array index as x, which might (in retrospect) have been a bad design choice
             self.order = 'F'
+            self.cam.order = 'F'
+            keepds=False
         
-        if (self.currentFrame is None or keepds == False):
+        if (self.currentFrame is None) or(self.currentFrame.shape[0] != self.cam.GetPicWidth()) or (self.currentFrame.shape[1] != self.cam.GetPicHeight()):
+            keepds = False
 
+
+
+        if not keepds:
             self.currentFrame = np.zeros([self.cam.GetPicWidth(), self.cam.GetPicHeight(), 
                                 1], dtype = 'uint16', order = self.order)
             
@@ -239,6 +247,7 @@ class FrameWrangler(wx.EvtHandler):
                         bufferOverflowing = self.cam.GetNumImsBuffered() >= (self.cam.GetBufferSize() - 2)
                     else:
                         bufferOverflowing = False
+
                     if bufferOverflowing:
                         self.bufferOverflowed = True
                         print('Warning: Camera buffer overflowing - purging buffer')

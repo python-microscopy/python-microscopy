@@ -64,7 +64,7 @@ class DMDModeChooserPanel(wx.Panel):
         self.SetSizerAndFit(vsizer)
 
     def OnCDMD(self, event):
-        print "Set display mode to: " + self.cDMD.GetStringSelection()
+        print("Set display mode to: %s"  % self.cDMD.GetStringSelection())
 
     def OnBSetmodeButton(self, event):
         if self.cDMD.GetStringSelection() == 'Image Sequence':
@@ -104,7 +104,7 @@ class DMDTestPattern(wx.Panel):
         self.SetSizerAndFit(vsizer)
 
     def OnCDMDtp(self, event):
-        print "select pattern " + self.cDMDtp.GetStringSelection()
+        print ("select pattern %s" % self.cDMDtp.GetStringSelection())
 
     def OnBSendButton(self, event):
         self.lc.SetTestPattern(test_pattern.index(self.cDMDtp.GetStringSelection()))
@@ -139,7 +139,7 @@ class DMDStaticImage(wx.Panel):
 
     def OnBBrowseButton(self, event):
         dlg = wx.FileDialog(self, message="Open an Image...", defaultDir=os.getcwd(), 
-                            defaultFile="", style=wx.OPEN)
+                            defaultFile="", style=wx.FD_OPEN)
 
         if dlg.ShowModal() == wx.ID_OK:
             filename = dlg.GetPath()            
@@ -178,7 +178,7 @@ class DMDImageSeq(wx.Panel):
     def OnBBrowseButton(self, event):
         self.seq = []
         dlg = wx.FileDialog(self, message="Select image sequence...", defaultDir=os.getcwd(), 
-                            defaultFile="", style=wx.OPEN | wx.MULTIPLE | wx.CHANGE_DIR)
+                            defaultFile="", style=wx.FD_OPEN | wx.FD_MULTIPLE | wx.FD_CHANGE_DIR)
 
         if dlg.ShowModal() == wx.ID_OK:
             filelist = dlg.GetPaths()

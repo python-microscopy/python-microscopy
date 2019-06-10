@@ -514,7 +514,7 @@ class ModuleCollection(HasTraits):
             l = []
     
         for mdd in l:
-            mn, md = mdd.items()[0]
+            mn, md = list(mdd.items())[0]
             try:
                 mod = all_modules[mn](self)
             except KeyError:

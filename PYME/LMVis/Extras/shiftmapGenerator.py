@@ -54,7 +54,7 @@ class ShiftmapGenerator:
         defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.sf'
 
         fdialog = wx.FileDialog(None, 'Save shift field as ...',
-            wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir = nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
+            wildcard='Shift Field file (*.sf)|*.sf', style=wx.FD_SAVE, defaultDir = nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()
@@ -89,7 +89,7 @@ class ShiftmapGenerator:
         defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.sf'
 
         fdialog = wx.FileDialog(None, 'Save shift field as ...',
-            wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir = nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
+            wildcard='Shift Field file (*.sf)|*.sf', style=wx.FD_SAVE, defaultDir = nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()
@@ -120,7 +120,7 @@ class ShiftmapGenerator:
         defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.sf'
 
         fdialog = wx.FileDialog(None, 'Save shift field as ...',
-            wildcard='Shift Field file (*.sf)|*.sf', style=wx.SAVE, defaultDir = nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
+            wildcard='Shift Field file (*.sf)|*.sf', style=wx.FD_SAVE, defaultDir = nameUtils.genShiftFieldDirectoryPath(), defaultFile=defFile)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()

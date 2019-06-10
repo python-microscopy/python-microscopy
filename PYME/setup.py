@@ -37,7 +37,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('IO')
     config.add_subpackage('Deconv')
     #config.add_subpackage('PSFEst')
-    #config.add_subpackage('mProfile')
+    config.add_subpackage('simulation')
     config.add_subpackage('misc')
     config.add_subpackage('LMVis')
     config.add_subpackage('ui')
@@ -50,6 +50,9 @@ def configuration(parent_package='',top_path=None):
     
     config.add_subpackage('recipes')
     config.add_data_dir('recipes/Recipes')
+    
+    config.add_subpackage('cluster')
+    config.add_data_dir('cluster/clusterUI')
     
     #config.add_subpackage('pad')
     #config.add_subpackage('bcl')

@@ -7,7 +7,8 @@ Created on Sat May 14 14:54:52 2016
 import wx
 import wx.py.shell
 
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 import wx.lib.agw.aui as aui
 
 #hacked so py2exe works
@@ -145,7 +146,7 @@ class VisGUICore(object):
         #if HAVE_DRIFT_CORRECTION:
         #    self.driftPane = CreateDriftPane(sidePanel, self.pipeline.mapping, self.pipeline)
 
-        self.filterPane = CreateFilterPane(sidePanel, self.pipeline.filterKeys, self.pipeline, self)
+        #self.filterPane = CreateFilterPane(sidePanel, self.pipeline.filterKeys, self.pipeline, self)
 
         if PYME.config.get('VisGUI-new_layers', False):
             #self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
@@ -153,8 +154,9 @@ class VisGUICore(object):
             #self.displayPane.Bind(displayPane.EVT_DISPLAY_CHANGE, self.RefreshView)
         
         
-            from .layer_panel import CreateLayerPane
+            from .layer_panel import CreateLayerPane, CreateLayerPanel
             CreateLayerPane(sidePanel, self)
+            #CreateLayerPanel(self)
             
             if self.use_shaders:
                 from .view_clipping_pane import GenViewClippingPanel
@@ -182,23 +184,23 @@ class VisGUICore(object):
         from PYME.recipes.vertical_recipe_display import RecipeDisplayPanel
         item = afp.foldingPane(pnl, -1, caption="Data Pipeline", pinned = True)
 
-        self.recipeView = RecipeDisplayPanel(item)
-        self.recipeView.SetRecipe(self.pipeline.recipe)
-        item.AddNewElement(self.recipeView)
-        
         pan = wx.Panel(item, -1)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(wx.StaticText(pan, -1, 'output:'), 0, wx.ALL, 2)
         self.chSource = wx.Choice(pan, -1, choices=[])
-        hsizer.Add(self.chSource, 1, wx.ALL|wx.EXPAND, 2)
+        hsizer.Add(self.chSource, 1, wx.ALL | wx.EXPAND, 2)
         pan.SetSizerAndFit(hsizer)
         self.update_datasource_panel()
         self.chSource.Bind(wx.EVT_CHOICE, self.OnSourceChange)
         self.pipeline.onRebuild.connect(self.update_datasource_panel)
-            
+
         item.AddNewElement(pan, foldable=False)
 
-        pnl.AddPane(item)
+        self.recipeView = RecipeDisplayPanel(item)
+        self.recipeView.SetRecipe(self.pipeline.recipe)
+        item.AddNewElement(self.recipeView, priority=20)
+
+        pnl.AddPane(item, 20)
         
     def update_datasource_panel(self, event=None, **kwargs):
         dss = list(self.pipeline.dataSources.keys())
@@ -415,7 +417,7 @@ class VisGUICore(object):
         layer.on_update.connect(self.glCanvas.refresh)
         self.glCanvas.refresh()
     
-        self.layer_added.send(self)
+        self.layer_added.send_robust(self)
 
     
     @property

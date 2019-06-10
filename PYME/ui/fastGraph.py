@@ -202,7 +202,7 @@ class FastGraphPanel(wx.Panel):
 
     def OnPaint(self,event):
         DC = wx.PaintDC(self)
-        self.PrepareDC(DC)
+        #self.PrepareDC(DC)
 
         s = self.GetVirtualSize()
         MemBitmap = wx.EmptyBitmap(s.GetWidth(), s.GetHeight())
@@ -212,7 +212,7 @@ class FastGraphPanel(wx.Panel):
         try:
             #DC.BeginDrawing()
 
-            self.DoPaint(MemDC);
+            self.DoPaint(MemDC)
 
             DC.Blit(0, 0, s.GetWidth(), s.GetHeight(), MemDC, 0, 0)
             #DC.EndDrawing()

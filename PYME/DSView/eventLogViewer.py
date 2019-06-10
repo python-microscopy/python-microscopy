@@ -339,13 +339,15 @@ class eventLogPanel(wx.Panel):
         self.eventSource = eventSource
         self.evKeyNames = set()
         for e in self.eventSource:
-            self.evKeyNames.add(e['EventName'])
+            self.evKeyNames.add(bytes(e['EventName']))
 
         colours = 0.9*pylab.cm.gist_rainbow(np.arange(len(self.evKeyNames))/float(len(self.evKeyNames)))[:,:3]
 
         self.lineColours = {}
         for k, c in zip(self.evKeyNames, colours):
             self.lineColours[k] = wx.Colour(*[int(v) for v in (255*c)])
+            
+        #print(self.lineColours)
 
         if self.initialised:
             self.Refresh()
@@ -476,10 +478,11 @@ class eventLogTPanel(wx.Panel):
         #self.pixPerFrame = pixPerFrame
 
         nTicksTarget = self.Size[1]/(5.5*textHeight)
-        tickSpacing = np.floor(nFrames/nTicksTarget)
+        tickSpacing = max(np.floor(nFrames/nTicksTarget), 1)
         #round to 1sf
         #tickSpacing = round(tickSpacing/(10**np.floor(np.log10(tickSpacing))))*(10**np.floor(np.log10(tickSpacing)))
         tickStart = np.ceil(minF/tickSpacing)*tickSpacing
+        #print(tickStart, maxF+.01, tickSpacing)
         ticks = np.arange(tickStart, maxF+.01, tickSpacing)
         tickTimes = framesToTime(ticks, self.eventSource, self.metaData) - self.startTime
 
@@ -705,6 +708,8 @@ class eventLogTPanel(wx.Panel):
             nMax = min(yp + .4*dT, self.maxRange[1])
             if not nMax > (nMin + .1):
                 nMax = nMin + .1
+        elif (rot == 0):
+            return
 
         if nMin == self.maxRange[0] and nMax == self.maxRange[1]:
             self.autoRange = True

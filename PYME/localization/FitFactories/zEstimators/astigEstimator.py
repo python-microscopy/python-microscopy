@@ -105,12 +105,12 @@ def calibrate(interpolator, md, roiSize=5):
     sgn = numpy.sign(d_dw)
 
     #take all bits having the same gradient sign as the central bit
-    mask = sgn == sgn[len(sgn)/2]
+    mask = sgn == sgn[int(len(sgn)/2)]
 
     #make sure to only take the middle contiguous section
     segNo = np.cumsum(np.diff(mask))
     #print len(z), len(d_dw), len(mask), len(segNo)
-    mask = segNo == segNo[len(sgn)/2]
+    mask = segNo == segNo[int(len(sgn)/2)]
     
     mask = np.hstack(([False], mask, [False]))
 

@@ -51,11 +51,12 @@ def create(parent):
 ] = [wx.NewId() for _init_ctrls in range(24)]
 
 
+from PYME.ui import manualFoldPanel as afp
 
-class AndorPanel(wx.Panel):
+class AndorPanel(afp.foldingPane):
 
     def _createCollapsingPane(self):
-        clp = collapsingPane(self, caption='Advanced ...')#|wx.CP_NO_TLW_RESIZE)
+        clp = afp.collapsingPane(self, caption='Advanced ...')#|wx.CP_NO_TLW_RESIZE)
         #clp = wx.CollapsiblePane(self, label='Advanced ...', style = wx.CP_DEFAULT_STYLE)#|wx.CP_NO_TLW_RESIZE)
 
         #clp.Expand()
@@ -70,13 +71,13 @@ class AndorPanel(wx.Panel):
 
         self.rbSingleShot = wx.RadioButton(cp, -1, 'Single Shot')
         self.rbSingleShot.SetValue(False)
-        self.rbSingleShot.SetToolTipString('Allows multiple channels with different integration times and good shutter synchronisation')
+        #self.rbSingleShot.SetToolTipString('Allows multiple channels with different integration times and good shutter synchronisation')
         self.rbSingleShot.Bind(wx.EVT_RADIOBUTTON,self.OnRbSingleShotRadiobutton)
         sbAqMode.Add(self.rbSingleShot, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
 
         self.rbContin = wx.RadioButton(cp, -1, 'Continuous')
         self.rbContin.SetValue(True)
-        self.rbContin.SetToolTipString('Allows fastest speeds, albeit without good syncronisation (fixable) or integration time flexibility')
+        #self.rbContin.SetToolTipString('Allows fastest speeds, albeit without good syncronisation (fixable) or integration time flexibility')
         self.rbContin.Bind(wx.EVT_RADIOBUTTON, self.OnRbContinRadiobutton)
         sbAqMode.Add(self.rbContin, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
 
@@ -134,70 +135,73 @@ class AndorPanel(wx.Panel):
 
         return clp
 
-    def _init_ctrls(self, prnt):
+    def _init_ctrls(self):
         # generated method, don't edit
-        wx.Panel.__init__(self, id=wxID_ANDORFRAME,
-              parent=prnt, size=wx.Size(-1, -1))
-        #self.SetClientSize(wx.Size(244, 327))
+        
+        pan = wx.Panel(parent=self, id=wxID_ANDORFRAME,size=wx.Size(-1, -1))
 
         vsizer=wx.BoxSizer(wx.VERTICAL)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        sbCooling = wx.StaticBoxSizer(wx.StaticBox(self, -1, u'Cooling [\N{DEGREE SIGN}C]'), wx.VERTICAL)
+        sbCooling = wx.StaticBoxSizer(wx.StaticBox(pan, -1, u'Cooling [\N{DEGREE SIGN}C]'), wx.VERTICAL)
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.tCCDTemp = wx.TextCtrl(self, -1, '0', size=(30, -1))
-        hsizer2.Add(self.tCCDTemp, 1, wx.wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.tCCDTemp = wx.TextCtrl(pan, -1, '0', size=(30, -1))
+        hsizer2.Add(self.tCCDTemp, 1, wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
         sbCooling.Add(hsizer2, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
-        self.bSetTemp = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
+        self.bSetTemp = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
         self.bSetTemp.Bind(wx.EVT_BUTTON, self.OnBSetTempButton)
         hsizer2.Add(self.bSetTemp, 0, wx.ALIGN_CENTER_VERTICAL, 0)
 
         hsizer.Add(sbCooling, 1, wx.EXPAND|wx.RIGHT, 5)
 
 
-        sbEMGain = wx.StaticBoxSizer(wx.StaticBox(self, -1, 'EM Gain', size=(30, -1)), wx.VERTICAL)
+        sbEMGain = wx.StaticBoxSizer(wx.StaticBox(pan, -1, 'EM Gain', size=(30, -1)), wx.VERTICAL)
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.tEMGain = wx.ComboBox(self, -1, '0', choices=['0', '%d' % self.cam.DefaultEMGain], size=[30,-1], style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
+        self.tEMGain = wx.ComboBox(pan, -1, '0', choices=['0', '%d' % self.cam.DefaultEMGain], size=[30,-1], style=wx.CB_DROPDOWN|wx.TE_PROCESS_ENTER)
         self.tEMGain.Bind(wx.EVT_TEXT, self.OnEMGainTextChange)
         self.tEMGain.Bind(wx.EVT_TEXT_ENTER, self.OnBSetGainButton)
         self.tEMGain.Bind(wx.EVT_COMBOBOX, self.OnBSetGainButton)
         hsizer2.Add(self.tEMGain, 1, wx.EXPAND|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.bSetGain = wx.Button(self, -1, 'Set', style=wx.BU_EXACTFIT)
+        self.bSetGain = wx.Button(pan, -1, 'Set', style=wx.BU_EXACTFIT)
         self.bSetGain.Bind(wx.EVT_BUTTON, self.OnBSetGainButton)
         hsizer2.Add(self.bSetGain, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
 
         sbEMGain.Add(hsizer2, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
-        self.stTrueEMGain = wx.StaticText(self, -1, '????')
+        self.stTrueEMGain = wx.StaticText(pan, -1, '????')
         self.stTrueEMGain.SetForegroundColour(wx.RED)
         sbEMGain.Add(self.stTrueEMGain, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
         hsizer.Add(sbEMGain, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 0)
         vsizer.Add(hsizer, 0, wx.EXPAND|wx.ALIGN_CENTER_HORIZONTAL, 0)
 
-        self.cbShutter = wx.CheckBox(self, -1, u'Camera Shutter Open')
+        self.cbShutter = wx.CheckBox(pan, -1, u'Camera Shutter Open')
         self.cbShutter.SetValue(True)
         self.cbShutter.Bind(wx.EVT_CHECKBOX, self.OnCbShutterCheckbox)
         vsizer.Add(self.cbShutter, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP, 5)
 
-        self.cp = self._createCollapsingPane()
+        #self.cp = self._createCollapsingPane(self)
 
-        vsizer.Add(self.cp, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 5)
-        vsizer.AddSpacer(5)
+        #vsizer.Add(self.cp, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 5)
+        #vsizer.AddSpacer(5)
 
-        self.SetSizer(vsizer)
+        pan.SetSizerAndFit(vsizer)
+        self.AddNewElement(pan)
 
         
 
-    def __init__(self, parent, cam, scope):
+    def __init__(self, parent, cam, scope, *args, **kwargs):
+        kwargs['caption'] = kwargs.get('caption', 'EMCCD')
+        afp.foldingPane.__init__(self, parent, *args, **kwargs)
         self.cam = cam
         self.scope = scope
 
-        self._init_ctrls(parent)
+        self._init_ctrls()
+        self.AddNewElement(self._createCollapsingPane())
 
         self.tCCDTemp.ChangeValue(repr(self.cam.GetCCDTempSetPoint()))
         self.tEMGain.SetValue(repr(self.cam.GetEMGain()))

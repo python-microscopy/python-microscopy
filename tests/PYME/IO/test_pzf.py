@@ -4,7 +4,7 @@ def test_compression_lossless_uint16():
     from pymecompress import bcl
     test_data = np.random.poisson(100, 10000).reshape(100,100).astype('uint16')
 
-    result = bcl.HuffmanDecompress(bcl.HuffmanCompress(test_data.data),
+    result = bcl.HuffmanDecompress(bcl.HuffmanCompress(np.frombuffer(test_data.data, dtype='uint8')),
                                    test_data.nbytes).view(test_data.dtype).reshape(test_data.shape)
 
     assert np.allclose(result, test_data)
@@ -13,7 +13,7 @@ def test_compression_lossless_uint8():
     from pymecompress import bcl
     test_data = np.random.poisson(100, 10000).reshape(100,100).astype('uint8')
 
-    result = bcl.HuffmanDecompress(bcl.HuffmanCompress(test_data.data),
+    result = bcl.HuffmanDecompress(bcl.HuffmanCompress(np.frombuffer(test_data.data, dtype='uint8')),
                                    test_data.nbytes).view(test_data.dtype).reshape(test_data.shape)
 
     assert np.allclose(result, test_data)
@@ -31,12 +31,16 @@ def test_PZFFormat_raw_uint16():
     
 def test_PZFFormat_raw_uint16_F():
     from PYME.IO import PZFFormat
-    test_data = np.random.poisson(100, 10000).reshape(100,100, order='F').astype('uint16')
+    test_data = np.random.poisson(100, 10000).reshape(100,100).astype('uint16').copy(order='F')
 
+    print(test_data.flags)
+    
     result, header = PZFFormat.loads(PZFFormat.dumps(test_data))
 
     #print result
     print(header, result.dtype)
+
+    print(test_data, result.squeeze())
 
     assert np.allclose(result.squeeze(), test_data.squeeze())
 

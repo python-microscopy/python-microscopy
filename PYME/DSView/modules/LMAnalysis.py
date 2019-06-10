@@ -22,8 +22,8 @@
 import os
 
 import PYME.localization.FitFactories
-import PYME.ui.autoFoldPanel as afp
-import Pyro.core
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 import dispatch
 import numpy as np
 import wx
@@ -41,7 +41,7 @@ from PYME.localization import remFitBuf
 from PYME.ui.mytimer import mytimer
 
 try:
-    from PYME.ParallelTasks import HTTPTaskPusher
+    from PYME.cluster import HTTPTaskPusher
 
     #test for a running task distributor
     distribURI = HTTPTaskPusher._getTaskQueueURI(0)
@@ -67,10 +67,10 @@ def _verifyResultsFilename(resultsFilename):
         while os.path.exists(os.path.join(di, stub + '_%d.h5r' % i)):
             i += 1
         fdialog = wx.FileDialog(None, 'Analysis file already exists, please select a new filename',
-                    wildcard='H5R files|*.h5r', defaultDir=di, defaultFile=stub + '_%d.h5r' % i, style=wx.SAVE)
+                    wildcard='H5R files|*.h5r', defaultDir=di, defaultFile=stub + '_%d.h5r' % i, style=wx.FD_SAVE)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            resultsFilename = fdialog.GetPath().encode()
+            resultsFilename = fdialog.GetPath()
         else:
             raise RuntimeError('Invalid results file - not running')
             
@@ -287,7 +287,7 @@ class AnalysisController(object):
             return self.pushImagesDS(image)
 
     def pushImagesCluster(self, image):
-        from PYME.ParallelTasks import HTTPRulePusher
+        from PYME.cluster import HTTPRulePusher
         #resultsFilename = _verifyResultsFilename(genResultFileName(image.seriesName))
         resultsFilename = _verifyClusterResultsFilename(genClusterResultFileName(image.seriesName))
         logging.debug('Results file: ' + resultsFilename)
@@ -298,7 +298,7 @@ class AnalysisController(object):
         self.resultsMdh['DataFileID'] = fileID.genDataSourceID(image.dataSource)
 
         self.pusher = HTTPRulePusher.HTTPRulePusher(dataSourceID=image.seriesName,
-                                               metadata=self.resultsMdh, resultsFilename=resultsFilename)
+                                                    metadata=self.resultsMdh, resultsFilename=resultsFilename)
 
         self.queueName = self.pusher.queueID
         self.results_filename = resultsFilename
@@ -380,6 +380,7 @@ class AnalysisController(object):
             self.tq = None
         
         if self.tq is None:
+            import Pyro.core
             from PYME.misc.computerName import GetComputerName
             compName = GetComputerName()
             
@@ -819,7 +820,8 @@ class LMAnalyser2(object):
                 analysisMDH[maptype] = '' # unset the map ID in this case
 
     def testFrame(self, gui=True):
-        from pylab import *
+        #from pylab import *
+        import matplotlib
         from matplotlib import pyplot as plt
         #close('all')
         if self.image.dataSource.moduleName == 'TQDataSource':

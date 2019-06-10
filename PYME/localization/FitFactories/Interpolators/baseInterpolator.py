@@ -132,7 +132,7 @@ class __interpolator:
         self.dy = voxelsize.y
         self.dz = voxelsize.z
 
-        self.interpModel = (mod/mod[:,:, mod.shape[2]/2].sum()).astype('f') #normalise to 1
+        self.interpModel = (mod/mod[:,:, int(mod.shape[2]/2)].sum()).astype('f') #normalise to 1
         self.shape = mod.shape
 
         self._precompute()

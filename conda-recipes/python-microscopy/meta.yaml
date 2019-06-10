@@ -29,20 +29,19 @@ build:
     - dh5view = PYME.DSView.dsviewer:main
     - PYMEAcquire = PYME.Acquire.PYMEAcquire:main
     - VisGUI = PYME.LMVis.VisGUI:main
-    - launchWorkers = PYME.ParallelTasks.launchWorkers:main
     - PYMEBatch = PYME.recipes.batchProcess:main
     - bakeshop = PYME.recipes.bakeshop:main
+    - PYMEDataServer = PYME.cluster.HTTPDataServer:main
+    - PYMEClusterDup = PYME.io.clusterDuplication:main
+    - PYMERuleServer = PYME.cluster.PYMERuleServer:main
+    - PYMENodeServer = PYME.cluster.PYMENodeServer:main
+    - PYMERuleNodeServer = PYME.cluster.PYMERuleNodeServer:main
+    - PYMEWebDav = PYME.cluster.webdav:main
+    - PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main
     - fitMonP = PYME.ParallelTasks.fitMonP:main
     - taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main
     - taskServerZC = PYME.ParallelTasks.taskServerZC:main
-    - PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main
-    - PYMEClusterDup = PYME.io.clusterDuplication:main
-    - PYMEDistributor = PYME.ParallelTasks.PYMEDistributor:main
-    - PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main
-    - PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main
-    - PYMERuleServer = PYME.ParallelTasks.PYMERuleServer:main
-    - PYMERuleNodeServer = PYME.ParallelTasks.PYMERuleNodeServer:main
-    - PYMEWebDav = PYME.ParallelTasks.webdav:main
+    - launchWorkers = PYME.ParallelTasks.launchWorkers:main
 
 
 
@@ -170,7 +169,7 @@ requirements:
     - pyyaml
     - psutil
     - dispatch
-    - pymecompress
+    - pymecompress >=0.1.4
     - ujson
     - docutils
     - sphinx

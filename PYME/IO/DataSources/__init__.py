@@ -35,25 +35,25 @@ import os
 
 def getDataSourceForFilename(filename):
     if filename.startswith('QUEUE://'):
-        import TQDataSource
+        from . import TQDataSource
         return TQDataSource.DataSource
     elif filename.startswith('PYME-CLUSTER://') or filename.startswith('pyme-cluster://'):
-        import ClusterPZFDataSource
+        from . import ClusterPZFDataSource
         return ClusterPZFDataSource.DataSource
     elif filename.startswith('http://') or filename.startswith('HTTP://'):
-        import HTTPDataSource
+        from . import HTTPDataSource
         return HTTPDataSource.DataSource
     elif filename.endswith('.h5'):
-        import HDFDataSource
+        from . import HDFDataSource
         return HDFDataSource.DataSource
     #elif filename.endswith('.md'): #treat this as being an image series
     #    self._loadImageSeries(filename)
     elif os.path.splitext(filename)[1] in ['.tif', '.tif', '.lsm']: #try tiff
-        import TiffDataSource
+        from . import TiffDataSource
         return TiffDataSource.DataSource
     elif filename.endswith('.dcimg'):
-        import DcimgDataSource
+        from . import DcimgDataSource
         return DcimgDataSource.DataSource
     else: #try bioformats
-        import BioformatsDataSource
+        from . import BioformatsDataSource
         return BioformatsDataSource.DataSource

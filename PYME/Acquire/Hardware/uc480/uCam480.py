@@ -211,7 +211,7 @@ class uc480Camera:
 
         self.CCDSize=(sensorProps.nMaxWidth, sensorProps.nMaxHeight)
         senstype = ctypes.cast(sensorProps.strSensorName, ctypes.c_char_p)
-        self.sensortype = senstype.value
+        self.sensortype = senstype.value.decode()
 
         # work out the ROI limits for this sensortype
         matches = [self.ROIlimitlist[st] for st in self.ROIlimitlist.keys()
@@ -303,7 +303,7 @@ class uc480Camera:
             if fatal:
                 raise RuntimeError('Error %s: %d: %s' % [msg]+GetError(self.boardHandle))
             else:
-                print 'Error %s: %d: %s' % [msg]+GetError(self.boardHandle)
+                print('Error %s: %d: %s' % [msg]+GetError(self.boardHandle))
 
     def Init(self):
         #set up polling thread        
@@ -506,22 +506,18 @@ class uc480Camera:
         raise Exception('Not implemented yet!!')
 
     def GetHorizBin(self):
-        return self.binning
-        #raise Exception, 'Not implemented yet!!'
+        return self.binX == 1
 
-    def GetHorzBinValue(*args):
-        #raise Exception, 'Not implemented yet!!'
+    def GetHorzBinValue(self):
         return self.binX
 
     def SetVertBin(self, val):
         raise Exception('Not implemented yet!!')
 
-    def GetVertBin(*args):
-        return 0
-        #raise Exception, 'Not implemented yet!!'
+    def GetVertBin(self):
+        return self.binY == 1
 
-    def GetVertBinValue(*args):
-        #raise Exception, 'Not implemented yet!!'
+    def GetVertBinValue(self):
         return self.binY
 
     def GetNumberChannels(*args):
@@ -537,10 +533,10 @@ class uc480Camera:
         return self.initialised
 
     def GetPicWidth(self):
-        return (self.ROIx[1] - self.ROIx[0] + 1)/self.binX
+        return int((self.ROIx[1] - self.ROIx[0] + 1)/self.binX)
 
     def GetPicHeight(self):
-        return (self.ROIy[1] - self.ROIy[0] + 1)/self.binY
+        return int((self.ROIy[1] - self.ROIy[0] + 1)/self.binY)
 
 
     def SetROI(self, x1,y1,x2,y2):
@@ -548,10 +544,10 @@ class uc480Camera:
 
         xstep = self.ROIlimits['xstep']
         ystep = self.ROIlimits['ystep']
-        x1 = xstep*(x1/xstep)
-        x2 = xstep*(x2/xstep)
-        y1 = ystep*(y1/ystep)
-        y2 = ystep*(y2/ystep)
+        x1 = int(xstep*np.floor(x1/xstep))
+        x2 = int(xstep*np.floor(x2/xstep))
+        y1 = int(ystep*np.floor(y1/ystep))
+        y2 = int(ystep*np.floor(y2/ystep))
         
         
         #if coordinates are reversed, don't care
@@ -700,7 +696,7 @@ class uc480Camera:
         pass
 
     def SetEMGain(self, gain):
-        raise Exception('Not implemented yet!!')
+        raise NotImplementedError()
 
     def GetEMGain(self):
         return self.EMGain

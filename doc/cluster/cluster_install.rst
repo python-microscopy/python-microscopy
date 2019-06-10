@@ -99,7 +99,8 @@ On each node:
 
      ``dataserver-root`` should point to a directory which will be dedicated to cluster data (not ``home`` or similar)
      and which must be writeable by the PYME user. Anything in this directory will be made visible through the cluster
-     file system.
+     file system. This should ideally be on a hard mount (not an auto-mount under ``/media/``) to ensure that permissions
+     don't get screwed up.
 
      ``dataserver-filter`` lets you specify a filter that will allow multiple distinct clusters to run on the same network.
      The default value of ``""`` will match all running servers. This is appropriate in the recommended case where the cluster
@@ -178,9 +179,12 @@ On the master node:
      WebDAV turns up the relevant instructions pretty quickly). Look at ``PYME/ParallelTasks/webdav.py`` for info on
      setting custom passwords.
 
+#. *[optional]* Install the svgwrite package to display recipes graphically in the cluster user interface. We do not
+   currently maintain a conda package for svgwrite, but it can be found in, e.g., the conda-forge channel.
+
 On each node:
 -------------
-6. Run ``PYMERuleNodeServer`` to launch the distributed analysis clients.
+7. Run ``PYMERuleNodeServer`` to launch the distributed analysis clients.
 
    .. note::
 
@@ -196,6 +200,42 @@ On the instrument computer
 #. Make a development install of PYME following the instructions at http://python-microscopy.org/doc/Installation/InstallationFromSource.html#installationfromsource .
 
 #. Either use the ``PYMEAcquire`` acquisition program, or adapt the code in ``PYME/experimental/dcimgFileChucker.py`` to interface with your acquisition program.
+
+
+Troubleshooting
+===============
+
+mDNS server advertisements point to loopback, rather than external interface
+----------------------------------------------------------------------------
+
+This is usually the result of an incomplete configuration of your Ubuntu install. The PYME servers advertise themselves
+as being available on the IP that the computer hostname maps to. Some Ubuntu installs have an entry in ``/etc/hosts``
+mapping the computer hostname to the loopback address (127.0.0.1), which is generally unhelpful as it means that when we
+try and find out the IP address associated with the computer we are currently running on we get the loopback address. If
+we then use this to advertise, no-one can find us. I haven't worked out what causes this issue (and it's not universal),
+but it is likely to be something with either the dhcp client or DNS.
+
+To fix this error, there are 2 options:
+
+**The right way:**
+
+* Make sure DNS (e.g. dnsmasq) and, optionally DHCP, are configured correctly within the cluster
+
+* Comment out / delete the ``<hostname> 127.0.0.1`` line in ``/etc/hosts``
+
+
+**The quick and dirty way:**
+
+**NOTE:** this only works if you have assigned static IPs to your nodes
+
+* Change the ``<hostname> 127.0.0.1`` line to map to your correct static IP
+
+
+ClusterUI doesn't show files
+----------------------------
+
+Assuming that PYMEDataServer is running this is likely to be a permissions error on the data directory. It's easiest if
+the PYME user owns the directory in question.
 
 
 

@@ -28,7 +28,9 @@
 ################
 
 from .HamamatsuDCAM import *
-
+from PYME.Acquire import eventLog
+import logging
+logger = logging.getLogger(__name__)
 
 # C11440-22CU DCAM_IDPROP variables
 # {'SUBARRAY VSIZE': 4202816, 'BUFFER TOP OFFSET BYTES': 4326224, 'IMAGE
@@ -68,6 +70,10 @@ DCAMPROP_MODE__ON = 2
 
 DCAMPROP_SENSORMODE__PROGRESSIVE = 12
 
+DCAMPROP_TRIGGERSOURCE_INTERNAL = 1
+DCAMPROP_TRIGGERSOURCE_EXTERNAL = 2
+DCAMPROP_TRIGGERSOURCE_SOFTWARE = 3
+
 DCAMCAP_START_SEQUENCE = ctypes.c_int32(int("-1",0))
 
 noiseProperties = {
@@ -78,8 +84,19 @@ noiseProperties = {
         'ADOffset': 100,
         'DefaultEMGain': 1,
         'SaturationThreshold': (2**16 - 1)
-        }
+        },
+'S/N: 720795' : { #FIXME - values are currently copied from above, and are probably wrong
+        'ReadNoise': 3.51,
+        'ElectronsPerCount': 0.416613,
+        'NGainStages': 0,
+        'ADOffset': 100,
+        'DefaultEMGain': 1,
+        'SaturationThreshold': (2**16 - 1)
+        },
 }
+
+class DCAMZeroBufferedException(Exception):
+    pass
 
 
 class HamamatsuORCA(HamamatsuDCAM):
@@ -96,7 +113,16 @@ class HamamatsuORCA(HamamatsuDCAM):
         self.bs = 0
         self.nReadOut = 0
 
+        self._n_frames_leftover = 0
+
+        self._aq_active = False
+
+        self._last_framestamp = None
+        self._last_camerastamp = None
+        self._last_timestamp = None
+
         # initialize other properties needed
+        self.external_shutter = None
 
     def Init(self):
         HamamatsuDCAM.Init(self)
@@ -111,7 +137,10 @@ class HamamatsuORCA(HamamatsuDCAM):
             self.waitstart.eventmask = DCAMWAIT_CAPEVENT_FRAMEREADY
             self.waitstart.timeout = DCAMWAIT_TIMEOUT_INFINITE
             self.setDefectCorrectMode(False)
+            self.enable_cooling(True)
+            self._mode = self.MODE_CONTINUOUS
             self.initialized = True
+            logger.debug('Hamamatsu Orca initialized')
 
 
     @property
@@ -133,13 +162,32 @@ class HamamatsuORCA(HamamatsuDCAM):
         """
         onoff = 2.0 if on else 1.0
         self.setCamPropValue('DEFECT CORRECT MODE', onoff)
+
+    def enable_cooling(self, on=True):
+        #OFF =1 , ON = 2
+
+        onoff = 2.0 if on else 1.0
+        self.setCamPropValue('SENSOR COOLER', onoff)
+
         
     def GetAcquisitionMode(self):
         #FIXME - actually support both continuous and single shot modes
-        return self.MODE_CONTINUOUS
+        #return self.MODE_CONTINUOUS
+        return self._mode
+
+    def SetAcquisitionMode(self, mode):
+        if mode in [self.MODE_CONTINUOUS, self.MODE_SOFTWARE_TRIGGER]:
+            self._mode = mode
+        else:
+            raise RuntimeError('Mode %d not supported' % mode)
+
+
+    def FireSoftwareTrigger(self):
+        self.checkStatus(dcam.dcamcap_firetrigger(self.handle, 0), 'dcamcap_firetrigger')
 
     def StartExposure(self):
         self.nReadOut = 0
+        self._n_frames_leftover = 0
         self._frameRate = self.getCamPropValue('INTERNAL FRAME RATE')
         # From parent
         HamamatsuDCAM.StartExposure(self)
@@ -150,6 +198,17 @@ class HamamatsuORCA(HamamatsuDCAM):
             self.bs)),
                          "dcambuf_alloc")
 
+        self._image_frame_bytes = int(self.getCamPropValue('IMAGE FRAMEBYTES'))
+
+        if self._mode == self.MODE_SOFTWARE_TRIGGER:
+            self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_SOFTWARE)
+        else:
+            #continuous mode, internal trigger
+            self.setCamPropValue('TRIGGER SOURCE', DCAMPROP_TRIGGERSOURCE_INTERNAL)
+
+
+        eventLog.logEvent('StartAq', '')
+
         # Start the capture
         #print str(self.getCamPropValue('SENSOR MODE'))
         #TODO - this is probably where we would need to deal with continuous vs single shot modes.
@@ -157,16 +216,25 @@ class HamamatsuORCA(HamamatsuDCAM):
                                             DCAMCAP_START_SEQUENCE),
                          "dcamcap_start")
 
+        self._aq_active = True
         return 0
 
     def SetROI(self, x1, y1, x2, y2):
+        logger.debug('Setting ROI: x0 %3.1f, y0 %3.1f, w %3.1f, h %3.1f' %(x1, y1, x2-x1, y2-y1))
+
+        #hamamatsu only supports ROI sizes (and positions) which are multiples of 4
+        x1 = 4*np.floor(x1/4)
+        y1 = 4*np.floor(y1/4)
+        w = 4*np.floor((x2-x1)/4)
+        h = 4*np.floor((y2-y1)/4)
+
         self.setCamPropValue('SUBARRAY HPOS', x1)
-        self.setCamPropValue('SUBARRAY HSIZE', x2-x1)
+        self.setCamPropValue('SUBARRAY HSIZE', w)
         self.setCamPropValue('SUBARRAY VPOS', y1)
-        self.setCamPropValue('SUBARRAY VSIZE', y2-y1)
+        self.setCamPropValue('SUBARRAY VSIZE', h)
 
         # If our ROI doesn't span the whole CCD, turn on subarray mode
-        if x2-x1 == self.GetCCDWidth() and y2-y1 == self.GetCCDHeight():
+        if w == self.GetCCDWidth() and h == self.GetCCDHeight():
             self.setCamPropValue('SUBARRAY MODE', DCAMPROP_MODE__OFF)
         else:
             self.setCamPropValue('SUBARRAY MODE', DCAMPROP_MODE__ON)
@@ -184,6 +252,7 @@ class HamamatsuORCA(HamamatsuDCAM):
         return int(self.GetROIY1() + self.getCamPropValue('SUBARRAY VSIZE'))
 
     def StopAq(self):
+        self._aq_active = False
         # Stop the capture
         self.checkStatus(dcam.dcamcap_stop(self.handle), "dcamcap_stop")
 
@@ -193,30 +262,64 @@ class HamamatsuORCA(HamamatsuDCAM):
                          "dcambuf_release")
 
     def ExtractColor(self, chSlice, mode):
-        # DCAM lockframe
-        # ctypes memcpy AndorNeo 251
-        #print "Frame rate: " + str(self._frameRate)
+        # Ask the camera what frames it has available
         tInfo = DCAMCAP_TRANSFERINFO()
         tInfo.size = ctypes.sizeof(tInfo)
         tInfo.transferkind = ctypes.c_int32(0)
         self.checkStatus(dcam.dcamcap_transferinfo(self.handle,
                                                    ctypes.addressof(tInfo)),
                          "dcamcap_transferinfo")
+
+        #Setup frame struct to tell the camera what frame we want
         frame = DCAMBUF_FRAME()
         frame.size = ctypes.sizeof(frame)
-        frame.iFrame = tInfo.nNewestFrameIndex  # Latest frame. This may need to be handled
+        #frame.iFrame = tInfo.nNewestFrameIndex  # Latest frame. This may need to be handled
         # differently.
+        #frame.iFrame = ctypes.c_int32(self.nReadOut)
+
+        # infer the frame number of the oldest image
+        nframes_buffered = (tInfo.nFrameCount - self.nReadOut)
+
+        next_frame = (tInfo.nNewestFrameIndex - nframes_buffered + 1)
+
+        # Hamamatsu maintains a circular buffer, wrap around the end of the buffer if needed
+        if (next_frame < 0):
+            next_frame = self.bs + next_frame
+
+        #do some sanity checks on the things we've calculated and print some stuff if they look weird
+        if (nframes_buffered <1) or (tInfo.nNewestFrameIndex <0) or (next_frame < 0):
+            print(nframes_buffered, next_frame, tInfo.nNewestFrameIndex)
+
+        # if we've somehow got here but our calculations indicate that there are no new frames in the buffer, raise an
+        # exception
+        if nframes_buffered < 1:
+            print(self._last_timestamp, self._last_framestamp, self._last_camerastamp)
+            raise DCAMZeroBufferedException()
+
+        #tell DCAM which fram we want from the buffer
+        frame.iFrame = next_frame
+
+        #lock / take ownership of the memory belonging to that frame
         self.checkStatus(dcam.dcambuf_lockframe(self.handle,
                                                 ctypes.addressof(frame)),
                          "dcambuf_lockframe")
 
         # uint_16 for this camera only DCAM_IDPROP_BITSPERCHANNEL
         #print str(self.getCamPropValue('BUFFER FRAMEBYTES'))
+
+        #copy into our local buffer
         ctypes.cdll.msvcrt.memcpy(chSlice.ctypes.data_as(
             ctypes.POINTER(ctypes.c_uint16)),
-            frame.buf,
-            int(self.getCamPropValue('IMAGE FRAMEBYTES')))
+            ctypes.c_void_p(frame.buf),
+            self._image_frame_bytes)
+
         self.nReadOut += 1
+        self._n_frames_leftover = nframes_buffered -1
+
+        self._last_camerastamp = frame.camerastamp
+        self._last_framestamp = frame.framestamp
+        self._last_timestamp = (frame.timestamp_sec, frame.timestamp_usec)
+
 
     def GetNumImsBuffered(self):
         tInfo = DCAMCAP_TRANSFERINFO()
@@ -229,11 +332,26 @@ class HamamatsuORCA(HamamatsuDCAM):
         return ret
 
     def ExpReady(self):
-        self.checkStatus(dcam.dcamwait_start(self.waitopen.hdcamwait,
-                                             ctypes.byref(self.waitstart)),
-                         "dcamwait_start")
-        return self.waitstart.eventhappened == int(
-            DCAMWAIT_CAPEVENT_FRAMEREADY.value)
+        if not self._aq_active:
+            return False
+
+        if self._n_frames_leftover > 1:
+            # if we somehow skipped events (i.e more than one frame came in between our last event and when we checked
+            # buffer levels in extractColour), short circuit and read out the buffered frames. Stop at 1 leftover frame
+            # as this possibly has an event waiting for it. It would appear that the DCAM api manages events by setting
+            # flags (i.e. we get one event if any number of frames arrive between the last event we waited for and our
+            # next wait call).
+            return True
+        try:
+            # wait for a frame event - fired when the camera has a new frame. It would appear that one event gets fired
+            # regardless of the number of frames that arrive between our last wait call and the this one.
+            self.checkStatus(dcam.dcamwait_start(self.waitopen.hdcamwait, ctypes.byref(self.waitstart)),
+                             "dcamwait_start")
+        except DCAMException as e:
+            logger.error(str(e))
+            return False
+
+        return self.waitstart.eventhappened == int(DCAMWAIT_CAPEVENT_FRAMEREADY.value)
         #return self.GetNumImsBuffered() > 0
 
     def GetBufferSize(self):
@@ -242,7 +360,7 @@ class HamamatsuORCA(HamamatsuDCAM):
     def SetIntegTime(self, intTime):
         [lb, ub] = self.getCamPropRange('EXPOSURE TIME')
         newTime = np.clip(intTime, lb, ub)
-        print str(newTime)
+        print(str(newTime))
         self.setCamPropValue('EXPOSURE TIME', newTime)
 
     def GetCCDWidth(self):
@@ -278,8 +396,33 @@ class HamamatsuORCA(HamamatsuDCAM):
         if self.active:
             mdh.setEntry('Camera.ADOffset', self.noiseProps['ADOffset'])
 
+    def SetShutter(self, mode):
+        """
+        This is a shim to use an external shutter, if ~assigned to the ORCA
+        Parameters
+        ----------
+        mode : bool
+            True (1) if open
+
+        Returns
+        -------
+        None
+        """
+        if self.external_shutter is not None:
+            self.external_shutter.SetShutter(mode)
+
     def Shutdown(self):
         # if self.initialized:
             # self.checkStatus(dcam.dcamwait_close(self.waitopen.hdcamwait),
             #                "dcamwait_close")
         HamamatsuDCAM.Shutdown(self)
+
+
+from PYME.Acquire.Hardware.Camera import MultiviewCameraMixin
+
+class MultiviewOrca(MultiviewCameraMixin, HamamatsuORCA):
+    def __init__(self, camNum, multiview_info):
+        HamamatsuORCA.__init__(self, camNum)
+        # default to the whole chip
+        default_roi = dict(xi=0, xf=2048, yi=0, yf=2048)
+        MultiviewCameraMixin.__init__(self, multiview_info, default_roi, HamamatsuORCA)

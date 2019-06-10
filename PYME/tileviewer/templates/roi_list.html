@@ -1,0 +1,12 @@
+<table class="table">
+    <thead>
+    <tr>
+    <th>ROI Index</th><th>x</th><th>y</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for roi in roi_list %}
+        <tr><td>{{ loop.index }}</td><td>{{ roi.x }}</td><td>{{ roi.y }}</td></tr>
+    {% endfor %}
+    </tbody>
+</table>

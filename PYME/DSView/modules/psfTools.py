@@ -37,7 +37,7 @@ except ImportError:
     #from traitsui.api import View, Item
     #from traitsui.menu import OKButton
 
-from graphViewPanel import *
+from .graphViewPanel import *
 from PYME.Analysis.PSFEst import psfQuality
 
 def remove_newlines(s):
@@ -471,7 +471,7 @@ class PSFTools(HasTraits):
             plt.show()
 
         fdialog = wx.FileDialog(None, 'Save Astigmatism Calibration as ...',
-            wildcard='Astigmatism Map (*.am)|*.am', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath())  #, defaultFile=defFile)
+            wildcard='Astigmatism Map (*.am)|*.am', style=wx.FD_SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath())  #, defaultFile=defFile)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()

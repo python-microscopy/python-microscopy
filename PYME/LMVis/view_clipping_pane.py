@@ -6,7 +6,8 @@ Created on Sat May 14 11:20:11 2016
 """
 import wx
 import wx.lib.newevent
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 import numpy as np
 
 LimitChangeEvent, EVT_LIMIT_CHANGE = wx.lib.newevent.NewCommandEvent()

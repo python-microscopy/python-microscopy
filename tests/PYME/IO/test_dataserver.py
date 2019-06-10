@@ -6,18 +6,23 @@ import shutil
 #import unittest
 import time
 
+import logging
+logger = logging.getLogger(__name__)
 proc = None
 tmp_root = None
 
 def setup_module():
     global proc, tmp_root
     tmp_root = os.path.join(tempfile.gettempdir(), 'PYMEDataServer_TEST')
+    
+    print('DataServer root: %s' % tmp_root)
+    
     if os.path.exists(tmp_root):
         print('Removing existing temp spooler dir')
         shutil.rmtree(tmp_root)
         
     os.makedirs(tmp_root)
-    proc = subprocess.Popen('python -m PYME.ParallelTasks.HTTPDataServer  -r %s -f TEST' % tmp_root , shell=True)
+    proc = subprocess.Popen('python -m PYME.cluster.HTTPDataServer  -r %s -f TEST' % tmp_root , shell=True)
     
     
 def teardown_module():
@@ -30,24 +35,24 @@ def teardown_module():
     
     
 def test_put():
-    testdata = 'foo bar\n'
+    testdata = b'foo bar\n'
     clusterIO.putFile('_testing/test.txt', testdata, 'TEST')
     retrieved = clusterIO.getFile('_testing/test.txt', 'TEST')
     
     assert testdata == retrieved
     
 def test_putfiles_and_list():
-    test_files = [('_testing/test_list/file_%d' % i, 'testing ... \n') for i in range(10)]
+    test_files = [('_testing/test_list/file_%d' % i, b'testing ... \n') for i in range(10)]
     
     clusterIO.putFiles(test_files, 'TEST')
     
-    listing = clusterIO.listdir('_testing/test_list/')
+    listing = clusterIO.listdir('_testing/test_list/', 'TEST')
     
     assert(len(listing) == 10)
 
 
 def test_list_after_timeout():
-    test_files = [('_testing/test_list2/file_%d' % i, 'testing ... \n') for i in range(10)]
+    test_files = [('_testing/test_list2/file_%d' % i, b'testing ... \n') for i in range(10)]
     
     clusterIO.putFiles(test_files, 'TEST')
     
@@ -60,7 +65,7 @@ def test_list_after_timeout():
 
 def test_double_put():
     """Trying to put the same file twice should cause an error"""
-    testdata = 'foo bar\n'
+    testdata = b'foo bar\n'
 
     clusterIO.putFile('_testing/test_d.txt', testdata, 'TEST')
     
@@ -86,10 +91,10 @@ def test_aggregate_h5r():
 
 
 def test_dircache_purge():
-    testdata = 'foo bar\n'
+    testdata = b'foo bar\n'
     for i in range(1050):
         clusterIO.putFile('_testing/lots_of_folders/test_%d/test.txt' % i, testdata, 'TEST')
     
-        listing = clusterIO.listdir('_testing/lots_of_folders/test_%d/' % i)
+        listing = clusterIO.listdir('_testing/lots_of_folders/test_%d/' % i, 'TEST')
     
     #assert (len(listing) == 10)

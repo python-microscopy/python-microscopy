@@ -1,6 +1,7 @@
 import wx
 import wx.lib.agw.aui as aui
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 
 class AUIFrame(wx.Frame):
     """A class which encapsulated the common frame layout code used by

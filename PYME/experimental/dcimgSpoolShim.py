@@ -1,15 +1,14 @@
-import glob
 import json
-import time
 import os
+import time
 
-from PYME.IO.clusterExport import ImageFrameSource, MDSource
-from PYME.IO import MetaDataHandler
-from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
-from PYME.IO import clusterIO
-from PYME.Analysis import MetaData
 from PYME.Acquire import HTTPSpooler
-from PYME.ParallelTasks import HTTPRulePusher  # HTTPTaskPusher
+from PYME.Analysis import MetaData
+from PYME.IO import MetaDataHandler
+from PYME.IO import clusterIO
+from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
+from PYME.IO.clusterExport import ImageFrameSource, MDSource
+from PYME.cluster import HTTPRulePusher
 
 # DT is the period of time the spooler will wait before checking if a file is free to be spooled (i.e. external
 # acquisition software has finished writing the dcimg file)
@@ -149,8 +148,8 @@ class DCIMGSpoolShim(object):
 
             for pos, fr in zip(positions, startFrames):
                 fakeTime = startTime + cycleTime*fr
-                self.spooler.evtLogger.logEvent(eventName='StartAq', eventDescr='%d' % fr, timestamp=fakeTime)
-                self.spooler.evtLogger.logEvent(eventName='ProtocolFocus', eventDescr='%d, %3.3f' % (fr, pos),
+                self.spooler.evtLogger.logEvent(eventName=b'StartAq', eventDescr=b'%d' % fr, timestamp=fakeTime)
+                self.spooler.evtLogger.logEvent(eventName=b'ProtocolFocus', eventDescr=b'%d, %3.3f' % (fr, pos),
                                                 timestamp=fakeTime)
         
         self.spooler.StopSpool()

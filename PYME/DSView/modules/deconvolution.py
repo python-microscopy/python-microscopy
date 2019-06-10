@@ -352,7 +352,7 @@ class deconvolver:
 
     def saveDeconvolution(self, event=None):
         fdialog = wx.FileDialog(None, 'Save Positions ...',
-            wildcard='TIFF Files|*.tif', defaultFile=os.path.splitext(self.seriesName)[0] + '_dec.tif', style=wx.SAVE|wx.HIDE_READONLY)
+            wildcard='TIFF Files|*.tif', defaultFile=os.path.splitext(self.seriesName)[0] + '_dec.tif', style=wx.FD_SAVE|wx.HIDE_READONLY)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             outFilename = fdialog.GetPath()

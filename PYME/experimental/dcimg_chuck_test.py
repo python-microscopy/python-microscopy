@@ -53,7 +53,7 @@ def main():
     for i in range(start_i, N_SERIES):
         t_now = time.time()
         delay = SERIES_DELAY_S - max(t_now - t_last, 0)
-        print delay
+        print('delay: %f' % delay)
         if delay > 0:
             time.sleep(delay)
         print('spooling series %d' % i)

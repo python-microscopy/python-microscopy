@@ -1,6 +1,6 @@
 #PYME Simple Metadata v1
 import os
-print __file__
+print(__file__)
 md['EndTime'] = 1300676178.4949999
 md['EstimatedLaserOnFrameNo'] = 0
 md['PSFFile'] = os.path.join(os.path.split(__file__)[0], 'astig_theory.tif')

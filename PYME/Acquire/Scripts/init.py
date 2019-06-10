@@ -36,10 +36,10 @@ def pz(scope):
     scope.fakePiezo = fakePiezo.FakePiezo(100)
     scope.register_piezo(scope.fakePiezo, 'z', needCamRestart=True)
     
-    scope.fakeXPiezo = fakePiezo.FakePiezo(10)
+    scope.fakeXPiezo = fakePiezo.FakePiezo(100)
     scope.register_piezo(scope.fakeXPiezo, 'x')
     
-    scope.fakeYPiezo = fakePiezo.FakePiezo(10)
+    scope.fakeYPiezo = fakePiezo.FakePiezo(100)
     scope.register_piezo(scope.fakeYPiezo, 'y')
 
 pz.join() #piezo must be there before we start camera
@@ -48,13 +48,15 @@ pz.join() #piezo must be there before we start camera
 def cm(scope):
     import numpy as np
     from PYME.Acquire.Hardware.Simulator import fakeCam
-    scope.register_camera(fakeCam.FakeCamera(256, #70*np.arange(0.0, 4*256.0),
+    cam = fakeCam.FakeCamera(256, #70*np.arange(0.0, 4*256.0),
                                              256, #70*np.arange(0.0, 256.0),
                                              fakeCam.NoiseMaker(),
                                              scope.fakePiezo, xpiezo = scope.fakeXPiezo,
                                              ypiezo = scope.fakeYPiezo,
                                              pixel_size_nm=70.,
-                                             ),'Fake Camera')
+                                             )
+    cam.SetEMGain(150)
+    scope.register_camera(cam,'Fake Camera')
 
 #scope.EnableJoystick = 'foo'
 
@@ -81,7 +83,7 @@ def sim_controls(MainFrame, scope):
 def cam_controls(MainFrame, scope):
     from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
     scope.camControls['Fake Camera'] = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
-    MainFrame.camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
+    MainFrame.camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties', False))
 
 @init_gui('Sample database')
 def samp_db(MainFrame, scope):
@@ -93,10 +95,10 @@ def samp_db(MainFrame, scope):
     sampPan = sampleInformation.slidePanel(MainFrame)
     MainFrame.camPanels.append((sampPan, 'Current Slide'))
 
-@init_gui('Analysis settings')
-def anal_settings(MainFrame, scope):
-    from PYME.Acquire.ui import AnalysisSettingsUI
-    AnalysisSettingsUI.Plug(scope, MainFrame)
+# @init_gui('Analysis settings')
+# def anal_settings(MainFrame, scope):
+#     from PYME.Acquire.ui import AnalysisSettingsUI
+#     AnalysisSettingsUI.Plug(scope, MainFrame)
 
 @init_gui('Fake DMD')
 def fake_dmd(MainFrame, scope):
@@ -133,13 +135,13 @@ def lasers(scope):
 def laser_controls(MainFrame, scope):
     from PYME.Acquire.ui import lasersliders
     
-    lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
-    MainFrame.time1.WantNotification.append(lcf.update)
-    MainFrame.camPanels.append((lcf, 'Laser Control'))
+    #lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
+    #MainFrame.time1.WantNotification.append(lcf.update)
+    #MainFrame.camPanels.append((lcf, 'Laser Control'))
     
     lsf = lasersliders.LaserSliders(MainFrame.toolPanel, scope.state)
     MainFrame.time1.WantNotification.append(lsf.update)
-    MainFrame.camPanels.append((lsf, 'Laser Powers'))
+    MainFrame.camPanels.append((lsf, 'Laser Control'))
 
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):

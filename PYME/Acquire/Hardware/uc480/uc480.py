@@ -9,6 +9,7 @@ import ctypes
 import ctypes.util
 import ctypes.wintypes
 import warnings
+import six
 
 from .uc480_h import *
 from ctypes.wintypes import BYTE
@@ -124,12 +125,12 @@ def loadLibrary(cameratype='uc480'):
         #libuc480 = ctypes.cdll.LoadLibrary(lib)
         if cameratype=='uc480':
                 libuc480 = ctypes.WinDLL('uc480_64')
-                print "loading uc480_64"
+                print("loading uc480_64")
         elif cameratype=='ueye':
                 libuc480 = ctypes.WinDLL('ueye_api_64')
-                print "loading ueye_api_64"
+                print("loading ueye_api_64")
         else:
-                raise "unknown camera type"
+                raise RuntimeError("unknown camera type")
 
 
 def CALL(name, *args):
@@ -141,9 +142,9 @@ def CALL(name, *args):
     func = getattr(libuc480, funcname)
     new_args = []
     for a in args:
-        if isinstance (a, unicode):
+        if isinstance(a, six.string_types) and not isinstance(a, bytes):
             print((name, 'argument',a, 'is unicode'))
-            new_args.append (str (a))
+            new_args.append(a.encode())
         else:
             new_args.append (a)
     r = func(*new_args)

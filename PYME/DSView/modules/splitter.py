@@ -138,7 +138,7 @@ class Unmixer:
         else:
             mode = 'lite'
             
-        print im.data[:,:,1,1].shape
+        print(im.data[:,:,1,1].shape)
 
         dv = ViewIm3D(im, mode=mode, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
@@ -174,7 +174,7 @@ class Unmixer:
     def OnSetShiftField(self, event=None):
         from PYME.IO.FileUtils import nameUtils
         fdialog = wx.FileDialog(None, 'Please select shift field to use ...',
-                    wildcard='Shift fields|*.sf', style=wx.OPEN, defaultDir = nameUtils.genShiftFieldDirectoryPath())
+                    wildcard='Shift fields|*.sf', style=wx.FD_OPEN, defaultDir = nameUtils.genShiftFieldDirectoryPath())
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             #self.ds = example.CDataStack(fdialog.GetPath().encode())

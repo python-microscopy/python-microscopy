@@ -84,6 +84,19 @@ def getPhotonNums(colourFilter, metadata):
     
 @goalfcn('n')
 def eimod(A, tau, n):
+    """
+    Integral of an exponential over bins
+    
+    Parameters
+    ----------
+    A
+    tau
+    n
+
+    Returns
+    -------
+
+    """
     #A, tau = p
     return A*tau*(np.exp(-(n-1)/tau) - np.exp(-n/tau))
 

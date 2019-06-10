@@ -171,6 +171,10 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         
         self.paneHooks.append(self.GenPanels)
         self.CreateFoldPanel()
+
+        #from .layer_panel import CreateLayerPane, CreateLayerPanel
+        #CreateLayerPane(sidePanel, self)
+        #CreateLayerPanel(self)
         
         self._recipe_manager = recipeGui.PipelineRecipeManager(self.pipeline)
         self._recipe_editor = recipeGui.RecipeView(self, self._recipe_manager)
@@ -279,10 +283,10 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
    
     def OnSaveMeasurements(self, event):
         fdialog = wx.FileDialog(None, 'Save measurements ...',
-            wildcard='Numpy array|*.npy|Tab formatted text|*.txt', style=wx.SAVE)
+            wildcard='Numpy array|*.npy|Tab formatted text|*.txt', style=wx.FD_SAVE)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
-            outFilename = fdialog.GetPath().encode()
+            outFilename = fdialog.GetPath()
 
             if outFilename.endswith('.txt'):
                 of = open(outFilename, 'w')

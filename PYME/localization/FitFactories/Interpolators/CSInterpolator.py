@@ -71,6 +71,7 @@ class CSInterpolator(__interpolator):
         
         #print self.interpModel.shape
         #print self.dx
+        print(self.PSF2Offset)
 
 
         r = cInterp.InterpolateCS(self.interpModel, ox, oy, oz, xl, yl, self.dx, self.dy,self.dz)
@@ -129,16 +130,17 @@ class CSInterpolator(__interpolator):
             dy = min((interpolator.shape[1] - len(Y))/2, ym) - 2
             dx = dy
     
-            safeRegion = ((X[xm-dx], X[xm+dx]), (Y[ym-dy], Y[ym+dy]),(Z[0] + self.IntZVals[3], Z[0] + self.IntZVals[-3]))
+            safeRegion = ((X[int(xm-dx)], X[int(xm+dx)]), (Y[int(ym-dy)], Y[int(ym+dy)]),(Z[0] + self.IntZVals[3], Z[0] + self.IntZVals[-3]))
         else:
-            xm = len(X)/2
-            dx = min((interpolator.shape[0] - len(X))/2, xm) - 2
+            xm = (len(X)/2)
+            dx = min(((interpolator.shape[0] - len(X))/2), xm) - 2
     
-            ym = len(Y)/2
-            dy = min((interpolator.shape[1] - len(Y))/2, ym) - 2
+            ym = (len(Y)/2)
+            dy = min(((interpolator.shape[1] - len(Y))/2), ym) - 2
     
-            safeRegion = ((X[xm-dx], X[xm+dx]), (Y[ym-dy], Y[ym+dy]),(Z[0] + self.IntZVals[3], Z[0] + self.IntZVals[-3]))
+            safeRegion = ((X[int(xm-dx)], X[int(xm+dx)]), (Y[int(ym-dy)], Y[int(ym+dy)]),(Z[0] + self.IntZVals[3], Z[0] + self.IntZVals[-3]))
 
+        print('safe region: %s' % repr(safeRegion))
         return X, Y, Z, safeRegion
 
 interpolator = CSInterpolator()

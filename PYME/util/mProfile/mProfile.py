@@ -50,7 +50,7 @@ Licensing: Take your pick of BSD or GPL
 import sys
 import time
 import os
-import colorize_db_t
+from . import colorize_db_t
 import webbrowser
 import tempfile
 import threading
@@ -63,10 +63,11 @@ class mydictn(dict):
         dict.__init__(self, *args)
 
     def __getitem__(self,key):
-        if self.has_key(key):
-            return dict.__getitem__(self, key)
-        else:
-            return None
+        return self.get(key, None)
+        # if self.has_key(key):
+        #     return dict.__getitem__(self, key)
+        # else:
+        #     return None
 
 
 lStore = threading.local()
@@ -83,10 +84,11 @@ class mydict(dict):
         dict.__init__(self, *args)
 
     def __getitem__(self,key):
-        if self.has_key(key):
-            return dict.__getitem__(self, key)
-        else:
-            return 0
+        return self.get(key, 0)
+        # if self.has_key(key):
+        #     return dict.__getitem__(self, key)
+        # else:
+        #     return 0
 
 def profileOn(fnames):
     global filenames, files, linecounts

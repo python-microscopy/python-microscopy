@@ -118,7 +118,7 @@ class Parser:
     def __init__(self, raw, times, counts, thresholdT = 0.01, out=sys.stdout):
         """ Store the source text.
         """
-        self.raw = string.strip(string.expandtabs(raw))
+        self.raw = raw.expandtabs().strip()
         self.out = out
         self.times = times
         self.counts = counts
@@ -138,7 +138,7 @@ class Parser:
         pos = 0
         
         while 1:
-            pos = string.find(self.raw, '\n', pos) + 1
+            pos = self.raw.find('\n', pos) + 1
             if not pos: break
             self.lines.append(pos)
         self.lines.append(len(self.raw))
@@ -149,7 +149,9 @@ class Parser:
         self.out.write(self.stylesheet)
         self.out.write('<pre class="code">\n')
         try:
-            tokenize.tokenize(text.readline, self)
+            #tokenize.tokenize(text.readline, self)
+            for tokens in tokenize.generate_tokens(text.readline):
+                self(*tokens)
         except tokenize.TokenError as ex:
             msg = ex[0]
             line = ex[1][0]
@@ -160,9 +162,11 @@ class Parser:
                 self.cover_flag = False
         self.out.write('\n</pre>')
 
-    def __call__(self, toktype, toktext, (srow,scol), (erow,ecol), line):
+    def __call__(self, toktype, toktext, start, end, line):
         """ Token handler.
         """
+        srow, scol = start
+        erow, ecol = end
         if 0:
             print("type", toktype, token.tok_name[toktype], "text", toktext,)
             print("start", srow,scol, "end", erow,ecol, "<br>")
@@ -176,10 +180,10 @@ class Parser:
         if (not self.line_flag):
             #tspec = 'XXX.YYs'
             tspec =  '       ' + '       '
-            if (self.times.has_key(srow)):
+            if (srow in self.times.keys()):
                 #print srow
                 t = self.times[srow]
-                gb = 250*(1 - t/self.maxTime) 
+                gb = int(250*(1 - t/self.maxTime))
                 self.out.write('<span style="background-color :#FF%02X%02X; ">' %(gb, gb))
                 self.cover_flag = True
 

@@ -23,7 +23,7 @@ def setup_module():
         
     port_start = 8100
     for i in range(10):
-        proc = subprocess.Popen('python -m PYME.ParallelTasks.HTTPDataServer -r %s -f TEST -t -p %d --timeout-test=0.5' % (tmp_root, port_start + i), stderr= sys.stderr, shell=True)
+        proc = subprocess.Popen('python -m PYME.cluster.HTTPDataServer -r %s -f TEST -t -p %d --timeout-test=0.5' % (tmp_root, port_start + i), stderr= sys.stderr, shell=True)
         procs.append(proc)
         
     time.sleep(5)

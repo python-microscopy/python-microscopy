@@ -27,11 +27,11 @@ entry_points={
         'PYMEBatch = PYME.Analysis.Modules.batchProcess:main',
         'taskServerZC = PYME.ParallelTasks.taskServerZC:main',
         'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
-        'PYMEDataServer = PYME.ParallelTasks.HTTPDataServer:main',
+        'PYMEDataServer = PYME.cluster.HTTPDataServer:main',
         'PYMEClusterDup = PYME.io.clusterDuplication:main',
-        'PYMEDistributor = PYME.ParallelTasks.PYMEDistributor:main',
+        #'PYMEDistributor = PYME.ParallelTasks.PYMEDistributor:main',
         'PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main',
-        'PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main',
+        #'PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main',
         'dh5view = PYME.DSView.dsviewer:main',
         'PYMEAcquire = PYME.Acquire.PYMEAcquire:main',
         'VisGUI = PYME.LMVis.VisGUI:main',
@@ -40,8 +40,8 @@ entry_points={
         #'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
         'fitMonP = PYME.ParallelTasks.fitMonP:main',
         'bakeshop = PYME.recipes.bakeshop:main',
-        'PYMERuleServer = PYME.ParallelTasks.PYMERuleServer:main',
-        'PYMERuleNodeServer = PYME.ParallelTasks.PYMERuleNodeServer:main',
+        'PYMERuleServer = PYME.cluster.PYMERuleServer:main',
+        'PYMERuleNodeServer = PYME.cluster.PYMERuleNodeServer:main',
     ]
 }
 

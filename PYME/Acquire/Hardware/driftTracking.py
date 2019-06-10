@@ -342,7 +342,7 @@ class correlator(Pyro.core.ObjBase):
             if self.lockActive:
                 if abs(self.piezo.GetOffset()) > 20.0:
                     self.lockFocus = False
-                    print "focus lock released"
+                    print("focus lock released")
                 if abs(dz) > self.focusTolerance and self.lastAdjustment >= self.minDelay:
                     zcorr = self.piezo.GetOffset() - dz
                     if zcorr < - self.maxfac*self.focusTolerance:

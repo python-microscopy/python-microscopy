@@ -25,6 +25,7 @@ from PYME.Acquire.Hardware.Piezos.base_piezo import PiezoBase
 
 class FakePiezo(PiezoBase):
     gui_description = 'Fake %s-piezo'
+    units_um = 1.0
     
     def __init__(self, maxtravel = 100.00):
         self.max_travel = maxtravel
@@ -38,6 +39,9 @@ class FakePiezo(PiezoBase):
                 self.curpos=self.max_travel
         else:
             self.curpos=0
+
+    def MoveRel(self, iChannel, incr, bTimeOut=True):
+        self.MoveTo(iChannel, self.curpos+incr)
 
     def GetPos(self, iChannel=1):
         return self.curpos

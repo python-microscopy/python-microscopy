@@ -40,6 +40,9 @@ from PYME.IO import buffers
 from PYME.IO.image import ImageStack
 
 import logging
+
+import six
+
 logger = logging.getLogger(__name__)
     
 import numpy
@@ -244,7 +247,7 @@ def createFitTaskFromTaskDef(task):
     if isinstance(md, dict):
         #metadata was parsed with the enclosing json
         mdh.update(md)
-    elif isinstance(md, str) or isinstance(md, unicode):
+    elif isinstance(md, six.string_types):
         if md.startswith('{'):
             #metadata is a quoted json dump
             import json

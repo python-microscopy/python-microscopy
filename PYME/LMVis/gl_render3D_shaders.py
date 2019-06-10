@@ -803,9 +803,11 @@ class LMGLShaderCanvas(GLCanvas):
             self.stereo = not self.stereo
             self.Refresh()
         elif event.GetKeyCode() == 67:  # C - centre
-            self.view.translation[0] = self.sx / 2
-            self.view.translation[1] = self.sy / 2
-            self.view.translation[2] = self.sz / 2
+            # self.view.translation[0] = self.sx / 2
+            # self.view.translation[1] = self.sy / 2
+            # self.view.translation[2] = self.sz / 2
+
+            self.recenter_bbox()
             self.Refresh()
 
         elif event.GetKeyCode() == 91:  # [ decrease eye separation

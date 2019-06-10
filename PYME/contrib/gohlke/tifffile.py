@@ -1383,9 +1383,11 @@ class TIFFpage(object):
                     for i in range(len(offsets)-1))))):
             # contiguous data
             fd.seek(offsets[0], 0)
-            if not isinstance(fd, file):
-                #handle reading from BytesIO and similar
-                result = numpy.fromstring(fd.read(numpy.prod(shape)*numpy.dtype(typecode).itemsize), typecode)
+            if not hasattr(fd, 'name'):
+                # handle reading from BytesIO and similar 'file like' objects
+                # np.fromfile memmaps and hence doesn't work for things which aren't a physical file
+                # we look for the name attribute as a python version independent way of telling the difference
+                result = numpy.frombuffer(fd.read(numpy.prod(shape)*numpy.dtype(typecode).itemsize), typecode)
             else:
                 result = numpy.fromfile(fd, typecode, numpy.prod(shape))
             

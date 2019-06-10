@@ -20,7 +20,8 @@
 #
 ##################
 import wx
-import PYME.ui.autoFoldPanel as afp
+#import PYME.ui.autoFoldPanel as afp
+import PYME.ui.manualFoldPanel as afp
 import numpy
 
 class psfExtractor:
@@ -425,7 +426,7 @@ class psfExtractor:
         #defFile = os.path.splitext(os.path.split(self.visFr.GetTitle())[-1])[0] + '.am'
 
         fdialog = wx.FileDialog(None, 'Save Astigmatism Calibration as ...',
-            wildcard='AstigMAPism file (*.am)|*.am', style=wx.SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath())  #, defaultFile=defFile)
+            wildcard='AstigMAPism file (*.am)|*.am', style=wx.FD_SAVE, defaultDir=nameUtils.genShiftFieldDirectoryPath())  #, defaultFile=defFile)
         succ = fdialog.ShowModal()
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()
@@ -473,7 +474,7 @@ class psfExtractor:
             psf = numpy.concatenate(psfs, 0)
             offsetsAllChannel = numpy.asarray(offsetsAllChannel)
             offsetsAllChannel -= offsetsAllChannel[0]
-            print offsetsAllChannel
+            print(offsetsAllChannel)
 
 #            from pylab import *
 #            import cPickle

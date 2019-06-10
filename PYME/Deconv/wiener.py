@@ -39,8 +39,6 @@ fftwWisdom.load_wisdom()
 NTHREADS = 1
 FFTWFLAGS = ['measure']
 
-from PYME.DSView import View3D
-
 def resizePSF(psf, data_size):
     if not psf.shape == data_size:
         #Expand PSF to data size by fourier domain interpolation

@@ -1,6 +1,6 @@
 #PYME Simple Metadata v1
 import os
-print __file__
+print(__file__)
 md['EndTime'] = 1300676178.4949999
 md['EstimatedLaserOnFrameNo'] = 0
 md['PSFFile'] = os.path.join(os.path.split(__file__)[0], 'psf_decon.psf')
@@ -10,7 +10,7 @@ md['Analysis.BGRange'] = [0, 0]
 md['Analysis.DataFileID'] = 1571469165
 md['Analysis.DebounceRadius'] = 14
 md['Analysis.DetectionThreshold'] = 7.0
-md['Analysis.FitModule'] = u'LatFitCOIR'
+md['Analysis.FitModule'] = 'LatFitCOIR'
 md['Analysis.InterpModule'] = 'LinearInterpolator'
 #md['Analysis.EstimatorModule'] = 'priEstimator'
 md['Analysis.subtractBackground'] = False
