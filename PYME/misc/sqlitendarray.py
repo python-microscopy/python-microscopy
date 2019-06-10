@@ -31,6 +31,7 @@ import sqlite3
 from numpy import ndarray
 import zlib
 from six.moves import cPickle as pickle
+import six
 import numpy as np
 
 #teach sqlite about numpy arrays
@@ -43,7 +44,10 @@ def convert_numarray(s):
         #assume data is zipped
         uz = zlib.decompress(s)
         #print(uz)
-        return np.loads(uz, encoding='bytes')
+        if six.PY2:
+            return np.loads(uz)
+        else:
+            return np.loads(uz, encoding='bytes')
     except:
         #fall back and just try unpickling
         return pickle.loads(s)

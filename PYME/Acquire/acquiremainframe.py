@@ -293,7 +293,7 @@ class PYMEMainFrame(AUIFrame):
         
         
         for t in self.anPanels:
-            self.AddTool(*t, panel=self.anPanel)
+            self.AddTool(*t, panel=self.aqPanel)
 
         #self.splash.Destroy()
 
