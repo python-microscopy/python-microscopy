@@ -77,7 +77,7 @@ class zScanner:
         for mdgen in MetaDataHandler.provideStartMetadata:
             mdgen(mdh)
 
-        self.view = View3D(self.image, 'Live Stack', mdh = mdh)
+        self.view = View3D(self.image, 'Z Stack', mdh = mdh)
         self.running = True
         
         self.zPoss = np.arange(self.stackSettings.GetStartPos(), self.stackSettings.GetEndPos()+.95*self.stackSettings.GetStepSize(),self.stackSettings.GetStepSize()*self.stackSettings.GetDirection())
@@ -151,7 +151,7 @@ class zScanner:
 
 
     def OnCameraFrame(self, sender, frameData, **kwargs):
-        fn = floor(self.callNum) % len(self.zPoss)
+        fn = int(floor(self.callNum) % len(self.zPoss))
         self.frameNum = fn
         #print fn
         if self.sqrt:
@@ -162,7 +162,7 @@ class zScanner:
         #if not fn == self.pos:
 
         self.callNum += 1
-        fn = floor(self.callNum) % len(self.zPoss)
+        fn = int(floor(self.callNum) % len(self.zPoss))
 
         #self.piezo.MoveTo(self.piezoChan, self.zPoss[fn])
         self._movePiezo(fn)
@@ -187,6 +187,8 @@ class zScanner:
             
         self.onSingleFrame.send(self)
             
+        if fn == 0:
+            self.view.do.Optimise()
         self.view.Refresh()
 
     def _movePiezo(self, fn):

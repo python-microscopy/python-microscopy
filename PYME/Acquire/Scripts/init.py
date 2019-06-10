@@ -83,7 +83,7 @@ def sim_controls(MainFrame, scope):
 def cam_controls(MainFrame, scope):
     from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
     scope.camControls['Fake Camera'] = AndorControlFrame.AndorPanel(MainFrame, scope.cam, scope)
-    MainFrame.camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties'))
+    MainFrame.camPanels.append((scope.camControls['Fake Camera'], 'EMCCD Properties', False))
 
 @init_gui('Sample database')
 def samp_db(MainFrame, scope):
@@ -135,13 +135,13 @@ def lasers(scope):
 def laser_controls(MainFrame, scope):
     from PYME.Acquire.ui import lasersliders
     
-    lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
-    MainFrame.time1.WantNotification.append(lcf.update)
-    MainFrame.camPanels.append((lcf, 'Laser Control'))
+    #lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
+    #MainFrame.time1.WantNotification.append(lcf.update)
+    #MainFrame.camPanels.append((lcf, 'Laser Control'))
     
     lsf = lasersliders.LaserSliders(MainFrame.toolPanel, scope.state)
     MainFrame.time1.WantNotification.append(lsf.update)
-    MainFrame.camPanels.append((lsf, 'Laser Powers'))
+    MainFrame.camPanels.append((lsf, 'Laser Control'))
 
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):

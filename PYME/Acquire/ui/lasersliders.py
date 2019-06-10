@@ -55,6 +55,7 @@ class LaserSliders(wx.Panel):
         
         self.sliders = []
         self.labels = []
+        self.buttons = []
         self.sliding = False
         #self.SetTitle("Piezo Control")
         
@@ -62,7 +63,11 @@ class LaserSliders(wx.Panel):
 
         for c, laserName in enumerate(self.laserNames):
             sz = wx.BoxSizer(wx.HORIZONTAL)
-            l = wx.StaticText(self, -1, laserName)
+            b = wx.ToggleButton(self, -1, laserName, style=wx.BU_EXACTFIT)
+            b.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle)
+            self.buttons.append(b)
+            sz.Add(b, 0, wx.ALL, 2)
+            l = wx.StaticText(self, -1, '     ')
             self.labels.append(l)
             sz.Add(l, 0, wx.ALL, 2)
 
@@ -104,6 +109,11 @@ class LaserSliders(wx.Panel):
             self.scopeState['Lasers.%s.Power' % laserName] = (maxPower*2**(sl.GetValue())/1024.)
         finally:
             self.sliding = False
+            
+    def on_toggle(self, event):
+        b = event.GetEventObject()
+        laserName = self.laserNames[self.buttons.index(b)]
+        self.scopeState.setItem('Lasers.%s.On' % laserName, b.GetValue())
 
     def update(self):
         if not self.sliding:
@@ -111,7 +121,8 @@ class LaserSliders(wx.Panel):
                 power = self.scopeState['Lasers.%s.Power' % laserName]
                 maxPower = self.scopeState['Lasers.%s.MaxPower' % laserName]
                 self.sliders[ind].SetValue(round(log2(max(power*1024/maxPower, 1))))
-                self.labels[ind].SetLabel(laserName + ' - %3.2f'%(100*power/maxPower))
+                self.labels[ind].SetLabel('%3.2f'%(100*power/maxPower))
+                self.buttons[ind].SetValue(self.scopeState['Lasers.%s.On' % laserName])
                 
 class LaserToggles(wx.Panel):
     def __init__(self, parent, scopeState, winid=-1):
