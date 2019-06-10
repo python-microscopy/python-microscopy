@@ -38,7 +38,7 @@
 
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from SocketServer import ThreadingMixIn
-from StringIO import StringIO
+from io import StringIO
 import sys,urllib,re,urlparse
 from time import time, timezone, strftime, localtime, gmtime
 import os, shutil, uuid, md5, mimetypes, base64
