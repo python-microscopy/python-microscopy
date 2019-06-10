@@ -813,7 +813,7 @@ def datafrompipeline(datasource,pipeline, ctr, boxsize = 7):
         rawser[:,:,t] = datasource[int(ctrx)-bszh:int(ctrx)+bszh+1,int(ctry)-bszh:int(ctry)+bszh+1,t].squeeze()
     return (tser, rawser)
 
-import StringIO
+from io import StringIO
 import sys
 def darkAnalysisRawPlusPipeline(datasource, pipeline, driftPane=None, boxsize = 7, doplot = True,
                                 threshfactor=0.45, mdh=None, debug=1):
@@ -897,12 +897,12 @@ def analyzeDataPlusEvents(tser, rawser, tevts, doplot = True,
     
     outstr = StringIO()
 
-    outstr.write("events: %d (%d raw)" % (tp.shape[0],th.shape[0]))
-    outstr.write("dark times: %d (%d raw)" % (ctp.shape[0],ctr.shape[0]))
+    outstr.write("events: %d (%d raw) \n" % (tp.shape[0],th.shape[0]))
+    outstr.write("dark times: %d (%d raw) \n" % (ctp.shape[0],ctr.shape[0]))
     #print >>outstr, "region: %d x %d nm (%d x %d pixel)" % (bbszx,bbszy,bbszx/voxx,bbszy/voxy)
     #print >>outstr, "centered at %d,%d (%d,%d pixels)" % (x.mean(),y.mean(),x.mean()/voxx,y.mean()/voxy)
-    outstr.write("darktime: ev %.1f (raw %.1f) frames" % (taup,taur))
-    outstr.write("qunits: ev %.2f (raw %.2f), eunits: %.2f" % (200.0/taup,200.0/taur,tp.shape[0]/500.0))
+    outstr.write("darktime: ev %.1f (raw %.1f) frames \n" % (taup,taur))
+    outstr.write("qunits: ev %.2f (raw %.2f), eunits: %.2f \n" % (200.0/taup,200.0/taur,tp.shape[0]/500.0))
 
     labelstr = str(outstr.getvalue())
 
