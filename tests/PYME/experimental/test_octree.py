@@ -41,7 +41,17 @@ def test_octree_maxdepth_8():
     print('max depth: %d ' % max(ot._nodes['depth']))
     
     assert (max(ot._nodes['depth']) == 8)
+
+def test_octree_samples_per_node():
+
+    from PYME.experimental import _octree as octree
     
+    pts = np.random.rand(100000, 3).astype('f4')
+    ot = octree.Octree([0, 1, 0, 1, 0, 1], samples_per_node=5)
+    
+    ot.add_points(pts)
+        
+    assert (min(ot._nodes['nPoints'][ot._nodes['nPoints'] > 0]) == 5)
     
     
 if __name__ == '__main__':
