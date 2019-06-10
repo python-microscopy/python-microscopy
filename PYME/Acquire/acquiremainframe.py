@@ -391,7 +391,7 @@ class PYMEMainFrame(AUIFrame):
 
 
 
-    def AddTool(self, pane, title, pinned=True, panel=None, folded=True):
+    def AddTool(self, pane, title, pinned=True, folded=True, panel=None):
         """Adds a pane to the tools section of the GUI
         
         Parameters
@@ -411,7 +411,8 @@ class PYMEMainFrame(AUIFrame):
             panel.AddPane(pane)
         else:
             # a normal wx.Panel / wx.Window
-            item = afp.foldingPane(panel, -1, caption=title, pinned = pinned, folded=folded)
+            print(panel, title, pinned, folded)
+            item = afp.foldingPane(panel, -1, caption=title, pinned=pinned, folded=folded)
             pane.Reparent(item)
             item.AddNewElement(pane, priority=1)
             panel.AddPane(item)

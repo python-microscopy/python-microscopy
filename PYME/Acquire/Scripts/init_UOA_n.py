@@ -85,13 +85,13 @@ def EMCCD_cam(scope):
 def cam_controls(MainFrame, scope):
     from PYME.Acquire.Hardware.AndorNeo import ZylaControlPanel
     scope.camControls['sCMOS'] = ZylaControlPanel.ZylaControl(MainFrame, scope.cameras['sCMOS'], scope)
-    MainFrame.camPanels.append((scope.camControls['sCMOS'], 'sCMOS Properties'))
+    MainFrame.camPanels.append((scope.camControls['sCMOS'], 'sCMOS Properties', False, False))
 
 @init_gui('EMCCD Camera controls')
 def cam_controls1(MainFrame, scope):
     from PYME.Acquire.Hardware.AndorIXon import AndorControlFrame
     scope.camControls['EMCCD'] = AndorControlFrame.AndorPanel(MainFrame, scope.cameras['EMCCD'], scope)
-    MainFrame.camPanels.append((scope.camControls['EMCCD'], 'EMCCD Properties'))
+    MainFrame.camPanels.append((scope.camControls['EMCCD'], 'EMCCD Properties', False, True))
 
 @init_gui('Sample database')
 def samp_db(MainFrame, scope):
@@ -117,7 +117,7 @@ def filter_wheel(MainFrame, scope):
     scope.filterWheel = FiltWheel(filtList, 'COM5', dichroic=None)
     fpan = FiltFrame(MainFrame, scope.filterWheel)
     scope.filterWheel.SetFilterPos("ND4.5")
-    MainFrame.toolPanels.append((fpan, 'Filter Wheel'))
+    MainFrame.toolPanels.append((fpan, 'Filter Wheel', False, False))
 
 @init_hardware('Power Meter')
 def power_meter(scope):
@@ -166,13 +166,13 @@ def lasers(scope):
 def laser_controls(MainFrame, scope):
     from PYME.Acquire.ui import lasersliders
     
-    lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
-    MainFrame.time1.WantNotification.append(lcf.update)
-    MainFrame.camPanels.append((lcf, 'Laser Control'))
+    # lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
+    # MainFrame.time1.WantNotification.append(lcf.update)
+    # MainFrame.camPanels.append((lcf, 'Lasers', False, False))
     
     lsf = lasersliders.LaserSliders(MainFrame.toolPanel, scope.state)
     MainFrame.time1.WantNotification.append(lsf.update)
-    MainFrame.camPanels.append((lsf, 'Laser Powers'))
+    MainFrame.camPanels.append((lsf, 'Lasers', False, False))
 
 # @init_hardware('Line scanner')
 # def line_scanner(scope):
@@ -186,7 +186,7 @@ def line_scanner_gui(MainFrame, scope):
 
     scope.line_scanner = scanner_control.ScannerController()
     scp = scanner_panel.ScannerPanel(MainFrame.camPanel, scope.line_scanner)
-    MainFrame.camPanels.append((scp, 'Line Scanner'))
+    MainFrame.camPanels.append((scp, 'Line Scanner', False, False))
 
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):
@@ -220,7 +220,7 @@ def drift_tracking(MainFrame, scope):
     import subprocess
     import sys
     from PYME.Acquire import PYMEAcquire
-    scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking" -m "compact"' % (sys.executable, PYMEAcquire.__file__), shell=True)
+    #scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking" -m "compact"' % (sys.executable, PYMEAcquire.__file__), shell=True)
 
 
 #must be here!!!
