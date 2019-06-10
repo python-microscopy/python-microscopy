@@ -575,10 +575,10 @@ class foldPanel(wx.Panel):
         self.RegenSizer()
         
     def fold1(self, pan=None):
-        print('fold1')
+        #print('fold1')
         self._in_fold1 = True
         self.Layout()
-        print(self.GetSize()[1], self.GetBestSize()[1])
+        #print(self.GetSize()[1], self.GetBestSize()[1])
         
         if self._one_pane_active and not (pan is None):
             self._collapse_all_other_frames(pan)
@@ -595,11 +595,11 @@ class foldPanel(wx.Panel):
     def _collapse_old_frames(self, pan=None):
         candidates = [p for p in self.panes if (p.can_fold and (not (p == pan)) and (p._time_last_unfolded< (time.time()-1)))]
 
-        print(candidates)
+        #print(candidates)
 
         if len(candidates) > 0:
             i = np.argmin([p._time_last_unfolded for p in candidates])
-            print i, candidates[i].caption
+            #print i, candidates[i].caption
             candidates[i].Fold()
         
         self.Layout()
