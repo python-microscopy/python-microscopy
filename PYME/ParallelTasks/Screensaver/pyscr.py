@@ -20,7 +20,8 @@ to call pyscr.main() - that's all!
 This is distributed under a free software license, see license.txt.
 """
 
-import sys, traceback, StringIO
+import sys, traceback
+from io import StringIO
 from ctypes import *
 from winuser import*
 from wingdi import *
@@ -95,7 +96,7 @@ class Screensaver:
                 self.initialize()
             except:
                 PostMessage(self.hWnd, WM_CLOSE, 0, 0)
-                exinfo = StringIO.StringIO()
+                exinfo = StringIO()
                 traceback.print_exc(file=exinfo)
                 print(("-"*78))
                 print("Exception in users initialiaztion code:")
