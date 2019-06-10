@@ -285,7 +285,7 @@ class PYMEMainFrame(AUIFrame):
             
         if self.scope.cam.CamReady():
             self.pan_spool = HDFSpoolFrame.PanSpool(self, self.scope)
-            self.AddAqTool(self.pan_spool, 'Blinking sequence', pinned=False)
+            self.AddAqTool(self.pan_spool, 'Time/Blinking series', pinned=False, folded=False)
             
         for t in self.aqPanels:
             self.AddAqTool(*t)
@@ -378,7 +378,7 @@ class PYMEMainFrame(AUIFrame):
             self._mgr.AddPane(self.toolPanel, aui.AuiPaneInfo().
                               Name("aqControls").Caption("Acquisition").CloseButton(False), target=cpinfo)
         else:
-            aqinfo = aui.AuiPaneInfo().Name("aqControls").Caption("Acquisition Tasks").Layer(1).Position(0).Left().CloseButton(False)
+            aqinfo = aui.AuiPaneInfo().Name("aqControls").Caption("Acquisition Tasks").Layer(2).Position(0).Right().CloseButton(False)
             self._mgr.AddPane(self.aqPanel, aqinfo)
             aqinfo.dock_proportion  = int(aqinfo.dock_proportion*1.3)
 
@@ -391,7 +391,7 @@ class PYMEMainFrame(AUIFrame):
 
 
 
-    def AddTool(self, pane, title, pinned=True, panel=None):
+    def AddTool(self, pane, title, pinned=True, panel=None, folded=True):
         """Adds a pane to the tools section of the GUI
         
         Parameters
@@ -406,12 +406,12 @@ class PYMEMainFrame(AUIFrame):
             panel = self.toolPanel
         
         if isinstance(pane, afp.foldingPane):
-            pane.SetCaption(title).Pin(pinned)
+            pane.SetCaption(title).Pin(pinned).Fold(folded)
             pane.Reparent(panel)
             panel.AddPane(pane)
         else:
             # a normal wx.Panel / wx.Window
-            item = afp.foldingPane(panel, -1, caption=title, pinned = pinned)
+            item = afp.foldingPane(panel, -1, caption=title, pinned = pinned, folded=folded)
             pane.Reparent(item)
             item.AddNewElement(pane, priority=1)
             panel.AddPane(item)
@@ -420,7 +420,7 @@ class PYMEMainFrame(AUIFrame):
 #        self.toolPanel.AddFoldPanelWindow(item, panel, fpb.FPB_ALIGN_WIDTH, fpb.FPB_DEFAULT_SPACING, 10)
         #wx.LayoutAlgorithm().LayoutWindow(self, self._leftWindow1)
 
-    def AddCamTool(self, pane, title, pinned=True):
+    def AddCamTool(self, pane, title, pinned=True, folded=True):
         """Adds a pane to the Camera section of the GUI
         
         Parameters
@@ -431,10 +431,10 @@ class PYMEMainFrame(AUIFrame):
             The caption for the panel.
         """
         
-        self.AddTool(pane, title, pinned=pinned, panel=self.camPanel)
+        self.AddTool(pane, title, pinned=pinned, panel=self.camPanel, folded=folded)
         
 
-    def AddAqTool(self, pane, title, pinned=True):
+    def AddAqTool(self, pane, title, pinned=True, folded=True):
         """Adds a pane to the Acquisition section of the GUI
         
         Parameters
@@ -444,7 +444,7 @@ class PYMEMainFrame(AUIFrame):
         title : string
             The caption for the panel.
         """
-        self.AddTool(pane, title, pinned=pinned, panel=self.aqPanel)
+        self.AddTool(pane, title, pinned=pinned, panel=self.aqPanel, folded=folded)
         
 
     def OnFileOpenStack(self, event):

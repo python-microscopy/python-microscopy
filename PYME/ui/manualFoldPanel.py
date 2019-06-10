@@ -372,14 +372,17 @@ class foldingPane(wx.Panel):
         else:
             self.Fold()
             
-        self.fold1()
+        
 
     def fold1(self, pan=None):
-        self.GetParent().fold1(self)
+        try:
+            self.GetParent().fold1(self)
+        except AttributeError:
+            pass
 
     def Fold(self, fold=True):
         if not fold:
-            self.Unfold()
+            return self.Unfold()
         #print 'foo'
         if not self.folded and not self.pinnedOpen:
             for element in self.elements:
@@ -392,6 +395,7 @@ class foldingPane(wx.Panel):
             self.folded = True
             self.stCaption.Refresh()
             self.Layout()
+            self.fold1()
             return True
         else:
             return False
@@ -412,6 +416,7 @@ class foldingPane(wx.Panel):
             self.folded = False
             self.stCaption.Refresh()
             self.Layout()
+            self.fold1()
             return True
         else:
             return False
