@@ -53,10 +53,12 @@ class SelectionOverlayLayer(OverlayLayer):
                 x0, y0 = self._selection_settings.start
                 x1, y1 = self._selection_settings.finish
 
+                zc = gl_canvas.view.translation[2]
+
                 glColor3fv(self._selection_settings.colour)
                 glBegin(GL_LINE_LOOP)
-                glVertex3f(x0, y0, gl_canvas.zc)
-                glVertex3f(x1, y0, gl_canvas.zc)
-                glVertex3f(x1, y1, gl_canvas.zc)
-                glVertex3f(x0, y1, gl_canvas.zc)
+                glVertex3f(x0, y0, zc)
+                glVertex3f(x1, y0, zc)
+                glVertex3f(x1, y1, zc)
+                glVertex3f(x0, y1, zc)
                 glEnd()

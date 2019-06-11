@@ -104,7 +104,11 @@ class RecipeDisplayPanel(wx.Panel):
                 s = node.__class__.__name__
                 
                 item = afp.foldingPane(self.fp, -1, caption=s, pinned = False)
-                pan = node.edit_traits(parent=item, kind='subpanel', view='pipeline_view_min')
+                if getattr(node, '_has_buttons', False):
+                    kind = 'panel'
+                else:
+                    kind = 'subpanel'
+                pan = node.edit_traits(parent=item, kind=kind, view='pipeline_view_min')
                 pan.control.SetMinSize((150, -1))
                 item.AddNewElement(pan.control)
                 self.fp.AddPane(item)

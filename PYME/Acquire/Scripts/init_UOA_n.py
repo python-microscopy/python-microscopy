@@ -220,7 +220,7 @@ def drift_tracking(MainFrame, scope):
     import subprocess
     import sys
     from PYME.Acquire import PYMEAcquire
-    #scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking" -m "compact"' % (sys.executable, PYMEAcquire.__file__), shell=True)
+    scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking" -m "compact"' % (sys.executable, PYMEAcquire.__file__), shell=True)
 
 
 #must be here!!!

@@ -212,7 +212,7 @@ class SampleInfoDialog(wx.Dialog):
         if acquiring and self.lSlides.GetItemCount() == 1:
             self.lSlides.Select(0)
 
-        print ('foo;')
+        print('foo;')
 
     def OnAddSlide(self, event):
         import webbrowser
@@ -226,7 +226,7 @@ class SampleInfoDialog(wx.Dialog):
 
     def OnSelectSlide(self, event):
         i = event.GetIndex()
-        print (i)
+        print(i)
         self.slide = self.lSlides.qs[i]
         print((self.slide))
         self.bOK.Enable()

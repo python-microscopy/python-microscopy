@@ -72,7 +72,7 @@ def plot_and_fit(frame_nums, model='q2'):
     plt.plot(t_, f)
     plt.grid()
     
-    print res[0]**2
+    print(res[0]**2)
     
     #plt.semilogy()
 

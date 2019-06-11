@@ -274,7 +274,7 @@ class SampleInfoDialog(wx.Dialog):
         if acquiring and self.lSlides.GetItemCount() == 1:
             self.lSlides.Select(0)
 
-        print ('foo;')
+        print('foo;')
 
     def OnAddSlide(self, event):
         import webbrowser
@@ -288,7 +288,7 @@ class SampleInfoDialog(wx.Dialog):
 
     def OnSelectSlide(self, event):
         i = event.GetIndex()
-        print (i)
+        print(i)
         #self.slide = self.lSlides.qs[i]
         #r = requests.get(('http://%s/api/get_slide_info?creator=%s&reference=%s&structure=%s&index=%d'%(dbhost, self.creator, self.reference, self.structure, i)).encode())
         #resp = r.json()

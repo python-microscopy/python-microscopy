@@ -144,7 +144,7 @@ class TriangleRenderLayer(EngineLayer):
             self._datasource_keys = ['constant',] + sorted(self.datasource.keys())
         
         if not (self.engine is None or self.datasource is None):
-            print ('lw update')
+            print('lw update')
             self.update_from_datasource(self.datasource)
             self.on_update.send(self)
 
@@ -261,7 +261,7 @@ class TriangleRenderLayer(EngineLayer):
             color_map = None
             color_limit = None
 
-        print ('setting values')
+        print('setting values')
         self.set_values(vertices, normals, cs, cmap, clim, alpha)
 
     def set_values(self, vertices=None, normals=None, colors=None, color_map=None, color_limit=None, alpha=None):

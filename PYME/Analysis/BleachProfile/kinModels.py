@@ -57,7 +57,10 @@ def goalfcn(indepvars = ''):
     indepvars = [s.strip() for s in indepvars.split(',')]
     
     def wrapfcn(fcn):
-        varNames = inspect.getargspec(fcn).args
+        try:
+            varNames = inspect.getfullargspec(fcn).args
+        except AttributeError:  # python 2
+            varNames = inspect.getargspec(fcn).args
         paramNames = [v for v in varNames if not v in indepvars]
         #nargs = len(paramNames)
         
@@ -207,7 +210,10 @@ def fITmod2(A, Ndet, lamb, tauI, a, Acrit, bg, N, t, Nco):
 #########################
 #define decorator to apply each fit fuction independantly over each colour channel
 def applyByChannel(fcn):
-    args = inspect.getargspec(fcn).args
+    try:
+        args = inspect.getfullargspec(fcn).args
+    except AttributeError:  # python 2
+        args = inspect.getargspec(fcn).args
     def colfcnwrap(pipeline, quiet = False):
         colourFilter = pipeline.colourFilter
         metadata = pipeline.mdh
