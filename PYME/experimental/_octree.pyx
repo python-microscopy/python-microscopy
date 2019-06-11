@@ -173,9 +173,8 @@ cdef class Octree:
     
     def _resize_nodes(self):
         old_nodes = self._nodes
-        # Adjust by 1.5x every time we grow. This allows us to reuse continuous memory 
-        # blocks every 5 reallocs.
-        new_size = old_nodes.shape[0]*1.5
+        # Adjust by 1.5x every time we grow.
+        new_size = int(old_nodes.shape[0]*1.5 + 0.5)
         
         print('Resizing node store - new size: %d' % new_size)
         #allocate new memory
