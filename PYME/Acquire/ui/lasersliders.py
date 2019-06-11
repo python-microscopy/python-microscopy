@@ -35,7 +35,7 @@ import re
 #from noclosefr import * 
 
 class LaserSliders(wx.Panel):
-    def __init__(self, parent, scopeState, winid=-1):
+    def __init__(self, parent, scopeState, winid=-1, ):
         # begin wxGlade: MyFrame1.__init__
         #kwds["style"] = wx.DEFAULT_FRAME_STYLE
         wx.Panel.__init__(self, parent, winid)
@@ -66,10 +66,10 @@ class LaserSliders(wx.Panel):
             b = wx.ToggleButton(self, -1, laserName, style=wx.BU_EXACTFIT)
             b.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle)
             self.buttons.append(b)
-            sz.Add(b, 0, wx.ALL, 2)
+            sz.Add(b, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
             l = wx.StaticText(self, -1, '     ')
             self.labels.append(l)
-            sz.Add(l, 0, wx.ALL, 2)
+            sz.Add(l, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
 
             sl = wx.Slider(self, -1, self.scopeState['Lasers.%s.Power' % laserName], 0, 10, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
             
@@ -77,7 +77,7 @@ class LaserSliders(wx.Panel):
                 #FIXME for wx >= 4
                 sl.SetTickFreq(10,1)
             
-            sz.Add(sl, 1, wx.ALL|wx.EXPAND, 2)
+            sz.Add(sl, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 2)
             sizer_2.Add(sz,1,wx.EXPAND,0)
 
             self.sliders.append(sl)
@@ -85,8 +85,37 @@ class LaserSliders(wx.Panel):
         #sizer_2.AddSpacer(5)
 
         self.Bind(wx.EVT_SCROLL,self.onSlide)
-                
-       
+
+        # discover our switchable (but not power controllable) lasers
+        self.switchedLaserNames = []
+        self.cBoxes=[]
+
+        for k in self.scopeState.keys():
+            m = re.match(r'Lasers\.(?P<laser_name>.*)\.On', k)
+            if m is not None:
+                ln = m.group('laser_name')
+                if ln not in self.laserNames:
+                    self.switchedLaserNames.append(ln)
+
+        self.switchedLaserNames.sort()
+
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        n = 0
+        self.cBoxes = []
+
+        for laserName in self.switchedLaserNames:
+            cb = wx.CheckBox(self, -1, laserName)
+            cb.SetValue(self.scopeState['Lasers.%s.On' % laserName])
+            cb.Bind(wx.EVT_CHECKBOX, self.OnCbOn)
+
+            self.cBoxes.append(cb)
+            hsizer.Add(cb, 1, wx.EXPAND, 0)
+            n += 1
+            if (n % 3) == 0:
+                sizer_2.Add(hsizer, 0, wx.EXPAND, 0)
+                hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        sizer_2.Add(hsizer, 0, wx.EXPAND, 0)
         #self.SetAutoLayout(1)
         self.SetSizer(sizer_2)
         sizer_2.Fit(self)
@@ -115,6 +144,14 @@ class LaserSliders(wx.Panel):
         laserName = self.laserNames[self.buttons.index(b)]
         self.scopeState.setItem('Lasers.%s.On' % laserName, b.GetValue())
 
+    def OnCbOn(self, event):
+        cb = event.GetEventObject()
+        ind = self.cBoxes.index(cb)
+
+        laserName = self.switchedLaserNames[ind]
+
+        self.scopeState['Lasers.%s.On' % laserName] = cb.GetValue()
+
     def update(self):
         if not self.sliding:
             for ind, laserName in enumerate(self.laserNames):
@@ -122,7 +159,15 @@ class LaserSliders(wx.Panel):
                 maxPower = self.scopeState['Lasers.%s.MaxPower' % laserName]
                 self.sliders[ind].SetValue(round(log2(max(power*1024/maxPower, 1))))
                 self.labels[ind].SetLabel('%3.2f'%(100*power/maxPower))
-                self.buttons[ind].SetValue(self.scopeState['Lasers.%s.On' % laserName])
+                lon = self.scopeState['Lasers.%s.On' % laserName]
+                self.buttons[ind].SetValue(lon)
+                if lon:
+                    self.buttons[ind].SetBackgroundColour("red")
+                else:
+                    self.buttons[ind].SetBackgroundColour(wx.NullColour)
+
+        for laserName, cb in zip(self.switchedLaserNames, self.cBoxes):
+            cb.SetValue(self.scopeState['Lasers.%s.On' % laserName])
                 
 class LaserToggles(wx.Panel):
     def __init__(self, parent, scopeState, winid=-1):

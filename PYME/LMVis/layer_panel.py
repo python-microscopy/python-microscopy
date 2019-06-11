@@ -32,19 +32,23 @@ class LayerPane(afp.foldingPane):
         self.il.Add(wx.ArtProvider.GetBitmap(wx.ART_PLUS, wx.ART_TOOLBAR, (16,16)))
         
         print('Image list size: %d' % self.il.GetImageCount())
+
+        self.fp = afp.foldPanel(self, single_active_pane=True)
+
+        self.AddNewElement(self.fp)
         
         self.pan = wx.Panel(self, -1)
 
         self.vsizer = wx.BoxSizer(wx.VERTICAL)
         
-        self.nb = wx.Notebook(self.pan, size=(200, -1))
-        self.nb.AssignImageList(self.il)
+        #self.nb = wx.Notebook(self.pan, size=(200, -1))
+        #self.nb.AssignImageList(self.il)
         
         self.pages = []
         
         self.update()
 
-        self.vsizer.Add(self.nb, 1, wx.ALL|wx.EXPAND, 0)
+        #self.vsizer.Add(self.nb, 1, wx.ALL|wx.EXPAND, 0)
         
         bAddLayer = wx.Button(self.pan, -1, 'New', style=wx.BU_EXACTFIT)
         bAddLayer.Bind(wx.EVT_BUTTON, lambda e : self.visFr.add_pointcloud_layer())
@@ -57,8 +61,67 @@ class LayerPane(afp.foldingPane):
         self.visFr.layer_added.connect(self.update)
         
         #self.nb.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
-        
+
     def update(self, *args, **kwargs):
+    
+        #self.nb.DeleteAllPages()
+        #for p in self.pages:
+        #p.control.Destroy()
+        #    p.dispose()
+        #    pass
+    
+        #while (self.nb.GetPageCount() > 0):
+        #    pg = self.nb.RemovePage(0)
+    
+        for p in self.pages:
+            p.control.Close()
+            #p.dispose()
+            pass
+        
+        self.fp.Clear()
+        
+        h = 0
+    
+        self.pages = []
+        print('Creating layers GUI')
+        for i, layer in enumerate(self.visFr.layers):
+            #print(i, layer)
+            item = afp.foldingPane(self.fp, -1, caption='Layer %d' % i, pinned=False, folded=False)
+            page = layer.edit_traits(parent=item, kind='subpanel')
+            item.AddNewElement(page.control)
+            
+            h = max(h, item.GetBestSize().height)
+            self.fp.AddPane(item)
+            self.pages.append(page)
+            #self.fp.fold1(item)
+            #print('Added layer: ', i)
+            
+        
+        n_layers = len(self.pages)
+        if  n_layers > 1:
+            h += (n_layers -1)*(item.stCaption.GetBestSize().height+5)
+        
+        print('height: ', h)
+        self.fp.SetMinSize((200, h))
+        
+        #self.vsizer.Fit(self.pan)
+        #self.pan.SetMinSize(self.pan.GetSize())
+        
+    
+        self.sizer.Fit(self)
+    
+        #print self.pan.GetBestSize(), self.pan.GetSize(), self.GetBestSize(), self.GetSize()
+        print('NB best size: ' + repr(self.fp.GetBestSize()))
+    
+        try:
+            self.GetParent().GetParent().Layout()
+        except AttributeError:
+            pass
+
+        if n_layers > 1:
+            item.Unfold()
+        
+    def _update(self, *args, **kwargs):
         
         #self.nb.DeleteAllPages()
         #for p in self.pages:
@@ -97,6 +160,7 @@ class LayerPane(afp.foldingPane):
             self.GetParent().GetParent().Layout()
         except AttributeError:
             pass
+         
          
             
         #self.nb.AddPage(wx.Panel(self.nb), 'New', imageId=0)

@@ -60,7 +60,7 @@ class FilterPanel(wx.Panel):
         #GUI stuff
         vsizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.lFiltKeys = wx.ListCtrl(self, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER, size=(-1, 30*(max(len(self.filterKeys.keys())+1, 5))))
+        self.lFiltKeys = wx.ListCtrl(self, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.SUNKEN_BORDER, size=(-1, 25*(max(len(self.filterKeys.keys())+1, 5))))
 
         self.lFiltKeys.InsertColumn(0, 'Key')
         self.lFiltKeys.InsertColumn(1, 'Min')
@@ -94,8 +94,8 @@ class FilterPanel(wx.Panel):
         
 
         vsizer.Add(self.lFiltKeys, 1, wx.ALL|wx.EXPAND, 0)
-        self.stNumFiltered = wx.StaticText(self, -1, '')
-        vsizer.Add(self.stNumFiltered, 0, wx.ALL | wx.EXPAND, 2)
+        #self.stNumFiltered = wx.StaticText(self, -1, '')
+        #vsizer.Add(self.stNumFiltered, 0, wx.ALL | wx.EXPAND, 2)
         self.SetSizerAndFit(vsizer)
         
     def update(self, filter_keys, data_source):

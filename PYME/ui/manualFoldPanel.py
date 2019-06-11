@@ -122,12 +122,13 @@ DEFAULT_CAPTION_STYLE = {
 'ACTIVE_PIN_COLOUR'   : (0, 0, 0),
 'ELLIPSES_COLOUR'     : (170, 170, 170),
 'ELLIPSES_RADIUS'     : 2,
+'HAS_PIN' : True,
 }
 
 class CaptionBar(wx.Window):
 
     def __init__(self, parent, id = wx.ID_ANY, pos=(-1,-1), caption="",
-                 foldIcons=None, cbstyle=DEFAULT_CAPTION_STYLE):
+                 foldIcons=None, cbstyle=DEFAULT_CAPTION_STYLE, pin_bits=pin_bits):
 
         wx.Window.__init__(self, parent, id, pos=pos,
                            size=(-1,cbstyle['HEIGHT']), style=wx.NO_BORDER)
@@ -202,7 +203,7 @@ class CaptionBar(wx.Window):
 
         self.pinButtonRect = (wndRect[2] - h - y0, y0, w,h)
 
-        if self.parent.foldable:
+        if self.style['HAS_PIN'] and self.parent.foldable:
             if self.parent.pinnedOpen:
                 gc.DrawBitmap(self._active_pin_bitmap, *self.pinButtonRect)
             else:
@@ -229,8 +230,7 @@ class CaptionBar(wx.Window):
 
         gc.PopState()
 
-
-
+    
     def OnLeftClick(self, event):
         if wx.Rect(*self.pinButtonRect).Contains(event.GetPosition()):
             self.parent.TogglePin()
@@ -313,6 +313,10 @@ class foldingPane(wx.Panel):
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
         
+    @property
+    def can_fold(self):
+        return self.foldable and not (self.pinnedOpen or self.folded)
+
     def SetCaption(self, caption):
         self.caption = caption
         self.stCaption.SetCaption(caption)
@@ -589,10 +593,14 @@ class foldPanel(wx.Panel):
         self.Refresh()
         
     def _collapse_old_frames(self, pan=None):
-        candidates = [p for p in self.panes if (p.foldable and not p.folded and (not (p == pan)) and (p._time_last_unfolded< (time.time()-1)))]
-        
+        candidates = [p for p in self.panes if (p.can_fold and (not (p == pan)) and (p._time_last_unfolded< (time.time()-1)))]
+
+        #print(candidates)
+
         if len(candidates) > 0:
-            candidates[np.argmin([p._time_last_unfolded for p in candidates])].Fold()
+            i = np.argmin([p._time_last_unfolded for p in candidates])
+            #print i, candidates[i].caption
+            candidates[i].Fold()
         
         self.Layout()
         self.Refresh()

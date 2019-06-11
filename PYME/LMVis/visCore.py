@@ -146,7 +146,7 @@ class VisGUICore(object):
         #if HAVE_DRIFT_CORRECTION:
         #    self.driftPane = CreateDriftPane(sidePanel, self.pipeline.mapping, self.pipeline)
 
-        #self.filterPane = CreateFilterPane(sidePanel, self.pipeline.filterKeys, self.pipeline, self)
+        self.filterPane = CreateFilterPane(sidePanel, self.pipeline.filterKeys, self.pipeline, self)
 
         if PYME.config.get('VisGUI-new_layers', False):
             #self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
@@ -417,7 +417,7 @@ class VisGUICore(object):
         layer.on_update.connect(self.glCanvas.refresh)
         self.glCanvas.refresh()
     
-        self.layer_added.send_robust(self)
+        self.layer_added.send(self)
 
     
     @property

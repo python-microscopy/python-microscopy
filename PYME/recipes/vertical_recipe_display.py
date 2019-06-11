@@ -104,7 +104,11 @@ class RecipeDisplayPanel(wx.Panel):
                 s = node.__class__.__name__
                 
                 item = afp.foldingPane(self.fp, -1, caption=s, pinned = False)
-                pan = node.edit_traits(parent=item, kind='panel', view='pipeline_view_min')
+                if getattr(node, '_has_buttons', False):
+                    kind = 'panel'
+                else:
+                    kind = 'subpanel'
+                pan = node.edit_traits(parent=item, kind=kind, view='pipeline_view_min')
                 pan.control.SetMinSize((150, -1))
                 item.AddNewElement(pan.control)
                 self.fp.AddPane(item)
@@ -144,7 +148,7 @@ class RecipeDisplayPanel(wx.Panel):
                         #ax.plot([2, xi, xi, x_0], [yi, yi, y, y], '-', color=_col(node), lw=2)
 
                         #print('Adding static text')
-                        item = afp.foldingPane(self.fp, -1, caption=None, pinned=True, folded=False, padding=0)
+                        item = afp.foldingPane(self.fp, -1, caption=None, pinned=True, folded=False, padding=0, style=0)
                         st = wx.StaticText(item, -1, node)
                         
                         node_col = tuple([int(v) for v in (255 * self._col(node)[:3])])
@@ -171,7 +175,7 @@ class RecipeDisplayPanel(wx.Panel):
                     
                     x_0 = x_vals[self.x0s[node]]
 
-                    item = afp.foldingPane(self.fp, -1, caption=None, pinned=True, folded=False, padding=0)
+                    item = afp.foldingPane(self.fp, -1, caption=None, pinned=True, folded=False, padding=0, style=0)
                     st = wx.StaticText(item, -1, node)
 
                     node_col = tuple([int(v) for v in (255 * self._col(node)[:3])])
