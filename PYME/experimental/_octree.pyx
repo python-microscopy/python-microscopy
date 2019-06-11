@@ -173,7 +173,9 @@ cdef class Octree:
     
     def _resize_nodes(self):
         old_nodes = self._nodes
-        new_size = old_nodes.shape[0]*2 #double whenever we grow (TODO - what is the best growth factor)
+        # Adjust by 1.5x every time we grow. This allows us to reuse continuous memory 
+        # blocks every 5 reallocs.
+        new_size = old_nodes.shape[0]*1.5
         
         print('Resizing node store - new size: %d' % new_size)
         #allocate new memory
@@ -227,7 +229,7 @@ cdef class Octree:
         
         new_node = &self._cnodes[new_idx]
         
-        new_node.nPoints = self._samples_per_node
+        new_node.nPoints = 1
         new_node.centre_x = parent.centre_x + _octant_sign_x[child_idx]*deltax
         new_node.centre_y = parent.centre_y + _octant_sign_y[child_idx]*deltay
         new_node.centre_z = parent.centre_z + _octant_sign_z[child_idx]*deltaz
@@ -300,7 +302,7 @@ cdef class Octree:
             
     def add_points(self, np.float32_t[:,:] pts):
 
-        # Double check for oversampling
+        # Double check for oversmoothing
         if len(pts) < self._samples_per_node:
             self._samples_per_node = len(pts)
 
