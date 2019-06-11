@@ -496,6 +496,7 @@ class MarchingCubes(object):
         triangles_returned = intersections[idxs, triangles_pruned].reshape(idxs.shape[0] // 3, 3, 3)
         normals = np.cross((triangles_returned[:, 2] - triangles_returned[:, 1]),
                            (triangles_returned[:, 0] - triangles_returned[:, 1]))
+                           
         triangles_stl = np.zeros(triangles_returned.shape[0], dtype=self.dt)
         triangles_stl['vertex0'] = triangles_returned[:, 0, :]
         triangles_stl['vertex1'] = triangles_returned[:, 1, :]

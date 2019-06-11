@@ -9,6 +9,29 @@ class TriangularMesh(object):
         self._neighbors = None
         self._face_indices = None
         self._face_areas = None
+        self.__mean_edge_length = None
+        #self.mappings = {'x': self.vertices[:,0], 'y': self.vertices[:,1], 'z': self.vertices[:,2]}
+        self.vertex_properties = ['x', 'y', 'z']
+
+    def keys(self):
+        return list(self.vertex_properties)
+
+    def __getitem__(self, k):
+        # this defers evaluation of the properties until we actually access them, as opposed to the mappings which
+        # stored the values on class creation.
+        return getattr(self, k)
+        
+    @property
+    def x(self):
+        return self.vertices[:,0]
+        
+    @property
+    def y(self):
+        return self.vertices[:,1]
+        
+    @property
+    def z(self):
+        return self.vertices[:,2]
 
         self.vertex_properties = ['x', 'y', 'z']
 
@@ -24,18 +47,6 @@ class TriangularMesh(object):
             raise KeyError('Key %s not defined' % k)
         
         return res
-
-    @property
-    def x(self):
-        return self.vertices[:, 0]
-
-    @property
-    def y(self):
-        return self.vertices[:, 1]
-
-    @property
-    def z(self):
-        return self.vertices[:, 2]
 
     @classmethod
     def from_stl(cls, filename):
@@ -82,6 +93,7 @@ class TriangularMesh(object):
         self._neighbors = None
         self._face_indices = None
         self._face_areas = None
+        self.__mean_edge_length = None
 
     @property
     def face_normals(self):
@@ -93,11 +105,23 @@ class TriangularMesh(object):
             triangles = self.vertices[self.faces]
             u = triangles[:, 2] - triangles[:, 1]
             v = triangles[:, 0] - triangles[:, 1]
+            w = triangles[:, 0] - triangles[:, 2]
+            u_mean = np.mean(np.linalg.norm(u, axis=1))
+            v_mean = np.mean(np.linalg.norm(v, axis=1))
+            w_mean = np.mean(np.linalg.norm(w, axis=1))
+            self.__mean_edge_length = np.mean([u_mean, v_mean, w_mean])
             n = np.cross(u, v, axis=1)
             nn = np.linalg.norm(n, axis=1)
             self._face_areas = 0.5*nn
             self._face_normals = n/nn[:,None]
+            self._face_normals[np.isnan(self.face_normals)] = 0
         return self._face_normals
+
+    @property
+    def _mean_edge_length(self):
+        if self.__mean_edge_length == None:
+            self.face_normals
+        return self.__mean_edge_length
 
     @property
     def face_areas(self):
@@ -129,7 +153,10 @@ class TriangularMesh(object):
                 nn = np.linalg.norm(nm)
                 nm = nm/nn
 
+                if np.any(np.isnan(nm)):
+                    nm = np.array([0,0,0])
                 self._vertex_normals[iv] = nm
+
         return self._vertex_normals
 
     @property
@@ -143,6 +170,7 @@ class TriangularMesh(object):
         if self._face_indices is None:
             self.get_face_indices_neighbors()
         return self._face_indices
+
 
     def get_face_indices_neighbors(self):
         """
@@ -221,8 +249,8 @@ class TriangularMesh(object):
         """
         from PYME.IO.FileUtils import stl
 
-        dt = np.dtype([('normal', '3f4'), ('vertex0', '3f4'), 
-                       ('vertex1', '3f4'), ('vertex2', '3f4')])
+        dt = np.dtype([('normal', '3f4'), ('vertex0', '3f4'), ('vertex1', '3f4'), 
+                       ('vertex2', '3f4'), ('attrib', 'u2')])
 
         triangles_stl = np.zeros(self.face_normals.shape[0], dtype=dt)
         triangles_stl['vertex0'] = self.vertices[self.faces[:, 0]]
@@ -237,12 +265,15 @@ class TriangularMesh(object):
         Convert mesh to numpy-stl format for viewing in a
         Jupyter notebook. This is mostly a debugging function.
         """
-        from stl import mesh
+        try:
+            from stl import mesh
 
-        obj = mesh.Mesh(np.zeros(self.faces.shape[0], 
-                        dtype=mesh.Mesh.dtype))
-        for i, f in enumerate(self.faces):
-            for j in range(3):
-                obj.vectors[i][j] = self.vertices[f[j],:]
+            obj = mesh.Mesh(np.zeros(self.faces.shape[0], 
+                            dtype=mesh.Mesh.dtype))
+            for i, f in enumerate(self.faces):
+                for j in range(3):
+                    obj.vectors[i][j] = self.vertices[f[j],:]
 
-        return obj
+            return obj
+        except ImportError:
+            raise ImportError('Please install numpy-stl to use this feature.')
