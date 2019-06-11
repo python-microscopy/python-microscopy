@@ -69,10 +69,13 @@ for filtName in skFilterNames:
     filt = getattr(skf, filtName)
     
     FilterID =  'SKF_' + filtName
+
+    try:
+        argspec = inspect.getfullargspec(filt)
+    except AttributeError:  # python 2
+        argspec = inspect.getargspec(filt)
     
-    argspec = inspect.getargspec(filt)
-    
-    if len(argspec.args) > 0:        
+    if len(argspec.args) > 0:
         args = argspec.args[1:]
         
         if len(args) > 0:
