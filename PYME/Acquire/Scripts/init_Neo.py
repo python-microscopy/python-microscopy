@@ -193,7 +193,7 @@ try:
     scope.filterWheel.SetFilterPos("ND4")
     toolPanels.append((scope.filterWheel, 'Filter Wheel'))
 except:
-    print 'Error starting filter wheel ...'
+    print('Error starting filter wheel ...')
 """)
 
 

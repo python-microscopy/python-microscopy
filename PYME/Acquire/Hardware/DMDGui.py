@@ -104,7 +104,7 @@ class DMDTestPattern(wx.Panel):
         self.SetSizerAndFit(vsizer)
 
     def OnCDMDtp(self, event):
-        print ("select pattern %s" % self.cDMDtp.GetStringSelection())
+        print("select pattern %s" % self.cDMDtp.GetStringSelection())
 
     def OnBSendButton(self, event):
         self.lc.SetTestPattern(test_pattern.index(self.cDMDtp.GetStringSelection()))

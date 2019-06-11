@@ -48,7 +48,7 @@ from PYME.Acquire.Hardware.comports import ComPort
 try:
     from PYME.Acquire.pymeconf import hwconfig
 except ImportError:
-    print "could not import pymeconf.py"
+    print("could not import pymeconf.py")
     hwconfig = None
 
 # alternative local setup
@@ -268,7 +268,7 @@ try:
     scope.filterWheel.SetFilterPos("ND4")
     toolPanels.append((scope.filterWheel, 'Filter Wheel'))
 except:
-    print 'Error starting filter wheel ...'
+    print('Error starting filter wheel ...')
 ''')
 
 
@@ -334,7 +334,7 @@ try:
     time1.WantNotification.append(acf.refresh)
     camPanels.append((acf, 'Shutter Control'))
 except:
-    print 'Error starting arc-lamp shutter ...'
+    print('Error starting arc-lamp shutter ...')
 ''')
 
 #

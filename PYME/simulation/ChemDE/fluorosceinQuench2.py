@@ -90,8 +90,8 @@ s.initialConditions['O2'] = 0.1*air_sat_O2_conc
 
 
 exPower = I0*k_emmision/excitations_per_W_per_cm2_per_us
-print u'Excitation Power: %3.2g W/cm\xB2' % (exPower)
-print u'                  = %3.2g mW over a 15 \u03BCm field' % (exPower*(0.0015**2)*1e3)
+print(u'Excitation Power: %3.2g W/cm\xB2' % (exPower))
+print(u'                  = %3.2g mW over a 15 \u03BCm field' % (exPower*(0.0015**2)*1e3))
 
 def dyedyemodt(p, t):
     '''Model for bleach decay when the rate is dominated by dye-dye interactions.
@@ -137,7 +137,7 @@ def plotInitialDecay():
     loglog(t_, s0)
     
     fr = rawIntensity.FitModel(dyedyemodt, [s0[0], t_[1] - t_[0], 1.], s0, t_)
-    print fr[0]
+    print(fr[0])
     
     loglog(t_, dyedyemodt(fr[0], t_))
 
@@ -182,7 +182,7 @@ def stateLifetimes(spec, concs):
         r1 = FitModel(emod, [1e-3, 3], res['R'], t/1e6)
         tRs.append(r1[0][1])
 
-        print max(tXs[-1], tRs[-1])
+        print(max(tXs[-1], tRs[-1]))
         #t = linspace(1, 5e6*max(max(tXs[-1], tRs[-1]), 1e-3), 1000)
 
     loglog(concs, tXs, label='X', lw=2)

@@ -205,7 +205,7 @@ try:
     scope.filtPan = FiltFrame(MainFrame, scope.filterWheel)
     toolPanels.append((scope.filtPan, 'Filter Wheel'))
 except:
-    print 'Error starting filter wheel ...'
+    print('Error starting filter wheel ...')
 ''')
 
 InitBG('DMD', '''

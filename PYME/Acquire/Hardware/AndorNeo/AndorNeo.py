@@ -383,15 +383,15 @@ class AndorBase(SDK3Camera):
     def SetROI(self, x1, y1, x2, y2):
         #shouldn't do GUI stuff here, but quick way of making it work
         if self._fixed_ROIs:
-            print 'Setting ROI, using fixed sizes'
+            print('Setting ROI, using fixed sizes')
             import wx
             dlg = wx.SingleChoiceDialog(None, 'Please select the ROI size', 'Camera ROI', ['%dx%d at (%d, %d)' % roi for roi in self.validROIS])
             dlg.ShowModal()
             self.SetROIIndex(dlg.GetSelection())
             dlg.Destroy()
         else: # allow to select ROI size more freely
-            print "free ROI choice"
-            print "requested: ", x1,y1,x2-x1+1,y2-y1+1
+            print("free ROI choice")
+            print("requested: ", x1,y1,x2-x1+1,y2-y1+1)
             if x1 < 1:
                 x1 = 1
             if y1 < 1:
@@ -418,7 +418,7 @@ class AndorBase(SDK3Camera):
                 w10 -= 10
             h = y2-y1+1
             # now set as specified
-            print "setting: ", x1,y1,w10,h
+            print("setting: ", x1,y1,w10,h)
             self.AOIWidth.setValue(w10)
             self.AOILeft.setValue(x1)
             self.AOIHeight.setValue(h)
@@ -569,10 +569,10 @@ class AndorBase(SDK3Camera):
     def SetEMGain(self, gain):
         self.EMGain = gain
         if gain > 0:
-            print 'low noise mode'
+            print('low noise mode')
             self.SetGainMode('low noise')
         else:
-            print 'high dynamic range mode'
+            print('high dynamic range mode')
             self.SetGainMode('high dynamic range')
     
     def SetAcquisitionMode(self, aqMode):
