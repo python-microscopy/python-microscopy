@@ -665,9 +665,8 @@ class microscope(object):
         for c in self.cameras.values():
             c.SetActive(False)
             c.SetShutter(False)
-            
-        for k in self.cameras.keys():
-            self.camControls[k].GetParent().Hide()#GetParent().UnPin()
+
+
         
         self.cam = self.cameras[camName]
         if 'lightpath' in dir(self):
@@ -678,11 +677,24 @@ class microscope(object):
             self.cam.SetShutter(self.camControls[camName].cbShutter.GetValue())
         except AttributeError:
             pass #for cameras which don't have a shutter
-        
-        
-        #TODO this needs to move to the GUI        
-        self.camControls[camName].GetParent().Show()#GetParent().PinOpen()
-        self.camControls[camName].GetParent().GetParent().Layout()
+
+        # TODO this needs to move to the GUI
+        from PYME.ui import manualFoldPanel as afp
+        for k in self.cameras.keys():
+            ctrl = self.camControls[k]
+            if isinstance(ctrl, afp.foldingPane):
+                ctrl.Hide()
+            else:
+                ctrl.GetParent().Hide()  # GetParent().UnPin()
+
+        ctrl = self.camControls[camName]
+        if isinstance(ctrl, afp.foldingPane):
+            ctrl.Show()
+            ctrl.GetParent().Layout()
+        else:
+            ctrl.GetParent().Show()
+            ctrl.GetParent().GetParent().Layout()
+        # End GUI TODO
 
         try:
             self.frameWrangler.cam = self.cam
