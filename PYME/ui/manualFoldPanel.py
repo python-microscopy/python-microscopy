@@ -122,12 +122,13 @@ DEFAULT_CAPTION_STYLE = {
 'ACTIVE_PIN_COLOUR'   : (0, 0, 0),
 'ELLIPSES_COLOUR'     : (170, 170, 170),
 'ELLIPSES_RADIUS'     : 2,
+'HAS_PIN' : True,
 }
 
 class CaptionBar(wx.Window):
 
     def __init__(self, parent, id = wx.ID_ANY, pos=(-1,-1), caption="",
-                 foldIcons=None, cbstyle=DEFAULT_CAPTION_STYLE):
+                 foldIcons=None, cbstyle=DEFAULT_CAPTION_STYLE, pin_bits=pin_bits):
 
         wx.Window.__init__(self, parent, id, pos=pos,
                            size=(-1,cbstyle['HEIGHT']), style=wx.NO_BORDER)
@@ -202,7 +203,7 @@ class CaptionBar(wx.Window):
 
         self.pinButtonRect = (wndRect[2] - h - y0, y0, w,h)
 
-        if self.parent.foldable:
+        if self.style['HAS_PIN'] and self.parent.foldable:
             if self.parent.pinnedOpen:
                 gc.DrawBitmap(self._active_pin_bitmap, *self.pinButtonRect)
             else:
@@ -229,8 +230,7 @@ class CaptionBar(wx.Window):
 
         gc.PopState()
 
-
-
+    
     def OnLeftClick(self, event):
         if wx.Rect(*self.pinButtonRect).Contains(event.GetPosition()):
             self.parent.TogglePin()

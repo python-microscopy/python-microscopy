@@ -365,7 +365,7 @@ class ViewClippingPanel(wx.Panel):
 
 def GenViewClippingPanel(visgui, pnl, title='View Clipping'):
     """Generate a ponts pane and insert into the given panel"""
-    item = afp.foldingPane(pnl, -1, caption=title, pinned=True)
+    item = afp.foldingPane(pnl, -1, caption=title, pinned=False)
     
     pan = ViewClippingPanel(item, visgui.glCanvas)
     item.AddNewElement(pan)
