@@ -67,20 +67,22 @@ class LaserSliders(wx.Panel):
             b.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle)
             self.buttons.append(b)
             sz.Add(b, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-            l = wx.StaticText(self, -1, '     ')
-            self.labels.append(l)
-            sz.Add(l, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
+            
 
-            sl = wx.Slider(self, -1, self.scopeState['Lasers.%s.Power' % laserName], 0, 10, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
+            sl = wx.Slider(self, -1, self.scopeState['Lasers.%s.Power' % laserName], 0, 100, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
             
             if wx.version() < '4':
                 #FIXME for wx >= 4
                 sl.SetTickFreq(10,1)
             
             sz.Add(sl, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 2)
-            sizer_2.Add(sz,1,wx.EXPAND,0)
-
             self.sliders.append(sl)
+
+            l = wx.StaticText(self, -1, '100.0')
+            self.labels.append(l)
+            sz.Add(l, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+
+            sizer_2.Add(sz, 1, wx.EXPAND, 0)
 
         #sizer_2.AddSpacer(5)
 
@@ -135,7 +137,7 @@ class LaserSliders(wx.Panel):
             #self.lasers[ind].SetPower(self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.)
             laserName = self.laserNames[ind]
             maxPower = self.scopeState['Lasers.%s.MaxPower' % laserName]
-            self.scopeState['Lasers.%s.Power' % laserName] = (maxPower*2**(sl.GetValue())/1024.)
+            self.scopeState['Lasers.%s.Power' % laserName] = (maxPower*2**(sl.GetValue()/10.)/1024.)
         finally:
             self.sliding = False
             
@@ -157,8 +159,8 @@ class LaserSliders(wx.Panel):
             for ind, laserName in enumerate(self.laserNames):
                 power = self.scopeState['Lasers.%s.Power' % laserName]
                 maxPower = self.scopeState['Lasers.%s.MaxPower' % laserName]
-                self.sliders[ind].SetValue(round(log2(max(power*1024/maxPower, 1))))
-                self.labels[ind].SetLabel('%3.2f'%(100*power/maxPower))
+                self.sliders[ind].SetValue(round(10*log2(max(power*1024/maxPower, 1))))
+                self.labels[ind].SetLabel('%.3g'%(100*power/maxPower))
                 lon = self.scopeState['Lasers.%s.On' % laserName]
                 self.buttons[ind].SetValue(lon)
                 if lon:

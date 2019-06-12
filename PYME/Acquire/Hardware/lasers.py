@@ -29,6 +29,7 @@ import threading
 class Laser(object):
     powerControlable = False
     MAX_POWER = 1
+    units='\%'
 
     def __init__(self, name,turnOn=False, scopeState=None):
         self.name= name
