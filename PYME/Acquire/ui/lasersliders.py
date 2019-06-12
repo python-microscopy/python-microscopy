@@ -160,7 +160,7 @@ class LaserSliders(wx.Panel):
                 power = self.scopeState['Lasers.%s.Power' % laserName]
                 maxPower = self.scopeState['Lasers.%s.MaxPower' % laserName]
                 self.sliders[ind].SetValue(round(10*log2(max(power*1024/maxPower, 1))))
-                self.labels[ind].SetLabel('%.3g'%(100*power/maxPower))
+                self.labels[ind].SetLabel('%#.3g'%(100*power/maxPower))
                 lon = self.scopeState['Lasers.%s.On' % laserName]
                 self.buttons[ind].SetValue(lon)
                 if lon:
