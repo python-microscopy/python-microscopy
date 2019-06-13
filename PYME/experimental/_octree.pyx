@@ -88,7 +88,7 @@ cdef class Octree:
     The code is reasonably optimized with creation of a 1M entry octree taking 2-3s
     
     '''
-    cdef int _next_node, _resize_limit, _maxdepth
+    cdef int _next_node, _resize_limit, _maxdepth, _samples_per_node
     cdef np.float32_t _xwidth, _ywidth, _zwidth
     cdef np.float32_t[6] _bounds
     cdef np.float32_t[3] _size
@@ -98,7 +98,7 @@ cdef class Octree:
     cdef object _octant_offsets
     cdef object _octant_sign
     
-    def __init__(self, bounds, maxdepth=12):
+    def __init__(self, bounds, maxdepth=12, samples_per_node=1):
         bounds = np.array(bounds, 'f4')
         self._bounds = bounds
         
@@ -115,6 +115,7 @@ cdef class Octree:
         self._set_cnodes(self._flat_nodes)
         
         self._maxdepth = maxdepth
+        self._samples_per_node = samples_per_node
         
         self._next_node = 1
         self._resize_limit = INITIAL_NODES - 1
@@ -149,7 +150,7 @@ cdef class Octree:
         
         #print 'getting children'
         child_idx = ((x > node.centre_x) + 2*(y > node.centre_y)  + 4*(z > node.centre_z))
-        while node.nPoints >= 1:
+        while node.nPoints >= self._samples_per_node:
             children = &node.child0
             new_idx = children[child_idx]
             if new_idx == 0:
@@ -172,7 +173,8 @@ cdef class Octree:
     
     def _resize_nodes(self):
         old_nodes = self._nodes
-        new_size = old_nodes.shape[0]*2 #double whenever we grow (TODO - what is the best growth factor)
+        # Adjust by 1.5x every time we grow.
+        new_size = int(old_nodes.shape[0]*1.5 + 0.5)
         
         print('Resizing node store - new size: %d' % new_size)
         #allocate new memory
@@ -298,5 +300,10 @@ cdef class Octree:
             #TODO - update centroids
             
     def add_points(self, np.float32_t[:,:] pts):
+
+        # Double check for oversmoothing
+        if len(pts) < self._samples_per_node:
+            self._samples_per_node = len(pts)
+
         for pt in pts:
             self.add_point(pt)

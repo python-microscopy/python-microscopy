@@ -42,8 +42,6 @@ def test_octree_maxdepth_8():
     
     assert (max(ot._nodes['depth']) == 8)
     
-    
-    
 if __name__ == '__main__':
     import time
     t1 = time.time()
