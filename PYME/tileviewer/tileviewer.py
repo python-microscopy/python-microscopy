@@ -93,7 +93,7 @@ if __name__ == '__main__':
     from PYME import cluster
     from PYME import resources
     
-    static_dir = os.path.join(os.path.split(cluster.__file__)[0], 'clusterUI','static')
+    static_dir = resources.get_web_static_dir()
     
     
     cherrypy.config.update({'server.socket_port': 8979,
