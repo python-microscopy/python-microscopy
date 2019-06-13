@@ -26,8 +26,10 @@
 
 
 <script src="/static/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/2.4.0/openseadragon.min.js"></script>
+<script src="/static/openseadragon.min.js"></script>
     <script src="/static/openseadragon-viewerinputhook.min.js"></script>
+    <script type='text/javascript' src='/static/openSeadragonGL.js'></script>
+  <script type='text/javascript' src='/static/viaWebGL.js'></script>
 <script type="text/javascript">
     var viewer = OpenSeadragon({
         id:            "openseadragon1",
@@ -50,6 +52,12 @@
             }
     }
     });
+
+    var seaGL = new openSeadragonGL(viewer);
+    seaGL.addHandler('tile-drawing');
+    seaGL.vShader = '/static/shaders/vertex/square.glsl';
+    seaGL.fShader = '/static/shaders/fragment/lut.glsl';
+    seaGL.init();
 
     viewer.addViewerInputHook({hooks: [
         {tracker: 'viewer', handler: 'dblClickHandler', hookHandler: onViewerDblClick},
