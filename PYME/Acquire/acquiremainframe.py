@@ -270,7 +270,7 @@ class PYMEMainFrame(AUIFrame):
             self.AddCamTool(*t)
         
         if len(self.scope.positioning.keys()) > 0.5:
-            self.pos_sl = positionUI.PositionSliders(self.scope, self, self.scope.joystick)
+            self.pos_sl = positionUI.PositionPanel(self.scope, self, self.scope.joystick)
             self.time1.WantNotification.append(self.pos_sl.update)
 
             self.AddTool(self.pos_sl, 'Positioning')
