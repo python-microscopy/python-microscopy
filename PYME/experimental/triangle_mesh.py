@@ -49,9 +49,14 @@ class TriangleMesh(object):
         return list(self.vertex_properties)
 
     def __getitem__(self, k):
-        # this defers evaluation of the properties until we actually access them, 
-        # as opposed to the mappings which stored the values on class creation.
-        return getattr(self, k)
+        # this defers evaluation of the properties until we actually access them, as opposed to the mappings which
+        # stored the values on class creation.
+        try:
+            res = getattr(self, k)
+        except AttributeError:
+            raise KeyError('Key %s not defined' % k)
+        
+        return res
 
     @property
     def x(self):
