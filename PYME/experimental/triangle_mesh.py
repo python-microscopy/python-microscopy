@@ -1,5 +1,11 @@
 import numpy as np
 
+def pack_edges(arr, axis=1):
+    res = ((arr[:,0].astype(np.uint32)) << 16)
+    res += arr[:,1].astype(np.uint32)
+    
+    return res
+
 class TriangleMesh(object):
     def __init__(self, vertices, faces, max_valence=6):
         """
@@ -353,19 +359,41 @@ class TriangleMesh(object):
 
             self._h_twin = -1*np.ones(n_edges, dtype=np.int)
             
-            for i in range(n_edges):
-                try:
-                    self._h_twin[i] = np.argwhere(np.all(edges[i,:] == edges[:,::-1], axis=1))[0]
+            # for i in range(n_edges):
+            #     try:
+            #         self._h_twin[i] = np.argwhere(np.all(edges[i,:] == edges[:,::-1], axis=1))[0]
                     
-                    # FIXME: This sets the same entry multiple times in self._vertices_halfedge.
-                    self._vertex_halfedges[self._h_vertex[i]] = self._h_twin[i]
-                except(IndexError):
-                    self._h_twin[i] = -1  # No twin edge exists
+            #         # FIXME: This sets the same entry multiple times in self._vertices_halfedge.
+            #         self._vertex_halfedges[self._h_vertex[i]] = self._h_twin[i]
+            #     except(IndexError):
+            #         self._h_twin[i] = -1  # No twin edge exists
 
+            # Create a unique handle for each edge
+            edges_packed = pack_edges(np.sort(edges,axis=1))
+            
+            # Use a dictionary to keep track of which edges are already assigned twins
+            d = {}
+            for i, e in enumerate(edges_packed):
+                if e in d.keys():
+                    idx = d.pop(e)
+                    self._h_twin[idx] = i
+                    self._h_twin[i] = idx
+                else:
+                    d[e] = i
+
+            # Set remaining unassigned edges to -1
+            for e in d.keys():
+                idx = d.pop(e)
+                self._h_twin[idx] = -1
+                
             self._h_face = np.hstack([j, j, j])
             self._h_next = np.hstack([j+n_faces, j+2*n_faces, j])
             self._h_prev = np.hstack([j+2*n_faces, j, j+n_faces])
             self._h_length = np.linalg.norm(self._vertices[self._h_vertex] - self._vertices[self._h_vertex[self._h_prev]], axis=1)
+            
+            # Set the vertex halfedges (multiassignment, but should be fine)
+            self._vertex_halfedges[self._h_vertex] = self._h_next
+
             self._faces = j  # Faces are defined by associated halfedges
         else:
             raise ValueError('Mesh does not contain vertices and faces.')
