@@ -621,10 +621,10 @@ class TriangleMesh(object):
         self._h_face[_next] = _face_2_idx
 
         # Make sure old vertices have existing vertex halfedges
-        self._vertex_halfedges[_curr] = _next
-        self._vertex_halfedges[_twin] = _twin_next
-        self._vertex_halfedges[_next] = _prev
-        self._vertex_halfedges[_twin_next] = _twin_prev
+        self._vertex_halfedges[self._h_vertex[_curr]] = _next
+        self._vertex_halfedges[self._h_vertex[_twin]] = _twin_next
+        self._vertex_halfedges[self._h_vertex[_next]] = _prev
+        self._vertex_halfedges[self._h_vertex[_twin_next]] = _twin_prev
 
         # Insert halfedges by face, completing the original faces first
         # Note that this assumes there's a -1 in identical locations across all halfedge vectors (should be safe)
@@ -840,8 +840,10 @@ class TriangleMesh(object):
         # Now we gotta recalculate the normals
         self._face_normals = None
         self._vertex_normals = None
+        self.face_normals
+        self.vertex_normals
 
-    def remesh(self, l=1):
+    def remesh(self, l=-1):
         """
         Produce a higher-quality mesh.
 
@@ -855,12 +857,37 @@ class TriangleMesh(object):
                 Target edge length for all edges in the mesh.
         """
 
-        # 1. Split all edges at their midpoint longer than (4/3)*l.
-        # 2. Collapse all edges shorter than (4/5)*l to their midpoint.
-        # 3. Flip edges in order to minimize deviation from valence 6.
-        # 4. Relocate vertices on the surface by tangential smoothing.
+        if (l == -1):
+            # Guess l
+            l = np.mean(self._h_length)
 
-        pass
+        # 1. Split all edges at their midpoint longer than (4/3)*l.
+        idxs = np.where(self._h_length > 1.33*l)[0]
+        d = {}
+        for i in idxs:
+            _twin = self._h_twin[i]
+            if _twin in d.keys():
+                continue
+            else:
+                d[_twin] = i
+                self.edge_split(i)
+        
+        # 2. Collapse all edges shorter than (4/5)*l to their midpoint.
+        idxs = np.where(self._h_length < 0.8*l)[0]
+        d = {}
+        for i in idxs:
+            _twin = self._h_twin[i]
+            if _twin in d.keys():
+                continue
+            else:
+                d[_twin] = i
+                self.edge_collapse(i)
+
+        # 3. Flip edges in order to minimize deviation from valence 6.
+        self.regularize()
+
+        # 4. Relocate vertices on the surface by tangential smoothing.
+        self.relax()
 
     def repair(self):
         """
