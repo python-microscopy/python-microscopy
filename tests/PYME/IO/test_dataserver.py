@@ -5,6 +5,7 @@ import os
 import shutil
 #import unittest
 import time
+import sys
 
 import logging
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ def setup_module():
         shutil.rmtree(tmp_root)
         
     os.makedirs(tmp_root)
-    proc = subprocess.Popen('python -m PYME.cluster.HTTPDataServer  -r %s -f TEST' % tmp_root , shell=True)
+    proc = subprocess.Popen([sys.executable, '-m', 'PYME.cluster.HTTPDataServer',  '-r', tmp_root, '-f', 'TEST'])
     
     
 def teardown_module():
