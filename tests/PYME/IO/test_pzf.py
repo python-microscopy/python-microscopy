@@ -1,4 +1,7 @@
 import numpy as np
+import pytest
+pytestmark = pytest.mark.skip("Segfaults on Linux")
+
 
 def test_compression_lossless_uint16():
     from pymecompress import bcl

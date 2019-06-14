@@ -15,5 +15,5 @@ vec4 rgba(float dx, float dy) {
 void main() {
   float v = rgba(0., 0.).r;
   //gl_FragColor = rgba(0.,0.);
-  gl_FragColor = vec4(v, v, v, 1);
+  gl_FragColor = vec4(v, 0, 0, 1);
 }

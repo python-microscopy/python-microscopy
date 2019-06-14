@@ -23,18 +23,22 @@ def setup_module():
         
     port_start = 8100
     for i in range(10):
-        proc = subprocess.Popen('python -m PYME.cluster.HTTPDataServer -r %s -f TEST -t -p %d --timeout-test=0.5' % (tmp_root, port_start + i), stderr= sys.stderr, shell=True)
+        proc = subprocess.Popen([sys.executable, '-m', 'PYME.cluster.HTTPDataServer', '-r', tmp_root,  '-f', 'TEST', '-t', '-p', '%d' % (port_start + i), '--timeout-test=0.5'], stderr= sys.stderr, shell=True)
         procs.append(proc)
         
     time.sleep(5)
+    print('Launched servers')
 
 
 def teardown_module():
     global proc, tmp_root
     #proc.send_signal(1)
     #time.sleep(1)
+    
     for proc in procs:
         proc.kill()
+        
+    print('Killed all servers')
     
     shutil.rmtree(tmp_root)
     
