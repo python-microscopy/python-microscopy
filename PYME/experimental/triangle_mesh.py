@@ -1,6 +1,14 @@
 import numpy as np
 
 def pack_edges(arr, axis=1):
+    """
+    Stores edges as a single unique integer. 
+    
+    NOTE: that this implictly caps the mesh at 2**16 
+    vertices. If we need more, adjust np.uint32 to
+    np.uint64 and << 16 to << 32.
+    """
+    arr = np.sort(arr, axis=1)
     res = ((arr[:,0].astype(np.uint32)) << 16)
     res += arr[:,1].astype(np.uint32)
     
@@ -174,6 +182,7 @@ class TriangleMesh(object):
         Calculate and return the area of each triangular face.
         """
         if self._face_areas is None:
+            self._face_normals = None
             self.face_normals
         return self._face_areas
 
@@ -183,6 +192,7 @@ class TriangleMesh(object):
         Calculate and return the normal of each vertex.
         """
         if self._vertex_normals is None:
+            self._vertex_neighbors = None
             self.vertex_neighbors
         return self._vertex_normals
 
@@ -192,6 +202,7 @@ class TriangleMesh(object):
         Calculate and return the valence of each vertex.
         """
         if self._valences is None:
+            self._vertex_neighbors = None
             self.vertex_neighbors
         return self._valences
 
@@ -369,7 +380,7 @@ class TriangleMesh(object):
             #         self._h_twin[i] = -1  # No twin edge exists
 
             # Create a unique handle for each edge
-            edges_packed = pack_edges(np.sort(edges,axis=1))
+            edges_packed = pack_edges(edges)
             
             # Use a dictionary to keep track of which edges are already assigned twins
             d = {}
@@ -385,7 +396,7 @@ class TriangleMesh(object):
             for e in d.keys():
                 idx = d.pop(e)
                 self._h_twin[idx] = -1
-                
+
             self._h_face = np.hstack([j, j, j])
             self._h_next = np.hstack([j+n_faces, j+2*n_faces, j])
             self._h_prev = np.hstack([j+2*n_faces, j, j+n_faces])
@@ -806,25 +817,29 @@ class TriangleMesh(object):
 
         for k in range(n):
             # Get vertex neighbors
-            n = self._vertex_neighbors
-            n_mask = (self._vertex_neighbors != -1)
-            vn = self._vertices[n]
+            nn = self._vertex_neighbors
+            nn_mask = (self._vertex_neighbors != -1)
+            vn = self._vertices[nn]
             
             # Get the faces of the vertex neighbors
-            fn = self._h_face[self._vertex_halfedges[n]]
+            fn = self._h_face[self._vertex_halfedges[nn]]
 
             # Get face areas and mask off the wrong ones
-            an = self._face_areas[fn]*n_mask
+            an = self._face_areas[fn]*nn_mask
 
             # Calculate gravity-weighted centroids
-            c = np.sum(an, axis=1)[...,None]*np.sum(an[...,None]*vn, axis=1)
+            c = (1./np.sum(an, axis=1)[...,None])*np.sum(an[...,None]*vn, axis=1)
 
             # Construct projection vector into tangent plane
             pn = self._vertex_normals[...,None]*self._vertex_normals[:,None,:]
             p = np.eye(3)[None,:] - pn
 
             # Update vertex positions
-            self._vertices = self._vertices + l*np.sum(p*(c-self._vertices)[...,None],axis=2)
+            self._vertices = self._vertices + l*np.sum(p*((c-self._vertices)[...,None]),axis=1)
+
+        # Now we gotta recalculate the normals
+        self._face_normals = None
+        self._vertex_normals = None
 
     def remesh(self, l=1):
         """
