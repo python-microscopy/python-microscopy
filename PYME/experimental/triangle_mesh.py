@@ -149,7 +149,7 @@ class TriangleMesh(object):
             self._face_areas = 0.5*nn
             self._face_normals = n/nn[:, None]
             self._face_normals[np.isnan(self.face_normals)] = 0
-        self._face_normals[self._faces == -1] = -1
+        self._face_normals[self._faces == -1] = 0
         return self._face_normals
 
     def update_face_normals(self, f_idxs):
@@ -848,7 +848,7 @@ class TriangleMesh(object):
         self.face_normals
         self.vertex_normals
 
-    def remesh(self, l=-1):
+    def remesh(self, edge_length=-1, l=1, n=1):
         """
         Produce a higher-quality mesh.
 
@@ -858,19 +858,23 @@ class TriangleMesh(object):
 
         Parameters
         ----------
-            l : float
+            edge_length : float
                 Target edge length for all edges in the mesh.
+            l : float
+                Relaxation egularization term, used to avoid oscillations.
+            n : int
+                Number of relaxation iterations to apply.
         """
 
-        if (l == -1):
+        if (edge_length == -1):
             # Guess l
-            l = np.mean(self._h_length)
+            edge_length = np.mean(self._h_length)
 
         # Grab the edges we want to modify
-        split_idxs = np.where(self._h_length > 1.33*l)[0]
-        collapse_idxs = np.where(self._h_length < 0.8*l)[0]
+        split_idxs = np.where(self._h_length > 1.33*edge_length)[0]
+        collapse_idxs = np.where(self._h_length < 0.8*edge_length)[0]
 
-        # 1. Split all edges at their midpoint longer than (4/3)*l.
+        # 1. Split all edges at their midpoint longer than (4/3)*edge_length.
         d = {}
         for i in split_idxs:
             _twin = self._h_twin[i]
@@ -880,7 +884,7 @@ class TriangleMesh(object):
                 d[_twin] = i
                 self.edge_split(i)
         
-        # 2. Collapse all edges shorter than (4/5)*l to their midpoint.
+        # 2. Collapse all edges shorter than (4/5)*edge_length to their midpoint.
         d = {}
         for i in collapse_idxs:
             _twin = self._h_twin[i]
@@ -894,7 +898,7 @@ class TriangleMesh(object):
         self.regularize()
 
         # 4. Relocate vertices on the surface by tangential smoothing.
-        self.relax()
+        self.relax(l=l, n=n)
 
     def repair(self):
         """
