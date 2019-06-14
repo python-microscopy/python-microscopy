@@ -699,9 +699,10 @@ class TriangleMesh(object):
 
     def _insert_vertex(self, _vertex):
         self._vertices, _idx, _v_orig = self._insert(self._vertices, _vertex, return_orig=True)
-        self._vertex_halfedges = self._resize(self._vertex_halfedges)
-        self._vertex_neighbors = self._resize(self._vertex_neighbors)
-        self._vertex_normals = self._resize(self._vertex_normals)
+        self._vertex_halfedges, _ = self._insert(self._vertex_halfedges, 0)
+        if self._vertex_neighbors.shape[0] < self._vertices.shape[0]:
+            self._vertex_neighbors = self._resize(self._vertex_neighbors, skip_entries=False)
+        self._vertex_normals, _ = self._insert(self._vertex_normals, 0)
 
         if len(_v_orig) > 0:
             # Some vertices were moved, we need to update references
@@ -828,7 +829,11 @@ class TriangleMesh(object):
             an = self._face_areas[fn]*nn_mask
 
             # Calculate gravity-weighted centroids
-            c = (1./np.sum(an, axis=1)[...,None])*np.sum(an[...,None]*vn, axis=1)
+            A = np.sum(an, axis=1)
+            c = 1./(A[...,None])*np.sum(an[...,None]*vn, axis=1)
+            # Don't get messed up by slivers. TODO: This is a hack. There should be
+            # sliver elimination.
+            c[A == 0] = self._vertices[A == 0]
 
             # Construct projection vector into tangent plane
             pn = self._vertex_normals[...,None]*self._vertex_normals[:,None,:]
@@ -861,10 +866,13 @@ class TriangleMesh(object):
             # Guess l
             l = np.mean(self._h_length)
 
+        # Grab the edges we want to modify
+        split_idxs = np.where(self._h_length > 1.33*l)[0]
+        collapse_idxs = np.where(self._h_length < 0.8*l)[0]
+
         # 1. Split all edges at their midpoint longer than (4/3)*l.
-        idxs = np.where(self._h_length > 1.33*l)[0]
         d = {}
-        for i in idxs:
+        for i in split_idxs:
             _twin = self._h_twin[i]
             if _twin in d.keys():
                 continue
@@ -873,9 +881,8 @@ class TriangleMesh(object):
                 self.edge_split(i)
         
         # 2. Collapse all edges shorter than (4/5)*l to their midpoint.
-        idxs = np.where(self._h_length < 0.8*l)[0]
         d = {}
-        for i in idxs:
+        for i in collapse_idxs:
             _twin = self._h_twin[i]
             if _twin in d.keys():
                 continue
