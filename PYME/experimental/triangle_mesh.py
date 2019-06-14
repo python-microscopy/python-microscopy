@@ -127,9 +127,10 @@ class TriangleMesh(object):
         Returns faces by vertex for rendering and STL applications.
         """
         if self._faces_by_vertex is None:
-            v0 = self._h_vertex[self._h_prev[self._faces]]
-            v1 = self._h_vertex[self._faces]
-            v2 = self._h_vertex[self._h_next[self._faces]]
+            faces = self._faces[self._faces != -1]
+            v0 = self._h_vertex[self._h_prev[faces]]
+            v1 = self._h_vertex[faces]
+            v2 = self._h_vertex[self._h_next[faces]]
             self._faces_by_vertex = np.vstack([v0, v1, v2]).T
         return self._faces_by_vertex
 
@@ -904,10 +905,33 @@ class TriangleMesh(object):
         """
         Make the mesh manifold.
         """
-        # Delete all edges of degree > 2
         # Find a vertex connected to two -1 halfedges
         # Build a triangle
         # Repeat until there are no more vertices with two -1 halfedges
+
+        # Unordered halfedges
+        edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
+
+        # Group edges uniquely
+        packed_edges = pack_edges(edges)
+
+        # Return the unique edges and their counts
+        e, c = np.unique(packed_edges, return_counts=True)
+
+        # Get the bad edges
+        bad_edges = dict([(x,i) for i, x in enumerate(e[c > 2])])
+
+        # Delete all edges of degree > 2
+        for i, edge in enumerate(edges):
+            if edge in bad_edges.keys():
+                # Delete the edge
+                self._h_vertex[i] = -1
+                self._h_twin[i] = -1
+                self._h_prev[i] = -1
+                self._h_next[i] = -1
+                self._h_face[i] = -1
+                self._h_length[i] = -1
+        
         pass
 
     def to_stl(self, filename):
