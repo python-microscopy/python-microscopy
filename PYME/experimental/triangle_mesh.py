@@ -905,9 +905,6 @@ class TriangleMesh(object):
         """
         Make the mesh manifold.
         """
-        # Find a vertex connected to two -1 halfedges
-        # Build a triangle
-        # Repeat until there are no more vertices with two -1 halfedges
 
         # Unordered halfedges
         edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
@@ -931,6 +928,17 @@ class TriangleMesh(object):
                 self._h_next[i] = -1
                 self._h_face[i] = -1
                 self._h_length[i] = -1
+
+        # While there are vertices connected to two -1 halfedges
+        iv = 0
+        while iv < self._vertices.shape[0]:
+            # Find a vertex connected to two -1 halfedges
+            if (np.sum(self._vertex_neighbors[iv, :] == -1) == 2):
+                # Build a triangle
+                
+                # Restart in case we repaired a case with >2 -1 halfedges
+                iv = 0
+            iv += 1
         
         pass
 
