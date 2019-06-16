@@ -442,10 +442,13 @@ class TriangleMesh(object):
                 if (_curr == _orig):
                     break
 
-            self._vertex_normals[v_idx] /= area
-            nn = np.linalg.norm(self._vertex_normals[v_idx])
-            if nn > 0:
-                self._vertex_normals[v_idx] /= nn
+            if area > 0:
+                self._vertex_normals[v_idx] /= area
+                nn = np.linalg.norm(self._vertex_normals[v_idx])
+                if nn > 0:
+                    self._vertex_normals[v_idx] /= nn
+                else:
+                    self._vertex_normals[v_idx] = 0
             else:
                 self._vertex_normals[v_idx] = 0
 
@@ -868,7 +871,7 @@ class TriangleMesh(object):
         """
 
         if (edge_length == -1):
-            # Guess l
+            # Guess edge_length
             edge_length = np.mean(self._h_length)
 
         # Grab the edges we want to modify
@@ -905,6 +908,7 @@ class TriangleMesh(object):
         """
         Make the mesh manifold.
         """
+        pass
 
         # Unordered halfedges
         edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
@@ -929,18 +933,23 @@ class TriangleMesh(object):
                 self._h_face[i] = -1
                 self._h_length[i] = -1
 
-        # While there are vertices connected to two -1 halfedges
-        iv = 0
-        while iv < self._vertices.shape[0]:
-            # Find a vertex connected to two -1 halfedges
-            if (np.sum(self._vertex_neighbors[iv, :] == -1) == 2):
-                # Build a triangle
-                
-                # Restart in case we repaired a case with >2 -1 halfedges
-                iv = 0
-            iv += 1
-        
-        pass
+        # # While there are vertices connected to two -1 halfedges
+        # while True:
+        #     # Find vertices connected to -1 halfedges
+        #     orphans = np.where((self._h_next == -1) & (self._h_prev == -1) & (self._h_twin != -1) & (self._h_vertex != -1))[0]
+
+        #     if orphans.size == 0:
+        #         break
+
+        #     # Create triangles from these vertices
+        #     for _curr in orphans:
+        #         _twin = self._h_twin[_curr]
+        #         _twin_prev = self._h_prev[_twin]
+        #         _twin_next = self._h_next[_twin]
+        #         self._h_vertex, _he_0_idx = self._insert(self._h_vertex, self._h_vertex[_next])
+        #         self._h_prev, _ = self._insert(self._h_prev, _curr)
+        #         self._h_next, _ = self._insert(self._h_next, _prev)
+        #         self._h_face, _ = self._insert(self._h_face, self._h_face[_curr])
 
     def to_stl(self, filename):
         """
