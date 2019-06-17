@@ -148,8 +148,8 @@ class DCIMGSpoolShim(object):
 
             for pos, fr in zip(positions, startFrames):
                 fakeTime = startTime + cycleTime*fr
-                self.spooler.evtLogger.logEvent(eventName=b'StartAq', eventDescr=b'%d' % fr, timestamp=fakeTime)
-                self.spooler.evtLogger.logEvent(eventName=b'ProtocolFocus', eventDescr=b'%d, %3.3f' % (fr, pos),
+                self.spooler.evtLogger.logEvent(eventName='StartAq', eventDescr='%d' % fr, timestamp=fakeTime)
+                self.spooler.evtLogger.logEvent(eventName='ProtocolFocus', eventDescr='%d, %3.3f' % (fr, pos),
                                                 timestamp=fakeTime)
         
         self.spooler.StopSpool()
@@ -168,7 +168,7 @@ class DCIMGSpoolShim(object):
             self.mdh.setEntry('Analysis.TrackFiducials', False)
             self.mdh.setEntry('Analysis.subtractBackground', True)
             self.mdh.setEntry('Analysis.GPUPCTBackground', True)
-            cluster_filename = 'pyme-cluster://%s/%s' % (clusterIO.local_serverfilter, self.spooler.seriesName)
+            cluster_filename = 'pyme-cluster://%s/%s' % (clusterIO.local_serverfilter, self.spooler.seriesName.replace(' ', '_'))
             # HTTPTaskPusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
             HTTPRulePusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
 
