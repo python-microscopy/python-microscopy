@@ -153,7 +153,7 @@ class PlayPanel(wx.Panel):
                 # Not an integer
                 raise ValueError('Please enter a valid frame number.')
             frame = max(0, frame)
-            frame = min(frame, self.do.selection[-1])
+            frame = min(frame, self.do.ds.shape[2])
             self.do.zp = frame
 
     def update(self):
