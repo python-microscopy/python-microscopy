@@ -168,8 +168,7 @@ class DCIMGSpoolShim(object):
             self.mdh.setEntry('Analysis.TrackFiducials', False)
             self.mdh.setEntry('Analysis.subtractBackground', True)
             self.mdh.setEntry('Analysis.GPUPCTBackground', True)
-            cluster_filename = 'pyme-cluster://%s/%s' % (clusterIO.local_serverfilter, self.spooler.seriesName.replace(' ', '_'))
-            # HTTPTaskPusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
+            cluster_filename = 'pyme-cluster://%s/%s' % (clusterIO.local_serverfilter, self.spooler.seriesName)
             HTTPRulePusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
 
         #remove the metadata generator
