@@ -519,8 +519,8 @@ def rendTri2(T, imageBounds, pixelSize, c=None, im=None, im1=None):
     #c = numpy.maximum(c, self.pixelsize**2)
     #c = 1.0/(c + 1)
     
-    sizeX = (imageBounds.x1 - imageBounds.x0) / pixelSize
-    sizeY = (imageBounds.y1 - imageBounds.y0) / pixelSize
+    sizeX = int((imageBounds.x1 - imageBounds.x0) / pixelSize)
+    sizeY = int((imageBounds.y1 - imageBounds.y0) / pixelSize)
     
     xs = (xs - imageBounds.x0) / pixelSize
     ys = (ys - imageBounds.y0) / pixelSize
