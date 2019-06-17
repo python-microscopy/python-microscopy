@@ -170,7 +170,7 @@ class FilterPanel(wx.Panel):
             minVal = float(dlg.tMin.GetValue())
             maxVal = float(dlg.tMax.GetValue())
 
-            key = dlg.cbKey.GetValue()
+            key = dlg.cbKey.GetValue().encode()
 
             if key == "":
                 return
@@ -193,7 +193,7 @@ class FilterPanel(wx.Panel):
         self.on_filter_changed.send(self)
 
     def OnFilterEdit(self, event):
-        key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText()
+        key = self.lFiltKeys.GetItem(self.currentFilterItem).GetText().encode()
         minVal, maxVal = self.filterKeys[key]
         #dlg = editFilterDialog.FilterEditDialog(self, mode='edit', possibleKeys=[], key=key, minVal=self.filterKeys[key][0], maxVal=self.filterKeys[key][1])
         try:

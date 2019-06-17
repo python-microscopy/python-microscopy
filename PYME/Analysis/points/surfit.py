@@ -398,6 +398,7 @@ def fit_quad_surf(pts, control_pt, fitPos=True):
     #randomly generate starting parameters
     sp = 2*np.random.randn(8).astype('f')
     #sp[-2]+= 10
+    sp[6:] = 0
     
     #set the staring surface position to be co-incident with the control point
     sp[:3] = control_pt
@@ -429,7 +430,7 @@ def _get_reconstr_grid(radius=50., step=10.):
         
     return _xr, _yr
 
-def reconstruct_quad_surf(p, control_point, N, radius=50, step=10.0):
+def reconstruct_quad_surf(p, control_point, N,  j, radius=50, step=10.0):
     """
     Reconstruct a fitted surface by generating a number of virtual localizations on that surface
      
@@ -469,10 +470,10 @@ def reconstruct_quad_surf(p, control_point, N, radius=50, step=10.0):
     d = sp - control_point[:,None]
     mask = (d*d).sum(0) < radius*radius
     
-    return np.vstack([sp[:,mask], normals[:,mask], 0*sp[0,mask] + N])
+    return np.vstack([sp[:,mask], normals[:,mask], 0*sp[0,mask] + N, 0*sp[0,mask] + j])
 
 
-def reconstruct_quad_surf_region_cropped(p, control_point, N, kdt, data, radius=50, step=10.0, fit_radius=100.):
+def reconstruct_quad_surf_region_cropped(p, control_point, N, j, kdt, data, radius=50, step=10.0, fit_radius=100.):
     """
     Like reconstruct_quad_surf, but additionally masks the reconstruction points to the convex hull of the points used
     to generate the fit.
@@ -511,7 +512,7 @@ def reconstruct_quad_surf_region_cropped(p, control_point, N, kdt, data, radius=
     #mask again to the convex hull of the points used for fitting
     mask = T.find_simplex(sp.T) > 0
     
-    return np.vstack([sp[:, mask], normals[:,mask], 0*sp[0,mask] + N])
+    return np.vstack([sp[:, mask], normals[:,mask], 0*sp[0,mask] + N, 0*sp[0,mask] + j])
 
 def fit_quad_surf_to_neighbourbood(data, kdt, i, radius=100, fitPos=True):
     """
@@ -737,7 +738,7 @@ def reconstruct_quad_surfaces(fits, radius):
 
 def reconstruct_quad_surfaces_P(fits, radius):
     res, pos, N = fits
-    return np.hstack([reconstruct_quad_surf(res[:,i], pos[:,i], N[i], radius=radius) for i in range(len(N)) if N[i] >= 1])
+    return np.hstack([reconstruct_quad_surf(res[:,i], pos[:,i], N[i], i, radius=radius) for i in range(len(N)) if N[i] >= 1])
 
 def filter_quad_results(fits, data, radius=50, proj_threshold=0.85):
     fits = fits.view(SURF_PATCH_DTYPE)
@@ -781,7 +782,7 @@ def reconstruct_quad_surfaces_Pr(fits, radius, step=10.):
     #res, pos, N = fits
     #print fits
     fits = fits.view(SURF_PATCH_DTYPE)
-    return np.hstack([reconstruct_quad_surf(fits[i]['results'].view('8f4'), fits[i]['pos'].view('3f4'), fits[i]['N'], radius=radius, step=step) for i in range(len(fits)) if fits[i]['N'] >= 1])
+    return np.hstack([reconstruct_quad_surf(fits[i]['results'].view('8f4'), fits[i]['pos'].view('3f4'), fits[i]['N'], i, radius=radius, step=step) for i in range(len(fits)) if fits[i]['N'] >= 1])
 
 def reconstruct_quad_surfaces_P_region_cropped(fits, radius, data, fit_radius=100., step=10.):
     from scipy.spatial import cKDTree
@@ -798,5 +799,5 @@ def reconstruct_quad_surfaces_Pr_region_cropped(fits, radius, data, fit_radius=1
     kdt = cKDTree(data)
 
     fits = fits.view(SURF_PATCH_DTYPE)
-    return np.hstack([reconstruct_quad_surf_region_cropped(fits[i]['results'].view('8f4'), fits[i]['pos'].view('3f4'), fits[i]['N'], kdt, data, radius=radius,
+    return np.hstack([reconstruct_quad_surf_region_cropped(fits[i]['results'].view('8f4'), fits[i]['pos'].view('3f4'), fits[i]['N'], i, kdt, data, radius=radius,
                                                            fit_radius=fit_radius, step=step) for i in range(len(fits)) if fits[i]['N'] >= 1])
