@@ -937,10 +937,9 @@ class TriangleMesh(object):
         # while True:
         #     # Find vertices sharing two -1 halfedges
         #     no_twin = (self._h_twin == -1)
-        #     v1, v2 = np.where(no_twin[:, None] == no_twin[None , :])
-        #     orphans = np.where(self._h_vertex[v1] == self._h_vertex[self._h_prev[v2]])[0]
+        #     _he1, _he2 = np.where(self._h_vertex[no_twin][:,None] == self._h_vertex[self._h_prev[no_twin]][None,:])
 
-        #     if orphans.size == 0:
+        #     if _he1.size == 0:
         #         break
 
         #     # Create triangles from these vertices
