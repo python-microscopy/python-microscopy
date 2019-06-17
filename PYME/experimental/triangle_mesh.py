@@ -933,10 +933,12 @@ class TriangleMesh(object):
                 self._h_face[i] = -1
                 self._h_length[i] = -1
 
-        # # While there are vertices connected to two -1 halfedges
+        # While there are vertices connected to two -1 halfedges
         # while True:
-        #     # Find vertices connected to -1 halfedges
-        #     orphans = np.where((self._h_next == -1) & (self._h_prev == -1) & (self._h_twin != -1) & (self._h_vertex != -1))[0]
+        #     # Find vertices sharing two -1 halfedges
+        #     no_twin = (self._h_twin == -1)
+        #     v1, v2 = np.where(no_twin[:, None] == no_twin[None , :])
+        #     orphans = np.where(self._h_vertex[v1] == self._h_vertex[self._h_prev[v2]])[0]
 
         #     if orphans.size == 0:
         #         break
