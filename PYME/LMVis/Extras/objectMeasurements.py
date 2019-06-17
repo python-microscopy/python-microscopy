@@ -50,10 +50,12 @@ class ObjectMeasurer:
 
         """
         from PYME.IO import image, tabular
-        from PYME.Analysis.points import objectMeasure
+        from PYME.recipes.localisations import LabelsFromImage
+        #from PYME.Analysis.points import objectMeasure
 
         visFr = self.visFr
         pipeline = visFr.pipeline
+        recipe = pipeline.recipe
 
         dlg = wx.SingleChoiceDialog(
                 None, 'choose the image which contains labels', 'Use Segmentation',
@@ -62,14 +64,15 @@ class ObjectMeasurer:
                 )
 
         if dlg.ShowModal() == wx.ID_OK:
-            img = image.openImages[dlg.GetStringSelection()]
-
-            ids, numPerObject = objectMeasure.get_labels_from_image(pipeline, img)
-
-            pipeline.addColumn('objectID', ids)
-            pipeline.addColumn('NEvents', numPerObject[ids-1])
-
-            pipeline.Rebuild()
+            img_name = dlg.GetStringSelection()
+            img = image.openImages[img_name]
+            
+            recipe.namespace[img_name] = img
+            
+            output_name = recipe.new_output_name('labels_from_img')
+            mod = LabelsFromImage(recipe, inputName=pipeline.selectedDataSourceKey,inputImage=img_name, outputName=output_name)
+            recipe.add_module(mod)
+            recipe.execute()
 
         dlg.Destroy()
 

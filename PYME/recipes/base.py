@@ -325,6 +325,14 @@ class ModuleCollection(HasTraits):
     def clear(self):
         self.namespace.clear()
         
+    def new_output_name(self, stub):
+        count = len([k.startswith(stub) for k in self.namespace.keys()])
+        
+        if count == 0:
+            return stub
+        else:
+            return '%s_%d' % (stub, count)
+        
         
     def dependancyGraph(self):
         dg = {}
