@@ -74,6 +74,8 @@ class ObjectMeasurer:
             recipe.add_module(mod)
             recipe.execute()
 
+            pipeline.selectDataSource(mod.outputName)
+
         dlg.Destroy()
 
     def OnMeasure(self, event):
