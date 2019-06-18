@@ -130,7 +130,7 @@ class DataSource(BaseDataSource):
         return res
 
     def getSliceShape(self):
-        return (self.sizeX, self.sizeY)
+        return (self.sizeY, self.sizeX)
 
     def getNumSlices(self):
         return self.sizeC*self.sizeT*self.sizeZ

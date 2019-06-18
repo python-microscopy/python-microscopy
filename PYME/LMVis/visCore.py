@@ -140,7 +140,8 @@ class VisGUICore(object):
             self.Update()
             print('refreshed')
             
-    def GenPanels(self, sidePanel):    
+    def GenPanels(self, sidePanel):
+        print('GenPanels')
         self.GenDataSourcePanel(sidePanel)
         
         #if HAVE_DRIFT_CORRECTION:
@@ -182,6 +183,8 @@ class VisGUICore(object):
         
     def GenDataSourcePanel(self, pnl):
         from PYME.recipes.vertical_recipe_display import RecipeDisplayPanel
+        
+        print('Creating datasource panel')
         item = afp.foldingPane(pnl, -1, caption="Data Pipeline", pinned = True)
 
         pan = wx.Panel(item, -1)
@@ -337,50 +340,50 @@ class VisGUICore(object):
         self.viewMode = 'shadedpoints'
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewTracks(self,event):
         self.viewMode = 'tracks'
         #self.glCanvas.cmap = pylab.cm.hsv
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewBlobs(self,event):
         self.viewMode = 'blobs'
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         #self.OnPercentileCLim(None)
 
     def OnViewTriangles(self,event):
         self.viewMode = 'triangles'
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewTriangles3D(self,event):
         self.viewMode = 'triangles3D'
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewQuads(self,event):
         self.viewMode = 'quads'
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewVoronoi(self,event):
         self.viewMode = 'voronoi'
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
 
     def OnViewInterpTriangles(self,event):
         self.viewMode = 'interp_triangles'
         self.RefreshView()
-        self.CreateFoldPanel()
+        #self.CreateFoldPanel()
         self.displayPane.OnPercentileCLim(None)
         
     def OnOpenFile(self, event):
@@ -693,7 +696,7 @@ class VisGUICore(object):
         
         #############################
         #now do all the gui stuff
-        
+        self.recipeView._layout()
         self.update_datasource_panel()
         
         if isinstance(self, wx.Frame):
@@ -702,7 +705,7 @@ class VisGUICore(object):
             self._removeOldTabs()
             self._createNewTabs()
             
-            self.CreateFoldPanel()
+            #self.CreateFoldPanel()
             print('Gui stuff done')
         
         if recipe_callback:

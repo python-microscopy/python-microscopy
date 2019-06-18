@@ -104,6 +104,7 @@ class AUIFrame(wx.Frame):
         loops over all the functions defined in self.paneHooks and calls them
         to generate the drawers.
         """
+        print('Creating fold panel')
         pinfo = self._mgr.GetPaneByName('sidePanel')
         if pinfo.IsOk(): #we already have a sidepanel, clear
             self.sidePanel.Clear()
