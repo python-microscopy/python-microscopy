@@ -157,14 +157,10 @@ class GaussianFitFactory:
         if not _warpDrive:  # Initialize new detector object for this process
             # try to pull settings from metadata
             guess_psf_sigma_pix = self.metadata.getOrDefault('Analysis.GuessPSFSigmaPix',
-                                                             600 / 2.8 / (self.metadata['voxelsize.x'] * 1e3),
-                                                             set_value_if_undefined=True)
+                                                             600 / 2.8 / (self.metadata['voxelsize.x'] * 1e3))
             small_filter_size = self.metadata.getOrDefault('Analysis.SmallDetectionFilterSize',
-                                                           int(2.355 * guess_psf_sigma_pix),
-                                                           set_value_if_undefined=True)
-            large_filter_size = self.metadata.getOrDefault('Analysis.LargeDetectionFilterSize',
-                                                           2 * small_filter_size,
-                                                           set_value_if_undefined=True)
+                                                           int(2.355 * guess_psf_sigma_pix))
+            large_filter_size = self.metadata.getOrDefault('Analysis.LargeDetectionFilterSize', 2 * small_filter_size)
             _warpDrive = warpDrive.detector(small_filter_size, large_filter_size, guess_psf_sigma_pix)
             _warpDrive.allocateMem(np.shape(self.data), self.data.dtype.itemsize)
             _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
