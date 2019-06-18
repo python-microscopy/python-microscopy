@@ -1554,6 +1554,8 @@ class StatisticsByFrame(ModuleBase):
     """
     Iterates through the time/z-position dimension of an ImageStack, calculating basic statistics for each frame,
     optionally using a 2D or 3D mask in the process.
+    
+    NOTE: only operates on first colour channel of stack.
 
     Parameters
     ----------
@@ -1582,19 +1584,13 @@ class StatisticsByFrame(ModuleBase):
         from scipy import stats
 
         series = namespace[self.input_name]
-
-        # squeeze down from 4D to 3D
-        data = np.atleast_3d(series.data.squeeze())
+        data = series.data
 
         if self.mask == '':
-            mask = np.ones_like(data, dtype=bool)
+            mask = None
         else:
             # again, handle our mask being either 2D, 3D, or 4D. NB - no color (4D) handling implemented at this point
-            mask = np.atleast_3d(namespace[self.mask].data[:,:,:].squeeze().astype(bool))
-
-        # broadcast that bad larry if need-be, e.g. a 2D mask, but no problem if it's already the right size
-        mask = np.broadcast_to(mask, data.shape)
-
+            mask = namespace[self.mask].data
 
         var = np.empty(data.shape[2], dtype=float)
         mean = np.empty_like(var)
@@ -1602,7 +1598,15 @@ class StatisticsByFrame(ModuleBase):
         mode = np.empty_like(var)
 
         for si in range(data.shape[2]):
-            slice_data = data[:,:,si][mask[:,:,si]]
+            slice_data = data[:,:,si, 0]
+            
+            if mask is not None:
+                if mask.shape[2] == 1:
+                    slice_data = slice_data[mask[:,:,0,0].astype('bool')]
+                elif mask.shape[2] == data.shape[2]:
+                    slice_data = slice_data[mask[:,:,si,0].astype('bool')]
+                else:
+                    raise RuntimeError('Mask dimensions do not match data dimensions')
 
             var[si] = np.var(slice_data)
             mean[si] = np.mean(slice_data)
@@ -1615,4 +1619,5 @@ class StatisticsByFrame(ModuleBase):
             res.mdh = series.mdh
         except:
             pass
+            
         namespace[self.output_name] = res
