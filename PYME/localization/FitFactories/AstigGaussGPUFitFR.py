@@ -154,11 +154,18 @@ class GaussianFitFactory:
             pass
 
         # Account for any changes we need to make in memory allocation on the GPU
-        if not _warpDrive:
-            #Initialize new detector object for this process
-            dfilter1 = warpDrive.normUnifFilter(12)
-            dfilter2 = warpDrive.normUnifFilter(6)
-            _warpDrive = warpDrive.detector(dfilter1, dfilter2)
+        if not _warpDrive:  # Initialize new detector object for this process
+            # try to pull settings from metadata
+            guess_psf_sigma_pix = self.metadata.getOrDefault('Analysis.GuessPSFSigmaPix',
+                                                             600 / 2.8 / (self.metadata['voxelsize.x'] * 1e3),
+                                                             set_value_if_undefined=True)
+            small_filter_size = self.metadata.getOrDefault('Analysis.SmallDetectionFilterSize',
+                                                           int(2.355 * guess_psf_sigma_pix),
+                                                           set_value_if_undefined=True)
+            large_filter_size = self.metadata.getOrDefault('Analysis.LargeDetectionFilterSize',
+                                                           2 * small_filter_size,
+                                                           set_value_if_undefined=True)
+            _warpDrive = warpDrive.detector(small_filter_size, large_filter_size, guess_psf_sigma_pix)
             _warpDrive.allocateMem(np.shape(self.data), self.data.dtype.itemsize)
             _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
 
@@ -245,57 +252,8 @@ class GaussianFitFactory:
         from PYME.localization import remFitBuf
         cameraMaps = remFitBuf.CameraInfoManager()
 
-        # self.refreshWarpDrive(cameraMaps)
-        try:
-            import warpDrive
-        except ImportError:
-            print("GPU fitting available on-request for academic use. Please contact David Baddeley or Joerg Bewersdorf.")
+        self.refreshWarpDrive(cameraMaps)
 
-            raise ImportError(missing_warpDrive_msg)
-
-        global _warpDrive  # One warpDrive instance for each process, re-used for subsequent fits.
-
-
-
-
-        # get varmap and flatmap
-        print('''AstigGaussGPUFitFR.FromPoint is currently only for diagnostics, use .FindAndFit instead. FromPoint will
-               use mean values for all camera maps''')
-        varmap = cameraMaps.getVarianceMap(self.metadata)
-        self.varmap = np.mean(varmap) * np.ones_like(self.data)
-
-        flatmap = cameraMaps.getFlatfieldMap(self.metadata)
-        self.flatmap = np.mean(flatmap) * np.ones_like(self.data)  # flatmat is mean-normalized and unitless
-
-        darkmap = cameraMaps.getDarkMap(self.metadata)
-        self.darkmap = np.mean(darkmap) * np.ones_like(self.data)
-
-        # apply darkmap correction
-        #self.data = (self.data - self.darkmap)
-
-
-
-        # Account for any changes we need to make in memory allocation on the GPU
-        if not _warpDrive:
-            # Initialize new detector object for this process
-            dfilter1 = warpDrive.normUnifFilter(12)
-            dfilter2 = warpDrive.normUnifFilter(6)
-            _warpDrive = warpDrive.detector(dfilter1, dfilter2)
-            _warpDrive.allocateMem(np.shape(self.data), self.data.dtype.itemsize)
-            _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
-
-            # If the data is coming from a different region of the camera, reallocate
-        elif _warpDrive.data.shape == self.data.shape:
-            # check if both corners are the same
-            topLeft = np.array_equal(self.varmap[:20, :20], _warpDrive.varmap[:20, :20])
-            botRight = np.array_equal(self.varmap[-20:, -20:], _warpDrive.varmap[-20:, -20:])
-            if not (topLeft or botRight):
-                _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
-        else:  # data is a different shape - we know that we need to re-allocate and prepvar
-            _warpDrive.allocateMem(np.shape(self.data), self.data.dtype.itemsize)
-            _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
-
-        #PYME ROISize is a half size
         roiSize = int(2*self.metadata.getOrDefault('Analysis.ROISize', 7.5) + 1)
 
         _warpDrive.fitFunc = _warpDrive.gaussAstig
