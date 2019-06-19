@@ -185,7 +185,7 @@ class TriangleMesh(object):
             v0 = self.vertices[self._h_vertex[self._h_next[self._faces[f_idx]]]]
             u = v2 - v1
             v = v0 - v1
-            n = fast_3x3_cross(u, v)
+            n = fast_3x3_cross(u.squeeze(), v.squeeze())
             # nn = np.linalg.norm(n)
             nn = np.sqrt((n*n).sum())
             self._face_areas[f_idx] = 0.5*nn
@@ -820,7 +820,7 @@ class TriangleMesh(object):
 
         # Update face and vertex normals
         self.update_face_normals([self._h_face[_curr], self._h_face[_twin]])
-        self.update_vertex_neighbors([self._h_vertex[_curr], self._h_vertex[_twin], self._h_vertex[_next], self._h_vertex[self._h_next[_twin]]])
+        self.update_vertex_neighbors([self._h_vertex[_curr], self._h_vertex[_twin], self._h_vertex[_next], self._h_vertex[self._h_next[_twin]], self._h_vertex[_prev], self._h_vertex[self._h_prev[_twin]]])
 
         self._faces_by_vertex = None
 
