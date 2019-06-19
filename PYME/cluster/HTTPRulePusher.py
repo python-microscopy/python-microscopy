@@ -104,6 +104,8 @@ def launch_localize(analysisMDH, seriesName):
     from PYME.IO.FileUtils.nameUtils import genClusterResultFileName
     from PYME.IO import unifiedIO
 
+    seriesName = seriesName.replace(' ', '_')  # spaces will have been stripped during spooling
+
     resultsFilename = verify_cluster_results_filename(genClusterResultFileName(seriesName))
     logger.info('Results file: ' + resultsFilename)
 

@@ -773,7 +773,7 @@ def putFile(filename, data, serverfilter=local_serverfilter):
         nAttempts +=1
         name, info = _chooseServer(serverfilter)
     
-        url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
+        url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename.replace(' ', '_'))
         print(repr(url))
     
         t = time.time()
@@ -938,6 +938,7 @@ if USE_RAW_SOCKETS:
                 nChunksSpooled = 0
                 while nChunksRemaining > 0:
                     filename, data = files[-nChunksRemaining]
+                    filename = filename.replace(' ', '_')  # disallow spaces in filenames on the cluster
                     dl = len(data)
                     if nChunksRemaining <= 1:
                         connection = b'close'
@@ -1028,7 +1029,7 @@ else:
         name, info = _chooseServer(serverfilter)
 
         for filename, data in files:
-            url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
+            url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename.replace(' ', '_'))
 
             t = time.time()
             #_last_access_time[name] = t
