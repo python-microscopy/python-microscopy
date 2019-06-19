@@ -14,6 +14,22 @@ def pack_edges(arr, axis=1):
     
     return res
 
+def fast_3x3_cross(a,b):
+    # Index only once
+    a0 = a[0]
+    a1 = a[1]
+    a2 = a[2]
+    b0 = b[0]
+    b1 = b[1]
+    b2 = b[2]
+
+    x = a1*b2 - a2*b1
+    y = a2*b0 - a0*b2
+    z = a0*b1 - a1*b0
+
+    vec = np.array([x,y,z])
+    return vec
+
 class TriangleMesh(object):
     def __init__(self, vertices, faces, max_valence=6):
         """
@@ -150,7 +166,7 @@ class TriangleMesh(object):
             self._face_areas = 0.5*nn
             self._face_normals = n/nn[:, None]
             self._face_normals[np.isnan(self.face_normals)] = 0
-        self._face_normals[self._faces == -1] = 0
+            self._face_normals[self._faces == -1] = 0
         return self._face_normals
 
     def update_face_normals(self, f_idxs):
@@ -169,8 +185,9 @@ class TriangleMesh(object):
             v0 = self.vertices[self._h_vertex[self._h_next[self._faces[f_idx]]]]
             u = v2 - v1
             v = v0 - v1
-            n = np.cross(u, v)
-            nn = np.linalg.norm(n)
+            n = fast_3x3_cross(u, v)
+            # nn = np.linalg.norm(n)
+            nn = np.sqrt((n*n).sum())
             self._face_areas[f_idx] = 0.5*nn
             if nn > 0:
                 self._face_normals[f_idx] = n/nn
@@ -422,21 +439,31 @@ class TriangleMesh(object):
         for v_idx in v_idxs:
             _orig = self._vertex_halfedges[v_idx]
             _curr = _orig
+            _twin = self._h_twin[_curr]
             i = 0
             area = 0
             self._vertex_normals[v_idx] = 0
             self._vertex_neighbors[v_idx, :] = -1
             self._valences[v_idx] = 0
+
+
             while True:
-                if (_curr == -1) or (self._h_twin[_curr] == -1):
+                if (_curr == -1) or (_twin == -1):
                     break
+
+                _vertex = self._h_vertex[_curr]
+                _face = self._h_face[_curr]
+
                 if (i < self.max_valence):
-                    self._vertex_neighbors[v_idx, i] = self._h_vertex[_curr]
-                    _curr_face = self._h_face[_curr]
-                    self._vertex_normals[v_idx] += (self.face_normals[_curr_face])*(self.face_areas[_curr_face])
-                    area += self.face_areas[_curr_face]
-                self._h_length[_curr] = np.linalg.norm(self._vertices[self._h_vertex[_curr]] - self._vertices[self._h_vertex[self._h_prev[_curr]]])
-                _curr = self._h_next[self._h_twin[_curr]]
+                    self._vertex_neighbors[v_idx, i] = _vertex
+                    n = self.face_normals[_face]
+                    a = self.face_areas[_face]
+                    self._vertex_normals[v_idx] += n*a
+                    area += a
+                l = self._vertices[_vertex] - self._vertices[self._h_vertex[self._h_prev[_curr]]]
+                self._h_length[_curr] = np.sqrt((l*l).sum())
+                _curr = self._h_next[_twin]
+                _twin = self._h_twin[_curr]
                 i += 1
                 self._valences[v_idx] += 1
                 if (_curr == _orig):
@@ -444,7 +471,8 @@ class TriangleMesh(object):
 
             if area > 0:
                 self._vertex_normals[v_idx] /= area
-                nn = np.linalg.norm(self._vertex_normals[v_idx])
+                n = self._vertex_normals[v_idx]
+                nn = np.sqrt((n*n).sum())
                 if nn > 0:
                     self._vertex_normals[v_idx] /= nn
                 else:
@@ -464,19 +492,25 @@ class TriangleMesh(object):
             for v_idx in np.arange(len(self.vertices)):
                 _orig = self._vertex_halfedges[v_idx]
                 _curr = _orig
+                _twin = self._h_twin[_curr]
                 i = 0
                 area = 0
                 self._valences[v_idx] = 0
                 while True:
-                    if (_curr == -1) or (self._h_twin[_curr] == -1):
+                    if (_curr == -1) or (_twin == -1):
                         break
+                    _vertex = self._h_vertex[_curr]
+                    _face = self._h_face[_curr]
                     if (i < self.max_valence):
-                        self._vertex_neighbors[v_idx, i] = self._h_vertex[_curr]
-                        _curr_face = self._h_face[_curr]
-                        self._vertex_normals[v_idx] += (self.face_normals[_curr_face])*(self.face_areas[_curr_face])
-                        area += self.face_areas[_curr_face]
-                    self._h_length[_curr] = np.linalg.norm(self._vertices[self._h_vertex[_curr]] - self._vertices[self._h_vertex[self._h_prev[_curr]]])
-                    _curr = self._h_next[self._h_twin[_curr]]
+                        self._vertex_neighbors[v_idx, i] = _vertex
+                        n = self.face_normals[_face]
+                        a = self.face_areas[_face]
+                        self._vertex_normals[v_idx] += n*a
+                        area += a
+                    l = self._vertices[_vertex] - self._vertices[self._h_vertex[self._h_prev[_curr]]]
+                    self._h_length[_curr] = np.sqrt((l*l).sum())
+                    _curr = self._h_next[_twin]
+                    _twin = self._h_twin[_curr]
                     i += 1
                     self._valences[v_idx] += 1
                     if (_curr == _orig):
@@ -910,28 +944,36 @@ class TriangleMesh(object):
         """
         pass
 
-        # Unordered halfedges
-        edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
+        # # Unordered halfedges
+        # edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
 
-        # Group edges uniquely
-        packed_edges = pack_edges(edges)
+        # # Group edges uniquely
+        # packed_edges = pack_edges(edges)
 
-        # Return the unique edges and their counts
-        e, c = np.unique(packed_edges, return_counts=True)
+        # # Return the unique edges and their counts
+        # e, c = np.unique(packed_edges, return_counts=True)
 
-        # Get the bad edges
-        bad_edges = dict([(x,i) for i, x in enumerate(e[c > 2])])
+        # # Get the bad edges
+        # bad_edges = dict([(x,i) for i, x in enumerate(e[c > 2])])
+        # # print(bad_edges)
 
-        # Delete all edges of degree > 2
-        for i, edge in enumerate(edges):
-            if edge in bad_edges.keys():
-                # Delete the edge
-                self._h_vertex[i] = -1
-                self._h_twin[i] = -1
-                self._h_prev[i] = -1
-                self._h_next[i] = -1
-                self._h_face[i] = -1
-                self._h_length[i] = -1
+        # n = len(self.faces)
+
+        # # Delete all edges of degree > 2
+        # for i, edge in enumerate(packed_edges):
+        #     # print(edge)
+        #     if not bool(bad_edges):
+        #         break
+        #     if edge in bad_edges.keys():
+        #         bad_edges.pop(edge)
+        #         # Delete the edge
+        #         _idx = np.mod(i, n)
+        #         self._h_vertex[_idx] = -1
+        #         self._h_twin[_idx] = -1
+        #         self._h_prev[_idx] = -1
+        #         self._h_next[_idx] = -1
+        #         self._h_face[_idx] = -1
+        #         self._h_length[_idx] = -1
 
         # While there are vertices connected to two -1 halfedges
         # while True:
