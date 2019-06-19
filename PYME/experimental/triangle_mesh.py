@@ -597,18 +597,21 @@ class TriangleMesh(object):
         self._h_twin[_curr] = -1
         self._h_next[_curr] = -1
         self._h_prev[_curr] = -1
+        self._h_length[_curr] = -1
 
         self._h_vertex[_prev] = -1
         self._h_face[_prev] = -1
         self._h_twin[_prev] = -1
         self._h_next[_prev] = -1
         self._h_prev[_prev] = -1
+        self._h_length[_prev] = -1
 
         self._h_vertex[_next] = -1
         self._h_face[_next] = -1
         self._h_twin[_next] = -1
         self._h_next[_next] = -1
         self._h_prev[_next] = -1
+        self._h_length[_next] = -1
 
         # Delete _twin, _twin_prev, _twin_next
         self._h_vertex[_twin] = -1
@@ -616,18 +619,21 @@ class TriangleMesh(object):
         self._h_twin[_twin] = -1
         self._h_next[_twin] = -1
         self._h_prev[_twin] = -1
+        self._h_length[_twin] = -1
 
         self._h_vertex[_twin_prev] = -1
         self._h_face[_twin_prev] = -1
         self._h_twin[_twin_prev] = -1
         self._h_next[_twin_prev] = -1
         self._h_prev[_twin_prev] = -1
+        self._h_length[_twin_prev] = -1
 
         self._h_vertex[_twin_next] = -1
         self._h_face[_twin_next] = -1
         self._h_twin[_twin_next] = -1
         self._h_next[_twin_next] = -1
         self._h_prev[_twin_next] = -1
+        self._h_length[_twin_next] = -1
 
         # Update faces
         self.update_face_normals([self._h_face[_prev_twin], self._h_face[self._h_twin[_twin_next]]])
@@ -736,11 +742,13 @@ class TriangleMesh(object):
         self._faces_by_vertex = None
 
     def _insert_vertex(self, _vertex):
+        n = self._vertices.shape[0]-1
         self._vertices, _idx, _v_orig = self._insert(self._vertices, _vertex, return_orig=True)
-        self._vertex_halfedges, _ = self._insert(self._vertex_halfedges, 0)
+        if _idx > n:
+            self._vertex_halfedges, _ = self._insert(self._vertex_halfedges, 0)
+            self._vertex_normals, _ = self._insert(self._vertex_normals, 0)
         if self._vertex_neighbors.shape[0] < self._vertices.shape[0]:
             self._vertex_neighbors = self._resize(self._vertex_neighbors, skip_entries=False)
-        self._vertex_normals, _ = self._insert(self._vertex_normals, 0)
 
         if len(_v_orig) > 0:
             # Some vertices were moved, we need to update references
@@ -751,7 +759,7 @@ class TriangleMesh(object):
 
         return _idx
     
-    def edge_flip(self, _curr):
+    def edge_flip(self, _curr, live_update=True):
         """
         Flip an edge specified by halfedge index _curr.
         """
@@ -818,29 +826,45 @@ class TriangleMesh(object):
         self._faces[self._h_face[_curr]] = _curr
         self._faces[self._h_face[_twin]] = _twin
 
-        # Update face and vertex normals
-        self.update_face_normals([self._h_face[_curr], self._h_face[_twin]])
-        self.update_vertex_neighbors([self._h_vertex[_curr], self._h_vertex[_twin], self._h_vertex[_next], self._h_vertex[self._h_next[_twin]], self._h_vertex[_prev], self._h_vertex[self._h_prev[_twin]]])
+        if live_update:
 
-        self._faces_by_vertex = None
+            # Update face and vertex normals
+            self.update_face_normals([self._h_face[_curr], self._h_face[_twin]])
+            self.update_vertex_neighbors([self._h_vertex[_curr], self._h_vertex[_twin], self._h_vertex[_next], self._h_vertex[self._h_next[_twin]], self._h_vertex[_prev], self._h_vertex[self._h_prev[_twin]]])
+
+            self._faces_by_vertex = None
 
     def regularize(self):
         """
         Adjust vertices so they tend toward valence < self.max_valence.
         """
 
+        # Make sure we don't flip edges forever (we can always try a further refinement)
+        n_tries = 2*self.max_valence + 1
+
+        # n = 0
+        # while True:
         # Find which vertices have high valences
         problems = np.where(self._valences > self.max_valence)[0]
 
-        # Make sure we don't flip edges forever (we can always try a further refinement)
-        n_tries = 2*self.max_valence + 1
+            # if (problems.size == 0) or (n > n_tries):
+            #     break
 
         # Loop over high valence vertices and flip edges to reduce valence
         for _idx in problems:
             i = 0
-            while (self._valences[_idx] > self.max_valence) and (i < n_tries):
-                self.edge_flip(self._vertex_halfedges[_idx])
+            while (i < n_tries) and (self._valences[_idx] > self.max_valence):
+                self.edge_flip(self._vertex_halfedges[_idx], live_update=True)
                 i += 1
+        
+            # # Now we gotta recalculate the normals
+            # self._face_normals = None
+            # self._vertex_normals = None
+            # self.face_normals
+            # self.vertex_normals
+
+            # self._faces_by_vertex = None
+            # n += 1
 
     def relax(self, l=1, n=1):
         """
@@ -908,35 +932,38 @@ class TriangleMesh(object):
             # Guess edge_length
             edge_length = np.mean(self._h_length)
 
-        # Grab the edges we want to modify
-        split_idxs = np.where(self._h_length > 1.33*edge_length)[0]
-        collapse_idxs = np.where(self._h_length < 0.8*edge_length)[0]
+        for k in range(n):
+            # Grab the edges we want to modify
+            split_idxs = np.where(self._h_length > 1.33*edge_length)[0]
+            collapse_idxs = np.where(self._h_length < 0.8*edge_length)[0]
 
-        # 1. Split all edges at their midpoint longer than (4/3)*edge_length.
-        d = {}
-        for i in split_idxs:
-            _twin = self._h_twin[i]
-            if _twin in d.keys():
-                continue
-            else:
-                d[_twin] = i
-                self.edge_split(i)
-        
-        # 2. Collapse all edges shorter than (4/5)*edge_length to their midpoint.
-        d = {}
-        for i in collapse_idxs:
-            _twin = self._h_twin[i]
-            if _twin in d.keys():
-                continue
-            else:
-                d[_twin] = i
-                self.edge_collapse(i)
+            # 1. Split all edges at their midpoint longer than (4/3)*edge_length.
+            d = {}
+            for i in split_idxs:
+                _twin = self._h_twin[i]
+                if _twin in d.keys():
+                    continue
+                else:
+                    d[i] = _twin
+                    self.edge_split(i)
+            
+            # 2. Collapse all edges shorter than (4/5)*edge_length to their midpoint.
+            d = {}
+            for i in collapse_idxs:
+                _twin = self._h_twin[i]
+                if _twin == -1:
+                    continue
+                if _twin in d.keys():
+                    continue
+                else:
+                    d[i] = _twin
+                    self.edge_collapse(i)
 
-        # 3. Flip edges in order to minimize deviation from valence 6.
-        self.regularize()
+            # 3. Flip edges in order to minimize deviation from valence 6.
+            self.regularize()
 
-        # 4. Relocate vertices on the surface by tangential smoothing.
-        self.relax(l=l, n=n)
+            # 4. Relocate vertices on the surface by tangential smoothing.
+            # self.relax(l=l)
 
     def repair(self):
         """
