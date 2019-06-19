@@ -8,28 +8,30 @@ try:  # py3
     from urllib.parse import quote, urlencode
 except ImportError:  # py2
     from urllib import quote, urlencode
+import logging
+logger = logging.getLogger(__name__)
 
 
 def check_name(name):
     """
-    Check if filename / url is OK to use with, e.g. clusterIO
+    Check if filename / url is OK to use with, e.g. clusterIO.
 
     Parameters
     ----------
-    name: str or bytes
+    name: str
         The filename or url to query
 
     Returns
     -------
     ok: bool
-        True if filename/url is fully compatible with clusterIO / unified IO
+        True if filename/url is fully compatible
 
     """
     return name == fix_name(name)
 
 def assert_name_ok(name):
     """
-    Raise if name contains reserved/invalid characters
+    Raise if name contains reserved/invalid characters for use with, e.g. clusterIO.
 
     Parameters
     ----------
@@ -37,35 +39,49 @@ def assert_name_ok(name):
         The filename or url to query
 
     """
+    fixed_name = fix_name(name)
     try:
-        assert check_name(name)
+        assert name == fixed_name
     except AssertionError:
-        raise AssertionError('Name "%s" not compatible with PYME Unified IO, try: "%s"' % (name, fix_name(name)))
+        raise AssertionError('Name "%s" not compatible with PYME Unified IO, try: "%s"' % (name, fixed_name))
 
 def fix_name(name):
     """
-    Cleans filename / url for use with e.g. clusterIO
+    Cleans filename / url for use with, e.g. clusterIO, by replacing spaces with underscores and removing all
+    percent-encoded characters other than ':' and '/'.
 
     Parameters
     ----------
-    name: str or bytes (utf-8)
+    name: str
         The filename or url to query
 
     Returns
     -------
-    fixed_name: str or bytes (utf-8)
-        The cleaned file name, data-typed to match the input
+    fixed_name: str
+        The cleaned file name
 
     """
-    # use underscores for spaces, remove b' resulting from str(b'something')
-    fixed_name = str(name).replace(' ', '_').replace("b'", '')
-    # remove any percent-encoded characters other than ':'. Note that this preserves '/'
-    fixed_name = re.sub('%..', '', quote(fixed_name).replace('%3A', ':'))
-    # make sure return is same type as input
-    try:  # for str types
-        return type(name)(fixed_name)
-    except TypeError:  # if input was bytes
-        return fixed_name.encode('utf-8')
+    return re.sub('%..', '', quote(name.replace(' ', '_')).replace('%3A', ':'))
+
+def verbose_fix_name(name):
+    """
+    Wrapper for fix_name which sacrifices performance in order to complain.
+    Parameters
+    ----------
+    name: str
+        The filename or url to query
+
+    Returns
+    -------
+    fixed_name: str
+        The cleaned file name
+
+    """
+    try:
+        assert_name_ok(name)
+    except AssertionError as e:
+        logger.error(str(e))
+    return fix_name(name)
 
 def split_cluster_url(url):
     if not (url.startswith('pyme-cluster') or url.startswith('PYME-CLUSTER')):
