@@ -28,6 +28,15 @@ def check_name(name):
     return name == fix_name(name)
 
 def assert_name_ok(name):
+    """
+    Raise if name contains reserved/invalid characters
+
+    Parameters
+    ----------
+    name: str or bytes
+        The filename or url to query
+
+    """
     try:
         assert check_name(name)
     except AssertionError:
