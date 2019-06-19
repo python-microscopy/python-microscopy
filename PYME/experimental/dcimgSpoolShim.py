@@ -4,8 +4,7 @@ import time
 
 from PYME.Acquire import HTTPSpooler
 from PYME.Analysis import MetaData
-from PYME.IO import MetaDataHandler
-from PYME.IO import clusterIO
+from PYME.IO import MetaDataHandler, clusterIO, unifiedIO
 from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
 from PYME.IO.clusterExport import ImageFrameSource, MDSource
 from PYME.cluster import HTTPRulePusher
@@ -86,7 +85,7 @@ class DCIMGSpoolShim(object):
 
         #determine a filename on the cluster from our local filename
         #TODO - make this more complex to generate suitable directory structures
-        filename = os.path.splitext(metadataFilename)[0]
+        filename = unifiedIO.verbose_fix_name(os.path.splitext(metadataFilename)[0])
         
         dirname, seriesname = os.path.split(filename)
         

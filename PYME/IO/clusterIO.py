@@ -12,6 +12,7 @@ import requests
 import time
 import numpy as np
 import threading
+from PYME.IO import unifiedIO
 
 if six.PY2:
     import httplib
@@ -762,9 +763,7 @@ def putFile(filename, data, serverfilter=local_serverfilter):
 
     if not isinstance(data, bytes):
         raise TypeError('data should be bytes (not a unicode string)')
-    
-    #filename = (filename)
-    #serverfilter = (serverfilter)
+    unifiedIO.assert_name_ok(filename)
     
     success = False
     nAttempts = 0
@@ -773,7 +772,7 @@ def putFile(filename, data, serverfilter=local_serverfilter):
         nAttempts +=1
         name, info = _chooseServer(serverfilter)
     
-        url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename.replace(' ', '_'))
+        url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
         print(repr(url))
     
         t = time.time()
@@ -938,7 +937,7 @@ if USE_RAW_SOCKETS:
                 nChunksSpooled = 0
                 while nChunksRemaining > 0:
                     filename, data = files[-nChunksRemaining]
-                    filename = filename.replace(' ', '_')  # disallow spaces in filenames on the cluster
+                    unifiedIO.assert_name_ok(filename)
                     dl = len(data)
                     if nChunksRemaining <= 1:
                         connection = b'close'
@@ -1029,7 +1028,8 @@ else:
         name, info = _chooseServer(serverfilter)
 
         for filename, data in files:
-            url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename.replace(' ', '_'))
+            unifiedIO.assert_name_ok(filename)
+            url = 'http://%s:%d/%s' % (socket.inet_ntoa(info.address), info.port, filename)
 
             t = time.time()
             #_last_access_time[name] = t
