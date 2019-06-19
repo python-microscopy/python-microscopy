@@ -81,7 +81,8 @@ preamp_gains = {
     7863 : 2,
 }
 
-class iXonCamera:
+from PYME.Acquire.Hardware.Camera import Camera
+class iXonCamera(Camera):
     #numpy_frames=1
 
     #define a couple of acquisition modes
@@ -668,6 +669,12 @@ class iXonCamera:
         ac.AbortAcquisition()
         ac.SetAcquisitionMode(aqMode)
         self.contMode = not aqMode == 1
+        
+    def GetAcquisitionMode(self):
+        if self.contMode:
+            return self.MODE_CONTINUOUS
+        else:
+            return self.MODE_SINGLE_SHOT
 
     def SetFrameTransfer(self, ftMode):
         self.__selectCamera()
