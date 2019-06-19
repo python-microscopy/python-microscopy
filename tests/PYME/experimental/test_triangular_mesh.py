@@ -37,7 +37,7 @@ def test_face_normal_magnitude():
     fnn = np.linalg.norm(fn, axis=1)
     y = np.ones(fnn.shape)
 
-    np.testing.assert_array_almost_equal(fnn, y)
+    np.testing.assert_array_almost_equal(fnn, y, 4)
 
 def test_vertex_normal_magnitude():
     tris = _generate_test_sphere()
@@ -46,7 +46,7 @@ def test_vertex_normal_magnitude():
     vnn = np.linalg.norm(vn, axis=1)
     y = np.ones(vnn.shape)
 
-    np.testing.assert_array_almost_equal(vnn, y)
+    np.testing.assert_array_almost_equal(vnn, y, 4)
 
 def test_vertex_normal_sign():
     tris = _generate_test_sphere()
@@ -59,7 +59,7 @@ def test_vertex_normal_sign():
     vnn = np.linalg.norm(mesh.vertices, axis=1)
     vnnn = mesh.vertices/np.vstack([vnn, vnn, vnn]).T
 
-    np.testing.assert_array_almost_equal(np.sign(vn), np.sign(vnnn))
+    np.testing.assert_array_almost_equal(np.sign(vn), np.sign(vnnn), 4)
 
 def test_add_vertex_location():
     # Construct a single triangle
@@ -69,7 +69,7 @@ def test_add_vertex_location():
     mesh.add_vertex(0)
 
     np.testing.assert_array_almost_equal(np.array([1./3, 1./3, 0.5]),
-                                         mesh.vertices[-1, :])
+                                         mesh.vertices[-1, :], 4)
 
 def test_add_vertex_n_faces():
     # Construct a single triangle
@@ -89,7 +89,7 @@ def test_add_vertex_faces():
 
     expected_faces = np.array([[0,3,2],[0,1,3],[1,2,3]])
 
-    np.testing.assert_array_almost_equal(mesh.faces, expected_faces)
+    np.testing.assert_array_almost_equal(mesh.faces, expected_faces, 4)
 
 def test_add_vertex_face_normals():
     # Construct a single triangle

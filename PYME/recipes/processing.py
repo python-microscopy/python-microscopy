@@ -1345,7 +1345,7 @@ class BinaryDilation(Filter):
             selem = skimage.morphology.ball(self.radius)
         else:
             selem = skimage.morphology.disk(self.radius)
-        return ndimage.binary_dilation(data, selem)
+        return ndimage.binary_dilation(data, selem, iterations=self.iterations)
 
 @register_module('BinaryErosion')         
 class BinaryErosion(Filter):
@@ -1359,11 +1359,10 @@ class BinaryErosion(Filter):
             selem = skimage.morphology.ball(self.radius)
         else:
             selem = skimage.morphology.disk(self.radius)
-        return ndimage.binary_erosion(data, selem)
+        return ndimage.binary_erosion(data, selem, iterations=self.iterations)
 
 @register_module('BinaryFillHoles')         
 class BinaryFillHoles(Filter):
-    iterations = Int(1)
     radius = Float(1)
     
     def applyFilter(self, data, chanNum, frNum, im):
@@ -1377,7 +1376,6 @@ class BinaryFillHoles(Filter):
         
 @register_module('GreyDilation')      
 class GreyDilation(Filter):
-    iterations = Int(1)
     radius = Float(1)
     
     def applyFilter(self, data, chanNum, frNum, im):
@@ -1391,7 +1389,6 @@ class GreyDilation(Filter):
 
 @register_module('GreyErosion')         
 class GreyErosion(Filter):
-    iterations = Int(1)
     radius = Float(1)
     
     def applyFilter(self, data, chanNum, frNum, im):
@@ -1405,7 +1402,6 @@ class GreyErosion(Filter):
         
 @register_module('WhiteTophat')         
 class WhiteTophat(Filter):
-    iterations = Int(1)
     radius = Float(1)
     
     def applyFilter(self, data, chanNum, frNum, im):
@@ -1806,3 +1802,30 @@ class BackgroundSubtractionMovingPercentile(BackgroundSubtractionMovingAverage):
     input and output images are the same size.
     """
     percentile = Float(0.25)
+
+
+
+@register_module('Projection')
+class Projection(Filter):
+    """ Project image along an axis
+    
+    TODO - make this more efficient - we currently force the whole stack into memory
+    """
+    
+    kind = Enum(['Mean', 'Max', 'Median', 'Std', 'Min'])
+    axis = Int(2)
+    
+    processFramesIndividually = False
+    
+    def applyFilter(self, data, chanel_num, frame_num, image):
+        if self.kind == 'Mean':
+            return np.mean(data, axis=int(self.axis))
+        if self.kind == 'Max':
+            return np.max(data, axis=int(self.axis))
+        if self.kind == 'Median':
+            return np.median(data, axis=int(self.axis))
+        if self.kind == 'Std':
+            return np.std(data, axis=int(self.axis))
+        if self.kind == 'Min':
+            return np.min(data, axis=int(self.axis))
+        

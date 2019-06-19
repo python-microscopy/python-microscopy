@@ -51,18 +51,23 @@ class SurfaceFitter(HasPrivateTraits):
         #filter surfaces and throw out those which don't point the same way as their neighbours
         f = surfit.filter_quad_results(f, pts.T, self.fitInfluenceRadius,self.normalAlignmentThreshold)
 
+        sfits = tabular.mappingFilter(tabular.recArrayInput(f.view(surfit.SURF_PATCH_DTYPE_FLAT)))
+        sfits.setMapping('r', '1./(np.abs(A) + np.abs(B) + 1e-6)')
+
+        pipeline.addDataSource('surf_fits_norm_filt', sfits, False)
+
         #do the reconstruction by generating an augmented point data set for each surface
         #this adds virtual localizations spread evenly across each surface
         if self.limitReconstructionToSupportHull:
-            xs, ys, zs, xn, yn, zn, N = surfit.reconstruct_quad_surfaces_Pr_region_cropped(f, self.reconstructionRadius, pts.T,
+            xs, ys, zs, xn, yn, zn, N, j = surfit.reconstruct_quad_surfaces_Pr_region_cropped(f, self.reconstructionRadius, pts.T,
                                                                            fit_radius=self.fitInfluenceRadius, step=self.reconstructionPointSpacing)
         else:
-            xs, ys, zs, xn, yn, zn, N = surfit.reconstruct_quad_surfaces_Pr(f, self.reconstructionRadius, step=self.reconstructionPointSpacing)
+            xs, ys, zs, xn, yn, zn, N, j = surfit.reconstruct_quad_surfaces_Pr(f, self.reconstructionRadius, step=self.reconstructionPointSpacing)
         
         #construct a new datasource with our augmented points
         ds = tabular.mappingFilter({'x': xs, 'y': ys, 'z' : zs,
                                     'xn': xn, 'yn' : yn, 'zn': zn,
-                                    'probe' : np.zeros_like(xs), 'Npoints' : N})
+                                    'probe' : np.zeros_like(xs), 'Npoints' : N, 'j': j, 'r': sfits['r'][j.astype('i')]})
         
         #add the datasource to the pipeline and set it to be the active data source
         pipeline.addDataSource('surf', ds, False)

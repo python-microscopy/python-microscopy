@@ -65,6 +65,9 @@ class PlayPanel(wx.Panel):
         self.bPlay = wx.BitmapButton(self, -1, self.bmPlay)
         self.bPlay.Bind(wx.EVT_BUTTON, self.OnPlay)
 
+        self.bGoto = wx.Button(self, -1, 'GOTO', style=wx.BU_EXACTFIT)
+        self.bGoto.Bind(wx.EVT_BUTTON, self.OnGoto)
+
         self.slPlaySpeed = wx.Slider(self, -1, 5, 1, 50, style=wx.SL_HORIZONTAL)
         self.slPlaySpeed.Bind(wx.EVT_SCROLL_THUMBRELEASE, self.OnPlaySpeedChanged)
 
@@ -80,6 +83,7 @@ class PlayPanel(wx.Panel):
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             hsizer.Add(self.bSeekStart, 0,wx.ALIGN_CENTER_VERTICAL,0)
             hsizer.Add(self.bPlay, 0,wx.ALIGN_CENTER_VERTICAL,0)
+            hsizer.ADd(self.bGoto, 0,wx.ALIGN_CENTER_VERTICAL,0)
             hsizer.Add(wx.StaticText(self, -1, 'FPS:'), 0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,4)
             hsizer.Add(self.slPlaySpeed, 1,wx.ALIGN_CENTER_VERTICAL)
 
@@ -89,6 +93,7 @@ class PlayPanel(wx.Panel):
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             hsizer.Add(self.bSeekStart, 0,wx.ALIGN_CENTER_VERTICAL)
             hsizer.Add(self.bPlay, 0,wx.ALIGN_CENTER_VERTICAL|wx.RIGHT,4)
+            hsizer.Add(self.bGoto, 0,wx.ALIGN_CENTER_VERTICAL|wx.RIGHT,4)
             hsizer.Add(wx.StaticText(self, -1, 'Pos:'), 0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,0)
             hsizer.Add(self.slPlayPos, 3,wx.ALIGN_CENTER_VERTICAL)
 
@@ -136,6 +141,20 @@ class PlayPanel(wx.Panel):
         self.do.zp = int((self.do.ds.shape[2]-1)*self.slPlayPos.GetValue()/100.)
         self.moving = False
         #self.vp.update()
+
+    def OnGoto(self, event):
+        dialog = wx.TextEntryDialog(self, 'Goto frame:','GOTO','0')
+        ans = dialog.ShowModal()
+        if ans == wx.ID_OK:
+            val = dialog.GetValue()
+            try:
+                frame = int(val)
+            except(ValueError):
+                # Not an integer
+                raise ValueError('Please enter a valid frame number.')
+            frame = max(0, frame)
+            frame = min(frame, self.do.ds.shape[2])
+            self.do.zp = frame
 
     def update(self):
         #print 'foo'

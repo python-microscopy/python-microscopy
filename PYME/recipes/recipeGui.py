@@ -165,7 +165,7 @@ class ModuleSelectionDialog(wx.Dialog):
 
         self.pan = wx.Panel(self)
 
-        modNames = modules.base.all_modules.keys()
+        modNames = list(modules.base.all_modules.keys())
         modNames.sort()
 
         self.rootNodes = {}
@@ -206,7 +206,10 @@ class ModuleSelectionDialog(wx.Dialog):
 
             #self.modnames[item] = mn
 
-        self.tree_list.ExpandAll(root)
+        if wx.version() > '4':
+            self.tree_list.ExpandAll()
+        else:
+            self.tree_list.ExpandAll(root)
 
         #self.tree_list.GetMainWindow().Bind(wx.EVT_LEFT_UP, self.OnSelect)
         self.tree_list.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelect)

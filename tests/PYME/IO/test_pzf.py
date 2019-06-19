@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-pytestmark = pytest.mark.skip("Segfaults on Linux")
+#pytestmark = pytest.mark.skip("Segfaults on Linux")
 
 
 def test_compression_lossless_uint16():

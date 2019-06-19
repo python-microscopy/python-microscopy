@@ -27,6 +27,8 @@ class RecipeDisplayPanel(wx.Panel):
         self.cols = {}
         self._pens = {}
         
+        self.fp = None
+        
         #self.SetMinSize((200, 500))
         
         #self.SetScrollRate(0, 20)
@@ -57,7 +59,9 @@ class RecipeDisplayPanel(wx.Panel):
         self.Refresh()
         
     def _layout(self, *args, **kwargs):
+        self.fp = None
         self.DestroyChildren()
+        
 
         from matplotlib import pyplot as plt
         from .base import ModuleBase, OutputModule
@@ -237,6 +241,9 @@ class RecipeDisplayPanel(wx.Panel):
         #print 'p'
         #if not self.IsShownOnScreen():
         #    return
+        if self.fp is None:
+            return
+        
 
         dc = wx.PaintDC(self)
         #self.PrepareDC(dc)
