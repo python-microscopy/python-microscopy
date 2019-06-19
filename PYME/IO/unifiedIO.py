@@ -3,6 +3,60 @@ import os
 from io import BytesIO
 from contextlib import contextmanager
 import tempfile
+import re
+try:  # py3
+    from urllib.parse import quote, urlencode
+except ImportError:  # py2
+    from urllib import quote, urlencode
+
+
+def check_name(name):
+    """
+    Check if filename / url is OK to use with, e.g. clusterIO
+
+    Parameters
+    ----------
+    name: str or bytes
+        The filename or url to query
+
+    Returns
+    -------
+    ok: bool
+        True if filename/url is fully compatible with clusterIO / unified IO
+
+    """
+    return name == fix_name(name)
+
+def assert_name_ok(name):
+    try:
+        assert check_name(name)
+    except AssertionError:
+        raise AssertionError('Name "%s" not compatible with PYME Unified IO, try: "%s"' % (name, fix_name(name)))
+
+def fix_name(name):
+    """
+    Cleans filename / url for use with e.g. clusterIO
+
+    Parameters
+    ----------
+    name: str or bytes (utf-8)
+        The filename or url to query
+
+    Returns
+    -------
+    fixed_name: str or bytes (utf-8)
+        The cleaned file name, data-typed to match the input
+
+    """
+    # use underscores for spaces, remove b' resulting from str(b'something')
+    fixed_name = str(name).replace(' ', '_').replace("b'", '')
+    # remove any percent-encoded characters other than ':'. Note that this preserves '/'
+    fixed_name = re.sub('%..', '', quote(fixed_name).replace('%3A', ':'))
+    # make sure return is same type as input
+    try:  # for str types
+        return type(name)(fixed_name)
+    except TypeError:  # if input was bytes
+        return fixed_name.encode('utf-8')
 
 def split_cluster_url(url):
     if not (url.startswith('pyme-cluster') or url.startswith('PYME-CLUSTER')):
