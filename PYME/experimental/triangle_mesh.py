@@ -75,9 +75,6 @@ class TriangleMesh(object):
         # Properties we can visualize
         self.vertex_properties = ['x', 'y', 'z']
 
-    def keys(self):
-        return list(self.vertex_properties)
-
     def __getitem__(self, k):
         # this defers evaluation of the properties until we actually access them, as opposed to the mappings which
         # stored the values on class creation.
@@ -87,18 +84,6 @@ class TriangleMesh(object):
             raise KeyError('Key %s not defined' % k)
         
         return res
-
-    @property
-    def x(self):
-        return self.vertices[:,0]
-        
-    @property
-    def y(self):
-        return self.vertices[:,1]
-        
-    @property
-    def z(self):
-        return self.vertices[:,2]
 
     @classmethod
     def from_stl(cls, filename):
@@ -132,6 +117,18 @@ class TriangleMesh(object):
         # print(normals)
 
         return cls(vertices, faces)
+
+    @property
+    def x(self):
+        return self.vertices[:,0]
+        
+    @property
+    def y(self):
+        return self.vertices[:,1]
+        
+    @property
+    def z(self):
+        return self.vertices[:,2]
 
     @property
     def vertices(self):
@@ -169,31 +166,6 @@ class TriangleMesh(object):
             self._face_normals[self._faces == -1] = 0
         return self._face_normals
 
-    def update_face_normals(self, f_idxs):
-        """
-        Recompute len(f_idxs) face normals.
-
-        Parameters
-        ----------
-        f_idxs : list or np.array
-            List of face indices to recompute.
-        """
-
-        for f_idx in f_idxs:
-            v2 = self.vertices[self._h_vertex[self._h_prev[self._faces[f_idx]]]]
-            v1 = self.vertices[self._h_vertex[self._faces[f_idx]]]
-            v0 = self.vertices[self._h_vertex[self._h_next[self._faces[f_idx]]]]
-            u = v2 - v1
-            v = v0 - v1
-            n = fast_3x3_cross(u.squeeze(), v.squeeze())
-            # nn = np.linalg.norm(n)
-            nn = np.sqrt((n*n).sum())
-            self._face_areas[f_idx] = 0.5*nn
-            if nn > 0:
-                self._face_normals[f_idx] = n/nn
-            else:
-                self._face_normals[f_idx] = 0
-
     @property
     def face_areas(self):
         """
@@ -203,6 +175,48 @@ class TriangleMesh(object):
             self._face_normals = None
             self.face_normals
         return self._face_areas
+    
+    @property
+    def vertex_neighbors(self):
+        """
+        Return the up to self.max_valence neighbors of each vertex.
+        """
+        if self._vertex_neighbors is None:
+            self._vertex_neighbors = -1*np.ones((len(self.vertices), self.max_valence), dtype=np.int)
+            self._vertex_normals = np.zeros((len(self.vertices), 3))
+            self._valences = np.zeros(len(self.vertices), dtype=np.int)
+            for v_idx in np.arange(len(self.vertices)):
+                _orig = self._vertex_halfedges[v_idx]
+                _curr = _orig
+                _twin = self._h_twin[_curr]
+                i = 0
+                area = 0
+                self._valences[v_idx] = 0
+                while True:
+                    if (_curr == -1) or (_twin == -1):
+                        break
+                    _vertex = self._h_vertex[_curr]
+                    _face = self._h_face[_curr]
+                    if (i < self.max_valence):
+                        self._vertex_neighbors[v_idx, i] = _vertex
+                        n = self.face_normals[_face]
+                        a = self.face_areas[_face]
+                        self._vertex_normals[v_idx] += n*a
+                        area += a
+                    l = self._vertices[_vertex] - self._vertices[self._h_vertex[self._h_prev[_curr]]]
+                    self._h_length[_curr] = np.sqrt((l*l).sum())
+                    _curr = self._h_next[_twin]
+                    _twin = self._h_twin[_curr]
+                    i += 1
+                    self._valences[v_idx] += 1
+                    if (_curr == _orig):
+                        break
+                self._vertex_normals[v_idx] /= area
+            nn = np.linalg.norm(self._vertex_normals, axis=1)
+            self._vertex_normals /= nn[:, None]
+            self._vertex_normals[np.isnan(self._vertex_normals)] = 0
+
+        return self._vertex_neighbors
 
     @property
     def vertex_normals(self):
@@ -224,139 +238,8 @@ class TriangleMesh(object):
             self.vertex_neighbors
         return self._valences
 
-    def _resize(self, vec, axis=0, skip_entries=True, return_orig=False):
-        """
-        Double the size of the input vector, keeping all active data.
-        This is designed to expand our halfedge vectors.
-
-        Parameters
-        ---------
-            vec : np.array
-                Vector to expand, contains -1s in unused entries.
-            axis : int
-                Axis (0 or 1) along which to resize vector (only works for 2D arrays).
-            skip_entries : bool
-                Don't copy -1 entries to the new array.
-            return_orig : bool
-                Return indices of non-negative-one entries in the array prior to resize.
-        """
-
-        if (axis > 1) or (len(vec.shape) > 2):
-            raise NotImplementedError('This function only works for 2D arrays along axes 0 and 1.')
-
-        # Increase the size 1.5x along the axis.
-        dt = vec.dtype
-        new_size = np.array(vec.shape)
-        new_size[axis] = int(1.5*new_size[axis] + 0.5)
-        # new_size[axis] *= 2
-        new_size = tuple(new_size)
-        
-        # Allocate memory for new array
-        new_vec = -1*np.ones(new_size, dtype=dt)
-
-        if skip_entries:
-            # Check for invalid entries
-            copy_mask = (vec != -1)
-            if len(vec.shape) > 1:
-                copy_mask = np.any(copy_mask, axis=(1-axis))
-                copy_size = np.sum(copy_mask)
-            else:
-                copy_size = np.sum(copy_mask)
-
-            if axis:
-                new_vec[:,:copy_size] = vec[:, copy_mask]
-            else:
-                new_vec[:copy_size] = vec[copy_mask]
-
-            # Return positions of non-negative-1 entries prior to re-ordering
-            if return_orig:
-                _orig = np.where(copy_mask)[0]
-                # Return empty list if original values are all at the same place
-                if np.all(_orig == np.arange(len(_orig))):
-                    _orig = []
-                return new_vec, _orig
-
-            return new_vec
-
-        # We're not skipping entries
-        if axis:
-            copy_size = vec.shape[1]
-            new_vec[:,:copy_size] = vec
-        else:
-            copy_size = vec.shape[0]
-            new_vec[:copy_size] = vec
-
-
-        # Update array
-        return new_vec
-
-    def _insert(self, vec, value, idx=None, axis=0, skip_entries=True, return_orig=False):
-        """
-        Insert a new value into vector vec (in place).
-
-        Parameters
-        ---------
-            vec : np.array
-                Vector in which to insert a new value, contains -1s in unused entries.
-            value : int or np.array
-                New value to insert.
-            idx : int
-                Specifies position of insertion in vec. Can be >len(vec).
-            axis : int
-                Axis (0 or 1) along which to resize vector (only works for 2D arrays).
-            skip_entries : bool
-                Don't copy -1 entries to the new array on resize.
-            return_orig : bool
-                Return indices of non-negative-one entries in the array prior to resize.
-
-        Returns
-        -------
-            pos : int
-                Position of value insertion.
-        """
-
-        if (axis > 1) or (len(vec.shape) > 2):
-            raise NotImplementedError('This function only works for 2D arrays along axes 0 and 1.')
-
-        if idx == None:
-            # Find location to insert
-            _idx = self.__find_idx(vec, axis)
-        else:
-            _idx = np.array([[idx]])
-
-        # Dummy in case there's no resize
-        if return_orig:
-            _orig = []
-        
-        if (_idx.size == 0) or (_idx[0][0] > (vec.shape[axis]-1)):
-            if return_orig:
-                vec, _orig = self._resize(vec, axis=axis, skip_entries=skip_entries, return_orig=True)
-            else:
-                vec = self._resize(vec, axis=axis, skip_entries=skip_entries)
-            
-            if (_idx.size == 0):
-                _idx = self.__find_idx(vec, axis)
-
-        if axis:
-            vec[:, _idx[0][0]] = value
-        else:
-            vec[_idx[0][0]] = value
-
-        # Returns empty list for _orig if there's no resize or if
-        # no positions are moved
-        if return_orig:
-            return vec, _idx[0][0], _orig
-
-        return vec, _idx[0][0]
-
-    def __find_idx(self, vec, axis=0):
-        # Find location to insert
-        _idx = np.argwhere(vec == -1)
-
-        if len(vec.shape) > 1:
-            _idx = np.argwhere(np.all(vec == -1, axis=(1-axis)))
-
-        return _idx
+    def keys(self):
+        return list(self.vertex_properties)
 
     def _initialize_halfedges(self, vertices, faces):
         """
@@ -427,7 +310,32 @@ class TriangleMesh(object):
         else:
             raise ValueError('Mesh does not contain vertices and faces.')
 
-    def update_vertex_neighbors(self, v_idxs):
+    def _update_face_normals(self, f_idxs):
+        """
+        Recompute len(f_idxs) face normals.
+
+        Parameters
+        ----------
+        f_idxs : list or np.array
+            List of face indices to recompute.
+        """
+
+        for f_idx in f_idxs:
+            v2 = self.vertices[self._h_vertex[self._h_prev[self._faces[f_idx]]]]
+            v1 = self.vertices[self._h_vertex[self._faces[f_idx]]]
+            v0 = self.vertices[self._h_vertex[self._h_next[self._faces[f_idx]]]]
+            u = v2 - v1
+            v = v0 - v1
+            n = fast_3x3_cross(u.squeeze(), v.squeeze())
+            # nn = np.linalg.norm(n)
+            nn = np.sqrt((n*n).sum())
+            self._face_areas[f_idx] = 0.5*nn
+            if nn > 0:
+                self._face_normals[f_idx] = n/nn
+            else:
+                self._face_normals[f_idx] = 0
+
+    def _update_vertex_neighbors(self, v_idxs):
         """
         Recalculate len(v_idxs) vertex neighbors/normals.
 
@@ -445,7 +353,6 @@ class TriangleMesh(object):
             self._vertex_normals[v_idx] = 0
             self._vertex_neighbors[v_idx, :] = -1
             self._valences[v_idx] = 0
-
 
             while True:
                 if (_curr == -1) or (_twin == -1):
@@ -480,49 +387,168 @@ class TriangleMesh(object):
             else:
                 self._vertex_normals[v_idx] = 0
 
-    @property
-    def vertex_neighbors(self):
+    def _resize(self, vec, axis=0, skip_entries=True, return_orig=False):
         """
-        Return the up to self.max_valence neighbors of each vertex.
+        Double the size of the input vector, keeping all active data.
+        This is designed to expand our halfedge vectors.
+
+        Parameters
+        ---------
+            vec : np.array
+                Vector to expand, contains -1s in unused entries.
+            axis : int
+                Axis (0 or 1) along which to resize vector (only works for 2D arrays).
+            skip_entries : bool
+                Don't copy -1 entries to the new array.
+            return_orig : bool
+                Return indices of non-negative-one entries in the array prior to resize.
         """
-        if self._vertex_neighbors is None:
-            self._vertex_neighbors = -1*np.ones((len(self.vertices), self.max_valence), dtype=np.int)
-            self._vertex_normals = np.zeros((len(self.vertices), 3))
-            self._valences = np.zeros(len(self.vertices), dtype=np.int)
-            for v_idx in np.arange(len(self.vertices)):
-                _orig = self._vertex_halfedges[v_idx]
-                _curr = _orig
-                _twin = self._h_twin[_curr]
-                i = 0
-                area = 0
-                self._valences[v_idx] = 0
-                while True:
-                    if (_curr == -1) or (_twin == -1):
-                        break
-                    _vertex = self._h_vertex[_curr]
-                    _face = self._h_face[_curr]
-                    if (i < self.max_valence):
-                        self._vertex_neighbors[v_idx, i] = _vertex
-                        n = self.face_normals[_face]
-                        a = self.face_areas[_face]
-                        self._vertex_normals[v_idx] += n*a
-                        area += a
-                    l = self._vertices[_vertex] - self._vertices[self._h_vertex[self._h_prev[_curr]]]
-                    self._h_length[_curr] = np.sqrt((l*l).sum())
-                    _curr = self._h_next[_twin]
-                    _twin = self._h_twin[_curr]
-                    i += 1
-                    self._valences[v_idx] += 1
-                    if (_curr == _orig):
-                        break
-                self._vertex_normals[v_idx] /= area
-            nn = np.linalg.norm(self._vertex_normals, axis=1)
-            self._vertex_normals /= nn[:, None]
-            self._vertex_normals[np.isnan(self._vertex_normals)] = 0
 
-        return self._vertex_neighbors
+        if (axis > 1) or (len(vec.shape) > 2):
+            raise NotImplementedError('This function only works for 2D arrays along axes 0 and 1.')
 
-    def edge_collapse(self, _curr):
+        # Increase the size 1.5x along the axis.
+        dt = vec.dtype
+        new_size = np.array(vec.shape)
+        new_size[axis] = int(1.5*new_size[axis] + 0.5)
+        # new_size[axis] *= 2
+        new_size = tuple(new_size)
+        
+        # Allocate memory for new array
+        new_vec = -1*np.ones(new_size, dtype=dt)
+
+        if skip_entries:
+            # Check for invalid entries
+            copy_mask = (vec != -1)
+            if len(vec.shape) > 1:
+                copy_mask = np.any(copy_mask, axis=(1-axis))
+                copy_size = np.sum(copy_mask)
+            else:
+                copy_size = np.sum(copy_mask)
+
+            if axis:
+                new_vec[:,:copy_size] = vec[:, copy_mask]
+            else:
+                new_vec[:copy_size] = vec[copy_mask]
+
+            # Return positions of non-negative-1 entries prior to re-ordering
+            if return_orig:
+                _orig = np.where(copy_mask)[0]
+                # Return empty list if original values are all at the same place
+                if np.all(_orig == np.arange(len(_orig))):
+                    _orig = []
+                return new_vec, _orig
+
+            return new_vec
+
+        # We're not skipping entries
+        if axis:
+            copy_size = vec.shape[1]
+            new_vec[:,:copy_size] = vec
+        else:
+            copy_size = vec.shape[0]
+            new_vec[:copy_size] = vec
+
+
+        # Update array
+        return new_vec
+
+    def __find_idx(self, vec, axis=0):
+        # Find location to insert
+        _idx = np.argwhere(vec == -1)
+
+        if len(vec.shape) > 1:
+            _idx = np.argwhere(np.all(vec == -1, axis=(1-axis)))
+
+        return _idx
+
+    def _insert(self, vec, value, idx=None, axis=0, skip_entries=True, return_orig=False):
+        """
+        Insert a new value into vector vec (in place).
+
+        Parameters
+        ---------
+            vec : np.array
+                Vector in which to insert a new value, contains -1s in unused entries.
+            value : int or np.array
+                New value to insert.
+            idx : int
+                Specifies position of insertion in vec. Can be >len(vec).
+            axis : int
+                Axis (0 or 1) along which to resize vector (only works for 2D arrays).
+            skip_entries : bool
+                Don't copy -1 entries to the new array on resize.
+            return_orig : bool
+                Return indices of non-negative-one entries in the array prior to resize.
+
+        Returns
+        -------
+            pos : int
+                Position of value insertion.
+        """
+
+        if (axis > 1) or (len(vec.shape) > 2):
+            raise NotImplementedError('This function only works for 2D arrays along axes 0 and 1.')
+
+        if idx == None:
+            # Find location to insert
+            _idx = self.__find_idx(vec, axis)
+        else:
+            _idx = np.array([[idx]])
+
+        # Dummy in case there's no resize
+        if return_orig:
+            _orig = []
+        
+        if (_idx.size == 0) or (_idx[0][0] > (vec.shape[axis]-1)):
+            if return_orig:
+                vec, _orig = self._resize(vec, axis=axis, skip_entries=skip_entries, return_orig=True)
+            else:
+                vec = self._resize(vec, axis=axis, skip_entries=skip_entries)
+            
+            if (_idx.size == 0):
+                _idx = self.__find_idx(vec, axis)
+
+        if axis:
+            vec[:, _idx[0][0]] = value
+        else:
+            vec[_idx[0][0]] = value
+
+        # Returns empty list for _orig if there's no resize or if
+        # no positions are moved
+        if return_orig:
+            return vec, _idx[0][0], _orig
+
+        return vec, _idx[0][0]
+
+    def _insert_vertex(self, _vertex):
+        """
+        Insert a new vertex into the mesh.
+
+        Parameters
+        ----------
+            _vertex : np.array
+                1D array of x, y, z coordinates of the new vertex.
+        """
+        # n = self._vertices.shape[0]-1
+        self._vertices, _idx, _v_orig = self._insert(self._vertices, _vertex, return_orig=True)
+        self._valences, _ = self._insert(self._valences, 0)
+        # if _idx > n:
+        self._vertex_halfedges, _ = self._insert(self._vertex_halfedges, 0)
+        self._vertex_normals, _ = self._insert(self._vertex_normals, 0)
+        if self._vertex_neighbors.shape[0] < self._vertices.shape[0]:
+            self._vertex_neighbors = self._resize(self._vertex_neighbors, skip_entries=False)
+
+        if len(_v_orig) > 0:
+            # Some vertices were moved, we need to update references
+            # I'm not sure we'll ever make it into this case
+            self._vertex_halfedges[_v_orig] = np.arange(_idx)
+
+        self._faces_by_vertex = None  # Reset
+
+        return _idx
+
+    def edge_collapse(self, _curr, live_update=True):
         """
         A.k.a. delete two triangles. Remove an edge, defined by halfedge _curr, 
         and its associated triangles, while keeping mesh connectivity.
@@ -530,7 +556,11 @@ class TriangleMesh(object):
         Parameters
         ----------
             _curr: int
-                Pointer to halfedge defining edge to remove.
+                Pointer to halfedge defining edge to collapse.
+            live_update : bool
+                Update associated faces and vertices after collapse. Set to 
+                False to handle this externally (useful if operating on 
+                multiple, disjoint edges).
         """
 
         # Create the pointers we need
@@ -549,6 +579,7 @@ class TriangleMesh(object):
         self._vertices[_dead_vertex, :] = -1
         self._vertex_normals[_dead_vertex, :] = -1
         self._vertex_neighbors[_dead_vertex, :] = -1
+        self._valences[_dead_vertex] = -1
 
         # Zipper the remaining triangles
         _zip_next = self._h_twin[_next]
@@ -635,15 +666,25 @@ class TriangleMesh(object):
         self._h_prev[_twin_next] = -1
         self._h_length[_twin_next] = -1
 
-        # Update faces
-        self.update_face_normals([self._h_face[_prev_twin], self._h_face[self._h_twin[_twin_next]]])
-        self.update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
+        if live_update:
+            # Update faces
+            self._update_face_normals([self._h_face[_prev_twin], self._h_face[self._h_twin[_twin_next]]])
+            self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
 
-        self._faces_by_vertex = None
+            self._faces_by_vertex = None
 
-    def edge_split(self, _curr):
+    def edge_split(self, _curr, live_update=True):
         """
         Split triangles evenly along an edge specified by halfedege index _curr.
+
+        Parameters
+        ----------
+            _curr : int
+                Pointer to halfedge defining edge to split.
+            live_update : bool
+                Update associated faces and vertices after split. Set to False
+                to handle this externally (useful if operating on multiple, 
+                disjoint edges).
         """
         _prev = self._h_prev[_curr]
         _next = self._h_next[_curr]
@@ -654,7 +695,6 @@ class TriangleMesh(object):
         # Grab the new vertex position
         _vertex = 0.5*(self.vertices[self._h_vertex[_curr]] + self.vertices[self._h_vertex[_twin]])
         _vertex_idx = self._insert_vertex(_vertex)
-        self._valences, _ = self._insert(self._valences, 0)
 
         # Ensure the original faces have the correct pointers and add two new faces
         self._faces[self._h_face[_curr]] = _curr
@@ -724,7 +764,6 @@ class TriangleMesh(object):
         self._h_next[_curr] = _he_0_idx
         self._h_prev[_twin] = _he_1_idx
 
-
         while len(self._face_areas) < len(self._faces):
             self._face_areas, _ = self._insert(self._face_areas, 0)
             self._face_normals, _ = self._insert(self._face_normals, 0)
@@ -736,32 +775,24 @@ class TriangleMesh(object):
         #     self._vertex_neighbors, _ = self._insert(self._vertex_neighbors, 0)
         #     self._vertex_normals, _ = self._insert(self._vertex_normals, 0)
 
-        self.update_face_normals([self._h_face[_he_0_idx], self._h_face[_he_1_idx], self._h_face[_he_2_idx], self._h_face[_he_5_idx]])
-        self.update_vertex_neighbors([self._h_vertex[_he_0_idx], self._h_vertex[_twin], self._h_vertex[_he_1_idx], self._h_vertex[_he_2_idx], self._h_vertex[_he_4_idx]])
+        if live_update:
+            self._update_face_normals([self._h_face[_he_0_idx], self._h_face[_he_1_idx], self._h_face[_he_2_idx], self._h_face[_he_5_idx]])
+            self._update_vertex_neighbors([self._h_vertex[_he_0_idx], self._h_vertex[_twin], self._h_vertex[_he_1_idx], self._h_vertex[_he_2_idx], self._h_vertex[_he_4_idx]])
 
-        self._faces_by_vertex = None
-
-    def _insert_vertex(self, _vertex):
-        n = self._vertices.shape[0]-1
-        self._vertices, _idx, _v_orig = self._insert(self._vertices, _vertex, return_orig=True)
-        if _idx > n:
-            self._vertex_halfedges, _ = self._insert(self._vertex_halfedges, 0)
-            self._vertex_normals, _ = self._insert(self._vertex_normals, 0)
-        if self._vertex_neighbors.shape[0] < self._vertices.shape[0]:
-            self._vertex_neighbors = self._resize(self._vertex_neighbors, skip_entries=False)
-
-        if len(_v_orig) > 0:
-            # Some vertices were moved, we need to update references
-            # I'm not sure we'll ever make it into this case
-            self._vertex_halfedges[_v_orig] = np.arange(_idx)
-
-        self._faces_by_vertex = None  # Reset
-
-        return _idx
+            self._faces_by_vertex = None
     
     def edge_flip(self, _curr, live_update=True):
         """
         Flip an edge specified by halfedge index _curr.
+
+        Parameters
+        ----------
+            _curr : int
+                Pointer to halfedge defining edge to flip.
+            live_update : bool
+                Update associated faces and vertices after flip. Set to False
+                to handle this externally (useful if operating on multiple, 
+                disjoint edges).
         """
 
         _prev = self._h_prev[_curr]
@@ -827,10 +858,9 @@ class TriangleMesh(object):
         self._faces[self._h_face[_twin]] = _twin
 
         if live_update:
-
             # Update face and vertex normals
-            self.update_face_normals([self._h_face[_curr], self._h_face[_twin]])
-            self.update_vertex_neighbors([self._h_vertex[_curr], self._h_vertex[_twin], self._h_vertex[_next], self._h_vertex[self._h_next[_twin]], self._h_vertex[_prev], self._h_vertex[self._h_prev[_twin]]])
+            self._update_face_normals([self._h_face[_curr], self._h_face[_twin]])
+            self._update_vertex_neighbors([self._h_vertex[_curr], self._h_vertex[_twin], self._h_vertex[_next], self._h_vertex[self._h_next[_twin]], self._h_vertex[_prev], self._h_vertex[self._h_prev[_twin]]])
 
             self._faces_by_vertex = None
 
@@ -873,7 +903,7 @@ class TriangleMesh(object):
         Parameters
         ----------
             l : float
-                Regularization term, used to avoid oscillations.
+                Regularization (damping) term, used to avoid oscillations.
             n : int
                 Number of iterations to apply.
         """
@@ -910,7 +940,7 @@ class TriangleMesh(object):
         self.face_normals
         self.vertex_normals
 
-    def remesh(self, edge_length=-1, l=1, n=1):
+    def remesh(self, edge_length=-1, l=1, n=1, n_relax=1):
         """
         Produce a higher-quality mesh.
 
@@ -923,19 +953,22 @@ class TriangleMesh(object):
             edge_length : float
                 Target edge length for all edges in the mesh.
             l : float
-                Relaxation egularization term, used to avoid oscillations.
+                Relaxation regularization term, used to avoid oscillations.
             n : int
-                Number of relaxation iterations to apply.
+                Number of remeshing iterations to apply.
+            n_relax : int 
+                Number of Lloyd relaxation (relax()) iterations to apply 
+                per remeshing iteration.
         """
 
         if (edge_length == -1):
             # Guess edge_length
-            edge_length = np.mean(self._h_length)
+            edge_length = np.mean(self._h_length[self._h_length != -1])
 
         for k in range(n):
             # Grab the edges we want to modify
-            split_idxs = np.where(self._h_length > 1.33*edge_length)[0]
-            collapse_idxs = np.where(self._h_length < 0.8*edge_length)[0]
+            split_idxs = np.where((self._h_length > 1.33*edge_length)*(self._h_length != -1))[0]
+            collapse_idxs = np.where((self._h_length < 0.8*edge_length)*(self._h_length != -1))[0]
 
             # 1. Split all edges at their midpoint longer than (4/3)*edge_length.
             d = {}
@@ -944,6 +977,7 @@ class TriangleMesh(object):
                 if _twin in d.keys():
                     continue
                 else:
+                    # print(i)
                     d[i] = _twin
                     self.edge_split(i)
             
@@ -959,11 +993,11 @@ class TriangleMesh(object):
                     d[i] = _twin
                     self.edge_collapse(i)
 
-            # 3. Flip edges in order to minimize deviation from valence 6.
-            self.regularize()
+            # # 3. Flip edges in order to minimize deviation from valence 6.
+            # self.regularize()
 
-            # 4. Relocate vertices on the surface by tangential smoothing.
-            # self.relax(l=l)
+            # # 4. Relocate vertices on the surface by tangential smoothing.
+            # self.relax(l=l, n=n_relax)
 
     def repair(self):
         """
