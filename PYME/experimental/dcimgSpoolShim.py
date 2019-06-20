@@ -4,8 +4,7 @@ import time
 
 from PYME.Acquire import HTTPSpooler
 from PYME.Analysis import MetaData
-from PYME.IO import MetaDataHandler
-from PYME.IO import clusterIO
+from PYME.IO import MetaDataHandler, clusterIO, unifiedIO
 from PYME.IO.DataSources import DcimgDataSource, MultiviewDataSource
 from PYME.IO.clusterExport import ImageFrameSource, MDSource
 from PYME.cluster import HTTPRulePusher
@@ -86,7 +85,7 @@ class DCIMGSpoolShim(object):
 
         #determine a filename on the cluster from our local filename
         #TODO - make this more complex to generate suitable directory structures
-        filename = os.path.splitext(metadataFilename)[0]
+        filename = unifiedIO.verbose_fix_name(os.path.splitext(metadataFilename)[0])
         
         dirname, seriesname = os.path.split(filename)
         
@@ -148,8 +147,8 @@ class DCIMGSpoolShim(object):
 
             for pos, fr in zip(positions, startFrames):
                 fakeTime = startTime + cycleTime*fr
-                self.spooler.evtLogger.logEvent(eventName=b'StartAq', eventDescr=b'%d' % fr, timestamp=fakeTime)
-                self.spooler.evtLogger.logEvent(eventName=b'ProtocolFocus', eventDescr=b'%d, %3.3f' % (fr, pos),
+                self.spooler.evtLogger.logEvent(eventName='StartAq', eventDescr='%d' % fr, timestamp=fakeTime)
+                self.spooler.evtLogger.logEvent(eventName='ProtocolFocus', eventDescr='%d, %3.3f' % (fr, pos),
                                                 timestamp=fakeTime)
         
         self.spooler.StopSpool()
@@ -169,7 +168,6 @@ class DCIMGSpoolShim(object):
             self.mdh.setEntry('Analysis.subtractBackground', True)
             self.mdh.setEntry('Analysis.GPUPCTBackground', True)
             cluster_filename = 'pyme-cluster://%s/%s' % (clusterIO.local_serverfilter, self.spooler.seriesName)
-            # HTTPTaskPusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
             HTTPRulePusher.launch_localize(analysisMDH=self.mdh, seriesName=cluster_filename)
 
         #remove the metadata generator
