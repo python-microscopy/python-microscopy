@@ -139,7 +139,8 @@ def GetSoftwareVersion():
     return SDK3.GetString(SDK3.AT_HANDLE_SYSTEM, 'SoftwareVersion', 255)
 
 
-class SDK3Camera(object):         
+from PYME.Acquire.Hardware.Camera import Camera
+class SDK3Camera(Camera):
     def __init__(self, camNum):
         """camera initialisation - note that this should be called  from derived classes
         *AFTER* the properties have been defined"""

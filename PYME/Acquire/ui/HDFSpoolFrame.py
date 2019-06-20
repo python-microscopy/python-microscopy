@@ -400,7 +400,7 @@ class PanSpool(afp.foldingPane):
         #quantization scale in GUI is in units of sigma, convert to ADU
         try:
             q_scale = float(self.tQuantizeScale.GetValue())/self.scope.cam.GetElectrPerCount()
-        except AttributeError:
+        except (AttributeError, NotImplementedError):
             print("WARNING: Camera doesn't provide electrons per count, using qscale in units of ADUs instead")
             q_scale = float(self.tQuantizeScale.GetValue())
 

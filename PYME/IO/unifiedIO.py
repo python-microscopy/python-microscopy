@@ -3,6 +3,85 @@ import os
 from io import BytesIO
 from contextlib import contextmanager
 import tempfile
+import re
+try:  # py3
+    from urllib.parse import quote, urlencode
+except ImportError:  # py2
+    from urllib import quote, urlencode
+import logging
+logger = logging.getLogger(__name__)
+
+
+def check_name(name):
+    """
+    Check if filename / url is OK to use with, e.g. clusterIO.
+
+    Parameters
+    ----------
+    name: str
+        The filename or url to query
+
+    Returns
+    -------
+    ok: bool
+        True if filename/url is fully compatible
+
+    """
+    return name == fix_name(name)
+
+def assert_name_ok(name):
+    """
+    Raise if name contains reserved/invalid characters for use with, e.g. clusterIO.
+
+    Parameters
+    ----------
+    name: str or bytes
+        The filename or url to query
+
+    """
+    fixed_name = fix_name(name)
+    try:
+        assert name == fixed_name
+    except AssertionError:
+        raise AssertionError('Name "%s" not compatible with PYME Unified IO, try: "%s"' % (name, fixed_name))
+
+def fix_name(name):
+    """
+    Cleans filename / url for use with, e.g. clusterIO, by replacing spaces with underscores and removing all
+    percent-encoded characters other than ':' and '/'.
+
+    Parameters
+    ----------
+    name: str
+        The filename or url to query
+
+    Returns
+    -------
+    fixed_name: str
+        The cleaned file name
+
+    """
+    return re.sub('%..', '', quote(name.replace(' ', '_')).replace('%3A', ':'))
+
+def verbose_fix_name(name):
+    """
+    Wrapper for fix_name which sacrifices performance in order to complain.
+    Parameters
+    ----------
+    name: str
+        The filename or url to query
+
+    Returns
+    -------
+    fixed_name: str
+        The cleaned file name
+
+    """
+    try:
+        assert_name_ok(name)
+    except AssertionError as e:
+        logger.error(str(e))
+    return fix_name(name)
 
 def split_cluster_url(url):
     if not (url.startswith('pyme-cluster') or url.startswith('PYME-CLUSTER')):
