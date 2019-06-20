@@ -155,12 +155,10 @@ class GaussianFitFactory:
 
         # Account for any changes we need to make in memory allocation on the GPU
         if not _warpDrive:  # Initialize new detector object for this process
-            # try to pull settings from metadata
             guess_psf_sigma_pix = self.metadata.getOrDefault('Analysis.GuessPSFSigmaPix',
                                                              600 / 2.8 / (self.metadata['voxelsize.x'] * 1e3))
-            small_filter_size = self.metadata.getOrDefault('Analysis.SmallDetectionFilterSize',
-                                                           int(2.355 * guess_psf_sigma_pix))
-            large_filter_size = self.metadata.getOrDefault('Analysis.LargeDetectionFilterSize', 2 * small_filter_size)
+            small_filter_size = self.metadata.getEntry('Detection.FilterSize')
+            large_filter_size = 2 * small_filter_size
             _warpDrive = warpDrive.detector(small_filter_size, large_filter_size, guess_psf_sigma_pix)
             _warpDrive.allocateMem(np.shape(self.data), self.data.dtype.itemsize)
             _warpDrive.prepvar(self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'])
@@ -282,16 +280,12 @@ GPU_BUFFER_READY=True
 
 import PYME.localization.MetaDataEdit as mde
 
-PARAMETERS = [#mde.ChoiceParam('Analysis.InterpModule','Interp:','LinearInterpolator', choices=Interpolators.interpolatorList, choiceNames=Interpolators.interpolatorDisplayList),
-              #mde.FilenameParam('PSFFilename', 'PSF:', prompt='Please select PSF to use ...', wildcard='PSF Files|*.psf'),
-              #mde.ShiftFieldParam('chroma.ShiftFilename', 'Shifts:', prompt='Please select shiftfield to use', wildcard='Shiftfields|*.sf'),
-              #mde.IntParam('Analysis.DebounceRadius', 'Debounce r:', 4),
-              mde.FloatParam('Analysis.ROISize', u'ROI half size', 7.5),
-              mde.BoolParam('Analysis.GPUPCTBackground', 'Calculate percentile background on GPU', True),
-              #mde.FloatParam('Analysis.ResidualMax', 'Max residual:', 0.25),
-              #mde.ChoiceParam('Analysis.EstimatorModule', 'Z Start Est:', 'astigEstimator', choices=zEstimators.estimatorList),
-              #mde.ChoiceParam('PRI.Axis', 'PRI Axis:', 'y', choices=['x', 'y'])
-              ]
+PARAMETERS = [
+    mde.FloatParam('Analysis.ROISize', u'ROI half size', 7.5),
+    mde.BoolParam('Analysis.GPUPCTBackground', 'Calculate percentile background on GPU', True),
+    mde.IntParam('Detection.FilterSize', 'Detection Filter Size:', 4,
+                 'Filter size used in detection in units of pixels. Should be ~FWHM of the PSF'),
+]
 
 DESCRIPTION = 'Astigmatic Gaussian fitting performed at warp-speed on the GPU'
 LONG_DESCRIPTION = 'Astigmatic Gaussian fitting on the GPU: Fits astigmatic gaussian with sCMOS noise model. Uses it\'s own object detection routine'
