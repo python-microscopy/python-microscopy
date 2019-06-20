@@ -87,8 +87,11 @@ class iXonCamera(Camera):
 
     #define a couple of acquisition modes
 
-    MODE_CONTINUOUS = 5
-    MODE_SINGLE_SHOT = 1
+    #MODE_CONTINUOUS = 5
+    #MODE_SINGLE_SHOT = 1
+    
+    _IXON_MODE_CONTINUOUS = 5
+    _IXON_MODE_SINGLE_SHOT = 1
 
     def __selectCamera(self):
         ret = ac.SetCurrentCamera(self.boardHandle)
@@ -172,11 +175,11 @@ class iXonCamera(Camera):
         #a file later.
 
         #continuous acquisition
-        ret = ac.SetAcquisitionMode(self.MODE_CONTINUOUS)
+        ret = ac.SetAcquisitionMode(self._IXON_MODE_CONTINUOUS)
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting aq mode: %s' % ac.errorCodes[ret])
 
-        self.contMode = True #we are in single shot mode
+        self._contMode = True #we are in single shot mode
 
         ret = ac.SetReadMode(4) #readout as image rather than doing any fancy stuff
         if not ret == ac.DRV_SUCCESS:
@@ -418,7 +421,7 @@ class iXonCamera(Camera):
         return self.binning
         #raise Exception, 'Not implemented yet!!'
 
-    def GetHorzBinValue(*args):
+    def GetHorzBinValue(self, *args):
         #raise Exception, 'Not implemented yet!!'
         return self.binX
 
@@ -435,7 +438,7 @@ class iXonCamera(Camera):
         return 0
         #raise Exception, 'Not implemented yet!!'
 
-    def GetVertBinValue(*args):
+    def GetVertBinValue(self, *args):
         #raise Exception, 'Not implemented yet!!'
         return self.binY
 
@@ -651,7 +654,7 @@ class iXonCamera(Camera):
 
     def SpoolOn(self, filename):
         self.__selectCamera()
-        ac.SetAcquisitionMode(5)
+        ac.SetAcquisitionMode(self._IXON_MODE_CONTINUOUS)
         ac.SetSpool(1,2,filename,10)
         ac.StartAcquisition()
 
@@ -659,7 +662,7 @@ class iXonCamera(Camera):
         self.__selectCamera()
         ac.AbortAcquisition()
         ac.SetSpool(0,2,r'D:\spool\spt',10)
-        ac.SetAcquisitionMode(1)
+        ac.SetAcquisitionMode(self._IXON_MODE_SINGLE_SHOT)
 
     def GetCCDTempSetPoint(self):
         return self.tempSet
@@ -667,14 +670,28 @@ class iXonCamera(Camera):
     def SetAcquisitionMode(self, aqMode):
         self.__selectCamera()
         ac.AbortAcquisition()
-        ac.SetAcquisitionMode(aqMode)
-        self.contMode = not aqMode == 1
+        if aqMode == self.MODE_CONTINUOUS:
+            ac.SetAcquisitionMode(self._IXON_MODE_CONTINUOUS)
+            self._contMode = True
+        elif aqMode == self.MODE_SINGLE_SHOT:
+            ac.SetAcquisitionMode(self._IXON_MODE_SINGLE_SHOT)
+            self._contMode = False
+        else:
+            raise RuntimeError('Mode %d not supported' % aqMode)
         
     def GetAcquisitionMode(self):
         if self.contMode:
             return self.MODE_CONTINUOUS
         else:
             return self.MODE_SINGLE_SHOT
+        
+    @property
+    def contMode(self):
+        return self._contMode
+    
+    @contMode.setter
+    def contMode(self, val):
+        self._contMode = val
 
     def SetFrameTransfer(self, ftMode):
         self.__selectCamera()
