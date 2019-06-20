@@ -284,7 +284,7 @@ PARAMETERS = [
     mde.FloatParam('Analysis.ROISize', u'ROI half size', 7.5),
     mde.BoolParam('Analysis.GPUPCTBackground', 'Calculate percentile background on GPU', True),
     mde.IntParam('Detection.FilterSize', 'Detection Filter Size:', 4,
-                 'Filter size used in detection in units of pixels. Should be ~FWHM of the PSF'),
+                 'Filter size used for point detection; units of pixels. Should be slightly less than the PSF FWHM'),
 ]
 
 DESCRIPTION = 'Astigmatic Gaussian fitting performed at warp-speed on the GPU'
