@@ -157,7 +157,7 @@ class GaussianFitFactory:
         if not _warpDrive:  # Initialize new detector object for this process
             guess_psf_sigma_pix = self.metadata.getOrDefault('Analysis.GuessPSFSigmaPix',
                                                              600 / 2.8 / (self.metadata['voxelsize.x'] * 1e3))
-            small_filter_size = self.metadata.getEntry('Detection.FilterSize')
+            small_filter_size = self.metadata.getEntry('Analysis.DetectionFilterSize')
             large_filter_size = 2 * small_filter_size
             _warpDrive = warpDrive.detector(small_filter_size, large_filter_size, guess_psf_sigma_pix)
             _warpDrive.allocateMem(np.shape(self.data), self.data.dtype.itemsize)
@@ -283,7 +283,7 @@ import PYME.localization.MetaDataEdit as mde
 PARAMETERS = [
     mde.FloatParam('Analysis.ROISize', u'ROI half size', 7.5),
     mde.BoolParam('Analysis.GPUPCTBackground', 'Calculate percentile background on GPU', True),
-    mde.IntParam('Detection.FilterSize', 'Detection Filter Size:', 4,
+    mde.IntParam('Analysis.DetectionFilterSize', 'Detection Filter Size:', 4,
                  'Filter size used for point detection; units of pixels. Should be slightly less than the PSF FWHM'),
 ]
 
