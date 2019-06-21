@@ -17,6 +17,7 @@ from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, Lis
 import numpy as np
 from scipy import ndimage
 from PYME.IO.image import ImageStack
+from PYME.IO import tabular
 
 import logging
 logger=logging.getLogger(__name__)
