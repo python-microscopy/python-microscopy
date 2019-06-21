@@ -12,6 +12,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+alpha_regex = re.compile(r'^[\w/]+$')
+
 def check_name(name):
     """
     Check if filename / url is OK to use with, e.g. clusterIO.
@@ -27,7 +29,11 @@ def check_name(name):
         True if filename/url is fully compatible
 
     """
-    return name == fix_name(name)
+    return bool(alpha_regex.match(name))
+    #return name == fix_name(name)
+
+def check_uri(name):
+    return check_name(name.split('://')[1])
 
 def assert_name_ok(name):
     """
@@ -39,11 +45,25 @@ def assert_name_ok(name):
         The filename or url to query
 
     """
-    fixed_name = fix_name(name)
     try:
-        assert name == fixed_name
+        assert check_name(name) == True
     except AssertionError:
-        raise AssertionError('Name "%s" not compatible with PYME Unified IO, try: "%s"' % (name, fixed_name))
+        raise AssertionError('Name "%s" is invalid. Names must only include alphanumeric characters and underscore' % name)
+
+def assert_uri_ok(name):
+    """
+    Raise if name contains reserved/invalid characters for use with, e.g. clusterIO.
+
+    Parameters
+    ----------
+    name: str or bytes
+        The filename or url to query
+
+    """
+    try:
+        assert check_uri(name) == True
+    except AssertionError:
+        raise AssertionError('Name "%s" is invalid. Names must only include alphanumeric characters and underscore' % name)
 
 def fix_name(name):
     """
