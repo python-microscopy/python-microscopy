@@ -1804,7 +1804,6 @@ class BackgroundSubtractionMovingPercentile(BackgroundSubtractionMovingAverage):
     percentile = Float(0.25)
 
 
-
 @register_module('Projection')
 class Projection(Filter):
     """ Project image along an axis
@@ -1828,4 +1827,76 @@ class Projection(Filter):
             return np.std(data, axis=int(self.axis))
         if self.kind == 'Min':
             return np.min(data, axis=int(self.axis))
-        
+
+@register_module('StatisticsByFrame')
+class StatisticsByFrame(ModuleBase):
+    """
+    Iterates through the time/z-position dimension of an ImageStack, calculating basic statistics for each frame,
+    optionally using a 2D or 3D mask in the process.
+    
+    NOTE: only operates on first colour channel of stack.
+
+    Parameters
+    ----------
+    input_name : Input
+        PYME.IO.ImageStack
+    mask : Input
+        PYME.IO.ImageStack. Optional mask to only calculate metrics
+
+    Returns
+    -------
+    output_name = Output
+
+
+    Notes
+    -----
+
+    """
+
+    input_name = Input('input')
+
+    mask = Input('')
+
+    output_name = Output('cluster_metrics')
+
+    def execute(self, namespace):
+        from scipy import stats
+
+        series = namespace[self.input_name]
+        data = series.data
+
+        if self.mask == '':
+            mask = None
+        else:
+            # again, handle our mask being either 2D, 3D, or 4D. NB - no color (4D) handling implemented at this point
+            mask = namespace[self.mask].data
+
+        var = np.empty(data.shape[2], dtype=float)
+        mean = np.empty_like(var)
+        median = np.empty_like(var)
+        mode = np.empty_like(var)
+
+        for si in range(data.shape[2]):
+            slice_data = data[:,:,si, 0]
+            
+            if mask is not None:
+                if mask.shape[2] == 1:
+                    slice_data = slice_data[mask[:,:,0,0].astype('bool')]
+                elif mask.shape[2] == data.shape[2]:
+                    slice_data = slice_data[mask[:,:,si,0].astype('bool')]
+                else:
+                    raise RuntimeError('Mask dimensions do not match data dimensions')
+
+            var[si] = np.var(slice_data)
+            mean[si] = np.mean(slice_data)
+            median[si] = np.median(slice_data)
+            mode[si] = stats.mode(slice_data)[0]
+
+        # package up and ship-out results
+        res = tabular.resultsFilter({'variance': var, 'mean': mean, 'median': median, 'mode': mode})
+        try:
+            res.mdh = series.mdh
+        except:
+            pass
+            
+        namespace[self.output_name] = res
