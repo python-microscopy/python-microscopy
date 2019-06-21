@@ -1549,6 +1549,30 @@ class BackgroundSubtractionMovingPercentile(BackgroundSubtractionMovingAverage):
     percentile = Float(0.25)
 
 
+@register_module('Projection')
+class Projection(Filter):
+    """ Project image along an axis
+    
+    TODO - make this more efficient - we currently force the whole stack into memory
+    """
+    
+    kind = Enum(['Mean', 'Max', 'Median', 'Std', 'Min'])
+    axis = Int(2)
+    
+    processFramesIndividually = False
+    
+    def applyFilter(self, data, chanel_num, frame_num, image):
+        if self.kind == 'Mean':
+            return np.mean(data, axis=int(self.axis))
+        if self.kind == 'Max':
+            return np.max(data, axis=int(self.axis))
+        if self.kind == 'Median':
+            return np.median(data, axis=int(self.axis))
+        if self.kind == 'Std':
+            return np.std(data, axis=int(self.axis))
+        if self.kind == 'Min':
+            return np.min(data, axis=int(self.axis))
+
 @register_module('StatisticsByFrame')
 class StatisticsByFrame(ModuleBase):
     """
