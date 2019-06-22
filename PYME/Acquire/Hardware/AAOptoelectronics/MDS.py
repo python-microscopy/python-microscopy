@@ -24,16 +24,17 @@ import serial
 import time
 import threading
 import re
+from PYME.Acquire.Hardware.aotf import AOTF
 
 try:
     import Queue
 except ImportError:
     import queue as Queue
 
-class AAOptoMDS(object):
-    def __init__(self, comPort = 'COM6', turnOn=False, name='AAOptoMDS', nChans=8, **kwargs):
-        self.com = serial.Serial(comPort,  timeout=1)
-        self.name = name
+class AAOptoMDS(AOTF):
+    def __init__(self, calibrations, com_port='COM6', name='AAOptoMDS', nChans=8):
+        AOTF.__init__(self, name, calibrations)
+        self.com = serial.Serial(com_port,  timeout=1)
         self.nChans = nChans
 
         self.freq = [0] * nChans
@@ -68,7 +69,7 @@ class AAOptoMDS(object):
         Get value from RF driver via serial port.
         """
         self._purge()
-        cmd = b'?%s\r\n' % command
+        cmd = b'?%b\r\n' % command.encode()
         self.commandQueue.put(cmd)
 
         try:
@@ -134,15 +135,15 @@ class AAOptoMDS(object):
         Initial properties. Must be called before polling starts.
         """
         self._purge()
-        cmd = '?S\r'
+        cmd = b'?S\r'
         with self.com as ser:
             ser.write(cmd)
             ser.flushOutput()
             val = self._readline(ser, self.nChans+1)
-        ret = filter(None, val.split('\n'))
+        ret = list(filter(None, val.split(b'\n')))
         for ch in range(self.nChans):
-            retrm = ret[ch].replace('\x00', '').replace('= ', '=').strip()
-            s = re.compile(r'l(?P<ch>\d+) F=(?P<freq>\d+.\d+) P=(?P<power>\d+.\d+) (?P<onoff>\w+)')
+            retrm = ret[ch].replace(b'\x00', b'').replace(b'= ', b'=').strip()
+            s = re.compile(br'l(?P<ch>\d+) F=(?P<freq>\d+.\d+) P=(?P<power>\d+.\d+) (?P<onoff>\w+)')
             vals = s.search(retrm)
             self.freq[ch] = float(vals.group('freq'))
             self.power[ch] = float(vals.group('power'))
@@ -153,9 +154,10 @@ class AAOptoMDS(object):
 
     def Close(self):
         print('Shutting down %s' % self.name)
-        [self.TurnOff(ch) for ch in range(self.nChans)]
+        for ch in range(self.nChans):
+            try:
+                self.TurnOff(ch)
+            except:
+                pass
         time.sleep(.1)
         self.doPoll = False
-
-    def __del__(self):
-        self.Close()
