@@ -103,7 +103,7 @@ class CoherentOBISLaser(Laser):
         return self.com.readline()
 
     def IsOn(self):
-        # FIXME - would be nice to check
+        # Would be nice to check, but there is a performance hit (this gets tracked as a scope state to update the GUI)
         return self.isOn
 
     def TurnOn(self):
