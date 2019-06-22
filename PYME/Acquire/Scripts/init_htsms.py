@@ -21,7 +21,6 @@
 #
 ##################
 
-#!/usr/bin/python
 from PYME.Acquire.ExecTools import joinBGInit, init_gui, init_hardware
 
 
@@ -67,10 +66,10 @@ def orca_cam(scope):
     multiview_info = {
         'Multiview.NumROIs': 4,
         'Multiview.ROISize': (size, size),
-        'Multiview.ROI0Origin': (104, 1024 - int(size/2)),
-        'Multiview.ROI1Origin': (844, 1024 - int(size/2)),
-        'Multiview.ROI2Origin': (1252, 1024 - int(size/2)),
-        'Multiview.ROI3Origin': (1724, 1024 - int(size/2)),
+        'Multiview.ROI0Origin': (104, 1024 - int(size / 2)),
+        'Multiview.ROI1Origin': (844, 1024 - int(size / 2)),
+        'Multiview.ROI2Origin': (1252, 1024 - int(size / 2)),
+        'Multiview.ROI3Origin': (1724, 1024 - int(size / 2)),
     }
     cam = MultiviewOrca(0, multiview_info)
     cam.Init()
@@ -83,7 +82,7 @@ def orca_cam(scope):
         else:
             cam.enable_multiview(views)
 
-    scope.state.registerHandler('Camera.Views', lambda : cam.active_views, set_camera_views, True)
+    scope.state.registerHandler('Camera.Views', lambda: cam.active_views, set_camera_views, True)
 
 
 @init_gui('sCMOS Camera controls')
@@ -97,7 +96,7 @@ def orca_cam_controls(MainFrame, scope):
 
     # TODO - add a ROI / Views panel
 
-    MainFrame.AddMenuItem('Camera','Set Multiview', lambda e: scope.state.setItem('Camera.Views',[0,1,2,3]))
+    MainFrame.AddMenuItem('Camera', 'Set Multiview', lambda e: scope.state.setItem('Camera.Views', [0, 1, 2, 3]))
     MainFrame.AddMenuItem('Camera', 'Clear Multiview', lambda e: scope.state.setItem('Camera.Views', []))
 
     # from PYME.Acquire.ui import multiview_panel
@@ -117,28 +116,86 @@ def orca_cam_controls(MainFrame, scope):
 #     AnalysisSettingsUI.Plug(scope, MainFrame)
 
 
-
-
-
-
 @init_hardware('Lasers & Shutters')
 def lasers(scope):
     from PYME.Acquire.Hardware.Coherent import OBIS
     from PYME.Acquire.Hardware.MPBCommunications import MPBCW
+    from PYME.Acquire.Hardware.AAOptoelectronics.MDS import AAOptoMDS
+    from PYME.Acquire.Hardware.aotf import AOTFControlledLaser
 
-    scope.l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405')
-    scope.CleanupFunctions.append(scope.l405.Close())
+    # key's are zero-indexed, MDS class does the same but add's one in commands when needed to match MDS API
+    aotf_calibrations = {  # note this is a test dummy TODO - load from file
+        0: {
+            'wavelength': 405,  # nm
+            'frequency': 79.838,  # MHz
+            'aotf_setting': [
+                0., 1.326, 2.652, 4.42, 22.1  # dBm
+            ],
+            'output': [
+                0., 0.84, 2.7, 6.66, 42.  # mW measured after objective
+            ],
+            'laser_setting': 250
+        },
+        1: {
+            'wavelength': 488,  # nm
+            'frequency': 79.838,  # MHz
+            'aotf_setting': [
+                0., 1.326, 2.652, 4.42, 22.1  # dBm
+            ],
+            'output': [
+                0., 0.84, 2.7, 6.66, 42.  # mW measured after objective
+            ],
+            'laser_setting': 250
+        },
+        2: {
+            'wavelength': 560,  # nm
+            'frequency': 79.838,  # MHz
+            'aotf_setting': [
+                0., 1.326, 2.652, 4.42, 22.1  # dBm
+            ],
+            'output': [
+                0., 4.2, 13.5, 33.3, 210.  # mW measured after objective
+            ],
+            'laser_setting': 250
+        },
+        3: {
+            'wavelength': 642,  # nm
+            'frequency': 79.838,  # MHz
+            'aotf_setting': [
+                0., 1.326, 2.652, 4.42, 22.1  # dBm
+            ],
+            'output': [
+                0., 4.2, 13.5, 33.3, 210.  # mW measured after objective
+            ],
+            'laser_setting': 250
+        },
+    }
 
-    scope.l488 = OBIS.CoherentOBISLaser('COM13', name='OBIS488')
-    scope.CleanupFunctions.append(scope.l488.Close())
+    scope.aotf = AAOptoMDS(aotf_calibrations, 'COM14', 'AAOptoMDS', nChans=4)
+    scope.CleanupFunctions.append(scope.aotf.Close)
 
-    scope.l560 = MPBCW.MPBCWLaser('COM11', name='MPB560', init_power=200)  # minimum power for our MPB lasers is 200 mW
-    scope.CleanupFunctions.append(scope.l560.Close())
+    l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turnOn=False)
+    scope.CleanupFunctions.append(l405.Close)
+    scope.l405 = AOTFControlledLaser(l405, scope.aotf, 0)
+    scope.l405.register(scope)
 
-    scope.l642 = MPBCW.MPBCWLaser('COM12', name='MPB642', init_power=200)  # minimum power for our MPB lasers is 200 mW
-    scope.CleanupFunctions.append(scope.l642.Close())
+    l488 = OBIS.CoherentOBISLaser('COM13', name='OBIS488', turnOn=False)
+    scope.CleanupFunctions.append(l488.Close)
+    scope.l488 = AOTFControlledLaser(l488, scope.aotf, 1)
+    scope.l488.register(scope)
 
-    scope.lasers = [scope.l405, scope.l488, scope.l560, scope.l642]
+    l560 = MPBCW.MPBCWLaser('COM11', name='MPB560', turn_on=True,
+                            init_power=200)  # minimum power for our MPB lasers is 200 mW
+    scope.l560 = AOTFControlledLaser(l560, scope.aotf, 2)
+    scope.CleanupFunctions.append(scope.l560.Close)
+    scope.l560.register(scope)
+
+    l642 = MPBCW.MPBCWLaser('COM12', name='MPB642', turn_on=True,
+                            init_power=200)  # minimum power for our MPB lasers is 200 mW
+    scope.CleanupFunctions.append(l642.Close)
+    scope.l642 = AOTFControlledLaser(l642, scope.aotf, 3)
+    scope.l642.register(scope)
+
 
 @init_gui('Laser controls')
 def laser_controls(MainFrame, scope):
@@ -189,7 +246,7 @@ def focus_keys(MainFrame, scope):
 @init_gui('Action manager')
 def action_manager(MainFrame, scope):
     from PYME.Acquire.ui import actionUI
-    
+
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
 
