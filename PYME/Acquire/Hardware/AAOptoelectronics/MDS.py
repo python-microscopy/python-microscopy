@@ -25,6 +25,8 @@ import time
 import threading
 import re
 from PYME.Acquire.Hardware.aotf import AOTF
+import logging
+logger = logging.getLogger(__name__)
 
 try:
     import Queue
@@ -32,49 +34,56 @@ except ImportError:
     import queue as Queue
 
 class AAOptoMDS(AOTF):
-    def __init__(self, calibrations, com_port='COM6', name='AAOptoMDS', nChans=8):
+    def __init__(self, calibrations, com_port='COM6', name='AAOptoMDS', n_chans=8):
         AOTF.__init__(self, name, calibrations)
         self.com = serial.Serial(com_port,  timeout=1)
-        self.nChans = nChans
+        self.n_chans = n_chans
 
-        self.freq = [0] * nChans
-        self.power = [0] * nChans
-        self.isOn = [False] * nChans
+        self.freq = [0] * n_chans
+        self.power = [0] * n_chans
+        self.is_on = True
+        self.channel_enabled = [False] * n_chans
+
+        self.command_queue = Queue.Queue()
+        self.reply_queue = Queue.Queue()
+
+        self.polling_thread = None
+        self.TurnOn()
 
         # Grab the initial properties
-        self.GetInitStatus()
-        time.sleep(1)
+        self.GetStatus()
 
-        self.doPoll = True
-
-        self.commandQueue = Queue.Queue()
-        self.replyQueue = Queue.Queue()
-
-        self.threadPoll = threading.Thread(target=self._poll)
-        self.threadPoll.start()
-
-        time.sleep(1)
-
-        [self.TurnOff(ch) for ch in range(self.nChans)]
+        [self.TurnOff(channel) if self.channel_enabled[channel] else None for channel in range(self.n_chans)]
 
     def _purge(self):
         try:
             while True:
-                self.replyQueue.get_nowait()
+                self.reply_queue.get_nowait()
         except:
             pass
 
-    def _query(self, command):
+    def _query(self, command, get_all=False):
         """
         Get value from RF driver via serial port.
         """
         self._purge()
-        cmd = b'?%b\r\n' % command.encode()
-        self.commandQueue.put(cmd)
+        cmd = b'%b\r\n' % command.encode()
+        self.command_queue.put(cmd)
 
         try:
-            line = self.replyQueue.get(timeout=3)
-            return line
+            if not get_all:
+                line = self.reply_queue.get()
+                return line
+            else:
+                reading = True
+                lines = [self.reply_queue.get()]
+                while reading:
+                    line = self.reply_queue.get()
+                    if line == b'':
+                        reading = False
+                    else:
+                        lines.append(line)
+                return lines
         except:
             pass
 
@@ -86,78 +95,134 @@ class AAOptoMDS(AOTF):
         return ret
 
     def _poll(self):
-        while self.doPoll:
-            with self.com as ser:
+        while self.is_on:
                 try:
-                    cmd = self.commandQueue.get(False)
+                    cmd = self.command_queue.get(False)
                     # print cmd
-                    ser.write(cmd)
-                    ser.flushOutput()
+                    self.com.write(cmd)
+                    self.com.flushOutput()
 
                 except Queue.Empty:
                     pass
 
                 # wait a little for reply
-                ret = self._readline(ser)
+                ret = self._readline(self.com)
 
                 if not ret == b'':
-                    self.replyQueue.put(ret)
+                    self.reply_queue.put(ret)
 
-            time.sleep(.05)
+        time.sleep(.05)
 
-    def IsOn(self, ch):
-        return self.isOn[ch]
+    def IsOn(self, channel=None):
+        if channel is not None:
+            return self.is_on
+        else:
+            return self.channel_enabled[channel] and self.is_on
 
-    def TurnOn(self, ch):
-        self._query('L'+str(ch+1)+'O1')
-        self.isOn[ch] = True
+    def IsEnabled(self, channel):
+        return self.channel_enabled[channel]
 
-    def TurnOff(self, ch):
-        self._query('L'+str(ch+1)+'O0')
-        self.isOn[ch] = False
+    def TurnOn(self):
+        """
 
-    def SetPower(self, power, ch):
-        self._query('L'+str(ch+1)+'D'+str(power))
-        self.power[ch] = power
+        Parameters
+        ----------
+        channel
 
-    def GetPower(self, ch):
-        return self.power[ch]
+        Returns
+        -------
 
-    def SetFreq(self, freq, ch):
-        self._query('L'+str(ch+1)+'F'+str(freq))
-        self.freq[ch] = freq
+        Notes
+        -----
+        Polling must be resumed (i.e. is_on True and polling thread active) before any serial commands are issued.
 
-    def GetFreq(self, ch):
-        return self.freq[ch]
+        """
+        self.is_on = True
+        # make sure com port is open
+        if not self.com.is_open:  # be a bit gentler than
+            self.com.open()
+        # make sure we are polling
+        if not self.polling_thread or not self.polling_thread.is_alive():
+            self.polling_thread = threading.Thread(target=self._poll)
+            self.polling_thread.start()
 
-    def GetInitStatus(self):
+    def Enable(self, channel):
+        if not self.is_on:
+            self.TurnOn()
+        # turn on the channel
+        self._query('L' + str(channel + 1) + 'O1')
+        self.channel_enabled[channel] = True
+
+    def Disable(self, channel):
+        self._query('L' + str(channel + 1) + 'O0')
+        self.channel_enabled[channel] = False
+
+    def SetPower(self, power, channel):
+        command = 'L'+str(channel+1)+'D'+str(power)
+        if power > 0:
+            # make sure we're running
+            if not self.is_on:
+                self.TurnOn()
+            # enable the channel
+            command += 'O1'
+            self.channel_enabled[channel] = True
+
+        self._query(command)
+        self.power[channel] = power
+
+    def GetPower(self, channel):
+        return self.power[channel]
+
+    def SetFreq(self, freq, channel):
+        self._query('L'+str(channel+1)+'F'+str(freq))
+        self.freq[channel] = freq
+
+    def GetFreq(self, channel):
+        return self.freq[channel]
+
+    def GetStatus(self):
         """
         Initial properties. Must be called before polling starts.
         """
         self._purge()
-        cmd = b'?S\r'
-        with self.com as ser:
-            ser.write(cmd)
-            ser.flushOutput()
-            val = self._readline(ser, self.nChans+1)
-        ret = list(filter(None, val.split(b'\n')))
-        for ch in range(self.nChans):
-            retrm = ret[ch].replace(b'\x00', b'').replace(b'= ', b'=').strip()
-            s = re.compile(br'l(?P<ch>\d+) F=(?P<freq>\d+.\d+) P=(?P<power>\d+.\d+) (?P<onoff>\w+)')
+        self.com.flush()
+        self.com.write(b'S?\r\n')
+        self.com.flushOutput()
+        # get the four lines
+        reply = []
+        while len(reply) < self.n_chans:  # avoid the pitfall of taking an empty line, b'\n'
+            line = self.reply_queue.get()
+            if line.startswith(b'\rl'):
+                reply.append(line)
+        self._purge()
+        # ret = [filter(None, reply.split(b'\n')))
+        for channel in range(self.n_chans):
+            retrm = reply[channel].replace(b'\x00', b'').replace(b'= ', b'=').strip()
+            s = re.compile(br'l(?P<channel>\d+) F=(?P<freq>\d+.\d+) P=(?P<power>\d+.\d+) (?P<onoff>\w+)')
             vals = s.search(retrm)
-            self.freq[ch] = float(vals.group('freq'))
-            self.power[ch] = float(vals.group('power'))
-            self.isOn[ch] = vals.group('onoff') == 'ON'
+            self.freq[channel] = float(vals.group('freq'))
+            self.power[channel] = float(vals.group('power'))
+            self.channel_enabled[channel] = vals.group('onoff') == 'ON'
 
     def SaveSettings(self):
         self._query('E')
 
     def Close(self):
-        print('Shutting down %s' % self.name)
-        for ch in range(self.nChans):
-            try:
-                self.TurnOff(ch)
-            except:
-                pass
-        time.sleep(.1)
-        self.doPoll = False
+        logger.debug('Shutting down %s' % self.name)
+        # shut down active channels
+        for channel in range(self.n_chans):
+            if self.channel_enabled[channel]:
+                try:
+                    self.Disable(channel)
+                except:
+                    pass
+
+        # stop polling
+        self.is_on = False
+        try:
+            self.polling_thread.join()
+        except:
+            pass
+
+        # disconnect from com port
+        self.com.close()
