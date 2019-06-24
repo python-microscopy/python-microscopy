@@ -77,21 +77,20 @@ class MPBCWLaser(Laser):
 
     def _poll(self):
         while self.is_on:
-            with self.com as ser:
-                try:
-                    cmd = self.command_queue.get(False)
-                    ser.write(cmd)
-                    ser.flushOutput()
+            try:
+                cmd = self.command_queue.get(False)
+                self.com.write(cmd)
+                self.com.flushOutput()
 
-                except Queue.Empty:
-                    pass
+            except Queue.Empty:
+                pass
 
-                # wait a little for reply
-                time.sleep(.1)
-                ret = self._readline(ser)
+            # wait a little for reply
+            time.sleep(.1)
+            ret = self._readline(self.com)
 
-                if ret != b'':
-                    self.reply_queue.put(ret)
+            if ret != b'':
+                self.reply_queue.put(ret)
 
             time.sleep(.05)
 
