@@ -62,7 +62,7 @@ class AAOptoMDS(AOTF):
         except:
             pass
 
-    def _query(self, command, get_all=False):
+    def _query(self, command):
         """
         Get value from RF driver via serial port.
         """
@@ -71,19 +71,8 @@ class AAOptoMDS(AOTF):
         self.command_queue.put(cmd)
 
         try:
-            if not get_all:
-                line = self.reply_queue.get()
-                return line
-            else:
-                reading = True
-                lines = [self.reply_queue.get()]
-                while reading:
-                    line = self.reply_queue.get()
-                    if line == b'':
-                        reading = False
-                    else:
-                        lines.append(line)
-                return lines
+            line = self.reply_queue.get()
+            return line
         except:
             pass
 
@@ -158,7 +147,7 @@ class AAOptoMDS(AOTF):
         self.channel_enabled[channel] = False
 
     def SetPower(self, power, channel):
-        command = 'L'+str(channel+1)+'D'+str(power)
+        command = 'L'+str(channel+1)+'D%2.2f' % power
         if power > 0:
             # make sure we're running
             if not self.is_on:
