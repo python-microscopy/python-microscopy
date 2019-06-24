@@ -143,7 +143,7 @@ class AOTF(object):
 
 
     def IsOn(self, channel=None):
-        if channel is not None:
+        if channel is None:
             return self.is_on
         else:
             return self.channel_enabled[channel] and self.is_on
