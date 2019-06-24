@@ -171,7 +171,7 @@ def lasers(scope):
         },
     }
 
-    scope.aotf = AAOptoMDS(aotf_calibrations, 'COM14', 'AAOptoMDS', nChans=4)
+    scope.aotf = AAOptoMDS(aotf_calibrations, 'COM14', 'AAOptoMDS', n_chans=4)
     scope.CleanupFunctions.append(scope.aotf.Close)
 
     l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turnOn=False)

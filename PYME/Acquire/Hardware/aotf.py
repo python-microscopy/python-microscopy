@@ -44,10 +44,12 @@ class AOTFControlledLaser(Laser):
     def TurnOn(self):
         if not self.laser_on:
             self.laser.TurnOn()
-        self.aotf.TurnOn(self.aotf_channel)
+        if not self.aotf.IsOn():
+            self.aotf.TurnOn()
+        self.aotf.Enable(self.aotf_channel)
 
     def TurnOff(self):
-        self.aotf.TurnOff(self.aotf_channel)
+        self.aotf.Disable(self.aotf_channel)
 
     def GetLaserPower(self):
         return self.laser.GetPower()
@@ -103,7 +105,7 @@ class AOTFControlledLaser(Laser):
 
 class AOTF(object):
 
-    def __init__(self, name, calibrations):
+    def __init__(self, name, calibrations, n_chans):
         """
         Parameters
         ----------
@@ -121,6 +123,12 @@ class AOTF(object):
         """
         self.name = name
         self.calibrations = calibrations
+        self.n_chans = n_chans
+
+        self.freq = [0] * n_chans
+        self.power = [0] * n_chans
+        self.is_on = False
+        self.channel_enabled = [False] * n_chans
 
         self.info = {}
         for chan, calib in self.calibrations.items():
@@ -134,26 +142,22 @@ class AOTF(object):
             self.info[chan]['max_fractional_output'] = peak_output / calib['laser_setting']
 
 
-    def IsOn(self, channel):
-        """
-        Check whether a channel is enabled
-        Parameters
-        ----------
-        channel: int
-            Channel to query
+    def IsOn(self, channel=None):
+        if channel is not None:
+            return self.is_on
+        else:
+            return self.channel_enabled[channel] and self.is_on
 
-        Returns
-        -------
-        state: bool
-            True = on, False = off
-
-        """
+    def TurnOn(self):
         raise NotImplementedError
 
-    def TurnOn(self, channel):
+    def TurnOff(self):
         raise NotImplementedError
 
-    def TurnOff(self, channel):
+    def Enable(self, channel):
+        raise NotImplementedError
+
+    def Disable(self, channel):
         raise NotImplementedError
 
     def SetPower(self, power, channel):

@@ -35,14 +35,8 @@ except ImportError:
 
 class AAOptoMDS(AOTF):
     def __init__(self, calibrations, com_port='COM6', name='AAOptoMDS', n_chans=8):
-        AOTF.__init__(self, name, calibrations)
+        AOTF.__init__(self, name, calibrations, n_chans)
         self.com = serial.Serial(com_port,  timeout=1)
-        self.n_chans = n_chans
-
-        self.freq = [0] * n_chans
-        self.power = [0] * n_chans
-        self.is_on = True
-        self.channel_enabled = [False] * n_chans
 
         self.command_queue = Queue.Queue()
         self.reply_queue = Queue.Queue()
@@ -101,15 +95,6 @@ class AAOptoMDS(AOTF):
                     self.reply_queue.put(ret)
 
         time.sleep(.05)
-
-    def IsOn(self, channel=None):
-        if channel is not None:
-            return self.is_on
-        else:
-            return self.channel_enabled[channel] and self.is_on
-
-    def IsEnabled(self, channel):
-        return self.channel_enabled[channel]
 
     def TurnOn(self):
         """
