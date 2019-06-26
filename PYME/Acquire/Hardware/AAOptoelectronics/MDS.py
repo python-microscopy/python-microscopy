@@ -35,32 +35,41 @@ try:
 except ImportError:
     import queue as Queue
 
-
-class SerialDevice(object):
+class AAOptoMDS(AOTF):
     """
-    Basic serial handling for devices which do not tolerate many port openings/closings, require their buffer to be
-    cleared regularly, and generally do not tolerate higher-performance serial back-ends.
+    Our device doesn't tolerate many port openings/closings and requires its buffer to be cleared regularly. Could be
+    because we connect to it through an external USB hub. As a result we keep the serial ports open rather than using
+    context managers.
     """
-    def __init__(self, com_port, name, timeout=1.):
+    def __init__(self, calibrations, com_port='COM6', name='AAOptoMDS', n_chans=8, serial_timeout=1):
         """
         Parameters
         ----------
+        calibrations: dict
+            see PYME.Acquire.Hardware.aotf.AOTF base class
         com_port: str
             Name of the com port to connect to, e.g. 'COM14'.
         name: str
             Name of the device
-        timeout: float
+        n_chans: int
+            Number of channels, typically 4 or 8.
+        serial_timeout: float
             Timeout to be used in all serial reads
         """
-        self.name = name
-        self.timeout = timeout
+        AOTF.__init__(self, name, calibrations, n_chans)
+
+        # initialize serial
+        self.timeout = serial_timeout
         # initialize and configure the serial port without opening it
-        self.com_port = serial.Serial(timeout=timeout)
-        self.com_port.port = com_port
+        self.com_port = serial.Serial(com_port, timeout=serial_timeout)
         self.lock = threading.Lock()
         self.is_on = True
-        if not self.com_port.is_open:
-            self.com_port.open()
+
+        # Grab the initial properties
+        logger.debug('Getting MDS status')
+        self.GetStatus()
+        logger.debug('Disabling any active AOTF channels')
+        [self.Disable(channel) if self.channel_enabled[channel] else None for channel in range(self.n_chans)]
 
     def query(self, command, lines_expected=1):
         """
@@ -82,8 +91,8 @@ class SerialDevice(object):
 
         Notes
         -----
-        serial.Serial.readlines method was not used because some devices wait until each line is read before writing
-        next line.
+        serial.Serial.readlines method was not used because our device requires a wait until each line is read before
+        it writes the next line.
         """
         with self.lock:
             self.com_port.reset_input_buffer()
@@ -91,28 +100,6 @@ class SerialDevice(object):
             reply = [self.com_port.readline() for line in range(lines_expected)]
             self.com_port.reset_input_buffer()
         return reply
-
-    def close(self):
-        logger.debug('Shutting down %s' % self.name)
-        # stop polling
-        self.is_on = False
-        try:
-            self.com_port.close()
-        except Exception as e:
-            logger.error(str(e))
-
-class AAOptoMDS(SerialDevice, AOTF):
-    def __init__(self, calibrations, com_port='COM6', name='AAOptoMDS', n_chans=8, serial_timeout=1):
-        logger.debug('AOTF init')
-        AOTF.__init__(self, name, calibrations, n_chans)
-        logger.debug('Serial device init')
-        SerialDevice.__init__(self, com_port, name, serial_timeout)
-
-        # Grab the initial properties
-        logger.debug('Getting MDS status')
-        self.GetStatus()
-        logger.debug('Disabling any active AOTF channels')
-        [self.Disable(channel) if self.channel_enabled[channel] else None for channel in range(self.n_chans)]
 
     def GetStatus(self):
         """
@@ -175,5 +162,9 @@ class AAOptoMDS(SerialDevice, AOTF):
                 except:
                     pass
 
-        # stop polling
-        SerialDevice.close(self)
+        # close serial port
+        self.is_on = False
+        try:
+            self.com_port.close()
+        except Exception as e:
+            logger.error(str(e))
