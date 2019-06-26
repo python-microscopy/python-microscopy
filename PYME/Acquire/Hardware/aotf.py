@@ -9,7 +9,7 @@ class AOTFControlledLaser(Laser):
     """
     Shim to make an AOTF and laser function like a "Laser" object
     """
-    def __init__(self, laser, aotf, aotf_channel, initial_laser_power=0):
+    def __init__(self, laser, aotf, aotf_channel, initial_laser_power=0, chained_devices=()):
         """
 
         Parameters
@@ -27,6 +27,8 @@ class AOTFControlledLaser(Laser):
         self.laser_on = self.laser.IsOn()
         self.aotf = aotf
         self.aotf_channel = aotf_channel
+
+        self.chained_devices = list(chained_devices)
 
         if initial_laser_power > 0:
             self.laser.TurnOn()
@@ -46,9 +48,11 @@ class AOTFControlledLaser(Laser):
             self.laser.TurnOn()
         if not self.aotf.IsOn():
             self.aotf.TurnOn()
+        [device.Notify(True) for device in self.chained_devices]
         self.aotf.Enable(self.aotf_channel)
 
     def TurnOff(self):
+        [device.Notify(False) for device in self.chained_devices]
         self.aotf.Disable(self.aotf_channel)
 
     def GetLaserPower(self):

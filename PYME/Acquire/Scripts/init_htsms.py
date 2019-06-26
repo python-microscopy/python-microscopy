@@ -171,29 +171,33 @@ def lasers(scope):
         },
     }
 
+    from PYME.Acquire.Hardware.ioslave import FiberShaker
+    # pins 3 and 5
+    fiber_shaker = FiberShaker('COM9', channel=3, on_voltage=2.5)
+
     scope.aotf = AAOptoMDS(aotf_calibrations, 'COM14', 'AAOptoMDS', n_chans=4)
     scope.CleanupFunctions.append(scope.aotf.Close)
 
     l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turnOn=False)
     scope.CleanupFunctions.append(l405.Close)
-    scope.l405 = AOTFControlledLaser(l405, scope.aotf, 0)
+    scope.l405 = AOTFControlledLaser(l405, scope.aotf, 0, chained_devices=(fiber_shaker))
     scope.l405.register(scope)
 
     l488 = OBIS.CoherentOBISLaser('COM13', name='OBIS488', turnOn=False)
     scope.CleanupFunctions.append(l488.Close)
-    scope.l488 = AOTFControlledLaser(l488, scope.aotf, 1)
+    scope.l488 = AOTFControlledLaser(l488, scope.aotf, 1, chained_devices=(fiber_shaker))
     scope.l488.register(scope)
 
     l560 = MPBCW.MPBCWLaser('COM11', name='MPB560', turn_on=True,
                             init_power=200)  # minimum power for our MPB lasers is 200 mW
-    scope.l560 = AOTFControlledLaser(l560, scope.aotf, 2)
+    scope.l560 = AOTFControlledLaser(l560, scope.aotf, 2, chained_devices=(fiber_shaker))
     scope.CleanupFunctions.append(scope.l560.Close)
     scope.l560.register(scope)
 
     l642 = MPBCW.MPBCWLaser('COM12', name='MPB642', turn_on=True,
                             init_power=200)  # minimum power for our MPB lasers is 200 mW
     scope.CleanupFunctions.append(l642.Close)
-    scope.l642 = AOTFControlledLaser(l642, scope.aotf, 3)
+    scope.l642 = AOTFControlledLaser(l642, scope.aotf, 3, chained_devices=(fiber_shaker))
     scope.l642.register(scope)
 
 
