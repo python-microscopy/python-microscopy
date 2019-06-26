@@ -119,7 +119,50 @@ class IOSlave(object):
                 res = float(ser.readline())
         
         return res
-        
+
+class IOSlaveAlwaysOpen(object):
+    """
+    Implementation of IOSlave without context managers on the serial commands. Note that the standard IOSlave is
+    preferable, but this is useful for ports which take a long time to open so commands can be dropped when opening the
+    port and immediately writing.
+
+    Notes
+    -----
+    serial.Serial('COMX') can return before commands will be received if written, which is why this class exists.
+    """
+    def __init__(self, port='COM12'):
+        self.lock = threading.Lock()
+        self.ser = serial.Serial(port=port, baudrate=115200, rtscts=False, timeout=.1, writeTimeout=2)
+
+    def SetDigital(self, chan, value):
+        with self.lock:
+            self.ser.write(b'SD%d %d\n' % (chan, value))
+            self.ser.readline()
+
+    def SetAnalog(self, chan, value):
+        with self.lock:
+            self.ser.write(b'SA%d %f\n' % (chan, value))
+            self.ser.readline()
+
+    def SetFlash(self, chan, value):
+        with self.lock:
+            self.ser.write(b'SF%d %d\n' % (chan, value))
+            self.ser.readline()
+
+    def GetAnalog(self, chan):
+        with self.lock:
+            self.ser.write(b'QA%d\n' % chan)
+            res = float(str(self.ser.readline()))
+
+        return res
+
+    def GetTemperature(self, chan):
+        with self.lock:
+            self.ser.write(b'QT%d\n' % chan)
+            res = float(self.ser.readline())
+
+        return res
+
 from PYME.Acquire.Hardware.lasers import Laser
 
 class AOMLaser(Laser):
@@ -190,9 +233,9 @@ class DigitalShutter(Laser):
         self.isOn = False
 
 
-class FiberShaker(IOSlave):
+class FiberShaker(IOSlaveAlwaysOpen):
     def __init__(self, com_port, channel, on_voltage):
-        IOSlave.__init__(self, com_port)
+        IOSlaveAlwaysOpen.__init__(self, com_port)
         self.is_on = False
         self.channel = channel
         self.on_voltage = on_voltage
