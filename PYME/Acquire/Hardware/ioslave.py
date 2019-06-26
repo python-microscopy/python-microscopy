@@ -7,6 +7,7 @@ Created on Sun Oct 06 15:59:23 2013
 
 import serial
 import time
+import threading
 
 #class IOSlave(object):
 #    def __init__(self, port='COM12'):
@@ -82,34 +83,40 @@ import time
 
 class IOSlave(object):
     def __init__(self, port='COM12'):
-        self.ser_args = dict(port=port, baudrate=115200, rtscts=0, timeout=.1, writeTimeout=2)
+        self.ser_args = dict(port=port, baudrate=115200, rtscts=False, timeout=.1, writeTimeout=2)
+        self.lock = threading.Lock()
         
     def SetDigital(self, chan, value):
-        with serial.Serial(**self.ser_args) as ser:
-            ser.write('SD%d %d\n' % (chan, value))
-            res = ser.readline()
+        with self.lock:
+            with serial.Serial(**self.ser_args) as ser:
+                ser.write(b'SD%d %d\n' % (chan, value))
+                res = ser.readline()
        
     def SetAnalog(self, chan, value):
-        with serial.Serial(**self.ser_args) as ser:
-            ser.write('SA%d %f\n' % (chan, value))
-            res = ser.readline()
+        with self.lock:
+            with serial.Serial(**self.ser_args) as ser:
+                ser.write(b'SA%d %f\n' % (chan, value))
+                res = ser.readline()
     
     def SetFlash(self, chan, value):
-        with serial.Serial(**self.ser_args) as ser:
-            ser.write('SF%d %d\n' % (chan, value))
-            res = ser.readline()       
+        with self.lock:
+            with serial.Serial(**self.ser_args) as ser:
+                ser.write(b'SF%d %d\n' % (chan, value))
+                res = ser.readline()
     
     def GetAnalog(self, chan):
-        with serial.Serial(**self.ser_args) as ser:
-            ser.write('QA%d\n' % chan)
-            res = float(ser.readline())
+        with self.lock:
+            with serial.Serial(**self.ser_args) as ser:
+                ser.write(b'QA%d\n' % chan)
+                res = float(str(ser.readline()))
         
         return res
         
     def GetTemperature(self, chan):
-        with serial.Serial(**self.ser_args) as ser:
-            ser.write('QT%d\n' % chan)
-            res =  float(ser.readline())
+        with self.lock:
+            with serial.Serial(**self.ser_args) as ser:
+                ser.write(b'QT%d\n' % chan)
+                res = float(ser.readline())
         
         return res
         
@@ -183,7 +190,41 @@ class DigitalShutter(Laser):
         self.isOn = False
 
 
-        
+class FiberShaker(IOSlave):
+    def __init__(self, com_port, channel, on_voltage):
+        IOSlave.__init__(self, com_port)
+        self.is_on = False
+        self.channel = channel
+        self.on_voltage = on_voltage
+        self._counter = 0
+
+    def TurnOn(self):
+        self.SetAnalog(self.channel, self.on_voltage)
+
+    def TurnOff(self):
+        self.SetAnalog(self.channel, 0)
+
+    def Notify(self, enable):
+        """
+
+        Parameters
+        ----------
+        enable: bool
+            Request from device to increment or decrement counter. True means the device wants the FiberShaker on, while
+            False means it is no longer needed.
+
+        """
+        if enable:
+            self._counter += 1
+        else:
+            self._counter -= 1
+            self._counter = max(self._counter, 0)
+        if self._counter == 0 and self.is_on:
+            self.TurnOff()
+        elif self._counter > 0 and not self.is_on:
+            self.TurnOn()
+
+
 if __name__ == '__main__':
     #run as a temperature logger
     ios = IOSlave()
