@@ -64,7 +64,9 @@ class AAOptoMDS(AOTF):
         self.com_port = serial.Serial(com_port, timeout=serial_timeout)
         self.lock = threading.Lock()
         self.is_on = True
-
+        # set to internal control mode
+        logger.debug('Setting AOTF to internal control mode')
+        self.query(b'I0\r\n', lines_expected=35)
         # Grab the initial properties
         logger.debug('Getting MDS status')
         self.GetStatus()
@@ -105,7 +107,7 @@ class AAOptoMDS(AOTF):
         """
         Initial properties. Must be called before polling starts.
         """
-        raw_reply = self.query(b'S?\r\n', lines_expected=5)
+        raw_reply = self.query(b'S?\r\n', lines_expected=36)
         reply = []
         for line in raw_reply:
             if line.startswith(b'\rl'):
