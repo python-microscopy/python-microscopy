@@ -4,6 +4,7 @@ import logging
 logger = logging.getLogger(__name__)
 from PYME.Acquire.Hardware.lasers import Laser
 from scipy.interpolate import interp1d
+import warnings
 
 class AOTFControlledLaser(Laser):
     """
@@ -94,16 +95,23 @@ class AOTFControlledLaser(Laser):
             pass
         self.laser.Close()
 
+    def IsPowerControllable(self):
+        return True  # assume the AOTF can be used to controll the power
+
+    def IsPowerControlable(self):
+        warnings.warn('Use IsPowerControllable', DeprecationWarning)
+        return self.IsPowerControllable()
+
     def __del__(self):
         self.Close()
 
     def registerStateHandlers(self, scopeState):
         scopeState.registerHandler('Lasers.%s.On' % self.name, self.IsOn, lambda v: self.TurnOn() if v else self.TurnOff())
-        if self.IsPowerControlable():
-            scopeState.registerHandler('Lasers.%s.Power' % self.name, self.GetPower, self.SetPower)
-            scopeState.registerHandler('Lasers.%s.AOTFSetting' % self.name, self.GetAOTFPower, self.SetAOTFPower)
-            scopeState.registerHandler('Lasers.%s.LaserPower' % self.name, self.GetLaserPower)
-            scopeState.registerHandler('Lasers.%s.MaxPower' % self.name, lambda : self.MAX_POWER)
+        # if self.IsPowerControlable():
+        scopeState.registerHandler('Lasers.%s.Power' % self.name, self.GetPower, self.SetPower)
+        scopeState.registerHandler('Lasers.%s.AOTFSetting' % self.name, self.GetAOTFPower, self.SetAOTFPower)
+        scopeState.registerHandler('Lasers.%s.LaserPower' % self.name, self.GetLaserPower)
+        scopeState.registerHandler('Lasers.%s.MaxPower' % self.name, lambda : self.MAX_POWER)
 
 
 
