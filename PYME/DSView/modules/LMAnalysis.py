@@ -514,7 +514,10 @@ class LMAnalyser2(object):
         self.numAnalysed = 0
         self.numEvents = 0
 
-        self.newStyleTaskDistribution = NEW_STYLE_DISTRIBUTION
+        if self.image.filename.upper().startswith('PYME-CLUSTER:'):
+            self.newStyleTaskDistribution = True
+        else:
+            self.newStyleTaskDistribution = NEW_STYLE_DISTRIBUTION
         
         dsviewer.pipeline = pipeline.Pipeline()
         self.ds = None
