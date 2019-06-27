@@ -130,6 +130,10 @@ class Annotater(object):
 
         dsviewer.AddMenuItem('Annotation', "Refine selection\tCtrl-R", self.snake_refine_trace)
         dsviewer.AddMenuItem('Annotation', "Draw line\tCtrl-L", self.add_curved_line)
+
+        dsviewer.AddMenuItem('Annotation', itemType='separator')
+        dsviewer.AddMenuItem('Annotation', "Train SVM Classifier", self.train_svm)
+        dsviewer.AddMenuItem('Annotation', "Train Naive Bayes Classifier", self.train_naive_bayes)
         
         self.do.on_selection_end.connect(self.snake_refine_trace)
         self.do.overlays.append(self.DrawOverlays)
@@ -274,10 +278,10 @@ class Annotater(object):
         hwidth = width/2.0
         pad_width = int(np.ceil(hwidth + 1))
         
-        xb_0 = max(min(x1, x2) - pad_width, 0)
-        xb_1 = min(max(x1, x2) + pad_width, output.shape[0])
-        yb_0 = max(min(y1, y2) - pad_width, 0)
-        yb_1 = min(max(y1, y2) + pad_width, output.shape[1])
+        xb_0 = int(max(min(x1, x2) - pad_width, 0))
+        xb_1 = int(min(max(x1, x2) + pad_width, output.shape[0]))
+        yb_0 = int(max(min(y1, y2) - pad_width, 0))
+        yb_1 = int(min(max(y1, y2) + pad_width, output.shape[1]))
         
         X_ = X[xb_0:xb_1, yb_0:yb_1]
         Y_ = Y[xb_0:xb_1, yb_0:yb_1]
@@ -310,7 +314,7 @@ class Annotater(object):
                     
         return output
     
-    def train_svm(self):
+    def train_svm(self, event=None):
         from PYME.Analysis import svmSegment
     
         #from PYME.IO.image import ImageStack
@@ -322,6 +326,23 @@ class Annotater(object):
     
         self.cf.train(self.dsviewer.image.data[:, :, self.do.zp, 0].squeeze(), self.rasterize(self.do.zp))
         
+        self.svm_segment()
+
+    def train_naive_bayes(self, event=None):
+        from PYME.Analysis import svmSegment
+        from sklearn.naive_bayes import GaussianNB
+    
+        #from PYME.IO.image import ImageStack
+        #from PYME.DSView import ViewIm3D
+        
+        clf = GaussianNB()
+    
+        #if not 'cf' in dir(self):
+        #if not 'cf' in dir(self):
+        self.cf = svmSegment.svmClassifier(clf=clf)
+    
+        self.cf.train(self.dsviewer.image.data[:, :, self.do.zp, 0].squeeze(), self.rasterize(self.do.zp))
+    
         self.svm_segment()
 
     def svm_segment(self):
