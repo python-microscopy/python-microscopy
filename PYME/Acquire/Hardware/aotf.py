@@ -17,7 +17,7 @@ class AOTFControlledLaser(Laser):
         ----------
         laser: PYME.Hardware.lasers.Laser
             An initialized laser
-        aotf: AOTF
+        aotf: PYME.Acquire.Hardware.aotf.AOTF
             An initialized AOTF
         aotf_channel: int
             Channel on the AOTF corresponding to the laser
@@ -181,8 +181,8 @@ class AOTF(object):
     def GetFractionalOutput(self, channel):
         return self.info[channel]['fractional_output_at_setting'](self.GetPower(channel))
 
-    def SetFractionalOutput(self, channel, fractional_output):
-        setting = self.info[channel]['setting_for_fractional_output'][fractional_output]
+    def SetFranctionalOutput(self, channel, fractional_output):
+        setting = self.info[channel]['setting_for_fractional_output'](fractional_output)
         self.SetPower(setting, channel)
 
     def SetFreq(self, frequency, channel):
