@@ -132,7 +132,7 @@ def lasers(scope):
             'aotf_setting': [
                 0., 1.326, 2.652, 4.42, 22.1  # dBm
             ],
-            'output': [
+            'output': [ # note that 0 aotf_setting must correspond with 0 output setting
                 0., 0.84, 2.7, 6.66, 42.  # mW measured after objective
             ],
             'laser_setting': 100
@@ -143,7 +143,7 @@ def lasers(scope):
             'aotf_setting': [
                 0., 1.326, 2.652, 4.42, 22.1  # dBm
             ],
-            'output': [
+            'output': [  # note that 0 aotf_setting must correspond with 0 output setting
                 0., 0.84, 2.7, 6.66, 42.  # mW measured after objective
             ],
             'laser_setting': 50
@@ -154,8 +154,8 @@ def lasers(scope):
             'aotf_setting': [
                 20.1, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0  # dBm
             ],
-            'output': [
-                88.9, 77.5, 60, 41.7, 28.2, 18.4, 12.2, 7.9, 5.1, 3.5, 2.5  # mW measured after objective
+            'output': [  # note that 0 aotf_setting must correspond with 0 output setting
+                88.9, 77.5, 60, 41.7, 28.2, 18.4, 12.2, 7.9, 5.1, 3.5, 0  # mW measured after objective
             ],
             'laser_setting': 200
         },
@@ -165,8 +165,8 @@ def lasers(scope):
             'aotf_setting': [
                 22.1, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0  # dBm
             ],
-            'output': [
-                82, 76.6, 61, 44.4, 30.6, 21.6, 14.9, 10.6, 7.8, 5.9, 4.8, 4.3  # mW measured after objective
+            'output': [ # note that 0 aotf_setting must correspond with 0 output setting
+                82, 76.6, 61, 44.4, 30.6, 21.6, 14.9, 10.6, 7.8, 5.9, 4.8, 0  # mW measured after objective
             ],
             'laser_setting': 200
         },
