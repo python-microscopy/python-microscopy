@@ -68,7 +68,7 @@ class AOTFControlledLaser(Laser):
         self.update_power_output()
 
     def GetAOTFPower(self):
-        self.aotf.GetPower(self.aotf_channel)
+        return self.aotf.GetPower(self.aotf_channel)
 
     def SetAOTFPower(self, power):
         self.aotf.SetPower(power, self.aotf_channel)
