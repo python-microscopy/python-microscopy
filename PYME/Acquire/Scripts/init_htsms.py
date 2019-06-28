@@ -65,6 +65,7 @@ def orca_cam(scope):
     size = 240
     multiview_info = {
         'Multiview.NumROIs': 4,
+        'Multiview.ChannelColor': [0, 1, 1, 0],
         'Multiview.ROISize': (size, size),
         'Multiview.ROI0Origin': (104, 1024 - int(size / 2)),
         'Multiview.ROI1Origin': (844, 1024 - int(size / 2)),
