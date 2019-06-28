@@ -82,7 +82,7 @@ class AOTFControlledLaser(Laser):
         # change laser power if needed
         if power > self.MAX_AOTF_FRACTIONAL_OUTPUT * self.laser_power:
             # laser power needs to be increased
-            self.SetLaserPower(max(self.laser_power * 1.5, self.laser.MAX_POWER))
+            self.SetLaserPower(power / self.MAX_AOTF_FRACTIONAL_OUTPUT)
         # TODO - do we ever want to decrease laser power again?
 
         fractional_output = power / self.laser_power
