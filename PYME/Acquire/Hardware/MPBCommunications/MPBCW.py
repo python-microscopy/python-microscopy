@@ -51,7 +51,8 @@ class MPBCWLaser(Laser):
         Laser.__init__(self, name, turn_on, **kwargs)
         if self.IsOn():
             self.SetPower(init_power)
-            self.MAX_POWER = float(self._query(b'getpowersetptlim 0').split()[1])
+
+        self.MIN_POWER, self.MAX_POWER = [float(p) for p in self._query(b'getpowersetptlim 0').strip(b'\rD >').split()]
 
     def _purge(self):
         try:

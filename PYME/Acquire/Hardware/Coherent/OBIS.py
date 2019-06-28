@@ -49,6 +49,7 @@ class CoherentOBISLaser(Laser):
 
         self.power = 0
         self.SetPower(init_power)
+        self.MIN_POWER = float(self._query(b'SOUR:POW:LIM:LOW?'))
         self.MAX_POWER = float(self._query(b'SOUR:POW:LIM:HIGH?'))
         self.isOn = False
 
