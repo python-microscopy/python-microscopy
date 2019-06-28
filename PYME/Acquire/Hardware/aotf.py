@@ -56,18 +56,23 @@ class AOTFControlledLaser(Laser):
         [device.Notify(False) for device in self.chained_devices]
         self.aotf.Disable(self.aotf_channel)
 
+    def update_power_output(self):
+        self.power_output = self.GetLaserPower() * self.aotf.GetFractionalOutput(self.aotf_channel)
+
     def GetLaserPower(self):
         return self.laser.GetPower()
 
     def SetLaserPower(self, power):
         self.laser.SetPower(power)
         self.laser_power = power
+        self.update_power_output()
 
     def GetAOTFPower(self):
         self.aotf.GetPower(self.aotf_channel)
 
     def SetAOTFPower(self, power):
         self.aotf.SetPower(power, self.aotf_channel)
+        self.update_power_output()
 
     def SetPower(self, power):
         # check if this is feasible
@@ -84,6 +89,7 @@ class AOTFControlledLaser(Laser):
 
         fractional_output = power / self.laser_power
         self.aotf.SetFractionalOutput(self.aotf_channel, fractional_output)
+        self.update_power_output()
 
     def GetPower(self):
         return self.power_output
@@ -110,7 +116,7 @@ class AOTFControlledLaser(Laser):
         # if self.IsPowerControlable():
         scopeState.registerHandler('Lasers.%s.Power' % self.name, self.GetPower, self.SetPower)
         scopeState.registerHandler('Lasers.%s.AOTFSetting' % self.name, self.GetAOTFPower, self.SetAOTFPower)
-        scopeState.registerHandler('Lasers.%s.LaserPower' % self.name, self.GetLaserPower)
+        scopeState.registerHandler('Lasers.%s.LaserPower' % self.name, self.GetLaserPower, self.SetLaserPower)
         scopeState.registerHandler('Lasers.%s.MaxPower' % self.name, lambda : self.MAX_POWER)
 
 
@@ -148,8 +154,10 @@ class AOTF(object):
             max_ind = np.argmax(calib['output'])
             peak_output = calib['output'][max_ind]
             normalized_output = np.asarray(calib['output']) / peak_output
-            self.info[chan]['fractional_output_at_setting'] = interp1d(calib['aotf_setting'], normalized_output)
-            self.info[chan]['setting_for_fractional_output'] = interp1d(normalized_output, calib['aotf_setting'])
+            self.info[chan]['fractional_output_at_setting'] = interp1d(calib['aotf_setting'], normalized_output,
+                                                                       fill_value=(0, 0))
+            self.info[chan]['setting_for_fractional_output'] = interp1d(normalized_output, calib['aotf_setting'],
+                                                                        fill_value=(0, 0))
             self.info[chan]['peak_output_setting'] = calib['aotf_setting'][max_ind]
             self.info[chan]['max_fractional_output'] = peak_output / calib['laser_setting']
 
