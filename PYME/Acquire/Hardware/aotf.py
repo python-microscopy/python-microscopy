@@ -10,7 +10,7 @@ class AOTFControlledLaser(Laser):
     """
     Shim to make an AOTF and laser function like a "Laser" object
     """
-    def __init__(self, laser, aotf, aotf_channel, initial_laser_power=0, chained_devices=None):
+    def __init__(self, laser, aotf, aotf_channel, chained_devices=None):
         """
 
         Parameters
@@ -31,12 +31,7 @@ class AOTFControlledLaser(Laser):
 
         self.chained_devices = chained_devices if chained_devices is not None else []
 
-        if initial_laser_power > 0:
-            self.laser.TurnOn()
-            self.laser.SetPower(initial_laser_power)
-            self.laser_power = initial_laser_power
-
-        self.power_output = 0
+        self.power_output = self.GetLaserPower() * self.aotf.GetFractionalOutput(self.aotf_channel)
         self.MAX_AOTF_FRACTIONAL_OUTPUT = self.aotf.info[self.aotf_channel]['max_fractional_output']
         self.MAX_POWER = self.laser.MAX_POWER * self.MAX_AOTF_FRACTIONAL_OUTPUT
 
@@ -63,6 +58,19 @@ class AOTFControlledLaser(Laser):
         return self.laser.GetPower()
 
     def SetLaserPower(self, power):
+        """
+
+        Parameters
+        ----------
+        power: float
+            Laser power in units dictated by the laser implementation in PYME, typically [mW], sometimes [W]. Note that
+            the AOTFControlledLaser will not function correctly if the calibration units are different that the units
+            used in self.laser.SerPower()
+
+        Returns
+        -------
+
+        """
         self.laser.SetPower(power)
         self.laser_power = power
         self.update_power_output()
@@ -71,10 +79,34 @@ class AOTFControlledLaser(Laser):
         return self.aotf.GetPower(self.aotf_channel)
 
     def SetAOTFPower(self, power):
+        """
+
+        Parameters
+        ----------
+        power: float
+            Power setting for the AOTF, typically [dBm], sometimes [V]
+
+        Returns
+        -------
+        None
+
+        """
         self.aotf.SetPower(power, self.aotf_channel)
         self.update_power_output()
 
     def SetPower(self, power):
+        """
+
+        Parameters
+        ----------
+        power: float
+            Desired power output at the sample, in the same units as the calibration (typically mW)
+
+        Returns
+        -------
+        None
+
+        """
         # check if this is feasible
         if power > self.MAX_POWER:
             logger.error('Laser %s maximum power is %f, cannot reach requested %f' % (self.name, self.MAX_POWER, power))
@@ -82,6 +114,9 @@ class AOTFControlledLaser(Laser):
         # change laser power if needed
         if power > self.MAX_AOTF_FRACTIONAL_OUTPUT * self.laser_power:
             # laser power needs to be increased
+            logger.debug('current laser power: %f, current fractional output:%f, current AOTF power: %f' % (self.laser_power,
+                                                                                                            self.aotf.GetFractionalOutput(self.aotf_channel),
+                                                                                                            self.aotf.power[self.aotf_channel]))
             self.SetLaserPower(power / self.MAX_AOTF_FRACTIONAL_OUTPUT)
         # TODO - do we ever want to decrease laser power again?
 
@@ -151,7 +186,7 @@ class AOTF(object):
             self.info[chan] = {}
             max_ind = np.argmax(calib['output'])
             peak_output = calib['output'][max_ind]
-            normalized_output = np.asarray(calib['output']) / peak_output
+            normalized_output = np.asarray(calib['output']) / calib['laser_setting']
             self.info[chan]['fractional_output_at_setting'] = interp1d(calib['aotf_setting'], normalized_output,
                                                                        fill_value=(0, 0))
             self.info[chan]['setting_for_fractional_output'] = interp1d(normalized_output, calib['aotf_setting'],
@@ -209,7 +244,7 @@ class AOTF(object):
         channel: int
             channel of the AOTF to query
         fractional_output: float
-            fractional output of the selected AOTF channel at the current setting
+            Desired fractional output of the selected AOTF channel
 
         Returns
         -------
@@ -217,6 +252,7 @@ class AOTF(object):
 
         """
         setting = self.info[channel]['setting_for_fractional_output']([fractional_output])[0]
+        logger.debug('desired fractional output: %f, corresponding setting: %f' % (fractional_output, setting))
         self.SetPower(setting, channel)
 
     def SetFreq(self, frequency, channel):
