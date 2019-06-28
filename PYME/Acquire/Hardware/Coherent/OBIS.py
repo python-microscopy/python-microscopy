@@ -33,8 +33,22 @@ from PYME.Acquire.Hardware.lasers import Laser
 
 
 class CoherentOBISLaser(Laser):
-    def __init__(self, comPort = 'COM8', turnOn=False, name='OBIS', init_power=0.005, **kwargs):
-        self.com = serial.Serial(comPort, timeout=.1)
+    def __init__(self, com_port = 'COM8', turn_on=False, name='OBIS', init_power=5, **kwargs):
+        """
+
+        Parameters
+        ----------
+        com_port: str
+            serial port
+        turn_on: bool
+            Whether or not to turn on the laser on instantiating the class
+        name: str
+            Name of the laser
+        init_power: float
+            In units of mW
+        kwargs
+        """
+        self.com = serial.Serial(com_port, timeout=.1)
         self.powerControlable = True
 
         self.doPoll = True
@@ -49,13 +63,13 @@ class CoherentOBISLaser(Laser):
 
         self.power = 0
         self.SetPower(init_power)
-        self.MIN_POWER = float(self._query(b'SOUR:POW:LIM:LOW?'))
-        self.MAX_POWER = float(self._query(b'SOUR:POW:LIM:HIGH?'))
+        self.MIN_POWER = 1e3 * float(self._query(b'SOUR:POW:LIM:LOW?'))
+        self.MAX_POWER = 1e3 * float(self._query(b'SOUR:POW:LIM:HIGH?'))
         self.isOn = False
 
         self._query(b'SYST:COMM:HAND OFF')
 
-        Laser.__init__(self, name, turnOn, **kwargs)
+        Laser.__init__(self, name, turn_on, **kwargs)
 
     def _purge(self):
         try:
@@ -117,7 +131,18 @@ class CoherentOBISLaser(Laser):
         self.isOn = False
 
     def SetPower(self, power):
-        self._query(('SOUR:POW:LEV:IMM:AMPL ' + str(power)).encode())
+        """
+
+        Parameters
+        ----------
+        power: float
+            Power in units of mW, note that laser API takes units of W
+
+        Returns
+        -------
+
+        """
+        self._query(('SOUR:POW:LEV:IMM:AMPL ' + str(power / 1e3)).encode())
         self.power = power
 
     def GetPower(self):
