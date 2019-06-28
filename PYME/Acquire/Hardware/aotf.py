@@ -185,10 +185,38 @@ class AOTF(object):
         raise NotImplementedError
 
     def GetFractionalOutput(self, channel):
-        return self.info[channel]['fractional_output_at_setting'](self.GetPower(channel))
+        """
+
+        Parameters
+        ----------
+        channel: int
+            channel of the AOTF to query
+
+        Returns
+        -------
+        fractional_output: float
+            fractional output of the selected AOTF channel at the current setting
+        """
+        return self.info[channel]['fractional_output_at_setting']([self.GetPower(channel)])[0]
 
     def SetFractionalOutput(self, channel, fractional_output):
-        setting = self.info[channel]['setting_for_fractional_output'](fractional_output)
+        """
+        Set the relative output of the AOTF using the stored calibration to translate from desired fractional output and
+        the AOTF settings for that channel.
+
+        Parameters
+        ----------
+        channel: int
+            channel of the AOTF to query
+        fractional_output: float
+            fractional output of the selected AOTF channel at the current setting
+
+        Returns
+        -------
+        None
+
+        """
+        setting = self.info[channel]['setting_for_fractional_output']([fractional_output])[0]
         self.SetPower(setting, channel)
 
     def SetFreq(self, frequency, channel):
