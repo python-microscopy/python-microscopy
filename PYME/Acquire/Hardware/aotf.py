@@ -181,7 +181,7 @@ class AOTF(object):
     def GetFractionalOutput(self, channel):
         return self.info[channel]['fractional_output_at_setting'](self.GetPower(channel))
 
-    def SetFranctionalOutput(self, channel, fractional_output):
+    def SetFractionalOutput(self, channel, fractional_output):
         setting = self.info[channel]['setting_for_fractional_output'](fractional_output)
         self.SetPower(setting, channel)
 
