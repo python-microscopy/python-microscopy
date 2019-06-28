@@ -77,9 +77,7 @@ class AOTFControlledLaser(Laser):
     def SetPower(self, power):
         # check if this is feasible
         if power > self.MAX_POWER:
-            logger.error('Laser %s maximum power is %f, cannot reach requested %f' % (self.laser.name,
-                                                                                      self.laser.MAX_POWER,
-                                                                                      power))
+            logger.error('Laser %s maximum power is %f, cannot reach requested %f' % (self.name, self.MAX_POWER, power))
             return
         # change laser power if needed
         if power > self.MAX_AOTF_FRACTIONAL_OUTPUT * self.laser_power:
