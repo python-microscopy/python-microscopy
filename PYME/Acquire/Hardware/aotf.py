@@ -252,7 +252,6 @@ class AOTF(object):
 
         """
         setting = self.info[channel]['setting_for_fractional_output']([fractional_output])[0]
-        logger.debug('desired fractional output: %f, corresponding setting: %f' % (fractional_output, setting))
         self.SetPower(setting, channel)
 
     def SetFreq(self, frequency, channel):
