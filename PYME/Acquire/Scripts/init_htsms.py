@@ -127,47 +127,47 @@ def lasers(scope):
     aotf_calibrations = {  # note this is a test dummy TODO - load from file
         0: {
             'wavelength': 405,  # nm
-            'frequency': 79.838,  # MHz
+            'frequency': 153.673,  # MHz
             'aotf_setting': [
                 0., 1.326, 2.652, 4.42, 22.1  # dBm
             ],
             'output': [
                 0., 0.84, 2.7, 6.66, 42.  # mW measured after objective
             ],
-            'laser_setting': 250
+            'laser_setting': 100
         },
         1: {
             'wavelength': 488,  # nm
-            'frequency': 79.838,  # MHz
+            'frequency': 115.336,  # MHz
             'aotf_setting': [
                 0., 1.326, 2.652, 4.42, 22.1  # dBm
             ],
             'output': [
                 0., 0.84, 2.7, 6.66, 42.  # mW measured after objective
             ],
-            'laser_setting': 250
+            'laser_setting': 50
         },
         2: {
             'wavelength': 560,  # nm
-            'frequency': 79.838,  # MHz
+            'frequency': 94.820,  # MHz
             'aotf_setting': [
-                0., 1.326, 2.652, 4.42, 22.1  # dBm
+                20.1, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0  # dBm
             ],
             'output': [
-                0., 4.2, 13.5, 33.3, 210.  # mW measured after objective
+                88.9, 77.5, 60, 41.7, 28.2, 18.4, 12.2, 7.9, 5.1, 3.5, 2.5  # mW measured after objective
             ],
-            'laser_setting': 250
+            'laser_setting': 200
         },
         3: {
             'wavelength': 642,  # nm
             'frequency': 79.838,  # MHz
             'aotf_setting': [
-                0., 1.326, 2.652, 4.42, 22.1  # dBm
+                22.1, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0  # dBm
             ],
             'output': [
-                0., 4.2, 13.5, 33.3, 210.  # mW measured after objective
+                82, 76.6, 61, 44.4, 30.6, 21.6, 14.9, 10.6, 7.8, 5.9, 4.8, 4.3  # mW measured after objective
             ],
-            'laser_setting': 250
+            'laser_setting': 200
         },
     }
 
