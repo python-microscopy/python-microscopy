@@ -128,25 +128,25 @@ def lasers(scope):
     aotf_calibrations = {  # note this is a test dummy TODO - load from file
         0: {
             'wavelength': 405,  # nm
-            'frequency': 153.673,  # MHz
+            'frequency': 154.3,  # MHz
             'aotf_setting': [
-                0., 1.326, 2.652, 4.42, 22.1  # dBm
+                18.3, 16, 14, 12, 10, 8.1, 0  # dBm
             ],
             'output': [ # note that 0 aotf_setting must correspond with 0 output setting
-                0., 0.84, 2.7, 6.66, 42.  # mW measured after objective
+                1, 0.9, 0.7, 0.6, 0.4, 0.3, 0  # mW measured after objective
             ],
             'laser_setting': 100
         },
         1: {
             'wavelength': 488,  # nm
-            'frequency': 115.336,  # MHz
+            'frequency': 115.614,  # MHz
             'aotf_setting': [
-                0., 1.326, 2.652, 4.42, 22.1  # dBm
+                0, 18.9, 18, 16, 14, 12, 10, 8, 6.1, 4, 2  # dBm
             ],
             'output': [  # note that 0 aotf_setting must correspond with 0 output setting
-                0., 0.84, 2.7, 6.66, 42.  # mW measured after objective
+                0, 7.25, 6.9, 5.6, 4, 2.7, 1.8, 1, 0.6, 0.3, 0.2  # mW measured after objective
             ],
-            'laser_setting': 50
+            'laser_setting': 45  # mW
         },
         2: {
             'wavelength': 560,  # nm
@@ -179,12 +179,12 @@ def lasers(scope):
     scope.aotf = AAOptoMDS(aotf_calibrations, 'COM14', 'AAOptoMDS', n_chans=4)
     scope.CleanupFunctions.append(scope.aotf.Close)
 
-    l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turnOn=False)
+    l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turn_on=False)
     scope.CleanupFunctions.append(l405.Close)
     scope.l405 = AOTFControlledLaser(l405, scope.aotf, 0, chained_devices=[fiber_shaker])
     scope.l405.register(scope)
 
-    l488 = OBIS.CoherentOBISLaser('COM13', name='OBIS488', turnOn=False)
+    l488 = OBIS.CoherentOBISLaser('COM13', name='OBIS488', turn_on=False)
     scope.CleanupFunctions.append(l488.Close)
     scope.l488 = AOTFControlledLaser(l488, scope.aotf, 1, chained_devices=[fiber_shaker])
     scope.l488.register(scope)
