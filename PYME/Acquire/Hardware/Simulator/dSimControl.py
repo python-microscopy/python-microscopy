@@ -364,6 +364,10 @@ class dSimControl(afp.foldPanel):
 
         pEmpiricalModel.SetSizer(pEmpiricalModelSizer)
 
+        
+        self.pFirstPrinciples = pFirstPrinciples
+        self.pEmpericalModel = pEmpiricalModel
+        
         self.nSimulationType.AddPage(imageId=-1, page=pFirstPrinciples,
                                      select=True,
                                      text='Theoretical State Model')
@@ -513,6 +517,8 @@ class dSimControl(afp.foldPanel):
         self.points = []
         self.EmpiricalHist = None
         self.tRefresh.Start(200)
+
+        #self.OnBGenWormlikeButton(None)
         #self.SetSizerAndFit(self.vsizer)
         
 
@@ -564,6 +570,8 @@ class dSimControl(afp.foldPanel):
         self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
         self.stCurObjPoints.SetForegroundColour("dark green")
         self.scope.cam.setFluors(None)
+
+        self._generate_and_set_fluorophores()
         #event.Skip()
 
     def OnBLoadPointsButton(self, event):
@@ -580,6 +588,8 @@ class dSimControl(afp.foldPanel):
         self.stCurObjPoints.SetLabel('Current object has %d points' % len(self.points))
         self.stCurObjPoints.SetForegroundColour("dark green")
         self.scope.cam.setFluors(None)
+        
+        self._generate_and_set_fluorophores()
         #event.Skip()
 
     def OnBSavePointsButton(self, event):
@@ -657,6 +667,11 @@ class dSimControl(afp.foldPanel):
         self.scope.cam.setFluors(fluors)
 
 
+    def _generate_and_set_fluorophores(self):
+        if self.nSimulationType.GetCurrentPage() == self.pFirstPrinciples:
+            self.OnBGenFloursButton(None)
+        else:
+            self.OnBGenEmpiricalHistFluorsButton(None)
         
 #        pylab.figure(1)
 #        pylab.clf()

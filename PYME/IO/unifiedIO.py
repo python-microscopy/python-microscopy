@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-alpha_regex = re.compile(r'^[\w/]+$')
+alpha_regex = re.compile(r'^[\w/\.]+$')
 
 def check_name(name):
     """

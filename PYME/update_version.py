@@ -35,7 +35,7 @@ def update_version():
     now = datetime.now()
     
     p = subprocess.Popen('hg id -i', shell=True, stdout = subprocess.PIPE)
-    id = p.stdout.readline().strip()
+    id = p.stdout.readline().strip().decode()
     
     f = open(os.path.join(os.path.split(__file__)[0], 'version.py'), 'w')
     
