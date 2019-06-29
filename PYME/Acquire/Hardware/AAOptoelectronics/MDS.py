@@ -71,7 +71,7 @@ class AAOptoMDS(AOTF):
         logger.debug('Getting MDS status')
         self.GetStatus()
         logger.debug('Disabling any active AOTF channels')
-        [self.Disable(channel) if self.channel_enabled[channel] else None for channel in range(self.n_chans)]
+        [(self.Disable(channel), self.SetPower(0, channel)) if self.channel_enabled[channel] else None for channel in range(self.n_chans)]
 
     def query(self, command, lines_expected=1):
         """
@@ -133,6 +133,15 @@ class AAOptoMDS(AOTF):
 
     def SetPower(self, power, channel):
         command = b'L%dD%2.2f' % (channel+1, power)
+
+        self.query(command + b'\r\n')
+        self.power[channel] = power
+
+    def GetPower(self, channel):
+        return self.power[channel]
+
+    def SetPowerAndEnable(self, power, channel):
+        command = b'L%dD%2.2f' % (channel+1, power)
         if power > 0:
             # make sure we're running
             if not self.is_on:
@@ -143,9 +152,6 @@ class AAOptoMDS(AOTF):
 
         self.query(command + b'\r\n')
         self.power[channel] = power
-
-    def GetPower(self, channel):
-        return self.power[channel]
 
     def SetFreq(self, freq, channel):
         self.query(b'L%dF%3.2f\r\n' % (channel + 1, freq))
