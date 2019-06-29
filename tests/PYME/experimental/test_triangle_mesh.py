@@ -186,7 +186,7 @@ def test_vertex_neighbors():
     k4_vertices = _generate_vertices(4)
     mesh = triangle_mesh.TriangleMesh(k4_vertices, K4_FACES, 6)
 
-    assert np.all(np.sort(mesh.vertex_neighbors[:,:K4_NEIGHBORS.shape[1]], axis=1) == np.sort(K4_NEIGHBORS, axis=1))
+    assert np.all(np.sort(mesh._h_vertex[mesh.vertex_neighbors[:,:K4_NEIGHBORS.shape[1]]], axis=1) == np.sort(K4_NEIGHBORS, axis=1))
 
 def test_euler_characteristic():
 
@@ -223,6 +223,28 @@ def test_edge_flip_normals():
     mesh.edge_flip(flip_idx)
 
     assert _test_normals(mesh)
+
+def test_double_edge_flip_topology():
+    vertices = _generate_vertices(4)
+    mesh = triangle_mesh.TriangleMesh(vertices, PRE_FLIP_FACES)
+
+    flip_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 0))[0]
+
+    mesh.edge_flip(flip_idx)
+
+    flip_idx = np.where((mesh._h_vertex == 0) & (mesh._h_face == 0))[0]
+
+    mesh.edge_flip(flip_idx)
+
+    flip_idx = np.where((mesh._h_vertex == 1) & (mesh._h_face == 0))[0]
+
+    mesh.edge_flip(flip_idx)
+
+    flip_idx = np.where((mesh._h_vertex == 2) & (mesh._h_face == 0))[0]
+
+    mesh.edge_flip(flip_idx)
+
+    assert _test_topology(mesh, PRE_FLIP_H_VERTEX, PRE_FLIP_H_FACE, PRE_FLIP_H_TWIN, PRE_FLIP_H_NEXT, PRE_FLIP_H_PREV)
 
 def test_edge_collapse_topology():
     vertices = _generate_vertices(4)

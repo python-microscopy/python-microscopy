@@ -198,7 +198,7 @@ class TriangleMesh(object):
                     _vertex = self._h_vertex[_curr]
                     _face = self._h_face[_curr]
                     if (i < self.max_valence):
-                        self._vertex_neighbors[v_idx, i] = _vertex
+                        self._vertex_neighbors[v_idx, i] = _curr
                         n = self.face_normals[_face]
                         a = self.face_areas[_face]
                         self._vertex_normals[v_idx] += n*a
@@ -362,7 +362,7 @@ class TriangleMesh(object):
                 _face = self._h_face[_curr]
 
                 if (i < self.max_valence):
-                    self._vertex_neighbors[v_idx, i] = _vertex
+                    self._vertex_neighbors[v_idx, i] = _curr
                     n = self.face_normals[_face]
                     a = self.face_areas[_face]
                     self._vertex_normals[v_idx] += n*a
@@ -586,6 +586,7 @@ class TriangleMesh(object):
         _zip_twin_prev = self._h_twin[_twin_prev]
         _zip_prev = self._h_twin[_prev]
         _zip_twin_next = self._h_twin[_twin_next]
+
         if (_zip_next != -1):
             self._h_twin[_zip_next] = _zip_prev
         if (_zip_twin_prev != -1):
@@ -860,7 +861,7 @@ class TriangleMesh(object):
         if live_update:
             # Update face and vertex normals
             self._update_face_normals([self._h_face[_curr], self._h_face[_twin]])
-            self._update_vertex_neighbors([self._h_vertex[_curr], self._h_vertex[_twin], self._h_vertex[_next], self._h_vertex[self._h_next[_twin]], self._h_vertex[_prev], self._h_vertex[self._h_prev[_twin]]])
+            self._update_vertex_neighbors([self._h_vertex[_curr], self._h_vertex[_twin], self._h_vertex[_next], self._h_vertex[_twin_next]])
 
             self._faces_by_vertex = None
 
@@ -912,13 +913,19 @@ class TriangleMesh(object):
             # Get vertex neighbors
             nn = self._vertex_neighbors
             nn_mask = (self._vertex_neighbors != -1)
-            vn = self._vertices[nn]
+            vn = self._vertices[self._h_vertex[nn]]
             
             # Get the faces of the vertex neighbors
-            fn = self._h_face[self._vertex_halfedges[nn]]
+            # fn = self._h_face[nn]
 
-            # Get face areas and mask off the wrong ones
-            an = self._face_areas[fn]*nn_mask
+            # Get the face centroids
+            # fc = 0.33*(self._vertices[self._h_vertex[self._h_prev[nn]]] + self._vertices[self._h_vertex[nn]] + self._vertices[self._h_vertex[self._h_next[nn]]])
+
+            # an = self._face_areas[fn]*nn_mask
+            # Calculate the voronoi areas and mask off the wrong ones
+            # an = 0.5*np.linalg.norm(np.cross(np.diff(fc, axis=1), (self._vertices[:,None,:]-fc)[:,:(self.max_valence-1),:], axis=2), axis=2)*nn_mask
+            an = (1./self._h_length[nn])*nn_mask
+            an[self._h_length[nn] == 0] = 0
 
             # Calculate gravity-weighted centroids
             A = np.sum(an, axis=1)
@@ -970,7 +977,7 @@ class TriangleMesh(object):
             split_idxs = np.where((self._h_length > 1.33*edge_length)*(self._h_length != -1))[0]
             collapse_idxs = np.where((self._h_length < 0.8*edge_length)*(self._h_length != -1))[0]
 
-            # 1. Split all edges at their midpoint longer than (4/3)*edge_length.
+            # 1. Split all edges longer than (4/3)*edge_length at their midpoint.
             d = {}
             for i in split_idxs:
                 _twin = self._h_twin[i]
