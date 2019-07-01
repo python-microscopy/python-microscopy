@@ -55,7 +55,7 @@ class AxesOverlayLayer(OverlayLayer):
             glPushMatrix()
 
             view_ratio = float(gl_canvas.Size[1])/float(gl_canvas.Size[0])
-            glTranslatef(.9, .1 - view_ratio, 0)
+            glTranslatef(.9, .9*view_ratio, 0)
             glScalef(.1, .1, .1)
             glLineWidth(3)
             glMultMatrixf(gl_canvas.object_rotation_matrix)
