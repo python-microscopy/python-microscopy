@@ -436,8 +436,10 @@ class colocaliser:
 
         from scipy import ndimage
         f_s = np.sign(FRC - 1. / 7.)
+        
+        fss = ndimage.gaussian_filter(f_s, 10, mode='nearest')
 
-        intercept = np.interp(0.0, - ndimage.gaussian_filter(f_s, 10), rB[:-1])
+        intercept = np.interp(0.0, - fss, rB[:-1])
 
         print('Intercept= %3.2f (%3.2f nm)' % (intercept, voxelsize[0] / intercept))
     
@@ -457,7 +459,10 @@ class colocaliser:
     
         plt.figtext(0.5, 0.5, 'FRC intercept at %3.1f nm' % (voxelsize[0] / intercept))
     
-        # plt.figure()
+        plt.figure()
+        plt.plot(rB[:-1], f_s)
+        plt.plot(rB[:-1], fss)
+        plt.show()
         #
         #
         # plt.plot(rB[:-1], FRC-1./7.)

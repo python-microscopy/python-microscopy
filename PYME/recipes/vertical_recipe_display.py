@@ -108,7 +108,7 @@ class RecipeDisplayPanel(wx.Panel):
                 s = node.__class__.__name__
                 
                 item = afp.foldingPane(self.fp, -1, caption=s, pinned = False)
-                if getattr(node, '_has_buttons', False):
+                if getattr(node, '_has_buttons', False) or (getattr(node,'_get_actions', None) is not None):
                     kind = 'panel'
                 else:
                     kind = 'subpanel'

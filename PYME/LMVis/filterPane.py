@@ -246,7 +246,7 @@ class FilterPane(afp.foldingPane):
     def __init__(self, panel, filterKeys, pipeline, visFr):
         afp.foldingPane.__init__(self, panel, -1, caption="Output Filter", pinned = False)
 
-        self.filterKeys = filterKeys
+        #self.filterKeys = filterKeys
         self.pipeline = pipeline
         self.visFr = visFr
 
@@ -279,6 +279,10 @@ class FilterPane(afp.foldingPane):
             visFr.Bind(wx.EVT_MENU, self.OnFilterClipToSelection, id=visFr.ID_VIEW_CLIP_ROI)
         except AttributeError:
             pass
+        
+    @property
+    def filterKeys(self):
+        return self.pipeline.filterKeys
         
     def update(self, *args, **kwargs):#, filter_keys):
         #self.filterKeys = filter_keys
