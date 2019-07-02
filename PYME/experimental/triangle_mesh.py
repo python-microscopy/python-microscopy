@@ -595,7 +595,6 @@ class TriangleMesh(object):
             self._h_twin[_zip_prev] = _zip_next
         if (_zip_twin_next != -1):
             self._h_twin[_zip_twin_next] = _zip_twin_prev
-            self._h_vertex[_zip_twin_next] = _live_vertex
 
         # We need some more pointers
         _prev_twin = self._h_twin[_prev]
@@ -621,7 +620,7 @@ class TriangleMesh(object):
         self._face_areas[_curr_face] = 0
         self._face_areas[_twin_face] = 0
         self._face_normals[_curr_face, :] = 0
-        self._face_normals[_twin_face, :] = 0 
+        self._face_normals[_twin_face, :] = 0
 
         # Delete curr, next, prev
         self._h_vertex[_curr] = -1
@@ -973,32 +972,29 @@ class TriangleMesh(object):
             edge_length = np.mean(self._h_length[self._h_length != -1])
 
         for k in range(n):
-            # Grab the edges we want to modify
-            split_idxs = np.where((self._h_length > 1.33*edge_length)*(self._h_length != -1))[0]
-            collapse_idxs = np.where((self._h_length < 0.8*edge_length)*(self._h_length != -1))[0]
+            # # 1. Split all edges longer than (4/3)*edge_length at their midpoint.
+            # split_idxs = np.where((self._h_length > 1.33*edge_length)*(self._h_length != -1))[0]
+            # d = {}
+            # for i in split_idxs:
+            #     _twin = self._h_twin[i]
 
-            # 1. Split all edges longer than (4/3)*edge_length at their midpoint.
-            d = {}
-            for i in split_idxs:
-                _twin = self._h_twin[i]
-                if _twin in d.keys():
-                    continue
-                else:
-                    # print(i)
-                    d[i] = _twin
-                    self.edge_split(i)
+            #     if _twin in d.keys():
+            #         continue
+
+            #     d[i] = _twin
+            #     self.edge_split(i)
             
             # 2. Collapse all edges shorter than (4/5)*edge_length to their midpoint.
+            collapse_idxs = np.where((self._h_length < 0.8*edge_length)*(self._h_length != -1))[0]
             d = {}
             for i in collapse_idxs:
                 _twin = self._h_twin[i]
-                if _twin == -1:
+
+                if (_twin == -1) or (_twin in d.keys()):
                     continue
-                if _twin in d.keys():
-                    continue
-                else:
-                    d[i] = _twin
-                    self.edge_collapse(i)
+
+                d[i] = _twin
+                self.edge_collapse(i)
 
             # # 3. Flip edges in order to minimize deviation from valence 6.
             # self.regularize()
