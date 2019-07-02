@@ -79,7 +79,7 @@ class ClusterOfOne(object):
         #wait for the rule server to come up before launching the node server
         time.sleep(5)
         self._launch_node_server()
-        #self._launch_cluster_ui(gui=gui)
+        self._launch_cluster_ui(gui=gui)
         
         
     def run(self):

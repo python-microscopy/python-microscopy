@@ -56,6 +56,10 @@ import time
 #import tempfile
 
 import threading
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
 
 import re
 
@@ -67,6 +71,9 @@ len_lib_prefix = len(lib_prefix)
 class thread_profiler(object):
     def __init__(self):
         self.outfile = None
+        
+        self._do_poll = True
+        self._out_queue = Queue.Queue()
 
     def profileOn(self, regex='.*PYME.*', outfile='profile.txt'):
         self.regex = re.compile(regex)
@@ -74,15 +81,26 @@ class thread_profiler(object):
 
         sys.setprofile(self.prof_callback)
         threading.setprofile(self.prof_callback)
+        
+        self._tPoll = threading.Thread(target=self._poll)
+        self._tPoll.start()
 
 
 
     def profileOff(self):
         sys.setprofile(None)
         threading.setprofile(None)
+        
+        self._do_poll = False
+        self._tPoll.join()
 
         self.outfile.flush()
         self.outfile.close()
+        
+        
+    def _poll(self):
+        while self._do_poll:
+            self.outfile.write(self._out_queue.get(timeout=0.1))
 
     def prof_callback(self, frame, event, arg):
         if event in ['call', 'return'] and (not frame.f_code.co_filename == __file__) and self.regex.match(frame.f_code.co_filename):
@@ -91,10 +109,12 @@ class thread_profiler(object):
                 fn = fn[len_lib_prefix:]
 
             funcName = fn + '\t' + frame.f_code.co_name
+            #stack = '.'.join(frame.f_code.co_names)
+            stack = frame.f_code.co_firstlineno #frame.f_back.f_code.co_name
 
             t = time.clock()
 
-            self.outfile.write('%f\t%s\t%s\t%s\n' % (t, threading.current_thread().getName(), funcName, event))
+            self._out_queue.put('%f\t%s\t%s\t%s\t%s\n' % (t, threading.current_thread().getName(), funcName, event, stack))
 
 
         

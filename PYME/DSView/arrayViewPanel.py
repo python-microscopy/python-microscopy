@@ -1071,8 +1071,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
             #if nothing has changed, don't re-render
             return self._oldIm
 
-        aspect = {}
-
         sc = pow(2.0,self.do.scale)
         sc2 = sc
 
@@ -1086,13 +1084,6 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         sY_ = int(sY/(sc*self.aspect))
         x0_ = int(x0/sc)
         y0_ = int(y0/(sc*self.aspect))
-        
-        #sc = pow(2.0,(self.do.scale-2))
-        
-        #print sX, sX_, self.do.ds.shape[0], step, x0_, y0_
-        
-        
-            #sc = sc*step
             
         fstep = float(step)
         step = int(step)
@@ -1100,28 +1091,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         #XY
         if self.do.slice == DisplayOpts.SLICE_XY:
             ima = numpy.zeros((int(numpy.ceil(min(sY_, self.do.ds.shape[1])/fstep)), int(numpy.ceil(min(sX_, self.do.ds.shape[0])/fstep)), 3), 'uint8')
-            #print ima.shape
-            for chan, offset, gain, cmap in self.do.GetActiveChans():#zip(self.do.Chans, self.do.Offs, self.do.Gains, self.do.cmaps, self.do.show):
-                #ima[:] = numpy.minimum(ima[:] + (255*cmap(gain*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T - offset))[:,:,:3])[:], 255)
-                #cmap =
-                
-                #print lut.shape
-                #if show:
+            for chan, offset, gain, cmap in self.do.GetActiveChans():
                 if not cmap == labeled:
-                    #seg = self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T
-                    #seg = seg.astype('f4')
-                    #g = numpy.float32(255.*gain)
-                    #o = numpy.float32(offset)
-                    #seg = (g*(seg - o))
-                    #print seg.dtype
-                    #seg = seg.astype('uint8')
-                    #seg = (g*(self.do.ds[x0_:(x0_+sX_),y0_:(y0_+sY_),int(self.do.zp), chan].squeeze().T - o)).astype('uint8')
-                    #seg = lut[seg]
-                    #print seg.shape
-                    #ima[:] = seg
-                    #ima[:,:,0] = seg
-                    #ima[:,:,1] = seg
-                    #ima[:,:,2] = seg
                     lut = getLUT(cmap)
                     
                     if self.do.maximumProjection:

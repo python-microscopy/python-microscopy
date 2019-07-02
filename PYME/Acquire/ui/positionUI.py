@@ -179,7 +179,7 @@ class PositionPanel(wx.Panel):
         if len(self.stageNames) > 0:
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             
-            gsizer = wx.FlexGridSizer(2,2)
+            gsizer = wx.FlexGridSizer(2,2, vgap=0, hgap=0)
             gsizer.AddGrowableCol(1, 1)
             
             gsizer.Add(wx.StaticText(self, -1, u"x [\u03BCm]:"), 0, wx.ALIGN_CENTRE_VERTICAL|wx.ALL, 0)
