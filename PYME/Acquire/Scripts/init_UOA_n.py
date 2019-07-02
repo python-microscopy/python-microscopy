@@ -219,7 +219,9 @@ def action_manager(MainFrame, scope):
 def drift_tracking(MainFrame, scope):
     import subprocess
     import sys
+    import time
     from PYME.Acquire import PYMEAcquire
+    time.sleep(10)
     scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking" -m "compact"' % (sys.executable, PYMEAcquire.__file__), shell=True)
 
 
