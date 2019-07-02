@@ -242,6 +242,7 @@ class FiberShaker(IOSlaveAlwaysOpen):
         self._counter = 0
 
     def TurnOn(self):
+        self.is_on = True
         self.SetAnalog(self.channel, self.on_voltage)
 
     def TurnOff(self):
