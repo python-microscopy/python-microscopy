@@ -246,6 +246,7 @@ class FiberShaker(IOSlaveAlwaysOpen):
         self.SetAnalog(self.channel, self.on_voltage)
 
     def TurnOff(self):
+        self.is_on = False
         self.SetAnalog(self.channel, 0)
 
     def Notify(self, enable):
