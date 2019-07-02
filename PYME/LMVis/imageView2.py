@@ -119,6 +119,9 @@ class ImageViewPanel(wx.Panel):
             
         
     def OnPaint(self,event):
+        if not self.IsShownOnScreen():
+            return
+        
         DC = wx.PaintDC(self)
         #self.PrepareDC(DC)
         
