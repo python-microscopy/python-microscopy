@@ -193,7 +193,7 @@ class FocusLockPID(PID):
 
         """
         crop_start = np.argmax(profile) - int(0.5 * self._fit_roi_size)
-        start, stop = min(crop_start, 0), max(crop_start + self.fit_roi_size, profile.shape[0])
+        start, stop = max(crop_start, 0), min(crop_start + self.fit_roi_size, profile.shape[0])
         results, errors = self._fitter.fit(self._roi_position, profile[start:stop])
         return results[1] + start
 
