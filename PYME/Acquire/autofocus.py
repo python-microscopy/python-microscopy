@@ -210,4 +210,5 @@ class FocusLockPID(PID):
             # logger.debug('current: %f, setpoint: %f, correction :%f, time elapsed: %f' % (self.peak_position,
             #                                                                               self.setpoint, correction,
             #                                                                               elapsed_time))
-            self.piezo.MoveRel(0, correction)
+            # self.piezo.MoveRel(0, correction)
+            self.piezo.SetOffset(self.piezo.GetOffset() + correction)
