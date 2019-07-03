@@ -195,10 +195,6 @@ class PointScanner:
                     eventLog.logEvent('ScannerYPos', '%3.6f' % self.scope.state['Positioning.y'])
 
                 if cam_trigger:
-                    # don't outpace camera buffer
-                    if (self.scope.cam._n_frames_leftover / self.scope.cam.GetBufferSize()) > 0.5:
-                        logger.debug('waiting a second for the buffer to clear')
-                        time.sleep(1)
                     self.scope.cam.FireSoftwareTrigger()
                     eventLog.logEvent('StartAq',"")
 #
