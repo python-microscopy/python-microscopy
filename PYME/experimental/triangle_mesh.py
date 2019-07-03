@@ -570,10 +570,16 @@ class TriangleMesh(object):
         
         # double check that we have a twin (otherwise -1 indexing will give us the last entry in the half edge list)
         # this should stop us ripping holes once we have a few -1 entries. TODO - handle more gracefully
-        assert(_twin !=  -1)
+        assert(_twin != -1)
+        assert(_curr != -1)
+        assert(_prev != -1)
+        assert(_next != -1)
         
         _twin_prev = self._h_prev[_twin]
         _twin_next = self._h_next[_twin]
+        
+        assert(_twin_prev != -1)
+        assert(_twin_next != -1)
 
         _dead_vertex = self._h_vertex[_twin]
         _live_vertex = self._h_vertex[_curr]
