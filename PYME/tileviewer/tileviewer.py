@@ -40,6 +40,7 @@ class TileServer(object):
         from PYME.IO import tabular
         
         if locations_file.endswith('.h5'):
+            # FIXME - this is an unexpected type change!
             self.roi_locations = tabular.hdfSource(locations_file, tablename=tablename)
         # elif locations_file.endswith('.csv'):
         #     self.roi_locations = tabular.textfileSource(locations_file)
@@ -48,7 +49,8 @@ class TileServer(object):
     @cherrypy.expose
     def get_roi_locations(self):
         if not self.roi_locations is None:
-            return self.roi_locations.toDataFrame().to_json()
+            from pandas import DataFrame
+            return DataFrame(self.roi_locations).to_json()
         
     @cherrypy.expose
     def add_roi(self, x, y):
