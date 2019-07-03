@@ -183,7 +183,9 @@ class ActionPanel(wx.Panel):
     
     def OnROIsFromTileviewer(self, event):
         import requests
-        resp = requests.get('http://localhost:8979/GetROILocations')
+        resp = requests.get('http://localhost:8979/get_roi_locations')
+        if resp.status_code != 200:
+            raise requests.HTTPError('Could not get ROI locations')
         
         self._add_ROIs(resp.json())
         
