@@ -286,7 +286,7 @@ class TriangleMesh(object):
             # Use a dictionary to keep track of which edges are already assigned twins
             d = {}
             for i, e in enumerate(edges_packed):
-                if e in d.keys():
+                if e in list(d.keys()):
                     idx = d.pop(e)
                     self._h_twin[idx] = i
                     self._h_twin[i] = idx
@@ -294,7 +294,7 @@ class TriangleMesh(object):
                     d[e] = i
 
             # Set remaining unassigned edges to -1
-            for e in d.keys():
+            for e in list(d.keys()):
                 idx = d.pop(e)
                 self._h_twin[idx] = -1
 
@@ -984,17 +984,24 @@ class TriangleMesh(object):
             #     d[i] = _twin
             #     self.edge_split(i)
             
-            # 2. Collapse all edges shorter than (4/5)*edge_length to their midpoint.
-            collapse_idxs = np.where((self._h_length < 0.8*edge_length)*(self._h_length != -1))[0]
-            d = {}
-            for i in collapse_idxs:
-                _twin = self._h_twin[i]
+            # # 2. Collapse all edges shorter than (4/5)*edge_length to their midpoint.
+            # collapse_idxs = np.where((self._h_length < 0.8*edge_length)*(self._h_length != -1))[0]
+            # d = {}
+            # for i in collapse_idxs:
+            #     _twin = self._h_twin[i]
 
-                if (_twin == -1) or (_twin in d.keys()):
-                    continue
+            #     if (_twin == -1) or (_twin in d.keys()):
+            #         continue
 
-                d[i] = _twin
-                self.edge_collapse(i)
+            #     d[i] = _twin
+            #     self.edge_collapse(i)
+
+            collapse_count = 0
+            for i in np.arange(len(self._h_length)):
+                if (self._h_length[i] != -1) and (self._h_length[i] < 0.8*edge_length):
+                    self.edge_collapse(i)
+                    collapse_count += 1
+            print('Collapse count: ' + str(collapse_count))
 
             # # 3. Flip edges in order to minimize deviation from valence 6.
             # self.regularize()
