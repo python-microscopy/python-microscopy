@@ -206,10 +206,6 @@ def lasers(scope):
 def laser_controls(MainFrame, scope):
     from PYME.Acquire.ui import lasersliders
 
-    lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
-    MainFrame.time1.WantNotification.append(lcf.update)
-    MainFrame.camPanels.append((lcf, 'Laser Control'))
-
     lsf = lasersliders.LaserSliders(MainFrame.toolPanel, scope.state)
     MainFrame.time1.WantNotification.append(lsf.update)
     MainFrame.camPanels.append((lsf, 'Laser Powers'))
