@@ -369,7 +369,7 @@ class LMGLShaderCanvas(GLCanvas):
             if self.displayMode == '3DPersp':
                 glFrustum(-1 + eye, 1 + eye, -ys, ys, 8.5, 11.5)
             else:
-                glOrtho(-1, 1, -ys, ys, -1000, 1000)
+                glOrtho(-1, 1, ys, -ys, -1000, 1000)
 
             glMatrixMode(GL_MODELVIEW)
             glTranslatef(eye, 0.0, 0.0)
@@ -742,7 +742,7 @@ class LMGLShaderCanvas(GLCanvas):
     def _ScreenCoordinatesToNm(self, x, y):
         # FIXME!!!
         x_ = self.pixelsize * (x - 0.5 * float(self.view_port_size[0])) + self.view.translation[0]
-        y_ = -self.pixelsize * (y - 0.5 * float(self.view_port_size[1])) + self.view.translation[1]
+        y_ = self.pixelsize * (y - 0.5 * float(self.view_port_size[1])) + self.view.translation[1]
         # print x_, y_
         return x_, y_
 
@@ -784,7 +784,7 @@ class LMGLShaderCanvas(GLCanvas):
         elif self.panning:
 
             dx = self.pixelsize * (x - self.xDragStart)
-            dy = -self.pixelsize * (y - self.yDragStart)
+            dy = self.pixelsize * (y - self.yDragStart)
 
             # print dx
 
