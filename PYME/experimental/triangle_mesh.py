@@ -618,7 +618,7 @@ class TriangleMesh(object):
         self._faces[_curr_face] = -1
         self._faces[_twin_face] = -1
         self._face_areas[_curr_face] = 0
-        self._face_areas[_twin_face] = 0
+        self._face_areas[_twin_face] = 0 
         self._face_normals[_curr_face, :] = 0
         self._face_normals[_twin_face, :] = 0
 
