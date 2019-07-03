@@ -180,9 +180,22 @@ class FocusLockPID(PID):
         self._roi_position = np.arange(roi_size)
 
     def find_peak(self, profile):
+        """
+
+        Parameters
+        ----------
+        profile: np.ndarray
+            1D array of the pixel intensities after summing along direction orthogonal to axis the focus-lock beam moves
+            along
+
+        Returns
+        -------
+
+        """
         crop_start = np.argmax(profile) - int(0.5 * self._fit_roi_size)
-        results, errors = self._fitter.fit(self._roi_position, profile[crop_start:crop_start + self._fit_roi_size])
-        return results[1] + crop_start
+        start, stop = min(crop_start, 0), max(crop_start + self.fit_roi_size, profile.shape[0])
+        results, errors = self._fitter.fit(self._roi_position, profile[start:stop])
+        return results[1] + start
 
     def on_frame(self, **kwargs):
         # get focus position
