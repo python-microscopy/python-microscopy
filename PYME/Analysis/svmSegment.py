@@ -98,7 +98,7 @@ def normalizeFeatures(fv, normalization= None):
     return (fv-fvm[:, None])/fvs[:,None], (fvm, fvs)
     
 def trainClassifier(features, labels):
-    clf = svm.SVC(C=100.)
+    clf = svm.SVC(C=100., probability=True)
     clf.fit(features.T, labels)
     
     return clf
@@ -115,6 +115,20 @@ def performClassification(clf, fv):
     chunks = [fv[:, (i*cs):min(((i+1)*cs), N)].T for i in range(nCPUs)]
     
     return np.hstack(p.map(clf.predict, chunks))
+
+
+def prob_predict(clf, fv):
+    nCPUs = multiprocessing.cpu_count()
+    #nCPUs = 6
+    p = multiprocessing.dummy.Pool(nCPUs)
+    
+    N = fv.shape[1]
+    cs = int(np.ceil(float(N) / nCPUs))
+    #print N
+    
+    chunks = [fv[:, (i * cs):min(((i + 1) * cs), N)].T for i in range(nCPUs)]
+    
+    return np.vstack(p.map(clf.predict_proba, chunks))
     
 class svmClassifier(object):
     def __init__(self, clf=None, filename = None):
@@ -148,7 +162,7 @@ class svmClassifier(object):
         features = self._getAndCacheFeatures(im)
             
         if self.clf is None or newInstance:
-            self.clf = svm.SVC(C=100.)
+            self.clf = svm.SVC(C=100., probability=True)
             
         print('Training classifier ...')
         #just use those pixels which have been labeled to train the classifier
@@ -172,6 +186,22 @@ class svmClassifier(object):
         c =  performClassification(self.clf, features)
         #print c.shape, im.shape, im.size
         return c.reshape(im.shape)
+
+    def probabilities(self, im):
+        im = im.squeeze()
+    
+        if im.ctypes.data in self.featureCache.keys():
+            features = self.featureCache[im.ctypes.data]
+        else:
+            features = self._getNormalizedFeatures(im)
+    
+        print('Performing classification ...')
+        c = prob_predict(self.clf, features)
+        print(c.shape, im.shape, im.size)
+        shape = np.ones(4, 'i')
+        shape[:len(im.shape)] = im.shape
+        shape[3] = c.shape[1]
+        return c.reshape(shape)
         
     def save(self, filename):
         from sklearn.externals import joblib

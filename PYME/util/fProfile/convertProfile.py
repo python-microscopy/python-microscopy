@@ -63,7 +63,8 @@ def build_call_tree_threads(df):
                                 'tf': l.time,
                                 'l': level,
                                 'td': threadIDX,
-                                'tl' : float(thread_levels[threadIDX])})
+                                'tl' : float(thread_levels[threadIDX]),
+                                'ns' : str(getattr(l, 'names', ''))})
                     level -= 1
                 except IndexError:
                     pass
@@ -89,7 +90,10 @@ def convert(infile='prof_spool.txt', outfile='prof_spool.json'):
     -------
 
     """
-    df = pd.read_csv(infile, '\t', names=['time', 'thread', 'file', 'function', 'event'])
+    #try:
+    df = pd.read_csv(infile, '\t', names=['time', 'thread', 'file', 'function', 'event', 'names'])
+    #except:
+    #    df = pd.read_csv(infile, '\t', names=['time', 'thread', 'file', 'function', 'event'])
 
     callstack = build_call_tree_threads(df)
 

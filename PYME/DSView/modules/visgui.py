@@ -20,7 +20,12 @@
 #
 ##################
 
-from PYME.LMVis.imageView import *
+from PYME.LMVis.imageView2 import ImageViewPanel, ColourImageViewPanel
+import pylab
+import numpy
+import wx
+import os
+
 from PYME.DSView.arrayViewPanel import ArrayViewPanel
 
 from six.moves import xrange
