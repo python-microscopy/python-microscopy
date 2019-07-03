@@ -30,7 +30,7 @@ def cam(scope):
     from PYME.Acquire.Hardware.uc480 import uCam480
     uCam480.init()
     cam = uCam480.uc480Camera(0)
-    scope.register_camera(cam, 'Focus', flipy=True)
+    scope.register_camera(cam, 'Focus')
 
 #PIFoc
 @init_hardware('PIFoc')
@@ -58,7 +58,7 @@ def pifoc(scope):
 def focus_lock(MainFrame, scope):
     from PYME.Acquire.autofocus import FocusLockPID
     from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
-    scope.focus_lock = FocusLockPID(scope, scope.piFoc, p=0.1, i=0.001, d=0.0005)
+    scope.focus_lock = FocusLockPID(scope, scope.piFoc, p=0.01, i=0.0001, d=0.00005)
     scope.focus_lock.register()
     panel = FocusLockPanel(MainFrame, scope.focus_lock)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
