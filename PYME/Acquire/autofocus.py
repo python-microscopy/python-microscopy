@@ -16,6 +16,12 @@ from scipy import optimize
 import logging
 logger = logging.getLogger(__name__)
 import time
+try:
+    # get monotonic time to ensure that time deltas are always positive
+    _current_time = time.monotonic
+except AttributeError:
+    # time.monotonic() not available (using python < 3.3), fallback to time.time()
+    _current_time = time.time
 
 class AutoFocus(object):
     def __init__(self, scope, increment=0.5):
@@ -111,7 +117,7 @@ class LineGaussFitter(object):
         return tuple(res.astype('f')), tuple(errors.astype('f'))
 
 class FocusLockPID(PID):
-    def __init__(self, scope, piezo, tolerance=0.025, p=1., i=0.1, d=0.05):
+    def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01):
         """
 
         Parameters
@@ -121,19 +127,17 @@ class FocusLockPID(PID):
         p: float
         i: float
         d: float
-        max_correction_step: float
-            Largest correction [um] to be applied on a single frame
+        sample_time: float
+            See simple_pid.PID, but this servo does not have a tolerence on the lock position, but rather a dead-time
+            of-sorts by only updating at ~regular time intervals. The correction is only changed once per sample_time.
         """
         self.scope = scope
         self.piezo = piezo
 
-        self.tolerance = tolerance
-
         self._fitter = LineGaussFitter()
         self.fit_roi_size = 30
 
-        # profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=0).astype(float)
-        # self.peak_position = self.find_peak(profile)
+
         self.peak_position = 512  # default to half of the camera size
 
         PID.__init__(self, p, i, d, setpoint=self.peak_position, auto_mode=False)
@@ -181,15 +185,16 @@ class FocusLockPID(PID):
         return results[1] + crop_start
 
     def on_frame(self, **kwargs):
-        t = time.time()
-        logger.debug('grabbing frame')
         # get focus position
         profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=0).astype(float)
         self.peak_position = self.find_peak(profile)
 
         # calculate correction
+        elapsed_time =_current_time() - self._last_time
         correction = self(self.peak_position)
-        if self.lock_enabled:
-            logger.debug('setpoint: %f, correction :%f, time elapsed: %f' % (self.setpoint, correction, time.time() - t))
-            if abs(correction - self.piezo.GetPos()) > self.tolerance:
-                self.piezo.MoveRel(0, correction)
+        # note that correction only updates if elapsed_time is larger than sample time - don't apply same correction 2x.
+        if self.lock_enabled and elapsed_time > self.sample_time:
+            # logger.debug('current: %f, setpoint: %f, correction :%f, time elapsed: %f' % (self.peak_position,
+            #                                                                               self.setpoint, correction,
+            #                                                                               elapsed_time))
+            self.piezo.MoveRel(0, correction)
