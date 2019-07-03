@@ -711,14 +711,25 @@ class microscope(object):
                 return name
                 
     def _SetActiveCameraIntegrationTime(self, integrationTime):
-        """Sets the integration time for the active camera (in ms)
+        """
+        Sets the integration time for the active camera
+        Parameters
+        ----------
+        integrationTime: float
+            Units of seconds.
 
-        NB: This is a state handler, use 
-        `scope.state['Camera.IntegrationTime'] = integrationTime` 
-        instead of calling directly        
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        This is a state handler, use
+        `scope.state['Camera.IntegrationTime'] = integrationTime`
+        instead of calling directly
         """
         self.cam.SetIntegTime(integrationTime)
-    
+    # FIXME - the getter and setter have different units, which is disgusting.
     def _GetActiveCameraIntegrationTime(self):
         """Gets the integration time for the active camera (in ms)"""
         return self.cam.GetIntegTime()
