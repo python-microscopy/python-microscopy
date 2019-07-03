@@ -623,48 +623,14 @@ class TriangleMesh(object):
         self._face_normals[_twin_face, :] = 0
 
         # Delete curr, next, prev
-        self._h_vertex[_curr] = -1
-        self._h_face[_curr] = -1
-        self._h_twin[_curr] = -1
-        self._h_next[_curr] = -1
-        self._h_prev[_curr] = -1
-        self._h_length[_curr] = -1
-
-        self._h_vertex[_prev] = -1
-        self._h_face[_prev] = -1
-        self._h_twin[_prev] = -1
-        self._h_next[_prev] = -1
-        self._h_prev[_prev] = -1
-        self._h_length[_prev] = -1
-
-        self._h_vertex[_next] = -1
-        self._h_face[_next] = -1
-        self._h_twin[_next] = -1
-        self._h_next[_next] = -1
-        self._h_prev[_next] = -1
-        self._h_length[_next] = -1
+        self._edge_delete(_curr)
+        self._edge_delete(_prev)
+        self._edge_delete(_next)
 
         # Delete _twin, _twin_prev, _twin_next
-        self._h_vertex[_twin] = -1
-        self._h_face[_twin] = -1
-        self._h_twin[_twin] = -1
-        self._h_next[_twin] = -1
-        self._h_prev[_twin] = -1
-        self._h_length[_twin] = -1
-
-        self._h_vertex[_twin_prev] = -1
-        self._h_face[_twin_prev] = -1
-        self._h_twin[_twin_prev] = -1
-        self._h_next[_twin_prev] = -1
-        self._h_prev[_twin_prev] = -1
-        self._h_length[_twin_prev] = -1
-
-        self._h_vertex[_twin_next] = -1
-        self._h_face[_twin_next] = -1
-        self._h_twin[_twin_next] = -1
-        self._h_next[_twin_next] = -1
-        self._h_prev[_twin_next] = -1
-        self._h_length[_twin_next] = -1
+        self._edge_delete(_twin)
+        self._edge_delete(_twin_prev)
+        self._edge_delete(_twin_next)
 
         if live_update:
             # Update faces
@@ -672,6 +638,14 @@ class TriangleMesh(object):
             self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
 
             self._faces_by_vertex = None
+
+    def _edge_delete(self, _edge):
+        self._h_vertex[_edge] = -1
+        self._h_face[_edge] = -1
+        self._h_twin[_edge] = -1
+        self._h_next[_edge] = -1
+        self._h_prev[_edge] = -1
+        self._h_length[_edge] = -1
 
     def edge_split(self, _curr, live_update=True):
         """
