@@ -532,7 +532,8 @@ class uc480Camera:
         Parameters
         ----------
         val: int
-            Binning factor, must be 2, 3, 4, 5, 6, 8, or 16
+            Binning factor. Supported values, depending on the camera, are 2, 3, 4, 5, 6, 8, or 16. Other values will be
+            changed to nearest acceptable value, though there is no check for whether the camera supports it.
 
         Returns
         -------
@@ -563,7 +564,8 @@ class uc480Camera:
         Parameters
         ----------
         val: int
-            Binning factor, must be 2, 3, 4, 5, 6, 8, or 16
+            Binning factor. Supported values, depending on the camera, are 2, 3, 4, 5, 6, 8, or 16. Other values will be
+            changed to nearest acceptable value, though there is no check for whether the camera supports it.
 
         Returns
         -------
