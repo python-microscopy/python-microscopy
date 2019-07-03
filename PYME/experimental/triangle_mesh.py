@@ -567,6 +567,11 @@ class TriangleMesh(object):
         _prev = self._h_prev[_curr]
         _next = self._h_next[_curr]
         _twin = self._h_twin[_curr]
+        
+        # double check that we have a twin (otherwise -1 indexing will give us the last entry in the half edge list)
+        # this should stop us ripping holes once we have a few -1 entries. TODO - handle more gracefully
+        assert(_twin !=  -1)
+        
         _twin_prev = self._h_prev[_twin]
         _twin_next = self._h_next[_twin]
 
@@ -576,25 +581,30 @@ class TriangleMesh(object):
         # Collapse to the midpoint of the original edge vertices
         self._h_vertex[self._h_vertex == _dead_vertex] = _live_vertex
         self._vertices[_live_vertex, :] = 0.5*(self._vertices[_live_vertex, :] + self._vertices[_dead_vertex, :])
+        
+        # update valence of vertex we keep
+        self._valences[_live_vertex] = self._valences[_live_vertex] + self._valences[_dead_vertex] -3
+        
+        # delete dead vertex
         self._vertices[_dead_vertex, :] = -1
         self._vertex_normals[_dead_vertex, :] = -1
         self._vertex_neighbors[_dead_vertex, :] = -1
         self._valences[_dead_vertex] = -1
+        self._vertex_halfedges[_dead_vertex] = -1
 
         # Zipper the remaining triangles
-        _zip_next = self._h_twin[_next]
-        _zip_twin_prev = self._h_twin[_twin_prev]
-        _zip_prev = self._h_twin[_prev]
-        _zip_twin_next = self._h_twin[_twin_next]
-
-        if (_zip_next != -1):
-            self._h_twin[_zip_next] = _zip_prev
-        if (_zip_twin_prev != -1):
-            self._h_twin[_zip_twin_prev] = _zip_twin_next
-        if (_zip_prev != -1):
-            self._h_twin[_zip_prev] = _zip_next
-        if (_zip_twin_next != -1):
-            self._h_twin[_zip_twin_next] = _zip_twin_prev
+        def _zipper(edge1, edge2):
+            t1 = self._h_twin[edge1]
+            t2 = self._h_twin[edge2]
+            
+            if (t1 != -1):
+                self._h_twin[t2] = t1
+                
+            if (t2 != -1):
+                self._h_twin[t1] = t2
+                
+        _zipper(_next, _prev)
+        _zipper(_twin_next, _twin_prev)
 
         # We need some more pointers
         _prev_twin = self._h_twin[_prev]
@@ -606,7 +616,6 @@ class TriangleMesh(object):
         _next_twin_twin_next_vertex = self._h_vertex[_next_twin_twin_next]
 
         # Make sure we have good _vertex_halfedges references
-        self._vertex_halfedges[_dead_vertex] = -1
         self._vertex_halfedges[_live_vertex] = _prev_twin
         self._vertex_halfedges[_prev_twin_vertex] = _next_prev_twin
         self._vertex_halfedges[_twin_next_vertex] = self._h_twin[_twin_next]
