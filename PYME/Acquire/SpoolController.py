@@ -89,6 +89,7 @@ class SpoolController(object):
         if self.spoolType == 'Cluster':
             from PYME.Acquire import HTTPSpooler
             #special case for HTTP spooling
+            # FIXME - this does not work for cases where the cluster is running different OS than spooling computer
             logger.debug('Looking for %s on cluster' % getRelFilename(self.dirname +'/'+ fn + '.pcs'))
             return HTTPSpooler.exists(getRelFilename(self.dirname + '/' + fn + '.pcs'))
             #return (fn + '.h5/') in HTTPSpooler.clusterIO.listdir(self.dirname)
