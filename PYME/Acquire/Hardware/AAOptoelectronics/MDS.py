@@ -30,10 +30,6 @@ import threading
 import logging
 logger = logging.getLogger(__name__)
 
-try:
-    import Queue
-except ImportError:
-    import queue as Queue
 
 class AAOptoMDS(AOTF):
     """
