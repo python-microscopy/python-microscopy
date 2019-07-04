@@ -541,7 +541,8 @@ class uc480Camera:
 
         Notes
         -----
-        Not all ueye cameras support each binning factor. Our uc480 only supports up to val=4
+        Not all ueye cameras support each binning factor. Our Thorlabs branded DCC1545M, for example, doesn't even
+        support binning, only subsampling.
 
         """
         from PYME.Acquire.Hardware.uc480 import uc480_h
@@ -573,7 +574,8 @@ class uc480Camera:
 
         Notes
         -----
-        Not all ueye cameras support each binning factor. Our uc480 only supports up to val=4
+        Not all ueye cameras support each binning factor. Our Thorlabs branded DCC1545M, for example, doesn't even
+        support binning, only subsampling.
 
         """
         from PYME.Acquire.Hardware.uc480 import uc480_h
