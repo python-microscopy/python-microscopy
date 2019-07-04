@@ -242,7 +242,7 @@ class MarzhauserTangoXY(PiezoBase):
             # MoveAbs (int lLSID, double dX, double dY, double dZ, double dA, BOOL bWait);
 
     def MoveRel(self, iChannel, incr, bTimeOut=True, wait_to_finish=True):
-        pos = (4 * ctypes.c_double)()
+        pos = 4 * [ctypes.c_double()]
         pos[iChannel] = incr
         with self.lock:
             MoveRel(self.lsid, pos[0], pos[1], pos[2], pos[3], wait_to_finish)
