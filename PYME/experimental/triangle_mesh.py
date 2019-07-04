@@ -50,8 +50,8 @@ class TriangleMesh(object):
         self._faces_by_vertex = None  # Representation of faces by triplets of vertices
 
         # Halfedges
-        self._h_vertex = None
-        self._h_face = None
+        self._h_vertex = None  # the vertex the half-edge points to
+        self._h_face = None    # the face that the half edge is ascociated with
         self._h_twin = None
         self._h_next = None
         self._h_prev = None
@@ -353,35 +353,48 @@ class TriangleMesh(object):
             self._vertex_normals[v_idx] = 0
             self._vertex_neighbors[v_idx, :] = -1
             self._valences[v_idx] = 0
+            
+            vertex = self._vertices[v_idx]
+            
+            _normal = 0*self._vertex_normals[v_idx] #avoid a few lookups by using a local variable
 
             while True:
                 if (_curr == -1) or (_twin == -1):
                     break
 
-                _vertex = self._h_vertex[_curr]
+                #_vertex = self._h_vertex[_curr]
                 _face = self._h_face[_curr]
 
                 if (i < self.max_valence):
                     self._vertex_neighbors[v_idx, i] = _curr
-                    n = self.face_normals[_face]
-                    a = self.face_areas[_face]
-                    self._vertex_normals[v_idx] += n*a
-                    area += a
-                l = self._vertices[_vertex] - self._vertices[self._h_vertex[self._h_prev[_curr]]]
-                self._h_length[_curr] = np.sqrt((l*l).sum())
+                    
+                    #TODO - should these be in if clause?
+                    n = self._face_normals[_face]
+                    a = self._face_areas[_face]
+                    #self._vertex_normals[v_idx] += n*a
+                    _normal += n*a
+                    #area += a
+                    
+                l = vertex - self._vertices[self._h_vertex[_curr]]
+                l = np.sqrt((l*l).sum())
+                self._h_length[_curr] = l
+                self._h_length[_twin] = l
+                
                 _curr = self._h_next[_twin]
                 _twin = self._h_twin[_curr]
+                
                 i += 1
                 self._valences[v_idx] += 1
+                
                 if (_curr == _orig):
                     break
 
             if area > 0:
-                self._vertex_normals[v_idx] /= area
-                n = self._vertex_normals[v_idx]
-                nn = np.sqrt((n*n).sum())
+                #self._vertex_normals[v_idx] /= area #not needed as we normalize anywat
+                #n = self._vertex_normals[v_idx]
+                nn = np.sqrt((_normal*_normal).sum())
                 if nn > 0:
-                    self._vertex_normals[v_idx] /= nn
+                    self._vertex_normals[v_idx] = _normal/nn
                 else:
                     self._vertex_normals[v_idx] = 0
             else:
@@ -680,6 +693,12 @@ class TriangleMesh(object):
         _twin = self._h_twin[_curr]
         _twin_prev = self._h_prev[_twin]
         _twin_next = self._h_next[_twin]
+        
+        assert(_curr != -1)
+        assert(_next != -1)
+        assert(_twin != -1)
+        assert(_twin_prev != -1)
+        assert(_twin_next != -1)
 
         # Grab the new vertex position
         _vertex = 0.5*(self.vertices[self._h_vertex[_curr]] + self.vertices[self._h_vertex[_twin]])
@@ -973,6 +992,13 @@ class TriangleMesh(object):
             #     d[i] = _twin
             #     self.edge_split(i)
             
+            split_count = 0
+            for i in np.arange(len(self._h_length)):
+                if (self._h_length[i] != -1) and (self._h_length[i] > 1.33*edge_length):
+                    self.edge_split(i)
+                    split_count += 1
+            print('Split count: %d' % (split_count))
+            
             # # 2. Collapse all edges shorter than (4/5)*edge_length to their midpoint.
             # collapse_idxs = np.where((self._h_length < 0.8*edge_length)*(self._h_length != -1))[0]
             # d = {}
@@ -993,7 +1019,7 @@ class TriangleMesh(object):
             print('Collapse count: ' + str(collapse_count))
 
             # # 3. Flip edges in order to minimize deviation from valence 6.
-            # self.regularize()
+            #self.regularize()
 
             # # 4. Relocate vertices on the surface by tangential smoothing.
             # self.relax(l=l, n=n_relax)
