@@ -31,6 +31,9 @@ def cam(scope):
     uCam480.init()
     cam = uCam480.uc480Camera(0)
     scope.register_camera(cam, 'Focus')
+    scope.cam.SetROI(325, 0, 525, 1024)
+    # try and hit about 40 Hz
+    scope.cam.SetIntegTime(0.025)
 
 #PIFoc
 @init_hardware('PIFoc')
