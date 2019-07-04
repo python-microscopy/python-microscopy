@@ -56,7 +56,7 @@ def pifoc(scope):
 
 @init_gui('Focus Lock')
 def focus_lock(MainFrame, scope):
-    from PYME.Acquire.autofocus import ReflectedLinePIDFocusLock
+    from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import ReflectedLinePIDFocusLock
     from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
     scope.focus_lock = ReflectedLinePIDFocusLock(scope, scope.piFoc, p=0.01, i=0.0001, d=0.00005)
     scope.focus_lock.register()
