@@ -1,3 +1,5 @@
+
+# This file is for focus locks which involve some sort of reflection off of the coverslip.
 from simple_pid import PID
 import numpy as np
 from scipy import optimize
@@ -13,6 +15,10 @@ except AttributeError:
 
 
 class GaussFitter1D(object):
+    """
+    1D gaussian fitter for use with focus locks which either have line-cameras, or whose frames are summed alone one
+    direction to create a line profile, the peak position of which indicates the current focal position.
+    """
     def _model_function(self, parameters, position):
         """
         1D gaussian
@@ -64,6 +70,19 @@ class GaussFitter1D(object):
         return tuple(res.astype('f')), tuple(errors.astype('f'))
 
 class ReflectedLinePIDFocusLock(PID):
+    """
+    The hardware implementation of this focus lock is an NIR laser piped into the objective straight, but slightly off-
+    center, such that some of it is reflected off of the coverslip-to-(sample immersion media) interface and colelcted
+    by the objective. This light then passes through a beamsplitter and is imaged as a stripe onto a camera using a
+    cylrindical lens. The stripe's (in our case, vertical) position on the camera therefore indicates the distance
+    betweem the objective and the sample.
+
+    This class takes camera frames, sums them along the direction parallel to the stripe, crops a part of the resulting
+    1D line profile and fits it using the GaussianFitter1D class above. The center position of the fitted Gaussian is
+    fed into the PID servo to determine an appropriate correction. We use an "offsetPiezo" so that we can image fields
+    of view with axial coordinates relative to the coverslip rather than absolute axial position (which is influenced by
+    coverslips sagging from media, etc.).
+    """
     def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01):
         """
 
