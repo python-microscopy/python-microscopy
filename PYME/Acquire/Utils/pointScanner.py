@@ -57,14 +57,11 @@ class PointScanner:
         self.currPos = self.scope.GetPos()
         
         if np.isscalar(self.pixels):
-            #constant - use as number of pixels
-            #center on current piezo position
-            #print self.pixelsize[0]
+            #constant - use as number of pixels, center on current piezo position
             self.xp = self.pixelsize[0]*np.arange(-self.pixels/2, self.pixels/2 +1) + self.currPos['x']
             self.yp = self.pixelsize[1]*np.arange(-self.pixels/2, self.pixels/2 +1) + self.currPos['y']
         elif np.isscalar(self.pixels[0]):
             #a 1D array - numbers in either direction centered on piezo pos
-            #print self.pixelsize[0]
             self.xp = self.pixelsize[0]*np.arange(-self.pixels[0]/2, self.pixels[0]/2 +1) + self.currPos['x']
             self.yp = self.pixelsize[1]*np.arange(-self.pixels[1]/2, self.pixels[1]/2 +1) + self.currPos['y']
         else:
