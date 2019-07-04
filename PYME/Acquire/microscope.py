@@ -318,7 +318,7 @@ class microscope(object):
         self.hardwareChecks = []
         
         #entries should be of the form: "x" : (piezo, channel, multiplier)
-        # where multiplyier is what to multiply by to get the usints to um
+        # where multiplyier is what to multiply by to get the units to micrometers
         self.positioning = {}
         self.joystick = None
 
