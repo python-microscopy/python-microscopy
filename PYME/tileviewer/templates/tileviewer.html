@@ -81,7 +81,7 @@
         var c = viewer.viewport.viewportToImageCoordinates(viewer.viewport.pointFromPixel(event.position));
         //console.log(c);
 
-        $.get( "/add_roi?x=" + c.x + "&y=" + c.y , function( data ) {
+        $.get( "/add_roi?x=" + ((c.x * {{ pyramid_pixe_size_um }}) + {{ pyramid_x0 }})  + "&y=" + ((c.y * {{ pyramid_pixe_size_um }}) + {{ pyramid_y0 }}), function( data ) {
         $( "#roi_list" ).html( data );
         //alert( "Load was performed." );
     });
