@@ -23,11 +23,13 @@
 
 import time
 import threading
+import warnings
 
 ##Virtual laser class - to be overridden
 
 class Laser(object):
-    powerControlable = False
+    powerControlable = False  # deprecated
+    power_controllable = False
     MAX_POWER = 1
     units='\%'
 
@@ -66,7 +68,15 @@ class Laser(object):
         th.start()
 
     def IsPowerControlable(self):
-        return self.powerControlable
+        # have warning report usage location rather than this line
+        warnings.warn('Use IsPowerControllable', category=DeprecationWarning, stacklevel=2)
+        try:
+            return self.IsPowerControllable()
+        except AttributeError:
+            return self.powerControlable
+
+    def IsPowerControllable(self):
+        return self.power_controllable
 
     def GetName(self):
         return self.name

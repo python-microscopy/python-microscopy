@@ -33,12 +33,13 @@ from PYME.Acquire.Hardware.lasers import Laser
 
 
 class CoherentOBISLaser(Laser):
-    def __init__(self, com_port = 'COM8', turn_on=False, name='OBIS', init_power=5, **kwargs):
+    power_controllable = True
+    def __init__(self, serial_port='COM8', turn_on=False, name='OBIS', init_power=5, **kwargs):
         """
 
         Parameters
         ----------
-        com_port: str
+        serial_port: str
             serial port
         turn_on: bool
             Whether or not to turn on the laser on instantiating the class
@@ -48,8 +49,7 @@ class CoherentOBISLaser(Laser):
             In units of mW
         kwargs
         """
-        self.com_port = serial.Serial(com_port, timeout=.1)
-        self.powerControllable = True
+        self.serial_port = serial.Serial(serial_port, timeout=.1)
         self.lock = threading.Lock()
 
 
@@ -92,10 +92,10 @@ class CoherentOBISLaser(Laser):
       it writes the next line.
       """
         with self.lock:
-            self.com_port.reset_input_buffer()
-            self.com_port.write(command)
-            reply = [self.com_port.readline() for line in range(lines_expected)]
-            self.com_port.reset_input_buffer()
+            self.serial_port.reset_input_buffer()
+            self.serial_port.write(command)
+            reply = [self.serial_port.readline() for line in range(lines_expected)]
+            self.serial_port.reset_input_buffer()
         return reply
 
 

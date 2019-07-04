@@ -23,35 +23,30 @@
 import serial
 import time
 import threading
+import warnings
 
-try:
-    import Queue
-except ImportError:
-    import queue as Queue
 
 from PYME.Acquire.Hardware.lasers import Laser
 
 
 class MPBCWLaser(Laser):
-    def __init__(self, comPort = 'COM3', name='MPBCW', turn_on=False, init_power=200, **kwargs):
+    power_controllable = True
+    def __init__(self, serial_port='COM3', name='MPBCW', turn_on=False, init_power=200, **kwargs):
         """
 
         Parameters
         ----------
-        comPort
+        serial_port: str
+            Name of the serial port to connect to
         name
         turn_on
         init_power: float
             In units of mW
         kwargs
         """
-        self.com = serial.Serial(comPort, 9600, timeout=.1)
-        self.powerControlable = True
+        self.serial_port = serial.Serial(serial_port, 9600, timeout=0.5)
+        self.lock = threading.Lock()
 
-        self.command_queue = Queue.Queue()
-        self.reply_queue = Queue.Queue()
-
-        self.polling_thread = None
         self.is_on = False
 
         time.sleep(1)
@@ -63,48 +58,22 @@ class MPBCWLaser(Laser):
         if self.IsOn():
             self.SetPower(init_power)
 
-        self.MIN_POWER, self.MAX_POWER = [float(p) for p in self._query(b'getpowersetptlim 0').strip(b'\rD >').split()]
+        self.MIN_POWER, self.MAX_POWER = [float(p) for p in self.query(b'getpowersetptlim 0', lines_expected=1)[0].strip(b'\rD >').split()]
 
-    def _purge(self):
-        try:
-            while True:
-                self.reply_queue.get_nowait()
-        except:
-            pass
-
-    def _query(self, command):
+    def query(self, command,lines_expected=1):
         """
         Get value from laser via serial port.
         """
-        self._purge()
         cmd = b'%b\r\n' % command
-        self.command_queue.put(cmd)
+        with self.lock:
+            self.serial_port.reset_input_buffer()
+            self.serial_port.write(cmd)
+            reply = [self.serial_port.readline() for line in range(lines_expected)]
+            self.serial_port.reset_input_buffer()
+        return reply
 
-        line = self.reply_queue.get(timeout=3)
 
-        return line
 
-    def _readline(self, ser):
-        return ser.readline()
-
-    def _poll(self):
-        while self.is_on:
-            try:
-                cmd = self.command_queue.get(False)
-                self.com.write(cmd)
-                self.com.flushOutput()
-
-            except Queue.Empty:
-                pass
-
-            # wait a little for reply
-            time.sleep(.1)
-            ret = self._readline(self.com)
-
-            if ret != b'':
-                self.reply_queue.put(ret)
-
-            time.sleep(.05)
 
     def IsOn(self):
         """
@@ -116,48 +85,42 @@ class MPBCWLaser(Laser):
         Notes
         -----
         Would be nice to check explicitly that everything is working, e.g. (self.is_on and
-        self.polling_thread is not None and self.polling_thread.is_alive() and self.com.is_open and self.check_on()),
+        self.polling_thread is not None and self.polling_thread.is_alive() and self.serial_port.is_open and self.check_on()),
         but this function is called to update the microscope state, so a serial command is too expensive.
 
         """
         return self.is_on
 
     def check_on(self):
-        response = self._query(b'getldenable')
+        response = self.query(b'getldenable', lines_expected=1)[0]
         return bool(response.split(b'\n')[0])
 
     def TurnOn(self):
         # make sure serial is open
         try:
-            self.com.open()
+            self.serial_port.open()
         except serial.SerialException:
             pass
 
         self.is_on = True
-        # make sure polling thread is alive
-        if self.polling_thread is None or not self.polling_thread.is_alive():
-            self.polling_thread = threading.Thread(target=self._poll)
-            self.polling_thread.start()
 
         # turn on the laser
-        self._query(b'setldenable 1')
+        self.query(b'setldenable 1',lines_expected=1)
 
     def TurnOff(self):
-        self._query(b'setldenable 0')
-        # stop polling
+        self.query(b'setldenable 0',lines_expected=1)
         self.is_on = False
-        # kill polling thread
-        self.polling_thread.join()
+
 
     def SetPower(self, power):
-        self._query(('setpower 2 ' + str(power)).encode())
+        self.query(('setpower 2 ' + str(power)).encode(),lines_expected=1)
         self.power = power
 
     def GetPower(self):
         return self.power
 
     def GetRealPower(self):
-        return float(self._query(b'power 0').split(b'\r')[0])
+        return float(self.query(b'power 0',lines_expected=1)[0].split(b'\r')[0])
 
     def Close(self):
         print('Shutting down %s' % self.name)

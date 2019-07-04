@@ -4,12 +4,12 @@ import logging
 logger = logging.getLogger(__name__)
 from PYME.Acquire.Hardware.lasers import Laser
 from scipy.interpolate import interp1d
-import warnings
 
 class AOTFControlledLaser(Laser):
     """
     Shim to make an AOTF and laser function like a "Laser" object
     """
+    power_controllable = True  # assume the AOTF can be used to control the power
     def __init__(self, laser, aotf, aotf_channel, chained_devices=None):
         """
 
@@ -145,13 +145,6 @@ class AOTFControlledLaser(Laser):
         except:
             pass
         self.laser.Close()
-
-    def IsPowerControllable(self):
-        return True  # assume the AOTF can be used to controll the power
-
-    def IsPowerControlable(self):
-        warnings.warn('Use IsPowerControllable', DeprecationWarning)
-        return self.IsPowerControllable()
 
     def __del__(self):
         self.Close()
