@@ -284,7 +284,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     #weights[:, -10:, :] = 0
     
     #print weights[:20, :].shape
-    edgeRamp = min(100, int(.5 * ds.shape[0]))
+    edgeRamp = min(100, int(.25 * ds.shape[0]))
     weights[:edgeRamp, :, :] *= np.linspace(0, 1, edgeRamp)[:, None, None]
     weights[-edgeRamp:, :, :] *= np.linspace(1, 0, edgeRamp)[:, None, None]
     weights[:, :edgeRamp, :] *= np.linspace(0, 1, edgeRamp)[None, :, None]
@@ -332,7 +332,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     
     return P
 
-def create_pyramid_from_dataset(filename, outdir, tile_size=256, **kwargs):
+def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
     from PYME.IO import image
     dataset = image.ImageStack(filename=filename)
     
