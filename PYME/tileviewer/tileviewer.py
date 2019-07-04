@@ -27,7 +27,10 @@ class TileServer(object):
     def _set_tile_source(self, tile_dir):
         self.tile_dir = tile_dir
         self.mdh = MetaDataHandler.load_json(os.path.join(tile_dir, 'metadata.json'))
-        self._pyramid = tile_pyramid.ImagePyramid(tile_dir, pyramid_tile_size=self.mdh['Pyramid.TileSize'])
+        self._pyramid = tile_pyramid.ImagePyramid(tile_dir, pyramid_tile_size=self.mdh['Pyramid.TileSize'],
+                                                  x0=self.mdh['Pyramid.x0'], y0=self.mdh['Pyramid.y0'],
+                                                  pixel_size=self.mdh['Pyramid.PixelSize'], n_tiles_x=self.mdh["Pyramid.NTilesX"],
+                                                  n_tiles_y = self.mdh["Pyramid.NTilesY"], depth=self.mdh["Pyramid.Depth"])
         
     @cherrypy.expose
     def set_tile_source(self, tile_dir):
@@ -84,6 +87,9 @@ class TileServer(object):
                                                           pyramid_height_px=self.mdh['Pyramid.PixelsY'],
                                                           pyramid_depth=self.mdh['Pyramid.Depth'],
                                                           tile_dir = self.tile_dir,
+                                                          pyramid_x0=self.mdh['Pyramid.x0'],
+                                                          pyramid_y0=self.mdh['Pyramid.y0'],
+                                                          pyramid_pixe_size_um=self.mdh['Pyramid.PixelSize']
                                                           )
     
     
