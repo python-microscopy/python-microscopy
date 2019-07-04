@@ -12,7 +12,7 @@ class ImagePyramid(object):
         
         self._mdh = NestedClassMDHandler(mdh)
         self._mdh['Pyramid.TileSize'] = self.tile_size
-        
+
         self.n_tiles_x = n_tiles_x
         self.n_tiles_y = n_tiles_y
         self.depth = depth
@@ -20,7 +20,7 @@ class ImagePyramid(object):
         self.x0 = x0
         self.y0 = y0
         self.pixel_size=pixel_size
-        
+        # fixme - what is this doing? Why are we overriding metadata no matter what?
         self._mdh['Pyramid.x0'] = x0
         self._mdh['Pyramid.y0'] = y0
         self._mdh['Pyramid.PixelSize'] = pixel_size
