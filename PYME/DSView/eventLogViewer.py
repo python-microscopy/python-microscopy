@@ -322,9 +322,12 @@ class eventLogPanel(wx.Panel):
         elif rot > 0: #zoom in
             nFrames *= 0.8
             nFrames = max(nFrames, 2)
-        yp = np.clip(yp, self.maxRange[0] + 0.5 * nFrames, self.maxRange[1] - 0.5 * nFrames)
+        #yp = np.clip(yp, self.maxRange[0] + 0.5 * nFrames, self.maxRange[1] - 0.5 * nFrames)
         nMin = yp - 0.5 * nFrames
         nMax = yp + 0.5 * nFrames
+        
+        nMin = max(nMin, self.maxRange[0])
+        nMax = min(nMax, self.maxRange[1])
 
         if nMin == self.maxRange[0] and nMax == self.maxRange[1]:
             self.autoRange = True
