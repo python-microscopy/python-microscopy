@@ -51,9 +51,12 @@ class GaussFitter1D(object):
     def fit(self, position, data):
         guess = self._calc_guess(position, data)
 
-        (res, cov_x, infodict, mesg, resCode) = optimize.leastsq(self._error_function, guess, args=(position, data),
+        (res, cov_x, infodict, mesg, res_code) = optimize.leastsq(self._error_function, guess, args=(position, data),
                                                                  full_output=1)
-
+        if res_code < 1 or res_code > 4:
+            # fit error
+            logger.debug('Focus lock fit error')
+            return tuple(np.zeros(5)), tuple(np.zeros(5))
         # estimate uncertainties
         residuals = infodict['fvec']  # note that fvec is error function evaluation, or (data - model_function)
         try:
