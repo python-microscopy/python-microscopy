@@ -4,7 +4,8 @@ import os
 import glob
 
 class ImagePyramid(object):
-    def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, pixel_size=1):
+    def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0,
+                 y0=0, pixel_size=1, roi_width=None, roi_height=None):
         self.base_dir = storage_directory
         self.tile_size = pyramid_tile_size
         
@@ -24,6 +25,9 @@ class ImagePyramid(object):
         self._mdh['Pyramid.x0'] = x0
         self._mdh['Pyramid.y0'] = y0
         self._mdh['Pyramid.PixelSize'] = pixel_size
+        # this metadata is gross, but allows us to account for camera orientation and swap width / height if needed.
+        self._mdh['Pyramid.ROIWidth'] = roi_width if roi_width is not None else mdh.getOrDefault('Camera.ROIWidth', 0)
+        self._mdh['Pyramid.ROIHeight'] = roi_width if roi_width is not None else mdh.getOrDefault('Camera.ROIHeight', 0)
         
         if not os.path.exists(self.base_dir):
             os.makedirs(self.base_dir)
@@ -56,7 +60,7 @@ class ImagePyramid(object):
                     (j * self.tile_size):((j + 1) * self.tile_size)] = subtile
                     
         return new_tile
-        print('Making layer %d' % (inputLevel+1))
+        # print('Making layer %d' % (inputLevel+1))
     
     def get_layer_tile_coords(self, level):
         base_tile_dir = os.path.join(self.base_dir, '%d' % level)
@@ -171,7 +175,7 @@ class ImagePyramid(object):
         return mdh
     
     def add_base_tile(self, x, y, frame, weights):
-        print('add_base_tile(%d, %d)' % (x, y))
+        # print('add_base_tile(%d, %d)' % (x, y))
 
         frameSizeX, frameSizeY = frame.shape[:2]
         
@@ -182,7 +186,7 @@ class ImagePyramid(object):
         tile_xs = range(int(np.floor(x / self.tile_size)), int(np.floor((x + frameSizeX) / self.tile_size) + 1))
         tile_ys = range(int(np.floor(y / self.tile_size)), int(np.floor((y + frameSizeY) / self.tile_size) + 1))
         
-        print('tile_xs: %s, tile_ys: %s' % (tile_xs, tile_ys))
+        # print('tile_xs: %s, tile_ys: %s' % (tile_xs, tile_ys))
 
         self.n_tiles_x = max(self.n_tiles_x, max(tile_xs))
         self.n_tiles_y = max(self.n_tiles_y, max(tile_ys))
@@ -251,10 +255,10 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     else:
         nchans = 1
     
-    #x & y positions of each frame
+    # x & y positions of each frame
     xps = xm(np.arange(numFrames))
     yps = ym(np.arange(numFrames))
-    
+    # no need to rotate positions, since xps and yps are the same
     if mdh.getOrDefault('CameraOrientation.FlipX', False):
         xps = -xps
     
@@ -294,16 +298,21 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     
     ROIX1 = roi_x0 + 1
     ROIY1 = roi_y0 + 1
-    
-    ROIX2 = ROIX1 + mdh.getEntry('Camera.ROIWidth')
-    ROIY2 = ROIY1 + mdh.getEntry('Camera.ROIHeight')
+
+    roi_width = mdh.getEntry('Camera.ROIWidth')
+    roi_height = mdh.getEntry('Camera.ROIHeight')
+    # if rotate_cam:
+    #     roi_width, roi_height = roi_height, roi_width
+    ROIX2 = ROIX1 + roi_width
+    ROIY2 = ROIY1 + roi_height
     
     if dark is None:
         offset = float(mdh.getEntry('Camera.ADOffset'))
     else:
         offset = 0.
 
-    P = ImagePyramid(out_folder, pyramid_tile_size, x0 = x0, y0 = y0, pixel_size=mdh.getEntry('voxelsize.x'))
+    P = ImagePyramid(out_folder, pyramid_tile_size, x0=x0, y0=y0, pixel_size=mdh.getEntry('voxelsize.x'),
+                     roi_width=roi_width, roi_height=roi_height)
     
     for i in range(int(mdh.getEntry('Protocol.DataStartsAt')), numFrames):
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
@@ -321,6 +330,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
             d_weighted = weights * d
 
 
+            # orient frame - TODO - check if we need to flip x and y?!
             if rotate_cam:
                 print('adding base tile from frame %d [transposed]' % i)
                 P.add_base_tile(x_i, y_i, d_weighted.T.squeeze(), weights.T.squeeze())
@@ -342,7 +352,7 @@ def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
     print(ym(np.arange(dataset.data.shape[2])))
     
     p = tile_pyramid(outdir, dataset.data, xm, ym, dataset.mdh, pyramid_tile_size=tile_size)
-    
+
     with open(os.path.join(outdir, 'metadata.json'), 'w') as f:
         f.write(p.mdh.to_JSON())
         

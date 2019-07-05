@@ -27,7 +27,7 @@ class TileServer(object):
     def _set_tile_source(self, tile_dir):
         self.tile_dir = tile_dir
         self.mdh = MetaDataHandler.load_json(os.path.join(tile_dir, 'metadata.json'))
-        self._pyramid = tile_pyramid.ImagePyramid(tile_dir, pyramid_tile_size=self.mdh['Pyramid.TileSize'],
+        self._pyramid = tile_pyramid.ImagePyramid(tile_dir, mdh=self.mdh, pyramid_tile_size=self.mdh['Pyramid.TileSize'],
                                                   x0=self.mdh['Pyramid.x0'], y0=self.mdh['Pyramid.y0'],
                                                   pixel_size=self.mdh['Pyramid.PixelSize'], n_tiles_x=self.mdh["Pyramid.NTilesX"],
                                                   n_tiles_y = self.mdh["Pyramid.NTilesY"], depth=self.mdh["Pyramid.Depth"])
@@ -88,7 +88,9 @@ class TileServer(object):
                                                           tile_dir = self.tile_dir,
                                                           pyramid_x0=self.mdh['Pyramid.x0'],
                                                           pyramid_y0=self.mdh['Pyramid.y0'],
-                                                          pyramid_pixe_size_um=self.mdh['Pyramid.PixelSize']
+                                                          pyramid_pixel_size_um=self.mdh['Pyramid.PixelSize'],
+                                                          roi_half_width=int(0.5*self.mdh['Pyramid.ROIWidth']),
+                                                          roi_half_height=int(0.5*self.mdh['Pyramid.ROIHeight'])
                                                           )
     
     
