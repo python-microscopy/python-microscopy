@@ -259,6 +259,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     xps = xm(np.arange(numFrames))
     yps = ym(np.arange(numFrames))
     # no need to rotate positions, since xps and yps are the same
+    # todo - check if this needs to be different for rotated images?
     if mdh.getOrDefault('CameraOrientation.FlipX', False):
         xps = -xps
     
