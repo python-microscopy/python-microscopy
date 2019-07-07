@@ -496,15 +496,6 @@ class TriangleMesh(object):
             # Update array
             return new_vec
 
-    def __find_idx(self, vec, key=None, axis=0):
-        # Find location to insert
-        _idx = np.argwhere(vec[key] == -1)
-
-        if len(vec.shape) > 1:
-            _idx = np.argwhere(np.all(vec[key] == -1, axis=(1-axis)))
-
-        return _idx
-
     def edge_collapse(self, _curr, live_update=True):
         """
         A.k.a. delete two triangles. Remove an edge, defined by halfedge _curr, 
