@@ -135,9 +135,9 @@ def _test_normals(mesh):
     vertex_mask = np.all(vertex_normals != -1, axis=1)
     
     # Zero out the normals/neighbors entries
-    mesh._vertex_neighbors = None
-    mesh._vertex_normals = None
-    mesh._face_normals = None
+    mesh._vertices['neighbors'][:] = -1
+    mesh._vertices['normal'][:] = -1
+    mesh._faces['normal'][:] = -1
 
     # Recalculate as if this is an initial calculation (this assumes 
     # mesh.face_normals and mesh.vertex_normals works, which is tested separately)
@@ -207,7 +207,7 @@ def test_edge_flip_topology():
     vertices = _generate_vertices(4)
     mesh = triangle_mesh.TriangleMesh(vertices, PRE_FLIP_FACES)
 
-    flip_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 0))[0]
+    flip_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 0))[0][0]
 
     mesh.edge_flip(flip_idx)
 
@@ -218,7 +218,7 @@ def test_edge_flip_normals():
     vertices = _generate_vertices(4)
     mesh = triangle_mesh.TriangleMesh(vertices, PRE_FLIP_FACES)
 
-    flip_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 0))[0]
+    flip_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 0))[0][0]
 
     mesh.edge_flip(flip_idx)
 
@@ -228,19 +228,19 @@ def test_double_edge_flip_topology():
     vertices = _generate_vertices(4)
     mesh = triangle_mesh.TriangleMesh(vertices, PRE_FLIP_FACES)
 
-    flip_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 0))[0]
+    flip_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 0))[0][0]
 
     mesh.edge_flip(flip_idx)
 
-    flip_idx = np.where((mesh._h_vertex == 0) & (mesh._h_face == 0))[0]
+    flip_idx = np.where((mesh._h_vertex == 0) & (mesh._h_face == 0))[0][0]
 
     mesh.edge_flip(flip_idx)
 
-    flip_idx = np.where((mesh._h_vertex == 1) & (mesh._h_face == 0))[0]
+    flip_idx = np.where((mesh._h_vertex == 1) & (mesh._h_face == 0))[0][0]
 
     mesh.edge_flip(flip_idx)
 
-    flip_idx = np.where((mesh._h_vertex == 2) & (mesh._h_face == 0))[0]
+    flip_idx = np.where((mesh._h_vertex == 2) & (mesh._h_face == 0))[0][0]
 
     mesh.edge_flip(flip_idx)
 
@@ -250,7 +250,7 @@ def test_edge_collapse_topology():
     vertices = _generate_vertices(4)
     mesh = triangle_mesh.TriangleMesh(vertices, K4_FACES)
 
-    collapse_idx = np.where((mesh._h_vertex == 2) & (mesh._h_face == 1))[0]
+    collapse_idx = np.where((mesh._h_vertex == 2) & (mesh._h_face == 1))[0][0]
 
     mesh.edge_collapse(collapse_idx)
 
@@ -260,7 +260,7 @@ def test_edge_collapse_normals():
     vertices = _generate_vertices(4)
     mesh = triangle_mesh.TriangleMesh(vertices, K4_FACES)
 
-    collapse_idx = np.where((mesh._h_vertex == 2) & (mesh._h_face == 1))[0]
+    collapse_idx = np.where((mesh._h_vertex == 2) & (mesh._h_face == 1))[0][0]
 
     mesh.edge_collapse(collapse_idx)
 
@@ -270,7 +270,7 @@ def test_edge_split_topology():
     vertices = _generate_vertices(4)
     mesh = triangle_mesh.TriangleMesh(vertices, PRE_SPLIT_FACES)
 
-    split_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 0))[0]
+    split_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 0))[0][0]
 
     mesh.edge_split(split_idx)
 
@@ -280,7 +280,7 @@ def test_edge_split_normals():
     vertices = _generate_vertices(4)
     mesh = triangle_mesh.TriangleMesh(vertices, PRE_SPLIT_FACES)
 
-    split_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 0))[0]
+    split_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 0))[0][0]
 
     mesh.edge_split(split_idx)
 
@@ -290,11 +290,11 @@ def test_split_collapse_topology():
     vertices = _generate_vertices(4)
     mesh = triangle_mesh.TriangleMesh(vertices, PRE_SPLIT_FACES)
 
-    split_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 0))[0]
+    split_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 0))[0][0]
 
     mesh.edge_split(split_idx)
 
-    collapse_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 3))[0]
+    collapse_idx = np.where((mesh._h_vertex == 3) & (mesh._h_face == 3))[0][0]
 
     mesh.edge_collapse(collapse_idx)
 
@@ -305,7 +305,7 @@ def test_flip_split_topology():
     vertices = _generate_vertices(4)
     mesh = triangle_mesh.TriangleMesh(vertices, POST_FLIP_FACES[::-1])
 
-    flip_idx = np.where((mesh._h_vertex == 2) & (mesh._h_face == 0))[0]
+    flip_idx = np.where((mesh._h_vertex == 2) & (mesh._h_face == 0))[0][0]
 
     mesh.edge_flip(flip_idx)
 
