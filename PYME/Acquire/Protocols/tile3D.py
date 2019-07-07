@@ -124,8 +124,10 @@ class ShiftfieldPreviewDialog(wx.Dialog):
         self.SetSizerAndFit(sizer1)
 
     def updatePointScanner(self):
+        ps.pixelsize = []
         ps.pixelsize[0] = float(self.tPixelSizeX.GetValue())
         ps.pixelsize[1] = float(self.tPixelSizeY.GetValue())
+        ps.pixels = []
         ps.pixels[0] = int(self.tXPixels.GetValue())
         ps.pixels[1] = int(self.tYPixels.GetValue())
 
