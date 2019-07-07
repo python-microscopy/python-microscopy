@@ -213,7 +213,6 @@ class TriangleMesh(object):
                 _curr = _orig
                 _twin = self._halfedges['twin'][_curr]
                 i = 0
-                self._vertices['valence'][v_idx] = 0
                 while True:
                     if (_curr == -1) or (_twin == -1):
                         break
@@ -229,9 +228,9 @@ class TriangleMesh(object):
                     _curr = self._halfedges['next'][_twin]
                     _twin = self._halfedges['twin'][_curr]
                     i += 1
-                    self._vertices['valence'][v_idx] += 1
                     if (_curr == _orig):
                         break
+                self._vertices['valence'][v_idx] = i
             nn = np.linalg.norm(self._vertices['normal'], axis=1)
             self._vertices['normal'] /= nn[:, None]
             self._vertices['normal'][np.isnan(self._vertices['normal'])] = 0
@@ -379,10 +378,7 @@ class TriangleMesh(object):
                 raise RuntimeError('Twin (%d) should point back to starting vertex (%d) but points to %d' % (_twin, v_idx, twin_edge['vertex']))
             
             i = 0
-            self._vertices['normal'][v_idx] = 0
-            self._vertices['neighbors'][v_idx, :] = -1
-            
-            vertex = self._vertices['position'][v_idx]
+            self._vertices['neighbors'][v_idx] = -1
             
             _normal = 0*self._vertices['normal'][v_idx]  # avoid a few lookups by using a local variable
 
@@ -390,19 +386,19 @@ class TriangleMesh(object):
                 if (_curr == -1) or (_twin == -1):
                     break
 
-                _face = curr_edge['face']
-
                 if (i < 6):
                     self._vertices['neighbors'][v_idx, i] = _curr
                     
                     #TODO - should these be in if clause?
+                    _face = curr_edge['face']
                     n = self._faces['normal'][_face]
                     a = self._faces['area'][_face]
                     _normal += n*a
                 else:
                     if self.debug and (i > 20):
                         raise RuntimeError('Abnormal vertex valance detected on vertex %d' % v_idx)
-                    
+                
+                vertex = self._vertices['position'][v_idx]
                 l = vertex - self._vertices['position'][curr_edge['vertex']]
                 l = np.sqrt((l*l).sum())
                 curr_edge['length'] = l
@@ -420,8 +416,8 @@ class TriangleMesh(object):
 
             self._vertices['valence'][v_idx] = i
 
-            if np.any(_normal != 0):
-                nn = np.sqrt((_normal*_normal).sum())
+            nn = np.sqrt((_normal*_normal).sum())
+            if nn > 0:
                 self._vertices['normal'][v_idx] = _normal/nn
             else:
                 self._vertices['normal'][v_idx] = 0
@@ -893,12 +889,15 @@ class TriangleMesh(object):
         """
 
         # Make sure we don't flip edges forever (we can always try a further refinement)
-        problems = np.where((self._vertices['valence'] != 6) & (self._vertices['valence'] != -1))[0]
+        # problems = np.where((self._vertices['valence'] != 6) & (self._vertices['valence'] != -1))[0]
 
         # Loop over high valence vertices and flip edges to reduce valence
-        for _idx in problems:
+        for _idx, val in enumerate(self._vertices['valence']):
+            if (val == -1) or (val == 6):
+                continue
             i = 0
-            while (i < 13) and (self._vertices['valence'][_idx] != 6):
+            tries = np.abs(val - 6)
+            while (i < tries) and (self._vertices['valence'][_idx] != 6):
                 self.edge_flip(self._vertices['halfedge'][_idx])
                 i += 1
 

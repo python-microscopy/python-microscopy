@@ -316,11 +316,11 @@ def test_flip_split_topology():
 
 def test_regularize():
     vertices = _generate_vertices(5)
-    mesh = triangle_mesh.TriangleMesh(vertices, POST_SPLIT_FACES, max_valence=3)
+    mesh = triangle_mesh.TriangleMesh(vertices, POST_SPLIT_FACES)
 
     mesh.regularize()
 
-    assert np.all(mesh._valences < 4)
+    assert np.all(mesh._valences <= 6)
 
 def test_resize():
 
@@ -339,48 +339,12 @@ def test_resize():
     test_vec_true_2 = np.all(test_vec[:(size-2)] == 0) & np.all(test_vec[(size-2):] == -1)
 
     # Test a 2D array along axis 0
-    _vertices = mesh._vertices
+    _vertices = mesh._vertices['position']
     _vertices = mesh._resize(_vertices)
     ax0_true = np.all(_vertices[0:4] == mesh.vertices) & np.all(_vertices[4:] == -1)
 
-    _vertices = mesh._vertices
+    _vertices = mesh._vertices['position']
     _vertices = mesh._resize(_vertices, axis=1)
     ax1_true = np.all(_vertices[:, 0:3] == mesh.vertices) & np.all(_vertices[:,3:] == -1)
 
     assert(test_vec_true & test_vec_true_2 & ax0_true & ax1_true)
-
-def test_insert():
-    k4_vertices = _generate_vertices(4)
-    mesh = triangle_mesh.TriangleMesh(k4_vertices, K4_FACES, 10)
-
-    factor = 1.5
-
-    size = 10
-    test_vec = np.zeros(size)
-    test_vec, _idx = mesh._insert(test_vec, 10)
-    test_vec_true = np.all(test_vec[:size] == 0) & np.all(test_vec[(size+1):] == -1) & (test_vec[_idx] == 10) & (test_vec.size == int(factor*size + 0.5))
-
-    size = 10
-    test_vec = np.zeros(size)
-    test_vec[9] = -1
-    test_vec, _idx = mesh._insert(test_vec, 10)
-    test_vec_true_2 = (test_vec[_idx] == 10) & (test_vec.size == size)
-
-    _vertices = mesh._vertices
-    _vertices[3,:] = -1
-    insert_arr = [1,2,3]
-    _vertices, _idx = mesh._insert(_vertices, insert_arr)
-    vertices_true = np.all(_vertices[_idx] == insert_arr) & (_idx == 3) & (_vertices.shape == mesh._vertices.shape)
-
-    _vertices = mesh._vertices
-    insert_arr = [1,2,3]
-    _vertices, _idx = mesh._insert(_vertices, insert_arr)
-    vertices_true_2 = np.all(_vertices[_idx] == insert_arr) & (_idx == mesh._vertices.shape[0]) & (_vertices.shape[0] == int(factor*mesh._vertices.shape[0] + 0.5))
-
-    _vertices = mesh._vertices
-    _vertices[1,2] = -1
-    insert_arr = [1,2,3,4]
-    _vertices, _idx = mesh._insert(_vertices, insert_arr, axis=1)
-    vertices_true_3 = np.all(_vertices[:,_idx].T == insert_arr) & (_vertices.shape[1] == int(factor*mesh._vertices.shape[1] + 0.5))
-
-    assert (test_vec_true & test_vec_true_2 & vertices_true & vertices_true_2 & vertices_true_3)
