@@ -746,12 +746,6 @@ class TriangleMesh(object):
         self._halfedges[_twin_prev]['face'] = _face_1_idx
         self._halfedges[_next]['face'] = _face_2_idx
 
-        # Make sure old vertices have existing vertex halfedges
-        self._vertices['halfedge'][curr_edge['vertex']] = _next
-        self._vertices['halfedge'][twin_edge['vertex']] = _twin_next
-        self._vertices['halfedge'][self._halfedges[_next]['vertex']] = _prev
-        self._vertices['halfedge'][self._halfedges[_twin_next]['vertex']] = _twin_prev
-
         # Insert the new faces
         _, _he_0_idx = self._new_edge(self._halfedges[_next]['vertex'], prev=_curr, next=_prev, face=curr_edge['face'])
         _, _he_1_idx = self._new_edge(_vertex_idx, prev=_twin_next, next=_twin, face=twin_edge['face'])
@@ -772,6 +766,12 @@ class TriangleMesh(object):
 
         self._halfedges[_he_3_idx]['twin'] = _he_4_idx
         self._halfedges[_he_4_idx]['twin'] = _he_3_idx
+
+        # Make sure old vertices have existing vertex halfedges
+        self._vertices['halfedge'][curr_edge['vertex']] = _he_3_idx
+        self._vertices['halfedge'][twin_edge['vertex']] = _curr
+        self._vertices['halfedge'][self._halfedges[_next]['vertex']] = _he_5_idx
+        self._vertices['halfedge'][self._halfedges[_twin_next]['vertex']] = _he_1_idx
 
         # Update _prev, next
         self._halfedges[_prev]['prev'] = _he_0_idx
