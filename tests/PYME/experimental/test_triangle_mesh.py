@@ -127,9 +127,9 @@ def _test_normals(mesh):
     """
 
     # Get values as updated by the flip
-    face_normals = mesh.face_normals
-    vertex_normals = mesh.vertex_normals
-    vertex_neighbors = mesh.vertex_neighbors
+    face_normals = np.copy(mesh.face_normals)
+    vertex_normals = np.copy(mesh.vertex_normals)
+    vertex_neighbors = np.copy(mesh.vertex_neighbors)
 
     face_mask = np.all(face_normals != -1, axis=1)
     vertex_mask = np.all(vertex_normals != -1, axis=1)

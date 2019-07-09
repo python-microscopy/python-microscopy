@@ -176,7 +176,7 @@ class TriangleMesh(object):
     @property
     def face_normals(self):
         """
-        Calculate and return the normal of each triangular face.
+        Return the normal of each triangular face.
         """
         if np.all(self._faces['normal'] == -1):
             v2 = self.vertices[self._halfedges['vertex'][self._halfedges['prev'][self._faces['halfedge']]]]
@@ -189,13 +189,13 @@ class TriangleMesh(object):
             self._faces['area'] = 0.5*nn
             self._faces['normal'] = n/nn[:, None]
             self._faces['normal'][np.isnan(self._faces['normal'])] = 0
-            self._faces['normal'][self._faces['halfedge'] == -1] = 0
+            self._faces['normal'][self._faces['halfedge'] == -1] = -1
         return self._faces['normal']
 
     @property
     def face_areas(self):
         """
-        Calculate and return the area of each triangular face.
+        Return the area of each triangular face.
         """
         if np.all(self._faces['area'] == -1):
             self._faces['normal'][:] = -1
@@ -211,22 +211,33 @@ class TriangleMesh(object):
             for v_idx in np.arange(len(self.vertices)):
                 _orig = self._vertices['halfedge'][v_idx]
                 _curr = _orig
-                _twin = self._halfedges['twin'][_curr]
+
+                curr_edge = self._halfedges[_curr]
+                _twin = curr_edge['twin']
+                twin_edge = self._halfedges[_twin]
+
+                self._vertices['normal'][v_idx] = 0
+
                 i = 0
                 while True:
                     if (_curr == -1) or (_twin == -1):
                         break
-                    _vertex = self._halfedges['vertex'][_curr]
-                    _face = self._halfedges['face'][_curr]
+                    _vertex = curr_edge['vertex']
+                    _face = curr_edge['face']
                     if (i < 6):
                         self._vertices['neighbors'][v_idx, i] = _curr
-                        n = self.face_normals[_face]
-                        a = self.face_areas[_face]
+                        n = self._faces['normal'][_face]
+                        a = self._faces['area'][_face]
                         self._vertices['normal'][v_idx] += n*a
-                    l = self._vertices['position'][_vertex] - self._vertices['position'][self._halfedges['vertex'][self._halfedges['prev'][_curr]]]
-                    self._halfedges['length'][_curr] = np.sqrt((l*l).sum())
-                    _curr = self._halfedges['next'][_twin]
-                    _twin = self._halfedges['twin'][_curr]
+                    
+                    l = self._vertices['position'][_vertex] - self._vertices['position'][self._halfedges['vertex'][curr_edge['prev']]]
+                    curr_edge['length'] = np.sqrt((l*l).sum())
+
+                    _curr = twin_edge['next']
+                    curr_edge = self._halfedges[_curr]
+                    _twin = curr_edge['twin']
+                    twin_edge = self._halfedges[_twin]
+
                     i += 1
                     if (_curr == _orig):
                         break
@@ -234,13 +245,14 @@ class TriangleMesh(object):
             nn = np.linalg.norm(self._vertices['normal'], axis=1)
             self._vertices['normal'] /= nn[:, None]
             self._vertices['normal'][np.isnan(self._vertices['normal'])] = 0
+            self._vertices['normal'][self._vertices['halfedge'] == -1] = -1
 
         return self._vertices['neighbors']
 
     @property
     def vertex_normals(self):
         """
-        Calculate and return the normal of each vertex.
+        Return the normal of each vertex.
         """
         if np.all(self._vertices['normal'] == -1):
             self._vertices['neighbors'][:] = -1
@@ -250,7 +262,7 @@ class TriangleMesh(object):
     @property
     def valences(self):
         """
-        Calculate and return the valence of each vertex.
+        Return the valence of each vertex.
         """
         if np.all(self._vertices['valence'] == -1):
             self._vertices['neighbors'][:] = -1
@@ -350,7 +362,9 @@ class TriangleMesh(object):
             n = fast_3x3_cross(u.squeeze(), v.squeeze())
             nn = np.sqrt((n*n).sum())
             self._faces['area'][f_idx] = 0.5*nn
-            if nn > 0:
+            if (self._faces['halfedge'][f_idx] == -1):
+                self._faces['normal'][f_idx] = -1
+            elif (nn > 0):
                 self._faces['normal'][f_idx] = n/nn
             else:
                 self._faces['normal'][f_idx] = 0
@@ -424,13 +438,12 @@ class TriangleMesh(object):
 
     def _resize(self, vec, axis=0, skip_entries=True, return_orig=False, key=None):
         """
-        Double the size of the input vector, keeping all active data.
-        This is designed to expand our halfedge vectors.
+        Increase the size of an input vector 1.5x, keeping all active data.
 
         Parameters
         ---------
             vec : np.array
-                Vector to expand, contains -1s in unused entries.
+                Vector to expand, -1 stored in unused entries.
             axis : int
                 Axis (0 or 1) along which to resize vector (only works for 2D arrays).
             skip_entries : bool
@@ -536,93 +549,95 @@ class TriangleMesh(object):
 
         _dead_vertex = twin_halfedge['vertex']
         _live_vertex = curr_halfedge['vertex']
-        
-        if self.debug and (_live_vertex == _dead_vertex):
-            print(_curr, curr_halfedge, _twin, twin_halfedge)
-            raise RuntimeError('Live vertex equals dead vertex (both halves of edge point to same place)')
 
-        # Collapse to the midpoint of the original edge vertices
-        self._halfedges['vertex'][self._halfedges['vertex'] == _dead_vertex] = _live_vertex
-        self._vertices['position'][_live_vertex, :] = 0.5*(self.vertices[_live_vertex, :] + self.vertices[_dead_vertex, :])
+        if True: # (self._vertices['valence'][_live_vertex] >= 4) and (self._vertices['valence'][_dead_vertex] >= 4):
         
-        # update valence of vertex we keep
-        self._vertices['valence'][_live_vertex] = self._vertices['valence'][_live_vertex] + self._vertices['valence'][_dead_vertex] - 3
-        
-        if self.debug:
-            print(self._vertices['valence'][_live_vertex], self._vertices['valence'][_dead_vertex])
-            assert(self._vertices['valence'][_live_vertex] >=3)
-        
-        # delete dead vertex
-        self._vertices[_dead_vertex] = -1
+            if self.debug and (_live_vertex == _dead_vertex):
+                print(_curr, curr_halfedge, _twin, twin_halfedge)
+                raise RuntimeError('Live vertex equals dead vertex (both halves of edge point to same place)')
 
-        # Zipper the remaining triangles
-        def _zipper(edge1, edge2):
-            t1 = self._halfedges[edge1]['twin']
-            t2 = self._halfedges[edge2]['twin']
+            # Collapse to the midpoint of the original edge vertices
+            self._halfedges['vertex'][self._halfedges['vertex'] == _dead_vertex] = _live_vertex
+            self._vertices['position'][_live_vertex, :] = 0.5*(self.vertices[_live_vertex, :] + self.vertices[_dead_vertex, :])
             
-            if (t2 != -1):
-                self._halfedges[t2]['twin'] = t1
-                
-            if (t1 != -1):
-                self._halfedges[t1]['twin'] = t2
-                
-        _zipper(_next, _prev)
-        _zipper(_twin_next, _twin_prev)
-
-        # We need some more pointers
-        _prev_twin = self._halfedges[_prev]['twin']
-        _prev_twin_vertex = self._halfedges[_prev_twin]['vertex']
-        _next_prev_twin = self._halfedges[_prev_twin]['next']
-        _next_prev_twin_vertex = self._halfedges[_next_prev_twin]['vertex']
-        _twin_next_vertex = self._halfedges[_twin_next]['vertex']
-        _next_twin_twin_next = self._halfedges['next'][self._halfedges[_twin_next]['twin']]
-        _next_twin_twin_next_vertex = self._halfedges[_next_twin_twin_next]['vertex']
-
-        # Make sure we have good _vertex_halfedges references
-        self._vertices['halfedge'][_live_vertex] = _prev_twin
-        self._vertices['halfedge'][_prev_twin_vertex] = _next_prev_twin
-        self._vertices['halfedge'][_twin_next_vertex] = self._halfedges[_twin_next]['twin']
-        self._vertices['halfedge'][_next_twin_twin_next_vertex] = self._halfedges['next'][_next_twin_twin_next]
-
-        # Delete the inner triangles
-        _curr_face = curr_halfedge['face']
-        _twin_face = twin_halfedge['face']
-        self._faces['halfedge'][_curr_face] = -1
-        self._faces['halfedge'][_twin_face] = -1
-        self._faces['area'][_curr_face] = 0
-        self._faces['area'][_twin_face] = 0 
-        self._faces['normal'][_curr_face, :] = 0
-        self._faces['normal'][_twin_face, :] = 0
-
-        if self.debug:
-            print(curr_halfedge, twin_halfedge)
-
-        # Delete curr, next, prev
-        self._edge_delete(_curr)
-        self._edge_delete(_prev)
-        self._edge_delete(_next)
-
-        # Delete _twin, _twin_prev, _twin_next
-        self._edge_delete(_twin)
-        self._edge_delete(_twin_prev)
-        self._edge_delete(_twin_next)
-
-        try:
-            if live_update:
-                # Update faces
-                self._update_face_normals([self._halfedges[_prev_twin]['face'], self._halfedges[self._halfedges[_twin_next]['twin']]['face']])
-                self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
-    
-                self._faces_by_vertex = None
+            # update valence of vertex we keep
+            self._vertices['valence'][_live_vertex] = self._vertices['valence'][_live_vertex] + self._vertices['valence'][_dead_vertex] - 3
             
-        except RuntimeError as e:
-            print (_curr, _twin, _next, _prev, _twin_next, _twin_prev, _next_prev_twin, _next_twin_twin_next, _prev_twin)
-            print([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
-            raise e
+            if self.debug:
+                print(self._vertices['valence'][_live_vertex], self._vertices['valence'][_dead_vertex])
+                assert(self._vertices['valence'][_live_vertex] >=3)
+            
+            # delete dead vertex
+            self._vertices[_dead_vertex] = -1
+
+            # Zipper the remaining triangles
+            def _zipper(edge1, edge2):
+                t1 = self._halfedges[edge1]['twin']
+                t2 = self._halfedges[edge2]['twin']
+                
+                if (t2 != -1):
+                    self._halfedges[t2]['twin'] = t1
+                    
+                if (t1 != -1):
+                    self._halfedges[t1]['twin'] = t2
+                    
+            _zipper(_next, _prev)
+            _zipper(_twin_next, _twin_prev)
+
+            # We need some more pointers
+            _prev_twin = self._halfedges[_prev]['twin']
+            _prev_twin_vertex = self._halfedges[_prev_twin]['vertex']
+            _next_prev_twin = self._halfedges[_prev_twin]['next']
+            _next_prev_twin_vertex = self._halfedges[_next_prev_twin]['vertex']
+            _twin_next_vertex = self._halfedges[_twin_next]['vertex']
+            _next_twin_twin_next = self._halfedges['next'][self._halfedges[_twin_next]['twin']]
+            _next_twin_twin_next_vertex = self._halfedges[_next_twin_twin_next]['vertex']
+
+            # Make sure we have good _vertex_halfedges references
+            self._vertices['halfedge'][_live_vertex] = _prev_twin
+            self._vertices['halfedge'][_prev_twin_vertex] = _next_prev_twin
+            self._vertices['halfedge'][_twin_next_vertex] = self._halfedges[_twin_next]['twin']
+            self._vertices['halfedge'][_next_twin_twin_next_vertex] = self._halfedges['next'][_next_twin_twin_next]
+
+            # Delete the inner triangles
+            _curr_face = curr_halfedge['face']
+            _twin_face = twin_halfedge['face']
+            self._faces['halfedge'][_curr_face] = -1
+            self._faces['halfedge'][_twin_face] = -1
+            self._faces['area'][_curr_face] = -1
+            self._faces['area'][_twin_face] = -1
+            self._faces['normal'][_curr_face, :] = -1
+            self._faces['normal'][_twin_face, :] = -1
+
+            if self.debug:
+                print(curr_halfedge, twin_halfedge)
+
+            # Delete curr, next, prev
+            self._edge_delete(_curr)
+            self._edge_delete(_prev)
+            self._edge_delete(_next)
+
+            # Delete _twin, _twin_prev, _twin_next
+            self._edge_delete(_twin)
+            self._edge_delete(_twin_prev)
+            self._edge_delete(_twin_next)
+
+            try:
+                if live_update:
+                    # Update faces
+                    self._update_face_normals([self._halfedges[_prev_twin]['face'], self._halfedges[self._halfedges[_twin_next]['twin']]['face']])
+                    self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
+        
+                    self._faces_by_vertex = None
+            
+            except RuntimeError as e:
+                print(_curr, _twin, _next, _prev, _twin_next, _twin_prev, _next_prev_twin, _next_twin_twin_next, _prev_twin)
+                print([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
+                raise e
 
     def _edge_delete(self, _edge):
         """
-        Delete edge _edge.
+        Delete edge _edge in place from self._halfedges.
 
         Parameters
         ----------
@@ -632,27 +647,62 @@ class TriangleMesh(object):
         self._halfedges[_edge] = -1
         self._halfedge_vacancies.append(_edge)
 
-    def _insert(self, el, el_arr, el_vacancies_arr, key, compact=False, **kwargs):
+    def _insert(self, el, el_arr, el_vacancies, key, compact=False, **kwargs):
+        """
+        Insert an element into an array at the position of the smallest empty entry
+        when searching the array by key.
+
+        Parameters
+        ----------
+            el 
+                Element to add to the array. Must be one of the dtypes in the structured 
+                dtype of el_arr.
+            el_arr : np.array
+                Array where we add the element
+            el_vacancies : list
+                External list where we keep empty positions of el_arr.
+            key : string
+                Key on which to search the array
+            compact : bool
+                Do we copy -1 values in the resize of el_arr?
+            kwargs 
+                List of dtype parameters to additionally define el.
+
+        Returns
+        -------
+            ed
+                Element added, includes el stored in full structured dtype of el_arr.
+            idx : int
+                Index of el_arr where ed is stored.
+            el_arr : np.array
+                Modified array containing ed.
+            el_vacancies : list
+                Modified list of el_arr vacancies.
+        """
         try:
-            idx = el_vacancies_arr.pop(0)
+            idx = el_vacancies.pop(0)
         except IndexError:
             # no vacant slot, resize
             el_arr = self._resize(el_arr, skip_entries=compact, key=key)
             #TODO - invalidate neighbours, vertex_halfedges etc ???
             
+            # NOTE: If we search by a different key next time, el_vacancies will
+            # still contain the vacant positions when searching on the previous key.
             if len(el_arr[key].shape) > 1:
-                el_vacancies_arr = [int(x) for x in np.argwhere(np.sum(el_arr[key],axis=1)/el_arr[key].shape[1] == -1)]
+                el_vacancies = [int(x) for x in np.argwhere(np.sum(el_arr[key],axis=1)/el_arr[key].shape[1] == -1)]
             else:
-                el_vacancies_arr = [int(x) for x in np.argwhere(el_arr[key] == -1)]
+                el_vacancies = [int(x) for x in np.argwhere(el_arr[key] == -1)]
 
-            idx = el_vacancies_arr.pop(0)
-            
+            idx = el_vacancies.pop(0)
+        
+        # Put el in el_arr
         ed = el_arr[idx]
         ed[key] = el
+        # Define additional structured dtype values for el
         for k, v in kwargs.items():
             ed[k] = v
             
-        return ed, idx, el_arr, el_vacancies_arr
+        return ed, idx, el_arr, el_vacancies
 
     def _new_edge(self, vertex, compact=False, **kwargs):
         """
@@ -683,6 +733,23 @@ class TriangleMesh(object):
     def _new_face(self, _edge, compact=False, **kwargs):
         """
         Create a new face based on edge _edge.
+
+        Parameters
+        ----------
+            _edge : idx
+                self._halfedges index of a single halfedge on this face
+            compact : bool
+                Do we copy -1 values in the resize of _faces?
+            kwargs 
+                List of _faces dtype parameters (e.g. area=13.556) to define face
+                via more than just one of its halfedges.
+
+        Returns
+        -------
+            fa : FACE_DTYPE
+                Face created
+            idx : int
+                Index of the face in self._faces.
         """
 
         fa, idx, self._faces, self._face_vacancies = self._insert(_edge, self._faces, self._face_vacancies, 'halfedge', compact, **kwargs)
@@ -697,6 +764,18 @@ class TriangleMesh(object):
         ----------
             _vertex : np.array
                 1D array of x, y, z coordinates of the new vertex.
+            compact : bool
+                Do we copy -1 values in the resize of _vertices?
+            kwargs 
+                List of _vertices dtype parameters (e.g. valence=2) to define vertex
+                via more than just its position.
+
+        Returns
+        -------
+            vx : VERTEX_DTYPE
+                Vertex created
+            idx : int
+                Index of the vertex in self._vertices.
         """
         vx, idx, self._vertices, self._vertex_vacancies = self._insert(_vertex, self._vertices, self._vertex_vacancies, 'position', compact, **kwargs)
 
@@ -809,11 +888,14 @@ class TriangleMesh(object):
                 disjoint edges).
         """
 
-        _prev = self._halfedges['prev'][_curr]
-        _next = self._halfedges['next'][_curr]
-        _twin = self._halfedges['twin'][_curr]
-        _twin_prev = self._halfedges['prev'][_twin]
-        _twin_next = self._halfedges['next'][_twin]
+        curr_edge = self._halfedges[_curr]
+        _prev = curr_edge['prev']
+        _next = curr_edge['next']
+        _twin = curr_edge['twin']
+        
+        twin_edge = self._halfedges[_twin]
+        _twin_prev = twin_edge['prev']
+        _twin_next = twin_edge['next']
 
         # Calculate adjustments to the halfedges we're flipping
         new_v0 = self._halfedges['vertex'][_next]
@@ -836,61 +918,77 @@ class TriangleMesh(object):
         self._halfedges['next'][_twin_prev] = _next
 
         # Don't even bother with checking, just make sure to update the
-        # vertex_halfedges references to halfedges we know work.
-        self._vertices['halfedge'][self._halfedges['vertex'][_curr]] = _next
-        self._vertices['halfedge'][self._halfedges['vertex'][_twin]] = _twin_next
+        # vertex_halfedges references to halfedges we know work
+        self._vertices['halfedge'][curr_edge['vertex']] = _next
+        self._vertices['halfedge'][twin_edge['vertex']] = _twin_next
 
         # Apply adjustments to the the halfedges we're flipping
-        self._halfedges['vertex'][_curr] = new_v0
-        self._halfedges['vertex'][_twin] = new_v1
-        self._halfedges['next'][_curr] = _prev
-        self._halfedges['next'][_twin] = _twin_prev
-        self._halfedges['prev'][_curr] = _twin_next
-        self._halfedges['prev'][_twin] = _next
+        curr_edge['vertex'] = new_v0
+        twin_edge['vertex'] = new_v1
+        curr_edge['next'] = _prev
+        twin_edge['next'] = _twin_prev
+        curr_edge['prev'] = _twin_next
+        twin_edge['prev'] = _next
 
         # Update pointers
-        _prev = self._halfedges['prev'][_curr]
-        _next = self._halfedges['next'][_curr]
-        _twin = self._halfedges['twin'][_curr]
-        _twin_prev = self._halfedges['prev'][_twin]
-        _twin_next = self._halfedges['next'][_twin]
+        _prev = curr_edge['prev']
+        _next = curr_edge['next']
+        _twin = curr_edge['twin']
+        _twin_prev = twin_edge['prev']
+        _twin_next = twin_edge['next']
 
         # Set faces
-        self._halfedges['face'][_next] = self._halfedges['face'][_curr]
-        self._halfedges['face'][_prev] = self._halfedges['face'][_curr]
-        self._halfedges['face'][_twin_next] = self._halfedges['face'][_twin]
-        self._halfedges['face'][_twin_prev] = self._halfedges['face'][_twin]
+        self._halfedges['face'][_next] = curr_edge['face']
+        self._halfedges['face'][_prev] = curr_edge['face']
+        self._halfedges['face'][_twin_next] = twin_edge['face']
+        self._halfedges['face'][_twin_prev] = twin_edge['face']
 
-        # Finish updating vertex_halfedges references, update face references.
-        self._vertices['halfedge'][self._halfedges['vertex'][_curr]] = _twin
-        self._vertices['halfedge'][self._halfedges['vertex'][_twin]] = _curr
-        self._faces[self._halfedges['face'][_curr]] = _curr
-        self._faces[self._halfedges['face'][_twin]] = _twin
+        # Finish updating vertex_halfedges references, update face references
+        self._vertices['halfedge'][curr_edge['vertex']] = _twin
+        self._vertices['halfedge'][twin_edge['vertex']] = _curr
+        self._faces[curr_edge['face']] = _curr
+        self._faces[twin_edge['face']] = _twin
 
         if live_update:
             # Update face and vertex normals
-            self._update_face_normals([self._halfedges['face'][_curr], self._halfedges['face'][_twin]])
-            self._update_vertex_neighbors([self._halfedges['vertex'][_curr], self._halfedges['vertex'][_twin], self._halfedges['vertex'][_next], self._halfedges['vertex'][_twin_next]])
+            self._update_face_normals([curr_edge['face'], twin_edge['face']])
+            self._update_vertex_neighbors([curr_edge['vertex'], twin_edge['vertex'], self._halfedges['vertex'][_next], self._halfedges['vertex'][_twin_next]])
 
             self._faces_by_vertex = None
 
     def regularize(self):
         """
-        Adjust vertices so they tend toward valence < self.max_valence.
+        Adjust vertices so they tend toward valence = self.max_valence.
         """
 
         # Make sure we don't flip edges forever (we can always try a further refinement)
         # problems = np.where((self._vertices['valence'] != 6) & (self._vertices['valence'] != -1))[0]
 
         # Loop over high valence vertices and flip edges to reduce valence
-        for _idx, val in enumerate(self._vertices['valence']):
-            if (val == -1) or (val == 6):
+        # for _idx, val in enumerate(self._vertices['valence']):
+        #     if (val == -1) or (val == 0) or (val == 6):
+        #         continue
+        #     i = np.abs(val - 6)
+        #     while (i > 0) and (self._vertices['valence'][_idx] > 6):
+        #         self.edge_flip(self._vertices['halfedge'][_idx])
+        #         i -= 1
+
+        for i in np.arange(len(self._halfedges['length'])):
+            curr_edge = self._halfedges[i]
+            val1 = self._vertices['valence'][curr_edge['vertex']]
+            val2 = self._vertices['valence'][self._halfedges['vertex'][curr_edge['twin']]]
+
+            if (val1 == -1) or (val2 == -1):
                 continue
-            i = 0
-            tries = np.abs(val - 6)
-            while (i < tries) and (self._vertices['valence'][_idx] != 6):
-                self.edge_flip(self._vertices['halfedge'][_idx])
-                i += 1
+
+            print(i, val1, val2)
+
+            s1 = (val1-6)
+            s2 = (val2-6)
+            if (s1*s2 < 0) and ((val1 >= 4) and (val2 >= 4)):
+                self.edge_flip(i)
+                # break
+
 
     def relax(self, l=1, n=1):
         """
@@ -987,7 +1085,6 @@ class TriangleMesh(object):
                 
                 assert(self._vertices['valence'][self._vertices['valence']>0].min() >=3)
         
-            
             # 2. Collapse all edges shorter than (4/5)*edge_length to their midpoint.
             collapse_count = 0
             for i in np.arange(len(self._halfedges['length'])):
