@@ -1128,6 +1128,17 @@ class TriangleMesh(object):
             # 4. Relocate vertices on the surface by tangential smoothing.
             self.relax(l=l, n=n_relax)
 
+    def _edge_valences(self):
+        edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
+        packed_edges = pack_edges(edges)
+        e, c = np.unique(packed_edges, return_counts=True)
+
+        d = {}
+        for k, v in zip(e, c):
+            d[k] = v
+        
+        return d
+
     def repair(self):
         """
         Make the mesh manifold.
