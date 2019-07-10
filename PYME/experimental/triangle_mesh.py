@@ -550,90 +550,93 @@ class TriangleMesh(object):
         _dead_vertex = twin_halfedge['vertex']
         _live_vertex = curr_halfedge['vertex']
 
-        if True: # (self._vertices['valence'][_live_vertex] >= 4) and (self._vertices['valence'][_dead_vertex] >= 4):
+        vl, vd = self._vertices['valence'][_live_vertex], self._vertices['valence'][_dead_vertex]
+
+        if (vl < 4) or (vd < 4) or (self._valences[self._halfedges[_next]['vertex']] < 4) or (self._valences[self._halfedges[_twin_next]['vertex']] < 4):
+            return
         
-            if self.debug and (_live_vertex == _dead_vertex):
-                print(_curr, curr_halfedge, _twin, twin_halfedge)
-                raise RuntimeError('Live vertex equals dead vertex (both halves of edge point to same place)')
+        if self.debug and (_live_vertex == _dead_vertex):
+            print(_curr, curr_halfedge, _twin, twin_halfedge)
+            raise RuntimeError('Live vertex equals dead vertex (both halves of edge point to same place)')
 
-            # Collapse to the midpoint of the original edge vertices
-            self._halfedges['vertex'][self._halfedges['vertex'] == _dead_vertex] = _live_vertex
-            self._vertices['position'][_live_vertex, :] = 0.5*(self.vertices[_live_vertex, :] + self.vertices[_dead_vertex, :])
-            
-            # update valence of vertex we keep
-            self._vertices['valence'][_live_vertex] = self._vertices['valence'][_live_vertex] + self._vertices['valence'][_dead_vertex] - 3
-            
-            if self.debug:
-                print(self._vertices['valence'][_live_vertex], self._vertices['valence'][_dead_vertex])
-                assert(self._vertices['valence'][_live_vertex] >=3)
-            
-            # delete dead vertex
-            self._vertices[_dead_vertex] = -1
+        # Collapse to the midpoint of the original edge vertices
+        self._halfedges['vertex'][self._halfedges['vertex'] == _dead_vertex] = _live_vertex
+        self._vertices['position'][_live_vertex, :] = 0.5*(self.vertices[_live_vertex, :] + self.vertices[_dead_vertex, :])
+        
+        # update valence of vertex we keep
+        self._vertices['valence'][_live_vertex] = self._vertices['valence'][_live_vertex] + self._vertices['valence'][_dead_vertex] - 3
+        
+        if self.debug:
+            print(self._vertices['valence'][_live_vertex], self._vertices['valence'][_dead_vertex])
+            assert(self._vertices['valence'][_live_vertex] >=3)
+        
+        # delete dead vertex
+        self._vertices[_dead_vertex] = -1
 
-            # Zipper the remaining triangles
-            def _zipper(edge1, edge2):
-                t1 = self._halfedges[edge1]['twin']
-                t2 = self._halfedges[edge2]['twin']
+        # Zipper the remaining triangles
+        def _zipper(edge1, edge2):
+            t1 = self._halfedges[edge1]['twin']
+            t2 = self._halfedges[edge2]['twin']
+            
+            if (t2 != -1):
+                self._halfedges[t2]['twin'] = t1
                 
-                if (t2 != -1):
-                    self._halfedges[t2]['twin'] = t1
-                    
-                if (t1 != -1):
-                    self._halfedges[t1]['twin'] = t2
-                    
-            _zipper(_next, _prev)
-            _zipper(_twin_next, _twin_prev)
+            if (t1 != -1):
+                self._halfedges[t1]['twin'] = t2
+                
+        _zipper(_next, _prev)
+        _zipper(_twin_next, _twin_prev)
 
-            # We need some more pointers
-            _prev_twin = self._halfedges[_prev]['twin']
-            _prev_twin_vertex = self._halfedges[_prev_twin]['vertex']
-            _next_prev_twin = self._halfedges[_prev_twin]['next']
-            _next_prev_twin_vertex = self._halfedges[_next_prev_twin]['vertex']
-            _twin_next_vertex = self._halfedges[_twin_next]['vertex']
-            _next_twin_twin_next = self._halfedges['next'][self._halfedges[_twin_next]['twin']]
-            _next_twin_twin_next_vertex = self._halfedges[_next_twin_twin_next]['vertex']
+        # We need some more pointers
+        _prev_twin = self._halfedges[_prev]['twin']
+        _prev_twin_vertex = self._halfedges[_prev_twin]['vertex']
+        _next_prev_twin = self._halfedges[_prev_twin]['next']
+        _next_prev_twin_vertex = self._halfedges[_next_prev_twin]['vertex']
+        _twin_next_vertex = self._halfedges[_twin_next]['vertex']
+        _next_twin_twin_next = self._halfedges['next'][self._halfedges[_twin_next]['twin']]
+        _next_twin_twin_next_vertex = self._halfedges[_next_twin_twin_next]['vertex']
 
-            # Make sure we have good _vertex_halfedges references
-            self._vertices['halfedge'][_live_vertex] = _prev_twin
-            self._vertices['halfedge'][_prev_twin_vertex] = _next_prev_twin
-            self._vertices['halfedge'][_twin_next_vertex] = self._halfedges[_twin_next]['twin']
-            self._vertices['halfedge'][_next_twin_twin_next_vertex] = self._halfedges['next'][_next_twin_twin_next]
+        # Make sure we have good _vertex_halfedges references
+        self._vertices['halfedge'][_live_vertex] = _prev_twin
+        self._vertices['halfedge'][_prev_twin_vertex] = _next_prev_twin
+        self._vertices['halfedge'][_twin_next_vertex] = self._halfedges[_twin_next]['twin']
+        self._vertices['halfedge'][_next_twin_twin_next_vertex] = self._halfedges['next'][_next_twin_twin_next]
 
-            # Delete the inner triangles
-            _curr_face = curr_halfedge['face']
-            _twin_face = twin_halfedge['face']
-            self._faces['halfedge'][_curr_face] = -1
-            self._faces['halfedge'][_twin_face] = -1
-            self._faces['area'][_curr_face] = -1
-            self._faces['area'][_twin_face] = -1
-            self._faces['normal'][_curr_face, :] = -1
-            self._faces['normal'][_twin_face, :] = -1
+        # Delete the inner triangles
+        _curr_face = curr_halfedge['face']
+        _twin_face = twin_halfedge['face']
+        self._faces['halfedge'][_curr_face] = -1
+        self._faces['halfedge'][_twin_face] = -1
+        self._faces['area'][_curr_face] = -1
+        self._faces['area'][_twin_face] = -1
+        self._faces['normal'][_curr_face, :] = -1
+        self._faces['normal'][_twin_face, :] = -1
 
-            if self.debug:
-                print(curr_halfedge, twin_halfedge)
+        if self.debug:
+            print(curr_halfedge, twin_halfedge)
 
-            # Delete curr, next, prev
-            self._edge_delete(_curr)
-            self._edge_delete(_prev)
-            self._edge_delete(_next)
+        # Delete curr, next, prev
+        self._edge_delete(_curr)
+        self._edge_delete(_prev)
+        self._edge_delete(_next)
 
-            # Delete _twin, _twin_prev, _twin_next
-            self._edge_delete(_twin)
-            self._edge_delete(_twin_prev)
-            self._edge_delete(_twin_next)
+        # Delete _twin, _twin_prev, _twin_next
+        self._edge_delete(_twin)
+        self._edge_delete(_twin_prev)
+        self._edge_delete(_twin_next)
 
-            try:
-                if live_update:
-                    # Update faces
-                    self._update_face_normals([self._halfedges[_prev_twin]['face'], self._halfedges[self._halfedges[_twin_next]['twin']]['face']])
-                    self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
+        try:
+            if live_update:
+                # Update faces
+                self._update_face_normals([self._halfedges[_prev_twin]['face'], self._halfedges[self._halfedges[_twin_next]['twin']]['face']])
+                self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
+    
+                self._faces_by_vertex = None
         
-                    self._faces_by_vertex = None
-            
-            except RuntimeError as e:
-                print(_curr, _twin, _next, _prev, _twin_next, _twin_prev, _next_prev_twin, _next_twin_twin_next, _prev_twin)
-                print([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
-                raise e
+        except RuntimeError as e:
+            print(_curr, _twin, _next, _prev, _twin_next, _twin_prev, _next_prev_twin, _next_twin_twin_next, _prev_twin)
+            print([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
+            raise e
 
     def _edge_delete(self, _edge):
         """
