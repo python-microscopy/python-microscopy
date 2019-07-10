@@ -412,6 +412,7 @@ class TriangleMesh(object):
                     a = self._faces['area'][_face]
                     _normal += n*a
                 else:
+                    pass
                     if self.debug and (i > 20):
                         raise RuntimeError('Abnormal vertex valance detected on vertex %d' % v_idx)
                 
@@ -649,7 +650,7 @@ class TriangleMesh(object):
         try:
             if live_update:
                 # Update faces
-                self._update_face_normals([face0, face2, face2, face3])
+                self._update_face_normals([face0, face1, face2, face3])
                 self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
     
                 self._faces_by_vertex = None
