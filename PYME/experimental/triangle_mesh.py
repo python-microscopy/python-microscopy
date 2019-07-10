@@ -4,7 +4,7 @@ def pack_edges(arr, axis=1):
     """
     Stores edges as a single unique integer. 
     
-    NOTE: that this implictly caps the mesh at 2**16 
+    NOTE: that this implictly caps the mesh at 2**16
     vertices. If we need more, adjust np.uint32 to
     np.uint64 and << 16 to << 32.
     """
@@ -51,6 +51,9 @@ class TriangleMesh(object):
         # Populate the normals
         self.face_normals
         self.vertex_normals
+
+        # Target valence for vertices (should be 6)
+        self._target_valence = 6
 
         # Properties we can visualize
         self.vertex_properties = ['x', 'y', 'z']
@@ -550,9 +553,14 @@ class TriangleMesh(object):
         _dead_vertex = twin_halfedge['vertex']
         _live_vertex = curr_halfedge['vertex']
 
+        # Grab the valences of the 4 points near the edge
         vl, vd = self._vertices['valence'][_live_vertex], self._vertices['valence'][_dead_vertex]
+        vn, vtn = self._vertices['valence'][self._halfedges[_next]['vertex']], self._vertices['valence'][self._halfedges[_twin_next]['vertex']]
 
-        if (vl < 4) or (vd < 4) or (self._valences[self._halfedges[_next]['vertex']] < 4) or (self._valences[self._halfedges[_twin_next]['vertex']] < 4):
+        if (vl < 4) or (vd < 4) or (vn < 4) or (vtn < 4):
+            # TODO: (re: David) This test is really playing it safe. It might be better
+            # to collapse and then deal with a valence 2 edge or perform a more thorough
+            # test.
             return
         
         if self.debug and (_live_vertex == _dead_vertex):
@@ -904,6 +912,10 @@ class TriangleMesh(object):
         new_v0 = self._halfedges['vertex'][_next]
         new_v1 = self._halfedges['vertex'][_twin_next]
 
+        # If there's already an edge between these two vertices, don't flip
+        if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
+            return
+
         # _next's next and prev must be adjusted
         self._halfedges['prev'][_next] = _twin_prev
         self._halfedges['next'][_next] = _twin
@@ -963,35 +975,34 @@ class TriangleMesh(object):
         """
         Adjust vertices so they tend toward valence = self.max_valence.
         """
+        for i in np.argsort(self._vertices['valence'])[::-1]:
+            val1 = self._vertices['valence'][i]
 
-        # Make sure we don't flip edges forever (we can always try a further refinement)
-        # problems = np.where((self._vertices['valence'] != 6) & (self._vertices['valence'] != -1))[0]
-
-        # Loop over high valence vertices and flip edges to reduce valence
-        # for _idx, val in enumerate(self._vertices['valence']):
-        #     if (val == -1) or (val == 0) or (val == 6):
-        #         continue
-        #     i = np.abs(val - 6)
-        #     while (i > 0) and (self._vertices['valence'][_idx] > 6):
-        #         self.edge_flip(self._vertices['halfedge'][_idx])
-        #         i -= 1
-
-        for i in np.arange(len(self._halfedges['length'])):
-            curr_edge = self._halfedges[i]
-            val1 = self._vertices['valence'][curr_edge['vertex']]
-            val2 = self._vertices['valence'][self._halfedges['vertex'][curr_edge['twin']]]
-
-            if (val1 == -1) or (val2 == -1):
+            # Don't update valence self._target_valence vertices, they're good
+            if (val1 == self._target_valence) or (val1 < 4):
                 continue
 
-            print(i, val1, val2)
+            s1 = (val1-self._target_valence)
 
-            s1 = (val1-6)
-            s2 = (val2-6)
-            if (s1*s2 < 0) and ((val1 >= 4) and (val2 >= 4)):
-                self.edge_flip(i)
-                # break
+            # Look through the neighbors for a suitable edge to flip
+            for _edge in self._vertices['neighbors'][i]:
+                val2 = self._vertices['valence'][ self._halfedges['vertex'][_edge]]
 
+                if (val2 == self._target_valence) or (val2 < 4):
+                    continue
+
+                # Calculate the distance of each valence to the optimal valence
+                s2 = (val2-self._target_valence)
+
+                # Skip long and short edges (re: Surazhsku and Gostman, 2003) as they will
+                # be handled by edge split/collapse
+                if (s1*s2) > 0:
+                    continue
+
+                self.edge_flip(_edge)
+
+                # Once we've flipped one edge incident on this vertex, move on
+                break
 
     def relax(self, l=1, n=1):
         """
@@ -1026,9 +1037,10 @@ class TriangleMesh(object):
             # Calculate gravity-weighted centroids
             A = np.sum(an, axis=1)
             c = 1./(A[...,None])*np.sum(an[...,None]*vn, axis=1)
-            # Don't get messed up by slivers. TODO: This is a hack. There should be
-            # sliver elimination.
-            c[A == 0] = self._vertices['position'][A == 0]
+            # Don't get messed up by slivers. NOTE: This is a hack in case
+            # edge split/collapse don't do their jobs.
+            A_mask = (A == 0)
+            c[A_mask] = self._vertices['position'][A_mask]
 
             # Construct projection vector into tangent plane
             pn = self._vertices['normal'][...,None]*self._vertices['normal'][:,None,:]
@@ -1096,10 +1108,10 @@ class TriangleMesh(object):
                     collapse_count += 1
             print('Collapse count: ' + str(collapse_count))
 
-            # # 3. Flip edges in order to minimize deviation from valence 6.
-            # self.regularize()
+            # 3. Flip edges in order to minimize deviation from self._target_valence.
+            self.regularize()
 
-            # # 4. Relocate vertices on the surface by tangential smoothing.
+            # 4. Relocate vertices on the surface by tangential smoothing.
             # self.relax(l=l, n=n_relax)
 
     def repair(self):
