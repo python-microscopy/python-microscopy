@@ -562,6 +562,13 @@ class TriangleMesh(object):
             # to collapse and then deal with a valence 2 edge or perform a more thorough
             # test.
             return
+
+        # Check for creation of multivalent edeges and prevent this
+        dead_list = self._halfedges['twin'][self._halfedges['vertex'] == _dead_vertex]
+        live_list = self._halfedges['twin'][self._halfedges['vertex'] == _live_vertex]
+        twin_list = list((set(dead_list) & set(live_list)) - set([_twin, _curr]))
+        if _live_vertex in self._halfedges['vertex'][twin_list]:
+            return
         
         if self.debug and (_live_vertex == _dead_vertex):
             print(_curr, curr_halfedge, _twin, twin_halfedge)
@@ -1112,7 +1119,7 @@ class TriangleMesh(object):
             self.regularize()
 
             # 4. Relocate vertices on the surface by tangential smoothing.
-            # self.relax(l=l, n=n_relax)
+            self.relax(l=l, n=n_relax)
 
     def repair(self):
         """
