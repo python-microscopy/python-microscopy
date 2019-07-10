@@ -553,15 +553,15 @@ class TriangleMesh(object):
         _dead_vertex = twin_halfedge['vertex']
         _live_vertex = curr_halfedge['vertex']
 
-        # Grab the valences of the 4 points near the edge
-        vl, vd = self._vertices['valence'][_live_vertex], self._vertices['valence'][_dead_vertex]
-        vn, vtn = self._vertices['valence'][self._halfedges[_next]['vertex']], self._vertices['valence'][self._halfedges[_twin_next]['vertex']]
+        # # Grab the valences of the 4 points near the edge
+        # vl, vd = self._vertices['valence'][_live_vertex], self._vertices['valence'][_dead_vertex]
+        # vn, vtn = self._vertices['valence'][self._halfedges[_next]['vertex']], self._vertices['valence'][self._halfedges[_twin_next]['vertex']]
 
-        if (vl < 4) or (vd < 4) or (vn < 4) or (vtn < 4):
-            # TODO: (re: David) This test is really playing it safe. It might be better
-            # to collapse and then deal with a valence 2 edge or perform a more thorough
-            # test.
-            return
+        # if (vl < 4) or (vd < 4) or (vn < 4) or (vtn < 4):
+        #     # TODO: (re: David) This test is really playing it safe. It might be better
+        #     # to collapse and then deal with a valence 2 edge or perform a more thorough
+        #     # test.
+        #     return
 
         # Check for creation of multivalent edeges and prevent this
         dead_list = self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == _dead_vertex]]
@@ -992,7 +992,7 @@ class TriangleMesh(object):
             val1 = self._vertices['valence'][i]
 
             # Don't update valence self._target_valence vertices, they're good
-            if (val1 == self._target_valence) or (val1 < 4):
+            if (val1 == self._target_valence) or (val1 == -1): # or (val1 < 4):
                 continue
 
             s1 = (val1-self._target_valence)
@@ -1001,7 +1001,7 @@ class TriangleMesh(object):
             for _edge in self._vertices['neighbors'][i]:
                 val2 = self._vertices['valence'][ self._halfedges['vertex'][_edge]]
 
-                if (val2 == self._target_valence) or (val2 < 4):
+                if (val2 == self._target_valence) or (val2 == -1): # or (val2 < 4):
                     continue
 
                 # Calculate the distance of each valence to the optimal valence
