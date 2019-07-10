@@ -564,10 +564,10 @@ class TriangleMesh(object):
             return
 
         # Check for creation of multivalent edeges and prevent this
-        dead_list = self._halfedges['twin'][self._halfedges['vertex'] == _dead_vertex]
-        live_list = self._halfedges['twin'][self._halfedges['vertex'] == _live_vertex]
-        twin_list = list((set(dead_list) & set(live_list)) - set([_twin, _curr]))
-        if _live_vertex in self._halfedges['vertex'][twin_list]:
+        dead_list = self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == _dead_vertex]]
+        live_list = self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == _live_vertex]]
+        twin_list = list(set(dead_list) & set(live_list))
+        if len(twin_list) > 2:
             return
         
         if self.debug and (_live_vertex == _dead_vertex):
