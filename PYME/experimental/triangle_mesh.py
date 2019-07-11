@@ -222,6 +222,7 @@ class TriangleMesh(object):
                 self._vertices['normal'][v_idx] = 0
 
                 i = 0
+                self._vertices['valence'][v_idx] = 0
                 while True:
                     if (_curr == -1) or (_twin == -1):
                         break
@@ -395,6 +396,7 @@ class TriangleMesh(object):
                 raise RuntimeError('Twin (%d) should point back to starting vertex (%d) but points to %d' % (_twin, v_idx, twin_edge['vertex']))
             
             i = 0
+            self._vertices['valence'][v_idx] = 0
             self._vertices['neighbors'][v_idx] = -1
             
             _normal = 0*self._vertices['normal'][v_idx]  # avoid a few lookups by using a local variable
@@ -556,7 +558,7 @@ class TriangleMesh(object):
 
         # # Grab the valences of the 4 points near the edge
         # vl, vd = self._vertices['valence'][_live_vertex], self._vertices['valence'][_dead_vertex]
-        # vn, vtn = self._vertices['valence'][self._halfedges[_next]['vertex']], self._vertices['valence'][self._halfedges[_twin_next]['vertex']]
+        # vn, vtn = self._vertices['valence'][self._halfedges['vertex'][_next]], self._vertices['valence'][self._halfedges['vertex'][_twin_next]]
 
         # if (vl < 4) or (vd < 4) or (vn < 4) or (vtn < 4):
         #     # TODO: (re: David) This test is really playing it safe. It might be better
@@ -627,12 +629,8 @@ class TriangleMesh(object):
         # Delete the inner triangles
         _curr_face = curr_halfedge['face']
         _twin_face = twin_halfedge['face']
-        self._faces['halfedge'][_curr_face] = -1
-        self._faces['halfedge'][_twin_face] = -1
-        self._faces['area'][_curr_face] = -1
-        self._faces['area'][_twin_face] = -1
-        self._faces['normal'][_curr_face, :] = -1
-        self._faces['normal'][_twin_face, :] = -1
+        self._faces[_curr_face] = -1
+        self._faces[_twin_face] = -1
 
         if self.debug:
             print(curr_halfedge, twin_halfedge)
@@ -843,8 +841,8 @@ class TriangleMesh(object):
         _, _vertex_idx = self._new_vertex(_vertex)
         
         # Ensure the original faces have the correct pointers and add two new faces
-        self._faces[curr_edge['face']] = _curr
-        self._faces[twin_edge['face']] = _twin
+        self._faces['halfedge'][curr_edge['face']] = _curr
+        self._faces['halfedge'][twin_edge['face']] = _twin
         _, _face_1_idx = self._new_face(_twin_prev)
         _, _face_2_idx = self._new_face(_next)
         self._halfedges['face'][_twin_prev] = _face_1_idx
@@ -928,7 +926,13 @@ class TriangleMesh(object):
 
         # If there's already an edge between these two vertices, don't flip
         if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
-            return
+            return False
+
+        # if (self._valences[curr_edge['vertex']] < 4) or (self._valences[twin_edge['vertex']] < 4):
+        #     # TODO - this test is really playing it safe, might be better to collapse and then deal with valence 2 edge, or
+        #     # perform a more thorough test
+        #     #print('Flipping could create a valence 2 vertex, skipping')
+        #     return
 
         # _next's next and prev must be adjusted
         self._halfedges['prev'][_next] = _twin_prev
@@ -975,8 +979,8 @@ class TriangleMesh(object):
         # Finish updating vertex_halfedges references, update face references
         self._vertices['halfedge'][curr_edge['vertex']] = _twin
         self._vertices['halfedge'][twin_edge['vertex']] = _curr
-        self._faces[curr_edge['face']] = _curr
-        self._faces[twin_edge['face']] = _twin
+        self._faces['halfedge'][curr_edge['face']] = _curr
+        self._faces['halfedge'][twin_edge['face']] = _twin
 
         if live_update:
             # Update face and vertex normals
@@ -984,6 +988,8 @@ class TriangleMesh(object):
             self._update_vertex_neighbors([curr_edge['vertex'], twin_edge['vertex'], self._halfedges['vertex'][_next], self._halfedges['vertex'][_twin_next]])
 
             self._faces_by_vertex = None
+
+        return True
 
     def regularize(self):
         """
@@ -1013,7 +1019,10 @@ class TriangleMesh(object):
                 if (s1*s2) > 0:
                     continue
 
-                self.edge_flip(_edge)
+                flipped = self.edge_flip(_edge)
+                if not flipped:
+                    # This one was gonna screw up the manifoldness. Check again.
+                    continue
 
                 # Once we've flipped one edge incident on this vertex, move on
                 break
@@ -1144,6 +1153,12 @@ class TriangleMesh(object):
         Make the mesh manifold.
         """
         pass
+
+        # 1. Delete edges of valence > 2
+        # 2. Find edges with _prev == -1 and _next == -1, but with a defined twin
+        # 3. Loop over the halfedges emanating from the twin vertex, find the one
+        #    forming the smallest dihedral angle with the original vertex, set this
+        #    as the twin of the original vertex's prev
 
     def to_stl(self, filename):
         """
