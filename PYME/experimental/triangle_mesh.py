@@ -208,7 +208,7 @@ class TriangleMesh(object):
     @property
     def vertex_neighbors(self):
         """
-        Return the up to self.max_valence neighbors of each vertex.
+        Return the up to self._target_valence neighbors of each vertex.
         """
         if np.all(self._vertices['neighbors'] == -1):
             for v_idx in np.arange(len(self.vertices)):
@@ -368,7 +368,7 @@ class TriangleMesh(object):
             self._faces['area'][f_idx] = 0.5*nn
             if (self._faces['halfedge'][f_idx] == -1):
                 self._faces['normal'][f_idx] = -1
-            elif (nn > 0):
+            if (nn > 0):
                 self._faces['normal'][f_idx] = n/nn
             else:
                 self._faces['normal'][f_idx] = 0
@@ -398,6 +398,7 @@ class TriangleMesh(object):
             i = 0
             self._vertices['valence'][v_idx] = 0
             self._vertices['neighbors'][v_idx] = -1
+            self._vertices['normal'][v_idx] = 0
             
             _normal = 0*self._vertices['normal'][v_idx]  # avoid a few lookups by using a local variable
 
@@ -435,6 +436,9 @@ class TriangleMesh(object):
                     break
 
             self._vertices['valence'][v_idx] = i
+
+            if self.debug and (self._valences[v_idx] < 3):
+                raise RuntimeError('Detected valence <3 on vertex %d' % v_idx)
 
             nn = np.sqrt((_normal*_normal).sum())
             if nn > 0:
@@ -920,19 +924,19 @@ class TriangleMesh(object):
         _twin_prev = twin_edge['prev']
         _twin_next = twin_edge['next']
 
+        if (self._valences[curr_edge['vertex']] < 4) or (self._valences[twin_edge['vertex']] < 4):
+            # TODO - this test is really playing it safe, might be better to collapse and then deal with valence 2 edge, or
+            # perform a more thorough test
+            #print('Flipping could create a valence 2 vertex, skipping')
+            return
+
         # Calculate adjustments to the halfedges we're flipping
         new_v0 = self._halfedges['vertex'][_next]
         new_v1 = self._halfedges['vertex'][_twin_next]
 
-        # If there's already an edge between these two vertices, don't flip
-        if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
-            return False
-
-        # if (self._valences[curr_edge['vertex']] < 4) or (self._valences[twin_edge['vertex']] < 4):
-        #     # TODO - this test is really playing it safe, might be better to collapse and then deal with valence 2 edge, or
-        #     # perform a more thorough test
-        #     #print('Flipping could create a valence 2 vertex, skipping')
-        #     return
+        # # If there's already an edge between these two vertices, don't flip
+        # if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
+        #     return False
 
         # _next's next and prev must be adjusted
         self._halfedges['prev'][_next] = _twin_prev
@@ -966,7 +970,6 @@ class TriangleMesh(object):
         # Update pointers
         _prev = curr_edge['prev']
         _next = curr_edge['next']
-        _twin = curr_edge['twin']
         _twin_prev = twin_edge['prev']
         _twin_next = twin_edge['next']
 
@@ -991,41 +994,137 @@ class TriangleMesh(object):
 
         return True
 
+    # def regularize(self):
+    #     """
+    #     Adjust vertices so they tend toward valence = self._target_valence.
+    #     """
+    #     for i in np.argsort(self._vertices['valence'])[::-1]:
+    #         val1 = self._vertices['valence'][i]
+
+    #         # Don't update valence self._target_valence vertices, they're good
+    #         if (val1 == self._target_valence) or (val1 == -1): # or (val1 < 4):
+    #             continue
+
+    #         s1 = (val1-self._target_valence)
+
+    #         # Look through the neighbors for a suitable edge to flip
+    #         for _edge in self._vertices['neighbors'][i]:
+    #             val2 = self._vertices['valence'][ self._halfedges['vertex'][_edge]]
+
+    #             if (val2 == self._target_valence) or (val2 == -1): # or (val2 < 4):
+    #                 continue
+
+    #             # Calculate the distance of each valence to the optimal valence
+    #             s2 = (val2-self._target_valence)
+
+    #             # Skip long and short edges (re: Surazhsku and Gostman, 2003) as they will
+    #             # be handled by edge split/collapse
+    #             if (s1*s2) > 0:
+    #                 continue
+
+    #             print('Flipping: ' + str(val1) + ', ' + str(val2))
+
+    #             flipped = self.edge_flip(_edge)
+    #             if not flipped:
+    #                 # This one was gonna screw up the manifoldness. Check again.
+    #                 continue
+
+    #             # Once we've flipped one edge incident on this vertex, move on
+    #             break
+    @property
+    def edge_dict(self):
+        edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['twin']]['vertex']]).T
+
+        d = {}
+        for i, e in enumerate(pack_edges(edges)):
+            d[e] = i
+            
+        return d
+
     def regularize(self):
         """
-        Adjust vertices so they tend toward valence = self.max_valence.
+        Adjust vertices so they tend toward valence < self._target_valence.
         """
-        for i in np.argsort(self._vertices['valence'])[::-1]:
-            val1 = self._vertices['valence'][i]
+    
+        # Make sure we don't flip edges forever (we can always try a further refinement)
+        n_tries = 2 * 8 + 1
+    
+        # n = 0
+        # while True:
+    
+        j = 0
+    
+        while (j < n_tries) and max(self._valences > self._target_valence):
+            j += 1
+        
+            # Find which vertices have high valences
+            problems = np.where(self._valences > self._target_valence)[0]
+            delta0 = np.abs(self._valences[problems] - self._target_valence)
+            
+            #e_to_flip = self._vertex_halfedges[problems]
+            
+            #find max-valence incident vertex
+            neighbours = self._vertex_neighbors[problems]
+            neighbour_vertices = self._halfedges[neighbours]['vertex']
+            _target_valence_n_id = np.argmax(self._valences[neighbour_vertices], axis=1)
+            _target_valence_n_e = neighbours[np.arange(len(_target_valence_n_id)), _target_valence_n_id]
+            
+            #e_dict = self.edge_dict
+            
+            #edges = np.vstack((problems, _target_valence_n)).T
+            #packed_edges = pack_edges(edges)
+            
+            #e_to_flip = np.array([e_dict[e] for e in packed_edges])
+            e_to_flip = _target_valence_n_e
+        
+            #find low-valence vertices
+            p1 = np.where((self._valences > 0) & (self._valences < self._target_valence))[0]
+            delta1 = np.abs(self._valences[p1] - self._target_valence)
+        
+            deltas = np.hstack((delta0, delta1))
+            edges_to_flip = np.hstack((e_to_flip, self._halfedges[self._vertex_halfedges[p1]]['next']))
 
-            # Don't update valence self._target_valence vertices, they're good
-            if (val1 == self._target_valence) or (val1 == -1): # or (val1 < 4):
-                continue
-
-            s1 = (val1-self._target_valence)
-
-            # Look through the neighbors for a suitable edge to flip
-            for _edge in self._vertices['neighbors'][i]:
-                val2 = self._vertices['valence'][ self._halfedges['vertex'][_edge]]
-
-                if (val2 == self._target_valence) or (val2 == -1): # or (val2 < 4):
-                    continue
-
-                # Calculate the distance of each valence to the optimal valence
-                s2 = (val2-self._target_valence)
-
-                # Skip long and short edges (re: Surazhsku and Gostman, 2003) as they will
-                # be handled by edge split/collapse
-                if (s1*s2) > 0:
-                    continue
-
-                flipped = self.edge_flip(_edge)
-                if not flipped:
-                    # This one was gonna screw up the manifoldness. Check again.
-                    continue
-
-                # Once we've flipped one edge incident on this vertex, move on
-                break
+            #flip the worst offenders first
+            edges_to_flip = edges_to_flip[np.argsort(deltas)[::-1]]
+            
+            ef = list(edges_to_flip)
+            k = 0
+            while (k < len(ef)):
+                e = ef[k]
+                #print j, e, self._halfedges[e]['twin']
+                try:
+                    ef.remove(self._halfedges[e]['twin'])
+                except ValueError:
+                    pass
+                k += 1
+                
+            edges_to_flip = np.array(ef)
+        
+            #print(deltas, edges_to_flip)
+        
+            print(len(edges_to_flip), len(problems), len(p1))
+            
+            #edges_to_flip = e_to_flip
+            #deltas = delta0
+        
+            
+        
+            # Loop over high valence vertices and flip edges to reduce valence
+            for _idx in edges_to_flip:
+                i = 0
+                #while (i < n_tries) and (self._valences[_idx] > self._target_valence):
+                if (self._valences[self._halfedges[_idx]['vertex']] > (self._target_valence)):
+                    self.edge_flip(_idx, live_update=True)
+                    i += 1
+                
+                    # # Now we gotta recalculate the normals
+                    # self._face_normals = None
+                    # self._vertex_normals = None
+                    # self.face_normals
+                    # self.vertex_normals
+                
+                    # self._faces_by_vertex = None
+                    # n += 1
 
     def relax(self, l=1, n=1):
         """
@@ -1053,7 +1152,7 @@ class TriangleMesh(object):
 
             # an = self._face_areas[fn]*nn_mask
             # Calculate the voronoi areas and mask off the wrong ones
-            # an = 0.5*np.linalg.norm(np.cross(np.diff(fc, axis=1), (self._vertices[:,None,:]-fc)[:,:(self.max_valence-1),:], axis=2), axis=2)*nn_mask
+            # an = 0.5*np.linalg.norm(np.cross(np.diff(fc, axis=1), (self._vertices[:,None,:]-fc)[:,:(self._target_valence-1),:], axis=2), axis=2)*nn_mask
             an = (1./self._halfedges['length'][nn])*nn_mask
             an[self._halfedges['length'][nn] == 0] = 0
 
