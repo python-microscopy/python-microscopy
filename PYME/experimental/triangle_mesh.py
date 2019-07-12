@@ -14,6 +14,22 @@ def pack_edges(arr, axis=1):
     
     return res
 
+def fast_3x3_cross(a,b):
+    # Index only once
+    a0 = a[0]
+    a1 = a[1]
+    a2 = a[2]
+    b0 = b[0]
+    b1 = b[1]
+    b2 = b[2]
+
+    x = a1*b2 - a2*b1
+    y = a2*b0 - a0*b2
+    z = a0*b1 - a1*b0
+
+    vec = np.array([x,y,z])
+    return vec
+
 HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('next', 'i4'), ('prev', 'i4'), ('length', 'f4')])
 FACE_DTYPE = np.dtype([('halfedge', 'i4'), ('normal', '3f4'), ('area', 'f4')])
 VERTEX_DTYPE = np.dtype([('position', '3f4'), ('normal', '3f4'), ('halfedge', 'i4'), ('valence', 'i4'), ('neighbors', '8i4')])
@@ -270,6 +286,39 @@ class TriangleMesh(object):
             self.vertex_neighbors
         return self._vertices['valence']
 
+    @property
+    def edge_dict(self):
+        """
+        Return a dictionary of the edges in the mesh, each stored as a single number.
+        """
+        #edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['twin']]['vertex']]).T
+        edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
+        
+        d = {}
+        for i, e in enumerate(pack_edges(edges)):
+            d[e] = i
+            
+        return d
+
+    @property
+    def edge_valences(self):
+        edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
+        packed_edges = pack_edges(edges)
+        e, c = np.unique(packed_edges, return_counts=True)
+
+        d = {}
+        for k, v in zip(e, c):
+            d[k] = v
+        
+        return d
+
+    @property
+    def manifold(self):
+        """
+        Checks if the mesh is manifold: Is every edge is shared by exactly two triangles?
+        """
+        return np.all(np.array(self.edge_valences.values()) == 2)
+
     def keys(self):
         return list(self.vertex_properties)
 
@@ -337,22 +386,6 @@ class TriangleMesh(object):
         f_idxs : list or np.array
             List of face indices to recompute.
         """
-
-        def fast_3x3_cross(a,b):
-            # Index only once
-            a0 = a[0]
-            a1 = a[1]
-            a2 = a[2]
-            b0 = b[0]
-            b1 = b[1]
-            b2 = b[2]
-
-            x = a1*b2 - a2*b1
-            y = a2*b0 - a0*b2
-            z = a0*b1 - a1*b0
-
-            vec = np.array([x,y,z])
-            return vec
 
         for f_idx in f_idxs:
             v2 = self.vertices[self._halfedges['vertex'][self._halfedges['prev'][self._faces['halfedge'][f_idx]]]]
@@ -751,7 +784,7 @@ class TriangleMesh(object):
         """
 
         ed, idx, self._halfedges, self._halfedge_vacancies = self._insert(vertex, self._halfedges, self._halfedge_vacancies, 'vertex', compact, **kwargs)
-            
+        
         return ed, idx
 
     def _new_face(self, _edge, compact=False, **kwargs):
@@ -933,7 +966,7 @@ class TriangleMesh(object):
 
         # If there's already an edge between these two vertices, don't flip
         if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
-            return False
+            return
 
         # _next's next and prev must be adjusted
         self._halfedges['prev'][_next] = _twin_prev
@@ -989,74 +1022,20 @@ class TriangleMesh(object):
 
             self._faces_by_vertex = None
 
-        return True
-
-    # def regularize(self):
-    #     """
-    #     Adjust vertices so they tend toward valence = 6.
-    #     """
-    #     for i in np.argsort(self._vertices['valence'])[::-1]:
-    #         val1 = self._vertices['valence'][i]
-
-    #         # Don't update valence 6 vertices, they're good
-    #         if (val1 == 6) or (val1 == -1): # or (val1 < 4):
-    #             continue
-
-    #         s1 = (val1-6)
-
-    #         # Look through the neighbors for a suitable edge to flip
-    #         for _edge in self._vertices['neighbors'][i]:
-    #             val2 = self._vertices['valence'][ self._halfedges['vertex'][_edge]]
-
-    #             if (val2 == 6) or (val2 == -1): # or (val2 < 4):
-    #                 continue
-
-    #             # Calculate the distance of each valence to the optimal valence
-    #             s2 = (val2-6)
-
-    #             # Skip long and short edges (re: Surazhsku and Gostman, 2003) as they will
-    #             # be handled by edge split/collapse
-    #             if (s1*s2) > 0:
-    #                 continue
-
-    #             print('Flipping: ' + str(val1) + ', ' + str(val2))
-
-    #             flipped = self.edge_flip(_edge)
-    #             if not flipped:
-    #                 # This one was gonna screw up the manifoldness. Check again.
-    #                 continue
-
-    #             # Once we've flipped one edge incident on this vertex, move on
-    #             break
-    @property
-    def edge_dict(self):
-        edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['twin']]['vertex']]).T
-
-        d = {}
-        for i, e in enumerate(pack_edges(edges)):
-            d[e] = i
-            
-        return d
-
     def regularize(self):
         """
-        Adjust vertices so they tend toward valence < 6.
+        Adjust vertices so they tend toward valence 6.
         """
     
-        # Make sure we don't flip edges forever (we can always try a further refinement)
-        n_tries = 17
-    
-    
         j = 0
-    
-        while (j < n_tries) and max(self._valences > 6):
+        while (j < 17) and max(self._valences > 6):
             j += 1
         
             # Find which vertices have high valences
             problems = np.where(self._valences > 6)[0]
             delta0 = np.abs(self._valences[problems] - 6)
                         
-            #find max-valence incident vertex
+            # Find max-valence incident vertex
             neighbours = self._vertex_neighbors[problems]
             neighbour_vertices = self._halfedges[neighbours]['vertex']
             _target_valence_n_id = np.argmax(self._valences[neighbour_vertices], axis=1)
@@ -1064,14 +1043,14 @@ class TriangleMesh(object):
             
             e_to_flip = _target_valence_n_e
         
-            #find low-valence vertices
+            # Find low-valence vertices
             p1 = np.where((self._valences > 0) & (self._valences < 6))[0]
             delta1 = np.abs(self._valences[p1] - 6)
         
             deltas = np.hstack((delta0, delta1))
             edges_to_flip = np.hstack((e_to_flip, self._halfedges[self._vertex_halfedges[p1]]['next']))
 
-            #flip the worst offenders first
+            # Flip the worst offenders first
             edges_to_flip = edges_to_flip[np.argsort(deltas)[::-1]]
             
             ef = list(edges_to_flip)
@@ -1085,7 +1064,6 @@ class TriangleMesh(object):
                 k += 1
                 
             edges_to_flip = np.array(ef)
-        
         
             # print(len(edges_to_flip), len(problems), len(p1))
             
@@ -1182,7 +1160,7 @@ class TriangleMesh(object):
             print('Split count: %d' % (split_count))
             
             if self.debug:
-                #check for dud half edges
+                # check for dud half edges
                 _valid = self._halfedges['vertex'] != -1
                 assert(not np.any(self._halfedges['twin'][_valid] == -1))
                 assert (not np.any(self._halfedges['next'][_valid] == -1))
@@ -1206,28 +1184,11 @@ class TriangleMesh(object):
             # 4. Relocate vertices on the surface by tangential smoothing.
             self.relax(l=l, n=n_relax)
 
-    def _edge_valences(self):
-        edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
-        packed_edges = pack_edges(edges)
-        e, c = np.unique(packed_edges, return_counts=True)
-
-        d = {}
-        for k, v in zip(e, c):
-            d[k] = v
-        
-        return d
-
     def repair(self):
         """
         Make the mesh manifold.
         """
         pass
-
-        # 1. Delete edges of valence > 2
-        # 2. Find edges with _prev == -1 and _next == -1, but with a defined twin
-        # 3. Loop over the halfedges emanating from the twin vertex, find the one
-        #    forming the smallest dihedral angle with the original vertex, set this
-        #    as the twin of the original vertex's prev
 
     def to_stl(self, filename):
         """
