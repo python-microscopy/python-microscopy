@@ -2,6 +2,76 @@ import numpy as np
 from PYME.IO.MetaDataHandler import get_camera_roi_origin, NestedClassMDHandler
 import os
 import glob
+import collections
+
+CacheEntry = collections.namedtuple('CacheEntry', ['data', 'saved'])
+
+class TileCache(object):
+    def __init__(self, max_size=1000):
+        self._max_size = max_size
+        self._cache = {}
+        #self._cache_size=0
+        self._cache_keys = []
+        
+    def load(self, filename):
+        try:
+            return self._cache[filename].data
+        except KeyError:
+            data = np.load(filename)
+            self._add(filename, data, saved=True)
+            return data
+        
+    def save(self, filename, data):
+        self._add(filename, data, saved=False)
+        
+    def _save_entry(self, filename):
+        item = self._cache[filename]
+        if not item.saved:
+            np.save(filename, item.data)
+            self._cache[filename] = CacheEntry(data=item.data, saved=True)
+            
+        
+    def _add(self, filename, data, saved=True):
+        if filename in self._cache_keys:
+            # replace existing item
+            # we are going to be a bit sneaky, and remove the key before re-adding it later. This will move the key to the
+            # back of the list, making it the most recently accessed (and least likely to be popped to make way for new data)
+            self._cache_keys.remove(filename)
+            
+        if len(self._cache_keys) >= self._max_size:
+            # adding item would make us too large, pop oldest entry from our cache
+            fn = self._cache_keys.pop(0) #remove oldest item
+            self._drop(fn)
+        
+        self._cache_keys.append(filename)
+        self._cache[filename] = CacheEntry(data=data, saved=saved)
+            
+    def _drop(self, filename):
+        item = self._cache.pop(filename)
+        if not item.saved:
+            np.save(filename, item.data)
+            
+    def flush(self):
+        for filename, item  in self._cache.items():
+            if not item.saved:
+                np.save(filename, item.data)
+                self._cache[filename] = CacheEntry(data=item.data, saved=True)
+                
+    def remove(self, filename):
+        if filename in self._cache_keys:
+            self._cache_keys.remove(filename)
+            self._cache.pop(filename)
+            
+        if os.path.exists(filename):
+            os.remove(filename)
+                
+    def purge(self):
+        self.flush()
+        self._cache_keys = []
+        self._cache = {}
+        
+    def exists(self, filename):
+        return (filename in self._cache_keys) or os.path.exists(filename)
 
 class ImagePyramid(object):
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, pixel_size=1):
@@ -27,11 +97,13 @@ class ImagePyramid(object):
         
         if not os.path.exists(self.base_dir):
             os.makedirs(self.base_dir)
+            
+        self._tilecache = TileCache()
     
     def get_tile(self, layer, x, y):
         fname = os.path.join(self.base_dir, '%d' % layer, '%03d' % x, '%03d_%03d_img.npy' % (x, y))
         try:
-            return np.load(fname)
+            return self._tilecache.load(fname)
         except IOError:
             return None
     
@@ -94,7 +166,7 @@ class ImagePyramid(object):
             
             out_filename = os.path.join(x_out_dir, '%03d_%03d_img.npy' % (xc, yc))
             
-            if not os.path.exists(out_filename):
+            if not self._tilecache.exists(out_filename):
                 tile = np.zeros([self.tile_size, self.tile_size])
                 
                 NW = self.get_tile(inputLevel, 2 * xc, 2 * yc)
@@ -117,7 +189,7 @@ class ImagePyramid(object):
                     tile[qsize:, qsize:] = ndimage.zoom(SE, .5)
                     #print(xc, yc, 'SE')
                 
-                np.save(out_filename, tile)
+                self._tilecache.save(out_filename, tile)
         
         return len(new_tile_coords)
     
@@ -127,14 +199,15 @@ class ImagePyramid(object):
                 out_fn = fn[:-7] + 'img.npy'
                 
                 if not os.path.exists(out_fn):
-                    occ = np.load(fn)
+                    occ = self._tilecache.load(fn)
                     sf = 1.0 / occ
                     sf[occ <= .1] = 0
-                    tile_ = np.load(fn[:-7] + 'acc.npy') * sf
-                    
-                    np.save(out_fn, tile_)
+                    tile_ = self._tilecache.load(fn[:-7] + 'acc.npy') * sf
+
+                    self._tilecache.save(out_fn, tile_)
     
     def update_pyramid(self):
+        self._tilecache.flush()
         self._rebuild_base()
         inputLevel = 0
         
@@ -143,14 +216,15 @@ class ImagePyramid(object):
         
         self.pyramid_valid = True
         self.depth = inputLevel
+        self._tilecache.flush()
     
     def _clean_tiles(self, x, y):
         level = 0
         
         tn = os.path.join(self.base_dir, '%d' % level, '%03d' % x, '%03d_%03d_img.npy' % (x, y))
         
-        while os.path.exists(tn):
-            os.remove(tn)
+        while self._tilecache.exists(tn):
+            self._tilecache.remove(tn)
             
             level += 1
             x = int(np.floor(x / 2))
@@ -197,8 +271,8 @@ class ImagePyramid(object):
                 occ_filename = os.path.join(x_out_dir, '%03d_%03d_occ.npy' % (tile_x, tile_y))
                 
                 try:
-                    tile_ = np.load(tile_filename)
-                    occ_ = np.load(occ_filename)
+                    tile_ = self._tilecache.load(tile_filename)
+                    occ_ = self._tilecache.load(occ_filename)
                 except IOError:
                     tile_ = np.zeros([self.tile_size, self.tile_size])
                     occ_ = np.zeros([self.tile_size, self.tile_size])
@@ -218,9 +292,9 @@ class ImagePyramid(object):
                 #print('tile[%d:%d, %d:%d] = frame[%d:%d, %d:%d]' % (xst, xet, yst, yet, xs, xe, ys, ye))
                 tile_[xst:xet, yst:yet] += frame[xs:xe, ys:ye]
                 occ_[xst:xet, yst:yet] += weights[xs:xe, ys:ye]
-                
-                np.save(tile_filename, tile_)
-                np.save(occ_filename, occ_)
+
+                self._tilecache.save(tile_filename, tile_)
+                self._tilecache.save(occ_filename, occ_)
                 
                 self._clean_tiles(tile_x, tile_y)
         
@@ -350,10 +424,12 @@ def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
         
 if __name__ == '__main__':
     import sys
+    from PYME.util import mProfile
+    mProfile.profileOn(['tile_pyramid.py',])
     input_stack, output_dir = sys.argv[1:]
     
     create_pyramid_from_dataset(input_stack, output_dir)
-    
+    mProfile.report()
     
     
     
