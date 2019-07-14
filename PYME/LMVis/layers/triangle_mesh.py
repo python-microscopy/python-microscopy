@@ -12,9 +12,11 @@ from OpenGL.GL import *
 
 
 class WireframeEngine(BaseEngine):
+    _outlines = True
     def __init__(self):
         BaseEngine.__init__(self)
         self.set_shader_program(WireFrameShaderProgram)
+
 
     def render(self, gl_canvas, layer):
         self._set_shader_clipping(gl_canvas)
@@ -28,6 +30,13 @@ class WireframeEngine(BaseEngine):
             glColorPointerf(layer.get_colors())
 
             glDrawArrays(GL_TRIANGLES, 0, n_vertices)
+            
+            if self._outlines:
+                sc = np.array([0.5, 0.5, 0.5, 1])
+                glColorPointerf(layer.get_colors()*sc[None,:])
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+                glDrawArrays(GL_TRIANGLES, 0, n_vertices)
+                
 
 
 class FlatFaceEngine(WireframeEngine):
@@ -37,7 +46,6 @@ class FlatFaceEngine(WireframeEngine):
     def render(self, gl_canvas, layer):
         self.set_shader_program(DefaultShaderProgram)
         WireframeEngine.render(self, gl_canvas, layer)
-
 
 class ShadedFaceEngine(WireframeEngine):
     def __init__(self):
