@@ -54,6 +54,8 @@ class TriangleMesh(object):
         self._vertices[:] = -1  # initialize everything to -1 to start with
         self._vertices['position'] = vertices
         self._vertex_vacancies = []
+        self._loop_subdivision_flip_edges = []
+        self._loop_subdivision_new_vertices = []
 
         self._faces = None  # Contains a pointer to one halfedge associated with each face
         self._faces_by_vertex = None  # Representation of faces by triplets of vertices
@@ -840,7 +842,7 @@ class TriangleMesh(object):
 
         return vx, idx
 
-    def edge_split(self, _curr, live_update=True):
+    def edge_split(self, _curr, live_update=True, loop_subdivide=False):
         """
         Split triangles evenly along an edge specified by halfedege index _curr.
 
@@ -852,6 +854,10 @@ class TriangleMesh(object):
                 Update associated faces and vertices after split. Set to False
                 to handle this externally (useful if operating on multiple, 
                 disjoint edges).
+            loop_subdivide: bool
+                Are we doing loop subdivision? If so, keep track of all edges
+                incident on both a new vertex and an old verex that do not
+                split an existing edge.
         """
         curr_edge = self._halfedges[_curr]
         _prev = curr_edge['prev']
@@ -924,6 +930,11 @@ class TriangleMesh(object):
         self._vertices['halfedge'][_vertex_idx] = _twin
         self._halfedges['next'][_curr] = _he_0_idx
         self._halfedges['prev'][_twin] = _he_1_idx
+
+        if loop_subdivide:
+            # Make sure these edges emanate from the new vertex stored at _vertex_idx
+            self._loop_subdivision_flip_edges.extend([_he_0_idx, _he_2_idx])
+            self._loop_subdivision_new_vertices.extend([_vertex_idx])
 
         if live_update:
             self._update_face_normals([self._halfedges['face'][_he_0_idx], self._halfedges['face'][_he_1_idx], self._halfedges['face'][_he_2_idx], self._halfedges['face'][_he_4_idx]])
@@ -1189,6 +1200,41 @@ class TriangleMesh(object):
         Make the mesh manifold.
         """
         pass
+
+    def loop_subdivide(self, n=1):
+        """
+        Upsample the mesh by a factor of 4 (factor of 2 along each axis in the plane of the mesh).
+
+        References:
+            1. C. T. Loop, “Smooth Subdivision Surfaces Based on Triangles,” University of Utah, 1987.
+            2. http://462cmu.github.io/asst2_meshedit/, task 4
+
+        Parameters
+        ----------
+            n : int
+                Number of upsampling operations to perform.
+        """
+
+        for k in range(n):
+            # 1. Split every edge in the mesh
+            split_edges = {}
+            edges_to_split = np.where(self._halfedges['length'] != -1)[0]  # Mark the original edges
+            # NOTE: We need this expensive operation so as to not split edges we create during the
+            # other edge splits (e.g. if there are -1s interspersed in self._halfedges).
+            for i in edges_to_split:
+                if (i in list(split_edges.keys())):
+                    continue
+                
+                split_edges[self._halfedges['twin'][i]] = i
+                self.edge_split(i, loop_subdivide=True)
+            
+            # 2. Flip any new edge that touches an old vertex and a new vertex
+            for i in np.arange(len(self._loop_subdivision_flip_edges)):
+                e = self._loop_subdivision_flip_edges.pop()  # Empties self._loop_subdivision_flip_edges
+                if (self._halfedges['vertex'][e] in self._loop_subdivision_new_vertices):
+                    # We're trying to flip an edge connected by two new vertices.
+                    continue
+                self.edge_flip(e)
 
     def to_stl(self, filename):
         """
