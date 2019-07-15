@@ -17,7 +17,7 @@ void __openFiles(NSArray* filenames) {
     NSPipe *pipe = [NSPipe pipe];
     //NSFileHandle *file = pipe.fileHandleForReading;
     
-    NSArray *script = @[@"/Users/david/anaconda/bin/VisGUI.py"];
+    NSArray *script = @[@"/Users/david/anaconda/bin/VisGUI"];
     
     NSTask *task = [[NSTask alloc] init];
     //task.launchPath = @"/Users/david/anaconda/bin/dh5view.py";
@@ -98,7 +98,7 @@ int nFiles = 0;
     printf("openFiles\n");
     //printf(filenames[0]);
     if (TRUE){
-        _launchFiles(filenames);
+        __openFiles(filenames);
     } else {
         _openFiles(filenames);
     }
