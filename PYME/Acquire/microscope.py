@@ -718,9 +718,6 @@ class microscope(object):
         integrationTime: float
             Units of seconds.
 
-        Returns
-        -------
-        None
 
         Notes
         -----
@@ -729,9 +726,9 @@ class microscope(object):
         instead of calling directly
         """
         self.cam.SetIntegTime(integrationTime)
-    # FIXME - the getter and setter have different units, which is disgusting.
+    
     def _GetActiveCameraIntegrationTime(self):
-        """Gets the integration time for the active camera (in ms)"""
+        """Gets the integration time for the active camera (in seconds)"""
         return self.cam.GetIntegTime()
         
     def _SetActiveCameraROI(self, ROI):

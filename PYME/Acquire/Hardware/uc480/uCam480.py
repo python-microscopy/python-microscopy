@@ -378,7 +378,7 @@ class uc480Camera:
         ret = uc480.CALL('WaitForNextImage', self.boardHandle, 1000, byref(pData), byref(bufID))
         
         if not ret == uc480.IS_SUCCESS:
-            # print('Wait for image failed with: %s' % ret)
+            print('Wait for image failed with: %s' % ret)
             return
             
         ret = uc480.CALL('CopyImageMem', self.boardHandle, pData, bufID, self.transferBuffer.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
@@ -462,29 +462,18 @@ class uc480Camera:
             self.contMode = True
 
     def SetIntegTime(self, iTime):
-        """
-
-        Parameters
-        ----------
-        iTime: float
-            Integration time, units of seconds
-
-        Returns
-        -------
-
-        """
+        #self.__selectCamera()
         newExp = c_double(0)
         newFrameRate = c_double(0)
         # call takes units of FPS
-        ret = uc480.CALL('SetFrameRate', self.boardHandle, c_double(1./iTime), byref(newFrameRate))
+        ret = uc480.CALL('SetFrameRate', self.boardHandle, c_double(1.0/iTime), byref(newFrameRate))
         if not ret == 0:
             raise RuntimeError('Error setting exp time: %d: %s' % GetError(self.boardHandle))
 
         # call takes units of milliseconds, and has been depreciated since iDS version 3.9, use Exposure instead
-        ret = uc480.CALL('SetExposureTime', self.boardHandle, c_double(1e3 * iTime), ctypes.byref(newExp))
+        ret = uc480.CALL('SetExposureTime', self.boardHandle, c_double(1e3*iTime), ctypes.byref(newExp))
         if not ret == 0:
             raise RuntimeError('Error setting exp time: %d: %s' % GetError(self.boardHandle))
-        # ret = uc480.CALL('Exposure', self.boardHandle, uc480.IS_EXPOSURE_CMD_SET_EXPOSURE)
 
         #print newExp.value, newFrameRate.value
         logger.debug('exposure time: %f, new exposure time: %f' % (1e3 * iTime, newExp.value))
@@ -493,13 +482,6 @@ class uc480Camera:
         self.expTime = newExp.value*1e-3
 
     def GetIntegTime(self):
-        """
-
-        Returns
-        -------
-        integration_time: float
-            units of milliseconds
-        """
         return self.expTime
 
     def SetROIMode(*args):
@@ -551,7 +533,7 @@ class uc480Camera:
         setting = getattr(uc480_h, 'IS_BINNING_%dX_HORIZONTAL' % binning)
         uc480.CALL('SetBinning', self.boardHandle, setting)
         # calling SetFrameRate and Exposure is recommended after changing binning size
-        self.SetIntegTime(self.GetIntegTime() / 1e3)  # fixme- fix get/set unit misamatch in microscope.py
+        self.SetIntegTime(self.GetIntegTime())
 
     def GetHorizBin(self):
         return self.binX == 1
@@ -584,7 +566,7 @@ class uc480Camera:
         setting = getattr(uc480_h, 'IS_BINNING_%dX_VERTICAL' % binning)
         uc480.CALL('SetBinning', self.boardHandle, setting)
         # calling SetFrameRate and Exposure is recommended after changing binning size
-        self.SetIntegTime(self.GetIntegTime()/1e3)  # fixme- fix get/set unit mismatch in microscope.py
+        self.SetIntegTime(self.GetIntegTime())
 
     def GetVertBin(self):
         return self.binY == 1
