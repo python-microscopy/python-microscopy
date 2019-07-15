@@ -23,6 +23,9 @@
 
 from PYME.Acquire.ExecTools import joinBGInit, init_gui, init_hardware
 
+from PYME import config
+#enable high-throughput style directory hashing
+config.config['acquire-spool_subdirectories'] = True
 
 @init_hardware('XY Stage')  # FIXME - may need module-level locks if we add 'x' and 'y' of the xy stage as different piezos
 def mz_stage(scope):
