@@ -34,8 +34,11 @@ def mz_stage(scope):
     # scope.stage.SetSoftLimits(0, [1.06, 20.7])
     # scope.stage.SetSoftLimits(1, [.8, 17.6])
 
-    scope.register_piezo(scope.stage, 'x', needCamRestart=False, channel=0, multiplier=1)
-    scope.register_piezo(scope.stage, 'y', needCamRestart=False, channel=1, multiplier=1)
+    # the stage should match the camera reference frame - i.e. the 'x' channel should be the one which results in lateral
+    # movement on the camera, and the y channel should result in vertical movement on the camera
+    # multipliers should be set (+1 or -1) so that the direction also matches.
+    scope.register_piezo(scope.stage, 'x', needCamRestart=False, channel=1, multiplier=1)
+    scope.register_piezo(scope.stage, 'y', needCamRestart=False, channel=0, multiplier=1)
 
     scope.joystick = MarzHauserJoystick(scope.stage)
     scope.joystick.Enable(True)
@@ -78,7 +81,10 @@ def orca_cam(scope):
     cam = MultiviewOrca(0, multiview_info)
     cam.Init()
 
-    scope.register_camera(cam, 'HamamatsuORCA', rotate=True, flipx=True, flipy=False)
+    # flip and rotate on primary camera should always be false - make the stage match the camera reference frame instead
+    # as it's much easier
+    # TODO - make flip, rotate etc actually work for tiling in case we have two cameras
+    scope.register_camera(cam, 'HamamatsuORCA', rotate=False, flipx=False, flipy=False)
 
     def set_camera_views(views):
         if (views is None) or (len(views) == 0):
