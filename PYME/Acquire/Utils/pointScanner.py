@@ -76,16 +76,6 @@ class PointScanner:
         #self.currPos = (self.xpiezo[0].GetPos(self.xpiezo[1]), self.ypiezo[0].GetPos(self.ypiezo[1]))
 
         self.imsize = self.nx*self.ny
-        # for very large and fast scans (200 x 200 tiles, with 1 ms exposure times) array indexing is too slow, use hash
-        # instead
-        self.x_pixel_position_dict = {}
-        self.x_pixel_position_dict.update(zip(range(self.nx), self.xp))
-        self.y_pixel_position_dict = {}
-        self.y_pixel_position_dict.update(zip(range(self.ny), self.yp))
-
-        logger.debug('X scan range: %f to %f micrometers' % (self.xp.min(), self.xp.max()))
-        logger.debug('X scan range: %f to %f micrometers' % (self.xp.min(), self.xp.max()))
-
         
 
     def start(self):
@@ -179,19 +169,19 @@ class PointScanner:
                 #self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[(callN % (self.imsize))/self.nx])
 
                 #self.scope.SetPos(x=self.xp[callN % self.nx], y = self.yp[(callN % (self.imsize))/self.nx])
-                # todo - precalculate and move out of tick()
+                # todo - precalculate and move out of tick() ???
                 x_i = callN % self.nx
                 y_i = int((callN % (self.imsize))/self.nx)
 
                 # do a bidirectional scan(faster)
                 if ((y_i) % 2):
                     #scan in reverse direction on odd runs
-                    new_x = self.x_pixel_position_dict[(len(self.xp) - 1) - x_i]  # self.xp[(len(self.xp) - 1) - x_i]
+                    new_x = self.xp[(len(self.xp) - 1) - x_i]
                 else:
-                    new_x = self.x_pixel_position_dict[x_i]  # self.xp[x_i]
+                    new_x = self.xp[x_i]
 
                 self.scope.state.setItems({'Positioning.x' : new_x,
-                                           'Positioning.y' : self.y_pixel_position_dict[y_i]  # self.yp[y_i]
+                                           'Positioning.y' : self.yp[y_i]
                                            }, stopCamera = not cam_trigger)
 
                 #print 'SetP'
