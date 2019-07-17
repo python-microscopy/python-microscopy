@@ -32,6 +32,7 @@ cdef extern from "triangle_mesh_utils.h":
     ctypedef struct face_t:
         pass
     void update_vertex_neighbors(np.int32_t *v_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, np.int32_t n_idxs)
+    void update_face_normals(np.int32_t *f_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, np.int32_t n_idxs)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -52,6 +53,29 @@ def c_update_vertex_neighbors(mesh, v_idxs):
     update_vertex_neighbors(<np.int32_t *> v_idxs_buf.buf, <halfedge_t *> halfedges_buf.buf, <vertex_t *> vertices_buf.buf, <face_t *> faces_buf.buf, n_v_idxs)
 
     PyBuffer_Release(&v_idxs_buf)
+    PyBuffer_Release(&halfedges_buf)
+    PyBuffer_Release(&vertices_buf)
+    PyBuffer_Release(&faces_buf)
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def c_update_face_normals(mesh, f_idxs):
+
+    cdef np.int32_t n_f_idxs = len(f_idxs)
+    
+    cdef Py_buffer f_idxs_buf
+    cdef Py_buffer halfedges_buf
+    cdef Py_buffer vertices_buf
+    cdef Py_buffer faces_buf
+
+    PyObject_GetBuffer(f_idxs, &f_idxs_buf, PyBUF_C_CONTIGUOUS)
+    PyObject_GetBuffer(mesh._halfedges, &halfedges_buf, PyBUF_C_CONTIGUOUS)
+    PyObject_GetBuffer(mesh._vertices, &vertices_buf, PyBUF_C_CONTIGUOUS)
+    PyObject_GetBuffer(mesh._faces, &faces_buf, PyBUF_C_CONTIGUOUS)
+
+    update_face_normals(<np.int32_t *> f_idxs_buf.buf, <halfedge_t *> halfedges_buf.buf, <vertex_t *> vertices_buf.buf, <face_t *> faces_buf.buf, n_f_idxs)
+
+    PyBuffer_Release(&f_idxs_buf)
     PyBuffer_Release(&halfedges_buf)
     PyBuffer_Release(&vertices_buf)
     PyBuffer_Release(&faces_buf)

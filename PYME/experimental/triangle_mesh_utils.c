@@ -13,6 +13,22 @@ float norm(float *pos)
     return sqrt(n);
 }
 
+void cross(float *a, float *b, float *n)
+{
+    float a0, a1, a2, b0, b1, b2;
+
+    a0 = a[0];
+    a1 = a[1];
+    a2 = a[2];
+    b0 = b[0];
+    b1 = b[1];
+    b2 = b[2];
+
+    n[0] = a1*b2 - a2*b1;
+    n[1] = a2*b0 - a0*b2;
+    n[2] = a0*b1 - a1*b0;
+}
+
 void update_vertex_neighbors(signed int *v_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
 {
     signed int i, j, k, v_idx, orig_idx, curr_idx, twin_idx;
@@ -85,6 +101,56 @@ void update_vertex_neighbors(signed int *v_idxs, halfedge_t *halfedges, vertex_t
         } else {
             for (k = 0; k < 3; ++k)
                 (curr_vertex->normal)[k] = 0;
+        }
+    }
+}
+
+void update_face_normals(signed int *f_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
+{
+    signed int j, k, f_idx, curr_idx, prev_idx, next_idx;
+    float v1[3], u[3], v[3], n[3], nn;
+    halfedge_t *curr_edge, *prev_edge, *next_edge;
+    face_t *curr_face;
+
+    for (j = 0; j < n_idxs; ++j)
+    {
+        f_idx = f_idxs[j];
+        curr_face = &(faces[f_idx]);
+        curr_idx = curr_face->halfedge;
+
+        if (curr_idx == -1)
+        {
+            for (k = 0; k < 3; ++k)
+                (curr_face->normal)[k] = -1;
+            curr_face->area = -1;
+            break;
+        }
+    
+        curr_edge = &(halfedges[curr_idx]);
+        prev_idx = curr_edge->prev;
+        prev_edge = &(halfedges[prev_idx]);
+        next_idx = curr_edge->next;
+        next_edge = &(halfedges[next_idx]);
+
+        for (k = 0; k < 3; ++k)
+            v1[k] = vertices[curr_edge->vertex].position[k];
+
+        for (k = 0; k < 3; ++k)
+        {
+            u[k] = vertices[prev_edge->vertex].position[k] - v1[k];
+            v[k] = vertices[next_edge->vertex].position[k] - v1[k];
+        }
+
+        cross(u, v, n);
+        nn = norm(n);
+        curr_face->area = 0.5*nn;
+
+        if (nn > 0){
+            for (k = 0; k < 3; ++k)
+                (curr_face->normal)[k] = n[k]/nn;
+        } else {
+            for (k = 0; k < 3; ++k)
+                (curr_face->normal)[k] = 0;
         }
     }
 }

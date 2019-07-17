@@ -199,6 +199,7 @@ class TriangleMesh(object):
         Return the normal of each triangular face.
         """
         if np.all(self._faces['normal'] == -1):
+            # triangle_mesh_utils.c_update_face_normals(self, np.arange(len(self._faces)).astype(np.int32))
             v2 = self.vertices[self._halfedges['vertex'][self._halfedges['prev'][self._faces['halfedge']]]]
             v1 = self.vertices[self._halfedges['vertex'][self._faces['halfedge']]]
             v0 = self.vertices[self._halfedges['vertex'][self._halfedges['next'][self._faces['halfedge']]]]
@@ -228,6 +229,7 @@ class TriangleMesh(object):
         Return the up to 6 neighbors of each vertex.
         """
         if np.all(self._vertices['neighbors'] == -1):
+            # triangle_mesh_utils.c_update_vertex_neighbors(self, np.arange(len(self._vertices)).astype(np.int32))
             for v_idx in np.arange(len(self.vertices)):
                 _orig = self._vertices['halfedge'][v_idx]
                 _curr = _orig
@@ -391,21 +393,23 @@ class TriangleMesh(object):
             List of face indices to recompute.
         """
 
-        for f_idx in f_idxs:
-            v2 = self.vertices[self._halfedges['vertex'][self._halfedges['prev'][self._faces['halfedge'][f_idx]]]]
-            v1 = self.vertices[self._halfedges['vertex'][self._faces['halfedge'][f_idx]]]
-            v0 = self.vertices[self._halfedges['vertex'][self._halfedges['next'][self._faces['halfedge'][f_idx]]]]
-            u = v2 - v1
-            v = v0 - v1
-            n = fast_3x3_cross(u.squeeze(), v.squeeze())
-            nn = np.sqrt((n*n).sum())
-            self._faces['area'][f_idx] = 0.5*nn
-            if (self._faces['halfedge'][f_idx] == -1):
-                self._faces['normal'][f_idx] = -1
-            if (nn > 0):
-                self._faces['normal'][f_idx] = n/nn
-            else:
-                self._faces['normal'][f_idx] = 0
+        triangle_mesh_utils.c_update_face_normals(self, np.array(f_idxs, dtype=np.int32))
+
+        # for f_idx in f_idxs:
+        #     v2 = self.vertices[self._halfedges['vertex'][self._halfedges['prev'][self._faces['halfedge'][f_idx]]]]
+        #     v1 = self.vertices[self._halfedges['vertex'][self._faces['halfedge'][f_idx]]]
+        #     v0 = self.vertices[self._halfedges['vertex'][self._halfedges['next'][self._faces['halfedge'][f_idx]]]]
+        #     u = v2 - v1
+        #     v = v0 - v1
+        #     n = fast_3x3_cross(u.squeeze(), v.squeeze())
+        #     nn = np.sqrt((n*n).sum())
+        #     self._faces['area'][f_idx] = 0.5*nn
+        #     if (self._faces['halfedge'][f_idx] == -1):
+        #         self._faces['normal'][f_idx] = -1
+        #     if (nn > 0):
+        #         self._faces['normal'][f_idx] = n/nn
+        #     else:
+        #         self._faces['normal'][f_idx] = 0
 
     def _update_vertex_neighbors(self, v_idxs):
         """
