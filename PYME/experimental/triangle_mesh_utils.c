@@ -1,5 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
+// #include <stdio.h>
+// #include <stdlib.h>
 #include <math.h>
 
 #include "triangle_mesh_utils.h"
@@ -43,6 +43,8 @@ void update_vertex_neighbors(signed int *v_idxs, halfedge_t *halfedges, vertex_t
     for (j = 0; j < n_idxs; ++j)
     {
         v_idx = v_idxs[j];
+        if (v_idx == -1)
+            continue;
         curr_vertex = &(vertices[v_idx]);
 
         orig_idx = curr_vertex->halfedge;
@@ -115,6 +117,9 @@ void update_face_normals(signed int *f_idxs, halfedge_t *halfedges, vertex_t *ve
     for (j = 0; j < n_idxs; ++j)
     {
         f_idx = f_idxs[j];
+        if (f_idx == -1)
+            continue;
+
         curr_face = &(faces[f_idx]);
         curr_idx = curr_face->halfedge;
 
@@ -123,7 +128,7 @@ void update_face_normals(signed int *f_idxs, halfedge_t *halfedges, vertex_t *ve
             for (k = 0; k < 3; ++k)
                 (curr_face->normal)[k] = -1;
             curr_face->area = -1;
-            break;
+            continue;
         }
     
         curr_edge = &(halfedges[curr_idx]);

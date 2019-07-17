@@ -16,21 +16,21 @@ def pack_edges(arr, axis=1):
     
     return res
 
-def fast_3x3_cross(a,b):
-    # Index only once
-    a0 = a[0]
-    a1 = a[1]
-    a2 = a[2]
-    b0 = b[0]
-    b1 = b[1]
-    b2 = b[2]
+# def fast_3x3_cross(a,b):
+#     # Index only once
+#     a0 = a[0]
+#     a1 = a[1]
+#     a2 = a[2]
+#     b0 = b[0]
+#     b1 = b[1]
+#     b2 = b[2]
 
-    x = a1*b2 - a2*b1
-    y = a2*b0 - a0*b2
-    z = a0*b1 - a1*b0
+#     x = a1*b2 - a2*b1
+#     y = a2*b0 - a0*b2
+#     z = a0*b1 - a1*b0
 
-    vec = np.array([x,y,z])
-    return vec
+#     vec = np.array([x,y,z])
+#     return vec
 
 HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('next', 'i4'), ('prev', 'i4'), ('length', 'f4')])
 FACE_DTYPE = np.dtype([('halfedge', 'i4'), ('normal', '3f4'), ('area', 'f4')])
@@ -199,18 +199,18 @@ class TriangleMesh(object):
         Return the normal of each triangular face.
         """
         if np.all(self._faces['normal'] == -1):
-            # triangle_mesh_utils.c_update_face_normals(self, np.arange(len(self._faces)).astype(np.int32))
-            v2 = self.vertices[self._halfedges['vertex'][self._halfedges['prev'][self._faces['halfedge']]]]
-            v1 = self.vertices[self._halfedges['vertex'][self._faces['halfedge']]]
-            v0 = self.vertices[self._halfedges['vertex'][self._halfedges['next'][self._faces['halfedge']]]]
-            u = v2 - v1
-            v = v0 - v1
-            n = np.cross(u, v, axis=1)
-            nn = np.linalg.norm(n, axis=1)
-            self._faces['area'] = 0.5*nn
-            self._faces['normal'] = n/nn[:, None]
-            self._faces['normal'][np.isnan(self._faces['normal'])] = 0
-            self._faces['normal'][self._faces['halfedge'] == -1] = -1
+            triangle_mesh_utils.c_update_face_normals(self, np.arange(len(self._faces)).astype(np.int32))
+            # v2 = self.vertices[self._halfedges['vertex'][self._halfedges['prev'][self._faces['halfedge']]]]
+            # v1 = self.vertices[self._halfedges['vertex'][self._faces['halfedge']]]
+            # v0 = self.vertices[self._halfedges['vertex'][self._halfedges['next'][self._faces['halfedge']]]]
+            # u = v2 - v1
+            # v = v0 - v1
+            # n = np.cross(u, v, axis=1)
+            # nn = np.linalg.norm(n, axis=1)
+            # self._faces['area'] = 0.5*nn
+            # self._faces['normal'] = n/nn[:, None]
+            # self._faces['normal'][np.isnan(self._faces['normal'])] = 0
+            # self._faces['normal'][self._faces['halfedge'] == -1] = -1
         return self._faces['normal']
 
     @property
@@ -229,46 +229,46 @@ class TriangleMesh(object):
         Return the up to 6 neighbors of each vertex.
         """
         if np.all(self._vertices['neighbors'] == -1):
-            # triangle_mesh_utils.c_update_vertex_neighbors(self, np.arange(len(self._vertices)).astype(np.int32))
-            for v_idx in np.arange(len(self.vertices)):
-                _orig = self._vertices['halfedge'][v_idx]
-                _curr = _orig
+            triangle_mesh_utils.c_update_vertex_neighbors(self, np.arange(len(self._vertices)).astype(np.int32))
+            # for v_idx in np.arange(len(self.vertices)):
+            #     _orig = self._vertices['halfedge'][v_idx]
+            #     _curr = _orig
 
-                curr_edge = self._halfedges[_curr]
-                _twin = curr_edge['twin']
-                twin_edge = self._halfedges[_twin]
+            #     curr_edge = self._halfedges[_curr]
+            #     _twin = curr_edge['twin']
+            #     twin_edge = self._halfedges[_twin]
 
-                self._vertices['normal'][v_idx] = 0
+            #     self._vertices['normal'][v_idx] = 0
 
-                i = 0
-                self._vertices['valence'][v_idx] = 0
-                while True:
-                    if (_curr == -1) or (_twin == -1):
-                        break
-                    _vertex = curr_edge['vertex']
-                    _face = curr_edge['face']
-                    if (i < 8):
-                        self._vertices['neighbors'][v_idx, i] = _curr
-                        n = self._faces['normal'][_face]
-                        a = self._faces['area'][_face]
-                        self._vertices['normal'][v_idx] += n*a
+            #     i = 0
+            #     self._vertices['valence'][v_idx] = 0
+            #     while True:
+            #         if (_curr == -1) or (_twin == -1):
+            #             break
+            #         _vertex = curr_edge['vertex']
+            #         _face = curr_edge['face']
+            #         if (i < 8):
+            #             self._vertices['neighbors'][v_idx, i] = _curr
+            #             n = self._faces['normal'][_face]
+            #             a = self._faces['area'][_face]
+            #             self._vertices['normal'][v_idx] += n*a
                     
-                    l = self._vertices['position'][_vertex] - self._vertices['position'][self._halfedges['vertex'][curr_edge['prev']]]
-                    curr_edge['length'] = np.sqrt((l*l).sum())
+            #         l = self._vertices['position'][_vertex] - self._vertices['position'][self._halfedges['vertex'][curr_edge['prev']]]
+            #         curr_edge['length'] = np.sqrt((l*l).sum())
 
-                    _curr = twin_edge['next']
-                    curr_edge = self._halfedges[_curr]
-                    _twin = curr_edge['twin']
-                    twin_edge = self._halfedges[_twin]
+            #         _curr = twin_edge['next']
+            #         curr_edge = self._halfedges[_curr]
+            #         _twin = curr_edge['twin']
+            #         twin_edge = self._halfedges[_twin]
 
-                    i += 1
-                    if (_curr == _orig):
-                        break
-                self._vertices['valence'][v_idx] = i
-            nn = np.linalg.norm(self._vertices['normal'], axis=1)
-            self._vertices['normal'] /= nn[:, None]
-            self._vertices['normal'][np.isnan(self._vertices['normal'])] = 0
-            self._vertices['normal'][self._vertices['halfedge'] == -1] = -1
+            #         i += 1
+            #         if (_curr == _orig):
+            #             break
+            #     self._vertices['valence'][v_idx] = i
+            # nn = np.linalg.norm(self._vertices['normal'], axis=1)
+            # self._vertices['normal'] /= nn[:, None]
+            # self._vertices['normal'][np.isnan(self._vertices['normal'])] = 0
+            # self._vertices['normal'][self._vertices['halfedge'] == -1] = -1
 
         return self._vertices['neighbors']
 
@@ -1173,7 +1173,7 @@ class TriangleMesh(object):
 
         if (target_edge_length <= 0.25*mean_edge_length):
             # Apply loop subdivision first.
-            print('Upsampling...')
+            # print('Upsampling...')
             n_iters = int(mean_edge_length/target_edge_length/4. + 0.5)
             self.loop_subdivide(n_iters)
 
