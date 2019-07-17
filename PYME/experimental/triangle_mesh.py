@@ -1,5 +1,7 @@
 import numpy as np
 
+from PYME.experimental import triangle_mesh_utils
+
 def pack_edges(arr, axis=1):
     """
     Stores edges as a single unique integer. 
@@ -414,69 +416,71 @@ class TriangleMesh(object):
             v_idxs : list or np.array
                 List of vertex indicies indicating which vertices to update.
         """
+
+        triangle_mesh_utils.c_update_vertex_neighbors(self, np.array(v_idxs, dtype=np.int32))
         
-        for v_idx in v_idxs:
-            _orig = self._vertices['halfedge'][v_idx]
-            _curr = _orig
+        # for v_idx in v_idxs:
+        #     _orig = self._vertices['halfedge'][v_idx]
+        #     _curr = _orig
             
-            curr_edge = self._halfedges[_curr]
-            _twin = curr_edge['twin']
-            twin_edge = self._halfedges[_twin]
+        #     curr_edge = self._halfedges[_curr]
+        #     _twin = curr_edge['twin']
+        #     twin_edge = self._halfedges[_twin]
             
-            if self.debug and (twin_edge['vertex'] != v_idx):
-                print(_curr, curr_edge, _twin,twin_edge)
-                raise RuntimeError('Twin (%d) should point back to starting vertex (%d) but points to %d' % (_twin, v_idx, twin_edge['vertex']))
+        #     if self.debug and (twin_edge['vertex'] != v_idx):
+        #         print(_curr, curr_edge, _twin,twin_edge)
+        #         raise RuntimeError('Twin (%d) should point back to starting vertex (%d) but points to %d' % (_twin, v_idx, twin_edge['vertex']))
             
-            i = 0
-            self._vertices['valence'][v_idx] = 0
-            self._vertices['neighbors'][v_idx] = -1
-            self._vertices['normal'][v_idx] = 0
+        #     i = 0
+        #     self._vertices['valence'][v_idx] = 0
+        #     self._vertices['neighbors'][v_idx] = -1
+        #     self._vertices['normal'][v_idx] = 0
             
-            _normal = 0*self._vertices['normal'][v_idx]  # avoid a few lookups by using a local variable
+        #     _normal = 0*self._vertices['normal'][v_idx]  # avoid a few lookups by using a local variable
 
-            while True:
-                if (_curr == -1) or (_twin == -1):
-                    break
+        #     while True:
+        #         if (_curr == -1) or (_twin == -1):
+        #             break
 
-                if (i < 8):
-                    self._vertices['neighbors'][v_idx, i] = _curr
+        #         if (i < 8):
+        #             self._vertices['neighbors'][v_idx, i] = _curr
                     
-                    #TODO - should these be in if clause?
-                    _face = curr_edge['face']
-                    n = self._faces['normal'][_face]
-                    a = self._faces['area'][_face]
-                    _normal += n*a
-                else:
-                    pass
-                    if self.debug and (i > 20):
-                        raise RuntimeError('Abnormal vertex valance detected on vertex %d' % v_idx)
+        #             #TODO - should these be in if clause?
+        #             _face = curr_edge['face']
+        #             n = self._faces['normal'][_face]
+        #             a = self._faces['area'][_face]
+        #             _normal += n*a
+        #         else:
+        #             pass
+        #             if self.debug and (i > 20):
+        #                 raise RuntimeError('Abnormal vertex valance detected on vertex %d' % v_idx)
                 
-                vertex = self._vertices['position'][v_idx]
-                l = vertex - self._vertices['position'][curr_edge['vertex']]
-                l = np.sqrt((l*l).sum())
-                curr_edge['length'] = l
-                twin_edge['length'] = l
+        #         vertex = self._vertices['position'][v_idx]
+        #         l = vertex - self._vertices['position'][curr_edge['vertex']]
+        #         l = np.sqrt((l*l).sum())
+        #         curr_edge['length'] = l
+        #         twin_edge['length'] = l
                 
-                _curr = twin_edge['next']
-                curr_edge = self._halfedges[_curr]
-                _twin = curr_edge['twin']
-                twin_edge = self._halfedges[_twin]
+        #         _curr = twin_edge['next']
+        #         curr_edge = self._halfedges[_curr]
+        #         _twin = curr_edge['twin']
+        #         twin_edge = self._halfedges[_twin]
                 
-                i += 1
+        #         i += 1
                 
-                if (_curr == _orig):
-                    break
+        #         if (_curr == _orig):
+        #             break
 
-            self._vertices['valence'][v_idx] = i
+        #     self._vertices['valence'][v_idx] = i
 
-            if self.debug and (self._valences[v_idx] < 3):
-                raise RuntimeError('Detected valence <3 on vertex %d' % v_idx)
+        #     if self.debug and (self._valences[v_idx] < 3):
+        #         raise RuntimeError('Detected valence <3 on vertex %d' % v_idx)
 
-            nn = np.sqrt((_normal*_normal).sum())
-            if nn > 0:
-                self._vertices['normal'][v_idx] = _normal/nn
-            else:
-                self._vertices['normal'][v_idx] = 0
+        #     nn = np.sqrt((_normal*_normal).sum())
+        #     if nn > 0:
+        #         self._vertices['normal'][v_idx] = _normal/nn
+        #     else:
+        #         self._vertices['normal'][v_idx] = 0
 
     def _resize(self, vec, axis=0, skip_entries=True, return_orig=False, key=None):
         """
@@ -1136,7 +1140,7 @@ class TriangleMesh(object):
         self.face_normals
         self.vertex_normals
 
-    def remesh(self, edge_length=-1, l=1, n=1, n_relax=1):
+    def remesh(self, n=5, target_edge_length=-1, l=0.5, n_relax=10):
         """
         Produce a higher-quality mesh.
 
@@ -1146,26 +1150,34 @@ class TriangleMesh(object):
 
         Parameters
         ----------
-            edge_length : float
+            n : int
+                Number of remeshing iterations to apply.
+            target_edge_length : float
                 Target edge length for all edges in the mesh.
             l : float
                 Relaxation regularization term, used to avoid oscillations.
-            n : int
-                Number of remeshing iterations to apply.
             n_relax : int 
                 Number of Lloyd relaxation (relax()) iterations to apply 
                 per remeshing iteration.
         """
 
-        if (edge_length == -1):
+        mean_edge_length = np.mean(self._halfedges['length'][self._halfedges['length'] != -1])
+
+        if (target_edge_length == -1):
             # Guess edge_length
-            edge_length = np.mean(self._halfedges['length'][self._halfedges['length'] != -1])
+            target_edge_length = mean_edge_length
+
+        if (target_edge_length <= 0.25*mean_edge_length):
+            # Apply loop subdivision first.
+            print('Upsampling...')
+            n_iters = int(mean_edge_length/target_edge_length/4. + 0.5)
+            self.loop_subdivide(n_iters)
 
         for k in range(n):
-            # 1. Split all edges longer than (4/3)*edge_length at their midpoint.
+            # 1. Split all edges longer than (4/3)*target_edge_length at their midpoint.
             split_count = 0
             for i in np.arange(len(self._halfedges['length'])):
-                if (self._halfedges['length'][i] >= 0) and (self._halfedges['length'][i] > 1.33*edge_length):
+                if (self._halfedges['length'][i] >= 0) and (self._halfedges['length'][i] > 1.33*target_edge_length):
                     self.edge_split(i)
                     split_count += 1
             print('Split count: %d' % (split_count))
@@ -1181,10 +1193,10 @@ class TriangleMesh(object):
                 
                 assert(self._vertices['valence'][self._vertices['valence']>0].min() >=3)
         
-            # 2. Collapse all edges shorter than (4/5)*edge_length to their midpoint.
+            # 2. Collapse all edges shorter than (4/5)*target_edge_length to their midpoint.
             collapse_count = 0
             for i in np.arange(len(self._halfedges['length'])):
-                if (self._halfedges['length'][i] >=0) and (self._halfedges['length'][i] < 0.8*edge_length):
+                if (self._halfedges['length'][i] >=0) and (self._halfedges['length'][i] < 0.8*target_edge_length):
                     self.edge_collapse(i)
                     collapse_count += 1
             print('Collapse count: ' + str(collapse_count))
