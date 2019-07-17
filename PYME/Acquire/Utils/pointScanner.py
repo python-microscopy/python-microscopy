@@ -55,16 +55,14 @@ class PointScanner:
 
     def genCoords(self):
         self.currPos = self.scope.GetPos()
+        logger.debug(self.currPos)
         
         if np.isscalar(self.pixels):
-            #constant - use as number of pixels
-            #center on current piezo position
-            #print self.pixelsize[0]
+            #constant - use as number of pixels, center on current piezo position
             self.xp = self.pixelsize[0]*np.arange(-self.pixels/2, self.pixels/2 +1) + self.currPos['x']
             self.yp = self.pixelsize[1]*np.arange(-self.pixels/2, self.pixels/2 +1) + self.currPos['y']
         elif np.isscalar(self.pixels[0]):
             #a 1D array - numbers in either direction centered on piezo pos
-            #print self.pixelsize[0]
             self.xp = self.pixelsize[0]*np.arange(-self.pixels[0]/2, self.pixels[0]/2 +1) + self.currPos['x']
             self.yp = self.pixelsize[1]*np.arange(-self.pixels[1]/2, self.pixels[1]/2 +1) + self.currPos['y']
         else:
@@ -171,7 +169,7 @@ class PointScanner:
                 #self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[(callN % (self.imsize))/self.nx])
 
                 #self.scope.SetPos(x=self.xp[callN % self.nx], y = self.yp[(callN % (self.imsize))/self.nx])
-
+                # todo - precalculate and move out of tick() ???
                 x_i = callN % self.nx
                 y_i = int((callN % (self.imsize))/self.nx)
 

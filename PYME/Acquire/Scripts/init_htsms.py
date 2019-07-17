@@ -21,9 +21,11 @@
 #
 ##################
 
-#!/usr/bin/python
 from PYME.Acquire.ExecTools import joinBGInit, init_gui, init_hardware
 
+from PYME import config
+#enable high-throughput style directory hashing
+config.config['acquire-spool_subdirectories'] = True
 
 @init_hardware('XY Stage')  # FIXME - may need module-level locks if we add 'x' and 'y' of the xy stage as different piezos
 def mz_stage(scope):
@@ -32,8 +34,11 @@ def mz_stage(scope):
     # scope.stage.SetSoftLimits(0, [1.06, 20.7])
     # scope.stage.SetSoftLimits(1, [.8, 17.6])
 
-    scope.register_piezo(scope.stage, 'x', needCamRestart=False, channel=0, multiplier=1)
-    scope.register_piezo(scope.stage, 'y', needCamRestart=False, channel=1, multiplier=1)
+    # the stage should match the camera reference frame - i.e. the 'x' channel should be the one which results in lateral
+    # movement on the camera, and the y channel should result in vertical movement on the camera
+    # multipliers should be set (+1 or -1) so that the direction also matches.
+    scope.register_piezo(scope.stage, 'x', needCamRestart=False, channel=1, multiplier=1)
+    scope.register_piezo(scope.stage, 'y', needCamRestart=False, channel=0, multiplier=1)
 
     scope.joystick = MarzHauserJoystick(scope.stage)
     scope.joystick.Enable(True)
@@ -66,16 +71,20 @@ def orca_cam(scope):
     size = 240
     multiview_info = {
         'Multiview.NumROIs': 4,
+        'Multiview.ChannelColor': [0, 1, 1, 0],
         'Multiview.ROISize': (size, size),
-        'Multiview.ROI0Origin': (104, 1024 - int(size/2)),
-        'Multiview.ROI1Origin': (844, 1024 - int(size/2)),
-        'Multiview.ROI2Origin': (1252, 1024 - int(size/2)),
-        'Multiview.ROI3Origin': (1724, 1024 - int(size/2)),
+        'Multiview.ROI0Origin': (104, 1024 - int(size / 2)),
+        'Multiview.ROI1Origin': (844, 1024 - int(size / 2)),
+        'Multiview.ROI2Origin': (1252, 1024 - int(size / 2)),
+        'Multiview.ROI3Origin': (1724, 1024 - int(size / 2)),
     }
     cam = MultiviewOrca(0, multiview_info)
     cam.Init()
 
-    scope.register_camera(cam, 'HamamatsuORCA', rotate=True, flipx=True, flipy=False)
+    # flip and rotate on primary camera should always be false - make the stage match the camera reference frame instead
+    # as it's much easier
+    # TODO - make flip, rotate etc actually work for tiling in case we have two cameras
+    scope.register_camera(cam, 'HamamatsuORCA', rotate=False, flipx=False, flipy=False)
 
     def set_camera_views(views):
         if (views is None) or (len(views) == 0):
@@ -83,7 +92,7 @@ def orca_cam(scope):
         else:
             cam.enable_multiview(views)
 
-    scope.state.registerHandler('Camera.Views', lambda : cam.active_views, set_camera_views, True)
+    scope.state.registerHandler('Camera.Views', lambda: cam.active_views, set_camera_views, True)
 
 
 @init_gui('sCMOS Camera controls')
@@ -97,7 +106,7 @@ def orca_cam_controls(MainFrame, scope):
 
     # TODO - add a ROI / Views panel
 
-    MainFrame.AddMenuItem('Camera','Set Multiview', lambda e: scope.state.setItem('Camera.Views',[0,1,2,3]))
+    MainFrame.AddMenuItem('Camera', 'Set Multiview', lambda e: scope.state.setItem('Camera.Views', [0, 1, 2, 3]))
     MainFrame.AddMenuItem('Camera', 'Clear Multiview', lambda e: scope.state.setItem('Camera.Views', []))
 
     # from PYME.Acquire.ui import multiview_panel
@@ -117,36 +126,94 @@ def orca_cam_controls(MainFrame, scope):
 #     AnalysisSettingsUI.Plug(scope, MainFrame)
 
 
-
-
-
-
 @init_hardware('Lasers & Shutters')
 def lasers(scope):
     from PYME.Acquire.Hardware.Coherent import OBIS
     from PYME.Acquire.Hardware.MPBCommunications import MPBCW
+    from PYME.Acquire.Hardware.AAOptoelectronics.MDS import AAOptoMDS
+    from PYME.Acquire.Hardware.aotf import AOTFControlledLaser
 
-    scope.l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405')
-    scope.CleanupFunctions.append(scope.l405.Close())
+    # key's are zero-indexed, MDS class does the same but add's one in commands when needed to match MDS API
+    aotf_calibrations = {  # note this is a test dummy TODO - load from file
+        0: {
+            'wavelength': 405,  # nm
+            'frequency': 154.3,  # MHz
+            'aotf_setting': [
+                18.3, 16, 14, 12, 10, 8.1, 0  # dBm
+            ],
+            'output': [ # note that 0 aotf_setting must correspond with 0 output setting
+                1, 0.9, 0.7, 0.6, 0.4, 0.3, 0  # mW measured after objective
+            ],
+            'laser_setting': 100
+        },
+        1: {
+            'wavelength': 488,  # nm
+            'frequency': 115.614,  # MHz
+            'aotf_setting': [
+                0, 18.9, 18, 16, 14, 12, 10, 8, 6.1, 4, 2  # dBm
+            ],
+            'output': [  # note that 0 aotf_setting must correspond with 0 output setting
+                0, 7.25, 6.9, 5.6, 4, 2.7, 1.8, 1, 0.6, 0.3, 0.2  # mW measured after objective
+            ],
+            'laser_setting': 45  # mW
+        },
+        2: {
+            'wavelength': 560,  # nm
+            'frequency': 94.820,  # MHz
+            'aotf_setting': [
+                20.1, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0  # dBm
+            ],
+            'output': [  # note that 0 aotf_setting must correspond with 0 output setting
+                88.9, 77.5, 60, 41.7, 28.2, 18.4, 12.2, 7.9, 5.1, 3.5, 2.5  # mW measured after objective
+            ],
+            'laser_setting': 200
+        },
+        3: {
+            'wavelength': 642,  # nm
+            'frequency': 79.838,  # MHz
+            'aotf_setting': [
+                22.1, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0  # dBm
+            ],
+            'output': [ # note that 0 aotf_setting must correspond with 0 output setting
+                82, 76.6, 61, 44.4, 30.6, 21.6, 14.9, 10.6, 7.8, 5.9, 4.8, 4.3  # mW measured after objective
+            ],
+            'laser_setting': 200
+        },
+    }
 
-    scope.l488 = OBIS.CoherentOBISLaser('COM13', name='OBIS488')
-    scope.CleanupFunctions.append(scope.l488.Close())
+    from PYME.Acquire.Hardware.ioslave import FiberShaker
+    # pins 3 and 5
+    fiber_shaker = FiberShaker('COM9', channel=3, on_voltage=2.5)
 
-    scope.l560 = MPBCW.MPBCWLaser('COM11', name='MPB560', init_power=200)  # minimum power for our MPB lasers is 200 mW
-    scope.CleanupFunctions.append(scope.l560.Close())
+    scope.aotf = AAOptoMDS(aotf_calibrations, 'COM14', 'AAOptoMDS', n_chans=4)
+    scope.CleanupFunctions.append(scope.aotf.Close)
 
-    scope.l642 = MPBCW.MPBCWLaser('COM12', name='MPB642', init_power=200)  # minimum power for our MPB lasers is 200 mW
-    scope.CleanupFunctions.append(scope.l642.Close())
+    l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turn_on=False)
+    scope.CleanupFunctions.append(l405.Close)
+    scope.l405 = AOTFControlledLaser(l405, scope.aotf, 0, chained_devices=[fiber_shaker])
+    scope.l405.register(scope)
 
-    scope.lasers = [scope.l405, scope.l488, scope.l560, scope.l642]
+    l488 = OBIS.CoherentOBISLaser('COM13', name='OBIS488', turn_on=False)
+    scope.CleanupFunctions.append(l488.Close)
+    scope.l488 = AOTFControlledLaser(l488, scope.aotf, 1, chained_devices=[fiber_shaker])
+    scope.l488.register(scope)
+
+    l560 = MPBCW.MPBCWLaser('COM11', name='MPB560', turn_on=True,
+                            init_power=200)  # minimum power for our MPB lasers is 200 mW
+    scope.l560 = AOTFControlledLaser(l560, scope.aotf, 2, chained_devices=[fiber_shaker])
+    scope.CleanupFunctions.append(scope.l560.Close)
+    scope.l560.register(scope)
+
+    l642 = MPBCW.MPBCWLaser('COM12', name='MPB642', turn_on=True,
+                            init_power=200)  # minimum power for our MPB lasers is 200 mW
+    scope.CleanupFunctions.append(l642.Close)
+    scope.l642 = AOTFControlledLaser(l642, scope.aotf, 3, chained_devices=[fiber_shaker])
+    scope.l642.register(scope)
+
 
 @init_gui('Laser controls')
 def laser_controls(MainFrame, scope):
     from PYME.Acquire.ui import lasersliders
-
-    lcf = lasersliders.LaserToggles(MainFrame.toolPanel, scope.state)
-    MainFrame.time1.WantNotification.append(lcf.update)
-    MainFrame.camPanels.append((lcf, 'Laser Control'))
 
     lsf = lasersliders.LaserSliders(MainFrame.toolPanel, scope.state)
     MainFrame.time1.WantNotification.append(lsf.update)
@@ -189,7 +256,7 @@ def focus_keys(MainFrame, scope):
 @init_gui('Action manager')
 def action_manager(MainFrame, scope):
     from PYME.Acquire.ui import actionUI
-    
+
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
 

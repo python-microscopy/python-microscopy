@@ -27,8 +27,6 @@
 import wx
 import datetime
 
-from PYME.IO.FileUtils.freeSpace import get_free_space
-
 import PYME.Acquire.Protocols
 #from PYME.Acquire.SpoolController import SpoolController
 
@@ -50,6 +48,9 @@ import sys
 import  PYME.ui.manualFoldPanel as afp
 from . import seqdialog
 from . import AnalysisSettingsUI
+
+import logging
+logger = logging.getLogger(__name__)
 
 class PanSpool(afp.foldingPane):
     """A Panel containing the GUI controls for spooling"""
@@ -341,7 +342,7 @@ class PanSpool(afp.foldingPane):
         Designed to be used as a callback with one of the system timers, but 
         can be called separately
         """
-        freeGB = get_free_space(self.spoolController.dirname)/1e9
+        freeGB = self.spoolController.get_free_space()
         self.stDiskSpace.SetLabel('Free Space: %3.2f GB' % freeGB)
         if freeGB < 5:
             self.stDiskSpace.SetForegroundColour(wx.Colour(200, 0,0))
@@ -415,6 +416,7 @@ class PanSpool(afp.foldingPane):
             self.spoolController.StartSpooling(fn, stack=stack, compLevel = compLevel, compressionSettings=compSettings,
                                                cluster_h5=self.cbClusterh5.GetValue())
         except IOError:
+            logger.exception('IO error whilst spooling')
             ans = wx.MessageBox('A series with the same name already exists', 'Error', wx.OK)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)
             

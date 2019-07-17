@@ -25,7 +25,9 @@ c_char = ctypes.c_byte
 c_char_p = ctypes.POINTER(ctypes.c_byte)
 c_int_p = ctypes.POINTER(ctypes.c_int)
 from ctypes import c_int
-IS_CHAR = ctypes.c_byte 
+IS_CHAR = ctypes.c_byte
+
+BINNING_FACTORS = [2, 3, 4, 5, 6, 8, 16]
 
 class CAMINFO(ctypes.Structure):
     _fields_ = [("SerNo",ctypes.c_char*12),  # (11 char)

@@ -72,7 +72,7 @@ class piezo_e816(PiezoBase):
     def ReInit(self):
         #self.ser_port.write('WTO A0\n')
         #self.ser_port.write('SVO A1\n')
-        gcs.SVO(b'A', [1])
+        gcs.SVO(self.id, b'A', [1])
         self.lastPos = self.GetPos() 
         
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
@@ -274,7 +274,7 @@ class piezo_e816T(PiezoBase):
                     gcs.MOV(self.id, b'A', pos[:1])
                     self.lastTargetPosition = pos.copy()
                     # print('p')
-                    logging.debug('Moving piezo to target: %f' % (pos[0],))
+                    # logging.debug('Moving piezo to target: %f' % (pos[0],))
 
                 if np.allclose(self.position, self.targetPosition, atol=.002):
                     self.onTarget = True
