@@ -13,21 +13,31 @@ class TileCache(object):
         #self._cache_size=0
         self._cache_keys = []
         
+    def _load(self, filename):
+        return np.load(filename)
+        
     def load(self, filename):
         try:
             return self._cache[filename].data
         except KeyError:
-            data = np.load(filename)
+            data = self._load(filename)
             self._add(filename, data, saved=True)
             return data
         
     def save(self, filename, data):
         self._add(filename, data, saved=False)
         
+    def _save(self, filename, data):
+        dirname = os.path.split(filename)[0]
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+            
+        np.save(filename, data)
+        
     def _save_entry(self, filename):
         item = self._cache[filename]
         if not item.saved:
-            np.save(filename, item.data)
+            self._save(filename, item.data)
             self._cache[filename] = CacheEntry(data=item.data, saved=True)
             
         
@@ -49,12 +59,12 @@ class TileCache(object):
     def _drop(self, filename):
         item = self._cache.pop(filename)
         if not item.saved:
-            np.save(filename, item.data)
+            self._save(filename, item.data)
             
     def flush(self):
         for filename, item  in self._cache.items():
             if not item.saved:
-                np.save(filename, item.data)
+                self._save(filename, item.data)
                 self._cache[filename] = CacheEntry(data=item.data, saved=True)
                 
     def remove(self, filename):
@@ -72,6 +82,86 @@ class TileCache(object):
         
     def exists(self, filename):
         return (filename in self._cache_keys) or os.path.exists(filename)
+    
+    
+class PZFTileCache(TileCache):
+    def _save(self, filename, data):
+        from PYME.IO import PZFFormat
+        dirname = os.path.split(filename)[0]
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        
+        with open(filename, 'wb') as f:
+            f.write(PZFFormat.dumps(data.astype('float32')))
+    
+    def _load(self, filename):
+        from PYME.IO import PZFFormat
+        with open(filename, 'rb') as f:
+            return PZFFormat.loads(f.read())
+    
+class TileIO(object):
+    def get_tile(self, layer, x, y):
+        raise NotImplementedError
+    
+    def save_tile(self, layer, x, y, data):
+        raise  NotImplementedError
+    
+    def delete_tile(self, layer, x, y):
+        raise  NotImplementedError
+    
+    def tile_exists(self, layer, x, y):
+        raise NotImplementedError
+    
+    def get_layer_tile_coords(self, layer):
+        raise NotImplementedError
+    
+    def flush(self):
+        pass
+
+class NumpyTileIO(TileIO):
+    def __init__(self, base_dir, suff='img'):
+        self.base_dir = base_dir
+        self.suff = suff + '.npy'
+        
+        self._tilecache = TileCache()
+    
+    def _filename(self, layer, x, y):
+        return os.path.join(self.base_dir, '%d' % layer, '%03d' % x, '%03d_%03d_%s' % (x, y, self.suff))
+    
+    def get_tile(self, layer, x, y):
+        try:
+            return self._tilecache.load(self._filename(layer, x, y))
+        except IOError:
+            return None
+        
+    def save_tile(self, layer, x, y, data):
+        self._tilecache.save(self._filename(layer, x, y), data)
+        
+    def delete_tile(self, layer, x, y):
+        self._tilecache.remove(self._filename(layer, x, y))
+        
+    def tile_exists(self, layer, x, y):
+        self._tilecache.exists(self._filename(layer, x, y))
+        
+    def get_layer_tile_coords(self, layer=0):
+        self.flush()
+        tiles = []
+        for xdir in glob.glob(os.path.join(self.base_dir, '%d' % layer, '*')):
+            for fn in glob.glob(os.path.join(xdir, '*_%s' % self.suff)):
+                tiles.append([int(s) for s in os.path.basename(fn).split('_')[:2]])
+                
+        return tiles
+    
+    def flush(self):
+        self._tilecache.flush()
+        
+class PZFTileIO(NumpyTileIO):
+    def __init__(self, base_dir, suff='img'):
+        self.base_dir = base_dir
+        self.suff = suff + '.pzf'
+    
+        self._tilecache = PZFTileCache()
+    
 
 class ImagePyramid(object):
     def __init__(self, storage_directory, pyramid_tile_size=256, mdh=None, n_tiles_x = 0, n_tiles_y = 0, depth=0, x0=0, y0=0, pixel_size=1):
@@ -98,14 +188,14 @@ class ImagePyramid(object):
         if not os.path.exists(self.base_dir):
             os.makedirs(self.base_dir)
             
-        self._tilecache = TileCache()
+        #self._tilecache = TileCache()
+            
+        self._imgs = PZFTileIO(base_dir=self.base_dir, suff='img')
+        self._acc = PZFTileIO(base_dir=self.base_dir, suff='acc')
+        self._occ = PZFTileIO(base_dir=self.base_dir, suff='occ')
     
     def get_tile(self, layer, x, y):
-        fname = os.path.join(self.base_dir, '%d' % layer, '%03d' % x, '%03d_%03d_img.npy' % (x, y))
-        try:
-            return self._tilecache.load(fname)
-        except IOError:
-            return None
+        return self._imgs.get_tile(layer, x, y)
     
     def get_oversize_tile(self, layer, x, y, span=2):
         """
@@ -131,42 +221,23 @@ class ImagePyramid(object):
         print('Making layer %d' % (inputLevel+1))
     
     def get_layer_tile_coords(self, level):
-        base_tile_dir = os.path.join(self.base_dir, '%d' % level)
-    
-        x_dirs = glob.glob(os.path.join(base_tile_dir, '*'))
-        base_tile_names = []
-    
-        for x_dir in x_dirs:
-            base_tile_names += glob.glob(os.path.join(x_dir, '*img.npy'))
-    
-        tile_coords = [np.array([int(s) for s in os.path.split(fn)[-1].split('_')[:2]]) for fn in base_tile_names]
-        
-        return tile_coords
+        return self._imgs.get_layer_tile_coords(level)
     
     def _make_layer(self, inputLevel):
         from scipy import ndimage
-        
-        out_dir = os.path.join(self.base_dir, '%d' % (inputLevel + 1))
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
-        
+
+        new_layer = inputLevel + 1
         tile_coords = self.get_layer_tile_coords(inputLevel)
         
         #print('tile_coords:', tile_coords)
         
         qsize = int(self.tile_size / 2)
         
-        new_tile_coords = list(set([tuple(np.floor(tc / 2).astype('i').tolist()) for tc in tile_coords]))
+        new_tile_coords = list(set([tuple(np.floor(np.array(tc) / 2).astype('i').tolist()) for tc in tile_coords]))
         #print('new_tile_coords:', new_tile_coords)
         
         for xc, yc in new_tile_coords:
-            x_out_dir = os.path.join(out_dir, '%03d' % xc)
-            if not os.path.exists(x_out_dir):
-                os.makedirs(x_out_dir)
-            
-            out_filename = os.path.join(x_out_dir, '%03d_%03d_img.npy' % (xc, yc))
-            
-            if not self._tilecache.exists(out_filename):
+            if not self._imgs.tile_exists(new_layer, xc, yc):
                 tile = np.zeros([self.tile_size, self.tile_size])
                 
                 NW = self.get_tile(inputLevel, 2 * xc, 2 * yc)
@@ -189,25 +260,21 @@ class ImagePyramid(object):
                     tile[qsize:, qsize:] = ndimage.zoom(SE, .5)
                     #print(xc, yc, 'SE')
                 
-                self._tilecache.save(out_filename, tile)
+                self._imgs.save_tile(new_layer, xc, yc, tile)
         
         return len(new_tile_coords)
     
     def _rebuild_base(self):
-        for xdir in glob.glob(os.path.join(self.base_dir, '0', '*')):
-            for fn in glob.glob(os.path.join(xdir, '*_occ.npy')):
-                out_fn = fn[:-7] + 'img.npy'
-                
-                if not os.path.exists(out_fn):
-                    occ = self._tilecache.load(fn)
+        for xc, yc in self._occ.get_layer_tile_coords(0):
+            if not self._imgs.tile_exists(0, xc, yc):
+                    occ = self._occ.get_tile(0, xc, yc)
                     sf = 1.0 / occ
                     sf[occ <= .1] = 0
-                    tile_ = self._tilecache.load(fn[:-7] + 'acc.npy') * sf
+                    tile_ = self._acc.get_tile(0, xc, yc) * sf
 
-                    self._tilecache.save(out_fn, tile_)
+                    self._imgs.save_tile(0, xc, yc, tile_)
     
     def update_pyramid(self):
-        self._tilecache.flush()
         self._rebuild_base()
         inputLevel = 0
         
@@ -216,21 +283,17 @@ class ImagePyramid(object):
         
         self.pyramid_valid = True
         self.depth = inputLevel
-        self._tilecache.flush()
+        self._imgs.flush()
     
     def _clean_tiles(self, x, y):
         level = 0
         
-        tn = os.path.join(self.base_dir, '%d' % level, '%03d' % x, '%03d_%03d_img.npy' % (x, y))
-        
-        while self._tilecache.exists(tn):
-            self._tilecache.remove(tn)
+        while self._imgs.tile_exists(level, x, y):
+            self._imgs.delete_tile(level, x, y)
             
             level += 1
             x = int(np.floor(x / 2))
             y = int(np.floor(y / 2))
-            
-            tn = os.path.join(self.base_dir, '%d' % level, '%03d' % x, '%03d_%03d_img.npy' % (x, y))
             
     
     @property
@@ -245,7 +308,7 @@ class ImagePyramid(object):
         return mdh
     
     def add_base_tile(self, x, y, frame, weights):
-        print('add_base_tile(%d, %d)' % (x, y))
+        #print('add_base_tile(%d, %d)' % (x, y))
 
         frameSizeX, frameSizeY = frame.shape[:2]
         
@@ -256,25 +319,18 @@ class ImagePyramid(object):
         tile_xs = range(int(np.floor(x / self.tile_size)), int(np.floor((x + frameSizeX) / self.tile_size) + 1))
         tile_ys = range(int(np.floor(y / self.tile_size)), int(np.floor((y + frameSizeY) / self.tile_size) + 1))
         
-        print('tile_xs: %s, tile_ys: %s' % (tile_xs, tile_ys))
+        #print('tile_xs: %s, tile_ys: %s' % (tile_xs, tile_ys))
 
         self.n_tiles_x = max(self.n_tiles_x, max(tile_xs))
         self.n_tiles_y = max(self.n_tiles_y, max(tile_ys))
         
         for tile_x in tile_xs:
-            x_out_dir = os.path.join(out_folder, '%03d' % tile_x)
-            if not os.path.exists(x_out_dir):
-                os.makedirs(x_out_dir)
-            
             for tile_y in tile_ys:
-                tile_filename = os.path.join(x_out_dir, '%03d_%03d_acc.npy' % (tile_x, tile_y))
-                occ_filename = os.path.join(x_out_dir, '%03d_%03d_occ.npy' % (tile_x, tile_y))
+                acc_ = self._acc.get_tile(0, tile_x, tile_y)
+                occ_ = self._occ.get_tile(0, tile_x, tile_y)
                 
-                try:
-                    tile_ = self._tilecache.load(tile_filename)
-                    occ_ = self._tilecache.load(occ_filename)
-                except IOError:
-                    tile_ = np.zeros([self.tile_size, self.tile_size])
+                if (acc_ is None) or (occ_ is None):
+                    acc_ = np.zeros([self.tile_size, self.tile_size])
                     occ_ = np.zeros([self.tile_size, self.tile_size])
                 
                 xs, xe = max(tile_x * self.tile_size - x, 0), min((tile_x + 1) * self.tile_size - x, frameSizeX)
@@ -290,11 +346,11 @@ class ImagePyramid(object):
                 
                 #print(tile_x, tile_y)
                 #print('tile[%d:%d, %d:%d] = frame[%d:%d, %d:%d]' % (xst, xet, yst, yet, xs, xe, ys, ye))
-                tile_[xst:xet, yst:yet] += frame[xs:xe, ys:ye]
+                acc_[xst:xet, yst:yet] += frame[xs:xe, ys:ye]
                 occ_[xst:xet, yst:yet] += weights[xs:xe, ys:ye]
 
-                self._tilecache.save(tile_filename, tile_)
-                self._tilecache.save(occ_filename, occ_)
+                self._acc.save_tile(0, tile_x, tile_y, acc_)
+                self._occ.save_tile(0, tile_x, tile_y, occ_)
                 
                 self._clean_tiles(tile_x, tile_y)
         
@@ -397,10 +453,10 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
 
             # orient frame - TODO - check if we need to flip x and y?!
             if rotate_cam:
-                print('adding base tile from frame %d [transposed]' % i)
+                #print('adding base tile from frame %d [transposed]' % i)
                 P.add_base_tile(x_i, y_i, d_weighted.T.squeeze(), weights.T.squeeze())
             else:
-                print('adding base tile from frame %d' % i)
+                #print('adding base tile from frame %d' % i)
                 P.add_base_tile(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
     
     P.update_pyramid()
@@ -426,11 +482,11 @@ def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
 if __name__ == '__main__':
     import sys
     from PYME.util import mProfile
-    mProfile.profileOn(['tile_pyramid.py',])
+    #mProfile.profileOn(['tile_pyramid.py',])
     input_stack, output_dir = sys.argv[1:]
     
     create_pyramid_from_dataset(input_stack, output_dir)
-    mProfile.report()
+    #mProfile.report()
     
     
     
