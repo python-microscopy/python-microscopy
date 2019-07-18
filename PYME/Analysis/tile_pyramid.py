@@ -97,7 +97,7 @@ class PZFTileCache(TileCache):
     def _load(self, filename):
         from PYME.IO import PZFFormat
         with open(filename, 'rb') as f:
-            return PZFFormat.loads(f.read())
+            return PZFFormat.loads(f.read())[0].squeeze()
     
 class TileIO(object):
     def get_tile(self, layer, x, y):
@@ -123,10 +123,13 @@ class NumpyTileIO(TileIO):
         self.base_dir = base_dir
         self.suff = suff + '.npy'
         
+        self.pattern = os.sep.join([self.base_dir, '%d', '%03d', '%03d_%03d_' + self.suff])
+        
         self._tilecache = TileCache()
     
     def _filename(self, layer, x, y):
-        return os.path.join(self.base_dir, '%d' % layer, '%03d' % x, '%03d_%03d_%s' % (x, y, self.suff))
+        return self.pattern % (layer, x, x, y)
+        #return os.path.join(self.base_dir, '%d' % layer, '%03d' % x, '%03d_%03d_%s' % (x, y, self.suff))
     
     def get_tile(self, layer, x, y):
         try:
@@ -159,8 +162,66 @@ class PZFTileIO(NumpyTileIO):
     def __init__(self, base_dir, suff='img'):
         self.base_dir = base_dir
         self.suff = suff + '.pzf'
+
+        self.pattern = os.sep.join([self.base_dir, '%d', '%03d', '%03d_%03d_' + self.suff])
     
         self._tilecache = PZFTileCache()
+        
+class SqliteTileIO(TileIO):
+    def __init__(self, base_dir, suff='img'):
+        import sqlite3
+        
+        self._conn = sqlite3.connect(os.path.join(base_dir, '%s.db' % suff))
+        self._cur = self._conn.cursor()
+
+        self._known_tables =[r[0] for r in self._cur.execute("SELECT name FROM sqlite_master WHERE type='table'")]
+        
+    def get_tile(self, layer, x, y):
+        from PYME.IO import PZFFormat
+        table = 'layer%d' % layer
+        if not table in self._known_tables:
+            return None
+        
+        self._cur.execute('SELECT data FROM layer%d WHERE x=? AND y=?' % layer, (x, y))
+        r = self._cur.fetchone()
+        if r is None:
+            return None
+        else:
+            return PZFFormat.loads(r[0])[0].squeeze()
+    
+    def save_tile(self, layer, x, y, data):
+        from PYME.IO import PZFFormat
+        import sqlite3
+        table = 'layer%d' % layer
+        
+        if not table in self._known_tables:
+            self._cur.execute('CREATE TABLE %s (y INTEGER, x INTEGER, data BLOB)' % table)
+            self._cur.execute('CREATE INDEX %s ON %s (x,y)' % ('idx_' + table, table))
+            self._known_tables.append(table)
+        
+        self._cur.execute('INSERT INTO %s VALUES (?,?,?)' % table, (x,y,buffer(PZFFormat.dumps(data.astype('float32')))))
+        
+    def delete_tile(self, layer, x, y):
+        self._cur.execute('DELETE FROM layer%d WHERE x=? AND y=?' % layer, (x, y))
+        
+    def tile_exists(self, layer, x, y):
+        table = 'layer%d' % layer
+        if not table in self._known_tables:
+            return False
+        
+        return self._cur.execute('SELECT 1 FROM layer%d WHERE x=? AND y=?' % layer, (x, y)).fetchone() is not None
+
+    def get_layer_tile_coords(self, layer=0):
+        coords = self._cur.execute('SELECT x, y FROM layer%d' % layer).fetchall()
+        #print coords
+        return coords
+    
+    def flush(self):
+        self._conn.commit()
+        
+    def __del__(self):
+        self._cur.close()
+        self._conn.close()
     
 
 class ImagePyramid(object):
@@ -193,6 +254,10 @@ class ImagePyramid(object):
         self._imgs = PZFTileIO(base_dir=self.base_dir, suff='img')
         self._acc = PZFTileIO(base_dir=self.base_dir, suff='acc')
         self._occ = PZFTileIO(base_dir=self.base_dir, suff='occ')
+
+        # self._imgs = SqliteTileIO(base_dir=self.base_dir, suff='img')
+        # self._acc = SqliteTileIO(base_dir=self.base_dir, suff='acc')
+        # self._occ = SqliteTileIO(base_dir=self.base_dir, suff='occ')
     
     def get_tile(self, layer, x, y):
         return self._imgs.get_tile(layer, x, y)
@@ -435,6 +500,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
 
     P = ImagePyramid(out_folder, pyramid_tile_size, x0 = x0, y0 = y0, pixel_size=mdh.getEntry('voxelsize.x'))
     
+    print('Adding base tiles ...')
     for i in range(int(mdh.getEntry('Protocol.DataStartsAt')), numFrames):
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
             x_i = xdp[i]
@@ -459,8 +525,10 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
                 #print('adding base tile from frame %d' % i)
                 P.add_base_tile(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
     
+    print('Updating pyramid ...')
     P.update_pyramid()
     
+    print('Done')
     return P
 
 def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
@@ -469,8 +537,8 @@ def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
     
     xm, ym = get_position_from_events(dataset.events, dataset.mdh)
     
-    print(xm(np.arange(dataset.data.shape[2])))
-    print(ym(np.arange(dataset.data.shape[2])))
+    #print(xm(np.arange(dataset.data.shape[2])))
+    #print(ym(np.arange(dataset.data.shape[2])))
     
     p = tile_pyramid(outdir, dataset.data, xm, ym, dataset.mdh, pyramid_tile_size=tile_size)
     
@@ -482,11 +550,11 @@ def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
 if __name__ == '__main__':
     import sys
     from PYME.util import mProfile
-    #mProfile.profileOn(['tile_pyramid.py',])
+    mProfile.profileOn(['tile_pyramid.py',])
     input_stack, output_dir = sys.argv[1:]
     
     create_pyramid_from_dataset(input_stack, output_dir)
-    #mProfile.report()
+    mProfile.report()
     
     
     

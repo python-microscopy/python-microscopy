@@ -208,7 +208,7 @@ for fn in [dist_config_file, site_config_file, user_config_file]:
     #loop over the three configuration locations and read files, if present.
     try:
         with open(fn) as f:
-            dist_conf = yaml.load(f)
+            dist_conf = yaml.safe_load(f)
             config.update(dist_conf)
     except (IOError, TypeError):
         #no configuration file found, or not formatted correctly
