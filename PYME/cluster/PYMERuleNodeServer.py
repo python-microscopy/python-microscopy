@@ -33,9 +33,9 @@ from PYME.util import fProfile, mProfile
 
 def main():
     
-    prof = fProfile.thread_profiler()
-    prof.profileOn('.*PYME.*|.*zeroconf.*', 'ruleserver_prof.txt')
-    mProfile.profileOn(['rulenodeserver.py', 'zeroconf.py'])
+    #prof = fProfile.thread_profiler()
+    #prof.profileOn('.*PYME.*|.*zeroconf.*', 'ruleserver_prof.txt')
+    #mProfile.profileOn(['rulenodeserver.py', 'zeroconf.py'])
     
     confFile = os.path.join(conf.user_config_dir, 'nodeserver.yaml')
     with open(confFile) as f:
@@ -143,8 +143,8 @@ def main():
         logger.info('Workers and nodeserver are shut down')
         
         
-        mProfile.report()
-        prof.profileOff()
+        #mProfile.report()
+        #prof.profileOff()
 
         sys.exit()
             
