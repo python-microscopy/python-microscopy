@@ -16,21 +16,21 @@ def pack_edges(arr, axis=1):
     
     return res
 
-# def fast_3x3_cross(a,b):
-#     # Index only once
-#     a0 = a[0]
-#     a1 = a[1]
-#     a2 = a[2]
-#     b0 = b[0]
-#     b1 = b[1]
-#     b2 = b[2]
+def fast_3x3_cross(a,b):
+    # Index only once
+    a0 = a[0]
+    a1 = a[1]
+    a2 = a[2]
+    b0 = b[0]
+    b1 = b[1]
+    b2 = b[2]
 
-#     x = a1*b2 - a2*b1
-#     y = a2*b0 - a0*b2
-#     z = a0*b1 - a1*b0
+    x = a1*b2 - a2*b1
+    y = a2*b0 - a0*b2
+    z = a0*b1 - a1*b0
 
-#     vec = np.array([x,y,z])
-#     return vec
+    vec = np.array([x,y,z])
+    return vec
 
 HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('next', 'i4'), ('prev', 'i4'), ('length', 'f4')])
 FACE_DTYPE = np.dtype([('halfedge', 'i4'), ('normal', '3f4'), ('area', 'f4')])
@@ -297,8 +297,8 @@ class TriangleMesh(object):
         """
         Return a dictionary of the edges in the mesh, each stored as a single number.
         """
-        #edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['twin']]['vertex']]).T
-        edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
+        # edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
+        edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['twin']]['vertex']]).T
         
         d = {}
         for i, e in enumerate(pack_edges(edges)):
@@ -308,7 +308,9 @@ class TriangleMesh(object):
 
     @property
     def edge_valences(self):
-        edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
+        # edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
+        edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['twin']]['vertex']]).T
+
         packed_edges = pack_edges(edges)
         e, c = np.unique(packed_edges, return_counts=True)
 
@@ -671,23 +673,25 @@ class TriangleMesh(object):
         face3 = self._halfedges['face'][self._halfedges['twin'][_twin_prev]]
 
         # Delete the inner triangles
-        _curr_face = curr_halfedge['face']
-        _twin_face = twin_halfedge['face']
-        self._faces[_curr_face] = -1
-        self._faces[_twin_face] = -1
+        self._face_delete(_curr)
+        self._face_delete(_twin)
+        # _curr_face = curr_halfedge['face']
+        # _twin_face = twin_halfedge['face']
+        # self._faces[_curr_face] = -1
+        # self._faces[_twin_face] = -1
 
         if self.debug:
             print(curr_halfedge, twin_halfedge)
 
-        # Delete curr, next, prev
-        self._edge_delete(_curr)
-        self._edge_delete(_prev)
-        self._edge_delete(_next)
+        # # Delete curr, next, prev
+        # self._edge_delete(_curr)
+        # self._edge_delete(_prev)
+        # self._edge_delete(_next)
 
-        # Delete _twin, _twin_prev, _twin_next
-        self._edge_delete(_twin)
-        self._edge_delete(_twin_prev)
-        self._edge_delete(_twin_next)
+        # # Delete _twin, _twin_prev, _twin_next
+        # self._edge_delete(_twin)
+        # self._edge_delete(_twin_prev)
+        # self._edge_delete(_twin_next)
 
         try:
             if live_update:
@@ -702,6 +706,22 @@ class TriangleMesh(object):
             print([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex, _twin_next_vertex])
             raise e
 
+    def _face_delete(self, _edge):
+        """
+        Delete a face defined by the halfedge _edge.
+
+        Parameters
+        ----------
+            edge : int
+                One self._halfedge index of the edge defining a face to delete.
+        """
+        curr_edge = self._halfedges[_edge]
+        self._faces[curr_edge['face']] = -1
+
+        self._edge_delete(curr_edge['next'])
+        self._edge_delete(curr_edge['prev'])
+        self._edge_delete(_edge)
+
     def _edge_delete(self, _edge):
         """
         Delete edge _edge in place from self._halfedges.
@@ -711,6 +731,9 @@ class TriangleMesh(object):
             edge : int
                 One self._halfedge index of the edge to delete.
         """
+        if _edge == -1:
+            return
+        
         self._halfedges[_edge] = -1
         self._halfedge_vacancies.append(_edge)
 
@@ -987,6 +1010,20 @@ class TriangleMesh(object):
         if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
             return
 
+        # # Convexity check
+        # y = self._vertices['position'][self._halfedges['vertex'][_curr]] - self._vertices['position'][self._halfedges['vertex'][_twin]]
+        # x = self._vertices['position'][new_v1] - self._vertices['position'][new_v0]
+        # xn = x/np.sqrt((x*x).sum())
+        # yn = y/np.sqrt((y*y).sum())
+        # p = np.eye(3) - xn[:,None]*yn[None,:]
+        # z = self._vertices['position'][self._halfedges['vertex'][_twin]] - self._vertices['position'][new_v0]
+        # pz = (p*z).sum(1)
+        # y_x_pz = fast_3x3_cross(x,pz)
+        # n = fast_3x3_cross(x,y)
+        # if (y_x_pz*n).sum() > 0:
+        #     # Concave, don't flip
+        #     return
+
         # _next's next and prev must be adjusted
         self._halfedges['prev'][_next] = _twin_prev
         self._halfedges['next'][_next] = _twin
@@ -1215,7 +1252,47 @@ class TriangleMesh(object):
         """
         Make the mesh manifold.
         """
-        pass
+
+        # # Delete all edges with valence not equal to 2
+        # edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['twin']]['vertex']]).T
+
+        # packed_edges = pack_edges(edges)
+        # e, c = np.unique(packed_edges, return_counts=True)
+
+        # d = {}
+        # for k, v in zip(e, c):
+        #     if v == 2:
+        #         continue
+        #     d[k] = v
+
+        # for i, e in enumerate(packed_edges):
+        #     if e in list(d.keys()):
+        #         self._face_delete(i)
+
+        # # Find halfedges forming negative triangle
+        # no_twin = (self._halfedges['twin'] == -1)
+        # _edge_0, _edge_1 = np.where((self._halfedges['vertex'][:,None] == self._halfedges['vertex'][self._halfedges['prev']][None, :])*no_twin[:,None]*no_twin[None,:])
+
+        # for _arriving, _leaving in zip(_edge_0, _edge_1):
+        #     arriving_edge = self._halfedges[_arriving]
+        #     leaving_edge = self._halfedges[_leaving]
+
+        #     v1 = self._halfedges['vertex'][arriving_edge['prev']]
+
+        #     _, _he_0_idx = self._new_edge(arriving_edge['vertex'], twin=_leaving)
+        #     _, _face_0_idx = self._new_face(_he_0_idx)
+        #     _, _he_1_idx = self._new_edge(v1, twin=_arriving, prev=_he_0_idx, face=_face_0_idx)
+        #     _, _he_2_idx = self._new_edge(leaving_edge['vertex'], prev=_he_1_idx, next=_he_0_idx, face=_face_0_idx)
+            
+        #     self._halfedges['face'][_he_0_idx] = _face_0_idx
+        #     self._halfedges['next'][_he_0_idx] = _he_1_idx
+        #     self._halfedges['prev'][_he_0_idx] = _he_2_idx
+        #     self._halfedges['next'][_he_1_idx] = _he_2_idx
+
+        #     self._update_face_normals([_face_0_idx])
+        #     self._update_vertex_neighbors([arriving_edge['vertex'], leaving_edge['vertex'], v1])
+
+        # pass
 
     def loop_subdivide(self, n=1):
         """

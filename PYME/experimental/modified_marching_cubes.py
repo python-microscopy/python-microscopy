@@ -822,7 +822,7 @@ class ModifiedMarchingCubes(object):
         idxs = np.repeat(idxs, triangles.shape[1])[triangles_pruned != -1]
         triangles_pruned = triangles_pruned[triangles_pruned != -1]
 
-        triangles_returned = intersections[idxs, triangles_pruned].reshape(idxs.shape[0] / 3, 3, 3)
+        triangles_returned = intersections[idxs, triangles_pruned].reshape(int(idxs.shape[0] / 3), 3, 3)
         normals = np.cross((triangles_returned[:, 2] - triangles_returned[:, 1]),
                            (triangles_returned[:, 0] - triangles_returned[:, 1]))
 

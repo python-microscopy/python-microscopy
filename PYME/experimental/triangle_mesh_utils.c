@@ -17,12 +17,8 @@ void cross(float *a, float *b, float *n)
 {
     float a0, a1, a2, b0, b1, b2;
 
-    a0 = a[0];
-    a1 = a[1];
-    a2 = a[2];
-    b0 = b[0];
-    b1 = b[1];
-    b2 = b[2];
+    a0 = a[0]; a1 = a[1]; a2 = a[2];
+    b0 = b[0]; b1 = b[1]; b2 = b[2];
 
     n[0] = a1*b2 - a2*b1;
     n[1] = a2*b0 - a0*b2;

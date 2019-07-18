@@ -1,6 +1,6 @@
 cimport cython
 cimport numpy as np
-from cpython cimport PyObject_CheckBuffer, PyObject_GetBuffer, PyBuffer_Release, Py_buffer, PyObject, PyBUF_SIMPLE, PyBUF_C_CONTIGUOUS, PyBUF_F_CONTIGUOUS, PyBuffer_IsContiguous
+from cpython cimport PyObject_GetBuffer, PyBuffer_Release, Py_buffer, PyObject, PyBUF_C_CONTIGUOUS
 
 import triangle_mesh 
 
