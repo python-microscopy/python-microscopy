@@ -46,13 +46,19 @@ def configuration(parent_package='', top_path=None):
                     extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
                     extra_link_args=linkArgs)
 
-    ext2 = Extension(name='.'.join([parent_package, 'experimental', 'triangle_mesh_utils']),
-                    sources=[os.path.join(cur_dir, 'mesh_utils.pyx'), os.path.join(cur_dir, 'triangle_mesh_utils.c')],
+    # ext2 = Extension(name='.'.join([parent_package, 'experimental', 'triangle_mesh_utils']),
+    #                 sources=[os.path.join(cur_dir, 'mesh_utils.pyx'), os.path.join(cur_dir, 'triangle_mesh_utils.c')],
+    #                 include_dirs= get_numpy_include_dirs(), #+ extra_include_dirs,
+    #                 extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
+    #                 extra_link_args=linkArgs)
+    
+    config = Configuration('experimental', parent_package, top_path, ext_modules=cythonize([ext]))
+
+    config.add_extension(name='triangle_mesh_utils',
+                    sources='triangle_mesh_utils.c',
                     include_dirs= get_numpy_include_dirs(), #+ extra_include_dirs,
                     extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
                     extra_link_args=linkArgs)
-    
-    config = Configuration('experimental', parent_package, top_path, ext_modules=cythonize([ext, ext2]))
     
     # config = Configuration('pymecompress', parent_package, top_path)
     #
