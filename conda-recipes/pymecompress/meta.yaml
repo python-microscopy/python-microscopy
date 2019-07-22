@@ -125,6 +125,7 @@ requirements:
   run:
     - python
     - numpy {{ numpy }}
+    - six
     
 
   #unfortunately not availible through conda on windows ##FIXME
