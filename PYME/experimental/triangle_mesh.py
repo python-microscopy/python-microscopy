@@ -1011,7 +1011,7 @@ class TriangleMesh(object):
         new_v0 = self._halfedges['vertex'][_next]
         new_v1 = self._halfedges['vertex'][_twin_next]
 
-        # If there's already an edge between these two vertices, don't flip
+        # If there's already an edge between these two vertices, don't flip (preserve manifoldness)
         if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
             return
 
@@ -1304,7 +1304,7 @@ class TriangleMesh(object):
         Upsample the mesh by a factor of 4 (factor of 2 along each axis in the plane of the mesh).
 
         References:
-            1. C. T. Loop, “Smooth Subdivision Surfaces Based on Triangles,” University of Utah, 1987.
+            1. C. T. Loop, "Smooth Subdivision Surfaces Based on Triangles," University of Utah, 1987
             2. http://462cmu.github.io/asst2_meshedit/, task 4
 
         Parameters

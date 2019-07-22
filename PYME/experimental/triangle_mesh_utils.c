@@ -132,6 +132,7 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
         }
     }
 
+    // Python's garbage collection will Py_DECREF halfedges, vertices, faces after each function call, so insure against this
     Py_INCREF(halfedges);
     Py_INCREF(vertices);
     Py_INCREF(faces);
@@ -221,6 +222,7 @@ static PyObject *update_face_normals(PyObject *self, PyObject *args)
         }
     }
 
+    // Python's garbage collection will Py_DECREF halfedges, vertices, faces after each function call, so insure against this
     Py_INCREF(halfedges);
     Py_INCREF(vertices);
     Py_INCREF(faces);

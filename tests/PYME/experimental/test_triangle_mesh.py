@@ -232,17 +232,21 @@ def test_double_edge_flip_topology():
 
     mesh.edge_flip(flip_idx)
 
-    flip_idx = np.where((mesh._h_vertex == 0) & (mesh._h_face == 0))[0][0]
+    flip_idx = np.where((mesh._h_vertex == 2) & (mesh._h_face == 1))[0][0]
 
     mesh.edge_flip(flip_idx)
 
-    flip_idx = np.where((mesh._h_vertex == 1) & (mesh._h_face == 0))[0][0]
+    # flip_idx = np.where((mesh._h_vertex == 0) & (mesh._h_face == 0))[0][0]
 
-    mesh.edge_flip(flip_idx)
+    # mesh.edge_flip(flip_idx)
 
-    flip_idx = np.where((mesh._h_vertex == 2) & (mesh._h_face == 0))[0][0]
+    # flip_idx = np.where((mesh._h_vertex == 1) & (mesh._h_face == 0))[0][0]
 
-    mesh.edge_flip(flip_idx)
+    # mesh.edge_flip(flip_idx)
+
+    # flip_idx = np.where((mesh._h_vertex == 2) & (mesh._h_face == 0))[0][0]
+
+    # mesh.edge_flip(flip_idx)
 
     assert _test_topology(mesh, PRE_FLIP_H_VERTEX, PRE_FLIP_H_FACE, PRE_FLIP_H_TWIN, PRE_FLIP_H_NEXT, PRE_FLIP_H_PREV)
 
