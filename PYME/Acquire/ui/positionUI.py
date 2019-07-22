@@ -212,7 +212,7 @@ class PositionPanel(wx.Panel):
             self.bLeft.Bind(wx.EVT_BUTTON, lambda e : self.nudge('x', -1))
             self.bRight.Bind(wx.EVT_BUTTON, lambda e: self.nudge('x', 1))
             self.bUp.Bind(wx.EVT_BUTTON, lambda e: self.nudge('y', 1))
-            self.bDown.Bind(wx.EVT_BUTTON, lambda e: self.nudge('x', -1))
+            self.bDown.Bind(wx.EVT_BUTTON, lambda e: self.nudge('y', -1))
 
             hsizer.Add(gsizer, 0, wx.EXPAND | wx.LEFT, 5)
             

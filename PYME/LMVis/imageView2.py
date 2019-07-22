@@ -149,7 +149,7 @@ class ImageViewPanel(wx.Panel):
 
     def _ScreenToAbsCoordinates(self, x, y):
         xp = self.centreX + self.glCanvas.pixelsize*(x - self.Size[0]/2)
-        yp = self.centreY - self.glCanvas.pixelsize*(y - self.Size[1]/2)
+        yp = self.centreY + self.glCanvas.pixelsize*(y - self.Size[1]/2)
 
         return xp, yp
 
@@ -159,7 +159,7 @@ class ImageViewPanel(wx.Panel):
 
     def _AbsToScreenCoordinates(self, x, y):
         xp = (x -self.centreX)/self.glCanvas.pixelsize + self.Size[0]/2
-        yp = (-y + self.centreY)/self.glCanvas.pixelsize + self.Size[1]/2
+        yp = (y - self.centreY)/self.glCanvas.pixelsize + self.Size[1]/2
 
         return xp, yp
 

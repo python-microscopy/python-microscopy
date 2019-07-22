@@ -27,6 +27,8 @@ import ctypes
 import time
 import sys
 from PYME.IO import MetaDataHandler
+import logging
+logger = logging.getLogger(__name__)
 
 import os
 from PYME.IO.FileUtils import nameUtils
@@ -463,15 +465,19 @@ class uc480Camera:
         #self.__selectCamera()
         newExp = c_double(0)
         newFrameRate = c_double(0)
+        # call takes units of FPS
         ret = uc480.CALL('SetFrameRate', self.boardHandle, c_double(1.0/iTime), byref(newFrameRate))
         if not ret == 0:
             raise RuntimeError('Error setting exp time: %d: %s' % GetError(self.boardHandle))
-        
+
+        # call takes units of milliseconds, and has been depreciated since iDS version 3.9, use Exposure instead
         ret = uc480.CALL('SetExposureTime', self.boardHandle, c_double(1e3*iTime), ctypes.byref(newExp))
         if not ret == 0:
             raise RuntimeError('Error setting exp time: %d: %s' % GetError(self.boardHandle))
 
-        #print newExp.value, newFrameRate.value 
+        #print newExp.value, newFrameRate.value
+        logger.debug('exposure time: %f, new exposure time: %f' % (1e3 * iTime, newExp.value))
+        logger.debug('frame rate: %f, new frame rate: %f' % (1./iTime, newFrameRate.value))
             
         self.expTime = newExp.value*1e-3
 
@@ -503,7 +509,31 @@ class uc480Camera:
         return self.CCDSize[1]
 
     def SetHorizBin(self, val):
-        raise Exception('Not implemented yet!!')
+        """
+
+        Parameters
+        ----------
+        val: int
+            Binning factor. Supported values, depending on the camera, are 2, 3, 4, 5, 6, 8, or 16. Other values will be
+            changed to nearest acceptable value, though there is no check for whether the camera supports it.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        Not all ueye cameras support each binning factor. Our Thorlabs branded DCC1545M, for example, doesn't even
+        support binning, only subsampling.
+
+        """
+        from PYME.Acquire.Hardware.uc480 import uc480_h
+        binning = uc480.BINNING_FACTORS[np.argmin(np.abs(np.asarray(uc480.BINNING_FACTORS) - val))]
+        logger.debug('Target binning: %d, Actual binning: %d' % (val, binning))
+        setting = getattr(uc480_h, 'IS_BINNING_%dX_HORIZONTAL' % binning)
+        uc480.CALL('SetBinning', self.boardHandle, setting)
+        # calling SetFrameRate and Exposure is recommended after changing binning size
+        self.SetIntegTime(self.GetIntegTime())
 
     def GetHorizBin(self):
         return self.binX == 1
@@ -512,7 +542,31 @@ class uc480Camera:
         return self.binX
 
     def SetVertBin(self, val):
-        raise Exception('Not implemented yet!!')
+        """
+
+        Parameters
+        ----------
+        val: int
+            Binning factor. Supported values, depending on the camera, are 2, 3, 4, 5, 6, 8, or 16. Other values will be
+            changed to nearest acceptable value, though there is no check for whether the camera supports it.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        Not all ueye cameras support each binning factor. Our Thorlabs branded DCC1545M, for example, doesn't even
+        support binning, only subsampling.
+
+        """
+        from PYME.Acquire.Hardware.uc480 import uc480_h
+        binning = uc480.BINNING_FACTORS[np.argmin(np.abs(np.asarray(uc480.BINNING_FACTORS) - val))]
+        logger.debug('Target binning: %d, Actual binning: %d' % (val, binning))
+        setting = getattr(uc480_h, 'IS_BINNING_%dX_VERTICAL' % binning)
+        uc480.CALL('SetBinning', self.boardHandle, setting)
+        # calling SetFrameRate and Exposure is recommended after changing binning size
+        self.SetIntegTime(self.GetIntegTime())
 
     def GetVertBin(self):
         return self.binY == 1

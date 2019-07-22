@@ -20,142 +20,155 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-import serial
-import time
-import threading
+# import serial
+# import time
+# import threading
 import re
+from PYME.Acquire.Hardware.aotf import AOTF
+import serial
+import threading
+import logging
+logger = logging.getLogger(__name__)
 
-try:
-    import Queue
-except ImportError:
-    import queue as Queue
 
-class AAOptoMDS(object):
-    def __init__(self, comPort = 'COM6', turnOn=False, name='AAOptoMDS', nChans=8, **kwargs):
-        self.com = serial.Serial(comPort,  timeout=1)
-        self.name = name
-        self.nChans = nChans
+class AAOptoMDS(AOTF):
+    """
+    Our device doesn't tolerate many port openings/closings and requires its buffer to be cleared regularly. Could be
+    because we connect to it through an external USB hub. As a result we keep the serial ports open rather than using
+    context managers.
+    """
+    def __init__(self, calibrations, com_port='COM6', name='AAOptoMDS', n_chans=8, serial_timeout=1):
+        """
+        Parameters
+        ----------
+        calibrations: dict
+            see PYME.Acquire.Hardware.aotf.AOTF base class
+        com_port: str
+            Name of the com port to connect to, e.g. 'COM14'.
+        name: str
+            Name of the device
+        n_chans: int
+            Number of channels, typically 4 or 8.
+        serial_timeout: float
+            Timeout to be used in all serial reads
+        """
+        AOTF.__init__(self, name, calibrations, n_chans)
 
-        self.freq = [0] * nChans
-        self.power = [0] * nChans
-        self.isOn = [False] * nChans
-
+        # initialize serial
+        self.timeout = serial_timeout
+        # initialize and configure the serial port without opening it
+        self.com_port = serial.Serial(com_port, timeout=serial_timeout)
+        self.lock = threading.Lock()
+        self.is_on = True
+        # set to internal control mode
+        logger.debug('Setting AOTF to internal control mode')
+        self.query(b'I0\r\n', lines_expected=35)
         # Grab the initial properties
-        self.GetInitStatus()
-        time.sleep(1)
+        logger.debug('Getting MDS status')
+        self.GetStatus()
+        logger.debug('Disabling any active AOTF channels')
+        [(self.Disable(channel), self.SetPower(0, channel)) if self.channel_enabled[channel] else None for channel in range(self.n_chans)]
 
-        self.doPoll = True
-
-        self.commandQueue = Queue.Queue()
-        self.replyQueue = Queue.Queue()
-
-        self.threadPoll = threading.Thread(target=self._poll)
-        self.threadPoll.start()
-
-        time.sleep(1)
-
-        [self.TurnOff(ch) for ch in range(self.nChans)]
-
-    def _purge(self):
-        try:
-            while True:
-                self.replyQueue.get_nowait()
-        except:
-            pass
-
-    def _query(self, command):
+    def query(self, command, lines_expected=1):
         """
-        Get value from RF driver via serial port.
+        Send serial command and return a set number of reply lines from the device before clearing the device outputs
+
+        Parameters
+        ----------
+        command: bytes
+            Command to send to the device. Must be complete, e.g. b'command\r\n'
+        lines_expected: int
+            Number of interesting lines to be returned from the device. Any remaining output from the device will be
+            cleared. Note that having lines_expected larger than the actual number of reply lines for a given command
+            will not crash, but will take self.timeout seconds for each extra line requested.
+
+        Returns
+        -------
+        reply: list
+            list of lines retrieved from the device. Blank lines are possible
+
+        Notes
+        -----
+        serial.Serial.readlines method was not used because our device requires a wait until each line is read before
+        it writes the next line.
         """
-        self._purge()
-        cmd = b'?%s\r\n' % command
-        self.commandQueue.put(cmd)
+        with self.lock:
+            self.com_port.reset_input_buffer()
+            self.com_port.write(command)
+            reply = [self.com_port.readline() for line in range(lines_expected)]
+            self.com_port.reset_input_buffer()
+        return reply
 
-        try:
-            line = self.replyQueue.get(timeout=3)
-            return line
-        except:
-            pass
-
-    def _readline(self, ser, nLines=1):
-        ret = b''
-        for n in range(nLines):
-            time.sleep(.1)
-            ret += ser.readline()
-        return ret
-
-    def _poll(self):
-        while self.doPoll:
-            with self.com as ser:
-                try:
-                    cmd = self.commandQueue.get(False)
-                    # print cmd
-                    ser.write(cmd)
-                    ser.flushOutput()
-
-                except Queue.Empty:
-                    pass
-
-                # wait a little for reply
-                ret = self._readline(ser)
-
-                if not ret == b'':
-                    self.replyQueue.put(ret)
-
-            time.sleep(.05)
-
-    def IsOn(self, ch):
-        return self.isOn[ch]
-
-    def TurnOn(self, ch):
-        self._query('L'+str(ch+1)+'O1')
-        self.isOn[ch] = True
-
-    def TurnOff(self, ch):
-        self._query('L'+str(ch+1)+'O0')
-        self.isOn[ch] = False
-
-    def SetPower(self, power, ch):
-        self._query('L'+str(ch+1)+'D'+str(power))
-        self.power[ch] = power
-
-    def GetPower(self, ch):
-        return self.power[ch]
-
-    def SetFreq(self, freq, ch):
-        self._query('L'+str(ch+1)+'F'+str(freq))
-        self.freq[ch] = freq
-
-    def GetFreq(self, ch):
-        return self.freq[ch]
-
-    def GetInitStatus(self):
+    def GetStatus(self):
         """
         Initial properties. Must be called before polling starts.
         """
-        self._purge()
-        cmd = '?S\r'
-        with self.com as ser:
-            ser.write(cmd)
-            ser.flushOutput()
-            val = self._readline(ser, self.nChans+1)
-        ret = filter(None, val.split('\n'))
-        for ch in range(self.nChans):
-            retrm = ret[ch].replace('\x00', '').replace('= ', '=').strip()
-            s = re.compile(r'l(?P<ch>\d+) F=(?P<freq>\d+.\d+) P=(?P<power>\d+.\d+) (?P<onoff>\w+)')
+        raw_reply = self.query(b'S?\r\n', lines_expected=36)
+        reply = []
+        for line in raw_reply:
+            if line.startswith(b'\rl'):
+                reply.append(line)
+        for channel in range(self.n_chans):
+            retrm = reply[channel].replace(b'\x00', b'').replace(b'= ', b'=').strip()
+            s = re.compile(br'l(?P<channel>\d+) F=(?P<freq>\d+.\d+) P=(?P<power>\d+.\d+) (?P<onoff>\w+)')
             vals = s.search(retrm)
-            self.freq[ch] = float(vals.group('freq'))
-            self.power[ch] = float(vals.group('power'))
-            self.isOn[ch] = vals.group('onoff') == 'ON'
+            self.freq[channel] = float(vals.group('freq'))
+            self.power[channel] = float(vals.group('power'))
+            self.channel_enabled[channel] = vals.group('onoff') == 'ON'
 
-    def SaveSettings(self):
-        self._query('E')
+    def Enable(self, channel):
+        if not self.is_on:
+            self.TurnOn()
+        # turn on the channel
+        self.query(b'L%dO1\r\n' % (channel + 1))
+        self.channel_enabled[channel] = True
+
+    def Disable(self, channel):
+        self.query(b'L%dO0\r\n' % (channel + 1))
+        self.channel_enabled[channel] = False
+
+    def SetPower(self, power, channel):
+        command = b'L%dD%2.2f' % (channel+1, power)
+
+        self.query(command + b'\r\n')
+        self.power[channel] = power
+
+    def GetPower(self, channel):
+        return self.power[channel]
+
+    def SetPowerAndEnable(self, power, channel):
+        command = b'L%dD%2.2f' % (channel+1, power)
+        if power > 0:
+            # make sure we're running
+            if not self.is_on:
+                self.TurnOn()
+            # enable the channel
+            command += b'O1'
+            self.channel_enabled[channel] = True
+
+        self.query(command + b'\r\n')
+        self.power[channel] = power
+
+    def SetFreq(self, freq, channel):
+        self.query(b'L%dF%3.2f\r\n' % (channel + 1, freq))
+        self.freq[channel] = freq
+
+    def GetFreq(self, channel):
+        return self.freq[channel]
 
     def Close(self):
-        print('Shutting down %s' % self.name)
-        [self.TurnOff(ch) for ch in range(self.nChans)]
-        time.sleep(.1)
-        self.doPoll = False
+        logger.debug('Shutting down %s' % self.name)
+        # shut down active channels
+        for channel in range(self.n_chans):
+            if self.channel_enabled[channel]:
+                try:
+                    self.Disable(channel)
+                except:
+                    pass
 
-    def __del__(self):
-        self.Close()
+        # close serial port
+        self.is_on = False
+        try:
+            self.com_port.close()
+        except Exception as e:
+            logger.error(str(e))

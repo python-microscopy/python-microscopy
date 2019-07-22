@@ -318,7 +318,7 @@ class microscope(object):
         self.hardwareChecks = []
         
         #entries should be of the form: "x" : (piezo, channel, multiplier)
-        # where multiplyier is what to multiply by to get the usints to um
+        # where multiplyier is what to multiply by to get the units to micrometers
         self.positioning = {}
         self.joystick = None
 
@@ -711,16 +711,24 @@ class microscope(object):
                 return name
                 
     def _SetActiveCameraIntegrationTime(self, integrationTime):
-        """Sets the integration time for the active camera (in ms)
+        """
+        Sets the integration time for the active camera
+        Parameters
+        ----------
+        integrationTime: float
+            Units of seconds.
 
-        NB: This is a state handler, use 
-        `scope.state['Camera.IntegrationTime'] = integrationTime` 
-        instead of calling directly        
+
+        Notes
+        -----
+        This is a state handler, use
+        `scope.state['Camera.IntegrationTime'] = integrationTime`
+        instead of calling directly
         """
         self.cam.SetIntegTime(integrationTime)
     
     def _GetActiveCameraIntegrationTime(self):
-        """Gets the integration time for the active camera (in ms)"""
+        """Gets the integration time for the active camera (in seconds)"""
         return self.cam.GetIntegTime()
         
     def _SetActiveCameraROI(self, ROI):
@@ -825,8 +833,13 @@ class microscope(object):
         needCamRestart : bool
             whether to restart the camera after changing the position (mostly for simulation and fake piezos)
 
-        Returns
-        -------
+        Notes
+        -----
+        
+        The 'x' and 'y' axes should be defined in terms of the axes of the principle camera (i.e. if a stage moves the
+        image on the camera left and right it is the 'x' stage, regardless of the physical motion of the sample). Likewise,
+        the multipliers should be set so that a positive movement of the x stage moves the image right, and a positive
+        movement of the y stage moves the image down.
 
         """
         try:
@@ -846,6 +859,27 @@ class microscope(object):
                                     lambda v: piezo.MoveTo(channel, v/(multiplier*units_um)), needCamRestart=needCamRestart)
         
     def register_camera(self, cam, name, port='', rotate=False, flipx=False, flipy=False):
+        """
+        Register a camera with the microscope
+        
+        Parameters
+        ----------
+        cam     : The camera object
+        name    : A human-readable name
+        port    : Which sideport the camera is attached to (used to automatically select the right camera when changing
+                  sideports & vice versa, but currently only works on the Nikon Ti stand)
+        rotate  : Is this camera rotated with respect to the cardinal camera (used for multi-camera support)
+        flipx   : Is this camera flipped in x w.r.t. the cardinal camera (used for multi-camera support)
+        flipy   : Is this camera flipped in y w.r.t. the cardinal camera (used for multi-camera support)
+
+        Notes
+        -----
+        The optional port, rotate, flipx, and flipy parameters all relate to multiple camera support and should be
+        defined with respect to the principle camera (not stages etc which should be in the frame of the principle camera).
+        The support for these parameters is currently pretty limited - they work when panning the sample using the mouse,
+        but are generally ignored in other parts of the code.
+
+        """
         cam.port = port
         cam.orientation = dict(rotate=rotate, flipx=flipx, flipy=flipy)
         

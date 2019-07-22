@@ -48,11 +48,12 @@ class TileServer(object):
     @cherrypy.expose
     def get_roi_locations(self):
         if not self.roi_locations is None:
-            return self.roi_locations.toDataFrame().to_json()
+            from pandas import DataFrame
+            return DataFrame(self.roi_locations).to_json() #FIXME - this is broken for tabular objects
         
     @cherrypy.expose
     def add_roi(self, x, y):
-        self.roi_locations.append({'x': float(x), 'y': float(y)})
+        self.roi_locations.append({'x': float(x), 'y': float(y)}) #FIXME - broken for tabular objects
         
         raise cherrypy.HTTPRedirect('/roi_list')
         
@@ -82,6 +83,9 @@ class TileServer(object):
                                                           pyramid_height_px=self.mdh['Pyramid.PixelsY'],
                                                           pyramid_depth=self.mdh['Pyramid.Depth'],
                                                           tile_dir = self.tile_dir,
+                                                          pyramid_x0=self.mdh['Pyramid.x0'],
+                                                          pyramid_y0=self.mdh['Pyramid.y0'],
+                                                          pyramid_pixel_size_um=self.mdh['Pyramid.PixelSize'],
                                                           )
     
     

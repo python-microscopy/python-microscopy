@@ -16,7 +16,7 @@ void _openFiles(NSArray* filenames) {
     NSPipe *pipe = [NSPipe pipe];
     //NSFileHandle *file = pipe.fileHandleForReading;
     
-    NSArray *script = @[@"/Users/david/anaconda/bin/dh5view.py"];
+    NSArray *script = @[@"/Users/david/anaconda/bin/dh5view"];
     
     NSTask *task = [[NSTask alloc] init];
     //task.launchPath = @"/Users/david/anaconda/bin/dh5view.py";

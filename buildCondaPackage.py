@@ -35,4 +35,7 @@ print('%d previous builds of this version' % len(prev_builds))
 if len(prev_builds) > 0:
     os.environ['BUILD_NUM'] = str(max(prev_builds) +1)
 
-os.system('conda build conda-recipes/python-microscopy')
+os.chdir('conda-recipes')
+ret = os.system('conda build python-microscopy')
+if not ret == 0:
+    sys.exit(ret)

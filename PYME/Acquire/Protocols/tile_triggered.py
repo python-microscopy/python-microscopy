@@ -67,11 +67,7 @@ class SFGenPlotPanel(PlotPanel):
         self.subplot.cla()
 
         for i in xrange(X.size):
-            #print 'plt'
             self.subplot.plot(ox + X[i], oy + Y[i])#, c=i)
-
-        #self.subplot.set_xlim(0, 512)
-        #self.subplot.set_ylim(0, 256)
 
         self.canvas.draw()
 

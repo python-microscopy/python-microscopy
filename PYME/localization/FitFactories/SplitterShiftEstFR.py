@@ -67,7 +67,24 @@ def replNoneWith1(n):
         return n
 
 
-fresultdtype=[('tIndex', '<i4'),('fitResults', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('background_g', '<f4'),('background_r', '<f4'),('dx', '<f4'),('dy', '<f4')]),('fitError', [('Ag', '<f4'),('Ar', '<f4'),('x0', '<f4'),('y0', '<f4'),('sigma', '<f4'), ('background_g', '<f4'),('background_r', '<f4'),('dx', '<f4'),('dy', '<f4')]), ('resultCode', '<i4'), ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
+fresultdtype=[('tIndex', '<i4'),
+              ('fitResults', [('Ag', '<f4'),
+                              ('Ar', '<f4'),
+                              ('x0', '<f4'),
+                              ('y0', '<f4'),
+                              ('sigma', '<f4'),
+                              ('background_g', '<f4'),
+                              ('background_r', '<f4'),
+                              ('dx', '<f4'),('dy', '<f4')]),
+              ('fitError', [('Ag', '<f4'),('Ar', '<f4'),
+                            ('x0', '<f4'),('y0', '<f4'),
+                            ('sigma', '<f4'),
+                            ('background_g', '<f4'),('background_r', '<f4'),
+                            ('dx', '<f4'),('dy', '<f4')]),
+              ('resultCode', '<i4'),
+              ('slicesUsed', [('x', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
+                              ('y', [('start', '<i4'),('stop', '<i4'),('step', '<i4')]),
+                              ('z', [('start', '<i4'),('stop', '<i4'),('step', '<i4')])])]
 
 def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fitErr=None):
     if slicesUsed is None:
@@ -90,8 +107,22 @@ def GaussianFitResultR(fitResults, metadata, slicesUsed=None, resultCode=-1, fit
     #print slicesUsed
     #print resultCode
 
+    res = np.zeros(1, dtype=fresultdtype)
 
-    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, slicesUsed)], dtype=fresultdtype)
+    n_params = len(fitResults)
+
+    res['tIndex'] = metadata.tIndex
+    res['fitResults'].view('9f4')[:n_params] = fitResults
+
+    if fitErr is None:
+        res['fitError'].view('9f4')[:] = -5e3
+    else:
+        res['fitError'].view('9f4')[:n_params] = fitErr
+
+    res['resultCode'] = resultCode
+    res['slicesUsed'] = slicesUsed
+    
+    return res
 
 
 class GaussianFitFactory:

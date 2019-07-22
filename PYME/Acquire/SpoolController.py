@@ -27,6 +27,7 @@ from PYME.IO.FileUtils.nameUtils import numToAlpha, getRelFilename, genHDFDataFi
 #import PYME.Acquire.Protocols
 import PYME.Acquire.protocol as prot
 from PYME.Acquire.ui import preflight
+from PYME import config
 
 import os
 import sys
@@ -61,11 +62,13 @@ class SpoolController(object):
         
         #dateDict = {'username' : win32api.GetUserName(), 'day' : dtn.day, 'month' : dtn.month, 'year':dtn.year}
         
-        self.dirname = defDir % nameUtils.dateDict
+        self._user_dir = None
+        self._base_dir = nameUtils.get_local_data_directory()
+        self._subdir = nameUtils.get_spool_subdir()
         self.seriesStub = defSeries % nameUtils.dateDict
 
         self.seriesCounter = 0
-        self.seriesName = self._GenSeriesName()
+        self._series_name = None
 
         self.protocol = prot.NullProtocol
         self.protocolZ = prot.NullZProtocol
@@ -73,27 +76,77 @@ class SpoolController(object):
         self.onSpoolProgress = dispatch.Signal()
         self.onSpoolStart = dispatch.Signal()
         self.onSpoolStop = dispatch.Signal()
-
-        
-        #if we've had to quit for whatever reason start where we left off
-        #while os.path.exists(os.path.join(self.dirname, self.seriesName + '.h5')):
-        self._update_series_counter()
-            
         
         
+        
+    @property
+    def _sep(self):
+        if self.spoolType == 'Cluster':
+            return '/'
+        else:
+            return os.sep
+        
+    @property
+    def dirname(self):
+        if not self._user_dir is None:
+            return self._user_dir
+        
+        if self.spoolType == 'Cluster':
+            return '/'.join(self._subdir)
+        else:
+            return os.sep.join([self._base_dir, ] + self._subdir)
+        
+    @property
+    def seriesName(self):
+        # make this a property so that we can defer evaluation to first use
+        # this lets us set 'acquire-spool_subdirectories' in the init.py for a specific microscope
+        if self._series_name is None:
+            #if we've had to quit for whatever reason start where we left off
+            #while os.path.exists(os.path.join(self.dirname, self.seriesName + '.h5')):
+            self._series_name = self._GenSeriesName()
+            self._update_series_counter()
+        
+        return self._series_name
+    
+    @seriesName.setter
+    def seriesName(self, val):
+        self._series_name = val
+    
 
     def _GenSeriesName(self):
-        return self.seriesStub + '_' + numToAlpha(self.seriesCounter)
+        if config.get('acquire-spool_subdirectories', False):
+            # High-throughput performance optimization
+            # If true, add a layer of directories to limit the number of series saved in a single directory
+            return '%03d%s%s_%05d' % (int(self.seriesCounter/100), self._sep, self.seriesStub, self.seriesCounter)
+        else:
+            return self.seriesStub + '_' + numToAlpha(self.seriesCounter)
        
     def _checkOutputExists(self, fn):
         if self.spoolType == 'Cluster':
             from PYME.Acquire import HTTPSpooler
             #special case for HTTP spooling
-            logger.debug('Looking for %s on cluster' % getRelFilename(self.dirname +'/'+ fn + '.pcs'))
-            return HTTPSpooler.exists(getRelFilename(self.dirname + '/' + fn + '.pcs'))
+            logger.debug('Looking for %s on cluster' % (self.dirname +'/'+ fn + '.pcs'))
+            return HTTPSpooler.exists(self.dirname + '/' + fn + '.pcs') or HTTPSpooler.exists(self.dirname + '/' + fn + '.h5')
             #return (fn + '.h5/') in HTTPSpooler.clusterIO.listdir(self.dirname)
         else:
-            return (fn + '.h5') in os.listdir(self.dirname)
+            return os.path.exists(os.sep.join([self.dirname, fn + '.h5']))
+        
+    def get_free_space(self):
+        """
+        Get available space in the target spool directory
+        
+        Returns
+        -------
+        
+        free space in GB
+
+        """
+        if self.spoolType == 'Cluster':
+            logger.warn('Cluster free space calculation not yet implemented, using fake value')
+            return 100
+        else:
+            from PYME.IO.FileUtils.freeSpace import get_free_space
+            return get_free_space(self.dirname)/1e9
         
     def _update_series_counter(self):
         logger.debug('Updating series counter')
@@ -103,7 +156,7 @@ class SpoolController(object):
             
     def SetSpoolDir(self, dirname):
         """Set the directory we're spooling into"""
-        self.dirname = dirname + os.sep
+        self._dirname = dirname + os.sep
 
         #if we've had to quit for whatever reason start where we left off
         while self._checkOutputExists(self.seriesName):
@@ -112,32 +165,35 @@ class SpoolController(object):
             
     def _ProgressUpate(self, **kwargs):
         self.onSpoolProgress.send(self)
+        
+    def _get_queue_name(self, fn, pcs=False):
+        if pcs:
+            ext = '.pcs'
+        else:
+            ext = '.h5'
+            
+        return self._sep.join([self.dirname.rstrip(self._sep), fn + ext])
 
 
     def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize,
                       compressionSettings=HTTPSpooler.defaultCompSettings, cluster_h5 = False):
         """Start spooling
         """
-        #import QueueSpooler, HTTPSpooler, HDFSpooler
 
-        if fn in ['', None]: #sanity checking
+        if fn in ['', None]:
             fn = self.seriesName
-            #raise RuntimeError('No output file specified')
-            #return #bail
         
-        if not (self.spoolType == 'Cluster' or os.path.exists(self.dirname)):
-            os.makedirs(self.dirname)
-
-        if not self.dirname[-1] == os.sep:
-            self.dirname += os.sep
+        #make directories as needed
+        if not (self.spoolType == 'Cluster'):
+            dirname = os.path.split(self._get_queue_name(fn))[0]
+            if not os.path.exists(dirname):
+                os.makedirs(dirname)
 
         if self._checkOutputExists(fn): #check to see if data with the same name exists
             self.seriesCounter +=1
             self.seriesName = self._GenSeriesName()
             
             raise IOError('Output file already exists')
-            return #bail
-            
 
         if stack:
             protocol = self.protocolZ
@@ -161,18 +217,14 @@ class SpoolController(object):
         
         if self.spoolType == 'Queue':
             from PYME.Acquire import QueueSpooler
-            self.queueName = getRelFilename(self.dirname + fn + '.h5')
+            self.queueName = getRelFilename(self._get_queue_name(fn))
             self.spooler = QueueSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                 frameShape = frameShape, protocol=protocol, 
                                                 guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
                                                 fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
         elif self.spoolType == 'Cluster':
             from PYME.Acquire import HTTPSpooler
-            #self.queueName = self.dirname + fn + '.h5'
-            if cluster_h5:
-                self.queueName = getRelFilename(self.dirname + fn + '.h5')
-            else:
-                self.queueName = getRelFilename(self.dirname + fn + '.pcs')
+            self.queueName = self._get_queue_name(fn, pcs=(not cluster_h5))
             self.spooler = HTTPSpooler.Spooler(self.queueName, self.scope.frameWrangler.onFrame, 
                                                frameShape = frameShape, protocol=protocol, 
                                                guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
@@ -181,7 +233,7 @@ class SpoolController(object):
            
         else:
             from PYME.Acquire import HDFSpooler
-            self.spooler = HDFSpooler.Spooler(self.dirname + fn + '.h5', self.scope.frameWrangler.onFrame, 
+            self.spooler = HDFSpooler.Spooler(self._get_queue_name(fn), self.scope.frameWrangler.onFrame,
                                               frameShape = frameShape, protocol=protocol, 
                                               guiUpdateCallback=self._ProgressUpate, complevel=compLevel, 
                                               fakeCamCycleTime=fakeCycleTime, maxFrames=maxFrames)
@@ -205,7 +257,7 @@ class SpoolController(object):
 
     @property
     def rel_dirname(self):
-        return nameUtils.getRelFilename(self.dirname)
+        return self._sep.join(self._subdir)
 
     def StopSpooling(self):
         """GUI callback to stop spooling."""

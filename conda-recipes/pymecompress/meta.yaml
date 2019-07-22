@@ -125,11 +125,12 @@ requirements:
   run:
     - python
     - numpy {{ numpy }}
+    - six
     
 
   #unfortunately not availible through conda on windows ##FIXME
 
-#test:
+test:
   # files which are copied from the recipe into the (temporary) test
   # directory which are needed during testing
   #files:
@@ -145,8 +146,8 @@ requirements:
   #  - bsdiff4 -h
   #  - bspatch4 -h
   # Python imports
-  #imports:
-  #  - bsdiff4
+  imports:
+    - pymecompress.bcl
 
   # The script run_test.py will be run automatically if it is part of the
   # recipe

@@ -165,7 +165,7 @@ class ActionPanel(wx.Panel):
         
         for roi in rois:
             args = {'state' : {'Positioning.x': float(roi['x']), 'Positioning.y': float(roi['y'])}}
-            self.actionManager.QueueAction('state.upate', args, nice, timeout)
+            self.actionManager.QueueAction('state.update', args, nice, timeout)
             args = {'maxFrames': int(self.tNumFrames.GetValue())}
             self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
     
@@ -183,9 +183,12 @@ class ActionPanel(wx.Panel):
     
     def OnROIsFromTileviewer(self, event):
         import requests
-        resp = requests.get('http://locahost:8979/GetROILocations')
-        
-        self._add_ROIs(resp.json())
+        resp = requests.get('http://localhost:8979/get_roi_locations')
+        if resp.status_code != 200:
+            raise requests.HTTPError('Could not get ROI locations')
+
+        roi_dict = resp.json()  #FIXME!!!  need to convert {'x':{}, 'y':{}} to list of dict
+        self._add_ROIs([dict(x=roi_dict['x'][ind], y=roi_dict['y'][ind]) for ind in sorted(roi_dict['x'].keys())])
         
 
 
