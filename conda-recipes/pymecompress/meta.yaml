@@ -146,8 +146,8 @@ test:
   #  - bsdiff4 -h
   #  - bspatch4 -h
   # Python imports
-  imports:
-    - pymecompress.bcl
+  #imports:
+  #  - pymecompress.bcl
 
   # The script run_test.py will be run automatically if it is part of the
   # recipe
