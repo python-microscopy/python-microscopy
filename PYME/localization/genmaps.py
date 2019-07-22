@@ -1,10 +1,11 @@
+from __future__ import print_function
 import sys
 import argparse
 import numpy as np
 import PYME.IO.image as im
 import PYME.IO.dataExporter as dexp
 from PYME.IO.MetaDataHandler import NestedClassMDHandler
-from __future__ import print_function
+
 
 def saveasmap(array,filename,mdh=None):
     array.shape += (1,) * (4 - array.ndim) # ensure we have trailing dims making up to 4D
