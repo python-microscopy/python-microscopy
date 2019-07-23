@@ -240,7 +240,7 @@ static PyMethodDef triangle_mesh_utils_methods[] = {
 static struct PyModuleDef moduledef = {
         PyModuleDef_HEAD_INIT,
         "triangle_mesh_utils",     /* m_name */
-        "C implementations of triangle_mesh operation for speed improvement",  /* m_doc */
+        "C implementations of triangle_mesh operations for speed improvement",  /* m_doc */
         -1,                  /* m_size */
         triangle_mesh_utils_methods,    /* m_methods */
         NULL,                /* m_reload */

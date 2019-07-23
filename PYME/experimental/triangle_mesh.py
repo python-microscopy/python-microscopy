@@ -464,7 +464,8 @@ class TriangleMesh(object):
         #         else:
         #             pass
         #             if self.debug and (i > 20):
-        #                 raise RuntimeError('Abnormal vertex valance detected on vertex %d' % v_idx)
+        #                 print('Abnormal vertex valance detected on vertex %d' % v_idx)
+        #                 # raise RuntimeError('Abnormal vertex valance detected on vertex %d' % v_idx)
                 
         #         vertex = self._vertices['position'][v_idx]
         #         l = vertex - self._vertices['position'][curr_edge['vertex']]
@@ -607,21 +608,19 @@ class TriangleMesh(object):
         _dead_vertex = twin_halfedge['vertex']
         _live_vertex = curr_halfedge['vertex']
 
-        # # Grab the valences of the 4 points near the edge
-        # vl, vd = self._vertices['valence'][_live_vertex], self._vertices['valence'][_dead_vertex]
-        # vn, vtn = self._vertices['valence'][self._halfedges['vertex'][_next]], self._vertices['valence'][self._halfedges['vertex'][_twin_next]]
+        # Grab the valences of the 4 points near the edge
+        vl, vd = self._vertices['valence'][_live_vertex], self._vertices['valence'][_dead_vertex]
+        vn, vtn = self._vertices['valence'][self._halfedges['vertex'][_next]], self._vertices['valence'][self._halfedges['vertex'][_twin_next]]
 
-        # if (vl < 4) or (vd < 4) or (vn < 4) or (vtn < 4):
-        #     # TODO: (re: David) This test is really playing it safe. It might be better
-        #     # to collapse and then deal with a valence 2 edge or perform a more thorough
-        #     # test.
-        #     return
+        # Make sure we create no vertices of valence <3 (manifoldness)
+        if ((vl + vd - 3) < 4) or (vn < 4) or (vtn < 4):
+            return
 
-        # Check for creation of multivalent edeges and prevent this
+        # Check for creation of multivalent edges and prevent this (manifoldness)
         dead_list = self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == _dead_vertex]]
         live_list = self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == _live_vertex]]
         twin_list = list(set(dead_list) & set(live_list))
-        if len(twin_list) > 2:
+        if len(twin_list) != 2:
             return
         
         if self.debug and (_live_vertex == _dead_vertex):
@@ -633,7 +632,7 @@ class TriangleMesh(object):
         self._vertices['position'][_live_vertex, :] = 0.5*(self.vertices[_live_vertex, :] + self.vertices[_dead_vertex, :])
         
         # update valence of vertex we keep
-        self._vertices['valence'][_live_vertex] = self._vertices['valence'][_live_vertex] + self._vertices['valence'][_dead_vertex] - 3
+        self._vertices['valence'][_live_vertex] = vl + vd - 3
         
         if self.debug:
             print(self._vertices['valence'][_live_vertex], self._vertices['valence'][_dead_vertex])
@@ -1001,11 +1000,9 @@ class TriangleMesh(object):
         _twin_prev = twin_edge['prev']
         _twin_next = twin_edge['next']
 
-        # if (self._valences[curr_edge['vertex']] < 4) or (self._valences[twin_edge['vertex']] < 4):
-        #     # TODO - this test is really playing it safe, might be better to collapse and then deal with valence 2 edge, or
-        #     # perform a more thorough test
-        #     #print('Flipping could create a valence 2 vertex, skipping')
-        #     return
+        # Make sure both vertices have valence > 3 (preserve manifoldness)
+        if (self._valences[curr_edge['vertex']] < 4) or (self._valences[twin_edge['vertex']] < 4):
+            return
 
         # Calculate adjustments to the halfedges we're flipping
         new_v0 = self._halfedges['vertex'][_next]
@@ -1015,18 +1012,30 @@ class TriangleMesh(object):
         if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
             return
 
-        # # Convexity check
-        # y = self._vertices['position'][self._halfedges['vertex'][_curr]] - self._vertices['position'][self._halfedges['vertex'][_twin]]
-        # x = self._vertices['position'][new_v1] - self._vertices['position'][new_v0]
-        # xn = x/np.sqrt((x*x).sum())
-        # yn = y/np.sqrt((y*y).sum())
-        # p = np.eye(3) - xn[:,None]*yn[None,:]
-        # z = self._vertices['position'][self._halfedges['vertex'][_twin]] - self._vertices['position'][new_v0]
-        # pz = (p*z).sum(1)
-        # y_x_pz = fast_3x3_cross(x,pz)
-        # n = fast_3x3_cross(x,y)
-        # if (y_x_pz*n).sum() > 0:
-        #     # Concave, don't flip
+        # Convexity check
+        y = self._vertices['position'][self._halfedges['vertex'][_curr]] - self._vertices['position'][self._halfedges['vertex'][_twin]]
+        x = self._vertices['position'][new_v1] - self._vertices['position'][new_v0]
+        xn = x/np.sqrt((x*x).sum())
+        yn = y/np.sqrt((y*y).sum())
+        p = np.eye(3) - xn[:,None]*yn[None,:]
+        z = self._vertices['position'][self._halfedges['vertex'][_twin]] - self._vertices['position'][new_v0]
+        pz = (p*z).sum(1)
+        y_x_pz = fast_3x3_cross(x,pz)
+        n = fast_3x3_cross(x,y)
+        if (y_x_pz*n).sum() > 0:
+            # Concave, don't flip
+            return
+
+        # # Make sure the dihedral angle between the flipped triangles is less than (2/3)*pi
+        # upper = self._vertices['position'][self._halfedges['vertex'][_curr]] - self._vertices['position'][new_v0]
+        # lower = self._vertices['position'][self._halfedges['vertex'][_twin]] - self._vertices['position'][new_v0]
+        # new_edge = self._vertices['position'][new_v1] - self._vertices['position'][new_v0]
+        # n1 = fast_3x3_cross(new_edge, upper)
+        # n2 = fast_3x3_cross(lower, new_edge)
+        # nn1 = n1/np.sqrt((n1*n1).sum())
+        # nn2 = n2/np.sqrt((n2*n2).sum())
+        # theta = np.arccos(np.sqrt((nn1*nn2).sum()))
+        # if theta >= 2.094:
         #     return
 
         # _next's next and prev must be adjusted
@@ -1251,7 +1260,7 @@ class TriangleMesh(object):
             self.regularize()
 
             # 4. Relocate vertices on the surface by tangential smoothing.
-            self.relax(l=l, n=n_relax)
+            # self.relax(l=l, n=n_relax)
 
     def repair(self):
         """
