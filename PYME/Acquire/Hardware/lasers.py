@@ -78,7 +78,7 @@ class Laser(object):
         
     def registerStateHandlers(self, scopeState):
         scopeState.registerHandler('Lasers.%s.On' % self.name, self.IsOn, lambda v: self.TurnOn() if v else self.TurnOff())
-        if self.IsPowerControllable():
+        if self.IsPowerControlable():
             scopeState.registerHandler('Lasers.%s.Power' % self.name, self.GetPower, self.SetPower)
             scopeState.registerHandler('Lasers.%s.MaxPower' % self.name, lambda : self.MAX_POWER)
             scopeState.registerHandler('Lasers.%s.MinPower' % self.name, lambda : self.MIN_POWER)
