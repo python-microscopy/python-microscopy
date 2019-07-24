@@ -97,19 +97,19 @@ class ReflectedLinePIDFocusLock(PID):
         i: float
         d: float
         sample_time: float
-            See simple_pid.PID, but this servo does not have a tolerence on the lock position, but rather a dead-time
+            See simple_pid.PID, but this servo does not have a tolerance on the lock position, but rather a dead-time
             of-sorts by only updating at ~regular time intervals. The correction is only changed once per sample_time.
         """
         self.scope = scope
         self.piezo = piezo
 
         self._fitter = GaussFitter1D()
-        self.fit_roi_size = 30
+        self.fit_roi_size = 75
 
 
         self.peak_position = 512  # default to half of the camera size
 
-        PID.__init__(self, p, i, d, setpoint=self.peak_position, auto_mode=False)
+        PID.__init__(self, p, i, d, setpoint=self.peak_position, auto_mode=False, sample_time=sample_time)
 
     @property
     def lock_enabled(self):
