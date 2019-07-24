@@ -31,6 +31,7 @@ class Laser(object):
     powerControlable = False  # deprecated
     power_controllable = False
     MAX_POWER = 1
+    MIN_POWER = 0
     units='\%'
 
     def __init__(self, name,turnOn=False, scopeState=None):
@@ -87,9 +88,10 @@ class Laser(object):
         
     def registerStateHandlers(self, scopeState):
         scopeState.registerHandler('Lasers.%s.On' % self.name, self.IsOn, lambda v: self.TurnOn() if v else self.TurnOff())
-        if self.IsPowerControlable():        
+        if self.IsPowerControllable():
             scopeState.registerHandler('Lasers.%s.Power' % self.name, self.GetPower, self.SetPower)
             scopeState.registerHandler('Lasers.%s.MaxPower' % self.name, lambda : self.MAX_POWER)
+            scopeState.registerHandler('Lasers.%s.MinPower' % self.name, lambda : self.MIN_POWER)
 
 
 
