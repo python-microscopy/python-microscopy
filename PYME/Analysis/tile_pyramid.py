@@ -3,6 +3,7 @@ from PYME.IO.MetaDataHandler import get_camera_roi_origin, NestedClassMDHandler
 import os
 import glob
 import collections
+import time
 
 CacheEntry = collections.namedtuple('CacheEntry', ['data', 'saved'])
 
@@ -126,6 +127,7 @@ class NumpyTileIO(TileIO):
         self.pattern = os.sep.join([self.base_dir, '%d', '%03d', '%03d_%03d_' + self.suff])
         
         self._tilecache = TileCache()
+        self._coords = {}
     
     def _filename(self, layer, x, y):
         return self.pattern % (layer, x, x, y)
@@ -138,22 +140,36 @@ class NumpyTileIO(TileIO):
             return None
         
     def save_tile(self, layer, x, y, data):
+        self._check_layer_tile_coords(layer)
         self._tilecache.save(self._filename(layer, x, y), data)
         
+        if not (x,y) in self._coords[layer]:
+            self._coords[layer].append((x,y))
+        
     def delete_tile(self, layer, x, y):
+        self._check_layer_tile_coords(layer)
         self._tilecache.remove(self._filename(layer, x, y))
+        self._coords[layer].remove((x, y))
         
     def tile_exists(self, layer, x, y):
-        self._tilecache.exists(self._filename(layer, x, y))
+        #return (x, y) in self._coords[layer]
+        return self._tilecache.exists(self._filename(layer, x, y))
         
-    def get_layer_tile_coords(self, layer=0):
-        self.flush()
+    def _check_layer_tile_coords(self, layer=0):
+        if not layer in self._coords.keys():
+            self._update_layer_tile_coords(layer)
+    
+    def _update_layer_tile_coords(self, layer=0):
         tiles = []
         for xdir in glob.glob(os.path.join(self.base_dir, '%d' % layer, '*')):
             for fn in glob.glob(os.path.join(xdir, '*_%s' % self.suff)):
-                tiles.append([int(s) for s in os.path.basename(fn).split('_')[:2]])
+                tiles.append(tuple([int(s) for s in os.path.basename(fn).split('_')[:2]]))
                 
-        return tiles
+        self._coords[layer] = tiles
+        
+    def get_layer_tile_coords(self, layer=0):
+        self._check_layer_tile_coords(layer)
+        return self._coords[layer]
     
     def flush(self):
         self._tilecache.flush()
@@ -166,6 +182,7 @@ class PZFTileIO(NumpyTileIO):
         self.pattern = os.sep.join([self.base_dir, '%d', '%03d', '%03d_%03d_' + self.suff])
     
         self._tilecache = PZFTileCache()
+        self._coords = {}
         
 class SqliteTileIO(TileIO):
     def __init__(self, base_dir, suff='img'):
@@ -175,6 +192,8 @@ class SqliteTileIO(TileIO):
         self._cur = self._conn.cursor()
 
         self._known_tables =[r[0] for r in self._cur.execute("SELECT name FROM sqlite_master WHERE type='table'")]
+        self._coords = {}
+        
         
     def get_tile(self, layer, x, y):
         from PYME.IO import PZFFormat
@@ -501,6 +520,8 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     P = ImagePyramid(out_folder, pyramid_tile_size, x0 = x0, y0 = y0, pixel_size=mdh.getEntry('voxelsize.x'))
     
     print('Adding base tiles ...')
+    
+    t1 = time.time()
     for i in range(int(mdh.getEntry('Protocol.DataStartsAt')), numFrames):
         if xdp[i - 1] == xdp[i] or not skipMoveFrames:
             x_i = xdp[i]
@@ -524,10 +545,15 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
             else:
                 #print('adding base tile from frame %d' % i)
                 P.add_base_tile(x_i, y_i, d_weighted.squeeze(), weights.squeeze())
+                
     
+    t2 = time.time()
+    print('Added base tiles in %fs' % (t2 - t1))
+    #P._occ.flush()
+    print(time.time() - t2)
     print('Updating pyramid ...')
     P.update_pyramid()
-    
+    print(time.time() - t2)
     print('Done')
     return P
 
@@ -550,11 +576,13 @@ def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
 if __name__ == '__main__':
     import sys
     from PYME.util import mProfile
-    mProfile.profileOn(['tile_pyramid.py',])
+    #mProfile.profileOn(['tile_pyramid.py',])
     input_stack, output_dir = sys.argv[1:]
-    
+    import time
+    t1 = time.time()
     create_pyramid_from_dataset(input_stack, output_dir)
-    mProfile.report()
+    print(time.time() - t1)
+    #mProfile.report()
     
     
     

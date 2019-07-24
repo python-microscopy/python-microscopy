@@ -30,6 +30,7 @@ particular could use a lot of work. Hopefully it's enough to get you started, ho
    Analysis
    VisGUI
    component_programs
+   LocalisationAnalysis
 
 
 

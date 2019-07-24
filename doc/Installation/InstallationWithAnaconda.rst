@@ -24,12 +24,13 @@ PYME on a variety of platforms. We currently provide compiled packages for 64 bi
     The downside of this is that you will need to run `source activate PYME` before you can run any of the PYME programs.
     You might also not be able to associate files to open with dh5view or VisGUI on windows.
 
-STEP 1: Installing Anaconda
-===========================
+STEP 1: Installing Miniconda
+============================
 
-Download and install `Anaconda <https://store.continuum.io/cshop/anaconda/>`_ from
-https://store.continuum.io/cshop/anaconda/. Choose the **64 bit** version of **Python 2.7**
-for your prefered platform.
+Python-microscopy can either be installed on top of the full Anaconda distribution, or on top of a stripped down version,
+called Miniconda. We reccomend the later as it is less likely to result in dependency issues. Download and install
+`Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ from https://docs.conda.io/en/latest/miniconda.html .
+Choose the **64 bit** version of **Python 2.7** for your prefered platform.
 
 .. warning::
 
@@ -64,7 +65,8 @@ This should download and install PYME, along with a number of it's dependencies.
     visualization) and `navigator-updater` packages in recent versions of Anaconda. As `navigator-updater`
     is installed by default, this can prevent `python-microscopy` from installing. If the installation above fails
     with an error message about dependencies, try running ``conda uninstall navigator-updater`` and then re-running
-    ``conda install python-microscopy``.
+    ``conda install python-microscopy``. This can also be avoided by starting with the stripped down miniconda distribution
+    instead.
 
     Other dependency issues can result in an old version of PYME being installed (most likely in older anaconda installs)
     A good sanity check is to look at what version conda wants to install when you run `conda install python-microscopy`.

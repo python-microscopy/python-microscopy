@@ -35,12 +35,13 @@ Name                      Description
 voxelsize.x               x pixel size in μm
 voxelsize.y               y pixel size in μm
 Camera.TrueEMGain         The calibrated electron multiplying gain (1 for
-                          ordinary CCDs)
+                          ordinary CCDs and sCMOS)
 Camera.NoiseFactor        EM excess noise factor (1.41 for EMCCDs, 1 for
                           standard CCDs / sCMOS)
 Camera.ElectronsPerCount  Number of photo-electons per AD unit
 Camera.ReadNoise          Read out noise in photo-electrons
-Camera.ADOffset           Analog to digital offset (dark level). Not strictly
+Camera.ADOffset           Analog to digital offset (dark level / average value of camera
+                          pixels when no light is incident). Not strictly
                           required as PYME will try and guess this from dark frames
                           at the beginning of the sequence, but unless your acquistion
                           is a very good match to the PYMEAcquire protocols this is
@@ -56,15 +57,14 @@ name (modulo extension) as the .tif file
 
 Once you've created the ``.md`` file, just launch::
 
-    lmview <filename>.tif
+    dh5view -m LM <filename>.tif
 
 if you want to perform localisation microscopy analysis, or::
 
     dh5view <filename>.tif
 
 for psf extraction, deconvolution, or other general purpose image processing tasks 
-(``lmview`` is just a shortcut for ``dh5view -m LM`` and launches dh5view in it's 
-localisation analysis personality).
+(the `` -m LM`` option launches ``dh5view`` in it's localisation analysis personality).
 
 Tiff Sequences
 ++++++++++++++
@@ -78,13 +78,15 @@ your data is in ``Frame001.tif``, ``Frame002.tif``, ``Frame003.tif`` etc ... a r
 This means that the ``.md`` file doesn't need to have the same name as the individual data files, and you
 now load the ``.md`` file rather than one of the ``.tif`` images. Eg.::
 
-    lmview <filename>.md
+    dh5view -m LM <filename>.md
+
+
 
 Tweaking the metadata
 +++++++++++++++++++++
 
 Once you have loaded the data one can further tweak the metadata (using
-the **Metadata** tab) of ``lmview``. Missing entries can to be added in the command
+the **Metadata** tab) of ``dh5view``. Missing entries can to be added in the command
 window by executing::
 
    image.mdh['entryname'] = value
@@ -95,12 +97,11 @@ the data - change the ``.md`` file, or export the data as PYMEs native ``.h5`` f
 if you want to keep the changes.
 
 
-Converting the data to PYMEs native ``.h5`` (old method)
-========================================================
+Converting the data to PYMEs native ``.h5`` or ``.pcs`` formats (old method)
+============================================================================
 
-There are a number of scripts to convert different data types (currently Raw, Tiff
-sequences, kdf stacks, and sequences of kdfs) to ``.h5`` in the ``PYME.io.FileUtils``
-folder. This approach is a little inelegant, because you need to add all the metadata entries
-manually in ``dh5view``, but can be useful in some circumstances (notably there is not
-yet support for directly analysing raw of kdf data).
+This is generally not recommended, as it's more work for the user. Load the data into dh5view, fill out all the metadata,
+and save to either `.h5` or to the cluster. You might want to consider this if you want to take advantage of our file
+compression. It might also give small improvements to analysis speed and memory usage (although in practice this is likely
+to be offset by the time it takes to convert).
 
