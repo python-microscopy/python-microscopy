@@ -187,7 +187,7 @@ class ActionPanel(wx.Panel):
         if resp.status_code != 200:
             raise requests.HTTPError('Could not get ROI locations')
 
-        roi_dict = resp.json()  # need to convert {'x':{}, 'y':{}} to list of dict
+        roi_dict = resp.json()  #FIXME!!!  need to convert {'x':{}, 'y':{}} to list of dict
         self._add_ROIs([dict(x=roi_dict['x'][ind], y=roi_dict['y'][ind]) for ind in sorted(roi_dict['x'].keys())])
         
 

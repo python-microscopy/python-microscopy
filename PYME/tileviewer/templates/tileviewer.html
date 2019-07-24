@@ -80,8 +80,8 @@
         //console.log(event);
         var c = viewer.viewport.viewportToImageCoordinates(viewer.viewport.pointFromPixel(event.position));
         //console.log(c);
-        // FIXME - does x need to be negated because of openseadragon / PYME, or because of our (rotate and) flipx camera orientation?
-        $.get( "/add_roi?x=" + (-1 * (((c.x - {{ roi_half_width }}) * {{ pyramid_pixel_size_um }}) + {{ pyramid_x0 }}))  + "&y=" + (((c.y - {{ roi_half_width }}) * {{ pyramid_pixel_size_um }}) + {{ pyramid_y0 }}), function( data ) {
+
+        $.get( "/add_roi?x=" + c.x + "&y=" + c.y , function( data ) {
         $( "#roi_list" ).html( data );
         //alert( "Load was performed." );
     });

@@ -65,8 +65,9 @@ dateDict = {'username' : getUsername(), 'day' : dtn.day, 'month' : dtn.month, 'y
 
 
 #\\ / and * will be replaced with os dependant separator
-datadirPattern = '%(dataDir)s/%(username)s/%(year)d_%(month)d_%(day)d%(dirSuffix)s'
-clusterDirPattern = '%(username)s/%(year)d_%(month)d_%(day)d%(dirSuffix)s'
+subdirPattern = '%(username)s/%(year)d_%(month)d_%(day)d%(dirSuffix)s'
+datadirPattern = '/'.join(('%(dataDir)s', subdirPattern))
+clusterDirPattern = subdirPattern
 filePattern = '%(day)d_%(month)d_series'
 
 #resultsdirPattern = '%(homeDir)s/analysis/%(dday)d-%(dmonth)d-%(dyear)d'
@@ -85,6 +86,12 @@ def getCalibrationDir(serialNum, create=True):
         os.makedirs(p)
 
     return os.path.normpath(p)
+
+def get_spool_subdir():
+    return seps.split(subdirPattern % dateDict)
+
+def get_local_data_directory():
+    return datadir
 
 def genHDFDataFilepath(create=True):
     """Generate a default path for saving HDF formatted raw data on the local

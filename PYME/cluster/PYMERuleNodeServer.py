@@ -13,7 +13,7 @@ from PYME import config as conf
 from PYME.misc import pyme_zeroconf
 from PYME.misc.computerName import GetComputerName
 
-#logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(name)s:%(levelname)s:%(message)s')
@@ -29,7 +29,14 @@ from multiprocessing import cpu_count
 import sys
 import threading
 
+from PYME.util import fProfile, mProfile
+
 def main():
+    
+    #prof = fProfile.thread_profiler()
+    #prof.profileOn('.*PYME.*|.*zeroconf.*', 'ruleserver_prof.txt')
+    #mProfile.profileOn(['rulenodeserver.py', 'zeroconf.py'])
+    
     confFile = os.path.join(conf.user_config_dir, 'nodeserver.yaml')
     with open(confFile) as f:
         config = yaml.load(f)
@@ -134,6 +141,10 @@ def main():
         #    pass
 
         logger.info('Workers and nodeserver are shut down')
+        
+        
+        #mProfile.report()
+        #prof.profileOff()
 
         sys.exit()
             

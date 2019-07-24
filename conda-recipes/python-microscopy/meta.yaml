@@ -132,7 +132,7 @@ requirements:
   # Packages required to build the package. python and numpy must be
   # listed explicitly if they are required.
   build:
-    - python
+    - python {{ python}}
     - numpy {{ numpy }}
     - matplotlib
     - cython
@@ -142,7 +142,7 @@ requirements:
   # Package names should be any valid conda spec (see "Specifying versions
   # in requirements" below).
   run:
-    - python
+    - python {{ python }}
     - numpy {{ numpy }}
     - scipy
     - matplotlib

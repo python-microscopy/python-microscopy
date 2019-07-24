@@ -312,7 +312,7 @@ class compThread(threading.Thread):
         #self.frameLock.release()
 
     def getIm(self):
-        im = self.buffer[self.bufferReadPos,:,:]
+        im = np.copy(self.buffer[self.bufferReadPos,:,:], order='F')
         self.numBufferedImages -= 1
         self.bufferReadPos +=1
         if self.bufferReadPos >= self.bufferlength: #wrap around

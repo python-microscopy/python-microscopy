@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation of PYME on 64 bit Windows, OSX, or Linux &mdash; PYME 19.02.27 documentation</title>
+  <title>Installation of PYME on 64 bit Windows, OSX, or Linux &mdash; PYME 19.07.22 documentation</title>
   
 
   
@@ -34,6 +34,7 @@
   
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/theme_overrides.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Installation for development or instrument control" href="InstallationFromSource.html" />
@@ -64,7 +65,7 @@
             
             
               <div class="version">
-                19.02.27
+                19.07.22
               </div>
             
           
@@ -91,7 +92,7 @@
               <p class="caption"><span class="caption-text">Installation</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation of PYME on 64 bit Windows, OSX, or Linux</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#step-1-installing-anaconda">STEP 1: Installing Anaconda</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-1-installing-miniconda">STEP 1: Installing Miniconda</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-2-installing-pyme-using-conda">STEP 2: Installing PYME using conda</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-3-verifying-the-installation">STEP 3: Verifying the Installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-4-setting-up-bioformats-importing-optional">STEP 4: Setting up bioformats importing [optional]</a></li>
@@ -195,11 +196,12 @@ PYME in a dedicated conda environment e.g. <cite>conda create -n PYME python=2.7
 The downside of this is that you will need to run <cite>source activate PYME</cite> before you can run any of the PYME programs.
 You might also not be able to associate files to open with dh5view or VisGUI on windows.</p>
 </div>
-<div class="section" id="step-1-installing-anaconda">
-<h2>STEP 1: Installing Anaconda<a class="headerlink" href="#step-1-installing-anaconda" title="Permalink to this headline">¶</a></h2>
-<p>Download and install <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda</a> from
-<a class="reference external" href="https://store.continuum.io/cshop/anaconda/">https://store.continuum.io/cshop/anaconda/</a>. Choose the <strong>64 bit</strong> version of <strong>Python 2.7</strong>
-for your prefered platform.</p>
+<div class="section" id="step-1-installing-miniconda">
+<h2>STEP 1: Installing Miniconda<a class="headerlink" href="#step-1-installing-miniconda" title="Permalink to this headline">¶</a></h2>
+<p>Python-microscopy can either be installed on top of the full Anaconda distribution, or on top of a stripped down version,
+called Miniconda. We reccomend the later as it is less likely to result in dependency issues. Download and install
+<a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> from <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">https://docs.conda.io/en/latest/miniconda.html</a> .
+Choose the <strong>64 bit</strong> version of <strong>Python 2.7</strong> for your prefered platform.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">Anaconda is available in both Python 2.7 and Python 3.x flavours. PYME will <strong>only</strong> work with the Python 2.7 version.</p>
@@ -229,7 +231,8 @@ conda install python-microscopy
 visualization) and <cite>navigator-updater</cite> packages in recent versions of Anaconda. As <cite>navigator-updater</cite>
 is installed by default, this can prevent <cite>python-microscopy</cite> from installing. If the installation above fails
 with an error message about dependencies, try running <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">uninstall</span> <span class="pre">navigator-updater</span></code> and then re-running
-<code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">python-microscopy</span></code>.</p>
+<code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">python-microscopy</span></code>. This can also be avoided by starting with the stripped down miniconda distribution
+instead.</p>
 <p class="last">Other dependency issues can result in an old version of PYME being installed (most likely in older anaconda installs)
 A good sanity check is to look at what version conda wants to install when you run <cite>conda install python-microscopy</cite>.
 If it’s older than a month or two (PYME uses date based versions) something is going wrong.</p>

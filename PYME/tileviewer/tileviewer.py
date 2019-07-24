@@ -27,10 +27,8 @@ class TileServer(object):
     def _set_tile_source(self, tile_dir):
         self.tile_dir = tile_dir
         self.mdh = MetaDataHandler.load_json(os.path.join(tile_dir, 'metadata.json'))
-        self._pyramid = tile_pyramid.ImagePyramid(tile_dir, mdh=self.mdh, pyramid_tile_size=self.mdh['Pyramid.TileSize'],
-                                                  x0=self.mdh['Pyramid.x0'], y0=self.mdh['Pyramid.y0'],
-                                                  pixel_size=self.mdh['Pyramid.PixelSize'], n_tiles_x=self.mdh["Pyramid.NTilesX"],
-                                                  n_tiles_y = self.mdh["Pyramid.NTilesY"], depth=self.mdh["Pyramid.Depth"])
+        self._pyramid = tile_pyramid.ImagePyramid(tile_dir, pyramid_tile_size=self.mdh['Pyramid.TileSize'])
+        
     @cherrypy.expose
     def set_tile_source(self, tile_dir):
         self._set_tile_source(tile_dir)
@@ -42,7 +40,6 @@ class TileServer(object):
         from PYME.IO import tabular
         
         if locations_file.endswith('.h5'):
-            # FIXME - this is an unexpected type change!
             self.roi_locations = tabular.hdfSource(locations_file, tablename=tablename)
         # elif locations_file.endswith('.csv'):
         #     self.roi_locations = tabular.textfileSource(locations_file)
@@ -52,11 +49,11 @@ class TileServer(object):
     def get_roi_locations(self):
         if not self.roi_locations is None:
             from pandas import DataFrame
-            return DataFrame(self.roi_locations).to_json()
+            return DataFrame(self.roi_locations).to_json() #FIXME - this is broken for tabular objects
         
     @cherrypy.expose
     def add_roi(self, x, y):
-        self.roi_locations.append({'x': float(x), 'y': float(y)})
+        self.roi_locations.append({'x': float(x), 'y': float(y)}) #FIXME - broken for tabular objects
         
         raise cherrypy.HTTPRedirect('/roi_list')
         
@@ -89,8 +86,6 @@ class TileServer(object):
                                                           pyramid_x0=self.mdh['Pyramid.x0'],
                                                           pyramid_y0=self.mdh['Pyramid.y0'],
                                                           pyramid_pixel_size_um=self.mdh['Pyramid.PixelSize'],
-                                                          roi_half_width=int(0.5*self.mdh['Pyramid.ROIWidth']),
-                                                          roi_half_height=int(0.5*self.mdh['Pyramid.ROIHeight'])
                                                           )
     
     

@@ -15,7 +15,7 @@ int main(int argc, const char * argv[]) {
         printf("\n");
     }
     
-    if (argc > 1){
+    if (false) { //(argc > 1){
         NSLog(@"launching Python interpreter");
         printf(Py_GetPath());
         NSLog([NSString stringWithCString: (Py_GetPath()) encoding:NSUTF8StringEncoding]);
@@ -24,7 +24,7 @@ int main(int argc, const char * argv[]) {
         PySys_SetArgvEx(argc, argv, 0);
         //PyObject *pFilename = PyString_FromString(argv[1]);
         
-        PyRun_SimpleString("import sys\nfrom PYME.Analysis.LMVis import VisGUI\nVisGUI.main(sys.argv[1])\n");
+        PyRun_SimpleString("import sys\nfrom PYME.LMVis import VisGUI\nVisGUI.main(sys.argv[1])\n");
         Py_Finalize();
         return 0;
     } else {
