@@ -20,12 +20,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from PYME.DSView import View3D
+from PYME.DSView import View3D, ViewIm3D
 #from PYME import cSMI
 import numpy as np
 #from PYME.Acquire import eventLog
 from math import floor
 from PYME.IO import MetaDataHandler
+from PYME.IO import image
 import time
 
 import dispatch
@@ -77,7 +78,10 @@ class zScanner:
         for mdgen in MetaDataHandler.provideStartMetadata:
             mdgen(mdh)
 
-        self.view = View3D(self.image, 'Z Stack', mdh = mdh)
+        self.img = image.ImageStack(data=self.image, mdh=mdh)
+
+        #self.view = View3D(self.image, 'Z Stack', mdh = mdh)
+        self.view = ViewIm3D(self.img, 'Z Stack')
         self.running = True
         
         self.zPoss = np.arange(self.stackSettings.GetStartPos(), self.stackSettings.GetEndPos()+.95*self.stackSettings.GetStepSize(),self.stackSettings.GetStepSize()*self.stackSettings.GetDirection())
@@ -126,16 +130,16 @@ class zScanner:
 
         self.image = np.zeros((self.shape_x, self.shape_y, self.nz), 'uint16')
 
-        self.view.image.SetData(self.image)        
-        self.view.do.SetDataStack(self.view.image.data)
+        self.img.SetData(self.image)
+        self.view.do.SetDataStack(self.img.data)
         
         #loop over all providers of metadata
         for mdgen in MetaDataHandler.provideStartMetadata:
-            mdgen(self.view.image.mdh)
+            mdgen(self.img.mdh)
             
         #new metadata handling
-        self.view.image.mdh.setEntry('StartTime', time.time())
-        self.view.image.mdh.setEntry('AcquisitionType', 'Stack')
+        self.img.mdh.setEntry('StartTime', time.time())
+        self.img.mdh.setEntry('AcquisitionType', 'Stack')
         
         #self.view_xz = View3D(self.image)
         #self.view_xz.do.slice = 1
@@ -196,11 +200,11 @@ class zScanner:
         self.scope.SetPos(**{self.posChan : self.zPoss[fn]})
         
     def OnAqStop(self, **kwargs):
-        self.view.image.mdh.setEntry('EndTime', time.time())
+        self.img.mdh.setEntry('EndTime', time.time())
 
         #loop over all providers of metadata
         for mdgen in MetaDataHandler.provideStopMetadata:
-           mdgen(self.view.image.mdh)
+           mdgen(self.img.mdh)
         #pass
 
     def destroy(self):

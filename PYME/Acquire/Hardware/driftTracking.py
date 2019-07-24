@@ -302,15 +302,16 @@ class correlator(Pyro.core.ObjBase):
             # print "cal proceed"
             if (self.calibState % 1) == 0:
                 #full step - record current image and move on to next position
-                self.setRefN(self.calibState - 1)
-                self.piezo.MoveTo(0, self.calPositions[self.calibState])
+                self.setRefN(int(self.calibState - 1))
+                self.piezo.MoveTo(0, self.calPositions[int(self.calibState)])
             
+			
             #increment our calibration state
             self.calibState += 0.5
             
         elif (self.calibState == self.NCalibStates):
             # print "cal finishing"
-            self.setRefN(self.calibState - 1)
+            self.setRefN(int(self.calibState - 1))
             
             #perform final bit of calibration - calcuate gradient between steps
             #self.dz = (self.refC - self.refB).ravel()
