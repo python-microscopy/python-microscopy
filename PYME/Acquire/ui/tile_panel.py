@@ -70,13 +70,14 @@ class TilePanel(wx.Panel):
         self.bGo.Disable()
         
         self.scope.tiler.on_stop.connect(self._on_stop)
+        self.scope.tiler.progress.connect(self._update)
         self.scope.tiler.start()
         
         
     def OnStop(self, event=None):
         self.scope.tiler.stop()
         
-    def _update(self):
+    def _update(self, *args, **kwargs):
         self.pProgress.SetValue(100*float(self.scope.tiler.callNum)/self.scope.tiler.imsize)
         
     def _on_stop(self, *args, **kwargs):
@@ -84,6 +85,7 @@ class TilePanel(wx.Panel):
         self.bGo.Enable()
         
         self.scope.tiler.on_stop.disconnect(self._on_stop)
+        self.scope.tiler.progress.disconnect(self._update)
         
         wx.CallAfter(wx.CallLater,1e3, self._launch_viewer)
         
@@ -93,12 +95,17 @@ class TilePanel(wx.Panel):
         import sys
         import webbrowser
         import time
+        import requests
 
         self.scope.tiler.P.update_pyramid()
         
-        if not self._gui_proc is None:
-            self._gui_proc.kill()
+        #if not self._gui_proc is None:
+        #    self._gui_proc.kill()
         
-        self._gui_proc = subprocess.Popen('%s -m PYME.tileviewer.tileviewer %s' % (sys.executable, self.scope.tiler._tiledir), shell=True)
-        time.sleep(3)
+        try:
+            requests.get('http://127.0.0.1:8979/set_tile_source?tile_dir=%s' % self.scope.tiler._tiledir)
+        except requests.ConnectionError:
+            self._gui_proc = subprocess.Popen('%s -m PYME.tileviewer.tileviewer %s' % (sys.executable, self.scope.tiler._tiledir), shell=True)
+            time.sleep(3)
+            
         webbrowser.open('http://127.0.0.1:8979/')

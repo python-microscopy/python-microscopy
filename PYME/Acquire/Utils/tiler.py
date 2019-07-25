@@ -22,7 +22,10 @@ class Tiler(pointScanner.PointScanner):
         self._base_tile_size = base_tile_size
         self._flat = None #currently not used
         
+        self._last_update_time = 0
+        
         self.on_stop = dispatch.Signal()
+        self.progress = dispatch.Signal()
         
     
     def _gen_weights(self):
@@ -78,6 +81,11 @@ class Tiler(pointScanner.PointScanner):
         
         self.P.add_base_tile(x_i, y_i, self._weights*d, self._weights)
         
+        t = time.time()
+        if t > (self._last_update_time + 1):
+            self._last_update_time = t
+            self.progress.send(self)
+        
     def _stop(self):
         pointScanner.PointScanner._stop(self)
         
@@ -87,3 +95,4 @@ class Tiler(pointScanner.PointScanner):
             f.write(self.P.mdh.to_JSON())
             
         self.on_stop.send(self)
+        self.progress.send(self)
