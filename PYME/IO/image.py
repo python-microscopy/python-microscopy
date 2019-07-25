@@ -590,6 +590,23 @@ class ImageStack(object):
         self.seriesName = getRelFilename(filename)
 
         self.mode = 'default'
+
+    def _loadPZF(self, filename):
+        """Load .pzf data.
+
+
+        """
+        from PYME.IO import unifiedIO
+        from PYME.IO import PZFFormat
+        mdfn = self._findAndParseMetadata(filename)
+    
+        with unifiedIO.openFile(filename) as f:
+            self.data = PZFFormat.loads(f.read())[0]
+    
+        #from PYME.ParallelTasks.relativeFiles import getRelFilename
+        self.seriesName = getRelFilename(filename)
+    
+        self.mode = 'default'
         
     def _loadDBL(self, filename):
         """Load Bewersdorf custom STED data.
@@ -992,6 +1009,8 @@ class ImageStack(object):
                 self._loadTiff(filename)
             elif filename.endswith('.dcimg'):
                 self._loadDCIMG(filename)
+            elif filename.endswith('.pzf'):
+                self._loadPZF(filename)
             else: #try bioformats
                 try:
                     self._loadBioformats(filename)
