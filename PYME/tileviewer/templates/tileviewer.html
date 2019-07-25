@@ -14,9 +14,25 @@
         </div>
   	<div class="row">
   	<div class="col-md-9">
-<div id="openseadragon1" style="width: 100%; height: 800px;"></div>
+        <div id="openseadragon1" style="width: 100%; height: 800px;"></div>
+
+
+
     </div>
         <div class="col-md-3">
+            <form class="form-inline">
+
+
+                    <div class="form-group">
+    <label for="display_gain">Display Gain</label>
+    <input type="text" class="form-control" id="display_gain" value="5.0" style="width: 70px;">
+  </div>
+
+
+  <button type="button" class="btn btn-default" id="set_display_gain">Set</button>
+
+
+</form>
             <h3>ROIs to image</h3>
             <p>Double click on image to add a ROI</p>
             <div id="roi_list" style="overflow-y:scroll;max-height:720px"></div>
@@ -91,6 +107,15 @@
         $( "#roi_list" ).html( data );
         //alert( "Load was performed." );
     });
+
+    function onSetGain(event){
+        var scale = $("#display_gain").val();
+        console.log(scale);
+        seaGL.viaGL.multiplier = scale;
+        viewer.world.resetItems();
+    }
+
+    $("#set_display_gain").click(onSetGain);
 </script>
 
 </body>

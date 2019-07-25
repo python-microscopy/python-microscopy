@@ -4,16 +4,25 @@ import numpy as np
 import time
 from PYME.IO import MetaDataHandler
 import os
+import dispatch
 
 class Tiler(pointScanner.PointScanner):
-    def __init__(self, scope, tile_dir, pixels = 10, pixelsize=0.1, dwelltime = 1, background=0, evtLog=False,
+    def __init__(self, scope, tile_dir, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=False,
                  trigger=False, base_tile_size=256):
-        pointScanner.PointScanner.__init__(self, scope=scope, pixels=pixels, pixelsize=pixelsize,  dwelltime=dwelltime,
+        
+        if tile_spacing is None:
+            fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
+            #calculate tile spacing such that there is 20% overlap.
+            tile_spacing = 0.8*fs*np.array(scope.GetPixelSize())
+            
+        pointScanner.PointScanner.__init__(self, scope=scope, pixels=n_tiles, pixelsize=tile_spacing,  dwelltime=dwelltime,
                                            background =background, avg=False, evtLog=evtLog, trigger=trigger, stop_on_complete=True)
         
         self._tiledir = tile_dir
         self._base_tile_size = base_tile_size
         self._flat = None #currently not used
+        
+        self.on_stop = dispatch.Signal()
         
     
     def _gen_weights(self):
@@ -69,10 +78,12 @@ class Tiler(pointScanner.PointScanner):
         
         self.P.add_base_tile(x_i, y_i, self._weights*d, self._weights)
         
-    def stop(self):
-        pointScanner.PointScanner.stop(self)
+    def _stop(self):
+        pointScanner.PointScanner._stop(self)
         
         self.P.update_pyramid()
 
         with open(os.path.join(self._tiledir, 'metadata.json'), 'w') as f:
             f.write(self.P.mdh.to_JSON())
+            
+        self.on_stop.send(self)

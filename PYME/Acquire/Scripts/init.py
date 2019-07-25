@@ -167,6 +167,14 @@ def action_manager(MainFrame, scope):
     MainFrame.AddPage(ap, caption='Queued Actions')
 
 
+@init_gui('Tiling')
+def action_manager(MainFrame, scope):
+    from PYME.Acquire.ui import tile_panel
+    
+    ap = tile_panel.TilePanel(MainFrame, scope)
+    MainFrame.aqPanels.append((ap, 'Tiling'))
+
+
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread
 
