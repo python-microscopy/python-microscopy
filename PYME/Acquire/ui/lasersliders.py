@@ -26,9 +26,14 @@
 
 
 import wx
-#import sys
+from PYME import config
 from numpy import log2
 import re
+
+SCALING_MODES = {
+    'log': 1,
+    'linear': 0
+}
 
 #redefine wxFrame with a version that hides when someone tries to close it
 #dirty trick, but lets the Boa gui builder still work with frames we do this to
@@ -57,20 +62,9 @@ class LaserSliders(wx.Panel):
         self.labels = []
         self.buttons = []
         self.sliding = False
-        #self.SetTitle("Piezo Control")
-        self.slider_modes=[ 'Linear Scale (min to max)', 'Percentage Log Scale']
-        self.mode = 0
-
+        self.mode = SCALING_MODES[config.get('laser-slider-scaling', default='log')]
         
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
-
-        #Allows for a diff way of displaying Laser Power Options
-        sz_scale = wx.BoxSizer(wx.HORIZONTAL)
-        b_scale = wx.ToggleButton(self, -1,self.slider_modes[abs(self.mode-1)], size=(160,30),style=wx.BU_EXACTFIT)
-        b_scale.Bind(wx.EVT_TOGGLEBUTTON, self.on_mode_select)
-        sz_scale.Add(b_scale, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
-        sizer_2.Add(sz_scale, 1, wx.EXPAND, 0)
-        self.mode_button = b_scale
 
         for c, laserName in enumerate(self.laserNames):
             sz = wx.BoxSizer(wx.HORIZONTAL)
@@ -168,16 +162,6 @@ class LaserSliders(wx.Panel):
         self.scopeState.setItem('Lasers.%s.On' % laserName, b.GetValue())
 
 
-    def on_mode_select(self, event):
-        self.mode=abs(self.mode-1)
-        if self.mode == 0:
-            for ind, laserName in enumerate(self.laserNames):
-                self.sliders[ind].SetMin(self.scopeState['Lasers.%s.MinPower' % laserName])
-                self.sliders[ind].SetMax(self.scopeState['Lasers.%s.MaxPower' % laserName])
-        else:
-            for ind, laserName in enumerate(self.laserNames):
-                self.sliders[ind].SetMin(0)
-                self.sliders[ind].SetMax(100)
 
 
     def OnCbOn(self, event):
@@ -190,7 +174,6 @@ class LaserSliders(wx.Panel):
 
     def update(self):
         if not self.sliding:
-            self.mode_button.SetLabel(self.slider_modes[abs(self.mode-1)])
             for ind, laserName in enumerate(self.laserNames):
 
                 power = self.scopeState['Lasers.%s.Power' % laserName]
