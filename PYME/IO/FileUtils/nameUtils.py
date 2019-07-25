@@ -53,7 +53,7 @@ if 'USERPROFILE' in os.environ.keys(): #windows
 
 datadir = os.path.join(homedir, 'PYMEData')
 if 'PYMEDATADIR' in os.environ.keys() and os.access(os.environ['PYMEDATADIR'], os.W_OK):
-    datadir = os.environ['PYMEDATADIR']
+    datadir = os.environ['PYMEDATADIR'].rstrip(os.sep)
 
 dirSuffix=''
 if 'PYMEDIRSUFFIX' in os.environ.keys():
