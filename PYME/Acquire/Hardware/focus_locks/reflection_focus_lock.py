@@ -3,6 +3,9 @@
 from simple_pid import PID
 import numpy as np
 from scipy import optimize
+from PYME.util import webframework
+import requests
+import threading
 import logging
 logger = logging.getLogger(__name__)
 import time
@@ -111,6 +114,10 @@ class ReflectedLinePIDFocusLock(PID):
 
         PID.__init__(self, p, i, d, setpoint=self.peak_position, auto_mode=False)
 
+    @webframework.register_endpoint('/GetPeakPosition', output_is_json=False)
+    def GetPeakPosition(self):
+        return self.peak_position
+
     @property
     def lock_enabled(self):
         return self.auto_mode
@@ -118,6 +125,16 @@ class ReflectedLinePIDFocusLock(PID):
     @lock_enabled.setter
     def lock_enabled(self, enable):
         self.auto_mode(enable)
+
+    @webframework.register_endpoint('/EnableLock', output_is_json=False)
+    def EnableLock(self):
+        logger.debug('Enabling focus lock')
+        self.lock_enabled = True
+
+    @webframework.register_endpoint('/DisableLock', output_is_json=False)
+    def DisableLock(self):
+        logger.debug('Disabling focus lock')
+        self.lock_enabled = False
 
     def register(self):
         self.scope.frameWrangler.onFrameGroup.connect(self.on_frame)
@@ -133,6 +150,7 @@ class ReflectedLinePIDFocusLock(PID):
         else:
             self.set_auto_mode(enable)
 
+    @webframework.register_endpoint('/ChangeSetpoint', output_is_json=False)
     def ChangeSetpoint(self, setpoint=None):
         if setpoint is None:
             self.setpoint = self.peak_position
@@ -181,3 +199,53 @@ class ReflectedLinePIDFocusLock(PID):
             #                                                                               elapsed_time))
             # self.piezo.MoveRel(0, correction)
             self.piezo.SetOffset(self.piezo.GetOffset() + correction)
+
+
+class RLPIDFocusLockClient(object):
+    def __init__(self, host='127.0.0.1', port=9798, name='focus_lock'):
+        self.host = host
+        self.port = port
+        self.name = name
+
+        self.base_url = 'http://%s:%d' % (host, port)
+
+    def EnableLock(self):
+        return requests.get(self.base_url + '/EnableLock')
+
+    def DisableLock(self):
+        return requests.get(self.base_url + '/DisableLock')
+
+    def GetPeakPosition(self):
+        response = requests.get(self.base_url + '/GetPeakPosition')
+        return float(response.json())
+
+    def ChangeSetpoint(self, setpoint=None):
+        if setpoint is None:
+            setpoint = self.GetPeakPosition
+        return requests.get(self.base_url + '/ChangeSetpoint?setpoint=%3.3f' % (setpoint,))
+
+
+class RLPIDFocusLockServer(webframework.APIHTTPServer, ReflectedLinePIDFocusLock):
+    def __init__(self, scope, piezo, port=9798, **kwargs):
+        ReflectedLinePIDFocusLock.__init__(self, scope, piezo, **kwargs)
+
+        server_address = ('127.0.0.1', port)
+        self.port = port
+
+
+        webframework.APIHTTPServer.__init__(self, server_address)
+        self.daemon_threads = True
+
+        self._server_thread = threading.Thread(target=self._thread_target)
+        self._server_thread.daemon_threads = True
+
+        self._server_thread.start()
+
+    def _thread_target(self):
+        try:
+            logger.info('Starting piezo on 127.0.0.1:%d' % (self.port,))
+            self.serve_forever()
+        finally:
+            logger.info('Shutting down ...')
+            self.shutdown()
+            self.server_close()
