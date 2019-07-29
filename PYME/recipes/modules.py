@@ -20,7 +20,8 @@ from . import localisations
 from . import multiview
 try:
     from . import skfilters
-except ImportError:
+except:
+    logger.exception('Could not import skimage')
     pass
 
 try:
