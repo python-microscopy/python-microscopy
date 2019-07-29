@@ -36,7 +36,10 @@ from PYME.Acquire import stackSettings
 
 #NB must come after 'from wx.... import *' !!!
 
-#from noclosefr import * 
+#from noclosefr import *
+
+import logging
+logger = logging.getLogger(__name__)
 
 MSG_NO_WAVETABLE = """Piezo does not support wavetable output.
 Synchronisation between movement and frames may be poor.
@@ -383,7 +386,8 @@ class seqPanel(wx.Panel):
         try:
             self.chPiezo.SetSelection(self.scanDirs.index(self.stackSettings.GetScanChannel()))
         except ValueError:
-            pass
+            logger.exception('Error updating')
+            return
 
         if self.stackSettings.GetStartMode() == self.stackSettings.START_AND_END:
             self.bSt_end.SetValue(True)
