@@ -118,23 +118,27 @@ class ReflectedLinePIDFocusLock(PID):
     def GetPeakPosition(self):
         return self.peak_position
 
-    @property
-    def lock_enabled(self):
-        return self.auto_mode
+    # @property
+    # def lock_enabled(self):
+    #     return self.auto_mode
+    #
+    # @lock_enabled.setter
+    # def lock_enabled(self, enable):
+    #     self.auto_mode = enable
 
-    @lock_enabled.setter
-    def lock_enabled(self, enable):
-        self.auto_mode(enable)
+    @webframework.register_endpoint('/LockEnabled', output_is_json=False)
+    def LockEnabled(self):
+        return self.auto_mode
 
     @webframework.register_endpoint('/EnableLock', output_is_json=False)
     def EnableLock(self):
         logger.debug('Enabling focus lock')
-        self.lock_enabled = True
+        self.set_auto_mode(True)
 
     @webframework.register_endpoint('/DisableLock', output_is_json=False)
     def DisableLock(self):
         logger.debug('Disabling focus lock')
-        self.lock_enabled = False
+        self.set_auto_mode(False)
 
     def register(self):
         self.scope.frameWrangler.onFrameGroup.connect(self.on_frame)
@@ -144,11 +148,9 @@ class ReflectedLinePIDFocusLock(PID):
         self.scope.frameWrangler.onFrameGroup.disconnect(self.on_frame)
         self.tracking = False
 
-    def ToggleLock(self, enable=None):
-        if enable is None:
-            self.set_auto_mode(~self.lock_enabled)
-        else:
-            self.set_auto_mode(enable)
+    @webframework.register_endpoint('/ToggleLock', output_is_json=False)
+    def ToggleLock(self):
+        self.set_auto_mode(~self.auto_mode)
 
     @webframework.register_endpoint('/ChangeSetpoint', output_is_json=False)
     def ChangeSetpoint(self, setpoint=None):
@@ -193,7 +195,7 @@ class ReflectedLinePIDFocusLock(PID):
         elapsed_time =_current_time() - self._last_time
         correction = self(self.peak_position)
         # note that correction only updates if elapsed_time is larger than sample time - don't apply same correction 2x.
-        if self.lock_enabled and elapsed_time > self.sample_time:
+        if self.auto_mode and elapsed_time > self.sample_time:
             # logger.debug('current: %f, setpoint: %f, correction :%f, time elapsed: %f' % (self.peak_position,
             #                                                                               self.setpoint, correction,
             #                                                                               elapsed_time))
@@ -209,6 +211,14 @@ class RLPIDFocusLockClient(object):
 
         self.base_url = 'http://%s:%d' % (host, port)
 
+    @property
+    def lock_enabled(self):
+        return self.LockEnabled()
+
+    def LockEnabled(self):
+        response = requests.get(self.base_url + '/LockEnabled')
+        return bool(response.json())
+
     def EnableLock(self):
         return requests.get(self.base_url + '/EnableLock')
 
@@ -221,8 +231,14 @@ class RLPIDFocusLockClient(object):
 
     def ChangeSetpoint(self, setpoint=None):
         if setpoint is None:
-            setpoint = self.GetPeakPosition
+            setpoint = self.GetPeakPosition()
         return requests.get(self.base_url + '/ChangeSetpoint?setpoint=%3.3f' % (setpoint,))
+
+    def ToggleLock(self):
+        if self.lock_enabled:
+            self.DisableLock()
+        else:
+            self.EnableLock()
 
 
 class RLPIDFocusLockServer(webframework.APIHTTPServer, ReflectedLinePIDFocusLock):
@@ -240,6 +256,10 @@ class RLPIDFocusLockServer(webframework.APIHTTPServer, ReflectedLinePIDFocusLock
         self._server_thread.daemon_threads = True
 
         self._server_thread.start()
+
+    @property
+    def lock_enabled(self):
+        return self.auto_mode
 
     def _thread_target(self):
         try:
