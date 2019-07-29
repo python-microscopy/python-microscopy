@@ -118,14 +118,6 @@ class ReflectedLinePIDFocusLock(PID):
     def GetPeakPosition(self):
         return self.peak_position
 
-    # @property
-    # def lock_enabled(self):
-    #     return self.auto_mode
-    #
-    # @lock_enabled.setter
-    # def lock_enabled(self, enable):
-    #     self.auto_mode = enable
-
     @webframework.register_endpoint('/LockEnabled', output_is_json=False)
     def LockEnabled(self):
         return self.auto_mode
