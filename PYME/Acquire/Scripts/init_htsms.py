@@ -234,7 +234,11 @@ def laser_controls(MainFrame, scope):
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):
     from PYME.Acquire.Hardware import focusKeys
+    from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
     fk = focusKeys.FocusKeys(MainFrame, scope.piFoc)
+    panel = FocusLockPanel(MainFrame, scope.focus_lock)
+    MainFrame.camPanels.append((panel, 'Focus Lock'))
+    MainFrame.time1.WantNotification.append(panel.refresh)
 
 #splitter
 # @init_gui('Splitter')
