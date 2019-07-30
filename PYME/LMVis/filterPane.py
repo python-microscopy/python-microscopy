@@ -147,10 +147,7 @@ class FilterPanel(wx.Panel):
         menu.Destroy()
 
     def OnFilterItemSelected(self, event):
-        try:
-            self.currentFilterItem = event.GetIndex()  # wx 4
-        except AttributeError:
-            self.currentFilterItem = event.m_itemIndex  # wx < 4
+        self.currentFilterItem = event.GetIndex()
         event.Skip()
 
     def OnFilterItemDeselected(self, event):
