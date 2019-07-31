@@ -22,10 +22,10 @@ class FocusLockPanel(wx.Panel):
         self.SetSizerAndFit(sizer_1)
 
     def OnToggleLock(self, event):
-        self.servo.ToggleLock(self.lock_checkbox.GetValue())
+        self.servo.ToggleLock()
 
     def OnUpdateSetpoint(self, event):
         self.servo.ChangeSetpoint()
 
     def refresh(self):
-        self.lock_checkbox.SetValue(self.servo.lock_enabled)
+        self.lock_checkbox.SetValue(bool(self.servo.lock_enabled))

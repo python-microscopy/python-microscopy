@@ -134,7 +134,7 @@ class OffsetPiezoClient(PiezoBase):
         return float(res.json())
 
     def LogFocusCorrection(self, offset):
-        res = requests.get(self.urlbase + '/LogFocusCorrection?ofset=%3.3f' % (offset,))
+        res = requests.get(self.urlbase + '/LogFocusCorrection?offset=%3.3f' % (offset,))
         return float(res.json())
 
 class OffsetPiezoServer(webframework.APIHTTPServer, OffsetPiezo):
