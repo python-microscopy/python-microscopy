@@ -54,6 +54,9 @@ class ShaderProgram:
             raise GLProgramException('Missing Shader Objects!')
         self._shader_path = shader_path
         self._program = glCreateProgram()
+        
+        if self._program == 0:
+            raise RuntimeError('glCreateProgram failed')
 
     def add_shader(self, shader_name, shader_type):
         """

@@ -68,8 +68,8 @@ def check_mapexists(mdh, type = 'dark'):
 
 class AndorBase(SDK3Camera):
     numpy_frames=1
-    MODE_CONTINUOUS = 1
-    MODE_SINGLE_SHOT = 0
+    #MODE_CONTINUOUS = 1
+    #MODE_SINGLE_SHOT = 0
 
     PixelEncodingForGain = {'12-bit (low noise)': 'Mono12',
                             '12-bit (high well capacity)': 'Mono12',
