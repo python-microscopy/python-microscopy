@@ -1,4 +1,9 @@
 :: "%PYTHON%" setup.py build_ext -c mingw32
+
+if not exist "%PREFIX%\Menu" mkdir "%PREFIX%\Menu"
+copy "%RECIPE_DIR%\menu-windows.json" "%PREFIX%\Menu"
+copy "PYME\resources\icons\*.ico" "%PREFIX%\Menu"
+
 "%PYTHON%" setup.py install
 
 :: copy "%RECIPE_DIR%"\libpython27.a "%PREFIX%"\libs
