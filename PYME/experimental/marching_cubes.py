@@ -641,7 +641,7 @@ def generate_sphere_image(radius=10):
     """Generate a 3D volume image of a sphere. Note that the intensity tapers at the radius (rather than ending abruptly)
     so that marching cubes can do it's thing properly"""
     X, Y, Z = np.mgrid[(-1.5*radius):(1.5*radius):1.0, (-1.5*radius):(1.5*radius):1.0, (-1.5*radius):(1.5*radius):1.0]
-    
+
     R2 = np.sqrt(X*X + Y*Y + Z*Z)
     
     S = np.tanh(R2 - radius)

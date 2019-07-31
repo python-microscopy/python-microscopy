@@ -74,8 +74,11 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
         orig_idx = curr_vertex->halfedge;
         curr_idx = orig_idx;
 
+        if (curr_idx == -1) continue;
+
         curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
         twin_idx = curr_edge->twin;
+        if (twin_idx == -1) continue;
         twin_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, twin_idx);
 
         i = 0;
@@ -180,20 +183,17 @@ static PyObject *update_face_normals(PyObject *self, PyObject *args)
         if (f_idx == -1)
             continue;
         curr_face = (face_t*)PyArray_GETPTR1(faces, f_idx);
-        curr_idx = curr_face->halfedge;
 
-        if (curr_idx == -1)
-        {
-            for (k = 0; k < VECTORSIZE; ++k)
-                (curr_face->normal)[k] = -1;
-            curr_face->area = -1;
-            continue;
-        }
-    
+        curr_idx = curr_face->halfedge;
+        if (curr_idx == -1) continue;
         curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
+
         prev_idx = curr_edge->prev;
+        if (prev_idx == -1) continue;
         prev_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, prev_idx);
+
         next_idx = curr_edge->next;
+        if (next_idx == -1) continue;
         next_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, next_idx);
 
         curr_vertex = (vertex_t*)PyArray_GETPTR1(vertices, (curr_edge->vertex));
