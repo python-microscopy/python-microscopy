@@ -231,7 +231,7 @@ class TriangleMesh(object):
     @property
     def vertex_neighbors(self):
         """
-        Return the up to 6 neighbors of each vertex.
+        Return the up to 8 neighbors of each vertex.
         """
         if np.all(self._vertices['neighbors'] == -1):
             if USE_C:
@@ -760,7 +760,7 @@ class TriangleMesh(object):
         self._halfedges[_edge] = -1
         self._halfedge_vacancies.append(_edge)
 
-    def _insert(self, el, el_arr, el_vacancies, key, compact=False, **kwargs):
+    def _insert(self, el, el_arr, el_vacancies, key, compact=False, insert_key=None, **kwargs):
         """
         Insert an element into an array at the position of the smallest empty entry
         when searching the array by key.
@@ -776,6 +776,8 @@ class TriangleMesh(object):
                 External list where we keep empty positions of el_arr.
             key : string
                 Key on which to search the array
+            insert_key : string
+                Key on which to insert element el. This is by default the search key.
             compact : bool
                 Do we copy -1 values in the resize of el_arr?
             kwargs 
@@ -802,8 +804,9 @@ class TriangleMesh(object):
             # NOTE: If we search by a different key next time, el_vacancies will
             # still contain the vacant positions when searching on the previous key.
             if len(el_arr[key].shape) > 1:
-                # TODO: If we search on self._vertices['position'] and one position is [-1,-1,-1],
-                # which is not unreasonable, this will replace that vertex.
+                # NOTE: If we search on self._vertices['position'] and one position is [-1,-1,-1],
+                # which is not unreasonable, this will replace that vertex. Hence we provide the
+                # option to search and insert on different keys.
                 el_vacancies = [int(x) for x in np.argwhere(np.all(el_arr[key] == -1, axis=1))]
             else:
                 el_vacancies = [int(x) for x in np.argwhere(el_arr[key] == -1)]
@@ -813,9 +816,13 @@ class TriangleMesh(object):
         if idx == -1:
             raise ValueError('Index cannot be -1.')
 
+        if insert_key == None:
+            # Default to searching and inserting on the same key
+            insert_key = key
+
         # Put el in el_arr
         ed = el_arr[idx]
-        ed[key] = el
+        ed[insert_key] = el
         # Define additional structured dtype values for el
         for k, v in kwargs.items():
             ed[k] = v
@@ -844,7 +851,7 @@ class TriangleMesh(object):
                 Index of the halfedge in self._halfedges.
         """
 
-        ed, idx, self._halfedges, self._halfedge_vacancies = self._insert(vertex, self._halfedges, self._halfedge_vacancies, 'vertex', compact, **kwargs)
+        ed, idx, self._halfedges, self._halfedge_vacancies = self._insert(vertex, self._halfedges, self._halfedge_vacancies, 'vertex', compact, None, **kwargs)
         
         return ed, idx
 
@@ -870,7 +877,7 @@ class TriangleMesh(object):
                 Index of the face in self._faces.
         """
 
-        fa, idx, self._faces, self._face_vacancies = self._insert(_edge, self._faces, self._face_vacancies, 'halfedge', compact, **kwargs)
+        fa, idx, self._faces, self._face_vacancies = self._insert(_edge, self._faces, self._face_vacancies, 'halfedge', compact, None, **kwargs)
 
         return fa, idx
 
@@ -895,7 +902,7 @@ class TriangleMesh(object):
             idx : int
                 Index of the vertex in self._vertices.
         """
-        vx, idx, self._vertices, self._vertex_vacancies = self._insert(_vertex, self._vertices, self._vertex_vacancies, 'position', compact, **kwargs)
+        vx, idx, self._vertices, self._vertex_vacancies = self._insert(_vertex, self._vertices, self._vertex_vacancies, 'halfedge', compact, 'position', **kwargs)
 
         self._faces_by_vertex = None  # Reset
 
