@@ -114,7 +114,7 @@ class AAOptoMDS(AOTF):
             vals = s.search(retrm)
             self.freq[channel] = float(vals.group('freq'))
             self.power[channel] = float(vals.group('power'))
-            self.channel_enabled[channel] = vals.group('onoff') == 'ON'
+            self.channel_enabled[channel] = vals.group('onoff') == b'ON'
 
     def Enable(self, channel):
         if not self.is_on:

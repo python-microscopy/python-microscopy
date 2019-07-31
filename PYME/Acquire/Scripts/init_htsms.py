@@ -233,6 +233,14 @@ def laser_controls(MainFrame, scope):
 #     scp = scanner_panel.ScannerPanel(MainFrame.camPanel, scope.line_scanner)
 #     MainFrame.camPanels.append((scp, 'Line Scanner'))
 
+@init_gui('Multiview Selection')
+def multiview_selection(MainFrame, scope):
+    from PYME.Acquire.ui import multiview_select
+
+    ms = multiview_select.MultiviewSelect(MainFrame.toolPanel, scope)
+    MainFrame.time1.WantNotification.append(ms.update)
+    MainFrame.camPanels.append((ms, 'Multiview Selection'))
+
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):
     from PYME.Acquire.Hardware import focusKeys

@@ -10,6 +10,7 @@ class AOTFControlledLaser(Laser):
     Shim to make an AOTF and laser function like a "Laser" object
     """
     power_controllable = True  # assume the AOTF can be used to control the power
+    powerControlable = power_controllable  # fixme
     def __init__(self, laser, aotf, aotf_channel, chained_devices=None):
         """
 
@@ -150,12 +151,9 @@ class AOTFControlledLaser(Laser):
         self.Close()
 
     def registerStateHandlers(self, scopeState):
-        scopeState.registerHandler('Lasers.%s.On' % self.name, self.IsOn, lambda v: self.TurnOn() if v else self.TurnOff())
-        # if self.IsPowerControlable():
-        scopeState.registerHandler('Lasers.%s.Power' % self.name, self.GetPower, self.SetPower)
+        Laser.registerStateHandlers(self, scopeState)
         scopeState.registerHandler('Lasers.%s.AOTFSetting' % self.name, self.GetAOTFPower, self.SetAOTFPower)
         scopeState.registerHandler('Lasers.%s.LaserPower' % self.name, self.GetLaserPower, self.SetLaserPower)
-        scopeState.registerHandler('Lasers.%s.MaxPower' % self.name, lambda : self.MAX_POWER)
 
 
 
