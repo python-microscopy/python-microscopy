@@ -828,7 +828,7 @@ class TriangleMesh(object):
             ed[k] = v
             
         return ed, idx, el_arr, el_vacancies
-
+ 
     def _new_edge(self, vertex, compact=False, **kwargs):
         """
         Create a new edge.
@@ -1046,36 +1046,33 @@ class TriangleMesh(object):
         new_v1 = self._halfedges['vertex'][_twin_next]
 
         # If there's already an edge between these two vertices, don't flip (preserve manifoldness)
-
         if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
             return
 
-        # # Convexity check
-        # y = self._vertices['position'][self._halfedges['vertex'][_curr]] - self._vertices['position'][self._halfedges['vertex'][_twin]]
-        # x = self._vertices['position'][new_v1] - self._vertices['position'][new_v0]
-        # xn = x/np.sqrt((x*x).sum())
-        # yn = y/np.sqrt((y*y).sum())
-        # # p = np.eye(3) - xn[:,None]*yn[None,:]
-        # p = xn[:,None]*yn[None,:]
-        # z = self._vertices['position'][self._halfedges['vertex'][_twin]] - self._vertices['position'][new_v0]
-        # pz = (p*z).sum(1)
-        # y_x_pz = fast_3x3_cross(x,pz)
-        # n = fast_3x3_cross(x,y)
-        # if (y_x_pz*n).sum() > 0:
-        #     # Concave, don't flip
-        #     return
+        # Construct projection operator for plane of _curr's face
+        n = self._faces['normal'][self._halfedges['face'][_curr]]
+        p = np.eye(3) - n[:,None]*n[None,:]
 
-        # # Make sure the dihedral angle between the flipped triangles is less than (2/3)*pi
-        # upper = self._vertices['position'][self._halfedges['vertex'][_curr]] - self._vertices['position'][new_v0]
-        # lower = self._vertices['position'][self._halfedges['vertex'][_twin]] - self._vertices['position'][new_v0]
-        # new_edge = self._vertices['position'][new_v1] - self._vertices['position'][new_v0]
-        # n1 = fast_3x3_cross(new_edge, upper)
-        # n2 = fast_3x3_cross(lower, new_edge)
-        # nn1 = n1/np.sqrt((n1*n1).sum())
-        # nn2 = n2/np.sqrt((n2*n2).sum())
-        # theta = np.arccos(np.sqrt((nn1*nn2).sum()))
-        # if theta >= 2.094:
-        #     return
+        # Construct the vectors we need in the plane
+        prev_vec = self._vertices['position'][self._halfedges['vertex'][_prev]] - self._vertices['position'][self._halfedges['vertex'][_next]]
+        next_vec = self._vertices['position'][self._halfedges['vertex'][_next]] - self._vertices['position'][self._halfedges['vertex'][_curr]]
+        twin_prev_vec = (p*(self._vertices['position'][self._halfedges['vertex'][_twin_prev]] - self._vertices['position'][self._halfedges['vertex'][_twin_next]])).sum(1)
+        twin_next_vec = (p*(self._vertices['position'][self._halfedges['vertex'][_twin_next]] - self._vertices['position'][self._halfedges['vertex'][_twin]])).sum(1)
+
+        norm_prev_vec = np.sqrt((prev_vec**2).sum())
+        norm_next_vec = np.sqrt((next_vec**2).sum())
+        norm_twin_prev_vec = np.sqrt((twin_prev_vec**2).sum())
+        norm_twin_next_vec = np.sqrt((twin_next_vec**2).sum())
+
+        curr_angle = (twin_prev_vec*next_vec).sum()/(norm_twin_prev_vec*norm_next_vec)
+        twin_angle = (twin_next_vec*prev_vec).sum()/(norm_twin_next_vec*norm_prev_vec)
+
+        # If the angle between _twin_prev and _next or the angle between _twin_next and _prev is greater than
+        # 120 degrees, the flip will create concavity.
+        min_cos_theta = -0.5  # 120 degrees
+        if (curr_angle > min_cos_theta) and (twin_angle > min_cos_theta):
+            # NOTE: This may be too restrictive as it does not take the 4-quadrant angle between vectors into account.
+            return
 
         # _next's next and prev must be adjusted
         self._halfedges['prev'][_next] = _twin_prev
@@ -1265,11 +1262,11 @@ class TriangleMesh(object):
             # Guess edge_length
             target_edge_length = mean_edge_length
 
-        # if (target_edge_length <= 0.25*mean_edge_length):
-        #     # Apply loop subdivision first.
-        #     # print('Upsampling...')
-        #     n_iters = int(mean_edge_length/target_edge_length/4. + 0.5)
-        #     self.loop_subdivide(n_iters)
+        if (target_edge_length <= 0.25*mean_edge_length):
+            # Apply loop subdivision first.
+            # print('Upsampling...')
+            n_iters = int(mean_edge_length/target_edge_length/4. + 0.5)
+            self.loop_subdivide(n_iters)
 
         for k in range(n):
             # 1. Split all edges longer than (4/3)*target_edge_length at their midpoint.
