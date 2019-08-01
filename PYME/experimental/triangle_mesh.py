@@ -305,7 +305,7 @@ class TriangleMesh(object):
         Return a dictionary of the edges in the mesh, each stored as a single number.
         """
         # edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
-        edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['twin']]['vertex']]).T
+        edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
         
         d = {}
         for i, e in enumerate(pack_edges(edges)):
@@ -316,7 +316,7 @@ class TriangleMesh(object):
     @property
     def edge_valences(self):
         # edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
-        edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['twin']]['vertex']]).T
+        edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
 
         packed_edges = pack_edges(edges)
         e, c = np.unique(packed_edges, return_counts=True)
@@ -332,7 +332,8 @@ class TriangleMesh(object):
         """
         Checks if the mesh is manifold: Is every edge is shared by exactly two triangles?
         """
-        edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
+        # edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
+        edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
 
         packed_edges = pack_edges(edges)
         _, c = np.unique(packed_edges, return_counts=True)
@@ -740,7 +741,7 @@ class TriangleMesh(object):
         self._faces[curr_edge['face']] = -1
 
         self._face_vacancies.append(curr_edge['face'])
-
+        
         self._edge_delete(curr_edge['next'])
         self._edge_delete(curr_edge['prev'])
         self._edge_delete(_edge)
@@ -759,6 +760,8 @@ class TriangleMesh(object):
         
         self._halfedges[_edge] = -1
         self._halfedge_vacancies.append(_edge)
+
+        self._faces_by_vertex = None
 
     def _insert(self, el, el_arr, el_vacancies, key, compact=False, insert_key=None, **kwargs):
         """
@@ -1046,33 +1049,58 @@ class TriangleMesh(object):
         new_v1 = self._halfedges['vertex'][_twin_next]
 
         # If there's already an edge between these two vertices, don't flip (preserve manifoldness)
-        if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
+        # NOTE: This is potentially a problem if we start with a high-valence mesh. In that case, swap this
+        # check with the more expensive commented one below.
+        if new_v1 in self._vertices['neighbors'][new_v0]:
+            return
+        # if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
+        #     return
+
+        # Convexity check: Let's see if the midpoint of the flipped edge will be above or below the plane of the 
+        # current edge
+        flip_midpoint = 0.5*(self._vertices['position'][new_v0] + self._vertices['position'][new_v1])
+        plane_midpoint = (1./3)*(self._vertices['position'][curr_edge['vertex']] + self._vertices['position'][self._halfedges['vertex'][curr_edge['next']]] + self._vertices['position'][self._halfedges['vertex'][curr_edge['prev']]])
+        flipped_dot = (self._faces['normal'][curr_edge['face']]*(flip_midpoint - plane_midpoint)).sum()
+
+        if flipped_dot < 0:
+            # If flipping moves the midpoint of the edge below the original triangle's plane, this introduces
+            # concavity, so don't flip.
             return
 
-        # Construct projection operator for plane of _curr's face
-        n = self._faces['normal'][self._halfedges['face'][_curr]]
-        p = np.eye(3) - n[:,None]*n[None,:]
+        # # Construct projection operator for plane of _curr's face
+        # n1 = self._faces['normal'][self._halfedges['face'][_curr]]
+        # n2 = self._faces['normal'][self._halfedges['face'][_twin]]
+        # # p = np.eye(3) - n[:,None]*n[None,:]
 
-        # Construct the vectors we need in the plane
-        prev_vec = self._vertices['position'][self._halfedges['vertex'][_prev]] - self._vertices['position'][self._halfedges['vertex'][_next]]
-        next_vec = self._vertices['position'][self._halfedges['vertex'][_next]] - self._vertices['position'][self._halfedges['vertex'][_curr]]
-        twin_prev_vec = (p*(self._vertices['position'][self._halfedges['vertex'][_twin_prev]] - self._vertices['position'][self._halfedges['vertex'][_twin_next]])).sum(1)
-        twin_next_vec = (p*(self._vertices['position'][self._halfedges['vertex'][_twin_next]] - self._vertices['position'][self._halfedges['vertex'][_twin]])).sum(1)
+        # # # Construct the vectors we need in the plane
+        # # prev_vec = self._vertices['position'][self._halfedges['vertex'][_prev]] - self._vertices['position'][self._halfedges['vertex'][_next]]
+        # # next_vec = self._vertices['position'][self._halfedges['vertex'][_next]] - self._vertices['position'][self._halfedges['vertex'][_curr]]
+        # # twin_prev_vec = (p*(self._vertices['position'][self._halfedges['vertex'][_twin_prev]] - self._vertices['position'][self._halfedges['vertex'][_twin_next]])).sum(1)
+        # # twin_next_vec = (p*(self._vertices['position'][self._halfedges['vertex'][_twin_next]] - self._vertices['position'][self._halfedges['vertex'][_twin]])).sum(1)
 
-        norm_prev_vec = np.sqrt((prev_vec**2).sum())
-        norm_next_vec = np.sqrt((next_vec**2).sum())
-        norm_twin_prev_vec = np.sqrt((twin_prev_vec**2).sum())
-        norm_twin_next_vec = np.sqrt((twin_next_vec**2).sum())
+        # # norm_prev_vec = np.sqrt((prev_vec**2).sum())
+        # # norm_next_vec = np.sqrt((next_vec**2).sum())
+        # # norm_twin_prev_vec = np.sqrt((twin_prev_vec**2).sum())
+        # # norm_twin_next_vec = np.sqrt((twin_next_vec**2).sum())
 
-        curr_angle = (twin_prev_vec*next_vec).sum()/(norm_twin_prev_vec*norm_next_vec)
-        twin_angle = (twin_next_vec*prev_vec).sum()/(norm_twin_next_vec*norm_prev_vec)
+        # # curr_angle = (twin_prev_vec*next_vec).sum()/(norm_twin_prev_vec*norm_next_vec)
+        # # twin_angle = (twin_next_vec*prev_vec).sum()/(norm_twin_next_vec*norm_prev_vec)
 
-        # If the angle between _twin_prev and _next or the angle between _twin_next and _prev is greater than
-        # 120 degrees, the flip will create concavity.
-        min_cos_theta = -0.5  # 120 degrees
-        if (curr_angle > min_cos_theta) and (twin_angle > min_cos_theta):
-            # NOTE: This may be too restrictive as it does not take the 4-quadrant angle between vectors into account.
-            return
+        # # If the angle between _twin_prev and _next or the angle between _twin_next and _prev is greater than
+        # # 120 degrees, the flip will create concavity.
+        # min_cos_theta = -0.5  # 120 degrees
+        # # if (curr_angle > min_cos_theta) and (twin_angle > min_cos_theta):
+        # #     # NOTE: This may be too restrictive as it does not take the 4-quadrant angle between vectors into account.
+        # #     return
+
+        # nn1 = np.sqrt((n1**2).sum())
+        # nn2 = np.sqrt((n2**2).sum())
+        # cos_dihedral_angle = (n1*n2).sum()/(nn1*nn2)
+
+        # # If the dot product between the two triangle normals is greater than 120 degrees, don't flip as this will 
+        # # create a significant divot.
+        # if cos_dihedral_angle < min_cos_theta:
+        #     return
 
         # _next's next and prev must be adjusted
         self._halfedges['prev'][_next] = _twin_prev
@@ -1128,60 +1156,100 @@ class TriangleMesh(object):
 
             self._faces_by_vertex = None
 
+    # def regularize(self):
+    #     """
+    #     Adjust vertices so they tend toward valence 6.
+    #     """
+    
+    #     j = 0
+    #     flip_count = 0
+    #     while (j < 17) and max(self._valences > 6):
+    #         j += 1
+        
+    #         # Find which vertices have high valences
+    #         problems = np.where(self._valences > 6)[0]
+    #         delta0 = np.abs(self._valences[problems] - 6)
+                        
+    #         # Find max-valence incident vertex
+    #         neighbours = self._vertex_neighbors[problems]
+    #         neighbour_vertices = self._halfedges[neighbours]['vertex']
+    #         _target_valence_n_id = np.argmax(self._valences[neighbour_vertices], axis=1)
+    #         _target_valence_n_e = neighbours[np.arange(len(_target_valence_n_id)), _target_valence_n_id]
+            
+    #         e_to_flip = _target_valence_n_e
+        
+    #         # Find low-valence vertices
+    #         p1 = np.where((self._valences > 0) & (self._valences < 6))[0]
+    #         delta1 = np.abs(self._valences[p1] - 6)
+        
+    #         deltas = np.hstack((delta0, delta1))
+    #         edges_to_flip = np.hstack((e_to_flip, self._halfedges[self._vertex_halfedges[p1]]['next']))
+
+    #         # Flip the worst offenders first
+    #         edges_to_flip = edges_to_flip[np.argsort(deltas)[::-1]]
+            
+    #         ef = list(edges_to_flip)
+    #         k = 0
+    #         while (k < len(ef)):
+    #             e = ef[k]
+    #             try:
+    #                 ef.remove(self._halfedges[e]['twin'])
+    #             except ValueError:
+    #                 pass
+    #             k += 1
+                
+    #         edges_to_flip = np.array(ef)
+        
+    #         if self.debug:
+    #             print(len(edges_to_flip), len(problems), len(p1))
+            
+    #         # Loop over high valence vertices and flip edges to reduce valence
+    #         for _idx in edges_to_flip:
+    #             i = 0
+    #             if (self._valences[self._halfedges[_idx]['vertex']] > (6)):
+    #                 self.edge_flip(_idx, live_update=True)
+    #                 i += 1
+    #                 flip_count += 1
+    #     print('Flip count: %d' % (flip_count))
+
     def regularize(self):
         """
         Adjust vertices so they tend toward valence 6.
         """
-    
-        j = 0
         flip_count = 0
-        while (j < 17) and max(self._valences > 6):
-            j += 1
-        
-            # Find which vertices have high valences
-            problems = np.where(self._valences > 6)[0]
-            delta0 = np.abs(self._valences[problems] - 6)
-                        
-            # Find max-valence incident vertex
-            neighbours = self._vertex_neighbors[problems]
-            neighbour_vertices = self._halfedges[neighbours]['vertex']
-            _target_valence_n_id = np.argmax(self._valences[neighbour_vertices], axis=1)
-            _target_valence_n_e = neighbours[np.arange(len(_target_valence_n_id)), _target_valence_n_id]
-            
-            e_to_flip = _target_valence_n_e
-        
-            # Find low-valence vertices
-            p1 = np.where((self._valences > 0) & (self._valences < 6))[0]
-            delta1 = np.abs(self._valences[p1] - 6)
-        
-            deltas = np.hstack((delta0, delta1))
-            edges_to_flip = np.hstack((e_to_flip, self._halfedges[self._vertex_halfedges[p1]]['next']))
 
-            # Flip the worst offenders first
-            edges_to_flip = edges_to_flip[np.argsort(deltas)[::-1]]
-            
-            ef = list(edges_to_flip)
-            k = 0
-            while (k < len(ef)):
-                e = ef[k]
-                try:
-                    ef.remove(self._halfedges[e]['twin'])
-                except ValueError:
-                    pass
-                k += 1
-                
-            edges_to_flip = np.array(ef)
-        
-            if self.debug:
-                print(len(edges_to_flip), len(problems), len(p1))
-            
-            # Loop over high valence vertices and flip edges to reduce valence
-            for _idx in edges_to_flip:
-                i = 0
-                if (self._valences[self._halfedges[_idx]['vertex']] > (6)):
-                    self.edge_flip(_idx, live_update=True)
-                    i += 1
+        # Do a single pass over all active edges and flip them if the flip minimizes the deviation of vertex valences
+        for i in np.arange(len(self._halfedges['length'])):
+                if (self._halfedges['length'][i] < 0):
+                    continue
+
+                curr_edge = self._halfedges[i]
+                _twin = curr_edge['twin']
+                twin_edge = self._halfedges[_twin]
+
+                # Pre-flip vertices
+                v1 = self._vertices['valence'][curr_edge['vertex']]
+                v2 = self._vertices['valence'][twin_edge['vertex']]
+
+                # Post-flip vertices
+                v3 = self._vertices['valence'][self._halfedges['vertex'][curr_edge['next']]]
+                v4 = self._vertices['valence'][self._halfedges['vertex'][twin_edge['next']]]
+
+                # Because np.abs is slow in our simple case...
+                def fast_abs(x):
+                    if x < 0:
+                        return -x
+                    return x
+
+                # Check valence deviation from 6 pre- and post-flip
+                score_pre = fast_abs(v1-6) + fast_abs(v2-6) + fast_abs(v3-6) + fast_abs(v4-6)
+                score_post = fast_abs(v1-7) + fast_abs(v2-7) + fast_abs(v3-5) + fast_abs(v4-5)
+
+                if score_post < score_pre:
+                    # Flip minimizes deviation of vertex valences from 6
+                    self.edge_flip(i)
                     flip_count += 1
+
         print('Flip count: %d' % (flip_count))
 
     def relax(self, l=1, n=1):
@@ -1307,21 +1375,25 @@ class TriangleMesh(object):
         Make the mesh manifold.
         """
 
-        # # Delete all edges with valence not equal to 2
-        # edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['twin']]['vertex']]).T
+        pass
+
+        # # Delete all edges with valence greater than 2
+        # edges = np.vstack([self._halfedges['vertex'], self._halfedges['vertex'][self._halfedges['prev']]]).T
 
         # packed_edges = pack_edges(edges)
         # e, c = np.unique(packed_edges, return_counts=True)
 
         # d = {}
         # for k, v in zip(e, c):
-        #     if v == 2:
+        #     if v <= 2:
         #         continue
         #     d[k] = v
 
         # for i, e in enumerate(packed_edges):
         #     if e in list(d.keys()):
         #         self._face_delete(i)
+
+        # self._faces_by_vertex = None
 
         # # Find halfedges forming negative triangle
         # no_twin = (self._halfedges['twin'] == -1)
@@ -1345,8 +1417,6 @@ class TriangleMesh(object):
 
         #     self._update_face_normals([_face_0_idx])
         #     self._update_vertex_neighbors([arriving_edge['vertex'], leaving_edge['vertex'], v1])
-
-        # pass
 
     def loop_subdivide(self, n=1):
         """
