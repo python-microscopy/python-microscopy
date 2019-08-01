@@ -29,26 +29,6 @@ def test_AstigGaussFitFR():
     assert errors_over_pred_IQR < 2.5
 
 
-def test_AstigGaussGPUFitFR():
-    """Test the Astigmatic Gaussian fit by fitting some randomly generated events. The pass condition here is fairly
-    loose, but should be sufficient to detect when the code has been broken"""
-    try:
-        import warpDrive
-    except ImportError:
-        print("PYME warp drive GPU fitting not installed")
-        return
-
-    from PYME.localization.Test import fitTestJigSCMOS as fitTestJig
-
-    tj = fitTestJig.fitTestJig.fromMDFile(os.path.join(TESTPATH, 'astig_gauss_gpu.md'))
-    tj.runTests(nTests=100)
-
-    errors_over_pred_IQR = fitTestJig.IQR((tj.error('x0') / tj.res['fitError']['x0']))
-    print(errors_over_pred_IQR)
-
-    assert errors_over_pred_IQR < 2.5
-
-
 def test_LatGaussFitFR():
     from PYME.localization.Test import fitTestJigWC as fitTestJig
     
