@@ -38,10 +38,10 @@ def test_AstigGaussGPUFitFR():
         print("PYME warp drive GPU fitting not installed")
         return
 
-    from PYME.localization.Test import fitTestJigWC as fitTestJig
+    from PYME.localization.Test import fitTestJigSCMOS as fitTestJig
 
     tj = fitTestJig.fitTestJig.fromMDFile(os.path.join(TESTPATH, 'astig_gauss_gpu.md'))
-    tj.runTests(nTests=10)
+    tj.runTests(nTests=100)
 
     errors_over_pred_IQR = fitTestJig.IQR((tj.error('x0') / tj.res['fitError']['x0']))
     print(errors_over_pred_IQR)
