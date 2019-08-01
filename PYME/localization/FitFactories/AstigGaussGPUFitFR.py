@@ -206,11 +206,11 @@ class GaussianFitFactory:
         # package our results with the right labels
         if _warpDrive.calcCRLB:
             for ii in range(_warpDrive.candCount):
-                resList[ii] = pack_results(fresultdtype, tIndex=tIndex, fitResults=dpars[ii, :], fitError=CRLB[ii, :], LLH=LLH[ii], resultCode=resultCode, nFit=_warpDrive.candCount[0])
+                resList[ii] = pack_results(fresultdtype, tIndex=tIndex, fitResults=dpars[ii, :], fitError=CRLB[ii, :], LLH=LLH[ii], resultCode=resultCode, nFit=_warpDrive.candCount)
                 #resList[ii] = GaussianFitResultR(dpars[ii, :], self.metadata, resultCode, CRLB[ii, :], LLH[ii], _warpDrive.candCount)
         else:
             for ii in range(_warpDrive.candCount):
-                resList[ii] = pack_results(fresultdtype, tIndex=tIndex, fitResults=dpars[ii, :], fitError=None, LLH=LLH[ii], resultCode=resultCode, nFit=_warpDrive.candCount[0])
+                resList[ii] = pack_results(fresultdtype, tIndex=tIndex, fitResults=dpars[ii, :], fitError=None, LLH=LLH[ii], resultCode=resultCode, nFit=_warpDrive.candCount)
 
 
         return np.hstack(resList)
