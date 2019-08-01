@@ -24,7 +24,7 @@
 #import scipy
 import scipy.ndimage as ndimage
 import numpy as np
-from .fitCommon import fmtSlicesUsed
+from .fitCommon import fmtSlicesUsed, pack_results
 
 from PYME.localization.cModels.gauss_app import *
 from PYME.Analysis._fithelpers import *
@@ -64,22 +64,22 @@ fresultdtype=[('tIndex', '<i4'),
               ('nChi2', '<f4'), 
               ('nFit', '<i4')]
 
-def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, nChi2=0, nEvents=1):	
-    if fitErr is None:
-        fitErr = -5e3*np.ones(fitResults.shape, 'f')
-        
-    res = np.zeros(1, fresultdtype)
-        
-    tIndex = metadata.getOrDefault('tIndex', 0)
-    
-    res['tIndex'] = tIndex
-    res['fitResults'].view('3f4')[:] = fitResults.astype('f')
-    res['fitError'].view('3f4')[:] = fitErr.astype('f')
-    res['resultCode'] = resultCode
-    res['nChi2'] = nChi2
-    res['nFit'] = nEvents
-    
-    return res
+# def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, nChi2=0, nEvents=1):
+#     if fitErr is None:
+#         fitErr = -5e3*np.ones(fitResults.shape, 'f')
+#
+#     res = np.zeros(1, fresultdtype)
+#
+#     tIndex = metadata.getOrDefault('tIndex', 0)
+#
+#     res['tIndex'] = tIndex
+#     res['fitResults'].view('3f4')[:] = fitResults.astype('f')
+#     res['fitError'].view('3f4')[:] = fitErr.astype('f')
+#     res['resultCode'] = resultCode
+#     res['nChi2'] = nChi2
+#     res['nFit'] = nEvents
+#
+#     return res
     
     #return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, nChi2, nEvents)], dtype=fresultdtype)
 		
@@ -308,15 +308,22 @@ class GaussianFitFactory:
                 
                 #recreate a list of events in the desired format
                 resList = np.empty(nEvents, FitResultsDType)
+                
+                tIndex = int(self.metadata.getOrDefault('tIndex', 0))
+                
                 for j in range(nEvents):
                     i3 = 3*j
                     i31 = i3 + 3
                     
                     if not fitErrors is None:
                         #print nEvents, i3, i31
-                        resList[j] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, fitErrors[i3:i31], nchi2, nEvents)
+                        resList[j] = pack_results(fresultdtype, tIndex=tIndex, fitResults=res[i3:i31], fitError=fitErrors[i3:i31], resultCode=resCode, nChi2=nchi2, nFit=nEvents)
+                        #resList[j] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, fitErrors[i3:i31], nchi2, nEvents)
                     else:
-                        resList[j] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, None, nchi2, nEvents)
+                        resList[j] = pack_results(fresultdtype, tIndex=tIndex, fitResults=res[i3:i31],
+                                                  fitError=None, resultCode=resCode, nChi2=nchi2,
+                                                  nFit=nEvents)
+                        #resList[j] = GaussianFitResultR(res[i3:i31], self.metadata, resCode, None, nchi2, nEvents)
                         
                 allEvents.append(resList)
         
@@ -339,7 +346,7 @@ class GaussianFitFactory:
 
 #so that fit tasks know which class to use
 FitFactory = GaussianFitFactory
-FitResult = GaussianFitResultR
+#FitResult = GaussianFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
 
 #this means that factory is reponsible for it's own object finding and implements
