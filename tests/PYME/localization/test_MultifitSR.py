@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import ndimage
+import pytest
 
 def gen_image(p=.95, disp=False):
     from PYME.Acquire.Hardware.Simulator import wormlike2
@@ -63,7 +64,9 @@ def test_AstigGaussGPUFitFR():
         import warpDrive
     except ImportError:
         print("PYME warp drive GPU fitting not installed")
+        pytest.skip('"warpDrive" GPU fitting module not installed')
         return
+    
     from PYME.localization.FitFactories import AstigGaussGPUFitFR
     from PYME.IO import MetaDataHandler
     from PYME.localization.remFitBuf import CameraInfoManager
