@@ -39,6 +39,8 @@ HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('n
 FACE_DTYPE = np.dtype([('halfedge', 'i4'), ('normal', '3f4'), ('area', 'f4')])
 VERTEX_DTYPE = np.dtype([('position', '3f4'), ('normal', '3f4'), ('halfedge', 'i4'), ('valence', 'i4'), ('neighbors', '8i4')])
 
+LOOP_ALPHA_FACTOR = (np.log(13)-np.log(3))/12
+
 class TriangleMesh(object):
     def __init__(self, vertices, faces, debug=False):
         """
@@ -1060,7 +1062,7 @@ class TriangleMesh(object):
         # current edge
         flip_midpoint = 0.5*(self._vertices['position'][new_v0] + self._vertices['position'][new_v1])
         plane_midpoint = (1./3)*(self._vertices['position'][curr_edge['vertex']] + self._vertices['position'][self._halfedges['vertex'][curr_edge['next']]] + self._vertices['position'][self._halfedges['vertex'][curr_edge['prev']]])
-        flipped_dot = (self._faces['normal'][curr_edge['face']]*(flip_midpoint - plane_midpoint)).sum()
+        flipped_dot = ((self._faces['normal'][curr_edge['face']])*(flip_midpoint - plane_midpoint)).sum()
 
         if flipped_dot < 0:
             # If flipping moves the midpoint of the edge below the original triangle's plane, this introduces
@@ -1235,15 +1237,9 @@ class TriangleMesh(object):
                 v3 = self._vertices['valence'][self._halfedges['vertex'][curr_edge['next']]]
                 v4 = self._vertices['valence'][self._halfedges['vertex'][twin_edge['next']]]
 
-                # Because np.abs is slow in our simple case...
-                def fast_abs(x):
-                    if x < 0:
-                        return -x
-                    return x
-
                 # Check valence deviation from 6 pre- and post-flip
-                score_pre = fast_abs(v1-6) + fast_abs(v2-6) + fast_abs(v3-6) + fast_abs(v4-6)
-                score_post = fast_abs(v1-7) + fast_abs(v2-7) + fast_abs(v3-5) + fast_abs(v4-5)
+                score_pre = np.abs([v1-6,v2-6,v3-6,v4-6]).sum()
+                score_post = np.abs([v1-7,v2-7,v3-5,v4-5]).sum()
 
                 if score_post < score_pre:
                     # Flip minimizes deviation of vertex valences from 6
@@ -1420,7 +1416,8 @@ class TriangleMesh(object):
 
     def loop_subdivide(self, n=1):
         """
-        Upsample the mesh by a factor of 4 (factor of 2 along each axis in the plane of the mesh).
+        Upsample the mesh by a factor of 4 (factor of 2 along each axis in the plane of the mesh) and
+        smooth meshes by Loop's 5/8 and 3/8 rule.
 
         References:
             1. C. T. Loop, "Smooth Subdivision Surfaces Based on Triangles," University of Utah, 1987
@@ -1433,25 +1430,47 @@ class TriangleMesh(object):
         """
 
         for k in range(n):
-            # 1. Split every edge in the mesh
+            # Reset
             split_edges = {}
-            edges_to_split = np.where(self._halfedges['length'] != -1)[0]  # Mark the original edges
-            # NOTE: We need this expensive operation so as to not split edges we create during the
-            # other edge splits (e.g. if there are -1s interspersed in self._halfedges).
-            for i in edges_to_split:
+            self._loop_subdivision_new_vertices = []
+            self._loop_subdivision_flip_edges = []
+            new_vertex_idxs = []
+
+            # Mark the current edges as old
+            edges_to_split = np.where(self._halfedges['length'] != -1)[0]
+            split_halfedges = self._halfedges[edges_to_split]
+
+            # Compute new vertex positions for old vertices
+            old_vertex_idxs = split_halfedges['vertex']
+            old_vertices = self._vertices[old_vertex_idxs]
+            old_neighbors = old_vertices['neighbors']
+            neg_mask = (old_neighbors != -1)
+            # alpha is a function of vertex order N that satisifies constraints on equation 3.4 of Loop's thesis
+            alpha = np.tanh(LOOP_ALPHA_FACTOR*old_vertices['valence'])
+            old_vertex_positions = (alpha[:,None])*old_vertices['position'] + ((1-alpha)[:,None])*((1./old_vertices['valence'])[:,None])*np.sum(self._vertices['position'][self._halfedges['vertex'][old_neighbors]]*neg_mask[...,None],axis=1)
+            
+            # Compute new vertex positions for new vertices
+            p0 = 0.375*(old_vertices['position'] + self._vertices['position'][self._halfedges['vertex'][split_halfedges['twin']]])
+            p1 = 0.125*(self._vertices['position'][self._halfedges['vertex'][split_halfedges['next']]] + self._vertices['position'][self._halfedges['vertex'][self._halfedges['next'][split_halfedges['twin']]]])
+            new_vertex_positions = p0 + p1
+
+            # 1. Split every edge in the mesh
+            for j, i in enumerate(edges_to_split):
                 if (i in list(split_edges.keys())):
                     continue
                 
                 split_edges[self._halfedges['twin'][i]] = i
+                new_vertex_idxs.append(j)
                 self.edge_split(i, loop_subdivide=True)
             
             # 2. Flip any new edge that touches an old vertex and a new vertex
-            for i in np.arange(len(self._loop_subdivision_flip_edges)):
-                e = self._loop_subdivision_flip_edges.pop()  # Empties self._loop_subdivision_flip_edges
-                if (self._halfedges['vertex'][e] in self._loop_subdivision_new_vertices):
-                    # We're trying to flip an edge connected by two new vertices.
-                    continue
+            edges_to_flip = list(set(self._halfedges['vertex'][self._loop_subdivision_flip_edges]) - set(self._loop_subdivision_new_vertices))
+            for e in edges_to_flip:
                 self.edge_flip(e)
+
+            # Copy new position values into self._vertices['position']
+            self._vertices['position'][old_vertex_idxs] = old_vertex_positions
+            self._vertices['position'][self._loop_subdivision_new_vertices] = new_vertex_positions[new_vertex_idxs]
 
     def to_stl(self, filename):
         """
