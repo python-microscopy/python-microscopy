@@ -269,7 +269,9 @@ class RuleServer(object):
                 #remore queue if expired (no activity for an hour) to free up memory
                 if self._rules[qn].expired:
                     with self._rule_lock:
-                        self._rules.pop(qn)
+                        r = self._rules.pop(qn)
+                        
+                    #r.on_complete()
             
             time.sleep(5)
     
