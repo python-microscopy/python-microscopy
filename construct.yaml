@@ -15,17 +15,17 @@ specs:
   - python-microscopy
   - conda
   - wxpython <3.9
-  - console_shortcut [win]
+  #- console_shortcut [win]
   - menuinst [win]
   #- sample                            [osx]
 
 # exclude these packages (list of names)
 exclude:
   #- openssl                           [unix]
-  - readline                          [unix]
-  - tk
-  - pyqt
-  - qt
+  #- readline                          [unix]
+  #- tk
+  #- pyqt
+  #- qt
   #- python
 
 # explicitly listed packages

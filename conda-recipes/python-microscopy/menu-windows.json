@@ -33,8 +33,24 @@
                 "quicklaunch": true
             },
             {
+                "script": "${PREFIX}/Scripts/bakeshop.exe",
+                "scriptarguments": [],
+
+                "name": "Bakeshop",
+                "workdir": "${USERPROFILE}",
+                "icon": "${MENU_DIR}/pmanal.ico",
+                "desktop": true,
+                "quicklaunch": true
+            },
+            {
                 "webbrowser": "http://python-microscopy.org/doc/index.html",
                 "name" : "Documentation"
+            },
+            {
+              "name": "Anaconda Prompt",
+              "system": "%windir%\\System32\\cmd.exe",
+              "scriptarguments": ["/K", "${ROOT_PREFIX}\\Scripts\\activate.bat", "${PREFIX}"],
+              "icon": "${MENU_DIR}/Iconleak-Atrous-Console.ico"
             }
 
         ]
