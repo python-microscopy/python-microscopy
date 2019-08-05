@@ -1,6 +1,6 @@
 # name and version (required)
 name: python-microscopy
-version: 19.03.05
+version: 19.08.04
 
 # channels to pull packages from
 channels: &id1
@@ -12,7 +12,7 @@ channels: &id1
 # specifications
 specs:
   - python
-  - python-microscopy #=18.05.12
+  - python-microscopy
   - conda
   - wxpython <3.9
   - console_shortcut [win]
@@ -25,6 +25,7 @@ exclude:
   - readline                          [unix]
   - tk
   - pyqt
+  - qt
   #- python
 
 # explicitly listed packages
