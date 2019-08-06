@@ -115,6 +115,6 @@ class SurfacePatchFitter(ModuleBase):
         # construct a new datasource with our augmented points
         reconstruction = tabular.mappingFilter({'x': xs, 'y': ys, 'z': zs,
                                                 'normal_vector_x': xn, 'normal_vector_y': yn, 'normal_vector_z': zn,
-                                                'probe': np.zeros_like(xs), 'n_points_fit': N, 'j': j,
+                                                'probe': np.zeros_like(xs), 'n_points_fit': N, 'patch_id': j,
                                                 'radius_of_curvature': filtered_fits['radius_of_curvature'][j.astype('i')]})
         namespace[self.out_surface_reconstruction] = reconstruction
