@@ -500,15 +500,26 @@ class VisGUICore(object):
                                       self.pipeline['z'],
                                       self.pointColour(), alpha=self.pointDisplaySettings.alpha, mode='pointsprites')
         elif self.viewMode == 'shadedpoints':
-            self.glCanvas.setPoints3D(self.pipeline['x'],
-                                      self.pipeline['y'],
-                                      self.pipeline['z'],
-                                      self.pointColour(),
-                                      alpha=self.pointDisplaySettings.alpha,
-                                      normal_x=self.pipeline['xn'],
-                                      normal_y=self.pipeline['yn'],
-                                      normal_z=self.pipeline['zn'],
-                                      mode='shadedpoints')
+            try:
+                self.glCanvas.setPoints3D(self.pipeline['x'],
+                                          self.pipeline['y'],
+                                          self.pipeline['z'],
+                                          self.pointColour(),
+                                          alpha=self.pointDisplaySettings.alpha,
+                                          normal_x=self.pipeline['normal_vector_x'],
+                                          normal_y=self.pipeline['normal_vector_y'],
+                                          normal_z=self.pipeline['normal_vector_z'],
+                                          mode='shadedpoints')
+            except KeyError:
+                self.glCanvas.setPoints3D(self.pipeline['x'],
+                                          self.pipeline['y'],
+                                          self.pipeline['z'],
+                                          self.pointColour(),
+                                          alpha=self.pointDisplaySettings.alpha,
+                                          normal_x=self.pipeline['xn'],
+                                          normal_y=self.pipeline['yn'],
+                                          normal_z=self.pipeline['zn'],
+                                          mode='shadedpoints')
         elif self.viewMode == 'tracks':
             if 'setTracks3D' in dir(self.glCanvas) and 'z' in self.pipeline.keys():
                 self.glCanvas.setTracks3D(self.pipeline['x'], 
