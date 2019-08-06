@@ -1,6 +1,4 @@
 
-import numpy as np
-
 class SurfaceFitter(object):
     def __init__(self, vis_frame):
         self.vis_frame = vis_frame
