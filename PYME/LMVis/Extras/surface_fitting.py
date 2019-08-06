@@ -22,28 +22,23 @@ class SurfaceFitter(object):
         """
         from PYME.recipes.surface_fitting import SurfacePatchFitter
         pipeline = self.vis_frame.pipeline
-        # hold off auto-running the recipe until we configure things
-        pipeline.recipe.trait_set(execute_on_invalidation=False)
 
         raw_key = 'quadratic_surface_fits_raw'
         filtered_key = 'quadratic_surface_fits_filtered'
         reconstruction_key = 'quadratic_surface'
-        try:
-            fit_module = SurfacePatchFitter(pipeline.recipe, input=pipeline.selectedDataSourceKey,
-                                            out_fits_raw=raw_key, out_fits_filtered=filtered_key,
-                                            out_surface_reconstruction=reconstruction_key)
 
-            pipeline.recipe.add_module(fit_module)
-            if not pipeline.recipe.configure_traits(view=pipeline.recipe.pipeline_view, kind='modal'):
-                return
+        fit_module = SurfacePatchFitter(pipeline.recipe, input=pipeline.selectedDataSourceKey, output_fits_raw=raw_key,
+                                        output_fits_filtered=filtered_key,
+                                        output_surface_reconstruction=reconstruction_key)
 
-            pipeline.recipe.execute()
-            pipeline.addDataSource(raw_key, pipeline.recipe.namespace[raw_key], False)
-            pipeline.addDataSource(filtered_key, pipeline.recipe.namespace[filtered_key], False)
-            pipeline.addDataSource(reconstruction_key, pipeline.recipe.namespace[reconstruction_key], False)
+        if not fit_module.configure_traits(kind='modal'):
+            return
 
-        finally:  # make sure that we configure the pipeline recipe as it was
-            pipeline.recipe.trait_set(execute_on_invalidation=True)
+        pipeline.recipe.add_module(fit_module)
+        pipeline.recipe.execute()
+        pipeline.addDataSource(raw_key, pipeline.recipe.namespace[raw_key], False)
+        pipeline.addDataSource(filtered_key, pipeline.recipe.namespace[filtered_key], False)
+        pipeline.addDataSource(reconstruction_key, pipeline.recipe.namespace[reconstruction_key], False)
 
         # refresh our view
         pipeline.selectDataSource(reconstruction_key)
