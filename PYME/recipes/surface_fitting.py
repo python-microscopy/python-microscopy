@@ -69,13 +69,13 @@ class SurfacePatchFitter(ModuleBase):
                                            'removed.')
     reconstruction_point_spacing = Float(10., desc='Spacing of points used to reconstruct the surface')
 
-    out_fits_raw = Output('raw_surface_fits')
-    out_fits_filtered = Output('filtered_surface_fits')
-    out_surface_reconstruction = Output('surface_reconstruction')
+    output_fits_raw = Output('raw_surface_fits')
+    output_fits_filtered = Output('filtered_surface_fits')
+    output_surface_reconstruction = Output('surface_reconstruction')
 
     def execute(self, namespace):
         from PYME.Analysis.points import surfit
-
+        print('executing!')
         data_source = namespace[self.input]
 
         # arrange point data in the format we expect
@@ -89,7 +89,7 @@ class SurfacePatchFitter(ModuleBase):
         raw_fits = tabular.mappingFilter(tabular.recArrayInput(results))
         raw_fits.setMapping('radius_of_curvature', '1./(np.abs(A) + np.abs(B) + 1e-6)')  # cap max at 1e6 instead of inf
 
-        namespace[self.out_fits_raw] = raw_fits
+        namespace[self.output_fits_raw] = raw_fits
 
         # filter surfaces and throw out patches with normals that don't point approx. the same way as their neighbors
         results = surfit.filter_quad_results(results, points.T, self.fit_influence_radius, self.alignment_threshold)
@@ -98,7 +98,7 @@ class SurfacePatchFitter(ModuleBase):
         filtered_fits = tabular.mappingFilter(tabular.recArrayInput(results.view(surfit.SURF_PATCH_DTYPE_FLAT)))
         filtered_fits.setMapping('radius_of_curvature', '1./(np.abs(A) + np.abs(B) + 1e-6)')
 
-        namespace[self.out_fits_filtered] = filtered_fits
+        namespace[self.output_fits_filtered] = filtered_fits
 
         # reconstruct the surface by generating an augmented point data set for each surface, adding virtual
         # localizations spread evenly across each surface patch. Note this is done on the filtered fits.
@@ -117,4 +117,4 @@ class SurfacePatchFitter(ModuleBase):
                                                 'normal_vector_x': xn, 'normal_vector_y': yn, 'normal_vector_z': zn,
                                                 'probe': np.zeros_like(xs), 'n_points_fit': N, 'patch_id': j,
                                                 'radius_of_curvature': filtered_fits['radius_of_curvature'][j.astype('i')]})
-        namespace[self.out_surface_reconstruction] = reconstruction
+        namespace[self.output_surface_reconstruction] = reconstruction
