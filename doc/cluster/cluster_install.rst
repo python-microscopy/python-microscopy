@@ -116,6 +116,9 @@ On each node:
 
    #. Install ``pyme-warp-drive`` following instructions at ``https://github.com/barentine/pyme-warp-drive``
 
+   #. *Optional, Install ``pyNVML`` so GPU usage can be graphically displayed in the clusterUI web interface. A Python 2
+      package is hosted in the ``david_baddeley`` conda channel, and installable with :code:`conda install nvidia-ml-py`.
+
 
 
 
