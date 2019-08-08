@@ -91,7 +91,7 @@ class WorkspaceTree(VirtualTree, wx.gizmos.TreeListCtrl):
             #either list like or dict like
             if 'keys' in dir(item):
                 #dict like
-                return item[item.keys()[n]]
+                return item[list(item.keys())[n]]
             else:
                 return item[n]
         else:
@@ -107,7 +107,7 @@ class WorkspaceTree(VirtualTree, wx.gizmos.TreeListCtrl):
             else:
                 return '[%d]' %n
         else:
-            return item.__dict__.keys()[n]
+            return list(item.__dict__.keys())[n]
 
     def _getChildPathPart(self, item, n):
         """get the nth child of an item"""
@@ -115,11 +115,11 @@ class WorkspaceTree(VirtualTree, wx.gizmos.TreeListCtrl):
             #either list like or dict like
             if 'keys' in dir(item):
                 #dict like
-                return "['%s']" % item.keys()[n]
+                return "['%s']" % list(item.keys())[n]
             else:
                 return '[%d]' %n
         else:
-            return '.' + item.__dict__.keys()[n]
+            return '.' + list(item.__dict__.keys())[n]
 
     def _getChildPath(self, index):
         """get the nth child of an item"""
