@@ -15,6 +15,8 @@ from scipy.optimize import leastsq, fmin
 from scipy.spatial import kdtree
 import multiprocessing
 from PYME.util.shmarray import shmarray
+import logging
+logger = logging.getLogger(__name__)
 
 def f(p, x, y, z):
     return eval('%f*x**2 + %f*x + %f*y**2 + %f*y + %f*z**2 + %f*z + %f*x*y + %f*x*z + %f*y*z + %f -1' % tuple(p))
@@ -738,12 +740,14 @@ def fit_quad_surfaces_Pr(data, radius, fitPos=False, NFits=0):
         processes = [multiprocessing.Process(target=fit_quad_surfaces_tr,
                                              args=(data, kdt, fnums[i::nCPUs], results, radius, fitPos)) for i in range(nCPUs)]
         # launch all the processes
+        logger.debug('launching quadratic surface patch fitting processes')
         for p in processes:
             p.start()
         # wait for them to complete
         for p in processes:
             p.join()
     else:
+        logger.debug('fitting quadratic surface patches in main process')
         fit_quad_surfaces_tr(data, kdt, fnums, results, radius, fitPos)
     # each process should have written their results into our shared memory array, return this
     return results
