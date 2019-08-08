@@ -5,7 +5,7 @@ import numpy as np
 from PYME.IO import tabular
 
 @register_module('FitSurfaceWithPatches')
-class SurfacePatchFitter(ModuleBase):
+class FitSurfaceWithPatches(ModuleBase):
     """
     Fits patches of quadratic planes to point data.
 
@@ -86,7 +86,7 @@ class SurfacePatchFitter(ModuleBase):
 
         # calculate a radius of curvature from our polynomials
         raw_fits = tabular.mappingFilter(tabular.recArrayInput(results))
-        raw_fits.setMapping('radius_of_curvature', '1./(np.abs(A) + np.abs(B) + 1e-6)')  # cap max at 1e6 instead of inf
+        raw_fits.setMapping('r_curve', '1./(np.abs(A) + np.abs(B) + 1e-6)')  # cap max at 1e6 instead of inf
 
         namespace[self.output_fits_raw] = raw_fits
 
@@ -95,7 +95,7 @@ class SurfacePatchFitter(ModuleBase):
 
         # again, add radius of curvature calculation with lazy evaluation
         filtered_fits = tabular.mappingFilter(tabular.recArrayInput(results.view(surfit.SURF_PATCH_DTYPE_FLAT)))
-        filtered_fits.setMapping('radius_of_curvature', '1./(np.abs(A) + np.abs(B) + 1e-6)')
+        filtered_fits.setMapping('r_curve', '1./(np.abs(A) + np.abs(B) + 1e-6)')
 
         namespace[self.output_fits_filtered] = filtered_fits
 
@@ -113,7 +113,7 @@ class SurfacePatchFitter(ModuleBase):
 
         # construct a new datasource with our augmented points
         reconstruction = tabular.mappingFilter({'x': xs, 'y': ys, 'z': zs,
-                                                'normal_vector_x': xn, 'normal_vector_y': yn, 'normal_vector_z': zn,
+                                                'normal_x': xn, 'normal_y': yn, 'normal_z': zn,
                                                 'probe': np.zeros_like(xs), 'n_points_fit': N, 'patch_id': j,
-                                                'radius_of_curvature': filtered_fits['radius_of_curvature'][j.astype('i')]})
+                                                'r_curve': filtered_fits['r_curve'][j.astype('i')]})
         namespace[self.output_surface_reconstruction] = reconstruction
