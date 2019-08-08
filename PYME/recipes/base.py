@@ -425,7 +425,7 @@ class ModuleCollection(HasTraits):
         dg = self.dependancyGraph()
         
         #solve the dependency tree        
-        return toposort.toposort_flatten(dg)
+        return toposort.toposort_flatten(dg, sort=False)
         
     def execute(self, **kwargs):
         #remove anything which is downstream from changed inputs
