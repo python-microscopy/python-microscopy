@@ -736,7 +736,7 @@ def fit_quad_surfaces_Pr(data, radius, fitPos=False, NFits=0):
     #nCPUth point. This was done as a simple way of allocating the tasks evenly, but might not be optimal in terms of e.g.
     #cache coherency. The process creation here will be significantly more efficient on *nix platforms which use copy on
     #write forking when compared to windows which will end up copying both the data and kdt structures
-    if multiprocessing.current_process().name is 'MainProcess':  # avoid potentially trying to spawn children from daemon
+    if multiprocessing.current_process().name == 'MainProcess':  # avoid potentially trying to spawn children from daemon
         processes = [multiprocessing.Process(target=fit_quad_surfaces_tr,
                                              args=(data, kdt, fnums[i::nCPUs], results, radius, fitPos)) for i in range(nCPUs)]
         # launch all the processes
