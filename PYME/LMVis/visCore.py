@@ -506,9 +506,9 @@ class VisGUICore(object):
                                           self.pipeline['z'],
                                           self.pointColour(),
                                           alpha=self.pointDisplaySettings.alpha,
-                                          normal_x=self.pipeline['normal_vector_x'],
-                                          normal_y=self.pipeline['normal_vector_y'],
-                                          normal_z=self.pipeline['normal_vector_z'],
+                                          normal_x=self.pipeline['normal_x'],
+                                          normal_y=self.pipeline['normal_y'],
+                                          normal_z=self.pipeline['normal_z'],
                                           mode='shadedpoints')
             except KeyError:
                 self.glCanvas.setPoints3D(self.pipeline['x'],
