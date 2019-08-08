@@ -180,7 +180,11 @@ class deconvolver:
                 self.decT.start()
 
                 tries = 0
-                while tries < 10 and not hasattr(self.dec, 'fs'):
+                while not hasattr(self.dec, 'fs'):
+                    if tries > 60:
+                        self.decT.kill()
+                        raise RuntimeError('Initialization not complete after 60s, giving up.')
+                    
                     time.sleep(1)
                     tries += 1
 
