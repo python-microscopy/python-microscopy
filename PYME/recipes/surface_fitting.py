@@ -75,7 +75,6 @@ class SurfacePatchFitter(ModuleBase):
 
     def execute(self, namespace):
         from PYME.Analysis.points import surfit
-        print('executing!')
         data_source = namespace[self.input]
 
         # arrange point data in the format we expect
