@@ -95,7 +95,7 @@ class WorkspaceTree(VirtualTree, wx.gizmos.TreeListCtrl):
             else:
                 return item[n]
         else:
-            return item.__dict__.values()[n]
+            return list(item.__dict__.values())[n]
 
     def _getChildName(self, item, n):
         """get the nth child of an item"""
