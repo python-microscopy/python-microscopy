@@ -555,8 +555,9 @@ class ModuleCollection(HasTraits):
     def update_from_yaml(self, data):
         import os
         import yaml
+        import six
         
-        if os.path.isfile(data):
+        if type(data) in six.string_types and os.path.isfile(data):
             with open(data) as f:
                 data = f.read()
     
