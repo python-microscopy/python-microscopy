@@ -569,8 +569,8 @@ def rendJitTriang2(x,y,n,jsig, mcp, imageBounds, pixelSize):
 
         nCPUs = multiprocessing.cpu_count()
 
-        tasks = (n/nCPUs)*numpy.ones(nCPUs, 'i')
-        tasks[:(n%nCPUs)] += 1
+        tasks = int(n / nCPUs) * numpy.ones(nCPUs, 'i')
+        tasks[:int(n%nCPUs)] += 1
 
         processes = [multiprocessing.Process(target = rendJitTri2, args=(im, im1, x, y, jsig, mcp, imageBounds, pixelSize, nIt)) for nIt in tasks]
 
@@ -643,8 +643,8 @@ def rendJitTet(x,y,z,n,jsig, jsigz, mcp, imageBounds, pixelSize, sliceSize=100):
 
         nCPUs = multiprocessing.cpu_count()
 
-        tasks = (n/nCPUs)*numpy.ones(nCPUs, 'i')
-        tasks[:(n%nCPUs)] += 1
+        tasks = int(n / nCPUs) * numpy.ones(nCPUs, 'i')
+        tasks[:int(n % nCPUs)] += 1
 
         processes = [multiprocessing.Process(target = rendJTet, args=(im, y, x,z, jsig, jsigz, mcp, nIt)) for nIt in tasks]
 
