@@ -15,6 +15,8 @@ from scipy.optimize import leastsq, fmin
 from scipy.spatial import kdtree
 import multiprocessing
 from PYME.util.shmarray import shmarray
+import logging
+logger = logging.getLogger(__name__)
 
 def f(p, x, y, z):
     return eval('%f*x**2 + %f*x + %f*y**2 + %f*y + %f*z**2 + %f*z + %f*x*y + %f*x*z + %f*y*z + %f -1' % tuple(p))
@@ -734,21 +736,20 @@ def fit_quad_surfaces_Pr(data, radius, fitPos=False, NFits=0):
     #nCPUth point. This was done as a simple way of allocating the tasks evenly, but might not be optimal in terms of e.g.
     #cache coherency. The process creation here will be significantly more efficient on *nix platforms which use copy on
     #write forking when compared to windows which will end up copying both the data and kdt structures
-    processes = [multiprocessing.Process(target=fit_quad_surfaces_tr, args=(data, kdt, fnums[i::nCPUs], results, radius))
-                 for i in
-                 range(nCPUs)]
-    
-    #launch all the processes
-    for p in processes:
-        print(p)
-        p.start()
-    
-    #wait for them to complete
-    for p in processes:
-        print(p)
-        p.join()
-    
-    #each process should have written their results into our shared memory array, return this
+    if multiprocessing.current_process().name == 'MainProcess':  # avoid potentially trying to spawn children from daemon
+        processes = [multiprocessing.Process(target=fit_quad_surfaces_tr,
+                                             args=(data, kdt, fnums[i::nCPUs], results, radius, fitPos)) for i in range(nCPUs)]
+        # launch all the processes
+        logger.debug('launching quadratic surface patch fitting processes')
+        for p in processes:
+            p.start()
+        # wait for them to complete
+        for p in processes:
+            p.join()
+    else:
+        logger.debug('fitting quadratic surface patches in main process')
+        fit_quad_surfaces_tr(data, kdt, fnums, results, radius, fitPos)
+    # each process should have written their results into our shared memory array, return this
     return results
 
 def reconstruct_quad_surfaces(fits, radius):

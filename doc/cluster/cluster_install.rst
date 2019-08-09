@@ -116,6 +116,9 @@ On each node:
 
    #. Install ``pyme-warp-drive`` following instructions at ``https://github.com/barentine/pyme-warp-drive``
 
+   #. *Optional, Install ``pyNVML`` so GPU usage can be graphically displayed in the clusterUI web interface. A Python 2
+      package is hosted in the ``david_baddeley`` conda channel, and installable with :code:`conda install nvidia-ml-py`.
+
 
 
 
@@ -168,6 +171,11 @@ On the master node:
      This will launch a webserver on port 9000 (the django default of 8080 is the default port for the dataserver,
      and so should be avoided). Ideally the ``clusterUI`` app should be deployed behind a webserver  - e.g. apache -
      following the Django instructions, although this currently results in unresolved performance problems.
+
+   .. tip::
+
+     The ``clusterUI`` app can be run from any computer with an interface on the cluster subnet, PYME installed (from
+     source), and the same ``dataserver-filter`` entry in the ``config.yaml`` file (see above).
 
 5. *[optional]* Run ``PYMEWebDav`` for the WebDAV server to enable the cluster to be mapped as a network drive on windows
    and mac. The webdav server will bind to port 9090, and has a default **username:password** combo of **test:test**.
@@ -234,8 +242,11 @@ To fix this error, there are 2 options:
 ClusterUI doesn't show files
 ----------------------------
 
-Assuming that PYMEDataServer is running this is likely to be a permissions error on the data directory. It's easiest if
-the PYME user owns the directory in question.
+* Assuming that PYMEDataServer is running this is likely to be a permissions error on the data directory. It's easiest if
+  the PYME user owns the directory in question.
+
+* Check that the computer running the ``clusterUI`` app has an interface on the cluster subnet and an appropriate
+  ``dataserver-filter`` entry in its ``config.yaml`` file.
 
 
 

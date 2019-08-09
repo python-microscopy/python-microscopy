@@ -5,56 +5,53 @@
             {
                 "script": "${PREFIX}/Scripts/launchWorkers.exe",
                 "scriptarguments": [],
-                // The following options can be applied to any shortcut type:
                 "name": "launchWorkers",
                 "workdir": "${USERPROFILE}",
                 "icon": "${MENU_DIR}/pmanal.ico",
-                "desktop": true,  // Also create desktop shortcut
-                "quicklaunch": true  // Also create "Quick Launch" bar shortcut
+                "desktop": true,
+                "quicklaunch": true
             },
             {
                 "script": "${PREFIX}/Scripts/dh5view.exe",
                 "scriptarguments": [],
-                // The following options can be applied to any shortcut type:
+
                 "name": "dh5view",
                 "workdir": "${USERPROFILE}",
                 "icon": "${MENU_DIR}/pmanal.ico",
-                "desktop": true,  // Also create desktop shortcut
-                "quicklaunch": true  // Also create "Quick Launch" bar shortcut
+                "desktop": true,
+                "quicklaunch": true
             },
 
              {
                 "script": "${PREFIX}/Scripts/VisGUI.exe",
                 "scriptarguments": [],
-                // The following options can be applied to any shortcut type:
+
                 "name": "VisGUI",
                 "workdir": "${USERPROFILE}",
                 "icon": "${MENU_DIR}/pmvis.ico",
-                "desktop": true,  // Also create desktop shortcut
-                "quicklaunch": true  // Also create "Quick Launch" bar shortcut
+                "desktop": true,
+                "quicklaunch": true
+            },
+            {
+                "script": "${PREFIX}/Scripts/bakeshop.exe",
+                "scriptarguments": [],
+
+                "name": "Bakeshop",
+                "workdir": "${USERPROFILE}",
+                "icon": "${MENU_DIR}/pmanal.ico",
+                "desktop": true,
+                "quicklaunch": true
+            },
+            {
+                "webbrowser": "http://python-microscopy.org/doc/index.html",
+                "name" : "Documentation"
+            },
+            {
+              "name": "Anaconda Prompt",
+              "system": "%windir%\\System32\\cmd.exe",
+              "scriptarguments": ["/K", "${ROOT_PREFIX}\\Scripts\\activate.bat", "${PREFIX}"],
+              "icon": "${MENU_DIR}/Iconleak-Atrous-Console.ico"
             }
-//            {
-//                "script": "${PREFIX}/some_command.exe",
-//                "scriptarguments": ["list", "of", "arguments"],
-//                // The following options can be applied to any shortcut type:
-//                "name": "Hello World",
-//                "workdir": "${PREFIX}",
-//                "icon": "${MENU_DIR}/app.ico",
-//                "desktop": true,  // Also create desktop shortcut
-//                "quicklaunch": true  // Also create "Quick Launch" bar shortcut
-//            },
-//            {
-//                "pywscript": "${PYTHON_SCRIPTS}/helloworld_ui-script.py"
-//            },
-//            {
-//                "pyscript": "${PYTHON_SCRIPTS}/helloworld-script.py"
-//            },
-//            {
-//                "webbrowser": "https://hello.com"
-//            },
-//            {
-//                "system": "path to executable.  No environment modification is done.",
-//                "scriptarguments": ["list", "of", "arguments"]
-//            }
+
         ]
 }

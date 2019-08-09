@@ -119,7 +119,15 @@ class TabularBase(object):
                 
     def __len__(self):
         return len(self[list(self.keys())[0]])
+    
+    def __getattr__(self, item):
+        try:
+            return self[item]
+        except KeyError:
+            raise AttributeError("'%s' has not attribute '%s'" % (self.__class__, item))
         
+    def __dir__(self):
+        return list(self.keys()) + list(self.__dict__.keys())
     
 
 class randomSource(TabularBase):
