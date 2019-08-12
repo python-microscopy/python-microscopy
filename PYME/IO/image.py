@@ -865,7 +865,12 @@ class ImageStack(object):
     def _loadBioformats(self, filename):
         #from PYME.IO.FileUtils import readTiff
         from PYME.IO.DataSources import BioformatsDataSource
-        import bioformats
+        
+        try:
+            import bioformats
+        except ImportError:
+            logger.exception('Error importing bioformats - is bioformats installed?')
+            raise RuntimeError('Cannot load file %s, no native handler and failed to import bioformats' % filename)
 
         #mdfn = self.FindAndParseMetadata(filename)
         print("Bioformats:loading data")
