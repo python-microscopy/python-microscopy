@@ -744,7 +744,6 @@ class MultiviewCameraMixin(object):
             and that's it. Then in your init script, simply define your multiview_info dict and initialize your
             MultiviewCoolCamera class.
 
-            TODO - use multiview_info['Multiview.ROISize'] as a default, but allow changing of ROI size through the GUI
             Parameters
             ----------
             multiview_info : dict
