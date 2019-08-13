@@ -855,6 +855,12 @@ class MultiviewCameraMixin(object):
             self.chip_roi = [chip_x_min, chip_y_min, chip_x_min + chip_width, chip_y_min + chip_height]
             logger.debug('setting chip ROI')
             self.SetROI(*self.chip_roi)
+            actual = (self.GetROIX1(), self.GetROIY1(), self.GetROIX2(), self.GetROIY2())
+            try:
+                assert actual == tuple(self.chip_roi)
+            except AssertionError:
+                raise(AssertionError('Error setting camera ROI. Check that ROI is feasible for camera, target: %s, actual: %s'
+                             % (tuple(self.chip_roi), actual)))
 
             # hold an array for temporarily writing the roughly cropped chip
             self.chip_data = np.empty((chip_width, chip_height), dtype='uint16', order='F')
