@@ -79,10 +79,10 @@ def orca_cam(scope):
         'Multiview.NumROIs': 4,
         'Multiview.ChannelColor': [0, 1, 1, 0],
         'Multiview.ROISize': (size, size),
-        'Multiview.ROI0Origin': (213 - half_size, 1024 - half_size),
+        'Multiview.ROI0Origin': (212 - half_size, 1024 - half_size),
         'Multiview.ROI1Origin': (808 - half_size, 1024 - half_size),
         'Multiview.ROI2Origin': (1230 - half_size, 1024 - half_size),
-        'Multiview.ROI3Origin': (1738 - half_size, 1024 - half_size),
+        'Multiview.ROI3Origin': (1736 - half_size, 1024 - half_size),
     }
     cam = MultiviewOrca(0, multiview_info)
     cam.Init()
