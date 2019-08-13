@@ -125,6 +125,7 @@ class HamamatsuORCA(HamamatsuDCAM):
         self.external_shutter = None
 
     def Init(self):
+        logger.debug('Initializing Hamamatsu Orca')
         HamamatsuDCAM.Init(self)
         if self.camNum < camReg.maxCameras:
             self.noiseProps = noiseProperties[self.GetSerialNumber()]
