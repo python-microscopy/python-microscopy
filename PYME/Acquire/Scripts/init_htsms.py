@@ -66,15 +66,23 @@ def pz(scope):
 def orca_cam(scope):
     from PYME.Acquire.Hardware.HamamatsuDCAM.HamamatsuORCA import MultiviewOrca
 
-    size = 240
+    # centers, (x, y), 2019/08/13
+    # [(213, 1021),
+    # (808, 1021),
+    # (1230, 1023),
+    # (1738, 1023)
+    # ]
+
+    size = 256
+    half_size = int(size / 2)
     multiview_info = {
         'Multiview.NumROIs': 4,
         'Multiview.ChannelColor': [0, 1, 1, 0],
         'Multiview.ROISize': (size, size),
-        'Multiview.ROI0Origin': (104, 1024 - int(size / 2)),
-        'Multiview.ROI1Origin': (844, 1024 - int(size / 2)),
-        'Multiview.ROI2Origin': (1252, 1024 - int(size / 2)),
-        'Multiview.ROI3Origin': (1724, 1024 - int(size / 2)),
+        'Multiview.ROI0Origin': (213 - half_size, 1024 - half_size),
+        'Multiview.ROI1Origin': (808 - half_size, 1024 - half_size),
+        'Multiview.ROI2Origin': (1230 - half_size, 1024 - half_size),
+        'Multiview.ROI3Origin': (1738 - half_size, 1024 - half_size),
     }
     cam = MultiviewOrca(0, multiview_info)
     cam.Init()
@@ -101,8 +109,6 @@ def orca_cam_controls(MainFrame, scope):
     # As it stands, we just use the default gain and readout settings.
     scope.camControls['HamamatsuORCA'] = wx.Panel(MainFrame)
     MainFrame.camPanels.append((scope.camControls['HamamatsuORCA'], 'ORCA Properties'))
-
-    # TODO - add a ROI / Views panel
 
     MainFrame.AddMenuItem('Camera', 'Set Multiview', lambda e: scope.state.setItem('Camera.Views', [0, 1, 2, 3]))
     MainFrame.AddMenuItem('Camera', 'Clear Multiview', lambda e: scope.state.setItem('Camera.Views', []))
