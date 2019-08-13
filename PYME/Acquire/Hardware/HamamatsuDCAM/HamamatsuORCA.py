@@ -240,6 +240,8 @@ class HamamatsuORCA(HamamatsuDCAM):
         else:
             self.setCamPropValue('SUBARRAY MODE', DCAMPROP_MODE__ON)
 
+        logger.debug('ROI set: x0 %3.1f, y0 %3.1f, w %3.1f, h %3.1f' % (x1, y1, w, h))
+
     def GetROIX1(self):
         return int(self.getCamPropValue('SUBARRAY HPOS'))
 
