@@ -28,7 +28,7 @@ import pylab
 from PYME.Analysis.piecewiseMapping import timeToFrames, framesToTime
 
 class eventLogPanel(wx.Panel):
-    def __init__(self, parent, eventSource, metaData, frameRange, charts = [], size=(-1, -1)):
+    def __init__(self, parent, eventSource, metaData, frameRange, charts = [], size=(-1, -1), activate=False):
         self.eventSource = eventSource
         self.metaData = metaData
         self.maxRange = frameRange
@@ -60,6 +60,11 @@ class eventLogPanel(wx.Panel):
         wx.EVT_MOUSEWHEEL(self, self.OnWheel)
 
         self.initialised = True
+        
+        self.active = activate
+        
+    def activate(self):
+        self.active = True
 
     def DoPaint(self, dc):
         dc.Clear()
@@ -279,7 +284,7 @@ class eventLogPanel(wx.Panel):
         dc.SetFont(wx.NullFont)
 
     def OnPaint(self,event):
-        if not self.IsShownOnScreen():
+        if not (self.active and self.IsShownOnScreen()):
             return
         
         DC = wx.PaintDC(self)
