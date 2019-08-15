@@ -22,7 +22,7 @@
 ##################
 
 import numpy as np
-from .fitCommon import fmtSlicesUsed 
+from .fitCommon import fmtSlicesUsed, pack_results
 from . import FFBase 
 
 from PYME.localization.cModels.gauss_app import genGauss,genGaussJac, genGaussJacW
@@ -69,30 +69,30 @@ fresultdtype=[('tIndex', '<i4'),
               ('subtractedBackground', '<f4')
               ]
 
-def GaussianFitResultR(fitResults, startParams, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0):
-    slicesUsed = fmtSlicesUsed(slicesUsed)
-    #print slicesUsed
-
-    if fitErr is None:
-        fitErr = -5e3*np.ones(fitResults.shape, 'f')
-        
-    res = np.zeros(1, fresultdtype)
-
-    res['tIndex'] = metadata.tIndex
-    res['fitResults'].view('8f4')[0, :] = fitResults.astype('f')
-    res['fitError'].view('8f4')[0, :] = fitErr.astype('f')
-    res['resultCode'] = resultCode
-    res['slicesUsed'].view('9i4')[:] = np.array(slicesUsed, dtype='i4').ravel(),
-                                                #dtype='i4').ravel() #fmtSlicesUsed(slicesUsed)
-    res['startParams'].view('8f4')[0, :] = startParams.astype('f')
-    #res['nchi2'] = nchi2
-    res['subtractedBackground'] = background
-
-    return res
-    
-    #res =  np.array([(metadata.tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, slicesUsed, background)], dtype=fresultdtype)
-    #print res
-    #return res
+# def GaussianFitResultR(fitResults, startParams, metadata, slicesUsed=None, resultCode=-1, fitErr=None, background=0):
+#     slicesUsed = fmtSlicesUsed(slicesUsed)
+#     #print slicesUsed
+#
+#     if fitErr is None:
+#         fitErr = -5e3*np.ones(fitResults.shape, 'f')
+#
+#     res = np.zeros(1, fresultdtype)
+#
+#     res['tIndex'] = metadata.tIndex
+#     res['fitResults'].view('8f4')[0, :] = fitResults.astype('f')
+#     res['fitError'].view('8f4')[0, :] = fitErr.astype('f')
+#     res['resultCode'] = resultCode
+#     res['slicesUsed'].view('9i4')[:] = np.array(slicesUsed, dtype='i4').ravel(),
+#                                                 #dtype='i4').ravel() #fmtSlicesUsed(slicesUsed)
+#     res['startParams'].view('8f4')[0, :] = startParams.astype('f')
+#     #res['nchi2'] = nchi2
+#     res['subtractedBackground'] = background
+#
+#     return res
+#
+#     #res =  np.array([(metadata.tIndex, fitResults.astype('f'), fitErr.astype('f'), startParams.astype('f'), resultCode, slicesUsed, background)], dtype=fresultdtype)
+#     #print res
+#     #return res
 		
 
 class GaussianFitFactory(FFBase.FitFactory):
@@ -134,9 +134,14 @@ class GaussianFitFactory(FFBase.FitFactory):
                 fitErrors = None
         except Exception:
             pass
+        
+        tIndex = int(self.metadata.getOrDefault('tIndex', 0))
 
         #package results
-        return GaussianFitResultR(res, np.array(startParameters), self.metadata, (xslice, yslice, zslice), resCode, fitErrors, bgm)
+        #return GaussianFitResultR(res, np.array(startParameters), self.metadata, (xslice, yslice, zslice), resCode, fitErrors, bgm)
+        return pack_results(fresultdtype, tIndex=tIndex, fitResults=res, fitError=fitErrors,
+                            startParams=np.array(startParameters),resultCode=resCode,slicesUsed=(xslice, yslice, zslice),
+                            subtractedBackground=bgm)
 
     @classmethod
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
@@ -152,7 +157,7 @@ class GaussianFitFactory(FFBase.FitFactory):
 
 #so that fit tasks know which class to use
 FitFactory = GaussianFitFactory
-FitResult = GaussianFitResultR
+#FitResult = GaussianFitResultR
 FitResultsDType = fresultdtype #only defined if returning data as numarray
 
 

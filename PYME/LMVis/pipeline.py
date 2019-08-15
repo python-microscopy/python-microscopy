@@ -1,3 +1,4 @@
+
 #!/usr/bin/python
 
 ###############
@@ -262,16 +263,16 @@ def _processEvents(ds, events, mdh):
 
 class Pipeline:
     def __init__(self, filename=None, visFr=None):
+        self.filter = None
+        self.mapping = None
+        self.colourFilter = None
+        self.events = None
+        
         self.recipe = ModuleCollection(execute_on_invalidation=True)
         self.recipe.recipe_executed.connect(self.Rebuild)
 
         self.selectedDataSourceKey = None
         self.filterKeys = {'error_x': (0,30), 'error_y':(0,30),'A':(5,20000), 'sig' : (95, 200)}
-
-        self.filter = None
-        self.mapping = None
-        self.colourFilter = None
-        self.events = None
 
         self.colour_mapper = None
 
@@ -317,6 +318,22 @@ class Pipeline:
 
     def keys(self):
         return self.colourFilter.keys()
+    
+    def __getattr__(self, item):
+        try:
+            #if 'colourFilter in '
+            if self.colourFilter is None:
+                raise AttributeError('colourFilter not yet created')
+            
+            return self.colourFilter[item]
+        except KeyError:
+            raise AttributeError("'%s' has not attribute '%s'" % (self.__class__, item))
+
+    def __dir__(self):
+        if self.colourFilter is None:
+            return list(self.__dict__.keys()) + list(dir(type(self)))
+        else:
+            return list(self.colourFilter.keys()) + list(self.__dict__.keys()) + list(dir(type(self)))
     
     #compatibility redirects
     @property

@@ -26,9 +26,14 @@
 
 
 import wx
-#import sys
+from PYME import config
 from numpy import log2
 import re
+
+SCALING_MODES = {
+    'log': 1,
+    'linear': 0
+}
 
 #redefine wxFrame with a version that hides when someone tries to close it
 #dirty trick, but lets the Boa gui builder still work with frames we do this to
@@ -57,7 +62,7 @@ class LaserSliders(wx.Panel):
         self.labels = []
         self.buttons = []
         self.sliding = False
-        #self.SetTitle("Piezo Control")
+        self.mode = SCALING_MODES[config.get('laser-slider-scaling', default='log')]
         
         sizer_2 = wx.BoxSizer(wx.VERTICAL)
 
@@ -67,10 +72,15 @@ class LaserSliders(wx.Panel):
             b.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle)
             self.buttons.append(b)
             sz.Add(b, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
-            
 
-            sl = wx.Slider(self, -1, self.scopeState['Lasers.%s.Power' % laserName], 0, 100, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
-            
+            if self.mode == 1:
+                min_power = 0
+                max_power = 100
+            else:
+                min_power = self.scopeState['Lasers.%s.MinPower' % laserName]
+                max_power =  self.scopeState['Lasers.%s.MaxPower' % laserName]
+            sl = wx.Slider(self, -1, self.scopeState['Lasers.%s.Power' % laserName],minValue=min_power, maxValue=max_power, size=wx.Size(150,-1),style=wx.SL_HORIZONTAL)#|wx.SL_AUTOTICKS|wx.SL_LABELS)
+
             if wx.version() < '4':
                 #FIXME for wx >= 4
                 sl.SetTickFreq(10,1)
@@ -137,7 +147,12 @@ class LaserSliders(wx.Panel):
             #self.lasers[ind].SetPower(self.lasers[ind].MAX_POWER*2**(sl.GetValue())/1024.)
             laserName = self.laserNames[ind]
             maxPower = self.scopeState['Lasers.%s.MaxPower' % laserName]
-            self.scopeState['Lasers.%s.Power' % laserName] = (maxPower*2**(sl.GetValue()/10.)/1024.)
+
+            if self.mode == 1:
+                self.scopeState['Lasers.%s.Power' % laserName] = (maxPower*2**(sl.GetValue()/10.)/1024.)
+            else:
+                self.scopeState['Lasers.%s.Power' % laserName] = sl.GetValue()
+
         finally:
             self.sliding = False
             
@@ -145,6 +160,9 @@ class LaserSliders(wx.Panel):
         b = event.GetEventObject()
         laserName = self.laserNames[self.buttons.index(b)]
         self.scopeState.setItem('Lasers.%s.On' % laserName, b.GetValue())
+
+
+
 
     def OnCbOn(self, event):
         cb = event.GetEventObject()
@@ -157,10 +175,17 @@ class LaserSliders(wx.Panel):
     def update(self):
         if not self.sliding:
             for ind, laserName in enumerate(self.laserNames):
+
                 power = self.scopeState['Lasers.%s.Power' % laserName]
                 maxPower = self.scopeState['Lasers.%s.MaxPower' % laserName]
-                self.sliders[ind].SetValue(round(10*log2(max(power*1024/maxPower, 1))))
-                self.labels[ind].SetLabel('%#.3g'%(100*power/maxPower))
+                #Check which slider modes so that the slider will move accordingly
+                if self.mode == 1:
+                    self.sliders[ind].SetValue(round(10*log2(max(power*1024/maxPower, 1))))
+                    self.labels[ind].SetLabel('%#.3g'%(100*power/maxPower))
+                else:
+                    self.sliders[ind].SetValue(power)
+                    self.labels[ind].SetLabel('%#.3g'%power)
+
                 lon = self.scopeState['Lasers.%s.On' % laserName]
                 self.buttons[ind].SetValue(lon)
                 if lon:

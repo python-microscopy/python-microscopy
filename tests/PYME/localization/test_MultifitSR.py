@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import ndimage
+import pytest
 
 def gen_image(p=.95, disp=False):
     from PYME.Acquire.Hardware.Simulator import wormlike2
@@ -21,7 +22,7 @@ def gen_image(p=.95, disp=False):
 
 
 
-def test_multifit():
+def test_GaussMultifitSR():
     """
     simple test to see if the multifit algorithm is working. We should detect roughly the same number of molecules
     as we simulated. This is only a loose test, and should pick up any critical reverse compatible breaks rather than
@@ -51,3 +52,45 @@ def test_multifit():
     
     print('nFound: %d, nSim: %d' %(nFound, nSim))
     assert (nFound > 0.5*nSim and nFound < 2.0*nSim)
+
+
+def test_AstigGaussGPUFitFR():
+    """
+    simple test to see if the multifit algorithm is working. We should detect roughly the same number of molecules
+    as we simulated. This is only a loose test, and should pick up any critical reverse compatible breaks rather than
+    actual fit performance.
+    """
+    try:
+        import warpDrive
+    except ImportError:
+        print("PYME warp drive GPU fitting not installed")
+        pytest.skip('"warpDrive" GPU fitting module not installed')
+        return
+    
+    from PYME.localization.FitFactories import AstigGaussGPUFitFR
+    from PYME.IO import MetaDataHandler
+    from PYME.localization.remFitBuf import CameraInfoManager
+
+    x, y, im = gen_image()
+
+    mdh = MetaDataHandler.NestedClassMDHandler()
+    mdh['Camera.ReadNoise'] = 1.0
+    mdh['Camera.NoiseFactor'] = 1.0
+    mdh['Camera.ElectronsPerCount'] = 1.0
+    mdh['Camera.TrueEMGain'] = 1.0
+    mdh['voxelsize.x'] = 0.7
+    mdh['voxelsize.y'] = 0.7
+    mdh['Analysis.DetectionFilterSize'] = 3
+    mdh['Analysis.ROISize'] = 4.5
+    mdh['Analysis.GPUPCTBackground'] = False
+
+    camera_info_manager = CameraInfoManager()
+
+    fitter = AstigGaussGPUFitFR.FitFactory(np.atleast_3d(im), mdh)
+    results = fitter.FindAndFit(1, cameraMaps=camera_info_manager)
+
+    n_simulated = len(x)
+    n_detected = len(results)
+
+    print('Detected: %d, Simulated: %d' % (n_detected, n_simulated))
+    assert (n_detected > 0.5 * n_simulated and n_detected < 2.0 * n_simulated)

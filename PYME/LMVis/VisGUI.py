@@ -368,6 +368,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
             self.elv.SetCharts(self.pipeline.eventCharts)
             
             self.AddPage(self.elv, caption='Events', select=False, update=False)
+            self.elv.activate() #turn painting on now to avoid a paint when we create
 
         logger.debug('Finished creating tabs')
         self.adding_panes = False

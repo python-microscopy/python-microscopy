@@ -32,6 +32,7 @@
 
 
 from PYME.Analysis._fithelpers import *
+from PYME.localization.FitFactories.fitCommon import pack_results
 import logging
 logger = logging.getLogger(__name__)
 
@@ -60,14 +61,14 @@ fresultdtype=[('tIndex', '<i4'),
               ('nFit', '<i4')]
 
 
-def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, LLH=None, nEvents=1):
-    if fitErr is None:
-        fitErr = -5e3*np.ones(fitResults.shape, 'f')
-        LLH = np.zeros(nEvents)
-
-    tIndex = metadata.getOrDefault('tIndex', 0)
-
-    return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, LLH, nEvents)], dtype=fresultdtype)
+# def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, LLH=None, nEvents=1):
+#     if fitErr is None:
+#         fitErr = -5e3*np.ones(fitResults.shape, 'f')
+#         LLH = np.zeros(nEvents)
+#
+#     tIndex = metadata.getOrDefault('tIndex', 0)
+#
+#     return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, LLH, nEvents)], dtype=fresultdtype)
 
 _warpDrive = None
 
@@ -199,10 +200,18 @@ class GaussianFitFactory:
         #return self.chan1.dpars # each fit produces column vector of results, append them all horizontally for return
         resList = np.empty(_warpDrive.candCount, FitResultsDType)
         resultCode = 0
+        
+        tIndex = int(self.metadata.getOrDefault('tIndex', 0))
 
         # package our results with the right labels
-        for ii in range(_warpDrive.candCount):
-            resList[ii] = GaussianFitResultR(dpars[ii, :], self.metadata, resultCode, CRLB[ii, :], LLH[ii], _warpDrive.candCount)
+        if _warpDrive.calcCRLB:
+            for ii in range(_warpDrive.candCount):
+                resList[ii] = pack_results(fresultdtype, tIndex=tIndex, fitResults=dpars[ii, :], fitError=CRLB[ii, :], LLH=LLH[ii], resultCode=resultCode, nFit=_warpDrive.candCount)
+                #resList[ii] = GaussianFitResultR(dpars[ii, :], self.metadata, resultCode, CRLB[ii, :], LLH[ii], _warpDrive.candCount)
+        else:
+            for ii in range(_warpDrive.candCount):
+                resList[ii] = pack_results(fresultdtype, tIndex=tIndex, fitResults=dpars[ii, :], fitError=None, LLH=LLH[ii], resultCode=resultCode, nFit=_warpDrive.candCount)
+
 
         return np.hstack(resList)
 
@@ -268,7 +277,7 @@ class GaussianFitFactory:
 
 # so that fit tasks know which class to use
 FitFactory = GaussianFitFactory
-FitResult = GaussianFitResultR
+#FitResult = GaussianFitResultR
 FitResultsDType = fresultdtype  #only defined if returning data as numarray
 
 #this means that factory is responsible for it's own object finding and implements

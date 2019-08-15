@@ -1,0 +1,57 @@
+{
+    "menu_name": "PYME",
+    "menu_items":
+        [
+            {
+                "script": "${PREFIX}/Scripts/launchWorkers.exe",
+                "scriptarguments": [],
+                "name": "launchWorkers",
+                "workdir": "${USERPROFILE}",
+                "icon": "${MENU_DIR}/pmanal.ico",
+                "desktop": true,
+                "quicklaunch": true
+            },
+            {
+                "script": "${PREFIX}/Scripts/dh5view.exe",
+                "scriptarguments": [],
+
+                "name": "dh5view",
+                "workdir": "${USERPROFILE}",
+                "icon": "${MENU_DIR}/pmanal.ico",
+                "desktop": true,
+                "quicklaunch": true
+            },
+
+             {
+                "script": "${PREFIX}/Scripts/VisGUI.exe",
+                "scriptarguments": [],
+
+                "name": "VisGUI",
+                "workdir": "${USERPROFILE}",
+                "icon": "${MENU_DIR}/pmvis.ico",
+                "desktop": true,
+                "quicklaunch": true
+            },
+            {
+                "script": "${PREFIX}/Scripts/bakeshop.exe",
+                "scriptarguments": [],
+
+                "name": "Bakeshop",
+                "workdir": "${USERPROFILE}",
+                "icon": "${MENU_DIR}/pmanal.ico",
+                "desktop": true,
+                "quicklaunch": true
+            },
+            {
+                "webbrowser": "http://python-microscopy.org/doc/index.html",
+                "name" : "Documentation"
+            },
+            {
+              "name": "Anaconda Prompt",
+              "system": "%windir%\\System32\\cmd.exe",
+              "scriptarguments": ["/K", "${ROOT_PREFIX}\\Scripts\\activate.bat", "${PREFIX}"],
+              "icon": "${MENU_DIR}/Iconleak-Atrous-Console.ico"
+            }
+
+        ]
+}

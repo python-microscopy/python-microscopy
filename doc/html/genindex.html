@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Index &mdash; PYME 19.02.27 documentation</title>
+  <title>Index &mdash; PYME 19.08.06 documentation</title>
   
 
   
@@ -35,6 +35,7 @@
   
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/theme_overrides.css" type="text/css" />
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" /> 
 </head>
@@ -63,7 +64,7 @@
             
             
               <div class="version">
-                19.02.27
+                19.08.06
               </div>
             
           
@@ -98,6 +99,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Analysis.html"><strong>dh5view</strong> - Image Data Analysis and Viewing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="VisGUI.html"><strong>VisGUI</strong> - Visualising Localization Data Sets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="component_programs.html">Common Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="LocalisationAnalysis.html">Analysing Localisation Microscopy data</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Development / Hacking</span></p>
 <ul>
@@ -239,8 +241,6 @@
 </li>
       <li><a href="api/PYME.LMVis.tests.gl_test_objects.html#PYME.LMVis.tests.gl_test_objects.TestObject.add">add() (PYME.LMVis.tests.gl_test_objects.TestObject method)</a>
 </li>
-      <li><a href="api/PYME.Analysis.deTile.html#PYME.Analysis.deTile.ImagePyramid.add_base_tile">add_base_tile() (PYME.Analysis.deTile.ImagePyramid method)</a>
-</li>
       <li><a href="api/PYME.DSView.modules.annotation.html#PYME.DSView.modules.annotation.Annotater.add_curved_line">add_curved_line() (PYME.DSView.modules.annotation.Annotater method)</a>
 </li>
       <li><a href="api/PYME.LMVis.Extras.dockedPanel.html#PYME.LMVis.Extras.dockedPanel.DockedPanel.add_menu_item">add_menu_item() (PYME.LMVis.Extras.dockedPanel.DockedPanel static method)</a>
@@ -262,8 +262,6 @@
       <li><a href="api/PYME.Acquire.acquiremainframe.html#PYME.Acquire.acquiremainframe.PYMEMainFrame.AddAqTool">AddAqTool() (PYME.Acquire.acquiremainframe.PYMEMainFrame method)</a>
 </li>
       <li><a href="api/PYME.Acquire.acquiremainframe.html#PYME.Acquire.acquiremainframe.PYMEMainFrame.AddCamTool">AddCamTool() (PYME.Acquire.acquiremainframe.PYMEMainFrame method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.Tag.addChild">addChild() (PYME.ParallelTasks.webdav.Tag method)</a>
 </li>
       <li><a href="api/PYME.IO.tabular.html#PYME.IO.tabular.mappingFilter.addColumn">addColumn() (PYME.IO.tabular.mappingFilter method)</a>
 </li>
@@ -321,8 +319,6 @@
 </li>
       <li><a href="api/PYME.Acquire.microscope.html#PYME.Acquire.microscope.microscope.AddVoxelSizeSetting">AddVoxelSizeSetting() (PYME.Acquire.microscope.microscope method)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.IntegerIDRule.advert">advert (PYME.ParallelTasks.ruleserver.IntegerIDRule attribute)</a>
-</li>
       <li><a href="api/PYME.Acquire.autofocus.html#PYME.Acquire.autofocus.AutoFocus.af">af() (PYME.Acquire.autofocus.AutoFocus method)</a>
 </li>
       <li><a href="api/PYME.contrib.listctrlMixins.html#PYME.contrib.listctrlMixins.ListCtrlSelectionManagerMix.afterPopupMenu">afterPopupMenu() (PYME.contrib.listctrlMixins.ListCtrlSelectionManagerMix method)</a>
@@ -369,8 +365,6 @@
         <li><a href="api/PYME.Analysis.Tracking.trackUtils.html#PYME.Analysis.Tracking.trackUtils.TrackManager.all">(PYME.Analysis.Tracking.trackUtils.TrackManager attribute)</a>
 </li>
       </ul></li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.all_props">all_props (PYME.ParallelTasks.webdav.DAVRequestHandler attribute)</a>
-</li>
       <li><a href="api/PYME.DSView.modules.html#PYME.DSView.modules.allmodules">allmodules() (in module PYME.DSView.modules)</a>
 </li>
       <li><a href="api/PYME.Acquire.ui.AnalysisSettingsUI.html#PYME.Acquire.ui.AnalysisSettingsUI.AnalysisDetailsPanel">AnalysisDetailsPanel (class in PYME.Acquire.ui.AnalysisSettingsUI)</a>
@@ -395,12 +389,12 @@
 </li>
       <li><a href="api/PYME.misc.aniso.html#PYME.misc.aniso.aniso">aniso() (in module PYME.misc.aniso)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.contrib.aniso.aniso.html#PYME.contrib.aniso.aniso.anisodiff">anisodiff() (in module PYME.contrib.aniso.aniso)</a>
 </li>
       <li><a href="api/PYME.contrib.aniso.aniso.html#PYME.contrib.aniso.aniso.anisodiff3">anisodiff3() (in module PYME.contrib.aniso.aniso)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.Analysis.annealThresh.html#PYME.Analysis.annealThresh.annealThresh">annealThresh() (in module PYME.Analysis.annealThresh)</a>
 </li>
       <li><a href="api/PYME.Analysis.annealThresh.html#PYME.Analysis.annealThresh.annealThresh2">annealThresh2() (in module PYME.Analysis.annealThresh)</a>
@@ -408,10 +402,6 @@
       <li><a href="api/PYME.Analysis.annealThresh.html#PYME.Analysis.annealThresh.annealThresh2D">annealThresh2D() (in module PYME.Analysis.annealThresh)</a>
 </li>
       <li><a href="api/PYME.DSView.modules.annotation.html#PYME.DSView.modules.annotation.Annotater">Annotater (class in PYME.DSView.modules.annotation)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.CPDistributor.announce">announce() (PYME.ParallelTasks.distributor.CPDistributor method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webframework.html#PYME.ParallelTasks.webframework.APIHTTPServer">APIHTTPServer (class in PYME.ParallelTasks.webframework)</a>
 </li>
       <li><a href="api/PYME.DSView.modules.pupilTools.html#PYME.DSView.modules.pupilTools.PupilTools.apodization">apodization (PYME.DSView.modules.pupilTools.PupilTools attribute)</a>
 </li>
@@ -490,6 +480,8 @@
 </li>
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.LocalMaxima.applyFilter">(PYME.recipes.processing.LocalMaxima method)</a>
 </li>
+        <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.Projection.applyFilter">(PYME.recipes.processing.Projection method)</a>
+</li>
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.SelectLabel.applyFilter">(PYME.recipes.processing.SelectLabel method)</a>
 </li>
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.SimpleThreshold.applyFilter">(PYME.recipes.processing.SimpleThreshold method)</a>
@@ -539,6 +531,10 @@
 </li>
       <li><a href="api/PYME.IO.clusterDuplication.html#PYME.IO.clusterDuplication.DupManager.assert_leader">assert_leader() (PYME.IO.clusterDuplication.DupManager method)</a>
 </li>
+      <li><a href="api/PYME.IO.unifiedIO.html#PYME.IO.unifiedIO.assert_name_ok">assert_name_ok() (in module PYME.IO.unifiedIO)</a>
+</li>
+      <li><a href="api/PYME.IO.unifiedIO.html#PYME.IO.unifiedIO.assert_uri_ok">assert_uri_ok() (in module PYME.IO.unifiedIO)</a>
+</li>
       <li><a href="api/PYME.recipes.multiview.html#PYME.recipes.multiview.MapAstigZ.astigmatism_calibration_location">astigmatism_calibration_location (PYME.recipes.multiview.MapAstigZ attribute)</a>
 </li>
       <li><a href="api/PYME.contrib.gohlke.czifile.html#PYME.contrib.gohlke.czifile.CziFile.attachment_directory">attachment_directory (PYME.contrib.gohlke.czifile.CziFile attribute)</a>
@@ -550,12 +546,6 @@
       <li><a href="api/PYME.ui.AUIFrame.html#PYME.ui.AUIFrame.AUIFrame">AUIFrame (class in PYME.ui.AUIFrame)</a>
 </li>
       <li><a href="api/PYME.contrib.auiFloatBook.html#PYME.contrib.auiFloatBook.AuiNotebookWithFloatingPages">AuiNotebookWithFloatingPages (class in PYME.contrib.auiFloatBook)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.Auserlist">Auserlist (PYME.ParallelTasks.webdav.DAVRequestHandler attribute)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.auth_enable">auth_enable (PYME.ParallelTasks.webdav.DAVRequestHandler attribute)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.auth_file">auth_file (PYME.ParallelTasks.webdav.DAVRequestHandler attribute)</a>
 </li>
       <li><a href="api/PYME.recipes.localisations.html#PYME.recipes.localisations.AutocorrelationDriftCorrection">AutocorrelationDriftCorrection (class in PYME.recipes.localisations)</a>
 </li>
@@ -574,6 +564,8 @@
       <li><a href="api/PYME.Analysis.points.gen3DTriangs.html#PYME.Analysis.points.gen3DTriangs.averageNormalsF">averageNormalsF() (in module PYME.Analysis.points.gen3DTriangs)</a>
 </li>
       <li><a href="api/PYME.contrib.gohlke.czifile.html#PYME.contrib.gohlke.czifile.CziFile.axes">axes (PYME.contrib.gohlke.czifile.CziFile attribute)</a>
+</li>
+      <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.Projection.axis">axis (PYME.recipes.processing.Projection attribute)</a>
 </li>
       <li><a href="api/PYME.LMVis.tests.gl_test_objects.html#PYME.LMVis.tests.gl_test_objects.Ellipsoid.AXIS_A">AXIS_A (PYME.LMVis.tests.gl_test_objects.Ellipsoid attribute)</a>
 </li>
@@ -623,12 +615,6 @@
 </li>
       <li><a href="api/PYME.recipes.bakeshop.html#PYME.recipes.bakeshop.BakeshopApp">BakeshopApp (class in PYME.recipes.bakeshop)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.dataserver.bandwidthTesting">bandwidthTesting (PYME.ParallelTasks.dataserver_wsgi.dataserver attribute)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.bandwidthTesting">(PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler attribute)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.IO.rgb_image.html#PYME.IO.rgb_image.base64_image">base64_image() (in module PYME.IO.rgb_image)</a>
 </li>
       <li><a href="api/PYME.IO.FileUtils.nameUtils.html#PYME.IO.FileUtils.nameUtils.baseconvert">baseconvert() (in module PYME.IO.FileUtils.nameUtils)</a>
@@ -636,8 +622,6 @@
       <li><a href="api/PYME.IO.DataSources.BaseDataSource.html#PYME.IO.DataSources.BaseDataSource.BaseDataSource">BaseDataSource (class in PYME.IO.DataSources.BaseDataSource)</a>
 </li>
       <li><a href="api/PYME.IO.tabular.html#PYME.IO.tabular.BaseHDFSource">BaseHDFSource (class in PYME.IO.tabular)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.basic_props">basic_props (PYME.ParallelTasks.webdav.DAVRequestHandler attribute)</a>
 </li>
       <li><a href="api/PYME.recipes.recipeGui.html#PYME.recipes.recipeGui.BatchFrame">BatchFrame (class in PYME.recipes.recipeGui)</a>
 </li>
@@ -659,8 +643,6 @@
 </li>
       <li><a href="api/PYME.Acquire.ExecTools.html#PYME.Acquire.ExecTools.BGInitTask">BGInitTask (class in PYME.Acquire.ExecTools)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.IntegerIDRule.bid">bid() (PYME.ParallelTasks.ruleserver.IntegerIDRule method)</a>
-</li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.Threshold.bin_spacing">bin_spacing (PYME.recipes.processing.Threshold attribute)</a>
 </li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.BinaryDilation">BinaryDilation (class in PYME.recipes.processing)</a>
@@ -673,10 +655,10 @@
 </li>
       <li><a href="api/PYME.Analysis.binAvg.html#PYME.Analysis.binAvg.binAvg">binAvg() (in module PYME.Analysis.binAvg)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.BinnedHistogram.binBy">binBy (PYME.recipes.measurement.BinnedHistogram attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.Analysis.binAvg.html#PYME.Analysis.binAvg.binMedian">binMedian() (in module PYME.Analysis.binAvg)</a>
 </li>
       <li><a href="api/PYME.Analysis.binAvg.html#PYME.Analysis.binAvg.binned_average">binned_average() (in module PYME.Analysis.binAvg)</a>
@@ -741,16 +723,8 @@
 </li>
       <li><a href="api/PYME.localization.remFitBuf.html#PYME.localization.remFitBuf.BufferManager">BufferManager (class in PYME.localization.remFitBuf)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.BufWriter">BufWriter (class in PYME.ParallelTasks.webdav)</a>
-</li>
       <li><a href="api/PYME.util.fProfile.convertProfile.html#PYME.util.fProfile.convertProfile.build_call_tree_threads">build_call_tree_threads() (in module PYME.util.fProfile.convertProfile)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.builddict">builddict() (in module PYME.ParallelTasks.webdav)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.XMLDict_Parser.builddict">(PYME.ParallelTasks.webdav.XMLDict_Parser method)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.contrib.lzw.html#PYME.contrib.lzw.ByteDecoder">ByteDecoder (class in PYME.contrib.lzw)</a>
 </li>
       <li><a href="api/PYME.contrib.lzw.html#PYME.contrib.lzw.ByteEncoder">ByteEncoder (class in PYME.contrib.lzw)</a>
@@ -919,6 +893,10 @@
       </ul></li>
       <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.ExtractChannel.channelToExtract">channelToExtract (PYME.recipes.base.ExtractChannel attribute)</a>
 </li>
+      <li><a href="api/PYME.IO.unifiedIO.html#PYME.IO.unifiedIO.check_name">check_name() (in module PYME.IO.unifiedIO)</a>
+</li>
+      <li><a href="api/PYME.IO.unifiedIO.html#PYME.IO.unifiedIO.check_uri">check_uri() (in module PYME.IO.unifiedIO)</a>
+</li>
       <li><a href="api/PYME.LMVis.importTextDialog.html#PYME.LMVis.importTextDialog.ImportTextDialog.CheckColNames">CheckColNames() (PYME.LMVis.importTextDialog.ImportTextDialog method)</a>
 </li>
       <li><a href="api/PYME.Acquire.frameWrangler.html#PYME.Acquire.frameWrangler.FrameWrangler.checkHardware">checkHardware() (PYME.Acquire.frameWrangler.FrameWrangler method)</a>
@@ -936,8 +914,6 @@
 </li>
       </ul></li>
       <li><a href="api/PYME.DSView.modules.deconvolution.html#PYME.DSView.modules.deconvolution.deconvolver.checkTQ">checkTQ() (PYME.DSView.modules.deconvolution.deconvolver method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.cherrypy_server">cherrypy_server() (in module PYME.ParallelTasks.dataserver_wsgi)</a>
 </li>
       <li><a href="api/PYME.Analysis.BleachProfile.kinModels.html#PYME.Analysis.BleachProfile.kinModels.chi2_mse">chi2_mse() (in module PYME.Analysis.BleachProfile.kinModels)</a>
 </li>
@@ -969,10 +945,6 @@
         <li><a href="api/PYME.ParallelTasks.HDFTaskQueue.html#PYME.ParallelTasks.HDFTaskQueue.HDFResultsTaskQueue.cleanup">(PYME.ParallelTasks.HDFTaskQueue.HDFResultsTaskQueue method)</a>
 </li>
         <li><a href="api/PYME.ParallelTasks.HDFTaskQueue.html#PYME.ParallelTasks.HDFTaskQueue.HDFTaskQueue.cleanup">(PYME.ParallelTasks.HDFTaskQueue.HDFTaskQueue method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.HTTPRulePusher.html#PYME.ParallelTasks.HTTPRulePusher.HTTPRulePusher.cleanup">(PYME.ParallelTasks.HTTPRulePusher.HTTPRulePusher method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.HTTPTaskPusher.html#PYME.ParallelTasks.HTTPTaskPusher.HTTPTaskPusher.cleanup">(PYME.ParallelTasks.HTTPTaskPusher.HTTPTaskPusher method)</a>
 </li>
         <li><a href="api/PYME.ParallelTasks.taskQueue.html#PYME.ParallelTasks.taskQueue.TaskQueue.cleanup">(PYME.ParallelTasks.taskQueue.TaskQueue method)</a>
 </li>
@@ -1087,10 +1059,6 @@
         <li><a href="api/PYME.Analysis.points.gen3DTriangs.html#PYME.Analysis.points.gen3DTriangs.collectConnected">(in module PYME.Analysis.points.gen3DTriangs)</a>
 </li>
       </ul></li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.Collection">Collection (class in PYME.ParallelTasks.webdav)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DirCollection.COLLECTION_MIME_TYPE">COLLECTION_MIME_TYPE (PYME.ParallelTasks.webdav.DirCollection attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.Colocalisation">Colocalisation (class in PYME.recipes.processing)</a>
@@ -1186,8 +1154,6 @@
       <li><a href="api/PYME.DSView.modules.composite.html#PYME.DSView.modules.composite.compositor">compositor (class in PYME.DSView.modules.composite)</a>
 </li>
       <li><a href="api/PYME.contrib.lzw.html#PYME.contrib.lzw.compress">compress() (in module PYME.contrib.lzw)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.taskWorkerHTTP.html#PYME.ParallelTasks.taskWorkerHTTP.taskWorker.computeLoop">computeLoop() (PYME.ParallelTasks.taskWorkerHTTP.taskWorker method)</a>
 </li>
       <li><a href="api/PYME.IO.tabular.html#PYME.IO.tabular.concatenateFilter">concatenateFilter (class in PYME.IO.tabular)</a>
 </li>
@@ -1307,10 +1273,6 @@
 </li>
       <li><a href="api/PYME.Analysis.Colocalisation.colocScaleDep.html#PYME.Analysis.Colocalisation.colocScaleDep.corrScale">corrScale() (in module PYME.Analysis.Colocalisation.colocScaleDep)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.CPDistributor">CPDistributor (class in PYME.ParallelTasks.distributor)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.nodeserver.html#PYME.ParallelTasks.nodeserver.CPNodeServer">CPNodeServer (class in PYME.ParallelTasks.nodeserver)</a>
-</li>
       <li><a href="api/PYME.ParallelTasks.launchWorkers.html#PYME.ParallelTasks.launchWorkers.cpuCount">cpuCount() (in module PYME.ParallelTasks.launchWorkers)</a>
 </li>
       <li><a href="api/PYME.Analysis.PSFEst.psfQuality.html#PYME.Analysis.PSFEst.psfQuality.crb3d">crb3d() (in module PYME.Analysis.PSFEst.psfQuality)</a>
@@ -1372,6 +1334,8 @@
       <li><a href="api/PYME.Acquire.sampleInformation.html#PYME.Acquire.sampleInformation.createImage">createImage() (in module PYME.Acquire.sampleInformation)</a>
 </li>
       <li><a href="api/PYME.LMVis.layer_panel.html#PYME.LMVis.layer_panel.CreateLayerPane">CreateLayerPane() (in module PYME.LMVis.layer_panel)</a>
+</li>
+      <li><a href="api/PYME.LMVis.layer_panel.html#PYME.LMVis.layer_panel.CreateLayerPanel">CreateLayerPanel() (in module PYME.LMVis.layer_panel)</a>
 </li>
       <li><a href="api/PYME.DSView.dsviewer.html#PYME.DSView.dsviewer.DSViewFrame.CreateModuleMenu">CreateModuleMenu() (PYME.DSView.dsviewer.DSViewFrame method)</a>
 </li>
@@ -1455,8 +1419,6 @@
 </li>
       <li><a href="api/PYME.misc.shellutils.html#PYME.misc.shellutils.datafrompipeline">datafrompipeline() (in module PYME.misc.shellutils)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.dataserver">dataserver (class in PYME.ParallelTasks.dataserver_wsgi)</a>
-</li>
       <li><a href="api/PYME.IO.DataSources.AlignDataSource.html#PYME.IO.DataSources.AlignDataSource.DataSource">DataSource (class in PYME.IO.DataSources.AlignDataSource)</a>
 
       <ul>
@@ -1492,10 +1454,6 @@
 </li>
       </ul></li>
       <li><a href="api/PYME.LMVis.filterPane.html#PYME.LMVis.filterPane.FilterPanel.dataSource">dataSource (PYME.LMVis.filterPane.FilterPanel attribute)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler">DAVRequestHandler (class in PYME.ParallelTasks.webdav)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVServer">DAVServer (class in PYME.ParallelTasks.webdav)</a>
 </li>
       <li><a href="api/PYME.Analysis.BleachProfile.deMod.html#PYME.Analysis.BleachProfile.deMod.dBdt">dBdt() (in module PYME.Analysis.BleachProfile.deMod)</a>
 </li>
@@ -1697,6 +1655,8 @@
       </ul></li>
       <li><a href="api/PYME.Acquire.Utils.fastTiler.html#PYME.Acquire.Utils.fastTiler.fastTiler.detach">detach() (PYME.Acquire.Utils.fastTiler.fastTiler method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.Acquire.Utils.vibrationAnalysis.html#PYME.Acquire.Utils.vibrationAnalysis.VibrAnal.Detach">Detach() (PYME.Acquire.Utils.vibrationAnalysis.VibrAnal method)</a>
 </li>
       <li><a href="api/PYME.Acquire.positionTracker.html#PYME.Acquire.positionTracker.PositionTracker.Detatch">Detatch() (PYME.Acquire.positionTracker.PositionTracker method)</a>
@@ -1715,15 +1675,13 @@
 </li>
       <li><a href="api/PYME.IO.clusterListing.html#PYME.IO.clusterListing.DirCache">DirCache (class in PYME.IO.clusterListing)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DirCollection">DirCollection (class in PYME.ParallelTasks.webdav)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.CaWave.direction_data">direction_data (PYME.recipes.processing.CaWave attribute)</a>
 </li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.CaWave.direction_plot">direction_plot (PYME.recipes.processing.CaWave attribute)</a>
 </li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.DirectionToMask3D">DirectionToMask3D (class in PYME.recipes.processing)</a>
+</li>
+      <li><a href="api/PYME.Acquire.SpoolController.html#PYME.Acquire.SpoolController.SpoolController.dirname">dirname (PYME.Acquire.SpoolController.SpoolController attribute)</a>
 </li>
       <li><a href="api/PYME.IO.unifiedIO.html#PYME.IO.unifiedIO.dirname">dirname() (in module PYME.IO.unifiedIO)</a>
 </li>
@@ -1755,8 +1713,6 @@
 </li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.DistanceTransform">DistanceTransform (class in PYME.recipes.processing)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.Distributor">Distributor (class in PYME.ParallelTasks.distributor)</a>
-</li>
       <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.Divide">Divide (class in PYME.recipes.base)</a>
 </li>
       <li><a href="api/PYME.Deconv.richardsonLucyMVM.html#PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.dlHd">dlHd() (PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy method)</a>
@@ -1775,61 +1731,11 @@
 </li>
       <li><a href="api/PYME.Analysis.BleachProfile.intensProf.html#PYME.Analysis.BleachProfile.intensProf.dNofcn">dNofcn() (in module PYME.Analysis.BleachProfile.intensProf)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.do_COPY">do_COPY() (PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.do_DELETE">do_DELETE() (PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.dataserver.do_GET">do_GET() (PYME.ParallelTasks.dataserver_wsgi.dataserver method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.do_GET">(PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.GetHandler.do_GET">(PYME.ParallelTasks.httpSpoolTarget.GetHandler method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.do_GET">(PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.webframework.html#PYME.ParallelTasks.webframework.JSONAPIRequestHandler.do_GET">(PYME.ParallelTasks.webframework.JSONAPIRequestHandler method)</a>
-</li>
-      </ul></li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.dataserver.do_HEAD">do_HEAD() (PYME.ParallelTasks.dataserver_wsgi.dataserver method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.do_HEAD">(PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-      </ul></li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.do_LOCK">do_LOCK() (PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.do_MKCOL">do_MKCOL() (PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.do_MOVE">do_MOVE() (PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.do_OPTIONS">do_OPTIONS() (PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.GetHandler.do_POST">do_POST() (PYME.ParallelTasks.httpSpoolTarget.GetHandler method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.webframework.html#PYME.ParallelTasks.webframework.JSONAPIRequestHandler.do_POST">(PYME.ParallelTasks.webframework.JSONAPIRequestHandler method)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.ProjectOnVector.do_proj">do_proj() (PYME.recipes.processing.ProjectOnVector method)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.do_PROPFIND">do_PROPFIND() (PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.do_PROPPATCH">do_PROPPATCH() (PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.dataserver.do_PUT">do_PUT() (PYME.ParallelTasks.dataserver_wsgi.dataserver method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.do_PUT">(PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.do_PUT">(PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.Analysis.points.rings.html#PYME.Analysis.points.rings.do_radial_anal">do_radial_anal() (in module PYME.Analysis.points.rings)</a>
 </li>
       <li><a href="api/PYME.Analysis.points.rings.html#PYME.Analysis.points.rings.do_summary_plots">do_summary_plots() (in module PYME.Analysis.points.rings)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.do_UNLOCK">do_UNLOCK() (PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
 </li>
       <li><a href="api/PYME.LMVis.Extras.dockedPanel.html#PYME.LMVis.Extras.dockedPanel.DockedPanel">DockedPanel (class in PYME.LMVis.Extras.dockedPanel)</a>
 </li>
@@ -1998,8 +1904,6 @@
       <li><a href="api/PYME.localization.FitFactories.DumbellFitR.html#PYME.localization.FitFactories.DumbellFitR.DumbellFitFactory">DumbellFitFactory (class in PYME.localization.FitFactories.DumbellFitR)</a>
 </li>
       <li><a href="api/PYME.localization.FitFactories.Interpolators.baseInterpolator.html#PYME.localization.FitFactories.Interpolators.baseInterpolator.dummy">dummy (class in PYME.localization.FitFactories.Interpolators.baseInterpolator)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DummyFileMember">DummyFileMember (class in PYME.ParallelTasks.webdav)</a>
 </li>
       <li><a href="api/PYME.IO.PZFFormat.html#PYME.IO.PZFFormat.dumps">dumps() (in module PYME.IO.PZFFormat)</a>
 </li>
@@ -2336,6 +2240,8 @@
 </li>
         <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.Plot.execute">(PYME.recipes.measurement.Plot method)</a>
 </li>
+        <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.TilePhysicalCoords.execute">(PYME.recipes.measurement.TilePhysicalCoords method)</a>
+</li>
         <li><a href="api/PYME.recipes.multiview.html#PYME.recipes.multiview.CalibrateShifts.execute">(PYME.recipes.multiview.CalibrateShifts method)</a>
 </li>
         <li><a href="api/PYME.recipes.multiview.html#PYME.recipes.multiview.FindClumps.execute">(PYME.recipes.multiview.FindClumps method)</a>
@@ -2373,6 +2279,8 @@
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.OpticalFlow.execute">(PYME.recipes.processing.OpticalFlow method)</a>
 </li>
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.ProjectOnVector.execute">(PYME.recipes.processing.ProjectOnVector method)</a>
+</li>
+        <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.StatisticsByFrame.execute">(PYME.recipes.processing.StatisticsByFrame method)</a>
 </li>
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.VectorfieldAngle.execute">(PYME.recipes.processing.VectorfieldAngle method)</a>
 </li>
@@ -2419,12 +2327,6 @@
 
       <ul>
         <li><a href="api/PYME.IO.clusterIO.html#PYME.IO.clusterIO.exists">(in module PYME.IO.clusterIO)</a>
-</li>
-      </ul></li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.TaskQueue.expired">expired (PYME.ParallelTasks.distributor.TaskQueue attribute)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.IntegerIDRule.expired">(PYME.ParallelTasks.ruleserver.IntegerIDRule attribute)</a>
 </li>
       </ul></li>
       <li><a href="api/PYME.LMVis.tests.gl_test_objects.html#PYME.LMVis.tests.gl_test_objects.ExponentialClusterizer">ExponentialClusterizer (class in PYME.LMVis.tests.gl_test_objects)</a>
@@ -2475,8 +2377,6 @@
         <li><a href="api/PYME.IO.dataExporter.html#PYME.IO.dataExporter.TxtExporter.extension">(PYME.IO.dataExporter.TxtExporter attribute)</a>
 </li>
       </ul></li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.dataserver.extensions_map">extensions_map (PYME.ParallelTasks.dataserver_wsgi.dataserver attribute)</a>
-</li>
       <li><a href="api/PYME.Analysis.profile_extraction.html#PYME.Analysis.profile_extraction.extract_profile">extract_profile() (in module PYME.Analysis.profile_extraction)</a>
 </li>
       <li><a href="api/PYME.Analysis.points.fiducials.html#PYME.Analysis.points.fiducials.extractAverageTrajectory">extractAverageTrajectory() (in module PYME.Analysis.points.fiducials)</a>
@@ -2705,6 +2605,12 @@
 </li>
       <li><a href="api/PYME.misc.mock_traits.html#PYME.misc.mock_traits.File">File (in module PYME.misc.mock_traits)</a>
 </li>
+      <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.ModuleBase.file_inputs">file_inputs (PYME.recipes.base.ModuleBase attribute)</a>
+
+      <ul>
+        <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.ModuleCollection.file_inputs">(PYME.recipes.base.ModuleCollection attribute)</a>
+</li>
+      </ul></li>
       <li><a href="api/PYME.contrib.lzw.html#PYME.contrib.lzw.filebytes">filebytes() (in module PYME.contrib.lzw)</a>
 </li>
       <li><a href="api/PYME.IO.h5rFile.html#PYME.IO.h5rFile.H5RFile.fileFitResult">fileFitResult() (PYME.IO.h5rFile.H5RFile method)</a>
@@ -2712,8 +2618,6 @@
       <li><a href="api/PYME.IO.clusterResults.html#PYME.IO.clusterResults.fileFormattedResults">fileFormattedResults() (in module PYME.IO.clusterResults)</a>
 </li>
       <li><a href="api/PYME.IO.clusterListing.html#PYME.IO.clusterListing.FileInfo">FileInfo (class in PYME.IO.clusterListing)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.FileMember">FileMember (class in PYME.ParallelTasks.webdav)</a>
 </li>
       <li><a href="api/PYME.contrib.gohlke.fcsfiles.html#PYME.contrib.gohlke.fcsfiles.ConfoCor3Raw.filename">filename() (PYME.contrib.gohlke.fcsfiles.ConfoCor3Raw method)</a>
 </li>
@@ -2747,18 +2651,6 @@
         <li><a href="api/PYME.ParallelTasks.HDFTaskQueue.html#PYME.ParallelTasks.HDFTaskQueue.HDFResultsTaskQueue.fileResults">(PYME.ParallelTasks.HDFTaskQueue.HDFResultsTaskQueue method)</a>
 </li>
         <li><a href="api/PYME.ParallelTasks.taskQueue.html#PYME.ParallelTasks.taskQueue.TaskQueue.fileResults">(PYME.ParallelTasks.taskQueue.TaskQueue method)</a>
-</li>
-      </ul></li>
-      <li><a href="api/PYME.ParallelTasks.HTTPRulePusher.html#PYME.ParallelTasks.HTTPRulePusher.HTTPRulePusher.fileTasksForFrames">fileTasksForFrames() (PYME.ParallelTasks.HTTPRulePusher.HTTPRulePusher method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.HTTPTaskPusher.html#PYME.ParallelTasks.HTTPTaskPusher.HTTPTaskPusher.fileTasksForFrames">(PYME.ParallelTasks.HTTPTaskPusher.HTTPTaskPusher method)</a>
-</li>
-      </ul></li>
-      <li><a href="api/PYME.ParallelTasks.HTTPRulePusher.html#PYME.ParallelTasks.HTTPRulePusher.RecipePusher.fileTasksForInputs">fileTasksForInputs() (PYME.ParallelTasks.HTTPRulePusher.RecipePusher method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.HTTPTaskPusher.html#PYME.ParallelTasks.HTTPTaskPusher.RecipePusher.fileTasksForInputs">(PYME.ParallelTasks.HTTPTaskPusher.RecipePusher method)</a>
 </li>
       </ul></li>
       <li><a href="api/PYME.IO.clusterListing.html#PYME.IO.clusterListing.FILETYPE_SERIES_COMPLETE">FILETYPE_SERIES_COMPLETE (in module PYME.IO.clusterListing)</a>
@@ -2797,6 +2689,8 @@
         <li><a href="api/PYME.DSView.modules.sparkprepare.html#PYME.DSView.modules.sparkprepare.filterer">(class in PYME.DSView.modules.sparkprepare)</a>
 </li>
       </ul></li>
+      <li><a href="api/PYME.LMVis.filterPane.html#PYME.LMVis.filterPane.FilterPane.filterKeys">filterKeys (PYME.LMVis.filterPane.FilterPane attribute)</a>
+</li>
       <li><a href="api/PYME.DSView.modules.measure.filterPan.html#PYME.DSView.modules.measure.filterPan.FilterPane">FilterPane (class in PYME.DSView.modules.measure.filterPan)</a>
 
       <ul>
@@ -2849,12 +2743,6 @@
 </li>
       <li><a href="api/PYME.Analysis.points.DeClump.pyDeClump.html#PYME.Analysis.points.DeClump.pyDeClump.findConnected">findConnected() (in module PYME.Analysis.points.DeClump.pyDeClump)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DirCollection.findMember">findMember() (PYME.ParallelTasks.webdav.DirCollection method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.TempDirCollection.findMember">(PYME.ParallelTasks.webdav.TempDirCollection method)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.localization.ofind.html#PYME.localization.ofind.ObjectIdentifier.FindObjects">FindObjects() (PYME.localization.ofind.ObjectIdentifier method)</a>
 
       <ul>
@@ -2878,8 +2766,6 @@
       <li><a href="api/PYME.Analysis.Tracking.trackUtils.html#PYME.Analysis.Tracking.trackUtils.findTracks2">findTracks2() (in module PYME.Analysis.Tracking.trackUtils)</a>
 </li>
       <li><a href="api/PYME.Analysis.points.twoColour.html#PYME.Analysis.points.twoColour.findWonkyVectors">findWonkyVectors() (in module PYME.Analysis.points.twoColour)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVServer.finish_request">finish_request() (PYME.ParallelTasks.webdav.DAVServer method)</a>
 </li>
       <li><a href="api/PYME.Acquire.HTTPSpooler.html#PYME.Acquire.HTTPSpooler.Spooler.finished">finished() (PYME.Acquire.HTTPSpooler.Spooler method)</a>
 </li>
@@ -3037,13 +2923,9 @@
 </li>
       <li><a href="api/PYME.localization.remFitBuf.html#PYME.localization.remFitBuf.fitResult">fitResult (class in PYME.localization.remFitBuf)</a>
 </li>
-      <li><a href="api/PYME.localization.FitFactories.AstigGaussFitFR.html#PYME.localization.FitFactories.AstigGaussFitFR.FitResult">FitResult() (in module PYME.localization.FitFactories.AstigGaussFitFR)</a>
+      <li><a href="api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.html#PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.FitResult">FitResult() (in module PYME.localization.FitFactories.BeadConvolvedAstigGaussFit)</a>
 
       <ul>
-        <li><a href="api/PYME.localization.FitFactories.AstigGaussGPUFitFR.html#PYME.localization.FitFactories.AstigGaussGPUFitFR.FitResult">(in module PYME.localization.FitFactories.AstigGaussGPUFitFR)</a>
-</li>
-        <li><a href="api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.html#PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.FitResult">(in module PYME.localization.FitFactories.BeadConvolvedAstigGaussFit)</a>
-</li>
         <li><a href="api/PYME.localization.FitFactories.ConfocCOIR.html#PYME.localization.FitFactories.ConfocCOIR.FitResult">(in module PYME.localization.FitFactories.ConfocCOIR)</a>
 </li>
         <li><a href="api/PYME.localization.FitFactories.DumbellFitR.html#PYME.localization.FitFactories.DumbellFitR.FitResult">(in module PYME.localization.FitFactories.DumbellFitR)</a>
@@ -3055,8 +2937,6 @@
         <li><a href="api/PYME.localization.FitFactories.GaussMultifitLinesR.html#PYME.localization.FitFactories.GaussMultifitLinesR.FitResult">(in module PYME.localization.FitFactories.GaussMultifitLinesR)</a>
 </li>
         <li><a href="api/PYME.localization.FitFactories.GaussMultifitR.html#PYME.localization.FitFactories.GaussMultifitR.FitResult">(in module PYME.localization.FitFactories.GaussMultifitR)</a>
-</li>
-        <li><a href="api/PYME.localization.FitFactories.GaussMultifitSR.html#PYME.localization.FitFactories.GaussMultifitSR.FitResult">(in module PYME.localization.FitFactories.GaussMultifitSR)</a>
 </li>
         <li><a href="api/PYME.localization.FitFactories.InterpFitR.html#PYME.localization.FitFactories.InterpFitR.FitResult">(in module PYME.localization.FitFactories.InterpFitR)</a>
 </li>
@@ -3119,6 +2999,8 @@
       </ul></li>
       <li><a href="api/PYME.Analysis.BleachProfile.fitRecover.html#PYME.Analysis.BleachProfile.fitRecover.FitTrace">FitTrace() (in module PYME.Analysis.BleachProfile.fitRecover)</a>
 </li>
+      <li><a href="api/PYME.IO.unifiedIO.html#PYME.IO.unifiedIO.fix_name">fix_name() (in module PYME.IO.unifiedIO)</a>
+</li>
       <li><a href="api/PYME.Analysis.MetaData.html#PYME.Analysis.MetaData.fixEMGain">fixEMGain() (in module PYME.Analysis.MetaData)</a>
 </li>
       <li><a href="api/PYME.DSView.modules.dark_and_flatfield.html#PYME.DSView.modules.dark_and_flatfield.flat">flat() (in module PYME.DSView.modules.dark_and_flatfield)</a>
@@ -3154,11 +3036,7 @@
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.DeconvolveMotionCompensating.flowScale">flowScale (PYME.recipes.processing.DeconvolveMotionCompensating attribute)</a>
 </li>
       <li><a href="api/PYME.contrib.lzw.html#PYME.contrib.lzw.Encoder.flush">flush() (PYME.contrib.lzw.Encoder method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.BufWriter.flush">(PYME.ParallelTasks.webdav.BufWriter method)</a>
 </li>
-      </ul></li>
       <li><a href="api/PYME.IO.h5rFile.html#PYME.IO.h5rFile.H5RFile.FLUSH_INTERVAL">FLUSH_INTERVAL (PYME.IO.h5rFile.H5RFile attribute)</a>
 </li>
       <li><a href="api/PYME.Acquire.HTTPHDFSpooler.html#PYME.Acquire.HTTPHDFSpooler.Spooler.FlushBuffer">FlushBuffer() (PYME.Acquire.HTTPHDFSpooler.Spooler method)</a>
@@ -3186,6 +3064,8 @@
       <li><a href="api/PYME.Analysis.angleFilter.html#PYME.Analysis.angleFilter.fold">fold() (in module PYME.Analysis.angleFilter)</a>
 </li>
       <li><a href="api/PYME.ui.autoFoldPanel.html#PYME.ui.autoFoldPanel.foldingPane.Fold">Fold() (PYME.ui.autoFoldPanel.foldingPane method)</a>
+</li>
+      <li><a href="api/PYME.ui.autoFoldPanel.html#PYME.ui.autoFoldPanel.foldPanel.fold1">fold1() (PYME.ui.autoFoldPanel.foldPanel method)</a>
 </li>
       <li><a href="api/PYME.ui.autoFoldPanel.html#PYME.ui.autoFoldPanel.foldButton">foldButton (class in PYME.ui.autoFoldPanel)</a>
 </li>
@@ -3264,6 +3144,8 @@
       <li><a href="api/PYME.misc.shellutils.html#PYME.misc.shellutils.frc">frc() (in module PYME.misc.shellutils)</a>
 </li>
       <li><a href="api/PYME.localization.FitFactories.MultiviewFitInterpNR.html#PYME.localization.FitFactories.MultiviewFitInterpNR.fresult_dtype">fresult_dtype() (in module PYME.localization.FitFactories.MultiviewFitInterpNR)</a>
+</li>
+      <li><a href="api/PYME.IO.MetaDataHandler.html#PYME.IO.MetaDataHandler.from_json">from_json() (in module PYME.IO.MetaDataHandler)</a>
 </li>
       <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.ModuleCollection.from_module_list">from_module_list() (PYME.recipes.base.ModuleCollection class method)</a>
 </li>
@@ -3407,20 +3289,14 @@
         <li><a href="api/PYME.localization.FitFactories.SplitterShiftEstFR.html#PYME.localization.FitFactories.SplitterShiftEstFR.GaussianFitFactory">(class in PYME.localization.FitFactories.SplitterShiftEstFR)</a>
 </li>
       </ul></li>
-      <li><a href="api/PYME.localization.FitFactories.AstigGaussFitFR.html#PYME.localization.FitFactories.AstigGaussFitFR.GaussianFitResultR">GaussianFitResultR() (in module PYME.localization.FitFactories.AstigGaussFitFR)</a>
+      <li><a href="api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.html#PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitResultR">GaussianFitResultR() (in module PYME.localization.FitFactories.BeadConvolvedAstigGaussFit)</a>
 
       <ul>
-        <li><a href="api/PYME.localization.FitFactories.AstigGaussGPUFitFR.html#PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitResultR">(in module PYME.localization.FitFactories.AstigGaussGPUFitFR)</a>
-</li>
-        <li><a href="api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.html#PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitResultR">(in module PYME.localization.FitFactories.BeadConvolvedAstigGaussFit)</a>
-</li>
         <li><a href="api/PYME.localization.FitFactories.GaussFitConstrR.html#PYME.localization.FitFactories.GaussFitConstrR.GaussianFitResultR">(in module PYME.localization.FitFactories.GaussFitConstrR)</a>
 </li>
         <li><a href="api/PYME.localization.FitFactories.GaussMultifitLinesR.html#PYME.localization.FitFactories.GaussMultifitLinesR.GaussianFitResultR">(in module PYME.localization.FitFactories.GaussMultifitLinesR)</a>
 </li>
         <li><a href="api/PYME.localization.FitFactories.GaussMultifitR.html#PYME.localization.FitFactories.GaussMultifitR.GaussianFitResultR">(in module PYME.localization.FitFactories.GaussMultifitR)</a>
-</li>
-        <li><a href="api/PYME.localization.FitFactories.GaussMultifitSR.html#PYME.localization.FitFactories.GaussMultifitSR.GaussianFitResultR">(in module PYME.localization.FitFactories.GaussMultifitSR)</a>
 </li>
         <li><a href="api/PYME.localization.FitFactories.LatGaussFitFR.html#PYME.localization.FitFactories.LatGaussFitFR.GaussianFitResultR">(in module PYME.localization.FitFactories.LatGaussFitFR)</a>
 </li>
@@ -3847,8 +3723,6 @@
       </ul></li>
       <li><a href="api/PYME.misc.read_agf.html#PYME.misc.read_agf.get_all_glasses">get_all_glasses() (in module PYME.misc.read_agf)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.rulenodeserver.html#PYME.ParallelTasks.rulenodeserver.Rater.get_any">get_any() (PYME.ParallelTasks.rulenodeserver.Rater method)</a>
-</li>
       <li><a href="api/PYME.Analysis.PSFGen.fourierHNA.html#PYME.Analysis.PSFGen.fourierHNA.get_bead_pupil">get_bead_pupil() (in module PYME.Analysis.PSFGen.fourierHNA)</a>
 
       <ul>
@@ -3894,11 +3768,11 @@
 </li>
       </ul></li>
       <li><a href="api/PYME.IO.FileUtils.freeSpace.html#PYME.IO.FileUtils.freeSpace.get_free_space">get_free_space() (in module PYME.IO.FileUtils.freeSpace)</a>
+
+      <ul>
+        <li><a href="api/PYME.Acquire.SpoolController.html#PYME.Acquire.SpoolController.SpoolController.get_free_space">(PYME.Acquire.SpoolController.SpoolController method)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.get_glob">get_glob() (PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.get_h5_part">get_h5_part() (PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler method)</a>
-</li>
+      </ul></li>
       <li><a href="api/PYME.misc.read_agf.html#PYME.misc.read_agf.get_index">get_index() (in module PYME.misc.read_agf)</a>
 </li>
       <li><a href="api/PYME.misc.pyme_zeroconf.html#PYME.misc.pyme_zeroconf.ZCListener.get_info">get_info() (PYME.misc.pyme_zeroconf.ZCListener method)</a>
@@ -3917,11 +3791,9 @@
       </ul></li>
       <li><a href="api/PYME.IO.h5File.html#PYME.IO.h5File.H5File.get_listing">get_listing() (PYME.IO.h5File.H5File method)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.rulenodeserver.html#PYME.ParallelTasks.rulenodeserver.Rater.get_local">get_local() (PYME.ParallelTasks.rulenodeserver.Rater method)</a>
+      <li><a href="api/PYME.IO.FileUtils.nameUtils.html#PYME.IO.FileUtils.nameUtils.get_local_data_directory">get_local_data_directory() (in module PYME.IO.FileUtils.nameUtils)</a>
 </li>
       <li><a href="api/PYME.IO.clusterIO.html#PYME.IO.clusterIO.get_local_path">get_local_path() (in module PYME.IO.clusterIO)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.get_localip">get_localip() (in module PYME.ParallelTasks.webdav)</a>
 </li>
       <li><a href="api/PYME.LMVis.Extras.animation.html#PYME.LMVis.Extras.animation.EditDialog.get_name">get_name() (PYME.LMVis.Extras.animation.EditDialog method)</a>
 
@@ -3981,15 +3853,11 @@
 </li>
       <li><a href="api/PYME.localization.splitting.html#PYME.localization.splitting.get_splitter_rois">get_splitter_rois() (in module PYME.localization.splitting)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.dataserver.get_status">get_status() (PYME.ParallelTasks.dataserver_wsgi.dataserver method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.get_status">(PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler method)</a>
+      <li><a href="api/PYME.IO.FileUtils.nameUtils.html#PYME.IO.FileUtils.nameUtils.get_spool_subdir">get_spool_subdir() (in module PYME.IO.FileUtils.nameUtils)</a>
 </li>
-      </ul></li>
       <li><a href="api/PYME.Acquire.ExecTools.html#PYME.Acquire.ExecTools.BGInitTask.get_status_msg">get_status_msg() (PYME.Acquire.ExecTools.BGInitTask method)</a>
 </li>
-      <li><a href="api/PYME.Analysis.deTile.html#PYME.Analysis.deTile.ImagePyramid.get_tile">get_tile() (PYME.Analysis.deTile.ImagePyramid method)</a>
+      <li><a href="api/PYME.resources.html#PYME.resources.get_web_static_dir">get_web_static_dir() (in module PYME.resources)</a>
 </li>
       <li><a href="api/PYME.Acquire.microscope.html#PYME.Acquire.microscope.microscope.GetActiveCameraName">GetActiveCameraName() (PYME.Acquire.microscope.microscope method)</a>
 </li>
@@ -4123,14 +3991,14 @@
 </li>
       <li><a href="api/PYME.misc.dirSize.html#PYME.misc.dirSize.getDirectorySize">getDirectorySize() (in module PYME.misc.dirSize)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.distribution.html#PYME.ParallelTasks.distribution.getDistributorInfo">getDistributorInfo() (in module PYME.ParallelTasks.distribution)</a>
-</li>
       <li><a href="api/PYME.misc.shellutils.html#PYME.misc.shellutils.getdriftcurves">getdriftcurves() (in module PYME.misc.shellutils)</a>
 </li>
       <li><a href="api/PYME.misc.shellutils.html#PYME.misc.shellutils.getDriftPars">getDriftPars() (in module PYME.misc.shellutils)</a>
 </li>
       <li><a href="api/PYME.misc.shellutils.html#PYME.misc.shellutils.getdriftxyzFromEvts">getdriftxyzFromEvts() (in module PYME.misc.shellutils)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.Acquire.stackSettings.html#PYME.Acquire.stackSettings.StackSettings.GetEndPos">GetEndPos() (PYME.Acquire.stackSettings.StackSettings method)</a>
 </li>
       <li><a href="api/PYME.Acquire.HTTPHDFSpooler.html#PYME.Acquire.HTTPHDFSpooler.HttpSpoolMDHandler.getEntry">getEntry() (PYME.Acquire.HTTPHDFSpooler.HttpSpoolMDHandler method)</a>
@@ -4149,8 +4017,6 @@
         <li><a href="api/PYME.IO.MetaDataHandler.html#PYME.IO.MetaDataHandler.XMLMDHandler.getEntry">(PYME.IO.MetaDataHandler.XMLMDHandler method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.Acquire.HTTPHDFSpooler.html#PYME.Acquire.HTTPHDFSpooler.HttpSpoolMDHandler.getEntryNames">getEntryNames() (PYME.Acquire.HTTPHDFSpooler.HttpSpoolMDHandler method)</a>
 
       <ul>
@@ -4167,8 +4033,6 @@
         <li><a href="api/PYME.IO.MetaDataHandler.html#PYME.IO.MetaDataHandler.XMLMDHandler.getEntryNames">(PYME.IO.MetaDataHandler.XMLMDHandler method)</a>
 </li>
       </ul></li>
-      <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.H5File.getEvent">getEvent() (PYME.ParallelTasks.httpSpoolTarget.H5File method)</a>
-</li>
       <li><a href="api/PYME.IO.DataSources.AlignDataSource.html#PYME.IO.DataSources.AlignDataSource.DataSource.getEvents">getEvents() (PYME.IO.DataSources.AlignDataSource.DataSource method)</a>
 
       <ul>
@@ -4204,8 +4068,6 @@
 </li>
         <li><a href="api/PYME.IO.DataSources.UnsplitDataSource.html#PYME.IO.DataSources.UnsplitDataSource.DataSource.getEvents">(PYME.IO.DataSources.UnsplitDataSource.DataSource method)</a>
 </li>
-        <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.H5File.getEvents">(PYME.ParallelTasks.httpSpoolTarget.H5File method)</a>
-</li>
       </ul></li>
       <li><a href="api/PYME.misc.fbpIcons.html#PYME.misc.fbpIcons.GetExpandedIconBitmap">GetExpandedIconBitmap() (in module PYME.misc.fbpIcons)</a>
 </li>
@@ -4234,11 +4096,7 @@
       <li><a href="api/PYME.Acquire.frameWrangler.html#PYME.Acquire.frameWrangler.FrameWrangler.getFPS">getFPS() (PYME.Acquire.frameWrangler.FrameWrangler method)</a>
 </li>
       <li><a href="api/PYME.Acquire.frameWrangler.html#PYME.Acquire.frameWrangler.FrameWrangler.getFrame">getFrame() (PYME.Acquire.frameWrangler.FrameWrangler method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.H5File.getFrame">(PYME.ParallelTasks.httpSpoolTarget.H5File method)</a>
 </li>
-      </ul></li>
       <li><a href="api/PYME.IO.FileUtils.nameUtils.html#PYME.IO.FileUtils.nameUtils.getFullExistingFilename">getFullExistingFilename() (in module PYME.IO.FileUtils.nameUtils)</a>
 </li>
       <li><a href="api/PYME.IO.FileUtils.nameUtils.html#PYME.IO.FileUtils.nameUtils.getFullFilename">getFullFilename() (in module PYME.IO.FileUtils.nameUtils)</a>
@@ -4248,8 +4106,6 @@
       <li><a href="api/PYME.misc.coverslipGeometries.html#PYME.misc.coverslipGeometries.GetGeometry">GetGeometry() (in module PYME.misc.coverslipGeometries)</a>
 </li>
       <li><a href="api/PYME.DSView.modules.blobMeasure.html#PYME.DSView.modules.blobMeasure.BlobObject.getGraph">getGraph() (PYME.DSView.modules.blobMeasure.BlobObject method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.GetHandler">GetHandler (class in PYME.ParallelTasks.httpSpoolTarget)</a>
 </li>
       <li><a href="api/PYME.resources.html#PYME.resources.getIconPath">getIconPath() (in module PYME.resources)</a>
 </li>
@@ -4333,20 +4189,10 @@
 </li>
       <li><a href="api/PYME.misc.shellutils.html#PYME.misc.shellutils.getmdh">getmdh() (in module PYME.misc.shellutils)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.Collection.getMembers">getMembers() (PYME.ParallelTasks.webdav.Collection method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DirCollection.getMembers">(PYME.ParallelTasks.webdav.DirCollection method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.TempDirCollection.getMembers">(PYME.ParallelTasks.webdav.TempDirCollection method)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.IO.DataSources.ClusterPZFDataSource.html#PYME.IO.DataSources.ClusterPZFDataSource.DataSource.getMetadata">getMetadata() (PYME.IO.DataSources.ClusterPZFDataSource.DataSource method)</a>
 
       <ul>
         <li><a href="api/PYME.IO.DataSources.HTTPDataSource.html#PYME.IO.DataSources.HTTPDataSource.DataSource.getMetadata">(PYME.IO.DataSources.HTTPDataSource.DataSource method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.H5File.getMetadata">(PYME.ParallelTasks.httpSpoolTarget.H5File method)</a>
 </li>
       </ul></li>
       <li><a href="api/PYME.Deconv.deconvDialogs.html#PYME.Deconv.deconvDialogs.DeconvSettingsDialog.GetMethod">GetMethod() (PYME.Deconv.deconvDialogs.DeconvSettingsDialog method)</a>
@@ -4362,10 +4208,6 @@
       <li><a href="api/PYME.Analysis.points.EdgeDB.edges.html#PYME.Analysis.points.EdgeDB.edges.EdgeDB.getNeighbourDists">getNeighbourDists() (PYME.Analysis.points.EdgeDB.edges.EdgeDB method)</a>
 </li>
       <li><a href="api/PYME.DSView.modules.blobMeasure.html#PYME.DSView.modules.blobMeasure.getNewID">getNewID() (in module PYME.DSView.modules.blobMeasure)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.XMLDict_Parser.getnexttag">getnexttag() (PYME.ParallelTasks.webdav.XMLDict_Parser method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.distribution.html#PYME.ParallelTasks.distribution.getNodeInfo">getNodeInfo() (in module PYME.ParallelTasks.distribution)</a>
 </li>
       <li><a href="api/PYME.misc.pyme_zeroconf.html#PYME.misc.pyme_zeroconf.getNS">getNS() (in module PYME.misc.pyme_zeroconf)</a>
 </li>
@@ -4497,18 +4339,6 @@
 </li>
       <li><a href="api/PYME.Analysis.points.objectMeasure.html#PYME.Analysis.points.objectMeasure.getPrincipalAxis">getPrincipalAxis() (in module PYME.Analysis.points.objectMeasure)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DirCollection.getProperties">getProperties() (PYME.ParallelTasks.webdav.DirCollection method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DummyFileMember.getProperties">(PYME.ParallelTasks.webdav.DummyFileMember method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.FileMember.getProperties">(PYME.ParallelTasks.webdav.FileMember method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.Member.getProperties">(PYME.ParallelTasks.webdav.Member method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.TempDirCollection.getProperties">(PYME.ParallelTasks.webdav.TempDirCollection method)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.Analysis.PSFEst.extractImages.html#PYME.Analysis.PSFEst.extractImages.getPSF">getPSF() (in module PYME.Analysis.PSFEst.extractImages)</a>
 </li>
       <li><a href="api/PYME.Deconv.deconvDialogs.html#PYME.Deconv.deconvDialogs.DeconvSettingsDialog.GetPSF">GetPSF() (PYME.Deconv.deconvDialogs.DeconvSettingsDialog method)</a>
@@ -4523,8 +4353,6 @@
 </li>
       <li><a href="api/PYME.Analysis.PSFEst.extractImages.html#PYME.Analysis.PSFEst.extractImages.getPSFSlice">getPSFSlice() (in module PYME.Analysis.PSFEst.extractImages)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.H5File.getPZFFrame">getPZFFrame() (PYME.ParallelTasks.httpSpoolTarget.H5File method)</a>
-</li>
       <li><a href="api/PYME.ParallelTasks.DSTaskQueue.html#PYME.ParallelTasks.DSTaskQueue.DSTaskQueue.getQueueData">getQueueData() (PYME.ParallelTasks.DSTaskQueue.DSTaskQueue method)</a>
 
       <ul>
@@ -4537,8 +4365,6 @@
         <li><a href="api/PYME.ParallelTasks.taskServerZC.html#PYME.ParallelTasks.taskServerZC.TaskQueueSet.getQueueData">(PYME.ParallelTasks.taskServerZC.TaskQueueSet method)</a>
 </li>
       </ul></li>
-      <li><a href="api/PYME.ParallelTasks.distribution.html#PYME.ParallelTasks.distribution.getQueueInfo">getQueueInfo() (in module PYME.ParallelTasks.distribution)</a>
-</li>
       <li><a href="api/PYME.ParallelTasks.HDFTaskQueue.html#PYME.ParallelTasks.HDFTaskQueue.HDFResultsTaskQueue.getQueueMetaData">getQueueMetaData() (PYME.ParallelTasks.HDFTaskQueue.HDFResultsTaskQueue method)</a>
 
       <ul>
@@ -4600,8 +4426,6 @@
       <li><a href="api/PYME.DSView.modules.composite.html#PYME.DSView.modules.composite.CompositeDialog.GetShiftmap">GetShiftmap() (PYME.DSView.modules.composite.CompositeDialog method)</a>
 </li>
       <li><a href="api/PYME.IO.MetaDataHandler.html#PYME.IO.MetaDataHandler.MDHandlerBase.GetSimpleString">GetSimpleString() (PYME.IO.MetaDataHandler.MDHandlerBase method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.BufWriter.getSize">getSize() (PYME.ParallelTasks.webdav.BufWriter method)</a>
 </li>
       <li><a href="api/PYME.IO.buffers.html#PYME.IO.buffers.dataBuffer.getSlice">getSlice() (PYME.IO.buffers.dataBuffer method)</a>
 
@@ -4759,12 +4583,6 @@
         <li><a href="api/PYME.ParallelTasks.taskServerZC.html#PYME.ParallelTasks.taskServerZC.TaskQueueSet.getTasks">(PYME.ParallelTasks.taskServerZC.TaskQueueSet method)</a>
 </li>
       </ul></li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.getTextFileLock">getTextFileLock() (in module PYME.ParallelTasks.dataserver_wsgi)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.getTextFileLock">(in module PYME.ParallelTasks.HTTPDataServer)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.IO.FileUtils.thumbnailDatabase.html#PYME.IO.FileUtils.thumbnailDatabase.getThumbnail">getThumbnail() (in module PYME.IO.FileUtils.thumbnailDatabase)</a>
 </li>
       <li><a href="api/PYME.Acquire.positionTracker.html#PYME.Acquire.positionTracker.PositionTracker.GetTrack">GetTrack() (PYME.Acquire.positionTracker.PositionTracker method)</a>
@@ -4897,8 +4715,6 @@
 </li>
       <li><a href="api/PYME.Analysis.BleachProfile.intensProf.html#PYME.Analysis.BleachProfile.intensProf.gt_mod">gt_mod() (in module PYME.Analysis.BleachProfile.intensProf)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.dataserver.guess_type">guess_type() (PYME.ParallelTasks.dataserver_wsgi.dataserver method)</a>
-</li>
       <li><a href="api/PYME.Analysis.deTile.html#PYME.Analysis.deTile.guessFlat">guessFlat() (in module PYME.Analysis.deTile)</a>
 </li>
       <li><a href="api/PYME.IO.FileUtils.fileID.html#PYME.IO.FileUtils.fileID.guessH5RImageID">guessH5RImageID() (in module PYME.IO.FileUtils.fileID)</a>
@@ -4918,25 +4734,13 @@
       <li><a href="api/PYME.IO.dataExporter.html#PYME.IO.dataExporter.H5Exporter">H5Exporter (class in PYME.IO.dataExporter)</a>
 </li>
       <li><a href="api/PYME.IO.h5File.html#PYME.IO.h5File.H5File">H5File (class in PYME.IO.h5File)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.H5File">(class in PYME.ParallelTasks.httpSpoolTarget)</a>
 </li>
-      </ul></li>
       <li><a href="api/PYME.IO.tabular.html#PYME.IO.tabular.h5rDSource">h5rDSource (class in PYME.IO.tabular)</a>
 </li>
       <li><a href="api/PYME.IO.h5rFile.html#PYME.IO.h5rFile.H5RFile">H5RFile (class in PYME.IO.h5rFile)</a>
 </li>
       <li><a href="api/PYME.IO.tabular.html#PYME.IO.tabular.h5rSource">h5rSource (class in PYME.IO.tabular)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.CPDistributor.handin">handin() (PYME.ParallelTasks.distributor.CPDistributor method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.TaskQueue.handin">(PYME.ParallelTasks.distributor.TaskQueue method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.nodeserver.html#PYME.ParallelTasks.nodeserver.CPNodeServer.handin">(PYME.ParallelTasks.nodeserver.CPNodeServer method)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.LMVis.tests.gl_test_objects.html#PYME.LMVis.tests.gl_test_objects.HarmonicCell">HarmonicCell (class in PYME.LMVis.tests.gl_test_objects)</a>
 </li>
       <li><a href="api/PYME.LMVis.tests.gl_test_objects.html#PYME.LMVis.tests.gl_test_objects.HarmonicCellBackground">HarmonicCellBackground (class in PYME.LMVis.tests.gl_test_objects)</a>
@@ -4944,8 +4748,6 @@
       <li><a href="api/PYME.LMVis.tests.gl_test_objects.html#PYME.LMVis.tests.gl_test_objects.Vesicle.has_hole">has_hole() (PYME.LMVis.tests.gl_test_objects.Vesicle method)</a>
 </li>
       <li><a href="api/PYME.misc.TiffImagePlugin.html#PYME.misc.TiffImagePlugin.ImageFileDirectory.has_key">has_key() (PYME.misc.TiffImagePlugin.ImageFileDirectory method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.TaskQueue.has_outstanding_tasks">has_outstanding_tasks (PYME.ParallelTasks.distributor.TaskQueue attribute)</a>
 </li>
       <li><a href="api/PYME.misc.hash32.html#PYME.misc.hash32.hashString32">hashString32() (in module PYME.misc.hash32)</a>
 </li>
@@ -4963,14 +4765,14 @@
 </li>
       <li><a href="api/PYME.IO.PZFFormat.html#PYME.IO.PZFFormat.header_dtype_v3">header_dtype_v3 (in module PYME.IO.PZFFormat)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.IO.image.html#PYME.IO.image.ImageBounds.height">height() (PYME.IO.image.ImageBounds method)</a>
 
       <ul>
         <li><a href="api/PYME.LMVis.visHelpersMin.html#PYME.LMVis.visHelpersMin.ImageBounds.height">(PYME.LMVis.visHelpersMin.ImageBounds method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.DSView.modules.blobMeasure.html#PYME.DSView.modules.blobMeasure.Measurements.hide">hide() (PYME.DSView.modules.blobMeasure.Measurements method)</a>
 </li>
       <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.ModuleBase.hide_in_overview">hide_in_overview (PYME.recipes.base.ModuleBase attribute)</a>
@@ -5007,11 +4809,7 @@
 </li>
       <li><a href="api/PYME.misc.colorsys.html#PYME.misc.colorsys.hsv_to_rgb">hsv_to_rgb() (in module PYME.misc.colorsys)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.HTTPRulePusher.html#PYME.ParallelTasks.HTTPRulePusher.HTTPRulePusher">HTTPRulePusher (class in PYME.ParallelTasks.HTTPRulePusher)</a>
-</li>
       <li><a href="api/PYME.Acquire.HTTPHDFSpooler.html#PYME.Acquire.HTTPHDFSpooler.HttpSpoolMDHandler">HttpSpoolMDHandler (class in PYME.Acquire.HTTPHDFSpooler)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.HTTPTaskPusher.html#PYME.ParallelTasks.HTTPTaskPusher.HTTPTaskPusher">HTTPTaskPusher (class in PYME.ParallelTasks.HTTPTaskPusher)</a>
 </li>
       <li><a href="api/PYME.Acquire.ExecTools.html#PYME.Acquire.ExecTools.HWNotPresent">HWNotPresent</a>
 </li>
@@ -5075,8 +4873,6 @@
 </li>
       <li><a href="api/PYME.DSView.scrolledImagePanel.html#PYME.DSView.scrolledImagePanel.ImagePanel">ImagePanel (class in PYME.DSView.scrolledImagePanel)</a>
 </li>
-      <li><a href="api/PYME.Analysis.deTile.html#PYME.Analysis.deTile.ImagePyramid">ImagePyramid (class in PYME.Analysis.deTile)</a>
-</li>
       <li><a href="api/PYME.DSView.modules.blobMeasure.html#PYME.DSView.modules.blobMeasure.Measurements.images">images() (PYME.DSView.modules.blobMeasure.Measurements method)</a>
 </li>
       <li><a href="api/PYME.IO.image.html#PYME.IO.image.ImageStack">ImageStack (class in PYME.IO.image)</a>
@@ -5115,12 +4911,6 @@
 </li>
       <li><a href="api/PYME.misc.read_agf.html#PYME.misc.read_agf.index_data">index_data() (in module PYME.misc.read_agf)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.TaskQueue.info">info() (PYME.ParallelTasks.distributor.TaskQueue method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.IntegerIDRule.info">(PYME.ParallelTasks.ruleserver.IntegerIDRule method)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.Acquire.protocol.html#PYME.Acquire.protocol.Protocol.Init">Init() (PYME.Acquire.protocol.Protocol method)</a>
 
       <ul>
@@ -5193,6 +4983,8 @@
         <li><a href="api/PYME.recipes.multiview.html#PYME.recipes.multiview.ShiftCorrect.input_name">(PYME.recipes.multiview.ShiftCorrect attribute)</a>
 </li>
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.BackgroundSubtractionMovingAverage.input_name">(PYME.recipes.processing.BackgroundSubtractionMovingAverage attribute)</a>
+</li>
+        <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.StatisticsByFrame.input_name">(PYME.recipes.processing.StatisticsByFrame attribute)</a>
 </li>
       </ul></li>
       <li><a href="api/PYME.recipes.localisations.html#PYME.recipes.localisations.AddShellMappedCoordinates.input_name_distance_to_shell">input_name_distance_to_shell (PYME.recipes.localisations.AddShellMappedCoordinates attribute)</a>
@@ -5272,6 +5064,8 @@
 </li>
         <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.MultifitBlobs.inputImage">(PYME.recipes.measurement.MultifitBlobs attribute)</a>
 </li>
+        <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.TilePhysicalCoords.inputImage">(PYME.recipes.measurement.TilePhysicalCoords attribute)</a>
+</li>
         <li><a href="api/PYME.recipes.output.html#PYME.recipes.output.ReportForEachOutput.inputImage">(PYME.recipes.output.ReportForEachOutput attribute)</a>
 </li>
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.ColocalisationEDT.inputImage">(PYME.recipes.processing.ColocalisationEDT attribute)</a>
@@ -5327,6 +5121,8 @@
 
       <ul>
         <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.Histogram.inputMeasurements">(PYME.recipes.measurement.Histogram attribute)</a>
+</li>
+        <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.TilePhysicalCoords.inputMeasurements">(PYME.recipes.measurement.TilePhysicalCoords attribute)</a>
 </li>
         <li><a href="api/PYME.recipes.tablefilters.html#PYME.recipes.tablefilters.SelectTableColumns.inputMeasurements">(PYME.recipes.tablefilters.SelectTableColumns attribute)</a>
 </li>
@@ -5525,8 +5321,6 @@
 </li>
       <li><a href="api/PYME.misc.shellutils.html#PYME.misc.shellutils.intdens">intdens() (in module PYME.misc.shellutils)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.IntegerIDRule">IntegerIDRule (class in PYME.ParallelTasks.ruleserver)</a>
-</li>
       <li><a href="api/PYME.Acquire.ui.intsliders.html#PYME.Acquire.ui.intsliders.IntegrationSliders">IntegrationSliders (class in PYME.Acquire.ui.intsliders)</a>
 </li>
       <li><a href="api/PYME.Acquire.ui.intsliders.html#PYME.Acquire.ui.intsliders.IntegrationSliders_">IntegrationSliders_ (class in PYME.Acquire.ui.intsliders)</a>
@@ -5574,8 +5368,6 @@
       <li><a href="api/PYME.IO.clusterListing.html#PYME.IO.clusterListing.DirCache.invalidate_directory">invalidate_directory() (PYME.IO.clusterListing.DirCache method)</a>
 </li>
       <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.Invert">Invert (class in PYME.recipes.base)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.taskWorkerHTTP.html#PYME.ParallelTasks.taskWorkerHTTP.taskWorker.ioLoop">ioLoop() (PYME.ParallelTasks.taskWorkerHTTP.taskWorker method)</a>
 </li>
       <li><a href="api/PYME.localization.Test.fitTestJigSCMOS.html#PYME.localization.Test.fitTestJigSCMOS.IQR">IQR() (in module PYME.localization.Test.fitTestJigSCMOS)</a>
 
@@ -5648,15 +5440,7 @@
 </li>
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.BinaryErosion.iterations">(PYME.recipes.processing.BinaryErosion attribute)</a>
 </li>
-        <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.BinaryFillHoles.iterations">(PYME.recipes.processing.BinaryFillHoles attribute)</a>
-</li>
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.Deconvolve.iterations">(PYME.recipes.processing.Deconvolve attribute)</a>
-</li>
-        <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.GreyDilation.iterations">(PYME.recipes.processing.GreyDilation attribute)</a>
-</li>
-        <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.GreyErosion.iterations">(PYME.recipes.processing.GreyErosion attribute)</a>
-</li>
-        <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.WhiteTophat.iterations">(PYME.recipes.processing.WhiteTophat attribute)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -5675,17 +5459,15 @@
 </li>
       <li><a href="api/PYME.Acquire.ExecTools.html#PYME.Acquire.ExecTools.BGInitTask.join">join() (PYME.Acquire.ExecTools.BGInitTask method)</a>
 </li>
-      <li><a href="api/PYME.Acquire.ExecTools.html#PYME.Acquire.ExecTools.joinBGInit">joinBGInit() (in module PYME.Acquire.ExecTools)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/PYME.Acquire.ExecTools.html#PYME.Acquire.ExecTools.joinBGInit">joinBGInit() (in module PYME.Acquire.ExecTools)</a>
+</li>
       <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.JoinChannels">JoinChannels (class in PYME.recipes.base)</a>
 </li>
       <li><a href="api/PYME.LMVis.views.html#PYME.LMVis.views.VideoView.JSON_DURATION">JSON_DURATION (PYME.LMVis.views.VideoView attribute)</a>
 </li>
       <li><a href="api/PYME.LMVis.Extras.animation.html#PYME.LMVis.Extras.animation.VideoPanel.JSON_LIST_NAME">JSON_LIST_NAME (PYME.LMVis.Extras.animation.VideoPanel attribute)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webframework.html#PYME.ParallelTasks.webframework.JSONAPIRequestHandler">JSONAPIRequestHandler (class in PYME.ParallelTasks.webframework)</a>
 </li>
       <li><a href="api/PYME.Analysis.Tracking.trackUtils.html#PYME.Analysis.Tracking.trackUtils.jumpDistModel">jumpDistModel() (in module PYME.Analysis.Tracking.trackUtils)</a>
 </li>
@@ -5771,6 +5553,8 @@
         <li><a href="api/PYME.ParallelTasks.taskServerZC.html#PYME.ParallelTasks.taskServerZC.TaskQueueSet.kill">(PYME.ParallelTasks.taskServerZC.TaskQueueSet method)</a>
 </li>
       </ul></li>
+      <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.Projection.kind">kind (PYME.recipes.processing.Projection attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -5817,12 +5601,6 @@
 </li>
       <li><a href="api/PYME.util.fProfile.viewProfile.html#PYME.util.fProfile.viewProfile.launch_browser">launch_browser() (in module PYME.util.fProfile.viewProfile)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.HTTPRulePusher.html#PYME.ParallelTasks.HTTPRulePusher.launch_localize">launch_localize() (in module PYME.ParallelTasks.HTTPRulePusher)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.HTTPTaskPusher.html#PYME.ParallelTasks.HTTPTaskPusher.launch_localize">(in module PYME.ParallelTasks.HTTPTaskPusher)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.Acquire.SpoolController.html#PYME.Acquire.SpoolController.SpoolController.LaunchAnalysis">LaunchAnalysis() (PYME.Acquire.SpoolController.SpoolController method)</a>
 </li>
       <li><a href="api/PYME.LMVis.layer_panel.html#PYME.LMVis.layer_panel.LayerPane">LayerPane (class in PYME.LMVis.layer_panel)</a>
@@ -5906,19 +5684,11 @@
       <ul>
         <li><a href="api/PYME.IO.clusterListing.html#PYME.IO.clusterListing.DirCache.list_directory">(PYME.IO.clusterListing.DirCache method)</a>
 </li>
-        <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.list_directory">(PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.dataserver.list_directory">(PYME.ParallelTasks.dataserver_wsgi.dataserver method)</a>
-</li>
       </ul></li>
       <li><a href="api/PYME.IO.clusterListing.html#PYME.IO.clusterListing.list_directory_p">list_directory_p() (in module PYME.IO.clusterListing)</a>
 </li>
       <li><a href="api/PYME.IO.pyme_h5ls.html#PYME.IO.pyme_h5ls.list_h5">list_h5() (in module PYME.IO.pyme_h5ls)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.list_h5">(PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler method)</a>
 </li>
-      </ul></li>
       <li><a href="api/PYME.Analysis.gen_sCMOS_maps.html#PYME.Analysis.gen_sCMOS_maps.listCalibrationDirs">listCalibrationDirs() (in module PYME.Analysis.gen_sCMOS_maps)</a>
 
       <ul>
@@ -5941,14 +5711,14 @@
 </li>
       <li><a href="api/PYME.misc.mock_traits.html#PYME.misc.mock_traits.ListStr">ListStr (in module PYME.misc.mock_traits)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.IO.dataWrap.html#PYME.IO.dataWrap.ListWrap">ListWrap (class in PYME.IO.dataWrap)</a>
 </li>
       <li><a href="api/PYME.Analysis.BleachProfile.intensProf.html#PYME.Analysis.BleachProfile.intensProf.lNdfcn">lNdfcn() (in module PYME.Analysis.BleachProfile.intensProf)</a>
 </li>
       <li><a href="api/PYME.Analysis.BleachProfile.intensProf.html#PYME.Analysis.BleachProfile.intensProf.lNdfcnDE">lNdfcnDE() (in module PYME.Analysis.BleachProfile.intensProf)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.Analysis.BleachProfile.intensProf.html#PYME.Analysis.BleachProfile.intensProf.lNofcn">lNofcn() (in module PYME.Analysis.BleachProfile.intensProf)</a>
 </li>
       <li><a href="api/PYME.Analysis.BleachProfile.intensProf.html#PYME.Analysis.BleachProfile.intensProf.lNofcnDE">lNofcnDE() (in module PYME.Analysis.BleachProfile.intensProf)</a>
@@ -5974,6 +5744,8 @@
       <li><a href="api/PYME.misc.TiffImagePlugin.html#PYME.misc.TiffImagePlugin.ImageFileDirectory.load_float">load_float() (PYME.misc.TiffImagePlugin.ImageFileDirectory method)</a>
 </li>
       <li><a href="api/PYME.IO.PZFFormat.html#PYME.IO.PZFFormat.load_header">load_header() (in module PYME.IO.PZFFormat)</a>
+</li>
+      <li><a href="api/PYME.IO.MetaDataHandler.html#PYME.IO.MetaDataHandler.load_json">load_json() (in module PYME.IO.MetaDataHandler)</a>
 </li>
       <li><a href="api/PYME.misc.TiffImagePlugin.html#PYME.misc.TiffImagePlugin.ImageFileDirectory.load_long">load_long() (PYME.misc.TiffImagePlugin.ImageFileDirectory method)</a>
 </li>
@@ -6039,32 +5811,6 @@
 </li>
       <li><a href="api/PYME.simulation.locify.html#PYME.simulation.locify.locify">locify() (in module PYME.simulation.locify)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.log_error">log_error() (PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.log_message">log_message() (PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.log_message">(PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-      </ul></li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.log_request">log_request() (PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.webframework.html#PYME.ParallelTasks.webframework.JSONAPIRequestHandler.log_request">(PYME.ParallelTasks.webframework.JSONAPIRequestHandler method)</a>
-</li>
-      </ul></li>
-      <li><a href="api/PYME.ParallelTasks.PYMEDistributor.html#PYME.ParallelTasks.PYMEDistributor.log_stream">log_stream() (in module PYME.ParallelTasks.PYMEDistributor)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.PYMENodeServer.html#PYME.ParallelTasks.PYMENodeServer.log_stream">(in module PYME.ParallelTasks.PYMENodeServer)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.PYMERuleNodeServer.html#PYME.ParallelTasks.PYMERuleNodeServer.log_stream">(in module PYME.ParallelTasks.PYMERuleNodeServer)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.PYMERuleServer.html#PYME.ParallelTasks.PYMERuleServer.log_stream">(in module PYME.ParallelTasks.PYMERuleServer)</a>
-</li>
-      </ul></li>
-      <li><a href="api/PYME.ParallelTasks.taskWorkerHTTP.html#PYME.ParallelTasks.taskWorkerHTTP.TaskError.log_url">log_url (PYME.ParallelTasks.taskWorkerHTTP.TaskError attribute)</a>
-</li>
       <li><a href="api/PYME.Acquire.eventLog.html#PYME.Acquire.eventLog.logEvent">logEvent() (in module PYME.Acquire.eventLog)</a>
 
       <ul>
@@ -6079,20 +5825,14 @@
         <li><a href="api/PYME.Acquire.Spooler.html#PYME.Acquire.Spooler.EventLogger.logEvent">(PYME.Acquire.Spooler.EventLogger method)</a>
 </li>
       </ul></li>
+      <li><a href="api/PYME.IO.dcimg.html#PYME.IO.dcimg.logger">logger (in module PYME.IO.dcimg)</a>
+</li>
       <li><a href="api/PYME.DSView.logparser.html#PYME.DSView.logparser.logparser">logparser (class in PYME.DSView.logparser)</a>
 </li>
       <li><a href="api/PYME.ParallelTasks.HDFTaskQueue.html#PYME.ParallelTasks.HDFTaskQueue.HDFTaskQueue.logQueueEvent">logQueueEvent() (PYME.ParallelTasks.HDFTaskQueue.HDFTaskQueue method)</a>
 
       <ul>
         <li><a href="api/PYME.ParallelTasks.taskServerZC.html#PYME.ParallelTasks.taskServerZC.TaskQueueSet.logQueueEvent">(PYME.ParallelTasks.taskServerZC.TaskQueueSet method)</a>
-</li>
-      </ul></li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.dataserver.logrequests">logrequests (PYME.ParallelTasks.dataserver_wsgi.dataserver attribute)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.logrequests">(PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler attribute)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.webframework.html#PYME.ParallelTasks.webframework.JSONAPIRequestHandler.logrequests">(PYME.ParallelTasks.webframework.JSONAPIRequestHandler attribute)</a>
 </li>
       </ul></li>
       <li><a href="api/PYME.DSView.logparser.html#PYME.DSView.logparser.logwriter">logwriter (class in PYME.DSView.logparser)</a>
@@ -6102,8 +5842,6 @@
       <li><a href="api/PYME.DSView.modules.blobMeasure.html#PYME.DSView.modules.blobMeasure.BlobObject.longAxisOrthDist">longAxisOrthDist() (PYME.DSView.modules.blobMeasure.BlobObject method)</a>
 </li>
       <li><a href="api/PYME.Analysis.points.astigmatism.astigTools.html#PYME.Analysis.points.astigmatism.astigTools.lookup_astig_z">lookup_astig_z() (in module PYME.Analysis.points.astigmatism.astigTools)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.taskWorkerHTTP.html#PYME.ParallelTasks.taskWorkerHTTP.taskWorker.loop_forever">loop_forever() (PYME.ParallelTasks.taskWorkerHTTP.taskWorker method)</a>
 </li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.Deconvolve.lorentzianFWHM">lorentzianFWHM (PYME.recipes.processing.Deconvolve attribute)</a>
 </li>
@@ -6119,10 +5857,6 @@
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.Member.M_COLLECTION">M_COLLECTION (PYME.ParallelTasks.webdav.Member attribute)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.Member.M_MEMBER">M_MEMBER (PYME.ParallelTasks.webdav.Member attribute)</a>
-</li>
       <li><a href="api/PYME.DSView.modules.blobMeasure.html#PYME.DSView.modules.blobMeasure.DataBlock.mad_0">mad_0 (PYME.DSView.modules.blobMeasure.DataBlock attribute)</a>
 </li>
       <li><a href="api/PYME.DSView.modules.blobMeasure.html#PYME.DSView.modules.blobMeasure.DataBlock.mad_1">mad_1 (PYME.DSView.modules.blobMeasure.DataBlock attribute)</a>
@@ -6138,18 +5872,6 @@
 </li>
         <li><a href="api/PYME.DSView.dsviewer.html#PYME.DSView.dsviewer.main">(in module PYME.DSView.dsviewer)</a>
 </li>
-        <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.main">(in module PYME.ParallelTasks.HTTPDataServer)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.PYMEDistributor.html#PYME.ParallelTasks.PYMEDistributor.main">(in module PYME.ParallelTasks.PYMEDistributor)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.PYMENodeServer.html#PYME.ParallelTasks.PYMENodeServer.main">(in module PYME.ParallelTasks.PYMENodeServer)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.PYMERuleNodeServer.html#PYME.ParallelTasks.PYMERuleNodeServer.main">(in module PYME.ParallelTasks.PYMERuleNodeServer)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.PYMERuleServer.html#PYME.ParallelTasks.PYMERuleServer.main">(in module PYME.ParallelTasks.PYMERuleServer)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.main">(in module PYME.ParallelTasks.dataserver_wsgi)</a>
-</li>
         <li><a href="api/PYME.ParallelTasks.fitMonP.html#PYME.ParallelTasks.fitMonP.main">(in module PYME.ParallelTasks.fitMonP)</a>
 </li>
         <li><a href="api/PYME.ParallelTasks.launchWorkers.html#PYME.ParallelTasks.launchWorkers.main">(in module PYME.ParallelTasks.launchWorkers)</a>
@@ -6157,8 +5879,6 @@
         <li><a href="api/PYME.ParallelTasks.taskServerZC.html#PYME.ParallelTasks.taskServerZC.main">(in module PYME.ParallelTasks.taskServerZC)</a>
 </li>
         <li><a href="api/PYME.ParallelTasks.taskWorkerZC.html#PYME.ParallelTasks.taskWorkerZC.main">(in module PYME.ParallelTasks.taskWorkerZC)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.main">(in module PYME.ParallelTasks.webdav)</a>
 </li>
         <li><a href="api/PYME.localization.genmaps.html#PYME.localization.genmaps.main">(in module PYME.localization.genmaps)</a>
 </li>
@@ -6177,18 +5897,10 @@
         <li><a href="api/PYME.ui.MetadataTree.html#PYME.ui.MetadataTree.TextEditMixin.make_editor">(PYME.ui.MetadataTree.TextEditMixin method)</a>
 </li>
       </ul></li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.IntegerIDRule.make_range_available">make_range_available() (PYME.ParallelTasks.ruleserver.IntegerIDRule method)</a>
-</li>
       <li><a href="api/PYME.contrib.listctrlMixins.html#PYME.contrib.listctrlMixins.TextEditMixin.makeColumnEditable">makeColumnEditable() (PYME.contrib.listctrlMixins.TextEditMixin method)</a>
 
       <ul>
         <li><a href="api/PYME.ui.MetadataTree.html#PYME.ui.MetadataTree.TextEditMixin.makeColumnEditable">(PYME.ui.MetadataTree.TextEditMixin method)</a>
-</li>
-      </ul></li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.makedirs_safe">makedirs_safe() (in module PYME.ParallelTasks.HTTPDataServer)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.makedirs_safe">(in module PYME.ParallelTasks.webdav)</a>
 </li>
       </ul></li>
       <li><a href="api/PYME.Analysis.points.fiducials.html#PYME.Analysis.points.fiducials.makeFilter">makeFilter() (in module PYME.Analysis.points.fiducials)</a>
@@ -6221,7 +5933,7 @@
 </li>
       <li><a href="api/PYME.recipes.tablefilters.html#PYME.recipes.tablefilters.Mapping.mappings">mappings (PYME.recipes.tablefilters.Mapping attribute)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.IntegerIDRule.mark_complete">mark_complete() (PYME.ParallelTasks.ruleserver.IntegerIDRule method)</a>
+      <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.StatisticsByFrame.mask">mask (PYME.recipes.processing.StatisticsByFrame attribute)</a>
 </li>
       <li><a href="api/PYME.recipes.filters.html#PYME.recipes.filters.MaskEdges">MaskEdges (class in PYME.recipes.filters)</a>
 </li>
@@ -6234,8 +5946,6 @@
       <li><a href="api/PYME.IO.tabular.html#PYME.IO.tabular.matfileColumnSource">matfileColumnSource (class in PYME.IO.tabular)</a>
 </li>
       <li><a href="api/PYME.IO.tabular.html#PYME.IO.tabular.matfileSource">matfileSource (class in PYME.IO.tabular)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.RuleServer.MAX_ADVERTISEMENTS">MAX_ADVERTISEMENTS (PYME.ParallelTasks.ruleserver.RuleServer attribute)</a>
 </li>
       <li><a href="api/PYME.ui.histLimits.html#PYME.ui.histLimits.HistLimitDialog.max_level_changed">max_level_changed() (PYME.ui.histLimits.HistLimitDialog method)</a>
 </li>
@@ -6309,8 +6019,6 @@
 </li>
       <li><a href="api/PYME.recipes.filters.html#PYME.recipes.filters.MedianFilter">MedianFilter (class in PYME.recipes.filters)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.Member">Member (class in PYME.ParallelTasks.webdav)</a>
-</li>
       <li><a href="api/PYME.misc.memUsage.html#PYME.misc.memUsage.memory">memory() (in module PYME.misc.memUsage)</a>
 </li>
       <li><a href="api/PYME.Analysis.points.multiview.html#PYME.Analysis.points.multiview.merge_clumps">merge_clumps() (in module PYME.Analysis.points.multiview)</a>
@@ -6345,8 +6053,6 @@
       </ul></li>
       <li><a href="api/PYME.Analysis.points.surfit.html#PYME.Analysis.points.surfit.mf">mf() (in module PYME.Analysis.points.surfit)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.Analysis.points.surfit.html#PYME.Analysis.points.surfit.mf2">mf2() (in module PYME.Analysis.points.surfit)</a>
 </li>
       <li><a href="api/PYME.Analysis.points.surfit.html#PYME.Analysis.points.surfit.mfA">mfA() (in module PYME.Analysis.points.surfit)</a>
@@ -6361,6 +6067,8 @@
 </li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.FindCaWaves.minActivePixels">minActivePixels (PYME.recipes.processing.FindCaWaves attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.recipes.localisations.html#PYME.recipes.localisations.DBSCANClustering.minClumpSize">minClumpSize (PYME.recipes.localisations.DBSCANClustering attribute)</a>
 
       <ul>
@@ -6641,24 +6349,18 @@
 </li>
       <li><a href="api/PYME.IO.MetaDataHandler.html#PYME.IO.MetaDataHandler.NestedClassMDHandler">NestedClassMDHandler (class in PYME.IO.MetaDataHandler)</a>
 </li>
-      <li><a href="api/PYME.LMVis.workspaceTree.html#PYME.LMVis.workspaceTree.WorkWrap.newColour">newColour() (PYME.LMVis.workspaceTree.WorkWrap method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.rulenodeserver.html#PYME.ParallelTasks.rulenodeserver.Rater.next">next() (PYME.ParallelTasks.rulenodeserver.Rater method)</a>
+      <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.ModuleCollection.new_output_name">new_output_name() (PYME.recipes.base.ModuleCollection method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/PYME.LMVis.workspaceTree.html#PYME.LMVis.workspaceTree.WorkWrap.newColour">newColour() (PYME.LMVis.workspaceTree.WorkWrap method)</a>
+</li>
       <li><a href="api/PYME.contrib.lzw.html#PYME.contrib.lzw.PagingDecoder.next_page">next_page() (PYME.contrib.lzw.PagingDecoder method)</a>
 </li>
       <li><a href="api/PYME.LMVis.importTextDialog.html#PYME.LMVis.importTextDialog.ImportTextDialog.niceVariables">niceVariables (PYME.LMVis.importTextDialog.ImportTextDialog attribute)</a>
 </li>
       <li><a href="api/PYME.LMVis.tests.gl_test_objects.html#PYME.LMVis.tests.gl_test_objects.NineCollections">NineCollections (class in PYME.LMVis.tests.gl_test_objects)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.nodeserver.html#PYME.ParallelTasks.nodeserver.NodeServer">NodeServer (class in PYME.ParallelTasks.nodeserver)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.rulenodeserver.html#PYME.ParallelTasks.rulenodeserver.NodeServer">(class in PYME.ParallelTasks.rulenodeserver)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.Analysis.PSFEst.psfQuality.html#PYME.Analysis.PSFEst.psfQuality.noise">noise() (in module PYME.Analysis.PSFEst.psfQuality)</a>
 </li>
       <li><a href="api/PYME.LMVis.tests.gl_test_objects.html#PYME.LMVis.tests.gl_test_objects.NoisePlane">NoisePlane (class in PYME.LMVis.tests.gl_test_objects)</a>
@@ -6693,12 +6395,8 @@
 </li>
       <li><a href="api/PYME.IO.DataSources.BaseDataSource.html#PYME.IO.DataSources.BaseDataSource.BaseDataSource.nTrueDims">nTrueDims (PYME.IO.DataSources.BaseDataSource.BaseDataSource attribute)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.nodeserver.html#PYME.ParallelTasks.nodeserver.NodeServer.num_tasks_to_request">num_tasks_to_request (PYME.ParallelTasks.nodeserver.NodeServer attribute)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.rulenodeserver.html#PYME.ParallelTasks.rulenodeserver.NodeServer.num_tasks_to_request">(PYME.ParallelTasks.rulenodeserver.NodeServer attribute)</a>
+      <li><a href="api/PYME.Acquire.ui.positionUI.html#PYME.Acquire.ui.positionUI.PositionPanel.nudge">nudge() (PYME.Acquire.ui.positionUI.PositionPanel method)</a>
 </li>
-      </ul></li>
       <li><a href="api/PYME.recipes.localisations.html#PYME.recipes.localisations.DBSCANClustering.numberOfJobs">numberOfJobs (PYME.recipes.localisations.DBSCANClustering attribute)</a>
 </li>
       <li><a href="api/PYME.recipes.tracking.html#PYME.recipes.tracking.FitFusionTraces.numFollowFrames">numFollowFrames (PYME.recipes.tracking.FitFusionTraces attribute)</a>
@@ -6791,16 +6489,12 @@
 </li>
       <li><a href="api/PYME.LMVis.Extras.animation.html#PYME.LMVis.Extras.animation.VideoPanel.on_edit">on_edit() (PYME.LMVis.Extras.animation.VideoPanel method)</a>
 </li>
+      <li><a href="api/PYME.Acquire.ui.positionUI.html#PYME.Acquire.ui.positionUI.PositionPanel.on_moveto">on_moveto() (PYME.Acquire.ui.positionUI.PositionPanel method)</a>
+</li>
       <li><a href="api/PYME.LMVis.Extras.animation.html#PYME.LMVis.Extras.animation.VideoPanel.on_select_view">on_select_view() (PYME.LMVis.Extras.animation.VideoPanel method)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.on_SIGHUP">on_SIGHUP() (in module PYME.ParallelTasks.distributor)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.on_SIGHUP">(in module PYME.ParallelTasks.ruleserver)</a>
+      <li><a href="api/PYME.Acquire.ui.lasersliders.html#PYME.Acquire.ui.lasersliders.LaserSliders.on_toggle">on_toggle() (PYME.Acquire.ui.lasersliders.LaserSliders method)</a>
 </li>
-        <li><a href="api/PYME.ParallelTasks.taskWorkerHTTP.html#PYME.ParallelTasks.taskWorkerHTTP.on_SIGHUP">(in module PYME.ParallelTasks.taskWorkerHTTP)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.misc.mock_traits.html#PYME.misc.mock_traits.on_trait_change">on_trait_change() (in module PYME.misc.mock_traits)</a>
 </li>
       <li><a href="api/PYME.Acquire.ui.actionUI.html#PYME.Acquire.ui.actionUI.ActionPanel.OnAddAction">OnAddAction() (PYME.Acquire.ui.actionUI.ActionPanel method)</a>
@@ -6931,8 +6625,12 @@
         <li><a href="api/PYME.Deconv.deconvDialogs.html#PYME.Deconv.deconvDialogs.DeconvProgressPanel.OnCancel">(PYME.Deconv.deconvDialogs.DeconvProgressPanel method)</a>
 </li>
       </ul></li>
-      <li><a href="api/PYME.Acquire.ui.lasersliders.html#PYME.Acquire.ui.lasersliders.LaserToggles.OnCbOn">OnCbOn() (PYME.Acquire.ui.lasersliders.LaserToggles method)</a>
+      <li><a href="api/PYME.Acquire.ui.lasersliders.html#PYME.Acquire.ui.lasersliders.LaserSliders.OnCbOn">OnCbOn() (PYME.Acquire.ui.lasersliders.LaserSliders method)</a>
+
+      <ul>
+        <li><a href="api/PYME.Acquire.ui.lasersliders.html#PYME.Acquire.ui.lasersliders.LaserToggles.OnCbOn">(PYME.Acquire.ui.lasersliders.LaserToggles method)</a>
 </li>
+      </ul></li>
       <li><a href="api/PYME.Acquire.ui.selectCameraPanel.html#PYME.Acquire.ui.selectCameraPanel.CameraChooserPanel.OnCCamera">OnCCamera() (PYME.Acquire.ui.selectCameraPanel.CameraChooserPanel method)</a>
 </li>
       <li><a href="api/PYME.DSView.modules.composite.html#PYME.DSView.modules.composite.CompositeDialog.OnChanDown">OnChanDown() (PYME.DSView.modules.composite.CompositeDialog method)</a>
@@ -7273,6 +6971,8 @@
 </li>
       <li><a href="api/PYME.recipes.recipeGui.html#PYME.recipes.recipeGui.BatchFrame.OnGetMatches2">OnGetMatches2() (PYME.recipes.recipeGui.BatchFrame method)</a>
 </li>
+      <li><a href="api/PYME.DSView.modules.playback.html#PYME.DSView.modules.playback.PlayPanel.OnGoto">OnGoto() (PYME.DSView.modules.playback.PlayPanel method)</a>
+</li>
       <li><a href="api/PYME.DSView.modules.blobMeasure.html#PYME.DSView.modules.blobMeasure.Measurements.OnHideObject">OnHideObject() (PYME.DSView.modules.blobMeasure.Measurements method)</a>
 </li>
       <li><a href="api/PYME.LMVis.Extras.flagZMotionArtifacts.html#PYME.LMVis.Extras.flagZMotionArtifacts.motionFlagger.OnIDTransient">OnIDTransient() (PYME.LMVis.Extras.flagZMotionArtifacts.motionFlagger method)</a>
@@ -7293,8 +6993,12 @@
         <li><a href="api/PYME.ui.MetadataTree.html#PYME.ui.MetadataTree.TextEditMixin.OnItemSelected">(PYME.ui.MetadataTree.TextEditMixin method)</a>
 </li>
       </ul></li>
-      <li><a href="api/PYME.Acquire.ui.positionUI.html#PYME.Acquire.ui.positionUI.PositionSliders.OnJoystickEnable">OnJoystickEnable() (PYME.Acquire.ui.positionUI.PositionSliders method)</a>
+      <li><a href="api/PYME.Acquire.ui.positionUI.html#PYME.Acquire.ui.positionUI.PositionPanel.OnJoystickEnable">OnJoystickEnable() (PYME.Acquire.ui.positionUI.PositionPanel method)</a>
+
+      <ul>
+        <li><a href="api/PYME.Acquire.ui.positionUI.html#PYME.Acquire.ui.positionUI.PositionSliders.OnJoystickEnable">(PYME.Acquire.ui.positionUI.PositionSliders method)</a>
 </li>
+      </ul></li>
       <li><a href="api/PYME.contrib.TextCtrlAutoComplete.html#PYME.contrib.TextCtrlAutoComplete.TextCtrlAutoComplete.onKeyDown">onKeyDown() (PYME.contrib.TextCtrlAutoComplete.TextCtrlAutoComplete method)</a>
 </li>
       <li><a href="api/PYME.misc.editgrid.html#PYME.misc.editgrid.EditGrid.OnKeyDown">OnKeyDown() (PYME.misc.editgrid.EditGrid method)</a>
@@ -7391,12 +7095,12 @@
 </li>
       <li><a href="api/PYME.LMVis.Extras.multiColourAnalysis.html#PYME.LMVis.Extras.multiColourAnalysis.MultiColAnalyzer.OnMCA">OnMCA() (PYME.LMVis.Extras.multiColourAnalysis.MultiColAnalyzer method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.Acquire.acquiremainframe.html#PYME.Acquire.acquiremainframe.PYMEMainFrame.OnMCamBin">OnMCamBin() (PYME.Acquire.acquiremainframe.PYMEMainFrame method)</a>
 </li>
       <li><a href="api/PYME.Acquire.acquiremainframe.html#PYME.Acquire.acquiremainframe.PYMEMainFrame.OnMCamRoi">OnMCamRoi() (PYME.Acquire.acquiremainframe.PYMEMainFrame method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.Acquire.acquiremainframe.html#PYME.Acquire.acquiremainframe.PYMEMainFrame.OnMCamSetPixelSize">OnMCamSetPixelSize() (PYME.Acquire.acquiremainframe.PYMEMainFrame method)</a>
 </li>
       <li><a href="api/PYME.Acquire.ui.AnalysisSettingsUI.html#PYME.Acquire.ui.AnalysisSettingsUI.AnalysisDetailsPanel.OnMDChanged">OnMDChanged() (PYME.Acquire.ui.AnalysisSettingsUI.AnalysisDetailsPanel method)</a>
@@ -7563,6 +7267,10 @@
       </ul></li>
       <li><a href="api/PYME.LMVis.Extras.clusterAnalysis.html#PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnRingTest">OnRingTest() (PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser method)</a>
 </li>
+      <li><a href="api/PYME.Acquire.ui.actionUI.html#PYME.Acquire.ui.actionUI.ActionPanel.OnROIsFromFile">OnROIsFromFile() (PYME.Acquire.ui.actionUI.ActionPanel method)</a>
+</li>
+      <li><a href="api/PYME.Acquire.ui.actionUI.html#PYME.Acquire.ui.actionUI.ActionPanel.OnROIsFromTileviewer">OnROIsFromTileviewer() (PYME.Acquire.ui.actionUI.ActionPanel method)</a>
+</li>
       <li><a href="api/PYME.DSView.dsviewer.html#PYME.DSView.dsviewer.DSViewFrame.OnSave">OnSave() (PYME.DSView.dsviewer.DSViewFrame method)</a>
 </li>
       <li><a href="api/PYME.DSView.modules.svmLabel.html#PYME.DSView.modules.svmLabel.manualLabel.OnSaveClassifier">OnSaveClassifier() (PYME.DSView.modules.svmLabel.manualLabel method)</a>
@@ -7674,6 +7382,8 @@
 </li>
         <li><a href="api/PYME.Acquire.ui.lasersliders.html#PYME.Acquire.ui.lasersliders.LaserSliders_.onSlide">(PYME.Acquire.ui.lasersliders.LaserSliders_ method)</a>
 </li>
+        <li><a href="api/PYME.Acquire.ui.positionUI.html#PYME.Acquire.ui.positionUI.PositionPanel.onSlide">(PYME.Acquire.ui.positionUI.PositionPanel method)</a>
+</li>
         <li><a href="api/PYME.Acquire.ui.positionUI.html#PYME.Acquire.ui.positionUI.PositionSliders.onSlide">(PYME.Acquire.ui.positionUI.PositionSliders method)</a>
 </li>
       </ul></li>
@@ -7742,6 +7452,8 @@
       <li><a href="api/PYME.DSView.dsviewer.html#PYME.DSView.dsviewer.DSViewFrame.OnToggleModule">OnToggleModule() (PYME.DSView.dsviewer.DSViewFrame method)</a>
 </li>
       <li><a href="api/PYME.Acquire.ui.scanner_panel.html#PYME.Acquire.ui.scanner_panel.ScannerPanel.OnToggleScan">OnToggleScan() (PYME.Acquire.ui.scanner_panel.ScannerPanel method)</a>
+</li>
+      <li><a href="api/PYME.Acquire.ui.HDFSpoolFrame.html#PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnToggleZStepping">OnToggleZStepping() (PYME.Acquire.ui.HDFSpoolFrame.PanSpool method)</a>
 </li>
       <li><a href="api/PYME.LMVis.Extras.particleTracking.html#PYME.LMVis.Extras.particleTracking.ParticleTracker.OnTrackMolecules">OnTrackMolecules() (PYME.LMVis.Extras.particleTracking.ParticleTracker method)</a>
 </li>
@@ -7856,6 +7568,8 @@
 </li>
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.BackgroundSubtractionMovingAverage.output_name">(PYME.recipes.processing.BackgroundSubtractionMovingAverage attribute)</a>
 </li>
+        <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.StatisticsByFrame.output_name">(PYME.recipes.processing.StatisticsByFrame attribute)</a>
+</li>
       </ul></li>
       <li><a href="api/PYME.recipes.pointcloud.html#PYME.recipes.pointcloud.Octree.output_octree">output_octree (PYME.recipes.pointcloud.Octree attribute)</a>
 </li>
@@ -7927,6 +7641,8 @@
         <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.PairwiseDistanceHistogram.outputName">(PYME.recipes.measurement.PairwiseDistanceHistogram attribute)</a>
 </li>
         <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.Plot.outputName">(PYME.recipes.measurement.Plot attribute)</a>
+</li>
+        <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.TilePhysicalCoords.outputName">(PYME.recipes.measurement.TilePhysicalCoords attribute)</a>
 </li>
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.FindCaWaves.outputName">(PYME.recipes.processing.FindCaWaves attribute)</a>
 </li>
@@ -8039,6 +7755,8 @@
 </li>
       <li><a href="api/PYME.contrib.lzw.html#PYME.contrib.lzw.BitPacker.pack">pack() (PYME.contrib.lzw.BitPacker method)</a>
 </li>
+      <li><a href="api/PYME.localization.FitFactories.fitCommon.html#PYME.localization.FitFactories.fitCommon.pack_results">pack_results() (in module PYME.localization.FitFactories.fitCommon)</a>
+</li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.Deconvolve.padding">padding (PYME.recipes.processing.Deconvolve attribute)</a>
 </li>
       <li><a href="api/PYME.contrib.lzw.html#PYME.contrib.lzw.PagingDecoder">PagingDecoder (class in PYME.contrib.lzw)</a>
@@ -8072,10 +7790,6 @@
       <li><a href="api/PYME.LMVis.Extras.particleTracking.html#PYME.LMVis.Extras.particleTracking.ParticleTracker">ParticleTracker (class in PYME.LMVis.Extras.particleTracking)</a>
 </li>
       <li><a href="api/PYME.misc.pyme_zeroconf.html#PYME.misc.pyme_zeroconf.PatchedServiceInfo">PatchedServiceInfo (class in PYME.misc.pyme_zeroconf)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.path_elem">path_elem() (PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.path_elem_prev">path_elem_prev() (PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
 </li>
       <li><a href="api/PYME.Deconv.richardsonLucyMVM.html#PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.pd">pd() (PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy method)</a>
 
@@ -8148,6 +7862,8 @@
       <li><a href="api/PYME.recipes.localisations.html#PYME.recipes.localisations.Pipelineify.pixelSizeNM">pixelSizeNM (PYME.recipes.localisations.Pipelineify attribute)</a>
 </li>
       <li><a href="api/PYME.Analysis.BleachProfile.intensProf.html#PYME.Analysis.BleachProfile.intensProf.pkmod_onestate">pkmod_onestate() (in module PYME.Analysis.BleachProfile.intensProf)</a>
+</li>
+      <li><a href="api/PYME.misc.fftw_compat.html#PYME.misc.fftw_compat.Plan">Plan (class in PYME.misc.fftw_compat)</a>
 </li>
       <li><a href="api/PYME.LMVis.Extras.animation.html#PYME.LMVis.Extras.animation.VideoPanel.play">play() (PYME.LMVis.Extras.animation.VideoPanel method)</a>
 </li>
@@ -8365,8 +8081,6 @@
 </li>
       <li><a href="api/PYME.LMVis.Extras.pointwiseColoc.html#PYME.LMVis.Extras.pointwiseColoc.PointwiseColocaliser">PointwiseColocaliser (class in PYME.LMVis.Extras.pointwiseColoc)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.IntegerIDRule.poll_timeouts">poll_timeouts() (PYME.ParallelTasks.ruleserver.IntegerIDRule method)</a>
-</li>
       <li><a href="api/PYME.Analysis.processLogger.html#PYME.Analysis.processLogger.ContextManager.PopContext">PopContext() (PYME.Analysis.processLogger.ContextManager method)</a>
 </li>
       <li><a href="api/PYME.LMVis.filterPane.html#PYME.LMVis.filterPane.FilterPanel.populate">populate() (PYME.LMVis.filterPane.FilterPanel method)</a>
@@ -8375,15 +8089,13 @@
 </li>
       <li><a href="api/PYME.ParallelTasks.taskQueue.html#PYME.ParallelTasks.taskQueue.popZero">popZero() (in module PYME.ParallelTasks.taskQueue)</a>
 </li>
+      <li><a href="api/PYME.Acquire.ui.positionUI.html#PYME.Acquire.ui.positionUI.PositionPanel">PositionPanel (class in PYME.Acquire.ui.positionUI)</a>
+</li>
       <li><a href="api/PYME.Acquire.ui.positionUI.html#PYME.Acquire.ui.positionUI.PositionSliders">PositionSliders (class in PYME.Acquire.ui.positionUI)</a>
 </li>
       <li><a href="api/PYME.Acquire.positionTracker.html#PYME.Acquire.positionTracker.PositionTracker">PositionTracker (class in PYME.Acquire.positionTracker)</a>
 </li>
       <li><a href="api/PYME.Analysis.PSFEst.psfQuality.html#PYME.Analysis.PSFEst.psfQuality.positivity">positivity() (in module PYME.Analysis.PSFEst.psfQuality)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.HTTPRulePusher.html#PYME.ParallelTasks.HTTPRulePusher.HTTPRulePusher.post_rule">post_rule() (PYME.ParallelTasks.HTTPRulePusher.HTTPRulePusher method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.TaskQueue.posttask">posttask() (PYME.ParallelTasks.distributor.TaskQueue method)</a>
 </li>
       <li><a href="api/PYME.ParallelTasks.DSTaskQueue.html#PYME.ParallelTasks.DSTaskQueue.DSTaskQueue.postTask">postTask() (PYME.ParallelTasks.DSTaskQueue.DSTaskQueue method)</a>
 
@@ -8461,6 +8173,10 @@
 </li>
       <li><a href="api/PYME.misc.read_agf.html#PYME.misc.read_agf.print_glass_report">print_glass_report() (in module PYME.misc.read_agf)</a>
 </li>
+      <li><a href="api/PYME.Analysis.svmSegment.html#PYME.Analysis.svmSegment.prob_predict">prob_predict() (in module PYME.Analysis.svmSegment)</a>
+</li>
+      <li><a href="api/PYME.Analysis.svmSegment.html#PYME.Analysis.svmSegment.svmClassifier.probabilities">probabilities() (PYME.Analysis.svmSegment.svmClassifier method)</a>
+</li>
       <li><a href="api/PYME.LMVis.tests.gl_test_objects.html#PYME.LMVis.tests.gl_test_objects.TestObject.probe">probe (PYME.LMVis.tests.gl_test_objects.TestObject attribute)</a>
 
       <ul>
@@ -8482,12 +8198,12 @@
 </li>
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.DeconvolveMotionCompensating.processFramesIndividually">(PYME.recipes.processing.DeconvolveMotionCompensating attribute)</a>
 </li>
+        <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.Projection.processFramesIndividually">(PYME.recipes.processing.Projection attribute)</a>
+</li>
         <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.Watershed.processFramesIndividually">(PYME.recipes.processing.Watershed attribute)</a>
 </li>
       </ul></li>
       <li><a href="api/PYME.Analysis.BleachProfile.rawIntensity.html#PYME.Analysis.BleachProfile.rawIntensity.processIntensityTrace">processIntensityTrace() (in module PYME.Analysis.BleachProfile.rawIntensity)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.XMLDict_Parser.processTag">processTag() (PYME.ParallelTasks.webdav.XMLDict_Parser method)</a>
 </li>
       <li><a href="api/PYME.Analysis.angleFilter.html#PYME.Analysis.angleFilter.procSkelFile">procSkelFile() (in module PYME.Analysis.angleFilter)</a>
 </li>
@@ -8527,6 +8243,8 @@
       </ul></li>
       <li><a href="api/PYME.DSView.modules.filtering.html#PYME.DSView.modules.filtering.filterer.Project">Project() (PYME.DSView.modules.filtering.filterer method)</a>
 </li>
+      <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.Projection">Projection (class in PYME.recipes.processing)</a>
+</li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.ProjectOnVector">ProjectOnVector (class in PYME.recipes.processing)</a>
 </li>
       <li><a href="api/PYME.misc.zernike.html#PYME.misc.zernike.projectZ">projectZ() (in module PYME.misc.zernike)</a>
@@ -8553,17 +8271,9 @@
       </ul></li>
       <li><a href="api/PYME.Acquire.protocol.html#PYME.Acquire.protocol.Protocol">Protocol (class in PYME.Acquire.protocol)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.protocol_version">protocol_version (PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler attribute)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.GetHandler.protocol_version">(PYME.ParallelTasks.httpSpoolTarget.GetHandler attribute)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.webframework.html#PYME.ParallelTasks.webframework.JSONAPIRequestHandler.protocol_version">(PYME.ParallelTasks.webframework.JSONAPIRequestHandler attribute)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.Acquire.stackSettings.html#PYME.Acquire.stackSettings.StackSettings.ProvideStackMetadata">ProvideStackMetadata() (PYME.Acquire.stackSettings.StackSettings method)</a>
 </li>
-      <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.ModuleCollection.pruneDependanciesFromNamespace">pruneDependanciesFromNamespace() (PYME.recipes.base.ModuleCollection method)</a>
+      <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.ModuleCollection.prune_dependencies_from_namespace">prune_dependencies_from_namespace() (PYME.recipes.base.ModuleCollection method)</a>
 </li>
       <li><a href="api/PYME.localization.ofind.html#PYME.localization.ofind.PseudoPointList">PseudoPointList (class in PYME.localization.ofind)</a>
 
@@ -8679,23 +8389,9 @@
 </li>
       <li><a href="api/PYME.IO.h5File.html#PYME.IO.h5File.H5File.put_file">put_file() (PYME.IO.h5File.H5File method)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.H5File.putEvent">putEvent() (PYME.ParallelTasks.httpSpoolTarget.H5File method)</a>
-</li>
       <li><a href="api/PYME.IO.clusterIO.html#PYME.IO.clusterIO.putFile">putFile() (in module PYME.IO.clusterIO)</a>
 </li>
       <li><a href="api/PYME.IO.clusterIO.html#PYME.IO.clusterIO.putFiles">putFiles() (in module PYME.IO.clusterIO)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.H5File.putFrame">putFrame() (PYME.ParallelTasks.httpSpoolTarget.H5File method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.H5File.putFrames">putFrames() (PYME.ParallelTasks.httpSpoolTarget.H5File method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.H5File.putMetadata">putMetadata() (PYME.ParallelTasks.httpSpoolTarget.H5File method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.H5File.putMetadataEntry">putMetadataEntry() (PYME.ParallelTasks.httpSpoolTarget.H5File method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.H5File.putPZFFrame">putPZFFrame() (PYME.ParallelTasks.httpSpoolTarget.H5File method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#PYME.ParallelTasks.httpSpoolTarget.H5File.putPZFFrames">putPZFFrames() (PYME.ParallelTasks.httpSpoolTarget.H5File method)</a>
 </li>
       <li><a href="api/PYME.misc.shellutils.html#PYME.misc.shellutils.px">px() (in module PYME.misc.shellutils)</a>
 </li>
@@ -8939,6 +8635,8 @@
 </li>
       <li><a href="api/PYME.Analysis.PSFGen.fourierHNA2.html#module-PYME.Analysis.PSFGen.fourierHNA2">PYME.Analysis.PSFGen.fourierHNA2 (module)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.Analysis.PSFGen.genCRBcurves.html#module-PYME.Analysis.PSFGen.genCRBcurves">PYME.Analysis.PSFGen.genCRBcurves (module)</a>
 </li>
       <li><a href="api/PYME.Analysis.PSFGen.nijboer_zernike.html#module-PYME.Analysis.PSFGen.nijboer_zernike">PYME.Analysis.PSFGen.nijboer_zernike (module)</a>
@@ -8949,8 +8647,6 @@
 </li>
       <li><a href="api/PYME.Analysis.setup.html#module-PYME.Analysis.setup">PYME.Analysis.setup (module)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.Analysis.svmSegment.html#module-PYME.Analysis.svmSegment">PYME.Analysis.svmSegment (module)</a>
 </li>
       <li><a href="api/PYME.Analysis.thresholding.html#module-PYME.Analysis.thresholding">PYME.Analysis.thresholding (module)</a>
@@ -9627,12 +9323,6 @@
 </li>
       <li><a href="api/PYME.ParallelTasks.html#module-PYME.ParallelTasks">PYME.ParallelTasks (module)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#module-PYME.ParallelTasks.dataserver_wsgi">PYME.ParallelTasks.dataserver_wsgi (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.distribution.html#module-PYME.ParallelTasks.distribution">PYME.ParallelTasks.distribution (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#module-PYME.ParallelTasks.distributor">PYME.ParallelTasks.distributor (module)</a>
-</li>
       <li><a href="api/PYME.ParallelTasks.DSTaskQueue.html#module-PYME.ParallelTasks.DSTaskQueue">PYME.ParallelTasks.DSTaskQueue (module)</a>
 </li>
       <li><a href="api/PYME.ParallelTasks.fitMon.html#module-PYME.ParallelTasks.fitMon">PYME.ParallelTasks.fitMon (module)</a>
@@ -9641,29 +9331,7 @@
 </li>
       <li><a href="api/PYME.ParallelTasks.HDFTaskQueue.html#module-PYME.ParallelTasks.HDFTaskQueue">PYME.ParallelTasks.HDFTaskQueue (module)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#module-PYME.ParallelTasks.HTTPDataServer">PYME.ParallelTasks.HTTPDataServer (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.HTTPRulePusher.html#module-PYME.ParallelTasks.HTTPRulePusher">PYME.ParallelTasks.HTTPRulePusher (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.httpSpoolTarget.html#module-PYME.ParallelTasks.httpSpoolTarget">PYME.ParallelTasks.httpSpoolTarget (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.HTTPTaskPusher.html#module-PYME.ParallelTasks.HTTPTaskPusher">PYME.ParallelTasks.HTTPTaskPusher (module)</a>
-</li>
       <li><a href="api/PYME.ParallelTasks.launchWorkers.html#module-PYME.ParallelTasks.launchWorkers">PYME.ParallelTasks.launchWorkers (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.nodeserver.html#module-PYME.ParallelTasks.nodeserver">PYME.ParallelTasks.nodeserver (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.PYMEDistributor.html#module-PYME.ParallelTasks.PYMEDistributor">PYME.ParallelTasks.PYMEDistributor (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.PYMENodeServer.html#module-PYME.ParallelTasks.PYMENodeServer">PYME.ParallelTasks.PYMENodeServer (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.PYMERuleNodeServer.html#module-PYME.ParallelTasks.PYMERuleNodeServer">PYME.ParallelTasks.PYMERuleNodeServer (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.PYMERuleServer.html#module-PYME.ParallelTasks.PYMERuleServer">PYME.ParallelTasks.PYMERuleServer (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.rulenodeserver.html#module-PYME.ParallelTasks.rulenodeserver">PYME.ParallelTasks.rulenodeserver (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#module-PYME.ParallelTasks.ruleserver">PYME.ParallelTasks.ruleserver (module)</a>
 </li>
       <li><a href="api/PYME.ParallelTasks.setup_exe.html#module-PYME.ParallelTasks.setup_exe">PYME.ParallelTasks.setup_exe (module)</a>
 </li>
@@ -9673,13 +9341,7 @@
 </li>
       <li><a href="api/PYME.ParallelTasks.taskServerZC.html#module-PYME.ParallelTasks.taskServerZC">PYME.ParallelTasks.taskServerZC (module)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.taskWorkerHTTP.html#module-PYME.ParallelTasks.taskWorkerHTTP">PYME.ParallelTasks.taskWorkerHTTP (module)</a>
-</li>
       <li><a href="api/PYME.ParallelTasks.taskWorkerZC.html#module-PYME.ParallelTasks.taskWorkerZC">PYME.ParallelTasks.taskWorkerZC (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#module-PYME.ParallelTasks.webdav">PYME.ParallelTasks.webdav (module)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webframework.html#module-PYME.ParallelTasks.webframework">PYME.ParallelTasks.webframework (module)</a>
 </li>
       <li><a href="api/PYME.recipes.html#module-PYME.recipes">PYME.recipes (module)</a>
 </li>
@@ -9789,8 +9451,6 @@
 </li>
       <li><a href="api/PYME.version.html#module-PYME.version">PYME.version (module)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler">PYMEHTTPRequestHandler (class in PYME.ParallelTasks.HTTPDataServer)</a>
-</li>
       <li><a href="api/PYME.Acquire.acquiremainframe.html#PYME.Acquire.acquiremainframe.PYMEMainFrame">PYMEMainFrame (class in PYME.Acquire.acquiremainframe)</a>
 </li>
       <li><a href="api/PYME.IO.DataSources.HDFDataSource.html#PYME.IO.DataSources.HDFDataSource.DataSource.pzf_index">pzf_index (PYME.IO.DataSources.HDFDataSource.DataSource attribute)</a>
@@ -9856,8 +9516,6 @@
       <li><a href="api/PYME.Acquire.ActionManager.html#PYME.Acquire.ActionManager.ActionManager.QueueAction">QueueAction() (PYME.Acquire.ActionManager.ActionManager method)</a>
 </li>
       <li><a href="api/PYME.IO.MetaDataHandler.html#PYME.IO.MetaDataHandler.QueueMDHandler">QueueMDHandler (class in PYME.IO.MetaDataHandler)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.CPDistributor.queues">queues() (PYME.ParallelTasks.distributor.CPDistributor method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -9963,10 +9621,6 @@
 </li>
       <li><a href="api/PYME.DSView.modules.annotation.html#PYME.DSView.modules.annotation.Annotater.rasterize">rasterize() (PYME.DSView.modules.annotation.Annotater method)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.nodeserver.html#PYME.ParallelTasks.nodeserver.CPNodeServer.rate">rate() (PYME.ParallelTasks.nodeserver.CPNodeServer method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.rulenodeserver.html#PYME.ParallelTasks.rulenodeserver.Rater">Rater (class in PYME.ParallelTasks.rulenodeserver)</a>
-</li>
       <li><a href="api/PYME.recipes.localisations.html#PYME.recipes.localisations.ProcessColour.ratios_from_metadata">ratios_from_metadata (PYME.recipes.localisations.ProcessColour attribute)</a>
 </li>
       <li><a href="api/PYME.LMVis.tests.gl_test_objects.html#PYME.LMVis.tests.gl_test_objects.GridContainer.re_enumerate">re_enumerate() (PYME.LMVis.tests.gl_test_objects.GridContainer method)</a>
@@ -10019,12 +9673,6 @@
 </li>
       <li><a href="api/PYME.recipes.recipeGui.html#PYME.recipes.recipeGui.RecipePlotPanel">RecipePlotPanel (class in PYME.recipes.recipeGui)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.HTTPRulePusher.html#PYME.ParallelTasks.HTTPRulePusher.RecipePusher">RecipePusher (class in PYME.ParallelTasks.HTTPRulePusher)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.HTTPTaskPusher.html#PYME.ParallelTasks.HTTPTaskPusher.RecipePusher">(class in PYME.ParallelTasks.HTTPTaskPusher)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.recipes.recipeGui.html#PYME.recipes.recipeGui.RecipeView">RecipeView (class in PYME.recipes.recipeGui)</a>
 </li>
       <li><a href="api/PYME.Analysis.BleachProfile.intensProf.html#PYME.Analysis.BleachProfile.intensProf.recolor">recolor() (in module PYME.Analysis.BleachProfile.intensProf)</a>
@@ -10051,12 +9699,6 @@
 
       <ul>
         <li><a href="api/PYME.misc.eventSpy.html#PYME.misc.eventSpy.eventInfo.recreate">(PYME.misc.eventSpy.eventInfo method)</a>
-</li>
-      </ul></li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DirCollection.recvMember">recvMember() (PYME.ParallelTasks.webdav.DirCollection method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.TempDirCollection.recvMember">(PYME.ParallelTasks.webdav.TempDirCollection method)</a>
 </li>
       </ul></li>
       <li><a href="api/PYME.misc.extraCMaps.html#PYME.misc.extraCMaps.Red">Red() (in module PYME.misc.extraCMaps)</a>
@@ -10101,8 +9743,6 @@
 </li>
       <li><a href="api/PYME.misc.extraCMaps.html#PYME.misc.extraCMaps.register_cmap">register_cmap() (in module PYME.misc.extraCMaps)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webframework.html#PYME.ParallelTasks.webframework.register_endpoint">register_endpoint() (in module PYME.ParallelTasks.webframework)</a>
-</li>
       <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.register_legacy_module">register_legacy_module() (in module PYME.recipes.base)</a>
 </li>
       <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.register_module">register_module() (in module PYME.recipes.base)</a>
@@ -10118,6 +9758,8 @@
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.Deconvolve.regularisationLambda">regularisationLambda (PYME.recipes.processing.Deconvolve attribute)</a>
 </li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.OpticalFlow.regularizationLambda">regularizationLambda (PYME.recipes.processing.OpticalFlow attribute)</a>
+</li>
+      <li><a href="api/PYME.Acquire.SpoolController.html#PYME.Acquire.SpoolController.SpoolController.rel_dirname">rel_dirname (PYME.Acquire.SpoolController.SpoolController attribute)</a>
 </li>
       <li><a href="api/PYME.DSView.modules.graphViewPanel.html#PYME.DSView.modules.graphViewPanel.MyNavigationToolbar.release">release() (PYME.DSView.modules.graphViewPanel.MyNavigationToolbar method)</a>
 
@@ -10185,6 +9827,8 @@
         <li><a href="api/PYME.IO.DataSources.UnsplitDataSource.html#PYME.IO.DataSources.UnsplitDataSource.DataSource.reloadData">(PYME.IO.DataSources.UnsplitDataSource.DataSource method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.localization.splitting.html#PYME.localization.splitting.remap_splitter_coords">remap_splitter_coords() (in module PYME.localization.splitting)</a>
 </li>
       <li><a href="api/PYME.localization.splitting.html#PYME.localization.splitting.remap_splitter_coords_">remap_splitter_coords_() (in module PYME.localization.splitting)</a>
@@ -10193,8 +9837,6 @@
 </li>
       <li><a href="api/PYME.DSView.modules.psfTools.html#PYME.DSView.modules.psfTools.remove_newlines">remove_newlines() (in module PYME.DSView.modules.psfTools)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.ModuleBase.remove_outputs">remove_outputs() (PYME.recipes.base.ModuleBase method)</a>
 </li>
       <li><a href="api/PYME.misc.pyme_zeroconf.html#PYME.misc.pyme_zeroconf.ZCListener.remove_service">remove_service() (PYME.misc.pyme_zeroconf.ZCListener method)</a>
@@ -10371,12 +10013,6 @@
 </li>
       <li><a href="api/PYME.recipes.base.html#PYME.recipes.base.ModuleCollection.resolveDependencies">resolveDependencies() (PYME.recipes.base.ModuleCollection method)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.ResponseNotAllowed">ResponseNotAllowed() (in module PYME.ParallelTasks.dataserver_wsgi)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.ResponseNotFound">ResponseNotFound() (in module PYME.ParallelTasks.dataserver_wsgi)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.ResponseOK">ResponseOK() (in module PYME.ParallelTasks.dataserver_wsgi)</a>
-</li>
       <li><a href="api/PYME.localization.Test.fitTestJigSCMOS.html#PYME.localization.Test.fitTestJigSCMOS.fitTestJig.result_params">result_params (PYME.localization.Test.fitTestJigSCMOS.fitTestJig attribute)</a>
 </li>
       <li><a href="api/PYME.localization.Test.fitTestJigSCMOS.html#PYME.localization.Test.fitTestJigSCMOS.fitTestJig.results">results (PYME.localization.Test.fitTestJigSCMOS.fitTestJig attribute)</a>
@@ -10479,8 +10115,6 @@
 </li>
       <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.FitPoints.roiHalfSize">roiHalfSize (PYME.recipes.measurement.FitPoints attribute)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DirCollection.rootdir">rootdir() (PYME.ParallelTasks.webdav.DirCollection method)</a>
-</li>
       <li><a href="api/PYME.DSView.displayOptions.html#PYME.DSView.displayOptions.DisplayOpts.ROT90">ROT90 (PYME.DSView.displayOptions.DisplayOpts attribute)</a>
 </li>
       <li><a href="api/PYME.recipes.multiview.html#PYME.recipes.multiview.MapAstigZ.rough_knot_spacing">rough_knot_spacing (PYME.recipes.multiview.MapAstigZ attribute)</a>
@@ -10491,24 +10125,14 @@
 </li>
       <li><a href="api/PYME.misc.snells.html#PYME.misc.snells.Rs">Rs() (in module PYME.misc.snells)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.Rule">Rule (class in PYME.ParallelTasks.ruleserver)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.RuleServer">RuleServer (class in PYME.ParallelTasks.ruleserver)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.run">run() (in module PYME.ParallelTasks.distributor)</a>
+      <li><a href="api/PYME.Acquire.ExecTools.html#PYME.Acquire.ExecTools.GUIInitTask.run">run() (PYME.Acquire.ExecTools.GUIInitTask method)</a>
 
       <ul>
-        <li><a href="api/PYME.Acquire.ExecTools.html#PYME.Acquire.ExecTools.GUIInitTask.run">(PYME.Acquire.ExecTools.GUIInitTask method)</a>
-</li>
         <li><a href="api/PYME.Deconv.decThread.html#PYME.Deconv.decThread.decThread.run">(PYME.Deconv.decThread.decThread method)</a>
 </li>
         <li><a href="api/PYME.IO.testClusterSpooling.html#PYME.IO.testClusterSpooling.TestSpooler.run">(PYME.IO.testClusterSpooling.TestSpooler method)</a>
 </li>
         <li><a href="api/PYME.LMVis.Extras.animation.html#PYME.LMVis.Extras.animation.VideoPanel.run">(PYME.LMVis.Extras.animation.VideoPanel method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.statusPoller.run">(PYME.ParallelTasks.HTTPDataServer.statusPoller method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.ServerThread.run">(PYME.ParallelTasks.ruleserver.ServerThread method)</a>
 </li>
         <li><a href="api/PYME.ParallelTasks.taskServerZC.html#PYME.ParallelTasks.taskServerZC.TaskWatcher.run">(PYME.ParallelTasks.taskServerZC.TaskWatcher method)</a>
 </li>
@@ -10516,19 +10140,9 @@
 </li>
         <li><a href="api/PYME.util.mProfile.tProfile.html#PYME.util.mProfile.tProfile.T.run">(PYME.util.mProfile.tProfile.T method)</a>
 </li>
-        <li><a href="api/PYME.ParallelTasks.nodeserver.html#PYME.ParallelTasks.nodeserver.run">(in module PYME.ParallelTasks.nodeserver)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.rulenodeserver.html#PYME.ParallelTasks.rulenodeserver.run">(in module PYME.ParallelTasks.rulenodeserver)</a>
-</li>
       </ul></li>
       <li><a href="api/PYME.Analysis.points.SoftRend.testTetrahedra.html#PYME.Analysis.points.SoftRend.testTetrahedra.run_t">run_t() (in module PYME.Analysis.points.SoftRend.testTetrahedra)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.runCP">runCP() (in module PYME.ParallelTasks.distributor)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.nodeserver.html#PYME.ParallelTasks.nodeserver.runCP">(in module PYME.ParallelTasks.nodeserver)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.recipes.batchProcess.html#PYME.recipes.batchProcess.runRec">runRec() (in module PYME.recipes.batchProcess)</a>
 </li>
       <li><a href="api/PYME.recipes.runRecipe.html#PYME.recipes.runRecipe.runRecipe">runRecipe() (in module PYME.recipes.runRecipe)</a>
@@ -10745,29 +10359,17 @@
 </li>
       <li><a href="api/PYME.misc.glassModel.html#PYME.misc.glassModel.Sellmeier">Sellmeier() (in module PYME.misc.glassModel)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.send_error">send_error() (PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.send_head">send_head() (PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DirCollection.sendData">sendData() (PYME.ParallelTasks.webdav.DirCollection method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.FileMember.sendData">(PYME.ParallelTasks.webdav.FileMember method)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.Acquire.ui.seqdialog.html#PYME.Acquire.ui.seqdialog.seqPanel">seqPanel (class in PYME.Acquire.ui.seqdialog)</a>
 </li>
       <li><a href="api/PYME.Acquire.ui.seqdialog.html#PYME.Acquire.ui.seqdialog.SeqProgressPanel">SeqProgressPanel (class in PYME.Acquire.ui.seqdialog)</a>
 </li>
       <li><a href="api/PYME.contrib.gohlke.tifffile.html#PYME.contrib.gohlke.tifffile.TIFFfile.series">series (PYME.contrib.gohlke.tifffile.TIFFfile attribute)</a>
 </li>
+      <li><a href="api/PYME.Acquire.SpoolController.html#PYME.Acquire.SpoolController.SpoolController.seriesName">seriesName (PYME.Acquire.SpoolController.SpoolController attribute)</a>
+</li>
       <li><a href="api/PYME.misc.shellutils.html#PYME.misc.shellutils.seriestiming">seriestiming() (in module PYME.misc.shellutils)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.server_version">server_version (PYME.ParallelTasks.webdav.DAVRequestHandler attribute)</a>
-</li>
       <li><a href="api/PYME.ParallelTasks.launchWorkers.html#PYME.ParallelTasks.launchWorkers.serverlog">serverlog() (in module PYME.ParallelTasks.launchWorkers)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.ServerThread">ServerThread (class in PYME.ParallelTasks.ruleserver)</a>
 </li>
       <li><a href="api/PYME.DSView.modules.graphViewPanel.html#PYME.DSView.modules.graphViewPanel.MyNavigationToolbar.set_cursor">set_cursor() (PYME.DSView.modules.graphViewPanel.MyNavigationToolbar method)</a>
 
@@ -11009,14 +10611,14 @@
 </li>
       <li><a href="api/PYME.IO.DataSources.UnsplitDataSource.html#PYME.IO.DataSources.UnsplitDataSource.DataSource.SetShiftField">SetShiftField() (PYME.IO.DataSources.UnsplitDataSource.DataSource method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.DSView.modules.composite.html#PYME.DSView.modules.composite.ImageList.SetShiftmap">SetShiftmap() (PYME.DSView.modules.composite.ImageList method)</a>
 </li>
       <li><a href="api/PYME.IO.DataSources.AlignDataSource.html#PYME.IO.DataSources.AlignDataSource.DataSource.SetShifts">SetShifts() (PYME.IO.DataSources.AlignDataSource.DataSource method)</a>
 </li>
       <li><a href="api/PYME.DSView.displayOptions.html#PYME.DSView.displayOptions.DisplayOpts.SetSlice">SetSlice() (PYME.DSView.displayOptions.DisplayOpts method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.Acquire.sampleInformation.html#PYME.Acquire.sampleInformation.SampleInfoDialog.setSlideChoices">setSlideChoices() (PYME.Acquire.sampleInformation.SampleInfoDialog method)</a>
 </li>
       <li><a href="api/PYME.Acquire.SpoolController.html#PYME.Acquire.SpoolController.SpoolController.SetSpoolDir">SetSpoolDir() (PYME.Acquire.SpoolController.SpoolController method)</a>
@@ -11120,8 +10722,6 @@
       <li><a href="api/PYME.LMVis.Extras.showShortcuts.html#PYME.LMVis.Extras.showShortcuts.ShowShortcuts">ShowShortcuts (class in PYME.LMVis.Extras.showShortcuts)</a>
 </li>
       <li><a href="api/PYME.LMVis.tests.gl_test_objects.html#PYME.LMVis.tests.gl_test_objects.GridContainer.shuffle">shuffle() (PYME.LMVis.tests.gl_test_objects.GridContainer method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.ServerThread.shutdown">shutdown() (PYME.ParallelTasks.ruleserver.ServerThread method)</a>
 </li>
       <li><a href="api/PYME.recipes.filters.html#PYME.recipes.filters.DoGFilter.sigma2s">sigma2s (PYME.recipes.filters.DoGFilter attribute)</a>
 </li>
@@ -11277,10 +10877,6 @@
 </li>
       <li><a href="api/PYME.localization.splitting.html#PYME.localization.splitting.split_image">split_image() (in module PYME.localization.splitting)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.split_path">split_path() (PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.splitattrs">splitattrs() (in module PYME.ParallelTasks.webdav)</a>
-</li>
       <li><a href="api/PYME.localization.FitFactories.SplitterFitFNR.html#PYME.localization.FitFactories.SplitterFitFNR.splWrap">splWrap() (in module PYME.localization.FitFactories.SplitterFitFNR)</a>
 
       <ul>
@@ -11373,13 +10969,11 @@
 </li>
       <li><a href="api/PYME.Acquire.microscope.html#PYME.Acquire.microscope.StateManager">StateManager (class in PYME.Acquire.microscope)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.nodeserver.html#PYME.ParallelTasks.nodeserver.CPNodeServer.status">status() (PYME.ParallelTasks.nodeserver.CPNodeServer method)</a>
+      <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.StatisticsByFrame">StatisticsByFrame (class in PYME.recipes.processing)</a>
 </li>
       <li><a href="api/PYME.Acquire.acquiremainframe.html#PYME.Acquire.acquiremainframe.PYMEMainFrame.StatusBarUpdate">StatusBarUpdate() (PYME.Acquire.acquiremainframe.PYMEMainFrame method)</a>
 </li>
       <li><a href="api/PYME.LMVis.statusLog.html#PYME.LMVis.statusLog.StatusLogger">StatusLogger (class in PYME.LMVis.statusLog)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.statusPoller">statusPoller (class in PYME.ParallelTasks.HTTPDataServer)</a>
 </li>
       <li><a href="api/PYME.recipes.localisations.html#PYME.recipes.localisations.AutocorrelationDriftCorrection.step">step (PYME.recipes.localisations.AutocorrelationDriftCorrection attribute)</a>
 </li>
@@ -11401,20 +10995,6 @@
       </ul></li>
       <li><a href="api/PYME.Acquire.zScanner.html#PYME.Acquire.zScanner.zScanner.Stop">Stop() (PYME.Acquire.zScanner.zScanner method)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.Distributor.stop">stop() (PYME.ParallelTasks.distributor.Distributor method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.statusPoller.stop">(PYME.ParallelTasks.HTTPDataServer.statusPoller method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.TaskQueue.stop">(PYME.ParallelTasks.distributor.TaskQueue method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.nodeserver.html#PYME.ParallelTasks.nodeserver.NodeServer.stop">(PYME.ParallelTasks.nodeserver.NodeServer method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.rulenodeserver.html#PYME.ParallelTasks.rulenodeserver.NodeServer.stop">(PYME.ParallelTasks.rulenodeserver.NodeServer method)</a>
-</li>
-        <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.RuleServer.stop">(PYME.ParallelTasks.ruleserver.RuleServer method)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.IO.clusterDuplication.html#PYME.IO.clusterDuplication.stopDuplicator">stopDuplicator() (in module PYME.IO.clusterDuplication)</a>
 </li>
       <li><a href="api/PYME.Acquire.HDFSpooler.html#PYME.Acquire.HDFSpooler.Spooler.StopSpool">StopSpool() (PYME.Acquire.HDFSpooler.Spooler method)</a>
@@ -11497,8 +11077,6 @@
 </li>
       <li><a href="api/PYME.IO.tabular.html#PYME.IO.tabular.TabularBase">TabularBase (class in PYME.IO.tabular)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.Tag">Tag (class in PYME.ParallelTasks.webdav)</a>
-</li>
       <li><a href="api/PYME.Acquire.positionTracker.html#PYME.Acquire.positionTracker.PositionTracker.Tag">Tag() (PYME.Acquire.positionTracker.PositionTracker method)</a>
 </li>
       <li><a href="api/PYME.ParallelTasks.taskDef.html#PYME.ParallelTasks.taskDef.Task">Task (class in PYME.ParallelTasks.taskDef)</a>
@@ -11507,39 +11085,21 @@
 </li>
       <li><a href="api/PYME.Acquire.ExecTools.html#PYME.Acquire.ExecTools.BGInitTask.TASK_FAILED">TASK_FAILED (PYME.Acquire.ExecTools.BGInitTask attribute)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.IntegerIDRule.TASK_INFO_DTYPE">TASK_INFO_DTYPE (PYME.ParallelTasks.ruleserver.IntegerIDRule attribute)</a>
-</li>
       <li><a href="api/PYME.Acquire.ExecTools.html#PYME.Acquire.ExecTools.BGInitTask.TASK_RUNNING">TASK_RUNNING (PYME.Acquire.ExecTools.BGInitTask attribute)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.taskWorkerHTTP.html#PYME.ParallelTasks.taskWorkerHTTP.TaskError">TaskError (class in PYME.ParallelTasks.taskWorkerHTTP)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.TaskInfo">TaskInfo (class in PYME.ParallelTasks.distributor)</a>
 </li>
       <li><a href="api/PYME.Acquire.protocol.html#PYME.Acquire.protocol.TaskListProtocol">TaskListProtocol (class in PYME.Acquire.protocol)</a>
 </li>
       <li><a href="api/PYME.Acquire.protocol.html#PYME.Acquire.protocol.TaskListTask">TaskListTask (class in PYME.Acquire.protocol)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.TaskQueue">TaskQueue (class in PYME.ParallelTasks.distributor)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.taskQueue.html#PYME.ParallelTasks.taskQueue.TaskQueue">(class in PYME.ParallelTasks.taskQueue)</a>
+      <li><a href="api/PYME.ParallelTasks.taskQueue.html#PYME.ParallelTasks.taskQueue.TaskQueue">TaskQueue (class in PYME.ParallelTasks.taskQueue)</a>
 </li>
-      </ul></li>
       <li><a href="api/PYME.ParallelTasks.taskServerZC.html#PYME.ParallelTasks.taskServerZC.TaskQueueSet">TaskQueueSet (class in PYME.ParallelTasks.taskServerZC)</a>
 </li>
       <li><a href="api/PYME.ParallelTasks.taskQueue.html#PYME.ParallelTasks.taskQueue.TaskQueueWithData">TaskQueueWithData (class in PYME.ParallelTasks.taskQueue)</a>
 </li>
       <li><a href="api/PYME.ParallelTasks.taskDef.html#PYME.ParallelTasks.taskDef.TaskResult">TaskResult (class in PYME.ParallelTasks.taskDef)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.CPDistributor.tasks">tasks() (PYME.ParallelTasks.distributor.CPDistributor method)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.nodeserver.html#PYME.ParallelTasks.nodeserver.CPNodeServer.tasks">(PYME.ParallelTasks.nodeserver.CPNodeServer method)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.ParallelTasks.taskServerZC.html#PYME.ParallelTasks.taskServerZC.TaskWatcher">TaskWatcher (class in PYME.ParallelTasks.taskServerZC)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.taskWorkerHTTP.html#PYME.ParallelTasks.taskWorkerHTTP.taskWorker">taskWorker (class in PYME.ParallelTasks.taskWorkerHTTP)</a>
 </li>
       <li><a href="api/PYME.util.mProfile.mProfile.html#PYME.util.mProfile.mProfile.te">te() (in module PYME.util.mProfile.mProfile)</a>
 
@@ -11549,18 +11109,12 @@
       </ul></li>
       <li><a href="api/PYME.misc.TiffImagePlugin.html#PYME.misc.TiffImagePlugin.TiffImageFile.tell">tell() (PYME.misc.TiffImagePlugin.TiffImageFile method)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.TempDirCollection">TempDirCollection (class in PYME.ParallelTasks.webdav)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.taskWorkerHTTP.html#PYME.ParallelTasks.taskWorkerHTTP.TaskError.template">template (PYME.ParallelTasks.taskWorkerHTTP.TaskError attribute)</a>
+      <li><a href="api/PYME.recipes.output.html#PYME.recipes.output.ReportForEachOutput.template">template (PYME.recipes.output.ReportForEachOutput attribute)</a>
 
       <ul>
-        <li><a href="api/PYME.recipes.output.html#PYME.recipes.output.ReportForEachOutput.template">(PYME.recipes.output.ReportForEachOutput attribute)</a>
-</li>
         <li><a href="api/PYME.recipes.output.html#PYME.recipes.output.ReportOutput.template">(PYME.recipes.output.ReportOutput attribute)</a>
 </li>
       </ul></li>
-      <li><a href="api/PYME.ParallelTasks.rulenodeserver.html#PYME.ParallelTasks.rulenodeserver.template_fill">template_fill() (in module PYME.ParallelTasks.rulenodeserver)</a>
-</li>
       <li><a href="api/PYME.recipes.localisations.html#PYME.recipes.localisations.FiducialCorrection.temporalFilter">temporalFilter (PYME.recipes.localisations.FiducialCorrection attribute)</a>
 </li>
       <li><a href="api/PYME.recipes.localisations.html#PYME.recipes.localisations.FiducialCorrection.temporalFilterScale">temporalFilterScale (PYME.recipes.localisations.FiducialCorrection attribute)</a>
@@ -11625,8 +11179,6 @@
 </li>
       <li><a href="api/PYME.util.fProfile.fProfile.html#PYME.util.fProfile.fProfile.thread_profiler">thread_profiler (class in PYME.util.fProfile.fProfile)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.ThreadedHTTPServer">ThreadedHTTPServer (class in PYME.ParallelTasks.HTTPDataServer)</a>
-</li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.Threshold">Threshold (class in PYME.recipes.processing)</a>
 </li>
       <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.DetectPoints2D.threshold">threshold (PYME.recipes.measurement.DetectPoints2D attribute)</a>
@@ -11679,16 +11231,16 @@
 </li>
       <li><a href="api/PYME.IO.FileUtils.saveTiffStack.html#PYME.IO.FileUtils.saveTiffStack.TiffMP">TiffMP (class in PYME.IO.FileUtils.saveTiffStack)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.IO.dataExporter.html#PYME.IO.dataExporter.TiffSeriesExporter">TiffSeriesExporter (class in PYME.IO.dataExporter)</a>
 </li>
       <li><a href="api/PYME.IO.dataExporter.html#PYME.IO.dataExporter.TiffStackExporter">TiffStackExporter (class in PYME.IO.dataExporter)</a>
 </li>
       <li><a href="api/PYME.Analysis.deTile.html#PYME.Analysis.deTile.tile">tile() (in module PYME.Analysis.deTile)</a>
 </li>
-      <li><a href="api/PYME.Analysis.deTile.html#PYME.Analysis.deTile.tile_pyramid">tile_pyramid() (in module PYME.Analysis.deTile)</a>
+      <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.TilePhysicalCoords">TilePhysicalCoords (class in PYME.recipes.measurement)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.DSView.modules.tiling.html#PYME.DSView.modules.tiling.tiler">tiler (class in PYME.DSView.modules.tiling)</a>
 </li>
       <li><a href="api/PYME.LMVis.Extras.subsets.html#PYME.LMVis.Extras.subsets.time_block_subset">time_block_subset() (in module PYME.LMVis.Extras.subsets)</a>
@@ -11698,10 +11250,6 @@
       <li><a href="api/PYME.recipes.localisations.html#PYME.recipes.localisations.TimeBlocks">TimeBlocks (class in PYME.recipes.localisations)</a>
 </li>
       <li><a href="api/PYME.LMVis.Extras.sequentialSpecies.html#PYME.LMVis.Extras.sequentialSpecies.TimedSpecies">TimedSpecies (class in PYME.LMVis.Extras.sequentialSpecies)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.timeout">timeout (PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler attribute)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler.timeoutTesting">timeoutTesting (PYME.ParallelTasks.HTTPDataServer.PYMEHTTPRequestHandler attribute)</a>
 </li>
       <li><a href="api/PYME.Analysis.piecewiseMapping.html#PYME.Analysis.piecewiseMapping.timeToFrames">timeToFrames() (in module PYME.Analysis.piecewiseMapping)</a>
 </li>
@@ -11761,8 +11309,6 @@
 </li>
       <li><a href="api/PYME.IO.tabular.html#PYME.IO.tabular.TabularBase.to_recarray">to_recarray() (PYME.IO.tabular.TabularBase method)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.taskWorkerHTTP.html#PYME.ParallelTasks.taskWorkerHTTP.TaskError.to_string">to_string() (PYME.ParallelTasks.taskWorkerHTTP.TaskError method)</a>
-</li>
       <li><a href="api/PYME.recipes.recipeLayout.html#PYME.recipes.recipeLayout.to_svg">to_svg() (in module PYME.recipes.recipeLayout)</a>
 
       <ul>
@@ -11821,6 +11367,8 @@
 </li>
       <li><a href="api/PYME.Analysis.svmSegment.html#PYME.Analysis.svmSegment.svmClassifier.train">train() (PYME.Analysis.svmSegment.svmClassifier method)</a>
 </li>
+      <li><a href="api/PYME.DSView.modules.annotation.html#PYME.DSView.modules.annotation.Annotater.train_naive_bayes">train_naive_bayes() (PYME.DSView.modules.annotation.Annotater method)</a>
+</li>
       <li><a href="api/PYME.DSView.modules.annotation.html#PYME.DSView.modules.annotation.Annotater.train_svm">train_svm() (PYME.DSView.modules.annotation.Annotater method)</a>
 </li>
       <li><a href="api/PYME.Analysis.svmSegment.html#PYME.Analysis.svmSegment.svmClassifier.trainAndClassify">trainAndClassify() (PYME.Analysis.svmSegment.svmClassifier method)</a>
@@ -11837,8 +11385,6 @@
         <li><a href="api/PYME.LMVis.tests.gl_test_objects.html#PYME.LMVis.tests.gl_test_objects.TestObjectContainer.translate">(PYME.LMVis.tests.gl_test_objects.TestObjectContainer method)</a>
 </li>
       </ul></li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.dataserver.translate_path">translate_path() (PYME.ParallelTasks.dataserver_wsgi.dataserver method)</a>
-</li>
       <li><a href="api/PYME.IO.FileUtils.nameUtils.html#PYME.IO.FileUtils.nameUtils.translateSeparators">translateSeparators() (in module PYME.IO.FileUtils.nameUtils)</a>
 </li>
       <li><a href="api/PYME.LMVis.renderers.html#PYME.LMVis.renderers.Triangle3DRenderer">Triangle3DRenderer (class in PYME.LMVis.renderers)</a>
@@ -11879,15 +11425,13 @@
 </li>
       <li><a href="api/PYME.recipes.output.html#PYME.recipes.output.UnifiedLoader">UnifiedLoader (class in PYME.recipes.output)</a>
 </li>
+      <li><a href="api/PYME.recipes.traits.html#PYME.recipes.traits.Unifile">Unifile (class in PYME.recipes.traits)</a>
+</li>
       <li><a href="api/PYME.Analysis.points.rings.html#PYME.Analysis.points.rings.uniform_blob_paint">uniform_blob_paint() (in module PYME.Analysis.points.rings)</a>
 </li>
       <li><a href="api/PYME.Analysis.points.rings.html#PYME.Analysis.points.rings.uniform_theory">uniform_theory() (in module PYME.Analysis.points.rings)</a>
 </li>
       <li><a href="api/PYME.Analysis.points.rings.html#PYME.Analysis.points.rings.uniform_theory_cdf">uniform_theory_cdf() (in module PYME.Analysis.points.rings)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.unixdate2httpdate">unixdate2httpdate() (in module PYME.ParallelTasks.webdav)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.unixdate2iso8601">unixdate2iso8601() (in module PYME.ParallelTasks.webdav)</a>
 </li>
       <li><a href="api/PYME.DSView.modules.splitter.html#PYME.DSView.modules.splitter.Unmixer">Unmixer (class in PYME.DSView.modules.splitter)</a>
 
@@ -11932,6 +11476,8 @@
 </li>
         <li><a href="api/PYME.Acquire.ui.lasersliders.html#PYME.Acquire.ui.lasersliders.LaserToggles.update">(PYME.Acquire.ui.lasersliders.LaserToggles method)</a>
 </li>
+        <li><a href="api/PYME.Acquire.ui.positionUI.html#PYME.Acquire.ui.positionUI.PositionPanel.update">(PYME.Acquire.ui.positionUI.PositionPanel method)</a>
+</li>
         <li><a href="api/PYME.Acquire.ui.positionUI.html#PYME.Acquire.ui.positionUI.PositionSliders.update">(PYME.Acquire.ui.positionUI.PositionSliders method)</a>
 </li>
         <li><a href="api/PYME.DSView.arrayViewPanel.html#PYME.DSView.arrayViewPanel.ArraySettingsAndViewPanel.update">(PYME.DSView.arrayViewPanel.ArraySettingsAndViewPanel method)</a>
@@ -11961,8 +11507,6 @@
 </li>
       <li><a href="api/PYME.ui.histLimits.html#PYME.ui.histLimits.HistLimitDialog.update_levels">update_levels() (PYME.ui.histLimits.HistLimitDialog method)</a>
 </li>
-      <li><a href="api/PYME.Analysis.deTile.html#PYME.Analysis.deTile.ImagePyramid.update_pyramid">update_pyramid() (PYME.Analysis.deTile.ImagePyramid method)</a>
-</li>
       <li><a href="api/PYME.update_version.html#PYME.update_version.update_version">update_version() (in module PYME.update_version)</a>
 </li>
       <li><a href="api/PYME.localization.remFitBuf.html#PYME.localization.remFitBuf.BufferManager.updateBuffers">updateBuffers() (PYME.localization.remFitBuf.BufferManager method)</a>
@@ -11982,8 +11526,6 @@
       <li><a href="api/PYME.Acquire.ui.HDFSpoolFrame.html#PYME.Acquire.ui.HDFSpoolFrame.PanSpool.UpdateFreeSpace">UpdateFreeSpace() (PYME.Acquire.ui.HDFSpoolFrame.PanSpool method)</a>
 </li>
       <li><a href="api/PYME.IO.h5rFile.html#PYME.IO.h5rFile.H5RFile.updateMetadata">updateMetadata() (PYME.IO.h5rFile.H5RFile method)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.HTTPDataServer.html#PYME.ParallelTasks.HTTPDataServer.updateStatus">updateStatus() (in module PYME.ParallelTasks.HTTPDataServer)</a>
 </li>
       <li><a href="api/PYME.Analysis.Tracking.tracking.html#PYME.Analysis.Tracking.tracking.Tracker.updateTrack">updateTrack() (PYME.Analysis.Tracking.tracking.Tracker method)</a>
 </li>
@@ -12045,14 +11587,10 @@
 </li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.CaWave.velocity_plot">velocity_plot (PYME.recipes.processing.CaWave attribute)</a>
 </li>
+      <li><a href="api/PYME.IO.unifiedIO.html#PYME.IO.unifiedIO.verbose_fix_name">verbose_fix_name() (in module PYME.IO.unifiedIO)</a>
+</li>
       <li><a href="api/PYME.Acquire.stackSettings.html#PYME.Acquire.stackSettings.StackSettings.Verify">Verify() (PYME.Acquire.stackSettings.StackSettings method)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.HTTPRulePusher.html#PYME.ParallelTasks.HTTPRulePusher.verify_cluster_results_filename">verify_cluster_results_filename() (in module PYME.ParallelTasks.HTTPRulePusher)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.HTTPTaskPusher.html#PYME.ParallelTasks.HTTPTaskPusher.verify_cluster_results_filename">(in module PYME.ParallelTasks.HTTPTaskPusher)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.LMVis.tests.gl_test_objects.html#PYME.LMVis.tests.gl_test_objects.Vesicle">Vesicle (class in PYME.LMVis.tests.gl_test_objects)</a>
 </li>
       <li><a href="api/PYME.Acquire.Utils.vibrationAnalysis.html#PYME.Acquire.Utils.vibrationAnalysis.VibrAnal">VibrAnal (class in PYME.Acquire.Utils.vibrationAnalysis)</a>
@@ -12069,10 +11607,10 @@
 </li>
       <li><a href="api/PYME.LMVis.views.html#PYME.LMVis.views.View">View (class in PYME.LMVis.views)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.misc.mock_traitsui.html#PYME.misc.mock_traitsui.View">View() (in module PYME.misc.mock_traitsui)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.DSView.dsviewer.html#PYME.DSView.dsviewer.View3D">View3D() (in module PYME.DSView.dsviewer)</a>
 </li>
       <li><a href="api/PYME.LMVis.views.html#PYME.LMVis.views.View.view_id">view_id (PYME.LMVis.views.View attribute)</a>
@@ -12153,23 +11691,11 @@
 </li>
       <li><a href="api/PYME.Acquire.zScanner.html#PYME.Acquire.zScanner.wavetableZScanner">wavetableZScanner (class in PYME.Acquire.zScanner)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.DAVRequestHandler.WebAuth">WebAuth() (PYME.ParallelTasks.webdav.DAVRequestHandler method)</a>
-</li>
       <li><a href="api/PYME.Analysis.points.DeClump.pyDeClump.html#PYME.Analysis.points.DeClump.pyDeClump.weightedAverage">weightedAverage() (in module PYME.Analysis.points.DeClump.pyDeClump)</a>
 </li>
       <li><a href="api/PYME.Analysis.points.DeClump.pyDeClump.html#PYME.Analysis.points.DeClump.pyDeClump.weightedAverage_">weightedAverage_() (in module PYME.Analysis.points.DeClump.pyDeClump)</a>
 </li>
-      <li><a href="api/PYME.ParallelTasks.distributor.html#PYME.ParallelTasks.distributor.WFDistributor">WFDistributor (class in PYME.ParallelTasks.distributor)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.nodeserver.html#PYME.ParallelTasks.nodeserver.WFNodeServer">WFNodeServer (class in PYME.ParallelTasks.nodeserver)</a>
-
-      <ul>
-        <li><a href="api/PYME.ParallelTasks.rulenodeserver.html#PYME.ParallelTasks.rulenodeserver.WFNodeServer">(class in PYME.ParallelTasks.rulenodeserver)</a>
-</li>
-      </ul></li>
       <li><a href="api/PYME.localization.FitFactories.InterpFitWFR.html#PYME.localization.FitFactories.InterpFitWFR.WFPSFFitFactory">WFPSFFitFactory (class in PYME.localization.FitFactories.InterpFitWFR)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.ruleserver.html#PYME.ParallelTasks.ruleserver.WFRuleServer">WFRuleServer (class in PYME.ParallelTasks.ruleserver)</a>
 </li>
       <li><a href="api/PYME.recipes.processing.html#PYME.recipes.processing.WhiteTophat">WhiteTophat (class in PYME.recipes.processing)</a>
 </li>
@@ -12195,10 +11721,10 @@
 </li>
       <li><a href="api/PYME.Analysis.angleFilter.html#PYME.Analysis.angleFilter.width_filter_m">width_filter_m() (in module PYME.Analysis.angleFilter)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.Analysis.angleFilter.html#PYME.Analysis.angleFilter.width_o">width_o() (in module PYME.Analysis.angleFilter)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/PYME.recipes.filters.html#PYME.recipes.filters.MaskEdges.widthPixels">widthPixels (PYME.recipes.filters.MaskEdges attribute)</a>
 </li>
       <li><a href="api/PYME.DSView.modules.deconvolution.html#PYME.DSView.modules.deconvolution.WienerDeconvolver">WienerDeconvolver (class in PYME.DSView.modules.deconvolution)</a>
@@ -12242,8 +11768,6 @@
       <ul>
         <li><a href="api/PYME.IO.MetaDataHandler.html#PYME.IO.MetaDataHandler.SimpleMDHandler.write">(PYME.IO.MetaDataHandler.SimpleMDHandler method)</a>
 </li>
-        <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.BufWriter.write">(PYME.ParallelTasks.webdav.BufWriter method)</a>
-</li>
       </ul></li>
       <li><a href="api/PYME.DSView.modules.psfExtraction.html#PYME.DSView.modules.psfExtraction.psfExtractor.write_metadata">write_metadata() (PYME.DSView.modules.psfExtraction.psfExtractor method)</a>
 </li>
@@ -12261,8 +11785,6 @@
         <li><a href="api/PYME.IO.MetaDataHandler.html#PYME.IO.MetaDataHandler.XMLMDHandler.writeXML">(PYME.IO.MetaDataHandler.XMLMDHandler method)</a>
 </li>
       </ul></li>
-      <li><a href="api/PYME.ParallelTasks.dataserver_wsgi.html#PYME.ParallelTasks.dataserver_wsgi.wsgiref_server">wsgiref_server() (in module PYME.ParallelTasks.dataserver_wsgi)</a>
-</li>
       <li><a href="api/PYME.misc.wxThread.html#PYME.misc.wxThread.wxThread">wxThread (class in PYME.misc.wxThread)</a>
 </li>
   </ul></td>
@@ -12310,8 +11832,6 @@
       <li><a href="api/PYME.recipes.measurement.html#PYME.recipes.measurement.Plot.xkey">xkey (PYME.recipes.measurement.Plot attribute)</a>
 </li>
       <li><a href="api/PYME.recipes.output.html#PYME.recipes.output.XLSOutput">XLSOutput (class in PYME.recipes.output)</a>
-</li>
-      <li><a href="api/PYME.ParallelTasks.webdav.html#PYME.ParallelTasks.webdav.XMLDict_Parser">XMLDict_Parser (class in PYME.ParallelTasks.webdav)</a>
 </li>
       <li><a href="api/PYME.IO.MetaDataHandler.html#PYME.IO.MetaDataHandler.XMLMDHandler">XMLMDHandler (class in PYME.IO.MetaDataHandler)</a>
 </li>

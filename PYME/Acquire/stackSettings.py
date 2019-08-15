@@ -26,6 +26,9 @@ import math
 import time
 from PYME.IO import MetaDataHandler
 
+import logging
+logger = logging.getLogger(__name__)
+
 class StackSettings(object):
     """A class to keep settings for acquiring z-stacks"""
     # 'Constants'
@@ -153,14 +156,17 @@ class StackSettings(object):
 
     
     def ProvideStackMetadata(self, mdh):
-        mdh.setEntry('StackSettings.StartPos', self.GetStartPos())
-        mdh.setEntry('StackSettings.EndPos', self.GetEndPos())
-        mdh.setEntry('StackSettings.StepSize', self.GetStepSize())
-        mdh.setEntry('StackSettings.NumSlices', self.GetSeqLength())
-        mdh.setEntry('StackSettings.ScanMode', ['Middle and Number', 'Start and End'][self.GetStartMode()])
-        mdh.setEntry('StackSettings.ScanPiezo', self.GetScanChannel())
-
-        mdh.setEntry('voxelsize.z', self.GetStepSize())
+        try:
+            mdh.setEntry('StackSettings.StartPos', self.GetStartPos())
+            mdh.setEntry('StackSettings.EndPos', self.GetEndPos())
+            mdh.setEntry('StackSettings.StepSize', self.GetStepSize())
+            mdh.setEntry('StackSettings.NumSlices', self.GetSeqLength())
+            mdh.setEntry('StackSettings.ScanMode', ['Middle and Number', 'Start and End'][self.GetStartMode()])
+            mdh.setEntry('StackSettings.ScanPiezo', self.GetScanChannel())
+    
+            mdh.setEntry('voxelsize.z', self.GetStepSize())
+        except:
+            logger.exception('Error writing stack metadata')
 
 
     def doStartLog(self):

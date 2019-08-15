@@ -18,9 +18,11 @@ from . import tablefilters
 from . import output
 from . import localisations
 from . import multiview
+from . import surface_fitting
 try:
     from . import skfilters
-except ImportError:
+except:
+    logger.exception('Could not import skimage')
     pass
 
 try:

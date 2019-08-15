@@ -21,8 +21,10 @@ ViaWebGL = function(incoming) {
     this.tile_pos = 'a_tile_pos';
     this.filter = gl.NEAREST;
     this.pos = 'a_pos';
+    this.scale = 'u_scale';
     this.height = 128;
     this.width = 128;
+    this.multiplier = 5.0;
     this.on = 0;
     this.gl = gl;
     // Assign from incoming terms
@@ -120,6 +122,9 @@ ViaWebGL.prototype = {
         var tile_size = gl.getUniformLocation(program, this.tile_size);
         gl.uniform2f(tile_size, gl.canvas.height, gl.canvas.width);
 
+        this.multiplier_loc = gl.getUniformLocation(program, this.scale);
+        gl.uniform1f(this.multiplier_loc, this.multiplier);
+
         // Get attribute terms
         this.att = [this.pos, this.tile_pos].map(function(name, number) {
 
@@ -146,6 +151,14 @@ ViaWebGL.prototype = {
         gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
         gl.bufferData(gl.ARRAY_BUFFER, buffer, gl.STATIC_DRAW);
     },
+
+    render: function(){
+        var gl = this.gl;
+        gl.uniform1f(this.multiplier_loc, this.multiplier);
+        // Draw everything needed to canvas
+        gl.drawArrays.apply(gl, this.tex.drawArrays);
+    },
+
     // Turns image or canvas into a rendered canvas
     toCanvas: function(tile) {
         // Stop Rendering
@@ -162,6 +175,8 @@ ViaWebGL.prototype = {
         // Allow for custom drawing in webGL
         this['gl-drawing'].call(this,tile);
         var gl = this.gl;
+
+
 
         // Set Attributes for GLSL
         this.att.map(function(x){
@@ -184,7 +199,8 @@ ViaWebGL.prototype = {
         gl.texImage2D.apply(gl, output);
 
         // Draw everything needed to canvas
-        gl.drawArrays.apply(gl, this.tex.drawArrays);
+        //gl.drawArrays.apply(gl, this.tex.drawArrays);
+        this.render();
 
         // Apply to container if needed
         if (this.container) {

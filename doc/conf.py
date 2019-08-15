@@ -188,6 +188,12 @@ html_static_path = ['_static']
 # template names.
 #html_additional_pages = {}
 
+html_context = {
+    'css_files': [
+      '_static/theme_overrides.css', # override wide tables in RTD theme
+    ],
+}
+
 # If false, no module index is generated.
 html_use_modindex = True
 

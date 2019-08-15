@@ -207,7 +207,7 @@ class MarzhauserTangoXY(PiezoBase):
         ConnectSimple(self.lsid, ctypes.c_int(-1), None, ctypes.c_int(57600), ctypes.c_bool(False))  # baud doesn't matter for dll usage
 
         # clear the current position
-        ClearPos(self.lsid, 7)
+        # ClearPos(self.lsid, 7)
 
         self.last_x, self.last_y, self.last_z = ctypes.c_double, ctypes.c_double, ctypes.c_double
         self.last_a = ctypes.c_double
@@ -278,6 +278,9 @@ class MarzhauserTangoXY(PiezoBase):
         return -25
     def GetMax(self, iChan=0):
         return 25
+
+    def clear_position(self):
+        ClearPos(self.lsid, 7)
 
 
 import numpy as np

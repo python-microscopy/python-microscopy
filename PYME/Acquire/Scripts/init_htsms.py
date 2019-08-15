@@ -58,10 +58,8 @@ def pz(scope):
     scope.piFoc = offsetPiezoREST.OffsetPiezoServer(scope._piFoc)
     scope.register_piezo(scope.piFoc, 'z', needCamRestart=False)
 
-    # server so drift correction can connect to the piezo
-    #pst = offsetPiezo.ServerThread(scope.piFoc)
-    #pst.start()
-    #scope.CleanupFunctions.append(pst.cleanup)
+    from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockClient
+    scope.focus_lock = RLPIDFocusLockClient()
 
 
 @init_hardware('HamamatsuORCA')
@@ -233,10 +231,22 @@ def laser_controls(MainFrame, scope):
 #     scp = scanner_panel.ScannerPanel(MainFrame.camPanel, scope.line_scanner)
 #     MainFrame.camPanels.append((scp, 'Line Scanner'))
 
+@init_gui('Multiview Selection')
+def multiview_selection(MainFrame, scope):
+    from PYME.Acquire.ui import multiview_select
+
+    ms = multiview_select.MultiviewSelect(MainFrame.toolPanel, scope)
+    MainFrame.time1.WantNotification.append(ms.update)
+    MainFrame.camPanels.append((ms, 'Multiview Selection'))
+
 @init_gui('Focus Keys')
 def focus_keys(MainFrame, scope):
     from PYME.Acquire.Hardware import focusKeys
+    from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
     fk = focusKeys.FocusKeys(MainFrame, scope.piFoc)
+    panel = FocusLockPanel(MainFrame, scope.focus_lock)
+    MainFrame.camPanels.append((panel, 'Focus Lock'))
+    MainFrame.time1.WantNotification.append(panel.refresh)
 
 #splitter
 # @init_gui('Splitter')

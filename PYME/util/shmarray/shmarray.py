@@ -37,6 +37,7 @@ import numpy
 from multiprocessing import sharedctypes
 from numpy import ctypeslib
 
+import warnings
 
 class shmarray(numpy.ndarray):
     """subclass of ndarray with overridden pickling functions which record dtype, shape
@@ -50,11 +51,29 @@ class shmarray(numpy.ndarray):
     def __new__(cls, ctypesArray, shape, dtype=float,
           strides=None, offset=0, order=None):
         
-        #some magic (copied from numpy.ctypeslib) to make sure the ctypes array
-        #has the array interface
+        # some magic (copied from numpy.ctypeslib) to make sure the ctypes array
+        # has the array interface
+        #
+        # NOTE: The prep_array function is gone as of numpy 1.15 so we might need to
+        # reconsider this. We can't ditch this completely without checking
+        # compatibility across versions of ctypes, multiprocessing, and numpy
+        #
+        # specifically, we would need to see when ctypes added PEP3118 support (see
+        # https://github.com/numpy/numpy/commit/8a8be508d2b2ce719de94209286293973c278b46#diff-37de2bd17911ea76b93d35e085d9d4df )
+        # and potentially update our dependencies accordingly.
+        #
+        # Looking in a bit more detail, there would still appear to be issues with ctypes
+        # and PEP3118 - e.g. https://bugs.python.org/issue32780 (along with a bunch of others
+        # which are now closed, but were fixed sufficiently recently that they could still effect
+        # older python installations)
         tp = type(ctypesArray)
-        try: tp.__array_interface__
-        except AttributeError: ctypeslib.prep_array(tp)
+        try:
+            tp.__array_interface__
+        except AttributeError:
+            if not numpy.version.version > '1.15':
+                # TODO - Fix this test and adapt as needed
+                # TODO - Should we warn the user for numpy > 1.15?
+                ctypeslib.prep_array(tp)
 
         obj = numpy.ndarray.__new__(cls, shape, dtype, ctypesArray, offset, strides,
                          order)
@@ -101,7 +120,7 @@ def create(shape, dtype='d', order=None):
         dt = 'b'
         N *= dtype.itemsize
 
-    a = sharedctypes.RawArray(dt, N)
+    a = sharedctypes.RawArray(dt, int(N))
     #print dtype, dt, a
 
     sa =  shmarray(a, shape, dtype, order=order)

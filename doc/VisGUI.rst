@@ -1,3 +1,5 @@
+.. _visgui:
+
 **VisGUI** - Visualising Localization Data Sets
 ***********************************************
 

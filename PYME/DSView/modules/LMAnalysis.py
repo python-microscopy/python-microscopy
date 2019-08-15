@@ -482,6 +482,9 @@ class FitDefaults(object):
 
         self.onMetaDataChange.send(self, mdh=self.analysisMDH)
 
+def _check_complete_mdh(mdh):
+    en = mdh.getEntryNames()
+    return all(x in en for x in ['Camera.TrueEMGain', 'Camera.NoiseFactor', 'Camera.ElectronsPerCount', 'Camera.ReadNoise', 'Camera.ADOffset'])
 
 class LMAnalyser2(object):
     def __init__(self, dsviewer):
@@ -490,6 +493,9 @@ class LMAnalyser2(object):
         self.view = dsviewer.view
         self.do = dsviewer.do
         
+        if not _check_complete_mdh(self.image.mdh):
+           logger.warning('Series does not seem to have metadata needed for localization analysis')
+            
         self.analysisController = AnalysisController(self.image.mdh)
         self.analysisSettingsView = AnalysisSettingsView(self.dsviewer, self.analysisController, self)
 

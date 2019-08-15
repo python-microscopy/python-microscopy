@@ -30,7 +30,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 class PointScanner:
-    def __init__(self, scope, pixels = 10, pixelsize=0.1, dwelltime = 1, background=0, avg=True, evtLog=False, sync=False, trigger=False):
+    def __init__(self, scope, pixels = 10, pixelsize=0.1, dwelltime = 1, background=0, avg=True, evtLog=False, sync=False,
+                 trigger=False, stop_on_complete=False):
         self.scope = scope
         #self.xpiezo = xpiezo
         #self.ypiezo = ypiezo
@@ -42,6 +43,7 @@ class PointScanner:
         self.avg = avg
         self.pixels = pixels
         self.pixelsize = pixelsize
+        self._stop_on_complete = stop_on_complete
 
         if np.isscalar(pixelsize):
             self.pixelsize = np.array([pixelsize, pixelsize])
@@ -149,7 +151,10 @@ class PointScanner:
             if not self.running:
                 return
 
-            cam_trigger = self.scope.cam.GetAcquisitionMode() == self.scope.cam.MODE_SOFTWARE_TRIGGER
+            try:
+                cam_trigger = self.scope.cam.GetAcquisitionMode() == self.scope.cam.MODE_SOFTWARE_TRIGGER
+            except AttributeError:
+                cam_trigger = False
 
             #logger.debug('Cam_trigger: %s' % repr(cam_trigger))
 
@@ -196,6 +201,10 @@ class PointScanner:
                     #logger.debug('Firing camera trigger')
                     self.scope.cam.FireSoftwareTrigger()
                     eventLog.logEvent('StartAq',"")
+                    
+            if (int(self.callNum/self.dwellTime)) > self.imsize:
+                if self._stop_on_complete:
+                    self._stop()
 #
         #
         #if self.sync:
@@ -203,35 +212,39 @@ class PointScanner:
 #                    time.sleep(.05)
 
         self.callNum += 1
+        
+    def _stop(self):
+        self.running = False
+        #self.xpiezo[0].MoveTo(self.xpiezo[1], self.currPos[0])
+        #self.ypiezo[0].MoveTo(self.ypiezo[1], self.currPos[1])
+    
+        #self.scope.SetPos(**self.currPos)
+        try:
+            #self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
+            self.scope.frameWrangler.onFrame.disconnect(self.tick)
+            #if self.sync:
+            #    self.scope.frameWrangler.HardwareChecks.remove(self.onTarget)
+        finally:
+            pass
+    
+        logger.debug('Returning home : %s' % self.currPos)
+    
+        self.scope.frameWrangler.stop()
+        self.scope.state.setItems({'Positioning.x': self.currPos['x'],
+                                   'Positioning.y': self.currPos['y'],
+                                   }, stopCamera=True)
+    
+        if self.trigger:
+            self.scope.cam.SetAcquisitionMode(self.scope.cam.MODE_CONTINUOUS)
+    
+        self.scope.frameWrangler.start()
 
     #def __del__(self):
     #    self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
     def stop(self):
         with self._rlock:
-            self.running = False
-            #self.xpiezo[0].MoveTo(self.xpiezo[1], self.currPos[0])
-            #self.ypiezo[0].MoveTo(self.ypiezo[1], self.currPos[1])
-
-            #self.scope.SetPos(**self.currPos)
-            try:
-                #self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
-                self.scope.frameWrangler.onFrame.disconnect(self.tick)
-                #if self.sync:
-                #    self.scope.frameWrangler.HardwareChecks.remove(self.onTarget)
-            finally:
-                pass
-
-            logger.debug('Returning home : %s' % self.currPos)
-
-            self.scope.frameWrangler.stop()
-            self.scope.state.setItems({'Positioning.x' : self.currPos['x'],
-                                           'Positioning.y' : self.currPos['y'],
-                                           }, stopCamera = True)
-
-            if self.trigger:
-                self.scope.cam.SetAcquisitionMode(self.scope.cam.MODE_CONTINUOUS)
-
-            self.scope.frameWrangler.start()
+            self._stop()
+            
 
 
         
