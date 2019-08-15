@@ -91,7 +91,7 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 
         while (1)
         {
-            if ((curr_idx == -1) || (twin_idx == -1))
+            if (curr_idx == -1)
                 break;
 
             if (i < NEIGHBORSIZE)
@@ -110,6 +110,8 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 
             l = norm(position);
             curr_edge->length = l;
+            if (twin_idx == -1)
+                break;
             twin_edge->length = l;
 
             curr_idx = twin_edge->next;
