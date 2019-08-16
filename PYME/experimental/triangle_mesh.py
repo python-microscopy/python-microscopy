@@ -35,9 +35,9 @@ def fast_3x3_cross(a,b):
     vec = np.array([x,y,z])
     return vec
 
-HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('next', 'i4'), ('prev', 'i4'), ('length', 'f4')])
-FACE_DTYPE = np.dtype([('halfedge', 'i4'), ('normal', '3f4'), ('area', 'f4')])
-VERTEX_DTYPE = np.dtype([('position', '3f4'), ('normal', '3f4'), ('halfedge', 'i4'), ('valence', 'i4'), ('neighbors', '8i4')])
+HALFEDGE_DTYPE = np.dtype([('vertex', 'i4'), ('face', 'i4'), ('twin', 'i4'), ('next', 'i4'), ('prev', 'i4'), ('length', 'f4'), ('component', 'i4')])
+FACE_DTYPE = np.dtype([('halfedge', 'i4'), ('normal', '3f4'), ('area', 'f4'), ('component', 'i4')])
+VERTEX_DTYPE = np.dtype([('position', '3f4'), ('normal', '3f4'), ('halfedge', 'i4'), ('valence', 'i4'), ('neighbors', '8i4'), ('component', 'i4')])
 
 LOOP_ALPHA_FACTOR = (np.log(13)-np.log(3))/12
 
@@ -1556,6 +1556,64 @@ class TriangleMesh(object):
     #             if e == -1:
     #                 continue
     #             heapq.heappush(cost_heap, (err[e], e))
+
+    def find_connected_components(self):
+        """
+        Label connected portions of the mesh as single components.
+        """
+
+        # Set all components to -1 (background)
+        self._halfedges['component'] = -1
+        self._vertices['component'] = -1
+        self._faces['component'] = -1
+
+        component_idx = 0
+        
+        # Two-pass connected components
+        for k in np.arange(2):
+            remaining = list(np.where(self._halfedges['vertex'] != -1)[0])
+
+            while len(remaining) > 0:
+                # Pick a halfedge
+                _curr = remaining.pop()
+                curr_halfedge = self._halfedges[_curr]
+                curr_vertex = curr_halfedge['vertex']
+
+                # Check its neighbors
+                nn = self._vertices['neighbors'][curr_vertex]
+                nn_mask = (nn != -1)
+                nn_component = self._halfedges['component'][nn[nn_mask]]
+                nn_component_mask = (nn_component != -1)
+                min_component = np.min(np.hstack([component_idx, nn_component[nn_component_mask]]))
+
+                # Assign a component
+                curr_halfedge['component'] = min_component
+                self._vertices['component'][curr_vertex] = min_component
+                self._faces['component'][curr_halfedge['face']] = min_component
+
+                if (min_component == component_idx):
+                    # Update component_idx
+                    component_idx += 1
+                else:
+                    # Update all previous component assignments
+                    for c in nn_component[nn_component_mask]:
+                        self._vertices['component'][self._vertices['component'] == c] = min_component
+                        self._halfedges['component'][self._halfedges['component'] == c] = min_component
+                        self._faces['component'][self._faces['component'] == c] = min_component
+
+    def keep_largest_connected_component(self):
+        # Find the connected components
+        self.find_connected_components()
+
+        # Which connected component is largest?
+        com, counts = np.unique(self._vertices['component'][self._vertices['component']!=-1], return_counts=True)
+        max_count = np.argmax(counts)
+        max_com = com[max_count]
+
+        # Remove the smaller components
+        self._vertices[self._vertices['component'] != max_com] = -1
+        self._halfedges[self._halfedges['component'] != max_com] = -1
+        self._faces[self._faces['component'] != max_com] = -1
 
     def to_stl(self, filename):
         """
