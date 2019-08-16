@@ -1305,7 +1305,7 @@ class TriangleMesh(object):
             # 3. Flip edges in order to minimize deviation from 6.
             self.regularize()
 
-            # 4. Relocate vertices on the selface by tangential smoothing.
+            # 4. Relocate vertices on the surface by tangential smoothing.
             self.relax(l=l, n=n_relax)
 
     # def repair(self):
@@ -1360,7 +1360,7 @@ class TriangleMesh(object):
         plane of the mesh) and smooth meshes by Loop's 5/8 and 3/8 rule.
 
         References:
-            1. C. T. Loop, "Smooth Subdivision selfaces Based on Triangles," 
+            1. C. T. Loop, "Smooth Subdivision surfaces Based on Triangles," 
                University of Utah, 1987
             2. http://462cmu.github.io/asst2_meshedit/, task 4
 
@@ -1420,142 +1420,150 @@ class TriangleMesh(object):
             # Restore boundary vertex positions
             self._vertices['position'][boundary_vertex_idxs] = boundary_vertex_positions
 
-    # def downsample(self, n_triangles=None):
-    #     """
-    #     Mesh downsampling via quadratic error metrics.
+    def downsample(self, n_triangles=None):
+        """
+        Mesh downsampling via quadratic error metrics.
 
-    #     Follows procedure in Garland and Heckbert, selface Simplification Using
-    #     Quadtratic Error Metrics.
+        Follows procedure in Garland and Heckbert, Surface Simplification Using
+        Quadtratic Error Metrics.
 
-    #     Parameters
-    #     ----------
-    #         n_triangles : int
-    #             Target number of triangles in the downsampled mesh.
-    #     """
+        Parameters
+        ----------
+            n_triangles : int
+                Target number of triangles in the downsampled mesh.
+        """
 
-    #     import heapq
+        import heapq
 
-    #     # 1. Compute quadratic matrices for all initial vertices
-    #     v = self._vertices['position']
-    #     n = self._vertices['normal']
-    #     d = (-n*v).sum(1)
-    #     p = np.vstack([n.T, d]).T  # plane
-    #     vn = self._vertices['neighbors']
-    #     vn_mask = (vn != -1)
-    #     pp = p[self._halfedges['vertex'][vn]]*vn_mask[...,None]  # neighbor planes
-    #     Q = (pp[...,None]*pp[:,:,None,:]).sum(1)  # per-vertex quadratic
+        # 1. Compute quadratic matrices for all initial vertices
+        v = self._vertices['position']
+        n = self._vertices['normal']
+        d = (-n*v).sum(1)
+        p = np.vstack([n.T, d]).T  # plane
+        vn = self._vertices['neighbors']
+        vn_mask = (vn != -1)
+        pp = p[self._halfedges['vertex'][vn]]*vn_mask[...,None]  # neighbor planes
+        Q = (pp[...,None]*pp[:,:,None,:]).sum(1)  # per-vertex quadratic
 
-    #     # 2. Select all valid pairs
-    #     #   For now, operate on edges. In the future we can also operate on any
-    #     #   pair of vertex positions such that || v_1 - v_2 || < t, where v_1,
-    #     #   v_2 \in R^3, and t \in R is a threshold.
+        # 2. Select all valid pairs
+        #   For now, operate on edges. In the future we can also operate on any
+        #   pair of vertex positions such that || v_1 - v_2 || < t, where v_1,
+        #   v_2 \in R^3, and t \in R is a threshold.
 
-    #     # 3. Compute optimal contraction target and cost of each contraction
-    #     # NOTE: we do this for all halfedges, empty or not. This saves us from having to search for
-    #     # unique halfedges later in step 5. Instead, we just ignore -1 values.
-    #     edges = np.vstack([self._halfedges['vertex'], self._halfedges['vertex'][self._halfedges['prev']]]).T
-    #     # Mask and shift to avoid a copy operation on Q
-    #     Q_mask = np.ones((4,4))
-    #     Q_mask[3,:] = 0
-    #     Q_shift = np.zeros((4,4))
-    #     Q_shift[3,3] = 1
-    #     # h is the solution vector for least squares
-    #     h = np.array([0,0,0,1])
-    #     # 3a. Compute the optimal contraction target for each valid pair
-    #     Q_edge = (Q[edges]).sum(1)  # Q paired
-    #     try:
-    #         vp = (np.linalg.inv(Q_edge*Q_mask[None,...] + Q_shift[None,...])*h).sum(2)
-    #     except(np.linalg.LinAlgError):
-    #         vp = 0.5*np.sum(self._vertices['position'][edges],axis=1)
-    #         vp = np.vstack([vp.T, np.ones(vp.shape[0])]).T
+        # 3. Compute optimal contraction target and cost of each contraction
+        # NOTE: we do this for all halfedges, empty or not. This saves us from having to search for
+        # unique halfedges later in step 5. Instead, we just ignore -1 values.
+        edges = np.vstack([self._halfedges['vertex'], self._halfedges['vertex'][self._halfedges['prev']]]).T
+        # Mask and shift to avoid a copy operation on Q
+        Q_mask = np.ones((4,4))
+        Q_mask[3,:] = 0
+        Q_shift = np.zeros((4,4))
+        Q_shift[3,3] = 1
+        # h is the solution vector for least squares
+        h = np.array([0,0,0,1])
+        # 3a. Compute the optimal contraction target for each valid pair
+        Q_edge = (Q[edges]).sum(1)  # Q paired
+        try:
+            vp = (np.linalg.inv(Q_edge*Q_mask[None,...] + Q_shift[None,...])*h).sum(2)
+        except(np.linalg.LinAlgError):
+            vp = 0.5*np.sum(self._vertices['position'][edges],axis=1)
+            vp = np.vstack([vp.T, np.ones(vp.shape[0])]).T
 
-    #     # 3b. Compute cost of contractions
-    #     err = ((vp[:,None,:]*Q_edge).sum(2)*vp).sum(1)
+        # 3b. Compute cost of contractions
+        err = ((vp[:,None,:]*Q_edge).sum(2)*vp).sum(1)
 
-    #     # 4. Place all the pairs in a heap keyed on cost with the minimum cost pair on top
-    #     cost_heap = []
-    #     for i in np.arange(len(edges)):
-    #         heapq.heappush(cost_heap, (err[i], i))
+        # 4. Place all the pairs in a heap keyed on cost with the minimum cost pair on top
+        cost_heap = []
+        for i in np.arange(len(edges)):
+            heapq.heappush(cost_heap, (err[i], i))
             
-    #     # 5. Iteratively remove the pair of least cost from the heap, 
-    #     #    contract this pair, and update the costs of all valid 
-    #     #    pairs involving the remaining live vertex.
-    #     n_faces = np.sum(self._faces['halfedge'] != -1)
-    #     if n_triangles is None:
-    #         # Assume we want to downsample by a factor of 4
-    #         n_triangles = int(0.25*n_faces)
-    #     collapse_tries = int(0.125*(n_faces - n_triangles))
-    #     while True:
-    #         if n_faces <= n_triangles:
-    #             # Sometimes edge_collapse does not collapse the edge
-    #             # because it would affect the manifoldness of the mesh,
-    #             # so we need to see how far off we are from the desired
-    #             # number of triangles n_triangles.
-    #             tmp = np.sum(self._faces['halfedge'] != -1)
-    #             if (n_faces == tmp) or (collapse_tries == 0):
-    #                 # We don't want to double check ourselves forever
-    #                 break
-    #             # Update our estimate and keep refining the mesh
-    #             n_faces = tmp
-    #             collapse_tries -= 1
+        # 5. Iteratively remove the pair of least cost from the heap, 
+        #    contract this pair, and update the costs of all valid 
+        #    pairs involving the remaining live vertex.
+        n_faces = np.sum(self._faces['halfedge'] != -1)
+        if n_triangles is None:
+            # Assume we want to downsample by a factor of 4
+            n_triangles = int(0.25*n_faces)
+        collapse_tries = int(0.125*(n_faces - n_triangles))
+        while True:
+            if n_faces <= n_triangles:
+                # Sometimes edge_collapse does not collapse the edge
+                # because it would affect the manifoldness of the mesh,
+                # so we need to see how far off we are from the desired
+                # number of triangles n_triangles.
+                tmp = np.sum(self._faces['halfedge'] != -1)
+                if (n_faces == tmp) or (collapse_tries == 0):
+                    # We don't want to double check ourselves forever
+                    break
+                # Update our estimate and keep refining the mesh
+                n_faces = tmp
+                collapse_tries -= 1
             
-    #         # Grab the edge with minimum cost
-    #         _, _edge = heapq.heappop(cost_heap)
+            # Grab the edge with minimum cost
+            _, _edge = heapq.heappop(cost_heap)
 
-    #         if _edge == -1:
-    #             continue
+            if _edge == -1:
+                continue
             
-    #         # Grab the live vertex
-    #         edge = self._halfedges[_edge]
-    #         _vertex = edge['vertex']
+            # Grab the live vertex
+            edge = self._halfedges[_edge]
+            _vertex = edge['vertex']
 
-    #         # This check takes care of 1. forgetting to pop dead edges
-    #         # from the heap after a collapse operation and 2. saves us
-    #         # from having to search edges for unique vertices.
-    #         if _vertex == -1:
-    #             continue
+            # This check takes care of 1. forgetting to pop dead edges
+            # from the heap after a collapse operation and 2. saves us
+            # from having to search edges for unique vertices.
+            if _vertex == -1:
+                continue
                 
-    #         # Collapse the edge
-    #         self.edge_collapse(_edge)
+            # Collapse the edge
+            self.edge_collapse(_edge)
             
-    #         # Decrement the estimate of the number of triangles in the 
-    #         # mesh accordingly
-    #         n_faces -= 2
+            # Decrement the estimate of the number of triangles in the 
+            # mesh accordingly
+            n_faces -= 2
+
+            # 1. Compute quadratic matrices for all initial vertices
+            v = self._vertices['position']
+            n = self._vertices['normal']
+            d = (-n*v).sum(1)
+            p = np.vstack([n.T, d]).T  # plane
+            vn = self._vertices['neighbors']
+            vn_mask = (vn != -1)
+            pp = p[self._halfedges['vertex'][vn]]*vn_mask[...,None]  # neighbor planes
+            Q = (pp[...,None]*pp[:,:,None,:]).sum(1)  # per-vertex quadratic
+
+            # 2. Select all valid pairs
+            #   For now, operate on edges. In the future we can also operate on any
+            #   pair of vertex positions such that || v_1 - v_2 || < t, where v_1,
+            #   v_2 \in R^3, and t \in R is a threshold.
+
+            # 3. Compute optimal contraction target and cost of each contraction
+            # NOTE: we do this for all halfedges, empty or not. This saves us from having to search for
+            # unique halfedges later in step 5. Instead, we just ignore -1 values.
+            edges = np.vstack([self._halfedges['vertex'], self._halfedges['vertex'][self._halfedges['prev']]]).T
+            # Mask and shift to avoid a copy operation on Q
+            Q_mask = np.ones((4,4))
+            Q_mask[3,:] = 0
+            Q_shift = np.zeros((4,4))
+            Q_shift[3,3] = 1
+            # h is the solution vector for least squares
+            h = np.array([0,0,0,1])
+            # 3a. Compute the optimal contraction target for each valid pair
+            Q_edge = (Q[edges]).sum(1)  # Q paired
+            try:
+                vp = (np.linalg.inv(Q_edge*Q_mask[None,...] + Q_shift[None,...])*h).sum(2)
+            except(np.linalg.LinAlgError):
+                vp = 0.5*np.sum(self._vertices['position'][edges],axis=1)
+                vp = np.vstack([vp.T, np.ones(vp.shape[0])]).T
+
+            # 3b. Compute cost of contractions
+            err = ((vp[:,None,:]*Q_edge).sum(2)*vp).sum(1)
+
+            # 4. Place all the pairs in a heap keyed on cost with the minimum cost pair on top
+            cost_heap = []
+            for i in np.arange(len(edges)):
+                heapq.heappush(cost_heap, (err[i], i))
             
-    #         # Update the vertex position
-    #         vertex = self._vertices[_vertex]
-    #         vertex['position'] = vp[_edge, :3]
-            
-    #         # Update the costs associated with _vertex and its neighbors
-    #         nn = self._halfedges[vertex['neighbors'][vertex['neighbors'] != -1]]
-    #         vn = np.hstack([_vertex, nn['vertex']])
-    #         v = self._vertices['position'][vn]
-    #         n = self._vertices['normal'][vn]
-    #         d = (-n*v).sum(1)
-    #         p[vn] = np.vstack([n.T, d]).T  # plane
-    #         vnn = self._vertices['neighbors'][vn]
-    #         vnn_mask = (vnn != -1)
-    #         pp = p[self._halfedges['vertex'][vnn]]*vnn_mask[...,None]  # neighbor planes
-    #         Q[vn] = (pp[...,None]*pp[:,:,None,:]).sum(1)  # per-vertex quadratic
-            
-    #         # Update the edge_collapse positions and costs
-    #         edges = np.hstack([vertex['neighbors'], nn['twin']])
-    #         Q_edge[edges] = (Q[self._halfedges['vertex'][np.vstack([edges, self._halfedges['prev'][edges]]).T]]).sum(1)  # Q paired
-    #         try:
-    #             vp[edges] = (np.linalg.inv(Q_edge[edges]*Q_mask[None,...] + Q_shift[None,...])*h).sum(2)
-    #         except(np.linalg.LinAlgError):
-    #             vp[edges,:3] = 0.5*np.sum(self._vertices['position'][edges],axis=1)
-    #         err[edges] = ((vp[edges,None,:]*Q_edge[edges]).sum(2)*vp[edges]).sum(1)
-            
-    #         # Update the costs in the cost heap
-    #         for e in edges:
-    #             # Just add them. If the cost is smaller, this will be 
-    #             # popped first. If larger, the original value will be 
-    #             # popped first. When the second value is popped, the 
-    #             # _vertex == -1 check will skip it.
-    #             if e == -1:
-    #                 continue
-    #             heapq.heappush(cost_heap, (err[e], e))
 
     def find_connected_components(self):
         """
