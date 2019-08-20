@@ -31,7 +31,6 @@ def cam(scope):
     uCam480.init()
     cam = uCam480.uc480Camera(0)
     scope.register_camera(cam, 'Focus')
-    scope.cam.SetROI(325, 0, 525, 1024)
     # try and hit about 40 Hz
     scope.cam.SetIntegTime(0.025)
 
@@ -42,20 +41,19 @@ def pifoc(scope):
     scope.piFoc = offsetPiezoREST.OffsetPiezoClient()
     scope.register_piezo(scope.piFoc, 'z')
 
-# @init_gui('Profile')
-# def profile(MainFrame,scope):
-#     from PYME.ui import fastGraph
-#     import numpy as np
-#
-#     #xvs = np.arange(scope.frameWrangler.currentFrame.shape[1])
-#
-#     fg = fastGraph.FastGraphPanel(MainFrame, -1, np.arange(10), np.zeros(10))
-#     MainFrame.AddPage(page=fg, select=False, caption='Profile')
-#
-#     def refr_profile(*args, **kwargs):
-#         fg.SetData(np.arange(scope.frameWrangler.currentFrame.shape[1]), scope.frameWrangler.currentFrame.sum(0))
-#
-#     scope.frameWrangler.onFrameGroup.connect(refr_profile)
+@init_gui('Profile')
+def profile(MainFrame,scope):
+    from PYME.ui import fastGraph
+    import numpy as np
+
+    fg = fastGraph.FastGraphPanel(MainFrame, -1, np.arange(10), np.arange(10))
+    MainFrame.AddPage(page=fg, select=False, caption='Profile')
+
+    def refr_profile(*args, **kwargs):
+
+        fg.SetData(np.arange(scope.frameWrangler.currentFrame.shape[1]), scope.frameWrangler.currentFrame.sum(0))
+
+    MainFrame.time1.WantNotification.append(refr_profile)
 
 @init_gui('Focus Lock')
 def focus_lock(MainFrame, scope):
