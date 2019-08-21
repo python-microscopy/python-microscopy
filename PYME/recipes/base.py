@@ -516,6 +516,18 @@ class ModuleCollection(HasTraits):
         return json.dumps(self.get_cleaned_module_list())
     
     def update_from_module_list(self, l):
+        """
+
+        Parameters
+        ----------
+        l: list
+            List of modules as defined in a recipe file, e.g.
+            [{'Filtering.Filter': {'filters': {'probe': [-0.5, 0.5]}, 'input': 'localizations', 'output': 'filtered'}}]
+
+        Returns
+        -------
+
+        """
         mc = []
     
         if l is None:
@@ -553,11 +565,24 @@ class ModuleCollection(HasTraits):
         return cls.from_module_list(l)
     
     def update_from_yaml(self, data):
+        """
+        Update the module collection using an unopened yaml file or the yaml file contents as a str. If the file has
+        been loaded using, e.g. yaml.safe_load, use ModuleCollection.update_from_module_list directly.
+
+        Parameters
+        ----------
+        data: str
+            path to yaml file or str resulting from opening and reading the file.
+
+        Returns
+        -------
+        None
+
+        """
         import os
         import yaml
-        import six
-        
-        if type(data) in six.string_types and os.path.isfile(data):
+
+        if os.path.isfile(data):
             with open(data) as f:
                 data = f.read()
     
