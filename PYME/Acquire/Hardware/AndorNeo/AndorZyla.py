@@ -486,7 +486,7 @@ class AndorBase(SDK3Camera):
             self.CycleMode.setString('uFixed')
             self.FrameCount.setValue(1)
             
-    def GetAcquisitionMode(self, mode):
+    def GetAcquisitionMode(self):
         if self.contMode:
             return self.MODE_CONTINUOUS
         else:

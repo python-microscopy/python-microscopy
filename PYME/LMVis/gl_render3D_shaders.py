@@ -759,7 +759,7 @@ class LMGLShaderCanvas(GLCanvas):
         elif self.dragging:
 
             angx = numpy.pi * (x - self.xDragStart) / 180
-            angy = -numpy.pi * (y - self.yDragStart) / 180
+            angy = numpy.pi * (y - self.yDragStart) / 180
 
             r_mat1 = numpy.matrix(
                 [[numpy.cos(angx), 0, numpy.sin(angx)], [0, 1, 0], [-numpy.sin(angx), 0, numpy.cos(angx)]])

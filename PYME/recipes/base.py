@@ -68,13 +68,14 @@ def register_legacy_module(moduleName, py_module=None):
 class ModuleBase(HasTraits):
     def __init__(self, parent=None, **kwargs):
         self._parent = parent
+        self._invalidate_parent = True
 
         HasTraits.__init__(self)
         self.set(**kwargs)
 
     @on_trait_change('anytrait')
-    def remove_outputs(self):
-        if not self.__dict__.get('_parent', None) is None:
+    def invalidate_parent(self):
+        if self._invalidate_parent and not self.__dict__.get('_parent', None) is None:
             self._parent.prune_dependencies_from_namespace(self.outputs)
             
             self._parent.invalidate_data()

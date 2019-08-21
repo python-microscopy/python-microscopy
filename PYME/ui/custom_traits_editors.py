@@ -127,7 +127,7 @@ class DictFloatEditList(editList.EditListCtrl):
         self.Bind(wx.EVT_LIST_END_LABEL_EDIT, self._on_values_change)
         
     def _on_values_change(self, event):
-        keys = self.value_dict.keys()
+        keys = sorted(self.value_dict.keys())
     
         k = keys[event.m_itemIndex]
     
@@ -143,7 +143,7 @@ class DictFloatEditList(editList.EditListCtrl):
         
         self.DeleteAllItems()
         
-        for k in self.value_dict.keys():
+        for k in sorted(self.value_dict.keys()):
             ind = self.InsertStringItem(UI_MAXSIZE, k)
             self.SetStringItem(ind, 1, '%1.3g' % self.value_dict[k])
 

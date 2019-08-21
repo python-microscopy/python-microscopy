@@ -127,7 +127,7 @@ class TabularBase(object):
             raise AttributeError("'%s' has not attribute '%s'" % (self.__class__, item))
         
     def __dir__(self):
-        return list(self.keys()) + list(self.__dict__.keys())
+        return list(self.keys()) + list(self.__dict__.keys()) + list(dir(type(self)))
     
 
 class randomSource(TabularBase):
@@ -751,7 +751,8 @@ class mappingFilter(TabularBase):
                 locals()[vname] = self.new_columns[vname][sl]
             elif vname in self.variables.keys():
                 locals()[vname] = self.variables[vname]
-            elif vname in dir(self): #look for constants
+            elif vname in self.__dict__.keys(): #look for constants
+                #FIXME - do we still need this now we have variables
                 locals()[vname] = self.__dict__[vname]
             elif vname in self.mappings.keys(): #finally try other mappings
                 #try to prevent infinite recursion here if mappings have circular references

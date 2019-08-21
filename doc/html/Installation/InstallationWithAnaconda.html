@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation of PYME on 64 bit Windows, OSX, or Linux &mdash; PYME 19.07.22 documentation</title>
+  <title>Installation of PYME on 64 bit Windows, OSX, or Linux &mdash; PYME 19.08.06 documentation</title>
   
 
   
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                19.07.22
+                19.08.06
               </div>
             
           
@@ -106,6 +106,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../Analysis.html"><strong>dh5view</strong> - Image Data Analysis and Viewing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../VisGUI.html"><strong>VisGUI</strong> - Visualising Localization Data Sets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../component_programs.html">Common Tasks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../LocalisationAnalysis.html">Analysing Localisation Microscopy data</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Development / Hacking</span></p>
 <ul>
@@ -216,11 +217,15 @@ members of the community have uploaded to <strong>binstar.org</strong>. The pyth
 and a number of it’s dependencies are available through the <cite>david_baddeley</cite> binstar channel.
 To install PYME, we first need to tell conda to use the <cite>david_baddeley</cite> channel
 in addition to it’s existing channels. We can simply tell conda to install the package
-named <cite>python-microscopy</cite>.</p>
+named <cite>python-microscopy</cite>. If you are using miniconda rather than a full anaconda distribution, we also need to add
+the <cite>anaconda</cite> channel, which should be added before the <cite>david_baddeley</cite> channel to ensure that the <cite>david_baddeley</cite>
+channel gets a higher priority and can over-ride the broken fftw package in the anaconda channel.</p>
 <p>This is accomplished by opening a terminal window (On OSX use spotlight to launch the <strong>Terminal</strong>
 app, on Windows, launch the <strong>Anaconda Command Prompt</strong> from the “Anaconda” group in the
-start menu) and running the following two commands:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda config --add channels david_baddeley
+start menu) and running the following three commands (the first of which can be ommitted if starting from a
+full anaconda install):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda config --add channels anaconda
+conda config --add channels david_baddeley
 conda install python-microscopy
 </pre></div>
 </div>
