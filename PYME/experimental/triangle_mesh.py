@@ -256,7 +256,7 @@ class TriangleMesh(object):
                     i = 0
                     self._vertices['valence'][v_idx] = 0
                     while True:
-                        if (_curr == -1) or (_twin == -1):
+                        if _curr == -1:
                             break
                         _vertex = curr_edge['vertex']
                         _face = curr_edge['face']
@@ -271,6 +271,8 @@ class TriangleMesh(object):
 
                         _curr = twin_edge['next']
                         curr_edge = self._halfedges[_curr]
+                        if _twin == -1:
+                            break
                         _twin = curr_edge['twin']
                         twin_edge = self._halfedges[_twin]
 
@@ -467,7 +469,7 @@ class TriangleMesh(object):
                 _normal = 0*self._vertices['normal'][v_idx]  # avoid a few lookups by using a local variable
 
                 while True:
-                    if (_curr == -1) or (_twin == -1):
+                    if (_curr == -1):
                         break
 
                     if (i < 8):
@@ -488,6 +490,8 @@ class TriangleMesh(object):
                     l = vertex - self._vertices['position'][curr_edge['vertex']]
                     l = np.sqrt((l*l).sum())
                     self._halfedges['length'][_curr] = l
+                    if (_twin == -1):
+                        break
                     self._halfedges['length'][_twin] = l
                     # curr_edge['length'] = l
                     # twin_edge['length'] = l
@@ -1433,7 +1437,7 @@ class TriangleMesh(object):
                 Target number of triangles in the downsampled mesh.
         """
 
-        import heapq
+        from PYME.experimental import treap
 
         # 1. Compute quadratic matrices for all initial vertices
         v = self._vertices['position']
@@ -1473,9 +1477,9 @@ class TriangleMesh(object):
         err = ((vp[:,None,:]*Q_edge).sum(2)*vp).sum(1)
 
         # 4. Place all the pairs in a heap keyed on cost with the minimum cost pair on top
-        cost_heap = []
+        cost_heap = treap.Treap()
         for i in np.arange(len(edges)):
-            heapq.heappush(cost_heap, (err[i], i))
+            cost_heap.insert(err[i], i)
             
         # 5. Iteratively remove the pair of least cost from the heap, 
         #    contract this pair, and update the costs of all valid 
@@ -1500,21 +1504,38 @@ class TriangleMesh(object):
                 collapse_tries -= 1
             
             # Grab the edge with minimum cost
-            _, _edge = heapq.heappop(cost_heap)
+            _, _edge = cost_heap.pop()
 
             if _edge == -1:
+                print('Edge was -1???')
                 continue
-            
-            # Grab the live vertex
-            edge = self._halfedges[_edge]
-            _vertex = edge['vertex']
 
-            # This check takes care of 1. forgetting to pop dead edges
-            # from the heap after a collapse operation and 2. saves us
-            # from having to search edges for unique vertices.
-            if _vertex == -1:
+            # Compute the new quadratic
+            edge = self._halfedges[_edge]
+            # Grab the live and dead vertex
+            _live_vertex = edge['vertex']
+            _dead_vertex = self._halfedges['vertex'][edge['prev']]
+            Q_edge[_edge] = Q[_live_vertex] + Q[_dead_vertex]
+
+            if (_live_vertex == -1) or (_dead_vertex == -1):
+                print('Vertex was -1???')
                 continue
-                
+
+            # Grab all neighboring halfedges
+            nn_live = self._vertices['neighbors'][_live_vertex]
+            nn_live_mask = (nn_live != -1)
+            nn_live_twin = self._halfedges['twin'][nn_live[nn_live_mask]]
+            nn_live_twin_mask = (nn_live_twin != -1)
+            nn_dead = self._vertices['neighbors'][_dead_vertex]
+            nn_dead_mask = (nn_dead != -1)
+            nn_dead_twin = self._halfedges['twin'][nn_dead[nn_dead_mask]]
+            nn_dead_twin_mask = (nn_dead_twin != -1)
+            neighbors = np.hstack([nn_live[nn_live_mask], nn_live_twin[nn_live_twin_mask], nn_dead[nn_dead_mask], nn_dead_twin[nn_dead_twin_mask]])
+
+            # Eliminate edges touching either vertex from the cost heap
+            for neighbor in neighbors:
+                cost_heap.delete(neighbor)
+                            
             # Collapse the edge
             self.edge_collapse(_edge)
             
@@ -1522,47 +1543,31 @@ class TriangleMesh(object):
             # mesh accordingly
             n_faces -= 2
 
-            # 1. Compute quadratic matrices for all initial vertices
-            v = self._vertices['position']
-            n = self._vertices['normal']
-            d = (-n*v).sum(1)
-            p = np.vstack([n.T, d]).T  # plane
-            vn = self._vertices['neighbors']
-            vn_mask = (vn != -1)
-            pp = p[self._halfedges['vertex'][vn]]*vn_mask[...,None]  # neighbor planes
-            Q = (pp[...,None]*pp[:,:,None,:]).sum(1)  # per-vertex quadratic
+            # Set the quadratic of _live_vertex to the edge quadratic
+            Q[_live_vertex] = Q_edge[_edge] 
+            # self._vertices['position'][_live_vertex] = vp[_edge,:3]
 
-            # 2. Select all valid pairs
-            #   For now, operate on edges. In the future we can also operate on any
-            #   pair of vertex positions such that || v_1 - v_2 || < t, where v_1,
-            #   v_2 \in R^3, and t \in R is a threshold.
+            # Grab the new neighbors
+            nn_live = self._vertices['neighbors'][_live_vertex]
+            nn_live_mask = (nn_live != -1)
+            nn_live_twin = self._halfedges['twin'][nn_live[nn_live_mask]]
+            nn_live_twin_mask = (nn_live_twin != -1)
+            neighbors = np.hstack([nn_live[nn_live_mask], nn_live_twin[nn_live_twin_mask]])
 
-            # 3. Compute optimal contraction target and cost of each contraction
-            # NOTE: we do this for all halfedges, empty or not. This saves us from having to search for
-            # unique halfedges later in step 5. Instead, we just ignore -1 values.
-            edges = np.vstack([self._halfedges['vertex'], self._halfedges['vertex'][self._halfedges['prev']]]).T
-            # Mask and shift to avoid a copy operation on Q
-            Q_mask = np.ones((4,4))
-            Q_mask[3,:] = 0
-            Q_shift = np.zeros((4,4))
-            Q_shift[3,3] = 1
-            # h is the solution vector for least squares
-            h = np.array([0,0,0,1])
-            # 3a. Compute the optimal contraction target for each valid pair
-            Q_edge = (Q[edges]).sum(1)  # Q paired
+            # Update the costs and positions of each of these neighbors and re-insert them into the queue
+            new_edges = np.vstack([self._halfedges['vertex'][neighbors], self._halfedges['vertex'][self._halfedges['prev'][neighbors]]]).T
+            Q_edge[neighbors] = (Q[new_edges]).sum(1)
+
             try:
-                vp = (np.linalg.inv(Q_edge*Q_mask[None,...] + Q_shift[None,...])*h).sum(2)
+                vp[neighbors] = (np.linalg.inv(Q_edge[neighbors]*Q_mask[None,...] + Q_shift[None,...])*h).sum(2)
             except(np.linalg.LinAlgError):
-                vp = 0.5*np.sum(self._vertices['position'][edges],axis=1)
-                vp = np.vstack([vp.T, np.ones(vp.shape[0])]).T
+                vp_temp = 0.5*np.sum(self._vertices['position'][new_edges],axis=1)
+                vp[neighbors] = np.vstack([vp_temp.T, np.ones(vp_temp.shape[0])]).T
 
-            # 3b. Compute cost of contractions
-            err = ((vp[:,None,:]*Q_edge).sum(2)*vp).sum(1)
+            err[neighbors] = ((vp[neighbors,None,:]*Q_edge[neighbors]).sum(2)*vp[neighbors]).sum(1)
 
-            # 4. Place all the pairs in a heap keyed on cost with the minimum cost pair on top
-            cost_heap = []
-            for i in np.arange(len(edges)):
-                heapq.heappush(cost_heap, (err[i], i))
+            for n in neighbors:
+                cost_heap.insert(err[n], n)
             
 
     def find_connected_components(self):
