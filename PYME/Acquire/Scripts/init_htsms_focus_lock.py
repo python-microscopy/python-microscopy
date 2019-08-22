@@ -41,13 +41,13 @@ def pifoc(scope):
     scope.piFoc = offsetPiezoREST.OffsetPiezoClient()
     scope.register_piezo(scope.piFoc, 'z')
 
-@init_gui('Profile')
+@init_gui('Raw Profile')
 def profile(MainFrame,scope):
     from PYME.ui import fastGraph
     import numpy as np
 
     fg = fastGraph.FastGraphPanel(MainFrame, -1, np.arange(10), np.arange(10))
-    MainFrame.AddPage(page=fg, select=False, caption='Profile')
+    MainFrame.AddPage(page=fg, select=False, caption='Raw Profile')
 
     def refr_profile(*args, **kwargs):
 
@@ -57,6 +57,8 @@ def profile(MainFrame,scope):
 
 @init_gui('Focus Lock')
 def focus_lock(MainFrame, scope):
+    import numpy as np
+    from PYME.ui import fastGraph
     from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockServer
     from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
     scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=0.01, i=0.0001, d=0.00005)
@@ -64,6 +66,19 @@ def focus_lock(MainFrame, scope):
     panel = FocusLockPanel(MainFrame, scope.focus_lock)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
     MainFrame.time1.WantNotification.append(panel.refresh)
+
+    fg = fastGraph.FastGraphPanel(MainFrame, -1, np.arange(10), np.arange(10))
+    MainFrame.AddPage(page=fg, select=False, caption='Profile')
+
+    def refresh_profile(*args, **kwargs):
+        profile = scope.frameWrangler.currentFrame.squeeze().sum(axis=0)
+        print(profile.shape)
+        if scope.focus_lock.subtraction_profile is not None:
+            print(scope.focus_lock.subtraction_profile.shape)
+            profile = profile - scope.focus_lock.subtraction_profile
+        fg.SetData(np.arange(scope.frameWrangler.currentFrame.shape[1]), profile)
+
+    MainFrame.time1.WantNotification.append(refresh_profile)
 
 
 
