@@ -17,9 +17,9 @@ class FocusLockPanel(wx.Panel):
         hsizer.Add(self.set_position_button, 0, wx.ALL, 2)
         self.set_position_button.Bind(wx.EVT_BUTTON, self.OnUpdateSetpoint)
 
-        self.set_subtraction_button = wx.Button(self, -1, 'Set Subtraction')
+        self.set_subtraction_button = wx.Button(self, -1, 'Set Dark')
         hsizer.Add(self.set_subtraction_button, 0, wx.ALL, 2)
-        self.set_position_button.Bind(wx.EVT_BUTTON, self.OnSetSubtractionProfile)
+        self.set_subtraction_button.Bind(wx.EVT_BUTTON, self.OnSetSubtractionProfile)
 
         sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
 
