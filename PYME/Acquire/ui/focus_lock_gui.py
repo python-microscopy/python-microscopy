@@ -13,9 +13,13 @@ class FocusLockPanel(wx.Panel):
         self.lock_checkbox.Bind(wx.EVT_CHECKBOX, self.OnToggleLock)
         hsizer.Add(self.lock_checkbox, 0, wx.ALL, 2)
 
-        self.set_position_button = wx.Button(self, -1, 'Set focus to current')
+        self.set_position_button = wx.Button(self, -1, 'Set Focus')
         hsizer.Add(self.set_position_button, 0, wx.ALL, 2)
         self.set_position_button.Bind(wx.EVT_BUTTON, self.OnUpdateSetpoint)
+
+        self.set_subtraction_button = wx.Button(self, -1, 'Set Subtraction')
+        hsizer.Add(self.set_subtraction_button, 0, wx.ALL, 2)
+        self.set_position_button.Bind(wx.EVT_BUTTON, self.OnSetSubtractionProfile)
 
         sizer_1.Add(hsizer, 0, wx.EXPAND, 0)
 
@@ -26,6 +30,9 @@ class FocusLockPanel(wx.Panel):
 
     def OnUpdateSetpoint(self, event):
         self.servo.ChangeSetpoint()
+
+    def OnSetSubtractionProfile(self, event):
+        self.servo.SetSubtractionProfile()
 
     def refresh(self):
         self.lock_checkbox.SetValue(bool(self.servo.lock_enabled))
