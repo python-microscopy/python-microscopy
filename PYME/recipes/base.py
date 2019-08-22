@@ -516,12 +516,11 @@ class ModuleCollection(HasTraits):
         import json
         return json.dumps(self.get_cleaned_module_list())
     
-    def update_from_module_list(self, l):
+    def _update_from_module_list(self, l):
         """
         Update from a parsed yaml or json list of modules
         
-        #FIXME - should this be a private method? It probably makes no sense to call it
-        directly as the format is pretty wack - a
+        It probably makes no sense to call this directly as the format is pretty wack - a
         list of dictionarys each with a single entry, but that is how the yaml parses
 
         Parameters
@@ -558,9 +557,11 @@ class ModuleCollection(HasTraits):
         self.invalidate_data()
     
     @classmethod
-    def from_module_list(cls, l):
+    def _from_module_list(cls, l):
+        """ A factory method which contains the common logic for loading/creating from either
+        yaml or json. Do not call directly"""
         c = cls()
-        c.update_from_module_list(l)
+        c._update_from_module_list(l)
                 
         return c
 
@@ -569,7 +570,7 @@ class ModuleCollection(HasTraits):
         import yaml
 
         l = yaml.load(data)
-        return cls.from_module_list(l)
+        return cls._from_module_list(l)
     
     def update_from_yaml(self, data):
         """
@@ -593,12 +594,12 @@ class ModuleCollection(HasTraits):
                 data = f.read()
     
         l = yaml.load(data)
-        return self.update_from_module_list(l)
+        return self._update_from_module_list(l)
 
     @classmethod
     def fromJSON(cls, data):
         import json
-        return cls.from_module_list(json.loads(data))
+        return cls._from_module_list(json.loads(data))
 
 
     def add_module(self, module):
