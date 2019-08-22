@@ -66,11 +66,11 @@ def pz(scope):
 def orca_cam(scope):
     from PYME.Acquire.Hardware.HamamatsuDCAM.HamamatsuORCA import MultiviewOrca
 
-    # centers, (x, y), 2019/08/13
-    # [(213, 1021),
-    # (808, 1021),
-    # (1230, 1023),
-    # (1738, 1023)
+    # centers, (x [0, 2047], y [0, 400]), 2019/08/14
+    # [(291, 199),
+    # (857, 199),
+    # (1257, 199),
+    # (1795, 198)
     # ]
 
     size = 256
@@ -79,10 +79,10 @@ def orca_cam(scope):
         'Multiview.NumROIs': 4,
         'Multiview.ChannelColor': [0, 1, 1, 0],
         'Multiview.ROISize': (size, size),
-        'Multiview.ROI0Origin': (212 - half_size, 1024 - half_size),
-        'Multiview.ROI1Origin': (808 - half_size, 1024 - half_size),
-        'Multiview.ROI2Origin': (1230 - half_size, 1024 - half_size),
-        'Multiview.ROI3Origin': (1736 - half_size, 1024 - half_size),
+        'Multiview.ROI0Origin': (292 - half_size, 1024 - half_size),
+        'Multiview.ROI1Origin': (857 - half_size, 1024 - half_size),
+        'Multiview.ROI2Origin': (1257 - half_size, 1024 - half_size),
+        'Multiview.ROI3Origin': (1796 - half_size, 1024 - half_size),
     }
     cam = MultiviewOrca(0, multiview_info)
     cam.Init()
