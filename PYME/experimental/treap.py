@@ -10,7 +10,7 @@ class Treap(object):
     have fast access to the element of minimum priority, but we can also 
     quickly find and delete nodes based on their search key.
 
-    Another name for this data structure is, priorty search tree.
+    Another name for this data structure is, priority search tree.
 
     TODO: Cythonize!
 
@@ -43,7 +43,7 @@ class Treap(object):
         if starting_node is None:
             starting_node = self._root_node
         _curr = starting_node
-        while _curr > -1:
+        while _curr != -1:
             curr_node = self._nodes[_curr]
             if key == curr_node['key']:
                 return _curr
@@ -89,18 +89,26 @@ class Treap(object):
             self._nodes['right'][parent] = self._nodes['left'][v]
             self._nodes['parent'][self._nodes['left'][v]] = parent
             self._nodes['left'][v] = parent
+        else:
+            print('broken')
+            return
 
-        self._nodes['parent'][v] = grandparent
         self._nodes['parent'][parent] = v
-
-        if self._nodes['right'][grandparent] == parent:
-            self._nodes['right'][grandparent] = v
-        elif self._nodes['left'][grandparent] == parent:
-            self._nodes['left'][grandparent] = v
+        self._nodes['parent'][v] = grandparent
 
         if parent == self._root_node:
+            # print(grandparent, parent, v)
+            # print(self._nodes[grandparent])
+            # print(self._nodes[parent])
+            # print(self._nodes[v])
             # Rotating up
             self._root_node = v
+        
+        if (grandparent != -1):
+            if self._nodes['right'][grandparent] == parent:
+                self._nodes['right'][grandparent] = v
+            elif self._nodes['left'][grandparent] == parent:
+                self._nodes['left'][grandparent] = v
 
     def insert(self, priority, key, root=None):
         """
@@ -142,13 +150,14 @@ class Treap(object):
 
         curr_node['key'] = key
         curr_node['priority'] = priority
+        curr_node['parent'] = root
         if _curr == self._root_node:
             curr_node['parent'] = -1
         else:
             curr_node['parent'] = root
 
         # Rotate to maintain heap properties
-        while priority < self._nodes['priority'][self._nodes['parent'][_curr]]:
+        while (self._nodes['parent'][_curr] != -1) and ((priority) < (self._nodes['priority'][self._nodes['parent'][_curr]])):
             self._rotate(_curr)
     
     def delete(self, key):
@@ -171,7 +180,7 @@ class Treap(object):
         curr_node = self._nodes[_curr]
 
         # Make sure node with key key is a leaf
-        while curr_node['left'] > -1 or curr_node['right'] > -1:
+        while curr_node['left'] != -1 or curr_node['right'] != -1:
             # Choose the minimumum priority node to rotate up (rotate _curr down)
             if curr_node['right'] == -1:
                 _to_rotate = curr_node['left']

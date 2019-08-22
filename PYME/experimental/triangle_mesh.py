@@ -1457,6 +1457,7 @@ class TriangleMesh(object):
         # 3. Compute optimal contraction target and cost of each contraction
         # NOTE: we do this for all halfedges, empty or not. This saves us from having to search for
         # unique halfedges later in step 5. Instead, we just ignore -1 values.
+        edges_mask = (self._halfedges['vertex'] != -1)
         edges = np.vstack([self._halfedges['vertex'], self._halfedges['vertex'][self._halfedges['prev']]]).T
         # Mask and shift to avoid a copy operation on Q
         Q_mask = np.ones((4,4))
@@ -1478,7 +1479,7 @@ class TriangleMesh(object):
 
         # 4. Place all the pairs in a heap keyed on cost with the minimum cost pair on top
         cost_heap = treap.Treap()
-        for i in np.arange(len(edges)):
+        for i in (np.arange(len(edges))[edges_mask]):
             cost_heap.insert(err[i], i)
             
         # 5. Iteratively remove the pair of least cost from the heap, 

@@ -643,9 +643,9 @@ def generate_sphere_image(radius=10):
     X, Y, Z = np.mgrid[(-1.5*radius):(1.5*radius):1.0, (-1.5*radius):(1.5*radius):1.0, (-1.5*radius):(1.5*radius):1.0]
 
     # Uncomment to create sphere missing a top
-    X += radius/2
-    Y += radius/5
-    Z += radius/5
+    # X += radius/2
+    # Y += radius/5
+    # Z += radius/5
 
     R2 = np.sqrt(X*X + Y*Y + Z*Z)
     
