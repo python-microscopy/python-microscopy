@@ -72,9 +72,7 @@ def focus_lock(MainFrame, scope):
 
     def refresh_profile(*args, **kwargs):
         profile = scope.frameWrangler.currentFrame.squeeze().sum(axis=0)
-        print(profile.shape)
         if scope.focus_lock.subtraction_profile is not None:
-            print(scope.focus_lock.subtraction_profile.shape)
             profile = profile - scope.focus_lock.subtraction_profile
         fg.SetData(np.arange(scope.frameWrangler.currentFrame.shape[1]), profile)
 
