@@ -518,11 +518,17 @@ class ModuleCollection(HasTraits):
     
     def update_from_module_list(self, l):
         """
+        Update from a parsed yaml or json list of modules
+        
+        #FIXME - should this be a private method? It probably makes no sense to call it
+        directly as the format is pretty wack - a
+        list of dictionarys each with a single entry, but that is how the yaml parses
 
         Parameters
         ----------
         l: list
-            List of modules as defined in a recipe file, e.g.
+            List of modules as obtained from parsing a yaml recipe,
+            Each module is a dictionary mapping with a single e.g.
             [{'Filtering.Filter': {'filters': {'probe': [-0.5, 0.5]}, 'input': 'localizations', 'output': 'filtered'}}]
 
         Returns
@@ -567,13 +573,12 @@ class ModuleCollection(HasTraits):
     
     def update_from_yaml(self, data):
         """
-        Update the module collection using an unopened yaml file or the yaml file contents as a str. If the file has
-        been loaded using, e.g. yaml.safe_load, use ModuleCollection.update_from_module_list directly.
+        Update from a yaml formatted recipe description
 
         Parameters
         ----------
         data: str
-            path to yaml file or str resulting from opening and reading the file.
+            either yaml formatted text, or the path to a yaml file.
 
         Returns
         -------
