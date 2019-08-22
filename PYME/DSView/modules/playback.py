@@ -83,7 +83,7 @@ class PlayPanel(wx.Panel):
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             hsizer.Add(self.bSeekStart, 0,wx.ALIGN_CENTER_VERTICAL,0)
             hsizer.Add(self.bPlay, 0,wx.ALIGN_CENTER_VERTICAL,0)
-            hsizer.ADd(self.bGoto, 0,wx.ALIGN_CENTER_VERTICAL,0)
+            hsizer.Add(self.bGoto, 0,wx.ALIGN_CENTER_VERTICAL,0)
             hsizer.Add(wx.StaticText(self, -1, 'FPS:'), 0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,4)
             hsizer.Add(self.slPlaySpeed, 1,wx.ALIGN_CENTER_VERTICAL)
 

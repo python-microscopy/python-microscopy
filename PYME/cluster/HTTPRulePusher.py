@@ -345,7 +345,7 @@ class RecipePusher(object):
         input_names = kwargs.keys()
         inputs = {k : kwargs[k] if isinstance(kwargs[k], list) else clusterIO.cglob(kwargs[k], include_scheme=True) for k in input_names}
 
-        numTotalFrames = len(inputs.values()[0])
+        numTotalFrames = len(list(inputs.values())[0])
         self.currentFrameNum = 0
 
         logger.debug('numTotalFrames = %d' % numTotalFrames)

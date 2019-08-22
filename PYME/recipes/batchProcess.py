@@ -55,7 +55,7 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS):
     for i in range(inputLengths[0]):
         in_d = {k:v[i] for k, v in inputGlobs.items()}
 
-        file_stub = os.path.splitext(os.path.basename(in_d.values()[0]))[0]
+        file_stub = os.path.splitext(os.path.basename(list(in_d.values())[0]))[0]
         
         fns = os.path.join(output_dir, file_stub)
         out_d = {k:('%s_%s'% (fns,k)) for k in  outputNames}

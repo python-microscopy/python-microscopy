@@ -33,7 +33,7 @@ def _histogram(img, nbins=255, bin_spacing='linear'):
         imr = img.ravel()
         imr = imr[imr > 0]
         imr.sort()
-        bins = imr[::(len(imr) / nbins)]
+        bins = imr[::int(len(imr) / nbins)]
         #print bins
         #nbins = len(bins)
     else:
@@ -69,7 +69,7 @@ def isodata_f(img, nbins=255, bin_spacing='linear', tol=1e-5):
     delta = bin_mids[-1] #nbins
 
     #start off with threshold at middle of range
-    t = bin_mids[nbins/2] #delta/2.
+    t = bin_mids[int(nbins / 2)] #delta/2.
 
     while delta > tol:
         #new threshold = mean of the two segment means
