@@ -1651,10 +1651,11 @@ class TriangleMesh(object):
 
         return boundary_polygons
 
-    def stupid_triangulation(self, polygon):
+    def fan_triangulation(self, polygon):
         """
         Triangulate a polygon, defined by halfedges in the mesh,
-        in a dumb way.
+        by creating a fan emanating from a single vertex out to
+        the boundary halfedges.
 
         Parameters
         ----------
@@ -1690,7 +1691,6 @@ class TriangleMesh(object):
         polygon = polygon[::-1]
 
         while True:
-            print(polygon)
             if len(polygon) == 3:
                 polygon = polygon[::-1]
                 # Draw a triangle in the opposite winding order.
@@ -1704,90 +1704,199 @@ class TriangleMesh(object):
             self._halfedges['vertex'][_h0_twin] = self._halfedges['vertex'][self._halfedges['prev'][h0]]
             polygon.append(self._halfedges['next'][_h0_twin])  # Adjust the boundary
 
-    def minimum_area_triangulation(self, polygon):
+    # def minimum_area_triangulation(self, polygon):
+    #     """
+    #     Performs a minimum area triangulation over a polygon defined by
+    #     halfedges in the mesh.
+
+    #     Parameters
+    #     ----------
+    #         polygon : list
+    #             List of halfedges defining a closed polygon in the mesh.
+
+    #     References
+    #     ----------
+    #         G. Barequet and M. Sharir, "Filling Gaps in the Boundary of a 
+    #         Polyhedron," Computer-Aided Geometric Design, 1995.
+    #     """
+
+    #     n = len(polygon)
+
+    #     # Ensure pn = p0
+    #     if polygon[-1] != polygon[0]:
+    #         polygon.append(polygon[0])
+    #         n += 1
+
+    #     # The polygon was likely found (if we used find_boundary_polygons)
+    #     # in the winding order of the original mesh. We need to reverse
+    #     # this to match the original mesh's winding order in the new 
+    #     # triangles
+    #     polygon = polygon[::-1]
+
+    #     def calc_area(a, b, c):
+    #         v0 = self._vertices['position'][a]
+    #         v1 = self._vertices['position'][b]
+    #         v2 = self._vertices['position'][c]
+    #         u = v2 - v1
+    #         v = v0 - v1
+    #         n = fast_3x3_cross(u,v)
+    #         area = 0.5*np.sqrt((n*n).sum())
+    #         return area
+        
+    #     # Create a weight matrix
+    #     W = np.zeros((n,n))
+    #     for i in np.arange(n-2):
+    #         W[i,i+2] = calc_area(self._halfedges['vertex'][polygon[i]], self._halfedges['vertex'][polygon[i+1]], self._halfedges['vertex'][polygon[i+2]])  # Weight by area
+
+    #     # Create a minimum index matrix
+    #     O = np.zeros((n,n))
+
+    #     # Find the minimum score
+    #     for j in np.arange(2, n):
+    #         for i in np.arange(n-j):
+    #             k = i + j
+    #             vi = self._halfedges['vertex'][polygon[i]]
+    #             vk = self._halfedges['vertex'][polygon[k]]
+    #             for m in np.arange(i,k):
+    #                 score = W[i, m] + W[m, k] + calc_area(vi, self._halfedges['vertex'][polygon[m]], vk)
+    #                 if score < W[i,k]:
+    #                     W[i, k] = score
+    #                     O[i, k] = m
+
+    #     def create_triangle(a, b, c):
+    #         pass
+
+    #     def trace(i, k, O):
+    #         if k == (i + 2):
+    #             # create triangle i, i+1, k
+    #             pass
+    #         else:
+    #             o = O[i, k]
+    #             if o != (i + 1):
+    #                 trace(i, o, O)
+    #             # create triangle i, o, k
+    #             if o != (k - 1):
+    #                 trace(o, k, O)
+        
+    #     trace(0, n-1, O)
+
+    def fill_holes(self, method='fan'):
         """
-        Performs a minimum area triangulation over a polygon defined by
-        halfedges in the mesh.
+        Fill holes in the mesh.
 
         Parameters
         ----------
-            polygon : list
-                List of halfedges defining a closed polygon in the mesh.
+            method : string
+                The method to use to patch boundary polygons. A string listed 
+                in options. 
+        """
+
+        options = ['fan']  #, 'area']
+
+        if method not in options:
+            print('Unknown triangulation method. Using default.')
+            method = 'fan'
+
+        boundary_polygons = self.find_boundary_polygons()
+
+        if method == 'fan':
+            for polygon in boundary_polygons:
+                self.fan_triangulation(polygon)
+
+        # if method == 'area':
+        #     for polygon in boundary_polygons:
+        #         self.minimum_area_triangulation(polygon)
+
+
+    def _cut_edge(self, _edge):
+        """
+        Cut the mesh along an edge. Usually this is used to separate portions
+        of the mesh adjacent on singular edges.
+
+        Parameters
+        ----------
+            _edge : int
+                Index of halfedge to cut.
 
         References
         ----------
-            G. Barequet and M. Sharir, "Filling Gaps in the Boundary of a 
-            Polyhedron," Computer-Aided Geometric Design, 1995.
+            Guéziec et al. Cutting and Stitching: Converting Sets of Polygons 
+            to Manifold Surfaces, IEEE TRANSACTIONS ON VISUALIZATION AND 
+            COMPUTER GRAPHICS, 2001.
         """
 
-        n = len(polygon)
+        # Grab the vertices this edge is connected to now
+        _v0 = self._halfedges['vertex'][self._halfedges['prev'][_edge]]
+        _v1 = self._halfedges['vertex'][_edge]
+        v0 = self._vertices[_v0]
+        v1 = self._vertices[_v1]
 
-        # Ensure pn = p0
-        if polygon[-1] != polygon[0]:
-            polygon.append(polygon[0])
-            n += 1
+        # Create copies of these vertices
+        _, _new_v0 = self._new_vertex(v0['position'], halfedge=_edge)
+        _, _new_v1 = self._new_vertex(v1['position'], halfedge=self._halfedges['next'][_edge])
 
-        # The polygon was likely found (if we used find_boundary_polygons)
-        # in the winding order of the original mesh. We need to reverse
-        # this to match the original mesh's winding order in the new 
-        # triangles
-        polygon = polygon[::-1]
+        # Connect to the new vertices
+        self._halfedges['vertex'][self._halfedges['prev'][_edge]] = _new_v0
+        self._halfedges['vertex'][_edge] = _new_v1
 
-        def calc_area(a, b, c):
-            v0 = self._vertices['position'][a]
-            v1 = self._vertices['position'][b]
-            v2 = self._vertices['position'][c]
-            u = v2 - v1
-            v = v0 - v1
-            n = fast_3x3_cross(u,v)
-            area = 0.5*np.sqrt((n*n).sum())
-            return area
-        
-        # Create a weight matrix
-        W = np.zeros((n,n))
-        for i in np.arange(n-2):
-            W[i,i+2] = calc_area(self._halfedges['vertex'][polygon[i]], self._halfedges['vertex'][polygon[i+1]], self._halfedges['vertex'][polygon[i+2]])  # Weight by area
+        # Disconnect this edge from its twin
+        self._halfedges['twin'][self._halfedges['twin'][_edge]] = -1
+        self._halfedges['twin'][_edge] = -1
 
-        # Create a minimum index matrix
-        O = np.zeros((n,n))
+        print(self._halfedges[_edge])
 
-        # Find the minimum score
-        for j in np.arange(2, n):
-            for i in np.arange(n-j):
-                k = i + j
-                vi = self._halfedges['vertex'][polygon[i]]
-                vk = self._halfedges['vertex'][polygon[k]]
-                for m in np.arange(i,k):
-                    score = W[i, m] + W[m, k] + calc_area(vi, self._halfedges['vertex'][polygon[m]], vk)
-                    if score < W[i,k]:
-                        W[i, k] = score
-                        O[i, k] = m
+        # Update vertices and faces
+        # self._update_face_normals([self._halfedges['face'][_edge]])
+        self._update_vertex_neighbors([_new_v0, _new_v1])
 
-        def create_triangle(a, b, c):
-            pass
+    def remove_singular_edges(self):
+        # Find all the singular edges
+        edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
 
-        def trace(i, k, O):
-            if k == (i + 2):
-                # create triangle i, i+1, k
-                pass
-            else:
-                o = O[i, k]
-                if o != (i + 1):
-                    trace(i, o, O)
-                # create triangle i, o, k
-                if o != (k - 1):
-                    trace(o, k, O)
-        
-        trace(0, n-1, O)
+        packed_edges = pack_edges(edges)
+        e, c = np.unique(packed_edges, return_counts=True)
 
-    def fill_holes(self):
+        singular_packed_edges = e[c>2]
+        for singular_packed_edge in singular_packed_edges:
+            singular_edges = list(np.where(packed_edges[:, None] == singular_packed_edge)[0])
+            print(singular_edges)
+            remaining_edge = singular_edges.pop()  # We only want to cut n-1 singular edges
+
+            # Cut the singular edges
+            for _edge in singular_edges:
+                self._cut_edge(_edge)
+
+            # Make sure the original vertices have proper halfedges
+            _v0 = self._halfedges['vertex'][self._halfedges['prev'][remaining_edge]]
+            _v1 = self._halfedges['vertex'][remaining_edge]
+            self._vertices['halfedge'][_v1] = self._halfedges['next'][remaining_edge]
+            self._vertices['halfedge'][_v0] = remaining_edge
+            self._halfedges['twin'][self._halfedges['twin'][remaining_edge]] = -1
+            self._halfedges['twin'][remaining_edge] = -1
+
+            # self._update_face_normals([self._halfedges['face'][remaining_edge]])
+            self._update_vertex_neighbors([_v0 ,_v1])
+
+        # Stitch the right edges back together
+
+    def repair(self):
         """
-        Fill holes in the mesh.
+        Repair the mesh so it's topologically manifold.
+
+        References
+        ----------
+            M. Attene, A lightweight approach to repairing digitized polygon
+            meshes, The Visual Computer, 2010.
         """
 
-        boundary_polygons = self.find_boundary_polygons()
-        for polygon in boundary_polygons:
-            self.stupid_triangulation(polygon)
+        # 1. Remove singularities (singular edges and isolated singular vertices)
+        self.remove_singular_edges()
+
+        # 2. Remove all connected components except the largest
+        self.keep_largest_connected_component()
+
+        # 3. Patch mesh holes with new triangles
+        self.fill_holes()
 
     def to_stl(self, filename):
         """
