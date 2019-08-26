@@ -87,7 +87,7 @@ class FitSurfaceWithPatches(ModuleBase):
         # calculate a radius of curvature from our polynomials
         raw_fits = tabular.mappingFilter(tabular.recArrayInput(results))
         raw_fits.setMapping('r_curve', '1./(np.abs(A) + np.abs(B) + 1e-6)')  # cap max at 1e6 instead of inf
-
+        raw_fits.mdh = data_source.mdh
         namespace[self.output_fits_raw] = raw_fits
 
         # filter surfaces and throw out patches with normals that don't point approx. the same way as their neighbors
@@ -96,7 +96,7 @@ class FitSurfaceWithPatches(ModuleBase):
         # again, add radius of curvature calculation with lazy evaluation
         filtered_fits = tabular.mappingFilter(tabular.recArrayInput(results.view(surfit.SURF_PATCH_DTYPE_FLAT)))
         filtered_fits.setMapping('r_curve', '1./(np.abs(A) + np.abs(B) + 1e-6)')
-
+        filtered_fits.mdh = data_source.mdh
         namespace[self.output_fits_filtered] = filtered_fits
 
         # reconstruct the surface by generating an augmented point data set for each surface, adding virtual
@@ -111,9 +111,16 @@ class FitSurfaceWithPatches(ModuleBase):
             xs, ys, zs, xn, yn, zn, N, j = surfit.reconstruct_quad_surfaces_Pr(results, self.reconstruction_radius,
                                                                                step=self.reconstruction_point_spacing)
 
+        j = j.astype(int)
+        try:
+            # duck-type probe; note we assume surface was fit to single-color data
+            probe = np.ones_like(xs) * data_source['probe'][0]
+        except KeyError:
+            probe = np.zeros_like(xs)
         # construct a new datasource with our augmented points
         reconstruction = tabular.mappingFilter({'x': xs, 'y': ys, 'z': zs,
                                                 'normal_x': xn, 'normal_y': yn, 'normal_z': zn,
-                                                'probe': np.zeros_like(xs), 'n_points_fit': N, 'patch_id': j,
-                                                'r_curve': filtered_fits['r_curve'][j.astype('i')]})
+                                                'probe': probe, 'n_points_fit': N, 'patch_id': j,
+                                                'r_curve': filtered_fits['r_curve'][j]})
+        reconstruction.mdh = data_source.mdh
         namespace[self.output_surface_reconstruction] = reconstruction
