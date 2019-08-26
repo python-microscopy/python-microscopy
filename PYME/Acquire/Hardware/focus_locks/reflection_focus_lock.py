@@ -150,7 +150,7 @@ class ReflectedLinePIDFocusLock(PID):
         if setpoint is None:
             self.setpoint = self.peak_position
         else:
-            self.setpoint = setpoint
+            self.setpoint = float(setpoint)
 
     @webframework.register_endpoint('/SetSubtractionProfile', output_is_json=False)
     def SetSubtractionProfile(self):
@@ -203,10 +203,6 @@ class ReflectedLinePIDFocusLock(PID):
         correction = self(self.peak_position)
         # note that correction only updates if elapsed_time is larger than sample time - don't apply same correction 2x.
         if self.auto_mode and elapsed_time > self.sample_time:
-            # logger.debug('current: %f, setpoint: %f, correction :%f, time elapsed: %f' % (self.peak_position,
-            #                                                                               self.setpoint, correction,
-            #                                                                               elapsed_time))
-            # self.piezo.MoveRel(0, correction)
             self.piezo.SetOffset(self.piezo.GetOffset() + correction)
 
 
