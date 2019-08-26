@@ -38,7 +38,7 @@ def mz_stage(scope):
     # movement on the camera, and the y channel should result in vertical movement on the camera
     # multipliers should be set (+1 or -1) so that the direction also matches.
     scope.register_piezo(scope.stage, 'x', needCamRestart=False, channel=1, multiplier=1)
-    scope.register_piezo(scope.stage, 'y', needCamRestart=False, channel=0, multiplier=1)
+    scope.register_piezo(scope.stage, 'y', needCamRestart=False, channel=0, multiplier=-1)
 
     scope.joystick = MarzHauserJoystick(scope.stage)
     scope.joystick.Enable(True)
@@ -276,13 +276,13 @@ def action_manager(MainFrame, scope):
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
 
-# @init_gui('Drift tracking')
-# def drift_tracking(MainFrame, scope):
-#     import subprocess
-#     import sys
-#     from PYME.Acquire import PYMEAcquire
-#     scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking" -m "compact"' % (sys.executable, PYMEAcquire.__file__), shell=True)
 
+@init_gui('Tiling')
+def action_manager(MainFrame, scope):
+    from PYME.Acquire.ui import tile_panel
+
+    ap = tile_panel.TilePanel(MainFrame, scope)
+    MainFrame.aqPanels.append((ap, 'Tiling'))
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread
