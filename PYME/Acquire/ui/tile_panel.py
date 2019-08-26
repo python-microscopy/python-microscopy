@@ -63,8 +63,11 @@ class TilePanel(wx.Panel):
         self.SetSizerAndFit(vsizer)
         
     def OnGo(self, event=None):
+        # run a triggered tile acquisition if the camera is capable
+        trigger = hasattr(self.scope.cam, 'FireSoftwareTrigger')
         self.scope.tiler = tiler.Tiler(self.scope, tile_dir = self.tDestination.GetValue(),
-                                       n_tiles=(int(self.tXTiles.GetValue()), int(self.tYTiles.GetValue())))
+                                       n_tiles=(int(self.tXTiles.GetValue()), int(self.tYTiles.GetValue())),
+                                       trigger=trigger)
         
         self.bStop.Enable()
         self.bGo.Disable()
