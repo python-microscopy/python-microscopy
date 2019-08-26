@@ -309,9 +309,10 @@ class taskWorker(object):
                 except:
                     import traceback
                     traceback.print_exc()
-                    logger.exception(traceback.format_exc())
-
-                    self.resultsQueue.put((queueURL, taskDescr, None))
+                    tb = traceback.format_exc()
+                    logger.exception(tb)
+                    self.resultsQueue.put((queueURL, taskDescr, TaskError(taskDescr, tb)))
+                    #self.resultsQueue.put((queueURL, taskDescr, None))
 
             elif taskDescr['type'] == 'recipe':
                 from PYME.recipes.modules import ModuleCollection
