@@ -516,7 +516,24 @@ class ModuleCollection(HasTraits):
         import json
         return json.dumps(self.get_cleaned_module_list())
     
-    def update_from_module_list(self, l):
+    def _update_from_module_list(self, l):
+        """
+        Update from a parsed yaml or json list of modules
+        
+        It probably makes no sense to call this directly as the format is pretty wack - a
+        list of dictionarys each with a single entry, but that is how the yaml parses
+
+        Parameters
+        ----------
+        l: list
+            List of modules as obtained from parsing a yaml recipe,
+            Each module is a dictionary mapping with a single e.g.
+            [{'Filtering.Filter': {'filters': {'probe': [-0.5, 0.5]}, 'input': 'localizations', 'output': 'filtered'}}]
+
+        Returns
+        -------
+
+        """
         mc = []
     
         if l is None:
@@ -540,9 +557,11 @@ class ModuleCollection(HasTraits):
         self.invalidate_data()
     
     @classmethod
-    def from_module_list(cls, l):
+    def _from_module_list(cls, l):
+        """ A factory method which contains the common logic for loading/creating from either
+        yaml or json. Do not call directly"""
         c = cls()
-        c.update_from_module_list(l)
+        c._update_from_module_list(l)
                 
         return c
 
@@ -551,23 +570,36 @@ class ModuleCollection(HasTraits):
         import yaml
 
         l = yaml.load(data)
-        return cls.from_module_list(l)
+        return cls._from_module_list(l)
     
     def update_from_yaml(self, data):
+        """
+        Update from a yaml formatted recipe description
+
+        Parameters
+        ----------
+        data: str
+            either yaml formatted text, or the path to a yaml file.
+
+        Returns
+        -------
+        None
+
+        """
         import os
         import yaml
-        
+
         if os.path.isfile(data):
             with open(data) as f:
                 data = f.read()
     
         l = yaml.load(data)
-        return self.update_from_module_list(l)
+        return self._update_from_module_list(l)
 
     @classmethod
     def fromJSON(cls, data):
         import json
-        return cls.from_module_list(json.loads(data))
+        return cls._from_module_list(json.loads(data))
 
 
     def add_module(self, module):

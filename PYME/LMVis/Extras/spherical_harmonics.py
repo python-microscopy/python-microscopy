@@ -22,7 +22,6 @@ class ShellManager(object):
                               self.OnCalcHarmonicRepresentation)
 
     def OnCalcHarmonicRepresentation(self, wx_event):
-        from mayavi import mlab
         recipe = self.pipeline.recipe
         recipe.trait_set(execute_on_invalidation=False)
 
@@ -47,8 +46,13 @@ class ShellManager(object):
         center = shell.mdh['Processing.SphericalHarmonicShell.Centre']
         z_scale = shell.mdh['Processing.SphericalHarmonicShell.ZScale']
         spharm.visualize_reconstruction(shell['modes'], shell['coefficients'], zscale=1. / z_scale)
-        mlab.points3d(self.pipeline['x'] - center[0], self.pipeline['y'] - center[1],
+        
+        try:
+            from mayavi import mlab
+            mlab.points3d(self.pipeline['x'] - center[0], self.pipeline['y'] - center[1],
                       self.pipeline['z'] - center[2] / z_scale, mode='point')
+        except ImportError:
+            logger.exception('Could not import Mayavi, 3D shell display disabled')
 
         self.pipeline.addDataSource('shell_mapped', shell_mapped)
         self.pipeline.selectDataSource('shell_mapped')

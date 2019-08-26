@@ -59,8 +59,8 @@ class EdgeDB:
         if threads:
             N = len(coords[0])
 
-            taskSize = N/multiprocessing.cpu_count()
-            taskEdges = list(range(0,N, taskSize)) + [N]
+            taskSize = int(N / multiprocessing.cpu_count())  # note that this floors
+            taskEdges = list(range(0, N, taskSize)) + [N]
 
             tasks = [(taskEdges[i], taskEdges[i+1]) for i in range(len(taskEdges)-1)]
             #print tasks
