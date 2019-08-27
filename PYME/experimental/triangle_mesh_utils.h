@@ -7,7 +7,8 @@ extern "C" {
 #endif
 
 #define VECTORSIZE 3
-#define NEIGHBORSIZE 8
+// Note this must match NEIGHBORSIZE in triangle_mesh.py
+#define NEIGHBORSIZE 20
 
 typedef struct {
     signed int vertex;

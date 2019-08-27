@@ -125,6 +125,80 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
                 break;
         }
 
+        // If we hit a boundary, try the reverse direction
+        // twin now becomes prev
+        if ((twin_idx == -1) && (curr_idx != -1))
+        {
+            twin_idx = curr_edge->prev;
+            twin_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, twin_idx);
+
+            i = 0;
+
+            for (k = 0; k < NEIGHBORSIZE; ++k)
+                (curr_vertex->neighbors)[k] = -1;
+
+            for (k = 0; k < VECTORSIZE; ++k)
+                normal[k] = 0;
+
+            if (i < NEIGHBORSIZE)
+            {
+                (curr_vertex->neighbors)[i] = curr_idx;
+                curr_face = (face_t*)PyArray_GETPTR1(faces, (curr_edge->face));
+                a = curr_face->area;
+                for (k = 0; k < VECTORSIZE; ++k) 
+                    normal[k] += ((curr_face->normal)[k])*a;
+            }
+
+            loop_vertex = (vertex_t*)PyArray_GETPTR1(vertices, (curr_edge->vertex));
+
+            for (k = 0; k < VECTORSIZE; ++k) 
+                position[k] = (curr_vertex->position)[k] - (loop_vertex->position)[k];
+
+            l = norm(position);
+            curr_edge->length = l;
+            
+            curr_idx = twin_edge->twin;
+            curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
+
+            ++i;
+
+            while (1)
+            {
+                if (curr_idx == -1)
+                    break;
+
+                if (i < NEIGHBORSIZE)
+                {
+                    (curr_vertex->neighbors)[i] = curr_idx;
+                    curr_face = (face_t*)PyArray_GETPTR1(faces, (curr_edge->face));
+                    a = curr_face->area;
+                    for (k = 0; k < VECTORSIZE; ++k) 
+                        normal[k] += ((curr_face->normal)[k])*a;
+                }
+
+                loop_vertex = (vertex_t*)PyArray_GETPTR1(vertices, (curr_edge->vertex));
+
+                for (k = 0; k < VECTORSIZE; ++k) 
+                    position[k] = (curr_vertex->position)[k] - (loop_vertex->position)[k];
+
+                l = norm(position);
+                curr_edge->length = l;
+                twin_edge->length = l;
+
+                twin_idx = curr_edge->prev;
+                if (twin_idx == -1)
+                    break;
+                twin_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, twin_idx);
+                curr_idx = twin_edge->twin;
+                curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
+
+                ++i;
+
+                if (curr_idx == orig_idx)
+                    break;
+            }
+        }
+
         curr_vertex->valence = i;
 
         nn = norm(normal);
