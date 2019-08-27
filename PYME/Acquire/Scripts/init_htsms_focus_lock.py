@@ -31,8 +31,9 @@ def cam(scope):
     uCam480.init()
     cam = uCam480.uc480Camera(0)
     scope.register_camera(cam, 'Focus')
-    # try and hit about 40 Hz
-    scope.cam.SetIntegTime(0.025)
+    scope.cam.SetROI(165, 397, 936, 554)
+    # With our laser at a stable operating current we saturate easily, set integ low
+    scope.cam.SetIntegTime(0.001)
 
 #PIFoc
 @init_hardware('PIFoc')
@@ -61,12 +62,13 @@ def focus_lock(MainFrame, scope):
     from PYME.ui import fastGraph
     from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockServer
     from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
-    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=0.01, i=0.0001, d=0.00005)
+    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=-0.26, i=-0.005, d=-0.005)
     scope.focus_lock.register()
     panel = FocusLockPanel(MainFrame, scope.focus_lock)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
     MainFrame.time1.WantNotification.append(panel.refresh)
 
+    # display dark-subtracted profile
     fg = fastGraph.FastGraphPanel(MainFrame, -1, np.arange(10), np.arange(10))
     MainFrame.AddPage(page=fg, select=False, caption='Profile')
 
@@ -78,6 +80,23 @@ def focus_lock(MainFrame, scope):
 
     MainFrame.time1.WantNotification.append(refresh_profile)
 
+    # display setpoint / error over time
+    n = 500
+    # setpoint = np.zeros(n)
+    position = np.ones(n) * scope.focus_lock.peak_position
+    time = np.arange(n)
+
+    position_plot = fastGraph.FastGraphPanel(MainFrame, -1, time, position)
+    MainFrame.AddPage(page=position_plot, select=False, caption='Position')
+
+    def refresh_position(*args, **kwargs):
+        position[:-1] = position[1:]
+        position[-1] = scope.focus_lock.peak_position
+        time[:-1] = time[1:]
+        time[-1] = scope.focus_lock._last_time
+        position_plot.SetData(time, position)
+
+    MainFrame.time1.WantNotification.append(refresh_position)
 
 
 #must be here!!!
