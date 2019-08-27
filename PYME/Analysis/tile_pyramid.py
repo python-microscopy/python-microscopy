@@ -4,6 +4,7 @@ import os
 import glob
 import collections
 import time
+import six
 
 CacheEntry = collections.namedtuple('CacheEntry', ['data', 'saved'])
 
@@ -184,6 +185,15 @@ class PZFTileIO(NumpyTileIO):
         self._tilecache = PZFTileCache()
         self._coords = {}
         
+
+if six.PY2:
+    def blob(data):
+        return buffer(data)
+else:
+    #Py3k
+    def blob(data):
+        return bytes(data)
+
 class SqliteTileIO(TileIO):
     def __init__(self, base_dir, suff='img'):
         import sqlite3
@@ -218,7 +228,7 @@ class SqliteTileIO(TileIO):
             self._cur.execute('CREATE INDEX %s ON %s (x,y)' % ('idx_' + table, table))
             self._known_tables.append(table)
         
-        self._cur.execute('INSERT INTO %s VALUES (?,?,?)' % table, (x,y,buffer(PZFFormat.dumps(data.astype('float32')))))
+        self._cur.execute('INSERT INTO %s VALUES (?,?,?)' % table, (x,y,blob(PZFFormat.dumps(data.astype('float32')))))
         
     def delete_tile(self, layer, x, y):
         self._cur.execute('DELETE FROM layer%d WHERE x=? AND y=?' % layer, (x, y))
