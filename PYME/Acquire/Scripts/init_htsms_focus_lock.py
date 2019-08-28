@@ -34,6 +34,9 @@ def cam(scope):
     scope.cam.SetROI(289, 827, 1080, 1008)
     # With our laser at a stable operating current we saturate easily, set integ low
     scope.cam.SetIntegTime(0.0005)
+    
+    # TODO - possibly change gain instead to avoid saturation
+    # see SetGain() and SetGainBoost() functions of the uc_480 class
 
 #PIFoc
 @init_hardware('PIFoc')

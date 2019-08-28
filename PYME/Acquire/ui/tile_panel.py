@@ -64,7 +64,10 @@ class TilePanel(wx.Panel):
         
     def OnGo(self, event=None):
         # run a triggered tile acquisition if the camera is capable
+        # FIXME - the hasattr test becomes problematic once we add FireSoftwareTrigger to our base camera class (to
+        # document API)
         trigger = hasattr(self.scope.cam, 'FireSoftwareTrigger')
+        
         self.scope.tiler = tiler.Tiler(self.scope, tile_dir = self.tDestination.GetValue(),
                                        n_tiles=(int(self.tXTiles.GetValue()), int(self.tYTiles.GetValue())),
                                        trigger=trigger)
