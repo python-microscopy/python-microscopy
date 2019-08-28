@@ -399,7 +399,7 @@ class ImagePyramid(object):
         mdh['Pyramid.NTilesX'] = self.n_tiles_x
         mdh['Pyramid.NTilesY'] = self.n_tiles_y
         mdh['Pyramid.PixelsX'] = self.n_tiles_x * self.tile_size
-        mdh['Pyramid.PixelsY'] = self.n_tiles_x * self.tile_size
+        mdh['Pyramid.PixelsY'] = self.n_tiles_y * self.tile_size
         
         return mdh
     
