@@ -255,7 +255,8 @@ camReg.regCamera()
 class HamamatsuDCAM(Camera):
 
     def __init__(self, camNum):
-        Camera.__init__(self, camNum)
+        Camera.__init__(self)
+        self.camNum = camNum
         self.handle = ctypes.c_void_p(0)
         self.properties = {}
         self.camWidth = 0
@@ -285,7 +286,7 @@ class HamamatsuDCAM(Camera):
     def GetSerialNumber(self):
         return self._serial_number
     
-    def GetModel(self):
+    def GetHeadModel(self):
         return  self._camera_model
 
     def StartExposure(self):

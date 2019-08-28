@@ -124,14 +124,9 @@ def check_mapexists(mdh, type = 'dark'):
     else:
         return None
 
-class uc480Camera:
+from PYME.Acquire.Hardware.Camera import Camera
+class uc480Camera(Camera):
     numpy_frames=1
-    contMode = True
-
-    #define a couple of acquisition modes
-
-    MODE_CONTINUOUS = 5
-    MODE_SINGLE_SHOT = 1
 
     ROIlimitlist = {
         'UI306x' : {
@@ -176,8 +171,11 @@ class uc480Camera:
     ROIlimitsDefault = ROIlimitlist['UI324x']
 
     def __init__(self, boardNum=0, nbits = 8, isDeviceID = False):
+        Camera.__init__(self)
+        
+        self._cont_mode = True
         self.initialised = False
-        self.active = True
+        
         if nbits not in [8,10,12]:
             raise RuntimeError('Supporting only 8, 10 or 12 bit depth, requested %d bit' % (nbits))
         self.nbits = nbits
@@ -195,7 +193,7 @@ class uc480Camera:
         self.initialised = True
 
         #register as a provider of metadata
-        MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
+        #MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
         caminfo = uc480.CAMINFO()
         ret = uc480.CALL('GetCameraInfo', self.boardHandle, ctypes.byref(caminfo))
@@ -415,51 +413,18 @@ class uc480Camera:
                 #print 'w',
                 time.sleep(.05)
             time.sleep(.0005)
-
-    def GetCamType(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetDataType(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetADBits(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetMaxDigit(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetNumberCh(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetBytesPerPoint(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetCCDType(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetCamID(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetCamVer(*args):
-        raise Exception('Not implemented yet!!')
-
-    def SetTrigMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetTrigMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def SetDelayTime(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetDelayTime(*args):
-        raise Exception('Not implemented yet!!')
         
     def SetAcquisitionMode(self, mode):
         if mode == self.MODE_SINGLE_SHOT:
-            self.contMode = False
+            self._cont_mode = False
         else:
-            self.contMode = True
+            self._cont_mode = True
+            
+    def GetAcquisitionMode(self):
+        if self._cont_mode:
+            return self.MODE_CONTINUOUS
+        else:
+            return self.MODE_SINGLE_SHOT
 
     def SetIntegTime(self, iTime):
         #self.__selectCamera()
@@ -484,23 +449,6 @@ class uc480Camera:
     def GetIntegTime(self):
         return self.expTime
 
-    def SetROIMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetROIMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def SetCamMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetCamMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def SetBoardNum(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetBoardNum(*args):
-        raise Exception('Not implemented yet!!')
 
     def GetCCDWidth(self):
         return self.CCDSize[0]
@@ -535,10 +483,10 @@ class uc480Camera:
         # calling SetFrameRate and Exposure is recommended after changing binning size
         self.SetIntegTime(self.GetIntegTime())
 
-    def GetHorizBin(self):
-        return self.binX == 1
-
-    def GetHorzBinValue(self):
+    def SetHorizontalBin(self, value):
+        self.SetHorizBin(value)
+        
+    def GetHorzontalBin(self):
         return self.binX
 
     def SetVertBin(self, val):
@@ -568,17 +516,12 @@ class uc480Camera:
         # calling SetFrameRate and Exposure is recommended after changing binning size
         self.SetIntegTime(self.GetIntegTime())
 
-    def GetVertBin(self):
-        return self.binY == 1
 
-    def GetVertBinValue(self):
+    def SetVerticalBin(self, value):
+        self.SetVertBin(value)
+    
+    def GetVerticalBin(self):
         return self.binY
-
-    def GetNumberChannels(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetElectrTemp(*args):
-        return 25
 
     def GetCCDTemp(self):
         return  25 #self.CCDTemp
@@ -659,28 +602,15 @@ class uc480Camera:
 
     def GetROIX1(self):
         return self.ROIx[0]
-        #raise Exception, 'Not implemented yet!!'
 
     def GetROIX2(self):
         return self.ROIx[1]
-        #raise Exception, 'Not implemented yet!!'
 
     def GetROIY1(self):
         return self.ROIy[0]
-        #raise Exception, 'Not implemented yet!!'
 
     def GetROIY2(self):
         return self.ROIy[1]
-        #raise Exception, 'Not implemented yet!!'
-
-    def DisplayError(*args):
-        pass
-
-    def GetStatus(*args):
-        pass
-
-    def SetCOC(*args):
-        pass
 
     def StartExposure(self):
         
@@ -692,7 +622,7 @@ class uc480Camera:
         
 
         eventLog.logEvent('StartAq', '')
-        if self.contMode:
+        if self._cont_mode:
             ret = uc480.CALL('CaptureVideo', self.boardHandle, uc480.IS_DONT_WAIT)
         else:
             ret = uc480.CALL('FreezeVideo', self.boardHandle, uc480.IS_DONT_WAIT)
@@ -700,11 +630,6 @@ class uc480Camera:
             raise RuntimeError('Error starting exposure: %d: %s' % GetError(self.boardHandle))
         return 0
 
-    def StartLifePreview(*args):
-        raise Exception('Not implemented yet!!')
-
-    def StopLifePreview(*args):
-        raise Exception('Not implemented yet!!')
 
     #PYME Camera interface functions - make this look like the other cameras
     def ExpReady(self):
@@ -739,8 +664,6 @@ class uc480Camera:
             #recycle buffer
             self.freeBuffers.put(buf)
         
-    def CheckCoordinates(*args):
-        raise Exception('Not implemented yet!!')
 
     def StopAq(self):
         ret = uc480.CALL('StopLiveVideo', self.boardHandle, uc480.IS_WAIT)
@@ -802,20 +725,12 @@ class uc480Camera:
 
     def GetBufferSize(self):
         return len(self._buffers)
-
-    def SetShutter(self, state):
-        pass
-        #raise Exception, 'Not implemented yet!!'
         
     def GetSerialNumber(self):
         return self.serialNum
 
     def GetHeadModel(self):
         return self.sensortype
-
-    def SetActive(self, active=True):
-        """flag the camera as active (or inactive) to dictate whether it writes it's metadata or not"""
-        self.active = active
 
     def GetElectronsPerCount(self):
         return (self.baseProps['ElectronsPerCount']/self.GetGainFactor())

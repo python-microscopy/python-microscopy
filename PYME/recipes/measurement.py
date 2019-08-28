@@ -744,7 +744,7 @@ class AddMetadataToMeasurements(ModuleBase):
         
         img = namespace[self.inputImage]
 
-        nEntries = len(res.values()[0])
+        nEntries = len(list(res.values())[0])
         for k, mdk in zip(self.keys.split(), self.metadataKeys.split()):
             if mdk == 'seriesName':
                 #import os

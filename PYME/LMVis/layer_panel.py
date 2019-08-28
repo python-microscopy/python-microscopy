@@ -77,7 +77,7 @@ class LayerPane(afp.foldingPane):
     
         for p in self.pages:
             p.control.Close()
-            #p.dispose()
+            p.dispose()
             pass
         
         self.fp.Clear()

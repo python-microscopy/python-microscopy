@@ -331,9 +331,9 @@ class Pipeline:
 
     def __dir__(self):
         if self.colourFilter is None:
-            return list(self.__dict__.keys())
+            return list(self.__dict__.keys()) + list(dir(type(self)))
         else:
-            return list(self.colourFilter.keys()) + list(self.__dict__.keys())
+            return list(self.colourFilter.keys()) + list(self.__dict__.keys()) + list(dir(type(self)))
     
     #compatibility redirects
     @property

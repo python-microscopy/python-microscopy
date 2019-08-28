@@ -356,6 +356,7 @@ class microscope(object):
         self.state.registerHandler('ActiveCamera', self.GetActiveCameraName, self._SetCamera, True)
         self.state.registerHandler('Camera.IntegrationTime', self._GetActiveCameraIntegrationTime, self._SetActiveCameraIntegrationTime, True)
         self.state.registerHandler('Camera.ROI', self._GetActiveCameraROI, self._SetActiveCameraROI, True)
+        self.state.registerHandler('Camera.Binning', self._GetActiveCameraBinning, self._SetActiveCameraBinning, True)
         
         self.actions = ActionManager(self)
         
@@ -428,7 +429,9 @@ class microscope(object):
         """
         currVoxelSizeID = self.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.cam.GetSerialNumber(),)).fetchone()
         if not currVoxelSizeID is None:
-            return self.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
+            voxx, voxy = self.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
+            
+            return voxx*self.cam.GetHorizontalBin(), voxy*self.cam.GetVerticalBin()
 
     def GenStartMetadata(self, mdh):
         """Collects the metadata we want to record at the start of a sequence
@@ -593,9 +596,9 @@ class microscope(object):
         #stext = stext + '    Position:        
         
         if self.frameWrangler.isRunning():
-            if 'GetFPS' in dir(self.cam):
+            try:
                 stext = stext + '    FPS = (%2.2f/%2.2f)' % (self.cam.GetFPS(),self.frameWrangler.getFPS())
-            else:
+            except (AttributeError, NotImplementedError):
                 stext = stext + '    FPS = %2.2f' % self.frameWrangler.getFPS()
 
             if 'GetNumImsBuffered' in dir(self.cam):
@@ -764,7 +767,36 @@ class microscope(object):
         y2 = self.cam.GetROIY2()
         
         return (x1, y1, x2, y2)
+
+    def _SetActiveCameraBinning(self, binning):
+        """
+        Sets Binning on the active camera
         
+        Parameters
+        ----------
+        binning : tuple/sequence (binx, biny)
+            the binning in x and y respectively
+            
+        """
+        binx, biny = binning
+        
+        self.cam.SetHorizontalBin(binx)
+        self.cam.SetVerticalBin(biny)
+
+    def _GetActiveCameraBinning(self):
+        """
+        Sets Binning on the active camera
+
+        Parameters
+        ----------
+        binning : tuple/sequence (binx, biny)
+            the binning in x and y respectively
+
+        """
+        binx = self.cam.GetHorizontalBin()
+        biny = self.cam.GetVerticalBin()
+        
+        return (binx, biny)
             
     def PanCamera(self, dx, dy):
         """Moves / pans the stage my a given offset, in pixels relative to the

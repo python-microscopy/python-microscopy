@@ -113,6 +113,9 @@ class DisplayOpts(object):
 
     @zp.setter
     def zp(self, value):
+        if (value < 0) or (value >= self.ds.shape[2]):
+            raise IndexError('Z position out of bounds')
+        
         self._zp = value
         #print 'z changed'
         self.OnChange()
@@ -123,6 +126,9 @@ class DisplayOpts(object):
 
     @xp.setter
     def xp(self, value):
+        if (value < 0) or (value >= self.ds.shape[0]):
+            raise IndexError('X position out of bounds')
+        
         self._xp = value
         #print 'z changed'
         self.OnChange()
@@ -133,6 +139,9 @@ class DisplayOpts(object):
 
     @yp.setter
     def yp(self, value):
+        if (value < 0) or (value >= self.ds.shape[1]):
+            raise IndexError('Y position out of bounds')
+        
         self._yp = value
         #print 'z changed'
         self.OnChange()

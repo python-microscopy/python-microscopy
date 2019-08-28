@@ -486,7 +486,7 @@ class AndorBase(SDK3Camera):
             self.CycleMode.setString('uFixed')
             self.FrameCount.setValue(1)
             
-    def GetAcquisitionMode(self, mode):
+    def GetAcquisitionMode(self):
         if self.contMode:
             return self.MODE_CONTINUOUS
         else:
@@ -516,23 +516,6 @@ class AndorBase(SDK3Camera):
     def GetCCDHeight(self): 
         return self.SensorWidth.getValue()
     
-    def SetHorizBin(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetHorizBin(*args):
-        return 0
-        #raise Exception, 'Not implemented yet!!'
-    def GetHorzBinValue(*args): 
-        raise Exception('Not implemented yet!!')
-    def SetVertBin(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetVertBin(*args):
-        return 0
-        #raise Exception, 'Not implemented yet!!'
-    def GetNumberChannels(*args): 
-        raise Exception('Not implemented yet!!')
-    
-    def GetElectrTemp(*args): 
-        return 25
         
     def GetCCDTemp(self):
         #for some reason querying the temperature takes a lot of time - do it less often
@@ -540,8 +523,6 @@ class AndorBase(SDK3Camera):
         
         return self._temp
     
-    def CamReady(*args): 
-        return True
     
     def GetPicWidth(self): 
         return self.AOIWidth.getValue()
@@ -595,11 +576,6 @@ class AndorBase(SDK3Camera):
     def GetROIY2(self):
         return self.AOITop.getValue() + self.AOIHeight.getValue()
     
-    def DisplayError(*args): 
-        pass
-
-    #def Init(*args): 
-    #    pass
 
     def Shutdown(self):
         logger.info('Shutting down sCMOS camera')
@@ -607,11 +583,6 @@ class AndorBase(SDK3Camera):
         self.shutdown()
         #pass
 
-    def GetStatus(*args): 
-        pass
-    
-    def SetCOC(*args): 
-        pass
 
     def StartExposure(self):
         #make sure no acquisiton is running
@@ -646,28 +617,11 @@ class AndorBase(SDK3Camera):
 
         #logger.debug('StopAq : done')
         
-
-    def StartLifePreview(*args): 
-        raise Exception('Not implemented yet!!')
-    def StopLifePreview(*args): 
-        raise Exception('Not implemented yet!!')
-
-    def GetBWPicture(*args): 
-        raise Exception('Not implemented yet!!')
-    
-    def CheckCoordinates(*args): 
-        raise Exception('Not implemented yet!!')
-
-    #new fcns for Andor compatibility
     def GetNumImsBuffered(self):
         return self.nFull
     
     def GetBufferSize(self):
         return self.nBuffers
-        
-    def SetActive(self, active=True):
-        """flag the camera as active (or inactive) to dictate whether it writes it's metadata or not"""
-        self.active = active
 
     def GenStartMetadata(self, mdh):
         if self.active:
@@ -750,10 +704,6 @@ class AndorBase(SDK3Camera):
     def SetEMGain(self, gain):
         logger.info("EMGain ignored")
 
-    
-    def SetAcquisitionMode(self, aqMode):
-        self.CycleMode.setIndex(aqMode)
-        #self.contMode = aqMode == self.MODE_CONTINUOUS
 
     def SetBurst(self, burstSize):
         if burstSize > 1:
@@ -766,11 +716,6 @@ class AndorBase(SDK3Camera):
             self.SetAcquisitionMode(self.MODE_CONTINUOUS)
             self.burstMode = False
 
-    def SetShutter(self, mode):
-        pass
-
-    def SetBaselineClamp(self, mode):
-        pass
     
     def GetFPS(self):
         #return self.FrameRate.getValue()

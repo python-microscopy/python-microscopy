@@ -87,7 +87,7 @@ class TabularBase(object):
         """
         from numpy.core import records
         if keys is None:
-            keys = self.keys()
+            keys = list(self.keys())
 
         columns = [self.__getitem__(k) for k in keys]
         
@@ -118,7 +118,7 @@ class TabularBase(object):
         raise NotImplementedError('Should be over-ridden in derived class')
                 
     def __len__(self):
-        return len(self[self.keys()[0]])
+        return len(self[list(self.keys())[0]])
     
     def __getattr__(self, item):
         try:
@@ -127,8 +127,7 @@ class TabularBase(object):
             raise AttributeError("'%s' has not attribute '%s'" % (self.__class__, item))
         
     def __dir__(self):
-        return list(self.keys()) + list(self.__dict__.keys())
-        
+        return list(self.keys()) + list(self.__dict__.keys()) + list(dir(type(self)))
     
 
 class randomSource(TabularBase):
@@ -517,7 +516,7 @@ class resultsFilter(SelectionFilter):
         self.resultsSource = resultsSource
 
         #by default select everything
-        self.Index = np.ones(self.resultsSource[resultsSource.keys()[0]].shape) >  0.5
+        self.Index = np.ones(self.resultsSource[list(resultsSource.keys())[0]].shape) >  0.5
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
@@ -546,7 +545,7 @@ class randomSelectionFilter(SelectionFilter):
         self.resultsSource = resultsSource
         
         #by default select everything
-        self.Index = np.random.choice(len(self.resultsSource[resultsSource.keys()[0]]), num_Samples, replace=False)
+        self.Index = np.random.choice(len(self.resultsSource[list(resultsSource.keys())[0]]), num_Samples, replace=False)
 
 
 class idFilter(SelectionFilter):
@@ -567,7 +566,7 @@ class idFilter(SelectionFilter):
         self.valid_ids = valid_ids
         
         #by default select everything
-        self.Index = np.zeros(self.resultsSource[resultsSource.keys()[0]].shape)
+        self.Index = np.zeros(self.resultsSource[list(resultsSource.keys())[0]].shape)
         
         for id in valid_ids:
             self.Index += (self.resultsSource[id_column] == id)
@@ -593,7 +592,7 @@ class concatenateFilter(TabularBase):
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
         if key == 'concatSource':
-            return np.hstack((np.zeros(len(self.source0[self.source0.keys()[0]])), np.ones(len(self.source1[self.source1.keys()[0]]))))
+            return np.hstack((np.zeros(len(self.source0[list(self.source0.keys())[0]])), np.ones(len(self.source1[list(self.source1.keys())[0]]))))
         else:
             return np.hstack((self.source0[key], self.source1[key]))[sl]
 
@@ -617,7 +616,7 @@ class cachingResultsFilter(TabularBase):
         self.cache = {}
 
         #by default select everything
-        self.Index = np.ones(self.resultsSource[resultsSource.keys()[0]].shape) >  0.5
+        self.Index = np.ones(self.resultsSource[list(resultsSource.keys())[0]].shape) >  0.5
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
@@ -752,7 +751,8 @@ class mappingFilter(TabularBase):
                 locals()[vname] = self.new_columns[vname][sl]
             elif vname in self.variables.keys():
                 locals()[vname] = self.variables[vname]
-            elif vname in dir(self): #look for constants
+            elif vname in self.__dict__.keys(): #look for constants
+                #FIXME - do we still need this now we have variables
                 locals()[vname] = self.__dict__[vname]
             elif vname in self.mappings.keys(): #finally try other mappings
                 #try to prevent infinite recursion here if mappings have circular references

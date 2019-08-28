@@ -83,7 +83,7 @@ class PlayPanel(wx.Panel):
             hsizer = wx.BoxSizer(wx.HORIZONTAL)
             hsizer.Add(self.bSeekStart, 0,wx.ALIGN_CENTER_VERTICAL,0)
             hsizer.Add(self.bPlay, 0,wx.ALIGN_CENTER_VERTICAL,0)
-            hsizer.ADd(self.bGoto, 0,wx.ALIGN_CENTER_VERTICAL,0)
+            hsizer.Add(self.bGoto, 0,wx.ALIGN_CENTER_VERTICAL,0)
             hsizer.Add(wx.StaticText(self, -1, 'FPS:'), 0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,4)
             hsizer.Add(self.slPlaySpeed, 1,wx.ALIGN_CENTER_VERTICAL)
 
@@ -152,8 +152,9 @@ class PlayPanel(wx.Panel):
             except(ValueError):
                 # Not an integer
                 raise ValueError('Please enter a valid frame number.')
+            
             frame = max(0, frame)
-            frame = min(frame, self.do.ds.shape[2])
+            frame = min(frame, self.do.ds.shape[2]-1)
             self.do.zp = frame
 
     def update(self):
