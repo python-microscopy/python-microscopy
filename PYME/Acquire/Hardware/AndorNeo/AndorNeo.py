@@ -348,8 +348,6 @@ class AndorBase(SDK3Camera):
         
         return self._temp
     
-    def CamReady(*args): 
-        return True
     
     def GetPicWidth(self): 
         return self.AOIWidth.getValue()

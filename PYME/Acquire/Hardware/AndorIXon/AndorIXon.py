@@ -416,12 +416,11 @@ class iXonCamera(Camera):
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
         #raise Exception, 'Not implemented yet!!'
+        
+    def SetHorizontalBin(self, value):
+        self.SetHorizBin(value)
 
-    def GetHorizBin(self):
-        return self.binning
-        #raise Exception, 'Not implemented yet!!'
-
-    def GetHorzBinValue(self, *args):
+    def GetHorzizontalBin(self, *args):
         #raise Exception, 'Not implemented yet!!'
         return self.binX
 
@@ -434,11 +433,10 @@ class iXonCamera(Camera):
             raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
         #raise Exception, 'Not implemented yet!!'
 
-    def GetVertBin(*args):
-        return 0
-        #raise Exception, 'Not implemented yet!!'
+    def SetVerticalBin(self, value):
+        self.SetVertBin(value)
 
-    def GetVertBinValue(self, *args):
+    def GetVerticalBin(self):
         #raise Exception, 'Not implemented yet!!'
         return self.binY
 
@@ -531,17 +529,7 @@ class iXonCamera(Camera):
         return self.ROIy[1]
         #raise Exception, 'Not implemented yet!!'
 
-    def DisplayError(*args):
-        pass
 
-    def Init(*args):
-        pass
-
-    def GetStatus(*args):
-        pass
-
-    def SetCOC(*args):
-        pass
 
     def StartExposure(self):
         self.__selectCamera()

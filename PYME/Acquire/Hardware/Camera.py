@@ -79,7 +79,7 @@ class Camera(object):
         Optional intialization function. Also called from the init script.
         Not really part of 'specification'
         """
-        raise NotImplementedError('Implement in derived class (if desired).')
+        pass
 
     @property
     def contMode(self):
@@ -261,20 +261,25 @@ class Camera(object):
     #Binning is not really supported in current software, making these commands mostly superfluous
     #Being able to read out the binning (GetHorizBin, GetVertBin) is however necessary
     #these should definitely be revisited
-    def SetHorizBin(*args):
+    def SetHorizontalBin(self, value):
         raise NotImplementedError("Implemented in derived class.")
 
-    def GetHorizBin(*args):
-        return 0
+    def GetHorizontalBin(self):
+        return 1
 
-    def GetHorzBinValue(*args):
+    def SetVerticalBin(self, value):
         raise NotImplementedError("Implemented in derived class.")
 
-    def SetVertBin(*args):
-        raise NotImplementedError("Implemented in derived class.")
-
-    def GetVertBin(*args):
-        return 0
+    def GetVerticalBin(self):
+        return 1
+    
+    def GetSupportedBinnings(self):
+        """
+        returns a list of tuples [(binx, biny), ...] of supported binning configurations
+        
+        """
+        
+        return [(1,1)]
     
     
     # ROI Functions

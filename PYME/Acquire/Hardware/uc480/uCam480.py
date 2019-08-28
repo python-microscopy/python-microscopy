@@ -535,10 +535,10 @@ class uc480Camera:
         # calling SetFrameRate and Exposure is recommended after changing binning size
         self.SetIntegTime(self.GetIntegTime())
 
-    def GetHorizBin(self):
-        return self.binX == 1
-
-    def GetHorzBinValue(self):
+    def SetHorizontalBin(self, value):
+        self.SetHorizBin(value)
+        
+    def GetHorzontalBin(self):
         return self.binX
 
     def SetVertBin(self, val):
@@ -568,10 +568,11 @@ class uc480Camera:
         # calling SetFrameRate and Exposure is recommended after changing binning size
         self.SetIntegTime(self.GetIntegTime())
 
-    def GetVertBin(self):
-        return self.binY == 1
 
-    def GetVertBinValue(self):
+    def SetVerticalBin(self, value):
+        self.SetVertBin(value)
+    
+    def GetVerticalBin(self):
         return self.binY
 
     def GetNumberChannels(*args):

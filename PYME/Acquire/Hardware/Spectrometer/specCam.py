@@ -238,9 +238,6 @@ class SpecCamera:
     def GetCCDTemp(self):
         return 25
     
-    def CamReady(*args): 
-        return True
-    
     def GetPicWidth(self): 
         return self.ROIx[1] - self.ROIx[0]
     def GetPicHeight(self): 

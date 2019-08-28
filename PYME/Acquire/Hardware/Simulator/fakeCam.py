@@ -472,9 +472,6 @@ class FakeCamera(Camera):
     def GetCCDTemp(self):
         return self.noiseMaker.temperature
     
-    def CamReady(*args): 
-        return True
-    
     def GetPicWidth(self): 
         return self.ROIx[1] - self.ROIx[0]
     def GetPicHeight(self): 
@@ -527,23 +524,11 @@ class FakeCamera(Camera):
     def GetROIY2(self):
         return self.ROIy[1]
         #raise Exception, 'Not implemented yet!!'
-    
-    
-    def DisplayError(*args): 
-        pass
 
-    def Init(*args): 
-        pass
 
     def Shutdown(self):
         self.compT.kill = True
         #pass
-
-    def GetStatus(*args): 
-        pass
-    
-    def SetCOC(*args): 
-        pass
 
     def StartAq(self):
         self.compT.StartExp()
@@ -561,20 +546,11 @@ class FakeCamera(Camera):
         #self.compTCur.start()
         return 0
 
-    def StartLifePreview(*args): 
-        raise Exception('Not implemented yet!!')
-    def StopLifePreview(*args): 
-        raise Exception('Not implemented yet!!')
 
     def ExpReady(self):
         #return not self.compTCur.isAlive() #thread has finished -> a picture is available
         return self.compT.numFramesBuffered() > 0
-        #return True
-        #raise Exception, 'Not implemented yet!!'
-
-    def GetBWPicture(*args): 
-        raise Exception('Not implemented yet!!')
-    
+ 
     def ExtractColor(self, chSlice, mode): 
         #im = self.noiseMaker.noisify(rend_im.simPalmIm(self.XVals, self.YVals, self.zPiezo.GetPos() - self.zOffset,self.fluors, laserPowers=self.laserPowers, intTime=self.intTime*1e-3))[:,:].astype('uint16')
 
