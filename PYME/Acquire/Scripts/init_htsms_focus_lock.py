@@ -29,11 +29,11 @@ import time
 def cam(scope):
     from PYME.Acquire.Hardware.uc480 import uCam480
     uCam480.init()
-    cam = uCam480.uc480Camera(0)
+    cam = uCam480.uc480Camera(0, nbits=10)
     scope.register_camera(cam, 'Focus')
-    scope.cam.SetROI(165, 397, 936, 554)
+    scope.cam.SetROI(289, 827, 1080, 1008)
     # With our laser at a stable operating current we saturate easily, set integ low
-    scope.cam.SetIntegTime(0.001)
+    scope.cam.SetIntegTime(0.0005)
 
 #PIFoc
 @init_hardware('PIFoc')
@@ -62,7 +62,7 @@ def focus_lock(MainFrame, scope):
     from PYME.ui import fastGraph
     from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockServer
     from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
-    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=-0.26, i=-0.005, d=-0.005)
+    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=-0.26, i=-0.005, d=-0.005, sample_time=0.004)
     scope.focus_lock.register()
     panel = FocusLockPanel(MainFrame, scope.focus_lock)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
