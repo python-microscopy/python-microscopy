@@ -136,16 +136,14 @@ class Camera(object):
         """
         raise NotImplementedError('Implemented in derived class.')
 
-    def GetModel(self):
+    def GetHeadModel(self):
         """
-        Get the model name of the hardware represented by Camera object.
-        
-        #FIXME - do we need this?
+        Get the the camera head model name.
 
         Returns
         -------
         str
-            Hardware model name of Camera object
+            camera model namet
         """
         raise NotImplementedError('Should be implemented in derived class.')
 
@@ -661,7 +659,7 @@ class Camera(object):
 
             # Personal identification
             mdh.setEntry('Camera.Name', self.GetName())
-            mdh.setEntry('Camera.Model', self.GetModel())
+            mdh.setEntry('Camera.Model', self.GetHeadModel())
             mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
 
             # Time

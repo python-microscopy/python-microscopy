@@ -193,7 +193,7 @@ class uc480Camera(Camera):
         self.initialised = True
 
         #register as a provider of metadata
-        MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
+        #MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
         caminfo = uc480.CAMINFO()
         ret = uc480.CALL('GetCameraInfo', self.boardHandle, ctypes.byref(caminfo))

@@ -100,13 +100,8 @@ class iXonCamera(Camera):
 
 
     def __init__(self, boardNum=0):
-#        self.noiseProps = {
-#        'ReadNoise' : 109.8,
-#        'ElectronsPerCount' : 27.32,
-#        'NGainStages' : 536,
-#        'ADOffset' : 971,
-#        'SaturationThreshold' : (2**14 -1)
-#        }
+        Camera.__init__(self)
+        
         self.initialised = False
         self.active = False
 
@@ -118,10 +113,9 @@ class iXonCamera(Camera):
 
         self.__selectCamera()
 
-        
 
         #register as a provider of metadata
-        MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
+        #MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
         #initialise the camera - n.b. this take ~2s
 
@@ -446,23 +440,17 @@ class iXonCamera(Camera):
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
 
-        #raise Exception, 'Not implemented yet!!'
-
     def GetROIX1(self):
         return self.ROIx[0]
-        #raise Exception, 'Not implemented yet!!'
 
     def GetROIX2(self):
         return self.ROIx[1]
-        #raise Exception, 'Not implemented yet!!'
 
     def GetROIY1(self):
         return self.ROIy[0]
-        #raise Exception, 'Not implemented yet!!'
 
     def GetROIY2(self):
         return self.ROIy[1]
-        #raise Exception, 'Not implemented yet!!'
 
 
 
@@ -514,15 +502,12 @@ class iXonCamera(Camera):
         #ret = ac.GetAcquiredData16(cast(c_void_p(int(chSlice)), POINTER(c_ushort)), self.GetPicWidth()*self.GetPicHeight())
 
         dt = ac.GetOldestImage16.argtypes[0]
-
         ret = ac.GetOldestImage16(cast(c_void_p(int(chSlice)), dt), self.GetPicWidth()*self.GetPicHeight())
 
         #print self.GetPicWidth()*self.GetPicHeight()
         if not ret == ac.DRV_SUCCESS:
             print(('Error getting image from camera: %s' % ac.errorCodes[ret]))
 
-    def CheckCoordinates(*args):
-        raise Exception('Not implemented yet!!')
 
     def StopAq(self):
         self.__selectCamera()
@@ -703,10 +688,6 @@ class iXonCamera(Camera):
         hm = create_string_buffer(255)
         ac.GetHeadModel(hm)
         return hm.value
-
-    def SetActive(self, active=True):
-        """flag the camera as active (or inactive) to dictate whether it writes it's metadata or not"""
-        self.active = active
 
     def GenStartMetadata(self, mdh):
         if self.active: #we are active -> write metadata

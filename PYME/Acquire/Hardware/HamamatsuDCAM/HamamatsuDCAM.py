@@ -286,7 +286,7 @@ class HamamatsuDCAM(Camera):
     def GetSerialNumber(self):
         return self._serial_number
     
-    def GetModel(self):
+    def GetHeadModel(self):
         return  self._camera_model
 
     def StartExposure(self):
