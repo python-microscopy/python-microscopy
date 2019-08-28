@@ -47,6 +47,11 @@
     <script type='text/javascript' src='/static/openSeadragonGL.js'></script>
   <script type='text/javascript' src='/static/viaWebGL.js'></script>
 <script type="text/javascript">
+    function imageToMicrometers(imageCoordinates) {
+        var micrometerCoordinates = {"x": imageCoordinates.x * {{ pyramid_pixel_size_um }} + {{ pyramid_x0 }}, "y": imageCoordinates.y * {{ pyramid_pixel_size_um }} + {{ pyramid_y0 }}};
+        return micrometerCoordinates;
+    }
+
     var viewer = OpenSeadragon({
         id:            "openseadragon1",
         prefixUrl:     "/static/images/osd_flat/",
@@ -57,9 +62,9 @@
         showNavigator: true,
         maxZoomPixelRatio: 10,
         tileSources:   {
-            height: {{ pyramid_height_px }},
-            width:  {{ pyramid_width_px }},
-            tileSize: {{ tile_size }},
+            height: {{ pyramid_height_px }},  // total height [pixels]
+            width:  {{ pyramid_width_px }},   // total width [pixels]
+            tileSize: {{ tile_size }},  // size of individual tile [pixels]
             minLevel: 0,
             maxLevel: {{ pyramid_depth }},
 
@@ -96,6 +101,7 @@
         //console.log(event);
         var c = viewer.viewport.viewportToImageCoordinates(viewer.viewport.pointFromPixel(event.position));
         //console.log(c);
+        c = imageToMicrometers(c);
 
         $.get( "/add_roi?x=" + c.x + "&y=" + c.y , function( data ) {
         $( "#roi_list" ).html( data );
