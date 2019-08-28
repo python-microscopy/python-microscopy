@@ -63,7 +63,7 @@ class TileCache(object):
             self._save(filename, item.data)
             
     def flush(self):
-        for filename, item  in self._cache.items():
+        for filename, item  in list(self._cache.items()):
             if not item.saved:
                 self._save(filename, item.data)
                 self._cache[filename] = CacheEntry(data=item.data, saved=True)
@@ -210,7 +210,6 @@ class SqliteTileIO(TileIO):
     
     def save_tile(self, layer, x, y, data):
         from PYME.IO import PZFFormat
-        import sqlite3
         table = 'layer%d' % layer
         
         if not table in self._known_tables:
@@ -517,8 +516,8 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     else:
         offset = 0.
 
-    P = ImagePyramid(out_folder, pyramid_tile_size, x0 = x0, y0 = y0, pixel_size=mdh.getEntry('voxelsize.x'))
-    
+    P = ImagePyramid(out_folder, pyramid_tile_size, x0=x0, y0=y0, pixel_size=mdh.getEntry('voxelsize.x'))
+
     print('Adding base tiles ...')
     
     t1 = time.time()
