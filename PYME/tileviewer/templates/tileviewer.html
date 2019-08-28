@@ -48,7 +48,10 @@
   <script type='text/javascript' src='/static/viaWebGL.js'></script>
 <script type="text/javascript">
     function imageToMicrometers(imageCoordinates) {
-        var micrometerCoordinates = {"x": (imageCoordinates.x - 0.5 * {{ tile_size }}) * {{ pyramid_pixel_size_um }} + {{ pyramid_x0 }}, "y": (imageCoordinates.y - 0.5 * {{ tile_size }}) * {{ pyramid_pixel_size_um }} + {{ pyramid_y0 }}};
+        var micrometerCoordinates = {
+        "x": (imageCoordinates.x - 0.5 * {{ tile_size }}) * {{ pyramid_pixel_size_um }} + {{ pyramid_x0 }},
+        "y": (imageCoordinates.y - 0.5 * {{ tile_size }}) * {{ pyramid_pixel_size_um }} + {{ pyramid_y0 }}
+        };
         return micrometerCoordinates;
     }
 
