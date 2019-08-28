@@ -26,6 +26,7 @@ import threading
 
 import numpy as np
 from PYME.Acquire import eventLog
+import uuid
 import logging
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ class PointScanner:
         self._rlock = threading.Lock()
         
         self.running = False
+        self._uuid = uuid.uuid4()
 
     def genCoords(self):
         self.currPos = self.scope.GetPos()
@@ -135,7 +137,7 @@ class PointScanner:
 
 
         #self.scope.frameWrangler.WantFrameNotification.append(self.tick)
-        self.scope.frameWrangler.onFrame.connect(self.tick)
+        self.scope.frameWrangler.onFrame.connect(self.tick, dispatch_uid=self._uuid)
 
         if self.trigger:
             self.scope.cam.FireSoftwareTrigger()
@@ -221,11 +223,11 @@ class PointScanner:
         #self.scope.SetPos(**self.currPos)
         try:
             #self.scope.frameWrangler.WantFrameNotification.remove(self.tick)
-            self.scope.frameWrangler.onFrame.disconnect(self.tick)
+            self.scope.frameWrangler.onFrame.disconnect(self.tick, dispatch_uid=self._uuid)
             #if self.sync:
             #    self.scope.frameWrangler.HardwareChecks.remove(self.onTarget)
-        finally:
-            pass
+        except:
+            logger.exception('Could not disconnect pointScanner tick from frameWrangler.onFrame')
     
         logger.debug('Returning home : %s' % self.currPos)
     
