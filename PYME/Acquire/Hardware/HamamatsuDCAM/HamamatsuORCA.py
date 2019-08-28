@@ -120,6 +120,8 @@ class HamamatsuORCA(HamamatsuDCAM):
         self._last_framestamp = None
         self._last_camerastamp = None
         self._last_timestamp = None
+        
+        self._frameRate = 0
 
         # initialize other properties needed
         self.external_shutter = None
@@ -143,8 +145,8 @@ class HamamatsuORCA(HamamatsuDCAM):
             logger.debug('Hamamatsu Orca initialized')
 
 
-    @property
-    def _intTime(self):
+    
+    def GetIntegTime(self):
         return self.getCamPropValue('EXPOSURE TIME')
 
     def setDefectCorrectMode(self, on=False):
@@ -377,16 +379,32 @@ class HamamatsuORCA(HamamatsuDCAM):
 
     def CamReady(self):
         return self.initialized
+    
+    def GetNoiseProperties(self):
+        return self.noiseProps
+    
+    def GetCCDTemp(self):
+        # FIXME - actually read the CCD temperature
+        return 0
+    
+    def GetFPS(self):
+        return self._frameRate
 
-    def GetStatus(self):
-        # This is to shut the command line the hell up.
-        pass
+    def GetCycleTime(self):
+        """
+        Get camera cycle time (1/fps) in seconds (float)
 
-    def GetReadNoise(self):
-        return self.noiseProps['ReadNoise']
-
-    def GetElectrPerCount(self):
-        return self.noiseProps['ElectronsPerCount']
+        Returns
+        -------
+        float
+            Camera cycle time (seconds)
+        """
+        #FIXME - raise NotImplemeted?
+    
+        if self._frameRate > 0:
+            return 1.0 / self._frameRate
+    
+        return 0.0
 
     def GetName(self):
         return "Hamamatsu ORCA Flash 4.0"

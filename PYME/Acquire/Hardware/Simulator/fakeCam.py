@@ -332,12 +332,12 @@ class compThread(threading.Thread):
 
 
 
-        
-class FakeCamera:
+from PYME.Acquire.Hardware.Camera import Camera
+class FakeCamera(Camera):
     numpy_frames=1
     order= 'C'
-    MODE_CONTINUOUS=True
-    MODE_SINGLE_SHOT=False
+    #MODE_CONTINUOUS=True
+    #MODE_SINGLE_SHOT=False
     
     def __init__(self, XVals, YVals, noiseMaker, zPiezo, zOffset=50.0, fluors=None, laserPowers=[0,50], xpiezo=None, ypiezo=None, illumFcn = 'ConstIllum', pixel_size_nm=70.):
         if np.isscalar(XVals):
@@ -372,8 +372,10 @@ class FakeCamera:
         #self.compT = compThread(self.XVals[self.ROIx[0]:self.ROIx[1]], self.YVals[self.ROIy[0]:self.ROIy[1]], self.zPiezo, self.zOffset,self.fluors, self.noiseMaker, laserPowers=self.laserPowers, intTime=self.intTime, xpiezo=self.xPiezo, ypiezo=self.yPiezo, illumFcn=self.illumFcn)
         #self.compT.start()
         self._restart_compT()
+        #self._frameRate = 0
 
-        self.contMode = True
+        self._acquisition_mode = self.MODE_CONTINUOUS
+        #self.contMode = True
         self.shutterOpen = True
 
         #let us work with andor dialog
@@ -462,18 +464,6 @@ class FakeCamera:
     def GetCCDHeight(self): 
         return len(self.YVals)
     
-    def SetHorizBin(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetHorizBin(*args):
-        return 0
-        #raise Exception, 'Not implemented yet!!'
-    def GetHorzBinValue(*args): 
-        raise Exception('Not implemented yet!!')
-    def SetVertBin(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetVertBin(*args):
-        return 0
-        #raise Exception, 'Not implemented yet!!'
     def GetNumberChannels(*args): 
         raise Exception('Not implemented yet!!')
     
@@ -676,9 +666,12 @@ class FakeCamera:
         self.noiseMaker.EMGain = gain
         #pass
 
+    def GetAcquisitionMode(self):
+        return self._acquisition_mode
+    
     def SetAcquisitionMode(self, mode):
-        self.contMode = mode
-        self.compT.contMode = mode
+        self._acquisition_mode = mode
+        self.compT.contMode = mode == self.MODE_CONTINUOUS
 
     def SetShutter(self, mode):
         self.shutterOpen = mode
@@ -690,8 +683,6 @@ class FakeCamera:
     def SetBaselineClamp(self, mode):
         pass
 
-    def GetBaselineClamp(self):
-        return True
 
     def SetIlluminationFcn(self, illumFcn):
         self.illumFcn = illumFcn

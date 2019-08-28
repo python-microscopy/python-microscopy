@@ -35,6 +35,8 @@ logger = logging.getLogger(__name__)
 
 
 class Camera(object):
+    # Frame format - PYME previously supported frames in a custom format, but numpy_frames should always be true for current code
+    numpy_frames = 1 #Frames are delivered as numpy arrays.
 
     # Acquisition modes
     MODE_SINGLE_SHOT = 0
@@ -43,7 +45,7 @@ class Camera(object):
     MODE_HARDWARE_TRIGGER = 3
 
 
-    def __init__(self, camNum, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
         Create a camera object. This gets called from the PYMEAcquire init
         script, which is custom for any given microscope and can take
@@ -54,26 +56,15 @@ class Camera(object):
 
         Parameters
         ----------
-        camNum:
-            Camera object number to initialize.
         args :
             Optional arguments, usually instantiated in inherited camera.
         kwargs :
             Optional dictionary of arguments, usually instantiated in
             inherited camera.
 
-        Returns
-        -------
-        Camera
-            A camera object.
         """
-        self.camNum = camNum  # Must associate Camera object with a UID
 
-
-        self._temp = 0  # Default camera temperature (Celsius)
-        self._frameRate = 0
-        #self._intTime = 0.100
-
+        self._frameRate = 0                                    # FIXME - does not belong in base class
 
         self.active = True  # Should the camera write its metadata?
 
@@ -87,95 +78,13 @@ class Camera(object):
         """
         Optional intialization function. Also called from the init script.
         Not really part of 'specification'
-
-        Returns
-        -------
-        None
         """
-        raise NotImplementedError('Implemented in derived class.')
-
-    def StartExposure(self):
-        """
-        Starts an acquisition.
-
-        Returns
-        -------
-        int
-            Success (0) or failure (-1) of initialization.
-        """
-        raise NotImplementedError('Implemented in derived class.')
-
-    def StopAq(self):
-        """
-        Stops acquiring.
-
-        Returns
-        -------
-        None
-        """
-        raise NotImplementedError('Implemented in derived class.')
-
-    def GenStartMetadata(self, mdh):
-        """
-        Create Camera metadata. This ensures the Camera's settings get
-        recorded.
-
-        Parameters
-        ----------
-        mdh : MetaDataHandler
-            MetaDataHandler object for Camera.
-
-        Returns
-        -------
-        None
-        """
-
-        if self.active:
-            # Set Camera object metadata here with calls to mdh.setEntry
-
-            # Personal identification
-            mdh.setEntry('Camera.Name', self.GetName())
-            mdh.setEntry('Camera.Model', self.GetModel())
-            mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
-
-            # Time
-            mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
-            mdh.setEntry('Camera.CycleTime', self.GetCycleTime())
-
-            # Gain
-            mdh.setEntry('Camera.EMGain', self.GetEMGain())
-            mdh.setEntry('Camera.TrueEMGain', self.GetTrueEMGain())
-
-            # Noise
-            mdh.setEntry('Camera.ReadNoise', self.GetReadNoise())
-            mdh.setEntry('Camera.NoiseFactor', self.GetNoiseFactor())
-
-            # QE
-            mdh.setEntry('Camera.ElectronsPerCount', self.GetElectrPerCount())
-
-            # Temp
-            mdh.setEntry('Camera.StartCCDTemp', self.GetCCDTemp())
-
-            # Chip size
-            mdh.setEntry('Camera.SensorWidth', self.GetCCDWidth())
-            mdh.setEntry('Camera.SensorHeight', self.GetCCDHeight())
-
-            # FOV
-            mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
-            mdh.setEntry('Camera.ROIPosY', self.GetROIY1())
-            mdh.setEntry('Camera.ROIOriginX', self.GetROIX1() - 1)
-            mdh.setEntry('Camera.ROIOriginY', self.GetROIY1() - 1)
-            mdh.setEntry('Camera.ROIWidth',
-                         self.GetROIX2() - self.GetROIX1())
-            mdh.setEntry('Camera.ROIHeight',
-                         self.GetROIY2() - self.GetROIY1())
+        raise NotImplementedError('Implement in derived class (if desired).')
 
     @property
     def contMode(self):
-        """ Return whether the camera is running in continuous mode or not.
-        This property (was previously a class member
-        variable) is required to allow the calling code to determine whether it
-        needs to restart exposures after processing
+        """ return whether the camera is runnint in continuous mode or not. This property (was previously a class member
+        variable) is required to allow the calling code to determine whether it needs to restart exposures after processing
         the previous one."""
         return self.GetAcquisitionMode() != self.MODE_SINGLE_SHOT
 
@@ -185,7 +94,7 @@ class Camera(object):
 
         Returns
         -------
-        bool
+        exposureReady : bool
             True if there are frames waiting
 
         """
@@ -193,10 +102,14 @@ class Camera(object):
         raise NotImplementedError('Implemented in derived class.')
 
     def GetName(self):
-        """ Camera name. """
-        return "Default Camera"
+        """ Camera name.
+        
+        FIXME - Do we need this???
+        
+        """
+        raise NotImplementedError('Implemented in derived class.')
 
-    def CamReady(*args):
+    def CamReady(self):
         """
         Returns true if the camera is ready (initialized) not really used for
         anything, but might still be checked.
@@ -206,20 +119,19 @@ class Camera(object):
         bool
             Is the camera ready?
         """
-
+    
         return True
-
+    
     def ExtractColor(self, chSlice, mode):
         """
-        Pulls the oldest frame from the camera buffer and copies it into
-        memory we provide. Note that the function signature and parameters are
-        a legacy of very old code written for a colour camera with a bayer mask.
+        Pulls the oldest frame from the camera buffer and copies it into memory we provide. Note that the function
+        signature and parameters are a legacy of very old code written for a colour camera with a bayer mask.
 
         Parameters
         ----------
         chSlice : `~numpy.ndarray`
             The array we want to put the data into
-        mode : int
+        mode : int, ignored
             Previously specified how to deal with the Bayer mask.
 
         Returns
@@ -231,6 +143,8 @@ class Camera(object):
     def GetModel(self):
         """
         Get the model name of the hardware represented by Camera object.
+        
+        #FIXME - do we need this?
 
         Returns
         -------
@@ -241,15 +155,36 @@ class Camera(object):
 
     def GetSerialNumber(self):
         """
-        Get the serial number of the hardware represented by Camera object.
+        Get the camera serial number
 
         Returns
         -------
-        str
-            Hardware serial number of Camera object
+        serialNum : str
+            The camera serial number
+
         """
         raise NotImplementedError('Should be implemented in derived class.')
+    
+    def SetIntegTime(self, iTime):
+        """
+        Sets the exposure time in s. Currently assumes that we will want to go as fast as possible at this exposure time
+        and also sets the frame rate to match.
 
+        Parameters
+        ----------
+        iTime : float
+            Exposure time in s
+
+        Returns
+        -------
+        None
+
+        See Also
+        --------
+        GetIntegTime
+        """
+        raise NotImplementedError('Implemented in derived class.')
+    
     def GetIntegTime(self):
         """
         Get Camera object integration time.
@@ -263,7 +198,9 @@ class Camera(object):
         --------
         SetIntegTime
         """
-        return self._intTime
+
+        raise NotImplementedError('Implemented in derived class.')
+
 
     def GetCycleTime(self):
         """
@@ -274,36 +211,11 @@ class Camera(object):
         float
             Camera cycle time (seconds)
         """
-        if self._frameRate > 0:
-            return 1.0/self._frameRate
-
-        return 0.0
-
-    def GetReadNoise(self):
         raise NotImplementedError('Implemented in derived class.')
 
-    def GetNoiseFactor(self):
-        return 1
-
-    def GetElectrPerCount(self):
-        raise NotImplementedError('Implemented in derived class.')
-
-    def GetCCDTemp(self):
-        """
-        Gets the Camera object's sensor temperature.
-
-        Returns
-        -------
-        float
-            The sensor's temperature in degrees Celsius
-        """
-
-        return self._temp
 
     def GetCCDWidth(self):
         """
-        Gets the Camera object's sensor width.
-
         Returns
         -------
         int
@@ -314,8 +226,6 @@ class Camera(object):
 
     def GetCCDHeight(self):
         """
-        Gets the Camera object's sensor height.
-
         Returns
         -------
         int
@@ -337,8 +247,8 @@ class Camera(object):
 
     def GetPicHeight(self):
         """
-        Returns the height (in pixels) of the currently selected ROI.
-
+        Returns the height (in pixels) of the currently selected ROI
+        
         Returns
         -------
         int
@@ -346,11 +256,40 @@ class Camera(object):
         """
         raise NotImplementedError('Implemented in derived class.')
 
+    
+    
+    #Binning is not really supported in current software, making these commands mostly superfluous
+    #Being able to read out the binning (GetHorizBin, GetVertBin) is however necessary
+    #these should definitely be revisited
+    def SetHorizBin(*args):
+        raise NotImplementedError("Implemented in derived class.")
+
+    def GetHorizBin(*args):
+        return 0
+
+    def GetHorzBinValue(*args):
+        raise NotImplementedError("Implemented in derived class.")
+
+    def SetVertBin(*args):
+        raise NotImplementedError("Implemented in derived class.")
+
+    def GetVertBin(*args):
+        return 0
+    
+    
+    # ROI Functions
+    def SetROIIndex(self, index):
+        """
+        Used for early Andor Neo cameras with fixed ROIs. Should not be needed for most cameras
+        
+        """
+        raise NotImplementedError("Implement if needed.")
+
     def SetROI(self, x1, y1, x2, y2):
         """
         Set the ROI via coordinates (as opposed to via an index).
 
-        FIXME: this is somewhat inconsistent over cameras, with some
+        NOTE/FIXME: this is somewhat inconsistent over cameras, with some
         cameras using 1-based and some cameras using 0-based indexing.
         Ideally we would convert them all to using zero based indexing and be
         consistent with numpy.
@@ -423,14 +362,39 @@ class Camera(object):
         """
         raise NotImplementedError('Implemented in derived class.')
 
+    def SetEMGain(self, gain):
+        """
+        Set the electron-multiplying gain. For EMCCDs this is typically the
+        uncalibrated, gain register setting. The calibrated gain is computed
+        separately and saved in the metadata as TrueEMGain.
+
+        Parameters
+        ----------
+        gain : float
+            EM gain of Camera object.
+
+        Returns
+        -------
+        None
+
+        See Also
+        --------
+        GetEMGain
+        """
+        pass
+
     def GetEMGain(self):
         """
-        Return electromagnetic gain of Camera object.
+        Return electron-multiplying gain register setting. The actual gain will likely be a non-linear function of this
+        gain, so EMCCD cameras classes are encouraged to keep calibration data and to write this into the metadata as
+        'TrueEMGain'
+        
+        For non-EMCCD cameras, this should return 1.
 
         Returns
         -------
         float
-            Camera object gain
+            Electron multiplying gain register setting
 
         See Also
         ----------
@@ -438,9 +402,11 @@ class Camera(object):
         """
         return 1
 
-    def GetTrueEMGain(self, true_gain=False):
+    def GetTrueEMGain(self):
         """
-        Return true electromagnetic gain of Camera object.
+        # FIXME - what is this doing here???????
+        
+        Return true electron-multiplying gain of Camera object.
 
         Returns
         -------
@@ -452,6 +418,74 @@ class Camera(object):
         GetEMGain
         """
         return 1
+
+    
+
+    
+
+
+    def GetElectrTemp(*args):
+        """
+        Returns the temperature of the internal electronics. Legacy of PCO Sensicam support, which had separate sensors
+        for CCD and electronics. Not actually used anywhere critical (might be recorded in metadata), can remove.
+
+        """
+        return 25
+
+    def GetCCDTemp(self):
+        """
+        Gets the sensor temperature.
+
+        Returns
+        -------
+        float
+            The sensor's temperature in degrees Celsius
+        """
+        raise NotImplementedError('Implement in derived class.')
+
+    def GetCCDTempSetPoint(self):
+        """
+        Get the target camera temperature. Only currently called in Ixon
+        related code, but potentially generally useful.
+
+        Returns
+        -------
+        float
+            Target camera temperature (Celsius)
+        """
+        raise NotImplementedError('Implemented in derived class.')
+
+    def SetCCDTemp(self, temp):
+        """
+        Set the target camera temperature.
+
+        Parameters
+        ----------
+        temp : float
+            The target camera temperature (Celsius)
+
+        Returns
+        -------
+        None
+        """
+        raise NotImplementedError('Implemented in derived class.')
+
+    def SetShutter(self, mode):
+        """
+        Set the camera shutter (if available).
+
+        Parameters
+        ----------
+        mode : bool
+            True (1) if open
+        """
+        pass
+
+    def SetBaselineClamp(self, mode):
+        """ Set the camera baseline clamp (EMCCD). Only called from the Ixon settings panel, so not relevant for other
+        cameras."""
+        pass
+
 
     def GetAcquisitionMode(self):
         """
@@ -490,7 +524,14 @@ class Camera(object):
         """
 
         raise NotImplementedError('Should be implemented in derived class.')
-
+    
+    def SetBurst(self, burstSize):
+        """
+        Used with Andor Zyla/Neo for burst mode acquisition, can generally ignore for most cameras. Somewhat experimental
+        and does not currently have any UI bindings.
+        """
+        raise NotImplementedError("Implement if needed")
+    
     def SetActive(self, active=True):
         """
         Flag the Camera object as active (or inactive) to dictate whether or
@@ -499,80 +540,24 @@ class Camera(object):
         Parameters
         ----------
         active : bool
-            Write metadata?
+        """
+
+        self.active = bool(active)
+    
+    def StartExposure(self):
+        """
+        Starts an acquisition.
 
         Returns
         -------
-        None
-        """
-
-        if not isinstance(active, bool):
-            raise TypeError("Active must be set to True or False.")
-
-        self.active = active
-
-    def SetIntegTime(self, intTime):
-        """
-        Sets the exposure time in s. Currently assumes that we will want to go
-        as fast as possible at this exposure time and also sets the frame
-        rate to match.
-
-        Parameters
-        ----------
-        intTime : float
-            Exposure time in s.
-
-        Returns
-        -------
-        None
-
-        See Also
-        --------
-        GetIntegTime
+        int
+            Success (0) or failure (-1) of initialization.
         """
         raise NotImplementedError('Implemented in derived class.')
 
-    def SetEMGain(self, gain):
+    def StopAq(self):
         """
-        Set the electromagnetic gain. For EMCCDs this is typically the
-        uncalibrated, gain register setting. The calibrated gain is computed
-        separately and saved in the metadata as RealEMGain.
-
-        Parameters
-        ----------
-        gain : float
-            EM gain of Camera object.
-
-        Returns
-        -------
-        None
-
-        See Also
-        --------
-        GetEMGain
-        """
-        raise NotImplementedError('Implemented in derived class.')
-
-    def GetCCDTempSetPoint(self):
-        """
-        Get the target camera temperature. Only currently called in Ixon
-        related code, but potentially generally useful.
-
-        Returns
-        -------
-        float
-            Target camera temperature (Celsius)
-        """
-        raise NotImplementedError('Implemented in derived class.')
-
-    def SetCCDTemp(self, temp):
-        """
-        Set the target camera temperature.
-
-        Parameters
-        ----------
-        temp : float
-            The target camera temperature (Celsius)
+        Stops acquiring.
 
         Returns
         -------
@@ -580,47 +565,6 @@ class Camera(object):
         """
         raise NotImplementedError('Implemented in derived class.')
 
-    def SetShutter(self, mode):
-        """
-        Set the camera shutter (if available).
-
-        Parameters
-        ----------
-        mode : bool
-            True (1) if open
-
-        Returns
-        -------
-        None
-        """
-        raise NotImplementedError('Implemented in derived class.')
-
-    def SetBaselineClamp(self, mode):
-        """
-        Set the camera baseline clamp (EMCCD). Only called from the Ixon
-        settings panel, so not relevant for other cameras.
-
-        Parameters
-        ----------
-        mode : int
-            Clamp state
-
-        Returns
-        -------
-        None
-        """
-        raise NotImplementedError('Implemented in derived class.')
-
-    def GetFPS(self):
-        """
-        Get the camera frame rate in frames per second (float).
-
-        Returns
-        -------
-        float
-            Camera frame rate (frames per second)
-        """
-        return self._frameRate
 
     def GetNumImsBuffered(self):
         """
@@ -644,84 +588,157 @@ class Camera(object):
         """
         raise NotImplementedError("Implemented in derived class.")
 
-    # Binning is not really supported in current software, making these commands
-    # mostly superfluous. Being able to read out the binning (GetHorizBin,
-    # GetVertBin) is however necessary and these should definitely be revisited
-    def SetHorizBin(*args):
-        raise NotImplementedError("Implemented in derived class.")
 
-    def GetHorizBin(*args):
-        return 0
-
-    def GetHorzBinValue(*args):
-        raise NotImplementedError("Implemented in derived class.")
-
-    def SetVertBin(*args):
-        raise NotImplementedError("Implemented in derived class.")
-
-    def GetVertBin(*args):
-        return 0
-
-    def GetElectrTemp(*args):
+    def GetNoiseProperties(self):
         """
-        Returns the temperature of the internal electronics. Legacy of PCO
-        Sensicam support, which had separate sensors for CCD and electronics.
-        Not actually used anywhere critical (might be recorded in metadata),
-        can remove.
+
+        Returns
+        -------
+
+        a dictionary with the following entries:
+
+        'ReadNoise' : camera read noise in electrons
+        'ElectronsPerCount' : AD conversion factor - how many electrons per camera count
+        'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS
+
+        and optionally
+        'ADOffset' : the dark level (in counts)
+        'DefaultEMGain' : a sensible EM gain setting to use for localization recording
+        'SaturationThreshold' : the full well capacity (in counts)
+
+        """
+        raise NotImplementedError('Implement in derived class')
+
+    def GetStatus(self):
+        """
+        Used to poll the camera for status information. Useful for some cameras where it makes sense
+        to make one API call to get the temperature, frame rate, num frames buffered etc ... and cache
+        the results. For most cameras can be safely ignored.
+
+        Parameters
+        ----------
+        args
+
+        Returns
+        -------
+
+        """
+        pass
+    
+    def GetFPS(self):
+        """
+        Get the camera frame rate in frames per second (float).
 
         Returns
         -------
         float
-            Temperature of internal electronics (default is 25.0).
-
+            Camera frame rate (frames per second)
         """
-        return 25.0
 
-    def Shutdown(self):
+        raise NotImplementedError('Implement in derived class')
+    
+    def GenStartMetadata(self, mdh):
         """
-        Clean up the Camera object.
+        FIXME - should this be in the base class ???
+        
+        Create Camera metadata. This ensures the Camera's settings get
+        recorded.
+
+        Parameters
+        ----------
+        mdh : MetaDataHandler
+            MetaDataHandler object for Camera.
 
         Returns
         -------
         None
         """
-        raise NotImplementedError('Implemented in derived class.')
 
+        if self.active:
+            # Set Camera object metadata here with calls to mdh.setEntry
+            self.GetStatus()
+
+            # Personal identification
+            mdh.setEntry('Camera.Name', self.GetName())
+            mdh.setEntry('Camera.Model', self.GetModel())
+            mdh.setEntry('Camera.SerialNumber', self.GetSerialNumber())
+
+            # Time
+            mdh.setEntry('Camera.IntegrationTime', self.GetIntegTime())
+            mdh.setEntry('Camera.CycleTime', self.GetCycleTime())
+
+            # Gain
+            mdh.setEntry('Camera.EMGain', self.GetEMGain())
+            mdh.setEntry('Camera.TrueEMGain', self.GetTrueEMGain())
+
+            # Noise
+            noiseProps = self.GetNoiseProperties()
+            mdh.setEntry('Camera.ReadNoise', noiseProps['ReadNoise'])
+            mdh.setEntry('Camera.NoiseFactor', noiseProps.get('NoiseFactor', 1))
+            mdh.setEntry('Camera.ElectronsPerCount', noiseProps['ElectronsPerCount'])
+
+            # Temp
+            mdh.setEntry('Camera.StartCCDTemp', self.GetCCDTemp())
+
+            # Chip size
+            mdh.setEntry('Camera.SensorWidth', self.GetCCDWidth())
+            mdh.setEntry('Camera.SensorHeight', self.GetCCDHeight())
+
+            # FOV
+            mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
+            mdh.setEntry('Camera.ROIPosY', self.GetROIY1())
+            mdh.setEntry('Camera.ROIOriginX', self.GetROIX1() - 1)
+            mdh.setEntry('Camera.ROIOriginY', self.GetROIY1() - 1)
+            mdh.setEntry('Camera.ROIWidth',
+                         self.GetROIX2() - self.GetROIX1())
+            mdh.setEntry('Camera.ROIHeight',
+                         self.GetROIY2() - self.GetROIY1())
+
+    def Shutdown(self):
+        """Shutdown and clean up the camera"""
+        pass
+        
     def __del__(self):
         self.Shutdown()
-
-
-    ##### Completely useless methods follow. To be deleted. #####
-
+    
+        
+    #legacy methods, unused
+    
     def CheckCoordinates(*args):
-        raise NotImplementedError("Deprecated.")
-
+        # this could possibly get a reprieve, maybe ofter re-naming. Purpose was to decide if a given
+        # ROI was going to be valid
+        raise DeprecationWarning("Deprecated.")
+    
     def DisplayError(*args):
-        raise NotImplementedError("Deprecated.")
-
+        """Completely deprecated and never called. Artifact of very old code which had GUI mixed up with camera. Should remove"""
+        raise DeprecationWarning("Deprecated.")
+    
     def GetBWPicture(*args):
-        raise NotImplementedError("Deprecated.")
-
+        """Legacy of old code. Not called anywhere, should remove"""
+        raise DeprecationWarning("Deprecated.")
+    
     def GetNumberChannels(*args):
-        raise NotImplementedError("Deprecated.")
+        """
+        Returns the number of colour channels in the Bayer mask. Legacy, deprecated, and not used
 
-    def GetStatus(*args):
-        raise NotImplementedError("Deprecated.")
+        Returns
+        -------
+        the number of colour channels
 
-    def SetBurst(self, burstSize):
-        raise NotImplementedError("Deprecated.")
-
+        """
+        raise DeprecationWarning("Deprecated.")
+    
     def SetCOC(*args):
-        raise NotImplementedError("Deprecated.")
-
-    def SetROIIndex(self, index):
-        raise NotImplementedError("Deprecated.")
+        """Legacy of sensicam support. Hopefully no longer called anywhere"""
+        raise DeprecationWarning("Deprecated.")
 
     def StartLifePreview(*args):
-        raise NotImplementedError("Deprecated.")
+        """Legacy of old code. Not called anywhere, should remove"""
+        raise DeprecationWarning("Deprecated.")
 
     def StopLifePreview(*args):
-        raise NotImplementedError("Deprecated.")
+        """Legacy of old code. Not called anywhere, should remove"""
+        raise DeprecationWarning("Deprecated.")
 
 class MultiviewCameraMixin(object):
         def __init__(self, multiview_info, default_roi, camera_class):

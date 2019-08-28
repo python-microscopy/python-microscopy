@@ -428,7 +428,9 @@ class microscope(object):
         """
         currVoxelSizeID = self.settingsDB.execute("SELECT sizeID FROM VoxelSizeHistory2 WHERE camSerial=? ORDER BY time DESC", (self.cam.GetSerialNumber(),)).fetchone()
         if not currVoxelSizeID is None:
-            return self.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
+            voxx, voxy = self.settingsDB.execute("SELECT x,y FROM VoxelSizes WHERE ID=?", currVoxelSizeID).fetchone()
+            
+            return voxx, voxy
 
     def GenStartMetadata(self, mdh):
         """Collects the metadata we want to record at the start of a sequence
@@ -593,9 +595,9 @@ class microscope(object):
         #stext = stext + '    Position:        
         
         if self.frameWrangler.isRunning():
-            if 'GetFPS' in dir(self.cam):
+            try:
                 stext = stext + '    FPS = (%2.2f/%2.2f)' % (self.cam.GetFPS(),self.frameWrangler.getFPS())
-            else:
+            except AttributeError:
                 stext = stext + '    FPS = %2.2f' % self.frameWrangler.getFPS()
 
             if 'GetNumImsBuffered' in dir(self.cam):
