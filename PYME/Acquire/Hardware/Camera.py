@@ -64,15 +64,11 @@ class Camera(object):
 
         """
 
-        self._frameRate = 0                                    # FIXME - does not belong in base class
-
         self.active = True  # Should the camera write its metadata?
 
         # Register as a provider of metadata (record camera settings)
         # this is important so that the camera settings get recorded
-        MetaDataHandler.provideStartMetadata.append(
-            self.GenStartMetadata
-            )
+        MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
     def Init(self):
         """

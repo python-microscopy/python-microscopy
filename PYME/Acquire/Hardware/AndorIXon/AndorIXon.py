@@ -317,46 +317,7 @@ class iXonCamera(Camera):
 #
 #            
 #    def GetContinuousMode(self):
-#        return self.contMode    
-    
-    def GetCamType(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetDataType(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetADBits(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetMaxDigit(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetNumberCh(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetBytesPerPoint(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetCCDType(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetCamID(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetCamVer(*args):
-        raise Exception('Not implemented yet!!')
-
-    def SetTrigMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetTrigMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def SetDelayTime(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetDelayTime(*args):
-        raise Exception('Not implemented yet!!')
+#        return self.contMode
 
     def SetPreampGain(self, gain):
         self.__selectCamera()
@@ -384,24 +345,6 @@ class iXonCamera(Camera):
 
         return float(exp.value)
 
-    def SetROIMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetROIMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def SetCamMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetCamMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def SetBoardNum(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetBoardNum(*args):
-        raise Exception('Not implemented yet!!')
-
     def GetCCDWidth(self):
         return self.CCDSize[0]
 
@@ -420,8 +363,7 @@ class iXonCamera(Camera):
     def SetHorizontalBin(self, value):
         self.SetHorizBin(value)
 
-    def GetHorzizontalBin(self, *args):
-        #raise Exception, 'Not implemented yet!!'
+    def GetHorizontalBin(self, *args):
         return self.binX
 
     def SetVertBin(self, val):
@@ -431,20 +373,13 @@ class iXonCamera(Camera):
         ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
-        #raise Exception, 'Not implemented yet!!'
 
     def SetVerticalBin(self, value):
         self.SetVertBin(value)
 
     def GetVerticalBin(self):
-        #raise Exception, 'Not implemented yet!!'
         return self.binY
 
-    def GetNumberChannels(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetElectrTemp(*args):
-        return 25
 
     def GetCCDTemp(self):
         return self.CCDTemp

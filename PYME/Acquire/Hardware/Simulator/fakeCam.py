@@ -411,34 +411,8 @@ class FakeCamera(Camera):
         if restart:
             self._restart_compT()
 
-    def GetCamType(*args): 
-        raise Exception('Not implemented yet!!')
     def GetSerialNumber(self):
         return 0
-    def GetDataType(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetADBits(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetMaxDigit(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetNumberCh(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetBytesPerPoint(*args):
-        raise Exception('Not implemented yet!!')
-    def GetCCDType(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetCamID(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetCamVer(*args): 
-        raise Exception('Not implemented yet!!')
-    def SetTrigMode(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetTrigMode(*args): 
-        raise Exception('Not implemented yet!!')
-    def SetDelayTime(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetDelayTime(*args): 
-        raise Exception('Not implemented yet!!')
     
     def SetIntegTime(self, iTime): 
         self.intTime=iTime#*1e-3
@@ -446,29 +420,11 @@ class FakeCamera(Camera):
     def GetIntegTime(self): 
         return self.intTime
     
-    def SetROIMode(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetROIMode(*args): 
-        raise Exception('Not implemented yet!!')
-    def SetCamMode(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetCamMode(*args): 
-        raise Exception('Not implemented yet!!')
-    def SetBoardNum(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetBoardNum(*args): 
-        raise Exception('Not implemented yet!!')
-    
     def GetCCDWidth(self): 
         return len(self.XVals)
     def GetCCDHeight(self): 
         return len(self.YVals)
     
-    def GetNumberChannels(*args): 
-        raise Exception('Not implemented yet!!')
-    
-    def GetElectrTemp(*args): 
-        return 25
     def GetCCDTemp(self):
         return self.noiseMaker.temperature
     
@@ -514,16 +470,15 @@ class FakeCamera(Camera):
     
     def GetROIX1(self):
         return self.ROIx[0]
-        #raise Exception, 'Not implemented yet!!'
+       
     def GetROIX2(self):
         return self.ROIx[1]
-        #raise Exception, 'Not implemented yet!!'
+        
     def GetROIY1(self):
         return self.ROIy[0]
-        #raise Exception, 'Not implemented yet!!'
+        
     def GetROIY2(self):
         return self.ROIy[1]
-        #raise Exception, 'Not implemented yet!!'
 
 
     def Shutdown(self):
@@ -570,10 +525,6 @@ class FakeCamera(Camera):
         #pylab.gca().set_xticklabels(['Caged', 'On', 'Blinked', 'Bleached'])
         #pylab.show()
         
-    def CheckCoordinates(*args): 
-        raise Exception('Not implemented yet!!')
-
-    #new fcns for Andor compatibility
     def GetNumImsBuffered(self):
         return self.compT.numFramesBuffered()
     
@@ -647,7 +598,7 @@ class FakeCamera(Camera):
     
     def SetAcquisitionMode(self, mode):
         self._acquisition_mode = mode
-        self.compT.contMode = mode == self.MODE_CONTINUOUS
+        self.compT.contMode = (mode == self.MODE_CONTINUOUS)
 
     def SetShutter(self, mode):
         self.shutterOpen = mode
@@ -656,17 +607,10 @@ class FakeCamera(Camera):
     def GetBaselineClamp(self):
         return True
 
-    def SetBaselineClamp(self, mode):
-        pass
-
 
     def SetIlluminationFcn(self, illumFcn):
         self.illumFcn = illumFcn
         self.compT.illumFcn = illumFcn
-
-    def SetActive(self, active=True):
-        '''flag the camera as active (or inactive) to dictate whether it writes it's metadata or not'''
-        self.active = active
 
     def __getattr__(self, name):
         if name in dir(self.noiseMaker):
