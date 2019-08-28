@@ -5,6 +5,9 @@ import glob
 import collections
 import time
 import six
+import logging
+
+logger = logging.getLogger(__name__)
 
 CacheEntry = collections.namedtuple('CacheEntry', ['data', 'saved'])
 
@@ -311,7 +314,7 @@ class ImagePyramid(object):
                     (j * self.tile_size):((j + 1) * self.tile_size)] = subtile
                     
         return new_tile
-        print('Making layer %d' % (inputLevel+1))
+        logger.debug('Making layer %d' % (inputLevel+1))
     
     def get_layer_tile_coords(self, level):
         return self._imgs.get_layer_tile_coords(level)
@@ -528,7 +531,7 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
 
     P = ImagePyramid(out_folder, pyramid_tile_size, x0=x0, y0=y0, pixel_size=mdh.getEntry('voxelsize.x'))
 
-    print('Adding base tiles ...')
+    logger.debug('Adding base tiles ...')
     
     t1 = time.time()
     for i in range(int(mdh.getEntry('Protocol.DataStartsAt')), numFrames):
@@ -557,13 +560,13 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
                 
     
     t2 = time.time()
-    print('Added base tiles in %fs' % (t2 - t1))
+    logger.debug('Added base tiles in %fs' % (t2 - t1))
     #P._occ.flush()
-    print(time.time() - t2)
-    print('Updating pyramid ...')
+    logger.debug(time.time() - t2)
+    logger.debug('Updating pyramid ...')
     P.update_pyramid()
-    print(time.time() - t2)
-    print('Done')
+    logger.debug(time.time() - t2)
+    logger.debug('Done')
     return P
 
 def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
@@ -590,7 +593,7 @@ if __name__ == '__main__':
     import time
     t1 = time.time()
     create_pyramid_from_dataset(input_stack, output_dir)
-    print(time.time() - t1)
+    logger.debug(time.time() - t1)
     #mProfile.report()
     
     
