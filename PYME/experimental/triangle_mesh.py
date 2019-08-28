@@ -1583,7 +1583,7 @@ class TriangleMesh(object):
                     for c in nn_component[nn_component_mask]:
                         self._vertices['component'][self._vertices['component'] == c] = min_component
                         self._halfedges['component'][self._halfedges['component'] == c] = min_component
-                        self._faces['component'][self._faces['component'] == c] = min_component
+                        self._faces['component'][self._faces['component'] == c] = min_component 
 
     def keep_largest_connected_component(self):
         # Find the connected components
@@ -1725,6 +1725,82 @@ class TriangleMesh(object):
             self._halfedges['vertex'][_h0_twin] = self._halfedges['vertex'][self._halfedges['prev'][h0]]
             polygon.append(self._halfedges['next'][_h0_twin])  # Adjust the boundary
 
+    # def minimum_area_triangulation(self, polygon):
+    #     """
+    #     Performs a minimum area triangulation over a polygon defined by
+    #     halfedges in the mesh.
+
+    #     Parameters
+    #     ----------
+    #         polygon : list
+    #             List of halfedges defining a closed polygon in the mesh.
+
+    #     References
+    #     ----------
+    #         G. Barequet and M. Sharir, "Filling Gaps in the Boundary of a 
+    #         Polyhedron," Computer-Aided Geometric Design, 1995.
+    #     """
+
+    #     n = len(polygon)
+
+    #     # Ensure pn = p0
+    #     if polygon[-1] != polygon[0]:
+    #         polygon.append(polygon[0])
+    #         n += 1
+
+    #     # The polygon was likely found (if we used find_boundary_polygons)
+    #     # in the winding order of the original mesh. We need to reverse
+    #     # this to match the original mesh's winding order in the new 
+    #     # triangles
+    #     polygon = polygon[::-1]
+
+    #     def calc_area(a, b, c):
+    #         v0 = self._vertices['position'][a]
+    #         v1 = self._vertices['position'][b]
+    #         v2 = self._vertices['position'][c]
+    #         u = v2 - v1
+    #         v = v0 - v1
+    #         n = fast_3x3_cross(u,v)
+    #         area = 0.5*np.sqrt((n*n).sum())
+    #         return area
+        
+    #     # Create a weight matrix
+    #     W = np.zeros((n,n))
+    #     for i in np.arange(n-2):
+    #         W[i,i+2] = calc_area(self._halfedges['vertex'][polygon[i]], self._halfedges['vertex'][polygon[i+1]], self._halfedges['vertex'][polygon[i+2]])  # Weight by area
+
+    #     # Create a minimum index matrix
+    #     O = np.zeros((n,n))
+
+    #     # Find the minimum score
+    #     for j in np.arange(2, n):
+    #         for i in np.arange(n-j):
+    #             k = i + j
+    #             vi = self._halfedges['vertex'][polygon[i]]
+    #             vk = self._halfedges['vertex'][polygon[k]]
+    #             for m in np.arange(i,k):
+    #                 score = W[i, m] + W[m, k] + calc_area(vi, self._halfedges['vertex'][polygon[m]], vk)
+    #                 if score < W[i,k]:
+    #                     W[i, k] = score
+    #                     O[i, k] = m
+
+    #     def create_triangle(a, b, c):
+    #         pass
+
+    #     def trace(i, k, O):
+    #         if k == (i + 2):
+    #             # create triangle i, i+1, k
+    #             pass
+    #         else:
+    #             o = O[i, k]
+    #             if o != (i + 1):
+    #                 trace(i, o, O)
+    #             # create triangle i, o, k
+    #             if o != (k - 1):
+    #                 trace(o, k, O)
+        
+    #     trace(0, n-1, O)
+
     def _fill_holes(self, method='fan'):
         """
         Fill holes in the mesh.
@@ -1747,6 +1823,20 @@ class TriangleMesh(object):
         if method == 'fan':
             for polygon in boundary_polygons:
                 self._fan_triangulation(polygon)
+
+    # def _remove_singularities(self):
+    #     # 1. Get a list of singular edges
+    #     edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
+    #     packed_edges = pack_edges(edges)
+    #     e, c = np.unique(packed_edges, return_counts=True)
+    #     singular_packed_edges = e[c>2]
+    #     singular_edges = []
+    #     for singular_packed_edge in singular_packed_edges:
+    #         singular_edges.extend(list(np.where(packed_edges[:, None] == singular_packed_edge)[0]))
+
+    #     # Delete faces associated with these edges
+    #     for _edge in singular_edges:
+    #         self._face_delete(_edge)
 
     def _remove_singularities(self):
         """
@@ -1792,13 +1882,15 @@ class TriangleMesh(object):
         for _vertex in singular_vertices:
             nn = self._vertices['neighbors'][_vertex]
             nn_mask = (nn != -1)
+            _vertex_edges = np.hstack([nn[nn_mask], self._halfedges['twin'][nn[nn_mask]]])
+            remaining = list(set(_vertex_edges) - set(singular_edges))  # Don't cluster on marked edges
             # Find connected components in the 1-neighbor ring
-            self.find_connected_components(nn[nn_mask])
+            self.find_connected_components(remaining)
 
             # 5. Create nc-1 copies of the vertex and assign each equivalence class 
             #    one of these vertices.
             components = np.unique(self._vertices['component'][self._vertices['component'] != -1])
-            for c in components[:-1]:
+            for c in components[1:]:
                 # Grab the faces associated with this component
                 _faces = np.where(self._faces['component'] == c)[0]
                 
