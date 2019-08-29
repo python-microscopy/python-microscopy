@@ -16,16 +16,14 @@ class ActionList(wx.ListCtrl):
         self.actionManager.onQueueChange.connect(self.update)
         
         self.InsertColumn(0, "Priority")
-        self.InsertColumn(1, "ID")
-        self.InsertColumn(2, "Function")
-        self.InsertColumn(3, "Args")
-        self.InsertColumn(4, "Expiry")
+        self.InsertColumn(1, "Function")
+        self.InsertColumn(2, "Args")
+        self.InsertColumn(3, "Expiry")
         
         self.SetColumnWidth(0, 50)
-        self.SetColumnWidth(1, 15)
-        self.SetColumnWidth(2, 150)
-        self.SetColumnWidth(3, 450)
-        self.SetColumnWidth(4, 50)
+        self.SetColumnWidth(1, 150)
+        self.SetColumnWidth(2, 450)
+        self.SetColumnWidth(3, 50)
 
 
     def OnGetItemText(self, item, col):
@@ -188,7 +186,6 @@ class ActionPanel(wx.Panel):
         -------
 
         """
-        priority_offset = 1.0 / (2 * len(rois))
         nice = float(self.tNice.GetValue())
         timeout = float(self.tTimeout.GetValue()) #CHECKME - default here might be too short
         
@@ -196,8 +193,7 @@ class ActionPanel(wx.Panel):
             args = {'state' : {'Positioning.x': float(x), 'Positioning.y': float(y)}}
             self.actionManager.QueueAction('state.update', args, nice, timeout)
             args = {'maxFrames': int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
-            self.actionManager.QueueAction('spoolController.StartSpooling', args, nice + priority_offset, timeout)
-            nice += 2 * priority_offset
+            self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
     
     def OnROIsFromFile(self, event):
         import wx
