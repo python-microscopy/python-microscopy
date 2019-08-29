@@ -130,7 +130,7 @@ class SpoolController(object):
             return HTTPSpooler.exists(pyme_cluster + '.pcs') or HTTPSpooler.exists(pyme_cluster + '.h5')
             #return (fn + '.h5/') in HTTPSpooler.clusterIO.listdir(self.dirname)
         else:
-            local_h5 = os.sep.join(os.sep.join([self.dirname, fn + '.h5']))
+            local_h5 = os.sep.join([self.dirname, fn + '.h5'])
             logger.debug('Looking for %s on local machine' % local_h5)
             return os.path.exists(local_h5)
         
