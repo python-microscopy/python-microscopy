@@ -15,7 +15,6 @@ except ImportError:
 import time
 import dispatch
 import weakref
-import uuid
 
 class ActionManager(object):
     """This implements a queue for actions which should be called sequentially.
@@ -110,7 +109,7 @@ class ActionManager(object):
         if (self.isLastTaskDone is None) or self.isLastTaskDone():
             try:
                 self.currentTask = self.actionQueue.get_nowait()
-                nice, uid, functionName, args, expiry = self.currentTask
+                nice, functionName, args, expiry = self.currentTask
                 self.onQueueChange.send(self)
             except Queue.Empty:
                 self.currentTask = None
