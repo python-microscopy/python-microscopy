@@ -84,7 +84,7 @@ class TriangleMesh(object):
         self.vertex_normals
 
         # Properties we can visualize
-        self.vertex_properties = ['x', 'y', 'z']
+        self.vertex_properties = ['x', 'y', 'z', 'component']
 
         self.fix_boundary = True  # Hold boundary edges in place
         self.debug = False  # Print debug statements
@@ -192,6 +192,10 @@ class TriangleMesh(object):
         return self.vertices[:,2]
 
     @property
+    def component(self):
+        return self._vertices['component'][self._vertices['halfedge'] != -1]
+
+    @property
     def vertices(self):
         return self._vertices['position']
 
@@ -228,7 +232,7 @@ class TriangleMesh(object):
                 self._faces['normal'] = n/nn[:, None]
                 self._faces['normal'][np.isnan(self._faces['normal'])] = 0
                 self._faces['normal'][self._faces['halfedge'] == -1] = -1
-        return self._faces['normal']
+        return self._faces['normal'][self._faces['halfedge'] != -1]
 
     @property
     def face_areas(self):
@@ -780,6 +784,8 @@ class TriangleMesh(object):
             return
         
         curr_edge = self._halfedges[_edge]
+        if curr_edge['vertex'] == -1:
+            return
         self._faces[curr_edge['face']] = -1
 
         self._face_vacancies.append(curr_edge['face'])
@@ -1285,11 +1291,9 @@ class TriangleMesh(object):
                 per remeshing iteration.
         """
 
-        mean_edge_length = np.mean(self._halfedges['length'][self._halfedges['length'] != -1])
-
         if (target_edge_length == -1):
             # Guess edge_length
-            target_edge_length = mean_edge_length
+            target_edge_length = np.mean(self._halfedges['length'][self._halfedges['length'] != -1])
 
         for k in range(n):
             # 1. Split all edges longer than (4/3)*target_edge_length at their midpoint.
@@ -1713,9 +1717,12 @@ class TriangleMesh(object):
 
         while True:
             if len(polygon) == 3:
-                polygon = polygon[::-1]
+                # polygon = polygon[::-1]
+                h0 = polygon.pop()
+                h1 = polygon.pop()
+                h2 = polygon.pop()
                 # Draw a triangle in the opposite winding order.
-                fill_triangle(*polygon)
+                fill_triangle(h0, h1, h2)
                 break
             h0 = polygon.pop()
             h1 = polygon.pop()
@@ -1723,6 +1730,8 @@ class TriangleMesh(object):
             # Due to the way fill_triangle works, we need to set h0's vertex after the fact
             _h0_twin = self._halfedges['twin'][h0]
             self._halfedges['vertex'][_h0_twin] = self._halfedges['vertex'][self._halfedges['prev'][h0]]
+            self._update_face_normals([self._halfedges['face'][_h0_twin], self._halfedges['face'][h0], self._halfedges['face'][h1]])
+            self._update_vertex_neighbors([self._halfedges['vertex'][_h0_twin], self._halfedges['vertex'][h0], self._halfedges['vertex'][h1]])
             polygon.append(self._halfedges['next'][_h0_twin])  # Adjust the boundary
 
     # def minimum_area_triangulation(self, polygon):
@@ -1824,6 +1833,8 @@ class TriangleMesh(object):
             for polygon in boundary_polygons:
                 self._fan_triangulation(polygon)
 
+        self._faces_by_vertex = None
+
     # def _remove_singularities(self):
     #     # 1. Get a list of singular edges
     #     edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
@@ -1862,19 +1873,22 @@ class TriangleMesh(object):
         # 2. Mark vertices that are endpoints of these edges
         singular_vertices = list(set(list(np.hstack([self._halfedges['vertex'][singular_edges], self._halfedges['vertex'][self._halfedges['twin'][singular_edges]]]))))
 
-        # # TODO: 3. Mark isolated singular vertices
-        # for _vertex in np.arange(self._vertices.shape[0]):
-        #     if self._vertices['halfedge'][_vertex] == -1:
-        #         continue
+        # TODO: 3. Mark isolated singular vertices
+        for _vertex in np.arange(self._vertices.shape[0]):
+            if self._vertices['halfedge'][_vertex] == -1:
+                continue
 
-        #     # If the number of elements in the 1-neighbor ring does not match 
-        #     # the number of halfedges pointing to a vertex, we have an isolated
-        #     # singular vertex (note this requires the C code version of
-        #     # update_vertex_neighbors, which reverses direction upon hitting
-        #     # an edge to ensure a more accurate valence)
-        #     n_incident = np.sum(self._halfedges['vertex'] == _vertex)
-        #     if self._vertices['valence'][_vertex] != n_incident:
-        #         singular_vertices.append(_vertex)
+            # If the number of elements in the 1-neighbor ring does not match 
+            # the number of halfedges pointing to a vertex, we have an isolated
+            # singular vertex (note this requires the C code version of
+            # update_vertex_neighbors, which reverses direction upon hitting
+            # an edge to ensure a more accurate valence)
+            n_incident = np.sum(self._halfedges['vertex'] == _vertex)
+            if self._vertices['valence'][_vertex] != n_incident:
+                print(self._vertices['valence'][_vertex], n_incident)
+                singular_vertices.append(_vertex)
+
+        # singular_vertices = list(set(singular_vertices))
 
         # 4. For each marked vertex, partition the faces of the 1-neighbor ring
         #    into nc "is reachable" equivalence classes. Faces are reachable if
@@ -1882,8 +1896,7 @@ class TriangleMesh(object):
         for _vertex in singular_vertices:
             nn = self._vertices['neighbors'][_vertex]
             nn_mask = (nn != -1)
-            _vertex_edges = np.hstack([nn[nn_mask], self._halfedges['twin'][nn[nn_mask]]])
-            remaining = list(set(_vertex_edges) - set(singular_edges))  # Don't cluster on marked edges
+            remaining = list(set(nn[nn_mask]) - set(singular_edges))  # Don't cluster on marked edges
             # Find connected components in the 1-neighbor ring
             self.find_connected_components(remaining)
 
