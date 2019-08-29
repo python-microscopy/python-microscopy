@@ -968,8 +968,8 @@ if USE_RAW_SOCKETS:
                     for i in range(nChunksSpooled):
                         status, reason, msg = _parse_response(fp)
                         if not status == 200:
-                            logging.error(('Response %d - status: %d' % (i, status)) + ' msg: ' + msg)
-                            raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, msg))
+                            logging.error(('Response %d - status: %d' % (i, status)) + ' msg: ' + str(msg))
+                            raise RuntimeError('Error spooling chunk %d: status: %d, msg: %s' % (i, status, str(msg)))
                 finally:
                     fp.close()
 
