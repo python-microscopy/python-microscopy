@@ -22,7 +22,7 @@ class ActionList(wx.ListCtrl):
         
         self.SetColumnWidth(0, 50)
         self.SetColumnWidth(1, 150)
-        self.SetColumnWidth(2, 300)
+        self.SetColumnWidth(2, 450)
         self.SetColumnWidth(3, 50)
 
 
@@ -174,6 +174,18 @@ class ActionPanel(wx.Panel):
         
     
     def _add_ROIs(self, rois):
+        """
+        Add ROIs to queue, staggering their positioning and spooling actions
+
+        Parameters
+        ----------
+        rois: list-like
+            list of ROI (x, y) positions, or array of shape (n_roi, 2)
+
+        Returns
+        -------
+
+        """
         nice = float(self.tNice.GetValue())
         timeout = float(self.tTimeout.GetValue()) #CHECKME - default here might be too short
         

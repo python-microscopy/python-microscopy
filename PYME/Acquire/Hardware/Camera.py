@@ -777,7 +777,8 @@ class MultiviewCameraMixin(object):
 
             self.n_views = multiview_info['Multiview.NumROIs']
             self.view_origins = [multiview_info['Multiview.ROI%dOrigin' % i] for i in range(self.n_views)]
-            self.size_x, self.size_y = multiview_info['Multiview.ROISize']
+            self.size_x, self.size_y = multiview_info['Multiview.DefaultROISize']
+            self.multiview_roi_size_options =  multiview_info['Multiview.ROISizeOptions']
 
             self.view_centers = [(ox + int(0.5*self.size_x), oy + int(0.5*self.size_y)) for ox, oy in self.view_origins]
 

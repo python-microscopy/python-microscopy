@@ -122,12 +122,15 @@ class SpoolController(object):
     def _checkOutputExists(self, fn):
         if self.spoolType == 'Cluster':
             from PYME.Acquire import HTTPSpooler
-            #special case for HTTP spooling
-            logger.debug('Looking for %s on cluster' % (self.dirname +'/'+ fn + '.pcs'))
-            return HTTPSpooler.exists(self.dirname + '/' + fn + '.pcs') or HTTPSpooler.exists(self.dirname + '/' + fn + '.h5')
+            # special case for HTTP spooling.  Make sure 000\series.pcs -> 000/series.pcs
+            pyme_cluster = self.dirname + '/' + fn.replace('\\', '/')
+            logger.debug('Looking for %s (.pcs or .h5) on cluster' % pyme_cluster)
+            return HTTPSpooler.exists(pyme_cluster + '.pcs') or HTTPSpooler.exists(pyme_cluster + '.h5')
             #return (fn + '.h5/') in HTTPSpooler.clusterIO.listdir(self.dirname)
         else:
-            return os.path.exists(os.sep.join([self.dirname, fn + '.h5']))
+            local_h5 = os.sep.join([self.dirname, fn + '.h5'])
+            logger.debug('Looking for %s on local machine' % local_h5)
+            return os.path.exists(local_h5)
         
     def get_free_space(self):
         """
@@ -155,11 +158,8 @@ class SpoolController(object):
     def SetSpoolDir(self, dirname):
         """Set the directory we're spooling into"""
         self._dirname = dirname + os.sep
-
         #if we've had to quit for whatever reason start where we left off
-        while self._checkOutputExists(self.seriesName):
-            self.seriesCounter +=1
-            self.seriesName = self._GenSeriesName()
+        self._update_series_counter()
             
     def _ProgressUpate(self, **kwargs):
         self.onSpoolProgress.send(self)

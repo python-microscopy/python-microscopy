@@ -31,6 +31,8 @@ def cam(scope):
     uCam480.init()
     cam = uCam480.uc480Camera(0, nbits=10)
     scope.register_camera(cam, 'Focus')
+    scope.cam.SetGainBoost(False)  # shouldn't be needed, but make sure it is off
+    scope.cam.SetGain(1)  # we really don't need any extra gain, this defaults to 10 on startup
     scope.cam.SetROI(289, 827, 1080, 1008)
     # With our laser at a stable operating current we saturate easily, set integ low
     scope.cam.SetIntegTime(0.0005)

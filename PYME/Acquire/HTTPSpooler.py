@@ -91,7 +91,7 @@ def getReducedFilename(filename):
     return sname
     
 def exists(seriesName):
-    return clusterIO.exists(getReducedFilename(seriesName) + '/')
+    return clusterIO.exists(getReducedFilename(seriesName))
 
 #Push data to cluster from multiple threads simultaeneously to hide IO latency
 #of each individual node. Not sure what the best number is here - currenty set

@@ -60,9 +60,9 @@ class AAOptoMDS(AOTF):
         self.com_port = serial.Serial(com_port, timeout=serial_timeout)
         self.lock = threading.Lock()
         self.is_on = True
-        # set to internal control mode
+        # set to internal control mode, grab a couple extra lines to give the unit time to write before clearing buffer
         logger.debug('Setting AOTF to internal control mode')
-        self.query(b'I0\r\n', lines_expected=35)
+        self.query(b'I0\r\n', lines_expected=3)
         # Grab the initial properties
         logger.debug('Getting MDS status')
         self.GetStatus()
