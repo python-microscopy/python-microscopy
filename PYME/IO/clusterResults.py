@@ -49,6 +49,8 @@ def fileFormattedResults(URI, data, mimetype=None, compression=True):
         #logging.debug('type(data) = %s, len(data) = %d' % (type(data), len(data)))
         if not isinstance(URI, bytes):
             URI = URI.encode()
+        # if not isinstance(data, bytes):
+        #     data = data.encode()
             
         s = clusterIO._getSession(URI)
         
@@ -133,7 +135,7 @@ def fileResults(URI, data_raw):
             data = data_raw.encode()
         else:
             df = pd.DataFrame(data_raw)
-            data = df.to_json()
+            data = df.to_json().encode()
 
     elif URI.endswith('.pzf'):
         raise RuntimeError('PZF format needs parameters, pack data yourself and call fileFormattedResults')
@@ -155,7 +157,7 @@ def fileResults(URI, data_raw):
 
     elif isinstance(data_raw, MetaDataHandler.MDHandlerBase):
         output_format = 'text/json'
-        data = data_raw.to_JSON()
+        data = data_raw.to_JSON().encode()
 
     else:
         logging.warn('No handler for data type found, using pickle')
