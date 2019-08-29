@@ -5,6 +5,9 @@ import numpy as np
 import cherrypy
 from io import BytesIO
 import os
+from collections import namedtuple
+
+Location = namedtuple('Location', 'x, y')
 
 from PYME.IO import MetaDataHandler
 
@@ -40,7 +43,8 @@ class TileServer(object):
         from PYME.IO import tabular
         
         if locations_file.endswith('.h5'):
-            self.roi_locations = tabular.hdfSource(locations_file, tablename=tablename)
+            locs = tabular.hdfSource(locations_file, tablename=tablename)
+            self.roi_locations = [Location(x,y) for x, y in zip(locs['x_um'], locs['y_um'])]
         # elif locations_file.endswith('.csv'):
         #     self.roi_locations = tabular.textfileSource(locations_file)
         raise cherrypy.HTTPRedirect('/')
@@ -48,12 +52,14 @@ class TileServer(object):
     @cherrypy.expose
     def get_roi_locations(self):
         if not self.roi_locations is None:
-            from pandas import DataFrame
-            return DataFrame(self.roi_locations).to_json() #FIXME - this is broken for tabular objects
+            import json
+            return json.dumps(self.roi_locations)
+            #return DataFrame(self.roi_locations).to_json() #FIXME - this is broken for tabular objects
         
     @cherrypy.expose
     def add_roi(self, x, y):
-        self.roi_locations.append({'x': float(x), 'y': float(y)}) #FIXME - broken for tabular objects
+        #self.roi_locations.append({'x': float(x), 'y': float(y)}) #FIXME - broken for tabular objects
+        self.roi_locations.append(Location(x=float(x), y=float(y)))
         
         raise cherrypy.HTTPRedirect('/roi_list')
         

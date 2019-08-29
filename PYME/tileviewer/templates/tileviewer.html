@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <title>PYME Tile Viewer</title>
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <style>
+        .roi {
+           fill : none;
+           stroke: #f00;
+           stroke-width: 1;
+            width: 25px;
+            height: 25px;
+       }
+
+        /*
+        .rois {
+            transform: translate(- {{ pyramid_x0 }}, - {{ pyramid_y0 }})scale({{ pyramid_pixel_size_um }}/{{ pyramid_width_px }});
+        }*/
+    </style>
 </head>
 <body>
   	<div class="container-fluid">
@@ -43,9 +57,12 @@
 
 <script src="/static/jquery.min.js"></script>
 <script src="/static/openseadragon.min.js"></script>
-    <script src="/static/openseadragon-viewerinputhook.min.js"></script>
-    <script type='text/javascript' src='/static/openSeadragonGL.js'></script>
-  <script type='text/javascript' src='/static/viaWebGL.js'></script>
+<script src="/static/openseadragon-svg-overlay.js"></script>
+<script src="/static/openseadragon-viewerinputhook.min.js"></script>
+<script type='text/javascript' src='/static/openSeadragonGL.js'></script>
+<script type='text/javascript' src='/static/viaWebGL.js'></script>
+<script src="//d3js.org/d3.v5.min.js"></script>
+
 <script type="text/javascript">
     function imageToMicrometers(imageCoordinates) {
         var micrometerCoordinates = {
@@ -88,6 +105,47 @@
         {tracker: 'viewer', handler: 'clickHandler', hookHandler: onViewerClick}
     ]});
 
+    var overlay = viewer.svgOverlay();
+
+    var tx = - {{ pyramid_x0 }};
+    var ty = - {{ pyramid_y0 }};
+    var sc = 1.0 /({{ pyramid_pixel_size_um }} * {{ pyramid_width_px }} );
+
+    var rois = d3.select(overlay.node()).append('g')
+            .attr('class', 'rois')
+            .attr('transform', 'scale(' + sc + ') translate(' + tx + ' ' + ty + ')');
+
+    function draw_rois(){
+        var url = "/get_roi_locations";
+
+        d3.json(url).then(function(data) {
+            //console.log(data);
+
+            var sel = rois.selectAll(".roi")
+                .data(data);
+
+            var roi = sel.enter().append("rect")
+                .attr("class", "roi")
+                .attr("x", function (d) {
+                    //console.log(d);
+                    return d[0];
+                })
+                .attr("y", function (d) {
+                    return d[1];
+                });
+
+            sel.exit().remove();
+
+        });
+    }
+
+{#    var d3Rect = d3.select(overlay.node()).append("rect")#}
+{#                        .attr("class", 'roi')#}
+{#                        .attr("x", 0.5)#}
+{#                        .attr("width", 0.25)#}
+{#                        .attr("y", 0.5)#}
+{#                        .attr("height", 0.25);#}
+
 
     function onViewerClick(event) {
         // Disable click zoom on the viewer using event.preventDefaultAction
@@ -108,12 +166,14 @@
 
         $.get( "/add_roi?x=" + c.x + "&y=" + c.y , function( data ) {
         $( "#roi_list" ).html( data );
+        draw_rois();
         //alert( "Load was performed." );
     });
     }
 
     $.get( "/roi_list", function( data ) {
         $( "#roi_list" ).html( data );
+        draw_rois();
         //alert( "Load was performed." );
     });
 
@@ -125,6 +185,8 @@
     }
 
     $("#set_display_gain").click(onSetGain);
+
+    $(window).resize(function() {overlay.resize();});
 </script>
 
 </body>

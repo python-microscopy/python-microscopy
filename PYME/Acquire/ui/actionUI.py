@@ -5,6 +5,7 @@ Created on Sat May 28 23:55:50 2016
 @author: david
 """
 import wx
+import numpy as np
 
 class ActionList(wx.ListCtrl):
     def __init__(self, parent, actionManager, pos=wx.DefaultPosition,
@@ -176,8 +177,8 @@ class ActionPanel(wx.Panel):
         nice = float(self.tNice.GetValue())
         timeout = float(self.tTimeout.GetValue()) #CHECKME - default here might be too short
         
-        for roi in rois:
-            args = {'state' : {'Positioning.x': float(roi['x']), 'Positioning.y': float(roi['y'])}}
+        for x, y in rois:
+            args = {'state' : {'Positioning.x': float(x), 'Positioning.y': float(y)}}
             self.actionManager.QueueAction('state.update', args, nice, timeout)
             args = {'maxFrames': int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
             self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
@@ -190,7 +191,7 @@ class ActionPanel(wx.Panel):
         if not filename == '':
             rois = tabular.hdfSource(filename, tablename='roi_locations')
             
-            rois = [{'x' : x, 'y' :y } for x, y in zip(rois['x_um'], rois['y_um'])]
+            rois = [(x, y) for x, y in zip(rois['x_um'], rois['y_um'])]
             
             self._add_ROIs(rois)
     
@@ -200,8 +201,9 @@ class ActionPanel(wx.Panel):
         if resp.status_code != 200:
             raise requests.HTTPError('Could not get ROI locations')
 
-        roi_dict = resp.json()  #FIXME!!!  need to convert {'x':{}, 'y':{}} to list of dict
-        self._add_ROIs([dict(x=roi_dict['x'][ind], y=roi_dict['y'][ind]) for ind in sorted(roi_dict['x'].keys())])
+        rois = np.array(resp.json())
+        print(rois.shape)
+        self._add_ROIs(rois)
         
 
 
