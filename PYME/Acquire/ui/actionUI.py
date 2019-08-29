@@ -176,6 +176,19 @@ class ActionPanel(wx.Panel):
         
     
     def _add_ROIs(self, rois):
+        """
+        Add ROIs to queue, staggering their positioning and spooling actions
+
+        Parameters
+        ----------
+        rois: list-like
+            list of ROI (x, y) positions, or array of shape (n_roi, 2)
+
+        Returns
+        -------
+
+        """
+        priority_offset = 1.0 / (2 * len(rois))
         nice = float(self.tNice.GetValue())
         timeout = float(self.tTimeout.GetValue()) #CHECKME - default here might be too short
         
@@ -183,7 +196,8 @@ class ActionPanel(wx.Panel):
             args = {'state' : {'Positioning.x': float(x), 'Positioning.y': float(y)}}
             self.actionManager.QueueAction('state.update', args, nice, timeout)
             args = {'maxFrames': int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
-            self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
+            self.actionManager.QueueAction('spoolController.StartSpooling', args, nice + priority_offset, timeout)
+            nice += 2 * priority_offset
     
     def OnROIsFromFile(self, event):
         import wx
