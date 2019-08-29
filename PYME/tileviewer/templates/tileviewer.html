@@ -48,6 +48,16 @@
 
 </form>
             <h3>ROIs to image</h3>
+            <div>
+                <form class="form-inline">
+                    <div class="form-group">
+                        <label for="recipe_path">Detection recipe</label>
+                        <input type="text" class="form-control" id="recipe_path" value="" style="width: 200px;">
+                        <button type="button" class="btn btn-default" id="run_recipe">Run</button>
+                    </div>
+                    <button type="button" class="btn" id="clear_rois">Clear</button>
+                </form>
+            </div>
             <p>Double click on image to add a ROI</p>
             <div id="roi_list" style="overflow-y:scroll;max-height:720px"></div>
         </div>
@@ -185,6 +195,13 @@
     }
 
     $("#set_display_gain").click(onSetGain);
+
+    $("#clear_rois").click(function(event){
+        $.get( "/clear_rois" , function( data ) {
+            $( "#roi_list" ).html( data );
+            draw_rois();
+        });
+    } );
 
     $(window).resize(function() {overlay.resize();});
 </script>

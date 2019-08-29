@@ -66,6 +66,14 @@ class TileServer(object):
     @cherrypy.expose
     def roi_list(self):
         return env.get_template('roi_list.html').render(roi_list=self.roi_locations)
+    
+    @cherrypy.expose
+    def clear_rois(self):
+        self.roi_locations = []
+        raise cherrypy.HTTPRedirect('/roi_list')
+    
+    @cherrypy.expose
+    def run_recipe_for_locations(self, ):
 
     @cherrypy.expose
     def get_tile(self, layer, x, y, vmin=0, vmax=255):
