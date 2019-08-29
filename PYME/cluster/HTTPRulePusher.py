@@ -50,7 +50,7 @@ def _getTaskQueueURI(n_retries=2):
     except KeyError:
         #if there is no local distributor, choose one at random
         logging.info('no local rule server, choosing one at random')
-        return random.choice(queueURLs.values())
+        return random.choice(list(queueURLs.values()))
 
 def verify_cluster_results_filename(resultsFilename):
     """
