@@ -160,11 +160,8 @@ class SpoolController(object):
     def SetSpoolDir(self, dirname):
         """Set the directory we're spooling into"""
         self._dirname = dirname + os.sep
-
         #if we've had to quit for whatever reason start where we left off
-        while self._checkOutputExists(self.seriesName):
-            self.seriesCounter +=1
-            self.seriesName = self._GenSeriesName()
+        self._update_series_counter()
             
     def _ProgressUpate(self, **kwargs):
         self.onSpoolProgress.send(self)
