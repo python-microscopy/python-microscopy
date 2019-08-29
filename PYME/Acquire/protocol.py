@@ -145,7 +145,7 @@ class TaskListProtocol(Protocol):
 
 class ZStackTaskListProtocol(TaskListProtocol):
     def __init__(self, taskList, startFrame, dwellTime, metadataEntries=[], preflightList=[], randomise=False,
-                 slice_order='saw', require_camera_restart=False):
+                 slice_order='saw', require_camera_restart=True):
         """
 
         Parameters
@@ -220,7 +220,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
             if not fn == self.pos:
                 self.pos = fn
                 #self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
-                scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=True)
+                scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=self.require_camera_restart)
                 eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (frameNum, self.zPoss[self.pos]))
                 
         TaskListProtocol.OnFrame(self, frameNum)
@@ -228,7 +228,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
     def OnFinish(self):
         #return piezo to start position
         #self.piezo.MoveTo(self.piezoChan, self.startPos)
-        scope.state.setItem(self.piezoName, self.startPos, stopCamera=True)
+        scope.state.setItem(self.piezoName, self.startPos, stopCamera=self.require_camera_restart)
 
         TaskListProtocol.OnFinish(self)
 
