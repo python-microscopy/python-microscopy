@@ -57,6 +57,8 @@ class ActionManager(object):
         
         self.onQueueChange = dispatch.Signal()
         
+        self._timestamp = 0
+        
     def QueueAction(self, functionName, args, nice=10, timeout=1e6):
         """Add an action to the queue
         
@@ -86,9 +88,13 @@ class ActionManager(object):
         curTime = time.time()    
         expiry = curTime + timeout
         
-        # add UUID to ensure FIFO behaviour for events with the same priority. The sorting will index further into the
-        # tuple if there are degenerate nice values in the queue. This fails on dictionaries with the same keys
-        self.actionQueue.put_nowait((nice, uuid.uuid4(), functionName, args, expiry))
+        #make sure our timestamps strictly increment
+        self._timestamp = max(curTime, self._timestamp + 1e-3)
+        
+        #ensure FIFO behaviour for events with the same priority
+        nice_ = nice + self._timestamp*1e-10
+        
+        self.actionQueue.put_nowait((nice_, functionName, args, expiry))
         self.onQueueChange.send(self)
         
         
