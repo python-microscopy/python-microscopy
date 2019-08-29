@@ -15,6 +15,7 @@ except ImportError:
 import time
 import dispatch
 import weakref
+import uuid
 
 class ActionManager(object):
     """This implements a queue for actions which should be called sequentially.
@@ -85,10 +86,9 @@ class ActionManager(object):
         curTime = time.time()    
         expiry = curTime + timeout
         
-        #ensure FIFO behaviour for events with the same priority
-        nice_ = nice + curTime*1e-10
-        
-        self.actionQueue.put_nowait((nice_, functionName, args, expiry))
+        # add UUID to ensure FIFO behaviour for events with the same priority. The sorting will index further into the
+        # tuple if there are degenerate nice values in the queue. This fails on dictionaries with the same keys
+        self.actionQueue.put_nowait((nice, uuid.uuid4(), functionName, args, expiry))
         self.onQueueChange.send(self)
         
         
@@ -104,7 +104,7 @@ class ActionManager(object):
         if (self.isLastTaskDone is None) or self.isLastTaskDone():
             try:
                 self.currentTask = self.actionQueue.get_nowait()
-                nice, functionName, args, expiry = self.currentTask
+                nice, uid, functionName, args, expiry = self.currentTask
                 self.onQueueChange.send(self)
             except Queue.Empty:
                 self.currentTask = None

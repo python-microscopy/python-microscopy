@@ -16,14 +16,16 @@ class ActionList(wx.ListCtrl):
         self.actionManager.onQueueChange.connect(self.update)
         
         self.InsertColumn(0, "Priority")
-        self.InsertColumn(1, "Function")
-        self.InsertColumn(2, "Args")
-        self.InsertColumn(3, "Expiry")
+        self.InsertColumn(1, "ID")
+        self.InsertColumn(2, "Function")
+        self.InsertColumn(3, "Args")
+        self.InsertColumn(4, "Expiry")
         
         self.SetColumnWidth(0, 50)
-        self.SetColumnWidth(1, 150)
-        self.SetColumnWidth(2, 300)
-        self.SetColumnWidth(3, 50)
+        self.SetColumnWidth(1, 15)
+        self.SetColumnWidth(2, 150)
+        self.SetColumnWidth(3, 450)
+        self.SetColumnWidth(4, 50)
 
 
     def OnGetItemText(self, item, col):
