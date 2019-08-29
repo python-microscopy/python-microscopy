@@ -77,8 +77,6 @@ class SpoolController(object):
         self.onSpoolStart = dispatch.Signal()
         self.onSpoolStop = dispatch.Signal()
         
-        
-        
     @property
     def _sep(self):
         if self.spoolType == 'Cluster':
@@ -292,8 +290,19 @@ class SpoolController(object):
         if isinstance(self.spooler, QueueSpooler.Spooler): #queue or not
             subprocess.Popen('%s -q %s QUEUE://%s' % (dh5view_cmd, self.spooler.tq.URI, self.queueName), shell=True)
         elif isinstance(self.spooler, HTTPSpooler.Spooler): #queue or not
-            subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.getURL()), shell=True) 
+            if self.autostart_analysis:
+                self.launch_cluster_analysis()
+            else:
+                subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.getURL()), shell=True)
+     
+    def launch_cluster_analysis(self):
+        from PYME.cluster import HTTPRulePusher
         
+        seriesName = self.spooler.getURL()
+        try:
+            HTTPRulePusher.launch_localize(self.scope.analysisSettings.analysisMDH, seriesName)
+        except:
+            logger.exception('Error launching analysis for %s' % seriesName)
 
 
     def SetProtocol(self, protocolName=None, reloadProtocol=True):
