@@ -24,7 +24,8 @@
 from math import floor
 import numpy as np
 from PYME.Acquire import eventLog
-
+import logging
+logger = logging.getLogger(__name__)
 from PYME import config
 
 from sys import maxsize as maxint
@@ -143,18 +144,55 @@ class TaskListProtocol(Protocol):
 
 
 class ZStackTaskListProtocol(TaskListProtocol):
-    def __init__(self, taskList, startFrame, dwellTime, metadataEntries = [], preflightList=[], randomise = False):
+    def __init__(self, taskList, startFrame, dwellTime, metadataEntries=[], preflightList=[], randomise=False,
+                 slice_order='saw'):
+        """
+
+        Parameters
+        ----------
+        taskList: list
+            List of tasks
+        startFrame: int
+            Frame to begin acquisition
+        dwellTime: int
+            Number of frames to spent on each step
+        metadataEntries: list
+            List of metadata entries to propagate through spooling
+        preflightList: list
+            List of tasks to perform before starting, i.e. before frame zero
+        randomise: bool
+            Deprecated, use slice_order='random' instead
+        slice_order: str
+            Setting for reordering z steps.
+                'saw': standard z-step moving linearly from one extreme to the other
+                'random': acquire z steps in a random order
+                'triangle': acquire z-steps in an up-then-down or down-then-up fashion like a triangle waveform
+        """
         TaskListProtocol.__init__(self, taskList, metadataEntries, preflightList)
         
         self.startFrame = startFrame
         self.dwellTime = dwellTime
         self.randomise = randomise
+        if self.randomise:
+            logger.warning("Use slice_order='random' instead of randomise=True")
+            self.slice_order = 'random'
+        else:
+            self.slice_order = slice_order
 
     def Init(self, spooler):
-        self.zPoss = np.arange(scope.stackSettings.GetStartPos(), scope.stackSettings.GetEndPos()+.95*scope.stackSettings.GetStepSize(),scope.stackSettings.GetStepSize()*scope.stackSettings.GetDirection())
+        self.zPoss = np.arange(scope.stackSettings.GetStartPos(),
+                               scope.stackSettings.GetEndPos() + .95 * scope.stackSettings.GetStepSize(),
+                               scope.stackSettings.GetStepSize() * scope.stackSettings.GetDirection())
 
-        if self.randomise:
-            self.zPoss = self.zPoss[np.argsort(np.random.rand(len(self.zPoss)))]
+        if self.slice_order != 'saw':
+            if self.slice_order == 'random':
+                self.zPoss = self.zPoss[np.argsort(np.random.rand(len(self.zPoss)))]
+            elif self.slice_order == 'triangle':
+                if len(self.zPoss) % 2:
+                    self.zPoss = np.concatenate([self.zPoss[::2], self.zPoss[-1::-2]])
+                else:
+                    self.zPoss = np.concatenate([self.zPoss[1::2], self.zPoss[::-2]])
+
 
         #piezo = scope.positioning[scope.stackSettings.GetScanChannel()]
         self.piezoName = 'Positioning.%s' % scope.stackSettings.GetScanChannel()
