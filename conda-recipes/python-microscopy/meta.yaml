@@ -23,25 +23,26 @@ build:
                   # The build string cannot contain a dash '-' character
 
   # Optional Python entry points
-  entry_points:
-    # This creates an entry point named bsdiff4 that calls
-    # bsdiff4.cli.main_bsdiff4()
-    - dh5view = PYME.DSView.dsviewer:main
-    - PYMEAcquire = PYME.Acquire.PYMEAcquire:main
-    - VisGUI = PYME.LMVis.VisGUI:main
-    - PYMEBatch = PYME.recipes.batchProcess:main
-    - bakeshop = PYME.recipes.bakeshop:main
-    - PYMEDataServer = PYME.cluster.HTTPDataServer:main
-    - PYMEClusterDup = PYME.io.clusterDuplication:main
-    - PYMERuleServer = PYME.cluster.PYMERuleServer:main
-    - PYMENodeServer = PYME.cluster.PYMENodeServer:main
-    - PYMERuleNodeServer = PYME.cluster.PYMERuleNodeServer:main
-    - PYMEWebDav = PYME.cluster.webdav:main
-    - PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main
-    - fitMonP = PYME.ParallelTasks.fitMonP:main
-    - taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main
-    - taskServerZC = PYME.ParallelTasks.taskServerZC:main
-    - launchWorkers = PYME.ParallelTasks.launchWorkers:main
+  {% include "entry_points.yaml" %}
+#  entry_points:
+#    # This creates an entry point named bsdiff4 that calls
+#    # bsdiff4.cli.main_bsdiff4()
+#    - dh5view = PYME.DSView.dsviewer:main
+#    - PYMEAcquire = PYME.Acquire.PYMEAcquire:main
+#    - VisGUI = PYME.LMVis.VisGUI:main
+#    - PYMEBatch = PYME.recipes.batchProcess:main
+#    - bakeshop = PYME.recipes.bakeshop:main
+#    - PYMEDataServer = PYME.cluster.HTTPDataServer:main
+#    - PYMEClusterDup = PYME.io.clusterDuplication:main
+#    - PYMERuleServer = PYME.cluster.PYMERuleServer:main
+#    - PYMENodeServer = PYME.cluster.PYMENodeServer:main
+#    - PYMERuleNodeServer = PYME.cluster.PYMERuleNodeServer:main
+#    - PYMEWebDav = PYME.cluster.webdav:main
+#    - PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main
+#    - fitMonP = PYME.ParallelTasks.fitMonP:main
+#    - taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main
+#    - taskServerZC = PYME.ParallelTasks.taskServerZC:main
+#    - launchWorkers = PYME.ParallelTasks.launchWorkers:main
 
 
 
