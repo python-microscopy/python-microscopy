@@ -324,7 +324,7 @@ class PanSpool(afp.foldingPane):
         self.UpdateFreeSpace()
 
         #update the spool method (specifically so that the default in the GUI and spool controller match)
-        self.spoolController.SetSpoolMethod(self._get_spool_method())
+        self.OnSpoolMethodChanged(None)
         
 
     def _get_spool_method(self):
@@ -477,9 +477,11 @@ class PanSpool(afp.foldingPane):
         """Set the directory we're spooling into (GUI callback)."""
         ndir = wx.DirSelector()
         if not ndir == '':
+            logger.debug('series name %s' % self.spoolController.seriesName)
             self.spoolController.SetSpoolDir(ndir)
             self.stSpoolDirName.SetLabel(self.spoolController.dirname)
             self.tcSpoolFile.SetValue(self.spoolController.seriesName)
+            logger.debug('series name %s' % self.spoolController.seriesName)
 
             self.UpdateFreeSpace()
 
