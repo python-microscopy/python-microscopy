@@ -145,7 +145,7 @@ class TaskListProtocol(Protocol):
 
 class ZStackTaskListProtocol(TaskListProtocol):
     def __init__(self, taskList, startFrame, dwellTime, metadataEntries=[], preflightList=[], randomise=False,
-                 slice_order='saw'):
+                 slice_order='saw', require_camera_restart=False):
         """
 
         Parameters
@@ -167,6 +167,8 @@ class ZStackTaskListProtocol(TaskListProtocol):
                 'saw': standard z-step moving linearly from one extreme to the other
                 'random': acquire z steps in a random order
                 'triangle': acquire z-steps in an up-then-down or down-then-up fashion like a triangle waveform
+        require_camera_restart: bool
+            Flag to toggle restarting the camera/frameWrangler on each step (True) or leave the camera running (False)
         """
         TaskListProtocol.__init__(self, taskList, metadataEntries, preflightList)
         
@@ -178,6 +180,8 @@ class ZStackTaskListProtocol(TaskListProtocol):
             self.slice_order = 'random'
         else:
             self.slice_order = slice_order
+
+        self.require_camera_restart = require_camera_restart
 
     def Init(self, spooler):
         self.zPoss = np.arange(scope.stackSettings.GetStartPos(),
@@ -205,7 +209,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
         spooler.md.setEntry('Protocol.PiezoStartPos', self.startPos)
         spooler.md.setEntry('Protocol.ZStack', True)
         
-        scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=True)
+        scope.state.setItem(self.piezoName, self.zPoss[self.pos], stopCamera=self.require_camera_restart)
         eventLog.logEvent('ProtocolFocus', '%d, %3.3f' % (0, self.zPoss[self.pos]))
 
         TaskListProtocol.Init(self,spooler)

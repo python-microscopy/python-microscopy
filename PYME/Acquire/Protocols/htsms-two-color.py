@@ -18,4 +18,5 @@ preflight = []  # no preflight checks
 
 # must be defined for protocol to be discovered
 PROTOCOL = TaskListProtocol(taskList, metaData, preflight)
-PROTOCOL_STACK = ZStackTaskListProtocol(taskList, 1, 800, metaData, preflight, slice_order='triangle')
+PROTOCOL_STACK = ZStackTaskListProtocol(taskList, 1, 800, metaData, preflight, slice_order='triangle',
+                                        require_camera_restart=False)
