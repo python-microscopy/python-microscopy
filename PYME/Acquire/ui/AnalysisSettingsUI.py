@@ -93,17 +93,17 @@ class AnalysisDetailsPanel(wx.Panel):
         
         self._analysisModule = ''
         
-        self.vsizer = wx.BoxSizer(wx.VERTICAL)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
         
         vsizer_std = wx.BoxSizer(wx.VERTICAL)
         self._populateStdOptionsPanel(self, vsizer_std)
-        self.vsizer.Add(vsizer_std, 0, wx.EXPAND, 0)
+        vsizer.Add(vsizer_std, 0, wx.EXPAND, 0)
         
         self.customOptionsSizer = wx.BoxSizer(wx.VERTICAL)
         self._populateCustomAnalysisPanel(self, self.customOptionsSizer)
-        self.vsizer.Add(self.customOptionsSizer, 0, wx.EXPAND, 0)
+        vsizer.Add(self.customOptionsSizer, 0, wx.EXPAND, 0)
         
-        self.SetSizerAndFit(self.vsizer)
+        self.SetSizerAndFit(vsizer)
     
 
     def _populateStdOptionsPanel(self, pan, vsizer):
