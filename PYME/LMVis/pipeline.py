@@ -583,12 +583,15 @@ class Pipeline:
         """
 
         if os.path.splitext(filename)[1] == '.h5r':
+            import tables
+            h5f = tables.open_file(filename)
+            self.filesToClose.append(h5f)
+            
             try:
-                ds = tabular.h5rSource(filename)
-                self.filesToClose.append(ds.h5f)
+                ds = tabular.h5rSource(h5f)
 
-                if 'DriftResults' in ds.h5f.root:
-                    driftDS = tabular.h5rDSource(ds.h5f)
+                if 'DriftResults' in h5f.root:
+                    driftDS = tabular.h5rDSource(h5f)
                     self.driftInputMapping = tabular.mappingFilter(driftDS)
                     #self.dataSources['Fiducials'] = self.driftInputMapping
                     self.addDataSource('Fiducials', self.driftInputMapping)
@@ -598,8 +601,7 @@ class Pipeline:
 
             except: #fallback to catch series that only have drift data
                 logger.exception('No fitResults table found')
-                ds = tabular.h5rDSource(filename)
-                self.filesToClose.append(ds.h5f)
+                ds = tabular.h5rDSource(h5f)
 
                 self.driftInputMapping = tabular.mappingFilter(ds)
                 #self.dataSources['Fiducials'] = self.driftInputMapping
@@ -607,11 +609,11 @@ class Pipeline:
                 #self.selectDataSource('Fiducials')
 
             #catch really old files which don't have any metadata
-            if 'MetaData' in ds.h5f.root:
-                self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(ds.h5f))
+            if 'MetaData' in h5f.root:
+                self.mdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5f))
 
-            if ('Events' in ds.h5f.root) and ('StartTime' in self.mdh.keys()):
-                self.events = ds.h5f.root.Events[:]
+            if ('Events' in h5f.root) and ('StartTime' in self.mdh.keys()):
+                self.events = h5f.root.Events[:]
 
         elif filename.endswith('.hdf'):
             #recipe output - handles generically formatted .h5

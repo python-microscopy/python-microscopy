@@ -9,8 +9,8 @@
            fill : none;
            stroke: #f00;
            stroke-width: 1;
-            width: 25px;
-            height: 25px;
+            width: 30px;
+            height: 30px;
        }
 
         /*
@@ -53,9 +53,11 @@
                     <div class="form-group">
                         <label for="recipe_path">Detection recipe</label>
                         <input type="text" class="form-control" id="recipe_path" value="" style="width: 200px;">
-                        <button type="button" class="btn btn-default" id="run_recipe">Run</button>
+                        <button type="button" class="btn btn-primary" id="run_recipe">Run</button>
                     </div>
-                    <button type="button" class="btn" id="clear_rois">Clear</button>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-danger" id="clear_rois">Clear</button>
+                    </div>
                 </form>
             </div>
             <p>Double click on image to add a ROI</p>
@@ -76,8 +78,8 @@
 <script type="text/javascript">
     function imageToMicrometers(imageCoordinates) {
         var micrometerCoordinates = {
-        "x": (imageCoordinates.x - 0.5 * {{ tile_size }}) * {{ pyramid_pixel_size_um }} + {{ pyramid_x0 }},
-        "y": (imageCoordinates.y - 0.5 * {{ tile_size }}) * {{ pyramid_pixel_size_um }} + {{ pyramid_y0 }}
+        "x": (imageCoordinates.x) * {{ pyramid_pixel_size_um }} + {{ pyramid_x0 }},
+        "y": (imageCoordinates.y) * {{ pyramid_pixel_size_um }} + {{ pyramid_y0 }}
         };
         return micrometerCoordinates;
     }
@@ -138,10 +140,10 @@
                 .attr("class", "roi")
                 .attr("x", function (d) {
                     //console.log(d);
-                    return d[0];
+                    return d[0] - 15;
                 })
                 .attr("y", function (d) {
-                    return d[1];
+                    return d[1] - 15;
                 });
 
             sel.exit().remove();
@@ -198,6 +200,14 @@
 
     $("#clear_rois").click(function(event){
         $.get( "/clear_rois" , function( data ) {
+            $( "#roi_list" ).html( data );
+            draw_rois();
+        });
+    } );
+
+    $("#run_recipe").click(function(event){
+        var recipe_path = $('#recipe_path').val();
+        $.get( "/run_recipe_for_locations?recipe_path=" + recipe_path , function( data ) {
             $( "#roi_list" ).html( data );
             draw_rois();
         });
