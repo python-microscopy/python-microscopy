@@ -1680,6 +1680,31 @@ class TriangleMesh(object):
 
         return boundary_polygons
 
+    def _fill_triangle(self, h0, h1, h2):
+        """
+        Create a triangle inside three halfedges.
+        """
+
+        _h0_twin_vertex = self._halfedges['vertex'][h2]
+        _, _h0_twin = self._new_edge(_h0_twin_vertex, twin=h0)
+        _, _face = self._new_face(_h0_twin)
+        _h1_twin_vertex = self._halfedges['vertex'][h0]
+        _, _h1_twin = self._new_edge(_h1_twin_vertex, twin=h1, face=_face, next=_h0_twin)
+        self._halfedges['face'][_h0_twin] = _face
+        self._halfedges['prev'][_h0_twin] = _h1_twin
+        _h2_twin_vertex = self._halfedges['vertex'][h1]
+        _, _h2_twin = self._new_edge(_h2_twin_vertex, twin=h2, face=_face, prev=_h0_twin, next=_h1_twin)
+        self._halfedges['next'][_h0_twin] = _h2_twin
+        self._halfedges['prev'][_h1_twin] = _h2_twin
+
+        self._halfedges['twin'][h0] = _h0_twin
+        self._halfedges['twin'][h1] = _h1_twin
+        self._halfedges['twin'][h2] = _h2_twin
+
+        # self._update_face_normals([_face, self._halfedges['face'][h0], self._halfedges['face'][h1], self._halfedges['face'][h2]])
+        # self._update_vertex_neighbors([_h2_twin_vertex, _h0_twin_vertex, _h1_twin_vertex])
+
+
     def _fan_triangulation(self, polygon):
         """
         Triangulate a polygon, defined by halfedges in the mesh,
@@ -1695,31 +1720,7 @@ class TriangleMesh(object):
         if len(polygon) < 3:
             raise ValueError('polygon must be of length >= 3')
 
-        def fill_triangle(h0, h1, h2):
-            """
-            Create a triangle inside three halfedges.
-            """
-
-            _h0_twin_vertex = self._halfedges['vertex'][h2]
-            _, _h0_twin = self._new_edge(_h0_twin_vertex, twin=h0)
-            _, _face = self._new_face(_h0_twin)
-            _h1_twin_vertex = self._halfedges['vertex'][h0]
-            _, _h1_twin = self._new_edge(_h1_twin_vertex, twin=h1, face=_face, next=_h0_twin)
-            self._halfedges['face'][_h0_twin] = _face
-            self._halfedges['prev'][_h0_twin] = _h1_twin
-            _h2_twin_vertex = self._halfedges['vertex'][h1]
-            _, _h2_twin = self._new_edge(_h2_twin_vertex, twin=h2, face=_face, prev=_h0_twin, next=_h1_twin)
-            self._halfedges['next'][_h0_twin] = _h2_twin
-            self._halfedges['prev'][_h1_twin] = _h2_twin
-
-            self._halfedges['twin'][h0] = _h0_twin
-            self._halfedges['twin'][h1] = _h1_twin
-            self._halfedges['twin'][h2] = _h2_twin
-
-            # self._update_face_normals([_face, self._halfedges['face'][h0], self._halfedges['face'][h1], self._halfedges['face'][h2]])
-            # self._update_vertex_neighbors([_h2_twin_vertex, _h0_twin_vertex, _h1_twin_vertex])
-
-        # Reverse order to maintain winding
+        # Reverse order
         polygon = polygon[::-1]
 
         while len(polygon) > 0:
@@ -1729,11 +1730,11 @@ class TriangleMesh(object):
                 # Base case, make a triangle
                 # polygon = polygon[::-1]
                 h2 = polygon.pop()
-                fill_triangle(h0,h1,h2)
+                self._fill_triangle(h0,h1,h2)
                 _h0_twin = self._halfedges['twin'][h0]
             else:
                 # Create a new triangle with a boundary edge
-                fill_triangle(h0, h1, -1)
+                self._fill_triangle(h0, h1, -1)
                 
                 # Due to the way fill_triangle works, we need to set h0's vertex after the fact
                 _h0_twin = self._halfedges['twin'][h0]
@@ -1745,7 +1746,53 @@ class TriangleMesh(object):
             # Update faces and vertices
             self._update_face_normals([self._halfedges['face'][_h0_twin], self._halfedges['face'][h0], self._halfedges['face'][h1]])
             self._update_vertex_neighbors([self._halfedges['vertex'][_h0_twin], self._halfedges['vertex'][h0], self._halfedges['vertex'][h1]])
+
+    def _zig_zag_triangulation(self, polygon):
+        """
+        Triangulate a polygon, defined by halfedges in the mesh,
+        by creating zig-zagging between edges of the boundary.
+
+        Parameters
+        ----------
+            polygon : list
+                List of halfedges defining a closed polygon in the mesh.
+        """
+
+        if len(polygon) < 3:
+            raise ValueError('polygon must be of length >= 3')
+
+        # Reverse order
+        polygon = polygon[::-1]
+        odd = True
+
+        while len(polygon) > 0:
+            h0 = polygon.pop()
+            h1 = polygon.pop()
+            if (len(polygon) == 1):
+                # Base case, make a triangle
+                # polygon = polygon[::-1]
+                h2 = polygon.pop()
+                self._fill_triangle(h0,h1,h2)
+                _h0_twin = self._halfedges['twin'][h0]
+            else:
+                # Create a new triangle with a boundary edge
+                self._fill_triangle(h0, h1, -1)
                 
+                # Due to the way fill_triangle works, we need to set h0's vertex after the fact
+                _h0_twin = self._halfedges['twin'][h0]
+                self._halfedges['vertex'][_h0_twin] = self._halfedges['vertex'][self._halfedges['prev'][h0]]
+            
+                # Adjust the boundary
+                polygon = polygon[::-1]  # zig-zag
+                if odd:
+                    polygon.insert(-1,self._halfedges['next'][_h0_twin])
+                else:
+                    polygon.append(self._halfedges['next'][_h0_twin])
+                odd = (not odd)
+
+            # Update faces and vertices
+            self._update_face_normals([self._halfedges['face'][_h0_twin], self._halfedges['face'][h0], self._halfedges['face'][h1]])
+            self._update_vertex_neighbors([self._halfedges['vertex'][_h0_twin], self._halfedges['vertex'][h0], self._halfedges['vertex'][h1]])                
 
     # def minimum_area_triangulation(self, polygon):
     #     """
@@ -1823,7 +1870,7 @@ class TriangleMesh(object):
         
     #     trace(0, n-1, O)
 
-    def _fill_holes(self, method='fan'):
+    def _fill_holes(self, method='zig-zag'):
         """
         Fill holes in the mesh.
 
@@ -1834,17 +1881,21 @@ class TriangleMesh(object):
                 in options. 
         """
 
-        options = ['fan']
+        options = ['fan', 'zig-zag']
 
         if method not in options:
             print('Unknown triangulation method. Using default.')
-            method = 'fan'
+            method = 'zig-zag'
 
         boundary_polygons = self._find_boundary_polygons()
 
         if method == 'fan':
             for polygon in boundary_polygons:
                 self._fan_triangulation(polygon)
+        
+        if method == 'zig-zag':
+            for polygon in boundary_polygons:
+                self._zig_zag_triangulation(polygon)
 
         self._faces_by_vertex = None
 
@@ -1942,7 +1993,7 @@ class TriangleMesh(object):
                 # Update the faces and vertices of this component
                 self._update_face_normals(_faces)
                 self._update_vertex_neighbors(np.hstack([_vertices,_new_vertex]))
-                
+
     def repair(self):
         """
         Repair the mesh so it's topologically manifold.
