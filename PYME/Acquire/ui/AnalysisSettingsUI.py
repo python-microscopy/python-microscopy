@@ -93,17 +93,17 @@ class AnalysisDetailsPanel(wx.Panel):
         
         self._analysisModule = ''
         
-        vsizer = wx.BoxSizer(wx.VERTICAL)
+        self.vsizer = wx.BoxSizer(wx.VERTICAL)
         
         vsizer_std = wx.BoxSizer(wx.VERTICAL)
         self._populateStdOptionsPanel(self, vsizer_std)
-        vsizer.Add(vsizer_std, 0, wx.EXPAND, 0)
+        self.vsizer.Add(vsizer_std, 0, wx.EXPAND, 0)
         
         self.customOptionsSizer = wx.BoxSizer(wx.VERTICAL)
         self._populateCustomAnalysisPanel(self, self.customOptionsSizer)
-        vsizer.Add(self.customOptionsSizer, 0, wx.EXPAND, 0)
+        self.vsizer.Add(self.customOptionsSizer, 0, wx.EXPAND, 0)
         
-        self.SetSizerAndFit(vsizer)
+        self.SetSizerAndFit(self.vsizer)
     
 
     def _populateStdOptionsPanel(self, pan, vsizer):
@@ -138,6 +138,9 @@ class AnalysisDetailsPanel(wx.Panel):
         if not self._analysisModule == self.analysisMDH['Analysis.FitModule']:
             self.customOptionsSizer.Clear(True)
             self._populateCustomAnalysisPanel(self, self.customOptionsSizer)
+            # FIXME - can't figure out a better way to redo the vertical sizer for longer menus
+            self.GetParent().fold1(self)
+            self.GetParent().fold1(self)
 
 
 class AnalysisSettings(object):
