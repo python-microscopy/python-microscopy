@@ -182,7 +182,7 @@ class HTTPRulePusher(object):
         clusterResults.fileResults(self.resultsURI + '/Events', self.ds.getEvents())
 
         # set up metadata file which is used for deciding how to launch the analysis
-        clusterIO.putFile(resultsMDFilename, self.mdh.to_JSON(), serverfilter=serverfilter)
+        clusterIO.putFile(resultsMDFilename, self.mdh.to_JSON().encode(), serverfilter=serverfilter)
         
         #wait until clusterIO caches clear to avoid replicating the results file.
         #time.sleep(1.5) #moved inside polling thread so launches will run quicker
