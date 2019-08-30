@@ -1886,22 +1886,22 @@ class TriangleMesh(object):
         # 2. Mark vertices that are endpoints of these edges
         singular_vertices = list(set(list(np.hstack([self._halfedges['vertex'][singular_edges], self._halfedges['vertex'][self._halfedges['twin'][singular_edges]]]))))
 
-        # # TODO: 3. Mark isolated singular vertices
-        # for _vertex in np.arange(self._vertices.shape[0]):
-        #     if self._vertices['halfedge'][_vertex] == -1:
-        #         continue
+        # TODO: 3. Mark isolated singular vertices
+        for _vertex in np.arange(self._vertices.shape[0]):
+            if self._vertices['halfedge'][_vertex] == -1:
+                continue
 
-        #     # If the number of elements in the 1-neighbor ring does not match 
-        #     # the number of halfedges pointing to a vertex, we have an isolated
-        #     # singular vertex (note this requires the C code version of
-        #     # update_vertex_neighbors, which reverses direction upon hitting
-        #     # an edge to ensure a more accurate valence)
-        #     n_incident = np.sum(self._halfedges['vertex'] == _vertex)
-        #     if self._vertices['valence'][_vertex] != n_incident:
-        #         print(self._vertices['valence'][_vertex], n_incident)
-        #         singular_vertices.append(_vertex)
+            # If the number of elements in the 1-neighbor ring does not match 
+            # the number of halfedges pointing to a vertex, we have an isolated
+            # singular vertex (note this requires the C code version of
+            # update_vertex_neighbors, which reverses direction upon hitting
+            # an edge to ensure a more accurate valence)
+            n_incident = np.sum(self._halfedges['vertex'] == _vertex)
+            if self._vertices['valence'][_vertex] != n_incident:
+                # print(self._vertices['valence'][_vertex], n_incident)
+                singular_vertices.append(_vertex)
 
-        # singular_vertices = list(set(singular_vertices))
+        singular_vertices = list(set(singular_vertices))
 
         # 4. For each marked vertex, partition the faces of the 1-neighbor ring
         #    into nc "is reachable" equivalence classes. Faces are reachable if
@@ -1935,20 +1935,14 @@ class TriangleMesh(object):
                 _modified_edges = _edges[_vertices == _vertex]
                 self._halfedges['vertex'][_modified_edges] = _new_vertex
 
-                # for _edge in _modified_edges:
-                #     _twin = self._halfedges['twin'][_edge]
-                #     if (_twin != -1):
-                #         _edge_component = (self._faces['component'][self._halfedges['face'][_edge]])
-                #         _twin_component = (self._faces['component'][self._halfedges['face'][_twin]])
-                #         if (_edge_component != _twin_component):
-                #             # Separate 'em
-                #             self._halfedges['twin'][_twin] = -1
-                #             self._halfedges['twin'][_edge] = -1
+                # Update the twins of the modified edges
+                self._halfedges['twin'][self._halfedges['twin'][_modified_edges]] = -1
+                self._halfedges['twin'][_modified_edges] = -1
 
                 # Update the faces and vertices of this component
                 self._update_face_normals(_faces)
                 self._update_vertex_neighbors(np.hstack([_vertices,_new_vertex]))
-
+                
     def repair(self):
         """
         Repair the mesh so it's topologically manifold.
