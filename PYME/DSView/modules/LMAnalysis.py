@@ -859,7 +859,7 @@ class LMAnalyser2(object):
             try:
                 d = ft.ofd.filteredData.T
                 #d = ft.data.squeeze().T
-                plt.imshow(d, cmap=plt.cm.hot, interpolation='nearest', hold=False, clim=(np.median(d.ravel()), d.max()))
+                plt.imshow(d, cmap=plt.cm.hot, interpolation='nearest', clim=(np.median(d.ravel()), d.max()))
                 plt.plot([p.x for p in ft.ofd], [p.y for p in ft.ofd], 'o', mew=2, mec='g', mfc='none', ms=9)
                 if ft.driftEst:
                     plt.plot([p.x for p in ft.ofdDr], [p.y for p in ft.ofdDr], 'o', mew=2, mec='b', mfc='none', ms=9)
@@ -882,7 +882,7 @@ class LMAnalyser2(object):
                 
                 if 'tIm' in dir(ft.ofd):
                     plt.figure()
-                    plt.imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest', hold=False)
+                    plt.imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest')
                     #axis('tight')
                     plt.xlim(0, d.shape[1])
                     plt.ylim(d.shape[0], 0)
