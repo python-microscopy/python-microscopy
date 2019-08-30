@@ -91,7 +91,7 @@ class RecipePlugin(recipeGui.RecipeManager):
     def RunCurrentRecipe(self, event=None, testMode=False, saveResults = False):
         if self.activeRecipe:
             if testMode:
-                #just run on current frame
+                #just run on current frame  # FIXME - this breaks SUPERTILE datasources and anything that needs to carry datasource attributes forward
                 self.outp = self.activeRecipe.execute(input=ImageStack([np.atleast_3d(self.image.data[:,:,self.do.zp, c]) for c in range(self.image.data.shape[3])], mdh=self.image.mdh))
             else:
                 #run normally
