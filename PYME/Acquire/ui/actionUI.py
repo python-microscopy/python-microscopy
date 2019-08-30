@@ -189,8 +189,13 @@ class ActionPanel(wx.Panel):
         nice = float(self.tNice.GetValue())
         timeout = float(self.tTimeout.GetValue()) #CHECKME - default here might be too short
         
+        # coordinates are for the centre of ROI - find the top-left corner
+        # a bit hackish for now.
+        # TODO - this should probably be fixed by offsetting / fixing the Pyramid.x0 and Pyramid.y0 metadata parameters
+        roi_offset = self.scope.GetPixelSize()[0]*self.scope.cam.GetPicHeight()/2.0
+        
         for x, y in rois:
-            args = {'state' : {'Positioning.x': float(x), 'Positioning.y': float(y)}}
+            args = {'state' : {'Positioning.x': float(x) - roi_offset, 'Positioning.y': float(y) - roi_offset}}
             self.actionManager.QueueAction('state.update', args, nice, timeout)
             args = {'maxFrames': int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
             self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)

@@ -71,6 +71,17 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS):
     
         pool.map(runRec, taskParams)
 
+def bake_recipe(recipe_filename, inputGlobs, output_dir, *args, **kwargs):
+    with open(recipe_filename) as f:
+        s = f.read()
+    
+    recipe = modules.ModuleCollection.fromYAML(s)
+    
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        
+    bake(recipe, inputGlobs, output_dir, *args, **kwargs)
+    
 
 def main():
     # set matplotlib backend for offline figure generation #TODO - move this further down (ie. to the figure generation code itself)?

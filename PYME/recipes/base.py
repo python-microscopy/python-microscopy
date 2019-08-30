@@ -66,6 +66,8 @@ def register_legacy_module(moduleName, py_module=None):
     return c_decorate
 
 class ModuleBase(HasTraits):
+    _invalidate_parent = True
+    
     def __init__(self, parent=None, **kwargs):
         self._parent = parent
         self._invalidate_parent = True

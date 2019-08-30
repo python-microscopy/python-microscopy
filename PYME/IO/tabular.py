@@ -228,7 +228,7 @@ class fitResultsSource(TabularBase):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
-class BaseHDFSource(fitResultsSource):
+class _BaseHDFSource(fitResultsSource):
     def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
         component. Takes either an open h5r file or a string filename to be
@@ -263,10 +263,56 @@ class BaseHDFSource(fitResultsSource):
         
     def close(self):
         if self._own_file:
-            self.h5f.close()
+            try:
+                self.h5f.close()
+            except:
+                pass
             
     def __del__(self):
         self.close()
+
+
+class BaseHDFSource(fitResultsSource):
+    def __init__(self, h5fFile, tablename='FitResults'):
+        """ Data source for use with h5r files as saved by the PYME analysis
+        component. Takes either an open h5r file or a string filename to be
+        opened."""
+        from PYME.IO import h5rFile
+        self.tablename = tablename
+        
+        if isinstance(h5fFile, tables.file.File):
+            try:
+                self.fitResults = getattr(h5fFile.root, tablename)[:]
+            except (AttributeError, tables.NoSuchNodeError):
+                logger.exception('Was expecting to find a "%s" table' % tablename)
+                raise
+    
+            #allow access using unnested original names
+            self._keys = unNestNames(getattr(h5fFile.root, tablename).description._v_nested_names)
+        
+        else:
+            if isinstance(h5fFile, h5rFile.H5RFile):
+                h5f = h5fFile
+            else:
+                h5f = h5rFile.openH5R(h5fFile)
+        
+            with h5f:
+                self.fitResults = h5f.getTableData(tablename, slice(None))
+                if (len(self.fitResults) == 0):
+                    raise RuntimeError('Was expecting to find a "%s" table' % tablename)
+                
+                #allow access using unnested original names
+                self._keys = unNestNames(getattr(h5f._h5file.root, tablename).description._v_nested_names)
+            
+        #close the hdf file (if we opened it)
+        #if self._own_file:
+        #    h5f.close()
+        
+        #or shorter aliases
+    
+    def close(self):
+        pass
+
 
 class h5rSource(BaseHDFSource):
     _name = "h5r Data Source"
