@@ -596,7 +596,7 @@ class Measure2D(ModuleBase):
                 #print key, sl
                     
                 if not key in self._keys:
-                    raise RuntimeError('Key not defined')
+                    raise KeyError("'%s' key not defined" % key)
                 
                 if key == 't':
                     return np.array(self.frameNos[sl])
