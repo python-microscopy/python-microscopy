@@ -162,7 +162,8 @@ def fileResults(URI, data_raw):
     else:
         logging.warn('No handler for data type found, using pickle')
         #output_format = 'pickle'
-        data = cPickle.dumps(data_raw)
+        # FIXME - likely moot since we'd like to avoid pickle, but when py2 rolls into the grave push protocol=2 with it
+        data = cPickle.dumps(data_raw, protocol=2)
 
 
     #now do URI translation
