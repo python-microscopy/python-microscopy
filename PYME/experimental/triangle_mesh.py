@@ -1697,9 +1697,12 @@ class TriangleMesh(object):
         self._halfedges['next'][_h0_twin] = _h2_twin
         self._halfedges['prev'][_h1_twin] = _h2_twin
 
-        self._halfedges['twin'][h0] = _h0_twin
-        self._halfedges['twin'][h1] = _h1_twin
-        self._halfedges['twin'][h2] = _h2_twin
+        if h0 != -1:
+            self._halfedges['twin'][h0] = _h0_twin
+        if h1 != -1:
+            self._halfedges['twin'][h1] = _h1_twin
+        if h2 != -1:
+            self._halfedges['twin'][h2] = _h2_twin
 
         # self._update_face_normals([_face, self._halfedges['face'][h0], self._halfedges['face'][h1], self._halfedges['face'][h2]])
         # self._update_vertex_neighbors([_h2_twin_vertex, _h0_twin_vertex, _h1_twin_vertex])
@@ -1739,7 +1742,7 @@ class TriangleMesh(object):
                 # Due to the way fill_triangle works, we need to set h0's vertex after the fact
                 _h0_twin = self._halfedges['twin'][h0]
                 self._halfedges['vertex'][_h0_twin] = self._halfedges['vertex'][self._halfedges['prev'][h0]]
-            
+                
                 # Adjust the boundary
                 polygon.append(self._halfedges['next'][_h0_twin])
 
@@ -1937,22 +1940,22 @@ class TriangleMesh(object):
         # 2. Mark vertices that are endpoints of these edges
         singular_vertices = list(set(list(np.hstack([self._halfedges['vertex'][singular_edges], self._halfedges['vertex'][self._halfedges['twin'][singular_edges]]]))))
 
-        # TODO: 3. Mark isolated singular vertices
-        for _vertex in np.arange(self._vertices.shape[0]):
-            if self._vertices['halfedge'][_vertex] == -1:
-                continue
+        # # TODO: 3. Mark isolated singular vertices
+        # for _vertex in np.arange(self._vertices.shape[0]):
+        #     if self._vertices['halfedge'][_vertex] == -1:
+        #         continue
 
-            # If the number of elements in the 1-neighbor ring does not match 
-            # the number of halfedges pointing to a vertex, we have an isolated
-            # singular vertex (note this requires the C code version of
-            # update_vertex_neighbors, which reverses direction upon hitting
-            # an edge to ensure a more accurate valence)
-            n_incident = np.sum(self._halfedges['vertex'] == _vertex)
-            if self._vertices['valence'][_vertex] != n_incident:
-                # print(self._vertices['valence'][_vertex], n_incident)
-                singular_vertices.append(_vertex)
+        #     # If the number of elements in the 1-neighbor ring does not match 
+        #     # the number of halfedges pointing to a vertex, we have an isolated
+        #     # singular vertex (note this requires the C code version of
+        #     # update_vertex_neighbors, which reverses direction upon hitting
+        #     # an edge to ensure a more accurate valence)
+        #     n_incident = np.sum(self._halfedges['vertex'] == _vertex)
+        #     if self._vertices['valence'][_vertex] != n_incident:
+        #         # print(self._vertices['valence'][_vertex], n_incident)
+        #         singular_vertices.append(_vertex)
 
-        singular_vertices = list(set(singular_vertices))
+        # singular_vertices = list(set(singular_vertices))
 
         # 4. For each marked vertex, partition the faces of the 1-neighbor ring
         #    into nc "is reachable" equivalence classes. Faces are reachable if
@@ -1987,8 +1990,10 @@ class TriangleMesh(object):
                 self._halfedges['vertex'][_modified_edges] = _new_vertex
 
                 # Update the twins of the modified edges
-                self._halfedges['twin'][self._halfedges['twin'][_modified_edges]] = -1
-                self._halfedges['twin'][_modified_edges] = -1
+                _modified_twin = self._halfedges['twin'][_modified_edges]
+                _modified_twin_mask = _modified_twin != -1
+                self._halfedges['twin'][_modified_twin[_modified_twin_mask]] = -1
+                self._halfedges['twin'][_modified_edges[_modified_twin_mask]] = -1
 
                 # Update the faces and vertices of this component
                 self._update_face_normals(_faces)

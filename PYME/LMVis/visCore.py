@@ -136,8 +136,8 @@ class VisGUICore(object):
                 self.RefreshView()
                 self.displayPane.OnPercentileCLim(None)
                 
-            self.Refresh()
-            self.Update()
+            self.glCanvas.Refresh()
+            self.glCanvas.Update()
             print('refreshed')
             
     def GenPanels(self, sidePanel):
