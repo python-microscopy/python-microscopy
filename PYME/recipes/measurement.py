@@ -797,5 +797,46 @@ class TilePhysicalCoords(ModuleBase):
         namespace[self.outputName] = out
 
 
+@register_module('FilterOverlappingROIs')
+class FilterOverlappingROIs(ModuleBase):
+    input = Input('input')
+    roi_size_pixels = Int(256)
+    output_name = Output('cluster_metrics')
+
+    def execute(self, namespace):
+        from scipy.spatial import KDTree
+
+        points = namespace[self.input]
+
+        try:
+            positions = np.stack([points['x_um'], points['y_um']], axis=1)
+        except KeyError:
+            positions = np.stack([points['x'], points['y']], axis=1) / 1e3  # assume x and y were in [nanometers]
+
+        tree = KDTree(positions)
+
+        far_flung = np.sqrt(2) * points.mdh['voxelsize.x'] * self.roi_size_pixels  # [micrometers]
+        neighbors = tree.query_ball_tree(tree, r=far_flung, p=2)
+
+        tossing = set()
+        for ind, close in enumerate(neighbors):
+            # ignore points we've already decided to reject
+            if ind not in tossing and len(close) > 1:
+                # reject points too close to our current indexed point
+                # TODO - don't reject points inside of this cirdular radius if their square ROIs don't actually overlap
+                tossing.union(set(close).discard(ind))
+
+        out = tabular.mappingFilter(points)
+        reject = np.zeros(tree.n, dtype=bool)
+        reject[list(tossing)] = True
+        out.addColumn('rejected', reject)
+        try:
+            out.mdh = points.mdh
+        except AttributeError:
+            pass
+
+        namespace[self.output] = out
+
+
 
 
