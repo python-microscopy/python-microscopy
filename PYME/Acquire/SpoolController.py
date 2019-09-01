@@ -34,6 +34,12 @@ import sys
 #import glob
 
 import subprocess
+import threading
+try:
+    import queue
+except ImportError:
+    # py2, remove this when we can
+    import Queue as queue
 
 import dispatch
 
@@ -76,6 +82,8 @@ class SpoolController(object):
         self.onSpoolProgress = dispatch.Signal()
         self.onSpoolStart = dispatch.Signal()
         self.onSpoolStop = dispatch.Signal()
+
+        self._analysis_launchers = queue.Queue(3)
         
     @property
     def _sep(self):
@@ -291,7 +299,13 @@ class SpoolController(object):
             subprocess.Popen('%s -q %s QUEUE://%s' % (dh5view_cmd, self.spooler.tq.URI, self.queueName), shell=True)
         elif isinstance(self.spooler, HTTPSpooler.Spooler): #queue or not
             if self.autostart_analysis:
-                self.launch_cluster_analysis()
+                # launch analysis in a separate thread
+                t = threading.Thread(target=self.launch_cluster_analysis)
+                t.start()
+                # keep track of a couple launching threads to make sure they have ample time to finish before joining
+                if self._analysis_launchers.full():
+                    self._analysis_launchers.get().join()
+                self._analysis_launchers.put(t)
             else:
                 subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.getURL()), shell=True)
      
@@ -337,4 +351,9 @@ class SpoolController(object):
         """
         self.spoolType = method
         self._update_series_counter()
+
+    def __del__(self):
+        # make sure our analysis launchers have a chance to finish their job before exiting
+        while not self._analysis_launchers.empty():
+            self._analysis_launchers.get().join()
 
