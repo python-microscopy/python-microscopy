@@ -84,7 +84,7 @@ class TriangleMesh(object):
         self.vertex_normals
 
         # Properties we can visualize
-        self.vertex_properties = ['x', 'y', 'z', 'component']
+        self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary']
 
         self.fix_boundary = True  # Hold boundary edges in place
         self.debug = False  # Print debug statements
@@ -166,6 +166,12 @@ class TriangleMesh(object):
             v2 = self._halfedges['vertex'][self._halfedges['next'][faces]]
             self._faces_by_vertex = np.vstack([v0, v1, v2]).T
         return self._faces_by_vertex
+
+    @property
+    def boundary(self):
+        nn = self._vertices['neighbors']
+        nn_mask = (nn!=-1)
+        return np.any((self._halfedges['twin'][nn] == -1)*nn_mask, axis=1)
 
     @property
     def face_normals(self):
@@ -1984,7 +1990,7 @@ class TriangleMesh(object):
 
                 # Update the faces and vertices of this component
                 self._update_face_normals(_faces)
-                self._update_vertex_neighbors(np.hstack([_vertices,_new_vertex]))     
+                self._update_vertex_neighbors(np.hstack([_vertices,_new_vertex]))
 
         # # TODO: 6. Mark isolated singular vertices
         # for _vertex in np.arange(self._vertices.shape[0]):
