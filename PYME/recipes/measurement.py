@@ -799,9 +799,35 @@ class TilePhysicalCoords(ModuleBase):
 
 @register_module('FilterOverlappingROIs')
 class FilterOverlappingROIs(ModuleBase):
+    """
+
+    Filter input ROI positions such that ROIs of a given size will not overlap. Output maintains all points, but with
+    the addition of a column indicating whether the point has been rejected due to overlap or not.
+
+    Parameters
+    ----------
+    input_name : Input
+        PYME.IO.tabular containing x and y coordinates. Compatible with measurement output for Supertile coordinates,
+        e.g. 'x_um'
+    roi_size_pixels: Int
+        Size of ROI to be used in calculating overlap.
+    reject_key: CStr
+        Name of column to add to output datasource encoding whether a point has been rejected due to overlap (1) or
+        kept (0).
+    output: Output
+        PYME.IO.tabular
+
+    Notes
+    -----
+    Currently roi overlap is defined as being within sqrt(2) * roi_size. Obviously two square ROIs can be roi_size + 1
+    away from each other and not overlap if they are arranged correctly, so the current check is a little more happy-to-
+    toss points then it could be.
+
+    """
     input = Input('input')
     roi_size_pixels = Int(256)
-    output_name = Output('cluster_metrics')
+    reject_key = CStr('rejected')
+    output = Output('cluster_metrics')
 
     def execute(self, namespace):
         from scipy.spatial import KDTree
@@ -824,12 +850,14 @@ class FilterOverlappingROIs(ModuleBase):
             if ind not in tossing and len(close) > 1:
                 # reject points too close to our current indexed point
                 # TODO - don't reject points inside of this cirdular radius if their square ROIs don't actually overlap
-                tossing.union(set(close).discard(ind))
+                close.remove(ind)
+                tossing.update(close)
 
         out = tabular.mappingFilter(points)
-        reject = np.zeros(tree.n, dtype=bool)
-        reject[list(tossing)] = True
-        out.addColumn('rejected', reject)
+        reject = np.zeros(tree.n, dtype=int)
+        reject[list(tossing)] = 1
+        out.addColumn(self.reject_key, reject.astype(int))
+
         try:
             out.mdh = points.mdh
         except AttributeError:
