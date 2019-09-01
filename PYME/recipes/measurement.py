@@ -806,7 +806,7 @@ class FilterOverlappingROIs(ModuleBase):
 
     Parameters
     ----------
-    input_name : Input
+    input : Input
         PYME.IO.tabular containing x and y coordinates. Compatible with measurement output for Supertile coordinates,
         e.g. 'x_um'
     roi_size_pixels: Int
@@ -866,5 +866,37 @@ class FilterOverlappingROIs(ModuleBase):
         namespace[self.output] = out
 
 
+@register_module('TravelingSalesperson')
+class TravelingSalesperson(ModuleBase):
+    """
+
+    Parameters
+    ----------
+    input : Input
+        PYME.IO.tabular containing x and y coordinates. Compatible with measurement output for Supertile coordinates,
+        e.g. 'x_um'
+    output: Output
+        PYME.IO.tabular
+
+    Notes
+    -----
 
 
+    """
+    input = Input('input')
+    output = Output('sorted')
+
+    def execute(self, namespace):
+        from sklearn.neighbors import kneighbors_graph
+        from scipy.optimize import linear_sum_assignment
+
+        points = namespace[self.input]
+
+        try:
+            positions = np.stack([points['x_um'], points['y_um']], axis=1)
+        except KeyError:
+            positions = np.stack([points['x'], points['y']], axis=1) / 1e3  # assume x and y were in [nanometers]
+
+        distance = kneighbors_graph(positions, 1, mode='distance', include_self=False, n_jobs=-1).toarray()
+
+        optimized = linear_sum_assignment(distance)
