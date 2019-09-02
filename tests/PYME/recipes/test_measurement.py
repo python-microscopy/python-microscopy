@@ -40,7 +40,7 @@ def test_TravelingSalesperson():
                                     'y_um': np.concatenate([y, 1.1 * r * np.sin(theta)])})
 
     recipe = base.ModuleCollection()
-    recipe.add_module(measurement.TravelingSalesperson(output='output'))
+    recipe.add_module(measurement.TravelingSalesperson(output='output', epsilon=0.001))
     recipe.namespace['input'] = points
 
     ordered = recipe.execute()
