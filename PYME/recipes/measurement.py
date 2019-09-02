@@ -891,6 +891,7 @@ class TravelingSalesperson(ModuleBase):
     """
     input = Input('input')
     epsilon = Float(0.001)
+    # TODO - add n_wanted as a parameter and only optimize a path reaching n_wanted points
     output = Output('sorted')
 
     def execute(self, namespace):
@@ -907,24 +908,7 @@ class TravelingSalesperson(ModuleBase):
         distances = distance_matrix(positions, positions)
 
 
-        # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
-        route = np.arange(distances.shape[0] - 1, -1, -1)
-
-        og_distance = self.calculate_path_length(distances, route)
-        # initialize values we'll be updating
-        improvement = 1
-        best_distance = og_distance
-        while improvement > self.epsilon:
-            last_distance = best_distance
-            for i in range(1, distances.shape[0] - 2):  # don't swap the first position
-                for k in range(i + 1, distances.shape[0]):  # allow the last position in the route to vary
-                    new_route = self.two_opt_swap(route, i, k)
-                    new_distance = self.calculate_path_length(distances, new_route)
-                    # print('distance: %f, route %s' % (new_distance, (new_route,)))
-                    if new_distance < best_distance:
-                        route = new_route
-                        best_distance = new_distance
-            improvement = (last_distance - best_distance) / last_distance
+        route, best_distance, og_distance = two_opt(distances, self.epsilon)
 
         # self.plot_path(positions, route)
         out = tabular.mappingFilter({'x_um': positions[:, 0][route],
@@ -939,18 +923,93 @@ class TravelingSalesperson(ModuleBase):
 
         namespace[self.output] = out
 
-    def plot_path(self, positions, route):
-        import matplotlib.pyplot as plt
-        ordered = positions[route]
-        plt.scatter(positions[:, 0], positions[:, 1])
-        plt.plot(ordered[:, 0], ordered[:, 1])
-        plt.show()
+def plot_path(positions, route):
+    import matplotlib.pyplot as plt
+    ordered = positions[route]
+    plt.scatter(positions[:, 0], positions[:, 1])
+    plt.plot(ordered[:, 0], ordered[:, 1])
+    plt.show()
 
-    def calculate_path_length(self, distances, route):
-        return distances[route[:-1], route[1:]].sum()
+def calculate_path_length(distances, route):
+    return distances[route[:-1], route[1:]].sum()
 
-    def two_opt_swap(self, route, i, k):
-        new_route = np.concatenate([route[:i],  # start up to first swap position
-                                    route[k:i - 1: -1],  # from first swap to second, reversed
-                                    route[k + 1:]])  # everything else
-        return new_route
+def two_opt_swap(route, i, k):
+    new_route = np.concatenate([route[:i],  # [start up to first swap position)
+                                route[k:i - 1: -1],  # [from first swap to second], reversed
+                                route[k + 1:]])  # (everything else]
+    return new_route
+
+def two_opt_swap_pre_calc(route_extension, i, k):
+    """
+
+    Parameters
+    ----------
+    route_extension: ndarray
+        route[i:]
+    i: int
+        first swap index
+    k: int
+        second swap index
+
+    Returns
+    -------
+    swapped route extension
+
+    """
+    return np.concatenate([route_extension[k - i:: -1], route_extension[k - i + 1:]])
+
+
+def two_opt(distances, epsilon):
+    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
+    route = np.arange(distances.shape[0] - 1, -1, -1)
+
+    og_distance = calculate_path_length(distances, route)
+    # initialize values we'll be updating
+    improvement = 1
+    best_distance = og_distance
+    while improvement > epsilon:
+        last_distance = best_distance
+        for i in range(1, distances.shape[0] - 2):  # don't swap the first position
+            for k in range(i + 1, distances.shape[0]):  # allow the last position in the route to vary
+                new_route = two_opt_swap(route, i, k)
+                new_distance = calculate_path_length(distances, new_route)
+                # print('distance: %f, route %s' % (new_distance, (new_route,)))
+
+                if new_distance < best_distance:
+                    route = new_route
+                    best_distance = new_distance
+        improvement = (last_distance - best_distance) / last_distance
+
+    return route, best_distance, og_distance
+
+
+def two_opt_precalc(distances, epsilon):
+    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
+    route = np.arange(distances.shape[0] - 1, -1, -1)
+
+    og_distance = calculate_path_length(distances, route)
+    # initialize values we'll be updating
+    improvement = 1
+    best_distance = og_distance
+    while improvement > epsilon:
+        last_distance = best_distance
+        for i in range(1, distances.shape[0] - 2):  # don't swap the first position
+            base_route = route[:i]
+            base_distance = calculate_path_length(distances, base_route)
+            route_ext = route[i:]
+            link_lookup = distances[base_route[-1], :]
+            for k in range(i + 1, distances.shape[0]):  # allow the last position in the route to vary
+                # new_route = self.two_opt_swap(route, i, k)
+                # new_distance = self.calculate_path_length(distances, new_route)
+                # print('distance: %f, route %s' % (new_distance, (new_route,)))
+                new_route_ext = two_opt_swap_pre_calc(route_ext, i, k)
+                new_distance = base_distance + calculate_path_length(distances, new_route_ext) + link_lookup[
+                    new_route_ext[0]]
+                if new_distance < best_distance:
+                    # route = new_route
+                    route_ext = new_route_ext
+                    best_distance = new_distance
+            route = np.concatenate([base_route, route_ext])
+        improvement = (last_distance - best_distance) / last_distance
+
+    return route, best_distance, og_distance
