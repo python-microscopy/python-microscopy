@@ -887,7 +887,8 @@ class TravelingSalesperson(ModuleBase):
     output = Output('sorted')
 
     def execute(self, namespace):
-        from sklearn.neighbors import kneighbors_graph
+        # from sklearn.neighbors import kneighbors_graph
+        from scipy.spatial import distance_matrix
         from scipy.optimize import linear_sum_assignment
 
         points = namespace[self.input]
@@ -897,6 +898,12 @@ class TravelingSalesperson(ModuleBase):
         except KeyError:
             positions = np.stack([points['x'], points['y']], axis=1) / 1e3  # assume x and y were in [nanometers]
 
-        distance = kneighbors_graph(positions, 1, mode='distance', include_self=False, n_jobs=-1).toarray()
+        # distance = kneighbors_graph(positions, 1, mode='distance', include_self=False, n_jobs=-1).toarray()
+        distances = distance_matrix(positions, positions)
+        # make it effectively upper triangular from a cost perspective
+        distances[np.tril_indices_from(distances)] = np.finfo(distances.dtype).max
+        r, order = linear_sum_assignment(distances)  # row indices will be sorted, columns are what we care about
 
-        optimized = linear_sum_assignment(distance)
+        out = tabular.mappingFilter({k: points[k][order] for k, v in points.keys()})
+        out.mdh = points.mdh
+        namespace[self.output] = out
