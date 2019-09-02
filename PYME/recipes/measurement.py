@@ -870,73 +870,91 @@ class FilterOverlappingROIs(ModuleBase):
 class TravelingSalesperson(ModuleBase):
     """
 
+    Optimize route visiting each position in an input dataset exactly once, starting from the last point in the input.
+    2-opt algorithm is used.
+
     Parameters
     ----------
     input : Input
         PYME.IO.tabular containing x and y coordinates. Compatible with measurement output for Supertile coordinates,
         e.g. 'x_um'
+    epsilon: Float
+        Relative improvement threshold used to stop algorithm when gains become negligible
     output: Output
         PYME.IO.tabular
 
     Notes
     -----
+    see https://en.wikipedia.org/wiki/2-opt for pseudo code
 
 
     """
     input = Input('input')
+    epsilon = Float(0.001)
     output = Output('sorted')
 
     def execute(self, namespace):
         # from sklearn.neighbors import kneighbors_graph
         from scipy.spatial import distance_matrix
         from scipy.optimize import linear_sum_assignment
+        import networkx as nx
 
         points = namespace[self.input]
 
         try:
             positions = np.stack([points['x_um'], points['y_um']], axis=1)
         except KeyError:
-            # note that units don't matter for this recipe module, so don't bother converting from nm to um
-            positions = np.stack([points['x'], points['y']], axis=1)
+            # units don't matter for these calculations, but we want to preserve them on the other side
+            positions = np.stack([points['x'], points['y']], axis=1) / 1e3
 
         # distance = kneighbors_graph(positions, 1, mode='distance', include_self=False, n_jobs=-1).toarray()
         distances = distance_matrix(positions, positions)
-        # move null
-        # line = range(distances.shape[0])
-        # distances[line, line] = np.finfo(distances.dtype).max
-        # distances[np.tril_indices_from(distances, k=0)] = np.finfo(distances.dtype).max
-        distances[np.tril_indices_from(distances, k=0)] = distances.max()
-        # NOTE - update to latest scipy build for C version, merged July 18 2019
-        r, c = linear_sum_assignment(distances)  # rows are sorted, order is columns
-        order = connect(r, c)
 
-        import matplotlib.pyplot as plt
-        plt.plot(points['x'][order], points['y'][order], '--')
-        plt.scatter(points['x'], points['y'])
-        plt.show()
-        out = tabular.mappingFilter({k: points[k][order] for k in points.keys()})
-        out.mdh = points.mdh
+
+        # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
+        route = np.arange(distances.shape[0] - 1, -1, -1)
+
+        og_distance = self.calculate_path_length(distances, route)
+        # initialize values we'll be updating
+        improvement = 1
+        best_distance = og_distance
+        while improvement > self.epsilon:
+            last_distance = best_distance
+            for i in range(1, distances.shape[0] - 2):  # don't swap the first position
+                for k in range(i + 1, distances.shape[0]):  # allow the last position in the route to vary
+                    new_route = self.two_opt_swap(route, i, k)
+                    new_distance = self.calculate_path_length(distances, new_route)
+                    # print('distance: %f, route %s' % (new_distance, (new_route,)))
+                    if new_distance < best_distance:
+                        route = new_route
+                        best_distance = new_distance
+            improvement = (last_distance - best_distance) / last_distance
+
+        # self.plot_path(positions, route)
+        out = tabular.mappingFilter({'x_um': positions[:, 0][route],
+                                     'y_um': positions[:, 1][route]})
+        out.mdh = MetaDataHandler.NestedClassMDHandler()
+        try:
+            out.mdh.copyEntriesFrom(points.mdh)
+        except AttributeError:
+            pass
+        out.mdh['TravelingSalesperson.Distance'] = best_distance
+        out.mdh['TravelingSalesperson.OriginalDistance'] = og_distance
+
         namespace[self.output] = out
 
-def connect(r, c):
-    order = np.zeros_like(r)
+    def plot_path(self, positions, route):
+        import matplotlib.pyplot as plt
+        ordered = positions[route]
+        plt.scatter(positions[:, 0], positions[:, 1])
+        plt.plot(ordered[:, 0], ordered[:, 1])
+        plt.show()
 
-    # rc = np.stack([r, c], axis=1)
+    def calculate_path_length(self, distances, route):
+        return distances[route[:-1], route[1:]].sum()
 
-
-
-    # start at the last point, for a LIFO-style acquisition to minimize stage travel # TODO - don't return stage after tiling
-    order[0] = r[-1]
-    order[1] = c[-1]
-    # order[1] = c[order[0]]
-    # order[2] = r[order[1]]
-
-    for ind in range(1, order.shape[0]):
-        if ind % 2 == 0:
-            order[ind] = c[order[ind-1]]
-        else:
-            order[ind] = r[order[ind-1]]
-
-
-
-    return order
+    def two_opt_swap(self, route, i, k):
+        new_route = np.concatenate([route[:i],  # start up to first swap position
+                                    route[k:i - 1: -1],  # from first swap to second, reversed
+                                    route[k + 1:]])  # everything else
+        return new_route

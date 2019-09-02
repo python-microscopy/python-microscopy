@@ -29,21 +29,24 @@ def test_FilterOverlappingROIs():
     assert (distances[:, 1] > max_distance).all()
 
 def test_TravelingSalesperson():
-    r = 100
+    r = 10
     theta = np.linspace(0, 2* np.pi, 5)
     dt = theta[1] - theta[0]
     x, y = r * np.cos(theta), r * np.sin(theta)
     x = np.concatenate([x, r * np.cos(theta + 0.5 * dt)])
     y = np.concatenate([y, r * np.sin(theta + 0.5 * dt)])
 
-    points = tabular.mappingFilter({'x': np.concatenate([x, 1.1 * r * np.cos(theta)]),
-                                    'y': np.concatenate([y, 1.1 * r * np.sin(theta)])})
+    points = tabular.mappingFilter({'x_um': np.concatenate([x, 1.1 * r * np.cos(theta)]),
+                                    'y_um': np.concatenate([y, 1.1 * r * np.sin(theta)])})
 
     recipe = base.ModuleCollection()
-    recipe.add_module(measurement.TravelingSalesperson())
+    recipe.add_module(measurement.TravelingSalesperson(output='output'))
     recipe.namespace['input'] = points
 
     ordered = recipe.execute()
+
+    # hopefully we're down to not too much more than the rough circumference.
+    assert ordered.mdh['TravelingSalesperson.Distance'] < 1.25 * (2 * np.pi * r)
 
 test_TravelingSalesperson()
 
