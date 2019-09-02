@@ -45,9 +45,5 @@ def test_TravelingSalesperson():
 
     ordered = recipe.execute()
 
-    # hopefully we're down to not too much more than the rough circumference.
+    # should be not too much more than the rough circumference.
     assert ordered.mdh['TravelingSalesperson.Distance'] < 1.25 * (2 * np.pi * r)
-
-test_TravelingSalesperson()
-
-

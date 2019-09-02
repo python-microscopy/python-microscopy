@@ -894,10 +894,7 @@ class TravelingSalesperson(ModuleBase):
     output = Output('sorted')
 
     def execute(self, namespace):
-        # from sklearn.neighbors import kneighbors_graph
         from scipy.spatial import distance_matrix
-        from scipy.optimize import linear_sum_assignment
-        import networkx as nx
 
         points = namespace[self.input]
 
@@ -907,7 +904,6 @@ class TravelingSalesperson(ModuleBase):
             # units don't matter for these calculations, but we want to preserve them on the other side
             positions = np.stack([points['x'], points['y']], axis=1) / 1e3
 
-        # distance = kneighbors_graph(positions, 1, mode='distance', include_self=False, n_jobs=-1).toarray()
         distances = distance_matrix(positions, positions)
 
 
