@@ -896,14 +896,47 @@ class TravelingSalesperson(ModuleBase):
         try:
             positions = np.stack([points['x_um'], points['y_um']], axis=1)
         except KeyError:
-            positions = np.stack([points['x'], points['y']], axis=1) / 1e3  # assume x and y were in [nanometers]
+            # note that units don't matter for this recipe module, so don't bother converting from nm to um
+            positions = np.stack([points['x'], points['y']], axis=1)
 
         # distance = kneighbors_graph(positions, 1, mode='distance', include_self=False, n_jobs=-1).toarray()
         distances = distance_matrix(positions, positions)
-        # make it effectively upper triangular from a cost perspective
-        distances[np.tril_indices_from(distances)] = np.finfo(distances.dtype).max
-        r, order = linear_sum_assignment(distances)  # row indices will be sorted, columns are what we care about
+        # move null
+        # line = range(distances.shape[0])
+        # distances[line, line] = np.finfo(distances.dtype).max
+        # distances[np.tril_indices_from(distances, k=0)] = np.finfo(distances.dtype).max
+        distances[np.tril_indices_from(distances, k=0)] = distances.max()
+        # NOTE - update to latest scipy build for C version, merged July 18 2019
+        r, c = linear_sum_assignment(distances)  # rows are sorted, order is columns
+        order = connect(r, c)
 
-        out = tabular.mappingFilter({k: points[k][order] for k, v in points.keys()})
+        import matplotlib.pyplot as plt
+        plt.plot(points['x'][order], points['y'][order], '--')
+        plt.scatter(points['x'], points['y'])
+        plt.show()
+        out = tabular.mappingFilter({k: points[k][order] for k in points.keys()})
         out.mdh = points.mdh
         namespace[self.output] = out
+
+def connect(r, c):
+    order = np.zeros_like(r)
+
+    # rc = np.stack([r, c], axis=1)
+
+
+
+    # start at the last point, for a LIFO-style acquisition to minimize stage travel # TODO - don't return stage after tiling
+    order[0] = r[-1]
+    order[1] = c[-1]
+    # order[1] = c[order[0]]
+    # order[2] = r[order[1]]
+
+    for ind in range(1, order.shape[0]):
+        if ind % 2 == 0:
+            order[ind] = c[order[ind-1]]
+        else:
+            order[ind] = r[order[ind-1]]
+
+
+
+    return order

@@ -27,3 +27,24 @@ def test_FilterOverlappingROIs():
     kdt = KDTree(positions)
     distances, indices = kdt.query(positions, k=2, p=2)
     assert (distances[:, 1] > max_distance).all()
+
+def test_TravelingSalesperson():
+    r = 100
+    theta = np.linspace(0, 2* np.pi, 5)
+    dt = theta[1] - theta[0]
+    x, y = r * np.cos(theta), r * np.sin(theta)
+    x = np.concatenate([x, r * np.cos(theta + 0.5 * dt)])
+    y = np.concatenate([y, r * np.sin(theta + 0.5 * dt)])
+
+    points = tabular.mappingFilter({'x': np.concatenate([x, 1.1 * r * np.cos(theta)]),
+                                    'y': np.concatenate([y, 1.1 * r * np.sin(theta)])})
+
+    recipe = base.ModuleCollection()
+    recipe.add_module(measurement.TravelingSalesperson())
+    recipe.namespace['input'] = points
+
+    ordered = recipe.execute()
+
+test_TravelingSalesperson()
+
+
