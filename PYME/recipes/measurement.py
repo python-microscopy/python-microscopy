@@ -917,7 +917,8 @@ class ChunkedTravelingSalesperson(ModuleBase):
     def execute(self, namespace):
         import multiprocessing
         from PYME.util.shmarray import shmarray
-        # from scipy.spatial import distance_matrix
+        from scipy.spatial import distance_matrix
+        import time
 
         points = namespace[self.input]
 
@@ -942,7 +943,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
 
         # number the sections  # TODO - make x oscillate left-right then right-left depending on odd or even y
         section = shmarray.create_copy(X + Y * sections_per_side)
-        n_sections = section.max()
+        n_sections = section.max() + 1
         I = np.argsort(section)
         section = section[I]
         positions[:, :] = positions[I, :]
@@ -959,12 +960,21 @@ class ChunkedTravelingSalesperson(ModuleBase):
         if (counts > 1000).any():
             logger.warning('%d counts in a bin, traveling salesperson algorithm may be very slow' % counts.max())
 
-        start = 0
+        ind_task_start = 0
+        ind_pos_start = 0
         processes = []
         # import matplotlib.pyplot as plt
         # plt.figure()
+        pivot_indices = counts.cumsum()
+        cumtasks = tasks.cumsum()
+        t = time.time()
         for ci in range(n_cpu):
-            subcounts = counts[ci * tasks[ci]: (ci + 1) * tasks[ci]]
+            ind_task_end = cumtasks[ci]
+            ind_pos_end = pivot_indices[ind_task_end -1]
+            # print('assigned %d tasks, %d : %d' % (tasks[ci], ind_task_start, ind_task_end))
+            # print('pos[%d : %d]' % (ind_pos_start, ind_pos_end))
+            subcounts = counts[ind_task_start: ind_task_end]
+            # print(subcounts)
             # positions, start_section, counts, n_tasks, epsilon, master_route
             # two_opt_section(positions[start:start + subcounts.sum(), :],
             #                                   start,
@@ -972,17 +982,34 @@ class ChunkedTravelingSalesperson(ModuleBase):
             #                                   tasks[ci], self.epsilon, master_route)
 
             p = multiprocessing.Process(target=two_opt_section,
-                                        args=(positions[start:start + subcounts.sum(), :],
-                                              start,
+                                        args=(positions[ind_pos_start:ind_pos_end, :],
+                                              ind_pos_start,
                                               subcounts,
                                               tasks[ci], self.epsilon, route))
             # plt.scatter(positions[start:start + counts[ci], 0], positions[start:start + counts[ci], 1])
             p.start()
             processes.append(p)
-            start += subcounts.sum()  # counts[ci]
+            ind_task_start = ind_task_end
+            ind_pos_start = ind_pos_end
+            # print(start)
         # plt.show()
 
+        # find the optimal way to join our sections, using another small two-opt
+
+        pivot_indices = np.concatenate([pivot_indices, pivot_indices[1:-1] + 1])  # get start / stop indices
+        # print(pivot_indices)
+
         [p.join() for p in processes]
+        logger.debug('Chunked TSPs finished after ~%.2f s, connecting chunks' % (time.time() - t))
+
+        distances = distance_matrix(positions[pivot_indices, :], positions[pivot_indices, :])
+        outer_route, bd, ogd = two_opt(distances, self.epsilon)
+        # print(outer_route)
+
+        # reorder the route
+
+
+
 
 
         # distances = distance_matrix(positions, positions)
