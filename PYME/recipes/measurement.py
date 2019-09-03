@@ -1009,7 +1009,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
             else:
                 final_route.append(route[stop - 1:start][::-1])
         final_route = np.concatenate(final_route)
-        print('n_points: %d, final route shape:%s:' % (positions.shape[0], (final_route.shape,)))
+        assert len(final_route) == positions.shape[0]
 
         # plot_path(positions, final_route)
 
