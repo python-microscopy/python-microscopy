@@ -952,7 +952,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
         tasks = int(n_sections / n_cpu) * np.ones(n_cpu, 'i')
         tasks[:int(n_sections % n_cpu)] += 1
 
-        master_route = shmarray.zeros(positions.shape[0], dtype='i')
+        route = shmarray.zeros(positions.shape[0], dtype='i')
 
         uni, counts = np.unique(section, return_counts=True)
         start = 0
@@ -971,7 +971,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
                                         args=(positions[start:start + subcounts.sum(), :],
                                               start,
                                               subcounts,
-                                              tasks[ci], self.epsilon, master_route))
+                                              tasks[ci], self.epsilon, route))
             # plt.scatter(positions[start:start + counts[ci], 0], positions[start:start + counts[ci], 1])
             p.start()
             processes.append(p)
@@ -990,13 +990,13 @@ class ChunkedTravelingSalesperson(ModuleBase):
         # route, best_distance, og_distance = two_opt_multiproc_inner_wild(distances, self.epsilon)
         #
         # # plot_path(positions, route)
-        # out = tabular.mappingFilter({'x_um': positions[:, 0][route],
-        #                              'y_um': positions[:, 1][route]})
-        # out.mdh = MetaDataHandler.NestedClassMDHandler()
-        # try:
-        #     out.mdh.copyEntriesFrom(points.mdh)
-        # except AttributeError:
-        #     pass
+        out = tabular.mappingFilter({'x_um': positions[:, 0][route],
+                                     'y_um': positions[:, 1][route]})
+        out.mdh = MetaDataHandler.NestedClassMDHandler()
+        try:
+            out.mdh.copyEntriesFrom(points.mdh)
+        except AttributeError:
+            pass
         # out.mdh['TravelingSalesperson.Distance'] = best_distance
         # out.mdh['TravelingSalesperson.OriginalDistance'] = og_distance
 
@@ -1076,25 +1076,6 @@ def two_opt_swap(route, i, k):
                                 route[k + 1:]])  # (everything else]
     return new_route
 
-def two_opt_swap_pre_calc(route_extension, i, k):
-    """
-
-    Parameters
-    ----------
-    route_extension: ndarray
-        route[i:]
-    i: int
-        first swap index
-    k: int
-        second swap index
-
-    Returns
-    -------
-    swapped route extension
-
-    """
-    return np.concatenate([route_extension[k - i:: -1], route_extension[k - i + 1:]])
-
 
 def two_opt(distances, epsilon, initial_route=None):
     # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
@@ -1115,194 +1096,6 @@ def two_opt(distances, epsilon, initial_route=None):
                 if new_distance < best_distance:
                     route = new_route
                     best_distance = new_distance
-        improvement = (last_distance - best_distance) / last_distance
-
-    return route, best_distance, og_distance
-
-
-def two_opt_precalc(distances, epsilon):
-    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
-    route = np.arange(distances.shape[0] - 1, -1, -1)
-
-    og_distance = calculate_path_length(distances, route)
-    # initialize values we'll be updating
-    improvement = 1
-    best_distance = og_distance
-    while improvement > epsilon:
-        last_distance = best_distance
-        for i in range(1, distances.shape[0] - 2):  # don't swap the first position
-            base_route = route[:i]
-            base_distance = calculate_path_length(distances, base_route)
-            route_ext = route[i:]
-            link_lookup = distances[base_route[-1], :]
-            for k in range(i + 1, distances.shape[0]):  # allow the last position in the route to vary
-                # new_route = self.two_opt_swap(route, i, k)
-                # new_distance = self.calculate_path_length(distances, new_route)
-                # print('distance: %f, route %s' % (new_distance, (new_route,)))
-                new_route_ext = two_opt_swap_pre_calc(route_ext, i, k)
-                new_distance = base_distance + calculate_path_length(distances, new_route_ext) + link_lookup[
-                    new_route_ext[0]]
-                if new_distance < best_distance:
-                    # route = new_route
-                    route_ext = new_route_ext
-                    best_distance = new_distance
-            route = np.concatenate([base_route, route_ext])
-        improvement = (last_distance - best_distance) / last_distance
-
-    return route, best_distance, og_distance
-
-def two_opt_inner_loop(distances, route, i, k, new_distances, new_routes):
-    ind = k - i - 1
-    new_route = two_opt_swap(route, i, k)
-    new_routes[ind, :] = new_route
-    new_distances[ind] = calculate_path_length(distances, new_route)
-
-def two_opt_threaded_inner(distances, epsilon):
-    import threading
-    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
-    route = np.arange(distances.shape[0] - 1, -1, -1)
-
-    og_distance = calculate_path_length(distances, route)
-    # initialize values we'll be updating
-    improvement = 1
-    best_distance = og_distance
-    from threading import Thread
-    new_distances = np.zeros(distances.shape[0] - 2)
-    new_routes = np.empty((distances.shape[0] - 1, distances.shape[1]), dtype=int)
-    while improvement > epsilon:
-        last_distance = best_distance
-        for i in range(1, distances.shape[0] - 2):  # don't swap the first position
-            threads = []
-            for k in range(i + 1, distances.shape[0]):
-                t = Thread(target=two_opt_inner_loop, args=(distances, route, i, k, new_distances, new_routes))
-                t.start()
-                threads.append(t)
-            [t.join() for t in threads]
-            # print('i: %d, k:%d, %s' % (i, k, (new_distances,)))
-            best = np.argmin(new_distances[:k - i])
-            if new_distances[best] < best_distance:
-                best_distance = new_distances[best]
-                route = new_routes[best, :]
-        improvement = (last_distance - best_distance) / last_distance
-
-    return route, best_distance, og_distance
-
-def two_opt_inner_loop_wild(distances, route, i, k, best_distance, n_tasks=1):
-    for rep in range(n_tasks):
-        new_route = two_opt_swap(route, i, k + rep)
-        dist = calculate_path_length(distances, new_route)
-        if dist < best_distance:
-            best_distance[0] = dist
-            route[:] = new_route
-
-def two_opt_threaded_inner_wild(distances, epsilon):
-    from threading import Thread
-    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
-    route = np.arange(distances.shape[0] - 1, -1, -1)
-
-    og_distance = calculate_path_length(distances, route)
-    # initialize values we'll be updating
-    improvement = 1
-    best_distance = np.array([og_distance])
-    while improvement > epsilon:
-        last_distance = best_distance[0]
-        for i in range(1, distances.shape[0] - 2):  # don't swap the first position
-            threads = []
-            for k in range(i + 1, distances.shape[0]):
-                t = Thread(target=two_opt_inner_loop_wild, args=(distances, route, i, k, best_distance))
-                t.start()
-                threads.append(t)
-            [t.join() for t in threads]
-            # print('i: %d, k:%d, %s' % (i, k, (new_distances,)))
-            # best = np.argmin(new_distances[:k - i])
-            # if new_distances[best] < best_distance:
-            #     best_distance = new_distances[best]
-            #     route = new_routes[best, :]
-            # make sure we have the right distance for our route
-            best_distance[0] = calculate_path_length(distances, route)
-        improvement = (last_distance - best_distance[0]) / last_distance
-
-    return route, best_distance, og_distance
-
-def two_opt_multiproc_inner_wild(distances, epsilon):
-    """
-    not recommended, prone to OSError: [Errno 23] Too many open files in system
-
-    """
-    import multiprocessing
-    from PYME.util.shmarray import shmarray
-
-    n_cpu = multiprocessing.cpu_count() * 20
-
-
-    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
-    route = shmarray.create_copy(np.arange(distances.shape[0] - 1, -1, -1))
-    distances = shmarray.create_copy(distances)
-
-    og_distance = calculate_path_length(distances, route)
-    # initialize values we'll be updating
-    improvement = 1
-    best_distance = shmarray.create_copy(np.array([og_distance]))
-    # best_distance = multiprocessing.Value()
-    while improvement > epsilon:
-        last_distance = best_distance[0]
-        for i in range(1, distances.shape[0] - 2):  # don't swap the first position
-            n = distances.shape[0] - i + 1
-            tasks = int(n / n_cpu) * np.ones(n_cpu, 'i')
-            tasks[:int(n % n_cpu)] += 1
-            processes = [multiprocessing.Process(target=two_opt_inner_loop_wild,
-                                                 args=(distances, route, i, k, best_distance)) for k in range(i + 1, distances.shape[0], tasks[0])]
-
-            for p in processes:
-                print(p)
-                p.start()
-
-            for p in processes:
-                print(p)
-                p.join()
-
-            # make sure we have the right distance for our route
-            best_distance[0] = calculate_path_length(distances, route)
-        improvement = (last_distance - best_distance[0]) / last_distance
-        print(improvement)
-
-    return route, best_distance, og_distance
-
-def two_opt_outer_loop(distances, route, i, new_distances, new_routes, last_distance):
-    distance = last_distance
-    ind = i - 1
-    for k in range(i + 1, distances.shape[0]):  # allow the last position in the route to vary
-        new_route = two_opt_swap(route, i, k)
-        new_distance = calculate_path_length(distances, new_route)
-        if new_distance < distance:
-            new_route = two_opt_swap(route, i, k)
-            distance = new_distance
-    new_routes[ind, :] = new_route
-    new_distances[ind] = distance
-
-def two_opt_threaded_outer(distances, epsilon):
-    from threading import Thread
-    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
-    route = np.arange(distances.shape[0] - 1, -1, -1)
-
-    og_distance = calculate_path_length(distances, route)
-    # initialize values we'll be updating
-    improvement = 1
-    best_distance = og_distance
-    new_distances = np.empty(distances.shape[0] - 3)
-    new_routes = np.empty((distances.shape[0] - 3, distances.shape[1]), dtype=int)
-    while improvement > epsilon:
-        last_distance = best_distance
-        # for i in range(1, distances.shape[0] - 2):  # don't swap the first position
-        threads = [Thread(target=two_opt_outer_loop, args=(distances,
-                                                           route, i, new_distances, new_routes,
-                                                           last_distance)) for i in range(1, distances.shape[0] - 2)]
-        [t.start() for t in threads]
-        [t.join() for t in threads]
-        best = np.argmin(new_distances)
-        if new_distances[best] < best_distance:
-            best_distance = new_distances[best]
-            route = new_routes[best, :]
         improvement = (last_distance - best_distance) / last_distance
 
     return route, best_distance, og_distance
