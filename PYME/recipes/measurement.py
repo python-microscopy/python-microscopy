@@ -1091,8 +1091,12 @@ def two_opt_multiproc_inner_wild(distances, epsilon):
     not recommended, prone to OSError: [Errno 23] Too many open files in system
 
     """
-    from multiprocessing import Process
+    import multiprocessing
     from PYME.util.shmarray import shmarray
+
+    # n_procs = multiprocessing.cpu_count()
+    # k_per = distances.shape[0] - 3
+
     # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
     route = shmarray.create_copy(np.arange(distances.shape[0] - 1, -1, -1))
     distances = shmarray.create_copy(distances)
@@ -1104,8 +1108,7 @@ def two_opt_multiproc_inner_wild(distances, epsilon):
     while improvement > epsilon:
         last_distance = best_distance[0]
         for i in range(1, distances.shape[0] - 2):  # don't swap the first positiond
-            processes = [Process(target=two_opt_inner_loop_wild, args=(distances, route, i, k, best_distance)) for k in range(i + 1, distances.shape[0]) for i
-                         in range(1, distances.shape[0] - 2)]
+            processes = [multiprocessing.Process(target=two_opt_inner_loop_wild, args=(distances, route, i, k, best_distance)) for k in range(i + 1, distances.shape[0])]
 
             for p in processes:
                 print(p)
