@@ -61,31 +61,22 @@ def test_ChunkedTravelingSalesman():
     recipe.namespace['input'] = points
 
     ordered = recipe.execute()
-
-test_ChunkedTravelingSalesman()
-
-    # how much improvement?
-    # assert ordered.mdh['TravelingSalesperson.Distance'] < 1.25 * (2 * np.pi * r)
+    # todo - add an actual test here
 
 
-# if __name__ == '__main__':
-#     import time
-#     r = 100
-#     theta = np.linspace(0, 2* np.pi, 200)
-#     dt = theta[1] - theta[0]
-#     x, y = r * np.cos(theta), r * np.sin(theta)
-#     x = np.concatenate([x, r * np.cos(theta + 0.5 * dt)])
-#     y = np.concatenate([y, r * np.sin(theta + 0.5 * dt)])
-#
-#     points = tabular.mappingFilter({'x_um': np.concatenate([x, 1.1 * r * np.cos(theta)]),
-#                                     'y_um': np.concatenate([y, 1.1 * r * np.sin(theta)])})
-#     print('n_points: %d' % len(points['x_um']))
-#
-#     recipe = base.ModuleCollection()
-#     recipe.add_module(measurement.TravelingSalesperson(output='output', epsilon=0.001))
-#     recipe.namespace['input'] = points
-#     t = time.time()
-#     recipe.execute()
-#     print(time.time() - t)
-#     mdh = recipe.namespace['output'].mdh
-#     print('og distance: %f, new distance: %f' % (mdh['TravelingSalesperson.OriginalDistance'], mdh['TravelingSalesperson.Distance']))
+if __name__ == '__main__':
+    import time
+    n = 10000  # takes about 70 seconds on 2015 macbook pro with episolon 0.001 ad 500 points per chunk
+    x = np.random.rand(n) * 4e3
+    y = np.random.rand(n) * 4e3
+
+    points = tabular.mappingFilter({'x_um': x, 'y_um': y})
+
+    recipe = base.ModuleCollection()
+    recipe.add_module(measurement.ChunkedTravelingSalesperson(output='output', epsilon=0.001,
+                                                              points_per_chunk=int(n/20)))
+    recipe.namespace['input'] = points
+
+    t = time.time()
+    recipe.execute()
+    print('n_points: %d, runtime: %f' % (n, time.time() - t))
