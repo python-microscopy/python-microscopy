@@ -983,35 +983,30 @@ class ChunkedTravelingSalesperson(ModuleBase):
             ind_task_start = ind_task_end
             ind_pos_start = ind_pos_end
 
-        # find a reasonable way to join our sections
+        # next we need to join our sections. Do a couple precalculations in this process while the others are executing
         pivot_indices = np.sort(np.concatenate([[0], cumcount[:-1], cumcount - 1]))  # get start/stop indices for each
+        distances = distance_matrix(positions, positions)
 
         [p.join() for p in processes]
-        logger.debug('Chunked TSPs finished after ~%.2f s, connecting chunks' % (time.time() - t))
+        print('Chunked TSPs finished after ~%.2f s, connecting chunks' % (time.time() - t))
 
-        distances = distance_matrix(positions[pivot_indices, :], positions[pivot_indices, :])
-        # make the distances zero between points in the same section so they remain linked
-        for sind in range(n_sections):
-            distances[2*sind, 2*sind + 1] = 0
-            distances[2*sind+1, 2*sind] = 0
+        # do swaps just on the pivot points
+        improvement = 1
+        best_distance = calculate_path_length(distances, route)
+        # nuke the epsilon to try and get the best section joining
+        while improvement > self.epsilon/1e3:
+            last_distance = best_distance
+            print(best_distance)
+            for i in pivot_indices[1:]:  # don't swap the first position
+                for k in range(i + 1, distances.shape[0]):  # allow the last position in the route to vary
+                    new_route = two_opt_swap(route, i, k)
+                    new_distance = calculate_path_length(distances, new_route)
 
-        # sort, supplying an initial route so it doesn't reverse our already-reversed path
-        outer_route, bd, ogd = two_opt(distances, self.epsilon/1e4, initial_route=np.arange(distances.shape[0], dtype=int))
-        # plot_path(positions[pivot_indices, :], outer_route)
-
-        # reorder the route sections
-        final_route = []
-
-        for sind in range(n_sections):
-            start, stop = pivot_indices[outer_route[2 * sind]], pivot_indices[outer_route[2 * sind + 1]]
-            if start < stop:
-                final_route.append(route[start:stop + 1])
-            else:
-                final_route.append(route[stop - 1:start][::-1])
-        final_route = np.concatenate(final_route)
-        assert len(final_route) == positions.shape[0]
-
-        # plot_path(positions, final_route)
+                    if new_distance < best_distance:
+                        route = new_route
+                        best_distance = new_distance
+            improvement = (last_distance - best_distance) / last_distance
+        # plot_path(positions, route)
 
         out = tabular.mappingFilter({k: points[k][route] for k in points.keys()})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
@@ -1019,7 +1014,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
             out.mdh.copyEntriesFrom(points.mdh)
         except AttributeError:
             pass
-        # out.mdh['TravelingSalesperson.Distance'] = best_distance
+        out.mdh['TravelingSalesperson.Distance'] = best_distance
         # out.mdh['TravelingSalesperson.OriginalDistance'] = og_distance
 
         namespace[self.output] = out
@@ -1089,10 +1084,10 @@ def calculate_path_length(distances, route):
     return distances[route[:-1], route[1:]].sum()
 
 def two_opt_swap(route, i, k):
-    new_route = np.concatenate([route[:i],  # [start up to first swap position)
-                                route[k:i - 1: -1],  # [from first swap to second], reversed
-                                route[k + 1:]])  # (everything else]
-    return new_route
+    return np.concatenate([route[:i],  # [start up to first swap position)
+                           route[k:i - 1: -1],  # [from first swap to second], reversed
+                           route[k + 1:]])  # (everything else]
+    # route[i:k + 1] = route[k:i - 1: -1]
 
 
 def two_opt(distances, epsilon, initial_route=None):
