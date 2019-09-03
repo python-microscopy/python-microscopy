@@ -943,7 +943,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
 
         # number the sections  # TODO - make x oscillate left-right then right-left depending on odd or even y
         section = shmarray.create_copy(X + Y * sections_per_side)
-        n_sections = section.max() + 1
+        n_sections = int(section.max() + 1)
         I = np.argsort(section)
         section = section[I]
         positions[:, :] = positions[I, :]
@@ -963,64 +963,59 @@ class ChunkedTravelingSalesperson(ModuleBase):
         ind_task_start = 0
         ind_pos_start = 0
         processes = []
-        # import matplotlib.pyplot as plt
-        # plt.figure()
-        pivot_indices = counts.cumsum()
+
+        cumcount = counts.cumsum()
         cumtasks = tasks.cumsum()
         t = time.time()
         for ci in range(n_cpu):
             ind_task_end = cumtasks[ci]
-            ind_pos_end = pivot_indices[ind_task_end -1]
-            # print('assigned %d tasks, %d : %d' % (tasks[ci], ind_task_start, ind_task_end))
-            # print('pos[%d : %d]' % (ind_pos_start, ind_pos_end))
+            ind_pos_end = cumcount[ind_task_end -1]
+
             subcounts = counts[ind_task_start: ind_task_end]
-            # print(subcounts)
-            # positions, start_section, counts, n_tasks, epsilon, master_route
-            # two_opt_section(positions[start:start + subcounts.sum(), :],
-            #                                   start,
-            #                                   subcounts,
-            #                                   tasks[ci], self.epsilon, master_route)
 
             p = multiprocessing.Process(target=two_opt_section,
                                         args=(positions[ind_pos_start:ind_pos_end, :],
                                               ind_pos_start,
                                               subcounts,
                                               tasks[ci], self.epsilon, route))
-            # plt.scatter(positions[start:start + counts[ci], 0], positions[start:start + counts[ci], 1])
             p.start()
             processes.append(p)
             ind_task_start = ind_task_end
             ind_pos_start = ind_pos_end
-            # print(start)
-        # plt.show()
 
-        # find the optimal way to join our sections, using another small two-opt
-
-        pivot_indices = np.concatenate([pivot_indices, pivot_indices[1:-1] + 1])  # get start / stop indices
-        # print(pivot_indices)
+        # find a reasonable way to join our sections
+        print(cumcount)
+        pivot_indices = np.sort(np.concatenate([[0], cumcount[:-1], cumcount - 1]))  # get start/stop indices for each
+        print(pivot_indices)
+        print(section[pivot_indices])
 
         [p.join() for p in processes]
         logger.debug('Chunked TSPs finished after ~%.2f s, connecting chunks' % (time.time() - t))
 
         distances = distance_matrix(positions[pivot_indices, :], positions[pivot_indices, :])
-        outer_route, bd, ogd = two_opt(distances, self.epsilon)
-        # print(outer_route)
+        # make the distances zero between points in the same section so they remain linked
+        for sind in range(n_sections):
+            distances[2*sind, 2*sind + 1] = 0
+            distances[2*sind+1, 2*sind] = 0
 
-        # reorder the route
+        # sort, supplying an initial route so it doesn't reverse our already-reversed path
+        outer_route, bd, ogd = two_opt(distances, self.epsilon/1e4, initial_route=np.arange(distances.shape[0], dtype=int))
+        # plot_path(positions[pivot_indices, :], outer_route)
 
+        # reorder the route sections
+        final_route = []
 
+        for sind in range(n_sections):
+            start, stop = pivot_indices[outer_route[2 * sind]], pivot_indices[outer_route[2 * sind + 1]]
+            if start < stop:
+                final_route.append(route[start:stop + 1])
+            else:
+                final_route.append(route[stop - 1:start][::-1])
+        final_route = np.concatenate(final_route)
+        print('n_points: %d, final route shape:%s:' % (positions.shape[0], (final_route.shape,)))
 
+        # plot_path(positions, final_route)
 
-
-        # distances = distance_matrix(positions, positions)
-
-        # plot_path(positions, master_route)
-        # distance = calculate_path_length(distances, master_route)
-
-
-        # route, best_distance, og_distance = two_opt_multiproc_inner_wild(distances, self.epsilon)
-        #
-        # # plot_path(positions, route)
         out = tabular.mappingFilter({k: points[k][route] for k in points.keys()})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
         try:
