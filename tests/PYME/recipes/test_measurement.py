@@ -66,7 +66,7 @@ def test_ChunkedTravelingSalesman():
 
 if __name__ == '__main__':
     import time
-    n = 10000  # takes about 70 seconds on 2015 macbook pro with episolon 0.001 ad 500 points per chunk
+    n = 10000  # takes about 40 seconds on i7-6850k
     x = np.random.rand(n) * 4e3
     y = np.random.rand(n) * 4e3
 

@@ -984,10 +984,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
             ind_pos_start = ind_pos_end
 
         # find a reasonable way to join our sections
-        print(cumcount)
         pivot_indices = np.sort(np.concatenate([[0], cumcount[:-1], cumcount - 1]))  # get start/stop indices for each
-        print(pivot_indices)
-        print(section[pivot_indices])
 
         [p.join() for p in processes]
         logger.debug('Chunked TSPs finished after ~%.2f s, connecting chunks' % (time.time() - t))
