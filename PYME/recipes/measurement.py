@@ -8,14 +8,15 @@ Created on Mon May 25 17:10:02 2015
 """
 from .base import ModuleBase, register_module, Filter
 from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List
-
 import numpy as np
 import pandas as pd
 from PYME.IO import tabular
 from PYME.IO import MetaDataHandler
 import os
-
 from six.moves import xrange
+import logging
+
+logger = logging.getLogger(__name__)
 
 @register_module('MultifitBlobs') 
 class MultifitBlobs(ModuleBase):
@@ -954,6 +955,10 @@ class ChunkedTravelingSalesperson(ModuleBase):
         route = shmarray.zeros(positions.shape[0], dtype='i')
 
         uni, counts = np.unique(section, return_counts=True)
+        logger.debug('%d points total, section counts: %s' % (counts.sum(), (counts,)))
+        if (counts > 1000).any():
+            logger.warning('%d counts in a bin, traveling salesperson algorithm may be very slow' % counts.max())
+
         start = 0
         processes = []
         # import matplotlib.pyplot as plt
@@ -989,8 +994,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
         # route, best_distance, og_distance = two_opt_multiproc_inner_wild(distances, self.epsilon)
         #
         # # plot_path(positions, route)
-        out = tabular.mappingFilter({'x_um': positions[:, 0][route],
-                                     'y_um': positions[:, 1][route]})
+        out = tabular.mappingFilter({k: points[k][route] for k in points.keys()})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
         try:
             out.mdh.copyEntriesFrom(points.mdh)
