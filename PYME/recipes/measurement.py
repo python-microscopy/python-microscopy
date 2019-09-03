@@ -865,6 +865,143 @@ class FilterOverlappingROIs(ModuleBase):
 
         namespace[self.output] = out
 
+def two_opt_section(positions, start_section, counts, n_tasks, epsilon, master_route):
+    from scipy.spatial import distance_matrix
+    start_pos = 0
+    start_route = start_section
+    for ti in range(n_tasks):
+        pos = positions[start_pos: start_pos + counts[ti]]
+        distances = distance_matrix(pos, pos)
+
+        # start on a corner, rather than center
+        route = np.argsort(pos[:, 0] + pos[:, 1])
+        # print('route %s' % (route,))
+
+        best_route, best_distance, og_distance = two_opt(distances, epsilon, route)
+        # print(best_route)
+        master_route[start_route:start_route + counts[ti]] = start_route + best_route
+        start_route += counts[ti]
+        start_pos += counts[ti]
+
+
+
+
+@register_module('ChunkedTravelingSalesperson')
+class ChunkedTravelingSalesperson(ModuleBase):
+    """
+
+    Optimize route visiting each position in an input dataset exactly once, starting from the last point in the input.
+    2-opt algorithm is used.
+
+    Parameters
+    ----------
+    input : Input
+        PYME.IO.tabular containing x and y coordinates. Compatible with measurement output for Supertile coordinates,
+        e.g. 'x_um'
+    epsilon: Float
+        Relative improvement threshold used to stop algorithm when gains become negligible
+    output: Output
+        PYME.IO.tabular
+
+    Notes
+    -----
+    see https://en.wikipedia.org/wiki/2-opt for pseudo code
+
+
+    """
+    input = Input('input')
+    epsilon = Float(0.001)
+    points_per_chunk = Int(500)
+    output = Output('sorted')
+
+    def execute(self, namespace):
+        import multiprocessing
+        from PYME.util.shmarray import shmarray
+        # from scipy.spatial import distance_matrix
+
+        points = namespace[self.input]
+
+        try:
+            # multiprocessing.Array()
+            positions = np.stack([points['x_um'], points['y_um']], axis=1)
+        except KeyError:
+            # units don't matter for these calculations, but we want to preserve them on the other side
+            positions = np.stack([points['x'], points['y']], axis=1) / 1e3
+
+        # assume density is uniform
+        x_min, y_min = positions.min(axis=0)
+        x_max, y_max = positions.max(axis=0)
+
+        sections_per_side = int(np.sqrt((positions.shape[0] /  self.points_per_chunk)))
+        size_x = (x_max - x_min) / sections_per_side
+        size_y = (y_max - y_min) / sections_per_side
+
+        # bin points into our "pixels"
+        X = np.round(positions[:, 0] / size_x).astype(int)
+        Y = np.round(positions[:, 1] / size_y).astype(int)
+
+        # number the sections  # TODO - make x oscillate left-right then right-left depending on odd or even y
+        section = shmarray.create_copy(X + Y * sections_per_side)
+        n_sections = section.max()
+        I = np.argsort(section)
+        section = section[I]
+        positions[:, :] = positions[I, :]
+
+        # split out points
+        n_cpu = multiprocessing.cpu_count()
+        tasks = int(n_sections / n_cpu) * np.ones(n_cpu, 'i')
+        tasks[:int(n_sections % n_cpu)] += 1
+
+        master_route = shmarray.zeros(positions.shape[0], dtype='i')
+
+        uni, counts = np.unique(section, return_counts=True)
+        start = 0
+        processes = []
+        # import matplotlib.pyplot as plt
+        # plt.figure()
+        for ci in range(n_cpu):
+            subcounts = counts[ci * tasks[ci]: (ci + 1) * tasks[ci]]
+            # positions, start_section, counts, n_tasks, epsilon, master_route
+            # two_opt_section(positions[start:start + subcounts.sum(), :],
+            #                                   start,
+            #                                   subcounts,
+            #                                   tasks[ci], self.epsilon, master_route)
+
+            p = multiprocessing.Process(target=two_opt_section,
+                                        args=(positions[start:start + subcounts.sum(), :],
+                                              start,
+                                              subcounts,
+                                              tasks[ci], self.epsilon, master_route))
+            # plt.scatter(positions[start:start + counts[ci], 0], positions[start:start + counts[ci], 1])
+            p.start()
+            processes.append(p)
+            start += subcounts.sum()  # counts[ci]
+        # plt.show()
+
+        [p.join() for p in processes]
+
+
+        # distances = distance_matrix(positions, positions)
+
+        # plot_path(positions, master_route)
+        # distance = calculate_path_length(distances, master_route)
+
+
+        # route, best_distance, og_distance = two_opt_multiproc_inner_wild(distances, self.epsilon)
+        #
+        # # plot_path(positions, route)
+        # out = tabular.mappingFilter({'x_um': positions[:, 0][route],
+        #                              'y_um': positions[:, 1][route]})
+        # out.mdh = MetaDataHandler.NestedClassMDHandler()
+        # try:
+        #     out.mdh.copyEntriesFrom(points.mdh)
+        # except AttributeError:
+        #     pass
+        # out.mdh['TravelingSalesperson.Distance'] = best_distance
+        # out.mdh['TravelingSalesperson.OriginalDistance'] = og_distance
+
+        namespace[self.output] = out
+
 
 @register_module('TravelingSalesperson')
 class TravelingSalesperson(ModuleBase):
@@ -908,7 +1045,7 @@ class TravelingSalesperson(ModuleBase):
         distances = distance_matrix(positions, positions)
 
 
-        route, best_distance, og_distance = two_opt_multiproc_inner_wild(distances, self.epsilon)
+        route, best_distance, og_distance = two_opt(distances, self.epsilon)
 
         # plot_path(positions, route)
         out = tabular.mappingFilter({'x_um': positions[:, 0][route],
@@ -959,9 +1096,9 @@ def two_opt_swap_pre_calc(route_extension, i, k):
     return np.concatenate([route_extension[k - i:: -1], route_extension[k - i + 1:]])
 
 
-def two_opt(distances, epsilon):
+def two_opt(distances, epsilon, initial_route=None):
     # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
-    route = np.arange(distances.shape[0] - 1, -1, -1)
+    route = initial_route if initial_route is not None else np.arange(distances.shape[0] - 1, -1, -1)
 
     og_distance = calculate_path_length(distances, route)
     # initialize values we'll be updating
@@ -1050,12 +1187,13 @@ def two_opt_threaded_inner(distances, epsilon):
 
     return route, best_distance, og_distance
 
-def two_opt_inner_loop_wild(distances, route, i, k, best_distance):
-    new_route = two_opt_swap(route, i, k)
-    dist = calculate_path_length(distances, new_route)
-    if dist < best_distance:
-        best_distance[0] = dist
-        route[:] = new_route
+def two_opt_inner_loop_wild(distances, route, i, k, best_distance, n_tasks=1):
+    for rep in range(n_tasks):
+        new_route = two_opt_swap(route, i, k + rep)
+        dist = calculate_path_length(distances, new_route)
+        if dist < best_distance:
+            best_distance[0] = dist
+            route[:] = new_route
 
 def two_opt_threaded_inner_wild(distances, epsilon):
     from threading import Thread
@@ -1094,8 +1232,8 @@ def two_opt_multiproc_inner_wild(distances, epsilon):
     import multiprocessing
     from PYME.util.shmarray import shmarray
 
-    # n_procs = multiprocessing.cpu_count()
-    # k_per = distances.shape[0] - 3
+    n_cpu = multiprocessing.cpu_count() * 20
+
 
     # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
     route = shmarray.create_copy(np.arange(distances.shape[0] - 1, -1, -1))
@@ -1105,10 +1243,15 @@ def two_opt_multiproc_inner_wild(distances, epsilon):
     # initialize values we'll be updating
     improvement = 1
     best_distance = shmarray.create_copy(np.array([og_distance]))
+    # best_distance = multiprocessing.Value()
     while improvement > epsilon:
         last_distance = best_distance[0]
-        for i in range(1, distances.shape[0] - 2):  # don't swap the first positiond
-            processes = [multiprocessing.Process(target=two_opt_inner_loop_wild, args=(distances, route, i, k, best_distance)) for k in range(i + 1, distances.shape[0])]
+        for i in range(1, distances.shape[0] - 2):  # don't swap the first position
+            n = distances.shape[0] - i + 1
+            tasks = int(n / n_cpu) * np.ones(n_cpu, 'i')
+            tasks[:int(n % n_cpu)] += 1
+            processes = [multiprocessing.Process(target=two_opt_inner_loop_wild,
+                                                 args=(distances, route, i, k, best_distance)) for k in range(i + 1, distances.shape[0], tasks[0])]
 
             for p in processes:
                 print(p)
@@ -1121,6 +1264,7 @@ def two_opt_multiproc_inner_wild(distances, epsilon):
             # make sure we have the right distance for our route
             best_distance[0] = calculate_path_length(distances, route)
         improvement = (last_distance - best_distance[0]) / last_distance
+        print(improvement)
 
     return route, best_distance, og_distance
 
