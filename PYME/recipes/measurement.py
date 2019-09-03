@@ -891,7 +891,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
     """
 
     Optimize route visiting each position in an input dataset exactly once, starting from the last point in the input.
-    2-opt algorithm is used.
+    2-opt algorithm is used, and points are chunked (very) roughly into
 
     Parameters
     ----------
@@ -900,13 +900,12 @@ class ChunkedTravelingSalesperson(ModuleBase):
         e.g. 'x_um'
     epsilon: Float
         Relative improvement threshold used to stop algorithm when gains become negligible
+    points_per_chunk: Int
+        Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
+        ideal paths, but much larger computational complexity. 500 points will take ballpark of 30 seconds on a 2015
+        macbook pro
     output: Output
         PYME.IO.tabular
-
-    Notes
-    -----
-    see https://en.wikipedia.org/wiki/2-opt for pseudo code
-
 
     """
     input = Input('input')
@@ -1020,10 +1019,6 @@ class TravelingSalesperson(ModuleBase):
     output: Output
         PYME.IO.tabular
 
-    Notes
-    -----
-    see https://en.wikipedia.org/wiki/2-opt for pseudo code
-
 
     """
     input = Input('input')
@@ -1078,6 +1073,32 @@ def two_opt_swap(route, i, k):
 
 
 def two_opt(distances, epsilon, initial_route=None):
+    """
+
+    Parameters
+    ----------
+    distances: ndarray
+        distance array, which distances[i, j] is the distance from the ith to the jth point
+    epsilon: float
+        exit tolerence on relative improvement. 0.01 corresponds to 1%
+    initial_route: ndarray
+        [optional] route to initialize search with. Note that the first position in the route is fixed, but all others
+        may vary. If no route is provided, the initial route is the same order the distances array was constructed with.
+
+    Returns
+    -------
+    route: ndarray
+        "solved" route
+    best_distance: float
+        distance of the route
+    og_distance: float
+        distance of the initial route.
+
+    Notes
+    -----
+    see https://en.wikipedia.org/wiki/2-opt for pseudo code
+
+    """
     # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
     route = initial_route if initial_route is not None else np.arange(distances.shape[0] - 1, -1, -1)
 
