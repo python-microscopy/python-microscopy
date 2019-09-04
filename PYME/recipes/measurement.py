@@ -1009,6 +1009,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
 
         final_route = np.copy(route)
         start = cumcount[0]
+        new_pivot_inds = []
         for sind in range(1, n_sections):  # we got section 0 for free with the copy
             cur_section = section_order[sind]
             section_count = counts[cur_section]
@@ -1016,16 +1017,21 @@ class ChunkedTravelingSalesperson(ModuleBase):
                 final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]][::-1]
             else:
                 final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]]
+            new_pivot_inds.append(start)
+            new_pivot_inds.append(start + section_count - 1)
             start += section_count
         print(pivot_positions.astype(int))
-        # import matplotlib.pyplot as plt
-        # from matplotlib import cm
-        # colors = cm.get_cmap('prism', n_sections)
-        # plt.figure()
-        # plt.scatter(positions[final_route, 0], positions[final_route, 1], color=colors(section[final_route]))
-        # plt.plot(positions[final_route, 0], positions[final_route, 1], color='k')
-        # plt.scatter(positions[final_route, 0][pivot_indices], positions[final_route, 1][pivot_indices], color='k')
-        # plt.show()
+        import matplotlib.pyplot as plt
+        from matplotlib import cm
+        colors = cm.get_cmap('prism', n_sections)
+        plt.figure()
+        sorted_pos = positions[route, :]
+        for pi in range(len(section)):
+            plt.scatter(sorted_pos[pi, 0], sorted_pos[pi, 1], marker='$' + str(section[pi]) + '$',
+                        color=colors(section[pi]))
+        plt.plot(positions[final_route, 0], positions[final_route, 1], color='k')
+        plt.scatter(positions[final_route, 0][new_pivot_inds], positions[final_route, 1][new_pivot_inds], color='k')
+        plt.show()
 
         out = tabular.mappingFilter({k: points[k][final_route] for k in points.keys()})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
