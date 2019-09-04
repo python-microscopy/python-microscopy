@@ -1001,8 +1001,9 @@ class ChunkedTravelingSalesperson(ModuleBase):
         # do a two-opt on just the section start/ends, with ability to reverse the section
         # pivot positions won't be correct unless they're already sorted. No need to sort section
         pivot_positions = positions[route, :][pivot_indices]
+        print(pivot_positions.astype(int))
         section_order, reversals = reversal_two_opt(section[pivot_indices], pivot_positions, self.epsilon)
-        # plot_pivots(section_order, pivot_positions, reversals)
+        plot_pivots(section_order, pivot_positions, reversals)
 
 
         final_route = np.copy(route)
@@ -1015,7 +1016,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
             else:
                 final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]]
             start += section_count
-
+        print(pivot_positions.astype(int))
         # import matplotlib.pyplot as plt
         # from matplotlib import cm
         # colors = cm.get_cmap('hsv', n_sections)
@@ -1094,17 +1095,17 @@ def plot_pivots(section_order, pivot_positions, reversals):
     plt.plot([ordered_pivots[0, 0], ordered_pivots[1, 0]],
              [ordered_pivots[0, 1], ordered_pivots[1, 1]],
              color='r')
-    for sind in range(1, n_sections):
-        plt.scatter([ordered_pivots[2 * sind, 0], ordered_pivots[2 * sind + 1, 0]],
-                    [ordered_pivots[2 * sind, 1], ordered_pivots[2 * sind + 1, 1]],
+    for sind in range(0, n_sections, 2):
+        plt.scatter([ordered_pivots[sind, 0], ordered_pivots[sind + 1, 0]],
+                    [ordered_pivots[sind, 1], ordered_pivots[sind + 1, 1]],
                     color=colors(sind))
-        plt.plot([ordered_pivots[2 * sind, 0], ordered_pivots[2 * sind + 1, 0]],
-                 [ordered_pivots[2 * sind, 1], ordered_pivots[2 * sind + 1, 1]], color=colors(sind))
+        plt.plot([ordered_pivots[sind, 0], ordered_pivots[sind + 1, 0]],
+                 [ordered_pivots[sind, 1], ordered_pivots[sind + 1, 1]], color=colors(sind))
     plt.show()
 
 def calc_dist(p0, p1):
     # todo - sqrt is monotonic, so can we skip it?
-    return np.sqrt((p0[0] - p1[0])**2 + (p0[1] - p1[0])**2)
+    return np.sqrt((p0[0] - p1[0])**2 + (p0[1] - p1[1])**2)
 
 def calculate_length_with_reversal(order, reversals, positions):
     """
@@ -1122,7 +1123,7 @@ def calculate_length_with_reversal(order, reversals, positions):
     """
     length = 0
     porder = np.repeat(2 * order, 2) + np.concatenate([[1, 0] if rev else [0, 1] for rev in reversals])
-    ordered_positions = positions[porder]
+    ordered_positions = np.copy(positions)[porder]
     # just do the links, need to offset by 1. Note len always even since we add sections with pairs of points
     for ind in range(1, len(positions) - 1, 2):
         length += calc_dist(ordered_positions[ind], ordered_positions[ind + 1])
