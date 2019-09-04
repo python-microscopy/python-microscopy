@@ -66,7 +66,7 @@ def test_ChunkedTravelingSalesman():
 
 if __name__ == '__main__':
     import time
-    n = 10000  # takes about 40 seconds on i7-6850k
+    n = 1000
     x = np.random.rand(n) * 4e3
     y = np.random.rand(n) * 4e3
 

@@ -942,11 +942,19 @@ class ChunkedTravelingSalesperson(ModuleBase):
         Y = np.round(positions[:, 1] / size_y).astype(int)
 
         # number the sections
-        section = shmarray.create_copy(X + Y * sections_per_side)
+        section = X + Y * sections_per_side
         n_sections = int(section.max() + 1)
         I = np.argsort(section)
         section = section[I]
         positions[:, :] = positions[I, :]
+
+        # import matplotlib.pyplot as plt
+        # from matplotlib import cm
+        # colors = cm.get_cmap('hsv', n_sections)
+        # plt.figure()
+        # plt.scatter(positions[:, 0], positions[:, 1], color=colors(section))
+        # plt.plot(positions[:, 0], positions[:, 1])
+        # plt.show()
 
         # split out points
         n_cpu = multiprocessing.cpu_count()
@@ -985,44 +993,17 @@ class ChunkedTravelingSalesperson(ModuleBase):
 
         # next we need to join our sections. Do a couple precalculations in this process while the others are executing
         pivot_indices = np.sort(np.concatenate([[0], cumcount[:-1], cumcount - 1]))  # get start/stop indices for each
-        # distances = distance_matrix(positions[pivot_indices], positions[pivot_indices])
-        # # zero same section pivots
-        # for sind in range(n_sections):
-        #     distances[sind, sind + 1] = 0
+        # print(pivot_indices)
 
         [p.join() for p in processes]
         print('Chunked TSPs finished after ~%.2f s, connecting chunks' % (time.time() - t))
 
-        # do swaps just on the pivot points
-        section_order, reversals = reversal_two_opt(section[pivot_indices], positions[pivot_indices, :], self.epsilon)
+        # do a two-opt on just the section start/ends, with ability to reverse the section
+        # pivot positions won't be correct unless they're already sorted. No need to sort section
+        pivot_positions = positions[route, :][pivot_indices]
+        section_order, reversals = reversal_two_opt(section[pivot_indices], pivot_positions, self.epsilon)
+        # plot_pivots(section_order, pivot_positions, reversals)
 
-        # order pivots
-        pivot_positions = positions[pivot_indices, :]
-
-        import matplotlib.pyplot as plt
-        porder = np.repeat(2 * section_order, 2) + np.concatenate([[1, 0] if rev else [0, 1] for rev in reversals])
-        ordered_pivots = pivot_positions[porder, :]
-        plt.plot(ordered_pivots[:, 0], ordered_pivots[:, 1], c='k')
-
-
-        from matplotlib import cm
-        colors = cm.get_cmap('viridis', n_sections)
-
-        plt.scatter([pivot_positions[0, 0], pivot_positions[1, 0]],
-                    [pivot_positions[0, 1], pivot_positions[1, 1]],
-                    color='r')
-        plt.plot([pivot_positions[0, 0], pivot_positions[1, 0]],
-                    [pivot_positions[0, 1], pivot_positions[1, 1]],
-                    color='r')
-        for sind in range(1, n_sections):
-            plt.scatter([pivot_positions[2 * sind, 0], pivot_positions[2 * sind + 1, 0]],
-                     [pivot_positions[2 * sind, 1], pivot_positions[2 * sind + 1, 1]],
-                        color=colors(sind))
-            plt.plot([pivot_positions[2 * sind, 0], pivot_positions[2 * sind + 1, 0]],
-                     [pivot_positions[2 * sind, 1], pivot_positions[2 * sind + 1, 1]], color=colors(sind))
-        plt.show()
-            # color = 'r' if reversals[sind] else 'g'
-            # plt.scatter(positions[pivot_indices, 0][sind], positions[pivot_indices, 1][sind], c=color)
 
         final_route = np.copy(route)
         start = cumcount[0]
@@ -1034,13 +1015,15 @@ class ChunkedTravelingSalesperson(ModuleBase):
             else:
                 final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]]
             start += section_count
-        ind = 3
-        start, end = counts[section_order[:ind]].sum(), counts[section_order[:ind + 1]].sum()
-        print(route[section==section_order[ind]])
-        print(reversals[ind])
-        print(final_route[start:end])
-        # final_route[(counts[section_order[:3]]).sum():(counts[section_order[:4]]).sum()]
-        plot_path(positions, final_route)
+
+        # import matplotlib.pyplot as plt
+        # from matplotlib import cm
+        # colors = cm.get_cmap('hsv', n_sections)
+        # plt.figure()
+        # plt.scatter(positions[:, 0][final_route], positions[:, 1][final_route], color=colors(section[final_route]))
+        # plt.plot(positions[:, 0][final_route], positions[:, 1][final_route], color='k')
+        # plt.scatter(positions[final_route, 0][pivot_indices], positions[final_route, 1][pivot_indices], color='k')
+        # plt.show()
 
         out = tabular.mappingFilter({k: points[k][final_route] for k in points.keys()})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
@@ -1097,6 +1080,7 @@ def reversal_two_opt(section_ids, pivot_positions, epsilon):
 def plot_pivots(section_order, pivot_positions, reversals):
     n_sections = len(section_order)
     import matplotlib.pyplot as plt
+    plt.figure()
     porder = np.repeat(2 * section_order, 2) + np.concatenate([[1, 0] if rev else [0, 1] for rev in reversals])
     ordered_pivots = pivot_positions[porder, :]
     plt.plot(ordered_pivots[:, 0], ordered_pivots[:, 1], c='k')
@@ -1104,18 +1088,18 @@ def plot_pivots(section_order, pivot_positions, reversals):
     from matplotlib import cm
     colors = cm.get_cmap('viridis', n_sections)
 
-    plt.scatter([pivot_positions[0, 0], pivot_positions[1, 0]],
-                [pivot_positions[0, 1], pivot_positions[1, 1]],
+    plt.scatter([ordered_pivots[0, 0], ordered_pivots[1, 0]],
+                [ordered_pivots[0, 1], ordered_pivots[1, 1]],
                 color='r')
-    plt.plot([pivot_positions[0, 0], pivot_positions[1, 0]],
-             [pivot_positions[0, 1], pivot_positions[1, 1]],
+    plt.plot([ordered_pivots[0, 0], ordered_pivots[1, 0]],
+             [ordered_pivots[0, 1], ordered_pivots[1, 1]],
              color='r')
     for sind in range(1, n_sections):
-        plt.scatter([pivot_positions[2 * sind, 0], pivot_positions[2 * sind + 1, 0]],
-                    [pivot_positions[2 * sind, 1], pivot_positions[2 * sind + 1, 1]],
+        plt.scatter([ordered_pivots[2 * sind, 0], ordered_pivots[2 * sind + 1, 0]],
+                    [ordered_pivots[2 * sind, 1], ordered_pivots[2 * sind + 1, 1]],
                     color=colors(sind))
-        plt.plot([pivot_positions[2 * sind, 0], pivot_positions[2 * sind + 1, 0]],
-                 [pivot_positions[2 * sind, 1], pivot_positions[2 * sind + 1, 1]], color=colors(sind))
+        plt.plot([ordered_pivots[2 * sind, 0], ordered_pivots[2 * sind + 1, 0]],
+                 [ordered_pivots[2 * sind, 1], ordered_pivots[2 * sind + 1, 1]], color=colors(sind))
     plt.show()
 
 def calc_dist(p0, p1):
@@ -1139,9 +1123,9 @@ def calculate_length_with_reversal(order, reversals, positions):
     length = 0
     porder = np.repeat(2 * order, 2) + np.concatenate([[1, 0] if rev else [0, 1] for rev in reversals])
     ordered_positions = positions[porder]
-    # just do the links
-    for ind in range(len(order)):
-        length += calc_dist(ordered_positions[2 * ind], ordered_positions[2 * ind + 1])
+    # just do the links, need to offset by 1. Note len always even since we add sections with pairs of points
+    for ind in range(1, len(positions) - 1, 2):
+        length += calc_dist(ordered_positions[ind], ordered_positions[ind + 1])
     return length
 
 
@@ -1156,11 +1140,6 @@ def calculate_length_with_reversal(order, reversals, positions):
 def reversal_two_opt_swap(reversals, ind):
     new_reversals = np.copy(reversals)
     new_reversals[ind] = ~new_reversals[ind]
-    return new_reversals
-
-def broke_reversal_two_opt_swap(reversals, i, k):#FIXME - delete this
-    new_reversals = np.copy(reversals)
-    new_reversals[i:k] = ~new_reversals[i:k]  # no + 1 here. You can't swap less than 2 indices, but you can reverse a single section!
     return new_reversals
 
 @register_module('TravelingSalesperson')
