@@ -61,12 +61,12 @@ def test_ChunkedTravelingSalesman():
     recipe.namespace['input'] = points
 
     ordered = recipe.execute()
-    # todo - add an actual test here
+    assert ordered.mdh['TravelingSalesperson.Distance'] < ordered.mdh['TravelingSalesperson.OriginalDistance']
 
 
 if __name__ == '__main__':
     import time
-    n = 1000
+    n = 10000
     x = np.random.rand(n) * 4e3
     y = np.random.rand(n) * 4e3
 
@@ -74,9 +74,10 @@ if __name__ == '__main__':
 
     recipe = base.ModuleCollection()
     recipe.add_module(measurement.ChunkedTravelingSalesperson(output='output', epsilon=0.001,
-                                                              points_per_chunk=int(n/20)))
+                                                              points_per_chunk=500))
     recipe.namespace['input'] = points
 
     t = time.time()
-    recipe.execute()
+    ordered = recipe.execute()
     print('n_points: %d, runtime: %f' % (n, time.time() - t))
+    print('og distance: %f, distance: %f' % (ordered.mdh['TravelingSalesperson.OriginalDistance'], ordered.mdh['TravelingSalesperson.Distance']))

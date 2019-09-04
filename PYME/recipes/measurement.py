@@ -867,6 +867,26 @@ class FilterOverlappingROIs(ModuleBase):
         namespace[self.output] = out
 
 def two_opt_section(positions, start_section, counts, n_tasks, epsilon, master_route):
+    """
+    Perform two-opt TSP on (potentially) multiple sections.
+
+    Parameters
+    ----------
+    positions: ndarray
+        positions, shape (n_points, 2), where n_points are just the positions for the tasks this call is responsible for
+    start_section: int
+        index denoting where the first position in the input positions belongs in the master_route array
+    counts: ndarray
+        array of counts corresponding to the number of positions in each sorting task
+    n_tasks: int
+        number of sorting tasks to execute in this function call. Each task will be sorted independently and shoved into
+        the master_route array in the order the tasks are executed.
+    epsilon: float
+        relative improvement exit criteria for sorting
+    master_route: shmarray
+        output array for the sorted tasks
+
+    """
     from scipy.spatial import distance_matrix
     start_pos = 0
     start_route = start_section
@@ -892,7 +912,10 @@ class ChunkedTravelingSalesperson(ModuleBase):
     """
 
     Optimize route visiting each position in an input dataset exactly once, starting from the last point in the input.
-    2-opt algorithm is used, and points are chunked (very) roughly into
+    2-opt algorithm is used, and points are chunked (very) roughly into a grid based on an assumption of uniform density
+    and the points_per_chunk argument. After the chunks are individually optimized, a modified two-opt algorithm is run
+    on the section end-points, so section order can be optimized as well as whether sections are traversed forwards or
+    backwards.
 
     Parameters
     ----------
@@ -903,8 +926,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
         Relative improvement threshold used to stop algorithm when gains become negligible
     points_per_chunk: Int
         Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
-        ideal paths, but much larger computational complexity. 500 points will take ballpark of 30 seconds on a 2015
-        macbook pro
+        ideal paths, but much larger computational complexity.
     output: Output
         PYME.IO.tabular
 
@@ -917,16 +939,13 @@ class ChunkedTravelingSalesperson(ModuleBase):
     def execute(self, namespace):
         import multiprocessing
         from PYME.util.shmarray import shmarray
-        from scipy.spatial import distance_matrix
         import time
 
         points = namespace[self.input]
 
         try:
-            # multiprocessing.Array()
             positions = np.stack([points['x_um'], points['y_um']], axis=1)
         except KeyError:
-            # units don't matter for these calculations, but we want to preserve them on the other side
             positions = np.stack([points['x'], points['y']], axis=1) / 1e3
 
         # assume density is uniform
@@ -992,20 +1011,17 @@ class ChunkedTravelingSalesperson(ModuleBase):
             ind_task_start = ind_task_end
             ind_pos_start = ind_pos_end
 
-        # next we need to join our sections. Do a couple precalculations in this process while the others are executing
+        # next we need to join our sections. Prepare for this while the other processes are executing
         pivot_indices = np.sort(np.concatenate([[0], cumcount[:-1], cumcount - 1]))  # get start/stop indices for each
-        # print(pivot_indices)
 
         [p.join() for p in processes]
         print('Chunked TSPs finished after ~%.2f s, connecting chunks' % (time.time() - t))
 
         # do a two-opt on just the section start/ends, with ability to reverse the section
-        # pivot positions won't be correct unless they're already sorted. No need to sort section
+        # pivot positions won't be correct unless they're already sorted. No need to sort section because its the same
         pivot_positions = positions[route, :][pivot_indices]
-        print(pivot_positions.astype(int))
-        section_order, reversals = reversal_two_opt(section[pivot_indices], pivot_positions, self.epsilon)
-        # plot_pivots(section_order, pivot_positions, reversals)
-
+        # spike the exit criteria low since the cost is cheap and the gains are high
+        section_order, reversals = reversal_two_opt(section[pivot_indices], pivot_positions, self.epsilon/1e3)
 
         final_route = np.copy(route)
         start = cumcount[0]
@@ -1039,8 +1055,17 @@ class ChunkedTravelingSalesperson(ModuleBase):
             out.mdh.copyEntriesFrom(points.mdh)
         except AttributeError:
             pass
-        # out.mdh['TravelingSalesperson.Distance'] = best_distance
-        # out.mdh['TravelingSalesperson.OriginalDistance'] = og_distance
+
+        # use the already sorted output to get the final distance
+        try:
+            og_distance = np.sqrt((points['x_um'][1:] - points['x_um'][:-1]) ** 2 + (points['y_um'][1:] - points['y_um'][:-1]) ** 2).sum()
+            final_distance = np.sqrt((out['x_um'][1:] - out['x_um'][:-1]) ** 2 + (out['y_um'][1:] - out['y_um'][:-1]) ** 2).sum()
+        except KeyError:
+            og_distance = np.sqrt((points['x'][1:] - points['x'][:-1]) ** 2 + (points['y'][1:] - points['y'][:-1]) ** 2).sum() / 1e3
+            final_distance = np.sqrt((out['x'][1:] - out['x'][:-1]) ** 2 + (out['y'][1:] - out['y'][:-1]) ** 2).sum() / 1e3
+
+        out.mdh['TravelingSalesperson.OriginalDistance'] = og_distance
+        out.mdh['TravelingSalesperson.Distance'] = final_distance
 
         namespace[self.output] = out
 
@@ -1053,60 +1078,33 @@ def reversal_two_opt(section_ids, pivot_positions, epsilon):
         sorted indices (into original position array) of start and end points for each section
     section_ids: ndarray
         same shape as pivot indices, encoding which section each pivot is in
+    epsilon: float
+        relative improvement exit criteria
 
     Returns
     -------
 
     """
-    # # calculate distance matrix with reversals
-    # distances = np.zeros((pivot_positions.shape[0], pivot_positions.shape[0], 2))
-    # for ri in range(pivot_positions.shape[0]):
-    #     for ci:
     sections = np.unique(section_ids)
     n_sections = len(sections)
     section_order = sections
     reversals = np.zeros_like(sections, dtype=bool)
     improvement = 1
     best_distance = calculate_length_with_reversal(section_order, reversals, pivot_positions)
-    while improvement > epsilon / 1e3:
-        print(best_distance)
+    while improvement > epsilon:
         last_distance = best_distance
-        for i in range(1, n_sections - 1):#2):  # already know section 0 is first, and it is forward
+        for i in range(1, n_sections - 1):  # already know section 0 is first, and it is forward
             for k in range(i + 1, n_sections):
                 new_section_order = two_opt_swap(section_order, i, k)
-                for rev_i in range(i, n_sections):#k):
-                    new_reversals = reversal_two_opt_swap(reversals, rev_i)
+                for rev_i in range(i, n_sections):
+                    new_reversals = reversal_swap(reversals, rev_i)
                     new_distance = calculate_length_with_reversal(new_section_order, new_reversals, pivot_positions)
                     if new_distance < best_distance:
                         section_order = new_section_order
                         reversals = new_reversals
                         best_distance = new_distance
-                        # plot_pivots(section_order, pivot_positions, reversals)
         improvement = (last_distance - best_distance) / last_distance
     return section_order, reversals
-
-def plot_pivots(section_order, pivot_positions, reversals):
-    n_sections = len(section_order)
-    import matplotlib.pyplot as plt
-    plt.figure()
-    porder = np.repeat(2 * section_order, 2) + np.concatenate([[1, 0] if rev else [0, 1] for rev in reversals])
-    ordered_pivots = pivot_positions[porder, :]
-    plt.plot(ordered_pivots[:, 0], ordered_pivots[:, 1], c='k')
-
-    from matplotlib import cm
-    colors = cm.get_cmap('viridis', n_sections)
-
-    plt.scatter([ordered_pivots[0, 0], ordered_pivots[1, 0]], [ordered_pivots[0, 1], ordered_pivots[1, 1]],
-                color='r')
-    plt.plot([ordered_pivots[0, 0], ordered_pivots[1, 0]], [ordered_pivots[0, 1], ordered_pivots[1, 1]],
-             color='r')
-    for sind in range(0, n_sections, 2):
-        plt.scatter([ordered_pivots[sind, 0], ordered_pivots[sind + 1, 0]],
-                    [ordered_pivots[sind, 1], ordered_pivots[sind + 1, 1]],
-                    color=colors(sind))
-        plt.plot([ordered_pivots[sind, 0], ordered_pivots[sind + 1, 0]],
-                 [ordered_pivots[sind, 1], ordered_pivots[sind + 1, 1]], color=colors(sind))
-    plt.show()
 
 def calc_dist(p0, p1):
     # todo - sqrt is monotonic, so can we skip it?
@@ -1117,13 +1115,17 @@ def calculate_length_with_reversal(order, reversals, positions):
 
     Parameters
     ----------
-    order
+    order: ndarray
+        section order
     reversals: ndarray
-        array of 0 and 1, forward and reverse
-    positions
+        array of bool, forward (False) and reverse (True)
+    positions: ndarray
+        pivot positions, sorted such that [::2] yields the positions of one end of each section.
 
     Returns
     -------
+    length: float
+        cumulative length _between_ sections
 
     """
     length = 0
@@ -1134,16 +1136,22 @@ def calculate_length_with_reversal(order, reversals, positions):
         length += calc_dist(ordered_positions[ind, :], ordered_positions[ind + 1, :])
     return length
 
+def reversal_swap(reversals, ind):
+    """
+    Flag a section as being reversed, returning a copy.
+    Parameters
+    ----------
+    reversals: ndarray
+        array of boolean flags denoting whether a segment is reversed (True) or not
+    ind: int
+        index to swap
 
-    # for ind in range(1, len(order)):  # keep the first index fixed
-    #     last_ind = 2 * (ind - 1) + 1 - (1 * reversals[ind - 1])
-    #     last_point = positions[last_ind, :]
-    #     next_ind = 2 * ind + 1 * reversals[ind]
-    #     next_point = positions[next_ind]
-    #     length += calc_dist(last_point, next_point)
-    # return length
+    Returns
+    -------
+    new_reversals: ndarray
+        copy of input reversals but with ind "not"-ed
 
-def reversal_two_opt_swap(reversals, ind):
+    """
     new_reversals = np.copy(reversals)
     new_reversals[ind] = ~new_reversals[ind]
     return new_reversals
@@ -1169,7 +1177,6 @@ class TravelingSalesperson(ModuleBase):
     """
     input = Input('input')
     epsilon = Float(0.001)
-    # TODO - add n_wanted as a parameter and only optimize a path reaching n_wanted points
     output = Output('sorted')
 
     def execute(self, namespace):
@@ -1212,10 +1219,30 @@ def calculate_path_length(distances, route):
     return distances[route[:-1], route[1:]].sum()
 
 def two_opt_swap(route, i, k):
+    """
+    Take everything the same up to i, then reverse i:k, then take k: normally.
+    Parameters
+    ----------
+    route: ndarray
+        Path to swap postions in
+    i: int
+        first swap index
+    k: int
+        second swap index
+    Returns
+    -------
+    two-opt swapped route
+
+    Notes
+    -----
+    Returns a copy. Temping to do something in place, e.g. route[i:k + 1] = route[k:i - 1: -1], but the algorithm
+    seems to require a copy somewhere anyway, so might as well do it here.
+
+    """
     return np.concatenate([route[:i],  # [start up to first swap position)
                            route[k:i - 1: -1],  # [from first swap to second], reversed
                            route[k + 1:]])  # (everything else]
-    # route[i:k + 1] = route[k:i - 1: -1]
+
 
 
 def two_opt(distances, epsilon, initial_route=None):
@@ -1258,7 +1285,6 @@ def two_opt(distances, epsilon, initial_route=None):
             for k in range(i + 1, distances.shape[0]):  # allow the last position in the route to vary
                 new_route = two_opt_swap(route, i, k)
                 new_distance = calculate_path_length(distances, new_route)
-                # print('distance: %f, route %s' % (new_distance, (new_route,)))
 
                 if new_distance < best_distance:
                     route = new_route
