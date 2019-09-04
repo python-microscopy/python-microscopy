@@ -1549,10 +1549,6 @@ class TriangleMesh(object):
                     curr_edge = self._halfedges[_edge]                    
                     self._halfedges['component'][_edge] = component
                     self._faces['component'][curr_edge['face']] = component
-                    # if curr_edge['twin'] != -1:
-                    #     twin_edge = self._halfedges[curr_edge['twin']]
-                    #     self._halfedges['component'][curr_edge['twin']] = component
-                    #     self._faces['component'][twin_edge['face']] = component
                     
                     # If the vertex is assigned, we've already visited it and
                     # don't need to do so again.
@@ -1867,42 +1863,65 @@ class TriangleMesh(object):
         #    into nc "is reachable" equivalence classes. Faces are reachable if
         #    they share a non-singular edge incident on the marked vertex.
         for _vertex in singular_vertices:
-            nn = self._vertices['neighbors'][_vertex]
-            nn_mask = (nn != -1)
-            twin_nn = self._halfedges['twin'][nn[nn_mask]]
+            # Don't use self._vertices['neighbors'] because we're dealing with 
+            # singular vertices
+            twin_nn = list(np.where(self._halfedges['vertex'] == _vertex)[0])
 
-            # Two-pass connected components to link faces sharing a
-            # non-singular edge incident on _vertex
             # Set all components to -1 (background)
             self._halfedges['component'] = -1
             self._vertices['component'] = -1
             self._faces['component'] = -1
-            component_idx = 0
-            for _edge in twin_nn:
-                _face = self._halfedges['face'][_edge]
-                _twin_face = self._halfedges['face'][self._halfedges['twin'][_edge]]
-                min_component = np.min([component_idx, self._faces['component'][_face]])
-                if min_component == component_idx:
-                    component_idx += 1
-                if min_component == -1:
-                    min_component = component_idx
-                self._faces['component'][_face] = min_component
-                if (_edge in singular_edges) or (self._halfedges['twin'][_edge] in singular_edges):
-                    # Split the faces
-                    min_component += 1
-                self._faces['component'][_twin_face] = min_component
 
+            # Connect component by face
+            component = 0
             for _edge in twin_nn:
-                if (_edge in singular_edges) or (self._halfedges['twin'][_edge] in singular_edges):
+                _curr_face = self._halfedges['face'][_edge]
+                curr_face = self._faces[_curr_face]
+                if (curr_face['halfedge'] == -1) or (curr_face['component'] != -1):
+                    # We only want to deal with valid, unassigned faces
                     continue
-                _face = self._halfedges['face'][_edge]
-                _twin_face = self._halfedges['face'][self._halfedges['twin'][_edge]]
-                min_component = np.min([component_idx, self._faces['component'][_face]])
-                self._faces['component'][_face] = min_component
-                self._faces['component'][_twin_face] = min_component
+
+                # Search faces contains faces connected to this vertex.
+                # We want to see if there are other faces connected to the
+                # search faces.
+                search_faces = []
+                self._faces[_curr_face]['component'] = component
+                search_faces.append(_curr_face)
+
+                # Find vertices connected to the search vertices
+                while search_faces:
+                    # Grab the latest search vertex neighbors
+                    _f = search_faces.pop()
+                    _f_edge = self._faces['halfedge'][_f]
+                    f_edge = self._halfedges[_f_edge]
+                    nn = np.hstack([self._halfedges['twin'][f_edge['prev']], self._halfedges['twin'][_f_edge], self._halfedges['twin'][f_edge['next']]])
+                    
+                    # Loop over the neighbors
+                    for _edge in nn:
+                        if _edge == -1:
+                            continue
+
+                        curr_edge = self._halfedges[_edge]
+                        
+                        # If the face is assigned, we've already visited it and
+                        # don't need to do so again.
+                        if self._faces['component'][curr_edge['face']] != -1:
+                            continue
+
+                        # If the edge is a singular_edge, we need to treat it as
+                        # a boundary
+                        if (_edge in singular_edges) or (curr_edge['twin'] in singular_edges):
+                            continue
+                        
+                        self._faces['component'][curr_edge['face']] = component
+                        search_faces.append(curr_edge['face'])
+                
+                # Increment the label as any faces not included in this
+                # iteration's search will be part of another component.
+                component += 1
 
             # 5. Create nc-1 copies of the vertex and assign each equivalence class 
-            #    one of these vertices.
+            #    one of these vertices. (All but one component gets a new vertex).
             components = np.unique(self._faces['component'][self._faces['component'] != -1])
             for c in components[1:]:
                 # Grab the faces associated with this component
@@ -1911,8 +1930,8 @@ class TriangleMesh(object):
                 # Grab the edges associated with these faces
                 _edges = np.hstack([self._halfedges['prev'][self._faces['halfedge'][_faces]], self._faces['halfedge'][_faces], self._halfedges['next'][self._faces['halfedge'][_faces]]])
                 
-                # All the neighbors are emanating from the vertex, so any edge will do
-                _edge = _edges[0]
+                # Find a halfedge emanating from the vertex
+                _edge = _edges[self._halfedges['vertex'][_edges] == _vertex][0]
 
                 # Create a copy of vertex _vertex
                 _, _new_vertex = self._new_vertex(self._vertices['position'][_vertex], halfedge=_edge)
