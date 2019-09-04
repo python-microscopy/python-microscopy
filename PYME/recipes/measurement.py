@@ -1051,7 +1051,8 @@ class ChunkedTravelingSalesperson(ModuleBase):
         #                 color=colors(section[pi]))
         # plt.show()
 
-        out = tabular.mappingFilter({k: points[k][final_route] for k in points.keys()})
+        # note that we sorted the positions / sections once before, need to propagate that through before sorting
+        out = tabular.mappingFilter({k: points[k][I][final_route] for k in points.keys()})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
         try:
             out.mdh.copyEntriesFrom(points.mdh)
