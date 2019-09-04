@@ -962,6 +962,8 @@ class ChunkedTravelingSalesperson(ModuleBase):
 
         # number the sections
         section = X + Y * (Y.max() + 1)
+        # keep all section numbers positive, starting at zero
+        section -= section.min()
         n_sections = int(section.max() + 1)
         I = np.argsort(section)
         section = section[I]
