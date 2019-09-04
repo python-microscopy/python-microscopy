@@ -948,14 +948,14 @@ class ChunkedTravelingSalesperson(ModuleBase):
         section = section[I]
         positions = positions[I, :]
 
-        import matplotlib.pyplot as plt
-        from matplotlib import cm
-        colors = cm.get_cmap('hsv', n_sections)
-        plt.figure()
-        for pi in range(len(section)):
-            plt.scatter(positions[pi, 0], positions[pi, 1], marker='$' + str(section[pi]) + '$', color=colors(section[pi]))
-        # plt.plot(positions[:, 0], positions[:, 1])
-        plt.show()
+        # import matplotlib.pyplot as plt
+        # from matplotlib import cm
+        # colors = cm.get_cmap('hsv', n_sections)
+        # plt.figure()
+        # for pi in range(len(section)):
+        #     plt.scatter(positions[pi, 0], positions[pi, 1], marker='$' + str(section[pi]) + '$', color=colors(section[pi]))
+        # # plt.plot(positions[:, 0], positions[:, 1])
+        # plt.show()
 
         # split out points
         n_cpu = multiprocessing.cpu_count()
@@ -1004,7 +1004,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
         pivot_positions = positions[route, :][pivot_indices]
         print(pivot_positions.astype(int))
         section_order, reversals = reversal_two_opt(section[pivot_indices], pivot_positions, self.epsilon)
-        plot_pivots(section_order, pivot_positions, reversals)
+        # plot_pivots(section_order, pivot_positions, reversals)
 
 
         final_route = np.copy(route)
@@ -1020,18 +1020,18 @@ class ChunkedTravelingSalesperson(ModuleBase):
             new_pivot_inds.append(start)
             new_pivot_inds.append(start + section_count - 1)
             start += section_count
-        print(pivot_positions.astype(int))
-        import matplotlib.pyplot as plt
-        from matplotlib import cm
-        colors = cm.get_cmap('prism', n_sections)
-        plt.figure()
-        sorted_pos = positions[route, :]
-        for pi in range(len(section)):
-            plt.scatter(sorted_pos[pi, 0], sorted_pos[pi, 1], marker='$' + str(section[pi]) + '$',
-                        color=colors(section[pi]))
-        plt.plot(positions[final_route, 0], positions[final_route, 1], color='k')
-        plt.scatter(positions[final_route, 0][new_pivot_inds], positions[final_route, 1][new_pivot_inds], color='k')
-        plt.show()
+
+        # import matplotlib.pyplot as plt
+        # from matplotlib import cm
+        # colors = cm.get_cmap('prism', n_sections)
+        # plt.figure()
+        # sorted_pos = positions[route, :]
+        # plt.plot(positions[final_route, 0], positions[final_route, 1], color='k')
+        # plt.scatter(positions[final_route, 0][new_pivot_inds], positions[final_route, 1][new_pivot_inds], color='k')
+        # for pi in range(len(section)):
+        #     plt.scatter(sorted_pos[pi, 0], sorted_pos[pi, 1], marker='$' + str(section[pi]) + '$',
+        #                 color=colors(section[pi]))
+        # plt.show()
 
         out = tabular.mappingFilter({k: points[k][final_route] for k in points.keys()})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
