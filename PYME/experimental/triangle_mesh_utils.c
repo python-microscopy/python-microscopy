@@ -130,7 +130,7 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
         // twin now becomes prev
         if ((twin_idx == -1) && (curr_idx != -1))
         {
-            
+            ++i;
             curr_idx = orig_idx;
             curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
             twin_idx = curr_edge->prev;

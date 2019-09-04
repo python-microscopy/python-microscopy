@@ -1512,87 +1512,71 @@ class TriangleMesh(object):
 
     def find_connected_components(self):
         """
-        Label connected portions of the mesh as single components.
-
-        """
+        Label connected components of the mesh.
+        """ 
 
         # Set all components to -1 (background)
         self._halfedges['component'] = -1
         self._vertices['component'] = -1
         self._faces['component'] = -1
 
-        to_search = list(np.where(self._halfedges['vertex'] != -1)[0])
+        # Connect component by vertex
+        component = 0
+        for _vertex in np.arange(self._vertices.shape[0]):
+            curr_vertex = self._vertices[_vertex]
+            if (curr_vertex['halfedge'] == -1) or (curr_vertex['component'] != -1):
+                # We only want to deal with valid, unassigned vertices
+                continue
 
-        component_idx = 0
-        
-        # Two-pass connected components
-        remaining = to_search
-        while len(remaining) > 0:
-            # Pick a halfedge
-            _curr = remaining.pop()
-            curr_halfedge = self._halfedges[_curr]
-            curr_vertex = curr_halfedge['vertex']
+            # Search vertices contains vertices connected to this vertex.
+            # We want to see if there are other vertices connected to the
+            # search vertices.
+            search_vertices = []
+            self._vertices[_vertex]['component'] = component
+            search_vertices.append(_vertex)
 
-            # Check its neighbors
-            nn = self._vertices['neighbors'][curr_vertex]
-            nn_mask = (nn != -1)
-            valid_nn = nn[nn_mask]
-            nn_component = self._halfedges['component'][valid_nn]
-            nn_component_mask = (nn_component != -1)
-            min_component = np.min(np.hstack([component_idx, nn_component[nn_component_mask]]))
-
-            # Assign a component
-            self._halfedges['component'][_curr] = min_component
-            self._vertices['component'][curr_vertex] = min_component
-            self._faces['component'][curr_halfedge['face']] = min_component
-
-            if (min_component == component_idx):
-                # Update component_idx
-                component_idx += 1
-            else:
-                # Update all previous component assignments
-                for c in nn_component[nn_component_mask]:
-                    self._vertices['component'][self._vertices['component'] == c] = min_component
-                    self._halfedges['component'][self._halfedges['component'] == c] = min_component
-                    self._faces['component'][self._faces['component'] == c] = min_component 
-
-        remaining = to_search
-        while len(remaining) > 0:
-            # Pick a halfedge
-            _curr = remaining.pop()
-            curr_halfedge = self._halfedges[_curr]
-            curr_vertex = curr_halfedge['vertex']
-
-            # Check its neighbors
-            nn = self._vertices['neighbors'][curr_vertex]
-            nn_mask = (nn != -1)
-            valid_nn = nn[nn_mask]
-            nn_component = self._halfedges['component'][valid_nn]
-            nn_component_mask = (nn_component != -1)
-            min_component = np.min(np.hstack([component_idx, nn_component[nn_component_mask]]))
-
-            # Assign a component
-            self._halfedges['component'][_curr] = min_component
-            self._vertices['component'][curr_vertex] = min_component
-            self._faces['component'][curr_halfedge['face']] = min_component
+            # Find vertices connected to the search vertices
+            while search_vertices:
+                # Grab the latest search vertex neighbors
+                _v = search_vertices.pop()
+                nn = self._vertices['neighbors'][_v]
+                # Loop over the neighbors
+                for _edge in nn:
+                    if _edge == -1:
+                        continue
+                    # Assign the vertex component label to halfedges and faces
+                    # emanating from this vertex
+                    curr_edge = self._halfedges[_edge]                    
+                    self._halfedges['component'][_edge] = component
+                    self._faces['component'][curr_edge['face']] = component
+                    # if curr_edge['twin'] != -1:
+                    #     twin_edge = self._halfedges[curr_edge['twin']]
+                    #     self._halfedges['component'][curr_edge['twin']] = component
+                    #     self._faces['component'][twin_edge['face']] = component
+                    
+                    # If the vertex is assigned, we've already visited it and
+                    # don't need to do so again.
+                    if self._vertices['component'][curr_edge['vertex']] != -1:
+                        continue
+                    self._vertices['component'][curr_edge['vertex']] = component
+                    search_vertices.append(curr_edge['vertex'])
+            
+            # Increment the label as any vertices not included in this
+            # iteration's search will be part of another component.
+            component += 1
 
     def keep_largest_connected_component(self):
         # Find the connected components
         self.find_connected_components()
 
         # Which connected component is largest? 
-        com, counts = np.unique(self._faces['component'][self._faces['component']!=-1], return_counts=True)
+        com, counts = np.unique(self._vertices['component'][self._vertices['component']!=-1], return_counts=True)
         max_count = np.argmax(counts)
         max_com = com[max_count]
 
-        # Do everything by face in case self._vertices['neighbors'] missed a vertex
-        faces_to_keep = self._faces[self._faces['component'] != max_com]
-        halfedges_to_keep = np.hstack([self._halfedges['prev'][faces_to_keep['halfedge']], faces_to_keep['halfedge'], self._halfedges['next'][faces_to_keep['halfedge']]])
-        vertices_to_keep = self._halfedges['vertex'][halfedges_to_keep]
-
         # Remove the smaller components
-        self._vertices[vertices_to_keep] = -1
-        self._halfedges[halfedges_to_keep] = -1
+        self._vertices[self._vertices['component'] != max_com] = -1
+        self._halfedges[self._halfedges['component'] != max_com] = -1
         self._faces[self._faces['component'] != max_com] = -1
 
         self._faces_by_vertex = None
@@ -1860,7 +1844,6 @@ class TriangleMesh(object):
         # 2. Mark vertices that are endpoints of these edges
         singular_vertices = list(set(list(np.hstack([self._halfedges['vertex'][singular_edges], self._halfedges['vertex'][self._halfedges['twin'][singular_edges]]]))))
         
-
         # 3. Mark isolated singular vertices
         for _vertex in np.arange(self._vertices.shape[0]):
             if self._vertices['halfedge'][_vertex] == -1:
