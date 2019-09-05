@@ -143,41 +143,44 @@ requirements:
   # Package names should be any valid conda spec (see "Specifying versions
   # in requirements" below).
   run:
-    - python {{ python }}
-    - numpy {{ numpy }}
-    - scipy
-    - matplotlib
-    - wxpython <3.9
-    - pytables <=3.4.2
-    - pyopengl
-    - traits
-    - traitsui
-    - mayavi
-    - toposort
-    - networkx
-    - pyro
-    - pyfftw3
-    - mpld3
-    - python.app      [osx]
-    - cherrypy
-    - scikit-image
-    - scikit-learn
-    - shapely         [osx]
-    - zeroconf [linux]
-    - zeroconf 0.17.7 [win or osx]
-    - requests
-    - pandas
-    - pyyaml
-    - psutil
-    - dispatch
-    - pymecompress >=0.1.4
-    - ujson
-    - docutils
-    - sphinx
-    - python-bioformats [osx]
-    - six
-    - future
-    - pywin32 [win]
+     - python {{ python }}
+     - numpy {{ numpy }}
+     - pyme-depends
+#    - python {{ python }}
+#    - numpy {{ numpy }}
+#    - scipy
+#    - matplotlib
+#    - wxpython <3.9
+#    - pytables <=3.4.2
+#    - pyopengl
+#    - traits
+#    - traitsui
+#    - mayavi
+#    - toposort
+#    - networkx
+#    - pyro
+#    - pyfftw3
+#    - mpld3
+#    - python.app      [osx]
+#    - cherrypy
+#    - scikit-image
+#    - scikit-learn
+#    - shapely         [osx]
+#    - zeroconf [linux]
+#    - zeroconf 0.17.7 [win or osx]
+#    - requests
+#    - pandas
+#    - pyyaml
+#    - psutil
+#    - dispatch
+#    - pymecompress >=0.1.4
+#    - ujson
+#    - docutils
+#    - sphinx
+#    - python-bioformats [osx]
+#    - six
+#    - future
+#    - pywin32 [win]
 
     #todo make cross-platform versions
     #- nvidia-ml-py  [linux] #optional - maybe better as dependency for gpu-fitting package
