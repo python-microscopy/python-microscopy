@@ -160,10 +160,9 @@ def fileResults(URI, data_raw):
         data = data_raw.to_JSON().encode()
 
     else:
-        logging.warn('No handler for data type found, using pickle')
+        logging.warning('No handler for data type found, using pickle')
         #output_format = 'pickle'
-        # FIXME - likely moot since we'd like to avoid pickle, but when py2 rolls into the grave push protocol=2 with it
-        data = cPickle.dumps(data_raw, protocol=2)
+        data = cPickle.dumps(data_raw)
 
 
     #now do URI translation
