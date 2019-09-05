@@ -1897,11 +1897,11 @@ class TriangleMesh(object):
                     nn = np.hstack([self._halfedges['twin'][f_edge['prev']], self._halfedges['twin'][_f_edge], self._halfedges['twin'][f_edge['next']]])
                     
                     # Loop over the neighbors
-                    for _edge in nn:
-                        if _edge == -1:
+                    for _nn_edge in nn:
+                        if _nn_edge == -1:
                             continue
 
-                        curr_edge = self._halfedges[_edge]
+                        curr_edge = self._halfedges[_nn_edge]
                         
                         # If the face is assigned, we've already visited it and
                         # don't need to do so again.
@@ -1910,7 +1910,7 @@ class TriangleMesh(object):
 
                         # If the edge is a singular_edge, we need to treat it as
                         # a boundary
-                        if (_edge in singular_edges) or (curr_edge['twin'] in singular_edges):
+                        if _nn_edge in singular_edges:
                             continue
                         
                         self._faces['component'][curr_edge['face']] = component
@@ -1930,13 +1930,13 @@ class TriangleMesh(object):
                 # Grab the edges associated with these faces
                 _edges = np.hstack([self._halfedges['prev'][self._faces['halfedge'][_faces]], self._faces['halfedge'][_faces], self._halfedges['next'][self._faces['halfedge'][_faces]]])
                 
+                _vertices = self._halfedges['vertex'][_edges]
+
                 # Find a halfedge emanating from the vertex
-                _edge = _edges[self._halfedges['vertex'][_edges] == _vertex][0]
+                _edge = self._halfedges['next'][_edges[_vertices == _vertex][0]]
 
                 # Create a copy of vertex _vertex
                 _, _new_vertex = self._new_vertex(self._vertices['position'][_vertex], halfedge=_edge)
-
-                _vertices = self._halfedges['vertex'][_edges]
 
                 # Assign edges in this component connected to _vertex to _new_vertex
                 _modified_edges = _edges[_vertices == _vertex]
