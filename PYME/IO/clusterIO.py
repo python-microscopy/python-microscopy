@@ -619,7 +619,7 @@ def getFile(filename, serverfilter=local_serverfilter, numRetries=3, use_file_ca
     #look for the file in the local server folder (short-circuit the server)
     localpath = get_local_path(filename, serverfilter)
     if localpath:
-        with open(localpath, 'r') as f:
+        with open(localpath, 'rb') as f:
             return f.read()
     
     locs = locateFile(filename, serverfilter, return_first_hit=True)
