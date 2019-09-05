@@ -263,7 +263,7 @@ class RuleServer(object):
     
     def _poll_rules(self):
         while self._do_poll:
-            for qn in self._rules.keys():
+            for qn in list(self._rules.keys()):
                 self._rules[qn].poll_timeouts()
                 
                 #remore queue if expired (no activity for an hour) to free up memory
