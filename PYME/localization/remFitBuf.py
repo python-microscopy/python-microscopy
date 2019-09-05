@@ -131,14 +131,32 @@ class CameraInfoManager(object):
         self._cache = {}
 
     def _parseROI(self, md):
-        """Extract ROI coordinates from metadata"""
+        """
+        Extract ROI coordinates from metadata
+
+        Parameters
+        ----------
+        md: dict-like
+            Metadata containing Camera.ROIWidth, Camera.ROIHeight or multiview information
+
+        Returns
+        -------
+        roi_slices: list
+            list of (x, y) slices to extract ROI from camera maps
+
+        """
+
+        if md['Multiview.ActiveViews'].any():
+            origins = md['Multiview.ROI%dOrigin'][md['Multiview.ActiveViews']]
+            size_x, size_y = md['Multiview.ROISize']
+            return [(slice(ox, ox + size_x), slice(oy, oy + size_y)) for ox, oy in origins]
         
         x0, y0 = get_camera_roi_origin(md)
 
         x1 = x0 + md['Camera.ROIWidth']
         y1 = y0 + md['Camera.ROIHeight']
 
-        return x0, y0, x1, y1
+        return [(slice(x0, x1), slice(y0, y1))]
 
     def _fetchMap(self, md, mapName):
         """retrive a map, with a given name. First try and get it from the Queue,
@@ -156,19 +174,18 @@ class CameraInfoManager(object):
         if mapName is None or mapName == '' or mapName == '<none>':
             return None
 
-        ROI = self._parseROI(md)
-        mapKey = (mapName, ROI)
+        slices = self._parseROI(md)
+        mapKey = (mapName, slices)
 
         try:
-            mp = self._cache[mapKey]
-        except KeyError: 
-            #cache miss
-            x0, y0, x1, y1 = ROI
-            mp = self._fetchMap(md, mapName)[x0:x1, y0:y1].astype('f') #everything should be float (rather than double)
-            
-            self._cache[mapKey] = mp
+            map = self._cache[mapKey]
+        except KeyError:  # cache miss
+            full_map = self._fetchMap(md, mapName)
+            # keep everything float vs double
+            map = np.concatenate([full_map[sl].astype('f') for sl in slices])
+            self._cache[mapKey] = map
 
-        return mp
+        return map
 
     def getVarianceMap(self, md):
         """Returns the pixel variance map specified in the supplied metadata, from cache if possible.
