@@ -87,7 +87,7 @@ def settings_form(analysisModule):
 # Create your views here.
 def settings(request, analysisModule='LatGaussFitFR'):
     import PYME.localization.FitFactories
-    analysisModule=analysisModule.encode()
+    analysisModule=analysisModule
 
     if request.method == 'POST':
         f = settings_form(analysisModule)(request.POST)
@@ -111,7 +111,7 @@ def localize(request, analysisModule='LatGaussFitFR'):
     from PYME import config
     USE_RULES = config.get('PYMERuleserver-use', True)
 
-    analysisModule = request.POST.get('Analysis.FitModule', analysisModule).encode()
+    analysisModule = request.POST.get('Analysis.FitModule', analysisModule)
 
     f = settings_form(analysisModule)(request.POST)
 
