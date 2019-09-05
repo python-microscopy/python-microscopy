@@ -575,7 +575,7 @@ class fitTask(taskDef.Task):
         import pylab
         #cm = pylab.cm
         pylab.clf()
-        pylab.imshow(self.ofd.filteredData.T, cmap=pylab.cm.hot, hold=False)
+        pylab.imshow(self.ofd.filteredData.T, cmap=pylab.cm.hot)
         xc = np.array([p.x for p in self.ofd])
         yc = np.array([p.y for p in self.ofd])
         pylab.plot(xc, yc, 'o', mew=2, mec='g', mfc='none', ms=9)
