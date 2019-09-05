@@ -55,6 +55,7 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS):
     for i in range(inputLengths[0]):
         in_d = {k:v[i] for k, v in inputGlobs.items()}
 
+        # FIXME - change to os.path.splitext(os.path.basename(list(in_d.values())[0]).split('?')[0])[0], otherwise file_stub = ?level=N for supertiles
         file_stub = os.path.splitext(os.path.basename(list(in_d.values())[0]))[0]
         
         fns = os.path.join(output_dir, file_stub)
@@ -65,7 +66,8 @@ def bake(recipe, inputGlobs, output_dir, num_procs = NUM_PROCS):
         taskParams.append((recipe, in_d, out_d, cntxt))
 
     if num_procs == 1:
-        map(runRec, taskParams)
+        # map(runRec, taskParams)  # map now returns iterator, which means this never runs unless we convert to list
+        [runRec(task) for task in taskParams]  # skip the map and just make the list we need anyway
     else:
         pool = multiprocessing.Pool(num_procs)
     

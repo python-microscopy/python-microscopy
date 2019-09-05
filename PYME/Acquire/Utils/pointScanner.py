@@ -235,6 +235,7 @@ class PointScanner:
         self.scope.state.setItems({'Positioning.x': self.currPos['x'],
                                    'Positioning.y': self.currPos['y'],
                                    }, stopCamera=True)
+        self.scope.turnAllLasersOff()
     
         if self.trigger:
             self.scope.cam.SetAcquisitionMode(self.scope.cam.MODE_CONTINUOUS)

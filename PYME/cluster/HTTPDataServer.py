@@ -644,15 +644,20 @@ class PYMEHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     
     def list_h5(self, path):
         from PYME.IO import h5File
-        with h5File.openH5(path.rstrip('/').rstrip('\\')) as h5f:
-            f, length = self._string_to_file(json.dumps(h5f.get_listing()))
-        
-        self.send_response(200)
-        encoding = sys.getfilesystemencoding()
-        self.send_header("Content-type", "application/json; charset=%s" % encoding)
-        self.send_header("Content-Length", str(length))
-        self.end_headers()
-        return f
+        try:
+            with h5File.openH5(path.rstrip('/').rstrip('\\')) as h5f:
+                f, length = self._string_to_file(json.dumps(h5f.get_listing()))
+
+            self.send_response(200)
+            encoding = sys.getfilesystemencoding()
+            self.send_header("Content-type", "application/json; charset=%s" % encoding)
+            self.send_header("Content-Length", str(length))
+            self.end_headers()
+            return f
+
+        except IOError:
+            self.send_error(404, "File not found - %s, [%s]" % (self.path, path))
+            return None
     
     def get_h5_part(self, path):
         from PYME.IO import h5File

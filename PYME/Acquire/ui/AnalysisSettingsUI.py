@@ -138,6 +138,9 @@ class AnalysisDetailsPanel(wx.Panel):
         if not self._analysisModule == self.analysisMDH['Analysis.FitModule']:
             self.customOptionsSizer.Clear(True)
             self._populateCustomAnalysisPanel(self, self.customOptionsSizer)
+            # FIXME - can't figure out a better way to redo the vertical sizer for longer menus
+            self.GetParent().fold1(self)
+            self.GetParent().fold1(self)
 
 
 class AnalysisSettings(object):

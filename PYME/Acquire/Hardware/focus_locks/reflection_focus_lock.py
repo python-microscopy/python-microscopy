@@ -134,11 +134,11 @@ class ReflectedLinePIDFocusLock(PID):
         self.set_auto_mode(False)
 
     def register(self):
-        self.scope.frameWrangler.onFrameGroup.connect(self.on_frame)
+        self.scope.frameWrangler.onFrame.connect(self.on_frame)
         self.tracking = True
 
     def deregister(self):
-        self.scope.frameWrangler.onFrameGroup.disconnect(self.on_frame)
+        self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
         self.tracking = False
 
     @webframework.register_endpoint('/ToggleLock', output_is_json=False)
