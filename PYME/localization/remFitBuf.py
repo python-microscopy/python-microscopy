@@ -182,7 +182,7 @@ class CameraInfoManager(object):
         except KeyError:  # cache miss
             full_map = self._fetchMap(md, mapName)
             # keep everything float vs double
-            map = np.concatenate([full_map[sl].astype('f') for sl in slices])
+            map = np.concatenate([full_map[sl].astype('f') for sl in slices], axis=0)
             self._cache[mapKey] = map
 
         return map
