@@ -1908,19 +1908,33 @@ class TriangleMesh(object):
                         # don't need to do so again.
                         if self._faces['component'][curr_edge['face']] != -1:
                             continue
+                        
+                        self._faces['component'][curr_edge['face']] = component
+                        search_faces.append(curr_edge['face'])
 
                         # If the edge is a singular_edge, we need to treat it as
                         # a boundary
                         if _nn_edge in singular_edges:
                             component += 1
-                            continue
-                        
-                        self._faces['component'][curr_edge['face']] = component
-                        search_faces.append(curr_edge['face'])
+                            # continue
                 
                 # Increment the label as any faces not included in this
                 # iteration's search will be part of another component.
                 component += 1
+
+            # Here we need to do a two-pass because we may have incorrectly split
+            # components since we don't visit the neighbors in order.
+            for _edge in _twin_nn:
+                curr_edge = self._halfedges[_edge]
+                if _edge in singular_edges:
+                    continue
+                _twin = curr_edge['twin']
+                if (_twin == -1) or (_twin in singular_edges):
+                    continue
+                twin_edge = self._halfedges[_twin]
+                component = np.min([self._faces['component'][curr_edge['face']], self._faces['component'][twin_edge['face']]])
+                self._faces['component'][curr_edge['face']] = component
+                self._faces['component'][twin_edge['face']] = component
 
             # 5. Create nc-1 copies of the vertex and assign each equivalence class 
             #    one of these vertices. (All but one component gets a new vertex).
@@ -1937,34 +1951,37 @@ class TriangleMesh(object):
                 _edges = np.hstack([self._halfedges['prev'][self._faces['halfedge'][_faces]], self._faces['halfedge'][_faces], self._halfedges['next'][self._faces['halfedge'][_faces]]])
                 _vertices = self._halfedges['vertex'][_edges]
 
-                # Find a halfedge emanating from the vertex
-                _edge = self._halfedges['next'][_edges[_vertices == _vertex][0]]
+                try:
+                    # Find a halfedge emanating from the vertex
+                    _edge = self._halfedges['next'][_edges[_vertices == _vertex][0]]
 
-                # Create a copy of vertex _vertex
-                _, _new_vertex = self._new_vertex(self._vertices['position'][_vertex], halfedge=_edge)
+                    # Create a copy of vertex _vertex
+                    _, _new_vertex = self._new_vertex(self._vertices['position'][_vertex], halfedge=_edge)
 
-                # Assign edges in this component connected to _vertex to _new_vertex
-                _modified_edges = _edges[_vertices == _vertex]
-                self._halfedges['vertex'][_modified_edges] = _new_vertex
+                    # Assign edges in this component connected to _vertex to _new_vertex
+                    _modified_edges = _edges[_vertices == _vertex]
+                    self._halfedges['vertex'][_modified_edges] = _new_vertex
 
-                # Disconnect the boundaries of the components
-                _twin_face_component = self._faces['component'][self._halfedges['face'][self._halfedges['twin'][_edges]]]
-                _boundary = (_twin_face_component != c)
-                _twin_edges = self._halfedges['twin'][_edges[_boundary]]
-                _twin_edges_mask = (_twin_edges != -1)
-                _valid_edges = _edges[_boundary][_twin_edges_mask]
-                self._halfedges['twin'][_twin_edges[_twin_edges_mask]] = -1
-                self._halfedges['twin'][_valid_edges] = -1
+                    # Disconnect the boundaries of the components
+                    _twin_face_component = self._faces['component'][self._halfedges['face'][self._halfedges['twin'][_edges]]]
+                    _boundary = (_twin_face_component != c)
+                    _twin_edges = self._halfedges['twin'][_edges[_boundary]]
+                    _twin_edges_mask = (_twin_edges != -1)
+                    _valid_edges = _edges[_boundary][_twin_edges_mask]
+                    self._halfedges['twin'][_twin_edges[_twin_edges_mask]] = -1
+                    self._halfedges['twin'][_valid_edges] = -1
 
-                # Double check that the original vertex did not have a halfedge in this
-                # component
-                _safe_faces_bool = (self._faces['component'][self._halfedges['face']] != c)
-                _safe_vertices = np.where((self._halfedges['vertex'] == _vertex) & (_safe_faces_bool))[0]
-                self._vertices['halfedge'][_vertex] = self._halfedges['next'][_safe_vertices[0]]
+                    # Double check that the original vertex did not have a halfedge in this
+                    # component
+                    _safe_faces_bool = (self._faces['component'][self._halfedges['face']] != c)
+                    _safe_vertices = np.where((self._halfedges['vertex'] == _vertex) & (_safe_faces_bool))[0]
+                    self._vertices['halfedge'][_vertex] = self._halfedges['next'][_safe_vertices[0]]
 
-                # Update the faces and vertices of this component
-                self._update_face_normals(_update_faces)
-                self._update_vertex_neighbors(_update_vertices)
+                    # Update the faces and vertices of this component
+                    self._update_face_normals(_update_faces)
+                    self._update_vertex_neighbors(_update_vertices)
+                except:
+                    continue
 
     def repair(self):
         """
