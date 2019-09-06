@@ -18,7 +18,7 @@ def pack_edges(arr, axis=1):
     vertices. If we need more, adjust np.uint32 to
     np.uint64 and << 16 to << 32.
     """
-    arr = np.sort(arr, axis=1)
+    arr = np.sort(arr, axis=axis)
     res = ((arr[:,0].astype(np.uint32)) << 16)
     res += arr[:,1].astype(np.uint32)
     
@@ -84,7 +84,7 @@ class TriangleMesh(object):
         self.vertex_normals
 
         # Properties we can visualize
-        self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary', 'singular']
+        self.vertex_properties = ['x', 'y', 'z', 'component', 'component_by_halfedge', 'component_by_face', 'boundary', 'singular']
 
         self.fix_boundary = True  # Hold boundary edges in place
         self.debug = False  # Print debug statements
@@ -148,6 +148,18 @@ class TriangleMesh(object):
         # if np.all(self._vertices['component'] == -1):
         self.find_connected_components()
         return self._vertices['component']
+
+    @property
+    def component_by_halfedge(self):
+        self.find_connected_components()
+        hedges = self._halfedges['component'][self._halfedges['twin'][self._vertices['halfedge']]]
+        hedges[self._halfedges['twin'][self._vertices['halfedge']] == -1] = self._halfedges['component'][self._vertices['halfedge'][self._halfedges['twin'][self._vertices['halfedge']] == -1]]
+        return hedges
+
+    @property
+    def component_by_face(self):
+        self.find_connected_components()
+        return self._faces['component'][self._halfedges['face'][self._halfedges['twin'][self._vertices['halfedge']]]]
 
     @property
     def vertices(self):
@@ -306,7 +318,6 @@ class TriangleMesh(object):
         TODO: Check that we don't have any isolated singular vertices, which 
         also make the mesh non-manifold.
         """
-        # edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
         edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
 
         packed_edges = pack_edges(edges)
@@ -1573,10 +1584,12 @@ class TriangleMesh(object):
         max_com = com[max_count]
 
         # Remove the smaller components
-        _vertices = np.where(self._vertices['component'] != max_com)[0]
-        _edges = np.where(self._halfedges['component'] != max_com)[0]
-        _faces = np.where(self._faces['component'] != max_com)[0]
+        _vertices = np.where((self._vertices['component'] != max_com))[0]
+        _edges = np.where((self._halfedges['component'] != max_com))[0]
+        _edges_with_twins = _edges[self._halfedges['twin'][_edges] != -1]
+        _faces = np.where((self._faces['component'] != max_com))[0]
         self._vertices[_vertices] = -1
+        self._halfedges['twin'][self._halfedges['twin'][_edges_with_twins]] = -1
         self._halfedges[_edges] = -1
         self._faces[_faces] = -1
 
@@ -1585,11 +1598,11 @@ class TriangleMesh(object):
         self._halfedge_vacancies.extend(_edges)
         self._face_vacancies.extend(_faces)
 
-        # Update the connectivity
-        self._faces['normal'][:] = -1
-        self._vertices['normal'][:] = -1
-        self.face_normals
-        self.vertex_neighbors
+        # # Update the connectivity
+        # self._faces['normal'][:] = -1
+        # self._vertices['normal'][:] = -1
+        # self.face_normals
+        # self.vertex_neighbors
         
         self._faces_by_vertex = None
 

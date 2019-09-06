@@ -171,12 +171,14 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
                     break;
                 twin_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, twin_idx);
                 curr_idx = twin_edge->twin;
+                if (curr_idx == -1)
+                    break;
                 curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
-
-                ++i;
 
                 if (curr_idx == orig_idx)
                     break;
+
+                ++i;
             }
         }
 
