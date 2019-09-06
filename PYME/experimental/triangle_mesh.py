@@ -1546,8 +1546,10 @@ class TriangleMesh(object):
                         continue
                     # Assign the vertex component label to halfedges and faces
                     # emanating from this vertex
-                    curr_edge = self._halfedges[_edge]                    
+                    curr_edge = self._halfedges[_edge]
                     self._halfedges['component'][_edge] = component
+                    self._halfedges['component'][curr_edge['prev']] = component
+                    self._halfedges['component'][curr_edge['next']] = component
                     self._faces['component'][curr_edge['face']] = component
                     
                     # If the vertex is assigned, we've already visited it and
@@ -1571,10 +1573,24 @@ class TriangleMesh(object):
         max_com = com[max_count]
 
         # Remove the smaller components
-        self._vertices[self._vertices['component'] != max_com] = -1
-        self._halfedges[self._halfedges['component'] != max_com] = -1
-        self._faces[self._faces['component'] != max_com] = -1
+        _vertices = np.where(self._vertices['component'] != max_com)[0]
+        _edges = np.where(self._halfedges['component'] != max_com)[0]
+        _faces = np.where(self._faces['component'] != max_com)[0]
+        self._vertices[_vertices] = -1
+        self._halfedges[_edges] = -1
+        self._faces[_faces] = -1
 
+        # Mark deleted faces as available
+        self._vertex_vacancies.extend(_vertices)
+        self._halfedge_vacancies.extend(_edges)
+        self._face_vacancies.extend(_faces)
+
+        # Update the connectivity
+        self._faces['normal'][:] = -1
+        self._vertices['normal'][:] = -1
+        self.face_normals
+        self.vertex_neighbors
+        
         self._faces_by_vertex = None
 
     def _find_boundary_polygons(self):
@@ -1835,7 +1851,7 @@ class TriangleMesh(object):
             singular_edges.extend(list(np.where(packed_edges[:, None] == singular_packed_edge)[0]))
 
         singular_edges.extend(self._halfedges['twin'][singular_edges])
-        singular_edges = list(set(singular_edges))
+        singular_edges = list(set(singular_edges) - set([-1]))
 
         # 2. Mark vertices that are endpoints of these edges
         singular_vertices = list(set(list(np.hstack([self._halfedges['vertex'][singular_edges], self._halfedges['vertex'][self._halfedges['twin'][singular_edges]]]))))
