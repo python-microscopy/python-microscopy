@@ -34,13 +34,13 @@ requirements:
   build:
     - python
     - setuptools
-    - enum-compat [py2k]
+    - enum-compat
     - netifaces
     - six
 
   run:
     - python
-    - enum-compat [py2k]
+    - enum-compat
     - netifaces
     - six
 
