@@ -25,7 +25,7 @@ build:
     #
     # Would create an entry point called zeroconf that calls zeroconf.main()
 
-  script: python setup.py install --no-deps
+  #script: python setup.py install --no-deps
   # If this is a new build for the same version, increment the build
   # number. If you do not include this key, it defaults to 0.
   number: 3
