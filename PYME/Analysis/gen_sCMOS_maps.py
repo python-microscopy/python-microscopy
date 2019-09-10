@@ -3,7 +3,7 @@ import os
 import argparse
 import numpy as np
 from PYME.IO.image import ImageStack
-from PYME.IO.MetaDataHandler import NestedClassMDHandler
+from PYME.IO.MetaDataHandler import NestedClassMDHandler, get_camera_roi_origin
 from PYME.IO.FileUtils import nameUtils
 
 import logging
@@ -80,62 +80,61 @@ def listCalibrationDirs():
         for m in result:
             print(m)
 
-
-def insertIntoFullMap(m, ve, smdh, sensor_size=(2048,2048)):
+def insert_into_full_map(dark, variance, metadata, sensor_size=(2048, 2048)):
     """
-    this function embeds the calculated maps into a full sensorSize array
-    that is padded with the camera default readnoise and offset as extracted from the
-    metadata
-    if m, ve are None nothing is copied into the map and just the uniform array is returned
+
+    Embeds partial-sensor camera maps into full-sized camera map by padding with basic values in metadata. Alternatively
+    can be used to create boring maps to use in place of metadata scalars.
 
     Parameters
     ----------
-    m
-    ve
-    smdh
-    sensorSize
+    dark: ndarray or None
+        darkmap for valid ROI, or None to generate a uniform, ~useless metadata map
+    variance: ndarray
+        variance for valid ROI, or None to generate a uniform, ~useless metadata map
+    metadata: dict-like
+        ROI informatrion and camera noise parameters to use when padding maps
+    sensor_size: 2-int tuple
+        x and y camera sensor size
 
     Returns
     -------
-
+    full_dark: ndarray
+        padded dark map
+    full_var: ndarray
+        padded variance map
+    mdh: PYME.IO.MetadataHandler.NestedClassMDHandler
+        metadata handler to be associated with full maps while maintaining information about the original/valid ROI.
     """
-    validROI = {
-        'PosX' : smdh['Camera.ROIPosX'],
-        'PosY' : smdh['Camera.ROIPosY'],
-        'Width' : smdh['Camera.ROIWidth'],
-        'Height' : smdh['Camera.ROIHeight']
-        }
-    
-    bmdh = NestedClassMDHandler()
-    bmdh.copyEntriesFrom(smdh)
-    bmdh.setEntry('Analysis.name', 'mean-variance')
-    bmdh.setEntry('Analysis.valid.ROIPosX', validROI['PosX'])
-    bmdh.setEntry('Analysis.valid.ROIPosY', validROI['PosY'])
-    bmdh.setEntry('Analysis.valid.ROIWidth', validROI['Width'])
-    bmdh.setEntry('Analysis.valid.ROIHeight', validROI['Height'])
 
-    bmdh['Camera.ROIPosX'] = 1
-    bmdh['Camera.ROIPosY'] = 1
-    bmdh['Camera.ROIWidth'] = sensor_size[0]
-    bmdh['Camera.ROIHeight'] = sensor_size[1]
-    bmdh['Camera.ROI'] = (1,1,sensor_size[0]+1,sensor_size[1]+1)
+    mdh = NestedClassMDHandler()
+    mdh.copyEntriesFrom(metadata)
+    mdh.setEntry('Analysis.name', 'mean-variance')
+    x_origin, y_origin = get_camera_roi_origin(mdh)
+    mdh.setEntry('Analysis.valid.ROIOriginX', x_origin)
+    mdh.setEntry('Analysis.valid.ROIOriginY', y_origin)
+    mdh.setEntry('Analysis.valid.ROIWidth', mdh['Camera.ROIWidth'])
+    mdh.setEntry('Analysis.valid.ROIHeight', mdh['Camera.ROIHeight'])
+    mdh['Camera.ROIOriginX'], mdh['Camera.ROIOriginY'] = 0, 0
+    mdh['Camera.ROIWidth'], mdh['Camera.ROIHeight'] = sensor_size
+    mdh['Camera.ROI'] = (0, 0, sensor_size[0], sensor_size[1])
 
-    if m is None:
-        mfull = np.zeros(sensor_size, dtype='float64')
-        vefull = np.zeros(sensor_size, dtype='float64')
+
+    if dark is not None and variance is not None:
+        full_dark = mdh['Camera.ADOffset'] * np.ones(sensor_size, dtype=dark.dtype)
+        full_var = (mdh['Camera.ReadNoise'] ** 2) * np.ones(sensor_size, dtype=variance.dtype)
+
+        xslice = slice(x_origin, x_origin + metadata['Camera.ROIWidth'])
+        yslice = slice(y_origin, y_origin + metadata['Camera.ROIHeight'])
+
+        full_dark[xslice, yslice] = dark
+        full_var[xslice, yslice] = variance
     else:
-        mfull = np.zeros(sensor_size, dtype=m.dtype)
-        vefull = np.zeros(sensor_size, dtype=ve.dtype)
-    mfull.fill(smdh['Camera.ADOffset'])
-    vefull.fill(smdh['Camera.ReadNoise']**2)
-    
-    if m is not None:
-        mfull[validROI['PosX']-1:validROI['PosX']-1+validROI['Width'],
-              validROI['PosY']-1:validROI['PosY']-1+validROI['Height']] = m
-        vefull[validROI['PosX']-1:validROI['PosX']-1+validROI['Width'],
-               validROI['PosY']-1:validROI['PosY']-1+validROI['Height']] = ve      
+        logger.warning('Generating uniform maps')
+        full_dark = mdh['Camera.ADOffset'] * np.ones(sensor_size)
+        full_var = (mdh['Camera.ReadNoise'] ** 2) * np.ones(sensor_size)
 
-    return mfull, vefull, bmdh
+    return full_dark, full_var, mdh
 
 def install_map(filename):
     """Installs a map file to its default location"""
@@ -259,7 +258,7 @@ def main():
 
     # if the uniform flag is set, then m and ve are passed as None
     # which makes sure that just the uniform defaults from meta data are used
-    mfull, vefull, basemdh = insertIntoFullMap(m, ve, source.mdh, sensor_size=sensorSize)
+    mfull, vefull, basemdh = insert_into_full_map(m, ve, source.mdh, sensor_size=sensorSize)
 
     logger.info('Saving results...')
 
