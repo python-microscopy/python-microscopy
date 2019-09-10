@@ -31,7 +31,7 @@ void cross(float *a, float *b, float *n)
 static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 {
     PyObject *v_idxs=0, *halfedges=0, *vertices=0, *faces=0;
-    signed int i, j, k, v_idx, orig_idx, curr_idx, twin_idx, n_idxs;
+    signed int i, j, k, v_idx, orig_idx, curr_idx, twin_idx, n_idxs, tmp;
     halfedge_t *curr_edge, *twin_edge;
     vertex_t *curr_vertex, *loop_vertex;
     face_t *curr_face;
@@ -130,6 +130,15 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
         // twin now becomes prev
         if ((twin_idx == -1) && (curr_idx != -1))
         {
+            // Ideally we sweep through the neighbors in a continuous fashion,
+            // so we'll reverse the order of all the edges so far.
+            for (k=i;k>1;k--)
+            {
+                tmp = (curr_vertex->neighbors)[k];
+                (curr_vertex->neighbors)[k] = (curr_vertex->neighbors)[k-1];
+                (curr_vertex->neighbors)[k-1] = tmp;
+            }
+
             curr_idx = orig_idx;
             curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
             twin_idx = curr_edge->prev;

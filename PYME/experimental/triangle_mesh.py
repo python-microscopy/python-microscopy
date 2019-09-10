@@ -79,6 +79,10 @@ class TriangleMesh(object):
         self._halfedge_vacancies = []
         self._initialize_halfedges(vertices, faces)
 
+        # Singular edges
+        self._singular_edges = None
+        self._singular_vertices = None
+
         # Populate the normals
         self.face_normals
         self.vertex_normals
@@ -203,6 +207,57 @@ class TriangleMesh(object):
             else:
                 singular_vertices[_vertex] = 0
         return singular_vertices
+
+    @property
+    def singular_edges(self):
+        """
+        Get a list of singular edges. A singular edge is any edge shared by
+        more than two faces.
+        """
+        if self._singular_edges is None:
+            edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
+            packed_edges = pack_edges(edges)
+            e, c = np.unique(packed_edges, return_counts=True)
+            singular_packed_edges = e[c>2]
+            singular_edges = []
+            for singular_packed_edge in singular_packed_edges:
+                singular_edges.extend(list(np.where(packed_edges[:, None] == singular_packed_edge)[0]))
+
+            singular_edges.extend(self._halfedges['twin'][singular_edges])
+            self._singular_edges = list(set(singular_edges) - set([-1]))
+
+        return self._singular_edges
+
+    @property
+    def singular_vertices(self):
+        """
+        Get a list of singular vertices. This includes endpoints of singular 
+        edges, and isolated singular vertices. Isolated singular vertices
+        have more than one 1-neighbor ring.
+        """
+        if self._singular_vertices is None:
+            # Mark vertices that are endpoints of these edges
+            singular_vertices = list(set(list(np.hstack([self._halfedges['vertex'][self.singular_edges], self._halfedges['vertex'][self._halfedges['twin'][self.singular_edges]]]))))
+            
+            # Mark isolated singular vertices
+            for _vertex in np.arange(self._vertices.shape[0]):
+                if self._vertices['halfedge'][_vertex] == -1:
+                    continue
+
+                # If the number of elements in the 1-neighbor ring does not match 
+                # the number of halfedges pointing to a vertex, we have an isolated
+                # singular vertex (note this requires the C code version of
+                # update_vertex_neighbors, which reverses direction upon hitting
+                # an edge to ensure a more accurate neighborhood)
+                n_incident = np.sum(self._halfedges['vertex'] == _vertex)
+                n_neighbors = np.sum(self._vertices['neighbors'][_vertex] != -1)
+                if n_neighbors != n_incident:
+                    singular_vertices.append(_vertex)
+
+            # Remove duplicates
+            self._singular_vertices = list(set(singular_vertices))
+
+        return self._singular_vertices
 
     @property
     def face_normals(self):
@@ -1841,6 +1896,74 @@ class TriangleMesh(object):
         # Reset display
         self._faces_by_vertex = None
 
+    def group_neighbors(self, _vertex):
+        """
+        Group faces around the 1-neighbor ring of a vertex by reachability. 
+        Faces are not reachable if they are separated by a singular edge.
+
+        Parameters
+        ----------
+            _vertex : int
+                Index of vertex at the center of a 1-neighbor ring.
+        """
+
+        _nn = self._vertices[_vertex]['neighbors']
+        _nn = _nn[_nn!=-1]
+        # Don't use self._vertices['neighbors'] because we're dealing with 
+        # singular vertices
+        _twin_nn = list(np.where(self._halfedges['vertex'] == _vertex)[0])
+
+        # Assign components via the 1-neighbors
+        component = 0
+        for _neighbor in _nn:
+            if (_neighbor in self.singular_edges):
+                component += 1
+            self._faces['component'][self._halfedges['face'][_neighbor]] = component
+
+        # Loop through the neighbors again and group connected components
+        for _neighbor in _nn:
+            if (_neighbor in self.singular_edges):
+                continue
+    
+            _twin_neighbor = self._halfedges['twin'][_neighbor]
+            _face = self._halfedges['face'][_neighbor]
+            _twin_face = self._halfedges['face'][_twin_neighbor]
+            min_component = np.min([self._faces['component'][_face], self._faces['component'][_twin_face]])
+            self._faces['component'][_face] = min_component
+            self._faces['component'][_twin_face] = min_component
+
+        # If there were any incident vertices not included in this list, group them, too
+        _remaining = list(set(_twin_nn) - set(self._halfedges['twin'][_nn]) - set([-1]))
+        
+        if _remaining:
+            component += 1
+            _remaining_list = _remaining
+
+            while _remaining_list:
+                _neighbor = _remaining_list.pop()
+                _twin_neighbor = self._halfedges['twin'][_neighbor]
+                if _twin_neighbor in _remaining:
+                    _remaining.remove(_twin_neighbor)
+                _face = self._halfedges['face'][_neighbor]
+                _twin_face = self._halfedges['face'][_twin_neighbor]
+                if (_neighbor in self.singular_edges):
+                    self._faces['component'][_face] = component
+                    component += 1
+                    self._faces['component'][_twin_face] = component
+                else:
+                    self._faces['component'][_face] = component
+                    self._faces['component'][_twin_face] = component
+
+            for _neighbor in _remaining:
+                if (_neighbor in self.singular_edges):
+                    continue
+                _twin_neighbor = self._halfedges['twin'][_neighbor]
+                _face = self._halfedges['face'][_neighbor]
+                _twin_face = self._halfedges['face'][_twin_neighbor]
+                min_component = np.min([self._faces['component'][_face], self._faces['component'][_twin_face]])
+                self._faces['component'][_face] = min_component
+                self._faces['component'][_twin_face] = min_component
+
     def _remove_singularities(self):
         """
         Excise singularities from the mesh. This essentially unzips multivalent
@@ -1854,117 +1977,22 @@ class TriangleMesh(object):
             to Manifold Surfaces, IEEE TRANSACTIONS ON VISUALIZATION AND 
             COMPUTER GRAPHICS, 2001.
         """
-        # 1. Get a list of singular edges
-        edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
-        packed_edges = pack_edges(edges)
-        e, c = np.unique(packed_edges, return_counts=True)
-        singular_packed_edges = e[c>2]
-        singular_edges = []
-        for singular_packed_edge in singular_packed_edges:
-            singular_edges.extend(list(np.where(packed_edges[:, None] == singular_packed_edge)[0]))
 
-        singular_edges.extend(self._halfedges['twin'][singular_edges])
-        singular_edges = list(set(singular_edges) - set([-1]))
+        # Make sure we're working with the latest singular edges/vertices
+        self._singular_edges = None
+        self._singular_vertices = None
 
-        # 2. Mark vertices that are endpoints of these edges
-        singular_vertices = list(set(list(np.hstack([self._halfedges['vertex'][singular_edges], self._halfedges['vertex'][self._halfedges['twin'][singular_edges]]]))))
-        
-        # 3. Mark isolated singular vertices
-        for _vertex in np.arange(self._vertices.shape[0]):
-            if self._vertices['halfedge'][_vertex] == -1:
-                continue
-
-            # If the number of elements in the 1-neighbor ring does not match 
-            # the number of halfedges pointing to a vertex, we have an isolated
-            # singular vertex (note this requires the C code version of
-            # update_vertex_neighbors, which reverses direction upon hitting
-            # an edge to ensure a more accurate neighborhood)
-            n_incident = np.sum(self._halfedges['vertex'] == _vertex)
-            n_neighbors = np.sum(self._vertices['neighbors'][_vertex] != -1)
-            if n_neighbors != n_incident:
-                singular_vertices.append(_vertex)
-
-        # Remove duplicates
-        singular_vertices = list(set(singular_vertices))
-
-        # 4. For each marked vertex, partition the faces of the 1-neighbor ring
+        #  For each marked vertex, partition the faces of the 1-neighbor ring
         #    into nc "is reachable" equivalence classes. Faces are reachable if
         #    they share a non-singular edge incident on the marked vertex.
-        for _vertex in singular_vertices:
-            # Don't use self._vertices['neighbors'] because we're dealing with 
-            # singular vertices
+        for _vertex in self.singular_vertices:
+
             _twin_nn = list(np.where(self._halfedges['vertex'] == _vertex)[0])
             _update_vertices = np.hstack([_vertex, self._halfedges['vertex'][self._halfedges['twin'][_twin_nn]]])
             _update_faces = self._faces[self._halfedges['face'][_twin_nn]]
 
-            # Set all components to -1 (background)
-            self._halfedges['component'] = -1
-            self._vertices['component'] = -1
-            self._faces['component'] = -1
-
-            # Connect component by face
-            component = 0
-            for _edge in _twin_nn:
-                _curr_face = self._halfedges['face'][_edge]
-                curr_face = self._faces[_curr_face]
-                if (curr_face['halfedge'] == -1) or (curr_face['component'] != -1):
-                    # We only want to deal with valid, unassigned faces
-                    continue
-
-                # Search faces contains faces connected to this vertex.
-                # We want to see if there are other faces connected to the
-                # search faces.
-                search_faces = []
-                self._faces[_curr_face]['component'] = component
-                search_faces.append(_curr_face)
-
-                # Find vertices connected to the search vertices
-                while search_faces:
-                    # Grab the latest search vertex neighbors
-                    _f = search_faces.pop()
-                    _f_edge = self._faces['halfedge'][_f]
-                    f_edge = self._halfedges[_f_edge]
-                    nn = np.hstack([self._halfedges['twin'][f_edge['prev']], self._halfedges['twin'][_f_edge], self._halfedges['twin'][f_edge['next']]])
-                    
-                    # Loop over the neighbors
-                    for _nn_edge in nn:
-                        if _nn_edge == -1:
-                            continue
-
-                        curr_edge = self._halfedges[_nn_edge]
-                        
-                        # If the face is assigned, we've already visited it and
-                        # don't need to do so again.
-                        if self._faces['component'][curr_edge['face']] != -1:
-                            continue
-                        
-                        self._faces['component'][curr_edge['face']] = component
-                        search_faces.append(curr_edge['face'])
-
-                        # If the edge is a singular_edge, we need to treat it as
-                        # a boundary
-                        if _nn_edge in singular_edges:
-                            component += 1
-                            # continue
-                
-                # Increment the label as any faces not included in this
-                # iteration's search will be part of another component.
-                component += 1
-
-            # Here we need to do a two-pass because we may have incorrectly split
-            # components since we don't visit the neighbors in order.
-            for _edge in _twin_nn:
-                curr_edge = self._halfedges[_edge]
-                if _edge in singular_edges:
-                    continue
-                _twin = curr_edge['twin']
-                if (_twin == -1) or (_twin in singular_edges):
-                    continue
-                twin_edge = self._halfedges[_twin]
-                component = np.min([self._faces['component'][curr_edge['face']], self._faces['component'][twin_edge['face']]])
-                self._faces['component'][curr_edge['face']] = component
-                self._faces['component'][twin_edge['face']] = component
-
+            self.group_neighbors(_vertex)
+            
             # 5. Create nc-1 copies of the vertex and assign each equivalence class 
             #    one of these vertices. (All but one component gets a new vertex).
             # Sort the component order by count so we create a new vertex for the nc-1
@@ -1973,44 +2001,39 @@ class TriangleMesh(object):
             c_sort = np.argsort(counts)[::-1]
             components = components[c_sort]
             for c in components[1:]:
-                # Grab the faces associated with this component
-                _faces = np.where(self._faces['component'] == c)[0]
-                
-                # Grab the edges associated with these faces
-                _edges = np.hstack([self._halfedges['prev'][self._faces['halfedge'][_faces]], self._faces['halfedge'][_faces], self._halfedges['next'][self._faces['halfedge'][_faces]]])
+                _faces = self._faces[self._faces['component'] == c]
+                print(_faces)
+                _edges = np.hstack([self._halfedges['prev'][_faces['halfedge']], _faces['halfedge'], self._halfedges['next'][_faces['halfedge']]])
+                print(self._halfedges[_edges])
                 _vertices = self._halfedges['vertex'][_edges]
+                print(_vertex)
+                print(_vertices)
+                
+                _edge = self._halfedges['next'][_edges[_vertices == _vertex][0]]
 
-                try:
-                    # Find a halfedge emanating from the vertex
-                    _edge = self._halfedges['next'][_edges[_vertices == _vertex][0]]
+                _, _new_vertex = self._new_vertex(self._vertices['position'][_vertex], halfedge=_edge)
 
-                    # Create a copy of vertex _vertex
-                    _, _new_vertex = self._new_vertex(self._vertices['position'][_vertex], halfedge=_edge)
+                # Assign edges in this component connected to _vertex to _new_vertex
+                _modified_edges = _edges[_vertices == _vertex]
+                self._halfedges['vertex'][_modified_edges] = _new_vertex
 
-                    # Assign edges in this component connected to _vertex to _new_vertex
-                    _modified_edges = _edges[_vertices == _vertex]
-                    self._halfedges['vertex'][_modified_edges] = _new_vertex
+                # Disconnect the boundaries of the components
+                _twin_face_component = self._faces['component'][self._halfedges['face'][self._halfedges['twin'][_edges]]]
+                _boundary = (_twin_face_component != c)
+                _twin_edges = self._halfedges['twin'][_edges[_boundary]]
+                _twin_edges_mask = (_twin_edges != -1)
+                _valid_edges = _edges[_boundary][_twin_edges_mask]
+                self._halfedges['twin'][_twin_edges[_twin_edges_mask]] = -1
+                self._halfedges['twin'][_valid_edges] = -1
 
-                    # Disconnect the boundaries of the components
-                    _twin_face_component = self._faces['component'][self._halfedges['face'][self._halfedges['twin'][_edges]]]
-                    _boundary = (_twin_face_component != c)
-                    _twin_edges = self._halfedges['twin'][_edges[_boundary]]
-                    _twin_edges_mask = (_twin_edges != -1)
-                    _valid_edges = _edges[_boundary][_twin_edges_mask]
-                    self._halfedges['twin'][_twin_edges[_twin_edges_mask]] = -1
-                    self._halfedges['twin'][_valid_edges] = -1
+                # Double check that the original vertex did not have a halfedge in this
+                # component
+                _safe_faces_bool = (self._faces['component'][self._halfedges['face']] != c)
+                _safe_vertices = np.where((self._halfedges['vertex'] == _vertex) & (_safe_faces_bool))[0]
+                self._vertices['halfedge'][_vertex] = self._halfedges['next'][_safe_vertices[0]]
 
-                    # Double check that the original vertex did not have a halfedge in this
-                    # component
-                    _safe_faces_bool = (self._faces['component'][self._halfedges['face']] != c)
-                    _safe_vertices = np.where((self._halfedges['vertex'] == _vertex) & (_safe_faces_bool))[0]
-                    self._vertices['halfedge'][_vertex] = self._halfedges['next'][_safe_vertices[0]]
-
-                    # Update the faces and vertices of this component
-                    self._update_face_normals(_update_faces)
-                    self._update_vertex_neighbors(_update_vertices)
-                except:
-                    continue
+                self._update_face_normals(_update_faces)
+                self._update_vertex_neighbors(_update_vertices)
 
     def repair(self):
         """
