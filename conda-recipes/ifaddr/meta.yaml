@@ -1,29 +1,38 @@
+#recipe copied from conda-forge
+
+{% set name = "ifaddr" %}
+{% set version = "0.1.6" %}
+{% set sha256 = "c19c64882a7ad51a394451dabcbbed72e98b5625ec1e79789924d5ea3e3ecb93" %}
+
 package:
-  name: ifaddr
-  version: {{ GIT_DESCRIBE_TAG }}
+  name: {{ name|lower }}
+  version: {{ version }}
 
 source:
-  git_url: https://github.com/pydron/ifaddr
-
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  sha256: {{ sha256 }}
 
 build:
-  noarch_python: False
-  preserve_egg_dir: True
-
-  # If this is a new build for the same version, increment the build
-  # number. If you do not include this key, it defaults to 0.
-  number: 1
+  noarch: python
+  number: 0
+  script: "{{ PYTHON }} -m pip install . -vv"
 
 requirements:
-  build:
+  host:
     - python
-    - setuptools
-
+    - pip
   run:
     - python
 
+test:
+  imports:
+    - ifaddr
 
 about:
   home: https://github.com/pydron/ifaddr
   license: MIT
-  summary: 'ifaddr - Enumerate IP addresses on the local network adapters'
+  license_family: MIT
+  license_file: LICENSE.txt
+  summary: 'Python Library to enumerate all network interfaces '
+  doc_url: https://pythonhosted.org/ifaddr/
+  dev_url: https://github.com/pydron/ifaddr

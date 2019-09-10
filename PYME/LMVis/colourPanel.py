@@ -338,7 +338,7 @@ class colourPanel(wx.Panel):
         col = event.GetColumn()
 
         if col == 1: #frac
-            self.pipeline.fluorSpecies[it.GetText()] = val
+            self.pipeline.fluorSpecies[str(it.GetText())] = val
             self.lFluorSpecies.SetItemTextColour(event.m_itemIndex, wx.Colour(*((128*numpy.array(cm.jet_r(val)))[:3])))
 
             #self.visFr.mapping.setMapping('p_%s' % it.GetText(), 'exp(-(%f*A - fitResults_Ag)**2/(4*fitError_Ag**2 + 2*fitError_Ar**2))*exp(-(%f*A - fitResults_Ar)**2/(2*fitError_Ag**2 +4*fitError_Ar**2))' % (1- val, val))
@@ -351,7 +351,7 @@ class colourPanel(wx.Panel):
             self.refresh()
         else: #shift
             axis = ['x', 'y', 'z'][col-3]
-            specName = it.GetText()
+            specName = str(it.GetText())
             if not specName in self.pipeline.chromaticShifts.keys():
                 self.pipeline.chromaticShifts[specName] = {}
 
