@@ -288,24 +288,16 @@ class Camera(object):
         """
         Set the ROI via coordinates (as opposed to via an index).
 
-        NOTE/FIXME: this is somewhat inconsistent over cameras, with some
-        cameras using 1-based and some cameras using 0-based indexing.
-        Ideally we would convert them all to using zero based indexing and be
-        consistent with numpy.
-
-        Most use 1 based (as it's a thin wrapper around the camera API), but we
-        should really do something saner here.
-
         Parameters
         ----------
         x1 : int
-            Left x-coordinate
+            Left x-coordinate, zero-indexed
         y1 : int
-            Top y-coordinate
+            Top y-coordinate, zero-indexed
         x2 : int
-            Right x-coordinate
+            Right x-coordinate, zero-indexed
         y2 : int
-            Bottom y-coordinate
+            Bottom y-coordinate, zero-indexed
 
         Returns
         -------
@@ -314,6 +306,13 @@ class Camera(object):
         See Also
         --------
         SetROIIndex
+
+        Notes
+        -----
+        Not all cameras which implement this method subclass this base class. Some of these cameras use 1-based
+        indexing, and others 0-based. Ideally we would convert them all to using zero based indexing to be consistent
+        with... Python. If you are implementing a camera, you should subclass the base class and use 0-based indexing.
+        Cameras subclassing the base Camera class are expected to use zero-based indexing.
         """
         raise NotImplementedError('Implemented in derived class.')
 
@@ -324,7 +323,12 @@ class Camera(object):
         Returns
         -------
         int
-            Left x-coordinate of ROI.
+            Left x-coordinate of ROI. Zero-indexed
+
+        Notes
+        -----
+        Older cameras which do not subclass this base class have a method by the same name which may return one-indexed
+        ROI positions
         """
         raise NotImplementedError('Implemented in derived class.')
 
@@ -335,7 +339,12 @@ class Camera(object):
         Returns
         -------
         int
-            Right x-coordinate of ROI.
+            Right x-coordinate of ROI. Zero-indexed
+
+        Notes
+        -----
+        Older cameras which do not subclass this base class have a method by the same name which may return one-indexed
+        ROI positions
         """
         raise NotImplementedError('Implemented in derived class.')
 
@@ -346,7 +355,12 @@ class Camera(object):
         Returns
         -------
         int
-            Top y-coordinate of ROI.
+            Top y-coordinate of ROI. Zero-indexed
+
+        Notes
+        -----
+        Older cameras which do not subclass this base class have a method by the same name which may return one-indexed
+        ROI positions
         """
         raise NotImplementedError('Implemented in derived class.')
 
@@ -357,7 +371,12 @@ class Camera(object):
         Returns
         -------
         int
-            Bottom y-coordinate of ROI.
+            Bottom y-coordinate of ROI. Zero-indexed
+
+        Notes
+        -----
+        Older cameras which do not subclass this base class have a method by the same name which may return one-indexed
+        ROI positions
         """
         raise NotImplementedError('Implemented in derived class.')
 
