@@ -221,14 +221,14 @@ def main():
     try:
         sensorSize[0] = source.mdh['Camera.SensorWidth']
     except AttributeError:
-        logger.warn('no valid sensor width in metadata - using default %d' % sensorSize[0])
+        logger.warning('no valid sensor width in metadata - using default %d' % sensorSize[0])
     try:
         sensorSize[1] = source.mdh['Camera.SensorHeight']
     except AttributeError:
-        logger.warn('no valid sensor height in metadata - using default %d' % sensorSize[1])
+        logger.warning('no valid sensor height in metadata - using default %d' % sensorSize[1])
     
     if not ((source.mdh['Camera.ROIWidth'] == sensorSize[0]) and (source.mdh['Camera.ROIHeight'] == sensorSize[1])):
-        logger.warn('Generating a map from data with ROI set. Use with EXTREME caution.\nMaps should be calculated from the whole chip.')
+        logger.warning('Generating a map from data with ROI set. Use with EXTREME caution.\nMaps should be calculated from the whole chip.')
 
         if args.dir is None:
             logger.error('Maps with an ROI set cannot be stored to the default map directory\nPlease specify an output directory.')
@@ -249,7 +249,7 @@ def main():
             ve[ve > variancethreshold] = blemishvariance
         nbad = np.sum((m > darkthreshold)*(ve > variancethreshold))
     else:
-        logger.warn('Simulating uniform maps - use with care')
+        logger.warning('Simulating uniform maps - use with care')
         nbad = 0
 
         if args.dir is None:
