@@ -683,11 +683,9 @@ class Camera(object):
             mdh.setEntry('Camera.SensorWidth', self.GetCCDWidth())
             mdh.setEntry('Camera.SensorHeight', self.GetCCDHeight())
 
-            # FOV
-            mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
-            mdh.setEntry('Camera.ROIPosY', self.GetROIY1())
-            mdh.setEntry('Camera.ROIOriginX', self.GetROIX1() - 1)
-            mdh.setEntry('Camera.ROIOriginY', self.GetROIY1() - 1)
+            # FOV Note that if a camera is using the baseclass it is new enough to use proper zero indexing for GetROIs
+            mdh.setEntry('Camera.ROIOriginX', self.GetROIX1())
+            mdh.setEntry('Camera.ROIOriginY', self.GetROIY1())
             mdh.setEntry('Camera.ROIWidth',
                          self.GetROIX2() - self.GetROIX1())
             mdh.setEntry('Camera.ROIHeight',
