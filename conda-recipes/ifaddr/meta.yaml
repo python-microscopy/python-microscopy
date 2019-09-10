@@ -32,7 +32,7 @@ about:
   home: https://github.com/pydron/ifaddr
   license: MIT
   license_family: MIT
-  license_file: LICENSE.txt
+  #license_file: LICENSE.txt
   summary: 'Python Library to enumerate all network interfaces '
   doc_url: https://pythonhosted.org/ifaddr/
   dev_url: https://github.com/pydron/ifaddr
