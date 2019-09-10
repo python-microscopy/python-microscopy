@@ -1896,7 +1896,53 @@ class TriangleMesh(object):
         # Reset display
         self._faces_by_vertex = None
 
-    def group_neighbors(self, _vertex):
+    def _connect_neighbors(self, _nn, starting_component=0):
+        """
+        Connect the neighbors in the list _nn starting from
+        starting_component.
+
+        Parameters
+        ----------
+            _nn : list
+                List of neighbors to connect.
+            starting_component : int
+                Component numbering to start at.
+
+        Returns
+        -------
+            component : int
+                Maxmimum component number used to group neighbors.
+        """
+        # Assign components via the 1-neighbors
+        component = starting_component
+        for _neighbor in _nn:
+            singular = (_neighbor in self.singular_edges)
+            if singular:
+                component += 1
+            if self._faces['component'][self._halfedges['face'][_neighbor]] != -1:
+                continue
+            self._faces['component'][self._halfedges['face'][_neighbor]] = component
+
+            # Extra check in case we're examining the edges out of order
+            if singular:
+                component += 1
+
+        # Loop through the neighbors again and group connected components
+        for _neighbor in _nn:
+            if (_neighbor in self.singular_edges):
+                continue
+    
+            _twin_neighbor = self._halfedges['twin'][_neighbor]
+            if _twin_neighbor != -1:
+                _face = self._halfedges['face'][_neighbor]
+                _twin_face = self._halfedges['face'][_twin_neighbor]
+                min_component = np.min([self._faces['component'][_face], self._faces['component'][_twin_face]])
+                self._faces['component'][_face] = min_component
+                self._faces['component'][_twin_face] = min_component
+
+        return component
+
+    def _group_neighbors(self, _vertex):
         """
         Group faces around the 1-neighbor ring of a vertex by reachability. 
         Faces are not reachable if they are separated by a singular edge.
@@ -1907,62 +1953,28 @@ class TriangleMesh(object):
                 Index of vertex at the center of a 1-neighbor ring.
         """
 
+        # Zero out connectivity
+        self._vertices['component'][:] = -1
+        self._faces['component'][:] = -1
+        self._halfedges['component'][:] = -1
+
+        # Grab the neighbors
         _nn = self._vertices[_vertex]['neighbors']
         _nn = _nn[_nn!=-1]
-        # Don't use self._vertices['neighbors'] because we're dealing with 
+
+        # Connect the neighbors
+        component = self._connect_neighbors(_nn, 0)
+
+        # Don't trust self._vertices['neighbors'] because we're dealing with 
         # singular vertices
         _twin_nn = list(np.where(self._halfedges['vertex'] == _vertex)[0])
-
-        # Assign components via the 1-neighbors
-        component = 0
-        for _neighbor in _nn:
-            if (_neighbor in self.singular_edges):
-                component += 1
-            self._faces['component'][self._halfedges['face'][_neighbor]] = component
-
-        # Loop through the neighbors again and group connected components
-        for _neighbor in _nn:
-            if (_neighbor in self.singular_edges):
-                continue
-    
-            _twin_neighbor = self._halfedges['twin'][_neighbor]
-            _face = self._halfedges['face'][_neighbor]
-            _twin_face = self._halfedges['face'][_twin_neighbor]
-            min_component = np.min([self._faces['component'][_face], self._faces['component'][_twin_face]])
-            self._faces['component'][_face] = min_component
-            self._faces['component'][_twin_face] = min_component
 
         # If there were any incident vertices not included in this list, group them, too
         _remaining = list(set(_twin_nn) - set(self._halfedges['twin'][_nn]) - set([-1]))
         
         if _remaining:
-            component += 1
-            _remaining_list = _remaining
-
-            while _remaining_list:
-                _neighbor = _remaining_list.pop()
-                _twin_neighbor = self._halfedges['twin'][_neighbor]
-                if _twin_neighbor in _remaining:
-                    _remaining.remove(_twin_neighbor)
-                _face = self._halfedges['face'][_neighbor]
-                _twin_face = self._halfedges['face'][_twin_neighbor]
-                if (_neighbor in self.singular_edges):
-                    self._faces['component'][_face] = component
-                    component += 1
-                    self._faces['component'][_twin_face] = component
-                else:
-                    self._faces['component'][_face] = component
-                    self._faces['component'][_twin_face] = component
-
-            for _neighbor in _remaining:
-                if (_neighbor in self.singular_edges):
-                    continue
-                _twin_neighbor = self._halfedges['twin'][_neighbor]
-                _face = self._halfedges['face'][_neighbor]
-                _twin_face = self._halfedges['face'][_twin_neighbor]
-                min_component = np.min([self._faces['component'][_face], self._faces['component'][_twin_face]])
-                self._faces['component'][_face] = min_component
-                self._faces['component'][_twin_face] = min_component
+            component += 1  # We're off the original 1-neighbor ring, so disconnect
+            self._connect_neighbors(_remaining, component)
 
     def _remove_singularities(self):
         """
@@ -1985,36 +1997,28 @@ class TriangleMesh(object):
         #  For each marked vertex, partition the faces of the 1-neighbor ring
         #    into nc "is reachable" equivalence classes. Faces are reachable if
         #    they share a non-singular edge incident on the marked vertex.
-        for _vertex in self.singular_vertices:
+        for _vertex in self.singular_vertices[::-1]:
 
             _twin_nn = list(np.where(self._halfedges['vertex'] == _vertex)[0])
             _update_vertices = np.hstack([_vertex, self._halfedges['vertex'][self._halfedges['twin'][_twin_nn]]])
             _update_faces = self._faces[self._halfedges['face'][_twin_nn]]
 
-            self.group_neighbors(_vertex)
+            self._group_neighbors(_vertex)
             
-            # 5. Create nc-1 copies of the vertex and assign each equivalence class 
+            # Create nc-1 copies of the vertex and assign each equivalence class 
             #    one of these vertices. (All but one component gets a new vertex).
-            # Sort the component order by count so we create a new vertex for the nc-1
-            # smallest components.
-            components, counts = np.unique(self._faces['component'][self._faces['component'] != -1], return_counts=True)
-            c_sort = np.argsort(counts)[::-1]
-            components = components[c_sort]
+            components = np.unique(self._faces['component'][self._faces['component'] != -1])
             for c in components[1:]:
                 _faces = self._faces[self._faces['component'] == c]
-                print(_faces)
                 _edges = np.hstack([self._halfedges['prev'][_faces['halfedge']], _faces['halfedge'], self._halfedges['next'][_faces['halfedge']]])
-                print(self._halfedges[_edges])
                 _vertices = self._halfedges['vertex'][_edges]
-                print(_vertex)
-                print(_vertices)
                 
-                _edge = self._halfedges['next'][_edges[_vertices == _vertex][0]]
+                _modified_edges = _edges[_vertices == _vertex] 
+
+                _edge = self._halfedges['next'][_modified_edges[0]]
 
                 _, _new_vertex = self._new_vertex(self._vertices['position'][_vertex], halfedge=_edge)
-
                 # Assign edges in this component connected to _vertex to _new_vertex
-                _modified_edges = _edges[_vertices == _vertex]
                 self._halfedges['vertex'][_modified_edges] = _new_vertex
 
                 # Disconnect the boundaries of the components
