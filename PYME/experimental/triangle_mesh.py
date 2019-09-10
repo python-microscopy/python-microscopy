@@ -2008,6 +2008,7 @@ class TriangleMesh(object):
             # Create nc-1 copies of the vertex and assign each equivalence class 
             #    one of these vertices. (All but one component gets a new vertex).
             components = np.unique(self._faces['component'][self._faces['component'] != -1])
+            print(components)
             for c in components[1:]:
                 _faces = self._faces[self._faces['component'] == c]
                 _edges = np.hstack([self._halfedges['prev'][_faces['halfedge']], _faces['halfedge'], self._halfedges['next'][_faces['halfedge']]])
@@ -2022,11 +2023,12 @@ class TriangleMesh(object):
                 self._halfedges['vertex'][_modified_edges] = _new_vertex
 
                 # Disconnect the boundaries of the components
-                _twin_face_component = self._faces['component'][self._halfedges['face'][self._halfedges['twin'][_edges]]]
+                _twin_face_component = self._faces['component'][self._halfedges['face'][self._halfedges['twin'][_modified_edges]]]
                 _boundary = (_twin_face_component != c)
-                _twin_edges = self._halfedges['twin'][_edges[_boundary]]
+                _twin_edges = self._halfedges['twin'][_modified_edges[_boundary]]
                 _twin_edges_mask = (_twin_edges != -1)
-                _valid_edges = _edges[_boundary][_twin_edges_mask]
+                _valid_edges = _modified_edges[_boundary][_twin_edges_mask]
+                print('Valid edges: ' + str(_valid_edges))
                 self._halfedges['twin'][_twin_edges[_twin_edges_mask]] = -1
                 self._halfedges['twin'][_valid_edges] = -1
 
