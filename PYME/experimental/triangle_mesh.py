@@ -88,7 +88,7 @@ class TriangleMesh(object):
         self.vertex_normals
 
         # Properties we can visualize
-        self.vertex_properties = ['x', 'y', 'z', 'component', 'component_by_halfedge', 'component_by_face', 'boundary', 'singular']
+        self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary', 'singular']
 
         self.fix_boundary = True  # Hold boundary edges in place
         self.debug = False  # Print debug statements
@@ -154,18 +154,6 @@ class TriangleMesh(object):
         return self._vertices['component']
 
     @property
-    def component_by_halfedge(self):
-        self.find_connected_components()
-        hedges = self._halfedges['component'][self._halfedges['twin'][self._vertices['halfedge']]]
-        hedges[self._halfedges['twin'][self._vertices['halfedge']] == -1] = self._halfedges['component'][self._vertices['halfedge'][self._halfedges['twin'][self._vertices['halfedge']] == -1]]
-        return hedges
-
-    @property
-    def component_by_face(self):
-        self.find_connected_components()
-        return self._faces['component'][self._halfedges['face'][self._halfedges['twin'][self._vertices['halfedge']]]]
-
-    @property
     def vertices(self):
         return self._vertices['position']
 
@@ -190,22 +178,11 @@ class TriangleMesh(object):
 
     @property
     def singular(self):
+        self._singular_edges = None
+        self._singular_vertices = None
         singular_vertices = np.zeros_like(self._vertices['halfedge'])
-        singular_vertices[:] = -1
-        for _vertex in np.arange(self._vertices.shape[0]):
-            if self._vertices['halfedge'][_vertex] == -1:
-                continue
-
-            # If the number of elements in the 1-neighbor ring does not match 
-            # the number of halfedges pointing to a vertex, we have an isolated
-            # singular vertex (note this requires the C code version of
-            # update_vertex_neighbors, which reverses direction upon hitting
-            # an edge to ensure a more accurate valence)
-            n_incident = np.sum(self._halfedges['vertex'] == _vertex)
-            if np.sum(self._vertices['neighbors'][_vertex] != -1) != n_incident:
-                singular_vertices[_vertex] = 1
-            else:
-                singular_vertices[_vertex] = 0
+        if len(self.singular_vertices) > 0:
+            singular_vertices[np.array(self.singular_vertices)] = 1
         return singular_vertices
 
     @property
@@ -255,7 +232,7 @@ class TriangleMesh(object):
                     singular_vertices.append(_vertex)
 
             # Remove duplicates
-            self._singular_vertices = list(set(singular_vertices))
+            self._singular_vertices = list(set(singular_vertices) - set([-1]))
 
         return self._singular_vertices
 
@@ -373,12 +350,18 @@ class TriangleMesh(object):
         TODO: Check that we don't have any isolated singular vertices, which 
         also make the mesh non-manifold.
         """
-        edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
-        edges[edges[:, 0] != -1]
-        packed_edges = pack_edges(edges)
-        _, c = np.unique(packed_edges, return_counts=True)
+        # edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
+        # edges[edges[:, 0] != -1]
+        # edges = np.vstack([self.faces[:,[0,1]], self.faces[:,[1,2]], self.faces[:,[2,0]]])
+        # packed_edges = pack_edges(edges)
+        # _, c = np.unique(packed_edges, return_counts=True)
         
-        return np.all(c==2)
+        # return np.all(c==2)
+
+        self._singular_edges = None
+        self._singular_vertices = None
+
+        return len(self.singular_vertices) == 0
 
     def keys(self):
         return list(self.vertex_properties)
@@ -1653,8 +1636,8 @@ class TriangleMesh(object):
 
         # Mark deleted faces as available
         self._vertex_vacancies = list(set(self._vertex_vacancies).union(set(_vertices)))
-        self._halfedge_vacancies.extend(_edges)
-        self._face_vacancies.extend(_faces)
+        self._halfedge_vacancies = list(set(self._halfedge_vacancies).union(set(_edges)))
+        self._face_vacancies = list(set(self._face_vacancies).union(set(_faces)))
         
         self._faces_by_vertex = None
 
