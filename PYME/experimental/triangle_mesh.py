@@ -374,7 +374,7 @@ class TriangleMesh(object):
         also make the mesh non-manifold.
         """
         edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
-
+        edges[edges[:, 0] != -1]
         packed_edges = pack_edges(edges)
         _, c = np.unique(packed_edges, return_counts=True)
         
@@ -422,6 +422,9 @@ class TriangleMesh(object):
             for i, e in enumerate(edges_packed):
                 if e in list(d.keys()):
                     idx = d.pop(e)
+                    if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
+                        # Handle multivalent edges
+                        continue
                     self._halfedges['twin'][idx] = i
                     self._halfedges['twin'][i] = idx
                 else:
@@ -2008,7 +2011,6 @@ class TriangleMesh(object):
             # Create nc-1 copies of the vertex and assign each equivalence class 
             #    one of these vertices. (All but one component gets a new vertex).
             components = np.unique(self._faces['component'][self._faces['component'] != -1])
-            print(components)
             for c in components[1:]:
                 _faces = self._faces[self._faces['component'] == c]
                 _edges = np.hstack([self._halfedges['prev'][_faces['halfedge']], _faces['halfedge'], self._halfedges['next'][_faces['halfedge']]])
@@ -2028,7 +2030,6 @@ class TriangleMesh(object):
                 _twin_edges = self._halfedges['twin'][_modified_edges[_boundary]]
                 _twin_edges_mask = (_twin_edges != -1)
                 _valid_edges = _modified_edges[_boundary][_twin_edges_mask]
-                print('Valid edges: ' + str(_valid_edges))
                 self._halfedges['twin'][_twin_edges[_twin_edges_mask]] = -1
                 self._halfedges['twin'][_valid_edges] = -1
 
