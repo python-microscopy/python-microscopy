@@ -172,12 +172,15 @@ class LazyScopeTweeter(object):
 
 
         # check that none of our conditions have been met
+        to_pop = []
         for ci, cond in enumerate(self.live_conditions):  # todo - prone to size changed during iteration?
             diff = self._get_count(cond['action_filter']) - cond['trigger_counts']
             if diff > 0 and cond['trigger_above']:
+                to_pop.append(ci)
                 self.scope_tweet(cond['message'])
 
-
+        for ci in to_pop:
+            self.live_conditions.pop(ci)
 
 
 
