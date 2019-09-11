@@ -193,6 +193,7 @@ class ActionPanel(wx.Panel):
         # a bit hackish for now.
         # TODO - this should probably be fixed by offsetting / fixing the Pyramid.x0 and Pyramid.y0 metadata parameters
         roi_offset = self.scope.GetPixelSize()[0]*self.scope.cam.GetPicHeight()/2.0
+        # fixme - make sure this isnt also accounted for in the viewer?
         
         for x, y in rois:
             args = {'state' : {'Positioning.x': float(x) - roi_offset, 'Positioning.y': float(y) - roi_offset}}
@@ -224,4 +225,3 @@ class ActionPanel(wx.Panel):
         
 
 
-   
