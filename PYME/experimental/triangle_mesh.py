@@ -1652,7 +1652,7 @@ class TriangleMesh(object):
         self._faces[_faces] = -1
 
         # Mark deleted faces as available
-        # self._vertex_vacancies.extend(_vertices)
+        self._vertex_vacancies = list(set(self._vertex_vacancies).union(set(_vertices)))
         self._halfedge_vacancies.extend(_edges)
         self._face_vacancies.extend(_faces)
         
