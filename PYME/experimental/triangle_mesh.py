@@ -1429,7 +1429,7 @@ class TriangleMesh(object):
                 Target number of triangles in the downsampled mesh.
         """
 
-        from PYME.experimental import treap
+        import PYME.experimental._treap as treap
 
         # 1. Compute quadratic matrices for all initial vertices
         v = self._vertices['position']

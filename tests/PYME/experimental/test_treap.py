@@ -1,5 +1,5 @@
 def test_insert():
-    from PYME.experimental import treap
+    import PYME.experimental._treap as treap
     import random
 
     h = treap.Treap()

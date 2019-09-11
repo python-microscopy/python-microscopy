@@ -116,7 +116,7 @@ class Treap(object):
 
         Parameters
         ----------
-            prioirty : float
+            priority : float
                 Priority of this node
             key : int
                 Searchable key for this node
@@ -238,7 +238,7 @@ class Treap(object):
 
         Returns
         ----------
-            prioirty : float
+            priority : float
                 Priority of smallest node
             key : int
                 Searchable key of smllest node
@@ -253,7 +253,7 @@ class Treap(object):
 
         Returns
         ----------
-            prioirty : float
+            priority : float
                 Priority of smallest node
             key : int
                 Searchable key of smllest node
