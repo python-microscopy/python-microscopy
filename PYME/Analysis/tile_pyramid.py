@@ -4,6 +4,10 @@ import os
 import glob
 import collections
 import time
+import six
+import logging
+
+logger = logging.getLogger(__name__)
 
 CacheEntry = collections.namedtuple('CacheEntry', ['data', 'saved'])
 
@@ -63,7 +67,7 @@ class TileCache(object):
             self._save(filename, item.data)
             
     def flush(self):
-        for filename, item  in self._cache.items():
+        for filename, item  in list(self._cache.items()):
             if not item.saved:
                 self._save(filename, item.data)
                 self._cache[filename] = CacheEntry(data=item.data, saved=True)
@@ -184,6 +188,15 @@ class PZFTileIO(NumpyTileIO):
         self._tilecache = PZFTileCache()
         self._coords = {}
         
+
+if six.PY2:
+    def blob(data):
+        return buffer(data)
+else:
+    #Py3k
+    def blob(data):
+        return bytes(data)
+
 class SqliteTileIO(TileIO):
     def __init__(self, base_dir, suff='img'):
         import sqlite3
@@ -210,7 +223,6 @@ class SqliteTileIO(TileIO):
     
     def save_tile(self, layer, x, y, data):
         from PYME.IO import PZFFormat
-        import sqlite3
         table = 'layer%d' % layer
         
         if not table in self._known_tables:
@@ -218,7 +230,7 @@ class SqliteTileIO(TileIO):
             self._cur.execute('CREATE INDEX %s ON %s (x,y)' % ('idx_' + table, table))
             self._known_tables.append(table)
         
-        self._cur.execute('INSERT INTO %s VALUES (?,?,?)' % table, (x,y,buffer(PZFFormat.dumps(data.astype('float32')))))
+        self._cur.execute('INSERT INTO %s VALUES (?,?,?)' % table, (x,y,blob(PZFFormat.dumps(data.astype('float32')))))
         
     def delete_tile(self, layer, x, y):
         self._cur.execute('DELETE FROM layer%d WHERE x=? AND y=?' % layer, (x, y))
@@ -302,7 +314,7 @@ class ImagePyramid(object):
                     (j * self.tile_size):((j + 1) * self.tile_size)] = subtile
                     
         return new_tile
-        print('Making layer %d' % (inputLevel+1))
+        logger.debug('Making layer %d' % (inputLevel+1))
     
     def get_layer_tile_coords(self, level):
         return self._imgs.get_layer_tile_coords(level)
@@ -387,7 +399,7 @@ class ImagePyramid(object):
         mdh['Pyramid.NTilesX'] = self.n_tiles_x
         mdh['Pyramid.NTilesY'] = self.n_tiles_y
         mdh['Pyramid.PixelsX'] = self.n_tiles_x * self.tile_size
-        mdh['Pyramid.PixelsY'] = self.n_tiles_x * self.tile_size
+        mdh['Pyramid.PixelsY'] = self.n_tiles_y * self.tile_size
         
         return mdh
     
@@ -517,9 +529,9 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
     else:
         offset = 0.
 
-    P = ImagePyramid(out_folder, pyramid_tile_size, x0 = x0, y0 = y0, pixel_size=mdh.getEntry('voxelsize.x'))
-    
-    print('Adding base tiles ...')
+    P = ImagePyramid(out_folder, pyramid_tile_size, x0=x0, y0=y0, pixel_size=mdh.getEntry('voxelsize.x'))
+
+    logger.debug('Adding base tiles ...')
     
     t1 = time.time()
     for i in range(int(mdh.getEntry('Protocol.DataStartsAt')), numFrames):
@@ -548,13 +560,13 @@ def tile_pyramid(out_folder, ds, xm, ym, mdh, split=False, skipMoveFrames=False,
                 
     
     t2 = time.time()
-    print('Added base tiles in %fs' % (t2 - t1))
+    logger.debug('Added base tiles in %fs' % (t2 - t1))
     #P._occ.flush()
-    print(time.time() - t2)
-    print('Updating pyramid ...')
+    logger.debug(time.time() - t2)
+    logger.debug('Updating pyramid ...')
     P.update_pyramid()
-    print(time.time() - t2)
-    print('Done')
+    logger.debug(time.time() - t2)
+    logger.debug('Done')
     return P
 
 def create_pyramid_from_dataset(filename, outdir, tile_size=128, **kwargs):
@@ -581,7 +593,7 @@ if __name__ == '__main__':
     import time
     t1 = time.time()
     create_pyramid_from_dataset(input_stack, output_dir)
-    print(time.time() - t1)
+    logger.debug(time.time() - t1)
     #mProfile.report()
     
     

@@ -50,7 +50,7 @@ def _getTaskQueueURI(n_retries=2):
     except KeyError:
         #if there is no local distributor, choose one at random
         logging.info('no local rule server, choosing one at random')
-        return random.choice(queueURLs.values())
+        return random.choice(list(queueURLs.values()))
 
 def verify_cluster_results_filename(resultsFilename):
     """
@@ -182,7 +182,7 @@ class HTTPRulePusher(object):
         clusterResults.fileResults(self.resultsURI + '/Events', self.ds.getEvents())
 
         # set up metadata file which is used for deciding how to launch the analysis
-        clusterIO.putFile(resultsMDFilename, self.mdh.to_JSON(), serverfilter=serverfilter)
+        clusterIO.putFile(resultsMDFilename, self.mdh.to_JSON().encode(), serverfilter=serverfilter)
         
         #wait until clusterIO caches clear to avoid replicating the results file.
         #time.sleep(1.5) #moved inside polling thread so launches will run quicker

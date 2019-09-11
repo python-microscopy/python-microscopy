@@ -335,18 +335,7 @@ class AndorBase(SDK3Camera):
     def GetCCDHeight(self): 
         return self.SensorHeight.getValue()
     
-    def SetHorizBin(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetHorizBin(*args):
-        return 0
-        #raise Exception, 'Not implemented yet!!'
-    def GetHorzBinValue(*args): 
-        raise Exception('Not implemented yet!!')
-    def SetVertBin(*args): 
-        raise Exception('Not implemented yet!!')
-    def GetVertBin(*args):
-        return 0
-        #raise Exception, 'Not implemented yet!!'
+
     def GetNumberChannels(*args): 
         raise Exception('Not implemented yet!!')
     
@@ -359,8 +348,6 @@ class AndorBase(SDK3Camera):
         
         return self._temp
     
-    def CamReady(*args): 
-        return True
     
     def GetPicWidth(self): 
         return self.AOIWidth.getValue()

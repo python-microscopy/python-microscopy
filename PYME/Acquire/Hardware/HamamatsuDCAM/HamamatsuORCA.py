@@ -120,11 +120,14 @@ class HamamatsuORCA(HamamatsuDCAM):
         self._last_framestamp = None
         self._last_camerastamp = None
         self._last_timestamp = None
+        
+        self._frameRate = 0
 
         # initialize other properties needed
         self.external_shutter = None
 
     def Init(self):
+        logger.debug('Initializing Hamamatsu Orca')
         HamamatsuDCAM.Init(self)
         if self.camNum < camReg.maxCameras:
             self.noiseProps = noiseProperties[self.GetSerialNumber()]
@@ -143,8 +146,8 @@ class HamamatsuORCA(HamamatsuDCAM):
             logger.debug('Hamamatsu Orca initialized')
 
 
-    @property
-    def _intTime(self):
+    
+    def GetIntegTime(self):
         return self.getCamPropValue('EXPOSURE TIME')
 
     def setDefectCorrectMode(self, on=False):
@@ -238,6 +241,8 @@ class HamamatsuORCA(HamamatsuDCAM):
             self.setCamPropValue('SUBARRAY MODE', DCAMPROP_MODE__OFF)
         else:
             self.setCamPropValue('SUBARRAY MODE', DCAMPROP_MODE__ON)
+
+        logger.debug('ROI set: x0 %3.1f, y0 %3.1f, w %3.1f, h %3.1f' % (x1, y1, w, h))
 
     def GetROIX1(self):
         return int(self.getCamPropValue('SUBARRAY HPOS'))
@@ -377,16 +382,32 @@ class HamamatsuORCA(HamamatsuDCAM):
 
     def CamReady(self):
         return self.initialized
+    
+    def GetNoiseProperties(self):
+        return self.noiseProps
+    
+    def GetCCDTemp(self):
+        # FIXME - actually read the CCD temperature
+        return 0
+    
+    def GetFPS(self):
+        return self._frameRate
 
-    def GetStatus(self):
-        # This is to shut the command line the hell up.
-        pass
+    def GetCycleTime(self):
+        """
+        Get camera cycle time (1/fps) in seconds (float)
 
-    def GetReadNoise(self):
-        return self.noiseProps['ReadNoise']
-
-    def GetElectrPerCount(self):
-        return self.noiseProps['ElectronsPerCount']
+        Returns
+        -------
+        float
+            Camera cycle time (seconds)
+        """
+        #FIXME - raise NotImplemeted?
+    
+        if self._frameRate > 0:
+            return 1.0 / self._frameRate
+    
+        return 0.0
 
     def GetName(self):
         return "Hamamatsu ORCA Flash 4.0"

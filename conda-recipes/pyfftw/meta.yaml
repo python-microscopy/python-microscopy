@@ -28,4 +28,4 @@ test:
 about:
   home: https://github.com/pyFFTW
   license: GPL
-  license_file: license.txt
+  #license_file: license.txt

@@ -100,13 +100,8 @@ class iXonCamera(Camera):
 
 
     def __init__(self, boardNum=0):
-#        self.noiseProps = {
-#        'ReadNoise' : 109.8,
-#        'ElectronsPerCount' : 27.32,
-#        'NGainStages' : 536,
-#        'ADOffset' : 971,
-#        'SaturationThreshold' : (2**14 -1)
-#        }
+        Camera.__init__(self)
+        
         self.initialised = False
         self.active = False
 
@@ -118,10 +113,9 @@ class iXonCamera(Camera):
 
         self.__selectCamera()
 
-        
 
         #register as a provider of metadata
-        MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
+        #MetaDataHandler.provideStartMetadata.append(self.GenStartMetadata)
 
         #initialise the camera - n.b. this take ~2s
 
@@ -317,46 +311,7 @@ class iXonCamera(Camera):
 #
 #            
 #    def GetContinuousMode(self):
-#        return self.contMode    
-    
-    def GetCamType(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetDataType(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetADBits(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetMaxDigit(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetNumberCh(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetBytesPerPoint(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetCCDType(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetCamID(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetCamVer(*args):
-        raise Exception('Not implemented yet!!')
-
-    def SetTrigMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetTrigMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def SetDelayTime(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetDelayTime(*args):
-        raise Exception('Not implemented yet!!')
+#        return self.contMode
 
     def SetPreampGain(self, gain):
         self.__selectCamera()
@@ -384,24 +339,6 @@ class iXonCamera(Camera):
 
         return float(exp.value)
 
-    def SetROIMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetROIMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def SetCamMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetCamMode(*args):
-        raise Exception('Not implemented yet!!')
-
-    def SetBoardNum(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetBoardNum(*args):
-        raise Exception('Not implemented yet!!')
-
     def GetCCDWidth(self):
         return self.CCDSize[0]
 
@@ -416,13 +353,11 @@ class iXonCamera(Camera):
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
         #raise Exception, 'Not implemented yet!!'
+        
+    def SetHorizontalBin(self, value):
+        self.SetHorizBin(value)
 
-    def GetHorizBin(self):
-        return self.binning
-        #raise Exception, 'Not implemented yet!!'
-
-    def GetHorzBinValue(self, *args):
-        #raise Exception, 'Not implemented yet!!'
+    def GetHorizontalBin(self, *args):
         return self.binX
 
     def SetVertBin(self, val):
@@ -432,21 +367,13 @@ class iXonCamera(Camera):
         ret = ac.SetImage(self.binX,self.binY,self.ROIx[0],self.ROIx[1],self.ROIy[0],self.ROIy[1])
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
-        #raise Exception, 'Not implemented yet!!'
 
-    def GetVertBin(*args):
-        return 0
-        #raise Exception, 'Not implemented yet!!'
+    def SetVerticalBin(self, value):
+        self.SetVertBin(value)
 
-    def GetVertBinValue(self, *args):
-        #raise Exception, 'Not implemented yet!!'
+    def GetVerticalBin(self):
         return self.binY
 
-    def GetNumberChannels(*args):
-        raise Exception('Not implemented yet!!')
-
-    def GetElectrTemp(*args):
-        return 25
 
     def GetCCDTemp(self):
         return self.CCDTemp
@@ -513,35 +440,19 @@ class iXonCamera(Camera):
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
 
-        #raise Exception, 'Not implemented yet!!'
-
     def GetROIX1(self):
         return self.ROIx[0]
-        #raise Exception, 'Not implemented yet!!'
 
     def GetROIX2(self):
         return self.ROIx[1]
-        #raise Exception, 'Not implemented yet!!'
 
     def GetROIY1(self):
         return self.ROIy[0]
-        #raise Exception, 'Not implemented yet!!'
 
     def GetROIY2(self):
         return self.ROIy[1]
-        #raise Exception, 'Not implemented yet!!'
 
-    def DisplayError(*args):
-        pass
 
-    def Init(*args):
-        pass
-
-    def GetStatus(*args):
-        pass
-
-    def SetCOC(*args):
-        pass
 
     def StartExposure(self):
         self.__selectCamera()
@@ -591,15 +502,12 @@ class iXonCamera(Camera):
         #ret = ac.GetAcquiredData16(cast(c_void_p(int(chSlice)), POINTER(c_ushort)), self.GetPicWidth()*self.GetPicHeight())
 
         dt = ac.GetOldestImage16.argtypes[0]
-
         ret = ac.GetOldestImage16(cast(c_void_p(int(chSlice)), dt), self.GetPicWidth()*self.GetPicHeight())
 
         #print self.GetPicWidth()*self.GetPicHeight()
         if not ret == ac.DRV_SUCCESS:
             print(('Error getting image from camera: %s' % ac.errorCodes[ret]))
 
-    def CheckCoordinates(*args):
-        raise Exception('Not implemented yet!!')
 
     def StopAq(self):
         self.__selectCamera()
@@ -780,10 +688,6 @@ class iXonCamera(Camera):
         hm = create_string_buffer(255)
         ac.GetHeadModel(hm)
         return hm.value
-
-    def SetActive(self, active=True):
-        """flag the camera as active (or inactive) to dictate whether it writes it's metadata or not"""
-        self.active = active
 
     def GenStartMetadata(self, mdh):
         if self.active: #we are active -> write metadata

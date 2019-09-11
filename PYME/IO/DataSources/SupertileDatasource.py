@@ -51,7 +51,8 @@ class DataSource(BaseDataSource):
         self.mdh['voxelsize.x'] = self.mdh['Pyramid.PixelSize']*(2**self.level)
         self.mdh['voxelsize.y'] = self.mdh['voxelsize.x']
 
-        self._pyr = ImagePyramid(self.tile_base, pyramid_tile_size=self.mdh['Pyramid.TileSize'])
+        self._pyr = ImagePyramid(self.tile_base, pyramid_tile_size=self.mdh['Pyramid.TileSize'],
+                                 x0=self.mdh['Pyramid.x0'], y0=self.mdh['Pyramid.y0'])
         
         self.tile_size = self._pyr.tile_size*(self.stride + self.overlap)
 
@@ -76,7 +77,9 @@ class DataSource(BaseDataSource):
     def tile_coords_um(self):
         px_size = self.mdh['voxelsize.x']
         
-        return px_size*self._pyr.tile_size*self.tile_coords
+        p0 = np.array([self.mdh['Pyramid.x0'], self.mdh['Pyramid.y0']])
+        
+        return px_size*self._pyr.tile_size*self.tile_coords + p0[None,:]
         
     
     def getSlice(self, ind):

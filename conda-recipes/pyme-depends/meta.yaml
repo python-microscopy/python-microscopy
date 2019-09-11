@@ -117,8 +117,8 @@ requirements:
   # Packages required to build the package. python and numpy must be
   # listed explicitly if they are required.
   build:
-    - python
-    - numpy x.x
+    - python {{ python }}
+    - numpy {{ numpy }}
   #  - matplotlib
     #- mingw  [win]
   # Packages required to run the package. These are the dependencies that
@@ -126,8 +126,8 @@ requirements:
   # Package names should be any valid conda spec (see "Specifying versions
   # in requirements" below).
   run:
-    - python
-    - numpy x.x
+    - python {{ python }}
+    - numpy {{ numpy }}
     - scipy
     - matplotlib
     - wxpython  <3.9 [py2k]
@@ -159,7 +159,8 @@ requirements:
     #FIXME for py3k
     - shapely [osx and py2k]
 
-    - zeroconf 0.17.7
+    - zeroconf 0.17.7 [py2k]
+    - zeroconf [py3k] #this might be too permissive
     - requests
     - pandas
     - pyyaml

@@ -23,8 +23,6 @@
 
 import tables
 from PYME.IO import MetaDataHandler
-
-import Pyro.core
 import os
 import time
 
@@ -68,6 +66,8 @@ class Spooler(sp.Spooler):
 #            taskQueueName = os.environ['PYME_TASKQUEUENAME']
 #       else:
 #            taskQueueName = 'taskQueue'
+        import Pyro.core
+
         from PYME.misc.computerName import GetComputerName
         compName = GetComputerName()
 

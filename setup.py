@@ -22,28 +22,35 @@ def configuration(parent_package='',top_path=None):
     config.get_version('PYME/version.py')
     return config
 
-entry_points={
-    'console_scripts': [
-        'PYMEBatch = PYME.Analysis.Modules.batchProcess:main',
-        'taskServerZC = PYME.ParallelTasks.taskServerZC:main',
-        'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
-        'PYMEDataServer = PYME.cluster.HTTPDataServer:main',
-        'PYMEClusterDup = PYME.io.clusterDuplication:main',
-        #'PYMEDistributor = PYME.ParallelTasks.PYMEDistributor:main',
-        'PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main',
-        #'PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main',
-        'dh5view = PYME.DSView.dsviewer:main',
-        'PYMEAcquire = PYME.Acquire.PYMEAcquire:main',
-        'VisGUI = PYME.LMVis.VisGUI:main',
-        'launchWorkers = PYME.ParallelTasks.launchWorkers:main',
-        #'taskServerZC = PYME.ParallelTasks.taskServerZC:main',
-        #'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
-        'fitMonP = PYME.ParallelTasks.fitMonP:main',
-        'bakeshop = PYME.recipes.bakeshop:main',
-        'PYMERuleServer = PYME.cluster.PYMERuleServer:main',
-        'PYMERuleNodeServer = PYME.cluster.PYMERuleNodeServer:main',
-    ]
-}
+import yaml
+import os
+with open(os.path.join(os.path.dirname(__file__), 'conda-recipes', 'python-microscopy', 'entry_points.yaml')) as f:
+    ep = yaml.load(f)['entry_points']
+
+entry_points={'console_scripts':ep}
+
+# entry_points={
+#     'console_scripts': [
+#         'PYMEBatch = PYME.recipes.batchProcess:main',
+#         'taskServerZC = PYME.ParallelTasks.taskServerZC:main',
+#         'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
+#         'PYMEDataServer = PYME.cluster.HTTPDataServer:main',
+#         'PYMEClusterDup = PYME.io.clusterDuplication:main',
+#         #'PYMEDistributor = PYME.ParallelTasks.PYMEDistributor:main',
+#         'PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main',
+#         #'PYMENodeServer = PYME.ParallelTasks.PYMENodeServer:main',
+#         'dh5view = PYME.DSView.dsviewer:main',
+#         'PYMEAcquire = PYME.Acquire.PYMEAcquire:main',
+#         'VisGUI = PYME.LMVis.VisGUI:main',
+#         'launchWorkers = PYME.ParallelTasks.launchWorkers:main',
+#         #'taskServerZC = PYME.ParallelTasks.taskServerZC:main',
+#         #'taskWorkerZC = PYME.ParallelTasks.taskWorkerZC:main',
+#         'fitMonP = PYME.ParallelTasks.fitMonP:main',
+#         'bakeshop = PYME.recipes.bakeshop:main',
+#         'PYMERuleServer = PYME.cluster.PYMERuleServer:main',
+#         'PYMERuleNodeServer = PYME.cluster.PYMERuleNodeServer:main',
+#     ]
+# }
 
 if __name__ == '__main__':
     import setuptools

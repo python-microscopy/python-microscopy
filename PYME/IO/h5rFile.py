@@ -18,11 +18,15 @@ file_cache = {}
 openLock = threading.Lock()
 
 def openH5R(filename, mode='r'):
-    key = (filename, mode)
+    key = filename
     
     with openLock:
         if key in file_cache and file_cache[key].is_alive:
-            return file_cache[key]
+            f = file_cache[key]
+            if f.mode == 'r' and not mode == 'r':
+                raise IOError('File already open in read-only mode, mode %s requested' % mode)
+            else:
+                return f
         else:
             file_cache[key] = H5RFile(filename, mode)
             return file_cache[key]

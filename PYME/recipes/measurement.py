@@ -8,14 +8,15 @@ Created on Mon May 25 17:10:02 2015
 """
 from .base import ModuleBase, register_module, Filter
 from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List
-
 import numpy as np
 import pandas as pd
 from PYME.IO import tabular
 from PYME.IO import MetaDataHandler
 import os
-
 from six.moves import xrange
+import logging
+
+logger = logging.getLogger(__name__)
 
 @register_module('MultifitBlobs') 
 class MultifitBlobs(ModuleBase):
@@ -596,7 +597,7 @@ class Measure2D(ModuleBase):
                 #print key, sl
                     
                 if not key in self._keys:
-                    raise RuntimeError('Key not defined')
+                    raise KeyError("'%s' key not defined" % key)
                 
                 if key == 't':
                     return np.array(self.frameNos[sl])
@@ -786,8 +787,8 @@ class TilePhysicalCoords(ModuleBase):
         x_frame_um, y_frame_um =img.data.tile_coords_um[meas['t']].T
         x_frame_px, y_frame_px = img.data.tile_coords[meas['t']].T
         
-        out.addColumn('x_um', x_frame_um + img.mdh['voxelsize.x']*meas['x'])
-        out.addColumn('y_um', y_frame_um + img.mdh['voxelsize.y']*meas['y'])
+        out.addColumn('x_um', x_frame_um + 1e-3*meas['x'])
+        out.addColumn('y_um', y_frame_um + 1e-3*meas['y'])
 
         out.addColumn('x_px', x_frame_px + meas['x'])
         out.addColumn('y_px', y_frame_px + meas['y'])
@@ -797,5 +798,195 @@ class TilePhysicalCoords(ModuleBase):
         namespace[self.outputName] = out
 
 
+@register_module('FilterOverlappingROIs')
+class FilterOverlappingROIs(ModuleBase):
+    """
+
+    Filter input ROI positions such that ROIs of a given size will not overlap. Output maintains all points, but with
+    the addition of a column indicating whether the point has been rejected due to overlap or not.
+
+    Parameters
+    ----------
+    input : Input
+        PYME.IO.tabular containing x and y coordinates. Compatible with measurement output for Supertile coordinates,
+        e.g. 'x_um'
+    roi_size_pixels: Int
+        Size of ROI to be used in calculating overlap.
+    reject_key: CStr
+        Name of column to add to output datasource encoding whether a point has been rejected due to overlap (1) or
+        kept (0).
+    output: Output
+        PYME.IO.tabular
+
+    Notes
+    -----
+    Currently roi overlap is defined as being within sqrt(2) * roi_size. Obviously two square ROIs can be roi_size + 1
+    away from each other and not overlap if they are arranged correctly, so the current check is a little more happy-to-
+    toss points then it could be.
+
+    """
+    input = Input('input')
+    roi_size_pixels = Int(256)
+    reject_key = CStr('rejected')
+    output = Output('cluster_metrics')
+
+    def execute(self, namespace):
+        from scipy.spatial import KDTree
+
+        points = namespace[self.input]
+
+        try:
+            positions = np.stack([points['x_um'], points['y_um']], axis=1)
+        except KeyError:
+            positions = np.stack([points['x'], points['y']], axis=1) / 1e3  # assume x and y were in [nanometers]
+
+        tree = KDTree(positions)
+
+        far_flung = np.sqrt(2) * points.mdh['voxelsize.x'] * self.roi_size_pixels  # [micrometers]
+        neighbors = tree.query_ball_tree(tree, r=far_flung, p=2)
+
+        tossing = set()
+        for ind, close in enumerate(neighbors):
+            # ignore points we've already decided to reject
+            if ind not in tossing and len(close) > 1:
+                # reject points too close to our current indexed point
+                # TODO - don't reject points inside of this cirdular radius if their square ROIs don't actually overlap
+                close.remove(ind)
+                tossing.update(close)
+
+        out = tabular.mappingFilter(points)
+        reject = np.zeros(tree.n, dtype=int)
+        reject[list(tossing)] = 1
+        out.addColumn(self.reject_key, reject.astype(int))
+
+        try:
+            out.mdh = points.mdh
+        except AttributeError:
+            pass
+
+        namespace[self.output] = out
+
+
+@register_module('ChunkedTravelingSalesperson')
+class ChunkedTravelingSalesperson(ModuleBase):
+    """
+
+    Optimize route visiting each position in an input dataset exactly once, starting from the last point in the input.
+    2-opt algorithm is used, and points are chunked (very) roughly into a grid based on an assumption of uniform density
+    and the points_per_chunk argument. After the chunks are individually optimized, a modified two-opt algorithm is run
+    on the section end-points, so section order can be optimized as well as whether sections are traversed forwards or
+    backwards.
+
+    Parameters
+    ----------
+    input : Input
+        PYME.IO.tabular containing x and y coordinates. Compatible with measurement output for Supertile coordinates,
+        e.g. 'x_um'
+    epsilon: Float
+        Relative improvement threshold used to stop algorithm when gains become negligible
+    points_per_chunk: Int
+        Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
+        ideal paths, but much larger computational complexity.
+    n_processes: Int
+        Number of processes to split the chunk tasks among. Setting of zero defaults to using one process per CPU core.
+    output: Output
+        PYME.IO.tabular
+
+    """
+    input = Input('input')
+    epsilon = Float(0.001)
+    points_per_chunk = Int(500)
+    n_processes = Int(0)
+    output = Output('sorted')
+
+    def execute(self, namespace):
+        from PYME.localization import traveling_salesperson
+
+        points = namespace[self.input]
+
+        try:
+            positions = np.stack([points['x_um'], points['y_um']], axis=1)
+        except KeyError:
+            positions = np.stack([points['x'], points['y']], axis=1) / 1e3
+
+        final_route = traveling_salesperson.tsp_chunk_two_opt_multiproc(positions, self.epsilon, self.points_per_chunk,
+                                                                        self.n_processes)
+
+        # note that we sorted the positions / sections once before, need to propagate that through before sorting
+        out = tabular.mappingFilter({k: points[k][final_route] for k in points.keys()})
+        out.mdh = MetaDataHandler.NestedClassMDHandler()
+        try:
+            out.mdh.copyEntriesFrom(points.mdh)
+        except AttributeError:
+            pass
+
+        # use the already sorted output to get the final distance
+        try:
+            og_distance = np.sqrt((points['x_um'][1:] - points['x_um'][:-1]) ** 2 + (points['y_um'][1:] - points['y_um'][:-1]) ** 2).sum()
+            final_distance = np.sqrt((out['x_um'][1:] - out['x_um'][:-1]) ** 2 + (out['y_um'][1:] - out['y_um'][:-1]) ** 2).sum()
+        except KeyError:
+            og_distance = np.sqrt((points['x'][1:] - points['x'][:-1]) ** 2 + (points['y'][1:] - points['y'][:-1]) ** 2).sum() / 1e3
+            final_distance = np.sqrt((out['x'][1:] - out['x'][:-1]) ** 2 + (out['y'][1:] - out['y'][:-1]) ** 2).sum() / 1e3
+
+        out.mdh['TravelingSalesperson.OriginalDistance'] = og_distance
+        out.mdh['TravelingSalesperson.Distance'] = final_distance
+
+        namespace[self.output] = out
+
+
+
+
+@register_module('TravelingSalesperson')
+class TravelingSalesperson(ModuleBase):
+    """
+
+    Optimize route visiting each position in an input dataset exactly once, starting from the last point in the input.
+    2-opt algorithm is used.
+
+    Parameters
+    ----------
+    input : Input
+        PYME.IO.tabular containing x and y coordinates. Compatible with measurement output for Supertile coordinates,
+        e.g. 'x_um'
+    epsilon: Float
+        Relative improvement threshold used to stop algorithm when gains become negligible
+    output: Output
+        PYME.IO.tabular
+
+
+    """
+    input = Input('input')
+    epsilon = Float(0.001)
+    output = Output('sorted')
+
+    def execute(self, namespace):
+        from PYME.localization import traveling_salesperson
+        from scipy.spatial import distance_matrix
+
+        points = namespace[self.input]
+
+        try:
+            positions = np.stack([points['x_um'], points['y_um']], axis=1)
+        except KeyError:
+            # units don't matter for these calculations, but we want to preserve them on the other side
+            positions = np.stack([points['x'], points['y']], axis=1) / 1e3
+
+        distances = distance_matrix(positions, positions)
+
+
+        route, best_distance, og_distance = traveling_salesperson.two_opt(distances, self.epsilon)
+
+        # plot_path(positions, route)
+        out = tabular.mappingFilter({'x_um': positions[:, 0][route],
+                                     'y_um': positions[:, 1][route]})
+        out.mdh = MetaDataHandler.NestedClassMDHandler()
+        try:
+            out.mdh.copyEntriesFrom(points.mdh)
+        except AttributeError:
+            pass
+        out.mdh['TravelingSalesperson.Distance'] = best_distance
+        out.mdh['TravelingSalesperson.OriginalDistance'] = og_distance
+
+        namespace[self.output] = out
 
 

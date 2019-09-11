@@ -5,6 +5,7 @@ Created on Sat May 28 23:55:50 2016
 @author: david
 """
 import wx
+import numpy as np
 
 class ActionList(wx.ListCtrl):
     def __init__(self, parent, actionManager, pos=wx.DefaultPosition,
@@ -21,7 +22,7 @@ class ActionList(wx.ListCtrl):
         
         self.SetColumnWidth(0, 50)
         self.SetColumnWidth(1, 150)
-        self.SetColumnWidth(2, 300)
+        self.SetColumnWidth(2, 450)
         self.SetColumnWidth(3, 50)
 
 
@@ -84,17 +85,30 @@ class ActionPanel(wx.Panel):
 
         hsizer.AddStretchSpacer()
 
+        vsizer.Add(hsizer, 0, wx.EXPAND, 0)
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.rbNoSteps = wx.RadioButton(self, -1, '2D', style=wx.RB_GROUP)
+        hsizer.Add(self.rbNoSteps, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+        self.rbZStepped = wx.RadioButton(self, -1, 'Z stepped')
+        hsizer.Add(self.rbZStepped, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 2)
+
+        self.rbNoSteps.SetValue(True)
+        
+        hsizer.AddStretchSpacer()
+
         hsizer.Add(wx.StaticText(self, -1, 'Num frames: '), 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
 
         self.tNumFrames = wx.TextCtrl(self, -1, '10000', size=(50, -1))
         hsizer.Add(self.tNumFrames, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
+        
+        hsizer.AddStretchSpacer()
 
         self.bAddAquisition = wx.Button(self, -1, 'Add acquisition')
         self.bAddAquisition.Bind(wx.EVT_BUTTON, self.OnAddSequence)
         hsizer.Add(self.bAddAquisition, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
 
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
-
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self.bQueueROIsFromFile = wx.Button(self, -1, 'Queue ROIs from file')
@@ -154,19 +168,36 @@ class ActionPanel(wx.Panel):
     def OnAddSequence(self, event):
         nice = float(self.tNice.GetValue())
         functionName = 'spoolController.StartSpooling'
-        args = {'maxFrames' : int(self.tNumFrames.GetValue())}
+        args = {'maxFrames' : int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
         timeout = float(self.tTimeout.GetValue())
         self.actionManager.QueueAction(functionName, args, nice, timeout)
         
     
     def _add_ROIs(self, rois):
+        """
+        Add ROIs to queue, staggering their positioning and spooling actions
+
+        Parameters
+        ----------
+        rois: list-like
+            list of ROI (x, y) positions, or array of shape (n_roi, 2)
+
+        Returns
+        -------
+
+        """
         nice = float(self.tNice.GetValue())
         timeout = float(self.tTimeout.GetValue()) #CHECKME - default here might be too short
         
-        for roi in rois:
-            args = {'state' : {'Positioning.x': float(roi['x']), 'Positioning.y': float(roi['y'])}}
+        # coordinates are for the centre of ROI - find the top-left corner
+        # a bit hackish for now.
+        # TODO - this should probably be fixed by offsetting / fixing the Pyramid.x0 and Pyramid.y0 metadata parameters
+        roi_offset = self.scope.GetPixelSize()[0]*self.scope.cam.GetPicHeight()/2.0
+        
+        for x, y in rois:
+            args = {'state' : {'Positioning.x': float(x) - roi_offset, 'Positioning.y': float(y) - roi_offset}}
             self.actionManager.QueueAction('state.update', args, nice, timeout)
-            args = {'maxFrames': int(self.tNumFrames.GetValue())}
+            args = {'maxFrames': int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
             self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
     
     def OnROIsFromFile(self, event):
@@ -177,7 +208,7 @@ class ActionPanel(wx.Panel):
         if not filename == '':
             rois = tabular.hdfSource(filename, tablename='roi_locations')
             
-            rois = [{'x' : x, 'y' :y } for x, y in zip(rois['x_um'], rois['y_um'])]
+            rois = [(x, y) for x, y in zip(rois['x_um'], rois['y_um'])]
             
             self._add_ROIs(rois)
     
@@ -187,8 +218,9 @@ class ActionPanel(wx.Panel):
         if resp.status_code != 200:
             raise requests.HTTPError('Could not get ROI locations')
 
-        roi_dict = resp.json()  #FIXME!!!  need to convert {'x':{}, 'y':{}} to list of dict
-        self._add_ROIs([dict(x=roi_dict['x'][ind], y=roi_dict['y'][ind]) for ind in sorted(roi_dict['x'].keys())])
+        rois = np.array(resp.json())
+        print(rois.shape)
+        self._add_ROIs(rois)
         
 
 

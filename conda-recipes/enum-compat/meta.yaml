@@ -9,7 +9,9 @@ source:
   git_url: https://github.com/jstasiak/enum-compat
 
 build:
-  script: python setup.py install --single-version-externally-managed --record=record.txt
+  #preserve_egg_dir: True
+  #script: python setup.py install --single-version-externally-managed --record=record.txt
+  #script: touch
 
 requirements:
   host:
@@ -18,7 +20,9 @@ requirements:
     - python
   run:
     - python
+    - enum34 [py2k]
 
 about:
+  #turing this into a conda virtual package
   home: github.com/jstasiak/enum-compat
   summary: This is a virtual package, its whole purpose is to install enum34 on Python older than 3.4. On Python 3.4+ it’s a no-op.

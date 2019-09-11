@@ -56,6 +56,8 @@ class ActionManager(object):
         
         self.onQueueChange = dispatch.Signal()
         
+        self._timestamp = 0
+        
     def QueueAction(self, functionName, args, nice=10, timeout=1e6):
         """Add an action to the queue
         
@@ -85,8 +87,11 @@ class ActionManager(object):
         curTime = time.time()    
         expiry = curTime + timeout
         
+        #make sure our timestamps strictly increment
+        self._timestamp = max(curTime, self._timestamp + 1e-3)
+        
         #ensure FIFO behaviour for events with the same priority
-        nice_ = nice + curTime*1e-10
+        nice_ = nice + self._timestamp*1e-10
         
         self.actionQueue.put_nowait((nice_, functionName, args, expiry))
         self.onQueueChange.send(self)

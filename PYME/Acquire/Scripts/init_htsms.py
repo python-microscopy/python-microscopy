@@ -38,7 +38,7 @@ def mz_stage(scope):
     # movement on the camera, and the y channel should result in vertical movement on the camera
     # multipliers should be set (+1 or -1) so that the direction also matches.
     scope.register_piezo(scope.stage, 'x', needCamRestart=False, channel=1, multiplier=1)
-    scope.register_piezo(scope.stage, 'y', needCamRestart=False, channel=0, multiplier=1)
+    scope.register_piezo(scope.stage, 'y', needCamRestart=False, channel=0, multiplier=-1)
 
     scope.joystick = MarzHauserJoystick(scope.stage)
     scope.joystick.Enable(True)
@@ -66,15 +66,24 @@ def pz(scope):
 def orca_cam(scope):
     from PYME.Acquire.Hardware.HamamatsuDCAM.HamamatsuORCA import MultiviewOrca
 
-    size = 240
+    # centers, (x [0, 2047], y [0, 400]), 2019/08/14
+    # [(291, 199),
+    # (857, 199),
+    # (1257, 199),
+    # (1795, 198)
+    # ]
+
+    size = 256
+    half_size = int(size / 2)
     multiview_info = {
         'Multiview.NumROIs': 4,
         'Multiview.ChannelColor': [0, 1, 1, 0],
-        'Multiview.ROISize': (size, size),
-        'Multiview.ROI0Origin': (104, 1024 - int(size / 2)),
-        'Multiview.ROI1Origin': (844, 1024 - int(size / 2)),
-        'Multiview.ROI2Origin': (1252, 1024 - int(size / 2)),
-        'Multiview.ROI3Origin': (1724, 1024 - int(size / 2)),
+        'Multiview.DefaultROISize': (size, size),
+        'Multiview.ROISizeOptions': [128, 240, 256, 352, 384],
+        'Multiview.ROI0Origin': (292 - half_size, 1024 - half_size),
+        'Multiview.ROI1Origin': (857 - half_size, 1024 - half_size),
+        'Multiview.ROI2Origin': (1257 - half_size, 1024 - half_size),
+        'Multiview.ROI3Origin': (1796 - half_size, 1024 - half_size),
     }
     cam = MultiviewOrca(0, multiview_info)
     cam.Init()
@@ -101,8 +110,6 @@ def orca_cam_controls(MainFrame, scope):
     # As it stands, we just use the default gain and readout settings.
     scope.camControls['HamamatsuORCA'] = wx.Panel(MainFrame)
     MainFrame.camPanels.append((scope.camControls['HamamatsuORCA'], 'ORCA Properties'))
-
-    # TODO - add a ROI / Views panel
 
     MainFrame.AddMenuItem('Camera', 'Set Multiview', lambda e: scope.state.setItem('Camera.Views', [0, 1, 2, 3]))
     MainFrame.AddMenuItem('Camera', 'Clear Multiview', lambda e: scope.state.setItem('Camera.Views', []))
@@ -270,13 +277,13 @@ def action_manager(MainFrame, scope):
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
 
-# @init_gui('Drift tracking')
-# def drift_tracking(MainFrame, scope):
-#     import subprocess
-#     import sys
-#     from PYME.Acquire import PYMEAcquire
-#     scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking" -m "compact"' % (sys.executable, PYMEAcquire.__file__), shell=True)
 
+@init_gui('Tiling')
+def action_manager(MainFrame, scope):
+    from PYME.Acquire.ui import tile_panel
+
+    ap = tile_panel.TilePanel(MainFrame, scope)
+    MainFrame.aqPanels.append((ap, 'Tiling'))
 
 #must be here!!!
 joinBGInit() #wait for anyhting which was being done in a separate thread

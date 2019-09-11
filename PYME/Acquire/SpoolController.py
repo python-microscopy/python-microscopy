@@ -34,6 +34,12 @@ import sys
 #import glob
 
 import subprocess
+import threading
+try:
+    import queue
+except ImportError:
+    # py2, remove this when we can
+    import Queue as queue
 
 import dispatch
 
@@ -76,8 +82,8 @@ class SpoolController(object):
         self.onSpoolProgress = dispatch.Signal()
         self.onSpoolStart = dispatch.Signal()
         self.onSpoolStop = dispatch.Signal()
-        
-        
+
+        self._analysis_launchers = queue.Queue(3)
         
     @property
     def _sep(self):
@@ -124,12 +130,15 @@ class SpoolController(object):
     def _checkOutputExists(self, fn):
         if self.spoolType == 'Cluster':
             from PYME.Acquire import HTTPSpooler
-            #special case for HTTP spooling
-            logger.debug('Looking for %s on cluster' % (self.dirname +'/'+ fn + '.pcs'))
-            return HTTPSpooler.exists(self.dirname + '/' + fn + '.pcs') or HTTPSpooler.exists(self.dirname + '/' + fn + '.h5')
+            # special case for HTTP spooling.  Make sure 000\series.pcs -> 000/series.pcs
+            pyme_cluster = self.dirname + '/' + fn.replace('\\', '/')
+            logger.debug('Looking for %s (.pcs or .h5) on cluster' % pyme_cluster)
+            return HTTPSpooler.exists(pyme_cluster + '.pcs') or HTTPSpooler.exists(pyme_cluster + '.h5')
             #return (fn + '.h5/') in HTTPSpooler.clusterIO.listdir(self.dirname)
         else:
-            return os.path.exists(os.sep.join([self.dirname, fn + '.h5']))
+            local_h5 = os.sep.join([self.dirname, fn + '.h5'])
+            logger.debug('Looking for %s on local machine' % local_h5)
+            return os.path.exists(local_h5)
         
     def get_free_space(self):
         """
@@ -157,11 +166,8 @@ class SpoolController(object):
     def SetSpoolDir(self, dirname):
         """Set the directory we're spooling into"""
         self._dirname = dirname + os.sep
-
         #if we've had to quit for whatever reason start where we left off
-        while self._checkOutputExists(self.seriesName):
-            self.seriesCounter +=1
-            self.seriesName = self._GenSeriesName()
+        self._update_series_counter()
             
     def _ProgressUpate(self, **kwargs):
         self.onSpoolProgress.send(self)
@@ -292,8 +298,25 @@ class SpoolController(object):
         if isinstance(self.spooler, QueueSpooler.Spooler): #queue or not
             subprocess.Popen('%s -q %s QUEUE://%s' % (dh5view_cmd, self.spooler.tq.URI, self.queueName), shell=True)
         elif isinstance(self.spooler, HTTPSpooler.Spooler): #queue or not
-            subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.getURL()), shell=True) 
+            if self.autostart_analysis:
+                # launch analysis in a separate thread
+                t = threading.Thread(target=self.launch_cluster_analysis)
+                t.start()
+                # keep track of a couple launching threads to make sure they have ample time to finish before joining
+                if self._analysis_launchers.full():
+                    self._analysis_launchers.get().join()
+                self._analysis_launchers.put(t)
+            else:
+                subprocess.Popen('%s %s' % (dh5view_cmd, self.spooler.getURL()), shell=True)
+     
+    def launch_cluster_analysis(self):
+        from PYME.cluster import HTTPRulePusher
         
+        seriesName = self.spooler.getURL()
+        try:
+            HTTPRulePusher.launch_localize(self.scope.analysisSettings.analysisMDH, seriesName)
+        except:
+            logger.exception('Error launching analysis for %s' % seriesName)
 
 
     def SetProtocol(self, protocolName=None, reloadProtocol=True):
@@ -328,4 +351,9 @@ class SpoolController(object):
         """
         self.spoolType = method
         self._update_series_counter()
+
+    def __del__(self):
+        # make sure our analysis launchers have a chance to finish their job before exiting
+        while not self._analysis_launchers.empty():
+            self._analysis_launchers.get().join()
 

@@ -503,24 +503,25 @@ class PYMEMainFrame(AUIFrame):
    
 
     def OnMCamBin(self, event):
+        logging.debug('Stopping frame wrangler to set ROI')
         self.scope.frameWrangler.stop()
-        if (self.bin_on):
-            self.scope.cam.SetHorizBin(1)
-            self.scope.cam.SetVertBin(1)
-            #self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMBIN, 'Turn Binning On')
-            self.bin_on = False
+        
+        binx, biny = self.scope.state['Camera.Binning']
+        if binx > 1:
+            #turn binning off
+            self.scope.state['Camera.Binning'] = (1,1)
         else:
-            self.scope.cam.SetHorizBin(16)
-            self.scope.cam.SetVertBin(16)
-            #self.mCam.SetLabel(wxID_SMIMAINFRAMEMCAMBIN, 'Turn Binning Off')
-            self.bin_on = True
-            
-        #self.scope.cam.SetCOC()
-        #self.scope.cam.GetStatus()
+            self.scope.state['Camera.Binning'] = (2, 2)
+
+        logging.debug('Preparing frame wrangler for new ROI size')
+
         self.scope.frameWrangler.Prepare()
         self.vp.SetDataStack(self.scope.frameWrangler.currentFrame)
-        self.pa.start()
-        #event.Skip()
+
+        logging.debug('Restarting frame wrangler with new ROI')
+        self.scope.frameWrangler.start()
+        self.vp.Refresh()
+        self.vp.GetParent().Refresh()
 
     def OnMCamSetPixelSize(self, event):
         from PYME.Acquire.ui import voxelSizeDialog

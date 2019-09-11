@@ -29,11 +29,16 @@ import time
 def cam(scope):
     from PYME.Acquire.Hardware.uc480 import uCam480
     uCam480.init()
-    cam = uCam480.uc480Camera(0)
+    cam = uCam480.uc480Camera(0, nbits=10)
     scope.register_camera(cam, 'Focus')
-    scope.cam.SetROI(325, 0, 525, 1024)
-    # try and hit about 40 Hz
-    scope.cam.SetIntegTime(0.025)
+    scope.cam.SetGainBoost(False)  # shouldn't be needed, but make sure it is off
+    scope.cam.SetGain(1)  # we really don't need any extra gain, this defaults to 10 on startup
+    scope.cam.SetROI(289, 827, 1080, 1008)
+    # With our laser at a stable operating current we saturate easily, set integ low
+    scope.cam.SetIntegTime(0.0005)
+    
+    # TODO - possibly change gain instead to avoid saturation
+    # see SetGain() and SetGainBoost() functions of the uc_480 class
 
 #PIFoc
 @init_hardware('PIFoc')
@@ -42,31 +47,61 @@ def pifoc(scope):
     scope.piFoc = offsetPiezoREST.OffsetPiezoClient()
     scope.register_piezo(scope.piFoc, 'z')
 
-# @init_gui('Profile')
-# def profile(MainFrame,scope):
-#     from PYME.ui import fastGraph
-#     import numpy as np
-#
-#     #xvs = np.arange(scope.frameWrangler.currentFrame.shape[1])
-#
-#     fg = fastGraph.FastGraphPanel(MainFrame, -1, np.arange(10), np.zeros(10))
-#     MainFrame.AddPage(page=fg, select=False, caption='Profile')
-#
-#     def refr_profile(*args, **kwargs):
-#         fg.SetData(np.arange(scope.frameWrangler.currentFrame.shape[1]), scope.frameWrangler.currentFrame.sum(0))
-#
-#     scope.frameWrangler.onFrameGroup.connect(refr_profile)
+@init_gui('Raw Profile')
+def profile(MainFrame,scope):
+    from PYME.ui import fastGraph
+    import numpy as np
+
+    fg = fastGraph.FastGraphPanel(MainFrame, -1, np.arange(10), np.arange(10))
+    MainFrame.AddPage(page=fg, select=False, caption='Raw Profile')
+
+    def refr_profile(*args, **kwargs):
+
+        fg.SetData(np.arange(scope.frameWrangler.currentFrame.shape[1]), scope.frameWrangler.currentFrame.sum(0))
+
+    MainFrame.time1.WantNotification.append(refr_profile)
 
 @init_gui('Focus Lock')
 def focus_lock(MainFrame, scope):
+    import numpy as np
+    from PYME.ui import fastGraph
     from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockServer
     from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
-    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=0.01, i=0.0001, d=0.00005)
+    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=-0.1, i=-0.0025, d=-0.002, sample_time=0.004)
     scope.focus_lock.register()
     panel = FocusLockPanel(MainFrame, scope.focus_lock)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
     MainFrame.time1.WantNotification.append(panel.refresh)
 
+    # display dark-subtracted profile
+    fg = fastGraph.FastGraphPanel(MainFrame, -1, np.arange(10), np.arange(10))
+    MainFrame.AddPage(page=fg, select=False, caption='Profile')
+
+    def refresh_profile(*args, **kwargs):
+        profile = scope.frameWrangler.currentFrame.squeeze().sum(axis=0)
+        if scope.focus_lock.subtraction_profile is not None:
+            profile = profile - scope.focus_lock.subtraction_profile
+        fg.SetData(np.arange(scope.frameWrangler.currentFrame.shape[1]), profile)
+
+    MainFrame.time1.WantNotification.append(refresh_profile)
+
+    # display setpoint / error over time
+    n = 500
+    # setpoint = np.zeros(n)
+    position = np.ones(n) * scope.focus_lock.peak_position
+    time = np.arange(n)
+
+    position_plot = fastGraph.FastGraphPanel(MainFrame, -1, time, position)
+    MainFrame.AddPage(page=position_plot, select=False, caption='Position')
+
+    def refresh_position(*args, **kwargs):
+        position[:-1] = position[1:]
+        position[-1] = scope.focus_lock.peak_position
+        time[:-1] = time[1:]
+        time[-1] = scope.focus_lock._last_time
+        position_plot.SetData(time, position)
+
+    MainFrame.time1.WantNotification.append(refresh_position)
 
 
 #must be here!!!

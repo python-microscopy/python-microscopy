@@ -111,6 +111,7 @@ class ReflectedLinePIDFocusLock(PID):
 
 
         self.peak_position = 512  # default to half of the camera size
+        self.subtraction_profile = None
 
         PID.__init__(self, p, i, d, setpoint=self.peak_position, auto_mode=False, sample_time=sample_time)
 
@@ -133,11 +134,11 @@ class ReflectedLinePIDFocusLock(PID):
         self.set_auto_mode(False)
 
     def register(self):
-        self.scope.frameWrangler.onFrameGroup.connect(self.on_frame)
+        self.scope.frameWrangler.onFrame.connect(self.on_frame)
         self.tracking = True
 
     def deregister(self):
-        self.scope.frameWrangler.onFrameGroup.disconnect(self.on_frame)
+        self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
         self.tracking = False
 
     @webframework.register_endpoint('/ToggleLock', output_is_json=False)
@@ -149,7 +150,18 @@ class ReflectedLinePIDFocusLock(PID):
         if setpoint is None:
             self.setpoint = self.peak_position
         else:
-            self.setpoint = setpoint
+            self.setpoint = float(setpoint)
+
+    @webframework.register_endpoint('/SetSubtractionProfile', output_is_json=False)
+    def SetSubtractionProfile(self):
+        """
+        Set a profile to subtract before any fitting is performed on each frame
+        Returns
+        -------
+
+        """
+        self.subtraction_profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=0).astype(float)
+
 
     @property
     def fit_roi_size(self):
@@ -181,17 +193,16 @@ class ReflectedLinePIDFocusLock(PID):
     def on_frame(self, **kwargs):
         # get focus position
         profile = self.scope.frameWrangler.currentFrame.squeeze().sum(axis=0).astype(float)
-        self.peak_position = self.find_peak(profile)
+        if self.subtraction_profile is not None:
+            self.peak_position = self.find_peak(profile - self.subtraction_profile)
+        else:
+            self.peak_position = self.find_peak(profile)
 
         # calculate correction
         elapsed_time =_current_time() - self._last_time
         correction = self(self.peak_position)
         # note that correction only updates if elapsed_time is larger than sample time - don't apply same correction 2x.
         if self.auto_mode and elapsed_time > self.sample_time:
-            # logger.debug('current: %f, setpoint: %f, correction :%f, time elapsed: %f' % (self.peak_position,
-            #                                                                               self.setpoint, correction,
-            #                                                                               elapsed_time))
-            # self.piezo.MoveRel(0, correction)
             self.piezo.SetOffset(self.piezo.GetOffset() + correction)
 
 
@@ -231,6 +242,9 @@ class RLPIDFocusLockClient(object):
             self.DisableLock()
         else:
             self.EnableLock()
+
+    def SetSubtractionProfile(self):
+        return requests.get(self.base_url + '/SetSubtractionProfile')
 
 
 class RLPIDFocusLockServer(webframework.APIHTTPServer, ReflectedLinePIDFocusLock):
