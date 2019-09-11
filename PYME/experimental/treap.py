@@ -3,7 +3,7 @@ import numpy as np
 INITIAL_NODES = 1000
 NODE_DTYPE = [('left', 'i4'), ('right', 'i4'), ('parent', 'i4'), ('priority', 'f4'), ('key', 'i4')]
 
-class Treap(object):
+class PyTreap(object):
     """
     Implement a treap (tree (min-)heap): a binary tree in which every node has
     a search key and a priority. This is essentially a 2D priority queue. We 
