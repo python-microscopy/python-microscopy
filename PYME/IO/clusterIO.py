@@ -145,7 +145,6 @@ def _listSingleDir(dirurl, nRetries=1, timeout=5):
         #logger.debug('dir cache miss')
         # t = time.time()
         url = dirurl.encode()
-        print(url)
         haveResult = False
         nTries = 0
         while nTries < nRetries and not haveResult:
