@@ -381,22 +381,23 @@ class LMGLShaderCanvas(GLCanvas):
 
             glScalef(self.view.scale, self.view.scale, self.view.scale)
 
-            glPushMatrix()
-            # rotate object
-            glMultMatrixf(self.object_rotation_matrix)
-
-            glTranslatef(-self.view.translation[0], -self.view.translation[1], -self.view.translation[2])
-            
-            for l in self.underlays:
-                l.render(self)
-
-            for l in self.layers:
-                l.render(self)
-
-            for o in self.overlays:
-                o.render(self)
-
-            glPopMatrix()
+            try:
+                glPushMatrix()
+                # rotate object
+                glMultMatrixf(self.object_rotation_matrix)
+    
+                glTranslatef(-self.view.translation[0], -self.view.translation[1], -self.view.translation[2])
+                
+                for l in self.underlays:
+                    l.render(self)
+    
+                for l in self.layers:
+                    l.render(self)
+    
+                for o in self.overlays:
+                    o.render(self)
+            finally:
+                glPopMatrix()
 
             self.ScaleBarOverlayLayer.render(self)
             if self.LUTDraw:

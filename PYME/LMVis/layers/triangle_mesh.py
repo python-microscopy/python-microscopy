@@ -125,6 +125,11 @@ class TriangleRenderLayer(EngineLayer):
         """
         return self._pipeline.get_layer_data(self.dsname)
         #return self.datasource
+    
+    @property
+    def _ds_class(self):
+        from PYME.experimental import triangular_mesh
+        return  triangular_mesh.TriangularMesh
 
     def _set_method(self):
         self.engine = ENGINES[self.method]()
@@ -133,7 +138,7 @@ class TriangleRenderLayer(EngineLayer):
     def _get_cdata(self):
         try:
             cdata = self.datasource[self.vertexColour]
-        except KeyError:
+        except (KeyError, TypeError):
             cdata = np.array([0, 1])
 
         return cdata
@@ -145,11 +150,13 @@ class TriangleRenderLayer(EngineLayer):
         self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
-        from PYME.experimental import triangular_mesh
-        self._datasource_choices = [k for k, v in self._pipeline.dataSources.items() if isinstance(v, triangular_mesh.TriangularMesh)]
+        self._datasource_choices = [k for k, v in self._pipeline.dataSources.items() if isinstance(v, self._ds_class)]
         
         if not self.datasource is None:
-            self._datasource_keys = ['constant',] + sorted(self.datasource.keys())
+            dks = ['constant',]
+            if hasattr(self.datasource, 'keys'):
+                 dks = dks + sorted(self.datasource.keys())
+            self._datasource_keys = dks
         
         if not (self.engine is None or self.datasource is None):
             print('lw update')

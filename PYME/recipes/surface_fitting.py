@@ -1,6 +1,6 @@
 
 from .base import register_module, ModuleBase
-from .traits import Input, Output, Float, Bool
+from .traits import Input, Output, Float, Int, Bool
 import numpy as np
 from PYME.IO import tabular
 
@@ -124,3 +124,37 @@ class FitSurfaceWithPatches(ModuleBase):
                                                 'r_curve': filtered_fits['r_curve'][j]})
         reconstruction.mdh = data_source.mdh
         namespace[self.output_surface_reconstruction] = reconstruction
+
+
+@register_module('DualMarchingCubes')
+class DualMarchingCubes(ModuleBase):
+    input = Input('octree')
+    output = Output('mesh')
+    
+    threshold_density = Float(2e-5)
+    n_points_min = Int(5) # lets us truncate on SNR
+    repair = Bool(False)
+    remesh = Bool(False)
+    
+    def execute(self, namespace):
+        from PYME.experimental import dual_marching_cubes
+        from PYME.experimental import triangle_mesh
+        
+        dmc = dual_marching_cubes.DualMarchingCubes(self.threshold_density)
+        dmc.set_octree(namespace[self.input].truncate_at_n_points(int(self.n_points_min)))
+        tris = dmc.march(dual_march=False)
+
+        surf = triangle_mesh.TriangleMesh.from_np_stl(tris)
+        
+        if self.repair:
+            surf.repair()
+            
+        if self.remesh:
+            #target_length = np.mean(surf._halfedges['length'][surf._halfedges['length'] != -1])
+            surf.remesh(5, l=0.5, n_relax=10)
+            
+            
+        namespace[self.output] = surf
+        
+        
+        

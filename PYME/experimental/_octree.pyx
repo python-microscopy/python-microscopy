@@ -124,6 +124,22 @@ cdef class Octree:
         
         self._octant_sign = np.array([[2*(n&1) - 1, (n&2) -1, (n&4)/2 -1] for n in range(8)])
         
+    def truncate_at_n_points(self, n_points=5):
+        out = Octree(self._bounds, self._maxdepth, samples_per_node=n_points)
+        
+        # n2 = np.copy(self._nodes[self._nodes[self._nodes['parent']]['nPoints'] >= n_points])
+        # n2[n2['nPoints'] <= n_points]['children'] = 0
+        #
+        # out._nodes = np.zeros(len(n2) + 1, NODE_DTYPE)
+        # out._nodes [:-1] = n2
+        # out._next_node = len(n2)
+        
+        out._nodes = np.copy(self.nodes)
+        out._nodes['children'][out._nodes['nPoints'] <= n_points] = 0
+        
+        return out
+        
+        
     def _set_cnodes(self, node_d[:] nodes):
         self._cnodes = &nodes[0]
         

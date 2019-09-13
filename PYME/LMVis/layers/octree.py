@@ -23,13 +23,21 @@ class OctreeRenderLayer(TriangleRenderLayer):
     #alpha = Float(1.0, desc='Face tranparency')
     depth = Int(3, desc='Depth at which to render Octree. Set to -1 for dynamic depth rendering.')
     density = Float(0.0, desc='Minimum density of octree node to display.')
+    min_points = Int(0, desc='Number of points/node to truncate octree at')
     #method = Enum(*ENGINES.keys(), desc='Method used to display faces')
 
-    def __init__(self, pipeline, method='wireframe', datasource=None, **kwargs):
-        TriangleRenderLayer.__init__(self, pipeline, method, datasource, **kwargs)
+    def __init__(self, pipeline, method='wireframe', dsname='', **kwargs):
+        TriangleRenderLayer.__init__(self, pipeline, method, dsname, **kwargs)
 
         self.on_trait_change(self.update, 'depth')
         self.on_trait_change(self.update, 'density')
+        self.on_trait_change(self.update, 'min_points')
+        
+    @property
+    def _ds_class(self):
+        from PYME.experimental import octree
+        return (octree.Octree, octree.PyOctree)
+        
 
     def update_from_datasource(self, ds):
         """
@@ -44,10 +52,11 @@ class OctreeRenderLayer(TriangleRenderLayer):
         -------
         None
         """
+        nodes = ds._nodes[ds._nodes[ds._nodes['parent']]['nPoints'] >= float(self.min_points)]
         
         if self.depth > 0:
             # Grab the nodes at the specified depth
-            nodes = ds._nodes[ds._nodes['depth'] == self.depth]
+            nodes = nodes[nodes['depth'] == self.depth]
             box_sizes = np.ones((nodes.shape[0], 3))*ds.box_size(self.depth)
             node_density = 1.*nodes['nPoints']/np.prod(box_sizes,axis=1)
             nodes = nodes[node_density >= self.density]
@@ -55,7 +64,7 @@ class OctreeRenderLayer(TriangleRenderLayer):
             alpha = nodes['nPoints']/box_sizes[:,0]
         elif self.depth == 0:
             # plot all bins
-            nodes = ds._nodes[ds._nodes['nPoints'] >= 1]
+            nodes = nodes[nodes['nPoints'] >= 1]
             box_sizes = np.vstack(ds.box_size(nodes['depth'])).T
 
             alpha = nodes['nPoints'] * ((2 ** nodes['depth'])**3)
@@ -88,7 +97,7 @@ class OctreeRenderLayer(TriangleRenderLayer):
             #nodes = ds._nodes[node_indices]
             #box_sizes = np.array(box_sizes)
 
-            nodes = ds._nodes[np.sum(ds._nodes['children']) == 0]
+            nodes = nodes[np.sum(nodes['children']) == 0]
             box_sizes = np.vstack(ds.box_size(nodes['depth'])).T
             
             alpha = nodes['nPoints']*((2.0**nodes['depth']))**3
@@ -168,9 +177,10 @@ class OctreeRenderLayer(TriangleRenderLayer):
         from traitsui.api import View, Item, Group, InstanceEditor, EnumEditor
         from PYME.ui.custom_traits_editors import HistLimitsEditor, CBEditor
 
-        return View([#Group([Item('datasource', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
+        return View([#Group([
+                     Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices')),
                      Item('method'),
-                     Item('depth'),
+                     Item('depth'),Item('min_points'),
                      #Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
                      #Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ]),
                      Group([Item('cmap', label='LUT'), Item('alpha'), Item('visible')])], )

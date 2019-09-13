@@ -1,3 +1,5 @@
+# -*- coding: utf8 -*-
+
 import numpy as np
 
 # Regular, boundary, and max vertex valences. These need tp be
