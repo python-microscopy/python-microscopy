@@ -493,7 +493,7 @@ class MarchingCubes(object):
         triangles_pruned = triangles[idxs].flatten()
         idxs = np.repeat(idxs, triangles.shape[1])[triangles_pruned != -1]
         triangles_pruned = triangles_pruned[triangles_pruned != -1]
-        triangles_returned = intersections[idxs, triangles_pruned].reshape(idxs.shape[0] // 3, 3, 3)
+        triangles_returned = intersections[idxs, triangles_pruned].reshape(int(idxs.shape[0] // 3), 3, 3)
         normals = np.cross((triangles_returned[:, 2] - triangles_returned[:, 1]),
                            (triangles_returned[:, 0] - triangles_returned[:, 1]))
                            
@@ -641,13 +641,17 @@ def generate_sphere_image(radius=10):
     """Generate a 3D volume image of a sphere. Note that the intensity tapers at the radius (rather than ending abruptly)
     so that marching cubes can do it's thing properly"""
     X, Y, Z = np.mgrid[(-1.5*radius):(1.5*radius):1.0, (-1.5*radius):(1.5*radius):1.0, (-1.5*radius):(1.5*radius):1.0]
-    
+
+    # Uncomment to create sphere missing a top
+    X += radius/2
+    Y += radius/5
+    Z += radius/5
+
     R2 = np.sqrt(X*X + Y*Y + Z*Z)
     
     S = np.tanh(R2 - radius)
     
     return S
-
 
 def image_to_vertex_values(im, voxelsize=1.0):
     """

@@ -23,7 +23,7 @@ def stl_to_verts_inds(triangles_stl):
 
     vertices_raw = np.vstack((triangles_stl['vertex0'], triangles_stl['vertex1'], triangles_stl['vertex2']))
     vertices, indices_raw = np.unique(vertices_raw, return_inverse=True, axis=0)
-    indices = indices_raw.reshape(indices_raw.shape[0] / 3, 3, order='F')
+    indices = indices_raw.reshape(int(indices_raw.shape[0] / 3), 3, order='F')
     normals = triangles_stl['normal']
 
     return vertices, normals, indices
