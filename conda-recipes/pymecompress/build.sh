@@ -1,3 +1,3 @@
 #!/bin/bash
 
-$PYTHON setup.py install --no-deps
+$PYTHON setup.py install

@@ -97,6 +97,7 @@ def exists(seriesName):
 #of each individual node. Not sure what the best number is here - currenty set
 #a "safe" maximum number of nodes that could access data
 NUM_POLL_THREADS = 10
+QUEUE_MAX_SIZE = 200 # ~10k frames
 
 defaultCompSettings = {
     'compression' : PZFFormat.DATA_COMP_HUFFCODE,
@@ -124,7 +125,7 @@ class Spooler(sp.Spooler):
         
         self.buflen = 50
         
-        self._postQueue = Queue.Queue()
+        self._postQueue = Queue.Queue(QUEUE_MAX_SIZE)
         self._dPoll = True
         self._lock = threading.Lock()
         
