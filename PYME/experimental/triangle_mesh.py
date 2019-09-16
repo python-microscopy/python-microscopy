@@ -459,7 +459,8 @@ class TriangleMesh(object):
         """
 
         if USE_C:
-            f_idxs = np.int32(f_idxs)
+            if isinstance(f_idxs, list):
+                f_idxs = np.int32(f_idxs)
             triangle_mesh_utils.c_update_face_normals(f_idxs, self._halfedges, self._vertices, self._faces)
         else:
             for f_idx in f_idxs:
@@ -489,7 +490,8 @@ class TriangleMesh(object):
         """
 
         if USE_C:
-            v_idxs = np.int32(v_idxs)
+            if isinstance(v_idxs, list):
+                v_idxs = np.int32(v_idxs)
             triangle_mesh_utils.c_update_vertex_neighbors(v_idxs, self._halfedges, self._vertices, self._faces)
         else:
             for v_idx in v_idxs:
