@@ -705,7 +705,7 @@ class ModifiedMarchingCubes(object):
 
         return ((values < self.isolevel) * EDGE_BITMASK).sum(1) #[EDGE_BITMASK[x] for x in MC_MAP]).sum(1)
 
-    def interpolate_vertex(self, v0, v1, v0_value, v1_value):
+    def interpolate_vertex(self, v0, v1, v0_value, v1_value, i=None, j0=None, j1=None):
         """
         Interpolate triangle vertex along edge formed by v0->v1.
 
@@ -798,7 +798,7 @@ class ModifiedMarchingCubes(object):
         v1_value = values[i, j1]
 
         # Calculate each edge once
-        p = self.interpolate_vertex(v0, v1, v0_value, v1_value)
+        p = self.interpolate_vertex(v0, v1, v0_value, v1_value, i, j0, j1)
 
         # Reshape the calculated vertices to match the shape we'll index into later
         pr = p[edges_inverse].reshape(-1, 12, 3, order='C')
@@ -970,3 +970,58 @@ class ModifiedMarchingCubes(object):
         # Do we want this function to kick the triangles back to us?
         if return_triangles:
             return self.export_triangles()
+        
+        
+class PiecewiseLinearMMC(ModifiedMarchingCubes):
+    def interpolate_vertex(self, v0, v1, v0_value, v1_value, i=None, j0=None, j1=None):
+        """
+        Interpolate triangle vertex along edge formed by v0->v1.
+
+        Parameters
+        ----------
+        v0, v1 :
+            Vertices of edge v0->v1.
+        v0_value, v1_value:
+            Scalar values at vertices v0, v1. Same values as for vertex_values in edge_index().
+
+        Returns
+        -------
+        Interpolated vertex of a triangle.
+        
+        """
+        
+        depth0 = self.depths[i, j0]
+        depth1 = self.depths[i, j1]
+        
+        d_depth = depth0 - depth1
+        
+        f = 8**d_depth
+        r = 1.0/(1+f)
+        
+        #print(f[~(f==1)], r[~(f==1)])
+        
+        #m_value = 0.5*(v0_value + v1_value)\
+        #r = depth1/(depth0 + depth1)
+        m_value = (v0_value*r + v1_value*(1-r))
+        #vm = (v0*depth1[:,None] + v1*depth0[:,None])/(depth1 +depth0)[:,None]
+        vm = v0*(1-r[:,None]) + v1*r[:,None]
+        
+        
+        #print(depth0[~(r == 0.5)], depth1[~(r == 0.5)], r[~(r == 0.5)])
+        
+        #print(v0_value[~(r == 0.5)], v1_value[~(r == 0.5)], m_value[~(r == 0.5)])
+        
+        # Interpolate along the edge v0 -> v1
+        mu1 = 1. * (self.isolevel - v0_value) / (m_value - v0_value)
+        p = v0 + mu1[:, None] * (vm - v0)
+
+        mu2 = 1. * (self.isolevel - m_value) / (v1_value - m_value)
+        p[mu2>0, :] = (vm + mu2[:, None] * (v1 - vm))[mu2 > 0, :]
+        #print(mu1, mu2)
+        
+        # Are v0 and v1 the same vertex? (common in dual marching cubes)
+        # If so, choose v0 as the triangle vertex position.
+        idxs = (np.abs(v1_value - v0_value) < 1e-12)#self.isolevel)
+        p[idxs, :] = v0[idxs, :]
+        
+        return p

@@ -1,10 +1,10 @@
 import numpy as np
 from copy import deepcopy
 
-from PYME.experimental.modified_marching_cubes import ModifiedMarchingCubes
+from PYME.experimental.modified_marching_cubes import ModifiedMarchingCubes, PiecewiseLinearMMC
 
 
-class DualMarchingCubes(ModifiedMarchingCubes):
+class DualMarchingCubes(PiecewiseLinearMMC):
     def __init__(self, isolevel=0):
         super(DualMarchingCubes, self).__init__(isolevel)
         self._ot = None
@@ -15,6 +15,7 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         # Make vertices/values a list instead of None
         self.vertices = []
         self.values = []
+        self.depths = []
         
         #precalculate shift scales for empty boxes
         max_depth = self._ot._nodes['depth'].max()
@@ -31,6 +32,7 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         # Make vertices/values np arrays
         self.vertices = np.vstack(self.vertices).astype('float64')
         self.values = np.vstack(self.values).astype('float64')
+        self.depths = np.vstack(self.depths).astype('float64')
 
     def march(self, return_triangles=True, dual_march=True):
         return super(DualMarchingCubes, self).march(return_triangles, dual_march)
@@ -533,6 +535,9 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             
             vv = np.array([nj[inds]['nPoints'] * self._density_sc[nj[inds]['depth']] for nj in nds])
             self.values.append(np.swapaxes(vv,0, 1))
+
+            vd = np.array([nj[inds]['depth'] for nj in nds])
+            self.depths.append(np.swapaxes(vd, 0, 1))
 
         if np.sum(~(leaf_nodes).astype(bool)) > 0:
 
