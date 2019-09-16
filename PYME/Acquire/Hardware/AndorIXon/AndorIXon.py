@@ -83,7 +83,7 @@ preamp_gains = {
 
 from PYME.Acquire.Hardware.Camera import Camera
 class iXonCamera(Camera):
-    #numpy_frames=1
+    numpy_frames=False
 
     #define a couple of acquisition modes
 
