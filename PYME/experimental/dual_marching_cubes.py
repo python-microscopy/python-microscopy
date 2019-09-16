@@ -1,10 +1,10 @@
 import numpy as np
 from copy import deepcopy
 
-from PYME.experimental.modified_marching_cubes import ModifiedMarchingCubes
+from PYME.experimental.marching_cubes import MarchingCubes
 
 
-class DualMarchingCubes(ModifiedMarchingCubes):
+class DualMarchingCubes(MarchingCubes):
     def __init__(self, isolevel=0):
         super(DualMarchingCubes, self).__init__(isolevel)
         self._ot = None
@@ -17,10 +17,14 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         self.values = []
         
         #precalculate shift scales for empty boxes
-        self._empty_shift_scales = 0.5*np.vstack(self._ot.box_size(np.arange(self._ot._nodes['depth'].max() + 1))).T
+        max_depth = self._ot._nodes['depth'].max()
+        self._empty_shift_scales = 0.5*np.vstack(self._ot.box_size(np.arange(max_depth + 1))).T
+        # precaluclate box sizes
+        self._density_sc = 1.0/np.prod(self._ot.box_size(np.arange(max_depth + 1)), axis=0)
         
         #TODO - get this from the octree
         self._octant_sign = np.array([[2 * (n & 1) - 1, (n & 2) - 1, (n & 4) / 2 - 1] for n in range(8)])
+        
 
         self.node_proc(self._ot._nodes[0])  # Create the dual grid
 
@@ -28,8 +32,8 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         self.vertices = np.vstack(self.vertices).astype('float64')
         self.values = np.vstack(self.values).astype('float64')
 
-    def march(self, return_triangles=True, dual_march=True):
-        return super(DualMarchingCubes, self).march(return_triangles, dual_march)
+    def march(self, return_triangles=True):
+        return super(DualMarchingCubes, self).march(return_triangles)
 
     def position_empty_node(self, n0, n1, shift):
         """
@@ -112,64 +116,13 @@ class DualMarchingCubes(ModifiedMarchingCubes):
 
         return divisions, is_subdivided
 
-    def update_subdivision(self, node):
+    def update_subdivision(self, node, children=range(8)):
         """
         Give non-root-node options for all children of a node that is subdivided.
         This is meant to recover empty node positions on a sparse octree.
         """
         
-        # Grab the children
-        n0 = np.copy(self._ot._nodes[node['children'][:, 0]])
-        n1 = np.copy(self._ot._nodes[node['children'][:, 1]])
-        n2 = np.copy(self._ot._nodes[node['children'][:, 2]])
-        n3 = np.copy(self._ot._nodes[node['children'][:, 3]])
-        n4 = np.copy(self._ot._nodes[node['children'][:, 4]])
-        n5 = np.copy(self._ot._nodes[node['children'][:, 5]])
-        n6 = np.copy(self._ot._nodes[node['children'][:, 6]])
-        n7 = np.copy(self._ot._nodes[node['children'][:, 7]])
-
-        # Make sure the zero nodes are set to a terminal node
-        # at the correct spatial position.
-        # n0, n1 = self.position_empty_node(n0, n1, [1, 0, 0])
-        # n0, n2 = self.position_empty_node(n0, n2, [0, 1, 0])
-        # n0, n3 = self.position_empty_node(n0, n3, [1, 1, 0])
-        # n0, n4 = self.position_empty_node(n0, n4, [0, 0, 1])
-        # n0, n5 = self.position_empty_node(n0, n5, [1, 0, 1])
-        # n0, n6 = self.position_empty_node(n0, n6, [0, 1, 1])
-        # n0, n7 = self.position_empty_node(n0, n7, [1, 1, 1])
-        # n1, n2 = self.position_empty_node(n1, n2, [-1, 1, 0])
-        # n1, n3 = self.position_empty_node(n1, n3, [0, 1, 0])
-        # n1, n4 = self.position_empty_node(n1, n4, [-1, 0, 1])
-        # n1, n5 = self.position_empty_node(n1, n5, [0, 0, 1])
-        # n1, n6 = self.position_empty_node(n1, n6, [-1, 1, 1])
-        # n1, n7 = self.position_empty_node(n1, n7, [0, 1, 1])
-        # n2, n3 = self.position_empty_node(n2, n3, [1, 0, 0])
-        # n2, n4 = self.position_empty_node(n2, n4, [0, -1, 1])
-        # n2, n5 = self.position_empty_node(n2, n5, [1, -1, 1])
-        # n2, n6 = self.position_empty_node(n2, n6, [0, 0, 1])
-        # n2, n7 = self.position_empty_node(n2, n7, [1, 0, 1])
-        # n3, n4 = self.position_empty_node(n3, n4, [-1, -1, 1])
-        # n3, n5 = self.position_empty_node(n3, n5, [0, -1, 1])
-        # n3, n6 = self.position_empty_node(n3, n6, [-1, 0, 1])
-        # n3, n7 = self.position_empty_node(n3, n7, [0, 0, 1])
-        # n4, n5 = self.position_empty_node(n4, n5, [1, 0, 0])
-        # n4, n6 = self.position_empty_node(n4, n6, [0, 1, 0])
-        # n4, n7 = self.position_empty_node(n4, n7, [1, 1, 0])
-        # n5, n6 = self.position_empty_node(n5, n6, [-1, 1, 0])
-        # n5, n7 = self.position_empty_node(n5, n7, [0, 1, 0])
-        # n6, n7 = self.position_empty_node(n6, n7, [1, 0, 0])
-        
-        n0 = self._empty_node_v2(n0, node, 0)
-        n1 = self._empty_node_v2(n1, node, 1)
-        n2 = self._empty_node_v2(n2, node, 2)
-        n3 = self._empty_node_v2(n3, node, 3)
-        n4 = self._empty_node_v2(n4, node, 4)
-        n5 = self._empty_node_v2(n5, node, 5)
-        n6 = self._empty_node_v2(n6, node, 6)
-        n7 = self._empty_node_v2(n7, node, 7)
-
-        # Return the subdivided nodes
-        return n0, n1, n2, n3, n4, n5, n6, n7
+        return [self._empty_node_v2(np.copy(self._ot._nodes[node['children'][:, j]]), node, j) for j in children]
 
     def node_proc(self, nodes):
         """
@@ -245,22 +198,15 @@ class DualMarchingCubes(ModifiedMarchingCubes):
     def face_proc_xy(self, n0, n1):
 
         # Initialize resulting nodes to current nodes
-        c0 = np.copy(n0)
-        c1 = np.copy(n0)
-        c2 = np.copy(n0)
-        c3 = np.copy(n0)
-        c4 = np.copy(n1)
-        c5 = np.copy(n1)
-        c6 = np.copy(n1)
-        c7 = np.copy(n1)
+        c0, c1, c2, c3 = np.copy(n0), np.copy(n0), np.copy(n0), np.copy(n0)
+        c4, c5, c6, c7 = np.copy(n1), np.copy(n1), np.copy(n1), np.copy(n1)
 
         # Replace current nodes with their ordered children if present
         n0_subdivided, is_n0_subdivided = self.subdivided(n0)
         n1_subdivided, is_n1_subdivided = self.subdivided(n1)
 
         if is_n0_subdivided:
-            
-            _, _, _, _, u4, u5, u6, u7 = self.update_subdivision(n0[n0_subdivided])
+            u4, u5, u6, u7 = self.update_subdivision(n0[n0_subdivided], [4, 5, 6, 7])
 
             c0[n0_subdivided] = u4
             c1[n0_subdivided] = u5
@@ -268,8 +214,7 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             c3[n0_subdivided] = u7
 
         if is_n1_subdivided:
-
-            u0, u1, u2, u3, _, _, _, _ = self.update_subdivision(n1[n1_subdivided])
+            u0, u1, u2, u3 = self.update_subdivision(n1[n1_subdivided], [0,1,2,3])
 
             c4[n1_subdivided] = u0
             c5[n1_subdivided] = u1
@@ -296,22 +241,16 @@ class DualMarchingCubes(ModifiedMarchingCubes):
     def face_proc_xz(self, n0, n1):
 
         # Initialize resulting nodes to current nodes
-        c0 = np.copy(n0)
-        c1 = np.copy(n0)
-        c4 = np.copy(n0)
-        c5 = np.copy(n0)
-        c2 = np.copy(n1)
-        c3 = np.copy(n1)
-        c6 = np.copy(n1)
-        c7 = np.copy(n1)
+        c0, c1, c4, c5 = np.copy(n0), np.copy(n0), np.copy(n0), np.copy(n0)
+        c2, c3, c6, c7 = np.copy(n1), np.copy(n1), np.copy(n1), np.copy(n1)
+        
 
         # Replace current nodes with their ordered children if present
         n0_subdivided, is_n0_subdivided = self.subdivided(n0)
         n1_subdivided, is_n1_subdivided = self.subdivided(n1)
 
         if is_n0_subdivided:
-            
-            _, _, u2, u3, _, _, u6, u7 = self.update_subdivision(n0[n0_subdivided])
+            u2, u3, u6, u7 = self.update_subdivision(n0[n0_subdivided], [2,3,6,7])
 
             c0[n0_subdivided] = u2
             c1[n0_subdivided] = u3
@@ -319,8 +258,7 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             c5[n0_subdivided] = u7
 
         if is_n1_subdivided:
-
-            u0, u1, _, _, u4, u5, _, _ = self.update_subdivision(n1[n1_subdivided])
+            u0, u1, u4, u5 = self.update_subdivision(n1[n1_subdivided], [0,1,4,5])
 
             c2[n1_subdivided] = u0
             c3[n1_subdivided] = u1
@@ -346,14 +284,9 @@ class DualMarchingCubes(ModifiedMarchingCubes):
     def face_proc_yz(self, n0, n1):
 
         # Initialize resulting nodes to current nodes
-        c0 = np.copy(n0)
-        c2 = np.copy(n0)
-        c4 = np.copy(n0)
-        c6 = np.copy(n0)
-        c1 = np.copy(n1)
-        c3 = np.copy(n1)
-        c5 = np.copy(n1)
-        c7 = np.copy(n1)
+        c0, c2, c4, c6 = np.copy(n0), np.copy(n0), np.copy(n0), np.copy(n0)
+        c1, c3, c5, c7 = np.copy(n1), np.copy(n1), np.copy(n1), np.copy(n1)
+
 
         # Replace current nodes with their ordered children if present
         n0_subdivided, is_n0_subdivided = self.subdivided(n0)
@@ -361,7 +294,7 @@ class DualMarchingCubes(ModifiedMarchingCubes):
 
         if is_n0_subdivided:
             
-            _, u1, _, u3, _, u5, _, u7 = self.update_subdivision(n0[n0_subdivided])
+            u1, u3, u5, u7 = self.update_subdivision(n0[n0_subdivided], [1,3,5,7])
 
             c0[n0_subdivided] = u1
             c2[n0_subdivided] = u3
@@ -370,7 +303,7 @@ class DualMarchingCubes(ModifiedMarchingCubes):
 
         if is_n1_subdivided:
 
-            u0, _, u2, _, u4, _, u6, _ = self.update_subdivision(n1[n1_subdivided])
+            u0, u2, u4, u6 = self.update_subdivision(n1[n1_subdivided], [0,2,4,6])
 
             c1[n1_subdivided] = u0
             c3[n1_subdivided] = u2
@@ -396,14 +329,10 @@ class DualMarchingCubes(ModifiedMarchingCubes):
     def edge_proc_x(self, n0, n1, n2, n3):
 
         # Initialize resulting nodes to current nodes
-        c0 = np.copy(n0)
-        c1 = np.copy(n0)
-        c4 = np.copy(n1)
-        c5 = np.copy(n1)
-        c6 = np.copy(n2)
-        c7 = np.copy(n2)
-        c2 = np.copy(n3)
-        c3 = np.copy(n3)
+        c0, c1 = np.copy(n0), np.copy(n0)
+        c4, c5 = np.copy(n1), np.copy(n1)
+        c6, c7 = np.copy(n2), np.copy(n2)
+        c2, c3 = np.copy(n3), np.copy(n3)
 
         # Replace current nodes with their ordered children if present
         n0_subdivided, is_n0_subdivided = self.subdivided(n0)
@@ -412,25 +341,25 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         n3_subdivided, is_n3_subdivided = self.subdivided(n3)
 
         if is_n2_subdivided:
-            u0, u1, _, _, _, _, _, _ = self.update_subdivision(n2[n2_subdivided])
+            u0, u1 = self.update_subdivision(n2[n2_subdivided], [0,1])
 
             c6[n2_subdivided] = u0
             c7[n2_subdivided] = u1
 
         if is_n3_subdivided:
-            _, _, _, _, u4, u5, _, _ = self.update_subdivision(n3[n3_subdivided])
+            u4, u5 = self.update_subdivision(n3[n3_subdivided], [4,5])
             
             c2[n3_subdivided] = u4
             c3[n3_subdivided] = u5
 
         if is_n0_subdivided:
-            _, _, _, _, _, _, u6, u7 = self.update_subdivision(n0[n0_subdivided])
+            u6, u7 = self.update_subdivision(n0[n0_subdivided], [6,7])
 
             c0[n0_subdivided] = u6
             c1[n0_subdivided] = u7
 
         if is_n1_subdivided:
-            _, _, u2, u3, _, _, _, _ = self.update_subdivision(n1[n1_subdivided])
+            u2, u3 = self.update_subdivision(n1[n1_subdivided], [2,3])
 
             c4[n1_subdivided] = u2
             c5[n1_subdivided] = u3
@@ -444,14 +373,10 @@ class DualMarchingCubes(ModifiedMarchingCubes):
     def edge_proc_y(self, n0, n1, n2, n3):
 
         # Initialize resulting nodes to current nodes
-        c0 = np.copy(n0)
-        c2 = np.copy(n0)
-        c1 = np.copy(n1)
-        c3 = np.copy(n1)
-        c5 = np.copy(n2)
-        c7 = np.copy(n2)
-        c4 = np.copy(n3)
-        c6 = np.copy(n3)
+        c0, c2 = np.copy(n0), np.copy(n0)
+        c1, c3 = np.copy(n1), np.copy(n1)
+        c5, c7 = np.copy(n2), np.copy(n2)
+        c4, c6 = np.copy(n3), np.copy(n3)
 
         # Replace current nodes with their ordered children if present
         n0_subdivided, is_n0_subdivided = self.subdivided(n0)
@@ -460,30 +385,26 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         n3_subdivided, is_n3_subdivided = self.subdivided(n3)
 
         if is_n2_subdivided:
-
-            u0, _, u2, _, _, _, _, _ = self.update_subdivision(n2[n2_subdivided])
+            u0, u2 = self.update_subdivision(n2[n2_subdivided], [0,2])
 
             c5[n2_subdivided] = u0
             c7[n2_subdivided] = u2
 
         if is_n3_subdivided:
-
-            _, u1, _, u3, _, _, _, _ = self.update_subdivision(n3[n3_subdivided])
+            u1, u3 = self.update_subdivision(n3[n3_subdivided], [1,3])
 
             c4[n3_subdivided] = u1
             c6[n3_subdivided] = u3
 
         if is_n0_subdivided:
-
-            _, _, _, _, _, u5, _, u7 = self.update_subdivision(n0[n0_subdivided])
+            u5, u7 = self.update_subdivision(n0[n0_subdivided], [5,7])
 
             c0[n0_subdivided] = u5
             c2[n0_subdivided] = u7
 
 
         if is_n1_subdivided:
-
-            _, _, _, _, u4, _, u6, _ = self.update_subdivision(n1[n1_subdivided])
+            u4, u6 = self.update_subdivision(n1[n1_subdivided], [4,6])
 
             c1[n1_subdivided] = u4
             c3[n1_subdivided] = u6
@@ -497,14 +418,10 @@ class DualMarchingCubes(ModifiedMarchingCubes):
     def edge_proc_z(self, n0, n1, n2, n3):
 
         # Initialize resulting nodes to current nodes
-        c0 = np.copy(n0)
-        c4 = np.copy(n0)
-        c2 = np.copy(n1)
-        c6 = np.copy(n1)
-        c3 = np.copy(n2)
-        c7 = np.copy(n2)
-        c1 = np.copy(n3)
-        c5 = np.copy(n3)
+        c0, c4 = np.copy(n0), np.copy(n0)
+        c2, c6 = np.copy(n1), np.copy(n1)
+        c3, c7 = np.copy(n2), np.copy(n2)
+        c1, c5 = np.copy(n3), np.copy(n3)
 
         # Replace current nodes with their ordered children if present
         n0_subdivided, is_n0_subdivided = self.subdivided(n0)
@@ -513,30 +430,25 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         n3_subdivided, is_n3_subdivided = self.subdivided(n3)
 
         if is_n2_subdivided:
-
-            u0, _, _, _, u4, _, _, _ = self.update_subdivision(n2[n2_subdivided])
+            u0, u4 = self.update_subdivision(n2[n2_subdivided], [0,4])
 
             c3[n2_subdivided] = u0
             c7[n2_subdivided] = u4
 
-
         if is_n3_subdivided:
-
-            _, _, u2, _, _, _, u6, _ = self.update_subdivision(n3[n3_subdivided])
+            u2,u6 = self.update_subdivision(n3[n3_subdivided], [2,6])
             
             c1[n3_subdivided] = u2
             c5[n3_subdivided] = u6
 
         if is_n0_subdivided:
-
-            _, _, _, u3, _, _, _, u7 = self.update_subdivision(n0[n0_subdivided])
+            u3, u7 = self.update_subdivision(n0[n0_subdivided], [3, 7])
 
             c0[n0_subdivided] = u3
             c4[n0_subdivided] = u7
 
-        if (np.sum(n1_subdivided) > 0):
-
-            _, u1, _, _, _, u5, _, _ = self.update_subdivision(n1[n1_subdivided])
+        if is_n1_subdivided:
+            u1, u5 = self.update_subdivision(n1[n1_subdivided], [1, 5])
 
             c2[n1_subdivided] = u1
             c6[n1_subdivided] = u5
@@ -549,6 +461,11 @@ class DualMarchingCubes(ModifiedMarchingCubes):
 
     def vert_proc(self, n0, n1, n2, n3, n4, n5, n6, n7):
         
+        nds = [n0, n1, n2, n3, n4, n5, n6, n7]
+
+        # Convert from dual marching cubes to marching cubes indexing
+        MC_MAP = [n0, n1, n3, n2, n4, n5, n7, n6]
+        
         leaf_nodes = (np.sum(n0['children'], axis=1) == 0) & (
                      np.sum(n1['children'], axis=1) == 0) & \
                      (np.sum(n2['children'], axis=1) == 0) & (
@@ -560,36 +477,20 @@ class DualMarchingCubes(ModifiedMarchingCubes):
 
         if (np.sum(leaf_nodes) > 0):
             inds = np.where(leaf_nodes)
-            self.vertices.append(
-                np.swapaxes(np.array([n0[inds]['centre'], n1[inds]['centre'], \
-                                      n2[inds]['centre'], n3[inds]['centre'], \
-                                      n4[inds]['centre'], n5[inds]['centre'], \
-                                      n6[inds]['centre'], n7[inds]['centre']]),
-                            0, 1))
-            self.values.append(
-                np.swapaxes(np.array([n0[inds]['nPoints'] / np.prod(self._ot.box_size(n0[inds]['depth']), axis=0),
-                                     n1[inds]['nPoints'] / np.prod(self._ot.box_size(n1[inds]['depth']), axis=0),
-                                     n2[inds]['nPoints'] / np.prod(self._ot.box_size(n3[inds]['depth']), axis=0),
-                                     n3[inds]['nPoints'] / np.prod(self._ot.box_size(n2[inds]['depth']), axis=0),
-                                     n4[inds]['nPoints'] / np.prod(self._ot.box_size(n4[inds]['depth']), axis=0),
-                                     n5[inds]['nPoints'] / np.prod(self._ot.box_size(n5[inds]['depth']), axis=0),
-                                     n6[inds]['nPoints'] / np.prod(self._ot.box_size(n7[inds]['depth']), axis=0),
-                                     n7[inds]['nPoints'] / np.prod(self._ot.box_size(n6[inds]['depth']), axis=0)]),
-                            0, 1))
+            
+            vt = np.array([nj[inds]['centre'] for nj in MC_MAP])
+            self.vertices.append(np.swapaxes(vt,0, 1))
+            
+            vv = np.array([nj[inds]['nPoints'] * self._density_sc[nj[inds]['depth']] for nj in MC_MAP])
+            self.values.append(np.swapaxes(vv,0, 1))
 
         if np.sum(~(leaf_nodes).astype(bool)) > 0:
 
             inds = np.where(~(leaf_nodes).astype(bool))
 
             # Initialize resulting nodes to current nodes
-            c0 = np.copy(n0[inds])
-            c1 = np.copy(n1[inds])
-            c2 = np.copy(n2[inds])
-            c3 = np.copy(n3[inds])
-            c4 = np.copy(n4[inds])
-            c5 = np.copy(n5[inds])
-            c6 = np.copy(n6[inds])
-            c7 = np.copy(n7[inds])
+            c0, c1, c2, c3, c4, c5, c6, c7 = [np.copy(nj[inds]) for nj in nds]
+            
 
             # Replace current nodes with their ordered children if present
             c0_subdivided, is_c0_subdivided = self.subdivided(c0)
@@ -602,28 +503,28 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             c7_subdivided, is_c7_subdivided = self.subdivided(c7)
 
             if is_c0_subdivided:
-                _, _, _, _, _, _, _, u7 = self.update_subdivision(c0[c0_subdivided])
+                u7, = self.update_subdivision(c0[c0_subdivided], [7])
                 c0[c0_subdivided] = u7
             if is_c1_subdivided:
-                _, _, _, _, _, _, u6, _ = self.update_subdivision(c1[c1_subdivided])
+                u6, = self.update_subdivision(c1[c1_subdivided], [6])
                 c1[c1_subdivided] = u6
             if is_c2_subdivided:
-                _, _, _, _, _, u5, _, _ = self.update_subdivision(c2[c2_subdivided])
+                u5,  = self.update_subdivision(c2[c2_subdivided], [5])
                 c2[c2_subdivided] = u5
             if is_c3_subdivided:
-                _, _, _, _, u4, _, _, _ = self.update_subdivision(c3[c3_subdivided])
+                u4, = self.update_subdivision(c3[c3_subdivided], [4])
                 c3[c3_subdivided] = u4
             if is_c4_subdivided:
-                _, _, _, u3, _, _, _, _ = self.update_subdivision(c4[c4_subdivided])
+                u3, = self.update_subdivision(c4[c4_subdivided], [3])
                 c4[c4_subdivided] = u3
             if is_c5_subdivided:
-                _, _, u2, _, _, _, _, _ = self.update_subdivision(c5[c5_subdivided])
+                u2, = self.update_subdivision(c5[c5_subdivided], [2])
                 c5[c5_subdivided] = u2
             if is_c6_subdivided:
-                _, u1, _, _, _, _, _, _ = self.update_subdivision(c6[c6_subdivided])
+                u1, = self.update_subdivision(c6[c6_subdivided], [1])
                 c6[c6_subdivided] = u1
             if is_c7_subdivided:
-                u0, _, _, _, _, _, _, _ = self.update_subdivision(c7[c7_subdivided])
+                u0, = self.update_subdivision(c7[c7_subdivided], [0])
                 c7[c7_subdivided] = u0
 
             if is_c0_subdivided or is_c1_subdivided or is_c2_subdivided or is_c3_subdivided or is_c4_subdivided or is_c5_subdivided or is_c6_subdivided or is_c7_subdivided:
