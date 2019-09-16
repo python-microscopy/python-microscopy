@@ -15,6 +15,12 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         # Make vertices/values a list instead of None
         self.vertices = []
         self.values = []
+        
+        #precalculate shift scales for empty boxes
+        self._empty_shift_scales = 0.5*np.vstack(self._ot.box_size(np.arange(self._ot._nodes['depth'].max() + 1))).T
+        
+        #TODO - get this from the octree
+        self._octant_sign = np.array([[2 * (n & 1) - 1, (n & 2) - 1, (n & 4) / 2 - 1] for n in range(8)])
 
         self.node_proc(self._ot._nodes[0])  # Create the dual grid
 
@@ -45,6 +51,8 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         # node. Essentially, we rebuild this portion of the octree.
         n0_root_mask = (n0['depth'] == 0) #& ((n1['children']).sum(1) > 0)
         n1_root_mask = (n1['depth'] == 0) #& ((n0['children']).sum(1) > 0)
+        
+        #print n0.shape
 
         if (np.sum(n0_root_mask) > 0):
             inds = np.where(n0_root_mask)
@@ -65,6 +73,21 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             n1[inds] = empty_node
             
         return n0, n1
+    
+    def _empty_node_v2(self, nj, parent, j):
+        #print nj.shape, parent.shape
+        n_root_mask = (nj['depth'] == 0)
+        
+        if np.any(n_root_mask):
+            inds = np.where(n_root_mask)
+
+            empty_node = np.zeros_like(nj[inds])
+            
+            empty_node['depth'] = parent[inds]['depth'] + 1
+            empty_node['centre'] = parent[inds]['centre'] + self._empty_shift_scales[empty_node['depth'], :] * self._octant_sign[j, :][None,:]
+        
+            nj[inds] = empty_node
+        return nj
 
     def subdivided(self, nodes):
         """ 
@@ -107,34 +130,43 @@ class DualMarchingCubes(ModifiedMarchingCubes):
 
         # Make sure the zero nodes are set to a terminal node
         # at the correct spatial position.
-        n0, n1 = self.position_empty_node(n0, n1, [1, 0, 0])
-        n0, n2 = self.position_empty_node(n0, n2, [0, 1, 0])
-        n0, n3 = self.position_empty_node(n0, n3, [1, 1, 0])
-        n0, n4 = self.position_empty_node(n0, n4, [0, 0, 1])
-        n0, n5 = self.position_empty_node(n0, n5, [1, 0, 1])
-        n0, n6 = self.position_empty_node(n0, n6, [0, 1, 1])
-        n0, n7 = self.position_empty_node(n0, n7, [1, 1, 1])
-        n1, n2 = self.position_empty_node(n1, n2, [-1, 1, 0])
-        n1, n3 = self.position_empty_node(n1, n3, [0, 1, 0])
-        n1, n4 = self.position_empty_node(n1, n4, [-1, 0, 1])
-        n1, n5 = self.position_empty_node(n1, n5, [0, 0, 1])
-        n1, n6 = self.position_empty_node(n1, n6, [-1, 1, 1])
-        n1, n7 = self.position_empty_node(n1, n7, [0, 1, 1])
-        n2, n3 = self.position_empty_node(n2, n3, [1, 0, 0])
-        n2, n4 = self.position_empty_node(n2, n4, [0, -1, 1])
-        n2, n5 = self.position_empty_node(n2, n5, [1, -1, 1])
-        n2, n6 = self.position_empty_node(n2, n6, [0, 0, 1])
-        n2, n7 = self.position_empty_node(n2, n7, [1, 0, 1])
-        n3, n4 = self.position_empty_node(n3, n4, [-1, -1, 1])
-        n3, n5 = self.position_empty_node(n3, n5, [0, -1, 1])
-        n3, n6 = self.position_empty_node(n3, n6, [-1, 0, 1])
-        n3, n7 = self.position_empty_node(n3, n7, [0, 0, 1])
-        n4, n5 = self.position_empty_node(n4, n5, [1, 0, 0])
-        n4, n6 = self.position_empty_node(n4, n6, [0, 1, 0])
-        n4, n7 = self.position_empty_node(n4, n7, [1, 1, 0])
-        n5, n6 = self.position_empty_node(n5, n6, [-1, 1, 0])
-        n5, n7 = self.position_empty_node(n5, n7, [0, 1, 0])
-        n6, n7 = self.position_empty_node(n6, n7, [1, 0, 0])
+        # n0, n1 = self.position_empty_node(n0, n1, [1, 0, 0])
+        # n0, n2 = self.position_empty_node(n0, n2, [0, 1, 0])
+        # n0, n3 = self.position_empty_node(n0, n3, [1, 1, 0])
+        # n0, n4 = self.position_empty_node(n0, n4, [0, 0, 1])
+        # n0, n5 = self.position_empty_node(n0, n5, [1, 0, 1])
+        # n0, n6 = self.position_empty_node(n0, n6, [0, 1, 1])
+        # n0, n7 = self.position_empty_node(n0, n7, [1, 1, 1])
+        # n1, n2 = self.position_empty_node(n1, n2, [-1, 1, 0])
+        # n1, n3 = self.position_empty_node(n1, n3, [0, 1, 0])
+        # n1, n4 = self.position_empty_node(n1, n4, [-1, 0, 1])
+        # n1, n5 = self.position_empty_node(n1, n5, [0, 0, 1])
+        # n1, n6 = self.position_empty_node(n1, n6, [-1, 1, 1])
+        # n1, n7 = self.position_empty_node(n1, n7, [0, 1, 1])
+        # n2, n3 = self.position_empty_node(n2, n3, [1, 0, 0])
+        # n2, n4 = self.position_empty_node(n2, n4, [0, -1, 1])
+        # n2, n5 = self.position_empty_node(n2, n5, [1, -1, 1])
+        # n2, n6 = self.position_empty_node(n2, n6, [0, 0, 1])
+        # n2, n7 = self.position_empty_node(n2, n7, [1, 0, 1])
+        # n3, n4 = self.position_empty_node(n3, n4, [-1, -1, 1])
+        # n3, n5 = self.position_empty_node(n3, n5, [0, -1, 1])
+        # n3, n6 = self.position_empty_node(n3, n6, [-1, 0, 1])
+        # n3, n7 = self.position_empty_node(n3, n7, [0, 0, 1])
+        # n4, n5 = self.position_empty_node(n4, n5, [1, 0, 0])
+        # n4, n6 = self.position_empty_node(n4, n6, [0, 1, 0])
+        # n4, n7 = self.position_empty_node(n4, n7, [1, 1, 0])
+        # n5, n6 = self.position_empty_node(n5, n6, [-1, 1, 0])
+        # n5, n7 = self.position_empty_node(n5, n7, [0, 1, 0])
+        # n6, n7 = self.position_empty_node(n6, n7, [1, 0, 0])
+        
+        n0 = self._empty_node_v2(n0, node, 0)
+        n1 = self._empty_node_v2(n1, node, 1)
+        n2 = self._empty_node_v2(n2, node, 2)
+        n3 = self._empty_node_v2(n3, node, 3)
+        n4 = self._empty_node_v2(n4, node, 4)
+        n5 = self._empty_node_v2(n5, node, 5)
+        n6 = self._empty_node_v2(n6, node, 6)
+        n7 = self._empty_node_v2(n7, node, 7)
 
         # Return the subdivided nodes
         return n0, n1, n2, n3, n4, n5, n6, n7

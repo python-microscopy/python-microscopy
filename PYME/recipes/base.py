@@ -115,10 +115,12 @@ class ModuleBase(HasTraits):
         -------
 
         """
-        namespace = {}
+        namespace = dict()
         
-        if (len(self.inputs) == 1) and (len(args) == 1):
-            namespace[self.inputs[0]] = args[0]
+        ips = list(self.inputs)
+        
+        if (len(ips) == 1) and (len(args) == 1):
+            namespace[ips[0]] = args[0]
         elif (len(args) > 0):
             raise RuntimeError('This module has multiple inputs, please use keyword arguments')
         else:

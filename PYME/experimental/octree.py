@@ -161,7 +161,7 @@ class PyOctree(object):
             self.add_point(pt)
 
 
-def gen_octree_from_points(table, min_pixel_size=5, max_depth=20):
+def gen_octree_from_points(table, min_pixel_size=5, max_depth=20, samples_per_node=1):
     pts = np.vstack([table['x'], table['y'], table['z']]).T.astype('f4')
     
     r_min = pts.min(axis=0)
@@ -173,7 +173,7 @@ def gen_octree_from_points(table, min_pixel_size=5, max_depth=20):
     
     max_depth = min(max_depth, np.log2(bbox_size / min_pixel_size) + 1)
     
-    ot = Octree([r_min[0], bb_max[0], r_min[1], bb_max[1], r_min[2], bb_max[2]], maxdepth=max_depth)
+    ot = Octree([r_min[0], bb_max[0], r_min[1], bb_max[1], r_min[2], bb_max[2]], maxdepth=max_depth, samples_per_node=samples_per_node)
     ot.add_points(pts)
     
     return ot

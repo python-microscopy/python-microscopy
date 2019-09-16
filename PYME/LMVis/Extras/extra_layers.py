@@ -1,6 +1,5 @@
 import numpy as np
-from PYME.LMVis.layers.octree import OctreeRenderLayer
-from PYME.experimental.octree import Octree, gen_octree_from_points
+
 
 
 # def _gen_octree_layer_from_points(visFr):
@@ -31,11 +30,15 @@ def gen_octree_layer_from_points(visFr):
     # regenerating everytime we change something with the points
     # TODO - expose octree parameters
     
-    ot = gen_octree_from_points(visFr.pipeline)
-    visFr.pipeline.dataSources['octree'] = ot
+    from PYME.recipes.pointcloud import Octree
+    from PYME.LMVis.layers.octree import OctreeRenderLayer
     
-    l = OctreeRenderLayer(visFr.pipeline, 'flat', 'octree', depth=0, alpha=1.0)
-    visFr.add_layer(l)
+    otm = Octree()
+    if otm.configure_traits(kind='modal'):
+        visFr.pipeline.dataSources['octree'] = otm.apply_simple(visFr.pipeline)
+        
+        l = OctreeRenderLayer(visFr.pipeline, 'flat', 'octree', depth=0, alpha=1.0)
+        visFr.add_layer(l)
 
 def gen_isosurface(visFr):
     from PYME.LMVis.layers.triangle_mesh import TriangleRenderLayer
