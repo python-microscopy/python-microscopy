@@ -321,7 +321,7 @@ class piezo_e816T(PiezoBase):
     def ReInit(self):
         with self.lock:
             #self.ser_port.write('WTO A0\n')
-            gcs.SVO(b'A', [1])
+            gcs.SVO(self.id, b'A', [1])
             time.sleep(1)
             self.lastPos = self.GetPos()
 
