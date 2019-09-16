@@ -723,10 +723,16 @@ class ModifiedMarchingCubes(object):
         # Interpolate along the edge v0 -> v1
         mu = 1.*(self.isolevel - v0_value) / (v1_value - v0_value)
         p = v0 + mu[:, None]*(v1-v0)
+        
+        #if np.any(mu < 0):
+        #    print('mu < 0', mu[mu < 0])
+            
+        #if np.any(mu > 1):
+        #    print('mu > 1', mu[(mu > 1)*(mu < 1e6)])
 
         # Are v0 and v1 the same vertex? (common in dual marching cubes)
         # If so, choose v0 as the triangle vertex position.
-        idxs = (np.abs(v1_value - v0_value) < self.isolevel)
+        idxs = (np.abs(v1_value - v0_value) < 1e-12)#self.isolevel)
         p[idxs, :] = v0[idxs, :]
 
         return p
@@ -753,11 +759,11 @@ class ModifiedMarchingCubes(object):
         # Find the voxel edges on which our triangle vertices lie
         interpolation_vertices = REGULAR_VERTEX_DATA[cube_index,:]
 		
-		# Corners
+        # Corners
         c0 = hi_nibble(interpolation_vertices)
         c1 = lo_nibble(interpolation_vertices)
 
-		# Construct vertex indices storing an edge in a single number
+        # Construct vertex indices storing an edge in a single number
         v_idxs = []
         for i in range(c0.shape[0]):
             for j in range(len(c0[i,:])):
