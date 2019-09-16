@@ -137,7 +137,7 @@ class DualMarchingCubes(ModuleBase):
     remesh = Bool(False)
     
     def execute(self, namespace):
-        from PYME.experimental import dual_marching_cubes
+        from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
         from PYME.experimental import triangle_mesh
         
         dmc = dual_marching_cubes.DualMarchingCubes(self.threshold_density)
