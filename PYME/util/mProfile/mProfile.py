@@ -124,8 +124,10 @@ def te(frame, event, arg):
         t = time.clock()
         files[lStore.lPrev[funcName][0]][lStore.lPrev[funcName][1]] += (t - lStore.tPrev[funcName])
         lStore.lPrev[funcName] = None
+    
     if event == 'call':
         return te
+    
     if event == 'line':
         if fn in filenames:
             linecounts[fn][frame.f_lineno] += 1
