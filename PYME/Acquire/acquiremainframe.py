@@ -664,7 +664,7 @@ class PYMEMainFrame(AUIFrame):
         import threading
         msg = 'Remaining Threads:\n'
         for t in threading.enumerate():
-            msg += '%s, %s\n' % (t, t._Thread__target)
+            msg += '%s, %s\n' % (t.name, t._target)
             
         logging.info(msg)
 
