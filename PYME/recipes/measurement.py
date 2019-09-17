@@ -836,7 +836,7 @@ class ROIOriginsFromCenters(ModuleBase):
         except KeyError:
             # assume x and y are in units of nanometers
             out = tabular.mappingFilter(points,
-                                        x_origin_um=(points['x']/1e3 - shift_x), y_um=(points['y']/1e3 - shift_y))
+                                        x_origin_um=(points['x']/1e3 - shift_x), y_origin_um=(points['y']/1e3 - shift_y))
 
         namespace[self.output] = out
 
