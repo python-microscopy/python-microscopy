@@ -195,6 +195,7 @@ class TriangleMesh(object):
         """
         if self._singular_edges is None:
             edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
+            edges = edges[edges[:,0] != -1]  # Drop non-edges
             packed_edges = pack_edges(edges)
             e, c = np.unique(packed_edges, return_counts=True)
             singular_packed_edges = e[c>2]
@@ -404,16 +405,36 @@ class TriangleMesh(object):
             
             # Use a dictionary to keep track of which edges are already assigned twins
             d = {}
+            multivalent_edge = False
+            multivalent_dict = {}
             for i, e in enumerate(edges_packed):
-                if e in list(d.keys()):
+                if e in d:
                     idx = d.pop(e)
                     if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
-                        # Handle multivalent edges
+                        # Push it back in the queue and let's see if the next time we
+                        # pull it out we get the right matching edge.
+                        d[e] = idx
+                        # Trip the flag
+                        multivalent_edge = True
+                        multivalent_dict[e] = i
                         continue
                     self._halfedges['twin'][idx] = i
                     self._halfedges['twin'][i] = idx
                 else:
                     d[e] = i
+
+            # Go back and grab the remaining multivalent edges
+            if multivalent_edge:
+                for k in list(multivalent_dict.keys()):
+                    idx = multivalent_dict.pop(k)
+                    for i, e in enumerate(edges_packed):
+                        if e != idx:
+                            continue
+                        if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
+                            continue
+                        self._halfedges['twin'][idx] = i
+                        self._halfedges['twin'][i] = idx
+                        break
 
             self._halfedges['face'] = np.hstack([j, j, j])
             self._halfedges['next'] = np.hstack([j+n_faces, j+2*n_faces, j])
@@ -438,6 +459,8 @@ class TriangleMesh(object):
         """
 
         if USE_C:
+            if isinstance(f_idxs, list):
+                f_idxs = np.int32(f_idxs)
             triangle_mesh_utils.c_update_face_normals(f_idxs, self._halfedges, self._vertices, self._faces)
         else:
             for f_idx in f_idxs:
@@ -467,6 +490,8 @@ class TriangleMesh(object):
         """
 
         if USE_C:
+            if isinstance(v_idxs, list):
+                v_idxs = np.int32(v_idxs)
             triangle_mesh_utils.c_update_vertex_neighbors(v_idxs, self._halfedges, self._vertices, self._faces)
         else:
             for v_idx in v_idxs:
@@ -1395,7 +1420,7 @@ class TriangleMesh(object):
 
             # 1. Split every edge in the mesh
             for j, i in enumerate(edges_to_split):
-                if (i in list(split_edges.keys())):
+                if i in split_edges:
                     continue
                 
                 split_edges[self._halfedges['twin'][i]] = i
@@ -1474,7 +1499,7 @@ class TriangleMesh(object):
         # 4. Place all the pairs in a heap keyed on cost with the minimum cost pair on top
         cost_heap = treap.Treap()
         for i in (np.arange(len(edges))[edges_mask]):
-            cost_heap.insert(err[i], i)
+            cost_heap.insert(np.float32(err[i]), np.int32(i))
             
         # 5. Iteratively remove the pair of least cost from the heap, 
         #    contract this pair, and update the costs of all valid 
@@ -1529,7 +1554,7 @@ class TriangleMesh(object):
 
             # Eliminate edges touching either vertex from the cost heap
             for neighbor in neighbors:
-                cost_heap.delete(neighbor)
+                cost_heap.delete(np.int32(neighbor))
                             
             # Collapse the edge
             self.edge_collapse(_edge)
@@ -1562,7 +1587,7 @@ class TriangleMesh(object):
             err[neighbors] = ((vp[neighbors,None,:]*Q_edge[neighbors]).sum(2)*vp[neighbors]).sum(1)
 
             for n in neighbors:
-                cost_heap.insert(err[n], n)
+                cost_heap.insert(np.float32(err[n]), np.int32(n))
 
     def find_connected_components(self):
         """
@@ -1632,7 +1657,8 @@ class TriangleMesh(object):
         _edges_with_twins = _edges[self._halfedges['twin'][_edges] != -1]
         _faces = np.where((self._faces['component'] != max_com))[0]
         self._vertices[_vertices] = -1
-        self._halfedges['twin'][self._halfedges['twin'][_edges_with_twins]] = -1
+        _kept_edges = self._halfedges['twin'][_edges_with_twins]
+        self._halfedges['twin'][_kept_edges] = -1
         self._halfedges[_edges] = -1
         self._faces[_faces] = -1
 
@@ -1640,6 +1666,10 @@ class TriangleMesh(object):
         self._vertex_vacancies = list(set(self._vertex_vacancies).union(set(_vertices)))
         self._halfedge_vacancies = list(set(self._halfedge_vacancies).union(set(_edges)))
         self._face_vacancies = list(set(self._face_vacancies).union(set(_faces)))
+
+        # Update newly orphaned edges
+        self._update_face_normals(list(set(self._halfedges['face'][_kept_edges])))
+        self._update_vertex_neighbors(list(set(self._halfedges['vertex'][_kept_edges])))
         
         self._faces_by_vertex = None
 
@@ -1983,7 +2013,7 @@ class TriangleMesh(object):
 
             _twin_nn = list(np.where(self._halfedges['vertex'] == _vertex)[0])
             _update_vertices = np.hstack([_vertex, self._halfedges['vertex'][self._halfedges['twin'][_twin_nn]]])
-            _update_faces = self._faces[self._halfedges['face'][_twin_nn]]
+            # _update_faces = self._faces[self._halfedges['face'][_twin_nn]]
 
             self._group_neighbors(_vertex)
             
@@ -2004,6 +2034,8 @@ class TriangleMesh(object):
                 self._halfedges['vertex'][_modified_edges] = _new_vertex
 
                 # Disconnect the boundaries of the components
+                # Any edge pointing to the new vertex with a twin in a 
+                # different component must be reassigned
                 _twin_face_component = self._faces['component'][self._halfedges['face'][self._halfedges['twin'][_modified_edges]]]
                 _boundary = (_twin_face_component != c)
                 _twin_edges = self._halfedges['twin'][_modified_edges[_boundary]]
@@ -2011,15 +2043,29 @@ class TriangleMesh(object):
                 _valid_edges = _modified_edges[_boundary][_twin_edges_mask]
                 self._halfedges['twin'][_twin_edges[_twin_edges_mask]] = -1
                 self._halfedges['twin'][_valid_edges] = -1
+                # Any edge emanating from the new vertex with a twin in a
+                # different component must be reassigned
+                _twin_next_face_component = self._faces['component'][self._halfedges['face'][self._halfedges['twin'][self._halfedges['next'][_modified_edges]]]]
+                _boundary = (_twin_next_face_component != c)                
+                _twin_next_edges = self._halfedges['twin'][self._halfedges['next'][_modified_edges[_boundary]]]
+                _twin_next_edges_mask = (_twin_next_edges != -1)
+                _valid_edges = self._halfedges['next'][_modified_edges[_boundary][_twin_next_edges_mask]]
+                self._halfedges['twin'][_twin_next_edges[_twin_next_edges_mask]] = -1
+                self._halfedges['twin'][_valid_edges] = -1
 
-                # Double check that the original vertex did not have a halfedge in this
-                # component
+                # Double check that the original vertex did not have a halfedge 
+                # in this component
                 _safe_faces_bool = (self._faces['component'][self._halfedges['face']] != c)
                 _safe_vertices = np.where((self._halfedges['vertex'] == _vertex) & (_safe_faces_bool))[0]
-                self._vertices['halfedge'][_vertex] = self._halfedges['next'][_safe_vertices[0]]
+                _safe_halfedge = self._halfedges['next'][_safe_vertices[0]]
+                self._vertices['halfedge'][_vertex] = _safe_halfedge
 
-                self._update_face_normals(_update_faces)
-                self._update_vertex_neighbors(_update_vertices)
+                # self._update_face_normals(_update_faces)
+                self._update_vertex_neighbors(np.hstack([_update_vertices, _new_vertex]))
+
+        # Reset
+        self._singular_edges = None
+        self._singular_vertices = None
 
     def repair(self):
         """

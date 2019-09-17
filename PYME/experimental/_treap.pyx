@@ -41,7 +41,7 @@ cdef class Treap:
     def _set_cnodes(self, node_d[:] nodes):
         self._cnodes = &nodes[0]
 
-    def _search(self, np.int32_t key, np.int32_t starting_node=-1):
+    def _search(self, np.int32_t key, np.int32_t starting_node=-2):
         """
         Return the index _curr of the node with key key.
 
@@ -60,7 +60,7 @@ cdef class Treap:
         cdef np.int32_t _curr
         cdef node_d * curr_node
 
-        if starting_node == -1:
+        if starting_node == -2:
             starting_node = self._root_node
         _curr = starting_node
         while _curr != -1:
@@ -96,21 +96,20 @@ cdef class Treap:
 
         cdef np.int32_t parent, grandparent
 
-        try:
-            parent = self._cnodes[v].parent
-            grandparent = self._cnodes[parent].parent
-        except(IndexError):
-            raise IndexError('Node {} has no parent.'.format(v))
+        parent = self._cnodes[v].parent
+        grandparent = self._cnodes[parent].parent
 
         if self._cnodes[parent].left == v:
             # Rotate right
             self._cnodes[parent].left = self._cnodes[v].right
-            self._cnodes[self._cnodes[v].right].parent = parent
+            if (self._cnodes[v].right != -1):
+                self._cnodes[self._cnodes[v].right].parent = parent
             self._cnodes[v].right = parent
         elif self._cnodes[parent].right == v:
             # Rotate left
             self._cnodes[parent].right = self._cnodes[v].left
-            self._cnodes[self._cnodes[v].left].parent = parent
+            if self._cnodes[v].left != -1:
+                self._cnodes[self._cnodes[v].left].parent = parent
             self._cnodes[v].left = parent
         else:
             print('broken')
@@ -142,6 +141,10 @@ cdef class Treap:
         """
         cdef np.int32_t _curr
         cdef node_d *curr_node
+
+        if key == -1:
+            # Can't insert something that doesn't exist
+            return
 
         if root is None:
             root = self._root_node

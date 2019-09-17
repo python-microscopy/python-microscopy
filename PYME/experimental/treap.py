@@ -12,8 +12,6 @@ class PyTreap(object):
 
     Another name for this data structure is, priority search tree.
 
-    TODO: Cythonize!
-
     References
     ----------
        Lecture notes "Lecture 8: Treaps and Skip Lists" by Jeff Erickson
