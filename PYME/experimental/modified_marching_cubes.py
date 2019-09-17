@@ -638,17 +638,33 @@ def single_unpack(res):
 # For the multi_pack/unpack we need np.uint64 to get bitshift to work correctly 
 # (not even np.uint32 works)
 
-def multi_pack(arr1, arr2, arr3):
-    arr = ((arr1.astype(np.uint64)) << 32)
-    arr += ((arr2.astype(np.uint64)) << 16)
-    arr += arr3.astype(np.uint64)
+# def multi_pack(arr1, arr2, arr3):
+#     arr = ((arr1.astype(np.uint64)) << 32)
+#     arr += ((arr2.astype(np.uint64)) << 16)
+#     arr += arr3.astype(np.uint64)
+#
+#     return arr
+#
+# def multi_unpack(arr):
+#     a = (((arr.astype(np.uint64)) >> 32) & 0xffff)
+#     b = (((arr.astype(np.uint64)) >> 16) & 0xffff)
+#     c = ((arr.astype(np.uint64)) & 0xffff)
+#
+#     return a, b, c
 
+
+def multi_pack(arr1, arr2, arr3):
+    arr = ((arr1.astype(np.uint64)) << 42)
+    arr += ((arr2.astype(np.uint64)) << 21)
+    arr += arr3.astype(np.uint64)
+    
     return arr
 
+
 def multi_unpack(arr):
-    a = (((arr.astype(np.uint64)) >> 32) & 0xffff)
-    b = (((arr.astype(np.uint64)) >> 16) & 0xffff)
-    c = ((arr.astype(np.uint64)) & 0xffff)
+    a = (((arr.astype(np.uint64)) >> 42) & 0x1FFFFF)
+    b = (((arr.astype(np.uint64)) >> 21) & 0x1FFFFF)
+    c = ((arr.astype(np.uint64)) & 0x1FFFFF)
     
     return a, b, c
 

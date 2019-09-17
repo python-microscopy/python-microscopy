@@ -45,7 +45,11 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         print('Dual grid created in %3.3f s' % (time.time() - t_))
 
     def march(self, return_triangles=True, **kwargs):
-        return super(DualMarchingCubes, self).march(return_triangles, **kwargs)
+        t_ = time.time()
+        res = super(DualMarchingCubes, self).march(return_triangles, **kwargs)
+        print('March in %3.3f s' % (time.time() - t_))
+        return res
+        
 
     def position_empty_node(self, n0, n1, shift):
         """
