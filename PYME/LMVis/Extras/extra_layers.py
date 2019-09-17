@@ -34,7 +34,7 @@ def gen_octree_layer_from_points(visFr):
     from PYME.LMVis.layers.octree import OctreeRenderLayer
     
     otm = Octree()
-    if otm.configure_traits(kind='modal'):
+    if True:#otm.configure_traits(kind='modal'):
         visFr.pipeline.dataSources['octree'] = otm.apply_simple(visFr.pipeline)
         
         l = OctreeRenderLayer(visFr.pipeline, 'flat', 'octree', depth=0, alpha=1.0)

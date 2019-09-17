@@ -622,9 +622,9 @@ lo_nibble = lambda b : ((b) & 0x0F)
 # and to establish vertex priority.
 # 3 integers (unpack) <--> (pack) single integer.
 def single_pack(a, b, c):
-    res = ((a) << 32)
-    res += ((b) << 16)
-    res += c
+    res = ((a) << 32) + ((b) << 16) + c
+    #res += ((b) << 16)
+    #res += c
 
     return res
 
@@ -766,24 +766,34 @@ class ModifiedMarchingCubes(object):
         c1 = lo_nibble(interpolation_vertices)
 
         # Construct vertex indices storing an edge in a single number
-        v_idxs = []
-        for i in range(c0.shape[0]):
-            for j in range(len(c0[i,:])):
-                e0 = c0[i,j]  # MC_MAP[c0[i,j]]
-                e1 = c1[i,j]  # MC_MAP[c1[i,j]]
-                v0 = vertices[i,e0,:]
-                v1 = vertices[i,e1,:]
+        #v_idxs = []
+        
+        # for i in range(c0.shape[0]):
+        #     for j in range(len(c0[i,:])):
+        #         e0 = c0[i,j]  # MC_MAP[c0[i,j]]
+        #         e1 = c1[i,j]  # MC_MAP[c1[i,j]]
+        #
+        #         # DB: below sorting doesn't appear necessary
+        #         # v0 = vertices[i,e0,:]
+        #         # v1 = vertices[i,e1,:]
+        #         #
+        #         # # Ordered
+        #         # if (v0[0] > v1[0]) or (v0[1] > v1[1]) or (v0[2] > v1[2]):
+        #         #     tmp = e0
+        #         #     e0 = e1
+        #         #     e1 = tmp
+        #
+        #         v_idx = single_pack(i, e0, e1)
+        #         v_idxs.append(v_idx)
+        #
+        # v_idxs = np.vstack(v_idxs).squeeze()
+        
+        
+        #sort
+        c0_ = np.minimum(c0, c1)
+        c1_ = np.maximum(c0, c1)
 
-                # Ordered
-                if (v0[0] > v1[0]) or (v0[1] > v1[1]) or (v0[2] > v1[2]):
-                    tmp = e0
-                    e0 = e1
-                    e1 = tmp
-
-                v_idx = single_pack(i, e0, e1)
-                v_idxs.append(v_idx)
-
-        v_idxs = np.vstack(v_idxs).squeeze()
+        v_idxs = multi_pack((np.arange(c0.shape[0])[:, None]*np.ones(c0.shape[1])[None,:]).astype('uint64'), c0_, c1_).ravel()
 
         # Grab the unique vertices and calculate edges
         edges_unique, edges_inverse = np.unique(v_idxs, return_inverse=True)
