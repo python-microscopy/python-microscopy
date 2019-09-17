@@ -2,9 +2,11 @@ import numpy as np
 from copy import deepcopy
 
 from PYME.experimental.marching_cubes import MarchingCubes
+from PYME.experimental.modified_marching_cubes import ModifiedMarchingCubes
 
 
-class DualMarchingCubes(MarchingCubes):
+class DualMarchingCubes(ModifiedMarchingCubes):
+    
     def __init__(self, isolevel=0):
         super(DualMarchingCubes, self).__init__(isolevel)
         self._ot = None
@@ -15,6 +17,7 @@ class DualMarchingCubes(MarchingCubes):
         # Make vertices/values a list instead of None
         self.vertices = []
         self.values = []
+        self.depths = []
         
         #precalculate shift scales for empty boxes
         max_depth = self._ot._nodes['depth'].max()
@@ -31,9 +34,10 @@ class DualMarchingCubes(MarchingCubes):
         # Make vertices/values np arrays
         self.vertices = np.vstack(self.vertices).astype('float64')
         self.values = np.vstack(self.values).astype('float64')
+        self.depths = np.vstack(self.depths).astype('float64')
 
-    def march(self, return_triangles=True):
-        return super(DualMarchingCubes, self).march(return_triangles)
+    def march(self, return_triangles=True, **kwargs):
+        return super(DualMarchingCubes, self).march(return_triangles, **kwargs)
 
     def position_empty_node(self, n0, n1, shift):
         """
@@ -460,11 +464,13 @@ class DualMarchingCubes(MarchingCubes):
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
     def vert_proc(self, n0, n1, n2, n3, n4, n5, n6, n7):
-        
-        nds = [n0, n1, n2, n3, n4, n5, n6, n7]
+        if not self._MC_MAP_MODE_MODIFIED:
+            # Convert from dual marching cubes to marching cubes indexing
+            nds = [n0, n1, n3, n2, n4, n5, n7, n6]
+        else:
+            nds = [n0, n1, n2, n3, n4, n5, n6, n7]
 
-        # Convert from dual marching cubes to marching cubes indexing
-        MC_MAP = [n0, n1, n3, n2, n4, n5, n7, n6]
+        
         
         leaf_nodes = (np.sum(n0['children'], axis=1) == 0) & (
                      np.sum(n1['children'], axis=1) == 0) & \
@@ -478,11 +484,14 @@ class DualMarchingCubes(MarchingCubes):
         if (np.sum(leaf_nodes) > 0):
             inds = np.where(leaf_nodes)
             
-            vt = np.array([nj[inds]['centre'] for nj in MC_MAP])
+            vt = np.array([nj[inds]['centre'] for nj in nds])
             self.vertices.append(np.swapaxes(vt,0, 1))
             
-            vv = np.array([nj[inds]['nPoints'] * self._density_sc[nj[inds]['depth']] for nj in MC_MAP])
+            vv = np.array([nj[inds]['nPoints'] * self._density_sc[nj[inds]['depth']] for nj in nds])
             self.values.append(np.swapaxes(vv,0, 1))
+
+            vd = np.array([nj[inds]['depth'] for nj in nds])
+            self.depths.append(np.swapaxes(vd, 0, 1))
 
         if np.sum(~(leaf_nodes).astype(bool)) > 0:
 
@@ -529,3 +538,61 @@ class DualMarchingCubes(MarchingCubes):
 
             if is_c0_subdivided or is_c1_subdivided or is_c2_subdivided or is_c3_subdivided or is_c4_subdivided or is_c5_subdivided or is_c6_subdivided or is_c7_subdivided:
                 self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+
+
+class PiecewiseDualMarchingCubes(DualMarchingCubes):
+    """
+    Swaps out the interpolation rountine for one which segments each edge into pieces, weighted by the vertex areas
+    of each vertex
+    """
+    def interpolate_vertex(self, v0, v1, v0_value, v1_value, i=slice(None), j0=None, j1=None):
+        """
+        Interpolate triangle vertex along edge formed by v0->v1.
+
+        Parameters
+        ----------
+        v0, v1 :
+            Vertices of edge v0->v1.
+        v0_value, v1_value:
+            Scalar values at vertices v0, v1. Same values as for vertex_values in edge_index().
+
+        Returns
+        -------
+        Interpolated vertex of a triangle.
+
+        """
+        
+        depth0 = self.depths[i, j0]
+        depth1 = self.depths[i, j1]
+        
+        d_depth = depth0 - depth1
+        
+        f = 8 ** d_depth
+        r = 1.0 / (1 + f)
+        
+        #print(f[~(f==1)], r[~(f==1)])
+        
+        #m_value = 0.5*(v0_value + v1_value)\
+        #r = depth1/(depth0 + depth1)
+        m_value = (v0_value * r + v1_value * (1 - r))
+        #vm = (v0*depth1[:,None] + v1*depth0[:,None])/(depth1 +depth0)[:,None]
+        vm = v0 * (1 - r[:, None]) + v1 * r[:, None]
+        
+        #print(depth0[~(r == 0.5)], depth1[~(r == 0.5)], r[~(r == 0.5)])
+        
+        #print(v0_value[~(r == 0.5)], v1_value[~(r == 0.5)], m_value[~(r == 0.5)])
+        
+        # Interpolate along the edge v0 -> v1
+        mu1 = 1. * (self.isolevel - v0_value) / (m_value - v0_value)
+        p = v0 + mu1[:, None] * (vm - v0)
+        
+        mu2 = 1. * (self.isolevel - m_value) / (v1_value - m_value)
+        p[mu2 > 0, :] = (vm + mu2[:, None] * (v1 - vm))[mu2 > 0, :]
+        #print(mu1, mu2)
+        
+        # Are v0 and v1 the same vertex? (common in dual marching cubes)
+        # If so, choose v0 as the triangle vertex position.
+        idxs = (np.abs(v1_value - v0_value) < 1e-12)#self.isolevel)
+        p[idxs, :] = v0[idxs, :]
+        
+        return p

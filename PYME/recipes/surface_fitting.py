@@ -133,14 +133,16 @@ class DualMarchingCubes(ModuleBase):
     
     threshold_density = Float(2e-5)
     n_points_min = Int(5) # lets us truncate on SNR
+    
     repair = Bool(False)
     remesh = Bool(False)
     
     def execute(self, namespace):
-        from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
+        #from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
+        from PYME.experimental import dual_marching_cubes
         from PYME.experimental import triangle_mesh
         
-        dmc = dual_marching_cubes.DualMarchingCubes(self.threshold_density)
+        dmc = dual_marching_cubes.PiecewiseDualMarchingCubes(self.threshold_density)
         dmc.set_octree(namespace[self.input].truncate_at_n_points(int(self.n_points_min)))
         tris = dmc.march(dual_march=False)
 

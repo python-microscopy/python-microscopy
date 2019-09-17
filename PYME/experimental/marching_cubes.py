@@ -324,6 +324,8 @@ class MarchingCubes(object):
         * http://paulbourke.net/geometry/polygonise/
     """
 
+    _MC_MAP_MODE_MODIFIED = False #allow us to switch between this and modified marching cubes easily
+
     def __init__(self, isolevel=0):
         """
         Initialize the marching cubes algorithm
@@ -366,7 +368,7 @@ class MarchingCubes(object):
         # return index
         return ((values < self.isolevel) * EDGE_BITMASK).sum(1)
 
-    def interpolate_vertex(self, v0, v1, v0_value, v1_value):
+    def interpolate_vertex(self, v0, v1, v0_value, v1_value, i=None, j0=None, j1=None):
         """
         Interpolate triangle vertex along edge formed by v0->v1.
 
@@ -454,12 +456,14 @@ class MarchingCubes(object):
         #
         # return intersection_vertices
 
-        v0 = vertices[:, INTERPOLATION_VERTICES[0, :]]
-        v1 = vertices[:, INTERPOLATION_VERTICES[1, :]]
-        v0_value = values[:, INTERPOLATION_VERTICES[0, :]]
-        v1_value = values[:, INTERPOLATION_VERTICES[1, :]]
+        j0 = INTERPOLATION_VERTICES[0, :]
+        j1 = INTERPOLATION_VERTICES[1, :]
+        v0 = vertices[:, j0]
+        v1 = vertices[:, j1]
+        v0_value = values[:, j0]
+        v1_value = values[:, j1]
 
-        p = self.interpolate_vertex(v0, v1, v0_value, v1_value)
+        p = self.interpolate_vertex(v0, v1, v0_value, v1_value, j0=j0, j1=j1)
 
         edge_indices = (np.repeat(edge, 12).reshape(edge.shape[0], 12) & INTERPOLATION_BITMASK) == 0
         p[edge_indices, :] = 0
@@ -533,7 +537,7 @@ class MarchingCubes(object):
 
         return self.triangles
 
-    def march(self, return_triangles=True):
+    def march(self, return_triangles=True, **kwargs):
         """
         March over the input vertices.
 
