@@ -483,14 +483,16 @@ class DualMarchingCubes(ModifiedMarchingCubes):
 
         if (np.sum(leaf_nodes) > 0):
             inds = np.where(leaf_nodes)
+
+            njis = [nj[inds] for nj in nds]
             
-            vt = np.array([nj[inds]['centre'] for nj in nds])
+            vt = np.array([nj['centre'] for nj in njis])
             self.vertices.append(np.swapaxes(vt,0, 1))
             
-            vv = np.array([nj[inds]['nPoints'] * self._density_sc[nj[inds]['depth']] for nj in nds])
+            vv = np.array([nj['nPoints'] * self._density_sc[nj['depth']] for nj in njis])
             self.values.append(np.swapaxes(vv,0, 1))
 
-            vd = np.array([nj[inds]['depth'] for nj in nds])
+            vd = np.array([nj['depth'] for nj in njis])
             self.depths.append(np.swapaxes(vd, 0, 1))
 
         if np.sum(~(leaf_nodes).astype(bool)) > 0:
@@ -569,6 +571,9 @@ class PiecewiseDualMarchingCubes(DualMarchingCubes):
         
         f = 8 ** d_depth
         r = 1.0 / (1 + f)
+
+        f2 = 2 ** d_depth
+        r2 = 1.0 / (1 + f2)
         
         #print(f[~(f==1)], r[~(f==1)])
         
@@ -576,7 +581,8 @@ class PiecewiseDualMarchingCubes(DualMarchingCubes):
         #r = depth1/(depth0 + depth1)
         m_value = (v0_value * r + v1_value * (1 - r))
         #vm = (v0*depth1[:,None] + v1*depth0[:,None])/(depth1 +depth0)[:,None]
-        vm = v0 * (1 - r[:, None]) + v1 * r[:, None]
+        #vm = v0 * (1 - r[:, None]) + v1 * r[:, None]
+        vm = v0 * (1 - r2[:, None]) + v1 * r2[:, None]
         
         #print(depth0[~(r == 0.5)], depth1[~(r == 0.5)], r[~(r == 0.5)])
         
