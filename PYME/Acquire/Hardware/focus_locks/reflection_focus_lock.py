@@ -105,6 +105,7 @@ class ReflectedLinePIDFocusLock(PID):
         """
         self.scope = scope
         self.piezo = piezo
+        self._last_offset = self.piezo.GetOffset()
 
         self._fitter = GaussFitter1D()
         self.fit_roi_size = 75
@@ -125,11 +126,19 @@ class ReflectedLinePIDFocusLock(PID):
 
     @webframework.register_endpoint('/EnableLock', output_is_json=False)
     def EnableLock(self):
+        """
+        Returns offset to last-known offset before enabling the lock.
+
+        The servo is generally more robust to changing its setpoint when it is running than when you toggle it off, move
+        off the setpoint, and then slam it on again. This just makes the slam small.
+        """
+        self.piezo.SetOffset(self._last_offset)
         logger.debug('Enabling focus lock')
         self.set_auto_mode(True)
 
     @webframework.register_endpoint('/DisableLock', output_is_json=False)
     def DisableLock(self):
+        self._last_offset = self.piezo.GetOffset()
         logger.debug('Disabling focus lock')
         self.set_auto_mode(False)
 
