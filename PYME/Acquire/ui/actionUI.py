@@ -180,7 +180,8 @@ class ActionPanel(wx.Panel):
         Parameters
         ----------
         rois: list-like
-            list of ROI (x, y) positions, or array of shape (n_roi, 2)
+            list of ROI (x, y) positions, or array of shape (n_roi, 2). Note that the x, y positions are the upper-left
+            corners of the FOV to be imaged.
 
         Returns
         -------
@@ -189,7 +190,7 @@ class ActionPanel(wx.Panel):
         nice = float(self.tNice.GetValue())
         timeout = float(self.tTimeout.GetValue()) #CHECKME - default here might be too short
         
-        for x, y in rois:
+        for x, y in rois:  # note that coordinates are for the origin, e.g. min x, min y (top left) corner
             args = {'state' : {'Positioning.x': float(x), 'Positioning.y': float(y)}}
             self.actionManager.QueueAction('state.update', args, nice, timeout)
             args = {'maxFrames': int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
@@ -203,7 +204,7 @@ class ActionPanel(wx.Panel):
         if not filename == '':
             rois = tabular.hdfSource(filename, tablename='roi_locations')
             
-            rois = [(x, y) for x, y in zip(rois['x_um'], rois['y_um'])]
+            rois = [(x, y) for x, y in zip(rois['x_origin_um'], rois['y_origin_um'])]
             
             self._add_ROIs(rois)
     
