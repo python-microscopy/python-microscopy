@@ -154,14 +154,8 @@
                 .attr("y", function (d) {
                     return d[1];
                 })
-                .attr("width", function (d) {
-                    console.log(d);
-                    return 2 * getROIHalfSize();
-                })
-                .attr("height", function (d) {
-                    console.log(d);
-                    return 2 * getROIHalfSize();
-                });
+                .attr("width", 2 * getROIHalfSize())
+                .attr("height", 2 * getROIHalfSize());
 
             sel.exit().remove();
 
