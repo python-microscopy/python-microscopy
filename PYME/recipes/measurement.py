@@ -797,9 +797,58 @@ class TilePhysicalCoords(ModuleBase):
         
         namespace[self.outputName] = out
 
+@register_module('ROIOriginsFromCenters')
+class ROIOriginsFromCenters(ModuleBase):
+    """
 
-@register_module('FilterOverlappingROIs')
-class FilterOverlappingROIs(ModuleBase):
+    Shift coordinates by a half field of view size in order to center a field of view on a point rather than have the
+    point be at the (min x, min y) corner.
+
+    Parameters
+    ----------
+    input : Input
+        PYME.IO.tabular containing x and y coordinates. Compatible with measurement output for Supertile coordinates,
+        e.g. 'x_um'
+    roi_size_pixels: Int
+        Size of ROI which shift should be calculated based on
+    output: Output
+        PYME.IO.tabular
+
+    Notes
+    -----
+    This module is optional for recipes run within the tile viewer, which itself will find the origin for given ROI
+    centers based on the imaging ROI size input into the web form.
+
+    """
+    input = Input('input')
+    roi_size_pixels = Int(256)
+    output = Output('centered')
+
+    def execute(self, namespace):
+        points = namespace[self.input]
+
+        try:
+            shift_x, shift_y = np.ones(2) * 0.5 * points.mdh['Pyramid.PixelSize'] * self.roi_size_pixels
+        except KeyError:
+            shift_x = 0.5 * points.mdh['voxelsize.x'] * self.roi_size_pixels
+            shift_y = 0.5 * points.mdh['voxelsize.y'] * self.roi_size_pixels
+
+        out = tabular.mappingFilter(points)
+        out.mdh = points.mdh
+
+        try:
+            out.addColumn('x_origin_um', points['x_um'] - shift_x)
+            out.addColumn('y_origin_um', points['y_um'] - shift_y)
+        except KeyError:
+            # assume x and y are in units of nanometers
+            out.addColumn('x_origin_um', points['x']/1e3 - shift_x)
+            out.addColumn('y_origin_um', points['y']/1e3 - shift_y)
+
+        namespace[self.output] = out
+
+
+@register_module('IdentifyOverlappingROIs')
+class IdentifyOverlappingROIs(ModuleBase):
     """
 
     Filter input ROI positions such that ROIs of a given size will not overlap. Output maintains all points, but with
@@ -837,27 +886,28 @@ class FilterOverlappingROIs(ModuleBase):
 
         try:
             positions = np.stack([points['x_um'], points['y_um']], axis=1)
+            far_flung = np.sqrt(2) * points.mdh['Pyramid.PixelSize'] * self.roi_size_pixels  # [micrometers]
         except KeyError:
             positions = np.stack([points['x'], points['y']], axis=1) / 1e3  # assume x and y were in [nanometers]
+            far_flung = np.sqrt(2) * points.mdh['voxelsize.x'] * self.roi_size_pixels  # [micrometers]
 
         tree = KDTree(positions)
 
-        far_flung = np.sqrt(2) * points.mdh['voxelsize.x'] * self.roi_size_pixels  # [micrometers]
+
         neighbors = tree.query_ball_tree(tree, r=far_flung, p=2)
 
         tossing = set()
         for ind, close in enumerate(neighbors):
-            # ignore points we've already decided to reject
-            if ind not in tossing and len(close) > 1:
+            if ind not in tossing and len(close) > 1:  # ignore points we've already decided to reject
                 # reject points too close to our current indexed point
-                # TODO - don't reject points inside of this cirdular radius if their square ROIs don't actually overlap
+                # TODO - don't reject points inside of this circular radius if their square ROIs don't actually overlap
                 close.remove(ind)
                 tossing.update(close)
 
         out = tabular.mappingFilter(points)
         reject = np.zeros(tree.n, dtype=int)
         reject[list(tossing)] = 1
-        out.addColumn(self.reject_key, reject.astype(int))
+        out.addColumn(self.reject_key, reject)
 
         try:
             out.mdh = points.mdh
