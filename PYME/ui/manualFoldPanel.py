@@ -129,8 +129,44 @@ DEFAULT_CAPTION_STYLE = {
 'HAS_PIN' : True,
 }
 
-class CaptionBar(wx.Window):
+class CaptionButton(object):
+    def __init__(self, active_bitmap, inactive_bitmap=None, show_fcn=None, active_fcn = None, onclick=None):
+        self._active_bitmap = active_bitmap
+        self._inactive_bitmap = inactive_bitmap
+        
+        self._show_fcn = show_fcn
+        self._active_fcn = active_fcn
+        self._onclick = onclick
+        
+        self._rect = [0,0,0,0]
+    
+    @property
+    def size(self):
+        return self._active_bitmap.GetWidth(), self._active_bitmap.GetHeight()
+    
+    @property
+    def show(self):
+        if self._show_fcn is None:
+            return True
+        else:
+            return self._show_fcn()
+        
+    @property
+    def active(self):
+        if self._active_fcn is None:
+            return True
+        else:
+            return self._active_fcn()
+        
+        
+    def click_test(self, event):
+        if (self._onclick is not None) and wx.Rect(*self._rect).Contains(event.GetPosition()):
+            self._onclick()
+            return True
+        else:
+            return False
 
+class CaptionBar(wx.Window):
     def __init__(self, parent, id = wx.ID_ANY, pos=(-1,-1), caption="",
                  foldIcons=None, cbstyle=DEFAULT_CAPTION_STYLE, pin_bits=pin_bits):
 
@@ -141,12 +177,18 @@ class CaptionBar(wx.Window):
         self.parent = parent
         self.caption = caption
         self.foldIcons = foldIcons
+        
+        self.buttons = []
 
         self._inactive_pin_bitmap = BitmapFromBits(pin_bits, 16, 16, ColourFromStyle(self.style['INACTIVE_PIN_COLOUR']))
         self._active_pin_bitmap = BitmapFromBits(pin_bits, 16, 16, ColourFromStyle(self.style['ACTIVE_PIN_COLOUR']))
 
-        self.pinButtonRect = (0,0,0,0)
-
+        #self.pinButtonRect = (0,0,0,0)
+        
+        self.buttons.append(CaptionButton(self._active_pin_bitmap, self._inactive_pin_bitmap,
+                                          show_fcn=lambda : self.style['HAS_PIN'] and self.parent.foldable,
+                                          active_fcn=lambda : self.parent.pinnedOpen,
+                                          onclick=lambda : self.parent.TogglePin()))
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -198,25 +240,51 @@ class CaptionBar(wx.Window):
         gc.DrawText(self.caption, self.style['CAPTION_INDENT'], y0)
 
 
-        h = self._active_pin_bitmap.GetHeight()
-        w = self._active_pin_bitmap.GetWidth()
-
-        y0 = self.style['HEIGHT']/2. - h/2.
-
-        #print wndRect[2]
-
-        self.pinButtonRect = (wndRect[2] - h - y0, y0, w,h)
-
-        if self.style['HAS_PIN'] and self.parent.foldable:
-            if self.parent.pinnedOpen:
-                gc.DrawBitmap(self._active_pin_bitmap, *self.pinButtonRect)
-            else:
-                gc.DrawBitmap(self._inactive_pin_bitmap, *self.pinButtonRect)
-
-        if self.parent.folded and self.parent.foldable:
-            self.DrawEllipses(gc)
+        # h = self._active_pin_bitmap.GetHeight()
+        # w = self._active_pin_bitmap.GetWidth()
+        #
+        # y0 = self.style['HEIGHT']/2. - h/2.
+        #
+        # #print wndRect[2]
+        #
+        # self.pinButtonRect = (wndRect[2] - h - y0, y0, w,h)
+        #
+        # if self.style['HAS_PIN'] and self.parent.foldable:
+        #     if self.parent.pinnedOpen:
+        #         gc.DrawBitmap(self._active_pin_bitmap, *self.pinButtonRect)
+        #     else:
+        #         gc.DrawBitmap(self._inactive_pin_bitmap, *self.pinButtonRect)
+        #
+        # if self.parent.folded and self.parent.foldable:
+        #     self.DrawEllipses(gc)
+        
+        self.DrawButtons(gc)
 
         gc.PopState()
+        
+    def DrawButtons(self, gc):
+        b0 = self.buttons[0]
+        
+        h, w = b0.size
+        y0 = self.style['HEIGHT'] / 2. - h / 2.
+        
+        x0 = self.GetRect()[2] - y0
+        
+        for b in self.buttons:
+            if b.show:
+                h, w = b.size
+                y0 = self.style['HEIGHT'] / 2. - h / 2.
+                x0 -= w
+                b._rect = (x0, y0, w,h)
+                
+                if b.active:
+                    gc.DrawBitmap(b._active_bitmap, *b._rect)
+                else:
+                    gc.DrawBitmap(b._inactive_bitmap, *b._rect)
+            
+        self._min_x = x0
+        
+        
 
     def DrawEllipses(self, gc):
         gc.SetBrush(wx.Brush(ColourFromStyle(self.style['ELLIPSES_COLOUR'])))
@@ -226,7 +294,8 @@ class CaptionBar(wx.Window):
         path.AddCircle(6*self.style['ELLIPSES_RADIUS'], 0, self.style['ELLIPSES_RADIUS'])
 
         gc.PushState()
-        gc.Translate(self.pinButtonRect[0], self.pinButtonRect[1] + self.pinButtonRect[3])
+        r0 = self.buttons[-1].rect
+        gc.Translate(r0[0], r0[1] + r0[3])
         bx = path.GetBox()
         gc.Translate(-bx[2], -bx[3])
 
@@ -236,10 +305,17 @@ class CaptionBar(wx.Window):
 
     
     def OnLeftClick(self, event):
-        if wx.Rect(*self.pinButtonRect).Contains(event.GetPosition()):
-            self.parent.TogglePin()
-        else:
-            self.parent.ToggleFold()
+        #if wx.Rect(*self.pinButtonRect).Contains(event.GetPosition()):
+        #    self.parent.TogglePin()
+            
+        for b in self.buttons:
+            if b.click_test(event):
+                rect = self.GetRect()
+                self.RefreshRect(rect)
+                return
+            
+        # we didn't hit any buttins, fold the panel instead
+        self.parent.ToggleFold()
 
 
     def OnSize(self, event):
@@ -309,7 +385,7 @@ class foldingPane(wx.Panel):
 
         if self.caption:
             #self.stCaption = wx.StaticText(self, -1, self.caption)
-            self.stCaption = CaptionBar(self, -1, caption=self.caption)
+            self.stCaption = self._create_caption_bar()
             #self.stCaption.SetBackgroundColour(wx.TheColourDatabase.FindColour('SLATE BLUE'))
             self.sizer.Add(self.stCaption, 0, wx.EXPAND, 0)
 
@@ -317,6 +393,10 @@ class foldingPane(wx.Panel):
         
         self.Bind(wx.EVT_SIZE, self.OnSize)
         
+    def _create_caption_bar(self):
+        """ This is over-rideable in derived classes so that they can implement their own caption bars"""
+        return CaptionBar(self, -1, caption=self.caption)
+    
     @property
     def can_fold(self):
         return self.foldable and not (self.pinnedOpen or self.folded)
