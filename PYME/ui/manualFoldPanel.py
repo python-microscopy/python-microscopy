@@ -28,6 +28,10 @@ from wx.lib.agw.aui.aui_utilities import BitmapFromBits
 import time
 import numpy as np
 
+import wx.lib.newevent
+
+PanelFoldCommandEvent, EVT_CMD_PANEL_FOLD = wx.lib.newevent.NewCommandEvent()
+
 def ColourFromStyle(col):
     if isinstance(col, six.string_types):
         col = wx.NamedColour(col)
@@ -399,6 +403,7 @@ class foldingPane(wx.Panel):
             self.folded = True
             self.stCaption.Refresh()
             self.Layout()
+            wx.PostEvent(self, PanelFoldCommandEvent(self.GetId()))
             self.fold1()
             return True
         else:
@@ -421,6 +426,7 @@ class foldingPane(wx.Panel):
             self.stCaption.Refresh()
             self.Layout()
             self.fold1()
+            wx.PostEvent(self, PanelFoldCommandEvent(self.GetId()))
             return True
         else:
             return False
@@ -483,6 +489,7 @@ class collapsingPane(foldingPane):
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         #self.bFold = wx.BitmapButton(capPan, -1, bitmap=self.bmR, style = wx.NO_BORDER)
         self.bFold = foldButton(self.stCaption, -1)
+        self.bFold.SetFolded(self.folded)
 
         hsizer.Add(self.bFold, 0, wx.LEFT|wx.RIGHT|wx.ALIGN_CENTER_VERTICAL, 2)
         hsizer.Add(wx.StaticText(self.stCaption, -1, caption), 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
@@ -543,6 +550,7 @@ class foldPanel(wx.Panel):
         self.fold_signal = dispatch.Signal()
         
         self.Bind(wx.EVT_SIZE, self.OnResize)
+        self.Bind(EVT_CMD_PANEL_FOLD, self.OnResize)
 
         #self.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouseLeave)
 

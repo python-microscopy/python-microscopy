@@ -103,16 +103,22 @@ class AnalysisSettingsView(object):
     ]
     
     DEFAULT_PARAMS = [mde.IntParam('Analysis.StartAt', 'Start at:', default=30),
-                      mde.RangeParam('Analysis.BGRange', 'Background:', default=(-30,0)),
-                      mde.BoolParam('Analysis.subtractBackground', 'Subtract background in fit', default=True),
-                      mde.BoolFloatParam('Analysis.PCTBackground' , 'Use percentile for background', default=False, helpText='', ondefault=0.25, offvalue=0),
-                      mde.FilenameParam('Camera.VarianceMapID', 'Variance Map:', prompt='Please select variance map to use ...', wildcard='TIFF Files|*.tif', filename=''),
-                      mde.FilenameParam('Camera.DarkMapID', 'Dark Map:', prompt='Please select dark map to use ...', wildcard='TIFF Files|*.tif', filename=''),
-                      mde.FilenameParam('Camera.FlatfieldMapID', 'Flatfield Map:', prompt='Please select flatfield map to use ...', wildcard='TIFF Files|*.tif', filename=''),
-                      mde.BoolParam('Analysis.TrackFiducials', 'Track Fiducials', default=False),
-                      mde.FloatParam('Analysis.FiducialThreshold', 'Fiducial Threshold', default=1.8),
-                      mde.IntParam('Analysis.FiducialROISize', 'Fiducial ROI', default=11),
-                      mde.FloatParam('Analysis.FiducialSize', 'Fiducial Diameter [nm]', default=1000.),
+                      mde.ParamGroup('Background Subtraction', [
+                          mde.RangeParam('Analysis.BGRange', 'Background:', default=(-30,0)),
+                          mde.BoolParam('Analysis.subtractBackground', 'Subtract background in fit', default=True),
+                          mde.BoolFloatParam('Analysis.PCTBackground' , 'Use percentile for background', default=False, helpText='', ondefault=0.25, offvalue=0),
+                          ], folded=False),
+                      mde.ParamGroup('sCMOS camera noise maps',
+                             [mde.FilenameParam('Camera.VarianceMapID', 'Variance Map:', prompt='Please select variance map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                              mde.FilenameParam('Camera.DarkMapID', 'Dark Map:', prompt='Please select dark map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                              mde.FilenameParam('Camera.FlatfieldMapID', 'Flatfield Map:', prompt='Please select flatfield map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                             ]),
+                      mde.ParamGroup('Fiducial based drift tracking',
+                             [mde.BoolParam('Analysis.TrackFiducials', 'Track Fiducials', default=False),
+                              mde.FloatParam('Analysis.FiducialThreshold', 'Fiducial Threshold', default=1.8),
+                              mde.IntParam('Analysis.FiducialROISize', 'Fiducial ROI', default=11),
+                              mde.FloatParam('Analysis.FiducialSize', 'Fiducial Diameter [nm]', default=1000.),
+                             ]),
     ]
     
     def __init__(self, dsviewer, analysisController, lmanal=None):
@@ -124,6 +130,8 @@ class AnalysisSettingsView(object):
 
         dsviewer.paneHooks.append(self.GenPointFindingPanel)
         dsviewer.paneHooks.append(self.GenAnalysisPanel)
+        
+        self.analysisController.onMetaDataChange.connect(self.on_metadata_change)
 
     def _populateStdOptionsPanel(self, pan, vsizer):
         for param in self.DEFAULT_PARAMS:
@@ -152,6 +160,13 @@ class AnalysisSettingsView(object):
                 
         except AttributeError:
             pass
+        
+    def on_metadata_change(self, *args, **kwargs):
+        fit_module = self.analysisMDH.getOrDefault('Analysis.FitModule', 'LatGaussFitFR')
+        if not fit_module == self.fitFactories[self.cFitType.GetSelection()]:
+            self.cFitType.SetSelection(self.fitFactories.index(fit_module))
+            
+        self.OnFitModuleChanged(None)
         
     def OnFitModuleChanged(self, event):
         self.customOptionsSizer.Clear(True)

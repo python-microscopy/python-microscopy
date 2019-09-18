@@ -13,6 +13,9 @@
 class MDParam(object):
     def __init__(self):
         pass
+        
+    def formFields(self):
+        return [self.formField()]
         #, mdToUpdate=None):
         #self.mdToUpdate = mdToUpdate
 
@@ -499,3 +502,41 @@ class BoolFloatParam(MDParam):
 
 
 
+class ParamGroup(object):
+    def __init__(self, name, items, helpText='', folded=True):
+        self.name = name
+        self.items = items
+        self.folded = folded
+        
+    def _createGUI(self, parent, mdh, syncMdh=False, mdhChangedSignal=None):
+        import wx
+        
+        box = wx.StaticBox(parent, label=self.name)
+        sbSizer = wx.StaticBoxSizer(box, wx.VERTICAL)
+        
+        for item in self.items:
+            it = item.createGUI(box, mdh, syncMdh, mdhChangedSignal)
+            sbSizer.Add(it, 0, wx.RIGHT|wx.EXPAND, 5)
+        
+        return sbSizer
+
+    def createGUI(self, parent, mdh, syncMdh=False, mdhChangedSignal=None):
+        import wx
+
+        from PYME.ui import manualFoldPanel as afp
+
+        clp = afp.collapsingPane(parent, caption=self.name, folded=self.folded)
+        cp = wx.Panel(clp, -1)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+    
+        for item in self.items:
+            it = item.createGUI(cp, mdh, syncMdh, mdhChangedSignal)
+            vsizer.Add(it, 0, wx.RIGHT | wx.EXPAND, 5)
+    
+        cp.SetSizer(vsizer)
+        clp.AddNewElement(cp)
+        return clp
+    
+    def formFields(self):
+        return [item.formField() for item in self.items]
+        
