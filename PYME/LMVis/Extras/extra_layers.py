@@ -49,14 +49,15 @@ def gen_isosurface(visFr):
 
     
     recipe = visFr.pipeline.recipe
-    dmc = DualMarchingCubes(recipe, input='octree',
-                                             output='surf')
+    dmc = DualMarchingCubes(recipe, invalidate_parent=False, input='octree',output='surf')
+    
     if dmc.configure_traits(kind='modal'):
         recipe.add_module(dmc)
         recipe.execute()
 
         layer = TriangleRenderLayer(visFr.pipeline, dsname='surf')
         visFr.add_layer(layer)
+        dmc._invalidate_parent = True
     
 
 

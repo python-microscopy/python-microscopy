@@ -68,9 +68,9 @@ def register_legacy_module(moduleName, py_module=None):
 class ModuleBase(HasTraits):
     _invalidate_parent = True
     
-    def __init__(self, parent=None, **kwargs):
+    def __init__(self, parent=None, invalidate_parent = True, **kwargs):
         self._parent = parent
-        self._invalidate_parent = True
+        self._invalidate_parent = invalidate_parent
 
         HasTraits.__init__(self)
         self.set(**kwargs)
