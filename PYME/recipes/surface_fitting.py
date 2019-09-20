@@ -146,7 +146,10 @@ class DualMarchingCubes(ModuleBase):
         dmc.set_octree(namespace[self.input].truncate_at_n_points(int(self.n_points_min)))
         tris = dmc.march(dual_march=False)
 
+        print('Generating TriangularMesh object')
         surf = triangle_mesh.TriangleMesh.from_np_stl(tris)
+        
+        print('Generated TriangularMesh object')
         
         if self.repair:
             surf.repair()

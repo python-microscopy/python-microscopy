@@ -37,8 +37,12 @@ def gen_octree_layer_from_points(visFr):
     if True:#otm.configure_traits(kind='modal'):
         visFr.pipeline.dataSources['octree'] = otm.apply_simple(visFr.pipeline)
         
+        print('Octree created, adding layer')
+        
         l = OctreeRenderLayer(visFr.pipeline, 'flat', 'octree', depth=0, alpha=1.0)
         visFr.add_layer(l)
+        
+        print('Octree layer added')
 
 def gen_isosurface(visFr):
     from PYME.LMVis.layers.triangle_mesh import TriangleRenderLayer
@@ -55,9 +59,11 @@ def gen_isosurface(visFr):
         recipe.add_module(dmc)
         recipe.execute()
 
+        print('Isosurface generated, adding layer')
         layer = TriangleRenderLayer(visFr.pipeline, dsname='surf')
         visFr.add_layer(layer)
         dmc._invalidate_parent = True
+        print('Isosurface layer added')
     
 
 

@@ -16,15 +16,16 @@ def pack_edges(arr, axis=1):
     """
     Stores edges as a single unique integer. 
     
-    NOTE: that this implictly caps the mesh at 2**16
-    vertices. If we need more, adjust np.uint32 to
-    np.uint64 and << 16 to << 32.
+    NOTE: that this implictly caps the mesh at 2**32
+    vertices.
     """
     arr = np.sort(arr, axis=axis)
-    res = ((arr[:,0].astype(np.uint32)) << 16)
-    res += arr[:,1].astype(np.uint32)
+    res = ((arr[:,0].astype(np.uint64)) << 32)
+    res += arr[:,1].astype(np.uint64)
     
     return res
+
+MAX_VERTEX_COUNT = 2**32
 
 def fast_3x3_cross(a,b):
     # Index only once
@@ -79,7 +80,13 @@ class TriangleMesh(object):
         # Halfedges
         self._halfedges = None
         self._halfedge_vacancies = []
+        
+        print('initializing halfedges ...')
+        print('vertices.shape = %s, faces.shape = %s' % (vertices.shape, faces.shape))
+        if vertices.shape[0] >= MAX_VERTEX_COUNT:
+            raise RuntimeError('Maximum vertex count is %d, mesh has %d' % (MAX_VERTEX_COUNT, vertices.shape[0]))
         self._initialize_halfedges(vertices, faces)
+        print('done initializing halfedges')
 
         # Singular edges
         self._singular_edges = None
@@ -135,6 +142,7 @@ class TriangleMesh(object):
                                         axis=0)
         faces = faces_raw.reshape(faces_raw.shape[0] // 3, 3, order='F')
 
+        print('Data munged to vertices, faces')
         return cls(vertices, faces, **kwargs)
 
     @property
@@ -402,7 +410,8 @@ class TriangleMesh(object):
 
             # Create a unique handle for each edge
             edges_packed = pack_edges(edges)
-            
+
+            print('iterating edges')
             # Use a dictionary to keep track of which edges are already assigned twins
             d = {}
             multivalent_edge = False
@@ -418,24 +427,35 @@ class TriangleMesh(object):
                         multivalent_edge = True
                         multivalent_dict[e] = i
                         continue
+                        
                     self._halfedges['twin'][idx] = i
                     self._halfedges['twin'][i] = idx
                 else:
                     d[e] = i
 
-            # Go back and grab the remaining multivalent edges
-            if multivalent_edge:
-                for k in list(multivalent_dict.keys()):
-                    idx = multivalent_dict.pop(k)
-                    for i, e in enumerate(edges_packed):
-                        if e != idx:
-                            continue
-                        if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
-                            continue
-                        self._halfedges['twin'][idx] = i
-                        self._halfedges['twin'][i] = idx
-                        break
-
+            # print('multivalent')
+            # # Go back and grab the remaining multivalent edges
+            # if multivalent_edge:
+            #     n_multivalent = len(list(multivalent_dict.keys()))
+            #     print('%d multivalent edges' % n_multivalent)
+            #     for j_, k in enumerate(list(multivalent_dict.keys())):
+            #         if (not (j_ % 10)):
+            #             print('mv edge %d of %d' % (j_, n_multivalent))
+            #
+            #         idx = multivalent_dict.pop(k)
+            #         for i, e in enumerate(edges_packed):
+            #             if e != idx:
+            #                 continue
+            #
+            #             if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
+            #                 continue
+            #
+            #             self._halfedges['twin'][idx] = i
+            #             self._halfedges['twin'][i] = idx
+            #             break
+            #
+            # print('multivalent done')
+            
             self._halfedges['face'] = np.hstack([j, j, j])
             self._halfedges['next'] = np.hstack([j+n_faces, j+2*n_faces, j])
             self._halfedges['prev'] = np.hstack([j+2*n_faces, j, j+n_faces])
