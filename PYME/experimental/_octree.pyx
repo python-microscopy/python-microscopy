@@ -4,10 +4,11 @@ cimport cython
 
 #size to initialize the storage to
 INITIAL_NODES = 1000
-NODE_DTYPE = [('depth', 'i4'), ('children', '8i4'),('parent', 'i4'), ('nPoints', 'i4'), ('centre', '3f4'), ('centroid', '3f4')]
+NODE_DTYPE = [('depth', 'i4'), ('n_children', 'i4'), ('children', '8i4'),('parent', 'i4'), ('nPoints', 'i4'), ('centre', '3f4'), ('centroid', '3f4')]
 
 #flat dtype to work around a cython memory view bug with array dtypes
 NODE_DTYPE2 = [('depth', 'i4'),
+               ('n_children', 'i4'),
                ('child0', 'i4'),
                ('child1', 'i4'),
                ('child2', 'i4'),
@@ -28,6 +29,7 @@ NODE_DTYPE2 = [('depth', 'i4'),
 #the struct that the above dtype maps to in c
 cdef packed struct node_d:
     np.int32_t depth
+    np.int32_t n_children
     np.int32_t child0
     np.int32_t child1
     np.int32_t child2
@@ -98,7 +100,11 @@ cdef class Octree:
     cdef object _octant_offsets
     cdef object _octant_sign
     
+    cdef np.float32_t[50] _scale
+    
     def __init__(self, bounds, maxdepth=12, samples_per_node=1):
+        cdef int n
+        
         bounds = np.array(bounds, 'f4')
         self._bounds = bounds
         
@@ -123,6 +129,12 @@ cdef class Octree:
         self._octant_offsets = np.array([1, 2, 4])
         
         self._octant_sign = np.array([[2*(n&1) - 1, (n&2) -1, (n&4)/2 -1] for n in range(8)])
+        
+        
+        #precalculate scaling factors for locating the centre of the next box down.
+        for n in range(50):
+            self._scale[n] = 1.0/(2.0**(n + 1))
+            
         
     def truncate_at_n_points(self, n_points=5):
         out = Octree(self._bounds, self._maxdepth, samples_per_node=n_points)
@@ -323,3 +335,85 @@ cdef class Octree:
 
         for pt in pts:
             self.add_point(pt)
+            
+    def update_n_children(self):
+        self._nodes['n_children'] = np.sum(self._nodes['children'], axis=1)
+        
+    @cython.boundscheck(False)  # Deactivate bounds checking
+    @cython.wraparound(False)
+    def _fix_empty_nodes(self, node_d[:] nj, node_d[:] parent, int j):
+        cdef int i
+        cdef float scale, deltax, deltay, deltaz
+        
+        for i in range(nj.shape[0]):
+            if nj[i].depth == 0:
+                nj[i].depth = parent[i].depth + 1
+                scale = self._scale[nj[i].depth]
+        
+                deltax = self._xwidth*scale
+                deltay = self._ywidth*scale
+                deltaz = self._zwidth*scale
+        
+                nj[i].centre_x = parent[i].centre_x + _octant_sign_x[j]*deltax
+                nj[i].centre_y = parent[i].centre_y + _octant_sign_y[j]*deltay
+                nj[i].centre_z = parent[i].centre_z + _octant_sign_z[j]*deltaz
+                
+                nj[i].child0 = 0
+                nj[i].child1 = 0
+                nj[i].child2 = 0
+                nj[i].child3 = 0
+                nj[i].child4 = 0
+                nj[i].child5 = 0
+                nj[i].child6 = 0
+                nj[i].child7 = 0
+                nj[i].n_children = 0
+                nj[i].nPoints = 0
+                
+    def fix_empty_nodes(self, nj, parent, int j):
+        self._fix_empty_nodes(nj.view(NODE_DTYPE2), parent.view(NODE_DTYPE2), j)
+        
+        
+                
+                
+            
+            
+        
+            
+            
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)
+def _has_children(node_d[:] nodes):
+    cdef bint any_have_children, _node_children
+    cdef int i, j, N
+    cdef node_d * _cnodes
+    cdef np.int32_t *children
+    #cdef bool * _subdiv
+    cdef np.uint8_t[:] subdiv
+    
+    N = len(nodes)
+    _cnodes = &nodes[0]
+    subdiv = np.zeros(N, 'uint8')
+    #_subdiv = &subdiv[0]
+    
+    any_have_children = False
+    
+    for i in range(N):
+        children = &_cnodes[i].child0
+        _node_children = False
+        j = 0
+        
+        while not _node_children and j < 8:
+            if children[j] > 0:
+                _node_children = True
+                any_have_children = True
+                
+            j+=1
+                
+        subdiv[i] = _node_children
+        
+    return subdiv, any_have_children
+            
+        
+        
+def has_children(nodes):
+    return _has_children(nodes.view(NODE_DTYPE2))

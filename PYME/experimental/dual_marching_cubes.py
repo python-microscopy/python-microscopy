@@ -3,7 +3,9 @@ from copy import deepcopy
 
 from PYME.experimental.marching_cubes import MarchingCubes
 from PYME.experimental.modified_marching_cubes import ModifiedMarchingCubes
+from PYME.experimental._octree import has_children
 
+import time
 
 class DualMarchingCubes(ModifiedMarchingCubes):
     
@@ -12,7 +14,11 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         self._ot = None
 
     def set_octree(self, ot):
+        t_ = time.time()
         self._ot = ot  # Assign the octree
+        
+        #update the n_children field of the octree (NOTE: this does not get updated when building)
+        self._ot.update_n_children()
 
         # Make vertices/values a list instead of None
         self.vertices = []
@@ -35,9 +41,15 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         self.vertices = np.vstack(self.vertices).astype('float64')
         self.values = np.vstack(self.values).astype('float64')
         self.depths = np.vstack(self.depths).astype('float64')
+        
+        print('Dual grid created in %3.3f s' % (time.time() - t_))
 
     def march(self, return_triangles=True, **kwargs):
-        return super(DualMarchingCubes, self).march(return_triangles, **kwargs)
+        t_ = time.time()
+        res = super(DualMarchingCubes, self).march(return_triangles, **kwargs)
+        print('March in %3.3f s' % (time.time() - t_))
+        return res
+        
 
     def position_empty_node(self, n0, n1, shift):
         """
@@ -82,10 +94,10 @@ class DualMarchingCubes(ModifiedMarchingCubes):
             
         return n0, n1
     
-    def _empty_node_v2(self, nj, parent, j):
+    def __empty_node_v2(self, nj, parent, j):
         #print nj.shape, parent.shape
         n_root_mask = (nj['depth'] == 0)
-        
+
         if np.any(n_root_mask):
             inds = np.where(n_root_mask)
 
@@ -96,8 +108,13 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         
             nj[inds] = empty_node
         return nj
+    
+    def _empty_node_v2(self, nj, parent, j):
+        self._ot.fix_empty_nodes(nj, parent, j)
+        
+        return nj
 
-    def subdivided(self, nodes):
+    def _subdivided(self, nodes):
         """ 
         Returns whether or not any of the nodes are subdivided and,
         if so, which ones are.
@@ -119,6 +136,35 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         is_subdivided = (np.sum(divisions) > 0)
 
         return divisions, is_subdivided
+
+    def subdivided(self, nodes):
+        """
+        Returns whether or not any of the nodes are subdivided and,
+        if so, which ones are.
+
+        Parameters
+        ----------
+            nodes : np.array
+                Node or nodes of an octree.
+
+        Returns
+        -------
+            divisions : np.array
+                True/False array indicating whether or not each node in
+                nodes is subdivided.
+            is_subdivided : np.array
+                Are of the nodes in nodes subdivided?
+        """
+        divisions = (nodes['n_children'] > 0)
+        is_subdivided = np.any(divisions) #(np.sum(divisions) > 0)
+    
+        return divisions, is_subdivided
+    
+    def __subdivided(self, nodes):
+        #r = self._subdivided(nodes)
+        d, h = has_children(nodes)
+        
+        return np.array(d, 'bool'), h
 
     def update_subdivision(self, node, children=range(8)):
         """
@@ -151,7 +197,8 @@ class DualMarchingCubes(ModifiedMarchingCubes):
         # DB: over our flat nodes?
         # DB: This raises another issue - If this is equvalent to a flat loop over nodes (and we don't use the vertices from deeper
         # DB: in the tree), how do we actually generate the edges which span between nodes?
-        nodes = nodes[np.sum(nodes['children'], axis=1) > 0]
+        #nodes = nodes[np.sum(nodes['children'], axis=1) > 0]
+        nodes = nodes[nodes['n_children'] > 0]
 
         # Perform operations on all subdivided nodes
         if nodes.size > 0:
@@ -463,39 +510,38 @@ class DualMarchingCubes(ModifiedMarchingCubes):
 
             self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
 
-    def vert_proc(self, n0, n1, n2, n3, n4, n5, n6, n7):
+    def _vert_proc(self, n0, n1, n2, n3, n4, n5, n6, n7):
         if not self._MC_MAP_MODE_MODIFIED:
             # Convert from dual marching cubes to marching cubes indexing
             nds = [n0, n1, n3, n2, n4, n5, n7, n6]
         else:
             nds = [n0, n1, n2, n3, n4, n5, n6, n7]
-
         
-        
-        leaf_nodes = (np.sum(n0['children'], axis=1) == 0) & (
-                     np.sum(n1['children'], axis=1) == 0) & \
-                     (np.sum(n2['children'], axis=1) == 0) & (
-                     np.sum(n3['children'], axis=1) == 0) & \
-                     (np.sum(n4['children'], axis=1) == 0) & (
-                     np.sum(n5['children'], axis=1) == 0) & \
-                     (np.sum(n6['children'], axis=1) == 0) & (
-                     np.sum(n7['children'], axis=1) == 0)
+        leaf_nodes = (n0['n_children'] == 0) & (n1['n_children'] == 0) & \
+                     (n2['n_children'] == 0) & (n3['n_children'] == 0) & \
+                     (n4['n_children'] == 0) & (n5['n_children']== 0) & \
+                     (n6['n_children'] == 0) & (n7['n_children'] == 0)
 
-        if (np.sum(leaf_nodes) > 0):
-            inds = np.where(leaf_nodes)
-
-            njis = [nj[inds] for nj in nds]
+        if np.any(leaf_nodes):
+            inds = np.where(leaf_nodes)[0]
             
-            vt = np.array([nj['centre'] for nj in njis])
-            self.vertices.append(np.swapaxes(vt,0, 1))
-            
-            vv = np.array([nj['nPoints'] * self._density_sc[nj['depth']] for nj in njis])
-            self.values.append(np.swapaxes(vv,0, 1))
+            vt = np.zeros([len(inds), 8, 3])
+            vv = np.zeros([len(inds), 8])
+            vd = np.zeros([len(inds), 8])
 
-            vd = np.array([nj['depth'] for nj in njis])
-            self.depths.append(np.swapaxes(vd, 0, 1))
+            for j, nj in enumerate(nds):
+                nji = nj[inds]
 
-        if np.sum(~(leaf_nodes).astype(bool)) > 0:
+                #vt[:, j, :] = 0
+                vt[:, j, :] = nji['centre']
+                vv[:, j] = nji['nPoints']* self._density_sc[nji['depth']]
+                vd[:, j] = nji['depth']
+
+            self.vertices.append(vt)
+            self.values.append(vv)
+            self.depths.append(vd)
+
+        if np.any(~(leaf_nodes).astype(bool)):
 
             inds = np.where(~(leaf_nodes).astype(bool))
 
@@ -540,6 +586,58 @@ class DualMarchingCubes(ModifiedMarchingCubes):
 
             if is_c0_subdivided or is_c1_subdivided or is_c2_subdivided or is_c3_subdivided or is_c4_subdivided or is_c5_subdivided or is_c6_subdivided or is_c7_subdivided:
                 self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+
+    def vert_proc(self, n0, n1, n2, n3, n4, n5, n6, n7):
+        if not self._MC_MAP_MODE_MODIFIED:
+            # Convert from dual marching cubes to marching cubes indexing
+            nds = [n0, n1, n3, n2, n4, n5, n7, n6]
+        else:
+            nds = [n0, n1, n2, n3, n4, n5, n6, n7]
+
+        leaf_nodes = (n0['n_children'] == 0) & (n1['n_children'] == 0) & \
+                     (n2['n_children'] == 0) & (n3['n_children'] == 0) & \
+                     (n4['n_children'] == 0) & (n5['n_children'] == 0) & \
+                     (n6['n_children'] == 0) & (n7['n_children'] == 0)
+
+        if np.any(leaf_nodes):
+            inds = np.where(leaf_nodes)[0]
+    
+            vt = np.zeros([len(inds), 8, 3])
+            vv = np.zeros([len(inds), 8])
+            vd = np.zeros([len(inds), 8])
+    
+            for j, nj in enumerate(nds):
+                nji = nj[inds]
+        
+                #vt[:, j, :] = 0
+                vt[:, j, :] = nji['centre']
+                vv[:, j] = nji['nPoints'] * self._density_sc[nji['depth']]
+                vd[:, j] = nji['depth']
+    
+            self.vertices.append(vt)
+            self.values.append(vv)
+            self.depths.append(vd)
+
+        if np.any(~(leaf_nodes).astype(bool)):
+    
+            inds = np.where(~(leaf_nodes).astype(bool))
+    
+            # Initialize resulting nodes to current nodes
+            cns = [np.copy(nj[inds]) for nj in nds]
+            c0, c1, c2, c3, c4, c5, c6, c7 = cns
+    
+            # Replace current nodes with their ordered children if present
+            any_subdiv = False
+            
+            for j, cn in enumerate(cns):
+                divs = cn['n_children'] > 0
+
+                cn_s = cn[divs]
+                if cn_s.size:
+                    cn[divs] = self._empty_node_v2(np.copy(self._ot._nodes[cn_s['children'][:, 7-j]]), cn_s, 7-j)
+    
+            self.vert_proc(c0, c1, c2, c3, c4, c5, c6, c7)
+                
 
 
 class PiecewiseDualMarchingCubes(DualMarchingCubes):

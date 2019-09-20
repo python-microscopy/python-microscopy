@@ -513,7 +513,7 @@ class matfileColumnSource(TabularBase):
         
         self.res = scipy.io.loadmat(filename)  # TODO: evaluate why these are cast as floats
         
-        self._keys = self.res.keys()
+        self._keys = [k for k in self.res.keys() if not k.startswith('_')]
     
     def keys(self):
         return self._keys

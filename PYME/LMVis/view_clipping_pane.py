@@ -18,7 +18,7 @@ if sys.platform == 'darwin':
     # ajust the mag in smaller increments
     SCROLL_FACTOR = .02
 else:
-    SCROLL_FACTOR = .2
+    SCROLL_FACTOR = .02
 
 
 try:
@@ -142,7 +142,7 @@ class ClippingPanel(wx.Panel):
     
         maxy = self.Size[1] - self.textSize
     
-        dc.SetBackground(wx.TRANSPARENT_BRUSH)
+        dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
         dc.Clear()
         
         

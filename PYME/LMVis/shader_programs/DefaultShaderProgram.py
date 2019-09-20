@@ -70,8 +70,8 @@ class DefaultShaderProgram(GLProgram):
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(0)
         glDisable(GL_BLEND)
-        glClearDepth(1.0)
-        glClear(GL_DEPTH_BUFFER_BIT)
+        #glClearDepth(1.0)
+        #glClear(GL_DEPTH_BUFFER_BIT)
         pass
 
 

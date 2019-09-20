@@ -23,7 +23,7 @@ class OctreeRenderLayer(TriangleRenderLayer):
     #alpha = Float(1.0, desc='Face tranparency')
     depth = Int(3, desc='Depth at which to render Octree. Set to -1 for dynamic depth rendering.')
     density = Float(0.0, desc='Minimum density of octree node to display.')
-    min_points = Int(0, desc='Number of points/node to truncate octree at')
+    min_points = Int(10, desc='Number of points/node to truncate octree at')
     #method = Enum(*ENGINES.keys(), desc='Method used to display faces')
 
     def __init__(self, pipeline, method='wireframe', dsname='', **kwargs):

@@ -3,6 +3,7 @@ import wx.lib.newevent
 
 #import PYME.ui.autoFoldPanel as afp
 import PYME.ui.manualFoldPanel as afp
+import PYME.ui.layerFoldPanel as lfp
 import numpy as np
 
 from PYME.ui import histLimits
@@ -88,7 +89,7 @@ class LayerPane(afp.foldingPane):
         print('Creating layers GUI')
         for i, layer in enumerate(self.visFr.layers):
             #print(i, layer)
-            item = afp.foldingPane(self.fp, -1, caption='Layer %d' % i, pinned=False, folded=False)
+            item = lfp.LayerFoldingPane(self.fp, layer=layer, caption='Layer %d' % i, pinned=False, folded=False)
             page = layer.edit_traits(parent=item, kind='subpanel')
             item.AddNewElement(page.control)
             
