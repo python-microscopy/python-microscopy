@@ -199,11 +199,24 @@ class piezo_e816(PiezoBase):
 
 import numpy as np
 class piezo_e816T(PiezoBase):
-    def __init__(self, identifier=None, maxtravel=12.00, Osen=None, hasTrigger=False):
+    def __init__(self, identifier=None, maxtravel=12.00, Osen=None, hasTrigger=False, target_tol=.002):
+        """
+
+        Parameters
+        ----------
+        identifier
+        maxtravel
+        Osen
+        hasTrigger
+        target_tol: float
+            OnTarget tolerance, units of [um]. If position and target position are within target_tol, OnTarget() returns
+            True
+        """
         self.max_travel = maxtravel
         #self.waveData = None
         #self.numWavePoints = 0
         self.units = 'um'
+        self._target_tol = target_tol
 
         self.lock = threading.Lock()
 
@@ -276,7 +289,7 @@ class piezo_e816T(PiezoBase):
                     # print('p')
                     # logging.debug('Moving piezo to target: %f' % (pos[0],))
 
-                if np.allclose(self.position, self.targetPosition, atol=.002):
+                if np.allclose(self.position, self.targetPosition, atol=self._target_tol):
                     self.onTarget = True
 
                 # check to see if we're on target

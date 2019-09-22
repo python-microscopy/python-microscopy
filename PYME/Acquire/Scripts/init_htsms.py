@@ -50,7 +50,7 @@ def mz_stage(scope):
 def pz(scope):
     from PYME.Acquire.Hardware.Piezos import piezo_e816_dll, offsetPiezoREST
 
-    scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100)
+    scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100, target_tol=0.01)
     #scope.hardwareChecks.append(scope._piFoc.OnTarget)
     scope.CleanupFunctions.append(scope._piFoc.close)
     #scope.piFoc = scope._piFoc
