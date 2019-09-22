@@ -192,6 +192,7 @@ class ActionPanel(wx.Panel):
         
         for x, y in rois:  # note that coordinates are for the origin, e.g. min x, min y (top left) corner
             args = {'state' : {'Positioning.x': float(x), 'Positioning.y': float(y)}}
+        # fixme - make sure this isnt also accounted for in the viewer?
             self.actionManager.QueueAction('state.update', args, nice, timeout)
             args = {'maxFrames': int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
             self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
@@ -220,4 +221,3 @@ class ActionPanel(wx.Panel):
         
 
 
-   
