@@ -62,9 +62,13 @@ class OffsetPiezo(PiezoBase):
 
     @webframework.register_endpoint('/SetOffset', output_is_json=False)
     def SetOffset(self, offset):
-        p = self.GetTargetPos()
+        # fixme - why did we care about the old offset here?
+        # p = self.GetTargetPos()
+        logger.debug('old offset: %.2f, new offset: %.2f, basetarget - (offset + target): %.2f' % (self.GetOffset(),
+                                                                                                   float(offset),
+                                                                                    self.basePiezo.GetTargetPos(0) - (float(offset) + self.GetTargetPos(0))))
         self.offset = float(offset)
-        self.MoveTo(0, p)
+        self.MoveTo(0, self.basePiezo.GetTargetPos(0))
 
     @webframework.register_endpoint('/LogShifts', output_is_json=False)
     def LogShifts(self, dx, dy, dz, active=True):

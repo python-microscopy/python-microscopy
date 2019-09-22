@@ -34,8 +34,9 @@ def cam(scope):
     scope.cam.SetGainBoost(False)  # shouldn't be needed, but make sure it is off
     scope.cam.SetGain(1)  # we really don't need any extra gain, this defaults to 10 on startup
     scope.cam.SetROI(289, 827, 1080, 1008)
-    # With our laser at a stable operating current we saturate easily, set integ low
-    scope.cam.SetIntegTime(0.0005)
+    # With our laser at a stable operating current we saturate easily, set integ low. Can't get frame rate higher than
+    # 300 Hz, so try and get a low integ and 250 frame rate
+    scope.cam.SetIntegTime(0.004)
     
     # TODO - possibly change gain instead to avoid saturation
     # see SetGain() and SetGainBoost() functions of the uc_480 class
