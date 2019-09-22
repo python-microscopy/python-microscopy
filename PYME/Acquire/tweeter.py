@@ -4,7 +4,14 @@ import yaml
 import os
 import time
 import numpy as np
+import logging
 import threading
+
+logger = logging.getLogger(__name__)
+
+class FakeAPI(object):
+    def update_status(self, status):
+        print('FakeTweet: %s' % status)
 
 
 class LazyScopeTweeter(object):
@@ -22,13 +29,22 @@ class LazyScopeTweeter(object):
         # get our keys/tokens
         if credential_filepath is None:
             credential_filepath = os.path.join(os.path.expanduser("~"), '.PYME/twitter-credentials.yaml')
-        with open(credential_filepath) as f:
-            cred = yaml.safe_load(f)
 
-        # authenticate
-        auth = tweepy.OAuthHandler(cred['consumer_key'], cred['consumer_secret'])
-        auth.set_access_token(cred['access_token'], cred['access_token_secret'])
-        self._t_api = tweepy.API(auth)
+
+        try:
+            with open(credential_filepath) as f:
+                cred = yaml.safe_load(f)
+            # authenticate
+            auth = tweepy.OAuthHandler(cred['consumer_key'], cred['consumer_secret'])
+            auth.set_access_token(cred['access_token'], cred['access_token_secret'])
+            self._t_api = tweepy.API(auth)
+        except IOError as e:
+            if not safety:
+                raise e
+            logger.debug('scope tweeter running in debug mode - no tweets will be issues')
+            self._t_api = FakeAPI()
+
+
 
         self.live_conditions = []
         self.dorment_conditions = []
@@ -46,7 +62,8 @@ class LazyScopeTweeter(object):
 
     def start_poll(self):
         self.polling = True
-        self._poll()
+        self._poll_thread = threading.Thread(target=self._poll)
+        self._poll_thread.start()
 
     def scope_tweet(self, text):
         self._t_api.update_status(self._prepend_text + text)
@@ -76,6 +93,7 @@ class LazyScopeTweeter(object):
                     Message to tweet once triggered
                 recurring: bool
                     Flag to recycle this condition after it is met and the tweet is sent
+                    FIXME- not implemented yet
 
         Returns
         -------
@@ -84,7 +102,7 @@ class LazyScopeTweeter(object):
         """
         # check if the condition is live or not
         counts = self._get_count(condition['action_filter'])
-        if self._check_live(condition, counts):
+        if self._check_live(counts, condition['queue_condition'], condition['queue_above']):
             self.live_conditions.append(condition)
         else:
             self.dorment_conditions.append(condition)
@@ -155,6 +173,8 @@ class LazyScopeTweeter(object):
         if len(self.live_conditions) == 0 and len(self.dorment_conditions) == 0:
             return
 
+        print('n live: %d' % len(self.live_conditions))
+
         tasks, task_counts = self.actions
         # check if any of our conditions are "live"  # todo - prone to size changed during iteration?
         for ci, cond in enumerate(self.dorment_conditions):
@@ -168,6 +188,8 @@ class LazyScopeTweeter(object):
 
             # shift task if it is now live
             if pop:
+                print('queuing task!')
+                print(self.actions)
                 self.live_conditions.append(self.dorment_conditions.pop(ci))
 
 
@@ -175,7 +197,7 @@ class LazyScopeTweeter(object):
         to_pop = []
         for ci, cond in enumerate(self.live_conditions):  # todo - prone to size changed during iteration?
             diff = self._get_count(cond['action_filter']) - cond['trigger_counts']
-            if diff > 0 and cond['trigger_above']:
+            if diff > 0 and cond['trigger_above'] == 1:
                 to_pop.append(ci)
                 self.scope_tweet(cond['message'])
 
