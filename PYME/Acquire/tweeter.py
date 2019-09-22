@@ -55,6 +55,9 @@ class LazyScopeTweeter(object):
 
         self.start_poll()
 
+    def __del__(self):
+        self._poll_thread.join()
+
     @property
     def actions(self):
         tasks = [task[1] for task in self.action_queue.queue]
@@ -150,9 +153,10 @@ class LazyScopeTweeter(object):
                 return True
             return False
 
+        # counts is lower than condition, only queue if queue_above is negative
         if queue_above < 0:
-            return False
-        return True
+            return True
+        return False
 
 
     def _poll(self):
@@ -197,9 +201,16 @@ class LazyScopeTweeter(object):
         to_pop = []
         for ci, cond in enumerate(self.live_conditions):  # todo - prone to size changed during iteration?
             diff = self._get_count(cond['action_filter']) - cond['trigger_counts']
-            if diff > 0 and cond['trigger_above'] == 1:
+            if diff > 0 and cond['trigger_above'] > 0:
                 to_pop.append(ci)
                 self.scope_tweet(cond['message'])
+            elif diff == 0 and cond['trigger_above'] == 0:
+                to_pop.append(ci)
+                self.scope_tweet(cond['message'])
+            elif diff < 0 and cond['trigger_above'] < 0:
+                to_pop.append(ci)
+                self.scope_tweet(cond['message'])
+
 
         for ci in to_pop:
             self.live_conditions.pop(ci)
