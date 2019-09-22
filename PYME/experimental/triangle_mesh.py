@@ -240,8 +240,8 @@ class TriangleMesh(object):
                 # singular vertex (note this requires the C code version of
                 # update_vertex_neighbors, which reverses direction upon hitting
                 # an edge to ensure a more accurate neighborhood)
-                n_incident = np.sum(self._halfedges['vertex'] == _vertex)
-                n_neighbors = np.sum(self._vertices['neighbors'][_vertex] != -1)
+                n_incident = np.flatnonzero(self._halfedges['vertex'] == _vertex).size
+                n_neighbors = np.flatnonzero(self._vertices['neighbors'][_vertex] != -1).size
                 if n_neighbors != n_incident:
                     singular_vertices.append(_vertex)
 
@@ -629,9 +629,9 @@ class TriangleMesh(object):
             
             if len(copy_mask.shape) > 1:
                 copy_mask = np.any(copy_mask, axis=(1-axis))
-                copy_size = np.sum(copy_mask)
+                copy_size = np.flatnonzero(copy_mask).size
             else:
-                copy_size = np.sum(copy_mask)
+                copy_size = np.flatnonzero(copy_mask).size
 
             if axis:
                 new_vec[:,:copy_size] = vec[:, copy_mask]
@@ -941,14 +941,14 @@ class TriangleMesh(object):
                 # option to search and insert on different keys.
                 el_vacancies = [int(x) for x in np.argwhere(np.all(el_arr[key] == -1, axis=1))]
             else:
-                el_vacancies = [int(x) for x in np.argwhere(el_arr[key] == -1)]
+                el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
 
             idx = el_vacancies.pop(0)
 
         if idx == -1:
             raise ValueError('Index cannot be -1.')
 
-        if insert_key == None:
+        if not insert_key:
             # Default to searching and inserting on the same key
             insert_key = key
 
