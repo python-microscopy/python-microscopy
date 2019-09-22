@@ -69,7 +69,10 @@ class LazyScopeTweeter(object):
         self._poll_thread.start()
 
     def scope_tweet(self, text):
-        self._t_api.update_status(self._prepend_text + text)
+        if not self.safety:
+            self._t_api.update_status(self._prepend_text + text)
+        else:
+            logger.debug('Safety on, tweet would be: %s' % (self._prepend_text + text))
 
     def add_tweet_condition(self, condition):
         """

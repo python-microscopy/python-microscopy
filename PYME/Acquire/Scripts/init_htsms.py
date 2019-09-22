@@ -277,6 +277,20 @@ def action_manager(MainFrame, scope):
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
 
+@init_hardware('tweeter')
+def tweeter(scope):
+    from PYME.Acquire.tweeter import LazyScopeTweeter
+    scope.tweeter = LazyScopeTweeter(scope.actions.actionQueue, safety=False)
+    # queue up our favorite condition
+    condition = {
+        'queue_condition': 9999,
+        'queue_above': 1,
+        'trigger_counts': 1,
+        'trigger_above': -1,
+        'action_filter': 'spoolController.StartSpooling',
+        'message': 'Just finished imaging >= 10,000 fields of view!'
+    }
+    scope.tweeter.add_tweet_condition(condition)
 
 @init_gui('Tiling')
 def action_manager(MainFrame, scope):
