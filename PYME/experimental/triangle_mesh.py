@@ -375,7 +375,10 @@ class TriangleMesh(object):
         if self._manifold is None:
             self._singular_edges = None
             self._singular_vertices = None
-            self._manifold = (len(self.singular_vertices) == 0)
+            vertex_mask = (self._halfedges['vertex'] != -1)
+            twin_mask = (self._halfedges['twin'] == -1)
+            boundary_check = ((np.flatnonzero(vertex_mask & twin_mask).size) == 0)
+            self._manifold = (len(self.singular_vertices) == 0) & boundary_check
 
         return self._manifold
 
@@ -747,7 +750,7 @@ class TriangleMesh(object):
             dead_mask = (self._halfedges['vertex'] == _dead_vertex)
             dead_list = self._halfedges['vertex'][self._halfedges['twin'][dead_mask & twin_mask]]
             live_list = self._halfedges['vertex'][self._halfedges['twin'][(self._halfedges['vertex'] == _live_vertex) & twin_mask]]
-        twin_list = list(set(dead_list) & set(live_list) - set([-1]))
+        twin_list = list((set(dead_list) & set(live_list)) - set([-1]))
         if len(twin_list) != 2:
             return
         
