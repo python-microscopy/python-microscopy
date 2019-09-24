@@ -194,8 +194,8 @@ class ActionPanel(wx.Panel):
         # TODO - does this play nicely with Andrew's MultiView camera?
         x0, y0, x1, y1 = self.scope.state['Camera.ROI']
         
-        roi_offset_x = self.scope.GetPixelSize()[0]*(x0 + x1)
-        roi_offset_y = self.scope.GetPixelSize()[1]*0.5*(y0 + y1)
+        roi_offset_x = self.scope.GetPixelSize()[0]*(x0 + 0.5*self.scope.cam.GetPicWidth())
+        roi_offset_y = self.scope.GetPixelSize()[1]*(y0 + 0.5*self.scope.cam.GetPicHeight())
         
         for x, y in rois:
             args = {'state' : {'Positioning.x': float(x) - roi_offset_x, 'Positioning.y': float(y) - roi_offset_y}}
