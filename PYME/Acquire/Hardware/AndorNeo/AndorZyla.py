@@ -178,6 +178,8 @@ class AndorBase(SDK3Camera):
         self.AcquisitionStart = ATCommand()
         self.AcquisitionStop = ATCommand()
         
+        self.SoftwareTrigger = ATCommand()
+        
         self.CycleMode = ATEnum()
         self.ElectronicShutteringMode = ATEnum()
         self.FanSpeed = ATEnum()
@@ -274,6 +276,9 @@ class AndorBase(SDK3Camera):
         except:
             logger.info("error disabling Static Blemish Correction")
             pass
+        
+        
+        self.TriggerMode.setString('Internal')
         
         self.SensorCooling.setValue(True)
         #self.TemperatureControl.setString('-30.00')
@@ -479,18 +484,30 @@ class AndorBase(SDK3Camera):
 #        return self.contMode
         
     def SetAcquisitionMode(self, mode):
-        if mode == self.MODE_CONTINUOUS:
+        if mode in [self.MODE_CONTINUOUS, self.MODE_SOFTWARE_TRIGGER]:
             if not self.contMode:
-                self.CycleMode.setString('uContinuous')
+                self.CycleMode.setString(u'Continuous')
+            
+            if mode == self.MODE_SOFTWARE_TRIGGER:
+                self.TriggerMode.setString(u'Software')
+            else:
+                self.TriggerMode.setString(u'Internal')
+                
         elif self.contMode:
-            self.CycleMode.setString('uFixed')
+            self.CycleMode.setString(u'Fixed')
             self.FrameCount.setValue(1)
             
     def GetAcquisitionMode(self):
         if self.contMode:
-            return self.MODE_CONTINUOUS
+            if self.TriggerMode.getString() == u'Software':
+                return self.MODE_SOFTWARE_TRIGGER
+            else:
+                return self.MODE_CONTINUOUS
         else:
             return self.MODE_SINGLE_SHOT
+    
+    def FireSoftwareTrigger(self):
+        self.SoftwareTrigger()
     
     @property
     def contMode(self):
