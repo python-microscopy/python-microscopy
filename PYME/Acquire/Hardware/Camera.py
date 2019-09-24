@@ -739,6 +739,8 @@ class Camera(object):
         """Legacy of old code. Not called anywhere, should remove"""
         raise DeprecationWarning("Deprecated.")
 
+
+# FIXME - move out of this file
 class MultiviewCameraMixin(object):
         def __init__(self, multiview_info, default_roi, camera_class):
             """
