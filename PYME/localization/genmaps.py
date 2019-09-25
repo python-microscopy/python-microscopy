@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 import PYME.IO.image as im
 import PYME.IO.dataExporter as dexp
-from PYME.IO.MetaDataHandler import NestedClassMDHandler
+from PYME.IO.MetaDataHandler import NestedClassMDHandler, get_camera_roi_origin
 
 
 def saveasmap(array,filename,mdh=None):
@@ -69,9 +69,11 @@ def listCalibrationDirs():
 # metadata
 # if m, ve are None nothing is copied into the map and just the uniform array is returned
 def insertIntoFullMap(m, ve, smdh, chipsize=(2048,2048)):
+    x0, y0 = get_camera_roi_origin(smdh)
+    
     validROI = {
-        'PosX' : smdh['Camera.ROIPosX'],
-        'PosY' : smdh['Camera.ROIPosY'],
+        'PosX' : x0+1,
+        'PosY' : x0+1,
         'Width' : smdh['Camera.ROIWidth'],
         'Height' : smdh['Camera.ROIHeight']
         }
@@ -84,11 +86,11 @@ def insertIntoFullMap(m, ve, smdh, chipsize=(2048,2048)):
     bmdh.setEntry('Analysis.valid.ROIWidth', validROI['Width'])
     bmdh.setEntry('Analysis.valid.ROIHeight', validROI['Height'])
 
-    bmdh['Camera.ROIPosX'] = 1
-    bmdh['Camera.ROIPosY'] = 1
+    bmdh['Camera.ROIOriginX'] = 0
+    bmdh['Camera.ROIOriginY'] = 0
     bmdh['Camera.ROIWidth'] = chipsize[0]
     bmdh['Camera.ROIHeight'] = chipsize[1]
-    bmdh['Camera.ROI'] = (1,1,chipsize[0]+1,chipsize[1]+1)
+    bmdh['Camera.ROI'] = (0,0,chipsize[0],chipsize[1])
 
     if m is None:
         mfull = np.zeros(chipsize, dtype='float64')

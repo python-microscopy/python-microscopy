@@ -83,12 +83,9 @@ class Unmixer:
         self.X2 = numpy.round(X - shiftField[0](X*70., Y*70.)/70.).astype('i')
         self.Y2 = numpy.round(Y - shiftField[1](X*70., Y*70.)/70.).astype('i')
 
-    def _deshift(self, red_chan, ROI=[1,1,512, 512]):
+    def _deshift(self, red_chan, ROI=[0,0,512, 512]):
         if 'X2' in dir(self):
             x1, y1, x2, y2 = ROI
-            x1 = x1 - 1
-            #x2 = self.scope.cam.GetROIX2()
-            y1 = y1 - 1
 
             #print self.X2.shape
 
@@ -110,7 +107,7 @@ class Unmixer:
             return red_chan
 
 
-    def Unmix(self, data, mixMatrix, offset, ROI=[1,1,512, 512]):
+    def Unmix(self, data, mixMatrix, offset, ROI=[0,0,512, 512]):
         import scipy.linalg
         
         #from pylab import *

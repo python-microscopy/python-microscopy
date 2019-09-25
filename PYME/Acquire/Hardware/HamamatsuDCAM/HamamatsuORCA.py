@@ -244,17 +244,14 @@ class HamamatsuORCA(HamamatsuDCAM):
 
         logger.debug('ROI set: x0 %3.1f, y0 %3.1f, w %3.1f, h %3.1f' % (x1, y1, w, h))
 
-    def GetROIX1(self):
-        return int(self.getCamPropValue('SUBARRAY HPOS'))
-
-    def GetROIX2(self):
-        return int(self.GetROIX1() + self.getCamPropValue('SUBARRAY HSIZE'))
-
-    def GetROIY1(self):
-        return int(self.getCamPropValue('SUBARRAY VPOS'))
-
-    def GetROIY2(self):
-        return int(self.GetROIY1() + self.getCamPropValue('SUBARRAY VSIZE'))
+    def GetROI(self):
+        x1 = int(self.getCamPropValue('SUBARRAY HPOS'))
+        y1 = int(self.getCamPropValue('SUBARRAY VPOS'))
+        
+        x2 = x1 + int(self.getCamPropValue('SUBARRAY HSIZE'))
+        y2 = y1 + int(self.getCamPropValue('SUBARRAY VSIZE'))
+        
+        return x1, y1, x2, y2
 
     def StopAq(self):
         self._aq_active = False

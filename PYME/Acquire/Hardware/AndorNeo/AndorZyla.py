@@ -580,18 +580,27 @@ class AndorBase(SDK3Camera):
 
     def GetSimpleGainMode(self):
         return self.SimplePreAmpGainControl.getString()
+    
+    def GetROI(self):
+        x1 = self.AOILeft.getValue()
+        y1 = self.AOITop.getValue()
+        
+        x2 = x1 + self.AOIWidth.getValue()
+        y2 = y1 + self.AOIHeight.getValue()
+        
+        return [x1, x2, y1, y2]
 
-    def GetROIX1(self):
-        return self.AOILeft.getValue()
-        
-    def GetROIX2(self):
-        return self.AOILeft.getValue() + self.AOIWidth.getValue()
-        
-    def GetROIY1(self):
-        return self.AOITop.getValue()
-        
-    def GetROIY2(self):
-        return self.AOITop.getValue() + self.AOIHeight.getValue()
+    # def GetROIX1(self):
+    #     return self.AOILeft.getValue()
+    #
+    # def GetROIX2(self):
+    #     return self.AOILeft.getValue() + self.AOIWidth.getValue()
+    #
+    # def GetROIY1(self):
+    #     return self.AOITop.getValue()
+    #
+    # def GetROIY2(self):
+    #     return self.AOITop.getValue() + self.AOIHeight.getValue()
     
 
     def Shutdown(self):
@@ -657,12 +666,14 @@ class AndorBase(SDK3Camera):
             mdh.setEntry('Camera.DefaultEMGain', 1) # needed for some protocols
             mdh.setEntry('Camera.SimpleGainMode', self.GetSimpleGainMode())
 
-            mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
-            mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
-            mdh.setEntry('Camera.ROIOriginX', self.GetROIX1() - 1)
-            mdh.setEntry('Camera.ROIOriginY', self.GetROIY1() - 1)
-            mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
-            mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
+            #mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
+            #mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
+
+            x1, y1, x2, y2 = self.GetROI()
+            mdh.setEntry('Camera.ROIOriginX', x1)
+            mdh.setEntry('Camera.ROIOriginY', y1)
+            mdh.setEntry('Camera.ROIWidth', x2 - x1)
+            mdh.setEntry('Camera.ROIHeight', y2 - y1)
             #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
 
             # pick up noise settings for gain mode

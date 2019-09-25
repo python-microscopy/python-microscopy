@@ -530,10 +530,10 @@ class uc480Camera(Camera):
         return self.initialised
 
     def GetPicWidth(self):
-        return int((self.ROIx[1] - self.ROIx[0] + 1)/self.binX)
+        return int((self.ROIx[1] - self.ROIx[0])/self.binX)
 
     def GetPicHeight(self):
-        return int((self.ROIy[1] - self.ROIy[0] + 1)/self.binY)
+        return int((self.ROIy[1] - self.ROIy[0])/self.binY)
 
 
     def SetROI(self, x1,y1,x2,y2):
@@ -549,26 +549,26 @@ class uc480Camera(Camera):
         
         #if coordinates are reversed, don't care
         if (x2 > x1):
-            self.ROIx = [x1+1, x2]
+            self.ROIx = [x1, x2]
         elif (x2 < x1):
-            self.ROIx = [x2+1, x1]
+            self.ROIx = [x2, x1]
         else: #x1 == x2 - BAD
             raise RuntimeError('Error Setting x ROI - Zero sized ROI')
 
         if (y2 > y1):
-            self.ROIy = [y1+1, y2]
+            self.ROIy = [y1, y2]
 
         elif (y2 < y1):
-            self.ROIy = [y2+1, y1]
+            self.ROIy = [y2, y1]
 
         else: #y1 == y2 - BAD
             raise RuntimeError('Error Setting y ROI - Zero sized ROI')
         
         rect = uc480.IS_RECT()
-        rect.s32X =  self.ROIx[0] - 1
-        rect.s32Y =  self.ROIy[0] - 1
-        rect.s32Width  = max(1 + self.ROIx[1] - self.ROIx[0], self.ROIlimits['xmin']) # ensure minimim size in x
-        rect.s32Height = max(1 + self.ROIy[1] - self.ROIy[0], self.ROIlimits['ymin']) # ensure minimim size in y
+        rect.s32X =  self.ROIx[0]
+        rect.s32Y =  self.ROIy[0]
+        rect.s32Width  = max(self.ROIx[1] - self.ROIx[0], self.ROIlimits['xmin']) # ensure minimim size in x
+        rect.s32Height = max(self.ROIy[1] - self.ROIy[0], self.ROIlimits['ymin']) # ensure minimim size in y
         # note: this can still fail on the right edge of the chip or bottom edge, since we then push beyond the
         # chip size limits FIXME!!!!!
 
@@ -600,17 +600,9 @@ class uc480Camera(Camera):
             self.SetIntegTime( self.GetIntegTime())
         #raise Exception, 'Not implemented yet!!'
 
-    def GetROIX1(self):
-        return self.ROIx[0]
-
-    def GetROIX2(self):
-        return self.ROIx[1]
-
-    def GetROIY1(self):
-        return self.ROIy[0]
-
-    def GetROIY2(self):
-        return self.ROIy[1]
+    def GetROI(self):
+        return self.ROIx[0], self.ROIy[0], self.ROIx[1], self.ROIy[1]
+    
 
     def StartExposure(self):
         
@@ -763,12 +755,14 @@ class uc480Camera(Camera):
             mdh.setEntry('Camera.SensorHeight',self.GetCCDHeight())
             mdh.setEntry('Camera.TrueEMGain', 1)
 
-            mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
-            mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
-            mdh.setEntry('Camera.ROIOriginX', self.GetROIX1() - 1) #new 0 based version
-            mdh.setEntry('Camera.ROIOriginY', self.GetROIY1() - 1)
-            mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1()+1)
-            mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1()+1)
+            #mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
+            #mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
+            
+            x1, y1, x2, y2 = self.GetROI()
+            mdh.setEntry('Camera.ROIOriginX', x1)
+            mdh.setEntry('Camera.ROIOriginY', y1)
+            mdh.setEntry('Camera.ROIWidth', x2 - x1)
+            mdh.setEntry('Camera.ROIHeight', y2 - y1)
             #mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
 
             check_mapexists(mdh,type='dark')
