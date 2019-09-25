@@ -102,6 +102,9 @@ class TriangleMesh(object):
         self.fix_boundary = True  # Hold boundary edges in place
         self.debug = False  # Print debug statements
 
+        # Is the mesh manifold?
+        self._manifold = None
+
         # Set debug, fix_boundary, etc.
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -237,8 +240,8 @@ class TriangleMesh(object):
                 # singular vertex (note this requires the C code version of
                 # update_vertex_neighbors, which reverses direction upon hitting
                 # an edge to ensure a more accurate neighborhood)
-                n_incident = np.sum(self._halfedges['vertex'] == _vertex)
-                n_neighbors = np.sum(self._vertices['neighbors'][_vertex] != -1)
+                n_incident = np.flatnonzero(self._halfedges['vertex'] == _vertex).size
+                n_neighbors = np.flatnonzero(self._vertices['neighbors'][_vertex] != -1).size
                 if n_neighbors != n_incident:
                     singular_vertices.append(_vertex)
 
@@ -369,10 +372,15 @@ class TriangleMesh(object):
         
         # return np.all(c==2)
 
-        self._singular_edges = None
-        self._singular_vertices = None
+        if self._manifold is None:
+            self._singular_edges = None
+            self._singular_vertices = None
+            vertex_mask = (self._halfedges['vertex'] != -1)
+            twin_mask = (self._halfedges['twin'] == -1)
+            boundary_check = ((np.flatnonzero(vertex_mask & twin_mask).size) == 0)
+            self._manifold = (len(self.singular_vertices) == 0) & boundary_check
 
-        return len(self.singular_vertices) == 0
+        return self._manifold
 
     def keys(self):
         return list(self.vertex_properties)
@@ -624,9 +632,9 @@ class TriangleMesh(object):
             
             if len(copy_mask.shape) > 1:
                 copy_mask = np.any(copy_mask, axis=(1-axis))
-                copy_size = np.sum(copy_mask)
+                copy_size = np.flatnonzero(copy_mask).size
             else:
-                copy_size = np.sum(copy_mask)
+                copy_size = np.flatnonzero(copy_mask).size
 
             if axis:
                 new_vec[:,:copy_size] = vec[:, copy_mask]
@@ -690,12 +698,12 @@ class TriangleMesh(object):
         if interior:
             nn = self._vertices['neighbors'][curr_halfedge['vertex']]
             nn_mask = (nn != -1)
-            if np.any((self._halfedges['twin'][nn]*nn_mask) == -1):
+            if (-1 in self._halfedges['twin'][nn]*nn_mask):
                 return
 
             nn = self._vertices['neighbors'][self._halfedges['vertex'][_twin]]
             nn_mask = (nn != -1)
-            if np.any((self._halfedges['twin'][nn]*nn_mask) == -1):
+            if (-1 in self._halfedges['twin'][nn]*nn_mask):
                 return
 
             twin_halfedge = self._halfedges[_twin]
@@ -728,10 +736,21 @@ class TriangleMesh(object):
             return
 
         # Check for creation of multivalent edges and prevent this (manifoldness)
-        twin_mask = (self._halfedges['twin'] != -1)
-        dead_list = self._halfedges['vertex'][self._halfedges['twin'][(self._halfedges['vertex'] == _dead_vertex) & twin_mask]]
-        live_list = self._halfedges['vertex'][self._halfedges['twin'][(self._halfedges['vertex'] == _live_vertex) & twin_mask]]
-        twin_list = list(set(dead_list) & set(live_list) - set([-1]))
+        fast_collapse_bool = (self.manifold and (vl < NEIGHBORSIZE) and (vd < NEIGHBORSIZE))
+        if fast_collapse_bool:
+            # Do it the fast way if we can
+            live_nn = self._vertices['neighbors'][_live_vertex]
+            dead_nn =  self._vertices['neighbors'][_dead_vertex]
+            live_mask = (live_nn != -1)
+            dead_mask = (dead_nn != -1)
+            live_list = self._halfedges['vertex'][live_nn[live_mask]]
+            dead_list = self._halfedges['vertex'][dead_nn[dead_mask]]
+        else:
+            twin_mask = (self._halfedges['twin'] != -1)
+            dead_mask = (self._halfedges['vertex'] == _dead_vertex)
+            dead_list = self._halfedges['vertex'][self._halfedges['twin'][dead_mask & twin_mask]]
+            live_list = self._halfedges['vertex'][self._halfedges['twin'][(self._halfedges['vertex'] == _live_vertex) & twin_mask]]
+        twin_list = list((set(dead_list) & set(live_list)) - set([-1]))
         if len(twin_list) != 2:
             return
         
@@ -740,22 +759,14 @@ class TriangleMesh(object):
             raise RuntimeError('Live vertex equals dead vertex (both halves of edge point to same place)')
 
         # Collapse to the midpoint of the original edge vertices
-        self._halfedges['vertex'][self._halfedges['vertex'] == _dead_vertex] = _live_vertex
+        if fast_collapse_bool:
+            self._halfedges['vertex'][self._halfedges['twin'][dead_nn[dead_mask]]] = _live_vertex
+        else:
+            self._halfedges['vertex'][dead_mask] = _live_vertex
         _live_pos = self._vertices['position'][_live_vertex]
         _dead_pos = self._vertices['position'][_dead_vertex]
         self._vertices['position'][_live_vertex] = 0.5*(_live_pos + _dead_pos)
         
-        # # We may need to adjust the collapsed vertex positions if we're fixing the boundary
-        # if self.fix_boundary and interior:
-        #     _live_neighbors = self._vertices['neighbors'][_live_vertex]
-        #     _live_neighbors_mask = (_live_neighbors != -1)
-        #     _dead_neighbors = self._vertices['neighbors'][_dead_vertex]
-        #     _dead_neighbors_mask = (_dead_neighbors != -1)
-        #     if np.any(self._halfedges['twin'][_live_neighbors[_live_neighbors_mask]] == -1):
-        #         self._vertices['position'][_live_vertex] = _live_pos
-        #     if np.any(self._halfedges['twin'][_dead_neighbors[_dead_neighbors_mask]] == -1):
-        #         self._vertices['position'][_live_vertex] = _dead_pos
-
         # update valence of vertex we keep
         self._vertices['valence'][_live_vertex] = vl + vd - 3
         
@@ -776,12 +787,15 @@ class TriangleMesh(object):
             if edge2 == -1:
                 t2 = -1
             
-            if (t2 != -1):
+            if (t1 != -1) and (t2 != -1):
                 self._halfedges['twin'][t2] = t1
-                
-            if (t1 != -1):
                 self._halfedges['twin'][t1] = t2
-                
+            else:
+                if (t1 != -1):
+                    self._halfedges['twin'][t1] = -1
+                if (t2 != -1):
+                    self._halfedges['twin'][t2] = -1
+
         _zipper(_next, _prev)
         if interior:
             _zipper(_twin_next, _twin_prev)
@@ -930,14 +944,14 @@ class TriangleMesh(object):
                 # option to search and insert on different keys.
                 el_vacancies = [int(x) for x in np.argwhere(np.all(el_arr[key] == -1, axis=1))]
             else:
-                el_vacancies = [int(x) for x in np.argwhere(el_arr[key] == -1)]
+                el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
 
             idx = el_vacancies.pop(0)
 
         if idx == -1:
             raise ValueError('Index cannot be -1.')
 
-        if insert_key == None:
+        if not insert_key:
             # Default to searching and inserting on the same key
             insert_key = key
 
@@ -1397,6 +1411,10 @@ class TriangleMesh(object):
             # 4. Relocate vertices on the surface by tangential smoothing.
             self.relax(l=l, n=n_relax)
 
+        # Let's double-check the mesh manifoldness
+        self._manifold = None
+        self.manifold
+
     def upsample(self, n=1):
         """
         Upsample the mesh by a factor of 4 (factor of 2 along each axis in the
@@ -1462,6 +1480,8 @@ class TriangleMesh(object):
 
             # Restore boundary vertex positions
             self._vertices['position'][boundary_vertex_idxs] = boundary_vertex_positions
+
+        self._manifold = None
 
     def downsample(self, n_triangles=None):
         """
@@ -1608,6 +1628,8 @@ class TriangleMesh(object):
 
             for n in neighbors:
                 cost_heap.insert(np.float32(err[n]), np.int32(n))
+
+        self._manifold = None
 
     def find_connected_components(self):
         """
@@ -2096,7 +2118,7 @@ class TriangleMesh(object):
             M. Attene, A lightweight approach to repairing digitized polygon
             meshes, The Visual Computer, 2010.
         """
-
+        
         # 1. Remove singularities (singular edges and isolated singular vertices)
         self._remove_singularities()
 
@@ -2105,6 +2127,8 @@ class TriangleMesh(object):
 
         # 3. Patch mesh holes with new triangles
         self._fill_holes()
+
+        self._manifold = None
 
     def to_stl(self, filename):
         """
