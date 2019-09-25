@@ -180,7 +180,10 @@ class MDHandlerBase(DictMixin):
         self.setEntry(name, value)
 
     def __getitem__(self, name):
-        return self.getEntry(name)
+        try:
+            return self.getEntry(name)
+        except AttributeError:
+            raise KeyError('Key %s not defined' % name)
 
     if six.PY3:
         def __len__(self):
