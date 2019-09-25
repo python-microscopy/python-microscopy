@@ -89,7 +89,7 @@ class LMGLShaderCanvas(GLCanvas):
 
     def __init__(self, parent):
         print("New Canvas")
-        attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
+        attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16, wx.glcanvas.WX_GL_SAMPLE_BUFFERS, 1, wx.glcanvas.WX_GL_SAMPLES, 8]
         GLCanvas.__init__(self, parent, -1, attribList=attribute_list)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -432,6 +432,7 @@ class LMGLShaderCanvas(GLCanvas):
         print('Shader - Version: {}'.format(glGetString(GL_SHADING_LANGUAGE_VERSION)))
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_NORMALIZE)
+        glEnable(GL_MULTISAMPLE)
 
         glLoadIdentity()
         glOrtho(self.xmin, self.xmax, self.ymin, self.ymax, self.zmin, self.zmax)
