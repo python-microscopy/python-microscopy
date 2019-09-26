@@ -1,7 +1,7 @@
 from .base import BaseEngine, EngineLayer
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram, OpaquePointShaderProgram
 from PYME.LMVis.shader_programs.PointSpriteShaderProgram import PointSpriteShaderProgram
-from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
+from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, GouraudSphereShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
 from pylab import cm
@@ -58,12 +58,19 @@ class TransparentPointsEngine(Points3DEngine):
         self.set_shader_program(DefaultShaderProgram)
         self.point_scale_correction = 1.0
         
+class SpheresEngine(Points3DEngine):
+    def __init__(self):
+        BaseEngine.__init__(self)
+        self.set_shader_program(GouraudSphereShaderProgram)
+        self.point_scale_correction = 1.0
+        
 
 ENGINES = {
     'points' : Points3DEngine,
     'transparent_points' : TransparentPointsEngine,
     'pointsprites' : PointSpritesEngine,
     'shaded_points' : ShadedPointsEngine,
+    'spheres' : SpheresEngine,
 }
 
 class PointCloudRenderLayer(EngineLayer):

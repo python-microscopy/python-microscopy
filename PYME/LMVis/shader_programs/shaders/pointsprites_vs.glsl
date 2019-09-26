@@ -13,6 +13,8 @@ uniform float z_max;
 uniform float v_min;
 uniform float v_max;
 
+varying float vis;
+
 void main() {
     bool visible;
     gl_PointSize = gl_Point.size;
@@ -26,5 +28,7 @@ void main() {
 
     visible = visible && gl_Position.z > v_min && gl_Position.z < v_max;
 
-    gl_FrontColor.a = gl_FrontColor.a*(float(visible));
+    vis = float(visible);
+
+    gl_FrontColor.a = gl_FrontColor.a*(vis);
 }

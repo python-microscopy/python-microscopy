@@ -21,7 +21,7 @@
 import os
 
 from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glPolygonMode, \
-    GL_FRONT_AND_BACK, GL_LINE, glUseProgram
+    GL_FRONT_AND_BACK, GL_LINE, glUseProgram, GL_BLEND,glDisable, glEnable, glDepthMask, GL_TRUE, GL_FALSE, GL_DEPTH_TEST, glBlendFunc, GL_SRC_ALPHA, GL_ONE
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
@@ -31,7 +31,12 @@ class WireFrameShaderProgram(GLProgram):
         pass
 
     def __enter__(self):
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+        glEnable(GL_BLEND)
+        glDepthMask(GL_TRUE)
+        glDisable(GL_DEPTH_TEST)
         self.get_shader_program().use()
+        self.set_clipping_uniforms()
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
 
     def __init__(self):
