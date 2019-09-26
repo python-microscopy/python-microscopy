@@ -180,7 +180,10 @@ class MDHandlerBase(DictMixin):
         self.setEntry(name, value)
 
     def __getitem__(self, name):
-        return self.getEntry(name)
+        try:
+            return self.getEntry(name)
+        except AttributeError:
+            raise KeyError('Key %s not defined' % name)
 
     if six.PY3:
         def __len__(self):
@@ -319,23 +322,18 @@ class MDHandlerBase(DictMixin):
         import json
         import numpy as np
         
-        def _jsify(obj):
-            """call a custom to_JSON method, if available"""
-            #if isinstance(obj, np.integer):
-            #    return int(obj)
-            #elif isinstance(obj, np.number):
-            #    return float(obj)
-            if isinstance(obj, np.generic):
-                return obj.tolist()
+        class CustomEncoder(json.JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, np.generic):
+                    return obj.tolist()
+                try:
+                    return obj.to_JSON()
+                except AttributeError:
+                    return json.JSONEncoder.default(self, obj)
 
-            try:
-                return obj.to_JSON()
-            except AttributeError:
-                return obj
-                
-        d = { k: _jsify(self.getEntry(k)) for k in self.getEntryNames()}
+        d = {k: self.getEntry(k) for k in self.getEntryNames()}
         
-        return json.dumps(d, indent=0, sort_keys=True)
+        return json.dumps(d, indent=2, sort_keys=True, cls=CustomEncoder)
 
 class HDFMDHandler(MDHandlerBase):
     def __init__(self, h5file, mdToCopy=None):

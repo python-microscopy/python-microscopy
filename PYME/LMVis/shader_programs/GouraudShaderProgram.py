@@ -27,13 +27,13 @@ import numpy as np
 class GouraudShaderProgram(GLProgram):
     INPUT_LIGHT = b'inputLight'
     test_value = [1.0, 0.0, 1.0, 1.0]
-    lights_vector = (0.0, 0.00, -1.0, 0.0)
+    lights_vector = (1.0, 1.0, -1.0, 0.0)
     view_vector = (0.0, 0.0, -1.0, 0.0)
 
     LIGHT_PROPS = {
-            'light_ambient': (0.1, 0.1, 0.1, 1.0),
-            'light_diffuse': (0.6, 0.6, 0.6, 1.0),
-            'light_specular': (0.3, 0.3, 0.3, 1.0),
+            'light_ambient': (0.2, 0.2, 0.2, 1.0),
+            'light_diffuse': (0.8, 0.8, 0.8, 1.0),
+            'light_specular': (0.7, 0.7, 0.7, 0.7),
             'light_position': lights_vector
     }
 
@@ -45,7 +45,7 @@ class GouraudShaderProgram(GLProgram):
         shader_program.add_shader("gouraud_fs.glsl", GL_FRAGMENT_SHADER)
         shader_program.link()
         self.set_shader_program(shader_program)
-        self._shininess = 80
+        self._shininess = 8
         
 
     def __enter__(self):

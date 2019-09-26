@@ -288,78 +288,112 @@ class Camera(object):
         """
         Set the ROI via coordinates (as opposed to via an index).
 
-        NOTE/FIXME: this is somewhat inconsistent over cameras, with some
-        cameras using 1-based and some cameras using 0-based indexing.
-        Ideally we would convert them all to using zero based indexing and be
-        consistent with numpy.
-
-        Most use 1 based (as it's a thin wrapper around the camera API), but we
-        should really do something saner here.
-
+        NOTE/FIXME: ROI handling is currently somewhat inconsistent between cameras, as a result of underlying differences
+        in the Camera APIs (some of which use zero based pixel indices and some of which use 1-based indices).
+        
+        With the possible exception of the Hamamatsu Orca Flash support, the numpy convention is used, whereby:
+         
+        x1, y1 are the zero based indices of the top-left pixel in the ROI and x2, y2 are the coordinates of the
+        bottom right corner of the ROI. It is important to note that, as with the python/numpy slice notation the row
+        and column with (zero based) coordinates y2 and x2 respectively are **excluded** from the ROI. IE an ROI [x1, y1, x2, y2]
+        goes from pixel index x1 up to, but not including pixel index x2 (this lets us define the ROI width as (x2-x1)).
+        
+        Due to the fact that they map directly to API functions related to the Andor cameras, GetROIX1 and GetROIY1,
+        return indices which are 1-based and GetROIX2 and GetROIY2 match x2 and y2 as provided to SetROI. This is not
+        strictly followed in all cameras with the orca flash breaking convention. Rather than maintaining an inconsistent
+        indexing convention between the GetROIX...() functions and SetROI, these have been etc have been deprecated for
+        a single GetROI() function which uses the same conventions as SetROI
+        
+        FIXME: How does the Orca handle x2, y2 ???
+        
         Parameters
         ----------
         x1 : int
-            Left x-coordinate
+            Left x-coordinate, zero-indexed
         y1 : int
-            Top y-coordinate
+            Top y-coordinate, zero-indexed
         x2 : int
-            Right x-coordinate
+            Right x-coordinate, (excluded from ROI)
         y2 : int
-            Bottom y-coordinate
+            Bottom y-coordinate, (excluded from ROI)
 
         Returns
         -------
         None
 
-        See Also
-        --------
-        SetROIIndex
+
+        """
+        raise NotImplementedError('Implemented in derived class.')
+    
+    def GetROI(self):
+        """
+        
+        Returns
+        -------
+        
+            The ROI, [x1, y1, x2, y2] in the numpy convention used by SetROI
+
         """
         raise NotImplementedError('Implemented in derived class.')
 
     def GetROIX1(self):
         """
-        Gets the position of the leftmost pixel of the ROI.
+        Gets the position of the leftmost pixel of the ROI. [Deprecated]
 
         Returns
         -------
         int
-            Left x-coordinate of ROI.
+            Left x-coordinate of ROI. One based indexing
+
+        Notes
+        -----
+        This is broken for the Orca
         """
-        raise NotImplementedError('Implemented in derived class.')
+        logger.warning("Deprecated - use GetROI() instead")
+        return self.GetROI()[0] + 1
+        
 
     def GetROIX2(self):
         """
-        Gets the position of the rightmost pixel of the ROI.
+        Gets the position of the rightmost pixel of the ROI. [Deprecated]
 
         Returns
         -------
         int
-            Right x-coordinate of ROI.
+            Right x-coordinate of ROI. One base indexing
+
+        
         """
-        raise NotImplementedError('Implemented in derived class.')
+        logger.warning("Deprecated - use GetROI() instead")
+        return self.GetROI()[2] + 1
 
     def GetROIY1(self):
         """
-        Gets the position of the top row of the ROI.
+        Gets the position of the top row of the ROI. [Deprecated]
 
         Returns
         -------
         int
-            Top y-coordinate of ROI.
+            Top y-coordinate of ROI. One based indexing
+
+        
         """
-        raise NotImplementedError('Implemented in derived class.')
+        logger.warning("Deprecated - use GetROI() instead")
+        return self.GetROI()[1]
 
     def GetROIY2(self):
         """
-        Gets the position of the bottom row of the ROI.
+        Gets the position of the bottom row of the ROI. [Deprecated]
 
         Returns
         -------
         int
-            Bottom y-coordinate of ROI.
+            Bottom y-coordinate of ROI. One based indexing
+
+        
         """
-        raise NotImplementedError('Implemented in derived class.')
+        logger.warning("Deprecated - use GetROI() instead")
+        return self.GetROI()[3]
 
     def SetEMGain(self, gain):
         """
@@ -683,15 +717,12 @@ class Camera(object):
             mdh.setEntry('Camera.SensorWidth', self.GetCCDWidth())
             mdh.setEntry('Camera.SensorHeight', self.GetCCDHeight())
 
-            # FOV
-            mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
-            mdh.setEntry('Camera.ROIPosY', self.GetROIY1())
-            mdh.setEntry('Camera.ROIOriginX', self.GetROIX1() - 1)
-            mdh.setEntry('Camera.ROIOriginY', self.GetROIY1() - 1)
-            mdh.setEntry('Camera.ROIWidth',
-                         self.GetROIX2() - self.GetROIX1())
-            mdh.setEntry('Camera.ROIHeight',
-                         self.GetROIY2() - self.GetROIY1())
+            x1, y1, x2, y2 = self.GetROI()
+            mdh.setEntry('Camera.ROIOriginX', x1)
+            mdh.setEntry('Camera.ROIOriginY', y1)
+            mdh.setEntry('Camera.ROIWidth', x2 - x1)
+            mdh.setEntry('Camera.ROIHeight', y2 - y1)
+            
 
     def Shutdown(self):
         """Shutdown and clean up the camera"""
@@ -739,6 +770,8 @@ class Camera(object):
         """Legacy of old code. Not called anywhere, should remove"""
         raise DeprecationWarning("Deprecated.")
 
+
+# FIXME - move out of this file
 class MultiviewCameraMixin(object):
         def __init__(self, multiview_info, default_roi, camera_class):
             """
@@ -872,7 +905,7 @@ class MultiviewCameraMixin(object):
             self.chip_roi = [chip_x_min, chip_y_min, chip_x_min + chip_width, chip_y_min + chip_height]
             logger.debug('setting chip ROI')
             self.SetROI(*self.chip_roi)
-            actual = (self.GetROIX1(), self.GetROIY1(), self.GetROIX2(), self.GetROIY2())
+            actual = self.GetROI()
             try:
                 assert actual == tuple(self.chip_roi)
             except AssertionError:

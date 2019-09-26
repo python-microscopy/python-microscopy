@@ -187,12 +187,24 @@ class ActionPanel(wx.Panel):
         -------
 
         """
+        from PYME.Acquire.Hardware.Camera import MultiviewCameraMixin
+        
         nice = float(self.tNice.GetValue())
         timeout = float(self.tTimeout.GetValue()) #CHECKME - default here might be too short
         
-        for x, y in rois:  # note that coordinates are for the origin, e.g. min x, min y (top left) corner
-            args = {'state' : {'Positioning.x': float(x), 'Positioning.y': float(y)}}
-        # fixme - make sure this isnt also accounted for in the viewer?
+        # coordinates are for the centre of ROI, and are referenced to the 0,0 pixel of the camera,
+        # correct this for a custom ROI.
+        # TODO - does this play nicely with Andrew's MultiView camera?
+        x0, y0, x1, y1 = self.scope.state['Camera.ROI']
+        
+        if isinstance(self.scope.cam, MultiviewCameraMixin):
+            # fix multiview crazyness
+            roi_offset_x = self.scope.GetPixelSize()[0] * (x0 + 0.5 * self.scope.cam.size_x)
+            roi_offset_y = self.scope.GetPixelSize()[1] * (y0 + 0.5 * self.scope.cam.size_y)
+        else:
+            roi_offset_x = self.scope.GetPixelSize()[0]*(x0 + 0.5*self.scope.cam.GetPicWidth())
+            roi_offset_y = self.scope.GetPixelSize()[1]*(y0 + 0.5*self.scope.cam.GetPicHeight())
+            args = {'state' : {'Positioning.x': float(x) - roi_offset_x, 'Positioning.y': float(y) - roi_offset_y}}
             self.actionManager.QueueAction('state.update', args, nice, timeout)
             args = {'maxFrames': int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
             self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)

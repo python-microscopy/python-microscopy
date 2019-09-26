@@ -18,14 +18,14 @@ class SurfaceFitter(object):
         -------
 
         """
-        from PYME.recipes.surface_fitting import SurfacePatchFitter
+        from PYME.recipes.surface_fitting import FitSurfaceWithPatches
         pipeline = self.vis_frame.pipeline
 
         raw_key = 'quadratic_surface_fits_raw'
         filtered_key = 'quadratic_surface_fits_filtered'
         reconstruction_key = 'quadratic_surface'
 
-        fit_module = SurfacePatchFitter(pipeline.recipe, input=pipeline.selectedDataSourceKey, output_fits_raw=raw_key,
+        fit_module = FitSurfaceWithPatches(pipeline.recipe, input=pipeline.selectedDataSourceKey, output_fits_raw=raw_key,
                                         output_fits_filtered=filtered_key,
                                         output_surface_reconstruction=reconstruction_key)
 

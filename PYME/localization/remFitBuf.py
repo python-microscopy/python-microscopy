@@ -146,7 +146,8 @@ class CameraInfoManager(object):
 
         """
 
-        if md['Multiview.ActiveViews'].any():
+        if any(md.get('Multiview.ActiveViews', [])):
+            #special case handling for multiview ROIs
             origins = [md['Multiview.ROI%dOrigin' % ind] for ind in md['Multiview.ActiveViews']]
             size_x, size_y = md['Multiview.ROISize']
             return [(slice(ox, ox + size_x), slice(oy, oy + size_y)) for ox, oy in origins]

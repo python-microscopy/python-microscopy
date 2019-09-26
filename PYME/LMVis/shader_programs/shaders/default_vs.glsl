@@ -13,6 +13,8 @@ uniform float v_min;
 uniform float v_max;
 uniform mat4 clip_rotation_matrix;
 
+varying float vis;
+
 
 void main() {
     bool visible;
@@ -28,6 +30,8 @@ void main() {
     visible = visible && v_position.z > v_min && v_position.z < v_max;
 
     gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+
+    vis = float(visible);
 
     gl_FrontColor.a = gl_FrontColor.a*(float(visible));
 }

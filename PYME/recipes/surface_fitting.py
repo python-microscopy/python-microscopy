@@ -119,7 +119,7 @@ class FitSurfaceWithPatches(ModuleBase):
             probe = np.zeros_like(xs)
         # construct a new datasource with our augmented points
         reconstruction = tabular.mappingFilter({'x': xs, 'y': ys, 'z': zs,
-                                                'normal_x': xn, 'normal_y': yn, 'normal_z': zn,
+                                                'xn': xn, 'yn': yn, 'zn': zn,
                                                 'probe': probe, 'n_points_fit': N, 'patch_id': j,
                                                 'r_curve': filtered_fits['r_curve'][j]})
         reconstruction.mdh = data_source.mdh

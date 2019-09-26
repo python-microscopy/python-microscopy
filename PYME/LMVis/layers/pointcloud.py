@@ -1,5 +1,5 @@
 from .base import BaseEngine, EngineLayer
-from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
+from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram, OpaquePointShaderProgram
 from PYME.LMVis.shader_programs.PointSpriteShaderProgram import PointSpriteShaderProgram
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
 
@@ -16,7 +16,7 @@ from OpenGL.GL import *
 class Points3DEngine(BaseEngine):
     def __init__(self):
         BaseEngine.__init__(self)
-        self.set_shader_program(DefaultShaderProgram)
+        self.set_shader_program(OpaquePointShaderProgram)
         self.point_scale_correction = 1.0
 
     def render(self, gl_canvas, layer):
@@ -52,9 +52,16 @@ class ShadedPointsEngine(Points3DEngine):
         self.set_shader_program(GouraudShaderProgram)
         self.point_scale_correction = 1.0
         
+class TransparentPointsEngine(Points3DEngine):
+    def __init__(self):
+        BaseEngine.__init__(self)
+        self.set_shader_program(DefaultShaderProgram)
+        self.point_scale_correction = 1.0
+        
 
 ENGINES = {
     'points' : Points3DEngine,
+    'transparent_points' : TransparentPointsEngine,
     'pointsprites' : PointSpritesEngine,
     'shaded_points' : ShadedPointsEngine,
 }
@@ -263,7 +270,7 @@ class PointCloudRenderLayer(EngineLayer):
                      Item('method'),
                      Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.on_update), show_label=False), ]),
-                     Group(Item('cmap', label='LUT'), Item('alpha'), Item('point_size'), Item('visible'))], )
+                     Group(Item('cmap', label='LUT'), Item('alpha'), Item('point_size'))], )
         #buttons=['OK', 'Cancel'])
 
     def default_traits_view(self):

@@ -440,19 +440,20 @@ class iXonCamera(Camera):
         if not ret == ac.DRV_SUCCESS:
             raise RuntimeError('Error setting image size: %s' % ac.errorCodes[ret])
 
-    def GetROIX1(self):
-        return self.ROIx[0]
-
-    def GetROIX2(self):
-        return self.ROIx[1]
-
-    def GetROIY1(self):
-        return self.ROIy[0]
-
-    def GetROIY2(self):
-        return self.ROIy[1]
-
-
+    # def GetROIX1(self):
+    #     return self.ROIx[0]
+    #
+    # def GetROIX2(self):
+    #     return self.ROIx[1]
+    #
+    # def GetROIY1(self):
+    #     return self.ROIy[0]
+    #
+    # def GetROIY2(self):
+    #     return self.ROIy[1]
+    
+    def GetROI(self):
+        return self.ROIx[0] - 1, self.ROIx[1], self.ROIy[0] -1, self.ROIy[1]
 
     def StartExposure(self):
         self.__selectCamera()
@@ -701,12 +702,15 @@ class iXonCamera(Camera):
             mdh.setEntry('Camera.CycleTime', self.tKin)
             mdh.setEntry('Camera.EMGain', self.GetEMGain())
 
-            mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
-            mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
-            mdh.setEntry('Camera.ROIOriginX', self.GetROIX1()-1)
-            mdh.setEntry('Camera.ROIOriginY', self.GetROIY1()-1)
-            mdh.setEntry('Camera.ROIWidth', self.GetROIX2() - self.GetROIX1())
-            mdh.setEntry('Camera.ROIHeight',  self.GetROIY2() - self.GetROIY1())
+            #mdh.setEntry('Camera.ROIPosX', self.GetROIX1())
+            #mdh.setEntry('Camera.ROIPosY',  self.GetROIY1())
+
+            x1, y1, x2, y2 = self.GetROI()
+            mdh.setEntry('Camera.ROIOriginX', x1)
+            mdh.setEntry('Camera.ROIOriginY', y1)
+            mdh.setEntry('Camera.ROIWidth', x2-x1)
+            mdh.setEntry('Camera.ROIHeight',  y2-y1)
+            
             mdh.setEntry('Camera.StartCCDTemp',  self.GetCCDTemp())
 
             #these should really be read from a configuration file

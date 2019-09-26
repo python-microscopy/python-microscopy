@@ -183,6 +183,6 @@ class OctreeRenderLayer(TriangleRenderLayer):
                      Item('depth'),Item('min_points'),
                      #Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
                      #Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ]),
-                     Group([Item('cmap', label='LUT'), Item('alpha'), Item('visible')])], )
+                     Group([Item('cmap', label='LUT'), Item('alpha')])], )
         # buttons=['OK', 'Cancel'])
 

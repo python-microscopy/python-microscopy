@@ -761,12 +761,8 @@ class microscope(object):
             The co-ordinates (in pixels) of the ROI, in the form (x0, y0, x1, y1)       
         
         """
-        x1 = self.cam.GetROIX1()
-        y1 = self.cam.GetROIY1()
-        x2 = self.cam.GetROIX2()
-        y2 = self.cam.GetROIY2()
         
-        return (x1, y1, x2, y2)
+        return self.cam.GetROI()
 
     def _SetActiveCameraBinning(self, binning):
         """
