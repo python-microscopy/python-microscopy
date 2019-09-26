@@ -50,21 +50,13 @@ class DefaultShaderProgram(GLProgram):
         #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         #glBlendFunc(GL_SRC_ALPHA, GL_DST_ALPHA)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE)
-        glDisable(GL_BLEND)
+        glEnable(GL_BLEND)
         glDepthMask(GL_TRUE)
-        glEnable(GL_DEPTH_TEST)
+        glDisable(GL_DEPTH_TEST)
         #glDepthFunc(GL_LEQUAL)
         glEnable(GL_POINT_SMOOTH)
         self.get_shader_program().use()
-        glUniform1f(self.get_uniform_location('x_min'), float(self.xmin))
-        glUniform1f(self.get_uniform_location('x_max'), float(self.xmax))
-        glUniform1f(self.get_uniform_location('y_min'), float(self.ymin))
-        glUniform1f(self.get_uniform_location('y_max'), float(self.ymax))
-        glUniform1f(self.get_uniform_location('z_min'), float(self.zmin))
-        glUniform1f(self.get_uniform_location('z_max'), float(self.zmax))
-        glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
-        glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
-        glUniformMatrix4fv(self.get_uniform_location('clip_rotation_matrix'), 1,GL_FALSE, self.v_matrix)
+        self.set_clipping_uniforms()
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -75,3 +67,14 @@ class DefaultShaderProgram(GLProgram):
         pass
 
 
+class OpaquePointShaderProgram(DefaultShaderProgram):
+    def __enter__(self):
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE)
+        glDisable(GL_BLEND)
+        glDepthMask(GL_TRUE)
+        glEnable(GL_DEPTH_TEST)
+        #glDepthFunc(GL_LEQUAL)
+        glEnable(GL_POINT_SMOOTH)
+        self.get_shader_program().use()
+        self.set_clipping_uniforms()
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
