@@ -58,6 +58,9 @@ class LUTOverlayLayer(OverlayLayer):
         
         self._clear_shader_clipping()
         with self.shader_program:
+            glDisable(GL_DEPTH_TEST)
+            glDisable(GL_LIGHTING)
+            glDisable(GL_BLEND)
             view_size_x = gl_canvas.xmax - gl_canvas.xmin
             view_size_y = gl_canvas.ymax - gl_canvas.ymin
 
@@ -82,7 +85,7 @@ class LUTOverlayLayer(OverlayLayer):
                 lb_ul_x = lb_ur_x - lb_width
           
     
-                glDisable(GL_LIGHTING)
+                
     
                 glBegin(GL_QUAD_STRIP)
     

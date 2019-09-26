@@ -322,7 +322,7 @@ class TriangleRenderLayer(EngineLayer):
                      Item('normal_mode', visible_when='method=="shaded"'),
                      Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ], visible_when='vertexColour != "constant"'),
-                     Group([Item('cmap', label='LUT'), Item('alpha'), Item('visible')])
+                     Group([Item('cmap', label='LUT'), Item('alpha')])
                      ], )
         # buttons=['OK', 'Cancel'])
 

@@ -49,3 +49,14 @@ class GLProgram(object):
 
     def get_uniform_location(self, uniform_name):
         return self._shader_program.get_uniform_location(uniform_name)
+
+    def set_clipping_uniforms(self):
+        glUniform1f(self.get_uniform_location('x_min'), float(self.xmin))
+        glUniform1f(self.get_uniform_location('x_max'), float(self.xmax))
+        glUniform1f(self.get_uniform_location('y_min'), float(self.ymin))
+        glUniform1f(self.get_uniform_location('y_max'), float(self.ymax))
+        glUniform1f(self.get_uniform_location('z_min'), float(self.zmin))
+        glUniform1f(self.get_uniform_location('z_max'), float(self.zmax))
+        glUniform1f(self.get_uniform_location('v_min'), float(self.vmin))
+        glUniform1f(self.get_uniform_location('v_max'), float(self.vmax))
+        glUniformMatrix4fv(self.get_uniform_location('clip_rotation_matrix'), 1, GL_FALSE, self.v_matrix)
