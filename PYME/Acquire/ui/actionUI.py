@@ -180,8 +180,7 @@ class ActionPanel(wx.Panel):
         Parameters
         ----------
         rois: list-like
-            list of ROI (x, y) positions, or array of shape (n_roi, 2). Note that the x, y positions are the upper-left
-            corners of the FOV to be imaged.
+            list of ROI (x, y) positions, or array of shape (n_roi, 2)
 
         Returns
         -------
