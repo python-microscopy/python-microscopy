@@ -216,8 +216,7 @@ class ReflectedLinePIDFocusLock(PID):
         if self.auto_mode and elapsed_time > self.sample_time:
             # logger.debug('Correction: %.2f' % correction)
             # logger.debug('components %s' % (self.components,))
-            self.piezo.SetOffset(correction)
-            # self.piezo.MoveRel(0, correction)
+            self.piezo.CorrectOffset(correction)
 
 
 class RLPIDFocusLockClient(object):
