@@ -36,7 +36,7 @@ def cam(scope):
     scope.cam.SetROI(289, 827, 1080, 1008)
     # With our laser at a stable operating current we saturate easily, set integ low. Can't get frame rate higher than
     # 300 Hz, so try and get a low integ and 250 frame rate
-    scope.cam.SetIntegTime(0.004)
+    scope.cam.SetIntegTime(0.005)
     
     # TODO - possibly change gain instead to avoid saturation
     # see SetGain() and SetGainBoost() functions of the uc_480 class
@@ -68,7 +68,7 @@ def focus_lock(MainFrame, scope):
     from PYME.ui import fastGraph
     from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockServer
     from PYME.Acquire.ui.focus_lock_gui import FocusLockPanel
-    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=-0.075, i=-0.0025, d=-0.002, sample_time=0.004)
+    scope.focus_lock = RLPIDFocusLockServer(scope, scope.piFoc, p=-0.075, i=-0.0025, d=-0.002, sample_time=0.005)
     scope.focus_lock.register()
     panel = FocusLockPanel(MainFrame, scope.focus_lock)
     MainFrame.camPanels.append((panel, 'Focus Lock'))
