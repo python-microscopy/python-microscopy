@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 from PYME.Acquire.Hardware.Piezos.base_piezo import PiezoBase
 
 class OffsetPiezo(PiezoBase):
+    """
+    basePiezo position - offset = OffsetPiezo position
+    """
     def __init__(self, basePiezo):
         self.basePiezo = basePiezo
         self.offset = 0
@@ -62,13 +65,17 @@ class OffsetPiezo(PiezoBase):
 
     @webframework.register_endpoint('/SetOffset', output_is_json=False)
     def SetOffset(self, offset):
-        # fixme - why did we care about the old offset here?
-        # p = self.GetTargetPos()
-        logger.debug('old offset: %.2f, new offset: %.2f, basetarget - (offset + target): %.2f' % (self.GetOffset(),
-                                                                                                   float(offset),
-                                                                                    self.basePiezo.GetTargetPos(0) - (float(offset) + self.GetTargetPos(0))))
+        # both gettarget and moveto account for offset, so make sure we only apply the change once
+        pos = self.GetPos()
         self.offset = float(offset)
-        self.MoveTo(0, self.basePiezo.GetTargetPos(0))
+        self.MoveTo(pos)
+
+    @webframework.register_endpoint('/CorrectOffset', output_is_json=False)
+    def CorrectOffset(self, correction):
+        # both gettarget and moveto account for offset, so make sure we only apply the change once
+        target = self.GetTargetPos(0)
+        self.offset += float(correction)  # correct the offset; positive means push base position higher than offsetpiezo
+        self.MoveTo(0, target)  # move the base piezo to correct position
 
     @webframework.register_endpoint('/LogShifts', output_is_json=False)
     def LogShifts(self, dx, dy, dz, active=True):
@@ -128,6 +135,9 @@ class OffsetPiezoClient(PiezoBase):
 
     def SetOffset(self, offset):
         return requests.get(self.urlbase + '/SetOffset?offset=%3.3f' % (offset))
+
+    def CorrectOffset(self, shim):
+        return requests.get(self.urlbase + '/CorrectOffset?correction=%3.3f' % (shim))
 
     def LogShifts(self, dx, dy, dz, active=True):
         res = requests.get(self.urlbase + '/LogShifts?dx=%3.3f&dy=%3.3f&dz=%3.3f&active=%d'% (dx, dy, dz, active))
