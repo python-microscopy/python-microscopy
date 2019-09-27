@@ -20,7 +20,6 @@
 #
 import PIL
 
-from PYME.LMVis.Extras.animation import VideoPanel
 from scipy.misc import toimage
 import wx
 from OpenGL.GL import GL_LUMINANCE, GL_RGB
@@ -30,21 +29,30 @@ from OpenGL.GL import GL_LUMINANCE, GL_RGB
 def save_snapshot(canvas):
     #FIXME - This is the WRONG way to do pixel sizes - we should be using a value in nm
     # we also shouldn't be calling a static method of an unrelated class to do this.
-    pixel_size = float(VideoPanel.ask(canvas, message='Please enter the pixel size (1 pixel on the screen = x pixel '
-                                                      'in the snapshot', default_value='1'))
-    file_name = wx.FileSelector('Save Image as ... (image .png will be appended to filename)')
-    if file_name:
-        # snap = canvas.getIm(pixel_size, GL_LUMINANCE)
-        snap = canvas.getIm(pixel_size, GL_RGB)
-        if snap.ndim == 3:
-            img = toimage(snap.transpose(1, 0, 2))
-        else:
-            img = toimage(snap.transpose())
-        img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
-        if not file_name.endswith('.png'):
-            img.save('{}.png'.format(file_name))
-        else:
-            img.save('{}'.format(file_name))
+    #pixel_size = float(VideoPanel.ask(canvas, message='Please enter the pixel size (1 pixel on the screen = x pixel '
+    #                                                  'in the snapshot', default_value='1'))
+    
+    dlg = wx.TextEntryDialog(canvas, "Snapshot pixel size", "Please enter the desired pixel size in the snapshot", "5")
+    if dlg.ShowModal() == wx.ID_OK:
+        pixel_size = float(dlg.GetValue())
+        dlg.Destroy()
+    
+        file_name = wx.FileSelector('Save current view as', wildcard="PNG files(*.png)|*.png",
+                        flags=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+        
+        if file_name:
+            # snap = canvas.getIm(pixel_size, GL_LUMINANCE)
+            snap = canvas.getIm(pixel_size, GL_RGB)
+            if snap.ndim == 3:
+                img = toimage(snap.transpose(1, 0, 2))
+            else:
+                img = toimage(snap.transpose())
+            img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
+            
+            if not file_name.endswith('.png'):
+                img.save('{}.png'.format(file_name))
+            else:
+                img.save('{}'.format(file_name))
 
 
 def Plug(vis_fr):

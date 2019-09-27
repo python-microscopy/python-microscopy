@@ -219,13 +219,13 @@ class VideoPanel(DockedPanel):
                 msg.ShowModal()
                 msg.Destroy()
 
-    @staticmethod
-    def ask(parent=None, message='', default_value=''):
-        dlg = wx.TextEntryDialog(parent, message, defaultValue=default_value)
-        dlg.ShowModal()
-        result = dlg.GetValue()
-        dlg.Destroy()
-        return result
+    # @staticmethod
+    # def ask(parent=None, message='', default_value=''):
+    #     dlg = wx.TextEntryDialog(parent, message, default_value)
+    #     dlg.ShowModal()
+    #     result = dlg.GetValue()
+    #     dlg.Destroy()
+    #     return result
 
     # noinspection PyTypeChecker
     def on_edit(self, event):

@@ -75,6 +75,8 @@ class ModuleBase(HasTraits):
     between executions (no side effects). This is critical in ensuring that repeat executions of the same
     recipe are reproducible and in allowing the incremental update (without re-running every module) when
     the parameters of one module change.
+    
+    If you want side effects - e.g. saving something to disk, look at the OutputModule class.
     """
     _invalidate_parent = True
     
