@@ -81,7 +81,7 @@ def gen_octree_from_points(visFr):
     return oc_name
 
 def gen_isosurface(visFr):
-    from PYME.LMVis.layers.triangle_mesh import TriangleRenderLayer
+    from PYME.LMVis.layers.mesh import TriangleRenderLayer
     from PYME.recipes.surface_fitting import DualMarchingCubes
     
     oc_name = gen_octree_from_points(visFr)
@@ -110,7 +110,7 @@ def gen_isosurface(visFr):
 def open_surface(visFr):
     import wx
     from PYME.experimental import triangle_mesh
-    from PYME.LMVis.layers.triangle_mesh import TriangleRenderLayer
+    from PYME.LMVis.layers.mesh import TriangleRenderLayer
     
     filename = wx.FileSelector("Choose a file to open",
                                    default_extension='stl',

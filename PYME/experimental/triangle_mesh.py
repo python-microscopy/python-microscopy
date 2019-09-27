@@ -2035,11 +2035,11 @@ class TriangleMesh(object):
         Excise singularities from the mesh. This essentially unzips multivalent
         edges from the rest of the mesh, creating new, smaller connected 
         components, each of which is free of singularities. This follows the
-        local method for cutting outlined in Guéziec et al.
+        local method for cutting outlined in Gueziec et al.
 
         References
         ----------
-            Guéziec et al. Cutting and Stitching: Converting Sets of Polygons 
+            Gueziec et al. Cutting and Stitching: Converting Sets of Polygons
             to Manifold Surfaces, IEEE TRANSACTIONS ON VISUALIZATION AND 
             COMPUTER GRAPHICS, 2001.
         """
