@@ -46,9 +46,10 @@ def load_ply(fn):
                     color[l, 2] = np.ubyte(line[5])
             for l in np.arange(n_faces):
                 line = f.readline().decode('ascii').strip().split(' ')
-                faces[l, 0] = np.int32(line[0])
-                faces[l, 1] = np.int32(line[1])
-                faces[l, 2] = np.int32(line[2])
+                n_elements = np.int32(line[0])
+                faces[l, 0] = np.int32(line[1])
+                faces[l, 1] = np.int32(line[2])
+                faces[l, 2] = np.int32(line[3])
             if colors:
                 return vertices, faces, color
             else:
