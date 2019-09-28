@@ -114,7 +114,7 @@ def open_surface(visFr):
     
     filename = wx.FileSelector("Choose a file to open",
                                    default_extension='stl',
-                                   wildcard='STL mesh (*.stl)|*.stl')
+                                   wildcard='STL mesh (*.stl)|*.stl|PLY mesh (*.ply)|*.ply')
     #print filename
     if not filename == '':
         surf_count = 0
@@ -123,7 +123,13 @@ def open_surface(visFr):
             surf_count += 1
             surf_name = 'surf%d' % surf_count
 
-        visFr.pipeline.dataSources[surf_name] = triangle_mesh.TriangleMesh.from_stl(filename)
+        ext = filename.split('.')[-1]
+        if ext == 'stl':
+            visFr.pipeline.dataSources[surf_name] = triangle_mesh.TriangleMesh.from_stl(filename)
+        elif ext == 'ply':
+            visFr.pipeline.dataSources[surf_name] = triangle_mesh.TriangleMesh.from_ply(filename)
+        else:
+            raise ValueError('Invalid file extension .' + str(ext))
         layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded')
         visFr.add_layer(layer)
         
@@ -148,9 +154,37 @@ def save_surface(visFr):
             key = dlg.GetStringSelection()
             dlg.Destroy()
 
-    filename = wx.SaveFileSelector("Save surface as ...", '.stl')
+    filename = wx.FileSelector('Save surface as...',
+                               default_extension='stl',
+                               wildcard='STL mesh (*.stl)|*.stl|PLY mesh (*.ply)|*.ply')
+
     if not filename == '':
-        visFr.pipeline.dataSources[key].to_stl(filename)
+        ext = filename.split('.')[-1]
+        if ext == 'stl':
+            visFr.pipeline.dataSources[key].to_stl(filename)
+        elif ext == 'ply':
+            colors = None
+            # Check if we've rendered this data source 
+            layer_list = [x.dsname for x in visFr.glCanvas.layers]
+            if key in layer_list:
+                # If we have, save the PLY with its colors
+                layer = visFr.glCanvas.layers[layer_list.index(key)]
+                # Construct a re-indexing for non-negative vertices
+                live_vertices = np.flatnonzero(visFr.pipeline.dataSources[key]._vertices['halfedge'] != -1)
+                new_vertex_indices = np.arange(live_vertices.shape[0])
+                vertex_lookup = np.zeros(visFr.pipeline.dataSources[key]._vertices.shape[0])
+                
+                vertex_lookup[live_vertices] = new_vertex_indices
+
+                # Grab the faces and vertices we want
+                faces = vertex_lookup[visFr.pipeline.dataSources[key].faces]
+
+                colors = np.zeros((live_vertices.size, 3), dtype=np.ubyte)
+                colors[faces.ravel().astype(np.int)] = np.floor(layer._colors[:,:3]*255).astype(np.ubyte)
+                
+            visFr.pipeline.dataSources[key].to_ply(filename, colors)
+        else:
+            raise ValueError('Invalid file extension .' + str(ext))
     
     
 

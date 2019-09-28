@@ -129,7 +129,7 @@ class TriangleRenderLayer(EngineLayer):
     @property
     def _ds_class(self):
         from PYME.experimental import triangular_mesh
-        return  triangular_mesh.TriangularMesh
+        return triangular_mesh.TriangularMesh
 
     def _set_method(self):
         self.engine = ENGINES[self.method]()

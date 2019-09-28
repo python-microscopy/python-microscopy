@@ -133,6 +133,18 @@ class TriangleMesh(object):
         return cls.from_np_stl(triangles_stl, **kwargs)
 
     @classmethod
+    def from_ply(cls, filename, **kwargs):
+        """
+        Read from PLY file.
+        """
+        from PYME.IO.FileUtils import ply
+
+        # Load a PLY from file
+        vertices, faces, _ = ply.load_ply(filename)
+
+        return cls(vertices, faces)
+
+    @classmethod
     def from_np_stl(cls, triangles_stl, **kwargs):
         """
         Read from an already-loaded STL stream.
@@ -2155,3 +2167,23 @@ class TriangleMesh(object):
         triangles_stl['normal'] = self.face_normals
 
         stl.save_stl_binary(filename, triangles_stl)
+
+    def to_ply(self, filename, colors=None):
+        """
+        Save a list of triangles and their vertex colors to a PLY file.
+        We assume colors are a Nx3 array where N is the number of vertices.
+        """
+        from PYME.IO.FileUtils import ply
+
+        # Construct a re-indexing for non-negative vertices
+        live_vertices = np.flatnonzero(self._vertices['halfedge'] != -1)
+        new_vertex_indices = np.arange(live_vertices.shape[0])
+        vertex_lookup = np.zeros(self._vertices.shape[0], dtype=np.int)
+        
+        vertex_lookup[live_vertices] = new_vertex_indices
+
+        # Grab the faces and vertices we want
+        faces = vertex_lookup[self.faces]
+        vertices = self._vertices['position'][live_vertices]
+
+        ply.save_ply(filename, vertices, faces, colors)
