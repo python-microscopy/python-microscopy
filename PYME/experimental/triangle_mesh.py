@@ -417,29 +417,44 @@ class TriangleMesh(object):
             self._faces[:] = -1  # initialize everything to -1 to start with
 
             # Create a unique handle for each edge
-            edges_packed = pack_edges(edges)
+            # edges_packed = pack_edges(edges)
 
-            print('iterating edges')
-            # Use a dictionary to keep track of which edges are already assigned twins
-            d = {}
-            multivalent_edge = False
-            multivalent_dict = {}
-            for i, e in enumerate(edges_packed):
-                if e in d:
-                    idx = d.pop(e)
-                    if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
-                        # Push it back in the queue and let's see if the next time we
-                        # pull it out we get the right matching edge.
-                        d[e] = idx
-                        # Trip the flag
-                        multivalent_edge = True
-                        multivalent_dict[e] = i
-                        continue
+            # Sort the edges lo->hi so we can arrange them uniquely
+            edges = edges.sort(axis=1)
+
+            # Grab the sorted indexes
+            edges_sorted = np.argsort(edges, axis=0)
+            
+            # Match the halfedges (this assumes all edges are valence 2)
+            self._halfedges[edges_sorted[::2]] = self._halfedges[edges_sorted[1::2]]
+            self._halfedges[edges_sorted[1::2]] = self._halfedges[edges_sorted[::2]]
+
+            # Account for univalent edges
+
+            # Account for multivalent edges
+            # edges_unique, edges_counts = np.unique(edges, return_counts=True, axis=0)
+
+            # print('iterating edges')
+            # # Use a dictionary to keep track of which edges are already assigned twins
+            # d = {}
+            # multivalent_edge = False
+            # multivalent_dict = {}
+            # for i, e in enumerate(edges_packed):
+            #     if e in d:
+            #         idx = d.pop(e)
+            #         if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
+            #             # Push it back in the queue and let's see if the next time we
+            #             # pull it out we get the right matching edge.
+            #             d[e] = idx
+            #             # Trip the flag
+            #             multivalent_edge = True
+            #             multivalent_dict[e] = i
+            #             continue
                         
-                    self._halfedges['twin'][idx] = i
-                    self._halfedges['twin'][i] = idx
-                else:
-                    d[e] = i
+            #         self._halfedges['twin'][idx] = i
+            #         self._halfedges['twin'][i] = idx
+            #     else:
+            #         d[e] = i
 
             # print('multivalent')
             # # Go back and grab the remaining multivalent edges
