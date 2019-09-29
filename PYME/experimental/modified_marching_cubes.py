@@ -821,7 +821,7 @@ class ModifiedMarchingCubes(object):
 
         
         # i, j0, j1 = multi_unpack(edges_unique)
-        i, j0, j1 = edges_unique.T.astype('uint64')
+        i, j0, j1 = edges_unique.T.astype('uint32')
 
         v0 = vertices[i, j0, :]
         v1 = vertices[i, j1, :]
