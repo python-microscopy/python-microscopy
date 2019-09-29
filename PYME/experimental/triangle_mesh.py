@@ -12,20 +12,20 @@ USE_C = True
 if USE_C:
     from PYME.experimental import triangle_mesh_utils
 
-def pack_edges(arr, axis=1):
-    """
-    Stores edges as a single unique integer. 
+# def pack_edges(arr, axis=1):
+#     """
+#     Stores edges as a single unique integer. 
     
-    NOTE: that this implictly caps the mesh at 2**32
-    vertices.
-    """
-    arr = np.sort(arr, axis=axis)
-    res = ((arr[:,0].astype(np.uint64)) << 32)
-    res += arr[:,1].astype(np.uint64)
+#     NOTE: that this implictly caps the mesh at 2**32
+#     vertices.
+#     """
+#     arr = np.sort(arr, axis=axis)
+#     res = ((arr[:,0].astype(np.uint64)) << 32)
+#     res += arr[:,1].astype(np.uint64)
     
-    return res
+#     return res
 
-MAX_VERTEX_COUNT = 2**32
+MAX_VERTEX_COUNT = 2**64
 
 def fast_3x3_cross(a,b):
     # Index only once
@@ -219,8 +219,9 @@ class TriangleMesh(object):
         if self._singular_edges is None:
             edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
             edges = edges[edges[:,0] != -1]  # Drop non-edges
-            packed_edges = pack_edges(edges)
-            e, c = np.unique(packed_edges, return_counts=True)
+            # packed_edges = pack_edges(edges)
+            packed_edges = np.sort(edges, axis=1)
+            e, c = np.unique(packed_edges, return_counts=True, axis=0)
             singular_packed_edges = e[c>2]
             singular_edges = []
             for singular_packed_edge in singular_packed_edges:
@@ -429,23 +430,45 @@ class TriangleMesh(object):
             self._faces[:] = -1  # initialize everything to -1 to start with
 
             # Create a unique handle for each edge
-            edges_packed = pack_edges(edges)
+            # edges_packed = pack_edges(edges)
+
+            # Sort the edges lo->hi so we can arrange them uniquely
+            # Convert to list of tuples for use with dictionary
+            edges_packed = [tuple(e) for e in np.sort(edges, axis=1)]
+
+            # Account for multivalent edges
+            # edges_unique, edges_counts = np.unique(edges, return_counts=True, axis=0)
+
+            # print('iterating edges')
+            # # Use a dictionary to keep track of which edges are already assigned twins
+            # d = {}
+            # multivalent_edge = False
+            # multivalent_dict = {}
+            # for i, e in enumerate(edges_packed):
+            #     if e in d:
+            #         idx = d.pop(e)
+            #         if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
+            #             # Push it back in the queue and let's see if the next time we
+            #             # pull it out we get the right matching edge.
+            #             d[e] = idx
+            #             # Trip the flag
+            #             multivalent_edge = True
+            #             multivalent_dict[e] = i
+            #             continue
+                        
+            #         self._halfedges['twin'][idx] = i
+            #         self._halfedges['twin'][i] = idx
+            #     else:
+            #         d[e] = i
 
             print('iterating edges')
             # Use a dictionary to keep track of which edges are already assigned twins
             d = {}
-            multivalent_edge = False
-            multivalent_dict = {}
             for i, e in enumerate(edges_packed):
                 if e in d:
                     idx = d.pop(e)
                     if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
-                        # Push it back in the queue and let's see if the next time we
-                        # pull it out we get the right matching edge.
-                        d[e] = idx
-                        # Trip the flag
-                        multivalent_edge = True
-                        multivalent_dict[e] = i
+                        # Don't assign a halfedge to multivalent edges
                         continue
                         
                     self._halfedges['twin'][idx] = i
