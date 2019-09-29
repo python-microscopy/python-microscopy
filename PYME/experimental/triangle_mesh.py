@@ -12,20 +12,20 @@ USE_C = True
 if USE_C:
     from PYME.experimental import triangle_mesh_utils
 
-def pack_edges(arr, axis=1):
-    """
-    Stores edges as a single unique integer. 
+# def pack_edges(arr, axis=1):
+#     """
+#     Stores edges as a single unique integer. 
     
-    NOTE: that this implictly caps the mesh at 2**32
-    vertices.
-    """
-    arr = np.sort(arr, axis=axis)
-    res = ((arr[:,0].astype(np.uint64)) << 32)
-    res += arr[:,1].astype(np.uint64)
+#     NOTE: that this implictly caps the mesh at 2**32
+#     vertices.
+#     """
+#     arr = np.sort(arr, axis=axis)
+#     res = ((arr[:,0].astype(np.uint64)) << 32)
+#     res += arr[:,1].astype(np.uint64)
     
-    return res
+#     return res
 
-MAX_VERTEX_COUNT = 2**32
+MAX_VERTEX_COUNT = 2**64
 
 def fast_3x3_cross(a,b):
     # Index only once
@@ -207,8 +207,9 @@ class TriangleMesh(object):
         if self._singular_edges is None:
             edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
             edges = edges[edges[:,0] != -1]  # Drop non-edges
-            packed_edges = pack_edges(edges)
-            e, c = np.unique(packed_edges, return_counts=True)
+            # packed_edges = pack_edges(edges)
+            packed_edges = np.sort(edges, axis=1)
+            e, c = np.unique(packed_edges, return_counts=True, axis=0)
             singular_packed_edges = e[c>2]
             singular_edges = []
             for singular_packed_edge in singular_packed_edges:
@@ -420,16 +421,8 @@ class TriangleMesh(object):
             # edges_packed = pack_edges(edges)
 
             # Sort the edges lo->hi so we can arrange them uniquely
-            edges = edges.sort(axis=1)
-
-            # Grab the sorted indexes
-            edges_sorted = np.argsort(edges, axis=0)
-            
-            # Match the halfedges (this assumes all edges are valence 2)
-            self._halfedges[edges_sorted[::2]] = self._halfedges[edges_sorted[1::2]]
-            self._halfedges[edges_sorted[1::2]] = self._halfedges[edges_sorted[::2]]
-
-            # Account for univalent edges
+            # Convert to list of tuples for use with dictionary
+            edges_packed = [tuple(e) for e in np.sort(edges, axis=1)]
 
             # Account for multivalent edges
             # edges_unique, edges_counts = np.unique(edges, return_counts=True, axis=0)
@@ -455,6 +448,21 @@ class TriangleMesh(object):
             #         self._halfedges['twin'][i] = idx
             #     else:
             #         d[e] = i
+
+            print('iterating edges')
+            # Use a dictionary to keep track of which edges are already assigned twins
+            d = {}
+            for i, e in enumerate(edges_packed):
+                if e in d:
+                    idx = d.pop(e)
+                    if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
+                        # Don't assign a halfedge to multivalent edges
+                        continue
+                        
+                    self._halfedges['twin'][idx] = i
+                    self._halfedges['twin'][i] = idx
+                else:
+                    d[e] = i
 
             # print('multivalent')
             # # Go back and grab the remaining multivalent edges
