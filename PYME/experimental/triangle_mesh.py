@@ -51,7 +51,7 @@ VERTEX_DTYPE = np.dtype([('position', '3f4'), ('normal', '3f4'), ('halfedge', 'i
 LOOP_ALPHA_FACTOR = (np.log(13)-np.log(3))/12
 
 class TriangleMesh(object):
-    def __init__(self, vertices, faces, **kwargs):
+    def __init__(self, vertices, faces, mesh=None, **kwargs):
         """
         Base class for triangle meshes stored using halfedge data structure. 
         Expects STL-like input.
@@ -66,44 +66,56 @@ class TriangleMesh(object):
             debug : bool
                 Print debug statements (assumes manifold mesh).
         """
-        self._vertices = np.zeros(vertices.shape[0], dtype=VERTEX_DTYPE)
-        self._vertices[:] = -1  # initialize everything to -1 to start with
-        self._vertices['position'] = vertices
-        self._vertex_vacancies = []
-        self._loop_subdivision_flip_edges = []
-        self._loop_subdivision_new_vertices = []
+        if mesh is not None:
+            import copy
+            for p, v in vars(mesh).items():
+                if (type(p).__module__ == np.__name__):
+                    setattr(self, p, np.copy(v))
+                # elif isinstance(v, list):
+                #     # We use some lists, this only works in Python 3
+                #     setattr(self, p, v.copy())
+                else:
+                    # Other elements
+                    setattr(self, p, copy.copy(v))
+        else:
+            self._vertices = np.zeros(vertices.shape[0], dtype=VERTEX_DTYPE)
+            self._vertices[:] = -1  # initialize everything to -1 to start with
+            self._vertices['position'] = vertices
+            self._vertex_vacancies = []
+            self._loop_subdivision_flip_edges = []
+            self._loop_subdivision_new_vertices = []
 
-        self._faces = None  # Contains a pointer to one halfedge associated with each face
-        self._faces_by_vertex = None  # Representation of faces by triplets of vertices
-        self._face_vacancies = []
+            self._faces = None  # Contains a pointer to one halfedge associated with each face
+            self._faces_by_vertex = None  # Representation of faces by triplets of vertices
+            self._face_vacancies = []
 
-        # Halfedges
-        self._halfedges = None
-        self._halfedge_vacancies = []
-        
-        print('initializing halfedges ...')
-        print('vertices.shape = %s, faces.shape = %s' % (vertices.shape, faces.shape))
-        if vertices.shape[0] >= MAX_VERTEX_COUNT:
-            raise RuntimeError('Maximum vertex count is %d, mesh has %d' % (MAX_VERTEX_COUNT, vertices.shape[0]))
-        self._initialize_halfedges(vertices, faces)
-        print('done initializing halfedges')
+            # Halfedges
+            self._halfedges = None
+            self._halfedge_vacancies = []
+            
+            print('initializing halfedges ...')
+            print('vertices.shape = %s, faces.shape = %s' % (vertices.shape, faces.shape))
+            if vertices.shape[0] >= MAX_VERTEX_COUNT:
+                raise RuntimeError('Maximum vertex count is %d, mesh has %d' % (MAX_VERTEX_COUNT, vertices.shape[0]))
+            self._initialize_halfedges(vertices, faces)
+            print('done initializing halfedges')
 
-        # Singular edges
-        self._singular_edges = None
-        self._singular_vertices = None
+            # Singular edges
+            self._singular_edges = None
+            self._singular_vertices = None
 
-        # Populate the normals
-        self.face_normals
-        self.vertex_normals
+            # Populate the normals
+            self.face_normals
+            self.vertex_normals
 
-        # Properties we can visualize
-        self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary', 'singular']
+            # Properties we can visualize
+            self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary', 'singular']
 
-        self.fix_boundary = True  # Hold boundary edges in place
-        self.debug = False  # Print debug statements
+            self.fix_boundary = True  # Hold boundary edges in place
+            self.debug = False  # Print debug statements
 
-        # Is the mesh manifold?
-        self._manifold = None
+            # Is the mesh manifold?
+            self._manifold = None
 
         # Set debug, fix_boundary, etc.
         for key, value in kwargs.items():
@@ -118,6 +130,9 @@ class TriangleMesh(object):
             raise KeyError('Key %s not defined' % k)
         
         return res
+
+    def __copy__(self):
+        return type(self)(self.vertices, self.faces, self)
 
     @classmethod
     def from_stl(cls, filename, **kwargs):
@@ -142,7 +157,7 @@ class TriangleMesh(object):
         # Load a PLY from file
         vertices, faces, _ = ply.load_ply(filename)
 
-        return cls(vertices, faces)
+        return cls(vertices, faces, mesh=None, **kwargs)
 
     @classmethod
     def from_np_stl(cls, triangles_stl, **kwargs):
@@ -158,7 +173,7 @@ class TriangleMesh(object):
         faces = faces_raw.reshape(faces_raw.shape[0] // 3, 3, order='F')
 
         print('Data munged to vertices, faces')
-        return cls(vertices, faces, **kwargs)
+        return cls(vertices, faces, mesh=None, **kwargs)
 
     @property
     def x(self):
