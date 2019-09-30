@@ -55,7 +55,7 @@ def gen_octree_from_points(visFr):
     
     colour_chans = pipeline.colourFilter.getColourChans()
     current_colour = pipeline.colourFilter.currentColour
-    if len(colour_chans) > 0:
+    if len(colour_chans) > 1:
         channel_choices = colour_chans + ['<all>',]
 
         dlg = wx.SingleChoiceDialog(visFr, "Which colour channel do you want to skin?", "Multiple colour channels detected", channel_choices)
