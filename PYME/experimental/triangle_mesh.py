@@ -833,6 +833,11 @@ class TriangleMesh(object):
 
         # Zipper the remaining triangles
         def _zipper(edge1, edge2):
+            # DB optimization notes:
+            # 1) there is a (very?) small performance penalty for nested functions - move this up to class level?
+            # 2) This would be a good candidate for a c/cython implementation (but possibly applies to whole edge collapse function)
+            # 3) function can be simplified (see _zipper1 implementation below). Probably minimal performance impact in
+            #    python version, but logic flow likely necessary in c/cython (avoids indexing with -1)
             t1 = self._halfedges['twin'][edge1]
             t2 = self._halfedges['twin'][edge2]
 
@@ -849,6 +854,17 @@ class TriangleMesh(object):
                     self._halfedges['twin'][t1] = -1
                 if (t2 != -1):
                     self._halfedges['twin'][t2] = -1
+
+        def _zipper1(edge1, edge2):
+            t1 = -1 if edge1 == -1 else self._halfedges['twin'][edge1]
+            t2 = -1 if edge2 == -1 else self._halfedges['twin'][edge2]
+    
+            if (t1 != -1):
+                self._halfedges['twin'][t1] = t2
+                
+            if (t2 != -1):
+                self._halfedges['twin'][t2] = t1
+            
 
         _zipper(_next, _prev)
         if interior:

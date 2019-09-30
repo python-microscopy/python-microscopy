@@ -8,6 +8,7 @@ extern "C" {
 
 #define VECTORSIZE 3
 // Note this must match NEIGHBORSIZE in triangle_mesh.py
+// [DB - can we export this constant from the module and then use that in triangle_mesh.py so that we don't need to define it in two places?]
 #define NEIGHBORSIZE 20
 
 typedef struct {
