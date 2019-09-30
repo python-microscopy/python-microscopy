@@ -12,20 +12,20 @@ USE_C = True
 if USE_C:
     from PYME.experimental import triangle_mesh_utils
 
-def pack_edges(arr, axis=1):
-    """
-    Stores edges as a single unique integer. 
+# def pack_edges(arr, axis=1):
+#     """
+#     Stores edges as a single unique integer. 
     
-    NOTE: that this implictly caps the mesh at 2**32
-    vertices.
-    """
-    arr = np.sort(arr, axis=axis)
-    res = ((arr[:,0].astype(np.uint64)) << 32)
-    res += arr[:,1].astype(np.uint64)
+#     NOTE: that this implictly caps the mesh at 2**32
+#     vertices.
+#     """
+#     arr = np.sort(arr, axis=axis)
+#     res = ((arr[:,0].astype(np.uint64)) << 32)
+#     res += arr[:,1].astype(np.uint64)
     
-    return res
+#     return res
 
-MAX_VERTEX_COUNT = 2**32
+MAX_VERTEX_COUNT = 2**64
 
 def fast_3x3_cross(a,b):
     # Index only once
@@ -51,7 +51,7 @@ VERTEX_DTYPE = np.dtype([('position', '3f4'), ('normal', '3f4'), ('halfedge', 'i
 LOOP_ALPHA_FACTOR = (np.log(13)-np.log(3))/12
 
 class TriangleMesh(object):
-    def __init__(self, vertices, faces, **kwargs):
+    def __init__(self, vertices=None, faces=None, mesh=None, **kwargs):
         """
         Base class for triangle meshes stored using halfedge data structure. 
         Expects STL-like input.
@@ -66,27 +66,43 @@ class TriangleMesh(object):
             debug : bool
                 Print debug statements (assumes manifold mesh).
         """
-        self._vertices = np.zeros(vertices.shape[0], dtype=VERTEX_DTYPE)
-        self._vertices[:] = -1  # initialize everything to -1 to start with
-        self._vertices['position'] = vertices
-        self._vertex_vacancies = []
+        if mesh is not None:
+            import copy
+            
+            self._vertices = np.copy(mesh._vertices)
+            self._vertex_vacancies = copy.copy(mesh._vertex_vacancies)
+
+            self._faces = np.copy(mesh._faces)
+            self._face_vacancies = copy.copy(mesh._face_vacancies)
+
+            self._halfedges = np.copy(mesh._halfedges)
+            self._halfedge_vacancies = copy.copy(mesh._halfedge_vacancies)
+        else:
+            self._vertices = np.zeros(vertices.shape[0], dtype=VERTEX_DTYPE)
+            self._vertices[:] = -1  # initialize everything to -1 to start with
+            self._vertices['position'] = vertices
+            self._vertex_vacancies = []
+
+            self._faces = None  # Contains a pointer to one halfedge associated with each face
+            self._face_vacancies = []
+
+            # Halfedges
+            self._halfedges = None
+            self._halfedge_vacancies = []
+            
+            print('initializing halfedges ...')
+            print('vertices.shape = %s, faces.shape = %s' % (vertices.shape, faces.shape))
+            if vertices.shape[0] >= MAX_VERTEX_COUNT:
+                raise RuntimeError('Maximum vertex count is %d, mesh has %d' % (MAX_VERTEX_COUNT, vertices.shape[0]))
+            self._initialize_halfedges(vertices, faces)
+            print('done initializing halfedges')
+
+        # Representation of faces by triplets of vertices
+        self._faces_by_vertex = None
+
+        # loop subdivision vars
         self._loop_subdivision_flip_edges = []
         self._loop_subdivision_new_vertices = []
-
-        self._faces = None  # Contains a pointer to one halfedge associated with each face
-        self._faces_by_vertex = None  # Representation of faces by triplets of vertices
-        self._face_vacancies = []
-
-        # Halfedges
-        self._halfedges = None
-        self._halfedge_vacancies = []
-        
-        print('initializing halfedges ...')
-        print('vertices.shape = %s, faces.shape = %s' % (vertices.shape, faces.shape))
-        if vertices.shape[0] >= MAX_VERTEX_COUNT:
-            raise RuntimeError('Maximum vertex count is %d, mesh has %d' % (MAX_VERTEX_COUNT, vertices.shape[0]))
-        self._initialize_halfedges(vertices, faces)
-        print('done initializing halfedges')
 
         # Singular edges
         self._singular_edges = None
@@ -119,6 +135,9 @@ class TriangleMesh(object):
         
         return res
 
+    def __copy__(self):
+        return type(self)(mesh=self)
+
     @classmethod
     def from_stl(cls, filename, **kwargs):
         """
@@ -131,6 +150,18 @@ class TriangleMesh(object):
 
         # Call from_np_stl on the file stream
         return cls.from_np_stl(triangles_stl, **kwargs)
+
+    @classmethod
+    def from_ply(cls, filename, **kwargs):
+        """
+        Read from PLY file.
+        """
+        from PYME.IO.FileUtils import ply
+
+        # Load a PLY from file
+        vertices, faces, _ = ply.load_ply(filename)
+
+        return cls(vertices, faces, **kwargs)
 
     @classmethod
     def from_np_stl(cls, triangles_stl, **kwargs):
@@ -207,8 +238,9 @@ class TriangleMesh(object):
         if self._singular_edges is None:
             edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
             edges = edges[edges[:,0] != -1]  # Drop non-edges
-            packed_edges = pack_edges(edges)
-            e, c = np.unique(packed_edges, return_counts=True)
+            # packed_edges = pack_edges(edges)
+            packed_edges = np.sort(edges, axis=1)
+            e, c = np.unique(packed_edges, return_counts=True, axis=0)
             singular_packed_edges = e[c>2]
             singular_edges = []
             for singular_packed_edge in singular_packed_edges:
@@ -417,23 +449,45 @@ class TriangleMesh(object):
             self._faces[:] = -1  # initialize everything to -1 to start with
 
             # Create a unique handle for each edge
-            edges_packed = pack_edges(edges)
+            # edges_packed = pack_edges(edges)
+
+            # Sort the edges lo->hi so we can arrange them uniquely
+            # Convert to list of tuples for use with dictionary
+            edges_packed = [tuple(e) for e in np.sort(edges, axis=1)]
+
+            # Account for multivalent edges
+            # edges_unique, edges_counts = np.unique(edges, return_counts=True, axis=0)
+
+            # print('iterating edges')
+            # # Use a dictionary to keep track of which edges are already assigned twins
+            # d = {}
+            # multivalent_edge = False
+            # multivalent_dict = {}
+            # for i, e in enumerate(edges_packed):
+            #     if e in d:
+            #         idx = d.pop(e)
+            #         if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
+            #             # Push it back in the queue and let's see if the next time we
+            #             # pull it out we get the right matching edge.
+            #             d[e] = idx
+            #             # Trip the flag
+            #             multivalent_edge = True
+            #             multivalent_dict[e] = i
+            #             continue
+                        
+            #         self._halfedges['twin'][idx] = i
+            #         self._halfedges['twin'][i] = idx
+            #     else:
+            #         d[e] = i
 
             print('iterating edges')
             # Use a dictionary to keep track of which edges are already assigned twins
             d = {}
-            multivalent_edge = False
-            multivalent_dict = {}
             for i, e in enumerate(edges_packed):
                 if e in d:
                     idx = d.pop(e)
                     if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
-                        # Push it back in the queue and let's see if the next time we
-                        # pull it out we get the right matching edge.
-                        d[e] = idx
-                        # Trip the flag
-                        multivalent_edge = True
-                        multivalent_dict[e] = i
+                        # Don't assign a halfedge to multivalent edges
                         continue
                         
                     self._halfedges['twin'][idx] = i
@@ -2155,3 +2209,23 @@ class TriangleMesh(object):
         triangles_stl['normal'] = self.face_normals
 
         stl.save_stl_binary(filename, triangles_stl)
+
+    def to_ply(self, filename, colors=None):
+        """
+        Save a list of triangles and their vertex colors to a PLY file.
+        We assume colors are a Nx3 array where N is the number of vertices.
+        """
+        from PYME.IO.FileUtils import ply
+
+        # Construct a re-indexing for non-negative vertices
+        live_vertices = np.flatnonzero(self._vertices['halfedge'] != -1)
+        new_vertex_indices = np.arange(live_vertices.shape[0])
+        vertex_lookup = np.zeros(self._vertices.shape[0], dtype=np.int)
+        
+        vertex_lookup[live_vertices] = new_vertex_indices
+
+        # Grab the faces and vertices we want
+        faces = vertex_lookup[self.faces]
+        vertices = self._vertices['position'][live_vertices]
+
+        ply.save_ply(filename, vertices, faces, colors)
