@@ -1324,9 +1324,10 @@ class TriangleMesh(object):
         flip_count = 0
 
         # Do a single pass over all active edges and flip them if the flip minimizes the deviation of vertex valences
-        for i in np.arange(len(self._halfedges['vertex'])):
-            if (self._halfedges['vertex'][i] < 0):
-                continue
+        # for i in np.arange(len(self._halfedges['vertex'])):
+        #     if (self._halfedges['vertex'][i] < 0):
+        #         continue
+        for i in np.flatnonzero(self._halfedges['vertex'] != -1):
 
             curr_edge = self._halfedges[i]
             _twin = curr_edge['twin']
