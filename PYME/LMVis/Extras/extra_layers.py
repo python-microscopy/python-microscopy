@@ -101,7 +101,7 @@ def gen_isosurface(visFr):
         recipe.execute()
 
         print('Isosurface generated, adding layer')
-        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded')
+        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = ['C', 'M', 'Y', 'R', 'G', 'B'][surf_count % 6])
         visFr.add_layer(layer)
         dmc._invalidate_parent = True
         print('Isosurface layer added')

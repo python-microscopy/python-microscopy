@@ -128,8 +128,8 @@ class TriangleRenderLayer(EngineLayer):
     
     @property
     def _ds_class(self):
-        from PYME.experimental import triangular_mesh
-        return triangular_mesh.TriangularMesh
+        from PYME.experimental import triangle_mesh
+        return triangle_mesh.TriangleMesh
 
     def _set_method(self):
         self.engine = ENGINES[self.method]()
@@ -322,7 +322,9 @@ class TriangleRenderLayer(EngineLayer):
                      Item('normal_mode', visible_when='method=="shaded"'),
                      Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ], visible_when='vertexColour != "constant"'),
-                     Group([Item('cmap', label='LUT'), Item('alpha')])
+                     Group([Item('cmap', label='LUT'),
+                            #Item('alpha')
+                            ])
                      ], )
         # buttons=['OK', 'Cancel'])
 
