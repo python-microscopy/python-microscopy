@@ -1253,7 +1253,8 @@ class TriangleMesh(object):
         _twin_next = twin_edge['next']
 
         # Make sure both vertices have valence > 3 (preserve manifoldness)
-        if (self._vertices['valence'][curr_edge['vertex']] < 4) or (self._vertices['valence'][twin_edge['vertex']] < 4):
+        vc, vt = self._vertices['valence'][curr_edge['vertex']], self._vertices['valence'][twin_edge['vertex']]
+        if (vc < 4) or (vt < 4):
             return
 
         # Calculate adjustments to the halfedges we're flipping
@@ -1263,10 +1264,15 @@ class TriangleMesh(object):
         # If there's already an edge between these two vertices, don't flip (preserve manifoldness)
         # NOTE: This is potentially a problem if we start with a high-valence mesh. In that case, swap this
         # check with the more expensive commented one below.
-        # if new_v1 in self._vertices['neighbors'][new_v0]:
-        #     return
-        if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
-            return
+
+        # Check for creation of multivalent edges and prevent this (manifoldness)
+        fast_collapse_bool = (self.manifold and (vc < NEIGHBORSIZE) and (vt < NEIGHBORSIZE))
+        if fast_collapse_bool:
+            if new_v1 in self._vertices['neighbors'][new_v0]:
+                return
+        else:
+            if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
+                return
 
         # Convexity check: Let's see if the midpoint of the flipped edge will be above or below the plane of the 
         # current edge
