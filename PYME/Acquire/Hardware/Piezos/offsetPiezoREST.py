@@ -158,6 +158,20 @@ class OffsetPiezoClient(PiezoBase):
         return float(res.json())
 
 def generate_offset_piezo_server(offset_piezo_base_class):
+    """
+    Class factory to return class which inherits from the desired style of OffsetPiezo
+
+    Parameters
+    ----------
+    offset_piezo_base_class: class
+        class object for desired offset piezo, either OffsetPiezo or TargetOwningOffsetPiezo
+
+    Returns
+    -------
+    OffsetPiezoServer:
+        class which can be instantiated to provide a server managing the desired type of offset piezo.
+
+    """
     class OffsetPiezoServer(webframework.APIHTTPServer, offset_piezo_base_class):
         def __init__(self, basePiezo, port=9797):
             offset_piezo_base_class.__init__(self, basePiezo)
@@ -182,13 +196,17 @@ def generate_offset_piezo_server(offset_piezo_base_class):
                 logger.info('Shutting down ...')
                 self.shutdown()
                 self.server_close()
+
     return OffsetPiezoServer
 
 class TargetOwningOffsetPiezo(OffsetPiezo):
     """
     The standard OffsetPiezo maintains a target position by adding an offset to the base_piezo target position. This is
     problematic because the base_piezo target position gets changed everytime it moves, so race conditions are possible
-    and the target will eventually drift over time when it should in fact never change!
+    and the target will eventually drift over time even if you'd like it to stay constant.
+
+    This offset piezo owns its target position, so it changes with self.MoveTo and self.MoveRel, not with
+    self.basePiezo.MoveTo and self.basePiezo.MoveRel.
 
     basePiezo position - offset = OffsetPiezo position
     """
