@@ -804,6 +804,7 @@ class TriangleMesh(object):
             dead_mask = (self._halfedges['vertex'] == _dead_vertex)
             dead_list = self._halfedges['vertex'][self._halfedges['twin'][dead_mask & twin_mask]]
             live_list = self._halfedges['vertex'][self._halfedges['twin'][(self._halfedges['vertex'] == _live_vertex) & twin_mask]]
+        
         twin_list = list((set(dead_list) & set(live_list)) - set([-1]))
         if len(twin_list) != 2:
             return
@@ -817,6 +818,7 @@ class TriangleMesh(object):
             self._halfedges['vertex'][self._halfedges['twin'][dead_nn[dead_mask]]] = _live_vertex
         else:
             self._halfedges['vertex'][dead_mask] = _live_vertex
+        
         _live_pos = self._vertices['position'][_live_vertex]
         _dead_pos = self._vertices['position'][_dead_vertex]
         self._vertices['position'][_live_vertex] = 0.5*(_live_pos + _dead_pos)
