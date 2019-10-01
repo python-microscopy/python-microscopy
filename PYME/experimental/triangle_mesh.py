@@ -770,7 +770,7 @@ class TriangleMesh(object):
 
             if (self._halfedges['twin'][_twin_prev] == -1) or (self._halfedges['twin'][_twin_next] == -1):
                 # Collapsing this edge will create another free edge
-                return
+                return 
 
         _dead_vertex = self._halfedges['vertex'][_prev]
         _live_vertex = curr_halfedge['vertex']
@@ -866,9 +866,9 @@ class TriangleMesh(object):
                 self._halfedges['twin'][t2] = t1
             
 
-        _zipper(_next, _prev)
+        _zipper1(_next, _prev)
         if interior:
-            _zipper(_twin_next, _twin_prev)
+            _zipper1(_twin_next, _twin_prev)
 
         # We need some more pointers
         # TODO: make these safer
@@ -1014,14 +1014,15 @@ class TriangleMesh(object):
                 # option to search and insert on different keys.
                 el_vacancies = [int(x) for x in np.argwhere(np.all(el_arr[key] == -1, axis=1))]
             else:
-                el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
+                # el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
+                el_vacancies = np.flatnonzero(el_arr[key] == -1).tolist()
 
             idx = el_vacancies.pop(0)
 
         if idx == -1:
             raise ValueError('Index cannot be -1.')
 
-        if not insert_key:
+        if insert_key is None:
             # Default to searching and inserting on the same key
             insert_key = key
 
@@ -1262,10 +1263,10 @@ class TriangleMesh(object):
         # If there's already an edge between these two vertices, don't flip (preserve manifoldness)
         # NOTE: This is potentially a problem if we start with a high-valence mesh. In that case, swap this
         # check with the more expensive commented one below.
-        if new_v1 in self._vertices['neighbors'][new_v0]:
-            return
-        # if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
+        # if new_v1 in self._vertices['neighbors'][new_v0]:
         #     return
+        if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
+            return
 
         # Convexity check: Let's see if the midpoint of the flipped edge will be above or below the plane of the 
         # current edge
@@ -1349,23 +1350,23 @@ class TriangleMesh(object):
             _twin = curr_edge['twin']
             twin_edge = self._halfedges[_twin]
 
-            # Pre-flip vertices
-            v1 = self._vertices['valence'][curr_edge['vertex']]
-            v2 = self._vertices['valence'][twin_edge['vertex']]
-
-            # Post-flip vertices
-            v3 = self._vertices['valence'][self._halfedges['vertex'][curr_edge['next']]]
-            v4 = self._vertices['valence'][self._halfedges['vertex'][twin_edge['next']]]
-
             target_valence = VALENCE
             if _twin == -1:
                 # boundary
                 target_valence = BOUNDARY_VALENCE
 
+            # Pre-flip vertices
+            v1 = self._vertices['valence'][curr_edge['vertex']] - target_valence
+            v2 = self._vertices['valence'][twin_edge['vertex']] - target_valence
+
+            # Post-flip vertices
+            v3 = self._vertices['valence'][self._halfedges['vertex'][curr_edge['next']]] - target_valence
+            v4 = self._vertices['valence'][self._halfedges['vertex'][twin_edge['next']]] - target_valence
+
             # Check valence deviation from VALENCE (or
             # BOUNDARY_VALENCE for boundaries) pre- and post-flip
-            score_pre = np.abs([v1-target_valence,v2-target_valence,v3-target_valence,v4-target_valence]).sum()
-            score_post = np.abs([v1-target_valence-1,v2-target_valence-1,v3-target_valence+1,v4-target_valence+1]).sum()
+            score_pre = np.abs([v1,v2,v3,v4]).sum()
+            score_post = np.abs([v1-1,v2-1,v3+1,v4+1]).sum()
 
             if score_post < score_pre:
                 # Flip minimizes deviation of vertex valences from VALENCE (or
