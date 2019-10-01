@@ -144,17 +144,18 @@
             var sel = rois.selectAll(".roi")
                 .data(data);
 
+            var roi_half = getROIHalfSize();
             var roi = sel.enter().append("rect")
                 .attr("class", "roi")
                 .attr("x", function (d) {
                     //console.log(d);
-                    return d[0];
+                    return d[0] - roi_half;
                 })
                 .attr("y", function (d) {
-                    return d[1];
+                    return d[1] - roi_half;
                 })
-                .attr("width", 2 * getROIHalfSize())
-                .attr("height", 2 * getROIHalfSize());
+                .attr("width", 2 * roi_half)
+                .attr("height", 2 * roi_half);
 
             sel.exit().remove();
 
@@ -187,7 +188,7 @@
         c = imageToMicrometers(c);
         offset = getROIHalfSize();
 
-        $.get( "/add_roi?x=" + (c.x - offset) + "&y=" + (c.y - offset) , function( data ) {
+        $.get( "/add_roi?x=" + c.x + "&y=" + c.y, function( data ) {
         $( "#roi_list" ).html( data );
         draw_rois();
         //alert( "Load was performed." );
