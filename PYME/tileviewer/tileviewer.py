@@ -49,11 +49,7 @@ class TileServer(object):
         
         if locations_file.endswith('.hdf'):
             locs = tabular.hdfSource(locations_file, tablename=tablename)
-            try:  # stage takes origin of ROI for position, not center. See recipes.measurement.ROIOriginsFromCenters
-                self.roi_locations = [Location(x,y) for x, y in zip(locs['x_origin_um'], locs['y_origin_um'])]
-            except KeyError:
-                logger.debug('ROI origins not explicitly defined; possibly queuing center positions as origins.')
-                self.roi_locations = [Location(x, y) for x, y in zip(locs['x_um'], locs['y_um'])]
+            self.roi_locations = [Location(x, y) for x, y in zip(locs['x_um'], locs['y_um'])]
             locs.close()
             del(locs)
         # elif locations_file.endswith('.csv'):
