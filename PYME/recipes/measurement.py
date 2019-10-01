@@ -797,55 +797,6 @@ class TilePhysicalCoords(ModuleBase):
         
         namespace[self.outputName] = out
 
-@register_module('ROIOriginsFromCenters')
-class ROIOriginsFromCenters(ModuleBase):
-    """
-
-    Shift coordinates by a half field of view size in order to center a field of view on a point rather than have the
-    point be at the (min x, min y) corner.
-
-    Parameters
-    ----------
-    input : Input
-        PYME.IO.tabular containing x and y coordinates. Compatible with measurement output for Supertile coordinates,
-        e.g. 'x_um'
-    roi_size_pixels: Int
-        Size of ROI which shift should be calculated based on
-    output: Output
-        PYME.IO.tabular
-
-    Notes
-    -----
-    This module is optional for recipes run within the tile viewer, which itself will find the origin for given ROI
-    centers based on the imaging ROI size input into the web form.
-
-    """
-    input = Input('input')
-    roi_size_pixels = Int(256)
-    output = Output('centered')
-
-    def execute(self, namespace):
-        points = namespace[self.input]
-
-        try:
-            shift_x, shift_y = np.ones(2) * 0.5 * points.mdh['Pyramid.PixelSize'] * self.roi_size_pixels
-        except KeyError:
-            shift_x = 0.5 * points.mdh['voxelsize.x'] * self.roi_size_pixels
-            shift_y = 0.5 * points.mdh['voxelsize.y'] * self.roi_size_pixels
-
-        out = tabular.mappingFilter(points)
-        out.mdh = points.mdh
-
-        try:
-            out.addColumn('x_origin_um', points['x_um'] - shift_x)
-            out.addColumn('y_origin_um', points['y_um'] - shift_y)
-        except KeyError:
-            # assume x and y are in units of nanometers
-            out.addColumn('x_origin_um', points['x']/1e3 - shift_x)
-            out.addColumn('y_origin_um', points['y']/1e3 - shift_y)
-
-        namespace[self.output] = out
-
 
 @register_module('IdentifyOverlappingROIs')
 class IdentifyOverlappingROIs(ModuleBase):
