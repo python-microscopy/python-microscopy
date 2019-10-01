@@ -199,7 +199,8 @@ class piezo_e816(PiezoBase):
 
 import numpy as np
 class piezo_e816T(PiezoBase):
-    def __init__(self, identifier=None, maxtravel=12.00, Osen=None, hasTrigger=False, target_tol=.002):
+    def __init__(self, identifier=None, maxtravel=12.00, Osen=None, hasTrigger=False, target_tol=.002,
+                 update_rate=0.005):
         """
 
         Parameters
@@ -211,12 +212,15 @@ class piezo_e816T(PiezoBase):
         target_tol: float
             OnTarget tolerance, units of [um]. If position and target position are within target_tol, OnTarget() returns
             True
+        update_rate: float
+            Seconds for the polling thread to pause between loops.
         """
         self.max_travel = maxtravel
         #self.waveData = None
         #self.numWavePoints = 0
         self.units = 'um'
         self._target_tol = target_tol
+        self._update_rate = update_rate
 
         self.lock = threading.Lock()
 
@@ -270,7 +274,7 @@ class piezo_e816T(PiezoBase):
             self.lock.acquire()
             try:
                 # check position
-                time.sleep(0.005)
+                time.sleep(self._update_rate)
 
                 self.position[0] = float(gcs.qPOS(self.id, b'A')[0])+ self.osen
 
