@@ -157,30 +157,63 @@ class OffsetPiezoClient(PiezoBase):
         res = requests.get(self.urlbase + '/LogFocusCorrection?offset=%3.3f' % (offset,))
         return float(res.json())
 
-class OffsetPiezoServer(webframework.APIHTTPServer, OffsetPiezo):
-    def __init__(self, basePiezo, port=9797):
-        OffsetPiezo.__init__(self, basePiezo)
-        
-        server_address = ('127.0.0.1', port)
-        self.port = port
-        
-        
-        webframework.APIHTTPServer.__init__(self, server_address)
-        self.daemon_threads = True
-        
-        self._server_thread = threading.Thread(target=self._thread_target)
-        self._server_thread.daemon_threads = True
-        
-        self._server_thread.start()
+def generate_offset_piezo_server(offset_piezo_base_class):
+    class OffsetPiezoServer(webframework.APIHTTPServer, offset_piezo_base_class):
+        def __init__(self, basePiezo, port=9797):
+            offset_piezo_base_class.__init__(self, basePiezo)
 
-    def _thread_target(self):
-        try:
-            logger.info('Starting piezo on 127.0.0.1:%d' % (self.port,))
-            self.serve_forever()
-        finally:
-            logger.info('Shutting down ...')
-            self.shutdown()
-            self.server_close()
+            server_address = ('127.0.0.1', port)
+            self.port = port
+
+
+            webframework.APIHTTPServer.__init__(self, server_address)
+            self.daemon_threads = True
+
+            self._server_thread = threading.Thread(target=self._thread_target)
+            self._server_thread.daemon_threads = True
+
+            self._server_thread.start()
+
+        def _thread_target(self):
+            try:
+                logger.info('Starting piezo on 127.0.0.1:%d' % (self.port,))
+                self.serve_forever()
+            finally:
+                logger.info('Shutting down ...')
+                self.shutdown()
+                self.server_close()
+    return OffsetPiezoServer
+
+class TargetOwningOffsetPiezo(OffsetPiezo):
+    """
+    The standard OffsetPiezo maintains a target position by adding an offset to the base_piezo target position. This is
+    problematic because the base_piezo target position gets changed everytime it moves, so race conditions are possible
+    and the target will eventually drift over time when it should in fact never change!
+
+    basePiezo position - offset = OffsetPiezo position
+    """
+    def __init__(self, base_piezo):
+        OffsetPiezo.__init__(self, base_piezo)
+        self._target_position = self.basePiezo.GetTargetPos(0)
+
+    @webframework.register_endpoint('/MoveTo', output_is_json=False)
+    def MoveTo(self, iChannel, fPos, bTimeOut=True):
+        self._target_position = float(fPos)
+        return self.basePiezo.MoveTo(int(iChannel), self._target_position + self.offset, bool(bTimeOut))
+
+    @webframework.register_endpoint('/MoveRel', output_is_json=False)
+    def MoveRel(self, iChannel, incr, bTimeOut=True):
+        self._target_position += float(incr)
+        print('here - moving to %f' % self._target_position)
+        return self.basePiezo.MoveTo(int(iChannel), self._target_position + self.offset, bool(bTimeOut))
+
+    @webframework.register_endpoint('/GetPos', output_is_json=False)
+    def GetPos(self, iChannel=0):
+        return self.basePiezo.GetPos(int(iChannel)) - self.offset
+
+    @webframework.register_endpoint('/GetTargetPos', output_is_json=False)
+    def GetTargetPos(self, iChannel=0):
+        return self._target_position
 
                 
     
@@ -189,7 +222,7 @@ def main():
     """For testing only"""
     from PYME.Acquire.Hardware.Simulator import fakePiezo
     bp = fakePiezo.FakePiezo(100)
-    st = OffsetPiezoServer(bp)
+    st = generate_offset_piezo_server(OffsetPiezo)(bp)
     st._server_thread.join()
     
 if __name__ == '__main__':
