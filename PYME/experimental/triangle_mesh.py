@@ -50,7 +50,37 @@ VERTEX_DTYPE = np.dtype([('position', '3f4'), ('normal', '3f4'), ('halfedge', 'i
 
 LOOP_ALPHA_FACTOR = (np.log(13)-np.log(3))/12
 
-class TriangleMesh(object):
+class TrianglesBase(object):
+    """
+    Base class to let VisGUI layers detect objects which are a bunch of triangles
+    
+    a derived class should provide suitable attributes/properties for vertices, faces, face_normals,
+    and vertex_normals.
+    
+    See Also: Tesselation class in PYME.recipes.pointcloud
+    
+    TODO - move me out of here?
+    TODO - provide default implementations for face_normals and vertex_normals?
+    
+    """
+    vertices=None
+    faces=None
+    face_normals=None
+    vertex_normals = None
+    
+    def keys(self):
+        """
+        returns the names of possible vertex attributes
+        """
+        raise NotImplementedError('Over-ride in derived class')
+    
+    def __getitem__(self, item):
+        """
+        returns a given vertex attribute
+        """
+        raise NotImplementedError('Over-ride in derived class')
+
+class TriangleMesh(TrianglesBase):
     def __init__(self, vertices=None, faces=None, mesh=None, **kwargs):
         """
         Base class for triangle meshes stored using halfedge data structure. 
