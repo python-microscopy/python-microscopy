@@ -109,7 +109,8 @@ def gen_isosurface(visFr):
 
 def open_surface(visFr):
     import wx
-    from PYME.experimental import triangle_mesh
+    # from PYME.experimental import triangle_mesh
+    from PYME.experimental import _triangle_mesh as triangle_mesh
     from PYME.LMVis.layers.mesh import TriangleRenderLayer
     
     filename = wx.FileSelector("Choose a file to open",

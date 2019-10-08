@@ -140,7 +140,8 @@ class TriangleRenderLayer(EngineLayer):
     
     @property
     def _ds_class(self):
-        from PYME.experimental import triangle_mesh
+        # from PYME.experimental import triangle_mesh
+        from PYME.experimental import _triangle_mesh as triangle_mesh
         return triangle_mesh.TrianglesBase
 
     def _set_method(self):

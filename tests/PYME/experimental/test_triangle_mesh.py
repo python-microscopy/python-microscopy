@@ -2,7 +2,8 @@ import numpy as np
 
 from PYME.experimental import marching_cubes
 
-from PYME.experimental import triangle_mesh
+# from PYME.experimental import triangle_mesh
+from PYME.experimental import _triangle_mesh as triangle_mesh
 
 # Ground truth faces and halfedges for a K3 planar graph
 K3_FACES = np.array([[2,0,1]])

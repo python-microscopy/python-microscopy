@@ -34,8 +34,8 @@ typedef struct {
     signed int neighbors[NEIGHBORSIZE];
 } vertex_t;
 
-float norm(float *vertex);
-void cross(float *a, float *b, float *n);
+double norm(const float *vertex);
+void cross(const float *a, const float *b, float *n);
 // void update_vertex_neighbors(signed int *v_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs);
 // void update_face_normals(signed int *f_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs);
 static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args);
