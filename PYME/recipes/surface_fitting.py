@@ -162,4 +162,42 @@ class DualMarchingCubes(ModuleBase):
         namespace[self.output] = surf
         
         
+@register_module('MarchingTetrahedra')
+class MarchingTetrahedra(ModuleBase):
+    input = Input('delaunay0')
+    output = Output('mesh')
+    
+    threshold_density = Float(2e-5)
+
+    repair = Bool(False)
+    remesh = Bool(False)
+
+    def execute(self, namespace):
+        #from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
+        from PYME.experimental import marching_tetrahedra
+        from PYME.experimental import triangle_mesh
+        import time
+
+        vertices = namespace[self.input].T.points[namespace[self.input].T.simplices]
+        values = namespace[self.input].dn[namespace[self.input].T.simplices]
         
+        
+        mt = marching_tetrahedra.MarchingTetrahedra(vertices, values, self.threshold_density)
+        print('Marching...')
+        start = time.time()
+        tris = mt.march()
+        stop = time.time()
+        elapsed = stop-start
+        print('Generated mesh in {} s'.format(elapsed))
+        print('Generating TriangularMesh object')
+        surf = triangle_mesh.TriangleMesh.from_np_stl(tris)
+        print('Generated TriangularMesh object')
+
+        if self.repair:
+            surf.repair()
+            
+        if self.remesh:
+            #target_length = np.mean(surf._halfedges['length'][surf._halfedges['length'] != -1])
+            surf.remesh(5, l=0.5, n_relax=10)
+        
+        namespace[self.output] = surf
