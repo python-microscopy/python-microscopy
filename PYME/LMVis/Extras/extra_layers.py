@@ -43,15 +43,8 @@ def add_octree_layer(visFr):
 def gen_octree_from_points(visFr):
     from PYME.recipes.pointcloud import Octree
     
-    oc_count = 0
-    oc_name = 'octree%d' % oc_count
-    
-    while oc_name in visFr.pipeline.dataSources.keys():
-        oc_count += 1
-        oc_name = 'octree%d' % oc_count
-
-    
     pipeline = visFr.pipeline
+    oc_name = pipeline.new_ds_name('octree')
     
     colour_chans = pipeline.colourFilter.getColourChans()
     current_colour = pipeline.colourFilter.currentColour
@@ -85,13 +78,7 @@ def gen_isosurface(visFr):
     from PYME.recipes.surface_fitting import DualMarchingCubes
     
     oc_name = gen_octree_from_points(visFr)
-    
-    surf_count = 0
-    surf_name = 'surf%d' % surf_count
-    while surf_name in visFr.pipeline.dataSources.keys():
-        surf_count += 1
-        surf_name = 'surf%d' % surf_count
-    
+    surf_name = visFr.pipeline.new_ds_name('surf')
     
     recipe = visFr.pipeline.recipe
     dmc = DualMarchingCubes(recipe, invalidate_parent=False, input=oc_name,output=surf_name)
@@ -189,14 +176,33 @@ def save_surface(visFr):
  
 def estimate_density(visFr):
     from PYME.recipes.pointcloud import LocalPointDensity
-    dens_count = 0
-    dens_name = 'dense%d' % dens_count
-    while dens_name in visFr.pipeline.dataSources.keys():
-        dens_count += 1
-        dens_name = 'dense%d' % dens_count
+    dens_name = visFr.pipeline.new_ds_name('dense')
 
     recipe = visFr.pipeline.recipe
     dmc = LocalPointDensity(recipe, invalidate_parent=False, input=visFr.pipeline.selectedDataSourceKey, output=dens_name)
+
+    if dmc.configure_traits(kind='modal'):
+        recipe.add_module(dmc)
+        recipe.execute()
+        dmc._invalidate_parent = True
+        visFr.pipeline.selectDataSource(dens_name)
+        
+        
+def estimate_circumcentre_densities(visFr):
+    from PYME.recipes.pointcloud import LocalPointDensity, DelaunayCircumcentres
+
+    recipe = visFr.pipeline.recipe
+    
+    tess_name = add_tesselation(visFr)
+    if tess_name is None:
+        return
+        
+    cc_name = visFr.pipeline.new_ds_name('circumcentres')
+    cc = DelaunayCircumcentres(recipe, input=tess_name, output=cc_name)
+    recipe.add_module(cc)
+    
+    dens_name = visFr.pipeline.new_ds_name('dense')
+    dmc = LocalPointDensity(recipe, invalidate_parent=False, input=visFr.pipeline.selectedDataSourceKey, input_sample_locations=cc_name, output=dens_name)
 
     if dmc.configure_traits(kind='modal'):
         recipe.add_module(dmc)
@@ -207,15 +213,9 @@ def estimate_density(visFr):
     
 def add_tesselation(visFr):
     from PYME.recipes.pointcloud import DelaunayTesselation
-    from PYME.LMVis.layers.mesh import TriangleRenderLayer
-    
-    surf_count = 0
-    surf_name = 'delaunay%d' % surf_count
-    while surf_name in visFr.pipeline.dataSources.keys():
-        surf_count += 1
-        surf_name = 'delaunay%d' % surf_count
 
     pipeline = visFr.pipeline
+    surf_name = pipeline.new_ds_name('delaunay')
 
     colour_chans = pipeline.colourFilter.getColourChans()
     current_colour = pipeline.colourFilter.currentColour
@@ -241,22 +241,28 @@ def add_tesselation(visFr):
     if dt.configure_traits(kind='modal'):
         pipeline.dataSources[surf_name] = dt.apply_simple(pipeline)
         print('Delaunay tesselation  (%s) created' % surf_name)
-
+        pipeline.colourFilter.setColour(current_colour)
+        return surf_name
+        
+    else:
+        pipeline.colourFilter.setColour(current_colour)
+        return None
+    
+def add_tesselation_layer(visFr):
+    from PYME.LMVis.layers.mesh import TriangleRenderLayer
+    surf_name = add_tesselation(visFr)
+    if surf_name is not None:
         layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='flat',
                                     cmap='hot')
         visFr.add_layer(layer)
-        
         print('Tesselation layer added')
-
-    pipeline.colourFilter.setColour(current_colour)
-    
-    
 
 
 def Plug(visFr):
     visFr.AddMenuItem('View', 'Add Octree Layer', lambda e : add_octree_layer(visFr))
     visFr.AddMenuItem('View', 'Estimate density', lambda e: estimate_density(visFr))
-    visFr.AddMenuItem('View', 'Create Delaunay Tesselation', lambda e: add_tesselation(visFr))
+    visFr.AddMenuItem('View', 'Estimate density [circumcentres]', lambda e: estimate_circumcentre_densities(visFr))
+    visFr.AddMenuItem('View', 'Create Delaunay Tesselation', lambda e: add_tesselation_layer(visFr))
     visFr.AddMenuItem('Mesh', 'Generate Isosurface', lambda e: gen_isosurface(visFr))
     visFr.AddMenuItem('Mesh', 'Load mesh', lambda e: open_surface(visFr))
     visFr.AddMenuItem('Mesh', 'Save mesh', lambda e: save_surface(visFr))

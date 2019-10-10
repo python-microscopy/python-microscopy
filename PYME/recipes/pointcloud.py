@@ -37,7 +37,8 @@ class LocalPointDensity(ModuleBase):
     TODO - find the correct scaling factors (probably involving pi) to convert this to $locs/um^{N_{dim}}$
     
     """
-    input = Input('input')
+    input = Input('input', desc='localizations')
+    input_sample_locations = Input('', desc='[optional] - locations to sample density at (if different from localizations')
     output = Output('output')
     
     n_nearest_neighbours = Int(10)
@@ -67,6 +68,11 @@ class LocalPointDensity(ModuleBase):
         
         inp = namespace[self.input]
         
+        if self.input_sample_locations == '':
+            locs = inp
+        else:
+            locs = namespace[self.input_sample_locations]
+        
         N = int(self.n_nearest_neighbours)
         n_ = np.arange(N)
         
@@ -74,14 +80,16 @@ class LocalPointDensity(ModuleBase):
             pts = np.vstack([inp['x'], inp['y'], inp['z']]).T
             kdt = cKDTree(pts)
         
-            d_ = np.array([self._dn3d(p, kdt, N, n_) for p in pts])
+            q_pts = np.array([locs['x'], locs['y'], locs['z']]).T
+            d_ = np.array([self._dn3d(p, kdt, N, n_) for p in q_pts])
         else:
             pts = np.vstack([inp['x'], inp['y']]).T
             kdt = cKDTree(pts)
-    
-            d_ = np.array([self._dn2d(p, kdt, N, n_) for p in pts])
+
+            q_pts = np.array([locs['x'], locs['y']]).T
+            d_ = np.array([self._dn2d(p, kdt, N, n_) for p in q_pts])
             
-        t = tabular.mappingFilter(inp)
+        t = tabular.mappingFilter(locs)
         t.addColumn('dn', d_)
         
         try:
@@ -147,16 +155,29 @@ class Tesselation(tabular.TabularBase, TrianglesBase):
     
     
     def circumcentres(self):
-        cc = np.zeros((len(self.T.simplices), 3))
+        #print(self.T.simplices.shape)
+        #print(self.vertices.shape)
+        
+        if self._3d:
+            verts = self.vertices
+            cc = np.zeros((len(self.T.simplices), 3))
+        else:
+            verts = self.vertices[:,:2]
+            cc = np.zeros((len(self.T.simplices), 2))
+            
+        #print(verts.shape)
+            
         for i, s in enumerate(self.T.simplices):
-            t_ = self.vertices[s,:]
+            t_ = verts[s,:]
             
             t0 = t_[0, :]
             #t02 = (t0*t0).sum()
             
             A = t_[1:, :] - t0[None,:]
             b = 0.5*((t_[1:,:] - t0[None, :])**2).sum(1)
-            cc[i, :] = np.linalg.solve(A.T,b) + t0
+            
+            #print(t_.shape, A.shape, b.shape)
+            cc[i, :] = np.linalg.solve(A,b) + t0
             
         return cc
             
@@ -183,3 +204,42 @@ class DelaunayTesselation(ModuleBase):
             pass
     
         namespace[self.output] = T
+
+@register_module('DelaunayCircumcentres')
+class DelaunayCircumcentres(ModuleBase):
+    input = Input('input')
+    output = Output('output')
+    
+    append_original_locs = Bool(False)
+    
+    def execute(self, namespace):
+        inp = namespace[self.input]
+        
+        if not isinstance(inp, Tesselation):
+            raise RuntimeError('expected a Tesselation object (as output by the DelaunayTesselation module)')
+        
+        if inp._3d:
+            x, y, z = inp.circumcentres().T
+            
+            if self.append_original_locs:
+                x = np.hstack([x, inp['x']])
+                y = np.hstack([y, inp['y']])
+                z = np.hstack([z, inp['z']])
+            
+            pts = {'x' : x, 'y':y, 'z' : z}
+        else:
+            x, y = inp.circumcentres().T
+            
+            if self.append_original_locs:
+                x = np.hstack([x, inp['x']])
+                y = np.hstack([y, inp['y']])
+            
+            pts = {'x': x, 'y': y, 'z': 0*x}
+        
+        out = tabular.mappingFilter(pts)
+        try:
+            out.mdh = inp.mdh
+        except AttributeError:
+            pass
+        
+        namespace[self.output] = out
