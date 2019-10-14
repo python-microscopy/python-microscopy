@@ -6,56 +6,31 @@
 
 #include "triangle_mesh_utils.h"
 
-/*
-
-DB: Performance suggestions
-
-There is potentially scope to do some type hinting here to get the compiler to generate SMID instructions (e.g. by using vector types)
-
-This may or may not be worthwhile, as the code will likely be compiler specific / different for gcc / msvc. Also the compiler
-should be fairly good at doing it for you.
-
-The one thing you can definitely do is flag the variables that are unchanged during the function call as const ... e.g.
-
-float norm(const float * const pos)
-
-Which gives the compiler more info and is definitely not going to generate slower code.
-
-You could potentially also flag the functions as inline, but I'm not sure how much good that will do on modern compilers,
-they should do that for you anyway.
-
-I'm not sure if there is an easy way of doing it, but as you divide by the norm, getting the compiler to generate
-rsqrt(n) and then multiplying by that could be significantly faster (I think there are more pressing things to address).
-
-*/
-float norm(float *pos)
+float norm(const float *pos)
 {
-    int i;
     float n = 0;
-    for (i = 0; i < VECTORSIZE; ++i)
+    for (int i = 0; i < VECTORSIZE; ++i)
         n += pos[i] * pos[i];
     return sqrt(n);
 }
 
-void cross(float *a, float *b, float *n)
+void cross(const float *a, const float *b, float *n)
 {
-    /* DB: I think the compiler should be able to optimize this away, but I'd probably not copy the array items into
-    separate variables first, but rather just have n[0] = a[1]*b[2] - a[2]*b[1] etc ... A naive compiler would generate
-    slower code for how you've written it.
-
-    One thing that might be worth thinking about is making a typedef for a vector - As it stands, the compiler doesn't
-    have any info about the overall dimensions of a, b, or n, or their alignment in memory but I'm not sure that matters.
-
-    Once again, I think there is more mileage to be had by moving more of the mesh class to c/cython first.
+    /*
+    One thing that might be worth thinking about is making a typedef for a vector
+    - As it stands, the compiler doesn't have any info about the overall dimensions 
+    of a, b, or n, or their alignment in memory but I'm not sure that matters.
     */
-    float a0, a1, a2, b0, b1, b2;
 
-    a0 = a[0]; a1 = a[1]; a2 = a[2];
-    b0 = b[0]; b1 = b[1]; b2 = b[2];
+    n[0] = a[1]*b[2] - a[2]*b[1];
+    n[1] = a[2]*b[0] - a[0]*b[2];
+    n[2] = a[0]*b[1] - a[1]*b[0];
+}
 
-    n[0] = a1*b2 - a2*b1;
-    n[1] = a2*b0 - a0*b2;
-    n[2] = a0*b1 - a1*b0;
+void difference(const float *a, const float *b, float *d)
+{
+    for (int k = 0; k < VECTORSIZE; ++k) 
+        d[k] = a[k] - b[k];
 }
 
 // void update_vertex_neighbors(signed int *v_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
@@ -161,8 +136,7 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 
             loop_vertex = &(p_vertices[(curr_edge->vertex)]);
 
-            for (k = 0; k < VECTORSIZE; ++k) 
-                position[k] = (curr_vertex->position)[k] - (loop_vertex->position)[k];
+            difference((curr_vertex->position), (loop_vertex->position), position);
 
             l = norm(position);
             curr_edge->length = l;
@@ -224,8 +198,7 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 
                 loop_vertex = &(p_vertices[(curr_edge->vertex)]);
 
-                for (k = 0; k < VECTORSIZE; ++k) 
-                    position[k] = (curr_vertex->position)[k] - (loop_vertex->position)[k];
+                difference((curr_vertex->position), (loop_vertex->position), position);
 
                 l = norm(position);
                 curr_edge->length = l;
@@ -267,7 +240,7 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 static PyObject *update_face_normals(PyObject *self, PyObject *args)
 {
     PyObject *f_idxs=0, *halfedges=0, *vertices=0, *faces=0;
-    int32_t j, k, f_idx, curr_idx, prev_idx, next_idx, n_idxs;
+    int32_t j, k, f_idx, curr_idx, prev_idx, next_idx, n_idxs, *p_f_idxs;
     float v1[VECTORSIZE], u[VECTORSIZE], v[VECTORSIZE], n[VECTORSIZE], nn;
     halfedge_t *curr_edge, *prev_edge, *next_edge;
     face_t *curr_face;
@@ -326,11 +299,8 @@ static PyObject *update_face_normals(PyObject *self, PyObject *args)
         for (k = 0; k < VECTORSIZE; ++k)
             v1[k] = (curr_vertex->position)[k];
 
-        for (k = 0; k < VECTORSIZE; ++k)
-        {
-            u[k] = (prev_vertex->position)[k] - v1[k];
-            v[k] = (next_vertex->position)[k] - v1[k];
-        }
+        difference((prev_vertex->position), v1, u);
+        difference((next_vertex->position), v1, v);
 
         cross(u, v, n);
         nn = norm(n);
