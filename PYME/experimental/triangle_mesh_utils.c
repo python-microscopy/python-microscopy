@@ -259,10 +259,6 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
         }
     }
 
-    // Python's garbage collection will Py_DECREF halfedges, vertices, faces after each function call, so insure against this
-    Py_INCREF(halfedges);
-    Py_INCREF(vertices);
-    Py_INCREF(faces);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -271,7 +267,7 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 static PyObject *update_face_normals(PyObject *self, PyObject *args)
 {
     PyObject *f_idxs=0, *halfedges=0, *vertices=0, *faces=0;
-    signed int j, k, f_idx, curr_idx, prev_idx, next_idx, n_idxs;
+    int32_t j, k, f_idx, curr_idx, prev_idx, next_idx, n_idxs;
     float v1[VECTORSIZE], u[VECTORSIZE], v[VECTORSIZE], n[VECTORSIZE], nn;
     halfedge_t *curr_edge, *prev_edge, *next_edge;
     face_t *curr_face;
@@ -299,30 +295,33 @@ static PyObject *update_face_normals(PyObject *self, PyObject *args)
         return NULL;
     } 
 
-    n_idxs = (signed int)PySequence_Length(f_idxs);
+    n_idxs = (int32_t)PySequence_Length(f_idxs);
+    vertex_t *p_vertices = (vertex_t*)PyArray_GETPTR1(vertices, 0);
+    halfedge_t *p_halfedges = (halfedge_t*)PyArray_GETPTR1(halfedges, 0);
+    face_t *p_faces = (face_t*)PyArray_GETPTR1(faces, 0);
 
     for (j = 0; j < n_idxs; ++j)
     {
-        f_idx = (signed int)PyArray_DATA(PySequence_GetItem(f_idxs, (Py_ssize_t) j));
+        f_idx = (int32_t)PyArray_DATA(PySequence_GetItem(f_idxs, (Py_ssize_t) j));
         if (f_idx == -1)
             continue;
-        curr_face = (face_t*)PyArray_GETPTR1(faces, f_idx);
+        curr_face = &(p_faces[f_idx]);
 
         curr_idx = curr_face->halfedge;
         if (curr_idx == -1) continue;
-        curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
+        curr_edge = &(p_halfedges[curr_idx]);
 
         prev_idx = curr_edge->prev;
         if (prev_idx == -1) continue;
-        prev_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, prev_idx);
+        prev_edge = &(p_halfedges[prev_idx]);
 
         next_idx = curr_edge->next;
         if (next_idx == -1) continue;
-        next_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, next_idx);
+        next_edge = &(p_halfedges[next_idx]);
 
-        curr_vertex = (vertex_t*)PyArray_GETPTR1(vertices, (curr_edge->vertex));
-        prev_vertex = (vertex_t*)PyArray_GETPTR1(vertices, (prev_edge->vertex));
-        next_vertex = (vertex_t*)PyArray_GETPTR1(vertices, (next_edge->vertex));
+        curr_vertex = &(p_vertices[(curr_edge->vertex)]);
+        prev_vertex = &(p_vertices[(prev_edge->vertex)]);
+        next_vertex = &(p_vertices[(next_edge->vertex)]);
 
         for (k = 0; k < VECTORSIZE; ++k)
             v1[k] = (curr_vertex->position)[k];
@@ -346,10 +345,6 @@ static PyObject *update_face_normals(PyObject *self, PyObject *args)
         }
     }
 
-    // Python's garbage collection will Py_DECREF halfedges, vertices, faces after each function call, so insure against this
-    Py_INCREF(halfedges);
-    Py_INCREF(vertices);
-    Py_INCREF(faces);
     Py_INCREF(Py_None);
     return Py_None;
 }
