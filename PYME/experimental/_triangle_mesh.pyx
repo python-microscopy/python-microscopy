@@ -154,6 +154,9 @@ cdef class TriangleMesh(TrianglesBase):
     cdef object fix_boundary
     cdef object _manifold
 
+    cdef object _H
+    cdef object _K
+
     def __init__(self, vertices=None, faces=None, mesh=None, **kwargs):
         """
         Base class for triangle meshes stored using halfedge data structure. 
@@ -212,6 +215,8 @@ cdef class TriangleMesh(TrianglesBase):
 
         # Representation of faces by triplets of vertices
         self._faces_by_vertex = None
+        self._H = None
+        self._K = None
 
         # loop subdivision vars
         self._loop_subdivision_flip_edges = []
@@ -226,12 +231,16 @@ cdef class TriangleMesh(TrianglesBase):
         self.vertex_normals
 
         # Properties we can visualize
-        self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary', 'singular']
+        self.vertex_properties = ['x', 'y', 'z', 'component', 'boundary', 'singular', 'H', 'K']
 
         self.fix_boundary = True  # Hold boundary edges in place
 
         # Is the mesh manifold?
         self._manifold = None
+
+        # Curvatures
+        self._H = None
+        self._K = None
 
         # Set fix_boundary, etc.
         for key, value in kwargs.items():
@@ -302,6 +311,18 @@ cdef class TriangleMesh(TrianglesBase):
     @property
     def z(self):
         return self.vertices[:,2]
+
+    @property
+    def H(self):
+        if self._H is None:
+            self.calculate_curvatures()
+        return self._H
+    
+    @property
+    def K(self):
+        if self._K is None:
+            self.calculate_curvatures()
+        return self._K
 
     @property
     def component(self):
@@ -647,6 +668,76 @@ cdef class TriangleMesh(TrianglesBase):
             # Update array
             return new_vec
 
+    def calculate_curvatures(self):
+        dN = 0.1
+        self._H = np.zeros(self._vertices.shape[0])
+        self._K = np.zeros(self._vertices.shape[0])
+        I = np.eye(3)
+        areas = np.zeros(self._vertices.shape[0])
+        for iv in range(self._vertices.shape[0]):
+            if self._vertices['halfedge'][iv] == -1:
+                continue
+
+            # Vertex and its normal
+            vi = self._vertices['position'][iv,:]
+            Nvi = self._vertices['normal'][iv,:]
+
+            p = I - Nvi[:,None]*Nvi[None,:] # np.outer(Nvi, Nvi)
+                
+            # vertex nearest neighbors
+            neighbors = self._vertices['neighbors'][iv]
+            neighbor_mask = (neighbors != -1)
+            neighbor_vertices = self._halfedges['vertex'][neighbors]
+            vjs = self._vertices['position'][neighbor_vertices[neighbor_mask]]
+
+            # Neighbor vectors & displaced neighbor tangents
+            dvs = vjs - vi[None,:]
+
+            # radial weighting
+            r_sum = np.sum(1./np.sqrt((dvs*dvs).sum(1)))
+
+            # Norms
+            dvs_norm = np.sqrt((dvs*dvs).sum(1))
+
+            # Hats
+            dvs_hat = dvs/dvs_norm[:,None]
+
+            # Tangents
+            T_thetas = np.dot(p,-dvs.T).T
+            Tijs = T_thetas/np.sqrt((T_thetas*T_thetas).sum(1)[:,None])
+            Tijs[np.sum(T_thetas,axis=1) == 0, :] = 0
+
+            # Edge normals subtracted from vertex normals
+            Ni_diffs = np.sqrt(2. - 2.*np.sqrt(1.-((Nvi[None,:]*dvs_hat).sum(1))**2))
+
+            k = 2.*np.sign((Nvi[None,:]*dvs).sum(1))*Ni_diffs/dvs_norm
+            w = (1./dvs_norm)/r_sum
+
+            Mvi = (w[None,:,None]*k[None,:,None]*Tijs.T[:,:,None]*Tijs[None,:,:]).sum(axis=1)
+
+            # Solve the eigenproblem in closed form
+            m00 = Mvi[0,0]
+            m01 = Mvi[0,1]
+            m02 = Mvi[0,2]
+            m11 = Mvi[1,1]
+            m12 = Mvi[1,2]
+            m22 = Mvi[2,2]
+
+            # Here we use the fact that Mvi is symnmetric and we know
+            # one of the eigenvalues must be 0
+            p = -m00*m11 - m00*m22 + m01*m01 + m02*m02 - m11*m22 + m12*m12
+            q = m00 + m11 + m22
+            r = np.sqrt(4*p + q*q)
+            
+            # Eigenvalues
+            l1 = 0.5*(q-r)
+            l2 = 0.5*(q+r)
+
+            k_1 = 3.*l1 - l2 #e[0] - e[1]
+            k_2 = 3.*l2 - l1 #e[1] - e[0]
+            self._H[iv] = 0.5*(k_1 + k_2)
+            self._K[iv] = k_1*k_2
+
     def edge_collapse(self, np.int32_t _curr, bint live_update=1):
         """
         A.k.a. delete two triangles. Remove an edge, defined by halfedge _curr,
@@ -832,6 +923,8 @@ cdef class TriangleMesh(TrianglesBase):
                     self._update_face_normals([face0, face1])
                     self._update_vertex_neighbors([_live_vertex, _prev_twin_vertex, _next_prev_twin_vertex])
                 self._faces_by_vertex = None
+                self._H = None
+                self._K = None
         
         except RuntimeError as e:
             print(_curr, _twin, _next, _prev, _twin_next, _twin_prev, _next_prev_twin, _next_twin_twin_next, _prev_twin)
@@ -896,6 +989,8 @@ cdef class TriangleMesh(TrianglesBase):
         self._halfedge_vacancies.append(_edge)
 
         self._faces_by_vertex = None
+        self._H = None
+        self._K = None
 
     def _insert(self, el, el_arr, el_vacancies, key, compact=False, insert_key=None, **kwargs):
         """
@@ -1050,6 +1145,8 @@ cdef class TriangleMesh(TrianglesBase):
         self._set_cvertices(self._flat_vertices)
 
         self._faces_by_vertex = None  # Reset
+        self._H = None
+        self._K = None
 
         return vx, idx
 
@@ -1165,6 +1262,8 @@ cdef class TriangleMesh(TrianglesBase):
                 self._update_face_normals([self._chalfedges[_he_0_idx].face, self._chalfedges[_he_4_idx].face])
                 self._update_vertex_neighbors([self._chalfedges[_curr].vertex, self._chalfedges[_prev].vertex, self._chalfedges[_he_0_idx].vertex, self._chalfedges[_he_4_idx].vertex])
             self._faces_by_vertex = None
+            self._H = None
+            self._K = None
     
     def edge_flip(self, np.int32_t _curr, bint live_update=1):
         """
@@ -1285,6 +1384,8 @@ cdef class TriangleMesh(TrianglesBase):
             self._update_vertex_neighbors([curr_edge.vertex, twin_edge.vertex, self._chalfedges[_next].vertex, self._chalfedges[_twin_next].vertex])
 
             self._faces_by_vertex = None
+            self._H = None
+            self._K = None
 
     def regularize(self):
         """
@@ -1733,6 +1834,8 @@ cdef class TriangleMesh(TrianglesBase):
         self._update_vertex_neighbors(list(set(self._halfedges['vertex'][_kept_edges])))
         
         self._faces_by_vertex = None
+        self._H = None
+        self._K = None
 
     def _find_boundary_polygons(self):
         """
@@ -1968,6 +2071,8 @@ cdef class TriangleMesh(TrianglesBase):
 
         # Reset display
         self._faces_by_vertex = None
+        self._H = None
+        self._K = None
 
     def _connect_neighbors(self, _nn, starting_component=0):
         """
