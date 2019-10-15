@@ -133,9 +133,9 @@ cdef class TriangleMesh(TrianglesBase):
     cdef public object _vertices
     cdef public object _faces
     cdef public object _halfedges
-    cdef object _vertex_vacancies
-    cdef object _face_vacancies
-    cdef object _halfedge_vacancies
+    cdef public object _vertex_vacancies
+    cdef public object _face_vacancies
+    cdef public object _halfedge_vacancies
     cdef object _flat_halfedges
     cdef object _flat_faces
     cdef object _flat_vertices
@@ -150,7 +150,7 @@ cdef class TriangleMesh(TrianglesBase):
     cdef object _singular_edges
     cdef object _singular_vertices
 
-    cdef object vertex_properties
+    cdef public object vertex_properties
     cdef object fix_boundary
     cdef object _manifold
 
