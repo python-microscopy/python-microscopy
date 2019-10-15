@@ -89,7 +89,7 @@ class ReflectedLinePIDFocusLock(PID):
     of view with axial coordinates relative to the coverslip rather than absolute axial position (which is influenced by
     coverslips sagging from media, etc.).
     """
-    def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01):
+    def __init__(self, scope, piezo, p=1., i=0.1, d=0.05, sample_time=0.01, mode='frame'):
         """
 
         Parameters
@@ -102,6 +102,8 @@ class ReflectedLinePIDFocusLock(PID):
         sample_time: float
             See simple_pid.PID, but this servo does not have a tolerance on the lock position, but rather a dead-time
             of-sorts by only updating at ~regular time intervals. The correction is only changed once per sample_time.
+        mode: str
+            flag, where 'frame' queries on each frame and 'time' queries at fixed times by polling at sample_time
         """
         self.scope = scope
         self.piezo = piezo
@@ -115,6 +117,36 @@ class ReflectedLinePIDFocusLock(PID):
         self.subtraction_profile = None
 
         PID.__init__(self, p, i, d, setpoint=self.peak_position, auto_mode=False, sample_time=sample_time)
+
+        self._mode = mode
+        self._polling = False
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, update_mode):
+        self.deregister()
+        self._mode = update_mode
+        self.register()
+
+    def _poll(self):
+        while self._polling:
+            t = time.time()
+            self.on_frame()
+            # throttle this to whatever we set cycle time to
+            time.sleep(max(self.sample_time - time.time() - t, 0))
+
+
+    def StartPolling(self):
+        self._polling = True
+        self._thread = threading.Thread(target=self._poll)
+        self._thread.start()
+
+    def StopPolling(self):
+        self._polling = False
+        self._thread.join()
 
     @webframework.register_endpoint('/GetPeakPosition', output_is_json=False)
     def GetPeakPosition(self):
@@ -145,12 +177,16 @@ class ReflectedLinePIDFocusLock(PID):
         self.set_auto_mode(False)
 
     def register(self):
-        self.scope.frameWrangler.onFrame.connect(self.on_frame)
-        self.tracking = True
+        if self.mode == 'time':
+            self.StartPolling()
+        else:
+            self.scope.frameWrangler.onFrame.connect(self.on_frame)
 
     def deregister(self):
-        self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
-        self.tracking = False
+        if self.mode == 'time':
+            self.StopPolling()
+        else:
+            self.scope.frameWrangler.onFrame.disconnect(self.on_frame)
 
     @webframework.register_endpoint('/ToggleLock', output_is_json=False)
     def ToggleLock(self):
