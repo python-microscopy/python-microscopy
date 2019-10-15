@@ -21,11 +21,11 @@
 import os
 
 from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glPolygonMode, \
-    GL_FRONT_AND_BACK, GL_LINE, glUseProgram, GL_BLEND,glDisable, glEnable, glDepthMask, GL_TRUE, GL_FALSE, GL_DEPTH_TEST, glBlendFunc, GL_SRC_ALPHA, GL_ONE
+    GL_FRONT_AND_BACK, GL_LINE, GL_FILL, glUseProgram, GL_BLEND,glDisable, glEnable, glDepthMask, GL_TRUE, GL_FALSE, GL_DEPTH_TEST, glBlendFunc, GL_SRC_ALPHA, GL_ONE
 from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
-class WireFrameShaderProgram(GLProgram):
+class TesselShaderProgram(GLProgram):
     def __exit__(self, exc_type, exc_val, exc_tb):
         glUseProgram(0)
         pass
@@ -35,15 +35,17 @@ class WireFrameShaderProgram(GLProgram):
         glEnable(GL_BLEND)
         glDepthMask(GL_TRUE)
         glDisable(GL_DEPTH_TEST)
+        #glDepthFunc(GL_LEQUAL)
+        #glEnable(GL_POINT_SMOOTH)
         self.get_shader_program().use()
         self.set_clipping_uniforms()
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
     def __init__(self):
         GLProgram.__init__(self)
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")
         _shader_program = ShaderProgram(shader_path)
-        _shader_program.add_shader("default_vs.glsl", GL_VERTEX_SHADER)
-        _shader_program.add_shader("default_fs.glsl", GL_FRAGMENT_SHADER)
+        _shader_program.add_shader("tessel_vs.glsl", GL_VERTEX_SHADER)
+        _shader_program.add_shader("tessel_fs.glsl", GL_FRAGMENT_SHADER)
         _shader_program.link()
         self.set_shader_program(_shader_program)

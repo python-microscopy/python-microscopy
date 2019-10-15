@@ -1,7 +1,7 @@
 from .base import BaseEngine, EngineLayer
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram, OpaquePointShaderProgram
 from PYME.LMVis.shader_programs.PointSpriteShaderProgram import PointSpriteShaderProgram
-from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
+from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram, GouraudSphereShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
 from pylab import cm
@@ -58,12 +58,19 @@ class TransparentPointsEngine(Points3DEngine):
         self.set_shader_program(DefaultShaderProgram)
         self.point_scale_correction = 1.0
         
+class SpheresEngine(Points3DEngine):
+    def __init__(self):
+        BaseEngine.__init__(self)
+        self.set_shader_program(GouraudSphereShaderProgram)
+        self.point_scale_correction = 1.0
+        
 
 ENGINES = {
     'points' : Points3DEngine,
     'transparent_points' : TransparentPointsEngine,
     'pointsprites' : PointSpritesEngine,
     'shaded_points' : ShadedPointsEngine,
+    'spheres' : SpheresEngine,
 }
 
 class PointCloudRenderLayer(EngineLayer):
@@ -180,7 +187,7 @@ class PointCloudRenderLayer(EngineLayer):
         if not self.vertexColour == '':
             c = ds[self.vertexColour]
         else:
-            c = None
+            c = 0*x
             
         if self.xn_key in ds.keys():
             xn, yn, zn = ds[self.xn_key], ds[self.yn_key], ds[self.zn_key]
@@ -268,9 +275,9 @@ class PointCloudRenderLayer(EngineLayer):
     
         return View([Group([Item('dsname', label='Data', editor=EnumEditor(name='_datasource_choices')), ]),
                      Item('method'),
-                     Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
-                     Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.on_update), show_label=False), ]),
-                     Group(Item('cmap', label='LUT'), Item('alpha'), Item('point_size'))], )
+                     Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour', visible_when='cmap not in ["R", "G", "B", "C", "M","Y", "K"]'),
+                     Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata, update_signal=self.on_update), show_label=False), ], visible_when='cmap not in ["R", "G", "B", "C", "M","Y", "K"]'),
+                     Group(Item('cmap', label='LUT'), Item('alpha', visible_when="method in ['pointsprites', 'transparent_points']"), Item('point_size'))])
         #buttons=['OK', 'Cancel'])
 
     def default_traits_view(self):

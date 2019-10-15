@@ -6,7 +6,28 @@
 
 #include "triangle_mesh_utils.h"
 
-float norm(float *pos)
+/*
+
+DB: Performance suggestions
+
+There is potentially scope to do some type hinting here to get the compiler to 
+generate SMID instructions (e.g. by using vector types)
+
+This may or may not be worthwhile, as the code will likely be compiler specific
+/ different for gcc / msvc. Also the compiler should be fairly good at doing it 
+for you.
+
+
+You could potentially also flag the functions as inline, but I'm not sure how 
+much good that will do on modern compilers, they should do that for you anyway.
+
+I'm not sure if there is an easy way of doing it, but as you divide by the 
+norm, getting the compiler to generate rsqrt(n) and then multiplying by that 
+could be significantly faster (I think there are more pressing things to 
+address).
+
+*/
+double norm(const float *pos)
 {
     int i;
     float n = 0;
@@ -15,19 +36,54 @@ float norm(float *pos)
     return sqrt(n);
 }
 
-void cross(float *a, float *b, float *n)
+void cross(const float *a, const float *b, float *n)
 {
-    float a0, a1, a2, b0, b1, b2;
+    /* DB: 
 
-    a0 = a[0]; a1 = a[1]; a2 = a[2];
-    b0 = b[0]; b1 = b[1]; b2 = b[2];
+    One thing that might be worth thinking about is making a typedef for a 
+    vector - As it stands, the compiler doesn't have any info about the overall
+    dimensions of a, b, or n, or their alignment in memory but I'm not sure that
+    matters.
 
-    n[0] = a1*b2 - a2*b1;
-    n[1] = a2*b0 - a0*b2;
-    n[2] = a0*b1 - a1*b0;
+    Once again, I think there is more mileage to be had by moving more of the 
+    mesh class to c/cython first.
+    */
+    
+    // float a0, a1, a2, b0, b1, b2;
+
+    // a0 = a[0]; a1 = a[1]; a2 = a[2];
+    // b0 = b[0]; b1 = b[1]; b2 = b[2];
+
+    n[0] = a[1]*b[2] - a[2]*b[1];
+    n[1] = a[2]*b[0] - a[0]*b[2];
+    n[2] = a[0]*b[1] - a[1]*b[0];
 }
 
 // void update_vertex_neighbors(signed int *v_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
+
+/*
+DB: Performance suggestions:
+
+- change to a pure c function and a python c api wrapper
+  reasons are 1 : facilitates moving more of the code to c 2: forces us to code
+  in a way that doesn't make python API calls within loop. This is good both 
+  because it will result in better performance, and also in that it will 
+  (potentially) let us release the GIL and get performance improvements from 
+  multithreading
+
+- PySequence_GetItem() is a python API call, we probably don't want it in the 
+  loop if we can help it.
+
+- I'm pretty sure that PyArray_GETPTR1 is a macro, which makes it significantly
+  less costly (expands to inline c code, & no need for GIL). That said, we know 
+  that the input arrays are contiguous (we check for this) so we could also 
+  just have, e.g., vertex_t * p_vertices = PyArray_GETPTR1(vertices, 0) outside
+  the loop and then just replace everything inside the loop with standard c 
+  indexing - ie curr_vertex = p_vertices[v_idx]. My strong suspicion is that 
+  the c compiler will do a better job of optimizing this, and it will also 
+  continue to work once more of the code is in c.
+
+*/
 static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 {
     PyObject *v_idxs=0, *halfedges=0, *vertices=0, *faces=0;

@@ -621,19 +621,19 @@ lo_nibble = lambda b : ((b) & 0x0F)
 # Pack and unpack functions to store vertex edges for uniqueness checks
 # and to establish vertex priority.
 # 3 integers (unpack) <--> (pack) single integer.
-def single_pack(a, b, c):
-    res = ((a) << 32) + ((b) << 16) + c
-    #res += ((b) << 16)
-    #res += c
+# def single_pack(a, b, c):
+#     res = ((a) << 32) + ((b) << 16) + c
+#     #res += ((b) << 16)
+#     #res += c
 
-    return res
+#     return res
 
-def single_unpack(res):
-    a = (((res) >> 32) & 0xffff)
-    b = (((res) >> 16) & 0xffff)
-    c = ((res) & 0xffff)
+# def single_unpack(res):
+#     a = (((res) >> 32) & 0xffff)
+#     b = (((res) >> 16) & 0xffff)
+#     c = ((res) & 0xffff)
 
-    return a, b, c
+#     return a, b, c
 
 # For the multi_pack/unpack we need np.uint64 to get bitshift to work correctly 
 # (not even np.uint32 works)
@@ -653,20 +653,20 @@ def single_unpack(res):
 #     return a, b, c
 
 
-def multi_pack(arr1, arr2, arr3):
-    arr = ((arr1.astype(np.uint64)) << 42)
-    arr += ((arr2.astype(np.uint64)) << 21)
-    arr += arr3.astype(np.uint64)
+# def multi_pack(arr1, arr2, arr3):
+#     arr = ((arr1.astype(np.uint64)) << 42)
+#     arr += ((arr2.astype(np.uint64)) << 21)
+#     arr += arr3.astype(np.uint64)
     
-    return arr
+#     return arr
 
 
-def multi_unpack(arr):
-    a = (((arr.astype(np.uint64)) >> 42) & 0x1FFFFF)
-    b = (((arr.astype(np.uint64)) >> 21) & 0x1FFFFF)
-    c = ((arr.astype(np.uint64)) & 0x1FFFFF)
+# def multi_unpack(arr):
+#     a = (((arr.astype(np.uint64)) >> 42) & 0x1FFFFF)
+#     b = (((arr.astype(np.uint64)) >> 21) & 0x1FFFFF)
+#     c = ((arr.astype(np.uint64)) & 0x1FFFFF)
     
-    return a, b, c
+#     return a, b, c
 
 # Convert from marching cubes indexing to modified marching cubes
 # MC_MAP = [0, 1, 3, 2, 4, 5, 7, 6]
@@ -699,7 +699,7 @@ class ModifiedMarchingCubes(object):
         self.triangles = None  # The list of triangles
         self.isolevel = isolevel
 
-        self._edge_indices = None
+        # self._edge_indices = None
 
         # Datatype for storing triangles created by marching cubes. Mimics STL data structure.
         # TODO: Add ('normal', '3f4') for real
@@ -809,16 +809,19 @@ class ModifiedMarchingCubes(object):
         c0_ = np.minimum(c0, c1)
         c1_ = np.maximum(c0, c1)
 
-        v_idxs = multi_pack((np.arange(c0.shape[0])[:, None]*np.ones(c0.shape[1])[None,:]).astype('uint64'), c0_, c1_).ravel()
+        # v_idxs = multi_pack((np.arange(c0.shape[0])[:, None]*np.ones(c0.shape[1])[None,:]).astype('uint64'), c0_, c1_).ravel()
+        v_idxs = np.vstack([(np.arange(c0.shape[0])[:, None]*np.ones(c0.shape[1])[None,:]).ravel(), c0_.ravel(), c1_.ravel()]).T
 
         # Grab the unique vertices and calculate edges
-        edges_unique, edges_inverse = np.unique(v_idxs, return_inverse=True)
+        # edges_unique, edges_inverse = np.unique(v_idxs, return_inverse=True)
+        edges_unique, edges_inverse = np.unique(v_idxs, return_inverse=True, axis=0)
 
         # Store these for manifold check later
-        self._edge_indices = v_idxs.reshape(-1, 12, order='F')
+        # self._edge_indices = v_idxs.reshape(-1, 12, order='F')
 
         
-        i, j0, j1 = multi_unpack(edges_unique)
+        # i, j0, j1 = multi_unpack(edges_unique)
+        i, j0, j1 = edges_unique.T.astype('uint32')
 
         v0 = vertices[i, j0, :]
         v1 = vertices[i, j1, :]
@@ -903,30 +906,30 @@ class ModifiedMarchingCubes(object):
 
         return self.triangles
 
-    def manifold_check(self, find_class, invert_class, cell_class, cube_index):
-            # Manifold check: If two adjacent edges share adjacent cell classes that result in 4 
-            # triangles sharing a single edge, we need to swap one of the cell classes so the mesh 
-            # becomes manifold. This follows the procedure from R. Wenger, Isosurfaces: Geometry, 
-            # Topology, and Algorithms, CRC Press, 2013.
+    # def manifold_check(self, find_class, invert_class, cell_class, cube_index):
+    #         # Manifold check: If two adjacent edges share adjacent cell classes that result in 4 
+    #         # triangles sharing a single edge, we need to swap one of the cell classes so the mesh 
+    #         # becomes manifold. This follows the procedure from R. Wenger, Isosurfaces: Geometry, 
+    #         # Topology, and Algorithms, CRC Press, 2013.
 
-            # Find invert_class cells sharing an edge with a find_class cell
-            class_find = (cell_class == find_class)
-            class_invert = (cell_class == invert_class)
-            class_find_edges = self._edge_indices[class_find].ravel()
-            class_invert_edges = self._edge_indices[class_invert].ravel()
-            class_common_edges = np.array(list(set(list(class_find_edges)).intersection(list(class_invert_edges))))
+    #         # Find invert_class cells sharing an edge with a find_class cell
+    #         class_find = (cell_class == find_class)
+    #         class_invert = (cell_class == invert_class)
+    #         class_find_edges = self._edge_indices[class_find].ravel()
+    #         class_invert_edges = self._edge_indices[class_invert].ravel()
+    #         class_common_edges = np.array(list(set(list(class_find_edges)).intersection(list(class_invert_edges))))
             
-            # If we found any...
-            if len(class_common_edges) > 0:
-                common_edge_bool = (self._edge_indices == class_common_edges[:, None, None])
-                inds_adj = np.where(common_edge_bool)[1]
-                cells_adj = inds_adj #[cell_class[inds_adj] == invert_class]
+    #         # If we found any...
+    #         if len(class_common_edges) > 0:
+    #             common_edge_bool = (self._edge_indices == class_common_edges[:, None, None])
+    #             inds_adj = np.where(common_edge_bool)[1]
+    #             cells_adj = inds_adj #[cell_class[inds_adj] == invert_class]
                 
-                # Invert the cube code of the cell of replace_class
-                cube_index[cells_adj] = ((cube_index[cells_adj]) ^ (0xFF))
-                cell_class[cells_adj] = REGULAR_CELL_CLASS[cube_index[cells_adj]]
+    #             # Invert the cube code of the cell of replace_class
+    #             cube_index[cells_adj] = ((cube_index[cells_adj]) ^ (0xFF))
+    #             cell_class[cells_adj] = REGULAR_CELL_CLASS[cube_index[cells_adj]]
 
-            return cell_class, cube_index
+    #         return cell_class, cube_index
 
 
     def num_shared_vertices(self):

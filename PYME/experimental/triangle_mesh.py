@@ -12,20 +12,20 @@ USE_C = True
 if USE_C:
     from PYME.experimental import triangle_mesh_utils
 
-def pack_edges(arr, axis=1):
-    """
-    Stores edges as a single unique integer. 
+# def pack_edges(arr, axis=1):
+#     """
+#     Stores edges as a single unique integer. 
     
-    NOTE: that this implictly caps the mesh at 2**32
-    vertices.
-    """
-    arr = np.sort(arr, axis=axis)
-    res = ((arr[:,0].astype(np.uint64)) << 32)
-    res += arr[:,1].astype(np.uint64)
+#     NOTE: that this implictly caps the mesh at 2**32
+#     vertices.
+#     """
+#     arr = np.sort(arr, axis=axis)
+#     res = ((arr[:,0].astype(np.uint64)) << 32)
+#     res += arr[:,1].astype(np.uint64)
     
-    return res
+#     return res
 
-MAX_VERTEX_COUNT = 2**32
+MAX_VERTEX_COUNT = 2**64
 
 def fast_3x3_cross(a,b):
     # Index only once
@@ -50,8 +50,38 @@ VERTEX_DTYPE = np.dtype([('position', '3f4'), ('normal', '3f4'), ('halfedge', 'i
 
 LOOP_ALPHA_FACTOR = (np.log(13)-np.log(3))/12
 
-class TriangleMesh(object):
-    def __init__(self, vertices, faces, **kwargs):
+class TrianglesBase(object):
+    """
+    Base class to let VisGUI layers detect objects which are a bunch of triangles
+    
+    a derived class should provide suitable attributes/properties for vertices, faces, face_normals,
+    and vertex_normals.
+    
+    See Also: Tesselation class in PYME.recipes.pointcloud
+    
+    TODO - move me out of here?
+    TODO - provide default implementations for face_normals and vertex_normals?
+    
+    """
+    vertices=None
+    faces=None
+    face_normals=None
+    vertex_normals = None
+    
+    def keys(self):
+        """
+        returns the names of possible vertex attributes
+        """
+        raise NotImplementedError('Over-ride in derived class')
+    
+    def __getitem__(self, item):
+        """
+        returns a given vertex attribute
+        """
+        raise NotImplementedError('Over-ride in derived class')
+
+class TriangleMesh(TrianglesBase):
+    def __init__(self, vertices=None, faces=None, mesh=None, **kwargs):
         """
         Base class for triangle meshes stored using halfedge data structure. 
         Expects STL-like input.
@@ -66,27 +96,43 @@ class TriangleMesh(object):
             debug : bool
                 Print debug statements (assumes manifold mesh).
         """
-        self._vertices = np.zeros(vertices.shape[0], dtype=VERTEX_DTYPE)
-        self._vertices[:] = -1  # initialize everything to -1 to start with
-        self._vertices['position'] = vertices
-        self._vertex_vacancies = []
+        if mesh is not None:
+            import copy
+            
+            self._vertices = np.copy(mesh._vertices)
+            self._vertex_vacancies = copy.copy(mesh._vertex_vacancies)
+
+            self._faces = np.copy(mesh._faces)
+            self._face_vacancies = copy.copy(mesh._face_vacancies)
+
+            self._halfedges = np.copy(mesh._halfedges)
+            self._halfedge_vacancies = copy.copy(mesh._halfedge_vacancies)
+        else:
+            self._vertices = np.zeros(vertices.shape[0], dtype=VERTEX_DTYPE)
+            self._vertices[:] = -1  # initialize everything to -1 to start with
+            self._vertices['position'] = vertices
+            self._vertex_vacancies = []
+
+            self._faces = None  # Contains a pointer to one halfedge associated with each face
+            self._face_vacancies = []
+
+            # Halfedges
+            self._halfedges = None
+            self._halfedge_vacancies = []
+            
+            print('initializing halfedges ...')
+            print('vertices.shape = %s, faces.shape = %s' % (vertices.shape, faces.shape))
+            if vertices.shape[0] >= MAX_VERTEX_COUNT:
+                raise RuntimeError('Maximum vertex count is %d, mesh has %d' % (MAX_VERTEX_COUNT, vertices.shape[0]))
+            self._initialize_halfedges(vertices, faces)
+            print('done initializing halfedges')
+
+        # Representation of faces by triplets of vertices
+        self._faces_by_vertex = None
+
+        # loop subdivision vars
         self._loop_subdivision_flip_edges = []
         self._loop_subdivision_new_vertices = []
-
-        self._faces = None  # Contains a pointer to one halfedge associated with each face
-        self._faces_by_vertex = None  # Representation of faces by triplets of vertices
-        self._face_vacancies = []
-
-        # Halfedges
-        self._halfedges = None
-        self._halfedge_vacancies = []
-        
-        print('initializing halfedges ...')
-        print('vertices.shape = %s, faces.shape = %s' % (vertices.shape, faces.shape))
-        if vertices.shape[0] >= MAX_VERTEX_COUNT:
-            raise RuntimeError('Maximum vertex count is %d, mesh has %d' % (MAX_VERTEX_COUNT, vertices.shape[0]))
-        self._initialize_halfedges(vertices, faces)
-        print('done initializing halfedges')
 
         # Singular edges
         self._singular_edges = None
@@ -119,6 +165,9 @@ class TriangleMesh(object):
         
         return res
 
+    def __copy__(self):
+        return type(self)(mesh=self)
+
     @classmethod
     def from_stl(cls, filename, **kwargs):
         """
@@ -131,6 +180,18 @@ class TriangleMesh(object):
 
         # Call from_np_stl on the file stream
         return cls.from_np_stl(triangles_stl, **kwargs)
+
+    @classmethod
+    def from_ply(cls, filename, **kwargs):
+        """
+        Read from PLY file.
+        """
+        from PYME.IO.FileUtils import ply
+
+        # Load a PLY from file
+        vertices, faces, _ = ply.load_ply(filename)
+
+        return cls(vertices, faces, **kwargs)
 
     @classmethod
     def from_np_stl(cls, triangles_stl, **kwargs):
@@ -207,8 +268,9 @@ class TriangleMesh(object):
         if self._singular_edges is None:
             edges = np.vstack([self._halfedges['vertex'], self._halfedges[self._halfedges['prev']]['vertex']]).T
             edges = edges[edges[:,0] != -1]  # Drop non-edges
-            packed_edges = pack_edges(edges)
-            e, c = np.unique(packed_edges, return_counts=True)
+            # packed_edges = pack_edges(edges)
+            packed_edges = np.sort(edges, axis=1)
+            e, c = np.unique(packed_edges, return_counts=True, axis=0)
             singular_packed_edges = e[c>2]
             singular_edges = []
             for singular_packed_edge in singular_packed_edges:
@@ -417,23 +479,45 @@ class TriangleMesh(object):
             self._faces[:] = -1  # initialize everything to -1 to start with
 
             # Create a unique handle for each edge
-            edges_packed = pack_edges(edges)
+            # edges_packed = pack_edges(edges)
+
+            # Sort the edges lo->hi so we can arrange them uniquely
+            # Convert to list of tuples for use with dictionary
+            edges_packed = [tuple(e) for e in np.sort(edges, axis=1)]
+
+            # Account for multivalent edges
+            # edges_unique, edges_counts = np.unique(edges, return_counts=True, axis=0)
+
+            # print('iterating edges')
+            # # Use a dictionary to keep track of which edges are already assigned twins
+            # d = {}
+            # multivalent_edge = False
+            # multivalent_dict = {}
+            # for i, e in enumerate(edges_packed):
+            #     if e in d:
+            #         idx = d.pop(e)
+            #         if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
+            #             # Push it back in the queue and let's see if the next time we
+            #             # pull it out we get the right matching edge.
+            #             d[e] = idx
+            #             # Trip the flag
+            #             multivalent_edge = True
+            #             multivalent_dict[e] = i
+            #             continue
+                        
+            #         self._halfedges['twin'][idx] = i
+            #         self._halfedges['twin'][i] = idx
+            #     else:
+            #         d[e] = i
 
             print('iterating edges')
             # Use a dictionary to keep track of which edges are already assigned twins
             d = {}
-            multivalent_edge = False
-            multivalent_dict = {}
             for i, e in enumerate(edges_packed):
                 if e in d:
                     idx = d.pop(e)
                     if self._halfedges['vertex'][idx] == self._halfedges['vertex'][i]:
-                        # Push it back in the queue and let's see if the next time we
-                        # pull it out we get the right matching edge.
-                        d[e] = idx
-                        # Trip the flag
-                        multivalent_edge = True
-                        multivalent_dict[e] = i
+                        # Don't assign a halfedge to multivalent edges
                         continue
                         
                     self._halfedges['twin'][idx] = i
@@ -716,7 +800,7 @@ class TriangleMesh(object):
 
             if (self._halfedges['twin'][_twin_prev] == -1) or (self._halfedges['twin'][_twin_next] == -1):
                 # Collapsing this edge will create another free edge
-                return
+                return 
 
         _dead_vertex = self._halfedges['vertex'][_prev]
         _live_vertex = curr_halfedge['vertex']
@@ -750,6 +834,7 @@ class TriangleMesh(object):
             dead_mask = (self._halfedges['vertex'] == _dead_vertex)
             dead_list = self._halfedges['vertex'][self._halfedges['twin'][dead_mask & twin_mask]]
             live_list = self._halfedges['vertex'][self._halfedges['twin'][(self._halfedges['vertex'] == _live_vertex) & twin_mask]]
+        
         twin_list = list((set(dead_list) & set(live_list)) - set([-1]))
         if len(twin_list) != 2:
             return
@@ -763,6 +848,7 @@ class TriangleMesh(object):
             self._halfedges['vertex'][self._halfedges['twin'][dead_nn[dead_mask]]] = _live_vertex
         else:
             self._halfedges['vertex'][dead_mask] = _live_vertex
+        
         _live_pos = self._vertices['position'][_live_vertex]
         _dead_pos = self._vertices['position'][_dead_vertex]
         self._vertices['position'][_live_vertex] = 0.5*(_live_pos + _dead_pos)
@@ -779,6 +865,11 @@ class TriangleMesh(object):
 
         # Zipper the remaining triangles
         def _zipper(edge1, edge2):
+            # DB optimization notes:
+            # 1) there is a (very?) small performance penalty for nested functions - move this up to class level?
+            # 2) This would be a good candidate for a c/cython implementation (but possibly applies to whole edge collapse function)
+            # 3) function can be simplified (see _zipper1 implementation below). Probably minimal performance impact in
+            #    python version, but logic flow likely necessary in c/cython (avoids indexing with -1)
             t1 = self._halfedges['twin'][edge1]
             t2 = self._halfedges['twin'][edge2]
 
@@ -796,9 +887,20 @@ class TriangleMesh(object):
                 if (t2 != -1):
                     self._halfedges['twin'][t2] = -1
 
-        _zipper(_next, _prev)
+        def _zipper1(edge1, edge2):
+            t1 = -1 if edge1 == -1 else self._halfedges['twin'][edge1]
+            t2 = -1 if edge2 == -1 else self._halfedges['twin'][edge2]
+    
+            if (t1 != -1):
+                self._halfedges['twin'][t1] = t2
+                
+            if (t2 != -1):
+                self._halfedges['twin'][t2] = t1
+            
+
+        _zipper1(_next, _prev)
         if interior:
-            _zipper(_twin_next, _twin_prev)
+            _zipper1(_twin_next, _twin_prev)
 
         # We need some more pointers
         # TODO: make these safer
@@ -944,14 +1046,15 @@ class TriangleMesh(object):
                 # option to search and insert on different keys.
                 el_vacancies = [int(x) for x in np.argwhere(np.all(el_arr[key] == -1, axis=1))]
             else:
-                el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
+                # el_vacancies = [int(x) for x in np.flatnonzero(el_arr[key] == -1)]
+                el_vacancies = np.flatnonzero(el_arr[key] == -1).tolist()
 
             idx = el_vacancies.pop(0)
 
         if idx == -1:
             raise ValueError('Index cannot be -1.')
 
-        if not insert_key:
+        if insert_key is None:
             # Default to searching and inserting on the same key
             insert_key = key
 
@@ -1182,7 +1285,8 @@ class TriangleMesh(object):
         _twin_next = twin_edge['next']
 
         # Make sure both vertices have valence > 3 (preserve manifoldness)
-        if (self._vertices['valence'][curr_edge['vertex']] < 4) or (self._vertices['valence'][twin_edge['vertex']] < 4):
+        vc, vt = self._vertices['valence'][curr_edge['vertex']], self._vertices['valence'][twin_edge['vertex']]
+        if (vc < 4) or (vt < 4):
             return
 
         # Calculate adjustments to the halfedges we're flipping
@@ -1192,10 +1296,15 @@ class TriangleMesh(object):
         # If there's already an edge between these two vertices, don't flip (preserve manifoldness)
         # NOTE: This is potentially a problem if we start with a high-valence mesh. In that case, swap this
         # check with the more expensive commented one below.
-        if new_v1 in self._vertices['neighbors'][new_v0]:
-            return
-        # if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
-        #     return
+
+        # Check for creation of multivalent edges and prevent this (manifoldness)
+        fast_collapse_bool = (self.manifold and (vc < NEIGHBORSIZE) and (vt < NEIGHBORSIZE))
+        if fast_collapse_bool:
+            if new_v1 in self._vertices['neighbors'][new_v0]:
+                return
+        else:
+            if new_v1 in self._halfedges['vertex'][self._halfedges['twin'][self._halfedges['vertex'] == new_v0]]:
+                return
 
         # Convexity check: Let's see if the midpoint of the flipped edge will be above or below the plane of the 
         # current edge
@@ -1270,31 +1379,32 @@ class TriangleMesh(object):
         flip_count = 0
 
         # Do a single pass over all active edges and flip them if the flip minimizes the deviation of vertex valences
-        for i in np.arange(len(self._halfedges['vertex'])):
-            if (self._halfedges['vertex'][i] < 0):
-                continue
+        # for i in np.arange(len(self._halfedges['vertex'])):
+        #     if (self._halfedges['vertex'][i] < 0):
+        #         continue
+        for i in np.flatnonzero(self._halfedges['vertex'] != -1):
 
             curr_edge = self._halfedges[i]
             _twin = curr_edge['twin']
             twin_edge = self._halfedges[_twin]
-
-            # Pre-flip vertices
-            v1 = self._vertices['valence'][curr_edge['vertex']]
-            v2 = self._vertices['valence'][twin_edge['vertex']]
-
-            # Post-flip vertices
-            v3 = self._vertices['valence'][self._halfedges['vertex'][curr_edge['next']]]
-            v4 = self._vertices['valence'][self._halfedges['vertex'][twin_edge['next']]]
 
             target_valence = VALENCE
             if _twin == -1:
                 # boundary
                 target_valence = BOUNDARY_VALENCE
 
+            # Pre-flip vertices
+            v1 = self._vertices['valence'][curr_edge['vertex']] - target_valence
+            v2 = self._vertices['valence'][twin_edge['vertex']] - target_valence
+
+            # Post-flip vertices
+            v3 = self._vertices['valence'][self._halfedges['vertex'][curr_edge['next']]] - target_valence
+            v4 = self._vertices['valence'][self._halfedges['vertex'][twin_edge['next']]] - target_valence
+
             # Check valence deviation from VALENCE (or
             # BOUNDARY_VALENCE for boundaries) pre- and post-flip
-            score_pre = np.abs([v1-target_valence,v2-target_valence,v3-target_valence,v4-target_valence]).sum()
-            score_post = np.abs([v1-target_valence-1,v2-target_valence-1,v3-target_valence+1,v4-target_valence+1]).sum()
+            score_pre = np.abs([v1,v2,v3,v4]).sum()
+            score_post = np.abs([v1-1,v2-1,v3+1,v4+1]).sum()
 
             if score_post < score_pre:
                 # Flip minimizes deviation of vertex valences from VALENCE (or
@@ -2035,11 +2145,11 @@ class TriangleMesh(object):
         Excise singularities from the mesh. This essentially unzips multivalent
         edges from the rest of the mesh, creating new, smaller connected 
         components, each of which is free of singularities. This follows the
-        local method for cutting outlined in Guéziec et al.
+        local method for cutting outlined in Gueziec et al.
 
         References
         ----------
-            Guéziec et al. Cutting and Stitching: Converting Sets of Polygons 
+            Gueziec et al. Cutting and Stitching: Converting Sets of Polygons
             to Manifold Surfaces, IEEE TRANSACTIONS ON VISUALIZATION AND 
             COMPUTER GRAPHICS, 2001.
         """
@@ -2155,3 +2265,23 @@ class TriangleMesh(object):
         triangles_stl['normal'] = self.face_normals
 
         stl.save_stl_binary(filename, triangles_stl)
+
+    def to_ply(self, filename, colors=None):
+        """
+        Save a list of triangles and their vertex colors to a PLY file.
+        We assume colors are a Nx3 array where N is the number of vertices.
+        """
+        from PYME.IO.FileUtils import ply
+
+        # Construct a re-indexing for non-negative vertices
+        live_vertices = np.flatnonzero(self._vertices['halfedge'] != -1)
+        new_vertex_indices = np.arange(live_vertices.shape[0])
+        vertex_lookup = np.zeros(self._vertices.shape[0], dtype=np.int)
+        
+        vertex_lookup[live_vertices] = new_vertex_indices
+
+        # Grab the faces and vertices we want
+        faces = vertex_lookup[self.faces]
+        vertices = self._vertices['position'][live_vertices]
+
+        ply.save_ply(filename, vertices, faces, colors)

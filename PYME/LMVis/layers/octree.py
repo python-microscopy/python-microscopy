@@ -1,5 +1,5 @@
 from .base import EngineLayer
-from .triangle_mesh import TriangleRenderLayer, ENGINES
+from .mesh import TriangleRenderLayer, ENGINES
 
 from PYME.experimental._octree import Octree
 

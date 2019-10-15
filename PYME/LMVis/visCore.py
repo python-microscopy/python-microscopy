@@ -405,10 +405,10 @@ class VisGUICore(object):
         logger.warn('RegenFilter is deprecated, please use pipeline.Rebuild() instead.')
         self.pipeline.Rebuild()
         
-    def add_pointcloud_layer(self, method='points', ds_name='output'):
+    def add_pointcloud_layer(self, method='points', ds_name='output', **kwargs):
         #from .layer_wrapper import LayerWrapper
         from .layers.pointcloud import PointCloudRenderLayer
-        l = PointCloudRenderLayer(self.pipeline, method=method, dsname=ds_name)
+        l = PointCloudRenderLayer(self.pipeline, method=method, dsname=ds_name, **kwargs)
         self.add_layer(l)
 
         logger.debug('Added layer, datasouce=%s' % l.dsname)
@@ -648,6 +648,12 @@ class VisGUICore(object):
                 l.set(vertexColour='t')
             elif 'z' in self.pipeline.keys():
                 l.set(vertexColour='z')
+                
+        colour_chans = self.pipeline.colourFilter.getColourChans()
+        if len(colour_chans) > 1:
+            #add a layer for each colour channel
+            for i, c in enumerate(sorted(colour_chans)):
+                self.add_pointcloud_layer(ds_name=('output.' + c), cmap=['C', 'M', 'Y', 'R', 'G', 'B'][i%6], visible=False)
                 
     def _populate_open_args(self, filename):
         args = {}

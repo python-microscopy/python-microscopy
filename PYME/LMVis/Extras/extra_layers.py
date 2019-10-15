@@ -43,19 +43,12 @@ def add_octree_layer(visFr):
 def gen_octree_from_points(visFr):
     from PYME.recipes.pointcloud import Octree
     
-    oc_count = 0
-    oc_name = 'octree%d' % oc_count
-    
-    while oc_name in visFr.pipeline.dataSources.keys():
-        oc_count += 1
-        oc_name = 'octree%d' % oc_count
-
-    
     pipeline = visFr.pipeline
+    oc_name = pipeline.new_ds_name('octree')
     
     colour_chans = pipeline.colourFilter.getColourChans()
     current_colour = pipeline.colourFilter.currentColour
-    if len(colour_chans) > 0:
+    if len(colour_chans) > 1:
         channel_choices = colour_chans + ['<all>',]
 
         dlg = wx.SingleChoiceDialog(visFr, "Which colour channel do you want to skin?", "Multiple colour channels detected", channel_choices)
@@ -81,17 +74,11 @@ def gen_octree_from_points(visFr):
     return oc_name
 
 def gen_isosurface(visFr):
-    from PYME.LMVis.layers.triangle_mesh import TriangleRenderLayer
+    from PYME.LMVis.layers.mesh import TriangleRenderLayer
     from PYME.recipes.surface_fitting import DualMarchingCubes
     
     oc_name = gen_octree_from_points(visFr)
-    
-    surf_count = 0
-    surf_name = 'surf%d' % surf_count
-    while surf_name in visFr.pipeline.dataSources.keys():
-        surf_count += 1
-        surf_name = 'surf%d' % surf_count
-    
+    surf_name = visFr.pipeline.new_ds_name('surf')
     
     recipe = visFr.pipeline.recipe
     dmc = DualMarchingCubes(recipe, invalidate_parent=False, input=oc_name,output=surf_name)
@@ -101,7 +88,7 @@ def gen_isosurface(visFr):
         recipe.execute()
 
         print('Isosurface generated, adding layer')
-        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded')
+        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = ['C', 'M', 'Y', 'R', 'G', 'B'][surf_count % 6])
         visFr.add_layer(layer)
         dmc._invalidate_parent = True
         print('Isosurface layer added')
@@ -109,12 +96,13 @@ def gen_isosurface(visFr):
 
 def open_surface(visFr):
     import wx
-    from PYME.experimental import triangle_mesh
-    from PYME.LMVis.layers.triangle_mesh import TriangleRenderLayer
+    # from PYME.experimental import triangle_mesh
+    from PYME.experimental import _triangle_mesh as triangle_mesh
+    from PYME.LMVis.layers.mesh import TriangleRenderLayer
     
     filename = wx.FileSelector("Choose a file to open",
                                    default_extension='stl',
-                                   wildcard='STL mesh (*.stl)|*.stl')
+                                   wildcard='STL mesh (*.stl)|*.stl|PLY mesh (*.ply)|*.ply')
     #print filename
     if not filename == '':
         surf_count = 0
@@ -123,7 +111,13 @@ def open_surface(visFr):
             surf_count += 1
             surf_name = 'surf%d' % surf_count
 
-        visFr.pipeline.dataSources[surf_name] = triangle_mesh.TriangleMesh.from_stl(filename)
+        ext = filename.split('.')[-1]
+        if ext == 'stl':
+            visFr.pipeline.dataSources[surf_name] = triangle_mesh.TriangleMesh.from_stl(filename)
+        elif ext == 'ply':
+            visFr.pipeline.dataSources[surf_name] = triangle_mesh.TriangleMesh.from_ply(filename)
+        else:
+            raise ValueError('Invalid file extension .' + str(ext))
         layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded')
         visFr.add_layer(layer)
         
@@ -148,15 +142,128 @@ def save_surface(visFr):
             key = dlg.GetStringSelection()
             dlg.Destroy()
 
-    filename = wx.SaveFileSelector("Save surface as ...", '.stl')
+    filename = wx.FileSelector('Save surface as...',
+                               default_extension='stl',
+                               wildcard='STL mesh (*.stl)|*.stl|PLY mesh (*.ply)|*.ply')
+
     if not filename == '':
-        visFr.pipeline.dataSources[key].to_stl(filename)
+        ext = filename.split('.')[-1]
+        if ext == 'stl':
+            visFr.pipeline.dataSources[key].to_stl(filename)
+        elif ext == 'ply':
+            colors = None
+            # Check if we've rendered this data source 
+            layer_list = [x.dsname for x in visFr.glCanvas.layers]
+            if key in layer_list:
+                # If we have, save the PLY with its colors
+                layer = visFr.glCanvas.layers[layer_list.index(key)]
+                # Construct a re-indexing for non-negative vertices
+                live_vertices = np.flatnonzero(visFr.pipeline.dataSources[key]._vertices['halfedge'] != -1)
+                new_vertex_indices = np.arange(live_vertices.shape[0])
+                vertex_lookup = np.zeros(visFr.pipeline.dataSources[key]._vertices.shape[0])
+                
+                vertex_lookup[live_vertices] = new_vertex_indices
+
+                # Grab the faces and vertices we want
+                faces = vertex_lookup[visFr.pipeline.dataSources[key].faces]
+
+                colors = np.zeros((live_vertices.size, 3), dtype=np.ubyte)
+                colors[faces.ravel().astype(np.int)] = np.floor(layer._colors[:,:3]*255).astype(np.ubyte)
+                
+            visFr.pipeline.dataSources[key].to_ply(filename, colors)
+        else:
+            raise ValueError('Invalid file extension .' + str(ext))
+    
+ 
+def estimate_density(visFr):
+    from PYME.recipes.pointcloud import LocalPointDensity
+    dens_name = visFr.pipeline.new_ds_name('dense')
+
+    recipe = visFr.pipeline.recipe
+    dmc = LocalPointDensity(recipe, invalidate_parent=False, input=visFr.pipeline.selectedDataSourceKey, output=dens_name)
+
+    if dmc.configure_traits(kind='modal'):
+        recipe.add_module(dmc)
+        recipe.execute()
+        dmc._invalidate_parent = True
+        visFr.pipeline.selectDataSource(dens_name)
+        
+        
+def estimate_circumcentre_densities(visFr):
+    from PYME.recipes.pointcloud import LocalPointDensity, DelaunayCircumcentres
+
+    recipe = visFr.pipeline.recipe
+    
+    tess_name = add_tesselation(visFr)
+    if tess_name is None:
+        return
+        
+    cc_name = visFr.pipeline.new_ds_name('circumcentres')
+    cc = DelaunayCircumcentres(recipe, input=tess_name, output=cc_name)
+    recipe.add_module(cc)
+    
+    dens_name = visFr.pipeline.new_ds_name('dense')
+    dmc = LocalPointDensity(recipe, invalidate_parent=False, input=visFr.pipeline.selectedDataSourceKey, input_sample_locations=cc_name, output=dens_name)
+
+    if dmc.configure_traits(kind='modal'):
+        recipe.add_module(dmc)
+        recipe.execute()
+        dmc._invalidate_parent = True
+        visFr.pipeline.selectDataSource(dens_name)
     
     
+def add_tesselation(visFr):
+    from PYME.recipes.pointcloud import DelaunayTesselation
+
+    pipeline = visFr.pipeline
+    surf_name = pipeline.new_ds_name('delaunay')
+
+    colour_chans = pipeline.colourFilter.getColourChans()
+    current_colour = pipeline.colourFilter.currentColour
+    if len(colour_chans) > 1:
+        channel_choices = colour_chans + ['<all>', ]
+    
+        dlg = wx.SingleChoiceDialog(visFr, "Which colour channel do you want to skin?",
+                                    "Multiple colour channels detected", channel_choices)
+    
+        if not dlg.ShowModal():
+            dlg.Destroy()
+            return
+        else:
+            chan = dlg.GetStringSelection()
+            dlg.Destroy()
+        
+            if chan == '<all>':
+                chan = None
+        
+            pipeline.colourFilter.setColour(chan)
+
+    dt = DelaunayTesselation()
+    if dt.configure_traits(kind='modal'):
+        pipeline.dataSources[surf_name] = dt.apply_simple(pipeline)
+        print('Delaunay tesselation  (%s) created' % surf_name)
+        pipeline.colourFilter.setColour(current_colour)
+        return surf_name
+        
+    else:
+        pipeline.colourFilter.setColour(current_colour)
+        return None
+    
+def add_tesselation_layer(visFr):
+    from PYME.LMVis.layers.mesh import TriangleRenderLayer
+    surf_name = add_tesselation(visFr)
+    if surf_name is not None:
+        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='flat',
+                                    cmap='hot')
+        visFr.add_layer(layer)
+        print('Tesselation layer added')
 
 
 def Plug(visFr):
     visFr.AddMenuItem('View', 'Add Octree Layer', lambda e : add_octree_layer(visFr))
+    visFr.AddMenuItem('View', 'Estimate density', lambda e: estimate_density(visFr))
+    visFr.AddMenuItem('View', 'Estimate density [circumcentres]', lambda e: estimate_circumcentre_densities(visFr))
+    visFr.AddMenuItem('View', 'Create Delaunay Tesselation', lambda e: add_tesselation_layer(visFr))
     visFr.AddMenuItem('Mesh', 'Generate Isosurface', lambda e: gen_isosurface(visFr))
     visFr.AddMenuItem('Mesh', 'Load mesh', lambda e: open_surface(visFr))
     visFr.AddMenuItem('Mesh', 'Save mesh', lambda e: save_surface(visFr))

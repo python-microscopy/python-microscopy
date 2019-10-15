@@ -2,6 +2,7 @@ from .base import BaseEngine, EngineLayer
 from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 from PYME.LMVis.shader_programs.WireFrameShaderProgram import WireFrameShaderProgram
 from PYME.LMVis.shader_programs.GouraudShaderProgram import GouraudShaderProgram
+from PYME.LMVis.shader_programs.TesselShaderProgram import TesselShaderProgram
 
 from PYME.recipes.traits import CStr, Float, Enum, ListFloat, List
 from pylab import cm
@@ -54,11 +55,22 @@ class ShadedFaceEngine(WireframeEngine):
     def render(self, gl_canvas, layer):
         self.set_shader_program(GouraudShaderProgram)
         WireframeEngine.render(self, gl_canvas, layer)
+        
+class TesselEngine(WireframeEngine):
+    _outlines = False
+    def __init__(self):
+        BaseEngine.__init__(self)
+
+    def render(self, gl_canvas, layer):
+        self.set_shader_program(TesselShaderProgram)
+        WireframeEngine.render(self, gl_canvas, layer)
+
 
 ENGINES = {
     'wireframe' : WireframeEngine,
     'flat' : FlatFaceEngine,
     'shaded' : ShadedFaceEngine,
+    'tessel' : TesselEngine,
 }
 
 
@@ -128,8 +140,9 @@ class TriangleRenderLayer(EngineLayer):
     
     @property
     def _ds_class(self):
-        from PYME.experimental import triangular_mesh
-        return  triangular_mesh.TriangularMesh
+        # from PYME.experimental import triangle_mesh
+        from PYME.experimental import _triangle_mesh as triangle_mesh
+        return triangle_mesh.TrianglesBase
 
     def _set_method(self):
         self.engine = ENGINES[self.method]()
@@ -191,107 +204,59 @@ class TriangleRenderLayer(EngineLayer):
             xn, yn, zn = np.repeat(ds.face_normals.T, 3, axis=1)
             
         if self.vertexColour in ['', 'constant']:
-            c = 255 * np.ones(len(x))
+            c = np.ones(len(x))
             clim = [0, 1]
         #elif self.vertexColour == 'vertex_index':
         #    c = np.arange(0, len(x))
         else:
             c = ds[self.vertexColour][ds.faces].ravel()
             clim = self.clim
-            
-            
 
-        # Concatenate vertices, interleave, restore to 3x(3N) points (3xN triangles),
-        # and assign the points to x, y, z vectors
-        #x, y, z = np.hstack((ds['vertex0'], ds['vertex1'], ds['vertex2'])).reshape(-1, 3).T
-        
-        # We copy the normals 3 times per triangle to get 3x(3N) normals to match the vertices shape
-        #xn, yn, zn = np.repeat(ds['normal'].T, 3, axis=1)
-        #xn, yn, zn = np.repeat(ds['normal'], 3, axis=1).reshape(-1, 3).T
-
-        # Pass the restructured data to update_data
-        self.update_data(x, y, z, c, cmap=getattr(cm, self.cmap), clim=clim, alpha=self.alpha, xn=xn, yn=yn, zn=zn)
-
-    def update_data(self, x=None, y=None, z=None, colors=None, cmap=None, clim=None, alpha=1.0, xn=None, yn=None, zn=None):
-        """
-        Feeds new vertex, normal, color, and transparency information about mesh triangles to VisGUI.
-
-        Parameters
-        ----------
-        x, y, z :
-            Triangle vertex 3-coordinates
-        cmap :
-            Color map
-        clim :
-            Color map lower and upper limits
-        alpha :
-            Transparency of triangles (between 0 and 1)
-        xn, yn, zn :
-            Normal magnitudes in x, y, and z-direction
-
-        Returns
-        -------
-        None
-        """
-
-        self._vertices = None
-        self.normals = None
-        self._colors = None
-        self._color_map = None
-        self._color_limit = 0
-        self._alpha = 0
+        cmap = getattr(cm, self.cmap)
+        alpha = float(self.alpha)
 
         # Do we have coordinates? Concatenate into vertices.
         if x is not None and y is not None and z is not None:
             vertices = np.vstack((x.ravel(), y.ravel(), z.ravel()))
-            vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
+            self._vertices = vertices.T.ravel().reshape(len(x.ravel()), 3)
 
             if not xn is None:
-                normals = np.vstack((xn.ravel(), yn.ravel(), zn.ravel())).T.ravel().reshape(len(x.ravel()), 3)
+                self._normals = np.vstack((xn.ravel(), yn.ravel(), zn.ravel())).T.ravel().reshape(len(x.ravel()), 3)
             else:
-                normals = -0.69 * np.ones(vertices.shape)
+                self._normals = -0.69 * np.ones(self._vertices.shape)
 
             self._bbox = np.array([x.min(), y.min(), z.min(), x.max(), y.max(), z.max()])
         else:
-            vertices = None
-            normals = None
             self._bbox = None
 
         # TODO: This temporarily sets all triangles to the color red. User should be able to select color.
-        if colors is None:
-            colors = np.ones(vertices.shape[0]) * 255  # vector of pink
+        if c is None:
+            c = np.ones(self._vertices.shape[0]) * 255  # vector of pink
+            
+        
 
-        if clim is not None and colors is not None:
-            cs_ = ((colors - clim[0]) / (clim[1] - clim[0]))
+        if clim is not None and c is not None and cmap is not None:
+            cs_ = ((c - clim[0]) / (clim[1] - clim[0]))
             cs = cmap(cs_)
-            cs[:, 3] = alpha
 
-            cs = cs.ravel().reshape(len(colors), 4)
+            if self.method in ['flat', 'tessel']:
+                alpha = cs_ * alpha
+            
+            cs[:, 3] = alpha
+            
+            if self.method == 'tessel':
+                cs = np.power(cs, 0.333)
+
+            self._colors = cs.ravel().reshape(len(c), 4)
         else:
             # cs = None
-            if not vertices is None:
-                cs = np.ones((vertices.shape[0], 4), 'f')
-            else:
-                cs = None
-            color_map = None
-            color_limit = None
+            if not self._vertices is None:
+                self._colors = np.ones((self._vertices.shape[0], 4), 'f')
+            
+        self._alpha = alpha
+        self._color_map = cmap
+        self._color_limit = clim
 
-        print('setting values')
-        self.set_values(vertices, normals, cs, cmap, clim, alpha)
-
-    def set_values(self, vertices=None, normals=None, colors=None, color_map=None, color_limit=None, alpha=None):
-        if vertices is not None:
-            self._vertices = vertices
-        if normals is not None:
-            self._normals = normals
-        if color_map is not None:
-            self._color_map = color_map
-        if colors is not None:
-            self._colors = colors
-        if color_limit is not None:
-            self._color_limit = color_limit
-        if alpha is not None:
-            self._alpha = alpha
 
     def get_vertices(self):
         return self._vertices
@@ -322,7 +287,9 @@ class TriangleRenderLayer(EngineLayer):
                      Item('normal_mode', visible_when='method=="shaded"'),
                      Item('vertexColour', editor=EnumEditor(name='_datasource_keys'), label='Colour'),
                      Group([Item('clim', editor=HistLimitsEditor(data=self._get_cdata), show_label=False), ], visible_when='vertexColour != "constant"'),
-                     Group([Item('cmap', label='LUT'), Item('alpha')])
+                     Group([Item('cmap', label='LUT'),
+                            Item('alpha', visible_when='method in ["flat", "tessel"]')
+                            ])
                      ], )
         # buttons=['OK', 'Cancel'])
 

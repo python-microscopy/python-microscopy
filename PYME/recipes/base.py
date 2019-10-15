@@ -66,6 +66,18 @@ def register_legacy_module(moduleName, py_module=None):
     return c_decorate
 
 class ModuleBase(HasTraits):
+    """
+    Recipe modules represent a "functional" processing block, the effects of which depend solely on its
+    inputs and parameters. They read a number of named inputs from the recipe namespace and write the
+    results of their computation back to one or more named output variables in the recipe namespace.
+    
+    They must not modify anything other than their named output variables, and should not maintain state
+    between executions (no side effects). This is critical in ensuring that repeat executions of the same
+    recipe are reproducible and in allowing the incremental update (without re-running every module) when
+    the parameters of one module change.
+    
+    If you want side effects - e.g. saving something to disk, look at the OutputModule class.
+    """
     _invalidate_parent = True
     
     def __init__(self, parent=None, invalidate_parent = True, **kwargs):
@@ -74,6 +86,8 @@ class ModuleBase(HasTraits):
 
         HasTraits.__init__(self)
         self.set(**kwargs)
+        
+        self._check_outputs()
 
     @on_trait_change('anytrait')
     def invalidate_parent(self):
@@ -81,6 +95,18 @@ class ModuleBase(HasTraits):
             self._parent.prune_dependencies_from_namespace(self.outputs)
             
             self._parent.invalidate_data()
+            
+    def _check_outputs(self):
+        """
+        This function exists to help with debugging when writing a new recipe module. It generates an
+        exception if no outputs have been defined (a module with no outputs will never execute).
+        
+        Over-ridden in the special case IO modules derived from OutputModule as these are permitted to
+        have side-effects, but not permitted to have classical outputs to the namespace and will execute
+        (when appropriate) regardless.
+        """
+        if len(self.outputs) == 0:
+            raise RuntimeError('Module should define at least one output.')
 
     def outputs_in_namespace(self, namespace):
         keys = namespace.keys()
@@ -270,6 +296,13 @@ class ModuleBase(HasTraits):
 
 
 class OutputModule(ModuleBase):
+    """
+    Output modules are the one exception to the recipe-module functional (no side effects) programming
+    paradigm and are used to perform IO and save or display designated outputs/endpoints from the recipe.
+    
+    As such, they should act solely as a sink, and should not do any processing or write anything back
+    to the namespace.
+    """
     filePattern = CStr('{output_dir}/{file_stub}.csv')
     scheme = Enum('File', 'pyme-cluster://', 'pyme-cluster:// - aggregate')
 
@@ -282,7 +315,18 @@ class OutputModule(ModuleBase):
             return os.path.join(clusterIO.local_dataroot, out_filename.lstrip('/'))
         elif self.scheme == 'pyme-cluster:// - aggregate':
             raise RuntimeError('Aggregation not suported')
-        
+
+    def _check_outputs(self):
+        """
+        This function exists to help with debugging when writing a new recipe module.
+
+        Over-ridden here for the special case IO modules derived from OutputModule as these are permitted to
+        have side-effects, but not permitted to have classical outputs to the namespace and will execute
+        (when appropriate) regardless.
+        """
+        if len(self.outputs) != 0:
+            raise RuntimeError('Output modules should not write anything to the namespace')
+    
     def generate(self, namespace, recipe_context={}):
         """
         Function to be called from within dh5view (rather than batch processing). Some outputs are ignored, in which

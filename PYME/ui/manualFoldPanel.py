@@ -222,7 +222,8 @@ class CaptionBar(wx.Window):
         gc.SetBrush(brush)
 
         gc.DrawRectangle(*wndRect)
-
+        
+        icon_width = self.DrawIcon(gc)
 
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         #print font.GetFaceName(), font.GetPointSize()
@@ -237,7 +238,7 @@ class CaptionBar(wx.Window):
         w,h = gc.GetTextExtent(self.caption)
 
         y0 = self.style['HEIGHT']/2. - h/2.
-        gc.DrawText(self.caption, self.style['CAPTION_INDENT'], y0)
+        gc.DrawText(self.caption, icon_width + self.style['CAPTION_INDENT'], y0)
 
 
         # h = self._active_pin_bitmap.GetHeight()
@@ -255,26 +256,30 @@ class CaptionBar(wx.Window):
         #     else:
         #         gc.DrawBitmap(self._inactive_pin_bitmap, *self.pinButtonRect)
         #
-        # if self.parent.folded and self.parent.foldable:
-        #     self.DrawEllipses(gc)
+        if self.parent.folded and self.parent.foldable:
+             self.DrawEllipses(gc)
         
         self.DrawButtons(gc)
 
         gc.PopState()
         
+    def DrawIcon(self, gc):
+        # Return width of icon
+        return 0
+        
     def DrawButtons(self, gc):
         b0 = self.buttons[0]
         
-        h, w = b0.size
+        w, h = b0.size
         y0 = self.style['HEIGHT'] / 2. - h / 2.
         
         x0 = self.GetRect()[2] - y0
         
-        for b in self.buttons:
+        for i, b in enumerate(self.buttons):
             if b.show:
-                h, w = b.size
+                w, h = b.size
                 y0 = self.style['HEIGHT'] / 2. - h / 2.
-                x0 -= w
+                x0 -= (w + (i>0)*5)
                 b._rect = (x0, y0, w,h)
                 
                 if b.active:
@@ -294,7 +299,7 @@ class CaptionBar(wx.Window):
         path.AddCircle(6*self.style['ELLIPSES_RADIUS'], 0, self.style['ELLIPSES_RADIUS'])
 
         gc.PushState()
-        r0 = self.buttons[-1].rect
+        r0 = self.buttons[-1]._rect
         gc.Translate(r0[0], r0[1] + r0[3])
         bx = path.GetBox()
         gc.Translate(-bx[2], -bx[3])

@@ -8,6 +8,7 @@ extern "C" {
 
 #define VECTORSIZE 3
 // Note this must match NEIGHBORSIZE in triangle_mesh.py
+// [DB - can we export this constant from the module and then use that in triangle_mesh.py so that we don't need to define it in two places?]
 #define NEIGHBORSIZE 20
 
 typedef struct {
@@ -33,8 +34,8 @@ typedef struct {
     signed int neighbors[NEIGHBORSIZE];
 } vertex_t;
 
-float norm(float *vertex);
-void cross(float *a, float *b, float *n);
+double norm(const float *vertex);
+void cross(const float *a, const float *b, float *n);
 // void update_vertex_neighbors(signed int *v_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs);
 // void update_face_normals(signed int *f_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs);
 static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args);

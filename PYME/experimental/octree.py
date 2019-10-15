@@ -169,7 +169,9 @@ def gen_octree_from_points(table, min_pixel_size=5, max_depth=20, samples_per_no
     
     bbox_size = (r_max - r_min).max()
     
-    bb_max = r_min + bbox_size
+    bb_max = r_min + 1.1* bbox_size
+    
+    r_min = r_min - 0.1*bbox_size
     
     max_depth = min(max_depth, np.log2(bbox_size / min_pixel_size) + 1)
     
