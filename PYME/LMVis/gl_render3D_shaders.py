@@ -36,6 +36,8 @@ from PYME.LMVis.layers import AxesOverlayLayer, LUTOverlayLayer, ScaleBarOverlay
 from PYME.LMVis.gl_offScreenHandler import OffScreenHandler
 from wx.glcanvas import GLCanvas
 
+
+from PYME import config
 from PYME.LMVis.views import View
 
 try:
@@ -89,7 +91,11 @@ class LMGLShaderCanvas(GLCanvas):
 
     def __init__(self, parent):
         print("New Canvas")
-        attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16, wx.glcanvas.WX_GL_SAMPLE_BUFFERS, 1, wx.glcanvas.WX_GL_SAMPLES, 8]
+        attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
+        num_antialias_samples = int(config.get('VisGUI-antialias_samples', 4))
+        if num_antialias_samples > 0:
+            attribute_list.extend([wx.glcanvas.WX_GL_SAMPLE_BUFFERS, 1, wx.glcanvas.WX_GL_SAMPLES, num_antialias_samples])
+        
         GLCanvas.__init__(self, parent, -1, attribList=attribute_list)
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
@@ -103,7 +109,11 @@ class LMGLShaderCanvas(GLCanvas):
         self.Bind(wx.EVT_MOTION, self.OnMouseMove)
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyPress)
         # wx.EVT_MOVE(self, self.OnMove)
-        self.gl_context = wx.glcanvas.GLContext(self)
+        try:
+            self.gl_context = wx.glcanvas.GLContext(self)
+        except:
+            logger.exception('Error creating OpenGL context, try modifying the number of anti-aliasing samples using the "VisGUI-antialias_samples" config setting (0 to disable antialiasing)')
+            raise
         
         #self.bounds = {'x':[-1e6, 1e6], 'y':[-1e6, 1e6], 'z':[-1e6,1e6], 'v':[-1e6, 1e6]}
         
