@@ -169,7 +169,7 @@ class ImportTextDialog(wx.Dialog):
             id = wx.NewId()
             self.comboIDs.append(id)
 
-            cb = wx.ComboBox(self.scrollW, id, size=(120, -1), choices=[cn]+ self.requiredVariables.keys() +self.recommendedVariables.keys() + self.niceVariables.keys())
+            cb = wx.ComboBox(self.scrollW, id, size=(120, -1), choices=[cn]+ list(self.requiredVariables.keys()) +list(self.recommendedVariables.keys()) + list(self.niceVariables.keys()))
             self.combos.append(cb)
             cb.SetSelection(0)
 

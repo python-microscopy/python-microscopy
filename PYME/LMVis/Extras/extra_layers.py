@@ -258,12 +258,34 @@ def add_tesselation_layer(visFr):
         visFr.add_layer(layer)
         print('Tesselation layer added')
 
+def gen_isosurface_from_tesselation(visFr):
+    from PYME.LMVis.layers.mesh import TriangleRenderLayer
+    from PYME.recipes.surface_fitting import MarchingTetrahedra
+    
+    surf_count = 0
+    oc_name = 'delaunay%d' % surf_count
+    surf_name, surf_count = visFr.pipeline.new_ds_name('surf')
+    
+    recipe = visFr.pipeline.recipe
+    mt = MarchingTetrahedra(recipe, invalidate_parent=False, input=oc_name, output=surf_name)
+    
+    if mt.configure_traits(kind='modal'):
+        recipe.add_module(mt)
+        recipe.execute()
+
+        print('Isosurface generated, adding layer')
+        layer = TriangleRenderLayer(visFr.pipeline, dsname=surf_name, method='shaded', cmap = ['C', 'M', 'Y', 'R', 'G', 'B'][surf_count % 6])
+        visFr.add_layer(layer)
+        mt._invalidate_parent = True
+        print('Isosurface layer added')
+
 
 def Plug(visFr):
     visFr.AddMenuItem('View', 'Add Octree Layer', lambda e : add_octree_layer(visFr))
     visFr.AddMenuItem('View', 'Estimate density', lambda e: estimate_density(visFr))
     visFr.AddMenuItem('View', 'Estimate density [circumcentres]', lambda e: estimate_circumcentre_densities(visFr))
     visFr.AddMenuItem('View', 'Create Delaunay Tesselation', lambda e: add_tesselation_layer(visFr))
+    visFr.AddMenuItem('View', 'Generate Isosurface from Delaunay Tesselation', lambda e: gen_isosurface_from_tesselation(visFr))
     visFr.AddMenuItem('Mesh', 'Generate Isosurface', lambda e: gen_isosurface(visFr))
     visFr.AddMenuItem('Mesh', 'Load mesh', lambda e: open_surface(visFr))
     visFr.AddMenuItem('Mesh', 'Save mesh', lambda e: save_surface(visFr))
