@@ -437,7 +437,7 @@ class Pipeline:
 
         self.Rebuild()
         
-    def new_ds_name(self, stub):
+    def new_ds_name(self, stub, return_count=False):
         """
         Generate a name for a new, unused, pipeline step output based on a stub
         
@@ -459,6 +459,9 @@ class Pipeline:
         while name in self.dataSources.keys():
             count += 1
             name = pattern % count
+            
+        if return_count:
+            return name, count
             
         return name
 

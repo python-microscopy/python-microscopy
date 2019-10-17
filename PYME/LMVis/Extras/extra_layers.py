@@ -78,7 +78,7 @@ def gen_isosurface(visFr):
     from PYME.recipes.surface_fitting import DualMarchingCubes
     
     oc_name = gen_octree_from_points(visFr)
-    surf_name = visFr.pipeline.new_ds_name('surf')
+    surf_name, surf_count = visFr.pipeline.new_ds_name('surf', return_count=True)
     
     recipe = visFr.pipeline.recipe
     dmc = DualMarchingCubes(recipe, invalidate_parent=False, input=oc_name,output=surf_name)
