@@ -440,6 +440,14 @@ class LMGLShaderCanvas(GLCanvas):
     def InitGL(self):
         print('OpenGL - Version: {}'.format(glGetString(GL_VERSION)))
         print('Shader - Version: {}'.format(glGetString(GL_SHADING_LANGUAGE_VERSION)))
+        
+        max_samples = glGetInteger(GL_MAX_SAMPLES)
+        n_samples = glGetInteger(GL_SAMPLES)
+        print('GL_MAX_SAMPLES: %d, GL_SAMPLES: %d' % (max_samples, n_samples))
+        
+        if (max_samples >= 4) and (n_samples < 4):
+            logger.info('Your machine supports OpenGL antialiasing, but antialiasing disabled - enable by setting the "VisGUI-antialias_samples" PYME config setting to 4 or higher')
+            
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_NORMALIZE)
         glEnable(GL_MULTISAMPLE)

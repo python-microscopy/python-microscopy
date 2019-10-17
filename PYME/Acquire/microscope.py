@@ -886,6 +886,15 @@ class microscope(object):
         self.state.registerHandler('Positioning.%s' % axis_name, lambda: units_um*multiplier*piezo.GetPos(channel),
                                     lambda v: piezo.MoveTo(channel, v/(multiplier*units_um)), needCamRestart=needCamRestart)
         
+        if hasattr(piezo, 'GetTargetPos'):
+            self.state.registerHandler('Positioning.%s.target' % axis_name,
+                                       lambda: units_um*multiplier*piezo.GetTargetPos(channel))
+        else:
+            # piezo doesn't have a GetTargetPos() method, assume that
+            # target position is equal to the current position
+            self.state.registerHandler('Positioning.%s.target' % axis_name,
+                                       lambda: units_um * multiplier * piezo.GetPos(channel))
+        
     def register_camera(self, cam, name, port='', rotate=False, flipx=False, flipy=False):
         """
         Register a camera with the microscope
