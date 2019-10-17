@@ -197,13 +197,12 @@ class ZStackTaskListProtocol(TaskListProtocol):
                 else:
                     self.zPoss = np.concatenate([self.zPoss[1::2], self.zPoss[::-2]])
 
-
-        #piezo = scope.positioning[scope.stackSettings.GetScanChannel()]
-        self.piezoName = 'Positioning.%s' % scope.stackSettings.GetScanChannel()
-        #self.piezo = piezo[0]
-        #self.piezoChan = piezo[1]
-        #self.startPos = self.piezo.GetPos(self.piezoChan)
-        self.startPos = scope.state[self.piezoName]
+        scan_channel = scope.stackSettings.GetScanChannel()
+        self.piezoName = 'Positioning.%s' % scan_channel
+        # grab target rather than state since state lags and on some piezos the MoveTo we eventually call will change
+        # the target position, and any error between target and (lagged) actual position will otherwise propagate
+        # fixme - can we get iChannel somehow? or should we add a positioning.target position to scope state?
+        self.startPos = scope.positioning[scan_channel][0].GetTargetPos()
         self.pos = 0
 
         spooler.md.setEntry('Protocol.PiezoStartPos', self.startPos)

@@ -9,13 +9,11 @@
            fill : none;
            stroke: #f00;
            stroke-width: 1;
-            width: 30px;
-            height: 30px;
        }
 
         /*
         .rois {
-            transform: translate(- {{ pyramid_x0 }}, - {{ pyramid_y0 }})scale({{ pyramid_pixel_size_um }}/{{ pyramid_width_px }});
+            transform: translate(- {{ pyramid_x0 }}, - {{ pyramid_y0 }})scale({{ pyramid_width_px }}/{{ pyramid_pixel_size_um }});
         }*/
     </style>
 </head>
@@ -60,7 +58,11 @@
                     </div>
                 </form>
             </div>
-            <p>Double click on image to add a ROI</p>
+                <form class="form-inline">
+                    <p>Double click on image to add a ROI</p>
+                    <label for="roi_size">ROI Display Size [pixels]:</label>
+                    <input type="int" class="form-control" id="roi_size" value=256 style="width: 70px;">
+                </form>
             <div id="roi_list" style="overflow-y:scroll;max-height:720px"></div>
         </div>
     </div>
@@ -82,6 +84,12 @@
         "y": (imageCoordinates.y) * {{ pyramid_pixel_size_um }} + {{ pyramid_y0 }}
         };
         return micrometerCoordinates;
+    }
+
+    function getROIHalfSize(){
+        var offset = {{ pyramid_pixel_size_um }} * 0.5 * $("#roi_size").val();
+        console.log(offset);
+        return offset;
     }
 
     var viewer = OpenSeadragon({
@@ -136,15 +144,18 @@
             var sel = rois.selectAll(".roi")
                 .data(data);
 
+            var roi_half = getROIHalfSize();
             var roi = sel.enter().append("rect")
                 .attr("class", "roi")
                 .attr("x", function (d) {
                     //console.log(d);
-                    return d[0] - 15;
+                    return d[0] - roi_half;
                 })
                 .attr("y", function (d) {
-                    return d[1] - 15;
-                });
+                    return d[1] - roi_half;
+                })
+                .attr("width", 2 * roi_half)
+                .attr("height", 2 * roi_half);
 
             sel.exit().remove();
 
@@ -175,8 +186,9 @@
         var c = viewer.viewport.viewportToImageCoordinates(viewer.viewport.pointFromPixel(event.position));
         //console.log(c);
         c = imageToMicrometers(c);
+        offset = getROIHalfSize();
 
-        $.get( "/add_roi?x=" + c.x + "&y=" + c.y , function( data ) {
+        $.get( "/add_roi?x=" + c.x + "&y=" + c.y, function( data ) {
         $( "#roi_list" ).html( data );
         draw_rois();
         //alert( "Load was performed." );

@@ -201,11 +201,11 @@ class ActionPanel(wx.Panel):
             roi_offset_x = self.scope.GetPixelSize()[0] * (x0 + 0.5 * self.scope.cam.size_x)
             roi_offset_y = self.scope.GetPixelSize()[1] * (y0 + 0.5 * self.scope.cam.size_y)
         else:
-            roi_offset_x = self.scope.GetPixelSize()[0]*(x0 + 0.5*self.scope.cam.GetPicWidth())
-            roi_offset_y = self.scope.GetPixelSize()[1]*(y0 + 0.5*self.scope.cam.GetPicHeight())
-        
+            roi_offset_x = self.scope.GetPixelSize()[0] * (x0 + 0.5 * self.scope.cam.GetPicWidth())
+            roi_offset_y = self.scope.GetPixelSize()[1] * (y0 + 0.5 * self.scope.cam.GetPicHeight())
+
         for x, y in rois:
-            args = {'state' : {'Positioning.x': float(x) - roi_offset_x, 'Positioning.y': float(y) - roi_offset_y}}
+            args = {'state': {'Positioning.x': float(x) - roi_offset_x, 'Positioning.y': float(y) - roi_offset_y}}
             self.actionManager.QueueAction('state.update', args, nice, timeout)
             args = {'maxFrames': int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
             self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
@@ -217,9 +217,9 @@ class ActionPanel(wx.Panel):
         filename = wx.FileSelector("Load ROI Positions:", wildcard="*.hdf", flags=wx.FD_OPEN)
         if not filename == '':
             rois = tabular.hdfSource(filename, tablename='roi_locations')
-            
+
             rois = [(x, y) for x, y in zip(rois['x_um'], rois['y_um'])]
-            
+
             self._add_ROIs(rois)
     
     def OnROIsFromTileviewer(self, event):
@@ -234,4 +234,3 @@ class ActionPanel(wx.Panel):
         
 
 
-   

@@ -48,14 +48,15 @@ def mz_stage(scope):
 
 @init_hardware('Z Piezo')
 def pz(scope):
-    from PYME.Acquire.Hardware.Piezos import piezo_e816_dll, offsetPiezoREST
+    from PYME.Acquire.Hardware.Piezos import piezo_e816_dll, offsetPiezoREST as opr
 
-    scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100)
+    # try and update the pifoc position roughly as often as the PID / camera, but a little faster if we can
+    scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100, target_tol=0.05, update_rate=0.002)
     #scope.hardwareChecks.append(scope._piFoc.OnTarget)
     scope.CleanupFunctions.append(scope._piFoc.close)
     #scope.piFoc = scope._piFoc
 
-    scope.piFoc = offsetPiezoREST.OffsetPiezoServer(scope._piFoc)
+    scope.piFoc = opr.generate_offset_piezo_server(opr.TargetOwningOffsetPiezo)(scope._piFoc)
     scope.register_piezo(scope.piFoc, 'z', needCamRestart=False)
 
     from PYME.Acquire.Hardware.focus_locks.reflection_focus_lock import RLPIDFocusLockClient
@@ -277,6 +278,20 @@ def action_manager(MainFrame, scope):
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
 
+@init_hardware('tweeter')
+def tweeter(scope):
+    from PYME.Acquire.tweeter import LazyScopeTweeter
+    scope.tweeter = LazyScopeTweeter(scope.actions.actionQueue, safety=False)
+    # queue up our favorite condition
+    condition = {
+        'queue_condition': 9999,
+        'queue_above': 1,
+        'trigger_counts': 1,
+        'trigger_above': -1,
+        'action_filter': 'spoolController.StartSpooling',
+        'message': 'Just finished imaging >= 10,000 fields of view!'
+    }
+    scope.tweeter.add_tweet_condition(condition)
 
 @init_gui('Tiling')
 def action_manager(MainFrame, scope):

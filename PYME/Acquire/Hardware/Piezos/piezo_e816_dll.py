@@ -199,11 +199,28 @@ class piezo_e816(PiezoBase):
 
 import numpy as np
 class piezo_e816T(PiezoBase):
-    def __init__(self, identifier=None, maxtravel=12.00, Osen=None, hasTrigger=False):
+    def __init__(self, identifier=None, maxtravel=12.00, Osen=None, hasTrigger=False, target_tol=.002,
+                 update_rate=0.005):
+        """
+
+        Parameters
+        ----------
+        identifier
+        maxtravel
+        Osen
+        hasTrigger
+        target_tol: float
+            OnTarget tolerance, units of [um]. If position and target position are within target_tol, OnTarget() returns
+            True
+        update_rate: float
+            Seconds for the polling thread to pause between loops.
+        """
         self.max_travel = maxtravel
         #self.waveData = None
         #self.numWavePoints = 0
         self.units = 'um'
+        self._target_tol = target_tol
+        self._update_rate = update_rate
 
         self.lock = threading.Lock()
 
@@ -257,7 +274,7 @@ class piezo_e816T(PiezoBase):
             self.lock.acquire()
             try:
                 # check position
-                time.sleep(0.005)
+                time.sleep(self._update_rate)
 
                 self.position[0] = float(gcs.qPOS(self.id, b'A')[0])+ self.osen
 
@@ -276,7 +293,7 @@ class piezo_e816T(PiezoBase):
                     # print('p')
                     # logging.debug('Moving piezo to target: %f' % (pos[0],))
 
-                if np.allclose(self.position, self.targetPosition, atol=.002):
+                if np.allclose(self.position, self.targetPosition, atol=self._target_tol):
                     self.onTarget = True
 
                 # check to see if we're on target
@@ -321,7 +338,7 @@ class piezo_e816T(PiezoBase):
     def ReInit(self):
         with self.lock:
             #self.ser_port.write('WTO A0\n')
-            gcs.SVO(b'A', [1])
+            gcs.SVO(self.id, b'A', [1])
             time.sleep(1)
             self.lastPos = self.GetPos()
 
