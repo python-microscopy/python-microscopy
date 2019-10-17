@@ -152,7 +152,7 @@ class SpoolController(object):
         """
         if self.spoolType == 'Cluster':
             logger.warn('Cluster free space calculation not yet implemented, using fake value')
-            return 100
+            return float('nan')
         else:
             from PYME.IO.FileUtils.freeSpace import get_free_space
             return get_free_space(self.dirname)/1e9

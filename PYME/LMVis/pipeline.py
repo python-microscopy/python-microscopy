@@ -436,6 +436,31 @@ class Pipeline:
                 self.filterKeys.pop(k)
 
         self.Rebuild()
+        
+    def new_ds_name(self, stub):
+        """
+        Generate a name for a new, unused, pipeline step output based on a stub
+        
+        FIXME - should this be in ModuleCollection instead?
+        FIXME - should this use recipe.outputs as well?
+        
+        Parameters
+        ----------
+        stub - string to start the name with
+
+        Returns
+        -------
+
+        """
+        count = 0
+        pattern = stub + '%d'
+        
+        name = pattern % count
+        while name in self.dataSources.keys():
+            count += 1
+            name = pattern % count
+            
+        return name
 
     def addColumn(self, name, values, default = 0):
         """

@@ -10,6 +10,8 @@ from collections import namedtuple
 Location = namedtuple('Location', 'x, y')
 
 from PYME.IO import MetaDataHandler
+import logging
+logger = logging.getLogger(__name__)
 
 #try:
 #    import Image
@@ -47,7 +49,7 @@ class TileServer(object):
         
         if locations_file.endswith('.hdf'):
             locs = tabular.hdfSource(locations_file, tablename=tablename)
-            self.roi_locations = [Location(x,y) for x, y in zip(locs['x_um'], locs['y_um'])]
+            self.roi_locations = [Location(x, y) for x, y in zip(locs['x_um'], locs['y_um'])]
             locs.close()
             del(locs)
         # elif locations_file.endswith('.csv'):

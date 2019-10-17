@@ -609,7 +609,9 @@ class uc480Camera(Camera):
         if self.doPoll:
             print('StartAq')
             self.StopAq()
-        self.InitBuffers()
+        # allocate at least 2 seconds of buffers
+        buffer_size = int(max(2 * self.GetFPS(), 50))
+        self.InitBuffers(buffer_size, buffer_size)
         
         
 

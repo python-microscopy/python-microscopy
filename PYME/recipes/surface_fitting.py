@@ -140,7 +140,8 @@ class DualMarchingCubes(ModuleBase):
     def execute(self, namespace):
         #from PYME.experimental import dual_marching_cubes_v2 as dual_marching_cubes
         from PYME.experimental import dual_marching_cubes
-        from PYME.experimental import triangle_mesh
+        # from PYME.experimental import triangle_mesh
+        from PYME.experimental import _triangle_mesh as triangle_mesh
         
         dmc = dual_marching_cubes.PiecewiseDualMarchingCubes(self.threshold_density)
         dmc.set_octree(namespace[self.input].truncate_at_n_points(int(self.n_points_min)))

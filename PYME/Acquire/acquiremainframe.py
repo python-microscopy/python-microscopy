@@ -54,6 +54,7 @@ from PYME.Acquire import protocol
 
 from PYME.IO import MetaDataHandler
 #from PYME.IO.FileUtils import nameUtils
+import six
 
 
 from PYME.ui.AUIFrame import AUIFrame
@@ -664,7 +665,10 @@ class PYMEMainFrame(AUIFrame):
         import threading
         msg = 'Remaining Threads:\n'
         for t in threading.enumerate():
-            msg += '%s, %s\n' % (t, t._Thread__target)
+            if six.PY3:
+                msg += '%s, %s\n' % (t.name, t._target)
+            else:
+                msg += '%s, %s\n' % (t, t._Thread__target)
             
         logging.info(msg)
 

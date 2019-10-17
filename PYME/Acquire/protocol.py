@@ -198,12 +198,8 @@ class ZStackTaskListProtocol(TaskListProtocol):
                     self.zPoss = np.concatenate([self.zPoss[1::2], self.zPoss[::-2]])
 
 
-        #piezo = scope.positioning[scope.stackSettings.GetScanChannel()]
         self.piezoName = 'Positioning.%s' % scope.stackSettings.GetScanChannel()
-        #self.piezo = piezo[0]
-        #self.piezoChan = piezo[1]
-        #self.startPos = self.piezo.GetPos(self.piezoChan)
-        self.startPos = scope.state[self.piezoName]
+        self.startPos = scope.state[self.piezoName + '.target']
         self.pos = 0
 
         spooler.md.setEntry('Protocol.PiezoStartPos', self.startPos)
