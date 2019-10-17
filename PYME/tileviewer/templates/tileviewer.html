@@ -9,6 +9,8 @@
            fill : none;
            stroke: #f00;
            stroke-width: 1;
+            width: 30px; /* these should have default values even if we over-write later*/
+            height: 30px;
        }
 
         /*
@@ -58,11 +60,12 @@
                     </div>
                 </form>
             </div>
-                <form class="form-inline">
-                    <p>Double click on image to add a ROI</p>
-                    <label for="roi_size">ROI Display Size [pixels]:</label>
-                    <input type="int" class="form-control" id="roi_size" value=256 style="width: 70px;">
-                </form>
+            <p>Double click on image to add a ROI</p>
+{#                <form class="form-inline">#}
+{##}
+{#                    <label for="roi_size">ROI Display Size [pixels]:</label>#}
+{#                    <input type="int" class="form-control" id="roi_size" value=256 style="width: 70px;">#}
+{#                </form>#}
             <div id="roi_list" style="overflow-y:scroll;max-height:720px"></div>
         </div>
     </div>
@@ -144,7 +147,20 @@
             var sel = rois.selectAll(".roi")
                 .data(data);
 
-            var roi_half = getROIHalfSize();
+            /* revert to hard-coded ROI sizes for now
+
+            Rationale being that GUI as it stands won't work properly / consistently
+            (ROIs are not refreshed when parameter changes, refrehsing will reset ROI size etc ...)
+
+            There is pretty much only one scenario where it would work as expected, namely if you change the ROI
+            size before selecting ROIs. To fix these issues, roi_size should probably be part of server state (the other
+            option would be to set a cookie). Changing the ROI size should also trigger a draw_rois() call.
+
+            I'm also not super keen on the clutter aspect in the GUI - I don't think that setting the ROI size
+            should be front and centre in the UI.
+             */
+
+            var roi_half = 15; //getROIHalfSize();
             var roi = sel.enter().append("rect")
                 .attr("class", "roi")
                 .attr("x", function (d) {
@@ -153,9 +169,9 @@
                 })
                 .attr("y", function (d) {
                     return d[1] - roi_half;
-                })
-                .attr("width", 2 * roi_half)
-                .attr("height", 2 * roi_half);
+                });
+                //.attr("width", 2 * roi_half)
+                //.attr("height", 2 * roi_half);
 
             sel.exit().remove();
 
@@ -186,7 +202,6 @@
         var c = viewer.viewport.viewportToImageCoordinates(viewer.viewport.pointFromPixel(event.position));
         //console.log(c);
         c = imageToMicrometers(c);
-        offset = getROIHalfSize();
 
         $.get( "/add_roi?x=" + c.x + "&y=" + c.y, function( data ) {
         $( "#roi_list" ).html( data );
