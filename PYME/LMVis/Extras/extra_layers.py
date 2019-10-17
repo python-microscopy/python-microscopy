@@ -257,11 +257,7 @@ def gen_isosurface_from_tesselation(visFr):
     
     surf_count = 0
     oc_name = 'delaunay%d' % surf_count
-    surf_name = 'surf%d' % surf_count
-    while surf_name in visFr.pipeline.dataSources.keys():
-        surf_count += 1
-        surf_name = 'surf%d' % surf_count
-    
+    surf_name, surf_count = visFr.pipeline.new_ds_name('surf')
     
     recipe = visFr.pipeline.recipe
     mt = MarchingTetrahedra(recipe, invalidate_parent=False, input=oc_name, output=surf_name)
@@ -280,7 +276,8 @@ def gen_isosurface_from_tesselation(visFr):
 def Plug(visFr):
     visFr.AddMenuItem('View', 'Add Octree Layer', lambda e : add_octree_layer(visFr))
     visFr.AddMenuItem('View', 'Estimate density', lambda e: estimate_density(visFr))
-    visFr.AddMenuItem('View', 'Create Delaunay Tesselation', lambda e: add_tesselation(visFr))
+    visFr.AddMenuItem('View', 'Estimate density [circumcentres]', lambda e: estimate_circumcentre_densities(visFr))
+    visFr.AddMenuItem('View', 'Create Delaunay Tesselation', lambda e: add_tesselation_layer(visFr))
     visFr.AddMenuItem('View', 'Generate Isosurface from Delaunay Tesselation', lambda e: gen_isosurface_from_tesselation(visFr))
     visFr.AddMenuItem('Mesh', 'Generate Isosurface', lambda e: gen_isosurface(visFr))
     visFr.AddMenuItem('Mesh', 'Load mesh', lambda e: open_surface(visFr))
