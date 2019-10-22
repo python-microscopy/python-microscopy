@@ -65,9 +65,9 @@ class MedianFilter(Filter):
     * implemented as a call to `scipy.ndimage.median_filter`
     * sizeZ is ignored and a 2D filtering performed if ``processFramesIndividually`` is selected
     """
-    sizeX = Float(1.0)
-    sizeY = Float(1.0)
-    sizeZ = Float(1.0)
+    sizeX = Int(1)
+    sizeY = Int(1)
+    sizeZ = Int(1)
     #def __init__(self, **kwargs):
     #    pass
     @property
