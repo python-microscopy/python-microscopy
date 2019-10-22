@@ -56,24 +56,29 @@ class GaussFitter1D(object):
 
         (res, cov_x, infodict, mesg, res_code) = optimize.leastsq(self._error_function, guess, args=(position, data),
                                                                  full_output=1)
-        if res_code < 1 or res_code > 4:
-            # fit error
-            logger.debug('Focus lock fit error')
-            return tuple(np.zeros(5)), tuple(np.zeros(5))
-        # estimate uncertainties
-        residuals = infodict['fvec']  # note that fvec is error function evaluation, or (data - model_function)
-        try:
-            # calculate residual variance, a.k.a. reduced chi-squared
-            residual_variance = np.sum(residuals ** 2) / (len(position) - len(guess))
-            # multiply cov by residual variance for estimating parameter variance
-            errors = np.sqrt(np.diag(residual_variance * cov_x))
-        except (
-                TypeError,
-                ValueError) as e:  # cov_x is None for singular matrices -> ~no curvature along at least one dimension
-            print(str(e))
-            errors = -1 * np.ones_like(res)
+        # if res_code < 1 or res_code > 4:
+        #     # fit error
+        #     logger.debug('Focus lock fit error')
+        #     return tuple(np.zeros(5)), tuple(np.zeros(5))
 
-        return tuple(res.astype('f')), tuple(errors.astype('f'))
+        success = res_code > 0 and res_code < 5
+        if success:
+            return tuple(res.astype('f')), success
+        return tuple(np.zeros(5)), success
+        # # estimate uncertainties
+        # residuals = infodict['fvec']  # note that fvec is error function evaluation, or (data - model_function)
+        # try:
+        #     # calculate residual variance, a.k.a. reduced chi-squared
+        #     residual_variance = np.sum(residuals ** 2) / (len(position) - len(guess))
+        #     # multiply cov by residual variance for estimating parameter variance
+        #     errors = np.sqrt(np.diag(residual_variance * cov_x))
+        # except (
+        #         TypeError,
+        #         ValueError) as e:  # cov_x is None for singular matrices -> ~no curvature along at least one dimension
+        #     print(str(e))
+        #     errors = -1 * np.ones_like(res)
+        #
+        # return tuple(res.astype('f')), tuple(errors.astype('f'))
 
 class ReflectedLinePIDFocusLock(PID):
     """
@@ -234,7 +239,10 @@ class ReflectedLinePIDFocusLock(PID):
         """
         crop_start = np.argmax(profile) - int(0.5 * self._fit_roi_size)
         start, stop = max(crop_start, 0), min(crop_start + self.fit_roi_size, profile.shape[0])
-        results, errors = self._fitter.fit(self._roi_position[:stop - start], profile[start:stop])
+        results, success = self._fitter.fit(self._roi_position[:stop - start], profile[start:stop])
+        if not success:
+            logger.debug('Focus lock fit error')
+            return np.nan
         return results[1] + start
 
     def on_frame(self, **kwargs):
@@ -244,6 +252,9 @@ class ReflectedLinePIDFocusLock(PID):
             self.peak_position = self.find_peak(profile - self.subtraction_profile)
         else:
             self.peak_position = self.find_peak(profile)
+
+        if self.peak_position == np.nan:
+            return
 
         # calculate correction
         elapsed_time =_current_time() - self._last_time
