@@ -562,7 +562,7 @@ class resultsFilter(SelectionFilter):
         self.resultsSource = resultsSource
 
         #by default select everything
-        self.Index = np.ones(self.resultsSource[list(resultsSource.keys())[0]].shape) >  0.5
+        self.Index = np.ones(self.resultsSource[list(resultsSource.keys())[0]].shape[0]) >  0.5
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
