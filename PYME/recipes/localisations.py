@@ -494,7 +494,7 @@ class ClusterCountVsImagingTime(ModuleBase):
             hiDensMinPtsClumps[ind] = np.sum(cid != -1)  # ignore unclumped in count
 
 
-        res = tabular.resultsFilter({'t': t,
+        res = tabular.mappingFilter({'t': t,
                                      'N_labelsWithLowMinPoints': lowDensMinPtsClumps,
                                      'N_labelsWithHighMinPoints': hiDensMinPtsClumps})
 

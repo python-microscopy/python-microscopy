@@ -1894,7 +1894,7 @@ class StatisticsByFrame(ModuleBase):
             mode[si] = stats.mode(slice_data)[0]
 
         # package up and ship-out results
-        res = tabular.resultsFilter({'variance': var, 'mean': mean, 'median': median, 'mode': mode})
+        res = tabular.mappingFilter({'variance': var, 'mean': mean, 'median': median, 'mode': mode})
         try:
             res.mdh = series.mdh
         except:

@@ -130,6 +130,9 @@ class TabularBase(object):
         return list(self.keys()) + list(self.__dict__.keys()) + list(dir(type(self)))
     
 
+# Data sources (File IO, or adapters to other data formats - e.g. recarrays
+###########################################################################
+
 class randomSource(TabularBase):
     _name = "Random Source"
     def __init__(self, xmax, ymax, nsamps):
@@ -527,6 +530,75 @@ class matfileColumnSource(TabularBase):
     
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
+    
+    
+class recArrayInput(TabularBase):
+    _name = 'RecArray Source'
+    def __init__(self, recordArray):
+        self.recArray = recordArray
+        self._keys = self.recArray.dtype.names
+
+    def keys(self):
+        return self._keys
+
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+
+        if not key in self._keys:
+            raise KeyError('Key (%s) not found' % key)
+
+        return self.recArray[key][sl]
+
+    def getInfo(self):
+        return 'Record Array Source\n\n %d points' % len(self.recArray['x'])
+
+
+class DictSource(TabularBase):
+    _name = 'Dict Source'
+    
+    def __init__(self, source):
+        """
+        Create a data source from a dictionary of numpy arrays, where each entry is a column.
+        
+        Parameters
+        ----------
+        source
+        
+        """
+        self._verify(source)
+        self._source = source
+        
+    def _verify(self, source):
+        L = len(source[source.keys()[0]])
+        
+        for k, v in source.items():
+            if not isinstance(v, np.ndarray):
+                raise ValueError('Column "%s" is not a numpy array' % k)
+            
+            if not len(v) == L:
+                raise ValueError('Columns are different lengths')
+        
+    def keys(self):
+        return self._source.keys()
+    
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+        return self.resultsSource[key][sl]
+
+class ColumnSource(DictSource):
+    _name = 'Column Source'
+    def __init__(self, **kwargs):
+        """
+        Create a datasource from columns specified by kwargs. Each column should be a numpy array.
+        
+        Parameters
+        ----------
+        kwargs
+        """
+        DictSource.__init__(self, dict(kwargs))
+
+# Filters (which remap existing data sources)
+#############################################
 
 
 class SelectionFilter(TabularBase):
@@ -558,11 +630,15 @@ class resultsFilter(SelectionFilter):
 
         The filter class does not have any explicit knowledge of the keys
         supported by the underlying data source."""
+        
+        if not isinstance(resultsSource, TabularBase):
+            raise ValueError('Expecting a tabular object for resultsSource')
 
         self.resultsSource = resultsSource
 
         #by default select everything
-        self.Index = np.ones(self.resultsSource[list(resultsSource.keys())[0]].shape[0]) >  0.5
+        #self.Index = np.ones(self.resultsSource[list(resultsSource.keys())[0]].shape[0]) >  0.5
+        self.Index = np.ones(len(self.resultsSource), dtype=np.bool)
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
@@ -588,10 +664,13 @@ class randomSelectionFilter(SelectionFilter):
         The filter class does not have any explicit knowledge of the keys
         supported by the underlying data source."""
         
+        if not isinstance(resultsSource, TabularBase):
+            raise ValueError('Expecting a tabular object for resultsSource')
+        
         self.resultsSource = resultsSource
         
         #by default select everything
-        self.Index = np.random.choice(len(self.resultsSource[list(resultsSource.keys())[0]]), num_Samples, replace=False)
+        self.Index = np.random.choice(len(self.resultsSource), num_Samples, replace=False)
 
 
 class idFilter(SelectionFilter):
@@ -607,12 +686,15 @@ class idFilter(SelectionFilter):
         The filter class does not have any explicit knowledge of the keys
         supported by the underlying data source."""
         
+        if not isinstance(resultsSource, TabularBase):
+            raise ValueError('Expecting a tabular object for resultsSource')
+        
         self.resultsSource = resultsSource
         self.id_column = id_column
         self.valid_ids = valid_ids
         
-        #by default select everything
-        self.Index = np.zeros(self.resultsSource[list(resultsSource.keys())[0]].shape)
+        #self.Index = np.zeros(self.resultsSource[list(resultsSource.keys())[0]].shape)
+        self.Index = np.zeros(len(self.resultsSource))
         
         for id in valid_ids:
             self.Index += (self.resultsSource[id_column] == id)
@@ -658,11 +740,14 @@ class cachingResultsFilter(TabularBase):
         The filter class does not have any explicit knowledge of the keys
         supported by the underlying data source."""
 
+        if not isinstance(resultsSource, TabularBase):
+            raise ValueError('Expecting a tabular object for resultsSource')
+        
         self.resultsSource = resultsSource
         self.cache = {}
 
         #by default select everything
-        self.Index = np.ones(self.resultsSource[list(resultsSource.keys())[0]].shape) >  0.5
+        self.Index = np.ones(len(self.resultsSource), dtype=np.bool)
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
@@ -701,6 +786,9 @@ class mappingFilter(TabularBase):
         or something else (which will be turned into a local variable - eg constants in above example)
 
         """
+        
+        if not isinstance(resultsSource, TabularBase):
+            warnings.warn(VisibleDeprecationWarning('Mapping filter created with something that is not a tabular object. This will be unsupported in a future release. Consider DictSource or ColumnSource instead'))
 
         self.resultsSource = resultsSource
 
@@ -825,6 +913,9 @@ class colourFilter(TabularBase):
     def __init__(self, resultsSource, currentColour=None):
         """Class to permit filtering by colour
         """
+        
+        if not isinstance(resultsSource, TabularBase):
+            raise ValueError('Expecting a tabular object for resultsSource')
 
         self.resultsSource = resultsSource
         self.currentColour = currentColour
@@ -901,6 +992,9 @@ class cloneSource(TabularBase):
         """Creates an in memory copy of a (filtered) data source"""
         #resultsSource
         self.cache = {}
+        
+        if not isinstance(resultsSource, TabularBase):
+            raise ValueError('Expecting a tabular object for resultsSource')
 
         klist = resultsSource.keys() if not keys else keys
 
@@ -916,22 +1010,3 @@ class cloneSource(TabularBase):
     def keys(self):
         return self.cache.keys()
 
-class recArrayInput(TabularBase):
-    _name = 'RecArray Source'
-    def __init__(self, recordArray):
-        self.recArray = recordArray
-        self._keys = self.recArray.dtype.names
-
-    def keys(self):
-        return self._keys
-
-    def __getitem__(self, keys):
-        key, sl = self._getKeySlice(keys)
-
-        if not key in self._keys:
-            raise KeyError('Key (%s) not found' % key)
-
-        return self.recArray[key][sl]
-
-    def getInfo(self):
-        return 'Record Array Source\n\n %d points' % len(self.recArray['x'])
