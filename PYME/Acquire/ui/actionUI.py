@@ -217,9 +217,9 @@ class ActionPanel(wx.Panel):
         filename = wx.FileSelector("Load ROI Positions:", wildcard="*.hdf", flags=wx.FD_OPEN)
         if not filename == '':
             rois = tabular.hdfSource(filename, tablename='roi_locations')
-
+            
             rois = [(x, y) for x, y in zip(rois['x_um'], rois['y_um'])]
-
+            
             self._add_ROIs(rois)
     
     def OnROIsFromTileviewer(self, event):

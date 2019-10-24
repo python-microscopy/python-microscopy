@@ -6,57 +6,31 @@
 
 #include "triangle_mesh_utils.h"
 
-/*
-
-DB: Performance suggestions
-
-There is potentially scope to do some type hinting here to get the compiler to 
-generate SMID instructions (e.g. by using vector types)
-
-This may or may not be worthwhile, as the code will likely be compiler specific
-/ different for gcc / msvc. Also the compiler should be fairly good at doing it 
-for you.
-
-
-You could potentially also flag the functions as inline, but I'm not sure how 
-much good that will do on modern compilers, they should do that for you anyway.
-
-I'm not sure if there is an easy way of doing it, but as you divide by the 
-norm, getting the compiler to generate rsqrt(n) and then multiplying by that 
-could be significantly faster (I think there are more pressing things to 
-address).
-
-*/
-double norm(const float *pos)
+float norm(const float *pos)
 {
-    int i;
     float n = 0;
-    for (i = 0; i < VECTORSIZE; ++i)
+    for (int i = 0; i < VECTORSIZE; ++i)
         n += pos[i] * pos[i];
     return sqrt(n);
 }
 
 void cross(const float *a, const float *b, float *n)
 {
-    /* DB: 
-
-    One thing that might be worth thinking about is making a typedef for a 
-    vector - As it stands, the compiler doesn't have any info about the overall
-    dimensions of a, b, or n, or their alignment in memory but I'm not sure that
-    matters.
-
-    Once again, I think there is more mileage to be had by moving more of the 
-    mesh class to c/cython first.
+    /*
+    One thing that might be worth thinking about is making a typedef for a vector
+    - As it stands, the compiler doesn't have any info about the overall dimensions 
+    of a, b, or n, or their alignment in memory but I'm not sure that matters.
     */
-    
-    // float a0, a1, a2, b0, b1, b2;
-
-    // a0 = a[0]; a1 = a[1]; a2 = a[2];
-    // b0 = b[0]; b1 = b[1]; b2 = b[2];
 
     n[0] = a[1]*b[2] - a[2]*b[1];
     n[1] = a[2]*b[0] - a[0]*b[2];
     n[2] = a[0]*b[1] - a[1]*b[0];
+}
+
+void difference(const float *a, const float *b, float *d)
+{
+    for (int k = 0; k < VECTORSIZE; ++k) 
+        d[k] = a[k] - b[k];
 }
 
 // void update_vertex_neighbors(signed int *v_idxs, halfedge_t *halfedges, vertex_t *vertices, face_t *faces, signed int n_idxs)
@@ -65,29 +39,23 @@ void cross(const float *a, const float *b, float *n)
 DB: Performance suggestions:
 
 - change to a pure c function and a python c api wrapper
-  reasons are 1 : facilitates moving more of the code to c 2: forces us to code
-  in a way that doesn't make python API calls within loop. This is good both 
-  because it will result in better performance, and also in that it will 
-  (potentially) let us release the GIL and get performance improvements from 
-  multithreading
+  reasons are 1 : facilitates moving more of the code to c 2: forces us to code in a way that doesn't make python API
+  calls within loop. This is good both because it will result in better performance, and also in that it will (potentially)
+  let us release the GIL and get performance improvements from multithreading
 
-- PySequence_GetItem() is a python API call, we probably don't want it in the 
-  loop if we can help it.
+- PySequence_GetItem() is a python API call, we probably don't want it in the loop if we can help it.
 
-- I'm pretty sure that PyArray_GETPTR1 is a macro, which makes it significantly
-  less costly (expands to inline c code, & no need for GIL). That said, we know 
-  that the input arrays are contiguous (we check for this) so we could also 
-  just have, e.g., vertex_t * p_vertices = PyArray_GETPTR1(vertices, 0) outside
-  the loop and then just replace everything inside the loop with standard c 
-  indexing - ie curr_vertex = p_vertices[v_idx]. My strong suspicion is that 
-  the c compiler will do a better job of optimizing this, and it will also 
-  continue to work once more of the code is in c.
+- I'm pretty sure that PyArray_GETPTR1 is a macro, which makes it significantly less costly (expands to inline c code, &
+  no need for GIL). That said, we know that the input arrays are contiguous (we check for this) so we could also just have,
+  e.g., vertex_t * p_vertices = PyArray_GETPTR1(vertices, 0) outside the loop and then just replace everything inside
+  the loop with standard c indexing - ie curr_vertex = p_vertices[v_idx]. My strong suspicion is that the c compiler will do a
+  better job of optimizing this, and it will also continue to work once more of the code is in c.
 
 */
 static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 {
     PyObject *v_idxs=0, *halfedges=0, *vertices=0, *faces=0;
-    signed int i, j, k, v_idx, orig_idx, curr_idx, twin_idx, n_idxs, tmp;
+    int32_t i, j, k, v_idx, orig_idx, curr_idx, twin_idx, n_idxs, tmp;
     halfedge_t *curr_edge, *twin_edge;
     vertex_t *curr_vertex, *loop_vertex;
     face_t *curr_face;
@@ -118,24 +86,28 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
         return NULL;
     } 
 
-    n_idxs = (signed int)PySequence_Length(v_idxs);
+    n_idxs = (int32_t)PySequence_Length(v_idxs);
+    vertex_t *p_vertices = (vertex_t*)PyArray_GETPTR1(vertices, 0);
+    halfedge_t *p_halfedges = (halfedge_t*)PyArray_GETPTR1(halfedges, 0);
+    face_t *p_faces = (face_t*)PyArray_GETPTR1(faces, 0);
 
     for (j = 0; j < n_idxs; ++j)
     {
-        v_idx = (signed int)PyArray_DATA(PySequence_GetItem(v_idxs, (Py_ssize_t) j));
+        v_idx = (int32_t)PyArray_DATA(PySequence_GetItem(v_idxs, (Py_ssize_t) j));
         if (v_idx == -1)
             continue;
-        curr_vertex = (vertex_t*)PyArray_GETPTR1(vertices, v_idx);
+                
+        curr_vertex = &(p_vertices[v_idx]);
 
-        orig_idx = curr_vertex->halfedge;
-        curr_idx = orig_idx;
+        curr_idx = curr_vertex->halfedge;
+        orig_idx = curr_idx;
 
         if (curr_idx == -1) continue;
 
-        curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
+        curr_edge = &(p_halfedges[curr_idx]);
         twin_idx = curr_edge->twin;
         if (twin_idx != -1)
-            twin_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, twin_idx);
+            twin_edge = &(p_halfedges[twin_idx]);
 
         i = 0;
 
@@ -150,19 +122,21 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
             if (curr_idx == -1)
                 break;
 
+            // printf("Current index: %d\n", curr_idx);
+            // printf("orig_index: %d\n", orig_idx);
+
             if (i < NEIGHBORSIZE)
             {
                 (curr_vertex->neighbors)[i] = curr_idx;
-                curr_face = (face_t*)PyArray_GETPTR1(faces, (curr_edge->face));
+                curr_face = &(p_faces[(curr_edge->face)]);
                 a = curr_face->area;
                 for (k = 0; k < VECTORSIZE; ++k) 
                     normal[k] += ((curr_face->normal)[k])*a;
             }
 
-            loop_vertex = (vertex_t*)PyArray_GETPTR1(vertices, (curr_edge->vertex));
+            loop_vertex = &(p_vertices[(curr_edge->vertex)]);
 
-            for (k = 0; k < VECTORSIZE; ++k) 
-                position[k] = (curr_vertex->position)[k] - (loop_vertex->position)[k];
+            difference((curr_vertex->position), (loop_vertex->position), position);
 
             l = norm(position);
             curr_edge->length = l;
@@ -171,9 +145,9 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
             twin_edge->length = l;
 
             curr_idx = twin_edge->next;
-            curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
+            curr_edge = &(p_halfedges[curr_idx]);
             twin_idx = curr_edge->twin;
-            twin_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, twin_idx);
+            twin_edge = &(p_halfedges[twin_idx]);
 
             ++i;
 
@@ -196,15 +170,15 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
             }
 
             curr_idx = orig_idx;
-            curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
+            curr_edge = &(p_halfedges[curr_idx]);
             twin_idx = curr_edge->prev;
             if (twin_idx == -1)
                 continue;
-            twin_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, twin_idx);
+            twin_edge = &(p_halfedges[twin_idx]);
             curr_idx = twin_edge->twin;
             if (curr_idx == -1)
                 continue;
-            curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
+            curr_edge = &(p_halfedges[curr_idx]);
 
             ++i;
 
@@ -216,16 +190,15 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
                 if (i < NEIGHBORSIZE)
                 {
                     (curr_vertex->neighbors)[i] = curr_idx;
-                    curr_face = (face_t*)PyArray_GETPTR1(faces, (curr_edge->face));
+                    curr_face = &(p_faces[(curr_edge->face)]);
                     a = curr_face->area;
                     for (k = 0; k < VECTORSIZE; ++k) 
                         normal[k] += ((curr_face->normal)[k])*a;
                 }
 
-                loop_vertex = (vertex_t*)PyArray_GETPTR1(vertices, (curr_edge->vertex));
+                loop_vertex = &(p_vertices[(curr_edge->vertex)]);
 
-                for (k = 0; k < VECTORSIZE; ++k) 
-                    position[k] = (curr_vertex->position)[k] - (loop_vertex->position)[k];
+                difference((curr_vertex->position), (loop_vertex->position), position);
 
                 l = norm(position);
                 curr_edge->length = l;
@@ -234,11 +207,11 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
                 twin_idx = curr_edge->prev;
                 if (twin_idx == -1)
                     break;
-                twin_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, twin_idx);
+                twin_edge = &(p_halfedges[twin_idx]);
                 curr_idx = twin_edge->twin;
                 if (curr_idx == -1)
                     break;
-                curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
+                curr_edge = &(p_halfedges[curr_idx]);
 
                 if (curr_idx == orig_idx)
                     break;
@@ -259,10 +232,6 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
         }
     }
 
-    // Python's garbage collection will Py_DECREF halfedges, vertices, faces after each function call, so insure against this
-    Py_INCREF(halfedges);
-    Py_INCREF(vertices);
-    Py_INCREF(faces);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -271,7 +240,7 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 static PyObject *update_face_normals(PyObject *self, PyObject *args)
 {
     PyObject *f_idxs=0, *halfedges=0, *vertices=0, *faces=0;
-    signed int j, k, f_idx, curr_idx, prev_idx, next_idx, n_idxs;
+    int32_t j, k, f_idx, curr_idx, prev_idx, next_idx, n_idxs, *p_f_idxs;
     float v1[VECTORSIZE], u[VECTORSIZE], v[VECTORSIZE], n[VECTORSIZE], nn;
     halfedge_t *curr_edge, *prev_edge, *next_edge;
     face_t *curr_face;
@@ -299,39 +268,39 @@ static PyObject *update_face_normals(PyObject *self, PyObject *args)
         return NULL;
     } 
 
-    n_idxs = (signed int)PySequence_Length(f_idxs);
+    n_idxs = (int32_t)PySequence_Length(f_idxs);
+    vertex_t *p_vertices = (vertex_t*)PyArray_GETPTR1(vertices, 0);
+    halfedge_t *p_halfedges = (halfedge_t*)PyArray_GETPTR1(halfedges, 0);
+    face_t *p_faces = (face_t*)PyArray_GETPTR1(faces, 0);
 
     for (j = 0; j < n_idxs; ++j)
     {
-        f_idx = (signed int)PyArray_DATA(PySequence_GetItem(f_idxs, (Py_ssize_t) j));
+        f_idx = (int32_t)PyArray_DATA(PySequence_GetItem(f_idxs, (Py_ssize_t) j));
         if (f_idx == -1)
             continue;
-        curr_face = (face_t*)PyArray_GETPTR1(faces, f_idx);
+        curr_face = &(p_faces[f_idx]);
 
         curr_idx = curr_face->halfedge;
         if (curr_idx == -1) continue;
-        curr_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, curr_idx);
+        curr_edge = &(p_halfedges[curr_idx]);
 
         prev_idx = curr_edge->prev;
         if (prev_idx == -1) continue;
-        prev_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, prev_idx);
+        prev_edge = &(p_halfedges[prev_idx]);
 
         next_idx = curr_edge->next;
         if (next_idx == -1) continue;
-        next_edge = (halfedge_t*)PyArray_GETPTR1(halfedges, next_idx);
+        next_edge = &(p_halfedges[next_idx]);
 
-        curr_vertex = (vertex_t*)PyArray_GETPTR1(vertices, (curr_edge->vertex));
-        prev_vertex = (vertex_t*)PyArray_GETPTR1(vertices, (prev_edge->vertex));
-        next_vertex = (vertex_t*)PyArray_GETPTR1(vertices, (next_edge->vertex));
+        curr_vertex = &(p_vertices[(curr_edge->vertex)]);
+        prev_vertex = &(p_vertices[(prev_edge->vertex)]);
+        next_vertex = &(p_vertices[(next_edge->vertex)]);
 
         for (k = 0; k < VECTORSIZE; ++k)
             v1[k] = (curr_vertex->position)[k];
 
-        for (k = 0; k < VECTORSIZE; ++k)
-        {
-            u[k] = (prev_vertex->position)[k] - v1[k];
-            v[k] = (next_vertex->position)[k] - v1[k];
-        }
+        difference((prev_vertex->position), v1, u);
+        difference((next_vertex->position), v1, v);
 
         cross(u, v, n);
         nn = norm(n);
@@ -346,10 +315,6 @@ static PyObject *update_face_normals(PyObject *self, PyObject *args)
         }
     }
 
-    // Python's garbage collection will Py_DECREF halfedges, vertices, faces after each function call, so insure against this
-    Py_INCREF(halfedges);
-    Py_INCREF(vertices);
-    Py_INCREF(faces);
     Py_INCREF(Py_None);
     return Py_None;
 }

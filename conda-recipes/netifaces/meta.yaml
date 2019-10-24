@@ -1,9 +1,9 @@
 package:
   name: netifaces
-  version: {{ GIT_DESCRIBE_TAG }}
+  version: 0.10.9
 
 source:
-  #git_rev: v0.13.1
+  git_rev: release_0_10_9
   git_url: https://github.com/al45tair/netifaces
 
 build:
