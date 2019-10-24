@@ -113,6 +113,15 @@ class GenImageDialog(wx.Dialog):
             sizer2.Add(self.cbTriangGeometric, 1, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
             sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+            
+        if mode in ['densityfit']:
+            sizer2 = wx.BoxSizer(wx.HORIZONTAL)
+            sizer2.Add(wx.StaticText(self, -1, '# Samples:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+    
+            self.tNumSamps = wx.TextCtrl(self, -1, '25', size=(60, -1))
+            sizer2.Add(self.tNumSamps, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+    
+            sizer1.Add(sizer2, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
 
             
             #sizer2.Add(wx.StaticText(self, -1, 'Use software rendereing:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)

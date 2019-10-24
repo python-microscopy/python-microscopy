@@ -329,6 +329,15 @@ class Histogram3DRenderer(HistogramRenderer):
     def genIm(self, settings, imb, mdh):
         mdh['Origin.z'] = settings['zBounds'][0]
         return visHelpers.rendHist3D(self.colourFilter['x'],self.colourFilter['y'], self.colourFilter['z'], imb, settings['pixelSize'], settings['zBounds'], settings['zSliceThickness'])
+
+class DensityFitRenderer(HistogramRenderer):
+    """3D histogram rendering"""
+
+    name = 'Density Fit'
+    mode = 'densityfit'
+
+    def genIm(self, settings, imb, mdh):
+        return visHelpers.rend_density_estimate(self.colourFilter['x'],self.colourFilter['y'], imb, settings['pixelSize'], settings['numSamples'])
     
 
 class GaussianRenderer(ColourRenderer):
@@ -521,7 +530,7 @@ class QuadTreeRenderer(ColourRenderer):
 
 
 RENDERER_GROUPS = ((CurrentRenderer,),
-                   (HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer),
+                   (HistogramRenderer, GaussianRenderer, TriangleRenderer, TriangleRendererW,LHoodRenderer, QuadTreeRenderer, DensityFitRenderer),
                    (Histogram3DRenderer, Gaussian3DRenderer, Triangle3DRenderer))
 
 RENDERERS = {i.name : i for s in RENDERER_GROUPS for i in s}

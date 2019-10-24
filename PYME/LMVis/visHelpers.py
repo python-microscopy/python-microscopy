@@ -182,6 +182,58 @@ def rendGauss(x, y, sx, imageBounds, pixelSize):
     im = im[roiSize:-roiSize, roiSize:-roiSize]
 
     return im
+
+
+def rend_density_estimate(x, y, imageBounds, pixelSize, N=10):
+    """
+
+    Parameters
+    ----------
+    x : ndarray
+        x positions [nm]
+    y : ndarray
+        y positions [nm]
+    sx : ndarray
+        (gaussian) lateral width (sigma) [nm]
+    imageBounds : PYME.IO.ImageBounds
+        ImageBounds instance - range in each dimension should be an integer multiple of pixelSize. ImageBounds (x0, y0)
+        and (x1, y1) correspond to the inside edge of the outer pixels.
+    pixelSize : float
+        size of pixels to be rendered [nm]
+
+    Returns
+    -------
+    im : ndarray
+        2D Gaussian rendering. Note that im[0, 0] is centered at 0.5 * [pixelSize, pixelSize] (FIXME)
+
+    TODOS:
+
+    - speed improvements? Parallelisation?
+    - variable ROI size? We currently base our ROI size on the median localization/jitter error, with the parts of the
+    Gaussians which extend past the ROI being dropped. This is usually not an issue, but could become one if we have a
+    large range of localization precisions (or if we are using something else - e.g. neighbour distances - as sigma).
+
+    """
+    from scipy.spatial import cKDTree
+    
+    X = numpy.arange(imageBounds.x0, imageBounds.x1, pixelSize) + 0.5 * pixelSize
+    Y = numpy.arange(imageBounds.y0, imageBounds.y1, pixelSize) + 0.5 * pixelSize
+    
+    im = scipy.zeros((len(X), len(Y)), 'f')
+    
+    
+    pts = np.vstack([x, y]).T
+    
+    kdt = cKDTree(pts)
+    n = np.arange(N)
+    
+    for i, xi in enumerate(X):
+        for j, yi in enumerate(Y):
+            d, _ = kdt.query(np.hstack((xi, yi)), N)
+            im[i, j] = float(np.linalg.lstsq(np.atleast_2d(d ** 2).T, n, rcond=None)[0])
+            
+    
+    return im
     
 def rendGaussProd(x,y, sx, imageBounds, pixelSize):
     """ EXPERIMENTAL code to try and generate a log-likelihood rendering
