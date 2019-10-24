@@ -431,8 +431,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
                     dxn = self.chroma.dx.ev(pNFoc[:,0]*1e3*self.voxelsize[0], pNFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[0])
                     dyn = self.chroma.dy.ev(pNFoc[:,0]*1e3*self.voxelsize[0], pNFoc[:,1]*1e3*self.voxelsize[1])/(1e3*self.voxelsize[1])
                 else:
-                    dxn = 0*pFoc[:,0]
-                    dyn = 0*pFoc[:,0]
+                    dxn = 0*pNFoc[:,0]
+                    dyn = 0*pNFoc[:,0]
 
             dc.SetBrush(wx.TRANSPARENT_BRUSH)
             ps = self.pointSize

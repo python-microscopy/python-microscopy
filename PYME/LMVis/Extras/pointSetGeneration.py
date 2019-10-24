@@ -215,7 +215,12 @@ class Generator(HasTraits):
         pylab.plot(res['fitResults']['x0'],res['fitResults']['y0'], '+')
 
         ds = tabular.mappingFilter(tabular.fitResultsSource(res))
-        pipeline.imageBounds = ImageBounds.estimateFromSource(ds)
+        
+        if isinstance(self.source, ImageSource):
+            pipeline.imageBounds = image.openImages[self.source.image].imgBounds
+        else:
+            pipeline.imageBounds = ImageBounds.estimateFromSource(ds)
+            
         pipeline.addDataSource('Generated Points', ds)
         pipeline.selectDataSource('Generated Points')
 

@@ -106,3 +106,85 @@ def mutual_information(X, Y, roi_mask=None, nbins=256, bits=False):
     else:
         return np.sum(pxy[m]*np.log(pxy[m]/px_py[m]))
     
+    
+def fourier_ring_correlation(imA, imB, voxelsize=[1.0, 1.0], window=False):
+    import matplotlib.pyplot as plt
+    from PYME.Analysis import binAvg
+    
+    imA = imA.squeeze()
+    imB = imB.squeeze()
+    
+    X, Y = np.mgrid[0:float(imA.shape[0]), 0:float(imA.shape[1])]
+    X = X / X.shape[0]
+    Y = Y / X.shape[1]
+    X = (X - .5)
+    Y = Y - .5
+    R = np.sqrt(X ** 2 + Y ** 2)
+    
+    if window:
+        W =np.hanning(X.shape[0])[:,None]*np.hanning(X.shape[1])[:,None]
+        imA = imA*W
+        imB = imB*W
+    
+    H1 = np.fft.fftn(imA)
+    H2 = np.fft.fftn(imB)
+    
+    #rB = np.linspace(0,R.max())
+    rB = np.linspace(0, 0.5, 100)
+    
+    bn, bm, bs = binAvg.binAvg(R, np.fft.fftshift(H1 * H2.conjugate()).real, rB)
+    
+    bn1, bm1, bs1 = binAvg.binAvg(R, np.fft.fftshift((H1 * H1.conjugate()).real), rB)
+    bn2, bm2, bs2 = binAvg.binAvg(R, np.fft.fftshift((H2 * H2.conjugate()).real), rB)
+    
+    plt.figure()
+    
+    ax = plt.gca()
+    
+    #FRC
+    FRC = bm / np.sqrt(bm1 * bm2)
+    ax.plot(rB[:-1], FRC)
+    
+    #noise envelope???????????
+    ax.plot(rB[:-1], 2. / np.sqrt(bn / 2), ':')
+    
+    dfrc = np.diff(FRC)
+    #print FRC
+    monotone = np.where(dfrc > 0)[0][0] + 1
+    
+    #print FRC[:monotone], FRC[:(monotone+1)]
+    
+    intercept_m = np.interp(1.0 - 1 / 7.0, 1 - FRC[:monotone], rB[:monotone])
+    
+    print('Intercept_m= %3.2f (%3.2f nm)' % (intercept_m, voxelsize[0] / intercept_m))
+    
+    from scipy import ndimage
+    f_s = np.sign(FRC - 1. / 7.)
+    
+    fss = ndimage.gaussian_filter(f_s, 10, mode='nearest')
+    
+    intercept = np.interp(0.0, - fss, rB[:-1])
+    
+    print('Intercept= %3.2f (%3.2f nm)' % (intercept, voxelsize[0] / intercept))
+    
+    xt = np.array([10., 15, 20, 30, 40, 50, 70, 90, 120, 150, 200, 300, 500])
+    rt = voxelsize[0] / xt
+    
+    plt.xticks(rt[::-1], ['%d' % xi for xi in xt[::-1]], rotation='vertical')
+    
+    ax.plot([0, rt[0]], np.ones(2) / 7.0)
+    
+    plt.grid()
+    plt.xlabel('Resolution [nm]')
+    
+    plt.ylabel('FRC')
+    plt.ylim(0, 1.1)
+    
+    plt.plot([intercept, intercept], [0, 1], '--')
+    
+    plt.figtext(0.5, 0.5, 'FRC intercept at %3.1f nm' % (voxelsize[0] / intercept))
+    
+    plt.figure()
+    plt.plot(rB[:-1], f_s)
+    plt.plot(rB[:-1], fss)
+    plt.show()
