@@ -212,7 +212,10 @@ class TargetOwningOffsetPiezo(OffsetPiezo):
     """
     def __init__(self, base_piezo):
         OffsetPiezo.__init__(self, base_piezo)
-        self._target_position = self.basePiezo.GetTargetPos(0)
+        try:
+            self._target_position = self.basePiezo.GetTargetPos(0)
+        except (AttributeError, NotImplementedError):
+            self._target_position = self.basePiezo.GetPos(0)
 
     @webframework.register_endpoint('/MoveTo', output_is_json=False)
     def MoveTo(self, iChannel, fPos, bTimeOut=True):
