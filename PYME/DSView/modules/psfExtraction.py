@@ -80,7 +80,7 @@ class psfExtractor:
         vsizer.Add(hsizer, 0,wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'ROI Size:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'ROI Half Size:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.tPSFROI = wx.TextCtrl(pan, -1, value='30,30,30', size=(40, -1))
         hsizer.Add(self.tPSFROI, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
