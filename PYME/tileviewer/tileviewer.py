@@ -48,7 +48,7 @@ class TileServer(object):
         print(locations_file)
         
         if locations_file.endswith('.hdf'):
-            locs = tabular.hdfSource(locations_file, tablename=tablename)
+            locs = tabular.HDFSource(locations_file, tablename=tablename)
             self.roi_locations = [Location(x, y) for x, y in zip(locs['x_um'], locs['y_um'])]
             locs.close()
             del(locs)

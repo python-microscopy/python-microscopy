@@ -63,7 +63,7 @@ def foldX(datasource, mdh, inject=False, chroma_mappings=False):
     """
     from PYME.IO import tabular
     if not inject:
-        datasource = tabular.mappingFilter(datasource)
+        datasource = tabular.MappingFilter(datasource)
 
     roiSizeNM = (mdh['Multiview.ROISize'][1]*mdh['voxelsize.x']*1000)  # voxelsize is in um
 
@@ -303,7 +303,7 @@ def find_clumps(datasource, gap_tolerance, radius_scale, radius_offset, inject=F
     clumps[I] = assigned
 
     if not inject:
-        datasource = tabular.mappingFilter(datasource)
+        datasource = tabular.MappingFilter(datasource)
 
     datasource.addColumn('clumpIndex', clumps)
 
@@ -356,14 +356,14 @@ def find_clumps_within_channel(datasource, gap_tolerance, radius_scale, radius_o
     clumps[I] = assigned
 
     if not inject:
-        datasource = tabular.mappingFilter(datasource)
+        datasource = tabular.MappingFilter(datasource)
 
     datasource.addColumn('clumpIndex', clumps)
 
     return datasource
 
 def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
-    from PYME.IO.tabular import cachingResultsFilter, mappingFilter
+    from PYME.IO.tabular import CachingResultsFilter, MappingFilter
 
     keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', labelKey, 'focus', 'LLH']
     keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
@@ -384,7 +384,7 @@ def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
     sorted_src = {k: datasource[k][I] for k in all_keys}
 
     grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights)
-    return mappingFilter(grouped)
+    return MappingFilter(grouped)
 
 
 

@@ -765,7 +765,7 @@ class ModuleCollection(HasTraits):
     
                         elif isinstance(t, tables.table.Table):
                             #  pipe our table into h5r or hdf source depending on the extension
-                            tab = tabular.h5rSource(h5f, t.name) if extension == '.h5r' else tabular.hdfSource(h5f, t.name)
+                            tab = tabular.H5RSource(h5f, t.name) if extension == '.h5r' else tabular.HDFSource(h5f, t.name)
                             tab.mdh = mdh
     
                             self.namespace[key_prefix + t.name] = tab

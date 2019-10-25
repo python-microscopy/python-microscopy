@@ -457,7 +457,7 @@ class ImageStack(object):
 
             if 'FitResults' in dir(h5Results.root):
                 self.fitResults = h5Results.root.FitResults[:]
-                self.resultsSource = tabular.h5rSource(h5Results)
+                self.resultsSource = tabular.H5RSource(h5Results)
 
                 self.resultsMdh = MetaData.TIRFDefault
                 self.resultsMdh.copyEntriesFrom(MetaDataHandler.HDFMDHandler(h5Results))

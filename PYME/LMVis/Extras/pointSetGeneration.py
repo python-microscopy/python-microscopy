@@ -214,7 +214,7 @@ class Generator(HasTraits):
         
         pylab.plot(res['fitResults']['x0'],res['fitResults']['y0'], '+')
 
-        ds = tabular.mappingFilter(tabular.fitResultsSource(res))
+        ds = tabular.MappingFilter(tabular.FitResultsSource(res))
         
         if isinstance(self.source, ImageSource):
             pipeline.imageBounds = image.openImages[self.source.image].imgBounds

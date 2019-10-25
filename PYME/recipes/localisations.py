@@ -16,7 +16,7 @@ class ExtractTableChannel(ModuleBase):
     def execute(self, namespace):
         inp = namespace[self.inputName]
 
-        map = tabular.colourFilter(inp, currentColour=self.channel)
+        map = tabular.ColourFilter(inp, currentColour=self.channel)
 
         if 'mdh' in dir(inp):
             map.mdh = inp.mdh
@@ -27,7 +27,7 @@ class ExtractTableChannel(ModuleBase):
     def _colour_choices(self):
         #try and find the available column names
         try:
-            return tabular.colourFilter.get_colour_chans(self._parent.namespace[self.inputName])
+            return tabular.ColourFilter.get_colour_chans(self._parent.namespace[self.inputName])
         except:
             return []
 
@@ -83,8 +83,8 @@ class DensityMapping(ModuleBase):
     def execute(self, namespace):
         from PYME.IO.image import ImageBounds
         inp = namespace[self.inputLocalizations]
-        if not isinstance(inp, tabular.colourFilter):
-            cf = tabular.colourFilter(inp, None)
+        if not isinstance(inp, tabular.ColourFilter):
+            cf = tabular.ColourFilter(inp, None)
             
             print('Created colour filter with chans: %s' % cf.getColourChans())
             cf.mdh = inp.mdh
@@ -158,7 +158,7 @@ class Pipelineify(ModuleBase):
         fitResults = namespace[self.inputFitResults]
         mdh = fitResults.mdh
 
-        mapped_ds = tabular.mappingFilter(fitResults)
+        mapped_ds = tabular.MappingFilter(fitResults)
 
 
         if not self.pixelSizeNM == 1: # TODO - check close instead?
@@ -230,7 +230,7 @@ class ProcessColour(ModuleBase):
         if self.ratios_from_metadata:
             self._get_dye_ratios_from_metadata(mdh)
         
-        output = tabular.mappingFilter(input)
+        output = tabular.MappingFilter(input)
         output.mdh = mdh
     
         if 'gFrac' in output.keys():
@@ -279,7 +279,7 @@ class TimeBlocks(ModuleBase):
         input = namespace[self.input]
         mdh = input.mdh
     
-        output = tabular.mappingFilter(input)
+        output = tabular.MappingFilter(input)
         output.mdh = mdh
         
         output.addColumn('block_id', np.mod((output['t']/self.block_size).astype('int'),2))
@@ -344,7 +344,7 @@ class IDTransientFrames(ModuleBase): #FIXME - move to multi-view specific module
 
         inp = namespace[self.inputName]
 
-        mapped = tabular.mappingFilter(inp)
+        mapped = tabular.MappingFilter(inp)
 
         if 'mdh' not in dir(inp):
             if self.framesPerStep <= 0:
@@ -398,7 +398,7 @@ class DBSCANClustering(ModuleBase):
         from sklearn.cluster import dbscan
 
         inp = namespace[self.inputName]
-        mapped = tabular.mappingFilter(inp)
+        mapped = tabular.MappingFilter(inp)
 
         # Note that sklearn gives unclustered points label of -1, and first value starts at 0.
         if self.multithreaded:
@@ -478,11 +478,11 @@ class ClusterCountVsImagingTime(ModuleBase):
         t = np.empty(iters)
         t[0] = 0
 
-        inp = tabular.mappingFilter(namespace[self.inputName])
+        inp = tabular.MappingFilter(namespace[self.inputName])
 
         for ind in range(1, iters):  # start from 1 since t=[0,0] will yield no clumps
             # filter time
-            inc = tabular.resultsFilter(inp, t=[0, self.stepSize*ind])
+            inc = tabular.ResultsFilter(inp, t=[0, self.stepSize * ind])
             t[ind] = np.max(inc['t'])
 
             cid, counts = np.unique(inc[self.labelsKey], return_counts=True)
@@ -494,7 +494,7 @@ class ClusterCountVsImagingTime(ModuleBase):
             hiDensMinPtsClumps[ind] = np.sum(cid != -1)  # ignore unclumped in count
 
 
-        res = tabular.mappingFilter({'t': t,
+        res = tabular.MappingFilter({'t': t,
                                      'N_labelsWithLowMinPoints': lowDensMinPtsClumps,
                                      'N_labelsWithHighMinPoints': hiDensMinPtsClumps})
 
@@ -552,7 +552,7 @@ class LabelsFromImage(ModuleBase):
 
         ids, numPerObject = cluster_morphology.get_labels_from_image(img, inp, minimum_localizations=self.minimum_localizations)
 
-        labeled = tabular.mappingFilter(inp)
+        labeled = tabular.MappingFilter(inp)
         labeled.addColumn(self.label_key_name, ids)
         labeled.addColumn(self.label_count_key_name, numPerObject[ids - 1])
 
@@ -671,7 +671,7 @@ class MeasureClusters3D(ModuleBase):
 
             indi = indf
 
-        meas = tabular.recArrayInput(measurements)
+        meas = tabular.RecArraySource(measurements)
 
         try:
             meas.mdh = namespace[self.inputName].mdh
@@ -724,10 +724,10 @@ class FiducialCorrection(ModuleBase):
                                                         timeWindow=int(self.timeWindow),
                                                         filter=self.temporalFilter, filterScale=float(self.temporalFilterScale))
         
-        out = tabular.mappingFilter(locs)
+        out = tabular.MappingFilter(locs)
         t_out = out['t']
 
-        out_f = tabular.mappingFilter(fids)
+        out_f = tabular.MappingFilter(fids)
         out_f.addColumn('clumpIndex', clump_index)
         t_out_f = out_f['t']
 
@@ -813,7 +813,7 @@ class AutocorrelationDriftCorrection(ModuleBase):
         shx = shifts[:, 0]
         shy = shifts[:, 1]
 
-        out = tabular.mappingFilter(locs)
+        out = tabular.MappingFilter(locs)
         t_out = out['t']
         dx = np.interp(t_out, t_shift, shx)
         dy = np.interp(t_out, t_shift, shy)
@@ -888,7 +888,7 @@ class SphericalHarmonicShell(ModuleBase): #FIXME - this likely doesnt belong her
         out = np.zeros(len(coefficients), dtype=output_dtype)
         out['modes']= modes
         out['coefficients'] = coefficients
-        out = tabular.recArrayInput(out)
+        out = tabular.RecArraySource(out)
         out.mdh = mdh
 
         namespace[self.output_name] = out
@@ -941,7 +941,7 @@ class AddShellMappedCoordinates(ModuleBase): #FIXME - this likely doesnt belong 
         from PYME.IO.MetaDataHandler import NestedClassMDHandler
 
         inp = namespace[self.inputName]
-        mapped = tabular.mappingFilter(inp)
+        mapped = tabular.MappingFilter(inp)
 
         rep = namespace[self.inputSphericalHarmonics]
 

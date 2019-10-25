@@ -39,6 +39,23 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+#helper function for renaming classes
+
+def deprecated_name(name):
+    def _dec(cls):
+        
+        def _dep_name(*args, **kwargs):
+            warnings.warn(VisibleDeprecationWarning('%s is deprecated, use %s instead' % (name, cls.__name__)))
+            return cls(*args, **kwargs)
+        
+        globals()[name] = _dep_name
+        
+        return cls
+    
+    return _dec
+    
+
+
 class TabularBase(object):
     def toDataFrame(self, keys=None):
         import pandas as pd
@@ -133,7 +150,8 @@ class TabularBase(object):
 # Data sources (File IO, or adapters to other data formats - e.g. recarrays
 ###########################################################################
 
-class randomSource(TabularBase):
+@deprecated_name('randomSource')
+class RandomSource(TabularBase):
     _name = "Random Source"
     def __init__(self, xmax, ymax, nsamps):
         """Uniform random source, for testing and as an example"""
@@ -178,7 +196,8 @@ def unNestDtype(descr, parent=''):
             unList += unNestDtype(n[1], parent + n[0] + '_')
     return unList
 
-class fitResultsSource(TabularBase):
+@deprecated_name('fitResultsSource')
+class FitResultsSource(TabularBase):
     _name = "recarrayfi Source"
     def __init__(self, fitResults, sort=True):
         self.setResults(fitResults, sort=sort)
@@ -231,7 +250,7 @@ class fitResultsSource(TabularBase):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
-class _BaseHDFSource(fitResultsSource):
+class _BaseHDFSource(FitResultsSource):
     def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
         component. Takes either an open h5r file or a string filename to be
@@ -275,7 +294,7 @@ class _BaseHDFSource(fitResultsSource):
         self.close()
 
 
-class BaseHDFSource(fitResultsSource):
+class BaseHDFSource(FitResultsSource):
     def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
         component. Takes either an open h5r file or a string filename to be
@@ -317,7 +336,8 @@ class BaseHDFSource(fitResultsSource):
         pass
 
 
-class h5rSource(BaseHDFSource):
+@deprecated_name('h5rSource')
+class H5RSource(BaseHDFSource):
     _name = "h5r Data Source"
     def __init__(self, h5fFile, tablename='FitResults'):
         BaseHDFSource.__init__(self, h5fFile, tablename)
@@ -339,19 +359,21 @@ class h5rSource(BaseHDFSource):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
-class h5rDSource(h5rSource):
+@deprecated_name('h5rDSource')
+class H5RDSource(H5RSource):
     _name = "h5r Drift Source"
 
     def __init__(self, h5fFile):
         """ Data source for use with h5r files as saved by the PYME analysis
         component"""
 
-        h5rSource.__init__(self, h5fFile, 'DriftResults')
+        H5RSource.__init__(self, h5fFile, 'DriftResults')
 
     def getInfo(self):
         return 'PYME h5r Drift Data Source\n\n %d points' % self.fitResults.shape[0]
 
-class hdfSource(h5rSource):
+@deprecated_name('hdfSource')
+class HDFSource(H5RSource):
     _name = "hdf Data Source"
 
     def __init__(self, h5fFile, tablename='FitResults'):
@@ -434,8 +456,8 @@ class hdfSource(h5rSource):
 #
 #     def getInfo(self):
 #         return 'PYME h5r Drift Data Source\n\n %d points' % self.h5f.root.DriftResults.shape[0]
-
-class textfileSource(TabularBase):
+@deprecated_name('textfileSource')
+class TextfileSource(TabularBase):
     _name = "Text File Source"
     def __init__(self, filename, columnnames, delimiter=None, skiprows=0):
         """ Input filter for use with delimited text data. Defaults
@@ -467,7 +489,8 @@ class textfileSource(TabularBase):
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
 
-class matfileSource(TabularBase):
+@deprecated_name('matfileSource')
+class MatfileSource(TabularBase):
     _name = "Matlab Source"
     def __init__(self, filename, columnnames, varName='Orte'):
         """ Input filter for use with matlab data. Need to provide a variable name
@@ -501,8 +524,8 @@ class matfileSource(TabularBase):
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
 
-
-class matfileColumnSource(TabularBase):
+@deprecated_name('matfileColumnSource')
+class MatfileColumnSource(TabularBase):
     _name = "Matlab Column Source"
     
     def __init__(self, filename):
@@ -531,8 +554,9 @@ class matfileColumnSource(TabularBase):
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
     
-    
-class recArrayInput(TabularBase):
+
+@deprecated_name('recArrayInput')
+class RecArraySource(TabularBase):
     _name = 'RecArray Source'
     def __init__(self, recordArray):
         self.recArray = recordArray
@@ -618,8 +642,8 @@ class SelectionFilter(TabularBase):
     def keys(self):
         return self.resultsSource.keys()
 
-
-class resultsFilter(SelectionFilter):
+@deprecated_name('resultsFilter')
+class ResultsFilter(SelectionFilter):
     _name = "Results Filter"
     def __init__(self, resultsSource, **kwargs):
         """Class to permit filtering of fit results - masquarades
@@ -649,9 +673,10 @@ class resultsFilter(SelectionFilter):
                 raise RuntimeError('Expected an iterable of length 2')
 
             self.Index *= (self.resultsSource[k] > range[0])*(self.resultsSource[k] < range[1])
-                
+    
 
-class randomSelectionFilter(SelectionFilter):
+@deprecated_name('randomSelectionFilter')
+class RandomSelectionFilter(SelectionFilter):
     _name = "Random Selection Filter"
     
     def __init__(self, resultsSource, num_Samples):
@@ -673,7 +698,8 @@ class randomSelectionFilter(SelectionFilter):
         self.Index = np.random.choice(len(self.resultsSource), num_Samples, replace=False)
 
 
-class idFilter(SelectionFilter):
+@deprecated_name('idFilter')
+class IdFilter(SelectionFilter):
     _name = "Id Filter"
     
     def __init__(self, resultsSource, id_column, valid_ids):
@@ -704,7 +730,8 @@ class idFilter(SelectionFilter):
         self.Index = self.Index > 0.5
 
 
-class concatenateFilter(TabularBase):
+@deprecated_name('concatenateFilter')
+class ConcatenateFilter(TabularBase):
     _name = "Concatenation Filter"
 
     def __init__(self, source0, source1):
@@ -728,7 +755,8 @@ class concatenateFilter(TabularBase):
         s1_keys = self.source1.keys()
         return list(set(['concatSource', ] + [k for k in self.source0.keys() if k in s1_keys]))
 
-class cachingResultsFilter(TabularBase):
+@deprecated_name('cachingResultsFilter')
+class CachingResultsFilter(TabularBase):
     _name = "Caching Results Filter"
     def __init__(self, resultsSource, **kwargs):
         """Class to permit filtering of fit results - masquarades
@@ -772,8 +800,8 @@ class cachingResultsFilter(TabularBase):
     def keys(self):
         return self.resultsSource.keys()
 
-
-class mappingFilter(TabularBase):
+@deprecated_name('mappingFilter')
+class MappingFilter(TabularBase):
     _name = "Mapping Filter"
     def __init__(self, resultsSource, **kwargs):
         """Class to permit transformations (e.g. drift correction) of fit results
@@ -908,7 +936,8 @@ class _ChannelFilter(TabularBase):
     def keys(self):
         return self.colour_filter.keys()
 
-class colourFilter(TabularBase):
+@deprecated_name('colourFilter')
+class ColourFilter(TabularBase):
     _name = "Colour Filter"
     def __init__(self, resultsSource, currentColour=None):
         """Class to permit filtering by colour
@@ -985,8 +1014,8 @@ class colourFilter(TabularBase):
         return self.resultsSource.keys()
 
     
-    
-class cloneSource(TabularBase):
+@deprecated_name('cloneSource')
+class CloneSource(TabularBase):
     _name = "Cloned Source"
     def __init__(self, resultsSource, keys=None):
         """Creates an in memory copy of a (filtered) data source"""

@@ -184,7 +184,7 @@ class ParticleTracker:
         #TODO - check what nPhotons is doing here!!!
         dclumped = pyDeClump.coalesceClumps(pipeline.selectedDataSource.resultsSource.fitResults,
                                             pipeline.selectedDataSource['clumpIndex'], nphotons)
-        ds = tabular.fitResultsSource(dclumped)
+        ds = tabular.FitResultsSource(dclumped)
 
         pipeline.addDataSource('Coalesced',  ds)
         pipeline.selectDataSource('Coalesced')

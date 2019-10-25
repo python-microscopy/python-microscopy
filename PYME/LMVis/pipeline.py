@@ -373,7 +373,7 @@ class Pipeline:
         names = []#'']
         for k, v in self.layer_datasources.items():
             names.append(k)
-            if isinstance(v, tabular.colourFilter):
+            if isinstance(v, tabular.ColourFilter):
                 for c in v.getColourChans():
                     names.append('.'.join([k, c]))
     
@@ -518,9 +518,9 @@ class Pipeline:
         #check that we have a suitable object - note that this could potentially be relaxed
         assert isinstance(ds, tabular.TabularBase)
 
-        if not isinstance(ds, tabular.mappingFilter):
+        if not isinstance(ds, tabular.MappingFilter):
             #wrap with a mapping filter
-            ds = tabular.mappingFilter(ds)
+            ds = tabular.MappingFilter(ds)
 
         #add keys which might not already be defined
         if add_missing_vars:
@@ -557,17 +557,17 @@ class Pipeline:
                 # TODO - make drift correction a recipe module so that we don't need this code. Long term we should be
                 # ditching the mapping filter here.
                 old_mapping = self.mapping
-                self.mapping = tabular.mappingFilter(self.selectedDataSource)
+                self.mapping = tabular.MappingFilter(self.selectedDataSource)
                 self.mapping.mappings.update(old_mapping.mappings)
             else:
-                self.mapping = tabular.mappingFilter(self.selectedDataSource)
+                self.mapping = tabular.MappingFilter(self.selectedDataSource)
 
             #the filter, however needs to be re-generated with new keys and or data source
-            self.filter = tabular.resultsFilter(self.mapping, **self.filterKeys)
+            self.filter = tabular.ResultsFilter(self.mapping, **self.filterKeys)
 
             #we can also recycle the colour filter
             if self.colourFilter is None:
-                self.colourFilter = tabular.colourFilter(self.filter)
+                self.colourFilter = tabular.ColourFilter(self.filter)
             else:
                 self.colourFilter.resultsSource = self.filter
 
@@ -616,11 +616,11 @@ class Pipeline:
             self.filesToClose.append(h5f)
             
             try:
-                ds = tabular.h5rSource(h5f)
+                ds = tabular.H5RSource(h5f)
 
                 if 'DriftResults' in h5f.root:
-                    driftDS = tabular.h5rDSource(h5f)
-                    self.driftInputMapping = tabular.mappingFilter(driftDS)
+                    driftDS = tabular.H5RDSource(h5f)
+                    self.driftInputMapping = tabular.MappingFilter(driftDS)
                     #self.dataSources['Fiducials'] = self.driftInputMapping
                     self.addDataSource('Fiducials', self.driftInputMapping)
 
@@ -629,9 +629,9 @@ class Pipeline:
 
             except: #fallback to catch series that only have drift data
                 logger.exception('No fitResults table found')
-                ds = tabular.h5rDSource(h5f)
+                ds = tabular.H5RDSource(h5f)
 
-                self.driftInputMapping = tabular.mappingFilter(ds)
+                self.driftInputMapping = tabular.MappingFilter(ds)
                 #self.dataSources['Fiducials'] = self.driftInputMapping
                 self.addDataSource('Fiducials', self.driftInputMapping)
                 #self.selectDataSource('Fiducials')
@@ -651,7 +651,7 @@ class Pipeline:
 
             for t in h5f.list_nodes('/'):
                 if isinstance(t, tables.table.Table):
-                    tab = tabular.hdfSource(h5f, t.name)
+                    tab = tabular.HDFSource(h5f, t.name)
                     self.addDataSource(t.name, tab)
                         
                     if 'EventName' in t.description._v_names: #FIXME - we shouldn't have a special case here
@@ -670,23 +670,23 @@ class Pipeline:
         elif os.path.splitext(filename)[1] == '.mat': #matlab file
             if 'VarName' in kwargs.keys():
                 #old style matlab import
-                ds = tabular.matfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
+                ds = tabular.MatfileSource(filename, kwargs['FieldNames'], kwargs['VarName'])
             else:
-                ds = tabular.matfileColumnSource(filename)
+                ds = tabular.MatfileColumnSource(filename)
                 
 
         elif os.path.splitext(filename)[1] == '.csv':
             #special case for csv files - tell np.loadtxt to use a comma rather than whitespace as a delimeter
             if 'SkipRows' in kwargs.keys():
-                ds = tabular.textfileSource(filename, kwargs['FieldNames'], delimiter=',', skiprows=kwargs['SkipRows'])
+                ds = tabular.TextfileSource(filename, kwargs['FieldNames'], delimiter=',', skiprows=kwargs['SkipRows'])
             else:
-                ds = tabular.textfileSource(filename, kwargs['FieldNames'], delimiter=',')
+                ds = tabular.TextfileSource(filename, kwargs['FieldNames'], delimiter=',')
 
         else: #assume it's a tab (or other whitespace) delimited text file
             if 'SkipRows' in kwargs.keys():
-                ds = tabular.textfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
+                ds = tabular.TextfileSource(filename, kwargs['FieldNames'], skiprows=kwargs['SkipRows'])
             else:
-                ds = tabular.textfileSource(filename, kwargs['FieldNames'])
+                ds = tabular.TextfileSource(filename, kwargs['FieldNames'])
 
 
 
@@ -729,7 +729,7 @@ class Pipeline:
             
         #wrap the data source with a mapping so we can fiddle with things
         #e.g. combining z position and focus 
-        mapped_ds = tabular.mappingFilter(ds)
+        mapped_ds = tabular.MappingFilter(ds)
 
         
         if 'PixelSize' in kwargs.keys():
@@ -813,7 +813,7 @@ class Pipeline:
     
         #wrap the data source with a mapping so we can fiddle with things
         #e.g. combining z position and focus
-        mapped_ds = tabular.mappingFilter(ds)
+        mapped_ds = tabular.MappingFilter(ds)
     
         if 'PixelSize' in kwargs.keys():
             mapped_ds.addVariable('pixelSize', kwargs['PixelSize'])

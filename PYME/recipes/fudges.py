@@ -36,6 +36,6 @@ class EstimateFrameZFromStepMetadata(ModuleBase):
         
         z = zm[frame_nums]
         
-        namespace[self.outputName] = tabular.MappingFilter({'z':z})
+        namespace[self.outputName] = tabular.ColumnSource(z=z)
         
         

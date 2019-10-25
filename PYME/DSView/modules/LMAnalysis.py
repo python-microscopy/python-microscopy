@@ -686,7 +686,7 @@ class LMAnalyser2(object):
             if len(newResults) > 0:
                 if len(self.fitResults) == 0:
                     self.fitResults = newResults
-                    self.ds = tabular.fitResultsSource(self.fitResults)
+                    self.ds = tabular.FitResultsSource(self.fitResults)
                     self.dsviewer.pipeline.OpenFile(ds=self.ds, imBounds = self.dsviewer.image.imgBounds)
                     self.dsviewer.pipeline.mdh = self.resultsMdh
                     try:

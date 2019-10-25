@@ -352,7 +352,7 @@ def findTracks2(datasource, rad_var='error_x', multiplier='2.0', nFrames=20, min
     import PYME.Analysis.points.DeClump.deClump as deClump
     from PYME.IO import tabular
     
-    with_clumps = tabular.mappingFilter(datasource)
+    with_clumps = tabular.MappingFilter(datasource)
     
     if rad_var == '1.0':
         delta_x = 0 * datasource['x'] + multiplier
@@ -380,7 +380,7 @@ def findTracks2(datasource, rad_var='error_x', multiplier='2.0', nFrames=20, min
     with_clumps.addColumn('trackVelocity', trackVelocities)
     
     if minClumpSize > 0:
-        filt = tabular.resultsFilter(with_clumps, clumpSize=[minClumpSize, 1e6])
+        filt = tabular.ResultsFilter(with_clumps, clumpSize=[minClumpSize, 1e6])
     else:
         filt = with_clumps
 

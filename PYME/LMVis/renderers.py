@@ -57,7 +57,7 @@ class CurrentRenderer:
 
     @property
     def colourFilter(self):
-        if isinstance(self.pipeline, tabular.colourFilter):
+        if isinstance(self.pipeline, tabular.ColourFilter):
             return self.pipeline
         else:
             return self.pipeline.colourFilter

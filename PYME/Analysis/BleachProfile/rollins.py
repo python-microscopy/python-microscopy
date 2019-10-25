@@ -151,7 +151,7 @@ def neg_binom_histfitting(colourFilter, metadata, cluster_ids, blink_ids, N_bins
     
     hist_datasource = np.rec.fromarrays((y_hist, x_hist), dtype=[('y_hist', '<f4'), ('x_hist', '<f4')])
     
-    hist_data = tabular.recArrayInput(hist_datasource.view(np.recarray))
+    hist_data = tabular.RecArraySource(hist_datasource.view(np.recarray))
     # filt_off = tabular.recArrayInput(off_hist_datasource.view(np.recarray))
     """
     have fit for both N and p simultaneously, also want to make one that fits based on p as found in geo fit
@@ -253,7 +253,7 @@ def g_histfitting(colourFilter, metadata, cluster_ids, blink_ids, N_bins): #geom
     #
     hist_datasource = np.rec.fromarrays((y_hist, x_hist), dtype=[('y_hist', '<f4'), ('x_hist', '<f4')])
     #
-    hist_data = tabular.recArrayInput(hist_datasource.view(np.recarray))
+    hist_data = tabular.RecArraySource(hist_datasource.view(np.recarray))
     # filt_off = tabular.recArrayInput(off_hist_datasource.view(np.recarray))
     """
     have fit for both N and p simultaneously, also want to make one that fits based on p as found in geo fit
@@ -451,8 +451,8 @@ def histfitting(colourFilter, metadata, cluster_idxs, fit_order, num_bins, blink
     off_hist_datasource = np.rec.fromarrays((y_hist_off, bin_edges_off[1:]),
                                             dtype=[('y_hist', '<f4'), ('x_hist', '<f4')])
     
-    filt_on = tabular.recArrayInput(on_hist_datasource.view(np.recarray))
-    filt_off = tabular.recArrayInput(off_hist_datasource.view(np.recarray))
+    filt_on = tabular.RecArraySource(on_hist_datasource.view(np.recarray))
+    filt_off = tabular.RecArraySource(off_hist_datasource.view(np.recarray))
     
     """
     trying to get relevant files into metadata

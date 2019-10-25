@@ -31,9 +31,9 @@ def saveDataFrame(output, filename):
     elif filename.endswith('.xlsx') or filename.endswith('.xls'):
         output.to_excell(filename)
     elif filename.endswith('.hdf'):
-        tabular.mappingFilter(output).to_hdf(filename)
+        tabular.MappingFilter(output).to_hdf(filename)
     else:
-        tabular.mappingFilter(output).to_hdf(filename + '.hdf', 'Data')
+        tabular.MappingFilter(output).to_hdf(filename + '.hdf', 'Data')
 
 def saveTabular(output, filename):
     """Saves a pandas dataframe, inferring the destination type based on extension"""
@@ -62,7 +62,7 @@ def saveOutput(output, filename):
     elif isinstance(output, matplotlib.figure.Figure):
         output.savefig(filename)
     else: #hope we can convert to a tabular format
-        saveTabular(tabular.mappingFilter(output), filename)
+        saveTabular(tabular.MappingFilter(output), filename)
         
 def runRecipe(recipe, inputs, outputs, context={}):
     """Load inputs and run recipe, saving outputs.

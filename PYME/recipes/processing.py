@@ -1537,7 +1537,7 @@ class Colocalisation(ModuleBase):
         pearson = correlationCoeffs.pearson(imA, imB, roi_mask=roi_mask)
         MA, MB = correlationCoeffs.maskManders(imA, imB, mA, mB, roi_mask=roi_mask)
         
-        out = tabular.mappingFilter({'pearson' : pearson, 'manders_A' : MA, 'manders_B' : MB})
+        out = tabular.DictSource({'pearson' : pearson, 'manders_A' : MA, 'manders_B' : MB})
         
         namespace[self.outputTable] = out
           
@@ -1622,7 +1622,7 @@ class ColocalisationEDT(ModuleBase):
         bins_, enrichment, enclosed, enclosed_area = edtColoc.image_enrichment_and_fraction_at_distance(imA, mask, voxelsize,
                                                                                                bins, roi_mask=roi_mask)
         
-        out = tabular.mappingFilter({'bins' : bins[1:], 'enrichment' : enrichment, 'enclosed' : enclosed, 'enclosed_area' : enclosed_area})
+        out = tabular.MappingFilter(tabular.DictSource({'bins' : bins[1:], 'enrichment' : enrichment, 'enclosed' : enclosed, 'enclosed_area' : enclosed_area}))
         out.mdh = getattr(im, 'mdh', None)
         
         if not self.inputImageB == '':
@@ -1894,7 +1894,7 @@ class StatisticsByFrame(ModuleBase):
             mode[si] = stats.mode(slice_data)[0]
 
         # package up and ship-out results
-        res = tabular.mappingFilter({'variance': var, 'mean': mean, 'median': median, 'mode': mode})
+        res = tabular.DictSource({'variance': var, 'mean': mean, 'median': median, 'mode': mode})
         try:
             res.mdh = series.mdh
         except:

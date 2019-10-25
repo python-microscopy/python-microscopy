@@ -27,7 +27,7 @@ import sys
 
 
 def convertFile(inFile, outFile):
-    ds = tabular.h5rSource(inFile)
+    ds = tabular.H5RSource(inFile)
 
     nRecords = len(ds[ds.keys()[0]])
 
