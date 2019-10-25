@@ -21,12 +21,11 @@
 #
 ##################
 
-from numpy import *
-from numpy.fft import *
 import numpy as np
-import numpy
 from PYME.IO import tabular
 import scipy.ndimage
+import logging
+logger = logging.getLogger(__name__)
 
 
 def getPSFSlice(datasource, resultsSource, metadata, zm=None):
@@ -39,10 +38,12 @@ def getPSFSlice(datasource, resultsSource, metadata, zm=None):
 #    for i in range()
 
 def extractIms(dataSource, results, metadata, zm =None, roiSize=10, nmax = 1000):
-    ims = zeros((2*roiSize, 2*roiSize, len(results['x'])))
-    points = (array([results['x']/(metadata.voxelsize.x *1e3), results['y']/(metadata.voxelsize.y *1e3), results['A']]).T)
+    ims = np.zeros((2*roiSize, 2*roiSize, len(results['x'])))
+    points = (np.array([results['x']/(metadata.voxelsize.x *1e3),
+                        results['y']/(metadata.voxelsize.y *1e3),
+                        results['A']]).T)
 
-    pts = numpy.round(points[:,:2])
+    pts = np.round(points[:,:2])
     points[:,:2] = points[:,:2] - pts
     ts = results['tIndex']
     bs = results['fitResults_background']
@@ -57,17 +58,17 @@ def extractIms(dataSource, results, metadata, zm =None, roiSize=10, nmax = 1000)
     bs = bs[ind]
 
     if not zm is None:
-        zvals = array(list(set(zm.yvals)))
+        zvals = np.array(list(set(zm.yvals)))
         zvals.sort()
 
         zv = zm(ts.astype('f'))
         #print zvals
         #print zv
 
-        zis = array([numpy.argmin(numpy.abs(zvals - z)) for z in zv])
+        zis = np.array([np.argmin(np.abs(zvals - z)) for z in zv])
         #print zis
     else:
-        zvals = array([0])
+        zvals = np.array([0])
         zis = 0.*ts
 
     for i in range(len(ts)):
@@ -84,21 +85,21 @@ def extractIms(dataSource, results, metadata, zm =None, roiSize=10, nmax = 1000)
 
 def getPSF(ims, points, zvals, zis):
     height, width = ims.shape[0],ims.shape[1]
-    kx,ky = mgrid[:height,:width]#,:self.sliceShape[2]]
+    kx,ky = np.mgrid[:height,:width]#,:self.sliceShape[2]]
 
-    kx = fftshift(kx - height/2.)/height
-    ky = fftshift(ky - width/2.)/width
+    kx = np.fft.fftshift(kx - height/2.)/height
+    ky = np.fft.fftshift(ky - width/2.)/width
     
 
-    d = zeros((height, width, len(zvals)))
+    d = np.zeros((height, width, len(zvals)))
     print((d.shape))
 
     for i in range(len(points)):
-        F = fftn(ims[:,:,i])
+        F = np.fft.fftn(ims[:,:,i])
         p = points[i,:]
         #print zis[i]
         #print ifftn(F*exp(-2j*pi*(kx*-p[0] + ky*-p[1]))).real.shape
-        d[:,:,zis[i]] = d[:,:,zis[i]] + ifftn(F*exp(-2j*pi*(kx*-p[0] + ky*-p[1]))).real
+        d[:,:,zis[i]] = d[:,:,zis[i]] + np.fft.ifftn(F*np.exp(-2j*np.pi*(kx*-p[0] + ky*-p[1]))).real
 
     d = len(zvals)*d/(points[:,2].sum())
     
@@ -111,7 +112,7 @@ def getPSF(ims, points, zvals, zis):
 
 def getIntCenter(im):
     im = im.squeeze()
-    X, Y, Z = ogrid[0:im.shape[0], 0:im.shape[1], 0:im.shape[2]]
+    X, Y, Z = np.ogrid[0:im.shape[0], 0:im.shape[1], 0:im.shape[2]]
 
     #from pylab import *
     #imshow(im.max(2))
@@ -135,18 +136,27 @@ def getIntCenter(im):
     return x, y, z
 
 
-def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1], normalize=True, centreZ = True, centreXY = True, x_offset=0, y_offset=0, z_offset=0):
+def getPSF3D(im, points, PSshape=(30,30,30), blur=(0.5, 0.5, 1), normalize=True, centreZ=True, centreXY=True,
+             x_offset=0, y_offset=0, z_offset=0):
     sx, sy, sz = PSshape
-    height, width, depth = 2*array(PSshape) + 1
-    kx,ky,kz = mgrid[:height,:width,:depth]#,:self.sliceShape[2]]
+    im_h, im_w, im_d = im.shape
+    height, width, depth = 2 * np.array(PSshape, dtype=int) + 1
+    logger.debug('Target PSF size: %d, %d, %d [px]' % (height, width, depth))
 
-    kx = fftshift(kx - height/2.)/height
-    ky = fftshift(ky - width/2.)/width
-    kz = fftshift(kz - depth/2.)/depth
+    # check that tagged points stay in-bounds
+    for p in points:
+        sx += min(int(p[0] - sx), 0)  # start inside
+        sx += min(im_h - int(np.ceil(p[0] + sx + 1)), 0)  # stop inside
 
+        sy += min(int(p[1] - sy), 0)
+        sx += min(im_w - int(np.ceil(p[1] + sy + 1)), 0)
 
-    d = zeros((height, width, depth))
-    print((d.shape))
+        sz += min(int(p[2] - sz), 0)
+        sz += min(im_d - int(np.ceil(p[2] + sz + 1)), 0)
+
+    height, width, depth = 2 * np.array([sx, sy, sz], dtype=int) + 1
+    logger.debug('Extracting PSF of size: %d, %d, %d [px]' % (height, width, depth))
+    d = np.zeros((height, width, depth))
 
     imgs = []
     dxs = []
@@ -186,9 +196,15 @@ def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1], normalize=True,
         dys = dys - dym + y_offset
         dzm = 0
 
+    kx, ky, kz = np.mgrid[:height, :width, :depth]  # ,:self.sliceShape[2]]
+
+    kx = np.fft.fftshift(kx - height / 2.) / height
+    ky = np.fft.fftshift(ky - width / 2.) / width
+    kz = np.fft.fftshift(kz - depth / 2.) / depth
+
     for imi, dx, dy, dz in zip(imgs, list(dxs), list(dys), list(dzs)):
-        F = fftn(imi)
-        d = d + ifftn(F*exp(-2j*pi*(kx*-dx + ky*-dy + kz*-dz))).real
+        F = np.fft.fftn(imi)
+        d = d + np.fft.ifftn(F*np.exp(-2j*np.pi*(kx*-dx + ky*-dy + kz*-dz))).real
 
     d = scipy.ndimage.gaussian_filter(d, blur)
     #estimate background as a function of z by averaging rim pixels
@@ -206,7 +222,7 @@ def backgroundCorrectPSFWF(d):
     import numpy as np
     from scipy import linalg
     
-    zf = d.shape[2]/2
+    zf = int(d.shape[2]/2)
         
     #subtract a linear background in x
     Ax = np.vstack([np.ones(d.shape[0]), np.arange(d.shape[0])]).T        
