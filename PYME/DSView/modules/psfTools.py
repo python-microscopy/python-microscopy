@@ -125,8 +125,11 @@ class PSFQualityPanel(wx.Panel):
         
         vsizer.Add(self.grid, 2, wx.EXPAND|wx.ALL, 5)
         vsizer.Add(wx.StaticText(self, -1, 'Click a cell for description'), 0, wx.ALL, 5)
-        
-        self.description = wx.TextCtrl(self, -1, '', style = wx.TE_MULTILINE|wx.TE_AUTO_SCROLL|wx.TE_READONLY)
+
+        try:
+            self.description = wx.TextCtrl(self, -1, '', style = wx.TE_MULTILINE|wx.TE_AUTO_SCROLL|wx.TE_READONLY)
+        except AttributeError:  # wx4, autoscroll is default behavior and flag doesn't exist
+            self.description = wx.TextCtrl(self, -1, '', style=wx.TE_MULTILINE | wx.TE_READONLY)
         vsizer.Add(self.description, 1, wx.EXPAND|wx.ALL, 5)
         
         self.grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnSelectCell)
@@ -219,7 +222,7 @@ class CRBViewPanel(wx.Panel):
         import numpy as np
         try:
             d = self.image.data[:,:,:,0].squeeze()
-            I = d[:,:,d.shape[2]/2].sum()
+            I = d[:,:,int(d.shape[2]/2)].sum()
 
             vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
 
@@ -233,7 +236,7 @@ class CRBViewPanel(wx.Panel):
             self.z_ = z_ - z_.mean()
 
             ps_as = fourierHNA.GenAstigPSF(self.z_, dx=vs[0], strength=2)
-            I = ps_as[:,:,ps_as.shape[2]/2].sum()
+            I = ps_as[:,:,int(ps_as.shape[2]/2)].sum()
             self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/I + self.background, 500, voxelsize=vs)))
 
             self.draw()
