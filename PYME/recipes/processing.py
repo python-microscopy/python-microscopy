@@ -1714,7 +1714,6 @@ class AverageFramesByZStep(ModuleBase):
                 for fi in range(count[si]):
                     # sum frames from this step directly into the output array
                     data_avg[:, :, si] += image_stack.data[:, :, frames_z_sorted[start + fi], ci].squeeze()
-                # data_avg[:, :, si] /= count[si]  # complete the average at this step
                 start += count[si]
             # complete the average for this color channel and append to output
             new_stack.append(data_avg / count[None, None, :])
@@ -1722,10 +1721,7 @@ class AverageFramesByZStep(ModuleBase):
         averaged = ImageStack(new_stack, mdh=image_stack.mdh)
 
         # fudge metadata, leaving breadcrumbs
-        #averaged.mdh['Processing.AverageFramesByStep.OriginalFramesPerStep'] = image_stack.mdh['StackSettings.FramesPerStep'] - This is not normally defined
-        #averaged.mdh['StackSettings.FramesPerStep'] = 1
         averaged.mdh['StackSettings.NumSteps'] = n_steps
-        #averaged.mdh['StackSettings.NumCycles'] = 1
         averaged.mdh['StackSettings.StepSize'] = abs(mode(np.diff(z))[0][0])
 
         namespace[self.output] = averaged
