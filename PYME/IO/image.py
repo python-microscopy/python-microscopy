@@ -441,8 +441,11 @@ class ImageStack(object):
             wx.MessageBox("Carrying on with defaults - no gaurantees it'll work well", 'ERROR: No metadata found in file ...', wx.OK)
             print("ERROR: No metadata fond in file ... Carrying on with defaults - no gaurantees it'll work well")
 
-        #attempt to estimate any missing parameters from the data itself        
-        MetaData.fillInBlanks(self.mdh, self.dataSource)
+        #attempt to estimate any missing parameters from the data itself
+        try:
+            MetaData.fillInBlanks(self.mdh, self.dataSource)
+        except:
+            logger.exception('Error attempting to populate missing metadata')
 
         #calculate the name to use when we do batch analysis on this        
         #from PYME.IO.FileUtils.nameUtils import getRelFilename

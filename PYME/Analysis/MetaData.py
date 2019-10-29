@@ -205,6 +205,7 @@ def fillInBlanks(md, dataSource):
         md.setEntry('EstimatedLaserOnFrameNo', md.getEntry('Protocol.DataStartsAt'))
         
     if not 'Protocol.DataStartsAt' in md.getEntryNames() and not 'EstimatedLaserOnFrameNo' in md.getEntryNames():
+        # FIXME - Do we still need this - this is a backwards compatibility fix for **really** old files
         #Guestimate when the laser was turned on
 
         if dataSource.getNumSlices() < 200: #not long enough to bother
@@ -237,13 +238,13 @@ def fillInBlanks(md, dataSource):
             darkFrStart, darkFrStop = md.getEntry('Protocol.DarkFrameRange')
             md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(darkFrStart,darkFrStop)]).ravel()))
         else: #use hueristics
-            tLon = md.getEntry('EstimatedLaserOnFrameNo')
+            tLon = md.getOrDefault('EstimatedLaserOnFrameNo', 0)
             #Estimate the offset during the dark time before laser was turned on
             #N.B. this will not work if other lights (e.g. room lights, arc lamp etc... are on
             if not tLon == 0:
                 md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(0, max(tLon - 1, 1))]).ravel()))
             else: #if laser was on to start with our best estimate is at maximal bleaching where the few molecules that are still on will hopefully have little influence on the median
-                md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(0, 10)]).ravel()))
+                md.setEntry('Camera.ADOffset', numpy.median(numpy.array([dataSource.getSlice(i) for i in range(0, min(10, dataSource.getNumSlices()))]).ravel()))
                 import wx
                 if not wx.GetApp() is None:
                     wx.MessageBox("ADOffset fudged as %d and probably wrong\nTo change ADOffset, execute the following in the console:\nmd.setEntry('Camera.ADOffset', newValue)\nmdh.setEntry('Camera.ADOffset', newValue)" % md.getEntry('Camera.ADOffset'),'Did not find laser turn on signature', style=wx.OK|wx.ICON_EXCLAMATION)
