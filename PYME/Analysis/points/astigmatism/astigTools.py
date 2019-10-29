@@ -32,7 +32,7 @@ def find_and_add_zRange(astig_library, rough_knot_spacing=50.):
         # conditions, i.e. that our spline has adequate support
         z_steps = np.unique(astig_library[ii]['z'])
         dz_med = np.median(np.diff(z_steps))
-        smoothing_factor = min(int(rough_knot_spacing / dz_med), 2)  # make sure knots are adequately supported
+        smoothing_factor = max(int(rough_knot_spacing / dz_med), 2)  # make sure knots are adequately supported
         knots = z_steps[1:-1:smoothing_factor]
         # make the spline
         dsig = terp.LSQUnivariateSpline(astig_library[ii]['z'], astig_library[ii]['dsigma'], knots)
