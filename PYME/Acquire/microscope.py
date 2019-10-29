@@ -886,14 +886,8 @@ class microscope(object):
         self.state.registerHandler('Positioning.%s' % axis_name, lambda: units_um*multiplier*piezo.GetPos(channel),
                                     lambda v: piezo.MoveTo(channel, v/(multiplier*units_um)), needCamRestart=needCamRestart)
         
-        try:
-            piezo.GetTargetPos(channel)
-            self.state.registerHandler('Positioning.%s_target' % axis_name,
+        self.state.registerHandler('Positioning.%s_target' % axis_name,
                                        lambda: units_um*multiplier*piezo.GetTargetPos(channel))
-        except (AttributeError, NotImplementedError):
-            # piezo doesn't have a functional GetTargetPos method, assume that target position = current position
-            self.state.registerHandler('Positioning.%s_target' % axis_name,
-                                       lambda: units_um * multiplier * piezo.GetPos(channel))
         
     def register_camera(self, cam, name, port='', rotate=False, flipx=False, flipy=False):
         """
