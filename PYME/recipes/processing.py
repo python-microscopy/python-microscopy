@@ -6,7 +6,7 @@ Created on Mon May 25 17:15:01 2015
 """
 
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List
+from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List, ListFloat
 
 #try:
 #    from traitsui.api import View, Item, Group
@@ -1682,6 +1682,7 @@ class AverageFramesByZStep(ModuleBase):
     def execute(self, namespace):
         from PYME.Analysis import piecewiseMapping
         from scipy.stats import mode
+        import time
 
         image_stack = namespace[self.input_image]
 
@@ -1707,6 +1708,9 @@ class AverageFramesByZStep(ModuleBase):
         logger.debug('Averaged stack size: %d' % n_steps)
 
         new_stack = []
+        t = time.time()
+        fudged_events = []
+        cycle_time = image_stack.mdh.getOrDefault('Camera.CycleTime', 1.0)
         for ci in range(image_stack.data.shape[3]):
             data_avg = np.zeros((image_stack.data.shape[0], image_stack.data.shape[1], n_steps))
             start = 0
@@ -1715,12 +1719,17 @@ class AverageFramesByZStep(ModuleBase):
                     # sum frames from this step directly into the output array
                     data_avg[:, :, si] += image_stack.data[:, :, frames_z_sorted[start + fi], ci].squeeze()
                 start += count[si]
+                fudged_events.append(('ProtocolFocus', t, '%d, %3.3f' % (si, z_steps[si])))
+                fudged_events.append((('StartAq', t, '%d' % si)))
+                t += cycle_time
             # complete the average for this color channel and append to output
             new_stack.append(data_avg / count[None, None, :])
 
-        averaged = ImageStack(new_stack, mdh=image_stack.mdh)
+        fudged_events = np.array(fudged_events, dtype=[('EventName', 'S32'), ('Time', '<f8'), ('EventDescr', 'S256')])
+        averaged = ImageStack(new_stack, mdh=image_stack.mdh, events=fudged_events)
 
         # fudge metadata, leaving breadcrumbs
+        averaged.mdh['Camera.CycleTime'] = cycle_time
         averaged.mdh['StackSettings.NumSteps'] = n_steps
         averaged.mdh['StackSettings.StepSize'] = abs(mode(np.diff(z))[0][0])
 
