@@ -303,6 +303,8 @@ class HistLimitPanel(wx.Panel):
             del MemBitmap
 
     def OnSize(self, event):
+        #print('dp size')
+        self.GenHist()
         self.Refresh()
         self.Update()
         
