@@ -6,7 +6,7 @@ Created on Mon May 25 17:15:01 2015
 """
 
 from .base import ModuleBase, register_module, Filter
-from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List, ListFloat
+from PYME.recipes.traits import Input, Output, Float, Enum, CStr, Bool, Int, List
 
 #try:
 #    from traitsui.api import View, Item, Group
@@ -1734,6 +1734,55 @@ class AverageFramesByZStep(ModuleBase):
         averaged.mdh['StackSettings.StepSize'] = abs(mode(np.diff(z))[0][0])
 
         namespace[self.output] = averaged
+
+
+@register_module('RegularizeStack')
+class RegularizeStack(ModuleBase):
+    """
+    fixme
+    """
+
+    input = Input('input')
+    z_sampling = Float(0.05)
+    output = Output('regular_stack')
+
+    def execute(self, namespace):
+        from PYME.Analysis import piecewiseMapping
+        from scipy.interpolate import RegularGridInterpolator
+
+
+        stack = namespace[self.input]
+
+        # RegularGridInterpolator(points, values, method='linear', bounds_error=True, fill_value=nan)
+
+        # grab z from events if we can
+        frames = np.arange(stack.data.shape[2], dtype=int)
+
+        # GeneratePMFromEventList internally handles converting time stamps to frame numbers
+        z_mapping = piecewiseMapping.GeneratePMFromEventList(stack.events, stack.mdh,
+                                                             stack.mdh['StartTime'],
+                                                             stack.mdh['Protocol.PiezoStartPos'])
+        z_vals = z_mapping(frames)
+
+        x = np.arange(0, stack.mdh['voxelsize.x'] * stack.data.shape[0], stack.mdh['voxelsize.x'])
+        y = np.arange(0, stack.mdh['voxelsize.y'] * stack.data.shape[1], stack.mdh['voxelsize.y'])
+
+        # generate grid for sampling
+        xx, yy, zz = np.meshgrid(x, y, np.arange(np.min(z_vals), np.max(z_vals), self.z_sampling),
+                                 indexing='ij')
+
+        regular = []
+        for ci in range(stack.data.shape[3]):
+            interp = RegularGridInterpolator((x, y, z_vals), stack.data[:, :, :, ci], method='linear')
+            regular.append(interp((xx, yy, zz)))
+
+        regular_stack = ImageStack(regular, mdh=stack.mdh)
+
+        regular_stack.mdh['RegularizedStack'] = True
+        regular_stack.mdh['StackSettings.StepSize'] = self.z_sampling
+        regular_stack.mdh['voxelsize.z'] = self.z_sampling
+
+        namespace[self.output] = regular_stack
 
 @register_module('BackgroundSubtractionMovingAverage')
 class BackgroundSubtractionMovingAverage(ModuleBase):
