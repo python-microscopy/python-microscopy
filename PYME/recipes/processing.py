@@ -1654,24 +1654,17 @@ class AverageFramesByZStep(ModuleBase):
     """
     Averages frames acquired at the same z-position, as determined by the associated events, or (fall-back) metadata.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     input_image : string
         name of an ImageStack instance, with metadata / events describing which frames were taken at which z-position.
-        
     input_zvals : string
-        name of a table mapping frames to z values. If empty, the image events are used
-        
-    Parameters
-    __________
-    
+        [optional] name of a table mapping frames to z values. If empty, the image events are used.
 
     Returns
     -------
     output : traits.Output
         ImageStack instance, where frames taken at the same z-position have been averaged together.
-    Notes
-    -----
     """
 
     input_image = Input('input')
@@ -1736,10 +1729,23 @@ class AverageFramesByZStep(ModuleBase):
         namespace[self.output] = averaged
 
 
-@register_module('RegularizeStack')
-class RegularizeStack(ModuleBase):
+@register_module('RegularizeZSampling')
+class RegularizeZSampling(ModuleBase):
     """
-    fixme
+    Resamples input stack at even intervals along z using a linear interpolation.
+
+    Parameters
+    ----------
+    input: Input
+        ImageStack instance
+    z_sampling: Float
+        Spacing to resample the stack axially, units of micrometers
+
+    Returns
+    -------
+    output: Output
+        ImageStack instance
+
     """
 
     input = Input('input')
@@ -1750,10 +1756,7 @@ class RegularizeStack(ModuleBase):
         from PYME.Analysis import piecewiseMapping
         from scipy.interpolate import RegularGridInterpolator
 
-
         stack = namespace[self.input]
-
-        # RegularGridInterpolator(points, values, method='linear', bounds_error=True, fill_value=nan)
 
         # grab z from events if we can
         frames = np.arange(stack.data.shape[2], dtype=int)
