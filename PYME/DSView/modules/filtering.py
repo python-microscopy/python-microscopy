@@ -316,11 +316,11 @@ class filterer:
 
     def OnResampleZStack(self, event):
         from PYME.DSView import ViewIm3D
-        from PYME.recipes.processing import RegularizeZSampling
+        from PYME.recipes.processing import ResampleZ
 
         dialog = wx.TextEntryDialog(None, 'Z Spacing [um]:', 'Enter Desired Spacing', str(0.05))
         if dialog.ShowModal() == wx.ID_OK:
-            regular = RegularizeZSampling().apply_simple(input=self.image, z_sampling=float(dialog.GetValue()))
+            regular = ResampleZ().apply_simple(input=self.image, z_sampling=float(dialog.GetValue()))
 
             ViewIm3D(regular, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 

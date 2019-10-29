@@ -1729,8 +1729,8 @@ class AverageFramesByZStep(ModuleBase):
         namespace[self.output] = averaged
 
 
-@register_module('RegularizeZSampling')
-class RegularizeZSampling(ModuleBase):
+@register_module('ResampleZ')
+class ResampleZ(ModuleBase):
     """
     Resamples input stack at even intervals along z using a linear interpolation. If the input stack contains multiple
     frames taken at the same z position, the stack should first be run through AverageFramesByZStep.
