@@ -479,7 +479,7 @@ class PSFTools(HasTraits):
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()
 
-            fid = open(fpath, 'wb')
+            fid = open(fpath, 'w', encoding='utf8')
             json.dump(results, fid, indent=4, sort_keys=True)
             fid.close()
 
