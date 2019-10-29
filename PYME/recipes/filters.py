@@ -100,9 +100,9 @@ class MaxFilter(Filter):
     * implemented as a call to `scipy.ndimage.maximum_filter`
     * sizeZ is ignored and a 2D filtering performed if ``processFramesIndividually`` is selected
     """
-    sizeX = Int(1)
-    sizeY = Int(1)
-    sizeZ = Int(1)
+    sizeX = Int(3)
+    sizeY = Int(3)
+    sizeZ = Int(3)
 
     # def __init__(self, **kwargs):
     #    pass
