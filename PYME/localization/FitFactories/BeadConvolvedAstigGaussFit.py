@@ -146,10 +146,10 @@ class GaussianFitFactory(FFBase.FitFactory):
         self.solver = FitModelWeighted
         try:  # check if bead diameter is stored in the metadata
             self.beadDiam = metadata['Bead.Diameter']  # Should be in [nm]
-        except AttributeError:
+        except KeyError:
             try:  # check if a bead diameter has been injected in just for analysis
                 self.beadDiam = metadata['Analysis.Bead.Diameter']
-            except AttributeError:
+            except KeyError:
                 raise UserWarning('BeadConvolvedAstigGauss fitfactory requires a Bead.Diameter entry in the metadata')
 
     def FromPoint(self, x, y, z=None, roiHalfSize=5, axialHalfSize=15):
