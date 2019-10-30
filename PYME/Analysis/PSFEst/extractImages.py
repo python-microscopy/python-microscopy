@@ -135,26 +135,52 @@ def getIntCenter(im):
 
     return x, y, z
 
+def _expand_z(ps_shape, im_shape, points):
+    """
+    Expand ROI size in z to maximum supported by image and point locations.
+    
+    Parameters
+    ----------
+    ps_shape : 3-tuple of psf half roi sizes
+    im_shape : 3-tuple giving
+    points : locations of points
+
+    Returns
+    -------
+
+    new_shape : 3-tuple of expanded PSF shape
+    """
+    
+    sx, sy, sz = ps_shape
+    logger.debug('Expanding PSF z size to maximum supported by data')
+    
+    pts = np.asarray(points)
+    dzl = np.min(pts[:,2]) - 1
+    dzh = np.min(im_shape[2] - pts[:,2]) -1
+    
+    szn = min(dzl, dzh)
+    
+    if szn < sz:
+        logger.warning('New PSF is SMALLER than requested (szn = %d, request = %d)' % (szn, sz))
+    
+    return sx, sy, szn
+
 
 def getPSF3D(im, points, PSshape=(30,30,30), blur=(0.5, 0.5, 1), normalize=True, centreZ=True, centreXY=True,
-             x_offset=0, y_offset=0, z_offset=0):
+             x_offset=0, y_offset=0, z_offset=0,expand_z=False):
+    
+    if expand_z:
+        PSshape = _expand_z(PSshape, im.shape, points)
+        
     sx, sy, sz = PSshape
-    im_h, im_w, im_d = im.shape
     height, width, depth = 2 * np.array(PSshape, dtype=int) + 1
-    logger.debug('Target PSF size: %d, %d, %d [px]' % (height, width, depth))
 
-    # check that tagged points stay in-bounds
-    for p in points:
-        sx += min(int(p[0] - sx), 0)  # start inside
-        sx += min(im_h - int(np.ceil(p[0] + sx + 1)), 0)  # stop inside
+    kx, ky, kz = np.mgrid[:height, :width, :depth]  # ,:self.sliceShape[2]]
 
-        sy += min(int(p[1] - sy), 0)
-        sx += min(im_w - int(np.ceil(p[1] + sy + 1)), 0)
+    kx = np.fft.fftshift(kx - height / 2.) / height
+    ky = np.fft.fftshift(ky - width / 2.) / width
+    kz = np.fft.fftshift(kz - depth / 2.) / depth
 
-        sz += min(int(p[2] - sz), 0)
-        sz += min(im_d - int(np.ceil(p[2] + sz + 1)), 0)
-
-    height, width, depth = 2 * np.array([sx, sy, sz], dtype=int) + 1
     logger.debug('Extracting PSF of size: %d, %d, %d [px]' % (height, width, depth))
     d = np.zeros((height, width, depth))
 
@@ -195,12 +221,6 @@ def getPSF3D(im, points, PSshape=(30,30,30), blur=(0.5, 0.5, 1), normalize=True,
         dxs = dxs - dxm + x_offset
         dys = dys - dym + y_offset
         dzm = 0
-
-    kx, ky, kz = np.mgrid[:height, :width, :depth]  # ,:self.sliceShape[2]]
-
-    kx = np.fft.fftshift(kx - height / 2.) / height
-    ky = np.fft.fftshift(ky - width / 2.) / width
-    kz = np.fft.fftshift(kz - depth / 2.) / depth
 
     for imi, dx, dy, dz in zip(imgs, list(dxs), list(dys), list(dzs)):
         F = np.fft.fftn(imi)
