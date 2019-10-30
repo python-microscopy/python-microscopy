@@ -1072,6 +1072,37 @@ class BinaryOr(ArithmaticFilter):
     def applyFilter(self, data0, data1, chanNum, i, image0):
         
         return (data0 + data1) > .5
+
+
+@register_module('LogicalAnd')
+class LogicalAnd(ArithmaticFilter):
+    """Perform a logical AND on images"""
+
+    def applyFilter(self, data0, data1, chanNum, i, image0):
+        return np.logical_and(data0, data1)
+
+
+@register_module('IsClose')
+class IsClose(ArithmaticFilter):
+    """
+    Wrapper for numpy.isclose
+
+    Parameters:
+    -----------
+    abs_tolerance: Float
+        absolute tolerance
+    rel_tolerance: Float
+        relative tolerance
+
+    Notes:
+    ------
+    from numpy docs, tolerances are combined as: absolute(a - b) <= (atol + rtol * absolute(b))
+
+    """
+    abs_tolerance = Float(1e-8)
+    rel_tolerance = Float(1e-5)
+    def applyFilter(self, data0, data1, chanNum, i, image0):
+        return np.isclose(data0, data1, atol=self.abs_tolerance, rtol=self.rel_tolerance)
         
 def _issubclass(cl, c):
     try:
