@@ -39,6 +39,7 @@ class filterer:
         dsviewer.AddMenuItem('Processing', 'Mean Projection', self.OnMeanProject)
         dsviewer.AddMenuItem('Processing', 'Max Projection', self.OnMaxProject)
         dsviewer.AddMenuItem('Processing', 'Average Frames by Step', self.OnAverageFramesByStep)
+        dsviewer.AddMenuItem('Processing', 'Resample Z Stack', self.OnResampleZStack)
 
     def OnGaussianFilter(self, event):
         import numpy as np
@@ -312,6 +313,16 @@ class filterer:
         averaged = AverageFramesByZStep().apply_simple(input_image=self.image)
 
         ViewIm3D(averaged, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
+
+    def OnResampleZStack(self, event):
+        from PYME.DSView import ViewIm3D
+        from PYME.recipes.processing import ResampleZ
+
+        dialog = wx.TextEntryDialog(None, 'Z Spacing [um]:', 'Enter Desired Spacing', str(0.05))
+        if dialog.ShowModal() == wx.ID_OK:
+            regular = ResampleZ().apply_simple(input=self.image, z_sampling=float(dialog.GetValue()))
+
+            ViewIm3D(regular, glCanvas=self.dsviewer.glCanvas, parent=wx.GetTopLevelParent(self.dsviewer))
 
 
 def Plug(dsviewer):

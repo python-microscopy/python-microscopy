@@ -37,9 +37,6 @@ def cam(scope):
     # With our laser at a stable operating current we saturate easily, set integ low. Can't get frame rate higher than
     # 300 Hz, so try and get a low integ and 250 frame rate
     scope.cam.SetIntegTime(0.005)
-    
-    # TODO - possibly change gain instead to avoid saturation
-    # see SetGain() and SetGainBoost() functions of the uc_480 class
 
 #PIFoc
 @init_hardware('PIFoc')
@@ -97,7 +94,8 @@ def focus_lock(MainFrame, scope):
 
     def refresh_position(*args, **kwargs):
         position[:-1] = position[1:]
-        position[-1] = scope.focus_lock.peak_position
+        # if the position can't be found, replace nan with zero
+        position[-1] = np.nan_to_num(scope.focus_lock.peak_position)
         time[:-1] = time[1:]
         time[-1] = scope.focus_lock._last_time
         position_plot.SetData(time, position)
