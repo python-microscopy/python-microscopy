@@ -22,6 +22,7 @@
 ##################
 
 from . import Mercury as m
+from PYME.Acquire.Hardware.Piezos import base_piezo
 import time
 import numpy  as np
 
@@ -53,7 +54,7 @@ class mercuryJoystick:
         return self.stepper.joystickOn
 
 
-class mercuryStepper:
+class mercuryStepper(base_piezo.PiezoBase):
     units_um = 1000
     def __init__(self, comPort=5, baud=9600, axes=['A', 'B'], steppers=['M-229.25S', 'M-229.25S']):
         self.axes = axes

@@ -215,14 +215,31 @@ def action_manager(MainFrame, scope):
     ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
 
+@init_gui('Tiling')
+def tiling(MainFrame, scope):
+    from PYME.Acquire.ui import tile_panel
+
+    ap = tile_panel.TilePanel(MainFrame, scope)
+    MainFrame.aqPanels.append((ap, 'Tiling'))
+
+
+#pz.join()
 @init_gui('Drift tracking')
 def drift_tracking(MainFrame, scope):
     import subprocess
     import sys
     import time
     from PYME.Acquire import PYMEAcquire
-    time.sleep(10)
-    scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking" -m "compact"' % (sys.executable, PYMEAcquire.__file__), shell=True)
+    import wx
+
+
+    def _drift_init():
+        #scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking" -m "compact"' % (sys.executable, PYMEAcquire.__file__), shell=True)
+        scope.p_drift = subprocess.Popen('%s "%s" -i init_drift_tracking.py -t "Drift Tracking"' % (sys.executable, PYMEAcquire.__file__), shell=True)
+
+    time.sleep(15)
+    _drift_init()
+    #wx.CallLater(15e3, _drift_init)
 
 
 #must be here!!!
