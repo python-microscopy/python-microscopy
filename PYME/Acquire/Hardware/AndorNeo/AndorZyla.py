@@ -489,6 +489,7 @@ class AndorBase(SDK3Camera):
                 self.CycleMode.setString(u'Continuous')
             
             if mode == self.MODE_SOFTWARE_TRIGGER:
+                print('Setting software triggered mode')
                 self.TriggerMode.setString(u'Software')
             else:
                 self.TriggerMode.setString(u'Internal')
