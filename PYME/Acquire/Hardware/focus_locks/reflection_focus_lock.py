@@ -55,7 +55,9 @@ class GaussFitter1D(object):
         guess = self._calc_guess(position, data)
 
         (res, cov_x, infodict, mesg, res_code) = optimize.leastsq(self._error_function, guess, args=(position, data),
-                                                                 full_output=1)
+                                                                 full_output=True, maxfev=200)
+
+        # logger.debug('%d iterations' % infodict['nfev'])
         # if res_code < 1 or res_code > 4:
         #     # fit error
         #     logger.debug('Focus lock fit error')
