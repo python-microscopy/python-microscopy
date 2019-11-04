@@ -307,7 +307,7 @@ def rendJitTri(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, seed=None):
     from matplotlib import tri
     np.random.seed(seed)
     
-    for i in range(n):
+    for i in range(int(n)):
         Imc = scipy.rand(len(x)) < mcp
         
         if isinstance(jsig, numpy.ndarray):
@@ -331,7 +331,7 @@ def _rend_jit_tri_geometric(im, x, y, jsig, mcp, imageBounds, pixelSize, n=1, se
 
     #im_ = numpy.zeros(im.shape, 'f')
     
-    for i in range(n):
+    for i in range(int(n)):
         #im_ *= 0
         #im_ = numpy.zeros(im.shape, 'f')
         Imc = scipy.rand(len(x)) < mcp

@@ -225,7 +225,7 @@ class DSViewFrame(AUIFrame):
             if mn in self.installedModules:
                 self.mModules.Check(id, True)
 
-            wx.EVT_MENU(self, id, self.OnToggleModule)
+            self.Bind(wx.EVT_MENU, self.OnToggleModule, id=id)
 
         self.menubar.Append(self.mModules, "&Modules")
         self._menus["&Modules"] = self.mModules

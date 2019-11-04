@@ -261,6 +261,15 @@ class MDHandlerBase(DictMixin):
     @staticmethod
     def tformat(timeval):
         import time
+        
+        print(timeval)
+        
+        if isinstance(timeval, six.string_types):
+            if timeval == '':
+                return timeval
+                
+            timeval = float(timeval)
+        
         if timeval < 946684800: # timestamp for year 2000 as heuristic
             return timeval
         else:
@@ -517,11 +526,11 @@ class XMLMDHandler(MDHandlerBase):
         if not filename is None:
             #loading an existing file
             self.doc = parse(filename)
-            self.md = self.doc.documentElement.getElementsByTagName(b'MetaData')[0]
+            self.md = self.doc.documentElement.getElementsByTagName('MetaData')[0]
         else:
             #creating a new document
-            self.doc = getDOMImplementation().createDocument(None, b'PYMEImageData', None)
-            self.md = self.doc.createElement(b'MetaData')
+            self.doc = getDOMImplementation().createDocument(None, 'PYMEImageData', None)
+            self.md = self.doc.createElement('MetaData')
             self.doc.documentElement.appendChild(self.md)
 
         if not mdToCopy is None:
@@ -559,24 +568,24 @@ class XMLMDHandler(MDHandlerBase):
         #typ = type(value) #.__name__
         
         if isinstance(value, float):
-            node.setAttribute(b'class', b'float')
-            node.setAttribute(b'value', str(value).encode('utf-8'))
+            node.setAttribute('class', 'float')
+            node.setAttribute('value', str(value))#.encode('utf-8'))
         elif isinstance(value, int):
-            node.setAttribute(b'class', b'int')
-            node.setAttribute(b'value', str(value).encode('utf-8'))
+            node.setAttribute('class', 'int')
+            node.setAttribute('value', str(value))#.encode('utf-8'))
         elif isinstance(value, six.binary_type):
-            node.setAttribute(b'class', 'str')
-            node.setAttribute(b'value', value)
+            node.setAttribute('class', 'str')
+            node.setAttribute('value', value)
         elif isinstance(value, six.text_type):
-            node.setAttribute(b'class', b'unicode')
-            node.setAttribute(b'value', value.encode('utf-8'))
+            node.setAttribute('class', 'unicode')
+            node.setAttribute('value', str(value))#.encode('utf-8'))
         elif np.isscalar(value):
-            node.setAttribute(b'class', b'float')
-            node.setAttribute(b'value', str(value).encode('utf-8'))
+            node.setAttribute('class', 'float')
+            node.setAttribute('value', str(value))#.encode('utf-8'))
         else: #pickle more complicated structures
-            node.setAttribute(b'class', b'pickle')
-            print((value, pickle.dumps(value)))
-            node.setAttribute(b'value', base64.b64encode((pickle.dumps(value))))
+            node.setAttribute('class', 'pickle')
+            #print((value, pickle.dumps(value)))
+            node.setAttribute('value', base64.b64encode((pickle.dumps(value))).decode('ascii'))
 
 
     def getEntry(self,entryName):
@@ -598,23 +607,24 @@ class XMLMDHandler(MDHandlerBase):
 
             entPath.pop(0)
 
-        cls = node.getAttribute(b'class')
-        val = node.getAttribute(b'value')
+        cls = node.getAttribute('class')
+        val = node.getAttribute('value')
         
-        if val == b'True': #booleans get cls 'int'
+        if val == 'True': #booleans get cls 'int'
                 val = True
-        elif val == b'False':
+        elif val == 'False':
                 val = False
-        elif cls == b'int':
+        elif cls == 'int':
                 val = int(val)
-        elif cls == b'float':
+        elif cls == 'float':
             val = float(val)
-        elif cls == b'unicode':
-            val = val.decode('utf8')
-        elif cls == b'pickle':
+        elif cls == 'unicode':
+            if six.PY2:
+                val = val.decode('utf8')
+        elif cls == 'pickle':
             #return None
             try:
-                val = pickle.loads(base64.b64decode(val))
+                val = pickle.loads(base64.b64decode(val.encode('ascii')))
             except:
                 logger.exception(u'Error loading metadata from pickle')
 
