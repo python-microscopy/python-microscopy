@@ -69,14 +69,14 @@ class Pipeline:
 
     def RegenFilter(self):
         if not self.selectedDataSource is None:
-            self.filter = inpFilt.resultsFilter(self.selectedDataSource, **self.filterKeys)
+            self.filter = inpFilt.ResultsFilter(self.selectedDataSource, **self.filterKeys)
             if self.mapping:
                 self.mapping.resultsSource = self.filter
             else:
-                self.mapping = inpFilt.mappingFilter(self.filter)
+                self.mapping = inpFilt.MappingFilter(self.filter)
 
             if not self.colourFilter:
-                self.colourFilter = inpFilt.colourFilter(self.mapping, self)
+                self.colourFilter = inpFilt.ColourFilter(self.mapping, self)
 
         self.edb = None
         self.objects = None
@@ -93,7 +93,7 @@ class Pipeline:
         self.colourFilter = None
         self.filename = filename
 
-        self.selectedDataSource = inpFilt.h5rSource(filename)
+        self.selectedDataSource = inpFilt.H5RSource(filename)
         self.dataSources.append(self.selectedDataSource)
 
 
@@ -119,7 +119,7 @@ class Pipeline:
             #if not 'fitError_Ag' in self.selectedDataSource.keys():
 
             if 'fitError_Ag' in self.selectedDataSource.keys():
-                self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)', error_gFrac = 'sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+                self.selectedDataSource = inpFilt.MappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)', error_gFrac ='sqrt((fitError_Ag/fitResults_Ag)**2 + (fitError_Ag**2 + fitError_Ar**2)/(fitResults_Ag + fitResults_Ar)**2)*fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
                 sg = self.selectedDataSource['fitError_Ag']
                 sr = self.selectedDataSource['fitError_Ar']
                 g = self.selectedDataSource['fitResults_Ag']
@@ -130,7 +130,7 @@ class Pipeline:
                     - scipy.special.erf((sg**2*(r-I) - sr**2*g)/(np.sqrt(2)*sg*sr*np.sqrt(sg**2+sr**2))))
                 self.selectedDataSource.setMapping('ColourNorm', '1.0*colNorm')
             else:
-                self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)', error_gFrac = '0*x + 0.01')
+                self.selectedDataSource = inpFilt.MappingFilter(self.selectedDataSource, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)', error_gFrac ='0*x + 0.01')
                 self.selectedDataSource.setMapping('fitError_Ag', '1*sqrt(fitResults_Ag/1)')
                 self.selectedDataSource.setMapping('fitError_Ar', '1*sqrt(fitResults_Ar/1)')
                 sg = self.selectedDataSource['fitError_Ag']
@@ -147,7 +147,7 @@ class Pipeline:
 
 
         elif 'fitResults_sigxl' in self.selectedDataSource.keys():
-            self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
+            self.selectedDataSource = inpFilt.MappingFilter(self.selectedDataSource)
             self.dataSources.append(self.selectedDataSource)
 
             self.selectedDataSource.setMapping('sig', 'fitResults_sigxl + fitResults_sigyu')
@@ -156,7 +156,7 @@ class Pipeline:
             self.selectedDataSource.dsigd_dz = -30.
             self.selectedDataSource.setMapping('fitResults_z0', 'dsigd_dz*sig_d')
         else:
-            self.selectedDataSource = inpFilt.mappingFilter(self.selectedDataSource)
+            self.selectedDataSource = inpFilt.MappingFilter(self.selectedDataSource)
             self.dataSources.append(self.selectedDataSource)
 
 

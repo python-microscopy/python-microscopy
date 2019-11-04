@@ -363,7 +363,7 @@ class ImagePyramid(object):
     def _rebuild_base(self):
         for xc, yc in self._occ.get_layer_tile_coords(0):
             if not self._imgs.tile_exists(0, xc, yc):
-                    occ = self._occ.get_tile(0, xc, yc)
+                    occ = self._occ.get_tile(0, xc, yc) + 1e-9
                     sf = 1.0 / occ
                     sf[occ <= .1] = 0
                     tile_ = self._acc.get_tile(0, xc, yc) * sf

@@ -85,7 +85,7 @@ class FitSurfaceWithPatches(ModuleBase):
                                               fitPos=(not self.constrain_surface_to_point))
 
         # calculate a radius of curvature from our polynomials
-        raw_fits = tabular.mappingFilter(tabular.recArrayInput(results))
+        raw_fits = tabular.MappingFilter(tabular.RecArraySource(results))
         raw_fits.setMapping('r_curve', '1./(np.abs(A) + np.abs(B) + 1e-6)')  # cap max at 1e6 instead of inf
         raw_fits.mdh = data_source.mdh
         namespace[self.output_fits_raw] = raw_fits
@@ -94,7 +94,7 @@ class FitSurfaceWithPatches(ModuleBase):
         results = surfit.filter_quad_results(results, points.T, self.fit_influence_radius, self.alignment_threshold)
 
         # again, add radius of curvature calculation with lazy evaluation
-        filtered_fits = tabular.mappingFilter(tabular.recArrayInput(results.view(surfit.SURF_PATCH_DTYPE_FLAT)))
+        filtered_fits = tabular.MappingFilter(tabular.RecArraySource(results.view(surfit.SURF_PATCH_DTYPE_FLAT)))
         filtered_fits.setMapping('r_curve', '1./(np.abs(A) + np.abs(B) + 1e-6)')
         filtered_fits.mdh = data_source.mdh
         namespace[self.output_fits_filtered] = filtered_fits
@@ -118,7 +118,7 @@ class FitSurfaceWithPatches(ModuleBase):
         except KeyError:
             probe = np.zeros_like(xs)
         # construct a new datasource with our augmented points
-        reconstruction = tabular.mappingFilter({'x': xs, 'y': ys, 'z': zs,
+        reconstruction = tabular.MappingFilter({'x': xs, 'y': ys, 'z': zs,
                                                 'xn': xn, 'yn': yn, 'zn': zn,
                                                 'probe': probe, 'n_points_fit': N, 'patch_id': j,
                                                 'r_curve': filtered_fits['r_curve'][j]})

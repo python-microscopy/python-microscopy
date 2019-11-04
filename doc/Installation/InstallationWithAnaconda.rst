@@ -59,7 +59,7 @@ full anaconda install):
 
 .. code-block:: bash
 	
-    conda config --add channels anaconda
+    conda config --append channels anaconda
     conda config --add channels david_baddeley
     conda install python-microscopy
 
@@ -77,6 +77,18 @@ This should download and install PYME, along with a number of it's dependencies.
     Other dependency issues can result in an old version of PYME being installed (most likely in older anaconda installs)
     A good sanity check is to look at what version conda wants to install when you run `conda install python-microscopy`.
     If it's older than a month or two (PYME uses date based versions) something is going wrong.
+
+.. warning::
+
+    **Avoid the `conda-forge` channel**. This mostly applies to people who want to use PYME with an existing anaconda
+    installation or who are doing further development. Whilst `conda-forge` is appealing due to the large
+    number of packages available, my experience is that it often results in a broken conda installation.
+    My recommendations are thus:
+
+    * Never add conda-forge to your channels
+    * If you must install a package from conda-forge, use conda-forge just for that one package, e.g.
+      `conda install -c conda-forge package` and the default channels for everything else. Double check
+      what other packages it wants to download/ update to satisfy it's dependencies.
 
 
 STEP 3: Verifying the Installation

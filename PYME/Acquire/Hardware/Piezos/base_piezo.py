@@ -16,7 +16,8 @@ class PiezoBase(object):
         raise NotImplementedError
     
     def GetTargetPos(self, iChannel=0):
-        raise NotImplementedError
+        # assume that target pos = current pos. Over-ride in derived class if possible
+        return self.GetPos(iChannel)
     
     def GetMin(self, iChan=1):
         raise NotImplementedError

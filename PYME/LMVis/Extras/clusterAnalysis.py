@@ -63,7 +63,7 @@ class ClusterAnalyser:
         rings.do_summary_plots(res)
         
         #dirty copy of the pipeline output
-        t1 = tabular.mappingFilter({k:pipeline[k] for k in pipeline.keys()})
+        t1 = tabular.MappingFilter({k:pipeline[k] for k in pipeline.keys()})
         
         #fixme (unclear how to make recipe module due to plotting)
         t1.addColumn('p_ring', p_ring)

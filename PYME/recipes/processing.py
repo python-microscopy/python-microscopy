@@ -1537,7 +1537,7 @@ class Colocalisation(ModuleBase):
         pearson = correlationCoeffs.pearson(imA, imB, roi_mask=roi_mask)
         MA, MB = correlationCoeffs.maskManders(imA, imB, mA, mB, roi_mask=roi_mask)
         
-        out = tabular.mappingFilter({'pearson' : pearson, 'manders_A' : MA, 'manders_B' : MB})
+        out = tabular.DictSource({'pearson' : pearson, 'manders_A' : MA, 'manders_B' : MB})
         
         namespace[self.outputTable] = out
           
@@ -1622,7 +1622,7 @@ class ColocalisationEDT(ModuleBase):
         bins_, enrichment, enclosed, enclosed_area = edtColoc.image_enrichment_and_fraction_at_distance(imA, mask, voxelsize,
                                                                                                bins, roi_mask=roi_mask)
         
-        out = tabular.mappingFilter({'bins' : bins[1:], 'enrichment' : enrichment, 'enclosed' : enclosed, 'enclosed_area' : enclosed_area})
+        out = tabular.MappingFilter(tabular.DictSource({'bins' : bins[1:], 'enrichment' : enrichment, 'enclosed' : enclosed, 'enclosed_area' : enclosed_area}))
         out.mdh = getattr(im, 'mdh', None)
         
         if not self.inputImageB == '':
@@ -1654,24 +1654,17 @@ class AverageFramesByZStep(ModuleBase):
     """
     Averages frames acquired at the same z-position, as determined by the associated events, or (fall-back) metadata.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     input_image : string
         name of an ImageStack instance, with metadata / events describing which frames were taken at which z-position.
-        
     input_zvals : string
-        name of a table mapping frames to z values. If empty, the image events are used
-        
-    Parameters
-    __________
-    
+        [optional] name of a table mapping frames to z values. If empty, the image events are used.
 
     Returns
     -------
     output : traits.Output
         ImageStack instance, where frames taken at the same z-position have been averaged together.
-    Notes
-    -----
     """
 
     input_image = Input('input')
@@ -1682,6 +1675,7 @@ class AverageFramesByZStep(ModuleBase):
     def execute(self, namespace):
         from PYME.Analysis import piecewiseMapping
         from scipy.stats import mode
+        import time
 
         image_stack = namespace[self.input_image]
 
@@ -1707,6 +1701,9 @@ class AverageFramesByZStep(ModuleBase):
         logger.debug('Averaged stack size: %d' % n_steps)
 
         new_stack = []
+        t = time.time()
+        fudged_events = []
+        cycle_time = image_stack.mdh.getOrDefault('Camera.CycleTime', 1.0)
         for ci in range(image_stack.data.shape[3]):
             data_avg = np.zeros((image_stack.data.shape[0], image_stack.data.shape[1], n_steps))
             start = 0
@@ -1714,21 +1711,82 @@ class AverageFramesByZStep(ModuleBase):
                 for fi in range(count[si]):
                     # sum frames from this step directly into the output array
                     data_avg[:, :, si] += image_stack.data[:, :, frames_z_sorted[start + fi], ci].squeeze()
-                # data_avg[:, :, si] /= count[si]  # complete the average at this step
                 start += count[si]
+                fudged_events.append(('ProtocolFocus', t, '%d, %3.3f' % (si, z_steps[si])))
+                fudged_events.append((('StartAq', t, '%d' % si)))
+                t += cycle_time
             # complete the average for this color channel and append to output
             new_stack.append(data_avg / count[None, None, :])
 
-        averaged = ImageStack(new_stack, mdh=image_stack.mdh)
+        fudged_events = np.array(fudged_events, dtype=[('EventName', 'S32'), ('Time', '<f8'), ('EventDescr', 'S256')])
+        averaged = ImageStack(new_stack, mdh=image_stack.mdh, events=fudged_events)
 
         # fudge metadata, leaving breadcrumbs
-        #averaged.mdh['Processing.AverageFramesByStep.OriginalFramesPerStep'] = image_stack.mdh['StackSettings.FramesPerStep'] - This is not normally defined
-        #averaged.mdh['StackSettings.FramesPerStep'] = 1
+        averaged.mdh['Camera.CycleTime'] = cycle_time
         averaged.mdh['StackSettings.NumSteps'] = n_steps
-        #averaged.mdh['StackSettings.NumCycles'] = 1
         averaged.mdh['StackSettings.StepSize'] = abs(mode(np.diff(z))[0][0])
 
         namespace[self.output] = averaged
+
+
+@register_module('ResampleZ')
+class ResampleZ(ModuleBase):
+    """
+    Resamples input stack at even intervals along z using a linear interpolation. If the input stack contains multiple
+    frames taken at the same z position, the stack should first be run through AverageFramesByZStep.
+
+    Parameters
+    ----------
+    input: Input
+        ImageStack instance
+    z_sampling: Float
+        Spacing to resample the stack axially, units of micrometers
+
+    Returns
+    -------
+    output: Output
+        ImageStack instance
+
+    """
+
+    input = Input('input')
+    z_sampling = Float(0.05)
+    output = Output('regular_stack')
+
+    def execute(self, namespace):
+        from PYME.Analysis import piecewiseMapping
+        from scipy.interpolate import RegularGridInterpolator
+
+        stack = namespace[self.input]
+
+        # grab z from events if we can
+        frames = np.arange(stack.data.shape[2], dtype=int)
+
+        # GeneratePMFromEventList internally handles converting time stamps to frame numbers
+        z_mapping = piecewiseMapping.GeneratePMFromEventList(stack.events, stack.mdh,
+                                                             stack.mdh['StartTime'],
+                                                             stack.mdh['Protocol.PiezoStartPos'])
+        z_vals = z_mapping(frames)
+
+        x = np.arange(0, stack.mdh['voxelsize.x'] * stack.data.shape[0], stack.mdh['voxelsize.x'])
+        y = np.arange(0, stack.mdh['voxelsize.y'] * stack.data.shape[1], stack.mdh['voxelsize.y'])
+
+        # generate grid for sampling
+        xx, yy, zz = np.meshgrid(x, y, np.arange(np.min(z_vals), np.max(z_vals), self.z_sampling),
+                                 indexing='ij')
+
+        regular = []
+        for ci in range(stack.data.shape[3]):
+            interp = RegularGridInterpolator((x, y, z_vals), stack.data[:, :, :, ci], method='linear')
+            regular.append(interp((xx, yy, zz)))
+
+        regular_stack = ImageStack(regular, mdh=stack.mdh)
+
+        regular_stack.mdh['RegularizedStack'] = True
+        regular_stack.mdh['StackSettings.StepSize'] = self.z_sampling
+        regular_stack.mdh['voxelsize.z'] = self.z_sampling
+
+        namespace[self.output] = regular_stack
 
 @register_module('BackgroundSubtractionMovingAverage')
 class BackgroundSubtractionMovingAverage(ModuleBase):
@@ -1894,7 +1952,7 @@ class StatisticsByFrame(ModuleBase):
             mode[si] = stats.mode(slice_data)[0]
 
         # package up and ship-out results
-        res = tabular.resultsFilter({'variance': var, 'mean': mean, 'median': median, 'mode': mode})
+        res = tabular.DictSource({'variance': var, 'mean': mean, 'median': median, 'mode': mode})
         try:
             res.mdh = series.mdh
         except:

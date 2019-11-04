@@ -32,7 +32,7 @@ def test_principle_axes():
 
 def test_labels_from_image():
     from PYME.IO.image import ImageStack
-    from PYME.IO.tabular import mappingFilter
+    from PYME.IO.tabular import DictSource
     im_size = 10
     im = np.zeros((im_size, im_size, im_size), dtype=int)
     im[-3:, -3:, -3:] = 1
@@ -43,7 +43,7 @@ def test_labels_from_image():
     image_stack.mdh['voxelsize.x'], image_stack.mdh['voxelsize.y'], image_stack.mdh['voxelsize.z'] = 0.001, 0.001, 0.001
 
     xx, yy, zz = np.meshgrid(np.arange(im_size), np.arange(im_size), np.arange(im_size))
-    points = mappingFilter({
+    points = DictSource({
         'x': xx.ravel(), 'y': yy.ravel(), 'z': zz.ravel()
     })
     points.mdh = image_stack.mdh

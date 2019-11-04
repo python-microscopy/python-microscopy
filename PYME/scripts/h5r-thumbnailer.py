@@ -40,7 +40,7 @@ from PIL import Image
 #logging.debug('Thumb Size: %s\n' % thumbSize)
 
 def generateThumbnail(inputFile, thumbSize):
-    f1 = inpFilt.h5rSource(inputFile)
+    f1 = inpFilt.H5RSource(inputFile)
 
     threeD = False
     stack = False
@@ -50,13 +50,13 @@ def generateThumbnail(inputFile, thumbSize):
 
     if 'fitResults_Ag' in f1.keys():
         #if we used the splitter set up a mapping so we can filter on total amplitude and ratio
-        f1_ = inpFilt.mappingFilter(f1, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
-        f2 = inpFilt.resultsFilter(f1_, error_x=[0,30], A=[5, 1e5], sig=[100/2.35, 350/2.35])
+        f1_ = inpFilt.MappingFilter(f1, A='fitResults_Ag + fitResults_Ar', gFrac='fitResults_Ag/(fitResults_Ag + fitResults_Ar)')
+        f2 = inpFilt.ResultsFilter(f1_, error_x=[0, 30], A=[5, 1e5], sig=[100 / 2.35, 350 / 2.35])
         split = True
     elif 'fitResults_sigma' in f1.keys():
-        f2 = inpFilt.resultsFilter(f1, error_x=[0,30], A=[5, 1e5], sig=[100/2.35, 350/2.35])
+        f2 = inpFilt.ResultsFilter(f1, error_x=[0, 30], A=[5, 1e5], sig=[100 / 2.35, 350 / 2.35])
     else:
-        f2 = inpFilt.resultsFilter(f1, error_x=[0,30], A=[5, 1e5])
+        f2 = inpFilt.ResultsFilter(f1, error_x=[0, 30], A=[5, 1e5])
 
     if 'fitResults_z0' in f1.keys():
         threeD = True

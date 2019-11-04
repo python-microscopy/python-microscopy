@@ -24,7 +24,7 @@ import wx
 import PYME.ui.manualFoldPanel as afp
 import numpy
 
-class psfExtractor:
+class PsfExtractor(object):
     def __init__(self, dsviewer):
         self.dsviewer = dsviewer
         self.view = dsviewer.view
@@ -80,7 +80,7 @@ class psfExtractor:
         vsizer.Add(hsizer, 0,wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 5)
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'ROI Size:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'ROI Half Size:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.tPSFROI = wx.TextCtrl(pan, -1, value='30,30,30', size=(40, -1))
         hsizer.Add(self.tPSFROI, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
@@ -96,35 +96,56 @@ class psfExtractor:
 
         vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
         
+        # hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        # hsizer.Add(wx.StaticText(pan, -1, 'PSF Type:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        # self.chType = wx.Choice(pan, -1, choices=['Widefield', 'Confocal'], size=(40, -1))
+        # hsizer.Add(self.chType, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        # if 'Camera.IntegrationTime' in self.image.mdh.getEntryNames():
+        #     #most likely widefield
+        #     self.chType.SetSelection(0)
+        # else:
+        #     #most likely confocal
+        #     #confocal is a safe default as widefield just does some fancy extra
+        #     #background correction
+        #     self.chType.SetSelection(1)
+
+        # vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
+
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(wx.StaticText(pan, -1, 'PSF Type:'), 0,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        hsizer.Add(wx.StaticText(pan, -1, 'Method:'), 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.chType = wx.Choice(pan, -1, choices=['Widefield', 'Confocal'], size=(40, -1))
-        hsizer.Add(self.chType, 1,wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        if 'Camera.IntegrationTime' in self.image.mdh.getEntryNames():
-            #most likely widefield
-            self.chType.SetSelection(0)
-        else:
-            #most likely confocal
-            #confocal is a safe default as widefield just does some fancy extra
-            #background correction
-            self.chType.SetSelection(1)
+        self.chMethod = wx.Choice(pan, -1, choices=['Standard', 'Split', 'Multi-channel'], size=(40, -1))
+        hsizer.Add(self.chMethod, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        self.chMethod.SetSelection(0) # most common option - also a good default with a splitter assuming aberrations are not very different between channels.
+        
+        if self.image.data.shape[3] == 4:
+            #most likely the high-throughput system, default to multi-view extraction
+            self.chMethod.SetSelection(0)
 
-        vsizer.Add(hsizer, 0,wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_HORIZONTAL, 0)
+        vsizer.Add(hsizer, 0, wx.EXPAND | wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 0)
 
-        self.cbAlignZ = wx.CheckBox(pan, -1, 'Align Z:')
+        self.cbAlignZ = wx.CheckBox(pan, -1, 'Align Z')
         self.cbAlignZ.SetValue(True)
         vsizer.Add(self.cbAlignZ, 0, wx.ALL, 5)
+        
+        self.cbBackgroundCorrect = wx.CheckBox(pan, -1, 'Widefield background correction:')
+        self.cbBackgroundCorrect.SetValue(False)
+        vsizer.Add(self.cbBackgroundCorrect, 0, wx.ALL, 5)
+
+        self.cbExpandROI = wx.CheckBox(pan, -1, 'Expand z ROI')
+        self.cbExpandROI.SetValue(False)
+        vsizer.Add(self.cbExpandROI, 0, wx.ALL, 5)
 
 
         hsizer = wx.BoxSizer(wx.HORIZONTAL)        
         bExtract = wx.Button(pan, -1, 'Extract', style=wx.BU_EXACTFIT)
-        bExtract.Bind(wx.EVT_BUTTON, self.OnExtractPSF)
+        bExtract.Bind(wx.EVT_BUTTON, self.OnExtract)
         hsizer.Add(bExtract, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5) 
         
-        bExtractSplit = wx.Button(pan, -1, 'Extract Split', style=wx.BU_EXACTFIT)
-        bExtractSplit.Bind(wx.EVT_BUTTON, self.OnExtractSplitPSF)
-        hsizer.Add(bExtractSplit, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        # bExtractSplit = wx.Button(pan, -1, 'Extract Split', style=wx.BU_EXACTFIT)
+        # bExtractSplit.Bind(wx.EVT_BUTTON, self.OnExtractSplitPSF)
+        # hsizer.Add(bExtractSplit, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         
         vsizer.Add(hsizer, 0,wx.ALL|wx.ALIGN_RIGHT, 5)
         
@@ -132,9 +153,9 @@ class psfExtractor:
         bAxialShift.Bind(wx.EVT_BUTTON, self.OnCalcShift)
         vsizer.Add(bAxialShift, 0,wx.ALL|wx.ALIGN_RIGHT, 5)
 
-        bExtractMultColour = wx.Button(pan, -1, 'Extract Multi Colour', style=wx.BU_EXACTFIT)
-        bExtractMultColour.Bind(wx.EVT_BUTTON, self.OnExtractMultiviewPSF)
-        vsizer.Add(bExtractMultColour, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        # bExtractMultColour = wx.Button(pan, -1, 'Extract Multi Colour', style=wx.BU_EXACTFIT)
+        # bExtractMultColour.Bind(wx.EVT_BUTTON, self.OnExtractMultiviewPSF)
+        # vsizer.Add(bExtractMultColour, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         #bCalibrateMultiview = wx.Button(pan, -1, 'Calibrate multiview astigmatism', style=wx.BU_EXACTFIT)
         #bCalibrateMultiview.Bind(wx.EVT_BUTTON, self.OnCalibrateMultiview)
@@ -260,6 +281,16 @@ class psfExtractor:
             pylab.vlines(z0, 0, 1)
             pylab.vlines(z1, 0, 1)
             pylab.figtext(.7,.7, 'dz = %3.2f' % dz)
+            
+    def OnExtract(self, event):
+        method = self.chMethod.GetStringSelection()
+        
+        if method == 'Standard':
+            return self.OnExtractPSF(event)
+        elif method == 'Split':
+            return  self.OnExtractSplitPSF(event)
+        elif method == 'Multi-channel':
+            return  self.OnExtractMultiviewPSF(event)
 
     def OnExtractPSF(self, event):
         if (len(self.PSFLocs) > 0):
@@ -269,9 +300,10 @@ class psfExtractor:
             psfROISize = [int(s) for s in self.tPSFROI.GetValue().split(',')]
             psfBlur = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
             #print psfROISize
-            psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,chnum], self.PSFLocs, psfROISize, psfBlur)
+            psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,chnum], self.PSFLocs, psfROISize, psfBlur,
+                                                  expand_z=self.cbExpandROI.GetValue())
             
-            if self.chType.GetSelection() == 0:
+            if self.cbBackgroundCorrect.GetValue():
                 #widefield image - do special background subtraction
                 psf = extractImages.backgroundCorrectPSFWF(psf)
 
@@ -300,9 +332,10 @@ class psfExtractor:
                 alignZ = (chnum > 0) and self.cbAlignZ.GetValue()
                 #always align the first channel
 
-                psf, offsets = extractImages.getPSF3D(self.image.data[:, :, :, chnum], self.PSFLocs, psfROISize, psfBlur, centreZ=alignZ)
+                psf, offsets = extractImages.getPSF3D(self.image.data[:, :, :, chnum], self.PSFLocs, psfROISize, psfBlur,
+                                                      centreZ=alignZ, expand_z=self.cbExpandROI.GetValue())
 
-                if self.chType.GetSelection() == 0:
+                if self.cbBackgroundCorrect.GetValue():
                     #widefield image - do special background subtraction
                     psf = extractImages.backgroundCorrectPSFWF(psf)
 
@@ -372,7 +405,7 @@ class psfExtractor:
                                          [self.PSFLocs[ii]], psfROISize, psfBlur)
 
 
-            if self.chType.GetSelection() == 0:
+            if self.cbBackgroundCorrect.GetValue():
                 #widefield image - do special background subtraction
                 psf = extractImages.backgroundCorrectPSFWF(psf)
 
@@ -464,7 +497,7 @@ class psfExtractor:
             for i in range(1, self.image.data.shape[3]):
                 psf, offsets = extractImages.getPSF3D(self.image.data[:,:,:,i].squeeze(), self.PSFLocs, psfROISize, psfBlur, centreZ=alignZ, z_offset=z_offset)
 
-                if self.chType.GetSelection() == 0:
+                if self.cbBackgroundCorrect.GetValue():
                     #widefield image - do special background subtraction
                     psf = extractImages.backgroundCorrectPSFWF(psf)
 
@@ -495,7 +528,9 @@ class psfExtractor:
         mdh['PSFExtraction.Mode'] = mode
         mdh['PSFExtraction.ROI'] = [int(s) for s in self.tPSFROI.GetValue().split(',')]
         mdh['PSFExtraction.Blur'] = [float(s) for s in self.tPSFBlur.GetValue().split(',')]
-        mdh['PSFExtraction.Type'] = self.chType.GetStringSelection()
+        #mdh['PSFExtraction.Type'] = self.chType.GetStringSelection()
+        mdh['PSFExtraction.WidefieldBackgroundCorrection'] = self.cbBackgroundCorrect.GetValue()
+        mdh['PSFExtraction.Method'] = self.chMethod.GetStringSelection()
         mdh['PSFExtraction.Locations'] = self.PSFLocs
 #        mdh['PSF_Extraction.Normalize'] = self.chNormalize.GetStringSelection()
         if axialshift is not None:
@@ -508,5 +543,5 @@ class psfExtractor:
 
 
 def Plug(dsviewer):
-    dsviewer.psfExtractor = psfExtractor(dsviewer)
+    dsviewer.psfExtractor = PsfExtractor(dsviewer)
 

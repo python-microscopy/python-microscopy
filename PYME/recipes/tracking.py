@@ -227,10 +227,10 @@ class LoadSpeckles(ModuleBase):
                                                       followFrames=self.followFrames, seriesLength=seriesLength, clipRegion=clip_region)
 
         #turn this into an inputFilter object
-        inp = tabular.recArrayInput(traces)
+        inp = tabular.RecArraySource(traces)
 
         #create a mapping to covert the co-ordinates in pixels to co-ordinates in nm
-        map = tabular.mappingFilter(inp, x = 'x_pixels*%3.2f' % (1000*mdh['voxelsize.x']),
+        map = tabular.MappingFilter(inp, x ='x_pixels*%3.2f' % (1000 * mdh['voxelsize.x']),
                                     y='y_pixels*%3.2f' % (1000 * mdh['voxelsize.y']))
 
         map.mdh = mdh

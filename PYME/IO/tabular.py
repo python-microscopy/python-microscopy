@@ -39,6 +39,23 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+#helper function for renaming classes
+
+def deprecated_name(name):
+    def _dec(cls):
+        
+        def _dep_name(*args, **kwargs):
+            warnings.warn(VisibleDeprecationWarning('%s is deprecated, use %s instead' % (name, cls.__name__)))
+            return cls(*args, **kwargs)
+        
+        globals()[name] = _dep_name
+        
+        return cls
+    
+    return _dec
+    
+
+
 class TabularBase(object):
     def toDataFrame(self, keys=None):
         import pandas as pd
@@ -130,7 +147,11 @@ class TabularBase(object):
         return list(self.keys()) + list(self.__dict__.keys()) + list(dir(type(self)))
     
 
-class randomSource(TabularBase):
+# Data sources (File IO, or adapters to other data formats - e.g. recarrays
+###########################################################################
+
+@deprecated_name('randomSource')
+class RandomSource(TabularBase):
     _name = "Random Source"
     def __init__(self, xmax, ymax, nsamps):
         """Uniform random source, for testing and as an example"""
@@ -175,7 +196,8 @@ def unNestDtype(descr, parent=''):
             unList += unNestDtype(n[1], parent + n[0] + '_')
     return unList
 
-class fitResultsSource(TabularBase):
+@deprecated_name('fitResultsSource')
+class FitResultsSource(TabularBase):
     _name = "recarrayfi Source"
     def __init__(self, fitResults, sort=True):
         self.setResults(fitResults, sort=sort)
@@ -228,7 +250,7 @@ class fitResultsSource(TabularBase):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
-class _BaseHDFSource(fitResultsSource):
+class _BaseHDFSource(FitResultsSource):
     def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
         component. Takes either an open h5r file or a string filename to be
@@ -272,7 +294,7 @@ class _BaseHDFSource(fitResultsSource):
         self.close()
 
 
-class BaseHDFSource(fitResultsSource):
+class BaseHDFSource(FitResultsSource):
     def __init__(self, h5fFile, tablename='FitResults'):
         """ Data source for use with h5r files as saved by the PYME analysis
         component. Takes either an open h5r file or a string filename to be
@@ -314,7 +336,8 @@ class BaseHDFSource(fitResultsSource):
         pass
 
 
-class h5rSource(BaseHDFSource):
+@deprecated_name('h5rSource')
+class H5RSource(BaseHDFSource):
     _name = "h5r Data Source"
     def __init__(self, h5fFile, tablename='FitResults'):
         BaseHDFSource.__init__(self, h5fFile, tablename)
@@ -336,19 +359,21 @@ class h5rSource(BaseHDFSource):
         return 'PYME h5r Data Source\n\n %d points' % self.fitResults.shape[0]
 
 
-class h5rDSource(h5rSource):
+@deprecated_name('h5rDSource')
+class H5RDSource(H5RSource):
     _name = "h5r Drift Source"
 
     def __init__(self, h5fFile):
         """ Data source for use with h5r files as saved by the PYME analysis
         component"""
 
-        h5rSource.__init__(self, h5fFile, 'DriftResults')
+        H5RSource.__init__(self, h5fFile, 'DriftResults')
 
     def getInfo(self):
         return 'PYME h5r Drift Data Source\n\n %d points' % self.fitResults.shape[0]
 
-class hdfSource(h5rSource):
+@deprecated_name('hdfSource')
+class HDFSource(H5RSource):
     _name = "hdf Data Source"
 
     def __init__(self, h5fFile, tablename='FitResults'):
@@ -431,8 +456,8 @@ class hdfSource(h5rSource):
 #
 #     def getInfo(self):
 #         return 'PYME h5r Drift Data Source\n\n %d points' % self.h5f.root.DriftResults.shape[0]
-
-class textfileSource(TabularBase):
+@deprecated_name('textfileSource')
+class TextfileSource(TabularBase):
     _name = "Text File Source"
     def __init__(self, filename, columnnames, delimiter=None, skiprows=0):
         """ Input filter for use with delimited text data. Defaults
@@ -464,7 +489,8 @@ class textfileSource(TabularBase):
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
 
-class matfileSource(TabularBase):
+@deprecated_name('matfileSource')
+class MatfileSource(TabularBase):
     _name = "Matlab Source"
     def __init__(self, filename, columnnames, varName='Orte'):
         """ Input filter for use with matlab data. Need to provide a variable name
@@ -498,8 +524,8 @@ class matfileSource(TabularBase):
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
 
-
-class matfileColumnSource(TabularBase):
+@deprecated_name('matfileColumnSource')
+class MatfileColumnSource(TabularBase):
     _name = "Matlab Column Source"
     
     def __init__(self, filename):
@@ -527,6 +553,76 @@ class matfileColumnSource(TabularBase):
     
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])
+    
+
+@deprecated_name('recArrayInput')
+class RecArraySource(TabularBase):
+    _name = 'RecArray Source'
+    def __init__(self, recordArray):
+        self.recArray = recordArray
+        self._keys = self.recArray.dtype.names
+
+    def keys(self):
+        return self._keys
+
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+
+        if not key in self._keys:
+            raise KeyError('Key (%s) not found' % key)
+
+        return self.recArray[key][sl]
+
+    def getInfo(self):
+        return 'Record Array Source\n\n %d points' % len(self.recArray['x'])
+
+
+class DictSource(TabularBase):
+    _name = 'Dict Source'
+    
+    def __init__(self, source):
+        """
+        Create a data source from a dictionary of numpy arrays, where each entry is a column.
+        
+        Parameters
+        ----------
+        source
+        
+        """
+        self._verify(source)
+        self._source = source
+        
+    def _verify(self, source):
+        L = len(source[source.keys()[0]])
+        
+        for k, v in source.items():
+            if not isinstance(v, np.ndarray):
+                raise ValueError('Column "%s" is not a numpy array' % k)
+            
+            if not len(v) == L:
+                raise ValueError('Columns are different lengths')
+        
+    def keys(self):
+        return self._source.keys()
+    
+    def __getitem__(self, keys):
+        key, sl = self._getKeySlice(keys)
+        return self.resultsSource[key][sl]
+
+class ColumnSource(DictSource):
+    _name = 'Column Source'
+    def __init__(self, **kwargs):
+        """
+        Create a datasource from columns specified by kwargs. Each column should be a numpy array.
+        
+        Parameters
+        ----------
+        kwargs
+        """
+        DictSource.__init__(self, dict(kwargs))
+
+# Filters (which remap existing data sources)
+#############################################
 
 
 class SelectionFilter(TabularBase):
@@ -546,8 +642,8 @@ class SelectionFilter(TabularBase):
     def keys(self):
         return self.resultsSource.keys()
 
-
-class resultsFilter(SelectionFilter):
+@deprecated_name('resultsFilter')
+class ResultsFilter(SelectionFilter):
     _name = "Results Filter"
     def __init__(self, resultsSource, **kwargs):
         """Class to permit filtering of fit results - masquarades
@@ -558,11 +654,15 @@ class resultsFilter(SelectionFilter):
 
         The filter class does not have any explicit knowledge of the keys
         supported by the underlying data source."""
+        
+        if not isinstance(resultsSource, TabularBase):
+            raise ValueError('Expecting a tabular object for resultsSource')
 
         self.resultsSource = resultsSource
 
         #by default select everything
-        self.Index = np.ones(self.resultsSource[list(resultsSource.keys())[0]].shape[0]) >  0.5
+        #self.Index = np.ones(self.resultsSource[list(resultsSource.keys())[0]].shape[0]) >  0.5
+        self.Index = np.ones(len(self.resultsSource), dtype=np.bool)
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
@@ -573,9 +673,10 @@ class resultsFilter(SelectionFilter):
                 raise RuntimeError('Expected an iterable of length 2')
 
             self.Index *= (self.resultsSource[k] > range[0])*(self.resultsSource[k] < range[1])
-                
+    
 
-class randomSelectionFilter(SelectionFilter):
+@deprecated_name('randomSelectionFilter')
+class RandomSelectionFilter(SelectionFilter):
     _name = "Random Selection Filter"
     
     def __init__(self, resultsSource, num_Samples):
@@ -588,13 +689,17 @@ class randomSelectionFilter(SelectionFilter):
         The filter class does not have any explicit knowledge of the keys
         supported by the underlying data source."""
         
+        if not isinstance(resultsSource, TabularBase):
+            raise ValueError('Expecting a tabular object for resultsSource')
+        
         self.resultsSource = resultsSource
         
         #by default select everything
-        self.Index = np.random.choice(len(self.resultsSource[list(resultsSource.keys())[0]]), num_Samples, replace=False)
+        self.Index = np.random.choice(len(self.resultsSource), num_Samples, replace=False)
 
 
-class idFilter(SelectionFilter):
+@deprecated_name('idFilter')
+class IdFilter(SelectionFilter):
     _name = "Id Filter"
     
     def __init__(self, resultsSource, id_column, valid_ids):
@@ -607,12 +712,15 @@ class idFilter(SelectionFilter):
         The filter class does not have any explicit knowledge of the keys
         supported by the underlying data source."""
         
+        if not isinstance(resultsSource, TabularBase):
+            raise ValueError('Expecting a tabular object for resultsSource')
+        
         self.resultsSource = resultsSource
         self.id_column = id_column
         self.valid_ids = valid_ids
         
-        #by default select everything
-        self.Index = np.zeros(self.resultsSource[list(resultsSource.keys())[0]].shape)
+        #self.Index = np.zeros(self.resultsSource[list(resultsSource.keys())[0]].shape)
+        self.Index = np.zeros(len(self.resultsSource))
         
         for id in valid_ids:
             self.Index += (self.resultsSource[id_column] == id)
@@ -622,7 +730,8 @@ class idFilter(SelectionFilter):
         self.Index = self.Index > 0.5
 
 
-class concatenateFilter(TabularBase):
+@deprecated_name('concatenateFilter')
+class ConcatenateFilter(TabularBase):
     _name = "Concatenation Filter"
 
     def __init__(self, source0, source1):
@@ -646,7 +755,8 @@ class concatenateFilter(TabularBase):
         s1_keys = self.source1.keys()
         return list(set(['concatSource', ] + [k for k in self.source0.keys() if k in s1_keys]))
 
-class cachingResultsFilter(TabularBase):
+@deprecated_name('cachingResultsFilter')
+class CachingResultsFilter(TabularBase):
     _name = "Caching Results Filter"
     def __init__(self, resultsSource, **kwargs):
         """Class to permit filtering of fit results - masquarades
@@ -658,11 +768,14 @@ class cachingResultsFilter(TabularBase):
         The filter class does not have any explicit knowledge of the keys
         supported by the underlying data source."""
 
+        if not isinstance(resultsSource, TabularBase):
+            raise ValueError('Expecting a tabular object for resultsSource')
+        
         self.resultsSource = resultsSource
         self.cache = {}
 
         #by default select everything
-        self.Index = np.ones(self.resultsSource[list(resultsSource.keys())[0]].shape) >  0.5
+        self.Index = np.ones(len(self.resultsSource), dtype=np.bool)
 
         for k in kwargs.keys():
             if not k in self.resultsSource.keys():
@@ -687,8 +800,8 @@ class cachingResultsFilter(TabularBase):
     def keys(self):
         return self.resultsSource.keys()
 
-
-class mappingFilter(TabularBase):
+@deprecated_name('mappingFilter')
+class MappingFilter(TabularBase):
     _name = "Mapping Filter"
     def __init__(self, resultsSource, **kwargs):
         """Class to permit transformations (e.g. drift correction) of fit results
@@ -701,6 +814,9 @@ class mappingFilter(TabularBase):
         or something else (which will be turned into a local variable - eg constants in above example)
 
         """
+        
+        if not isinstance(resultsSource, TabularBase):
+            warnings.warn(VisibleDeprecationWarning('Mapping filter created with something that is not a tabular object. This will be unsupported in a future release. Consider DictSource or ColumnSource instead'))
 
         self.resultsSource = resultsSource
 
@@ -820,11 +936,15 @@ class _ChannelFilter(TabularBase):
     def keys(self):
         return self.colour_filter.keys()
 
-class colourFilter(TabularBase):
+@deprecated_name('colourFilter')
+class ColourFilter(TabularBase):
     _name = "Colour Filter"
     def __init__(self, resultsSource, currentColour=None):
         """Class to permit filtering by colour
         """
+        
+        if not isinstance(resultsSource, TabularBase):
+            raise ValueError('Expecting a tabular object for resultsSource')
 
         self.resultsSource = resultsSource
         self.currentColour = currentColour
@@ -894,13 +1014,16 @@ class colourFilter(TabularBase):
         return self.resultsSource.keys()
 
     
-    
-class cloneSource(TabularBase):
+@deprecated_name('cloneSource')
+class CloneSource(TabularBase):
     _name = "Cloned Source"
     def __init__(self, resultsSource, keys=None):
         """Creates an in memory copy of a (filtered) data source"""
         #resultsSource
         self.cache = {}
+        
+        if not isinstance(resultsSource, TabularBase):
+            raise ValueError('Expecting a tabular object for resultsSource')
 
         klist = resultsSource.keys() if not keys else keys
 
@@ -916,22 +1039,3 @@ class cloneSource(TabularBase):
     def keys(self):
         return self.cache.keys()
 
-class recArrayInput(TabularBase):
-    _name = 'RecArray Source'
-    def __init__(self, recordArray):
-        self.recArray = recordArray
-        self._keys = self.recArray.dtype.names
-
-    def keys(self):
-        return self._keys
-
-    def __getitem__(self, keys):
-        key, sl = self._getKeySlice(keys)
-
-        if not key in self._keys:
-            raise KeyError('Key (%s) not found' % key)
-
-        return self.recArray[key][sl]
-
-    def getInfo(self):
-        return 'Record Array Source\n\n %d points' % len(self.recArray['x'])

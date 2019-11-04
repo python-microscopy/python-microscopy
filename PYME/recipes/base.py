@@ -765,7 +765,7 @@ class ModuleCollection(HasTraits):
     
                         elif isinstance(t, tables.table.Table):
                             #  pipe our table into h5r or hdf source depending on the extension
-                            tab = tabular.h5rSource(h5f, t.name) if extension == '.h5r' else tabular.hdfSource(h5f, t.name)
+                            tab = tabular.H5RSource(h5f, t.name) if extension == '.h5r' else tabular.HDFSource(h5f, t.name)
                             tab.mdh = mdh
     
                             self.namespace[key_prefix + t.name] = tab
@@ -1072,6 +1072,37 @@ class BinaryOr(ArithmaticFilter):
     def applyFilter(self, data0, data1, chanNum, i, image0):
         
         return (data0 + data1) > .5
+
+
+@register_module('LogicalAnd')
+class LogicalAnd(ArithmaticFilter):
+    """Perform a logical AND on images"""
+
+    def applyFilter(self, data0, data1, chanNum, i, image0):
+        return np.logical_and(data0, data1)
+
+
+@register_module('IsClose')
+class IsClose(ArithmaticFilter):
+    """
+    Wrapper for numpy.isclose
+
+    Parameters:
+    -----------
+    abs_tolerance: Float
+        absolute tolerance
+    rel_tolerance: Float
+        relative tolerance
+
+    Notes:
+    ------
+    from numpy docs, tolerances are combined as: absolute(a - b) <= (atol + rtol * absolute(b))
+
+    """
+    abs_tolerance = Float(1e-8)
+    rel_tolerance = Float(1e-5)
+    def applyFilter(self, data0, data1, chanNum, i, image0):
+        return np.isclose(data0, data1, atol=self.abs_tolerance, rtol=self.rel_tolerance)
         
 def _issubclass(cl, c):
     try:

@@ -21,16 +21,15 @@
 #
 ##################
 
-from numpy import *
-from numpy.fft import *
 import numpy as np
-import numpy
 from PYME.IO import tabular
 import scipy.ndimage
+import logging
+logger = logging.getLogger(__name__)
 
 
 def getPSFSlice(datasource, resultsSource, metadata, zm=None):
-    f1 = tabular.resultsFilter(resultsSource, error_x=[1,30], A=[10, 500], sig=(150/2.35, 900/2.35))
+    f1 = tabular.ResultsFilter(resultsSource, error_x=[1, 30], A=[10, 500], sig=(150 / 2.35, 900 / 2.35))
 
     ims, pts, zvals, zis = extractIms(datasource, f1, metadata, zm)
     return getPSF(ims, pts, zvals, zis)
@@ -39,10 +38,12 @@ def getPSFSlice(datasource, resultsSource, metadata, zm=None):
 #    for i in range()
 
 def extractIms(dataSource, results, metadata, zm =None, roiSize=10, nmax = 1000):
-    ims = zeros((2*roiSize, 2*roiSize, len(results['x'])))
-    points = (array([results['x']/(metadata.voxelsize.x *1e3), results['y']/(metadata.voxelsize.y *1e3), results['A']]).T)
+    ims = np.zeros((2*roiSize, 2*roiSize, len(results['x'])))
+    points = (np.array([results['x']/(metadata.voxelsize.x *1e3),
+                        results['y']/(metadata.voxelsize.y *1e3),
+                        results['A']]).T)
 
-    pts = numpy.round(points[:,:2])
+    pts = np.round(points[:,:2])
     points[:,:2] = points[:,:2] - pts
     ts = results['tIndex']
     bs = results['fitResults_background']
@@ -57,17 +58,17 @@ def extractIms(dataSource, results, metadata, zm =None, roiSize=10, nmax = 1000)
     bs = bs[ind]
 
     if not zm is None:
-        zvals = array(list(set(zm.yvals)))
+        zvals = np.array(list(set(zm.yvals)))
         zvals.sort()
 
         zv = zm(ts.astype('f'))
         #print zvals
         #print zv
 
-        zis = array([numpy.argmin(numpy.abs(zvals - z)) for z in zv])
+        zis = np.array([np.argmin(np.abs(zvals - z)) for z in zv])
         #print zis
     else:
-        zvals = array([0])
+        zvals = np.array([0])
         zis = 0.*ts
 
     for i in range(len(ts)):
@@ -84,21 +85,21 @@ def extractIms(dataSource, results, metadata, zm =None, roiSize=10, nmax = 1000)
 
 def getPSF(ims, points, zvals, zis):
     height, width = ims.shape[0],ims.shape[1]
-    kx,ky = mgrid[:height,:width]#,:self.sliceShape[2]]
+    kx,ky = np.mgrid[:height,:width]#,:self.sliceShape[2]]
 
-    kx = fftshift(kx - height/2.)/height
-    ky = fftshift(ky - width/2.)/width
+    kx = np.fft.fftshift(kx - height/2.)/height
+    ky = np.fft.fftshift(ky - width/2.)/width
     
 
-    d = zeros((height, width, len(zvals)))
+    d = np.zeros((height, width, len(zvals)))
     print((d.shape))
 
     for i in range(len(points)):
-        F = fftn(ims[:,:,i])
+        F = np.fft.fftn(ims[:,:,i])
         p = points[i,:]
         #print zis[i]
         #print ifftn(F*exp(-2j*pi*(kx*-p[0] + ky*-p[1]))).real.shape
-        d[:,:,zis[i]] = d[:,:,zis[i]] + ifftn(F*exp(-2j*pi*(kx*-p[0] + ky*-p[1]))).real
+        d[:,:,zis[i]] = d[:,:,zis[i]] + np.fft.ifftn(F*np.exp(-2j*np.pi*(kx*-p[0] + ky*-p[1]))).real
 
     d = len(zvals)*d/(points[:,2].sum())
     
@@ -111,7 +112,7 @@ def getPSF(ims, points, zvals, zis):
 
 def getIntCenter(im):
     im = im.squeeze()
-    X, Y, Z = ogrid[0:im.shape[0], 0:im.shape[1], 0:im.shape[2]]
+    X, Y, Z = np.ogrid[0:im.shape[0], 0:im.shape[1], 0:im.shape[2]]
 
     #from pylab import *
     #imshow(im.max(2))
@@ -134,19 +135,54 @@ def getIntCenter(im):
 
     return x, y, z
 
+def _expand_z(ps_shape, im_shape, points):
+    """
+    Expand ROI size in z to maximum supported by image and point locations.
+    
+    Parameters
+    ----------
+    ps_shape : 3-tuple of psf half roi sizes
+    im_shape : 3-tuple giving
+    points : locations of points
 
-def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1], normalize=True, centreZ = True, centreXY = True, x_offset=0, y_offset=0, z_offset=0):
+    Returns
+    -------
+
+    new_shape : 3-tuple of expanded PSF shape
+    """
+    
+    sx, sy, sz = ps_shape
+    logger.debug('Expanding PSF z size to maximum supported by data')
+    
+    pts = np.asarray(points)
+    dzl = np.min(pts[:,2]) - 1
+    dzh = np.min(im_shape[2] - pts[:,2]) -1
+    
+    szn = min(dzl, dzh)
+    
+    if szn < sz:
+        logger.warning('New PSF is SMALLER than requested (szn = %d, request = %d)' % (szn, sz))
+    
+    return sx, sy, szn
+
+
+def getPSF3D(im, points, PSshape=(30,30,30), blur=(0.5, 0.5, 1), normalize=True, centreZ=True, centreXY=True,
+             x_offset=0, y_offset=0, z_offset=0,expand_z=False):
+    
+    if expand_z:
+        PSshape = _expand_z(PSshape, im.shape, points)
+        
     sx, sy, sz = PSshape
-    height, width, depth = 2*array(PSshape) + 1
-    kx,ky,kz = mgrid[:height,:width,:depth]#,:self.sliceShape[2]]
+    height, width, depth = 2 * np.array(PSshape, dtype=int) + 1
 
-    kx = fftshift(kx - height/2.)/height
-    ky = fftshift(ky - width/2.)/width
-    kz = fftshift(kz - depth/2.)/depth
+    kx, ky, kz = np.mgrid[:height, :width, :depth]  # ,:self.sliceShape[2]]
 
+    kx = np.fft.fftshift(kx - height / 2.) / height
+    ky = np.fft.fftshift(ky - width / 2.) / width
+    kz = np.fft.fftshift(kz - depth / 2.) / depth
 
-    d = zeros((height, width, depth))
-    print((d.shape))
+    logger.debug('Extracting PSF of size: %d, %d, %d [px]' % (height, width, depth))
+    d = np.zeros((height, width, depth))
 
     imgs = []
     dxs = []
@@ -187,8 +223,8 @@ def getPSF3D(im, points, PSshape = [30,30,30], blur=[.5, .5, 1], normalize=True,
         dzm = 0
 
     for imi, dx, dy, dz in zip(imgs, list(dxs), list(dys), list(dzs)):
-        F = fftn(imi)
-        d = d + ifftn(F*exp(-2j*pi*(kx*-dx + ky*-dy + kz*-dz))).real
+        F = np.fft.fftn(imi)
+        d = d + np.fft.ifftn(F*np.exp(-2j*np.pi*(kx*-dx + ky*-dy + kz*-dz))).real
 
     d = scipy.ndimage.gaussian_filter(d, blur)
     #estimate background as a function of z by averaging rim pixels
@@ -206,7 +242,7 @@ def backgroundCorrectPSFWF(d):
     import numpy as np
     from scipy import linalg
     
-    zf = d.shape[2]/2
+    zf = int(d.shape[2]/2)
         
     #subtract a linear background in x
     Ax = np.vstack([np.ones(d.shape[0]), np.arange(d.shape[0])]).T        

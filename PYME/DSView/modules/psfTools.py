@@ -45,60 +45,6 @@ def remove_newlines(s):
     s = ' '.join(s.split())
     return '\n'.join(s.split('<>'))
 
-def find_and_add_zRange(astig_library, rough_knot_spacing=50.):
-    """
-    Find range about highest intensity point over which sigmax - sigmay is monotonic.
-    Note that astig_library[psfIndex]['zCenter'] should contain the offset in nm to the brightest z-slice
-
-    Parameters
-    ----------
-    astig_library : List
-        Elements are dictionaries containing PSF fit information
-    rough_knot_spacing : Float
-        Smoothing is applied to (sigmax-sigmay) before finding the region over which it is monotonic. A cubic spline is
-        fit to (sigmax-sigmay) using knots spaced roughly be rough_knot_spacing (units of nanometers, i.e. that of
-        astig_library[ind]['z']). To make deciding the knots convenient, they are spaced an integer number of z-steps,
-        so the actual knot spacing is rounded to this.
-
-    Returns
-    -------
-    astig_library : List
-        The astigmatism calibration list which is taken as an input is modified in place and returned.
-
-    """
-    #TODO - move this to an astigmatism calibration module. This doesn't belong here.
-    
-    import scipy.interpolate as terp
-    # from scipy.stats import mode
-    for ii in range(len(astig_library)):
-        # figure out where to place knots. Note that we subsample our z-positions so we satisfy Schoenberg-Whitney
-        # conditions, i.e. that our spline has adequate support
-        z_steps = np.unique(astig_library[ii]['z'])
-        dz_med = np.median(np.diff(z_steps))
-        smoothing_factor = int(rough_knot_spacing / dz_med)
-        knots = z_steps[1:-1:smoothing_factor]
-        # make the spline
-        dsig = terp.LSQUnivariateSpline(astig_library[ii]['z'], astig_library[ii]['dsigma'], knots)
-
-        # mask where the sign is the same as the center
-        zvec = np.linspace(np.min(astig_library[ii]['z']), np.max(astig_library[ii]['z']), 1000)
-        sgn = np.sign(np.diff(dsig(zvec)))
-        halfway = np.absolute(zvec - astig_library[ii]['zCenter']).argmin()  # len(sgn)/2
-        notmask = sgn != sgn[halfway]
-
-        # find region of dsigma which is monotonic after smoothing
-        try:
-            lowerZ = zvec[np.where(notmask[:halfway])[0].max()]
-        except ValueError:
-            lowerZ = zvec[0]
-        try:
-            upperZ = zvec[(halfway + np.where(notmask[halfway:])[0].min() - 1)]
-        except ValueError:
-            upperZ = zvec[-1]
-        astig_library[ii]['zRange'] = [lowerZ, upperZ]
-
-    return astig_library
-
 class PSFQualityPanel(wx.Panel):
     def __init__(self, dsviewer):
         wx.Panel.__init__(self, dsviewer) 
@@ -125,8 +71,11 @@ class PSFQualityPanel(wx.Panel):
         
         vsizer.Add(self.grid, 2, wx.EXPAND|wx.ALL, 5)
         vsizer.Add(wx.StaticText(self, -1, 'Click a cell for description'), 0, wx.ALL, 5)
-        
-        self.description = wx.TextCtrl(self, -1, '', style = wx.TE_MULTILINE|wx.TE_AUTO_SCROLL|wx.TE_READONLY)
+
+        try:
+            self.description = wx.TextCtrl(self, -1, '', style = wx.TE_MULTILINE|wx.TE_AUTO_SCROLL|wx.TE_READONLY)
+        except AttributeError:  # wx4, autoscroll is default behavior and flag doesn't exist
+            self.description = wx.TextCtrl(self, -1, '', style=wx.TE_MULTILINE | wx.TE_READONLY)
         vsizer.Add(self.description, 1, wx.EXPAND|wx.ALL, 5)
         
         self.grid.Bind(wx.grid.EVT_GRID_CELL_LEFT_CLICK, self.OnSelectCell)
@@ -219,7 +168,7 @@ class CRBViewPanel(wx.Panel):
         import numpy as np
         try:
             d = self.image.data[:,:,:,0].squeeze()
-            I = d[:,:,d.shape[2]/2].sum()
+            I = d[:,:,int(d.shape[2]/2)].sum()
 
             vs = 1e3*np.array([self.image.mdh['voxelsize.x'], self.image.mdh['voxelsize.y'],self.image.mdh['voxelsize.z']])
 
@@ -233,7 +182,7 @@ class CRBViewPanel(wx.Panel):
             self.z_ = z_ - z_.mean()
 
             ps_as = fourierHNA.GenAstigPSF(self.z_, dx=vs[0], strength=2)
-            I = ps_as[:,:,ps_as.shape[2]/2].sum()
+            I = ps_as[:,:,int(ps_as.shape[2]/2)].sum()
             self.crb_as = (cramerRao.CalcCramerReoZ(cramerRao.CalcFisherInformZn2(ps_as*2000/I + self.background, 500, voxelsize=vs)))
 
             self.draw()
@@ -353,6 +302,7 @@ class PSFTools(HasTraits):
         import json
         from PYME.Analysis.PSFEst import extractImages
         import wx
+        from PYME.Analysis.points.astigmatism import astigTools
 
         # query user for type of calibration
         # NB - GPU fit is not enabled here because it exits on number of iterations, which is not necessarily convergence for very bright beads!
@@ -415,7 +365,7 @@ class PSFTools(HasTraits):
                 use_web_view = False
 
         # find reasonable z range for each channel, inject 'zRange' into the results. FIXME - injection is bad
-        results = find_and_add_zRange(results)
+        results = astigTools.find_and_add_zRange(results)
 
         #do plotting
         plt.ioff()
@@ -476,7 +426,7 @@ class PSFTools(HasTraits):
         if (succ == wx.ID_OK):
             fpath = fdialog.GetPath()
 
-            fid = open(fpath, 'wb')
+            fid = open(fpath, 'w', encoding='utf8')
             json.dump(results, fid, indent=4, sort_keys=True)
             fid.close()
 

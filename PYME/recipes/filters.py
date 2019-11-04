@@ -65,9 +65,9 @@ class MedianFilter(Filter):
     * implemented as a call to `scipy.ndimage.median_filter`
     * sizeZ is ignored and a 2D filtering performed if ``processFramesIndividually`` is selected
     """
-    sizeX = Float(1.0)
-    sizeY = Float(1.0)
-    sizeZ = Float(1.0)
+    sizeX = Int(3)
+    sizeY = Int(3)
+    sizeZ = Int(3)
     #def __init__(self, **kwargs):
     #    pass
     @property
@@ -79,6 +79,42 @@ class MedianFilter(Filter):
     
     def completeMetadata(self, im):
         im.mdh['Processing.MedianFilter'] = self.sigmas
+
+
+@register_module('MaxFilter')
+class MaxFilter(Filter):
+    """
+    Performs a maximum filter of the input image
+
+    Parameters
+    ----------
+
+    sizeX : size of filter kernel along x axis in pixels
+
+    sizeY : size of filter kernel along y axis in pixels
+
+    sizeZ : size of filter kernel along z axis in pixels
+
+    Notes
+    -----
+    * implemented as a call to `scipy.ndimage.maximum_filter`
+    * sizeZ is ignored and a 2D filtering performed if ``processFramesIndividually`` is selected
+    """
+    sizeX = Int(3)
+    sizeY = Int(3)
+    sizeZ = Int(3)
+
+    # def __init__(self, **kwargs):
+    #    pass
+    @property
+    def sigmas(self):
+        return [self.sizeX, self.sizeY, self.sizeZ]
+
+    def applyFilter(self, data, chanNum, frNum, im):
+        return ndimage.maximum_filter(data, self.sigmas[:len(data.shape)])
+
+    def completeMetadata(self, im):
+        im.mdh['Processing.MaxFilter'] = self.sigmas
         
 @register_module('DespeckleFilter')         
 class DespeckleFilter(Filter):
@@ -152,9 +188,9 @@ class MeanFilter(Filter):
     * implemented as a call to `scipy.ndimage.mean_filter`
     * sizeZ is ignored and a 2D filtering performed if ``processFramesIndividually`` is selected
     """
-    sizeX = Float(1.0)
-    sizeY = Float(1.0)
-    sizeZ = Float(1.0)
+    sizeX = Int(3)
+    sizeY = Int(3)
+    sizeZ = Int(3)
     #def __init__(self, **kwargs):
     #    pass
     @property

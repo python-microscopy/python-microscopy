@@ -117,7 +117,7 @@ class RecipePlugin(recipeGui.RecipeManager):
                         dv.pipeline = pipeline.Pipeline()
         
                     from PYME.IO import tabular
-                    cache = tabular.cachingResultsFilter(self.activeRecipe.namespace['out_meas'])
+                    cache = tabular.CachingResultsFilter(self.activeRecipe.namespace['out_meas'])
                     dv.pipeline.OpenFile(ds=cache)
                     dv.view.filter = dv.pipeline
     
@@ -149,7 +149,7 @@ class RecipePlugin(recipeGui.RecipeManager):
                 from PYME.IO import tabular
                 import six
                 
-                cache = tabular.cachingResultsFilter(self.outp)
+                cache = tabular.CachingResultsFilter(self.outp)
                 self.dsviewer.pipeline.OpenFile(ds = cache)
                 self.dsviewer.pipeline.filterKeys = {}
                 self.dsviewer.pipeline.Rebuild()
@@ -223,7 +223,7 @@ class RecipePlugin(recipeGui.RecipeManager):
             if not 'pipeline' in dir(self.dsviewer):
                 self.dsviewer.pipeline = pipeline.Pipeline()
                 
-            cache = tabular.cachingResultsFilter(data)
+            cache = tabular.CachingResultsFilter(data)
             self.dsviewer.pipeline.OpenFile(ds = cache)
             self.dsviewer.view.filter = self.dsviewer.pipeline
                 

@@ -39,7 +39,7 @@ class MultifitBlobs(ModuleBase):
             md['tIndex'] = i
             ff = GaussMultifitSR.FitFactory(self.scale*img.data[:,:,i], img.mdh, noiseSigma=np.ones_like(img.data[:,:,i].squeeze()))
         
-            res.append(tabular.fitResultsSource(ff.FindAndFit(self.threshold)))
+            res.append(tabular.FitResultsSource(ff.FindAndFit(self.threshold)))
             
         res = pd.DataFrame(np.vstack(res))
         res.mdh = img.mdh
@@ -87,7 +87,7 @@ class FitDumbells(ModuleBase):
             r[i] = ff.FromPoint(x/ps, y/ps)
             
         
-        res = tabular.fitResultsSource(r)
+        res = tabular.FitResultsSource(r)
         res.mdh = md
         
         namespace[self.outputName] = res
@@ -159,7 +159,7 @@ class DetectPoints2D(ModuleBase):
             t.append(ti * np.ones_like(finder.x[:]))
 
         # FIXME - make a dict source so we don't abuse the mapping filter for everything
-        out = tabular.mappingFilter({'x': np.concatenate(x, axis=0), 'y': np.concatenate(y, axis=0),
+        out = tabular.MappingFilter({'x': np.concatenate(x, axis=0), 'y': np.concatenate(y, axis=0),
                                      't': np.concatenate(t, axis=0)})
 
         out.mdh = MetaDataHandler.NestedClassMDHandler()
@@ -225,7 +225,7 @@ class FitPoints(ModuleBase):
             #print x/ps, y/ps
             r[i] = ff.FromPoint(x/ps, y/ps, roiHalfSize=self.roiHalfSize)
 
-        res = tabular.fitResultsSource(r, sort=False)
+        res = tabular.FitResultsSource(r, sort=False)
         res.mdh = md
 
         namespace[self.outputName] = res
@@ -303,7 +303,7 @@ class IntensityAtPoints(ModuleBase):
             for r in self.radii:
                 res[i]['r%d' % r] = aggFunc(img.data, np.round(x / ps), np.round(y / ps), t, r)
 
-        res = tabular.recArrayInput(res)
+        res = tabular.RecArraySource(res)
         res.mdh = md
 
         namespace[self.outputName] = res
@@ -755,7 +755,7 @@ class AddMetadataToMeasurements(ModuleBase):
             res[k] = np.array([v]*nEntries)
         
         #res = pd.DataFrame(res)
-        res = tabular.mappingFilter(res)
+        res = tabular.MappingFilter(res)
         #if 'mdh' in dir(meas):
         res.mdh = img.mdh
         
@@ -782,7 +782,7 @@ class TilePhysicalCoords(ModuleBase):
         meas = namespace[self.inputMeasurements]
         img = namespace[self.inputImage]
         
-        out = tabular.mappingFilter(meas)
+        out = tabular.MappingFilter(meas)
         
         x_frame_um, y_frame_um =img.data.tile_coords_um[meas['t']].T
         x_frame_px, y_frame_px = img.data.tile_coords[meas['t']].T
@@ -855,7 +855,7 @@ class IdentifyOverlappingROIs(ModuleBase):
                 close.remove(ind)
                 tossing.update(close)
 
-        out = tabular.mappingFilter(points)
+        out = tabular.MappingFilter(points)
         reject = np.zeros(tree.n, dtype=int)
         reject[list(tossing)] = 1
         out.addColumn(self.reject_key, reject)
@@ -914,7 +914,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
                                                                         self.n_processes)
 
         # note that we sorted the positions / sections once before, need to propagate that through before sorting
-        out = tabular.mappingFilter({k: points[k][final_route] for k in points.keys()})
+        out = tabular.MappingFilter({k: points[k][final_route] for k in points.keys()})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
         try:
             out.mdh.copyEntriesFrom(points.mdh)
@@ -978,7 +978,7 @@ class TravelingSalesperson(ModuleBase):
         route, best_distance, og_distance = traveling_salesperson.two_opt(distances, self.epsilon)
 
         # plot_path(positions, route)
-        out = tabular.mappingFilter({'x_um': positions[:, 0][route],
+        out = tabular.MappingFilter({'x_um': positions[:, 0][route],
                                      'y_um': positions[:, 1][route]})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
         try:

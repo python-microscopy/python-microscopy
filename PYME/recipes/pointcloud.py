@@ -89,7 +89,7 @@ class LocalPointDensity(ModuleBase):
             q_pts = np.array([locs['x'], locs['y']]).T
             d_ = np.array([self._dn2d(p, kdt, N, n_) for p in q_pts])
             
-        t = tabular.mappingFilter(locs)
+        t = tabular.MappingFilter(locs)
         t.addColumn('dn', d_)
         
         try:
@@ -236,7 +236,7 @@ class DelaunayCircumcentres(ModuleBase):
             
             pts = {'x': x, 'y': y, 'z': 0*x}
         
-        out = tabular.mappingFilter(pts)
+        out = tabular.MappingFilter(pts)
         try:
             out.mdh = inp.mdh
         except AttributeError:

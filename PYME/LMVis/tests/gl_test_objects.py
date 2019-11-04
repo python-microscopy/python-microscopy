@@ -29,7 +29,7 @@ from numpy import random
 
 from PYME.Acquire.Hardware.Simulator.wormlike2 import wormlikeChain
 from PYME.Analysis.points.spherical_harmonics import cart2sph, reconstruct_from_modes
-from PYME.IO.tabular import hdfSource
+from PYME.IO.tabular import HDFSource
 
 
 class TestObject(object):
@@ -505,7 +505,7 @@ class HarmonicCellBackground(TestObject):
         self._dimensions = dimensions
         self._density = density
         self._file_name = file_name
-        ds = hdfSource(file_name, tablename='Data')
+        ds = HDFSource(file_name, tablename='Data')
 
         self._center = ds['centre']
         self._modes = zip(ds['m_modes'], ds['n_modes'])

@@ -91,7 +91,7 @@ class ShiftCorrect(ModuleBase):
 
         try:  # try loading shift map as hdf file
             with unifiedIO.local_or_temp_filename(loc) as f:
-                shift_map_source = tabular.hdfSource(f, 'shift_map')
+                shift_map_source = tabular.HDFSource(f, 'shift_map')
                 shift_map_source.mdh = HDFMDHandler(shift_map_source.h5f)
 
             # build dict of dicts so we can easily rebuild shiftfield objects in multiview.calc_shifts_for_points
@@ -104,7 +104,7 @@ class ShiftCorrect(ModuleBase):
             s = unifiedIO.read(self.shift_map_path)
             shift_map = json.loads(s)
 
-        mapped = tabular.mappingFilter(inp)
+        mapped = tabular.MappingFilter(inp)
 
         multiview.apply_shifts_to_points(mapped, shift_map)
         # propagate metadata
@@ -262,7 +262,7 @@ class MapAstigZ(ModuleBase):
 
         astig_calibrations = json.loads(s)
 
-        mapped = tabular.mappingFilter(inp)
+        mapped = tabular.MappingFilter(inp)
 
         z, zerr = astigTools.lookup_astig_z(mapped, astig_calibrations, self.rough_knot_spacing, plot=False)
 
@@ -395,5 +395,5 @@ class CalibrateShifts(ModuleBase):
 
         mdh['Multiview.shift_map.model'] = '.'.join([spx.__class__.__module__, spx.__class__.__name__])
 
-        namespace[self.output_name] = tabular.recArrayInput(shift_maps)
+        namespace[self.output_name] = tabular.RecArraySource(shift_maps)
         namespace[self.output_name].mdh = mdh

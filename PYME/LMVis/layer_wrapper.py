@@ -65,7 +65,7 @@ class LayerWrapper(HasTraits):
         names = []#'']
         for k, v in self._namespace.items():
             names.append(k)
-            if isinstance(v, tabular.colourFilter):
+            if isinstance(v, tabular.ColourFilter):
                 for c in v.getColourChans():
                     names.append('.'.join([k, c]))
                     

@@ -230,7 +230,7 @@ def coalesceClumps(fitResults, assigned, nphotons=None):
 
 
 def mergeClumps(datasource, labelKey='clumpIndex'):
-    from PYME.IO.tabular import cachingResultsFilter, mappingFilter
+    from PYME.IO.tabular import CachingResultsFilter, MappingFilter, DictSource
     from PYME.Analysis.points.multiview import coalesce_dict_sorted
 
     ds_keys = datasource.keys()
@@ -251,7 +251,7 @@ def mergeClumps(datasource, labelKey='clumpIndex'):
     sorted_src = {k: datasource[k][I] for k in all_keys}
 
     grouped = coalesce_dict_sorted(sorted_src, sorted_src[labelKey], keys_to_aggregate, aggregation_weights)
-    return mappingFilter(grouped)
+    return DictSource(grouped)
 
 
 def deClump(fitResults):

@@ -92,7 +92,7 @@ class OptionsPanel(wx.Panel):
             hClim.Bind(histLimits.EVT_LIMIT_CHANGE, self.OnCLimChanged)
             self.hcs.append(hClim)
 
-            ssizer.Add(hClim, 0, wx.ALL, 2)
+            ssizer.Add(hClim, 0, wx.ALL|wx.EXPAND, 2)
             
             hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -115,7 +115,7 @@ class OptionsPanel(wx.Panel):
             if horizOrientation:
                 hsizer.Add(ssizer, 0, wx.ALL, 2)
             else:
-                vsizer.Add(ssizer, 0, wx.ALL, 5)
+                vsizer.Add(ssizer, 0, wx.ALL|wx.EXPAND, 5)
 
         self.bOptimise = wx.Button(self, -1, "Stretch", style=wx.BU_EXACTFIT)
 

@@ -16,7 +16,7 @@ class Mapping(ModuleBase):
     def execute(self, namespace):
         inp = namespace[self.inputName]
 
-        mapped = tabular.mappingFilter(inp, **self.mappings)
+        mapped = tabular.MappingFilter(inp, **self.mappings)
 
         if 'mdh' in dir(inp):
             mapped.mdh = inp.mdh
@@ -35,7 +35,7 @@ class FilterTable(ModuleBase):
     def execute(self, namespace):
         inp = namespace[self.inputName]
 
-        filtered = tabular.resultsFilter(inp, **self.filters)
+        filtered = tabular.ResultsFilter(inp, **self.filters)
 
         if 'mdh' in dir(inp):
             filtered.mdh = inp.mdh
@@ -94,7 +94,7 @@ class FilterTableByIDs(ModuleBase):
     def execute(self, namespace):
         inp = namespace[self.inputName]
 
-        filtered = tabular.idFilter(inp, id_column=self.idColumnName, valid_ids=self.ids)
+        filtered = tabular.IdFilter(inp, id_column=self.idColumnName, valid_ids=self.ids)
 
         if 'mdh' in dir(inp):
             filtered.mdh = inp.mdh
@@ -164,7 +164,7 @@ class ConcatenateTables(ModuleBase):
         inp0 = namespace[self.inputName0]
         inp1 = namespace[self.inputName1]
 
-        concatenated = tabular.concatenateFilter(inp0, inp1)
+        concatenated = tabular.ConcatenateFilter(inp0, inp1)
 
         if 'mdh' in dir(inp0):
             concatenated.mdh = inp0.mdh
@@ -200,7 +200,7 @@ class AggregateMeasurements(ModuleBase):
 
         meas1 = namespace[self.inputMeasurements1]
         #res = pd.DataFrame(res)
-        res = tabular.cloneSource(res)
+        res = tabular.CloneSource(res)
         if 'mdh' in dir(meas1):
             res.mdh = meas1.mdh
 
@@ -218,7 +218,7 @@ class SelectTableColumns(ModuleBase):
     def execute(self, namespace):
         meas = namespace[self.inputMeasurements]
 
-        out = tabular.cloneSource(meas, keys=self.keys.split())
+        out = tabular.CloneSource(meas, keys=self.keys.split())
         # propagate metadata, if present
         try:
             out.mdh = meas.mdh
@@ -238,7 +238,7 @@ class RandomSubset(ModuleBase):
     def execute(self, namespace):
         data = namespace[self.input]
         
-        out = tabular.randomSelectionFilter(data, num_Samples=self.numToSelect)
+        out = tabular.RandomSelectionFilter(data, num_Samples=self.numToSelect)
         
         try:
             out.mdh = data.mdh
