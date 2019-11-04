@@ -312,7 +312,7 @@ class PositionPanel(wx.Panel):
             #            else:
             
             pos = poss[pName]
-            self.sliders[ind].SetValue(100 * pos)
+            self.sliders[ind].SetValue(int(100 * pos))
             self.sliderLabels[ind].SetLabel(u'%s - %2.3f %s' % (pName, pos, unit))
             
             self.sliders[ind].SetMin(100 * self.ranges[pName][0])
