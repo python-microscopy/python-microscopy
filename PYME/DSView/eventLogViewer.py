@@ -55,9 +55,9 @@ class eventLogPanel(wx.Panel):
 
         wx.Panel.__init__(self, parent, size=size)
 
-        wx.EVT_PAINT(self, self.OnPaint)
-        wx.EVT_SIZE(self, self.OnSize)
-        wx.EVT_MOUSEWHEEL(self, self.OnWheel)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_MOUSEWHEEL, self.OnWheel)
 
         self.initialised = True
         
