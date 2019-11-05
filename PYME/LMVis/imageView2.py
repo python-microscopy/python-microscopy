@@ -324,7 +324,7 @@ class ImageViewPanel(wx.Panel):
     
         dc.Clear()
         dc.DrawBitmap(wx.BitmapFromImage(imw), (-self.centreX + x0 + width / 2) / pixelsize,
-                      (self.centreY - y1 + height / 2) / pixelsize)
+                      (-self.centreY + y0 + height / 2) / pixelsize)
 
 
 class ColourImageViewPanel(ImageViewPanel):

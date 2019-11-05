@@ -317,7 +317,7 @@ class LMGLCanvas(GLCanvas):
             glVertex3f (self.backgroundExtent[0],self.backgroundExtent[1], 0.0)
             glTexCoord2f (0.0, 1.0) # upper left corner of image */
             glVertex3f (self.backgroundOrigin[0],self.backgroundExtent[1], 0.0)
-            glEnd ();
+            glEnd ()
 
             glDisable (GL_TEXTURE_2D) # disable texture mapping */
 

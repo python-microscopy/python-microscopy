@@ -30,7 +30,6 @@ from PYME.LMVis.shader_programs.shader_program import ShaderProgram
 
 
 class DefaultShaderProgram(GLProgram):
-
     def __init__(self, clipping={'x':[-1e6, 1e6], 'y' : [-1e6, 1e6], 'z': [-1e6, 1e6], 'v' : [-1e6, 1e6]}):
         GLProgram.__init__(self)
         shader_path = os.path.join(os.path.dirname(__file__), "shaders")
@@ -78,3 +77,14 @@ class OpaquePointShaderProgram(DefaultShaderProgram):
         self.get_shader_program().use()
         self.set_clipping_uniforms()
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+
+
+class ImageShaderProgram(DefaultShaderProgram):
+    def __init__(self):
+        GLProgram.__init__(self)
+        shader_path = os.path.join(os.path.dirname(__file__), "shaders")
+        _shader_program = ShaderProgram(shader_path)
+        _shader_program.add_shader("image_vs.glsl", GL_VERTEX_SHADER)
+        _shader_program.add_shader("image_fs.glsl", GL_FRAGMENT_SHADER)
+        _shader_program.link()
+        self.set_shader_program(_shader_program)

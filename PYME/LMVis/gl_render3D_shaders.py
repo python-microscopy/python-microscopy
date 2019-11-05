@@ -639,7 +639,8 @@ class LMGLShaderCanvas(GLCanvas):
             self.parent.OnGLViewChanged()
 
         for callback in self.wantViewChangeNotification:
-            callback.Refresh()
+            if callback:
+                callback.Refresh()
 
     def moveView(self, dx, dy, dz=0):
         return self.pan(dx, dy, dz)
@@ -653,7 +654,8 @@ class LMGLShaderCanvas(GLCanvas):
         self.Refresh()
 
         for callback in self.wantViewChangeNotification:
-            callback.Refresh()
+            if callback:
+                callback.Refresh()
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
@@ -696,7 +698,8 @@ class LMGLShaderCanvas(GLCanvas):
         self.Refresh()
 
         for callback in self.wantViewChangeNotification:
-            callback.Refresh()
+            if callback:
+                callback.Refresh()
 
     def WheelFocus(self, rot, xp, yp, zp=0):
         if rot > 0:
@@ -710,7 +713,8 @@ class LMGLShaderCanvas(GLCanvas):
         self.Refresh()
 
         for callback in self.wantViewChangeNotification:
-            callback.Refresh()
+            if callback:
+                callback.Refresh()
 
     def OnLeftDown(self, event):
         if not self.displayMode == '2D':
