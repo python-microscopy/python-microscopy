@@ -19,7 +19,9 @@ class ImageEngine(BaseEngine):
         self.set_shader_program(ImageShaderProgram)
         
         self._texture_id = None
+        self._lut_id = None
         self._img = None
+        self._lut = None
         
     def set_texture(self, image):
         if self._texture_id is None:
@@ -45,11 +47,41 @@ class ImageEngine(BaseEngine):
             glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
             glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, image.shape[0], image.shape[1], 0, GL_RED, GL_FLOAT, image.astype('f4'))
 
+    def set_lut(self, lut):
+        if self._lut_id is None:
+            self._lut_id = glGenTextures(1)
+    
+        if lut is None:
+            return
+    
+        if not lut is self._lut:
+            self._lut = lut
+            
+            lut_array = lut(np.linspace(0, 1.0, 255))
+        
+            glActiveTexture(GL_TEXTURE1)
+            glBindTexture(GL_TEXTURE_1D, self._lut_id)
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP)
+            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+            #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+            glTexParameteri (GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+            #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+            glTexParameteri (GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
+            glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, lut_array.shape[0], 0, GL_RGBA, GL_FLOAT,
+                         lut_array.astype('f4'))
+
 
     def render(self, gl_canvas, layer):
         self._set_shader_clipping(gl_canvas)
 
         with self.shader_program:
+            self.set_lut(layer.colour_map)
+            glActiveTexture(GL_TEXTURE1)
+            glBindTexture(GL_TEXTURE_1D, self._lut_id) # bind to our texture, has id of 1 */
+            glUniform1i(self.shader_program.get_uniform_location("lut"), 1)
+            
             self.set_texture(layer._im)
             glUniform2f(self.shader_program.get_uniform_location("clim"), *layer.get_color_limit())
             
