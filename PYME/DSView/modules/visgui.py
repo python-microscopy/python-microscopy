@@ -27,6 +27,7 @@ import wx
 import os
 
 from PYME.DSView.arrayViewPanel import ArrayViewPanel
+from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
 
 from six.moves import xrange
 
@@ -65,7 +66,39 @@ class visGuiExtras:
                 ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_GIF)
             elif ext == '.bmp':
                 ivp.curIm.SaveFile(fname, wx.BITMAP_TYPE_BMP)
-
+                
+                
+class GLImageView(LMGLShaderCanvas):
+    def __init__(self, parent, image, glCanvas, display_opts, show_lut=False, **kwargs):
+        LMGLShaderCanvas.__init__(self, parent=parent, show_lut=show_lut, view=glCanvas.view, **kwargs)
+        
+        #cmaps = ['r', 'g', 'b']
+        
+        self._do = display_opts
+        self._do.WantChangeNotification.append(self._sync_display_opts)
+        
+        self.wantViewChangeNotification.add(glCanvas)
+        
+        self._image = image
+        
+        wx.CallLater(500, self._add_layers)
+        
+        
+    def _add_layers(self):
+        from PYME.LMVis.layers import image_layer
+        for name, i in zip(self._image.names, xrange(self._image.data.shape[3])):
+            l_i = image_layer.ImageRenderLayer({'im': self._image}, dsname='im', display_opts=self._do, channel=i, context=self.gl_context)
+        
+            self.layers.append(l_i)
+    
+        self._sync_display_opts()
+        
+    def _sync_display_opts(self):
+        for l in self.layers:
+            l.sync_to_display_opts()
+            
+        self.Refresh()
+        
 def Plug(dsviewer):
     dsviewer.vgextras = visGuiExtras(dsviewer)
 
@@ -78,9 +111,9 @@ def Plug(dsviewer):
         dsviewer.ivps.append(ImageViewPanel(dsviewer, dsviewer.image, dsviewer.glCanvas, dsviewer.do, chan=i))
         if dsviewer.image.data.shape[3] > 1 and len(cmaps) > 0:
             dsviewer.do.cmaps[i] = cmaps.pop(0)
-
+            
         dsviewer.AddPage(page=dsviewer.ivps[-1], select=True, caption=name)
-
+        
 
     if dsviewer.image.data.shape[2] > 1:
         dsviewer.AddPage(page=ArrayViewPanel(dsviewer, do=dsviewer.do, voxelsize=dsviewer.image.voxelsize), select=False, caption='Slices')
@@ -88,6 +121,9 @@ def Plug(dsviewer):
     elif dsviewer.image.data.shape[3] > 1:
         dsviewer.civp = ColourImageViewPanel(dsviewer, dsviewer.glCanvas, dsviewer.do, dsviewer.image)
         dsviewer.civp.ivps = dsviewer.ivps
-        dsviewer.AddPage(page=dsviewer.civp, select=True, caption='Composite')
+        dsviewer.AddPage(page=dsviewer.civp, select=False, caption='Composite')
+
+    dsviewer._gl_im = GLImageView(dsviewer, image=dsviewer.image, glCanvas=dsviewer.glCanvas, display_opts=dsviewer.do)
+    dsviewer.AddPage(page=dsviewer._gl_im, select=True, caption='GLComp')
     
 

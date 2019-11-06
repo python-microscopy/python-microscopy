@@ -90,7 +90,7 @@ class LayerWrapper(HasTraits):
             self._eng_params = self.engine.get('point_size', 'vertexColour')
             #print(eng_params)
             
-        self.engine = ENGINES[self.method]()
+        self.engine = ENGINES[self.method](self._context)
         self.engine.set(**self._eng_params)
         self.engine.on_trait_change(self._update, 'vertexColour')
         self.engine.on_trait_change(self.update)

@@ -31,7 +31,7 @@ class LUTOverlayLayer(OverlayLayer):
     This OverlayLayer produces a bar that indicates the given color map.
     """
 
-    def __init__(self, offset=None):
+    def __init__(self, offset=None, **kwargs):
         """
 
         Parameters
@@ -43,7 +43,7 @@ class LUTOverlayLayer(OverlayLayer):
         if not offset:
             offset = [10, 10]
             
-        OverlayLayer.__init__(self, offset)
+        OverlayLayer.__init__(self, offset, **kwargs)
 
         self.set_offset(offset)
 

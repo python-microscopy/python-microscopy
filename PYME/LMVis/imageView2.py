@@ -59,7 +59,7 @@ class ImageViewPanel(wx.Panel):
     def DrawOverlays(self,dc):
         sc = self.image.pixelSize/self.glCanvas.pixelsize
         
-        if self.glCanvas.centreCross:
+        if False:#self.glCanvas.centreCross:
             print('drawing crosshair')
             dc.SetPen(wx.Pen(wx.GREEN, 2))
 

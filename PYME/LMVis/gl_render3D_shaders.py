@@ -81,7 +81,6 @@ class SelectionSettings(object):
         self.colour = [1, 1, 0]
         self.show = False
 
-
 class LMGLShaderCanvas(GLCanvas):
     LUTOverlayLayer = None
     AxesOverlayLayer = None
@@ -89,7 +88,7 @@ class LMGLShaderCanvas(GLCanvas):
     ScaleBoxOverlayLayer = None
     _is_initialized = False
 
-    def __init__(self, parent):
+    def __init__(self, parent, show_lut=True, display_mode='2D', view=None):
         print("New Canvas")
         attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
         num_antialias_samples = int(config.get('VisGUI-antialias_samples', 4))
@@ -114,53 +113,31 @@ class LMGLShaderCanvas(GLCanvas):
         except:
             logger.exception('Error creating OpenGL context, try modifying the number of anti-aliasing samples using the "VisGUI-antialias_samples" config setting (0 to disable antialiasing)')
             raise
-        
-        #self.bounds = {'x':[-1e6, 1e6], 'y':[-1e6, 1e6], 'z':[-1e6,1e6], 'v':[-1e6, 1e6]}
-        
-        # self.bounds = np.zeros(1, dtype=[('x', '2f4'), ('y', '2f4'), ('z', '2f4'), ('v', '2f4')])
-        # self.bounds['x'] = [-1e6, 1e6]
-        # self.bounds['y'] = [-1e6, 1e6]
-        # self.bounds['z'] = [-1e6, 1e6]
-        # self.bounds['v'] = [-1e6, 1e6]
-        #print self.bounds.shape
 
-        self.nVertices = 0
-        self.IScale = [1.0, 1.0, 1.0]
-        self.zeroPt = [0, 1.0 / 3, 2.0 / 3]
-        self.cmap = None
-        self.clim = [0, 1]
-        self.alim = [0, 1]
-
-        self.displayMode = '2D'  # 3DPersp' #one of 3DPersp, 3DOrtho, 2D
-
-        self.wireframe = False
+        self.displayMode = display_mode  # 3DPersp' #one of 3DPersp, 3DOrtho, 2D
 
         self.parent = parent
 
-        self.pointSize = 30  # default point size = 30nm
-
         self._scaleBarLength = 1000
-
-        self.centreCross = False
-        
         self.clear_colour = [0,0,0,1.0]
 
-        self.LUTDraw = True
+        self.LUTDraw = show_lut
 
-        self.c = numpy.array([1, 1, 1])
-        self.a = numpy.array([1, 1, 1])
         self.zmin = -10
         self.zmax = 10
 
         self.angup = 0
         self.angright = 0
         
-        self.view = views.View()
-
-        self.zc_o = 0
+        if view is None:
+            self.view = views.View()
+        else:
+            self.view = view
 
         self.sx = 100
         self.sy = 100
+
+        self.zc_o = 0
 
         self.stereo = False
 
@@ -168,8 +145,6 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.dragging = False
         self.panning = False
-
-        self.edgeThreshold = 20
 
         self.selectionSettings = SelectionSettings()
         self.selectionDragging = False
@@ -185,8 +160,6 @@ class LMGLShaderCanvas(GLCanvas):
         self.view_port_size = (self.Size[0], self.Size[1])
         
         self._old_bbox = None
-
-        return
     
     @property
     def xc(self):
@@ -226,7 +199,7 @@ class LMGLShaderCanvas(GLCanvas):
             print('ns')
             return
         wx.PaintDC(self)
-        self.gl_context.SetCurrent(self)
+        #self.gl_context.SetCurrent(self)
         self.SetCurrent(self.gl_context)
 
         if not self._is_initialized:
@@ -273,13 +246,13 @@ class LMGLShaderCanvas(GLCanvas):
     def initialize(self):
         from .layers.ScaleBoxOverlayLayer import ScaleBoxOverlayLayer
         self.InitGL()
-        self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
-        self.ScaleBoxOverlayLayer = ScaleBoxOverlayLayer()
+        self.ScaleBarOverlayLayer = ScaleBarOverlayLayer(context=self.gl_context)
+        self.ScaleBoxOverlayLayer = ScaleBoxOverlayLayer(context=self.gl_context)
 
-        self.LUTOverlayLayer = LUTOverlayLayer()
-        self.AxesOverlayLayer = AxesOverlayLayer()
+        self.LUTOverlayLayer = LUTOverlayLayer(context=self.gl_context)
+        self.AxesOverlayLayer = AxesOverlayLayer(context=self.gl_context)
         
-        self.overlays.append(SelectionOverlayLayer(self.selectionSettings))
+        self.overlays.append(SelectionOverlayLayer(self.selectionSettings,context=self.gl_context))
         self.underlays.append(self.ScaleBoxOverlayLayer)
 
         self._is_initialized = True
@@ -468,143 +441,16 @@ class LMGLShaderCanvas(GLCanvas):
 
         return
 
-    def setTriang3D(self, x, y, z, c=None, sizeCutoff=1000., zrescale=1, internalCull=True, wireframe=False, alpha=1,
-                    recenter=True):
 
-        if recenter:
-            self.recenter(x, y)
-        self.layers.append(TetrahedraRenderLayer(x, y, z, c, self.cmap, sizeCutoff,
-                                                 internalCull, zrescale, alpha, is_wire_frame=wireframe))
-        self.Refresh()
-
-    def setTriang(self, T, c=None, sizeCutoff=1000., zrescale=1, internalCull=True, alpha=1,
-                  recenter=True):
-        # center data
-        x = T.x
-        y = T.y
-        xs = x[T.triangles]
-        ys = y[T.triangles]
-        zs = np.zeros_like(xs)  # - z.mean()
-
-        if recenter:
-            self.recenter(x, y)
-
-        if c is None:
-            a = numpy.vstack((xs[:, 0] - xs[:, 1], ys[:, 0] - ys[:, 1])).T
-            b = numpy.vstack((xs[:, 0] - xs[:, 2], ys[:, 0] - ys[:, 2])).T
-            b2 = numpy.vstack((xs[:, 1] - xs[:, 2], ys[:, 1] - ys[:, 2])).T
-
-            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
-            c = 1.0 / (c + 1)
-
-        self.c = numpy.vstack((c, c, c)).T.ravel()
-
-        self.view.vec_up = numpy.array([0, 1, 0])
-        self.view.vec_right = numpy.array([1, 0, 0])
-        self.view.vec_back = numpy.array([0, 0, 1])
-
-        self.SetCurrent(self.gl_context)
-
-        self.layers.append(
-            VertexRenderLayer(T.x[T.triangles], T.y[T.triangles], 0 * (T.x[T.triangles]), self.c,
-                              self.cmap, self.clim, alpha))
-        self.Refresh()
-
-    def setTriangEdges(self, T):
-        self.setTriang(T)
-
-    def setPoints3D(self, x, y, z, c=None, a=None, recenter=False, alpha=1.0, mode='points',
-                    normal_x = None, normal_y = None, normal_z = None):  # , clim=None):
-        # center data
-        x = x  # - x.mean()
-        y = y  # - y.mean()
-        z = z  # - z.mean()
-
-        if recenter:
-            self.recenter(x, y)
-
-        self.view.translation[2] = z.mean()
-        self.zc_o = 1.0 * self.view.translation[2]
-
-        if c is None:
-            self.c = numpy.ones(x.shape).ravel()
-        else:
-            self.c = c
-
-        if a:
-            self.a = a
-        else:
-            self.a = numpy.ones(x.shape).ravel()
-
-        self.sx = x.max() - x.min()
-        self.sy = y.max() - y.min()
-        self.sz = z.max() - z.min()
-
-        self.SetCurrent(self.gl_context)
-
-        if mode is 'pointsprites':
-            self.layers.append(PointSpritesRenderLayer(x, y, z, self.c, self.cmap, self.clim, alpha, self.pointSize))
-        elif mode is 'shadedpoints':
-            self.layers.append(ShadedPointRenderLayer(x, y, z, normal_x, normal_y, normal_z, self.c, self.cmap,
-                                                      self.clim, alpha=alpha, point_size=self.pointSize))
-        else:
-            self.layers.append(Point3DRenderLayer(x, y, z, self.c, self.cmap, self.clim,
-                                                  alpha=alpha, point_size=self.pointSize))
-        self.Refresh()
-
-    def setPoints(self, x, y, c=None, a=None, recenter=True, alpha=1.0):
-        """Set 2D points"""
-        self.setPoints3D(x, y, 0 * x, c, a, recenter, alpha)
-
-    def setQuads(self, qt, max_depth=100, md_scale=False):
-        lvs = qt.getLeaves(max_depth)
-
-        xs = numpy.zeros((len(lvs), 4))
-        ys = numpy.zeros((len(lvs), 4))
-        c = numpy.zeros(len(lvs))
-
-        i = 0
-
-        real_max_depth = 0
-        for l in lvs:
-            xs[i, :] = [l.x0, l.x1, l.x1, l.x0]
-            ys[i, :] = [l.y0, l.y0, l.y1, l.y1]
-            c[i] = float(l.numRecords) * 2 ** (2 * l.depth)
-            i += 1
-            real_max_depth = max(real_max_depth, l.depth)
-
-        if not md_scale:
-            c /= 2 ** (2 * real_max_depth)
-
-        self.c = numpy.vstack((c, c, c, c)).T.ravel()
-
-        self.SetCurrent(self.gl_context)
-        self.layers.append(QuadTreeRenderLayer(xs.ravel(), ys.ravel(), 0 * xs.ravel(),
-                                               self.c, self.cmap, self.clim, alpha=1))
-        self.Refresh()
 
     def ResetView(self):
-
         self.view.vec_up = numpy.array([0, 1, 0])
         self.view.vec_right = numpy.array([1, 0, 0])
         self.view.vec_back = numpy.array([0, 0, 1])
 
         self.Refresh()
 
-    def setColour(self, IScale=None, zeroPt=None):
-        self.Refresh()
-
-    def setCMap(self, cmap):
-        self.cmap = cmap
-        self.setColour()
-
-    def setCLim(self, clim, alim=None):
-        self.clim = clim
-        if alim is None:
-            self.alim = clim
-        else:
-            self.alim = alim
-        self.setColour()
+    
 
     @property
     def xmin(self):
@@ -951,6 +797,158 @@ class LMGLShaderCanvas(GLCanvas):
     def refresh(self, *args, **kwargs):
         bb = self.bbox #force an update of our bounding box
         self.Refresh()
+
+
+class LegacyGLCanvas(LMGLShaderCanvas):
+    """ Catch all for stuff which has largely been deprecated by layers, but might still be required for the non-layers mode"""
+    
+    def __init__(self, *args, **kwargs):
+        LMGLShaderCanvas.__init__(self, *args, **kwargs)
+        
+        import pylab
+
+        self.cmap = pylab.cm.gist_rainbow
+        self.clim = [0, 1]
+        self.alim = [0, 1]
+
+        self.pointSize = 30  # default point size = 30nm
+
+        self.c = numpy.array([1, 1, 1])
+        self.a = numpy.array([1, 1, 1])
+        
+    
+    def setColour(self, IScale=None, zeroPt=None):
+        self.Refresh()
+
+    def setCMap(self, cmap):
+        self.cmap = cmap
+        self.setColour()
+
+    def setCLim(self, clim, alim=None):
+        self.clim = clim
+        if alim is None:
+            self.alim = clim
+        else:
+            self.alim = alim
+        self.setColour()
+        
+        
+    def setTriang3D(self, x, y, z, c=None, sizeCutoff=1000., zrescale=1, internalCull=True, wireframe=False, alpha=1,
+                    recenter=True):
+
+        if recenter:
+            self.recenter(x, y)
+        self.layers.append(TetrahedraRenderLayer(x, y, z, c, self.cmap, sizeCutoff,
+                                                 internalCull, zrescale, alpha, is_wire_frame=wireframe))
+        self.Refresh()
+
+    def setTriang(self, T, c=None, sizeCutoff=1000., zrescale=1, internalCull=True, alpha=1,
+                  recenter=True):
+        # center data
+        x = T.x
+        y = T.y
+        xs = x[T.triangles]
+        ys = y[T.triangles]
+        zs = np.zeros_like(xs)  # - z.mean()
+
+        if recenter:
+            self.recenter(x, y)
+
+        if c is None:
+            a = numpy.vstack((xs[:, 0] - xs[:, 1], ys[:, 0] - ys[:, 1])).T
+            b = numpy.vstack((xs[:, 0] - xs[:, 2], ys[:, 0] - ys[:, 2])).T
+            b2 = numpy.vstack((xs[:, 1] - xs[:, 2], ys[:, 1] - ys[:, 2])).T
+
+            c = numpy.median([(b * b).sum(1), (a * a).sum(1), (b2 * b2).sum(1)], 0)
+            c = 1.0 / (c + 1)
+
+        self.c = numpy.vstack((c, c, c)).T.ravel()
+
+        self.view.vec_up = numpy.array([0, 1, 0])
+        self.view.vec_right = numpy.array([1, 0, 0])
+        self.view.vec_back = numpy.array([0, 0, 1])
+
+        self.SetCurrent(self.gl_context)
+
+        self.layers.append(
+            VertexRenderLayer(T.x[T.triangles], T.y[T.triangles], 0 * (T.x[T.triangles]), self.c,
+                              self.cmap, self.clim, alpha))
+        self.Refresh()
+
+    def setTriangEdges(self, T):
+        self.setTriang(T)
+
+    def setPoints3D(self, x, y, z, c=None, a=None, recenter=False, alpha=1.0, mode='points',
+                    normal_x = None, normal_y = None, normal_z = None):  # , clim=None):
+        from PYME.LMVis.layers.pointcloud import PointCloudRenderLayer
+        # center data
+        x = x  # - x.mean()
+        y = y  # - y.mean()
+        z = z  # - z.mean()
+
+        if recenter:
+            self.recenter(x, y)
+
+        self.view.translation[2] = z.mean()
+        self.zc_o = 1.0 * self.view.translation[2]
+
+        if c is None:
+            self.c = numpy.ones(x.shape).ravel()
+        else:
+            self.c = c
+
+        if a:
+            self.a = a
+        else:
+            self.a = numpy.ones(x.shape).ravel()
+
+        self.sx = x.max() - x.min()
+        self.sy = y.max() - y.min()
+        self.sz = z.max() - z.min()
+
+        self.SetCurrent(self.gl_context)
+
+        if mode is 'pointsprites':
+            self.layers.append(PointSpritesRenderLayer(x, y, z, self.c, self.cmap, self.clim, alpha, self.pointSize))
+        elif mode is 'shadedpoints':
+            self.layers.append(ShadedPointRenderLayer(x, y, z, normal_x, normal_y, normal_z, self.c, self.cmap,
+                                                      self.clim, alpha=alpha, point_size=self.pointSize))
+        else:
+            self.layers.append(Point3DRenderLayer(x, y, z, self.c, self.cmap, self.clim,
+                                                  alpha=alpha, point_size=self.pointSize))
+        self.Refresh()
+
+    def setPoints(self, x, y, c=None, a=None, recenter=True, alpha=1.0):
+        """Set 2D points"""
+        self.setPoints3D(x, y, 0 * x, c, a, recenter, alpha)
+
+    def setQuads(self, qt, max_depth=100, md_scale=False):
+        lvs = qt.getLeaves(max_depth)
+
+        xs = numpy.zeros((len(lvs), 4))
+        ys = numpy.zeros((len(lvs), 4))
+        c = numpy.zeros(len(lvs))
+
+        i = 0
+
+        real_max_depth = 0
+        for l in lvs:
+            xs[i, :] = [l.x0, l.x1, l.x1, l.x0]
+            ys[i, :] = [l.y0, l.y0, l.y1, l.y1]
+            c[i] = float(l.numRecords) * 2 ** (2 * l.depth)
+            i += 1
+            real_max_depth = max(real_max_depth, l.depth)
+
+        if not md_scale:
+            c /= 2 ** (2 * real_max_depth)
+
+        self.c = numpy.vstack((c, c, c, c)).T.ravel()
+
+        self.SetCurrent(self.gl_context)
+        self.layers.append(QuadTreeRenderLayer(xs.ravel(), ys.ravel(), 0 * xs.ravel(),
+                                               self.c, self.cmap, self.clim, alpha=1))
+        self.Refresh()
+    
 
 
 def showGLFrame():

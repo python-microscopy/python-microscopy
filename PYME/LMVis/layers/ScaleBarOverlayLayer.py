@@ -27,8 +27,8 @@ class ScaleBarOverlayLayer(OverlayLayer):
     """
     This class creates a scale bar that indicate the size, depending on the zoom level
     """
-    def __init__(self, offset=None, color=None):
-        super(ScaleBarOverlayLayer, self).__init__(offset)
+    def __init__(self, offset=None, color=None, **kwargs):
+        super(ScaleBarOverlayLayer, self).__init__(offset, **kwargs)
         if not color:
             self._color = [1.0, 1.0, 1.0]
         else:

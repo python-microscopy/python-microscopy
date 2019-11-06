@@ -14,8 +14,8 @@ from OpenGL.GL import *
 
 class ImageEngine(BaseEngine):
     _outlines = True
-    def __init__(self):
-        BaseEngine.__init__(self)
+    def __init__(self, context=None):
+        BaseEngine.__init__(self, context=context)
         self.set_shader_program(ImageShaderProgram)
         
         self._texture_id = None
@@ -58,12 +58,14 @@ class ImageEngine(BaseEngine):
             self._lut = lut
             
             lut_array = lut(np.linspace(0, 1.0, 255))
+            
+            print(lut_array.shape, lut_array[-1])
         
             glActiveTexture(GL_TEXTURE1)
             glBindTexture(GL_TEXTURE_1D, self._lut_id)
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP)
-            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+            glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+            #glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP)
             #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
             glTexParameteri (GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
             #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
@@ -134,12 +136,14 @@ class ImageRenderLayer(EngineLayer):
     _datasource_choices = List()
     _datasource_keys = List()
 
-    def __init__(self, pipeline, method='image', dsname='', **kwargs):
+    def __init__(self, pipeline, method='image', dsname='', display_opts=None, context=None, **kwargs):
+        EngineLayer.__init__(self, context=context, **kwargs)
         self._pipeline = pipeline
         self.engine = None
         self.cmap = 'gray'
 
         self._bbox = None
+        self._do = display_opts #a dh5view display_options instance - if provided, this over-rides the the clim, cmap properties
         
         self._im_key = None
 
@@ -166,7 +170,7 @@ class ImageRenderLayer(EngineLayer):
 
         # if we were given a pipeline, connect ourselves to the onRebuild signal so that we can automatically update
         # ourselves
-        if not self._pipeline is None:
+        if (not self._pipeline is None) and hasattr(pipeline, 'onRebuild'):
             self._pipeline.onRebuild.connect(self.update)
 
     @property
@@ -174,7 +178,11 @@ class ImageRenderLayer(EngineLayer):
         """
         Return the datasource we are connected to (does not go through the pipeline for triangles_mesh).
         """
-        return self._pipeline.get_layer_data(self.dsname)
+        try:
+            return self._pipeline.get_layer_data(self.dsname)
+        except AttributeError:
+            #fallback if pipeline is a dictionary
+            return self._pipeline[self.dsname]
         #return self.datasource
     
     @property
@@ -184,7 +192,7 @@ class ImageRenderLayer(EngineLayer):
         return image.ImageStack
 
     def _set_method(self):
-        self.engine = ENGINES[self.method]()
+        self.engine = ENGINES[self.method](self._context)
         self.update()
 
 
@@ -195,13 +203,11 @@ class ImageRenderLayer(EngineLayer):
     #     self.update(*args, **kwargs)
 
     def update(self, *args, **kwargs):
-        self._datasource_choices = [k for k, v in self._pipeline.dataSources.items() if isinstance(v, self._ds_class)]
-        
-        if not self.datasource is None:
-            dks = ['constant',]
-            if hasattr(self.datasource, 'keys'):
-                 dks = dks + sorted(self.datasource.keys())
-            self._datasource_keys = dks
+        try:
+            self._datasource_choices = [k for k, v in self._pipeline.dataSources.items() if isinstance(v, self._ds_class)]
+        except AttributeError:
+            self._datasource_choices = [k for k, v in self._pipeline.items() if
+                                        isinstance(v, self._ds_class)]
         
         if not (self.engine is None or self.datasource is None):
             print('lw update')
@@ -211,6 +217,23 @@ class ImageRenderLayer(EngineLayer):
     @property
     def bbox(self):
         return self._bbox
+    
+    def sync_to_display_opts(self, do=None):
+        if (do is None):
+            if not (self._do is None):
+                do = self._do
+            else:
+                return
+
+        o = do.Offs[self.channel]
+        g = do.Gains[self.channel]
+        clim = [o, o + 1.0 / g]
+
+        cmap = do.cmaps[self.channel].name
+        visible = do.show[self.channel]
+        
+        self.set(clim=clim, cmap=cmap, visible=visible)
+        
 
     def update_from_datasource(self, ds):
         """
@@ -226,8 +249,20 @@ class ImageRenderLayer(EngineLayer):
         """
 
         
+        #if self._do is not None:
+            # Let display options (if provied) over-ride our settings (TODO - is this the right way to do this?)
+        #    o = self._do.Offs[self.channel]
+        #    g = self._do.Gains[self.channel]
+        #    clim = [o, o + 1.0/g]
+            #self.clim = clim
+            
+        #    cmap = self._do.cmaps[self.channel]
+            #self.visible = self._do.show[self.channel]
+        #else:
+        
         clim = self.clim
         cmap = getattr(cm, self.cmap)
+            
         alpha = float(self.alpha)
         
         c0, c1 = clim

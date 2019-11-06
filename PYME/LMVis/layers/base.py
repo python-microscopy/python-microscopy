@@ -36,11 +36,12 @@ except ImportError:
     HAVE_QUATERNION = False
 
 class BaseEngine(object):
-    def __init__(self):
+    def __init__(self, context=None):
+        self._context = context
         self._shader_program = None
     
     def set_shader_program(self, shader_program):
-        self._shader_program = ShaderProgramFactory.get_program(shader_program)
+        self._shader_program = ShaderProgramFactory.get_program(shader_program, self._context)
 
     @property
     def shader_program(self):
@@ -77,6 +78,10 @@ class BaseLayer(HasTraits):
     own shader. In this case, use `SimpleLayer` as a base.
     """
     visible = Bool(True)
+    
+    def __init__(self, context=None, **kwargs):
+        self._context = context
+        #HasTraits.__init__(**kwargs)
         
     @property
     def bbox(self):
@@ -153,11 +158,12 @@ class SimpleLayer(BaseLayer):
     """
     Layer base class for layers which do their own rendering and manage their own shaders
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
+        BaseLayer.__init__(self, **kwargs)
         self._shader_program = None
     
     def set_shader_program(self, shader_program):
-        self._shader_program = ShaderProgramFactory.get_program(shader_program)
+        self._shader_program = ShaderProgramFactory.get_program(shader_program, self._context)
 
     @property
     def shader_program(self):

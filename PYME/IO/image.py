@@ -303,7 +303,10 @@ class ImageStack(object):
     def names(self):
         """Return the names of the colour channels"""
         try:
-            return self.mdh['ChannelNames']
+            names = self.mdh['ChannelNames']
+            #make things play nice on py3
+            return [name.decode() if isinstance(name, bytes) else name for name in names]
+        
         except:
             return ['Chan %d'% d for d in range(self.data.shape[3])]
 
