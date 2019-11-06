@@ -22,6 +22,16 @@ class GaussFitter1D(object):
     1D gaussian fitter for use with focus locks which either have line-cameras, or whose frames are summed alone one
     direction to create a line profile, the peak position of which indicates the current focal position.
     """
+    def __init__(self, maxfev=200):
+        """
+
+        Parameters
+        ----------
+        maxfev: int
+            see scipy.optimize.leastsq argument by the same name
+        """
+        self.maxfev = maxfev
+
     def _model_function(self, parameters, position):
         """
         1D gaussian
@@ -55,7 +65,7 @@ class GaussFitter1D(object):
         guess = self._calc_guess(position, data)
 
         (res, cov_x, infodict, mesg, res_code) = optimize.leastsq(self._error_function, guess, args=(position, data),
-                                                                 full_output=True, maxfev=200)
+                                                                 full_output=True, maxfev=self.maxfev)
 
         # logger.debug('%d iterations' % infodict['nfev'])
         # if res_code < 1 or res_code > 4:
