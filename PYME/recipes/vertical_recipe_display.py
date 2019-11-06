@@ -261,7 +261,7 @@ class RecipeDisplayPanel(wx.Panel):
 
         dc.SetPen(wx.BLACK_PEN)
         for nd in self.x0s.keys():
-            dc.SetPen(wx.Pen(wx.Colour(*list(255*self._col(nd))[:3]), 2))
+            dc.SetPen(wx.Pen(wx.Colour(*((255*self._col(nd))[:3]).astype('i').tolist()), 2))
             try:
                 x0, y0 = self._output_position(nd)
                 x1, y1 = self._data_input_pos(nd)
