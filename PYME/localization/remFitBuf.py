@@ -176,7 +176,7 @@ class CameraInfoManager(object):
             return None
 
         slices = self._parseROI(md)
-        mapKey = (mapName, slices)
+        mapKey = mapName + str(slices)  # key needs slice information in case active ROIs/size change
 
         try:
             map = self._cache[mapKey]

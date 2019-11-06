@@ -80,7 +80,7 @@ def orca_cam(scope):
         'Multiview.NumROIs': 4,
         'Multiview.ChannelColor': [0, 1, 1, 0],
         'Multiview.DefaultROISize': (size, size),
-        'Multiview.ROISizeOptions': [128, 240, 256, 352, 384],
+        'Multiview.ROISizeOptions': [128, 240, 256, 304, 352, 384],
         'Multiview.ROI0Origin': (292 - half_size, 1024 - half_size),
         'Multiview.ROI1Origin': (857 - half_size, 1024 - half_size),
         'Multiview.ROI2Origin': (1257 - half_size, 1024 - half_size),
