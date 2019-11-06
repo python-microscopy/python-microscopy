@@ -59,8 +59,15 @@ class RecipeDisplayPanel(wx.Panel):
         self.Refresh()
         
     def _layout(self, *args, **kwargs):
+        print('RecipeView._layout')
+        if self.fp:
+             self.fp.elements = []
+             self.fp.DestroyChildren()
         self.fp = None
+        #print('destroyed fold panel children')
+        
         self.DestroyChildren()
+        #print('destroyed children')
         
 
         from matplotlib import pyplot as plt

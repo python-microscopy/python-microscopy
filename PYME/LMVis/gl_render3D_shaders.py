@@ -198,7 +198,8 @@ class LMGLShaderCanvas(GLCanvas):
         if not self.IsShown():
             print('ns')
             return
-        wx.PaintDC(self)
+        
+        #wx.PaintDC(self)
         #self.gl_context.SetCurrent(self)
         self.SetCurrent(self.gl_context)
 
@@ -315,6 +316,15 @@ class LMGLShaderCanvas(GLCanvas):
 
         # print 'is'
 
+    @property
+    def _stereo_views(self):
+        if self.displayMode == '2D':
+            return ['2D']
+        elif self.stereo:
+            return ['left', 'right']
+        else:
+            return ['centre']
+    
     def OnDraw(self):
         self.interlace_stencil()
         glEnable(GL_DEPTH_TEST)
@@ -322,20 +332,14 @@ class LMGLShaderCanvas(GLCanvas):
         glClearColor(*self.clear_colour)
         glClear(GL_COLOR_BUFFER_BIT)
 
-        # print 'od'
+        #aspect ratio of window
+        ys = float(self.view_port_size[1]) / float(self.view_port_size[0])
 
-        if self.displayMode == '2D':
-            views = ['2D']
-        elif self.stereo:
-            views = ['left', 'right']
-        else:
-            views = ['centre']
-
-        for view in views:
-            if view == 'left':
+        for stereo_view in self._stereo_views:
+            if stereo_view == 'left':
                 eye = -self.eye_dist
                 glStencilFunc(GL_NOTEQUAL, 1, 1)
-            elif view == 'right':
+            elif stereo_view == 'right':
                 eye = +self.eye_dist
                 glStencilFunc(GL_EQUAL, 1, 1)
             else:
@@ -346,8 +350,6 @@ class LMGLShaderCanvas(GLCanvas):
             glLoadIdentity()
             glMatrixMode(GL_PROJECTION)
             glLoadIdentity()
-
-            ys = float(self.view_port_size[1]) / float(self.view_port_size[0])
 
             if self.displayMode == '3DPersp':
                 glFrustum(-1 + eye, 1 + eye, -ys, ys, 8.5, 11.5)
@@ -368,7 +370,6 @@ class LMGLShaderCanvas(GLCanvas):
                 glPushMatrix()
                 # rotate object
                 glMultMatrixf(self.object_rotation_matrix)
-    
                 glTranslatef(-self.view.translation[0], -self.view.translation[1], -self.view.translation[2])
                 
                 for l in self.underlays:
@@ -389,8 +390,6 @@ class LMGLShaderCanvas(GLCanvas):
         glFlush()
 
         self.SwapBuffers()
-
-        return
 
     @property
     def object_rotation_matrix(self):
@@ -439,18 +438,12 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.ResetView()
 
-        return
-
-
-
     def ResetView(self):
         self.view.vec_up = numpy.array([0, 1, 0])
         self.view.vec_right = numpy.array([1, 0, 0])
         self.view.vec_back = numpy.array([0, 0, 1])
 
         self.Refresh()
-
-    
 
     @property
     def xmin(self):
@@ -471,6 +464,12 @@ class LMGLShaderCanvas(GLCanvas):
     @property
     def pixelsize(self):
         return 2. / (self.view.scale * self.view_port_size[0])
+    
+    def _view_changed(self):
+        """Notify anyone who is synced to our view"""
+        for callback in self.wantViewChangeNotification:
+            if callback:
+                callback.Refresh()
 
     def setView(self, xmin, xmax, ymin, ymax):
 
@@ -484,37 +483,27 @@ class LMGLShaderCanvas(GLCanvas):
         if 'OnGLViewChanged' in dir(self.parent):
             self.parent.OnGLViewChanged()
 
-        for callback in self.wantViewChangeNotification:
-            if callback:
-                callback.Refresh()
+        self._view_changed()
 
     def moveView(self, dx, dy, dz=0):
         return self.pan(dx, dy, dz)
 
     def pan(self, dx, dy, dz=0):
-        # self.setView(self.xmin + dx, self.xmax + dx, self.ymin + dy, self.ymax + dy)
         self.view.translation[0] += dx
         self.view.translation[1] += dy
         self.view.translation[2] += dz
 
         self.Refresh()
-
-        for callback in self.wantViewChangeNotification:
-            if callback:
-                callback.Refresh()
+        self._view_changed()
 
     def OnWheel(self, event):
         rot = event.GetWheelRotation()
         xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
 
         dx, dy = (xp - self.view.translation[0]), (yp - self.view.translation[1])
-
         dx_, dy_, dz_, c_ = numpy.dot(self.object_rotation_matrix, [dx, dy, 0, 0])
-
         xp_, yp_, zp_ = (self.view.translation[0] + dx_), (self.view.translation[1] + dy_), (self.view.translation[2] + dz_)
 
-        # print xp
-        # print yp
         if event.MiddleIsDown():
             self.WheelFocus(rot, xp_, yp_, zp_)
         else:
@@ -542,25 +531,17 @@ class LMGLShaderCanvas(GLCanvas):
             self.view.translation[2] += dz * (1. - ZOOM_FACTOR)
 
         self.Refresh()
-
-        for callback in self.wantViewChangeNotification:
-            if callback:
-                callback.Refresh()
+        self._view_changed()
 
     def WheelFocus(self, rot, xp, yp, zp=0):
         if rot > 0:
-            # zoom out
             self.view.translation[2] -= 1.
 
         if rot < 0:
-            # zoom in
             self.view.translation[2] += 1.
 
         self.Refresh()
-
-        for callback in self.wantViewChangeNotification:
-            if callback:
-                callback.Refresh()
+        self._view_changed()
 
     def OnLeftDown(self, event):
         if not self.displayMode == '2D':
@@ -622,12 +603,10 @@ class LMGLShaderCanvas(GLCanvas):
 
         if self.selectionDragging:
             self.selectionSettings.finish = self._ScreenCoordinatesToNm(x, y)
-
             self.Refresh()
             event.Skip()
 
         elif self.dragging:
-
             angx = numpy.pi * (x - self.xDragStart) / 180
             angy = numpy.pi * (y - self.yDragStart) / 180
 
@@ -652,11 +631,8 @@ class LMGLShaderCanvas(GLCanvas):
             event.Skip()
 
         elif self.panning:
-
             dx = self.pixelsize * (x - self.xDragStart)
             dy = self.pixelsize * (y - self.yDragStart)
-
-            # print dx
 
             dx_, dy_, dz_, c_ = numpy.dot(self.object_rotation_matrix, [dx, dy, 0, 0])
 
@@ -673,10 +649,6 @@ class LMGLShaderCanvas(GLCanvas):
             self.stereo = not self.stereo
             self.Refresh()
         elif event.GetKeyCode() == 67:  # C - centre
-            # self.view.translation[0] = self.sx / 2
-            # self.view.translation[1] = self.sy / 2
-            # self.view.translation[2] = self.sz / 2
-
             self.recenter_bbox()
             self.Refresh()
 
@@ -721,7 +693,6 @@ class LMGLShaderCanvas(GLCanvas):
             event.Skip()
 
     def getSnapshot(self, mode=GL_RGB):
-
         # glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
         # width, height = self.view_port_size[0], self.view_port_size[1]
         # snap = glReadPixelsf(0, 0, width, height, mode)
