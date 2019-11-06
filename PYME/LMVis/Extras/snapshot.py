@@ -20,7 +20,7 @@
 #
 import PIL
 
-from scipy.misc import toimage
+#from scipy.misc import toimage
 import wx
 from OpenGL.GL import GL_LUMINANCE, GL_RGB
 
@@ -56,4 +56,5 @@ def save_snapshot(canvas):
 
 
 def Plug(vis_fr):
-    vis_fr.AddMenuItem('View', 'Save Snapshot', lambda e: save_snapshot(vis_fr.glCanvas))
+    pass
+    #vis_fr.AddMenuItem('View', 'Save Snapshot', lambda e: save_snapshot(vis_fr.glCanvas))
