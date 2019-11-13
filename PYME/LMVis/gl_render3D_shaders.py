@@ -90,7 +90,7 @@ class LMGLShaderCanvas(GLCanvas):
 
     def __init__(self, parent, show_lut=True, display_mode='2D', view=None):
         print("New Canvas")
-        attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
+        attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER]
         num_antialias_samples = int(config.get('VisGUI-antialias_samples', 4))
         if num_antialias_samples > 0:
             attribute_list.extend([wx.glcanvas.WX_GL_SAMPLE_BUFFERS, 1, wx.glcanvas.WX_GL_SAMPLES, num_antialias_samples])
