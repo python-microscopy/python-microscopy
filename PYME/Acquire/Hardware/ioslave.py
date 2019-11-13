@@ -149,6 +149,11 @@ class IOSlaveAlwaysOpen(object):
             self.ser.write(b'SF%d %d\n' % (chan, value))
             self.ser.readline()
 
+    def SetServo(self, chan, value):
+        with self.lock:
+            self.ser.write(b'SS%d %d\n' % (chan, value))
+            self.ser.readline()
+
     def GetAnalog(self, chan):
         with self.lock:
             self.ser.write(b'QA%d\n' % chan)
@@ -234,16 +239,16 @@ class DigitalShutter(Laser):
 
 
 class FiberShaker(IOSlaveAlwaysOpen):
-    def __init__(self, com_port, channel, on_voltage):
+    def __init__(self, com_port, channel, on_value):
         IOSlaveAlwaysOpen.__init__(self, com_port)
         self.is_on = False
         self.channel = channel
-        self.on_voltage = on_voltage
+        self.on_value = on_value
         self._counter = 0
 
     def TurnOn(self):
         self.is_on = True
-        self.SetAnalog(self.channel, self.on_voltage)
+        self.SetAnalog(self.channel, self.on_value)
 
     def TurnOff(self):
         self.is_on = False
@@ -268,6 +273,18 @@ class FiberShaker(IOSlaveAlwaysOpen):
             self.TurnOff()
         elif self._counter > 0 and not self.is_on:
             self.TurnOn()
+
+class ServoFiberShaker(FiberShaker):
+    """
+    Fiber shaker using a brushless DC motor, requiring 50 Hz PWM (e.g. arduino servo library) to control
+    """
+    def TurnOn(self):
+        self.is_on = True
+        self.SetServo(self.channel, self.on_value)
+
+    def TurnOff(self):
+        self.is_on = False
+        self.SetServo(self.channel, 0)
 
 
 if __name__ == '__main__':
