@@ -549,7 +549,7 @@ class MatfileColumnSource(TabularBase):
         if not key in self._keys:
             raise KeyError('Key (%s) not found' % key)
         
-        return self.res[key][sl]
+        return self.res[key][sl].squeeze()
     
     def getInfo(self):
         return 'Text Data Source\n\n %d points' % len(self.res['x'])

@@ -125,3 +125,14 @@ class BaseDataSource(object):
         self.oldData = r
 
         return r
+    
+class XYZTCDataSource(object):
+    def __init__(self, datasource):
+        self._datasource = datasource
+        
+    @property
+    def shape(self):
+        raise NotImplementedError()
+    
+    def __getitem__(self, item):
+        raise NotImplementedError()
