@@ -81,11 +81,14 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
 
         AUIFrame.__init__(self, parent, id, title, pos, size, style)
         
+        
         self.cmd_args = cmd_args
         self._flags = 0
         
         self.pipeline = pipeline.Pipeline(visFr=self)
         self.pipeline.dataSources.update(pipeline_vars)
+
+        visCore.VisGUICore.__init__(self, use_shaders=use_shaders)
         
         #self.Quads = None
                
@@ -102,7 +105,7 @@ class VisGUIFrame(AUIFrame, visCore.VisGUICore):
         #initialize the common parts
         ###############################
         #NB: this has to come after the shell has been generated, but before the fold panel
-        visCore.VisGUICore.__init__(self, use_shaders=use_shaders)
+        
 
         ################################   
 

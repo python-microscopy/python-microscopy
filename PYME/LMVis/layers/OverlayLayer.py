@@ -26,8 +26,8 @@ from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
 
 class OverlayLayer(SimpleLayer):
 
-    def __init__(self, offset):
-        super(OverlayLayer, self).__init__()
+    def __init__(self, offset, **kwargs):
+        super(OverlayLayer, self).__init__(**kwargs)
         if offset:
             self._offset = offset
         else:

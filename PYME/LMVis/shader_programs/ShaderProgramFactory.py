@@ -28,7 +28,7 @@ class ShaderProgramFactory:
     _programs = {}
 
     @staticmethod
-    def get_program(class_name):
+    def get_program(class_name, context=None):
         """
 
         Parameters
@@ -39,11 +39,11 @@ class ShaderProgramFactory:
         -------
         object of the given class. If there's already an existing one. That one is returned.
         """
-        existing_program = ShaderProgramFactory._programs.get(class_name)
+        existing_program = ShaderProgramFactory._programs.get((class_name, context))
         if existing_program:
             return existing_program
         else:
             new_program = class_name()
-            ShaderProgramFactory._programs[class_name] = new_program
+            ShaderProgramFactory._programs[(class_name, context)] = new_program
             logger.debug("New shader program created: {}".format(class_name))
             return new_program

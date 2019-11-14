@@ -9,7 +9,9 @@
 float norm(const float *pos)
 {
     float n = 0;
-    for (int i = 0; i < VECTORSIZE; ++i)
+    int i = 0;
+
+    for (i = 0; i < VECTORSIZE; ++i)
         n += pos[i] * pos[i];
     return sqrt(n);
 }
@@ -29,7 +31,8 @@ void cross(const float *a, const float *b, float *n)
 
 void difference(const float *a, const float *b, float *d)
 {
-    for (int k = 0; k < VECTORSIZE; ++k) 
+    int k = 0;
+    for (k=0; k < VECTORSIZE; ++k)
         d[k] = a[k] - b[k];
 }
 

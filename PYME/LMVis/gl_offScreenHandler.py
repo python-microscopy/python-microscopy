@@ -31,6 +31,7 @@ class OffScreenHandler(object):
     def __enter__(self):
         glBindFramebuffer(GL_FRAMEBUFFER, self._frame_buffer_object)
         glPushAttrib(GL_VIEWPORT_BIT)
+        print('Viewport: ', self._viewport_size)
         glViewport(0, 0, self._viewport_size[0], self._viewport_size[1])
         glDrawBuffer(GL_COLOR_ATTACHMENT0)
 

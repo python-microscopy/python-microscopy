@@ -14,8 +14,8 @@ from OpenGL.GL import *
 
 class WireframeEngine(BaseEngine):
     _outlines = True
-    def __init__(self):
-        BaseEngine.__init__(self)
+    def __init__(self, context=None):
+        BaseEngine.__init__(self, context=context)
         self.set_shader_program(WireFrameShaderProgram)
 
 
@@ -41,16 +41,16 @@ class WireframeEngine(BaseEngine):
 
 
 class FlatFaceEngine(WireframeEngine):
-    def __init__(self):
-        BaseEngine.__init__(self)
+    def __init__(self, context=None):
+        BaseEngine.__init__(self, context=context)
 
     def render(self, gl_canvas, layer):
         self.set_shader_program(DefaultShaderProgram)
         WireframeEngine.render(self, gl_canvas, layer)
 
 class ShadedFaceEngine(WireframeEngine):
-    def __init__(self):
-        BaseEngine.__init__(self)
+    def __init__(self, context=None):
+        BaseEngine.__init__(self, context=context)
 
     def render(self, gl_canvas, layer):
         self.set_shader_program(GouraudShaderProgram)
@@ -58,8 +58,8 @@ class ShadedFaceEngine(WireframeEngine):
         
 class TesselEngine(WireframeEngine):
     _outlines = False
-    def __init__(self):
-        BaseEngine.__init__(self)
+    def __init__(self, context=None):
+        BaseEngine.__init__(self, context=context)
 
     def render(self, gl_canvas, layer):
         self.set_shader_program(TesselShaderProgram)
@@ -89,7 +89,8 @@ class TriangleRenderLayer(EngineLayer):
     _datasource_choices = List()
     _datasource_keys = List()
 
-    def __init__(self, pipeline, method='wireframe', dsname='', **kwargs):
+    def __init__(self, pipeline, method='wireframe', dsname='', context=None, **kwargs):
+        EngineLayer.__init__(self, context=context, **kwargs)
         self._pipeline = pipeline
         self.engine = None
         self.cmap = 'gist_rainbow'
@@ -145,7 +146,7 @@ class TriangleRenderLayer(EngineLayer):
         return triangle_mesh.TrianglesBase
 
     def _set_method(self):
-        self.engine = ENGINES[self.method]()
+        self.engine = ENGINES[self.method](self._context)
         self.update()
 
     def _get_cdata(self):

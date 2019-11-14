@@ -27,7 +27,7 @@ from OpenGL.GL import *
 
 
 class ScaleBoxOverlayLayer(OverlayLayer):
-    def __init__(self, tick_distance=1000, color=None):
+    def __init__(self, tick_distance=1000, color=None, **kwargs):
         """
         
         Parameters
@@ -37,7 +37,7 @@ class ScaleBoxOverlayLayer(OverlayLayer):
         
         
         offset = None
-        super(ScaleBoxOverlayLayer, self).__init__(offset)
+        super(ScaleBoxOverlayLayer, self).__init__(offset, **kwargs)
         if not color:
             self._color = [1.0, 1.0, 1.0, 0.5]
         else:

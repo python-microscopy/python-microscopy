@@ -81,7 +81,6 @@ class SelectionSettings(object):
         self.colour = [1, 1, 0]
         self.show = False
 
-
 class LMGLShaderCanvas(GLCanvas):
     LUTOverlayLayer = None
     AxesOverlayLayer = None
@@ -89,9 +88,9 @@ class LMGLShaderCanvas(GLCanvas):
     ScaleBoxOverlayLayer = None
     _is_initialized = False
 
-    def __init__(self, parent):
+    def __init__(self, parent, show_lut=True, display_mode='2D', view=None):
         print("New Canvas")
-        attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER, 16]
+        attribute_list = [wx.glcanvas.WX_GL_RGBA, wx.glcanvas.WX_GL_STENCIL_SIZE, 8, wx.glcanvas.WX_GL_DOUBLEBUFFER]
         num_antialias_samples = int(config.get('VisGUI-antialias_samples', 4))
         if num_antialias_samples > 0:
             attribute_list.extend([wx.glcanvas.WX_GL_SAMPLE_BUFFERS, 1, wx.glcanvas.WX_GL_SAMPLES, num_antialias_samples])
@@ -114,53 +113,31 @@ class LMGLShaderCanvas(GLCanvas):
         except:
             logger.exception('Error creating OpenGL context, try modifying the number of anti-aliasing samples using the "VisGUI-antialias_samples" config setting (0 to disable antialiasing)')
             raise
-        
-        #self.bounds = {'x':[-1e6, 1e6], 'y':[-1e6, 1e6], 'z':[-1e6,1e6], 'v':[-1e6, 1e6]}
-        
-        # self.bounds = np.zeros(1, dtype=[('x', '2f4'), ('y', '2f4'), ('z', '2f4'), ('v', '2f4')])
-        # self.bounds['x'] = [-1e6, 1e6]
-        # self.bounds['y'] = [-1e6, 1e6]
-        # self.bounds['z'] = [-1e6, 1e6]
-        # self.bounds['v'] = [-1e6, 1e6]
-        #print self.bounds.shape
 
-        self.nVertices = 0
-        self.IScale = [1.0, 1.0, 1.0]
-        self.zeroPt = [0, 1.0 / 3, 2.0 / 3]
-        self.cmap = None
-        self.clim = [0, 1]
-        self.alim = [0, 1]
-
-        self.displayMode = '2D'  # 3DPersp' #one of 3DPersp, 3DOrtho, 2D
-
-        self.wireframe = False
+        self.displayMode = display_mode  # 3DPersp' #one of 3DPersp, 3DOrtho, 2D
 
         self.parent = parent
 
-        self.pointSize = 30  # default point size = 30nm
-
         self._scaleBarLength = 1000
-
-        self.centreCross = False
-        
         self.clear_colour = [0,0,0,1.0]
 
-        self.LUTDraw = True
+        self.LUTDraw = show_lut
 
-        self.c = numpy.array([1, 1, 1])
-        self.a = numpy.array([1, 1, 1])
         self.zmin = -10
         self.zmax = 10
 
         self.angup = 0
         self.angright = 0
         
-        self.view = views.View()
-
-        self.zc_o = 0
+        if view is None:
+            self.view = views.View()
+        else:
+            self.view = view
 
         self.sx = 100
         self.sy = 100
+
+        self.zc_o = 0
 
         self.stereo = False
 
@@ -168,8 +145,6 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.dragging = False
         self.panning = False
-
-        self.edgeThreshold = 20
 
         self.selectionSettings = SelectionSettings()
         self.selectionDragging = False
@@ -185,8 +160,6 @@ class LMGLShaderCanvas(GLCanvas):
         self.view_port_size = (self.Size[0], self.Size[1])
         
         self._old_bbox = None
-
-        return
     
     @property
     def xc(self):
@@ -225,8 +198,9 @@ class LMGLShaderCanvas(GLCanvas):
         if not self.IsShown():
             print('ns')
             return
-        wx.PaintDC(self)
-        self.gl_context.SetCurrent(self)
+        
+        #wx.PaintDC(self)
+        #self.gl_context.SetCurrent(self)
         self.SetCurrent(self.gl_context)
 
         if not self._is_initialized:
@@ -273,13 +247,13 @@ class LMGLShaderCanvas(GLCanvas):
     def initialize(self):
         from .layers.ScaleBoxOverlayLayer import ScaleBoxOverlayLayer
         self.InitGL()
-        self.ScaleBarOverlayLayer = ScaleBarOverlayLayer()
-        self.ScaleBoxOverlayLayer = ScaleBoxOverlayLayer()
+        self.ScaleBarOverlayLayer = ScaleBarOverlayLayer(context=self.gl_context)
+        self.ScaleBoxOverlayLayer = ScaleBoxOverlayLayer(context=self.gl_context)
 
-        self.LUTOverlayLayer = LUTOverlayLayer()
-        self.AxesOverlayLayer = AxesOverlayLayer()
+        self.LUTOverlayLayer = LUTOverlayLayer(context=self.gl_context)
+        self.AxesOverlayLayer = AxesOverlayLayer(context=self.gl_context)
         
-        self.overlays.append(SelectionOverlayLayer(self.selectionSettings))
+        self.overlays.append(SelectionOverlayLayer(self.selectionSettings,context=self.gl_context))
         self.underlays.append(self.ScaleBoxOverlayLayer)
 
         self._is_initialized = True
@@ -342,6 +316,15 @@ class LMGLShaderCanvas(GLCanvas):
 
         # print 'is'
 
+    @property
+    def _stereo_views(self):
+        if self.displayMode == '2D':
+            return ['2D']
+        elif self.stereo:
+            return ['left', 'right']
+        else:
+            return ['centre']
+    
     def OnDraw(self):
         self.interlace_stencil()
         glEnable(GL_DEPTH_TEST)
@@ -349,20 +332,14 @@ class LMGLShaderCanvas(GLCanvas):
         glClearColor(*self.clear_colour)
         glClear(GL_COLOR_BUFFER_BIT)
 
-        # print 'od'
+        #aspect ratio of window
+        ys = float(self.view_port_size[1]) / float(self.view_port_size[0])
 
-        if self.displayMode == '2D':
-            views = ['2D']
-        elif self.stereo:
-            views = ['left', 'right']
-        else:
-            views = ['centre']
-
-        for view in views:
-            if view == 'left':
+        for stereo_view in self._stereo_views:
+            if stereo_view == 'left':
                 eye = -self.eye_dist
                 glStencilFunc(GL_NOTEQUAL, 1, 1)
-            elif view == 'right':
+            elif stereo_view == 'right':
                 eye = +self.eye_dist
                 glStencilFunc(GL_EQUAL, 1, 1)
             else:
@@ -373,8 +350,6 @@ class LMGLShaderCanvas(GLCanvas):
             glLoadIdentity()
             glMatrixMode(GL_PROJECTION)
             glLoadIdentity()
-
-            ys = float(self.view_port_size[1]) / float(self.view_port_size[0])
 
             if self.displayMode == '3DPersp':
                 glFrustum(-1 + eye, 1 + eye, -ys, ys, 8.5, 11.5)
@@ -395,7 +370,6 @@ class LMGLShaderCanvas(GLCanvas):
                 glPushMatrix()
                 # rotate object
                 glMultMatrixf(self.object_rotation_matrix)
-    
                 glTranslatef(-self.view.translation[0], -self.view.translation[1], -self.view.translation[2])
                 
                 for l in self.underlays:
@@ -416,8 +390,6 @@ class LMGLShaderCanvas(GLCanvas):
         glFlush()
 
         self.SwapBuffers()
-
-        return
 
     @property
     def object_rotation_matrix(self):
@@ -466,8 +438,373 @@ class LMGLShaderCanvas(GLCanvas):
 
         self.ResetView()
 
-        return
+    def ResetView(self):
+        self.view.vec_up = numpy.array([0, 1, 0])
+        self.view.vec_right = numpy.array([1, 0, 0])
+        self.view.vec_back = numpy.array([0, 0, 1])
 
+        self.Refresh()
+
+    @property
+    def xmin(self):
+        return self.view.translation[0] - 0.5 * self.pixelsize * self.view_port_size[0]
+
+    @property
+    def xmax(self):
+        return self.view.translation[0] + 0.5 * self.pixelsize * self.view_port_size[0]
+
+    @property
+    def ymin(self):
+        return self.view.translation[1] - 0.5 * self.pixelsize * self.view_port_size[1]
+
+    @property
+    def ymax(self):
+        return self.view.translation[1] + 0.5 * self.pixelsize * self.view_port_size[1]
+
+    @property
+    def pixelsize(self):
+        return 2. / (self.view.scale * self.view_port_size[0])
+    
+    def _view_changed(self):
+        """Notify anyone who is synced to our view"""
+        for callback in self.wantViewChangeNotification:
+            if callback:
+                callback.Refresh()
+
+    def setView(self, xmin, xmax, ymin, ymax):
+
+        self.view.translation[0] = (xmin + xmax) / 2.0
+        self.view.translation[1] = (ymin + ymax) / 2.0
+        self.view.translation[2] = self.zc_o  # 0#z.mean()
+
+        self.view.scale = 2. / (xmax - xmin)
+
+        self.Refresh()
+        if 'OnGLViewChanged' in dir(self.parent):
+            self.parent.OnGLViewChanged()
+
+        self._view_changed()
+
+    def moveView(self, dx, dy, dz=0):
+        return self.pan(dx, dy, dz)
+
+    def pan(self, dx, dy, dz=0):
+        self.view.translation[0] += dx
+        self.view.translation[1] += dy
+        self.view.translation[2] += dz
+
+        self.Refresh()
+        self._view_changed()
+
+    def OnWheel(self, event):
+        rot = event.GetWheelRotation()
+        xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
+
+        dx, dy = (xp - self.view.translation[0]), (yp - self.view.translation[1])
+        dx_, dy_, dz_, c_ = numpy.dot(self.object_rotation_matrix, [dx, dy, 0, 0])
+        xp_, yp_, zp_ = (self.view.translation[0] + dx_), (self.view.translation[1] + dy_), (self.view.translation[2] + dz_)
+
+        if event.MiddleIsDown():
+            self.WheelFocus(rot, xp_, yp_, zp_)
+        else:
+            self.WheelZoom(rot, xp_, yp_, zp_)
+
+    def WheelZoom(self, rot, xp, yp, zp=0):
+        dx = xp - self.view.translation[0]
+        dy = yp - self.view.translation[1]
+        dz = zp - self.view.translation[2]
+
+        if rot > 0:
+            # zoom out
+            self.view.scale *= ZOOM_FACTOR
+
+            self.view.translation[0] += dx * (1. - 1. / ZOOM_FACTOR)
+            self.view.translation[1] += dy * (1. - 1. / ZOOM_FACTOR)
+            self.view.translation[2] += dz * (1. - 1. / ZOOM_FACTOR)
+
+        if rot < 0:
+            # zoom in
+            self.view.scale /= ZOOM_FACTOR
+
+            self.view.translation[0] += dx * (1. - ZOOM_FACTOR)
+            self.view.translation[1] += dy * (1. - ZOOM_FACTOR)
+            self.view.translation[2] += dz * (1. - ZOOM_FACTOR)
+
+        self.Refresh()
+        self._view_changed()
+
+    def WheelFocus(self, rot, xp, yp, zp=0):
+        if rot > 0:
+            self.view.translation[2] -= 1.
+
+        if rot < 0:
+            self.view.translation[2] += 1.
+
+        self.Refresh()
+        self._view_changed()
+
+    def OnLeftDown(self, event):
+        if not self.displayMode == '2D':
+            # dragging the mouse rotates the object
+            self.xDragStart = event.GetX()
+            self.yDragStart = event.GetY()
+
+            self.angyst = self.angup
+            self.angxst = self.angright
+
+            self.dragging = True
+        else:  # 2D
+            # dragging the mouse sets an ROI
+            xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
+
+            self.selectionDragging = True
+            self.selectionSettings.show = True
+
+            self.selectionSettings.start = (xp, yp)
+            self.selectionSettings.finish = (xp, yp)
+
+        event.Skip()
+
+    def OnLeftUp(self, event):
+        self.dragging = False
+
+        if self.selectionDragging:
+            xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
+
+            self.selectionSettings.finish = (xp, yp)
+            self.selectionDragging = False
+
+            self.Refresh()
+            self.Update()
+
+        event.Skip()
+
+    def OnMiddleDown(self, event):
+        self.xDragStart = event.GetX()
+        self.yDragStart = event.GetY()
+
+        self.panning = True
+        event.Skip()
+
+    def OnMiddleUp(self, event):
+        self.panning = False
+        event.Skip()
+
+    def _ScreenCoordinatesToNm(self, x, y):
+        # FIXME!!!
+        x_ = self.pixelsize * (x - 0.5 * float(self.view_port_size[0])) + self.view.translation[0]
+        y_ = self.pixelsize * (y - 0.5 * float(self.view_port_size[1])) + self.view.translation[1]
+        # print x_, y_
+        return x_, y_
+
+    def OnMouseMove(self, event):
+        x = event.GetX()
+        y = event.GetY()
+
+        if self.selectionDragging:
+            self.selectionSettings.finish = self._ScreenCoordinatesToNm(x, y)
+            self.Refresh()
+            event.Skip()
+
+        elif self.dragging:
+            angx = numpy.pi * (x - self.xDragStart) / 180
+            angy = numpy.pi * (y - self.yDragStart) / 180
+
+            r_mat1 = numpy.matrix(
+                [[numpy.cos(angx), 0, numpy.sin(angx)], [0, 1, 0], [-numpy.sin(angx), 0, numpy.cos(angx)]])
+            r_mat = r_mat1 * numpy.matrix(
+                [[1, 0, 0], [0, numpy.cos(angy), numpy.sin(angy)], [0, -numpy.sin(angy), numpy.cos(angy)]])
+
+            vec_right_n = numpy.array(r_mat * numpy.matrix(self.view.vec_right).T).squeeze()
+            vec_up_n = numpy.array(r_mat * numpy.matrix(self.view.vec_up).T).squeeze()
+            vec_back_n = numpy.array(r_mat * numpy.matrix(self.view.vec_back).T).squeeze()
+
+            self.view.vec_right = vec_right_n
+
+            self.view.vec_up = vec_up_n
+            self.view.vec_back = vec_back_n
+
+            self.xDragStart = x
+            self.yDragStart = y
+
+            self.Refresh()
+            event.Skip()
+
+        elif self.panning:
+            dx = self.pixelsize * (x - self.xDragStart)
+            dy = self.pixelsize * (y - self.yDragStart)
+
+            dx_, dy_, dz_, c_ = numpy.dot(self.object_rotation_matrix, [dx, dy, 0, 0])
+
+            self.xDragStart = x
+            self.yDragStart = y
+
+            self.pan(-dx_, -dy_, -dz_)
+
+            event.Skip()
+
+    def OnKeyPress(self, event):
+        # print event.GetKeyCode()
+        if event.GetKeyCode() == 83:  # S - toggle stereo
+            self.stereo = not self.stereo
+            self.Refresh()
+        elif event.GetKeyCode() == 67:  # C - centre
+            self.recenter_bbox()
+            self.Refresh()
+
+        elif event.GetKeyCode() == 91:  # [ decrease eye separation
+            self.eye_dist /= 1.5
+            self.Refresh()
+
+        elif event.GetKeyCode() == 93:  # ] increase eye separation
+            self.eye_dist *= 1.5
+            self.Refresh()
+
+        elif event.GetKeyCode() == 82:  # R reset view
+            self.ResetView()
+            self.Refresh()
+
+        elif event.GetKeyCode() == 314:  # left
+            pos = numpy.array([self.view.translation[0], self.view.translation[1], self.view.translation[2]], 'f')
+            pos -= 300 * self.view.vec_right
+            self.view.translation[0], self.view.translation[1], self.view.translation[2] = pos
+            # print 'l'
+            self.Refresh()
+
+        elif event.GetKeyCode() == 315:  # up
+            pos = numpy.array([self.view.translation[0], self.view.translation[1], self.view.translation[2]])
+            pos -= 300 * self.view.vec_back
+            self.view.translation[0], self.view.translation[1], self.view.translation[2] = pos
+            self.Refresh()
+
+        elif event.GetKeyCode() == 316:  # right
+            pos = numpy.array([self.view.translation[0], self.view.translation[1], self.view.translation[2]])
+            pos += 300 * self.view.vec_right
+            self.view.translation[0], self.view.translation[1], self.view.translation[2] = pos
+            self.Refresh()
+
+        elif event.GetKeyCode() == 317:  # down
+            pos = numpy.array([self.view.translation[0], self.view.translation[1], self.view.translation[2]])
+            pos += 300 * self.view.vec_back
+            self.view.translation[0], self.view.translation[1], self.view.translation[2] = pos
+            self.Refresh()
+
+        else:
+            event.Skip()
+
+    def getSnapshot(self, mode=GL_RGB):
+        # glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
+        # width, height = self.view_port_size[0], self.view_port_size[1]
+        # snap = glReadPixelsf(0, 0, width, height, mode)
+        # snap = snap.ravel().reshape(width, height, -1, order='F')
+        #
+        # if mode == GL_LUMINANCE:
+        #     # snap.strides = (4, 4 * snap.shape[0])
+        #     pass
+        # elif mode == GL_RGB:
+        #     snap.strides = (12, 12 * snap.shape[0], 4)
+        # else:
+        #     raise RuntimeError('{} is not a supported format.'.format(mode))
+        # img.show()
+        self.on_screen = False
+        off_screen_handler = OffScreenHandler(self.view_port_size, mode)
+        with off_screen_handler:
+            self.OnDraw()
+        snap = off_screen_handler.get_snap()
+        self.on_screen = True
+        return  (255*np.asarray(snap)).astype('uint8')
+
+    def getIm(self, pixel_size=None, mode=GL_RGB, image_bounds=None):
+        if ((pixel_size is None) or (abs(1 - pixel_size) < 0.001) and image_bounds is None):  # use current pixel size
+            return self.getSnapshot(mode=mode)
+        else:
+            # set size before moving the view, since self.setView includes a self.Refresh() call
+            if image_bounds is None:
+                from PYME.IO.image import ImageBounds
+                x0, y0, z0, x1, y1, z1 = self.bbox
+                #FIXME - do model-view translation to cope with 3D rotated views.
+                image_bounds = ImageBounds(x0, x1, y0, y1, z0, z1)
+                
+            self.view_port_size = (int((image_bounds.x1 - image_bounds.x0) / pixel_size),
+                                   int((image_bounds.y1 - image_bounds.y0) / pixel_size))
+            logging.debug('viewport size %s' % (self.view_port_size,))
+            self.setView(image_bounds.x0, image_bounds.x0 + self.view_port_size[0]*pixel_size,
+                         image_bounds.y0, image_bounds.y0 + self.view_port_size[1]*pixel_size)
+            snap = self.getSnapshot(mode=mode)
+            
+            print(pixel_size, self.pixelsize)
+            assert(self.pixelsize == pixel_size)
+            self.view_port_size = self.Size
+            return snap
+
+    def recenter(self, x, y):
+        self.view.translation[0] = x.mean()
+        self.view.translation[1] = y.mean()
+        self.view.translation[2] = 0  # z.mean()
+
+        self.sx = x.max() - x.min()
+        self.sy = y.max() - y.min()
+        self.sz = 0  # z.max() - z.min()
+
+        self.view.scale = 2. / (max(self.sx, self.sy))
+        
+    def recenter_bbox(self):
+        bb = self.bbox
+        if bb is None:
+            return
+        
+        centre = 0.5*(bb[:3] + bb[3:])
+        
+        self.view.translation[0], self.view.translation[1], self.view.translation[2] = centre
+
+    def set_view(self, view):
+        self.view=view
+        self.Refresh()
+
+    def get_view(self, view_id='id'):
+        view = View.copy(self.view)
+        view.view_id = view_id
+        return view
+    
+    def refresh(self, *args, **kwargs):
+        bb = self.bbox #force an update of our bounding box
+        self.Refresh()
+
+
+class LegacyGLCanvas(LMGLShaderCanvas):
+    """ Catch all for stuff which has largely been deprecated by layers, but might still be required for the non-layers mode"""
+    
+    def __init__(self, *args, **kwargs):
+        LMGLShaderCanvas.__init__(self, *args, **kwargs)
+        
+        import pylab
+
+        self.cmap = pylab.cm.gist_rainbow
+        self.clim = [0, 1]
+        self.alim = [0, 1]
+
+        self.pointSize = 30  # default point size = 30nm
+
+        self.c = numpy.array([1, 1, 1])
+        self.a = numpy.array([1, 1, 1])
+        
+    
+    def setColour(self, IScale=None, zeroPt=None):
+        self.Refresh()
+
+    def setCMap(self, cmap):
+        self.cmap = cmap
+        self.setColour()
+
+    def setCLim(self, clim, alim=None):
+        self.clim = clim
+        if alim is None:
+            self.alim = clim
+        else:
+            self.alim = alim
+        self.setColour()
+        
+        
     def setTriang3D(self, x, y, z, c=None, sizeCutoff=1000., zrescale=1, internalCull=True, wireframe=False, alpha=1,
                     recenter=True):
 
@@ -515,6 +852,7 @@ class LMGLShaderCanvas(GLCanvas):
 
     def setPoints3D(self, x, y, z, c=None, a=None, recenter=False, alpha=1.0, mode='points',
                     normal_x = None, normal_y = None, normal_z = None):  # , clim=None):
+        from PYME.LMVis.layers.pointcloud import PointCloudRenderLayer
         # center data
         x = x  # - x.mean()
         y = y  # - y.mean()
@@ -582,371 +920,7 @@ class LMGLShaderCanvas(GLCanvas):
         self.layers.append(QuadTreeRenderLayer(xs.ravel(), ys.ravel(), 0 * xs.ravel(),
                                                self.c, self.cmap, self.clim, alpha=1))
         self.Refresh()
-
-    def ResetView(self):
-
-        self.view.vec_up = numpy.array([0, 1, 0])
-        self.view.vec_right = numpy.array([1, 0, 0])
-        self.view.vec_back = numpy.array([0, 0, 1])
-
-        self.Refresh()
-
-    def setColour(self, IScale=None, zeroPt=None):
-        self.Refresh()
-
-    def setCMap(self, cmap):
-        self.cmap = cmap
-        self.setColour()
-
-    def setCLim(self, clim, alim=None):
-        self.clim = clim
-        if alim is None:
-            self.alim = clim
-        else:
-            self.alim = alim
-        self.setColour()
-
-    @property
-    def xmin(self):
-        return self.view.translation[0] - 0.5 * self.pixelsize * self.view_port_size[0]
-
-    @property
-    def xmax(self):
-        return self.view.translation[0] + 0.5 * self.pixelsize * self.view_port_size[0]
-
-    @property
-    def ymin(self):
-        return self.view.translation[1] - 0.5 * self.pixelsize * self.view_port_size[1]
-
-    @property
-    def ymax(self):
-        return self.view.translation[1] + 0.5 * self.pixelsize * self.view_port_size[1]
-
-    @property
-    def pixelsize(self):
-        return 2. / (self.view.scale * self.view_port_size[0])
-
-    def setView(self, xmin, xmax, ymin, ymax):
-
-        self.view.translation[0] = (xmin + xmax) / 2.0
-        self.view.translation[1] = (ymin + ymax) / 2.0
-        self.view.translation[2] = self.zc_o  # 0#z.mean()
-
-        self.view.scale = 2. / (xmax - xmin)
-
-        self.Refresh()
-        if 'OnGLViewChanged' in dir(self.parent):
-            self.parent.OnGLViewChanged()
-
-        for callback in self.wantViewChangeNotification:
-            callback.Refresh()
-
-    def moveView(self, dx, dy, dz=0):
-        return self.pan(dx, dy, dz)
-
-    def pan(self, dx, dy, dz=0):
-        # self.setView(self.xmin + dx, self.xmax + dx, self.ymin + dy, self.ymax + dy)
-        self.view.translation[0] += dx
-        self.view.translation[1] += dy
-        self.view.translation[2] += dz
-
-        self.Refresh()
-
-        for callback in self.wantViewChangeNotification:
-            callback.Refresh()
-
-    def OnWheel(self, event):
-        rot = event.GetWheelRotation()
-        xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
-
-        dx, dy = (xp - self.view.translation[0]), (yp - self.view.translation[1])
-
-        dx_, dy_, dz_, c_ = numpy.dot(self.object_rotation_matrix, [dx, dy, 0, 0])
-
-        xp_, yp_, zp_ = (self.view.translation[0] + dx_), (self.view.translation[1] + dy_), (self.view.translation[2] + dz_)
-
-        # print xp
-        # print yp
-        if event.MiddleIsDown():
-            self.WheelFocus(rot, xp_, yp_, zp_)
-        else:
-            self.WheelZoom(rot, xp_, yp_, zp_)
-
-    def WheelZoom(self, rot, xp, yp, zp=0):
-        dx = xp - self.view.translation[0]
-        dy = yp - self.view.translation[1]
-        dz = zp - self.view.translation[2]
-
-        if rot > 0:
-            # zoom out
-            self.view.scale *= ZOOM_FACTOR
-
-            self.view.translation[0] += dx * (1. - 1. / ZOOM_FACTOR)
-            self.view.translation[1] += dy * (1. - 1. / ZOOM_FACTOR)
-            self.view.translation[2] += dz * (1. - 1. / ZOOM_FACTOR)
-
-        if rot < 0:
-            # zoom in
-            self.view.scale /= ZOOM_FACTOR
-
-            self.view.translation[0] += dx * (1. - ZOOM_FACTOR)
-            self.view.translation[1] += dy * (1. - ZOOM_FACTOR)
-            self.view.translation[2] += dz * (1. - ZOOM_FACTOR)
-
-        self.Refresh()
-
-        for callback in self.wantViewChangeNotification:
-            callback.Refresh()
-
-    def WheelFocus(self, rot, xp, yp, zp=0):
-        if rot > 0:
-            # zoom out
-            self.view.translation[2] -= 1.
-
-        if rot < 0:
-            # zoom in
-            self.view.translation[2] += 1.
-
-        self.Refresh()
-
-        for callback in self.wantViewChangeNotification:
-            callback.Refresh()
-
-    def OnLeftDown(self, event):
-        if not self.displayMode == '2D':
-            # dragging the mouse rotates the object
-            self.xDragStart = event.GetX()
-            self.yDragStart = event.GetY()
-
-            self.angyst = self.angup
-            self.angxst = self.angright
-
-            self.dragging = True
-        else:  # 2D
-            # dragging the mouse sets an ROI
-            xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
-
-            self.selectionDragging = True
-            self.selectionSettings.show = True
-
-            self.selectionSettings.start = (xp, yp)
-            self.selectionSettings.finish = (xp, yp)
-
-        event.Skip()
-
-    def OnLeftUp(self, event):
-        self.dragging = False
-
-        if self.selectionDragging:
-            xp, yp = self._ScreenCoordinatesToNm(event.GetX(), event.GetY())
-
-            self.selectionSettings.finish = (xp, yp)
-            self.selectionDragging = False
-
-            self.Refresh()
-            self.Update()
-
-        event.Skip()
-
-    def OnMiddleDown(self, event):
-        self.xDragStart = event.GetX()
-        self.yDragStart = event.GetY()
-
-        self.panning = True
-        event.Skip()
-
-    def OnMiddleUp(self, event):
-        self.panning = False
-        event.Skip()
-
-    def _ScreenCoordinatesToNm(self, x, y):
-        # FIXME!!!
-        x_ = self.pixelsize * (x - 0.5 * float(self.view_port_size[0])) + self.view.translation[0]
-        y_ = self.pixelsize * (y - 0.5 * float(self.view_port_size[1])) + self.view.translation[1]
-        # print x_, y_
-        return x_, y_
-
-    def OnMouseMove(self, event):
-        x = event.GetX()
-        y = event.GetY()
-
-        if self.selectionDragging:
-            self.selectionSettings.finish = self._ScreenCoordinatesToNm(x, y)
-
-            self.Refresh()
-            event.Skip()
-
-        elif self.dragging:
-
-            angx = numpy.pi * (x - self.xDragStart) / 180
-            angy = numpy.pi * (y - self.yDragStart) / 180
-
-            r_mat1 = numpy.matrix(
-                [[numpy.cos(angx), 0, numpy.sin(angx)], [0, 1, 0], [-numpy.sin(angx), 0, numpy.cos(angx)]])
-            r_mat = r_mat1 * numpy.matrix(
-                [[1, 0, 0], [0, numpy.cos(angy), numpy.sin(angy)], [0, -numpy.sin(angy), numpy.cos(angy)]])
-
-            vec_right_n = numpy.array(r_mat * numpy.matrix(self.view.vec_right).T).squeeze()
-            vec_up_n = numpy.array(r_mat * numpy.matrix(self.view.vec_up).T).squeeze()
-            vec_back_n = numpy.array(r_mat * numpy.matrix(self.view.vec_back).T).squeeze()
-
-            self.view.vec_right = vec_right_n
-
-            self.view.vec_up = vec_up_n
-            self.view.vec_back = vec_back_n
-
-            self.xDragStart = x
-            self.yDragStart = y
-
-            self.Refresh()
-            event.Skip()
-
-        elif self.panning:
-
-            dx = self.pixelsize * (x - self.xDragStart)
-            dy = self.pixelsize * (y - self.yDragStart)
-
-            # print dx
-
-            dx_, dy_, dz_, c_ = numpy.dot(self.object_rotation_matrix, [dx, dy, 0, 0])
-
-            self.xDragStart = x
-            self.yDragStart = y
-
-            self.pan(-dx_, -dy_, -dz_)
-
-            event.Skip()
-
-    def OnKeyPress(self, event):
-        # print event.GetKeyCode()
-        if event.GetKeyCode() == 83:  # S - toggle stereo
-            self.stereo = not self.stereo
-            self.Refresh()
-        elif event.GetKeyCode() == 67:  # C - centre
-            # self.view.translation[0] = self.sx / 2
-            # self.view.translation[1] = self.sy / 2
-            # self.view.translation[2] = self.sz / 2
-
-            self.recenter_bbox()
-            self.Refresh()
-
-        elif event.GetKeyCode() == 91:  # [ decrease eye separation
-            self.eye_dist /= 1.5
-            self.Refresh()
-
-        elif event.GetKeyCode() == 93:  # ] increase eye separation
-            self.eye_dist *= 1.5
-            self.Refresh()
-
-        elif event.GetKeyCode() == 82:  # R reset view
-            self.ResetView()
-            self.Refresh()
-
-        elif event.GetKeyCode() == 314:  # left
-            pos = numpy.array([self.view.translation[0], self.view.translation[1], self.view.translation[2]], 'f')
-            pos -= 300 * self.view.vec_right
-            self.view.translation[0], self.view.translation[1], self.view.translation[2] = pos
-            # print 'l'
-            self.Refresh()
-
-        elif event.GetKeyCode() == 315:  # up
-            pos = numpy.array([self.view.translation[0], self.view.translation[1], self.view.translation[2]])
-            pos -= 300 * self.view.vec_back
-            self.view.translation[0], self.view.translation[1], self.view.translation[2] = pos
-            self.Refresh()
-
-        elif event.GetKeyCode() == 316:  # right
-            pos = numpy.array([self.view.translation[0], self.view.translation[1], self.view.translation[2]])
-            pos += 300 * self.view.vec_right
-            self.view.translation[0], self.view.translation[1], self.view.translation[2] = pos
-            self.Refresh()
-
-        elif event.GetKeyCode() == 317:  # down
-            pos = numpy.array([self.view.translation[0], self.view.translation[1], self.view.translation[2]])
-            pos += 300 * self.view.vec_back
-            self.view.translation[0], self.view.translation[1], self.view.translation[2] = pos
-            self.Refresh()
-
-        else:
-            event.Skip()
-
-    def getSnapshot(self, mode=GL_RGB):
-
-        # glBindFramebuffer(GL_READ_FRAMEBUFFER, 0)
-        # width, height = self.view_port_size[0], self.view_port_size[1]
-        # snap = glReadPixelsf(0, 0, width, height, mode)
-        # snap = snap.ravel().reshape(width, height, -1, order='F')
-        #
-        # if mode == GL_LUMINANCE:
-        #     # snap.strides = (4, 4 * snap.shape[0])
-        #     pass
-        # elif mode == GL_RGB:
-        #     snap.strides = (12, 12 * snap.shape[0], 4)
-        # else:
-        #     raise RuntimeError('{} is not a supported format.'.format(mode))
-        # img.show()
-        self.on_screen = False
-        off_screen_handler = OffScreenHandler(self.view_port_size, mode)
-        with off_screen_handler:
-            self.OnDraw()
-        snap = off_screen_handler.get_snap()
-        self.on_screen = True
-        return snap
-
-    def getIm(self, pixel_size=None, mode=GL_RGB, image_bounds=None):
-        if ((pixel_size is None) or (abs(1 - pixel_size) < 0.001) and image_bounds is None):  # use current pixel size
-            return self.getSnapshot(mode=mode)
-        else:
-            # set size before moving the view, since self.setView includes a self.Refresh() call
-            if image_bounds is None:
-                from PYME.IO.image import ImageBounds
-                x0, y0, z0, x1, y1, z1 = self.bbox
-                #FIXME - do model-view translation to cope with 3D rotated views.
-                image_bounds = ImageBounds(x0, x1, y0, y1, z0, z1)
-                
-            self.view_port_size = (int((image_bounds.x1 - image_bounds.x0) / pixel_size),
-                                   int((image_bounds.y1 - image_bounds.y0) / pixel_size))
-            logging.debug('viewport size %s' % (self.view_port_size,))
-            self.setView(image_bounds.x0, image_bounds.x0 + self.view_port_size[0]*pixel_size,
-                         image_bounds.y0, image_bounds.y0 + self.view_port_size[1]*pixel_size)
-            snap = self.getSnapshot(mode=mode)
-            print(pixel_size, self.pixelsize)
-            assert(self.pixelsize == pixel_size)
-            self.view_port_size = self.Size
-            return snap
-
-    def recenter(self, x, y):
-        self.view.translation[0] = x.mean()
-        self.view.translation[1] = y.mean()
-        self.view.translation[2] = 0  # z.mean()
-
-        self.sx = x.max() - x.min()
-        self.sy = y.max() - y.min()
-        self.sz = 0  # z.max() - z.min()
-
-        self.view.scale = 2. / (max(self.sx, self.sy))
-        
-    def recenter_bbox(self):
-        bb = self.bbox
-        if bb is None:
-            return
-        
-        centre = 0.5*(bb[:3] + bb[3:])
-        
-        self.view.translation[0], self.view.translation[1], self.view.translation[2] = centre
-
-    def set_view(self, view):
-        self.view=view
-        self.Refresh()
-
-    def get_view(self, view_id='id'):
-        view = View.copy(self.view)
-        view.view_id = view_id
-        return view
     
-    def refresh(self, *args, **kwargs):
-        bb = self.bbox #force an update of our bounding box
-        self.Refresh()
 
 
 def showGLFrame():
