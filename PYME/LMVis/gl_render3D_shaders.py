@@ -712,7 +712,7 @@ class LMGLShaderCanvas(GLCanvas):
             self.OnDraw()
         snap = off_screen_handler.get_snap()
         self.on_screen = True
-        return snap
+        return  (255*np.asarray(snap)).astype('uint8')
 
     def getIm(self, pixel_size=None, mode=GL_RGB, image_bounds=None):
         if ((pixel_size is None) or (abs(1 - pixel_size) < 0.001) and image_bounds is None):  # use current pixel size
@@ -731,6 +731,7 @@ class LMGLShaderCanvas(GLCanvas):
             self.setView(image_bounds.x0, image_bounds.x0 + self.view_port_size[0]*pixel_size,
                          image_bounds.y0, image_bounds.y0 + self.view_port_size[1]*pixel_size)
             snap = self.getSnapshot(mode=mode)
+            
             print(pixel_size, self.pixelsize)
             assert(self.pixelsize == pixel_size)
             self.view_port_size = self.Size
