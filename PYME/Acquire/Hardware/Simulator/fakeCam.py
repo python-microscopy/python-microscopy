@@ -126,7 +126,19 @@ class NoiseMaker:
         return self._ar_cache[offset:(offset+nEntries)].reshape(im_shape)
 
     def noisify(self, im):
-        """Add noise to image using an EMCCD noise model"""
+        """Add noise to image using an EMCCD noise model
+        
+        Inputs
+        ------
+        
+        im : NxM array of intensities (in photons)
+        
+        Outputs
+        -------
+        
+        out: NxM array of simulated camera pixel intensities (in ADUs)
+        
+        """
 
         M = EMCCDTheory.M((80. + self.EMGain)/(255 + 80.), self.vbreakdown, self.temperature, self.NGainElements, 2.2)
         F2 = 1.0/EMCCDTheory.FSquared(M, self.NGainElements)
