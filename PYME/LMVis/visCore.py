@@ -67,6 +67,7 @@ from PYME.LMVis import statusLog
 
 class VisGUICore(object):
     def __init__(self, use_shaders=False):
+        self._new_layers = PYME.config.get('VisGUI-new_layers', False)
         self.viewMode = 'points' #one of points, triangles, quads, or voronoi
         #self.colData = 't'
         self.pointDisplaySettings = pointSettingsPanel.PointDisplaySettings()
@@ -87,7 +88,7 @@ class VisGUICore(object):
         gl_pan = wx.Panel(win)
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        self._new_layers = PYME.config.get('VisGUI-new_layers', False)
+
         
         if not use_shaders:
             self.glCanvas = gl_render.LMGLCanvas(gl_pan)
