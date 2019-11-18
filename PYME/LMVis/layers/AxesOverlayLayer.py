@@ -27,10 +27,10 @@ class AxesOverlayLayer(OverlayLayer):
     This OverlayLayer produces axes and displays the orientation of the model.
     """
 
-    def __init__(self, offset=None, size=1):
+    def __init__(self, offset=None, size=1, **kwargs):
         if not offset:
             offset = [10, 10]
-        super(AxesOverlayLayer, self).__init__(offset)
+        super(AxesOverlayLayer, self).__init__(offset, **kwargs)
         self._size = size
 
     def render(self, gl_canvas):

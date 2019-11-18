@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 from OpenGL.GL import *
 
 class Points3DEngine(BaseEngine):
-    def __init__(self):
-        BaseEngine.__init__(self)
+    def __init__(self, context=None):
+        BaseEngine.__init__(self, context=context)
         self.set_shader_program(OpaquePointShaderProgram)
         self.point_scale_correction = 1.0
 
@@ -41,26 +41,26 @@ class Points3DEngine(BaseEngine):
 
 
 class PointSpritesEngine(Points3DEngine):
-    def __init__(self):
-        BaseEngine.__init__(self)
+    def __init__(self, context=None):
+        BaseEngine.__init__(self, context=context)
         self.set_shader_program(PointSpriteShaderProgram)
         self.point_scale_correction = self.shader_program.size_factor
         
 class ShadedPointsEngine(Points3DEngine):
-    def __init__(self):
-        BaseEngine.__init__(self)
+    def __init__(self, context=None):
+        BaseEngine.__init__(self, context=context)
         self.set_shader_program(GouraudShaderProgram)
         self.point_scale_correction = 1.0
         
 class TransparentPointsEngine(Points3DEngine):
-    def __init__(self):
-        BaseEngine.__init__(self)
+    def __init__(self, context=None):
+        BaseEngine.__init__(self, context=context)
         self.set_shader_program(DefaultShaderProgram)
         self.point_scale_correction = 1.0
         
 class SpheresEngine(Points3DEngine):
-    def __init__(self):
-        BaseEngine.__init__(self)
+    def __init__(self, context=None):
+        BaseEngine.__init__(self, context=context)
         self.set_shader_program(GouraudSphereShaderProgram)
         self.point_scale_correction = 1.0
         
@@ -90,7 +90,8 @@ class PointCloudRenderLayer(EngineLayer):
     _datasource_keys = List()
     _datasource_choices = List()
 
-    def __init__(self, pipeline, method='points', dsname='', **kwargs):
+    def __init__(self, pipeline, method='points', dsname='', context=None, **kwargs):
+        EngineLayer.__init__(self, context=context, **kwargs)
         self._pipeline = pipeline
         self.engine = None
         self.cmap = 'gist_rainbow'
@@ -140,7 +141,7 @@ class PointCloudRenderLayer(EngineLayer):
 
     def _set_method(self):
         #logger.debug('Setting layer method to %s' % self.method)
-        self.engine = ENGINES[self.method]()
+        self.engine = ENGINES[self.method](self._context)
         self.update()
 
     def _get_cdata(self):

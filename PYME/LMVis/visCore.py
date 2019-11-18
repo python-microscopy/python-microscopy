@@ -86,20 +86,25 @@ class VisGUICore(object):
 
         gl_pan = wx.Panel(win)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        
+
+        self._new_layers = PYME.config.get('VisGUI-new_layers', False)
         
         if not use_shaders:
             self.glCanvas = gl_render.LMGLCanvas(gl_pan)
         else:
-            from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
-            self.glCanvas = LMGLShaderCanvas(gl_pan)
+            from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas, LegacyGLCanvas
+            if self._new_layers:
+                #use stripped down version
+                self.glCanvas = LMGLShaderCanvas(gl_pan)
+            else:
+                self.glCanvas = LegacyGLCanvas(gl_pan)
 
         sizer.Add(self.create_tool_bar(gl_pan), 0, wx.EXPAND, 0)
         sizer.Add(self.glCanvas, 5, wx.EXPAND, 0)
         gl_pan.SetSizerAndFit(sizer)
         win.AddPage(page=gl_pan, caption='View')#, select=True)
 
-        self.glCanvas.setCMap(pylab.cm.gist_rainbow) #pylab.cm.hot
+        #self.glCanvas.setCMap(pylab.cm.gist_rainbow) #pylab.cm.hot
 
         #self.rec_gui = recipeGui.
         #win.AddPage(page=self.glCanvas, caption='View')#, select=True)
@@ -107,7 +112,6 @@ class VisGUICore(object):
         self.refv = False
         
         self._legacy_layer = None
-        self._new_layers = PYME.config.get('VisGUI-new_layers', False)
         
         self.layer_added = dispatch.Signal()
         
@@ -149,7 +153,7 @@ class VisGUICore(object):
 
         self.filterPane = CreateFilterPane(sidePanel, self.pipeline.filterKeys, self.pipeline, self)
 
-        if PYME.config.get('VisGUI-new_layers', False):
+        if self._new_layers:
             #self.colourFilterPane = CreateColourFilterPane(sidePanel, self.pipeline.colourFilter, self.pipeline)
             #self.displayPane = displayPane.CreateDisplayPane(sidePanel, self.glCanvas, self)
             #self.displayPane.Bind(displayPane.EVT_DISPLAY_CHANGE, self.RefreshView)
@@ -262,7 +266,7 @@ class VisGUICore(object):
             self.AddMenuItem('File', "&Exit", self.OnQuit,id = wx.ID_EXIT)
 
 
-        if not PYME.config.get('VisGUI-new_layers', False):
+        if not self._new_layers:
             self.AddMenuItem('View', '&Points', self.OnViewPoints, itemType='normal') #TODO - add radio type
             if use_shaders:
                 self.AddMenuItem('View', '&Pointsprites', self.OnViewPointsprites)

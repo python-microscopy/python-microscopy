@@ -20,7 +20,7 @@
 #
 import PIL
 
-from scipy.misc import toimage
+#from scipy.misc import toimage
 import wx
 from OpenGL.GL import GL_LUMINANCE, GL_RGB
 
@@ -32,10 +32,13 @@ def save_snapshot(canvas):
     #pixel_size = float(VideoPanel.ask(canvas, message='Please enter the pixel size (1 pixel on the screen = x pixel '
     #                                                  'in the snapshot', default_value='1'))
     
-    dlg = wx.TextEntryDialog(canvas, "Snapshot pixel size", "Please enter the desired pixel size in the snapshot", "5")
-    if dlg.ShowModal() == wx.ID_OK:
-        pixel_size = float(dlg.GetValue())
-        dlg.Destroy()
+    
+    #dlg = wx.TextEntryDialog(canvas, "Snapshot pixel size", "Please enter the desired pixel size in the snapshot", "5")
+    #if dlg.ShowModal() == wx.ID_OK:
+    if True:
+        #pixel_size = float(dlg.GetValue())
+        pixel_size=None
+        #dlg.Destroy()
     
         file_name = wx.FileSelector('Save current view as', wildcard="PNG files(*.png)|*.png",
                         flags=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
@@ -43,10 +46,14 @@ def save_snapshot(canvas):
         if file_name:
             # snap = canvas.getIm(pixel_size, GL_LUMINANCE)
             snap = canvas.getIm(pixel_size, GL_RGB)
+            print(snap.dtype, snap.shape, snap.max())
             if snap.ndim == 3:
-                img = toimage(snap.transpose(1, 0, 2))
+                img = PIL.Image.fromarray(snap.transpose(1, 0, 2))
+                #img = toimage(snap.transpose(1, 0, 2))
             else:
-                img = toimage(snap.transpose())
+                img = PIL.Image.fromarray(snap.transpose())
+                #img = toimage(snap.transpose())
+            
             img = img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
             
             if not file_name.endswith('.png'):

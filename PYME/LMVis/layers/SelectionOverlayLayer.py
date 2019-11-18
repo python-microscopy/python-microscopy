@@ -28,8 +28,8 @@ class SelectionOverlayLayer(OverlayLayer):
     This OverlayLayer creates the lines of a box.
     The dimensions of the box are determined by the selection_settings
     """
-    def __init__(self, selection_settings):
-        super(SelectionOverlayLayer, self).__init__([0, 0])
+    def __init__(self, selection_settings, **kwargs):
+        super(SelectionOverlayLayer, self).__init__([0, 0], **kwargs)
         self._selection_settings = selection_settings
 
     def render(self, gl_canvas):

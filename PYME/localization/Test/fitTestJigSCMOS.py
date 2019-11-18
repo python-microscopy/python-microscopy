@@ -257,7 +257,10 @@ class fitTestJig(object):
         
         self.d2 = []
 
-        #generate our data
+        # generate our data
+        #
+        # note that the noisemaker is a full camera model and converts from photons to ADUs, so intensity related
+        # parameters in fit will differ from those used in the model evaluation
         ####################
         for i in range(nTests):
             p = np.array(params) + np.array(param_jit)*(2*np.random.rand(len(param_jit)) - 1)
@@ -323,6 +326,12 @@ class fitTestJig(object):
         Returns
         -------
         array of differences between fitted and model values
+        
+        Notes
+        -----
+        
+        Errors in intensity related parameters (e.g. Amplitude, background) will be incorrect due to conversion between
+        photons and ADUs in camera model.
 
         """
         xv = self.ps[varName].ravel()

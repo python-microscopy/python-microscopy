@@ -90,7 +90,9 @@ class fitTestJig(object):
             #from PYME.DSView import View3D
             #View3D(self.data)
 
+            # note that the noisemaker converts from photons to ADUs, so intensity related parameters in fit will differ from model
             self.d2 = self.noiseM.noisify(self.data)
+            
             #print self.d2.min(), self.d2.max(), self.data.min(), self.data.max()
             
             #print self.d2.shape

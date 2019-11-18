@@ -40,16 +40,16 @@ class ImageViewPanel(wx.Panel):
         self.chan = chan
         self.zdim = zdim
         
-        wx.EVT_PAINT(self, self.OnPaint)
-        wx.EVT_SIZE(self, self.OnSize)
-        wx.EVT_MOUSEWHEEL(self, self.OnWheel)
-        wx.EVT_KEY_DOWN(self, self.OnKeyPress)
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.Bind(wx.EVT_MOUSEWHEEL, self.OnWheel)
+        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyPress)
 
-        wx.EVT_LEFT_DOWN(self, self.OnLeftDown)
-        wx.EVT_LEFT_UP(self, self.OnLeftUp)
-        wx.EVT_MIDDLE_DOWN(self, self.OnMiddleDown)
-        wx.EVT_MIDDLE_UP(self, self.OnMiddleUp)
-        wx.EVT_MOTION(self, self.OnMotion)
+        self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
+        self.Bind(wx.EVT_MIDDLE_DOWN, self.OnMiddleDown)
+        self.Bind(wx.EVT_MIDDLE_UP, self.OnMiddleUp)
+        self.Bind(wx.EVT_MOTION, self.OnMotion)
 
         self.selecting=False
         self.panning = False
@@ -59,7 +59,7 @@ class ImageViewPanel(wx.Panel):
     def DrawOverlays(self,dc):
         sc = self.image.pixelSize/self.glCanvas.pixelsize
         
-        if self.glCanvas.centreCross:
+        if False:#self.glCanvas.centreCross:
             print('drawing crosshair')
             dc.SetPen(wx.Pen(wx.GREEN, 2))
 
@@ -324,7 +324,7 @@ class ImageViewPanel(wx.Panel):
     
         dc.Clear()
         dc.DrawBitmap(wx.BitmapFromImage(imw), (-self.centreX + x0 + width / 2) / pixelsize,
-                      (self.centreY - y1 + height / 2) / pixelsize)
+                      (-self.centreY + y0 + height / 2) / pixelsize)
 
 
 class ColourImageViewPanel(ImageViewPanel):
