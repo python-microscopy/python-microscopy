@@ -597,7 +597,7 @@ class DictSource(TabularBase):
         
         for k, v in source.items():
             if not isinstance(v, np.ndarray):
-                raise ValueError('Column "%s" is not a numpy array' % k)
+                raise TypeError('Column "%s" is not a numpy array' % k)
             
             if not len(v) == L:
                 raise ValueError('Columns are different lengths')
@@ -656,7 +656,7 @@ class ResultsFilter(SelectionFilter):
         supported by the underlying data source."""
         
         if not isinstance(resultsSource, TabularBase):
-            raise ValueError('Expecting a tabular object for resultsSource')
+            raise TypeError('Expecting a tabular object for resultsSource')
 
         self.resultsSource = resultsSource
 
@@ -690,7 +690,7 @@ class RandomSelectionFilter(SelectionFilter):
         supported by the underlying data source."""
         
         if not isinstance(resultsSource, TabularBase):
-            raise ValueError('Expecting a tabular object for resultsSource')
+            raise TypeError('Expecting a tabular object for resultsSource')
         
         self.resultsSource = resultsSource
         
@@ -713,7 +713,7 @@ class IdFilter(SelectionFilter):
         supported by the underlying data source."""
         
         if not isinstance(resultsSource, TabularBase):
-            raise ValueError('Expecting a tabular object for resultsSource')
+            raise TypeError('Expecting a tabular object for resultsSource')
         
         self.resultsSource = resultsSource
         self.id_column = id_column
@@ -769,7 +769,7 @@ class CachingResultsFilter(TabularBase):
         supported by the underlying data source."""
 
         if not isinstance(resultsSource, TabularBase):
-            raise ValueError('Expecting a tabular object for resultsSource')
+            raise TypeError('Expecting a tabular object for resultsSource')
         
         self.resultsSource = resultsSource
         self.cache = {}
@@ -944,7 +944,7 @@ class ColourFilter(TabularBase):
         """
         
         if not isinstance(resultsSource, TabularBase):
-            raise ValueError('Expecting a tabular object for resultsSource')
+            raise TypeError('Expecting a tabular object for resultsSource')
 
         self.resultsSource = resultsSource
         self.currentColour = currentColour
@@ -1023,7 +1023,7 @@ class CloneSource(TabularBase):
         self.cache = {}
         
         if not isinstance(resultsSource, TabularBase):
-            raise ValueError('Expecting a tabular object for resultsSource')
+            raise TypeError('Expecting a tabular object for resultsSource')
 
         klist = resultsSource.keys() if not keys else keys
 
