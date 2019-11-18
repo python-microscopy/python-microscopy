@@ -593,7 +593,7 @@ class DictSource(TabularBase):
         self._source = source
         
     def _verify(self, source):
-        L = len(source[source.keys()[0]])
+        L = len(source[list(source.keys())[0]])
         
         for k, v in source.items():
             if not isinstance(v, np.ndarray):
@@ -881,7 +881,7 @@ class MappingFilter(TabularBase):
         #force to be an array
         values = np.array(values)
 
-        if not len(values) == len(self.resultsSource[self.resultsSource.keys()[0]]):
+        if not len(values) == len(self.resultsSource[list(self.resultsSource.keys())[0]]):
             raise RuntimeError('New column does not match the length of existing columns')
 
         #insert into our __dict__ object (for backwards compatibility - TODO change me to something less hacky)
@@ -961,7 +961,7 @@ class ColourFilter(TabularBase):
     def _index(self, channel):
         colChans = self.getColourChans()
         if not channel in colChans:
-            return np.ones(len(self.resultsSource[self.resultsSource.keys()[0]]), 'bool')
+            return np.ones(len(self.resultsSource[list(self.resultsSource.keys())[0]]), 'bool')
         else:
             p_dye = self.resultsSource['p_%s' % channel]
 
