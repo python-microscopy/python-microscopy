@@ -74,6 +74,9 @@ class LMDisplay(visCore.VisGUICore):
         #self.Quads = None
         #dsviewer.menubar.Insert(dsviewer.menubar.GetMenuCount()-1, self.CreateMenuBar(subMenu=True), 'Points')
 
+        # initialize the common parts
+        visCore.VisGUICore.__init__(self)
+
         self.CreateMenuBar(subMenu=True)
 
 
@@ -84,8 +87,7 @@ class LMDisplay(visCore.VisGUICore):
 
         #statusLog.SetStatusDispFcn(self.SetStatus)
     
-        #initialize the common parts
-        visCore.VisGUICore.__init__(self)
+
         
 
 

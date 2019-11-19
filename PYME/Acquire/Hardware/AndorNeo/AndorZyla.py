@@ -583,13 +583,13 @@ class AndorBase(SDK3Camera):
         return self.SimplePreAmpGainControl.getString()
     
     def GetROI(self):
-        x1 = self.AOILeft.getValue()
-        y1 = self.AOITop.getValue()
+        x1 = self.AOILeft.getValue() - 1
+        y1 = self.AOITop.getValue() - 1
         
         x2 = x1 + self.AOIWidth.getValue()
         y2 = y1 + self.AOIHeight.getValue()
         
-        return [x1, x2, y1, y2]
+        return [x1, y1, x2, y2]
 
     # def GetROIX1(self):
     #     return self.AOILeft.getValue()

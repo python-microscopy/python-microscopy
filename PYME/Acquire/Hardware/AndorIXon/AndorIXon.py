@@ -453,7 +453,7 @@ class iXonCamera(Camera):
     #     return self.ROIy[1]
     
     def GetROI(self):
-        return self.ROIx[0] - 1, self.ROIx[1], self.ROIy[0] -1, self.ROIy[1]
+        return self.ROIx[0] - 1, self.ROIy[0] -1, self.ROIx[1], self.ROIy[1]
 
     def StartExposure(self):
         self.__selectCamera()
