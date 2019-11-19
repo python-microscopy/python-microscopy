@@ -91,9 +91,13 @@ class H5Exporter(Exporter):
         xSize, ySize = data[xslice, yslice, 0].shape[:2]
         
         print((xSize, ySize))
+        dtype = data[xslice, yslice, 0].dtype
         
-        #atm = tables.UInt16Atom()
-        atm = tables.Atom.from_dtype(data[xslice, yslice, 0].dtype)
+        if not dtype in ['uint8', 'uint16', 'float32']:
+            warnings.warn('Attempting to save an unsupported data-type (%s) - data should be one of uint8, uint16, or float32' % dtype,
+                           stacklevel=2)
+        
+        atm = tables.Atom.from_dtype(dtype)
 
         ims = h5out.create_earray(h5out.root,'ImageData',atm,(0,xSize,ySize), filters=filters, expectedrows=nframes, chunkshape=(1,xSize,ySize))
 
