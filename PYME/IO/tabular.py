@@ -607,7 +607,7 @@ class DictSource(TabularBase):
     
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
-        return self.resultsSource[key][sl]
+        return self._source[key][sl]
 
 class ColumnSource(DictSource):
     _name = 'Column Source'
