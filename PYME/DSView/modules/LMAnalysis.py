@@ -55,6 +55,8 @@ logger = logging.getLogger(__name__)
 
 debug = True
 
+IMG_WILDCARDS = 'Image Data|*.h5;*.tif;|All files|*.*'
+
 def debugPrint(msg):
     if debug:
         print(msg)
@@ -109,9 +111,15 @@ class AnalysisSettingsView(object):
                           mde.BoolFloatParam('Analysis.PCTBackground' , 'Use percentile for background', default=False, helpText='', ondefault=0.25, offvalue=0),
                           ], folded=False),
                       mde.ParamGroup('sCMOS camera noise maps',
-                             [mde.FilenameParam('Camera.VarianceMapID', 'Variance Map:', prompt='Please select variance map to use ...', wildcard='TIFF Files|*.tif', filename=''),
-                              mde.FilenameParam('Camera.DarkMapID', 'Dark Map:', prompt='Please select dark map to use ...', wildcard='TIFF Files|*.tif', filename=''),
-                              mde.FilenameParam('Camera.FlatfieldMapID', 'Flatfield Map:', prompt='Please select flatfield map to use ...', wildcard='TIFF Files|*.tif', filename=''),
+                             [mde.FilenameParam('Camera.VarianceMapID', 'Variance Map:',
+                                                prompt='Please select variance map to use ...',
+                                                wildcard=IMG_WILDCARDS, filename=''),
+                              mde.FilenameParam('Camera.DarkMapID',
+                                                'Dark Map:', prompt='Please select dark map to use ...',
+                                                wildcard=IMG_WILDCARDS, filename=''),
+                              mde.FilenameParam('Camera.FlatfieldMapID', 'Flatfield Map:',
+                                                prompt='Please select flatfield map to use ...',
+                                                wildcard=IMG_WILDCARDS, filename=''),
                              ]),
                       mde.ParamGroup('Fiducial based drift tracking',
                              [mde.BoolParam('Analysis.TrackFiducials', 'Track Fiducials', default=False),

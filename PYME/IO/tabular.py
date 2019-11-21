@@ -593,11 +593,11 @@ class DictSource(TabularBase):
         self._source = source
         
     def _verify(self, source):
-        L = len(source[source.keys()[0]])
+        L = len(source[list(source.keys())[0]])
         
         for k, v in source.items():
             if not isinstance(v, np.ndarray):
-                raise ValueError('Column "%s" is not a numpy array' % k)
+                raise TypeError('Column "%s" is not a numpy array' % k)
             
             if not len(v) == L:
                 raise ValueError('Columns are different lengths')
@@ -607,7 +607,7 @@ class DictSource(TabularBase):
     
     def __getitem__(self, keys):
         key, sl = self._getKeySlice(keys)
-        return self.resultsSource[key][sl]
+        return self._source[key][sl]
 
 class ColumnSource(DictSource):
     _name = 'Column Source'
@@ -656,7 +656,7 @@ class ResultsFilter(SelectionFilter):
         supported by the underlying data source."""
         
         if not isinstance(resultsSource, TabularBase):
-            raise ValueError('Expecting a tabular object for resultsSource')
+            raise TypeError('Expecting a tabular object for resultsSource')
 
         self.resultsSource = resultsSource
 
@@ -690,7 +690,7 @@ class RandomSelectionFilter(SelectionFilter):
         supported by the underlying data source."""
         
         if not isinstance(resultsSource, TabularBase):
-            raise ValueError('Expecting a tabular object for resultsSource')
+            raise TypeError('Expecting a tabular object for resultsSource')
         
         self.resultsSource = resultsSource
         
@@ -713,7 +713,7 @@ class IdFilter(SelectionFilter):
         supported by the underlying data source."""
         
         if not isinstance(resultsSource, TabularBase):
-            raise ValueError('Expecting a tabular object for resultsSource')
+            raise TypeError('Expecting a tabular object for resultsSource')
         
         self.resultsSource = resultsSource
         self.id_column = id_column
@@ -769,7 +769,7 @@ class CachingResultsFilter(TabularBase):
         supported by the underlying data source."""
 
         if not isinstance(resultsSource, TabularBase):
-            raise ValueError('Expecting a tabular object for resultsSource')
+            raise TypeError('Expecting a tabular object for resultsSource')
         
         self.resultsSource = resultsSource
         self.cache = {}
@@ -881,7 +881,7 @@ class MappingFilter(TabularBase):
         #force to be an array
         values = np.array(values)
 
-        if not len(values) == len(self.resultsSource[self.resultsSource.keys()[0]]):
+        if not len(values) == len(self.resultsSource[list(self.resultsSource.keys())[0]]):
             raise RuntimeError('New column does not match the length of existing columns')
 
         #insert into our __dict__ object (for backwards compatibility - TODO change me to something less hacky)
@@ -944,7 +944,7 @@ class ColourFilter(TabularBase):
         """
         
         if not isinstance(resultsSource, TabularBase):
-            raise ValueError('Expecting a tabular object for resultsSource')
+            raise TypeError('Expecting a tabular object for resultsSource')
 
         self.resultsSource = resultsSource
         self.currentColour = currentColour
@@ -961,7 +961,7 @@ class ColourFilter(TabularBase):
     def _index(self, channel):
         colChans = self.getColourChans()
         if not channel in colChans:
-            return np.ones(len(self.resultsSource[self.resultsSource.keys()[0]]), 'bool')
+            return np.ones(len(self.resultsSource[list(self.resultsSource.keys())[0]]), 'bool')
         else:
             p_dye = self.resultsSource['p_%s' % channel]
 
@@ -1023,7 +1023,7 @@ class CloneSource(TabularBase):
         self.cache = {}
         
         if not isinstance(resultsSource, TabularBase):
-            raise ValueError('Expecting a tabular object for resultsSource')
+            raise TypeError('Expecting a tabular object for resultsSource')
 
         klist = resultsSource.keys() if not keys else keys
 

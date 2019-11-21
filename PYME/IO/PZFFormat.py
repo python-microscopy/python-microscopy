@@ -239,7 +239,7 @@ def dumps(data, sequenceID=0, frameNum=0, frameTimestamp=0, compression = DATA_C
     elif data.dtype == 'float32':
         header['DataFormat'] = DATA_FMT_FLOAT32
     else:
-        raise RuntimeError('Unsupported data type')
+        raise RuntimeError('Unsupported data type: %s' % data.dtype)
     
     header['DimOrder'] = 'C'
     header['Width'] = data.shape[0]
