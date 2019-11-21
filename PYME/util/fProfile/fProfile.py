@@ -49,11 +49,7 @@ Licensing: Take your pick of BSD or GPL
 
 import sys
 import time
-
-#import os
-#import colorize_db_t
-#import webbrowser
-#import tempfile
+import warnings
 
 import threading
 try:
@@ -75,7 +71,7 @@ class thread_profiler(object):
         self._do_poll = True
         self._out_queue = Queue.Queue()
 
-    def profileOn(self, regex='.*PYME.*', outfile='profile.txt'):
+    def profile_on(self, regex='.*PYME.*', outfile='profile.txt'):
         self.regex = re.compile(regex)
         self.outfile = open(outfile, 'w')
 
@@ -85,9 +81,11 @@ class thread_profiler(object):
         self._tPoll = threading.Thread(target=self._poll)
         self._tPoll.start()
 
+    def profileOn(self, *args, **kwargs):
+        warnings.warn('profileOn(...) is deprecated, use profile_on(...) instead', DeprecationWarning, stacklevel=2)
+        self.profile_on(*args, **kwargs)
 
-
-    def profileOff(self):
+    def profile_off(self):
         sys.setprofile(None)
         threading.setprofile(None)
         
@@ -97,6 +95,10 @@ class thread_profiler(object):
         self.outfile.flush()
         self.outfile.close()
         
+    def profileOff(self, *args, **kwargs):
+        warnings.warn('profileOff() is deprecated, use profile_off() instead', DeprecationWarning, stacklevel=2)
+        self.profile_off(*args, **kwargs)
+            
         
     def _poll(self):
         while self._do_poll:

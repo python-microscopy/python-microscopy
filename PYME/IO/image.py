@@ -875,8 +875,8 @@ class ImageStack(object):
         try:
             import bioformats
         except ImportError:
-            logger.exception('Error importing bioformats - is bioformats installed?')
-            raise RuntimeError('Cannot load file %s, no native handler and failed to import bioformats' % filename)
+            logger.exception('Error importing bioformats - is the python-bioformats module installed?')
+            raise
 
         #mdfn = self.FindAndParseMetadata(filename)
         print("Bioformats:loading data")
@@ -1025,16 +1025,18 @@ class ImageStack(object):
             else: #try bioformats
                 try:
                     self._loadBioformats(filename)
-                except ImportError:
-                    # we don't have bioformats - check to see if the file is in a format which we could also read
-                    # natively (.tiff)
-                    logger.exception('Error importing bioformats - try installing python-bioformats')
+                except (ImportError, RuntimeError):
+                    # We don't have bioformats - check to see if the file is in a format which we could also read
+                    # natively (.tiff). Complains loudly about having to do this as by convention the .tiff extension
+                    # is used to force bioformats loading of tiffs which we otherwise wouldn't understand.
                     
                     if os.path.splitext(filename)[1] in ['.tiff']:
                         logger.warning('Loading .tiff with internal code not bioformats, is this really what you wanted?\n\
                                        The .tiff extension is normally used in PYME to force bioformats loading of TIFF \
                                        files which would not load correctly using the internal TIFF handling code. \
                                        Normal TIFF files should use the .tif extension instead.')
+                        
+                        # Also print warning in case logging is not configured.
                         print('WARNING: Could not load bioformats, falling back to internal TIFF code for .tiff')
                         
                         if haveGUI:
@@ -1043,7 +1045,7 @@ class ImageStack(object):
                                           This might not work as expected as the .tiff format is typically used for TIFFs\
                                           which don\'t load properly using the native code.\n\
                                           Try installing python-bioformats as detailed in step 4 of the installation instructions \
-                                          (http://python-microscopy.org/doc/Installation/InstallationWithAnaconda.html", 'WARNING', wx.OK)
+                                          (http://python-microscopy.org/doc/Installation/InstallationWithAnaconda.html)", 'WARNING', wx.OK)
                         
                         self._loadTiff(filename)
                     else:
@@ -1052,7 +1054,8 @@ class ImageStack(object):
                             wx.MessageBox('No native support for file type, and Bioformats could not be loaded. \n\
                             Try installing python-bioformats as detailed in step 4 of the installation instructions \
                             (http://python-microscopy.org/doc/Installation/InstallationWithAnaconda.html', 'WARNING', wx.OK)
-                        raise
+                            
+                        raise RuntimeError('Cannot load file %s, no native handler and failed to import bioformats' % filename)
             
     
 
