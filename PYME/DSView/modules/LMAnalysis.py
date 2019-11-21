@@ -55,7 +55,7 @@ logger = logging.getLogger(__name__)
 
 debug = True
 
-IMG_WILDCARDS = 'Image Data|*.h5;*.tif;|All files|*.*'
+MAP_WILDCARDS = 'TIFF|*.tif;|All files|*.*'
 
 def debugPrint(msg):
     if debug:
@@ -113,13 +113,13 @@ class AnalysisSettingsView(object):
                       mde.ParamGroup('sCMOS camera noise maps',
                              [mde.FilenameParam('Camera.VarianceMapID', 'Variance Map:',
                                                 prompt='Please select variance map to use ...',
-                                                wildcard=IMG_WILDCARDS, filename=''),
+                                                wildcard=MAP_WILDCARDS, filename=''),
                               mde.FilenameParam('Camera.DarkMapID',
                                                 'Dark Map:', prompt='Please select dark map to use ...',
-                                                wildcard=IMG_WILDCARDS, filename=''),
+                                                wildcard=MAP_WILDCARDS, filename=''),
                               mde.FilenameParam('Camera.FlatfieldMapID', 'Flatfield Map:',
                                                 prompt='Please select flatfield map to use ...',
-                                                wildcard=IMG_WILDCARDS, filename=''),
+                                                wildcard=MAP_WILDCARDS, filename=''),
                              ]),
                       mde.ParamGroup('Fiducial based drift tracking',
                              [mde.BoolParam('Analysis.TrackFiducials', 'Track Fiducials', default=False),
