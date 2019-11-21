@@ -187,9 +187,9 @@ def lasers(scope):
         },
     }
 
-    from PYME.Acquire.Hardware.ioslave import FiberShaker
-    # pins 3 and 5
-    fiber_shaker = FiberShaker('COM9', channel=3, on_voltage=2.5)
+    from PYME.Acquire.Hardware.ioslave import ServoFiberShaker
+
+    fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=70)  # pin 9
 
     scope.aotf = AAOptoMDS(aotf_calibrations, 'COM14', 'AAOptoMDS', n_chans=4)
     scope.CleanupFunctions.append(scope.aotf.Close)
