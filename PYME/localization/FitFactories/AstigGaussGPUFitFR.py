@@ -36,15 +36,44 @@ from PYME.localization.FitFactories.fitCommon import pack_results
 import logging
 logger = logging.getLogger(__name__)
 
-##################
-# Model Function, only for reference in this case.
-def f_gaussAstigSlow(p, X, Y):
-    """2D Gaussian model function with independent sigx, sigy - parameter vector [A, x0, y0, sx, sy]"""
-    #x0, y0, A, sx, sy, c, = p
-    x0, y0, A, sx, sy = p
-    return A*np.exp(-(X[:,None]-x0)**2/(2*sy**2) - (Y[None,:] - y0)**2/(2*sx**2))  # + c
-#####################
+def astigmatic_gaussian(p, X, Y):
+    """
+    2D Gaussian model function with independent sigx, sigy
 
+    Parameters
+    ----------
+    p: iterable
+        Parameter array, in the following order:
+            x0: float
+                x center position [units same as X, Y]
+            y0: float
+                y center position [units same as X, Y]
+            A: float
+                Amplitude, or peak height of the Gaussian [units same as b]
+            b: float
+                background, constant offset [units same as A]
+            sx: float
+                sigma along the x direction [units same as X, Y]
+            sy: float
+                sigma along the y direction [units same as X, Y]
+    X: ndarray
+        y position array (1d)
+    Y: ndarray
+        y position array (1d)
+
+    Returns
+    -------
+    model: ndarray
+        2D image of gaussian
+
+    Notes
+    -----
+    This function is not actually used by the GPU fit, but is here as an example, and for testing with, e.g.
+    PYME.localization.Test.fitTestJigSCMOS. See fitTestJig notes about units, particularly the amplitude parameters A
+    and b.
+    """
+    x0, y0, A, b, sx, sy = p
+    return A * np.exp(-(X[:,None]-x0)**2/(2*sx**2) - (Y[None,:] - y0)**2/(2*sy**2)) + b
 
 fresultdtype=[('tIndex', '<i4'),
               ('fitResults', [('y0', '<f4'), ('x0', '<f4'), #Fang and Davids xys are swapped
@@ -59,16 +88,6 @@ fresultdtype=[('tIndex', '<i4'),
               ('resultCode', '<i4'),
               ('LLH', '<f4'),
               ('nFit', '<i4')]
-
-
-# def GaussianFitResultR(fitResults, metadata, resultCode=-1, fitErr=None, LLH=None, nEvents=1):
-#     if fitErr is None:
-#         fitErr = -5e3*np.ones(fitResults.shape, 'f')
-#         LLH = np.zeros(nEvents)
-#
-#     tIndex = metadata.getOrDefault('tIndex', 0)
-#
-#     return np.array([(tIndex, fitResults.astype('f'), fitErr.astype('f'), resultCode, LLH, nEvents)], dtype=fresultdtype)
 
 _warpDrive = None
 
@@ -95,7 +114,7 @@ class GaussianFitFactory:
         metadata : PYME.IO.MetaDataHandler.MDHandlerBase or derived class
         fitfcn : dummy variable
             Not used in this fit factory
-        background : numpy.ndarray or warpDrive.buffers.Buffer
+        background : numpy.ndarray, warpDrive.buffers.Buffer, or scalar
             warpDrive.buffers.Buffer allows asynchronous estimation of the per-pixel background on the GPU.
         noiseSigma : numpy.ndarray
             (over-)estimate of the noise level at each pixel (see fitTask.calcSigma in remFitBuf.py)
@@ -106,6 +125,8 @@ class GaussianFitFactory:
 
         if isinstance(background, np.ndarray):
             self.background = background.squeeze()  # will be set to contiguous float32 inside of detector class method
+        elif np.isscalar(background):
+            self.background = np.ascontiguousarray(background * np.ones_like(self.data), dtype=np.float32)
         else:  # it's a buffer!
             self.background = background
         self.noiseSigma = noiseSigma
@@ -251,19 +272,21 @@ class GaussianFitFactory:
         return self.getRes()
 
     def FromPoint(self, x, y, roiHalfSize=None):
-        # FIXME - currently ignoring roiHalfSize from PYME because it is typically an int
+        """
+        This is a bit hacked to work with PYME.localization.Test.fitTestJigSCMOS
+        """
         from PYME.localization import remFitBuf
         cameraMaps = remFitBuf.CameraInfoManager()
 
         self.refreshWarpDrive(cameraMaps)
-
-        roiSize = int(2*self.metadata.getOrDefault('Analysis.ROISize', 7.5) + 1)
-
+        roi_size = int(2*self.metadata.getOrDefault('Analysis.ROISize', 7.5) + 1)
+        # make sure our ROI size is smaller than the data, otherwise we'll have some bad memory accesses
+        roi_size = min(roi_size, self.data.shape[0] - 3)
         _warpDrive.fitFunc = _warpDrive.gaussAstig
-        _warpDrive.insertTestCandidates(int(x) + int(y)*_warpDrive.rsize)  # 1799)
-        _warpDrive.insertData(self.data)
-        _warpDrive.fitItToWinIt(roiSize)
-
+        # todo - add check on x and y to make sure we don't have bad memory accesses for small self.data
+        _warpDrive.insertTestCandidates([int(x) + int(y)*self.data.shape[0]])
+        _warpDrive.insertData(self.data, self.background)
+        _warpDrive.fitItToWinIt(roi_size)
         return self.getRes()
 
 
@@ -271,9 +294,9 @@ class GaussianFitFactory:
     def evalModel(cls, params, md, x=0, y=0, roiHalfSize=5):
         #generate grid to evaluate function on
         X = 1e3*md.voxelsize.x*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
-        Y = 1e3*md.voxelsize.y*np.mgrid[(x - roiHalfSize):(x + roiHalfSize + 1)]
+        Y = 1e3*md.voxelsize.y*np.mgrid[(y - roiHalfSize):(y + roiHalfSize + 1)]
 
-        return (f_gaussAstigSlow(params, X, Y), X[0], Y[0], 0)
+        return (astigmatic_gaussian(params, X, Y), X[0], Y[0], 0)
 
 # so that fit tasks know which class to use
 FitFactory = GaussianFitFactory
