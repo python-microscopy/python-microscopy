@@ -1949,7 +1949,7 @@ class StatisticsByFrame(ModuleBase):
             var[si] = np.var(slice_data)
             mean[si] = np.mean(slice_data)
             median[si] = np.median(slice_data)
-            mode[si] = stats.mode(slice_data)[0]
+            mode[si] = stats.mode(slice_data, axis=None)[0][0]
 
         # package up and ship-out results
         res = tabular.DictSource({'variance': var, 'mean': mean, 'median': median, 'mode': mode})
