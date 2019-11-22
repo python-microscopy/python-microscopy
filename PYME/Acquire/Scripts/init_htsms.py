@@ -138,60 +138,18 @@ def lasers(scope):
     from PYME.Acquire.Hardware.MPBCommunications import MPBCW
     from PYME.Acquire.Hardware.AAOptoelectronics.MDS import AAOptoMDS
     from PYME.Acquire.Hardware.aotf import AOTFControlledLaser
+    from PYME.config import config
+    import json
 
-    # key's are zero-indexed, MDS class does the same but add's one in commands when needed to match MDS API
-    aotf_calibrations = {  # note this is a test dummy TODO - load from file
-        0: {
-            'wavelength': 405,  # nm
-            'frequency': 154.3,  # MHz
-            'aotf_setting': [
-                18.3, 16, 14, 12, 10, 8.1, 0  # dBm
-            ],
-            'output': [ # note that 0 aotf_setting must correspond with 0 output setting
-                1, 0.9, 0.7, 0.6, 0.4, 0.3, 0  # mW measured after objective
-            ],
-            'laser_setting': 100
-        },
-        1: {
-            'wavelength': 488,  # nm
-            'frequency': 115.614,  # MHz
-            'aotf_setting': [
-                0, 18.9, 18, 16, 14, 12, 10, 8, 6.1, 4, 2  # dBm
-            ],
-            'output': [  # note that 0 aotf_setting must correspond with 0 output setting
-                0, 7.25, 6.9, 5.6, 4, 2.7, 1.8, 1, 0.6, 0.3, 0.2  # mW measured after objective
-            ],
-            'laser_setting': 45  # mW
-        },
-        2: {
-            'wavelength': 560,  # nm
-            'frequency': 94.820,  # MHz
-            'aotf_setting': [
-                20.1, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0  # dBm
-            ],
-            'output': [  # note that 0 aotf_setting must correspond with 0 output setting
-                88.9, 77.5, 60, 41.7, 28.2, 18.4, 12.2, 7.9, 5.1, 3.5, 2.5  # mW measured after objective
-            ],
-            'laser_setting': 200
-        },
-        3: {
-            'wavelength': 642,  # nm
-            'frequency': 79.838,  # MHz
-            'aotf_setting': [
-                22.1, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0  # dBm
-            ],
-            'output': [ # note that 0 aotf_setting must correspond with 0 output setting
-                82, 76.6, 61, 44.4, 30.6, 21.6, 14.9, 10.6, 7.8, 5.9, 4.8, 4.3  # mW measured after objective
-            ],
-            'laser_setting': 200
-        },
-    }
+    calib_file = config['aotf-calibration-file']
+    with open(calib_file, 'r') as f:
+        aotf_calibration = json.load(f)
 
     from PYME.Acquire.Hardware.ioslave import ServoFiberShaker
 
     fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=70)  # pin 9
 
-    scope.aotf = AAOptoMDS(aotf_calibrations, 'COM14', 'AAOptoMDS', n_chans=4)
+    scope.aotf = AAOptoMDS(aotf_calibration, 'COM14', 'AAOptoMDS', n_chans=4)
     scope.CleanupFunctions.append(scope.aotf.Close)
 
     l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turn_on=False)

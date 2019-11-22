@@ -42,7 +42,8 @@ class AAOptoMDS(AOTF):
         Parameters
         ----------
         calibrations: dict
-            see PYME.Acquire.Hardware.aotf.AOTF base class
+            see PYME.Acquire.Hardware.aotf.AOTF base class. Note that the key's (corresponding to each channel) should
+            be zero-indexed, this class will handle converting to one-indexed channels to match the MDS API.
         com_port: str
             Name of the com port to connect to, e.g. 'COM14'.
         name: str

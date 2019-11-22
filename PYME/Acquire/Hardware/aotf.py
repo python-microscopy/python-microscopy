@@ -186,6 +186,7 @@ class AOTF(object):
 
         self.info = {}
         for chan, calib in self.calibrations.items():
+            chan = int(chan)  # json format specs keys as str
             self.info[chan] = {}
             max_ind = np.argmax(calib['output'])
             peak_output = calib['output'][max_ind]
