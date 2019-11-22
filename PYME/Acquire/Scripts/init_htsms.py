@@ -139,18 +139,17 @@ def lasers(scope):
     from PYME.Acquire.Hardware.AAOptoelectronics.MDS import AAOptoMDS
     from PYME.Acquire.Hardware.aotf import AOTFControlledLaser
     from PYME.config import config
+    from PYME.Acquire.Hardware.ioslave import ServoFiberShaker
     import json
 
     calib_file = config['aotf-calibration-file']
     with open(calib_file, 'r') as f:
         aotf_calibration = json.load(f)
 
-    from PYME.Acquire.Hardware.ioslave import ServoFiberShaker
-
-    fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=70)  # pin 9
-
     scope.aotf = AAOptoMDS(aotf_calibration, 'COM14', 'AAOptoMDS', n_chans=4)
     scope.CleanupFunctions.append(scope.aotf.Close)
+
+    fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=70)  # pin 9
 
     l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turn_on=False)
     scope.CleanupFunctions.append(l405.Close)
