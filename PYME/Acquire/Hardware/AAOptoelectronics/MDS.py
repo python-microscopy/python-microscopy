@@ -110,7 +110,7 @@ class AAOptoMDS(AOTF):
             if line.startswith(b'\rl'):
                 reply.append(line)
         for channel in range(self.n_chans):
-            retrm = reply[channel].replace(b'\x00', b'').replace(b'= ', b'=').strip()
+            retrm = reply[channel].replace(b'\x00', b'').replace(b'= ', b'=').replace(b'-', b'').strip()
             s = re.compile(br'l(?P<channel>\d+) F=(?P<freq>\d+.\d+) P=(?P<power>\d+.\d+) (?P<onoff>\w+)')
             vals = s.search(retrm)
             self.freq[channel] = float(vals.group('freq'))
