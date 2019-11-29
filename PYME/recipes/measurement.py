@@ -798,6 +798,42 @@ class TilePhysicalCoords(ModuleBase):
         namespace[self.outputName] = out
 
 
+@register_module('MapBoundingBoxSize')
+class MapBoundingBoxSize(ModuleBase):
+    """
+
+    Helper function to go from bounding box coordinates to sizes. Returned sizes are in the same units as the input
+    metadata voxelsize entries.
+
+    Parameters
+    ----------
+    input: Input
+        PYME.IO.tabular containing measurements with 'bbox' key defined. See measurement.Measure2D.
+    new_column_base_name: CStr
+        Key name for output. "_x" and "_y" will be appended
+    output: Output
+        PYME.IO.tabular
+
+    Notes
+    -----
+    Takes row of input image to be 'x' and column to be 'y'
+
+    """
+    input = Input('input')
+    new_column_base_name = CStr('bounding_box')
+    output = Output('bbox_mapped')
+
+    def execute(self, namespace):
+        out = tabular.MappingFilter(namespace[self.input])
+        out.mdh = namespace[self.input].mdh
+        bbox = out['bbox']
+
+        out.addColumn(self.new_column_base_name + '_x', np.abs(bbox[:, 2] - bbox[:, 0]) * out.mdh['voxelsize.x'])
+        out.addColumn(self.new_column_base_name + '_y', np.abs(bbox[:, 3] - bbox[:, 1]) * out.mdh['voxelsize.y'])
+
+        namespace[self.output] = out
+
+
 @register_module('IdentifyOverlappingROIs')
 class IdentifyOverlappingROIs(ModuleBase):
     """
@@ -807,7 +843,7 @@ class IdentifyOverlappingROIs(ModuleBase):
 
     Parameters
     ----------
-    input : Input
+    input: Input
         PYME.IO.tabular containing x and y coordinates. Compatible with measurement output for Supertile coordinates,
         e.g. 'x_um'
     roi_size_pixels: Int
@@ -828,7 +864,7 @@ class IdentifyOverlappingROIs(ModuleBase):
     input = Input('input')
     roi_size_pixels = Int(256)
     reject_key = CStr('rejected')
-    output = Output('cluster_metrics')
+    output = Output('overlaps_identified')
 
     def execute(self, namespace):
         from scipy.spatial import KDTree
