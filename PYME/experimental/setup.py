@@ -71,7 +71,7 @@ def configuration(parent_package='', top_path=None):
 
     config.add_extension(name='triangle_mesh_utils',
                     sources='triangle_mesh_utils.c',
-                    include_dirs= get_numpy_include_dirs(), #+ extra_include_dirs,
+                    include_dirs= get_numpy_include_dirs() + extra_include_dirs,
                     extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
                     extra_link_args=linkArgs)
     
