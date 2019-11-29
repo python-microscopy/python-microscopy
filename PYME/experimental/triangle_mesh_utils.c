@@ -59,9 +59,9 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 {
     PyObject *v_idxs=0, *halfedges=0, *vertices=0, *faces=0;
     int32_t i, j, k, v_idx, orig_idx, curr_idx, twin_idx, n_idxs, tmp;
-    halfedge_t *curr_edge, *twin_edge;
-    vertex_t *curr_vertex, *loop_vertex;
-    face_t *curr_face;
+    halfedge_t *curr_edge, *twin_edge, *p_halfedges;
+    vertex_t *curr_vertex, *loop_vertex, *p_vertices;
+    face_t *curr_face, *p_faces;
 
     float position[VECTORSIZE];
     float normal[VECTORSIZE];
@@ -90,9 +90,9 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
     } 
 
     n_idxs = (int32_t)PySequence_Length(v_idxs);
-    vertex_t *p_vertices = (vertex_t*)PyArray_GETPTR1(vertices, 0);
-    halfedge_t *p_halfedges = (halfedge_t*)PyArray_GETPTR1(halfedges, 0);
-    face_t *p_faces = (face_t*)PyArray_GETPTR1(faces, 0);
+    p_vertices = (vertex_t*)PyArray_GETPTR1(vertices, 0);
+    p_halfedges = (halfedge_t*)PyArray_GETPTR1(halfedges, 0);
+    p_faces = (face_t*)PyArray_GETPTR1(faces, 0);
 
     for (j = 0; j < n_idxs; ++j)
     {
@@ -245,9 +245,9 @@ static PyObject *update_face_normals(PyObject *self, PyObject *args)
     PyObject *f_idxs=0, *halfedges=0, *vertices=0, *faces=0;
     int32_t j, k, f_idx, curr_idx, prev_idx, next_idx, n_idxs, *p_f_idxs;
     float v1[VECTORSIZE], u[VECTORSIZE], v[VECTORSIZE], n[VECTORSIZE], nn;
-    halfedge_t *curr_edge, *prev_edge, *next_edge;
-    face_t *curr_face;
-    vertex_t *curr_vertex, *prev_vertex, *next_vertex;
+    halfedge_t *curr_edge, *prev_edge, *next_edge, *p_halfedges;
+    face_t *curr_face, *p_faces;
+    vertex_t *curr_vertex, *prev_vertex, *next_vertex, *p_vertices;
 
     if (!PyArg_ParseTuple(args, "OOOO", &f_idxs, &halfedges, &vertices, &faces)) return NULL;
     if (!PySequence_Check(f_idxs))
@@ -272,9 +272,9 @@ static PyObject *update_face_normals(PyObject *self, PyObject *args)
     } 
 
     n_idxs = (int32_t)PySequence_Length(f_idxs);
-    vertex_t *p_vertices = (vertex_t*)PyArray_GETPTR1(vertices, 0);
-    halfedge_t *p_halfedges = (halfedge_t*)PyArray_GETPTR1(halfedges, 0);
-    face_t *p_faces = (face_t*)PyArray_GETPTR1(faces, 0);
+    p_vertices = (vertex_t*)PyArray_GETPTR1(vertices, 0);
+    p_halfedges = (halfedge_t*)PyArray_GETPTR1(halfedges, 0);
+    p_faces = (face_t*)PyArray_GETPTR1(faces, 0);
 
     for (j = 0; j < n_idxs; ++j)
     {
