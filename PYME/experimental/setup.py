@@ -35,7 +35,7 @@ else:
 #windows VC++ has really shocking c standard support so we need to include
 #custom stdint.h and intypes.h files from https://code.google.com/archive/p/msinttypes
 #print os.environ.get('CC', 'foo')
-if False: #sys.platform == 'win32' and not os.environ.get('CC', '') == 'mingw':
+if sys.platform == 'win32' and not os.environ.get('CC', '') == 'mingw':
     extra_include_dirs = ['win_incl']
 else:
     extra_include_dirs = []
