@@ -30,6 +30,15 @@ if sys.platform == 'darwin':#MacOS
     linkArgs = []
 else:
     linkArgs = ['-static-libgcc']
+    
+    
+#windows VC++ has really shocking c standard support so we need to include
+#custom stdint.h and intypes.h files from https://code.google.com/archive/p/msinttypes
+#print os.environ.get('CC', 'foo')
+if False: #sys.platform == 'win32' and not os.environ.get('CC', '') == 'mingw':
+    extra_include_dirs = ['win_incl']
+else:
+    extra_include_dirs = []
 
 from Cython.Build import cythonize
 
@@ -42,19 +51,19 @@ def configuration(parent_package='', top_path=None):
     
     ext = Extension(name='.'.join([parent_package, 'experimental', '_octree']),
                     sources=[os.path.join(cur_dir, '_octree.pyx')],
-                    include_dirs= get_numpy_include_dirs(), #+ extra_include_dirs,
+                    include_dirs= get_numpy_include_dirs() + extra_include_dirs,
                     extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
                     extra_link_args=linkArgs)
 
     ext2 = Extension(name='.'.join([parent_package, 'experimental', '_treap']),
                     sources=[os.path.join(cur_dir, '_treap.pyx')],
-                    include_dirs= get_numpy_include_dirs(), #+ extra_include_dirs,
+                    include_dirs= get_numpy_include_dirs() + extra_include_dirs,
                     extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
                     extra_link_args=linkArgs)
 
     ext3 = Extension(name='.'.join([parent_package, 'experimental', '_triangle_mesh']),
                     sources=[os.path.join(cur_dir, '_triangle_mesh.pyx')],
-                    include_dirs= get_numpy_include_dirs(), #+ extra_include_dirs,
+                    include_dirs= get_numpy_include_dirs() + extra_include_dirs,
                     extra_compile_args=['-O3', '-fno-exceptions', '-ffast-math', '-march=native', '-mtune=native'],
                     extra_link_args=linkArgs)
     

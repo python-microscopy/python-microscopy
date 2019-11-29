@@ -1,6 +1,7 @@
 #ifndef _triangle_mesh_utils_h_
-
 #define _triangle_mesh_utils_h_
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
