@@ -11,8 +11,8 @@ def test_FilterOverlappingROIs():
     roi_size = 256
     roi_size_um = roi_size * mdh['voxelsize.x']
     max_distance = np.sqrt(2) * roi_size_um
-    points = tabular.RandomSource(100 * roi_size_um, 100 * roi_size_um, int(1e3))
-    points = tabular.MappingFilter(points, **{'x_um': 'x', 'y_um': 'y'})  # pretend we defined points in um
+    points = tabular.RandomSource(1e3 * 100 * roi_size_um, 1e3 * 100 * roi_size_um, int(1e3))  # [nm]
+    points = tabular.MappingFilter(points, **{'x_um': 'x/1e3', 'y_um': 'y/1e3'})  # pretend we defined points in um
     points.mdh = mdh
 
     recipe = base.ModuleCollection()
