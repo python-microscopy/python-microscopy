@@ -884,7 +884,7 @@ class IdentifyOverlappingROIs(ModuleBase):
         tossing = set()
         for ind, close in enumerate(neighbors):
             close.remove(ind)  # ignore the point in question
-            if ind not in tossing and len(close) > 0:  # ignore points we've already decided to reject
+            if len(close) > 0 and ind not in tossing:  # ignore points we've already decided to reject
                 # check if rois actually overlap
                 for cind in close:
                     if cind not in tossing:
