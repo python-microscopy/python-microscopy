@@ -888,9 +888,11 @@ class IdentifyOverlappingROIs(ModuleBase):
                 # check if rois actually overlap
                 for cind in close:
                     if cind not in tossing:
-                        x_overlap = abs(positions[ind, 0] - positions[cind, 0]) < half_roi
-                        y_overlap = abs(positions[ind, 1] - positions[cind, 1]) < half_roi
-                        if x_overlap and y_overlap:
+                        x_overlap = min(positions[ind, 0] + half_roi, positions[cind, 0] + half_roi)
+                        x_overlap -= max(positions[ind, 0] - half_roi, positions[cind, 0] - half_roi)
+                        y_overlap = min(positions[ind, 1] + half_roi, positions[cind, 1] + half_roi)
+                        y_overlap -= max(positions[ind, 1] - half_roi, positions[cind, 1] - half_roi)
+                        if x_overlap * y_overlap > 0:
                             # reject points too close to our current indexed point
                             tossing.add(cind)
 
