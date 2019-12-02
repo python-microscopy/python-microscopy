@@ -16,7 +16,7 @@ def test_FilterOverlappingROIs():
     points.mdh = mdh
 
     recipe = base.ModuleCollection()
-    recipe.add_module(measurement.FilterOverlappingROIs(roi_size_pixels=roi_size, output='mapped'))
+    recipe.add_module(measurement.IdentifyOverlappingROIs(roi_size_pixels=roi_size, output='mapped'))
     recipe.add_module(tablefilters.FilterTable(inputName='mapped', filters={'rejected': [-0.5, 0.5]},
                                                outputName='output'))
     recipe.namespace['input'] = points
