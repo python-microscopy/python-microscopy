@@ -838,7 +838,7 @@ class MapBoundingBoxSize(ModuleBase):
 class IdentifyOverlappingROIs(ModuleBase):
     """
 
-    Filter input ROI positions such that ROIs of a given size will not overlap. Output maintains all points, but with
+    Filter input ROI positions such that square ROIs of a given size will not overlap. Output maintains all points, but with
     the addition of a column indicating whether the point has been rejected due to overlap or not.
 
     Parameters
@@ -854,12 +854,6 @@ class IdentifyOverlappingROIs(ModuleBase):
     output: Output
         PYME.IO.tabular
 
-    Notes
-    -----
-    Currently roi overlap is defined as being within sqrt(2) * roi_size. Obviously two square ROIs can be roi_size + 1
-    away from each other and not overlap if they are arranged correctly, so the current check is a little more happy-to-
-    toss points then it could be.
-
     """
     input = Input('input')
     roi_size_pixels = Int(256)
@@ -873,10 +867,14 @@ class IdentifyOverlappingROIs(ModuleBase):
 
         try:
             positions = np.stack([points['x_um'], points['y_um']], axis=1)
-            far_flung = np.sqrt(2) * points.mdh['Pyramid.PixelSize'] * self.roi_size_pixels  # [micrometers]
+            half_roi = 0.5 * points.mdh['Pyramid.PixelSize'] * self.roi_size_pixels  # [micrometers]
+            far_flung = np.sqrt(2) * 2 * half_roi  # [micrometers]
+            logger.debug('Using TilePyramid metadata')
         except KeyError:
+            logger.debug('Using standard, non-TilePyramid metadata')
             positions = np.stack([points['x'], points['y']], axis=1) / 1e3  # assume x and y were in [nanometers]
-            far_flung = np.sqrt(2) * points.mdh['voxelsize.x'] * self.roi_size_pixels  # [micrometers]
+            half_roi = 0.5 * points.mdh['voxelsize.x'] * self.roi_size_pixels  # # [micrometers]
+            far_flung = np.sqrt(2) * 2 * half_roi  # [micrometers]
 
         tree = KDTree(positions)
 
@@ -885,11 +883,16 @@ class IdentifyOverlappingROIs(ModuleBase):
 
         tossing = set()
         for ind, close in enumerate(neighbors):
-            if ind not in tossing and len(close) > 1:  # ignore points we've already decided to reject
-                # reject points too close to our current indexed point
-                # TODO - don't reject points inside of this circular radius if their square ROIs don't actually overlap
-                close.remove(ind)
-                tossing.update(close)
+            close.remove(ind)  # ignore the point in question
+            if ind not in tossing and len(close) > 0:  # ignore points we've already decided to reject
+                # check if rois actually overlap
+                for cind in close:
+                    if cind not in tossing:
+                        x_overlap = abs(positions[ind, 0] - positions[cind, 0]) < half_roi
+                        y_overlap = abs(positions[ind, 1] - positions[cind, 1]) < half_roi
+                        if x_overlap and y_overlap:
+                            # reject points too close to our current indexed point
+                            tossing.add(cind)
 
         out = tabular.MappingFilter(points)
         reject = np.zeros(tree.n, dtype=int)
