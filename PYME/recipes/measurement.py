@@ -851,6 +851,9 @@ class IdentifyOverlappingROIs(ModuleBase):
     reject_key: CStr
         Name of column to add to output datasource encoding whether a point has been rejected due to overlap (1) or
         kept (0).
+    flag_all: Bool
+        When flag_all is False, overlapping ROIs are only set as overlapping until one per roi-size area remains. If
+        flag_all is True, then all ROIs which initially are overlapping with any other roi are marked for rejection.
     output: Output
         PYME.IO.tabular
 
@@ -858,6 +861,7 @@ class IdentifyOverlappingROIs(ModuleBase):
     input = Input('input')
     roi_size_pixels = Int(256)
     reject_key = CStr('rejected')
+    flag_all = Bool(False)
     output = Output('overlaps_identified')
 
     def execute(self, namespace):
@@ -880,21 +884,25 @@ class IdentifyOverlappingROIs(ModuleBase):
 
 
         neighbors = tree.query_ball_tree(tree, r=far_flung, p=2)
-
         tossing = set()
-        for ind, close in enumerate(neighbors):
-            close.remove(ind)  # ignore the point in question
-            if len(close) > 0 and ind not in tossing:  # ignore points we've already decided to reject
-                # check if rois actually overlap
-                for cind in close:
-                    if cind not in tossing:
-                        x_overlap = min(positions[ind, 0] + half_roi, positions[cind, 0] + half_roi)
-                        x_overlap -= max(positions[ind, 0] - half_roi, positions[cind, 0] - half_roi)
-                        y_overlap = min(positions[ind, 1] + half_roi, positions[cind, 1] + half_roi)
-                        y_overlap -= max(positions[ind, 1] - half_roi, positions[cind, 1] - half_roi)
-                        if x_overlap * y_overlap > 0:
-                            # reject points too close to our current indexed point
-                            tossing.add(cind)
+        if self.flag_all:  # mark any fov close to any other fov as overlapping/rejected
+            for ind, close in enumerate(neighbors):
+                if len(close) > 1:
+                    tossing.update(close)
+        else:  # only mark fovs as overlapping/rejected until there is one per critical area
+            for ind, close in enumerate(neighbors):
+                close.remove(ind)  # ignore the point in question
+                if len(close) > 0 and ind not in tossing:  # ignore points we've already decided to reject
+                    # check if rois actually overlap
+                    for cind in close:
+                        if cind not in tossing:
+                            x_overlap = min(positions[ind, 0] + half_roi, positions[cind, 0] + half_roi)
+                            x_overlap -= max(positions[ind, 0] - half_roi, positions[cind, 0] - half_roi)
+                            y_overlap = min(positions[ind, 1] + half_roi, positions[cind, 1] + half_roi)
+                            y_overlap -= max(positions[ind, 1] - half_roi, positions[cind, 1] - half_roi)
+                            if x_overlap * y_overlap > 0:
+                                # reject points too close to our current indexed point
+                                tossing.add(cind)
 
         out = tabular.MappingFilter(points)
         reject = np.zeros(tree.n, dtype=int)
