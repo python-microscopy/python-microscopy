@@ -69,7 +69,7 @@ class CameraMapDialog(wx.Dialog):
     def OnChooseMaps(self, event):
         choice = event.GetEventObject()
         cam_name = self.cam_names[self.cal_choices.index(choice)]
-        cal_name = self.cal_choices[choice.GetStringSelection()]
+        cal_name = self.map_names[choice.GetStringSelection()]
 
         self.scope.SetCameraMaps(cal_name, cam_name)
 
