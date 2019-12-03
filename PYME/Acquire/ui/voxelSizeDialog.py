@@ -54,14 +54,14 @@ class VoxelSizeDialog(wx.Dialog):
         self.tName = wx.TextCtrl(self, -1, size=(80, -1))
         hsizer.Add(self.tName, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 10)
 
-        hsizer.Add(wx.StaticText(self, -1, u'(x '), 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hsizer.Add(wx.StaticText(self, -1, '(x '), 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.tx = wx.TextCtrl(self, -1, size=(30, -1))
         hsizer.Add(self.tx, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
 
-        hsizer.Add(wx.StaticText(self, -1, u', y '), 0, wx.ALIGN_CENTER_VERTICAL, 0)
+        hsizer.Add(wx.StaticText(self, -1, ', y '), 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self.ty = wx.TextCtrl(self, -1, size=(30, -1))
         hsizer.Add(self.ty, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 5)
-        hsizer.Add(wx.StaticText(self, -1, u') [\u03BCm] '), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 10)
+        hsizer.Add(wx.StaticText(self, -1, ') [\u03BCm] '), 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT, 10)
 
         self.bAdd = wx.Button(self, -1, 'Add', style=wx.BU_EXACTFIT)
         self.bAdd.Bind(wx.EVT_BUTTON, self.OnAddVSSetting)
@@ -117,7 +117,7 @@ class VoxelSizeDialog(wx.Dialog):
             ch.Clear()
 
         for ID, name, x, y in voxelsizes:
-            compName = '%s - (%3.2f, %3.2f)' % (name, x, y)
+            compName = '%s - (%3.3f, %3.3f)' % (name, x, y)
 
             voxIDs.append(ID)
             self.voxNames[compName] = name
