@@ -1,0 +1,25 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
+
+# explicit text diffs
+*.pxd    text diff=python
+*.py     text diff=python
+*.py3    text diff=python
+*.pyw    text diff=python
+*.pyx    text diff=python
+*.pyz    text diff=python
+*.c      text
+*.h      text
+*.html   text diff=html
+*.cpp    text diff=cpp
+
+# leave alone
+*.db     binary
+*.p      binary
+*.pkl    binary
+*.pickle binary
+*.pyc    binary
+*.pyd    binary
+*.pyo    binary
+*.png    binary
+*.jpg    binary
