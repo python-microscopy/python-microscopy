@@ -47,7 +47,8 @@ logger = logging.getLogger(__name__)
 
 def check_mapexists(mdh, type = 'dark'):
     import os
-    import PYME.Analysis.gen_sCMOS_maps as gmaps
+    from PYME.IO import clusterIO
+    from PYME.Analysis.gen_sCMOS_maps import map_filename
     
     if type == 'dark':
         id = 'Camera.DarkMapID'
@@ -57,16 +58,31 @@ def check_mapexists(mdh, type = 'dark'):
         id = 'Camera.FlatfieldMapID'
     else:
         raise RuntimeError('unknown map type %s' % type)
-        
-    mapPath = gmaps.mkDefaultPath(type,mdh,create=False)
-    if os.path.exists(mapPath):
-        mdh[id] = mapPath
-        return mapPath
+    
+    mapfn = map_filename(mdh, type)
+
+    #find and record calibration paths
+    local_path = os.path.join(nameUtils.getCalibrationDir(mdh['Camera.SerialNumber']), mapfn)
+    cluster_path = 'CALIBRATION/%s/%s' % (mdh['Camera.SerialNumber'], mapfn)
+    
+    if clusterIO.exists(cluster_path):
+        c_path = 'PYME-CLUSTER://%s/%s' % (clusterIO.local_serverfilter, cluster_path)
+        mdh[id] = c_path
+        return c_path
+    elif os.path.exists(local_path):
+        mdh[id] = local_path
+        return local_path
     else:
         return None
+    
+class CameraMapMixin(object):
+    def fill_camera_map_metadata(self, mdh):
+        check_mapexists(mdh, type='dark')
+        check_mapexists(mdh, type='variance')
+        check_mapexists(mdh, type='flatfield')
 
 
-class AndorBase(SDK3Camera):
+class AndorBase(SDK3Camera, CameraMapMixin):
     numpy_frames=1
     #MODE_CONTINUOUS = 1
     #MODE_SINGLE_SHOT = 0
@@ -696,22 +712,8 @@ class AndorBase(SDK3Camera):
             #if not realEMGain == None:
             mdh.setEntry('Camera.TrueEMGain', 1)
             
-            itime = int(1000*self.GetIntegTime())
-
-            #find and record calibration paths FIXME - make this work for cluster analysis
-            calpath = nameUtils.getCalibrationDir(self.GetSerialNumber())
-
-            dkfn = os.path.join(calpath, 'dark_%dms.tif'%itime)
-            logger.debug("looking for darkmap at %s" % dkfn)
-            if os.path.exists(dkfn):
-                mdh['Camera.DarkMapID'] = dkfn
-
-            varfn = os.path.join(calpath, 'variance_%dms.tif'%itime)
-            logger.debug("looking for variancemap at %s" % varfn)
-            if os.path.exists(varfn):
-                mdh['Camera.VarianceMapID'] = varfn
-
-            check_mapexists(mdh,type='flatfield')
+            self.fill_camera_map_metadata(mdh)
+            
 
             if  self.StaticBlemishCorrection.isImplemented():
                 mdh.setEntry('Camera.StaticBlemishCorrection', self.StaticBlemishCorrection.getValue())
