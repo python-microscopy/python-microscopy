@@ -42,6 +42,13 @@ def _meanvards(dataSource, start=0, end=-1):
 
     return (m,v)
 
+def map_filename(mdh, type):
+    if type != 'flatfield':
+        itime = int(1000*mdh['Camera.IntegrationTime'])
+        return '%s_%dms.tif' % (type,itime)
+    else:
+        return '%s.tif' % (type)
+
 
 def makePathUnlessExists(path):
     import errno
@@ -55,11 +62,9 @@ def makePathUnlessExists(path):
 def mkDestPath(destdir,stem,mdh,create=True):
     if create and not os.path.isdir(destdir):
         raise ValueError('directory %s does not exist; please create' % destdir)
-    if stem != 'flatfield':
-        itime = int(1000*mdh['Camera.IntegrationTime'])
-        return os.path.join(destdir,'%s_%dms.tif' % (stem,itime))
-    else:
-        return os.path.join(destdir,'%s.tif' % (stem))
+    
+    return os.path.join(destdir, map_filename(mdh, stem))
+
 
 def mkDefaultPath(stem,mdh,create=True,calibrationDir=None):
     if calibrationDir is None:
