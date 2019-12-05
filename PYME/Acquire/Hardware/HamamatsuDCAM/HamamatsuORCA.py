@@ -29,6 +29,7 @@
 
 from .HamamatsuDCAM import *
 from PYME.Acquire import eventLog
+from PYME.Acquire.Hardware.Camera import MultiviewCameraMixin, CameraMapMixin
 import logging
 logger = logging.getLogger(__name__)
 
@@ -99,7 +100,7 @@ class DCAMZeroBufferedException(Exception):
     pass
 
 
-class HamamatsuORCA(HamamatsuDCAM):
+class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
 
     numpy_frames = 1
 
@@ -412,6 +413,7 @@ class HamamatsuORCA(HamamatsuDCAM):
     def GenStartMetadata(self, mdh):
         HamamatsuDCAM.GenStartMetadata(self, mdh)
         if self.active:
+            self.fill_camera_map_metadata(mdh)
             mdh.setEntry('Camera.ADOffset', self.noiseProps['ADOffset'])
 
     def SetShutter(self, mode):
@@ -435,8 +437,6 @@ class HamamatsuORCA(HamamatsuDCAM):
             #                "dcamwait_close")
         HamamatsuDCAM.Shutdown(self)
 
-
-from PYME.Acquire.Hardware.Camera import MultiviewCameraMixin
 
 class MultiviewOrca(MultiviewCameraMixin, HamamatsuORCA):
     def __init__(self, camNum, multiview_info):
