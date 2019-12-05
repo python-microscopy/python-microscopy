@@ -242,6 +242,12 @@ class PanSpool(afp.foldingPane):
         self.bStopSpooling.Bind(wx.EVT_BUTTON, self.OnBStopSpoolingButton)
     
         hsizer.Add(self.bStopSpooling, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.bOpenSeries = wx.Button(self.spoolProgPan, -1, 'Open', style=wx.BU_EXACTFIT)
+        self.bOpenSeries.Enable(False)
+        self.bOpenSeries.Bind(wx.EVT_BUTTON, self.OnBOpenSeries)
+        hsizer.Add(self.bOpenSeries, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+
     
         self.bAnalyse = wx.Button(self.spoolProgPan, -1, 'Analyse', style=wx.BU_EXACTFIT)
         self.bAnalyse.Enable(False)
@@ -425,6 +431,7 @@ class PanSpool(afp.foldingPane):
     def OnSpoolingStarted(self, **kwargs):
         if self.spoolController.spoolType in ['Queue', 'Cluster']:
             self.bAnalyse.Enable()
+            self.bOpenSeries.Enable()
 
         self.bStartSpool.Enable(False)
         #self.bStartStack.Enable(False)
@@ -445,6 +452,10 @@ class PanSpool(afp.foldingPane):
         """GUI callback to stop spooling."""
         self.spoolController.StopSpooling()
         #self.OnSpoolingStopped()
+
+    def OnBOpenSeries(self, event):
+        """GUI callback to open current series in dh5view."""
+        self.spoolController.OpenSeries()
         
     def OnSpoolingStopped(self, **kwargs):
         self.bStartSpool.Enable(True)
