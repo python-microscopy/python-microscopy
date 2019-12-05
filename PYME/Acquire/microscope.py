@@ -437,6 +437,31 @@ class microscope(object):
             
             return voxx*self.cam.GetHorizontalBin(), voxy*self.cam.GetVerticalBin()
 
+    def GetCameraMaps(self):
+        """
+        Get camera map locations from settings database.
+
+        Returns
+        -------
+        dark: str
+            Path to dark map
+        flat: str
+            Path to flatfield map
+        var: str
+            path to variance map
+
+        Notes
+        -----
+        Returned paths may be cluster paths, e.g. pyme-cluster:///calibations/varmap.tif. See PYME.IO.unifiedIO.
+        """
+        curr_choice_id = self.settingsDB.execute(
+            "SELECT choice_id FROM CameraMapHistory WHERE cam_serial=? ORDER BY time DESC",
+            (self.cam.GetSerialNumber(),)).fetchone()
+        if curr_choice_id is not None:
+            dark, flat, var = self.settingsDB.execute("SELECT dark_path, flat_path, var_path FROM CameraMaps WHERE ID=?", curr_choice_id).fetchone()
+            return dark, flat, var
+        return '', '', ''
+
     def GenStartMetadata(self, mdh):
         """Collects the metadata we want to record at the start of a sequence
         
@@ -453,6 +478,14 @@ class microscope(object):
             mdh.setEntry('voxelsize.units', 'um')
         except TypeError:
             pass
+
+        dark, flat, var = self.GetCameraMaps()
+        if dark != '':
+            mdh.setEntry('Camera.FlatfieldMapID', dark)
+        if flat != '':
+            mdh.setEntry('Camera.DarkMapID', flat)
+        if var != '':
+            mdh.setEntry('Camera.VarianceMapID', var)
 
         for p in self.piezos:
             mdh.setEntry('Positioning.%s' % p[2].replace(' ', '_').replace('-', '_'), p[0].GetPos(p[1]))
