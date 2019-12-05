@@ -79,7 +79,8 @@ class PYMEMainFrame(AUIFrame):
         self.AddMenuItem('Camera', 'Toggle ROI\tF8', self.OnMCamRoi)
         self.miCamBin = self.AddMenuItem('Camera', 'Turn binning on', self.OnMCamBin, itemType='check')
         self.AddMenuItem('Camera', 'Set pixel size', self.OnMCamSetPixelSize)
-        
+        self.AddMenuItem('Camera', 'Set camera maps', self.OnMCamSetCameraMaps)
+
         #Acquire menu
         self.AddMenuItem('Acquire', 'Snapshot\tF5', self.OnMAquireOnePic)
               
@@ -530,6 +531,11 @@ class PYMEMainFrame(AUIFrame):
         dlg = voxelSizeDialog.VoxelSizeDialog(self, self.scope)
         dlg.ShowModal()
 
+    def OnMCamSetCameraMaps(self, event):
+        from PYME.Acquire.ui.camera_map_dialog import CameraMapDialog
+
+        dlg = CameraMapDialog(self, self.scope)
+        dlg.ShowModal()
 
     def OnMCamRoi(self, event):
         logging.debug('Stopping frame wrangler to set ROI')
