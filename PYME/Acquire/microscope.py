@@ -415,7 +415,11 @@ class microscope(object):
         if not 'StartupTimes' in tableNames:
             self.settingsDB.execute("CREATE TABLE StartupTimes (component TEXT, time REAL)")
             self.settingsDB.execute("INSERT INTO StartupTimes VALUES ('total', 5)")
-            
+        if not 'CameraMaps' in tableNames:
+            self.settingsDB.execute("CREATE TABLE CameraMaps (ID INTEGER PRIMARY KEY, name TEXT, dark_path TEXT, flat_path TEXT, var_path TEXT)")
+        if not 'CameraMapHistory' in tableNames:
+            self.settingsDB.execute("CREATE TABLE CameraMapHistory (time timestamp, choice_id INTEGER, cam_serial INTEGER)")
+
         self.settingsDB.commit()
 
     def GetPixelSize(self):
@@ -512,6 +516,20 @@ class microscope(object):
         self.settingsDB.execute("INSERT INTO VoxelSizeHistory2 VALUES (?, ?, ?)", (datetime.datetime.now(), voxelSizeID, cam.GetSerialNumber()))
         self.settingsDB.commit()
 
+    def AddCameraMaps(self, name, dark_path, flat_path, var_path):
+        self.settingsDB.execute("INSERT INTO CameraMaps (name, dark_path, flat_path, var_path) VALUES (?, ?, ?, ?)",
+                                (name, dark_path, flat_path, var_path))
+        self.settingsDB.commit()
+
+    def SetCameraMaps(self, calibrations_name, cam_name=None):
+        if cam_name is None:
+            cam = self.cam
+        else:
+            cam = self.cameras[cam_name]
+        choice_id = self.settingsDB.execute("SELECT ID FROM CameraMaps WHERE name=?", (calibrations_name,)).fetchone()[0]
+        self.settingsDB.execute("INSERT INTO CameraMapHistory VALUES (?, ?, ?)",
+                                (datetime.datetime.now(), choice_id, cam.GetSerialNumber()))
+        self.settingsDB.commit()
 
     def satCheck(self, source, **kwargs): # check for saturation
         """Check to see if the current frame is saturated and stop the camera/
