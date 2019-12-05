@@ -33,6 +33,44 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
+def check_mapexists(mdh, type='dark'):
+    import os
+    from PYME.IO import clusterIO
+    from PYME.IO.FileUtils import nameUtils
+    from PYME.Analysis.gen_sCMOS_maps import map_filename
+
+    if type == 'dark':
+        id = 'Camera.DarkMapID'
+    elif type == 'variance':
+        id = 'Camera.VarianceMapID'
+    elif type == 'flatfield':
+        id = 'Camera.FlatfieldMapID'
+    else:
+        raise RuntimeError('unknown map type %s' % type)
+
+    mapfn = map_filename(mdh, type)
+
+    # find and record calibration paths
+    local_path = os.path.join(nameUtils.getCalibrationDir(mdh['Camera.SerialNumber']), mapfn)
+    cluster_path = 'CALIBRATION/%s/%s' % (mdh['Camera.SerialNumber'], mapfn)
+
+    if clusterIO.exists(cluster_path):
+        c_path = 'PYME-CLUSTER://%s/%s' % (clusterIO.local_serverfilter, cluster_path)
+        mdh[id] = c_path
+        return c_path
+    elif os.path.exists(local_path):
+        mdh[id] = local_path
+        return local_path
+    else:
+        return None
+
+
+class CameraMapMixin(object):
+    def fill_camera_map_metadata(self, mdh):
+        check_mapexists(mdh, type='dark')
+        check_mapexists(mdh, type='variance')
+        check_mapexists(mdh, type='flatfield')
+
 
 class Camera(object):
     # Frame format - PYME previously supported frames in a custom format, but numpy_frames should always be true for current code

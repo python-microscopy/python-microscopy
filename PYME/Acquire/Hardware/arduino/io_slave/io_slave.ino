@@ -42,11 +42,13 @@ void setup() {
     ; // wait for serial port to connect. Needed for Leonardo only
   }
   
-  //Attach servos
+  // Attach and null servos
   servos[9].attach(9);
   servos[10].attach(10);
   servos[11].attach(11);
-  
+  servos[0].write(0);
+  servos[10].write(0);
+  servos[11].write(0);
 }
 
 

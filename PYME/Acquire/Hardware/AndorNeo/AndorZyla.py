@@ -36,50 +36,12 @@ except ImportError:
     
 import time
 import traceback
-from PYME.IO.FileUtils import nameUtils
-
 from PYME.misc.aligned_array import create_aligned_array
-
 from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog
+from PYME.Acquire.Hardware.Camera import CameraMapMixin, MultiviewCameraMixin
 
 logger = logging.getLogger(__name__)
-
-def check_mapexists(mdh, type = 'dark'):
-    import os
-    from PYME.IO import clusterIO
-    from PYME.Analysis.gen_sCMOS_maps import map_filename
-    
-    if type == 'dark':
-        id = 'Camera.DarkMapID'
-    elif type == 'variance':
-        id = 'Camera.VarianceMapID'
-    elif type == 'flatfield':
-        id = 'Camera.FlatfieldMapID'
-    else:
-        raise RuntimeError('unknown map type %s' % type)
-    
-    mapfn = map_filename(mdh, type)
-
-    #find and record calibration paths
-    local_path = os.path.join(nameUtils.getCalibrationDir(mdh['Camera.SerialNumber']), mapfn)
-    cluster_path = 'CALIBRATION/%s/%s' % (mdh['Camera.SerialNumber'], mapfn)
-    
-    if clusterIO.exists(cluster_path):
-        c_path = 'PYME-CLUSTER://%s/%s' % (clusterIO.local_serverfilter, cluster_path)
-        mdh[id] = c_path
-        return c_path
-    elif os.path.exists(local_path):
-        mdh[id] = local_path
-        return local_path
-    else:
-        return None
-    
-class CameraMapMixin(object):
-    def fill_camera_map_metadata(self, mdh):
-        check_mapexists(mdh, type='dark')
-        check_mapexists(mdh, type='variance')
-        check_mapexists(mdh, type='flatfield')
 
 
 class AndorBase(SDK3Camera, CameraMapMixin):
@@ -812,7 +774,11 @@ class AndorSim(AndorBase):
         self.AOIVbin = ATInt()
         
         AndorBase.__init__(self,camNum)
-        
-        
-        
-        
+
+
+class MultiviewZyla(MultiviewCameraMixin, AndorZyla):
+    def __init__(self, camNum, multiview_info):
+        AndorZyla.__init__(self, camNum)
+        # default to the whole chip
+        default_roi = dict(xi=0, xf=2048, yi=0, yf=2048)
+        MultiviewCameraMixin.__init__(self, multiview_info, default_roi, AndorZyla)
