@@ -268,17 +268,6 @@ class SpoolController(object):
     def StopSpooling(self):
         """GUI callback to stop spooling."""
         self.spooler.StopSpool()
-
-    def OpenSeries(self):
-        """
-        GUI callback to open current series in dh5view without starting analysis
-        """
-        from PYME.Acquire import QueueSpooler, HTTPSpooler
-        if isinstance(self.spooler, QueueSpooler.Spooler):
-            subprocess.Popen('%s -q %s QUEUE://%s' % (self._dh5view_cmd.strip(' -g'),
-                                                      self.spooler.tq.URI, self.queueName), shell=True)
-        elif isinstance(self.spooler, HTTPSpooler.Spooler):
-            subprocess.Popen('%s %s' % (self._dh5view_cmd.strip(' -g'), self.spooler.getURL()), shell=True)
         
     def SpoolStopped(self, **kwargs):
         self.seriesCounter +=1
@@ -301,12 +290,18 @@ class SpoolController(object):
             dh5view_cmd += ' -g'
         return dh5view_cmd
 
-    def LaunchAnalysis(self):
-        """Launch analysis
+    def LaunchAnalysis(self, allow_open=True):
+        """
+        Parameters
+        ----------
+        allow_open: bool
+            True allows series to be opened in dh5view for manual or automatic analysis. False will not open any
+            dh5view windows, meaning that this function all will then only affect series spooled to a cluster that have
+            analysis metadata available.
         """
         from PYME.Acquire import QueueSpooler, HTTPSpooler
         
-        if isinstance(self.spooler, QueueSpooler.Spooler): #queue or not
+        if isinstance(self.spooler, QueueSpooler.Spooler) and allow_open: #queue or not
             subprocess.Popen('%s -q %s QUEUE://%s' % (self._dh5view_cmd, self.spooler.tq.URI, self.queueName), shell=True)
         elif isinstance(self.spooler, HTTPSpooler.Spooler): #queue or not
             if self.autostart_analysis:
@@ -317,6 +312,8 @@ class SpoolController(object):
                 if self._analysis_launchers.full():
                     self._analysis_launchers.get().join()
                 self._analysis_launchers.put(t)
+            elif allow_open:
+                subprocess.Popen('%s %s' % (self._dh5view_cmd, self.spooler.getURL()), shell=True)
      
     def launch_cluster_analysis(self):
         from PYME.cluster import HTTPRulePusher
