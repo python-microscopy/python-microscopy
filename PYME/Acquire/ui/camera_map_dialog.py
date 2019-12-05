@@ -42,7 +42,6 @@ class CameraMapDialog(wx.Dialog):
         hsizer.Add(wx.StaticText(self, -1, 'variance path:'), 0, wx.ALIGN_CENTER_VERTICAL, 0)
         self._variance = wx.TextCtrl(self, -1, size=(30, -1))
         hsizer.Add(self._variance, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
-        # hsizer.Add(wx.StaticText(self, -1, ') [\u03BCm] '), 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 10)
 
         self.bAdd = wx.Button(self, -1, 'Add', style=wx.BU_EXACTFIT)
         self.bAdd.Bind(wx.EVT_BUTTON, self.OnAddMaps)
@@ -56,11 +55,6 @@ class CameraMapDialog(wx.Dialog):
         btn.SetDefault()
 
         btSizer.AddButton(btn)
-
-        # btn = wx.Button(self, wx.ID_CANCEL)
-
-        # btSizer.AddButton(btn)
-
         btSizer.Realize()
 
         sizer1.Add(btSizer, 0, wx.ALIGN_RIGHT | wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
