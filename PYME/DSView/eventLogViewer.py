@@ -738,7 +738,7 @@ class eventLogTPanel(wx.Panel):
 
         self.lineColours = {}
         for k, c in zip(self.evKeyNames, colours):
-            self.lineColours[k] = wx.Colour(*(255*c))
+            self.lineColours[k] = wx.Colour(*((255*c).astype('i')))
 
         if self.initialised:
             self.Refresh()
