@@ -228,6 +228,19 @@ class CameraInfoManager(object):
             return mp
 
     def correctImage(self, md, img):
+        """
+        Parameters
+        ----------
+        md: PYME.IO.MetaDataHandler.MDHandlerBase
+            metadata
+        img: ndarray
+            uncorrected data [ADU]
+
+        Returns
+        -------
+        corrected: ndarray
+            ADOffset and flatfield corrected image [ADU]
+        """
         dk = self.getDarkMap(md)
         flat = self.getFlatfieldMap(md)
 
@@ -545,6 +558,29 @@ class fitTask(taskDef.Task):
 
     @classmethod
     def calcSigma(cls, md, data):
+        """
+        Estimate a per-pixel noise standard deviation (overestimate).
+        Parameters
+        ----------
+        md: PYME.IO.MetaDataHandler.MDHandlerBase
+            metadata
+        data: ndarray
+            data, having been dark-map and flatfield corrected. [ADU]
+
+        Returns
+        -------
+        sigma: ndarray
+            estimated per-pixel noise as a (overestimate of the) standard deviation. [ADU]
+
+        Notes
+        -----
+        TrueEMGain: float
+            conversion factor between electrons post-electron-multiplication and raw photoelectrons. [e-/pe-]
+        NoiseFactor: float
+            typically 1.4 for EMCCD when gain is > 10, 1 for CCD and CMOS. [pe-^(-1/2)] see doi: 10.1109/TED.2003.813462
+        var: ndarray
+            (per-pixel) variance, readout noise [e-^2]
+        """
         var = np.atleast_3d(cameraMaps.getVarianceMap(md)) # this must be float type!! Should we enforce with an 'astype' call?
         return np.sqrt(var + (float(md.Camera.NoiseFactor)**2)*(float(md.Camera.ElectronsPerCount)*float(md.Camera.TrueEMGain)*np.maximum(data, 1.0) + float(md.Camera.TrueEMGain)*float(md.Camera.TrueEMGain)))/float(md.Camera.ElectronsPerCount)
     
