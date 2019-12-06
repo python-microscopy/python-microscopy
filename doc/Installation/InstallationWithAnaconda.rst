@@ -32,9 +32,15 @@ called Miniconda. We reccomend the later as it is less likely to result in depen
 `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ from https://docs.conda.io/en/latest/miniconda.html .
 Choose the **64 bit** version of **Python 2.7** for your prefered platform.
 
+.. note::
+
+    As of mid 2019, PYME will no longer install cleanly on top of a full anaconda install due to conflicts with the
+    versions of dask and wxpython which are shipped with anaconda. We strongly recommend using miniconda instead (or a
+    bare conda environment)
+
 .. warning::
 
-    Anaconda is available in both Python 2.7 and Python 3.x flavours. PYME will **only** work with the Python 2.7 version.
+    Miniconda is available in both Python 2.7 and Python 3.x flavours. PYME will **only** work with the Python 2.7 version.
 
 
 
