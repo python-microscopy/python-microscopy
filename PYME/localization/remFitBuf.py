@@ -559,7 +559,7 @@ class fitTask(taskDef.Task):
     @classmethod
     def calcSigma(cls, md, data):
         """
-        Estimate a per-pixel noise standard deviation (overestimate).
+        Estimate a per-pixel noise standard deviation.
         Parameters
         ----------
         md: PYME.IO.MetaDataHandler.MDHandlerBase
@@ -570,7 +570,7 @@ class fitTask(taskDef.Task):
         Returns
         -------
         sigma: ndarray
-            estimated per-pixel noise as a (overestimate of the) standard deviation. [ADU]
+            estimated per-pixel noise as a standard deviation. [ADU]
 
         Notes
         -----
