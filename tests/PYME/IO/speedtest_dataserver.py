@@ -30,17 +30,17 @@ def teardown_module():
 def test_single_put():
     testdata = 'foo bar\n'
     t = time.time()
-    clusterIO.putFile('_testing/test.txt', testdata, 'TEST')
+    clusterIO.put_file('_testing/test.txt', testdata, 'TEST')
     
     print('putting a small file took %3.5f s' % (time.time() - t))
 
     t = time.time()
-    clusterIO.putFile('_testing/test1.txt', testdata, 'TEST')
+    clusterIO.put_file('_testing/test1.txt', testdata, 'TEST')
 
     print('putting a second small file took %3.5f s' % (time.time() - t))
 
     t = time.time()
-    retrieved = clusterIO.getFile('_testing/test.txt', 'TEST')
+    retrieved = clusterIO.get_file('_testing/test.txt', 'TEST')
 
     print('retrieving a small file took %3.5f s' % (time.time() - t))
     
@@ -49,7 +49,7 @@ def test_putfiles_and_list():
     test_files = [('_testing/test_list/file_%d' % i, 'testing ... \n') for i in range(10000)]
     
     t = time.time()
-    clusterIO.putFiles(test_files[:1000], 'TEST')
+    clusterIO.put_files(test_files[:1000], 'TEST')
     print('putting 1000 small files took %3.5f s' % (time.time() - t))
     
     t = time.time()
@@ -71,7 +71,7 @@ def test_putfiles_and_list():
     
     #put remainder
     t = time.time()
-    clusterIO.putFiles(test_files[1000:], 'TEST')
+    clusterIO.put_files(test_files[1000:], 'TEST')
     print('putting 9000 small files took %3.5f s' % (time.time() - t))
 
     time.sleep(2) #should be enough to invalidate local cache
@@ -107,7 +107,7 @@ def test_putfiles_and_list():
     print('\n\n stress testing with 100,000 files ...')
     t = time.time()
     for j in range(100):
-        clusterIO.putFiles([('_testing/test_l2/series_%d/file_%d' % (j,i), 'testing ... \n') for i in range(1000)], 'TEST')
+        clusterIO.put_files([('_testing/test_l2/series_%d/file_%d' % (j, i), 'testing ... \n') for i in range(1000)], 'TEST')
         
     print('\nputting 100,000 small files in 100 directories took %3.5f s' % (time.time() - t))
 

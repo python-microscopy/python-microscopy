@@ -1,8 +1,48 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Feb 14 10:07:11 2016
+API interface to PYME cluster storage.
+--------------------------------------
 
-@author: david
+The cluster storage effectively aggregates storage across a number of cluster nodes. In contrast to a standard file-system,
+we only support atomic reads and writes of entire files, and only support a single write to a given file (no modification
+or replacement). Under the hood, the file system is implemented as a bunch of HTTP servers, with the `clusterIO` library
+simply presenting a unified view of the files on all servers.
+
+The most important functions are:
+
+    | :func:`get_file` which performs an atomic get to a randomly [#f1]_ chosen server
+    | :func:`put_file` which performs an atomic put
+    | :func:`listdir` which performs a (unified) directory listing
+    
+There are also a bunch of utility functions, mirroring some of those available in the os, os.path, and glob modules:
+
+    | :func:`exists`
+    | :func:`cglob`
+    | :func:`walk`
+    | :func:`isdir`
+    | :func:`stat`
+    
+And some functions to facilitate efficient (and data local) operations
+
+    | :func:`is_local`
+    | :func:`get_local_path`
+    | :func:`locate_file`
+    | :func:`put_files`
+    
+There are are also higher level functions in :mod:`PYME.IO.unifiedIO`  which allows files to be accessed in a consistent
+way given either a cluster URI or a local path and :mod:`PYME.IO.clusterResults` which helps with saving tabular data to
+the cluster.
+
+
+
+.. rubric:: Footnotes
+
+.. [#f1] technically we do some basic load balancing
+
+
+Function Documentation
+-----------------------
+
 """
 import six
 import PYME.misc.pyme_zeroconf as pzc
@@ -179,7 +219,7 @@ def _listSingleDir(dirurl, nRetries=1, timeout=5):
     return dirL, dt
 
 
-def locateFile(filename, serverfilter=local_serverfilter, return_first_hit=False):
+def locate_file(filename, serverfilter=local_serverfilter, return_first_hit=False):
     """
     Searches the cluster to find which server(s) a given file is stored on
 
@@ -340,6 +380,20 @@ def listdir(dirname, serverfilter=local_serverfilter):
     return sorted(listdirectory(dirname, serverfilter).keys())
 
 def isdir(name, serverfilter=local_serverfilter):
+    """
+    Tests if a given path on the cluster is a directory. Analogous to os.path.isdir
+    
+    Parameters
+    ----------
+    name
+    serverfilter
+
+    Returns
+    -------
+    
+    True or False
+
+    """
     name = (name)
     serverfilter = (serverfilter)
     
@@ -395,6 +449,20 @@ def _cglob(url, timeout=2, nRetries=1):
     return list(matches)
     
 def cglob(pattern, serverfilter=local_serverfilter):
+    """
+    Find files matching a given glob on the cluster. Analogous to the python glob.glob function.
+    
+    Parameters
+    ----------
+    pattern : string glob
+    serverfilter : cluster name (optional)
+
+    Returns
+    -------
+    
+    a list of files matching the glob
+
+    """
     global _pool
     from multiprocessing.pool import ThreadPool
 
@@ -431,18 +499,23 @@ def cglob(pattern, serverfilter=local_serverfilter):
     
 
 def exists(name, serverfilter=local_serverfilter):
-#    if name.endswith('/'):
-#        name = name[:-1]
-#        trailing = '/'
-#    else:
-#        trailing = ''
-#
-#    dirname = '/'.join(name.split('/')[:-1])
-#    fname = name.split('/')[-1] + trailing
-    #return fname in listdir(dirname, serverfilter)
-    return (len(locateFile(name, serverfilter, True)) > 0) or isdir(name, serverfilter)
+    """
+    Test whether a file exists on the cluster. Analogue to os.path.exists for local files.
+    
+    Parameters
+    ----------
+    name : string, file path
+    serverfilter : name of the cluster (optional)
 
-class stat_result(object):
+    Returns
+    -------
+    
+    True if file exists, else False
+
+    """
+    return (len(locate_file(name, serverfilter, True)) > 0) or isdir(name, serverfilter)
+
+class _StatResult(object):
     def __init__(self, file_info):
         self.st_size = file_info.size
         self.size = self.st_size
@@ -452,6 +525,18 @@ class stat_result(object):
         self.type = file_info.type
 
 def stat(name, serverfilter=local_serverfilter):
+    """
+    Cluster analog to os.stat
+    
+    Parameters
+    ----------
+    name
+    serverfilter
+
+    Returns
+    -------
+
+    """
     from . import clusterListing as cl
 
     name = (name)
@@ -465,13 +550,13 @@ def stat(name, serverfilter=local_serverfilter):
     
     if fname == '':
         #special case for the root directory
-        return stat_result(cl.FileInfo(cl.FILETYPE_DIRECTORY, 0))
+        return _StatResult(cl.FileInfo(cl.FILETYPE_DIRECTORY, 0))
     
     try:
-        r = stat_result(listing[fname])
+        r = _StatResult(listing[fname])
     except KeyError:
         try:
-            r = stat_result(listing[fname + '/'])
+            r = _StatResult(listing[fname + '/'])
         except:
             logger.exception('error stating: %s' % name)
             #print dirname, fname
@@ -562,7 +647,19 @@ def parseURL(URL):
     return filename, serverfilter
 
 
-def isLocal(filename, serverfilter):
+def is_local(filename, serverfilter):
+    """
+    Test to see if a file is held on the local computer
+    
+    Parameters
+    ----------
+    filename
+    serverfilter
+
+    Returns
+    -------
+
+    """
     filename = (filename)
     serverfilter = (serverfilter)
     
@@ -574,6 +671,18 @@ def isLocal(filename, serverfilter):
         return False
 
 def get_local_path(filename, serverfilter):
+    """
+    Get a local path, if available based on a cluster filename
+    
+    Parameters
+    ----------
+    filename
+    serverfilter
+
+    Returns
+    -------
+
+    """
     filename = (filename)
     serverfilter = (serverfilter)
     
@@ -583,7 +692,7 @@ def get_local_path(filename, serverfilter):
         if os.path.exists(localpath):
             return localpath
 
-def getFile(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True):
+def get_file(filename, serverfilter=local_serverfilter, numRetries=3, use_file_cache=True):
     """
     Get a file from the cluster.
     
@@ -621,7 +730,7 @@ def getFile(filename, serverfilter=local_serverfilter, numRetries=3, use_file_ca
         with open(localpath, 'rb') as f:
             return f.read()
     
-    locs = locateFile(filename, serverfilter, return_first_hit=True)
+    locs = locate_file(filename, serverfilter, return_first_hit=True)
 
     nTries = 1
     while nTries < numRetries and len(locs) == 0:
@@ -629,7 +738,7 @@ def getFile(filename, serverfilter=local_serverfilter, numRetries=3, use_file_ca
         logger.debug('Could not find file, retrying ...')
         time.sleep(1)
         nTries += 1
-        locs = locateFile(filename, serverfilter, return_first_hit=True)
+        locs = locate_file(filename, serverfilter, return_first_hit=True)
 
 
     if (len(locs) == 0):
@@ -723,15 +832,17 @@ def _chooseServer(serverfilter=local_serverfilter, exclude_netlocs=[]):
         return name, info
 
 
-def mirrorFile(filename, serverfilter=local_serverfilter):
+def mirror_file(filename, serverfilter=local_serverfilter):
     """Copies a given file to another server on the cluster (chosen by algorithm)
 
     The actual copy is performed peer to peer.
+    
+    This is used in cluster duplication and should not (usually) be called by end-user code
     """
     filename = (filename)
     serverfilter = (serverfilter)
     
-    locs = locateFile(filename, serverfilter)
+    locs = locate_file(filename, serverfilter)
 
     # where is the data currently located - exclude these from destinations
     currentCopyNetlocs = [urlparse(l[0]).netloc for l in locs]
@@ -753,11 +864,33 @@ def mirrorFile(filename, serverfilter=local_serverfilter):
     r.close()
 
 
-def putFile(filename, data, serverfilter=local_serverfilter):
-    """put a file to a server in the cluster (chosen by algorithm)
-
-    TODO - Add retry with a different server on failure
+def put_file(filename, data, serverfilter=local_serverfilter):
     """
+    Put a file to the cluster. The server on which the file resides is chosen by a crude load-balancing algorithm
+    designed to uniformly distribute data across the servers within the cluster. The target file must not exist.
+    
+    .. warning::
+        Putting a file is not strictly safe when run from multiple processes, and might result in unexpected behaviour
+        if puts with identical filenames are made concurrently (within ~2s). It is up to the calling code to ensure that such
+        filename collisions cannot occur. In practice this is reasonably easy to achieve when machine generated filenames
+        are used, but implies that interfaces which allow the user to specify arbitrary filenames should run through a
+        single user interface with external locking (e.g. clusterUI), particularly if there is any chance that multiple
+        users will be creating files simultaeneously.
+    
+    Parameters
+    ----------
+    filename : string
+        path to new file, which much not exist
+    data : bytes
+        the data to put
+    serverfilter : string
+        the cluster name (optional)
+
+    Returns
+    -------
+
+    """
+
     from . import clusterListing as cl
 
     if not isinstance(data, bytes):
@@ -898,11 +1031,29 @@ if USE_RAW_SOCKETS:
         return status, reason, data
                 
     
-    def putFiles(files, serverfilter=local_serverfilter):
-        """put a bunch of files to a single server in the cluster (chosen by algorithm)
-
-        TODO - Add retry with a different server on failure
+    def put_files(files, serverfilter=local_serverfilter):
         """
+        Put a bunch of files to a single server in the cluster (chosen by algorithm)
+        
+        This uses a long-lived http2 session with keep-alive to avoid the connection overhead in creating a new
+        session for each file, and puts files before waiting for a response to the last put. This function exists to
+        facilitate fast streaming
+        
+        As it reads the replies *after* attempting to put all the files, this is currently not as safe as put_file (in
+        handling failures we assume that no attempts were successful after the first failed file).
+        
+        Parameters
+        ----------
+        files : list of tuple
+            a list of tuples of the form (<string> filepath, <bytes> data) for the files to be uploaded
+            
+        serverfilter
+
+        Returns
+        -------
+
+        """
+        
 
         files = [(f) for f in files]
         serverfilter = (serverfilter)
@@ -1016,10 +1167,22 @@ if USE_RAW_SOCKETS:
 
             #r.close()
 else:
-    def putFiles(files, serverfilter=local_serverfilter):
-        """put a bunch of files to a single server in the cluster (chosen by algorithm)
+    def put_files(files, serverfilter=local_serverfilter):
+        """
+        Put a bunch of files to a single server in the cluster (chosen by algorithm)
+        
+        This version does not normally get called, but is between put_file and the raw sockets version of put_files in speed.
+        
+        Parameters
+        ----------
+        files : list of tuple
+            a list of tuples of the form (<string> filepath, <bytes> data) for the files to be uploaded
+            
+        serverfilter
 
-        TODO - Add retry with a different server on failure
+        Returns
+        -------
+
         """
         files = [(f) for f in files]
         serverfilter = (serverfilter)
@@ -1047,10 +1210,21 @@ else:
 _cached_status = None
 _cached_status_expiry = 0
 _status_lock = threading.Lock()
-def getStatus(serverfilter=local_serverfilter):
-    """Lists the contents of a directory on the cluster. Similar to os.listdir,
-        but directories are indicated by a trailing slash
-        """
+def get_status(serverfilter=local_serverfilter):
+    """
+    Get status of cluster servers (currently only used in the clusterIO web service)
+    
+    
+    Parameters
+    ----------
+    serverfilter
+
+    Returns
+    -------
+    
+    a list of status dictionaries
+
+    """
     import json
     global _cached_status, _cached_status_expiry
 

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation of PYME on 64 bit Windows, OSX, or Linux &mdash; PYME 19.08.06 documentation</title>
+  <title>Installation of PYME on 64 bit Windows, OSX, or Linux &mdash; PYME 19.10.25 documentation</title>
   
 
   
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                19.08.06
+                19.10.25
               </div>
             
           
@@ -224,7 +224,7 @@ channel gets a higher priority and can over-ride the broken fftw package in the 
 app, on Windows, launch the <strong>Anaconda Command Prompt</strong> from the “Anaconda” group in the
 start menu) and running the following three commands (the first of which can be ommitted if starting from a
 full anaconda install):</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda config --add channels anaconda
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda config --append channels anaconda
 conda config --add channels david_baddeley
 conda install python-microscopy
 </pre></div>
@@ -241,6 +241,19 @@ instead.</p>
 <p class="last">Other dependency issues can result in an old version of PYME being installed (most likely in older anaconda installs)
 A good sanity check is to look at what version conda wants to install when you run <cite>conda install python-microscopy</cite>.
 If it’s older than a month or two (PYME uses date based versions) something is going wrong.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p><strong>Avoid the `conda-forge` channel</strong>. This mostly applies to people who want to use PYME with an existing anaconda
+installation or who are doing further development. Whilst <cite>conda-forge</cite> is appealing due to the large
+number of packages available, my experience is that it often results in a broken conda installation.
+My recommendations are thus:</p>
+<ul class="last simple">
+<li>Never add conda-forge to your channels</li>
+<li>If you must install a package from conda-forge, use conda-forge just for that one package, e.g.
+<cite>conda install -c conda-forge package</cite> and the default channels for everything else. Double check
+what other packages it wants to download/ update to satisfy it’s dependencies.</li>
+</ul>
 </div>
 </div>
 <div class="section" id="step-3-verifying-the-installation">

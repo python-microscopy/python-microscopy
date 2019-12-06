@@ -167,7 +167,7 @@ def local_or_temp_filename(url):
             ext = os.path.splitext(sequenceName)[-1]
 
             with tempfile.NamedTemporaryFile(mode='w+b', suffix=ext) as outf:
-                s = clusterIO.getFile(sequenceName, clusterfilter)
+                s = clusterIO.get_file(sequenceName, clusterfilter)
                 outf.write(s)
                 outf.flush()
 
@@ -189,7 +189,7 @@ def openFile(filename, mode='rb'):
 
         sequenceName, clusterfilter = split_cluster_url(filename)
 
-        s = clusterIO.getFile(sequenceName, clusterfilter)
+        s = clusterIO.get_file(sequenceName, clusterfilter)
         return BytesIO(s)
     else:
         raise IOError('File does not exist or URI not understood: %s' % filename)
@@ -207,7 +207,7 @@ def read(filename):
 
         sequenceName, clusterfilter = split_cluster_url(filename)
 
-        s = clusterIO.getFile(sequenceName, clusterfilter)
+        s = clusterIO.get_file(sequenceName, clusterfilter)
         return s
     else:
         raise IOError('File does not exist or URI not understood: %s' % filename)

@@ -5,7 +5,7 @@ from django.shortcuts import render
 
 def status(request):
     from PYME.IO import clusterIO
-    nodes = clusterIO.getStatus()
+    nodes = clusterIO.get_status()
 
     total_storage = 0
     free_storage = 0
@@ -30,7 +30,7 @@ def status(request):
 def load(request):
     from PYME.IO import clusterIO
 
-    nodes = clusterIO.getStatus()
+    nodes = clusterIO.get_status()
 
     total_storage = 0
     free_storage = 0
