@@ -49,7 +49,7 @@ If you run a (or multiple) server(s) (see :mod:`PYME.cluster.HTTPDataServer`) cl
 configuration. To support multiple clusters on a single network segment, however, we have the concept of a *cluster name*.
 Servers will broadcast the name of the cluster they belong to as part of their mDNS advertisement.
 
-On the client side, you can select which cluster you want to talk to with the ``serverfilter`` argument to accepted by the
+On the client side, you can select which cluster you want to talk to with the ``serverfilter`` argument to the
 clusterIO functions. Each function will access all servers which include the value of ``serverfilter`` in their name. If
 unspecified, the value of the :mod:`PYME.config` configuration option ``dataserver-filter`` is used, which in turn defaults
 to the local computer name. This enables the use of a local "cluster of one" for analysis without any additional configuration
