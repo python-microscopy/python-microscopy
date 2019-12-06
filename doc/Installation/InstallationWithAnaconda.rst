@@ -34,9 +34,11 @@ Choose the **64 bit** version of **Python 2.7** for your prefered platform.
 
 .. note::
 
-    As of mid 2019, PYME will no longer install cleanly on top of a full anaconda install due to conflicts with the
-    versions of dask and wxpython which are shipped with anaconda. We strongly recommend using miniconda instead (or a
-    bare conda environment)
+    As of mid 2019, PYME will no longer install cleanly on top of a full anaconda install due to a broken dask package
+    in the default conda channels (see https://github.com/dask/dask/issues/4846 - this fix does not seem to have propagated
+    back to the anaconda default channels). We strongly recommend using miniconda instead (or a bare conda environment
+    which does not include dask). If you need scikits-image (which has dask as a dependency), install python-microscopy
+    first and then explicity install compatible versions of numpy, skimage, and dask.
 
 .. warning::
 
@@ -105,14 +107,14 @@ installed as part of PYME.
 
 .. tabularcolumns:: |p{4.5cm}|p{11cm}|
 
-========================	==================================================================================================================
-``dh5view -t -m lite``		This is the data viewer for image files (also used to launch localization analysis). The **-t -m lite** options 
-							initiates a test mode which should display a image consisting of random noise. 
-
-``PYMEAcquire``				This is the data acquistion component, which when launched without any options will start with simulated hardware.
-
-``VisGUI``					This is a viewer for point data sets. When launched without any parameters it will show a large pink triangle.
-========================	==================================================================================================================
++------------------------+----------------------------------------------------------------------------------------------------------------------+
+| ``dh5view -t -m lite`` | This is the data viewer for image files (also used to launch localization analysis). The **-t -m lite** options      |
+|                        | initiates a test mode which should display a image consisting of random noise.                                       |
++------------------------+----------------------------------------------------------------------------------------------------------------------+
+| ``PYMEAcquire``        | This is the data acquistion component, which when launched without any options will start with simulated hardware.   |
++------------------------+----------------------------------------------------------------------------------------------------------------------+
+| ``VisGUI``             | This is a viewer for point data sets. When launched without any parameters it will show a large pink triangle.       |
++------------------------+----------------------------------------------------------------------------------------------------------------------+
 
 
 STEP 4: Setting up bioformats importing [optional]

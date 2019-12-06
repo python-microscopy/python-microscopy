@@ -749,6 +749,17 @@ Traceback (most recent call last):
     plugin = plugin_class()
 TypeError: 'NoneType' object is not callable
 [39;49;00m
+/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer:6: WARNING: Unexpected section title.
+
+Security warning
+----------------
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.do_GET'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.list_directory'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_error'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_message'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_request'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.send_error'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.send_head'[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'LatGaussFitlmR' from module u'PYME.localization.FitFactories'; the following exception was raised:
 No module named levmar_gfit[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'ofind_xcorr_fw' from module u'PYME.localization'; the following exception was raised:
@@ -934,30 +945,6 @@ OSError: [Errno 2] No such file or directory
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_stl'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_u3d'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_x3d'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getEvents'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getNumSlices'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getSlice'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getSliceShape'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.MetaDataHandler.MDHandlerBase.GetSimpleString'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.MetaDataHandler.MDHandlerBase.WriteSimple'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.MetaDataHandler.MDHandlerBase.copyEntriesFrom'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.MetaDataHandler.MDHandlerBase.getEntry'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.MetaDataHandler.MDHandlerBase.getEntryNames'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.MetaDataHandler.MDHandlerBase.getOrDefault'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.MetaDataHandler.MDHandlerBase.keys'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.MetaDataHandler.MDHandlerBase.mergeEntriesFrom'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.MetaDataHandler.MDHandlerBase.setEntry'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.clusterExport.ImageFrameSource.spoolData'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.clusterExport.ImageFrameSource.spoolImageFromFile'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.dcimg.DCIMGFile.get_frame'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.h5rFile.H5RFile.fileFitResult'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.h5rFile.H5RFile.updateMetadata'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Load'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Save'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.SetData'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addColumn'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addVariable'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.TabularBase.to_recarray'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.IO.DataSources.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getEvents'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.IO.DataSources.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getNumSlices'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.IO.DataSources.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getSlice'[39;49;00m
@@ -1017,6 +1004,42 @@ OSError: [Errno 2] No such file or directory
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.tests.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.add_probe'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.tests.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObject.translate'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.tests.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.tests.gl_test_objects.TestObjectContainer.translate'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.do_GET'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.list_directory'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_error'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_message'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_request'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.send_error'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.send_head'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.do_GET'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.do_HEAD'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.guess_type'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.list_directory'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.translate_path'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.bid'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.make_range_available'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.taskWorkerHTTP.taskWorker.ioLoop'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVRequestHandler.path_elem'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVRequestHandler.path_elem_prev'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVRequestHandler.split_path'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVServer.finish_request'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DirCollection.findMember'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DirCollection.getMembers'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DirCollection.recvMember'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DirCollection.sendData'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.FileMember.getProperties'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.FileMember.sendData'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.Tag.addChild'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.TempDirCollection.getProperties'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.XMLDict_Parser.builddict'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.XMLDict_Parser.processTag'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.do_GET'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.list_directory'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_error'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_message'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_request'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.send_error'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.send_head'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CSInterpolator.CSInterpolator.getCoords'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CSInterpolator.CSInterpolator.interp'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CSInterpolator.CSInterpolator.interpG'[39;49;00m

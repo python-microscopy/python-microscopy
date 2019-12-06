@@ -8,31 +8,68 @@ we only support atomic reads and writes of entire files, and only support a sing
 or replacement). Under the hood, the file system is implemented as a bunch of HTTP servers, with the `clusterIO` library
 simply presenting a unified view of the files on all servers.
 
+.. note::
+
+    PYME cluster storage has a number of design aspects which trade some safety for speed. Importantly it lacks features
+    such as locking found in traditional filesystems. This is largely offset by only supporting atomic writes, and being
+    write once (no deletion or modification), but does rely on clients being well behaved (i.e. not trying to write to
+    the same file concurrently) - see `put_file()` for more details. Directory listings etc .. are also not guaranteed
+    to update immediately after file puts, with a latency of up to 2s for directory updates being possible.
+
 The most important functions are:
 
-    | :func:`get_file` which performs an atomic get to a randomly [#f1]_ chosen server
-    | :func:`put_file` which performs an atomic put
+    | :func:`get_file` which performs an atomic get
+    | :func:`put_file` which performs an atomic put to a randomly [#f1]_ chosen server
     | :func:`listdir` which performs a (unified) directory listing
     
 There are also a bunch of utility functions, mirroring some of those available in the os, os.path, and glob modules:
 
-    | :func:`exists`
-    | :func:`cglob`
-    | :func:`walk`
-    | :func:`isdir`
-    | :func:`stat`
+    :func:`exists`
+    :func:`cglob`
+    :func:`walk`
+    :func:`isdir`
+    :func:`stat`
     
-And some functions to facilitate efficient (and data local) operations
+And finally some functions to facilitate efficient (and data local) operations
 
-    | :func:`is_local`
-    | :func:`get_local_path`
-    | :func:`locate_file`
-    | :func:`put_files`
+    | :func:`is_local` which determines if a file is hosted on the local machine
+    | :func:`get_local_path` which returns a local path if a file is local
+    | :func:`locate_file` which returns a list of http urls where the given file can be found
+    | :func:`put_files` which implements a streamed, high performance, put of multiple files
     
 There are are also higher level functions in :mod:`PYME.IO.unifiedIO`  which allows files to be accessed in a consistent
 way given either a cluster URI or a local path and :mod:`PYME.IO.clusterResults` which helps with saving tabular data to
 the cluster.
 
+Cluster identification
+----------------------
+
+clusterIO automatically identifies the individual data servers that make up the cluster using the mDNS (zeroconf) protocol.
+If you run a (or multiple) server(s) (see :mod:`PYME.cluster.HTTPDataServer`) clusterIO will find them with no additional
+configuration. To support multiple clusters on a single network segment, however, we have the concept of a *cluster name*.
+Servers will broadcast the name of the cluster they belong to as part of their mDNS advertisement.
+
+On the client side, you can select which cluster you want to talk to with the ``serverfilter`` argument to accepted by the
+clusterIO functions. Each function will access all servers which include the value of ``serverfilter`` in their name. If
+unspecified, the value of the :mod:`PYME.config` configuration option ``dataserver-filter`` is used, which in turn defaults
+to the local computer name. This enables the use of a local "cluster of one" for analysis without any additional configuration
+and without interfering with any clusters which are already on the network. When setting up a proper, multi-computer cluster,
+set the ``dataserver-filter`` config option on all members of the cluster o a common value. Once setup in this manner, it
+should not be necessary to actually specify ``serverfilter`` when using clusterIO.
+ 
+ .. note::
+ 
+    The nature of ``serverfilter`` matches is both powerful and requires some care. A value of ``serverfilter=''`` will match
+    every data server running on the local network and present them as an aggregated cluster. Similarly ``serverfilter='cluster'``
+    will match ``cluster``, ``cluster1``, ``cluster2``, ``3cluster`` etc and prevent them all as an aggregated cluster. This
+    cluster aggregation opens up interesting postprocessing and display options, but to avoid unexpected effects it would
+    be prudent to follow the following recommendations.
+    
+    1) Avoid cluster names which are substrings of other cluster names
+    2) Always use the full cluster name for ``serverfilter``.
+    
+    Depending on how useful aggregation actually proves to be
+    ``serverfilter`` might change to either requiring an exact match or compiling to a regex at some point in the future.
 
 
 .. rubric:: Footnotes
@@ -649,7 +686,9 @@ def parseURL(URL):
 
 def is_local(filename, serverfilter):
     """
-    Test to see if a file is held on the local computer
+    Test to see if a file is held on the local computer.
+    
+    This is used in the distributed scheduler to score tasks.
     
     Parameters
     ----------

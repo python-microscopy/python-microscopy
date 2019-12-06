@@ -1,25 +1,23 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Feb 13 18:12:18 2016
-
-@author: david
-
 This is a very simple HTTP server which allows data to be saved to the server using PUT
 
-Security note:
-==============
 
-The code as it stands lets any client write arbitrary data to the server. 
-The only concessions we make to security are:
+.. warning::
+    Security warning
+    ----------------
 
-a) paths are vetted to make sure that they reside under out root (i.e. no escape through .. etc)
-b) we enforce a write-once scheme (if a file exists it can't be overridden)
+    The code as it stands lets any client write arbitrary data to the server.
+    The only concessions we make to security are:
+    
+    a) Paths are vetted to make sure that they reside under our server root (i.e. no escape through .. etc)
+    b) We enforce a write-once scheme (if a file exists it can't be overridden)
+    
+    This protects against people accidentally or maliciously altering data, or discovering
+    server settings, but leaves us open to denial of service type attacks in which
+    a malicious client could fill up our storage.
 
-This protects against people accidentally or maliciously altering data, or discovering 
-server settings, but leaves us open to denial of service type attacks in which
-a malicious client could fill up our storage.
-
-THE CODE AS IT STANDS SHOULD ONLY BE USED ON A TRUSTED NETWORK
+    **THE CODE AS IT STANDS SHOULD ONLY BE USED ON A TRUSTED NETWORK**
 
 TODO: Add some form of authentication. Needs to be low overhead (e.g. digest based)
 """

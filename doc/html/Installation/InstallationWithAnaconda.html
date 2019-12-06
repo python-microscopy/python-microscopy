@@ -203,9 +203,17 @@ You might also not be able to associate files to open with dh5view or VisGUI on 
 called Miniconda. We reccomend the later as it is less likely to result in dependency issues. Download and install
 <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">Miniconda</a> from <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">https://docs.conda.io/en/latest/miniconda.html</a> .
 Choose the <strong>64 bit</strong> version of <strong>Python 2.7</strong> for your prefered platform.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">As of mid 2019, PYME will no longer install cleanly on top of a full anaconda install due to a broken dask package
+in the default conda channels (see <a class="reference external" href="https://github.com/dask/dask/issues/4846">https://github.com/dask/dask/issues/4846</a> - this fix does not seem to have propagated
+back to the anaconda default channels). We strongly recommend using miniconda instead (or a bare conda environment
+which does not include dask). If you need scikits-image (which has dask as a dependency), install python-microscopy
+first and then explicity install compatible versions of numpy, skimage, and dask.</p>
+</div>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">Anaconda is available in both Python 2.7 and Python 3.x flavours. PYME will <strong>only</strong> work with the Python 2.7 version.</p>
+<p class="last">Miniconda is available in both Python 2.7 and Python 3.x flavours. PYME will <strong>only</strong> work with the Python 2.7 version.</p>
 </div>
 </div>
 <div class="section" id="step-2-installing-pyme-using-conda">
@@ -262,16 +270,13 @@ what other packages it wants to download/ update to satisfy it’s dependencies.
 installed as part of PYME.</p>
 <table border="1" class="docutils">
 <colgroup>
-<col width="16%" />
-<col width="84%" />
+<col width="17%" />
+<col width="83%" />
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">dh5view</span> <span class="pre">-t</span> <span class="pre">-m</span> <span class="pre">lite</span></code></td>
-<td><dl class="first last docutils">
-<dt>This is the data viewer for image files (also used to launch localization analysis). The <strong>-t -m lite</strong> options</dt>
-<dd>initiates a test mode which should display a image consisting of random noise.</dd>
-</dl>
-</td>
+<td>This is the data viewer for image files (also used to launch localization analysis). The <strong>-t -m lite</strong> options
+initiates a test mode which should display a image consisting of random noise.</td>
 </tr>
 <tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">PYMEAcquire</span></code></td>
 <td>This is the data acquistion component, which when launched without any options will start with simulated hardware.</td>
