@@ -668,14 +668,15 @@ class Camera(object):
 
         a dictionary with the following entries:
 
-        'ReadNoise' : camera read noise in electrons
-        'ElectronsPerCount' : AD conversion factor - how many electrons per camera count
-        'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS
+        'ReadNoise' : camera read noise as a standard deviation in units of ADU
+        'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
+        'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
+            doi: 10.1109/TED.2003.813462
 
         and optionally
-        'ADOffset' : the dark level (in counts)
+        'ADOffset' : the dark level (in ADU)
         'DefaultEMGain' : a sensible EM gain setting to use for localization recording
-        'SaturationThreshold' : the full well capacity (in counts)
+        'SaturationThreshold' : the full well capacity (in ADU)
 
         """
         raise NotImplementedError('Implement in derived class')
