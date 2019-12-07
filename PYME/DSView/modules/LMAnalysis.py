@@ -905,7 +905,7 @@ class LMAnalyser2(object):
                 
                 if 'tIm' in dir(ft.ofd):
                     plt.figure()
-                    plt.imshow(ft.ofd.tIm.T, cmap=cm.hot, interpolation='nearest')
+                    plt.imshow(ft.ofd.tIm.T, cmap=plt.cm.hot, interpolation='nearest')
                     #axis('tight')
                     plt.xlim(0, d.shape[1])
                     plt.ylim(d.shape[0], 0)

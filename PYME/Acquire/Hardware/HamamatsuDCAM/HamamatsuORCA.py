@@ -86,11 +86,11 @@ noiseProperties = {
         'DefaultEMGain': 1,
         'SaturationThreshold': (2**16 - 1)
         },
-'S/N: 720795' : { #FIXME - values are currently copied from above, and are probably wrong
-        'ReadNoise': 3.51,
+'S/N: 720795' : {
+        'ReadNoise': 2.3940335559897847,  # rn is sqrt(var) in units of ADU. Median of varmap is 0.9947778 [e-^2]
         'ElectronsPerCount': 0.416613,
         'NGainStages': 0,
-        'ADOffset': 100,
+        'ADOffset': 101.753685,
         'DefaultEMGain': 1,
         'SaturationThreshold': (2**16 - 1)
         },
