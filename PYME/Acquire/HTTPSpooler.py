@@ -101,8 +101,8 @@ QUEUE_MAX_SIZE = 200 # ~10k frames
 
 defaultCompSettings = {
     'compression' : PZFFormat.DATA_COMP_HUFFCODE,
-    'quantization' : PZFFormat.DATA_QUANT_SQRT,
-    'quantizationOffset' : 0.0,
+    'quantization' : PZFFormat.DATA_QUANT_NONE,
+    'quantizationOffset' : -1e6, # set to an unreasonable value so that we raise an error if default offset is used
     'quantizationScale' : 1.0
 }
 
@@ -156,6 +156,18 @@ class Spooler(sp.Spooler):
             self.compSettings.update(kwargs['compressionSettings'])
         except KeyError:
             pass
+        
+        if not self.compSettings['quantization'] == PZFFormat.DATA_QUANT_NONE:
+            # do some sanity checks on our quantization parameters
+            # note that these conversions will throw a ValueError if the settings are not numeric
+            offset = float(self.compSettings['quantizationOffset'])
+            scale = float(self.compSettings['quantizationScale'])
+            
+            # these are potentially a bit too permissive, but should catch an offset which has been left at the
+            # default value
+            assert(offset >= 0)
+            assert(scale >=.001)
+            assert(scale <= 100)
             
     def _queuePoll(self):
         while self._dPoll:
