@@ -393,9 +393,7 @@ class PanSpool(afp.foldingPane):
             try:
                 q_offset = self.scope.cam.noiseProps['ADOffset']
             except AttributeError:
-                msg = "Camera doesn't define noise properties, manually set the desired quantization offset"
-                ans = wx.MessageBox(msg, 'Error', wx.OK)
-                raise AttributeError(msg)
+                ans = wx.MessageBox("Camera doesn't define noise properties, manually set the desired quantization offset" , 'Error', wx.OK)
         else:
             q_offset = float(q_offset)
 
