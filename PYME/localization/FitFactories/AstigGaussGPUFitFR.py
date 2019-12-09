@@ -111,13 +111,15 @@ class GaussianFitFactory:
         Parameters
         ----------
         data : numpy.ndarray
+            Note, remFitBuf subtracts the ADOffset and flatfields before passing us the data in units of ADU
         metadata : PYME.IO.MetaDataHandler.MDHandlerBase or derived class
         fitfcn : dummy variable
             Not used in this fit factory
         background : numpy.ndarray, warpDrive.buffers.Buffer, or scalar
-            warpDrive.buffers.Buffer allows asynchronous estimation of the per-pixel background on the GPU.
+            warpDrive.buffers.Buffer allows asynchronous estimation of the per-pixel background on the GPU. Units are
+            ADU, and by default the darkmap or ADOffset will be subtracted.
         noiseSigma : numpy.ndarray
-            (over-)estimate of the noise level at each pixel (see fitTask.calcSigma in remFitBuf.py)
+            (over-)estimate of the noise level at each pixel [ADU]
         """
 
         self.data = np.squeeze(data).astype(np.float32)  # np.ascontiguousarray(np.squeeze(data), dtype=np.float32)
@@ -143,7 +145,7 @@ class GaussianFitFactory:
 
         global _warpDrive  # One warpDrive instance for each process, re-used for subsequent fits.
 
-        # get varmap and flatmap
+        # get varmap [e-^2]
         varmap = cameraMaps.getVarianceMap(self.metadata)
         if not np.isscalar(varmap):
             self.varmap = varmap.astype(np.float32)  # np.ascontiguousarray(varmap)
@@ -154,23 +156,17 @@ class GaussianFitFactory:
             else:
                 self.varmap = varmap*np.ones_like(self.data)
 
+        # get flatmap [unitless]
         flatmap = cameraMaps.getFlatfieldMap(self.metadata)
         if not np.isscalar(flatmap):
-            self.flatmap = flatmap.astype(np.float32)  # flatmat is mean-normalized and unitless
+            self.flatmap = flatmap.astype(np.float32)
         else:
-            #flatmap = self.metadata['Camera.TrueEMGain']*self.metadata['Camera.ElectronsPerCount']
-            self.flatmap = flatmap*np.ones_like(self.data) # flatmat is mean-normalized and unitless
+            self.flatmap = flatmap*np.ones_like(self.data)
 
-        # subtract darkmap
-        #### DB - Dark map is already subtracted by remFitBuf!!!! NOTE: flatfielding will also have been done, so undo
-        #darkmap = cameraMaps.getDarkMap(self.metadata)
-        #self.data -= darkmap #same op for scalar or array
-
-        ### Undo the flatfielding we did in remFitBuf: (img.astype('f')-dk)*flat
-        self.data = self.data/self.flatmap  # no conversion here, flatmap normed so data still in [ADU]
-        # if self.background is not None:  # flatfielding is also done on moving-averaged background
-        if isinstance(self.background, np.ndarray):
-            self.background = self.background/self.flatmap  # no conversion here, flatmap normed so data still in [ADU]
+        # Undo the dark and flat corrections from remFitBuf: (img.astype('f')-dk)*flat
+        self.data = self.data/self.flatmap  # no unit conversion here, still in [ADU]
+        if isinstance(self.background, np.ndarray):  # flatfielding is done on CPU-calculated backgrounds
+            self.background = self.background/self.flatmap  # no unit conversion here, still in [ADU]
         else:
             # if self.background is a buffer, the background is already on the GPU and has not been flatfielded
             pass
