@@ -417,10 +417,6 @@ class fitTask(taskDef.Task):
         #when camera buffer overflows, empty pictures are produced - deal with these here
         if self.data.max() == 0:
             return fitResult(self, [], [])
-        
-        #squash 4th dimension
-        #NB - this now subtracts the ADOffset
-        self.data = cameraMaps.correctImage(md, self.data.squeeze()).reshape((self.data.shape[0], self.data.shape[1],1))
 
         #calculate background
         self.bg = 0
@@ -439,8 +435,20 @@ class fitTask(taskDef.Task):
                 # the "normal" way - calculate the background for this frame and correct this for camera characteristics
                 self.bg = cameraMaps.correctImage(md, bufferManager.bBuffer.getBackground(self.bgindices)).reshape(self.data.shape)
 
-        #calculate noise
-        self.sigma = self.calcSigma(md, self.data)
+
+        if 'OWN_PREFIT' in dir(self.fitMod):
+            # fit module does its own prefit steps, e.g. camera correction, sigma calculation, etc.
+            self.data = self.data.squeeze()
+            # fit module does it's own object finding
+            ff = self.fitMod.FitFactory(self.data, md, self.bg)
+            self.res = ff.FindAndFit(self.threshold, gui=gui, cameraMaps=cameraMaps)
+            return fitResult(self, self.res, [])
+        else:
+            #squash 4th dimension
+            #NB - this now subtracts the ADOffset
+            self.data = cameraMaps.correctImage(md, self.data.squeeze()).reshape((self.data.shape[0], self.data.shape[1],1))
+            # calculate noise
+            self.sigma = self.calcSigma(md, self.data)
 
         #if logger.isEnabledFor(logging.DEBUG):
         #    logger.debug('data_mean: %3.2f, bg: %3.2f, sigma: %3.2f' % (self.data.mean(), self.sigma.mean(), self.bg.mean()))
@@ -454,7 +462,7 @@ class fitTask(taskDef.Task):
             
         if 'MULTIFIT' in dir(self.fitMod):
             #fit module does it's own object finding
-            ff = self.fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma=self.sigma)
+            ff = self.fitMod.FitFactory(self.data, md, background=self.bg, noiseSigma=self.sigma)
             self.res = ff.FindAndFit(self.threshold, gui=gui, cameraMaps=cameraMaps)
             return fitResult(self, self.res, [])
             
