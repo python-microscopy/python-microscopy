@@ -41,12 +41,11 @@ To tell anaconda about our channel, and to install the dependencies we need to o
 
 This should download and install the required dependencies.
 
-STEP 3: Install mercurial
-=========================
+STEP 3: Install git
+===================
 
-We need to mercurial to pull the latest source from the repository. You can either get this through your platform
-repositories [linux], by downloading and installing `TortoiseHG <http://tortoisehg.bitbucket.org/>`_ [win/OSX], or by
-running ``conda install mercurial``.
+If you are contemplating a source install you probably don't need explicit instructions here, and might well already
+have it, but as a fallback git is conda installable: ``conda install git``.
 
 STEP 4: Install a c/c++ compiler
 ================================
@@ -57,15 +56,13 @@ install XCode, and on windows download and install `MS Visual C for Python 2.7 <
 STEP 5: Get the code
 ====================
 
-The code is stored in a mercurial repository. Get the current copy by doing
+The code is stored in a github repository. Get the current copy by doing
 ::
 
-    hg clone https://bitbucket.org/david_baddeley/python-microscopy
-
-or the equivalent using a gui client (eg `TortoiseHG <http://tortoisehg.bitbucket.org/>`_).
+    git clone https://github.com/python-microscopy/python-microscopy
 
 If you are going to be doing significant development and plan on issuing pull requests, it might be reasonable to create
-a private fork on bitbucket at this point and clone from that (this is reasonably easy to set up later, so if you're unsure
+a private fork on github at this point and clone from that (this is reasonably easy to set up later, so if you're unsure
 just pull the code from the default repository and go from there).
 
 
@@ -90,6 +87,10 @@ Change to the directory where you cloned the code and execute the following.
 
 At this point you should have a functioning install.
 
+.. note::
+    Due to some slightly weird interplay between numpy distutils and setuptools ``python setup.py develop`` works from
+    the base directory of the repository, but if you want to run ``python setup.py install`` instead you'll need to drop
+    down one directory into the `PYME` directory first.
 
 
 Further configuration (mostly optional)

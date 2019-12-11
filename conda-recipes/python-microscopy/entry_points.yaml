@@ -9,6 +9,7 @@ entry_points:
     - PYMERuleServer = PYME.cluster.PYMERuleServer:main
     - PYMENodeServer = PYME.cluster.PYMENodeServer:main
     - PYMERuleNodeServer = PYME.cluster.PYMERuleNodeServer:main
+    - PYMEClusterOfOne = PYME.cluster.cluster_of_one:main
     - PYMEWebDav = PYME.cluster.webdav:main
     - PYMEscmosmapgen = PYME.Analysis.gen_sCMOS_maps:main
     - fitMonP = PYME.ParallelTasks.fitMonP:main
