@@ -108,8 +108,9 @@ class BufferManager(object):
                     # NB: The GPU version should result in a uniform background but will NOT completely remove the background. As such it will only work 
                     # for fits which have a constant background as a fit parameter, and not those which assume that background subtraction reduces the 
                     # background to zero (as is the case for our CPU based background estimation). Use with caution.
-                    self.bBuffer = GPUPercentileBuffer(self.dBuffer, md['Analysis.PCTBackground'],
-                                                       buffer_length=bufferLen, dark_map=cameraMaps.getDarkMap(md))
+                    self.bBuffer = GPUPercentileBuffer(self.dBuffer, md['Analysis.PCTBackground'], bufferLen,
+                                                       cameraMaps.getDarkMap(md), cameraMaps.getFlatfieldMap(md),
+                                                       md['Camera.ElectronsPerCount'])
                 else: 
                     # use our default CPU implementation
                     self.bBuffer = buffers.backgroundBufferM(self.dBuffer, md['Analysis.PCTBackground'])
@@ -441,7 +442,7 @@ class fitTask(taskDef.Task):
             self.data = self.data.squeeze()
             # fit module does it's own object finding
             ff = self.fitMod.FitFactory(self.data, md, self.bg)
-            self.res = ff.FindAndFit(self.threshold, gui=gui, cameraMaps=cameraMaps)
+            self.res = ff.FindAndFit(self.threshold, cameraMaps=cameraMaps, gui=gui)
             return fitResult(self, self.res, [])
         else:
             #squash 4th dimension

@@ -131,8 +131,8 @@ class GaussianFitFactory:
             self.background = np.ascontiguousarray(background * np.ones_like(self.data), dtype=np.float32)
         else:  # it's a buffer!
             self.background = background
-        self.noiseSigma = noiseSigma
-        self.fitfcn = fitfcn
+        # self.noiseSigma = noiseSigma
+        # self.fitfcn = fitfcn
 
 
     def refreshWarpDrive(self, cameraMaps):
@@ -241,7 +241,7 @@ class GaussianFitFactory:
 
         return np.hstack(resList)
 
-    def FindAndFit(self, threshold, cameraMaps):
+    def FindAndFit(self, threshold, cameraMaps, **kwargs):
         """
 
         Args:
