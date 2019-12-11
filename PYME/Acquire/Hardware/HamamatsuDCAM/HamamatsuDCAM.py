@@ -279,7 +279,7 @@ class HamamatsuDCAM(Camera):
             self.properties = self.getCamProperties()
 
             self._camera_model = self.getCamInfo(DCAM_IDSTR_MODEL)
-            self._serial_number = self.getCamInfo(DCAM_IDSTR_CAMERAID)
+            self._serial_number = self.getCamInfo(DCAM_IDSTR_CAMERAID).strip('S/N: ')
 
             self.SetIntegTime(0.1)
             
