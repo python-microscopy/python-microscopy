@@ -183,10 +183,15 @@ class PanSpool(afp.foldingPane):
         self.cbClusterh5.SetValue(False)
     
         hsizer.Add(self.cbClusterh5, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-    
         vsizer.Add(hsizer, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 0)
-    
         pan.SetSizerAndFit(vsizer)
+        
+        #setup callbacks to update compression settings on UI change
+        self.cbCompress.Bind(wx.EVT_CHECKBOX, lambda e: self.update_spooler_compression_settings())
+        self.cbQuantize.Bind(wx.EVT_CHECKBOX, lambda e: self.update_spooler_compression_settings())
+        self.tQuantizeOffset.Bind(wx.EVT_KILL_FOCUS, lambda e: self.update_spooler_compression_settings())
+        self.tQuantizeScale.Bind(wx.EVT_KILL_FOCUS, lambda e: self.update_spooler_compression_settings())
+        
         return pan
     
         
@@ -326,7 +331,22 @@ class PanSpool(afp.foldingPane):
         #update the spool method (specifically so that the default in the GUI and spool controller match)
         self.OnSpoolMethodChanged(None)
         
+        #make default compression settings in spooler match the display.
+        self.update_spooler_compression_settings(False)
+        
 
+    def update_spooler_compression_settings(self, ui_on_error=True):
+        try:
+            self.spoolController.compressionSettings = self.get_compression_settings(ui_on_error)
+        except:
+            logger.warn('Compression settings invalid, disabling quantization')
+            if ui_on_error:
+                ans = wx.MessageBox(
+                    "Compression settings invalid, disabling quantization",
+                    'Error', wx.OK)
+            self.cbQuantize.SetValue(False)
+            self.spoolController.compressionSettings = self.get_compression_settings()
+    
     def _get_spool_method(self):
         if self.rbSpoolFile.GetValue():
             return 'File'
@@ -363,7 +383,49 @@ class PanSpool(afp.foldingPane):
         # pan.SetMinSize([pan.GetMinSize()[0], pan.GetBestSize()[1]])
         # self.Layout()
         # self.GetParent().Layout()
+                
+    def get_compression_settings(self, ui_message_on_error=True):
+        if not self.cbQuantize.GetValue():
+            compSettings = {
+                'compression': PZFFormat.DATA_COMP_HUFFCODE if self.cbCompress.GetValue() else PZFFormat.DATA_COMP_RAW,
+                'quantization': PZFFormat.DATA_QUANT_NONE,
+                'quantizationOffset': 0.0,
+                'quantizationScale': 1.0
+            }
+    
+            return compSettings
+        
+        else:
+            #try and set our quantization offset automatically as the AD offset of the camera
+            q_offset = self.tQuantizeOffset.GetValue()
+            if q_offset == 'auto':
+                #FIXME - add getter to camera???
+                try:
+                    q_offset = self.scope.cam.noiseProps['ADOffset']
+                except AttributeError:
+                    if ui_message_on_error:
+                        ans = wx.MessageBox(
+                                "Camera doesn't define noise properties, manually set the desired quantization offset",
+                                'Error', wx.OK)
+                    raise
+            else:
+                q_offset = float(q_offset)
+        
+            #quantization scale in GUI is in units of sigma, convert to ADU
+            try:
+                q_scale = float(self.tQuantizeScale.GetValue()) / self.scope.cam.GetElectronsPerCount()
+            except (AttributeError, NotImplementedError):
+                print("WARNING: Camera doesn't provide electrons per count, using qscale in units of ADUs instead")
+                q_scale = float(self.tQuantizeScale.GetValue())
+        
+            compSettings = {
+                'compression': PZFFormat.DATA_COMP_HUFFCODE if self.cbCompress.GetValue() else PZFFormat.DATA_COMP_RAW,
+                'quantization': PZFFormat.DATA_QUANT_SQRT,
+                'quantizationOffset': q_offset,
+                'quantizationScale': q_scale
+            }
             
+            return compSettings
             
 
     def OnBStartSpoolButton(self, event=None, stack=False):
@@ -384,36 +446,11 @@ class PanSpool(afp.foldingPane):
             compLevel = 2
         else:
             compLevel = 0
-
-
-        #try and set our quantization offset automatically as the AD offset of the camera
-        q_offset = self.tQuantizeOffset.GetValue()
-        if q_offset == 'auto':
-            #FIXME - add getter to camera???
-            try:
-                q_offset = self.scope.cam.noiseProps['ADOffset']
-            except AttributeError:
-                ans = wx.MessageBox("Camera doesn't define noise properties, manually set the desired quantization offset" , 'Error', wx.OK)
-        else:
-            q_offset = float(q_offset)
-
-
-        #quantization scale in GUI is in units of sigma, convert to ADU
-        try:
-            q_scale = float(self.tQuantizeScale.GetValue())/self.scope.cam.GetElectronsPerCount()
-        except (AttributeError, NotImplementedError):
-            print("WARNING: Camera doesn't provide electrons per count, using qscale in units of ADUs instead")
-            q_scale = float(self.tQuantizeScale.GetValue())
-
-        compSettings = {
-            'compression' : PZFFormat.DATA_COMP_HUFFCODE if self.cbCompress.GetValue() else PZFFormat.DATA_COMP_RAW,
-            'quantization' : PZFFormat.DATA_QUANT_SQRT if self.cbQuantize.GetValue() else PZFFormat.DATA_QUANT_NONE,
-            'quantizationOffset' : q_offset,
-            'quantizationScale' : q_scale
-        }
+        
 
         try:
-            self.spoolController.StartSpooling(fn, stack=stack, compLevel = compLevel, compressionSettings=compSettings,
+            self.spoolController.StartSpooling(fn, stack=stack, compLevel = compLevel,
+                                               compressionSettings=self.get_compression_settings(),
                                                cluster_h5=self.cbClusterh5.GetValue())
         except IOError:
             logger.exception('IO error whilst spooling')
