@@ -26,10 +26,10 @@ steps:
 
 - script: |
     python -m pip install --upgrade pip
-    pip install -r requirements.txt
+    pip install -r test_requirements.txt
   displayName: 'Install dependencies'
 - script: |
     python setup.py develop
     pip install pytest pytest-azurepipelines pytest-cov
-    pytest --cov pymecompress --cov-report html
+    pytest tests\ --cov tests --cov-report html
   displayName: 'pytest'

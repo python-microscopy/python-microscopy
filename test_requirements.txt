@@ -1,0 +1,46 @@
+#NB - this is the testing requirements - it omits some packages which are not covered by the tests
+
+numpy >=1.11
+scipy
+matplotlib
+wxpython
+pytables <=3.4.2
+#pyopengl
+traits
+traitsui
+pillow
+cython
+
+#toposort
+#networkx
+
+#pyro
+
+#pyfftw3 [py2k]
+#pyfftw [py3k]
+
+#mpld3
+cherrypy
+#scikit-image
+#scikit-learn
+
+#FIXME for py3k
+#shapely [osx and py2k]
+
+zeroconf =0.17.7
+requests
+pandas
+pyyaml
+psutil
+
+#docutils
+#sphinx
+ujson
+jinja2
+dispatch
+#pycairo
+#pymecompress >=0.1.4
+six
+future
+#pywin32 [win]
+cython
