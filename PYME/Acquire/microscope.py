@@ -384,7 +384,7 @@ class microscope(object):
         self.state.setItems(state_updates)
 
     def SetCamPos(self, **kwargs):
-        state_updates = {'Positioning.Camera_%s' % k : v for k, v in kwargs.items()}
+        state_updates = {'Positioning.camera_%s' % k : v for k, v in kwargs.items()}
         self.state.setItems(state_updates)
             
     def GetPosRange(self):
@@ -399,7 +399,7 @@ class microscope(object):
 
         return res
 
-    def GetCameraPosition(self):
+    def GetCamPos(self, axis=None):
         """
         The function upper-left-corner fanatics have all been waiting for. You may not know it, but you just found
         yourself a new *reference frame*. You're home now.
@@ -451,9 +451,14 @@ class microscope(object):
             if self.cam.orientation['flipy']:
                 cam_pos_y *= -1
 
-        return cam_pos_x, cam_pos_y
+        if axis is None:
+            return cam_pos_x, cam_pos_y
+        if axis == 'x':
+            return cam_pos_x
+        if axis == 'y':
+            return cam_pos_y
 
-    def SetCameraPosition(self, x, y):
+    def _set_camera_position(self, x=None, y=None):
         """
         Move the camera, and be kind of lazy about it.
 
@@ -464,7 +469,9 @@ class microscope(object):
         y: float
             position [um]
         """
-        current_x_position, current_y_position = self.GetCameraPosition()
+        current_x_position, current_y_position = self.GetCamPos()
+        x = x if x is not None else current_x_position
+        y = y if y is not None else current_y_position
         self.PanCamera(x - current_x_position, y - current_y_position)
 
     def _OpenSettingsDB(self):
@@ -960,9 +967,12 @@ class microscope(object):
         self.state.registerHandler('Positioning.%s_target' % axis_name,
                                        lambda: units_um*multiplier*piezo.GetTargetPos(channel))
 
-        if 'axis_name' == 'x' or 'axis_name' == 'y':
-            self.state.registerHandler('Positioning.Camera_%s' % axis_name, self.GetCameraPosition,
-                                       self.SetCameraPosition)
+        if axis_name == 'x':
+            self.state.registerHandler('Positioning.camera_x', lambda: self.GetCamPos('x'),
+                                       lambda pos: self._set_camera_position(pos, None))
+        if axis_name == 'y':
+            self.state.registerHandler('Positioning.camera_y', lambda: self.GetCamPos('y'),
+                                       lambda pos: self._set_camera_position(None, pos))
         
     def register_camera(self, cam, name, port='', rotate=False, flipx=False, flipy=False):
         """
