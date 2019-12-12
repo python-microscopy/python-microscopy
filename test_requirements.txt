@@ -27,8 +27,8 @@ cherrypy
 #FIXME for py3k
 #shapely [osx and py2k]
 
-#zeroconf ==0.17.7
-zeroconf
+zeroconf==0.17.7
+#zeroconf
 requests
 pandas
 pyyaml

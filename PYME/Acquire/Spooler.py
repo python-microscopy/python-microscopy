@@ -27,8 +27,6 @@ import datetime
 
 from PYME.IO import MetaDataHandler
 
-import wx #FIXME - shouldn't do this here
-
 try:
     from PYME.Acquire import sampleInformation
 except:
@@ -179,6 +177,7 @@ class Spooler:
                 self.guiUpdateCallback()
             
         try:
+            import wx #FIXME - shouldn't do this here
             wx.CallAfter(self.protocol.OnFrame, self.imNum)
             #FIXME - The GUI logic shouldn't be here (really needs to change at the level of the protocol and/or general structure of PYMEAcquire
         except AssertionError:  # handle if spooler doesn't have a GUI

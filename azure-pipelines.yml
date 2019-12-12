@@ -27,9 +27,15 @@ steps:
 - script: |
     python -m pip install --upgrade pip
     pip install -r test_requirements.txt
+    git clone https://github.com/olivierverdier/dispatch
+    python dispatch/setup.py install
   displayName: 'Install dependencies'
+
 - script: |
     python setup.py develop
+  displayName: 'build'
+
+- script: |
     pip install pytest pytest-azurepipelines pytest-cov
     pytest tests --cov PYME --cov-report html --cov-report xml
   displayName: 'pytest'
