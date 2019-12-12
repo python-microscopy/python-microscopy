@@ -38,7 +38,7 @@ psutil
 #sphinx
 ujson
 jinja2
-dispatch
+#dispatch
 #pycairo
 #pymecompress >=0.1.4
 six
