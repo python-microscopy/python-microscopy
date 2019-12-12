@@ -112,7 +112,9 @@ def get_camera_roi_origin(mdh):
     ROIOriginX, ROIOriginY
 
     """
-    
+    if 'Multiview.ActiveViews' in mdh.getEntryNames() and len(mdh['Multiview.ActiveViews']) > 0:
+        # multiview cameras are on, for now assume the origin of the 0th channel is the stage-origin of all views
+        return mdh['Multiview.ROI0Origin']
     if 'Camera.ROIOriginX' in mdh.getEntryNames():
         return mdh['Camera.ROIOriginX'], mdh['Camera.ROIOriginY']
     elif 'Camera.ROIPosX' in mdh.getEntryNames():
