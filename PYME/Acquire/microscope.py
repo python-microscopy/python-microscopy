@@ -407,6 +407,13 @@ class microscope(object):
         Assume the stage 0 position and the camera chip origin are the same. Now, change your ROI position on the chip
         - from the perspective of the origin, you moved the stage! You didn't, but we'll tell you by how much.
 
+        Returns
+        -------
+        x: float
+            Current camera x position [um]
+        y: float
+            Current camera y position [um]
+
         Notes
         -----
         For convenience, we'll follow the conventions of PanCamera, namely that positive stage motion is negative camera
@@ -448,7 +455,7 @@ class microscope(object):
 
     def SetCameraPosition(self, x, y):
         """
-        Move the camera origin
+        Move the camera, and be kind of lazy about it.
 
         Parameters
         ----------
