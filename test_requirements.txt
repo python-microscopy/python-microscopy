@@ -11,7 +11,7 @@ traitsui
 pillow
 cython
 
-#toposort
+toposort
 #networkx
 
 #pyro
