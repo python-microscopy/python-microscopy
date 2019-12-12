@@ -382,6 +382,10 @@ class microscope(object):
     def SetPos(self, **kwargs):
         state_updates = {'Positioning.%s' % k : v for k, v in kwargs.items()}
         self.state.setItems(state_updates)
+
+    def SetCamPos(self, **kwargs):
+        state_updates = {'Positioning.Camera_%s' % k : v for k, v in kwargs.items()}
+        self.state.setItems(state_updates)
             
     def GetPosRange(self):
         #Todo - fix to use positioning
@@ -394,7 +398,64 @@ class microscope(object):
                 res[k] = (p.GetMax(c)*m,p.GetMin(c)*m)
 
         return res
-        
+
+    def GetCameraPosition(self):
+        """
+        The function upper-left-corner fanatics have all been waiting for. You may not know it, but you just found
+        yourself a new *reference frame*. You're home now.
+
+        Assume the stage 0 position and the camera chip origin are the same. Now, change your ROI position on the chip
+        - from the perspective of the origin, you moved the stage! You didn't, but we'll tell you by how much.
+
+        Notes
+        -----
+        For convenience, we'll follow the conventions of PanCamera, namely that positive stage motion is negative camera
+        motion, rotation (switching x and y) happens 'before' flipping x, which happens 'before' flipping y.
+
+        """
+        # prepare
+        mdh = MetaDataHandler.NestedClassMDHandler()
+
+        # capture states
+        self.cam.GenStartMetadata(mdh)
+        pos = self.GetPos()
+        voxx, voxy = self.GetPixelSize()
+
+        # find the camera origin
+        cox, coy = MetaDataHandler.get_camera_roi_origin(mdh)
+        cox *= voxx
+        coy *= voxy
+
+        # find the stage position
+        spx, spy = pos['Positioning.x'], pos['Positioning.y']
+
+        # find the camera position relative to the stage
+        cam_pos_x, cam_pos_y = spx - cox, spy - coy
+        if 'orientation' in dir(self.cam):
+            if self.cam.orientation['rotate']:
+                cam_pos_x, cam_pos_y = cam_pos_y, cam_pos_x
+
+            if self.cam.orientation['flipx']:
+                cam_pos_x *= -1
+
+            if self.cam.orientation['flipy']:
+                cam_pos_y *= -1
+
+        return cam_pos_x, cam_pos_y
+
+    def SetCameraPosition(self, x, y):
+        """
+        Move the camera origin
+
+        Parameters
+        ----------
+        x: float
+            position [um]
+        y: float
+            position [um]
+        """
+        current_x_position, current_y_position = self.GetCameraPosition()
+        self.PanCamera(x - current_x_position, y - current_y_position)
 
     def _OpenSettingsDB(self):
         #create =  not os.path.exists('PYMESettings.db')
@@ -888,6 +949,10 @@ class microscope(object):
         
         self.state.registerHandler('Positioning.%s_target' % axis_name,
                                        lambda: units_um*multiplier*piezo.GetTargetPos(channel))
+
+        if 'axis_name' == 'x' or 'axis_name' == 'y':
+            self.state.registerHandler('Positioning.Camera_%s' % axis_name, self.GetCameraPosition,
+                                       self.SetCameraPosition)
         
     def register_camera(self, cam, name, port='', rotate=False, flipx=False, flipy=False):
         """
