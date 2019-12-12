@@ -412,6 +412,9 @@ class microscope(object):
         For convenience, we'll follow the conventions of PanCamera, namely that positive stage motion is negative camera
         motion, rotation (switching x and y) happens 'before' flipping x, which happens 'before' flipping y.
 
+        Note that the origin here is currently implemented as the center of the 0, 0 pixel on the camera. There is a
+        half-pixel one could consider, but let us consider it ignored.
+
         """
         # prepare
         mdh = MetaDataHandler.NestedClassMDHandler()
