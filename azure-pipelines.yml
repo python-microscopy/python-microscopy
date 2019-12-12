@@ -37,5 +37,5 @@ steps:
 - script: |
     pip install pytest pytest-azurepipelines pytest-cov pytest-html
     cd tests
-    pytest -v --html=report.html . --cov PYME --cov-report html --cov-report xml
+    pytest -v --html=report.html . --cov ../PYME --cov-report html --cov-report xml
   displayName: 'pytest'
