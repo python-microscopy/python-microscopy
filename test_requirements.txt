@@ -4,7 +4,8 @@ numpy >=1.11
 scipy
 matplotlib
 wxpython
-pytables <=3.4.2
+pytables
+#<=3.4.2
 #pyopengl
 traits
 traitsui
