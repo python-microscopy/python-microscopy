@@ -78,7 +78,7 @@ DCAMPROP_TRIGGERSOURCE_SOFTWARE = 3
 DCAMCAP_START_SEQUENCE = ctypes.c_int32(int("-1",0))
 
 noiseProperties = {
-'S/N: 100233' : {
+'100233' : {
         'ReadNoise': 3.51,
         'ElectronsPerCount': 0.47,
         'NGainStages': 0,
@@ -86,7 +86,7 @@ noiseProperties = {
         'DefaultEMGain': 1,
         'SaturationThreshold': (2**16 - 1)
         },
-'S/N: 720795' : {
+'720795' : {
         'ReadNoise': 2.3940335559897847,  # rn is sqrt(var) in units of ADU. Median of varmap is 0.9947778 [e-^2]
         'ElectronsPerCount': 0.416613,
         'NGainStages': 0,
