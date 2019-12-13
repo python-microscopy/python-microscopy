@@ -186,26 +186,13 @@ class ActionPanel(wx.Panel):
         -------
 
         """
-        from PYME.Acquire.Hardware.Camera import MultiviewCameraMixin
         
         nice = float(self.tNice.GetValue())
         timeout = float(self.tTimeout.GetValue()) #CHECKME - default here might be too short
         
         # coordinates are for the centre of ROI, and are referenced to the 0,0 pixel of the camera,
         # correct this for a custom ROI.
-        x0, y0, _, _ = self.scope.state['Camera.ROI']
-        
-        if isinstance(self.scope.cam, MultiviewCameraMixin):
-            # fix multiview crazyness
-            if self.scope.cam.multiview_enabled:
-                #always use the 0th ROI for determining relative position, regardless of which ROIs are active
-                x0, y0 = self.scope.cam.view_origins[0]
-            
-            roi_offset_x = self.scope.GetPixelSize()[0] * (x0 + 0.5 * self.scope.cam.size_x)
-            roi_offset_y = self.scope.GetPixelSize()[1] * (y0 + 0.5 * self.scope.cam.size_y)
-        else:
-            roi_offset_x = self.scope.GetPixelSize()[0] * (x0 + 0.5 * self.scope.cam.GetPicWidth())
-            roi_offset_y = self.scope.GetPixelSize()[1] * (y0 + 0.5 * self.scope.cam.GetPicHeight())
+        roi_offset_x, roi_offset_y = self.scope.get_roi_offset()
 
         for x, y in rois:
             args = {'state': {'Positioning.x': float(x) - roi_offset_x, 'Positioning.y': float(y) - roi_offset_y}}
