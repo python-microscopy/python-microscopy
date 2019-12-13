@@ -203,7 +203,7 @@
         //console.log(c);
         c = imageToMicrometers(c);
 
-        $.get( "/add_roi?x=" + c.x + "&y=" + c.y, function( data ) {
+        $.get( "/toggle_roi?x=" + c.x + "&y=" + c.y, function( data ) {
         $( "#roi_list" ).html( data );
         draw_rois();
         //alert( "Load was performed." );
