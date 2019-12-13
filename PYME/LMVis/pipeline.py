@@ -431,7 +431,7 @@ class Pipeline:
         self.selectedDataSourceKey = dskey
 
         #remove any keys from the filter which are not present in the data
-        for k in self.filterKeys.keys():
+        for k in list(self.filterKeys.keys()):
             if not k in self.selectedDataSource.keys():
                 self.filterKeys.pop(k)
 
