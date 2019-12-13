@@ -120,6 +120,29 @@ def get_camera_roi_origin(mdh):
     else:
         return 0,0
     
+def get_camera_physical_roi_origin(mdh):
+    """
+    Get the camera roi offset to use for positioning. For a standard camera this is the same as the ROI pixel origin,
+    but for cameras with an image splitting device this may not be the case. For these cameras, return a position
+    relative to the left-most ROI.
+    
+    TODO: This currently works for the HTSMS multiview setup, expand to also work with the dual-view splitters used on
+    other setups.
+    
+    Parameters
+    ----------
+    mdh
+
+    Returns
+    -------
+
+    """
+    if len(mdh.get('Multiview.ActiveViews', [])) > 0:
+        # multiview cameras are on, assume the origin of the 0th channel is the stage-origin of all views
+        return mdh['Multiview.ROI0Origin']
+    else:
+        return get_camera_roi_origin(mdh)
+    
 
 class MDHandlerBase(DictMixin):
     """Base class from which all metadata handlers are derived.

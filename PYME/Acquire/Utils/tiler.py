@@ -58,12 +58,7 @@ class Tiler(pointScanner.PointScanner):
         self.background = self.mdh.getOrDefault('Camera.ADOffset', self.background)
         
         # make our x0, y0 independent of the camera ROI setting
-
-        if len(self.mdh.get('Multiview.ActiveViews', [])) > 0:
-            # multiview cameras are on, for now assume the origin of the 0th channel is the stage-origin of all views
-            x0_cam, y0_cam = self.mdh['Multiview.ROI0Origin']
-        else:
-            x0_cam, y0_cam = MetaDataHandler.get_camera_roi_origin(self.mdh)
+        x0_cam, y0_cam = MetaDataHandler.get_camera_physical_roi_origin(self.mdh)
             
         x0 = self._x0 + self._pixel_size*x0_cam
         y0 = self._y0 + self._pixel_size*y0_cam
