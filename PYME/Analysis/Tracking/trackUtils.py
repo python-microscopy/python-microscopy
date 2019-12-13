@@ -458,36 +458,35 @@ def jumpDistModel(p, r, N, t, dx):
     return N*res*dx
 
 def FitJumpSizeDist(velocities, startParams, dT):
-    from pylab import *
-    from PYME.Analysis._fithelpers import *
+    from PYME.Analysis._fithelpers import FitModel
     
     N = len(velocities)
 
-    figure()
+    plt.figure()
 
-    h, b, p = hist(velocities, 200)
+    h, b, _ = plt.hist(velocities, 200)
     
     x = b[1:]
     dx = x[1] - x[0]
 
     r = FitModel(jumpDistModel, startParams, h, x, N, dT, dx)
 
-    plot(x, jumpDistModel(r[0], x, N, dT, dx), lw=2)
+    plt.plot(x, jumpDistModel(r[0], x, N, dT, dx), lw=2)
 
     fT = 0
 
     for i in range(len(startParams)/2):
       D, f = r[0][(2*i):(2*i +2)]
 
-      plot(x, N*f*jumpDistProb(x, D, dT)*dx, '--', lw=2, label='D = %3.2g, f=%3.2f' % (D, f))
+      plt.plot(x, N*f*jumpDistProb(x, D, dT)*dx, '--', lw=2, label='D = %3.2g, f=%3.2f' % (D, f))
       fT += f
 
     D = r[0][-1]
-    plot(x, N*(1 - fT)*jumpDistProb(x, D, dT)*dx, '--', lw=2, label='D = %3.2g, f=%3.2f' % (D, (1-fT)))
+    plt.plot(x, N*(1 - fT)*jumpDistProb(x, D, dT)*dx, '--', lw=2, label='D = %3.2g, f=%3.2f' % (D, (1-fT)))
 
-    xlabel('Jump Size [nm]')
-    ylabel('Frequency')
-    legend()
+    plt.xlabel('Jump Size [nm]')
+    plt.ylabel('Frequency')
+    plt.legend()
 
     return r
 
