@@ -158,7 +158,7 @@ def _expand_z(ps_shape, im_shape, points):
     dzl = np.min(pts[:,2]) - 1
     dzh = np.min(im_shape[2] - pts[:,2]) -1
     
-    szn = min(dzl, dzh)
+    szn = int(min(dzl, dzh))
     
     if szn < sz:
         logger.warning('New PSF is SMALLER than requested (szn = %d, request = %d)' % (szn, sz))
