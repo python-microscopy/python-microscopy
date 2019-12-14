@@ -98,13 +98,13 @@ class BufferManager(object):
         if md.getOrDefault('Analysis.PCTBackground', 0) > 0:
             if not isinstance(self.bBuffer, buffers.backgroundBufferM):
                 try:
-                    from warpDrive.buffers import Buffer as GPUPercentileBuffer
+                    from warpdrive.buffers import Buffer as GPUPercentileBuffer
                     HAVE_GPU_PCT_BUFFER = True
                 except ImportError:
                     HAVE_GPU_PCT_BUFFER = False
                 
                 if (HAVE_GPU_PCT_BUFFER and md.getOrDefault('Analysis.GPUPCTBackground', False)):
-                    # calculate percentile buffer on the GPU. Only applies if warpDrive module is available AND we explcitly ask for the GPU version
+                    # calculate percentile buffer on the GPU. Only applies if warpdrive module is available AND we explcitly ask for the GPU version
                     # NB: The GPU version should result in a uniform background but will NOT completely remove the background. As such it will only work 
                     # for fits which have a constant background as a fit parameter, and not those which assume that background subtraction reduces the 
                     # background to zero (as is the case for our CPU based background estimation). Use with caution.
@@ -430,7 +430,7 @@ class fitTask(taskDef.Task):
                 bufferManager.bBuffer.calc_background(self.bgindices)
                 self.bg = bufferManager.bBuffer  # NB - GPUFIT flag means the fit can handle an asynchronous background calculation
                 
-                # TODO - due to the way the GPU fits in warpDrive works (undoing our flatfielding corrections), it would make sense to have a special case 
+                # TODO - due to the way the GPU fits in warpdrive works (undoing our flatfielding corrections), it would make sense to have a special case
                 # before the data correction 
             else:
                 # the "normal" way - calculate the background for this frame and correct this for camera characteristics
