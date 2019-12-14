@@ -419,37 +419,26 @@ class fitTask(taskDef.Task):
         if self.data.max() == 0:
             return fitResult(self, [], [])
 
-        #calculate background
+        # default background to zero
         self.bg = 0
-        if not len(self.bgindices) == 0:
-            if hasattr(bufferManager.bBuffer, 'calc_background') and 'GPU_BUFFER_READY' in dir(self.fitMod):
-                # special case to support GPU based percentile background calculation. In this case we simply update the frame range the buffer needs
-                # to look at and leave the buffer on the GPU. self.bg is then a proxy for the GPU background buffer rather than being the background data itself.
-                # NB: this has the consequence that the background estimate is not subjected to dark and flat-field corrections, potentially making it unsuitable
-                # for fits that are not specifically constructed to deal with uncorrected data.
+
+        if 'GPU_PREFIT' in dir(self.fitMod):
+            if len(self.bgindices) != 0:  # asynchronously calculate background
                 bufferManager.bBuffer.calc_background(self.bgindices)
-                self.bg = bufferManager.bBuffer  # NB - GPUFIT flag means the fit can handle an asynchronous background calculation
-                
-                # TODO - due to the way the GPU fits in warpdrive works (undoing our flatfielding corrections), it would make sense to have a special case
-                # before the data correction 
-            else:
-                # the "normal" way - calculate the background for this frame and correct this for camera characteristics
-                self.bg = cameraMaps.correctImage(md, bufferManager.bBuffer.getBackground(self.bgindices)).reshape(self.data.shape)
-
-
-        if 'OWN_PREFIT' in dir(self.fitMod):
-            # fit module does its own prefit steps, e.g. camera correction, sigma calculation, etc.
+                self.bg = bufferManager.bBuffer
+            # fit module does its own prefit steps on the GPU
             self.data = self.data.squeeze()
-            # fit module does it's own object finding
             ff = self.fitMod.FitFactory(self.data, md, self.bg)
             self.res = ff.FindAndFit(self.threshold, cameraMaps=cameraMaps, gui=gui)
             return fitResult(self, self.res, [])
-        else:
-            #squash 4th dimension
-            #NB - this now subtracts the ADOffset
-            self.data = cameraMaps.correctImage(md, self.data.squeeze()).reshape((self.data.shape[0], self.data.shape[1],1))
-            # calculate noise
-            self.sigma = self.calcSigma(md, self.data)
+
+        #squash 4th dimension
+        self.data = cameraMaps.correctImage(md, self.data.squeeze()).reshape((self.data.shape[0], self.data.shape[1],1))
+        # calculate noise
+        self.sigma = self.calcSigma(md, self.data)
+        if len(self.bgindices) != 0:
+            # calculate the background for this frame and correct this for camera characteristics
+            self.bg = cameraMaps.correctImage(md, bufferManager.bBuffer.getBackground(self.bgindices)).reshape(self.data.shape)
 
         #if logger.isEnabledFor(logging.DEBUG):
         #    logger.debug('data_mean: %3.2f, bg: %3.2f, sigma: %3.2f' % (self.data.mean(), self.sigma.mean(), self.bg.mean()))
