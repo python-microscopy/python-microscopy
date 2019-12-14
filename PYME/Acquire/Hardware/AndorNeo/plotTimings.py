@@ -22,7 +22,9 @@
 ################
 
 def PlotTimings():
-    from pylab import *
+    #from pylab import *
+    import matplotlib.pyplot as plt
+    import numpy as np
     f = open('poll.txt')
     
     events = {'q':[], 'p':[], 'b':[], 't':[], 'n':[]}
@@ -41,31 +43,31 @@ def PlotTimings():
         
     f.close()
         
-    figure()
+    plt.figure()
     
     for i, ev in enumerate(events.keys()):
-        t = array(events[ev])
+        t = np.array(events[ev])
         
-        plot(t, i*ones(t.size), '+', label=ev)
+        plt.plot(t, i*np.ones(t.size), '+', label=ev)
         
-    legend()
-    axis('equal')
-    
-    figure()
+    plt.legend()
+    plt.axis('equal')
+
+    plt.figure()
     colours = ['r', 'g', 'b']
     for i, ev in enumerate(pollEvents.keys()):
         if len(pollEvents[ev]) > 0:
-            t = array(pollEvents[ev])
+            t = np.array(pollEvents[ev])
             print((t.shape))
             
-            u = arange(t.shape[0]) % 2
-            
-            hlines(ones(t.shape[0]) + .02*(u- .5), t[:,0], t[:,1], colours[i], label=ev, lw=20*(3-i))
+            u = np.arange(t.shape[0]) % 2
+
+            plt.hlines(np.ones(t.shape[0]) + .02*(u- .5), t[:,0], t[:,1], colours[i], label=ev, lw=20*(3-i))
     
-    t = array(events['q'])
-    vlines(t, .5*ones(t.size), 1.5*ones(t.size), label='q') 
-    plot(t, 1.5*ones(t.size) +.1*rand(t.size), '+k')#, label='q')      
-    legend()
-    
-    ylim(-1, 3)
+    t = np.array(events['q'])
+    plt.vlines(t, .5*np.ones(t.size), 1.5*np.ones(t.size), label='q')
+    plt.plot(t, 1.5*np.ones(t.size) +.1*np.random.rand(t.size), '+k')#, label='q')
+    plt.legend()
+
+    plt.ylim(-1, 3)
     #axis('equal')

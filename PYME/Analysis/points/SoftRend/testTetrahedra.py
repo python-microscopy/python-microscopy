@@ -22,16 +22,17 @@
 ################
 
 def run_t():
-    from pylab import *
+    #from pylab import *
+    import numpy as np
     from PYME.DSView.dsviewer import View3D
     from PYME.Analysis.points import gen3DTriangs
     
-    x = 5e3*rand(1000)
-    y = 2.5e3*rand(1000)
-    z = 5e3*rand(1000)
+    x = 5e3*np.random.rand(1000)
+    y = 2.5e3*np.random.rand(1000)
+    z = 5e3*np.random.rand(1000)
     
     
-    im = zeros((250, 150, 25), order='F')
+    im = np.zeros((250, 150, 25), order='F')
     
     gen3DTriangs.renderTetrahedra(im, x, y, z, scale=[1, 1, 1], pixelsize=[10, 10, 100])
     View3D(im)

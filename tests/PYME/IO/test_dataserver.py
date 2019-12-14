@@ -25,6 +25,8 @@ def setup_module():
     os.makedirs(tmp_root)
     proc = subprocess.Popen([sys.executable, '-m', 'PYME.cluster.HTTPDataServer',  '-r', tmp_root, '-f', 'TEST'])
     
+    time.sleep(3) #give time for the server to spin up
+    
     
 def teardown_module():
     global proc, tmp_root

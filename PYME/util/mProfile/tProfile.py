@@ -122,18 +122,19 @@ runTests()
 #profile_off()
 
 def plotProfile(s):
-    from pylab import *
+    #from pylab import *
+    import matplotlib.pyplot as plt
     import matplotlib.patches as mpatches
     from matplotlib.collections import PatchCollection
     
-    a_s = array(s)
+    a_s = np.array(s)
     
     tnames = list(set(a_s[:,1]))
     #print tnames
     
     z2 = np.zeros(2)
     
-    ax = gca()
+    ax = plt.gca()
     
     y0 = 1
     patches = []
@@ -146,7 +147,7 @@ def plotProfile(s):
             y = d + y0
             #plot(np.array([0, te])+ts, z2 + y, lw=5)
             patches.append(mpatches.Rectangle((ts, y), te, 1))
-            text(ts, y + .6*rand(), fcn[0])
+            plt.text(ts, y + .6*np.random.rand(), fcn[0])
             tb = min(tb, ts)
             tbe = max(tbe, ts+te)
         y0 += dm + 2
@@ -155,9 +156,9 @@ def plotProfile(s):
     collection = PatchCollection(patches, cmap=plt.cm.hsv, alpha=0.3)
     collection.set_array(np.array(colors))
     ax.add_collection(collection)
-    show()
-    ylim(0, y0)
-    xlim(tb, tbe)
+    plt.show()
+    plt.ylim(0, y0)
+    plt.xlim(tb, tbe)
 
 #from pprint import pprint
 #pprint(get_profile_stats())
