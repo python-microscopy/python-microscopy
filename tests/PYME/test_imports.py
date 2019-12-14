@@ -10,7 +10,7 @@ try:
 except ImportError:
     HAVE_WX = False
 
-
+@pytest.mark.xfail(not HAVE_WX, reason="Depends on wx, which is not installed on this platform")
 def test_IO_imports():
     from PYME.IO import buffer_helpers, buffers
     from PYME.IO import clusterExport, clusterGlob
