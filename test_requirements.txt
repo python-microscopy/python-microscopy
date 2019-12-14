@@ -1,6 +1,6 @@
 #NB - this is the testing requirements - it omits some packages which are not covered by the tests
 
-numpy >=1.11
+numpy==1.14.*
 scipy
 matplotlib
 #wxpython
