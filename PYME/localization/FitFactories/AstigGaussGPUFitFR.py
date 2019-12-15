@@ -109,7 +109,7 @@ class GaussianFitFactory:
         Parameters
         ----------
         data : numpy.ndarray
-            Note, remFitBuf subtracts the ADOffset and flatfields before passing us the data in units of ADU
+            Uncorrected data, in raw ADU
         metadata : PYME.IO.MetaDataHandler.MDHandlerBase or derived class
         background : numpy.ndarray, warpdrive.buffers.Buffer, or scalar
             warpdrive.buffers.Buffer allows asynchronous estimation of the per-pixel background on the GPU.
@@ -172,7 +172,7 @@ class GaussianFitFactory:
             _warpdrive.prepare_maps(self.darkmap, self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'],
                                     self.metadata['Camera.NoiseFactor'], self.metadata['Camera.TrueEMGain'])
 
-            #If the data is coming from a different region of the camera, reallocate
+        # If the data is coming from a different region of the camera, reallocate
         elif _warpdrive.data.shape == self.data.shape:
             # check if both corners are the same
             topLeft = np.array_equal(self.varmap[:20, :20], _warpdrive.varmap[:20, :20])
