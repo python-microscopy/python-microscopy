@@ -428,11 +428,12 @@ class fitTask(taskDef.Task):
                 self.bg = bufferManager.bBuffer
             # fit module does its own prefit steps on the GPU
             self.data = self.data.squeeze()
-            ff = self.fitMod.FitFactory(self.data, md, self.bg)
+            ff = self.fitMod.FitFactory(self.data, md, background=self.bg, noiseSigma=None)
             self.res = ff.FindAndFit(self.threshold, cameraMaps=cameraMaps, gui=gui)
             return fitResult(self, self.res, [])
 
-        #squash 4th dimension
+        # squash 4th dimension
+        # NOTE: correctImage now subtracts ADOffset
         self.data = cameraMaps.correctImage(md, self.data.squeeze()).reshape((self.data.shape[0], self.data.shape[1],1))
         # calculate noise
         self.sigma = self.calcSigma(md, self.data)
