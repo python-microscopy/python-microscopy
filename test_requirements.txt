@@ -17,7 +17,7 @@ toposort
 #pyro
 
 pyfftw3; python_version < '3.0'
-pyfftw; python_verstion > '3.0'
+pyfftw; python_version > '3.0'
 
 #mpld3
 cherrypy
