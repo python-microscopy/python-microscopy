@@ -180,7 +180,7 @@ class Spooler:
             import wx #FIXME - shouldn't do this here
             wx.CallAfter(self.protocol.OnFrame, self.imNum)
             #FIXME - The GUI logic shouldn't be here (really needs to change at the level of the protocol and/or general structure of PYMEAcquire
-        except AssertionError:  # handle if spooler doesn't have a GUI
+        except (ImportError, AssertionError):  # handle if spooler doesn't have a GUI
             self.protocol.OnFrame(self.imNum) #FIXME - This will most likely fail for anything but a NullProtocol
 
         if self.imNum == 2 and sampleInformation and sampleInformation.currentSlide[0]: #have first frame and should thus have an imageID

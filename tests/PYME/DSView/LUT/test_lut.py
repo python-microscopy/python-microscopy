@@ -19,8 +19,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+import pytest
 
+# mark some tests as expected to fail if we are testing on a headless system
+try:
+    import wx
+    HAVE_WX = True
+except ImportError:
+    HAVE_WX = False
 
+@pytest.mark.xfail(not HAVE_WX, reason="Fails on a headless system as PYME.DSView.__init__ imports wx")
 def test():
     import numpy as np
     from matplotlib import cm

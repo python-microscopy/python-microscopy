@@ -27,7 +27,6 @@ import scipy
 from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog
 
-import pylab
 import numpy as np
 
 import threading
@@ -179,7 +178,7 @@ class compThread(threading.Thread):
         self.noiseMaker = noisemaker
         self.contMode = contMode
         self.bufferlength = bufferlength
-        self.buffer = pylab.zeros((bufferlength, len(XVals), len(YVals)), 'uint16')
+        self.buffer = np.zeros((bufferlength, len(XVals), len(YVals)), 'uint16')
         self.bufferWritePos = 0
         self.bufferReadPos = 0
         self.numBufferedImages = 0
