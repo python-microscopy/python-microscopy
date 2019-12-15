@@ -1387,7 +1387,7 @@ class TIFFpage(object):
                 # handle reading from BytesIO and similar 'file like' objects
                 # np.fromfile memmaps and hence doesn't work for things which aren't a physical file
                 # we look for the name attribute as a python version independent way of telling the difference
-                result = numpy.frombuffer(fd.read(numpy.prod(shape)*numpy.dtype(typecode).itemsize), typecode)
+                result = numpy.frombuffer(fd.read(int(numpy.prod(shape)*numpy.dtype(typecode).itemsize)), typecode)
             else:
                 result = numpy.fromfile(fd, typecode, numpy.prod(shape))
             
