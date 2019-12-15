@@ -22,7 +22,6 @@
 ##################
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 def binned_average(binVar, indepVar, edges):
     """
@@ -113,6 +112,7 @@ def binned_median(binVar, indepVar, edges):
 binMedian=binned_median
 
 def errorPlot(filter, bins):
+    import matplotlib.pyplot as plt
     x = (bins[:-1] + bins[1:])/2.
 
     a1 = plt.axes()
