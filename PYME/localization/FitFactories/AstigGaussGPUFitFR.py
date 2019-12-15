@@ -111,16 +111,11 @@ class GaussianFitFactory:
         data : numpy.ndarray
             Note, remFitBuf subtracts the ADOffset and flatfields before passing us the data in units of ADU
         metadata : PYME.IO.MetaDataHandler.MDHandlerBase or derived class
-        fitfcn : dummy variable
-            Not used in this fit factory
         background : numpy.ndarray, warpdrive.buffers.Buffer, or scalar
-            warpdrive.buffers.Buffer allows asynchronous estimation of the per-pixel background on the GPU. Units are
-            ADU, and by default the darkmap or ADOffset will be subtracted.
-        noiseSigma : numpy.ndarray
-            (over-)estimate of the noise level at each pixel [ADU]
+            warpdrive.buffers.Buffer allows asynchronous estimation of the per-pixel background on the GPU.
         """
 
-        self.data = np.squeeze(data).astype(np.float32)  # np.ascontiguousarray(np.squeeze(data), dtype=np.float32)
+        self.data = data
         self.metadata = metadata
 
         if isinstance(background, np.ndarray):
@@ -129,8 +124,6 @@ class GaussianFitFactory:
             self.background = np.ascontiguousarray(background * np.ones_like(self.data), dtype=np.float32)
         else:  # it's a buffer!
             self.background = background
-        # self.noiseSigma = noiseSigma
-        # self.fitfcn = fitfcn
 
 
     def refresh_warpdrive(self, cameraMaps):
@@ -217,7 +210,7 @@ class GaussianFitFactory:
             CRLB[:, 5] = np.sqrt(np.abs(CRLB[:, 5]))*(1000*self.metadata.voxelsize.x)
 
         #return self.chan1.dpars # each fit produces column vector of results, append them all horizontally for return
-        resList = np.empty(_warpdrive.candCount, FitResultsDType)
+        res_list = np.empty(_warpdrive.candCount, FitResultsDType)
         resultCode = 0
         
         tIndex = int(self.metadata.getOrDefault('tIndex', 0))
@@ -225,24 +218,27 @@ class GaussianFitFactory:
         # package our results with the right labels
         if _warpdrive.calculate_crb:
             for ii in range(_warpdrive.candCount):
-                resList[ii] = pack_results(fresultdtype, tIndex=tIndex, fitResults=dpars[ii, :], fitError=CRLB[ii, :],
+                res_list[ii] = pack_results(fresultdtype, tIndex=tIndex, fitResults=dpars[ii, :], fitError=CRLB[ii, :],
                                            LLH=LLH[ii], resultCode=resultCode, nFit=_warpdrive.candCount)
         else:
             for ii in range(_warpdrive.candCount):
-                resList[ii] = pack_results(fresultdtype, tIndex=tIndex, fitResults=dpars[ii, :], fitError=None,
+                res_list[ii] = pack_results(fresultdtype, tIndex=tIndex, fitResults=dpars[ii, :], fitError=None,
                                            LLH=LLH[ii], resultCode=resultCode, nFit=_warpdrive.candCount)
 
-        return np.hstack(resList)
+        return np.hstack(res_list)
 
     def FindAndFit(self, threshold, cameraMaps, **kwargs):
         """
 
-        Args:
-            threshold: in units of noiseSigma (if supplied)
-            cameraMaps: cameraInfoManager object (see remFitBuf.py)
+        Parameters
+        ----------
+        threshold: float
+            detection threshold, as a multiple of per-pixel noise standard deviation
+        cameraMaps: cameraInfoManager object (see remFitBuf.py)
 
-        Returns:
-            output of self.getRes
+        Returns
+        -------
+        results
 
         """
         # make sure we've loaded and pre-filtered maps for the correct FOV
