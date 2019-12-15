@@ -98,18 +98,19 @@ class BufferManager(object):
         if md.getOrDefault('Analysis.PCTBackground', 0) > 0:
             if not isinstance(self.bBuffer, buffers.backgroundBufferM):
                 try:
-                    from warpDrive.buffers import Buffer as GPUPercentileBuffer
+                    from warpdrive.buffers import Buffer as GPUPercentileBuffer
                     HAVE_GPU_PCT_BUFFER = True
                 except ImportError:
                     HAVE_GPU_PCT_BUFFER = False
                 
                 if (HAVE_GPU_PCT_BUFFER and md.getOrDefault('Analysis.GPUPCTBackground', False)):
-                    # calculate percentile buffer on the GPU. Only applies if warpDrive module is available AND we explcitly ask for the GPU version
+                    # calculate percentile buffer on the GPU. Only applies if warpdrive module is available AND we explcitly ask for the GPU version
                     # NB: The GPU version should result in a uniform background but will NOT completely remove the background. As such it will only work 
                     # for fits which have a constant background as a fit parameter, and not those which assume that background subtraction reduces the 
                     # background to zero (as is the case for our CPU based background estimation). Use with caution.
-                    self.bBuffer = GPUPercentileBuffer(self.dBuffer, md['Analysis.PCTBackground'],
-                                                       buffer_length=bufferLen, dark_map=cameraMaps.getDarkMap(md))
+                    self.bBuffer = GPUPercentileBuffer(self.dBuffer, md['Analysis.PCTBackground'], bufferLen,
+                                                       cameraMaps.getDarkMap(md), cameraMaps.getFlatfieldMap(md),
+                                                       md['Camera.ElectronsPerCount'])
                 else: 
                     # use our default CPU implementation
                     self.bBuffer = buffers.backgroundBufferM(self.dBuffer, md['Analysis.PCTBackground'])
@@ -417,30 +418,28 @@ class fitTask(taskDef.Task):
         #when camera buffer overflows, empty pictures are produced - deal with these here
         if self.data.max() == 0:
             return fitResult(self, [], [])
-        
-        #squash 4th dimension
-        #NB - this now subtracts the ADOffset
-        self.data = cameraMaps.correctImage(md, self.data.squeeze()).reshape((self.data.shape[0], self.data.shape[1],1))
 
-        #calculate background
+        # default background to zero
         self.bg = 0
-        if not len(self.bgindices) == 0:
-            if hasattr(bufferManager.bBuffer, 'calc_background') and 'GPU_BUFFER_READY' in dir(self.fitMod):
-                # special case to support GPU based percentile background calculation. In this case we simply update the frame range the buffer needs
-                # to look at and leave the buffer on the GPU. self.bg is then a proxy for the GPU background buffer rather than being the background data itself.
-                # NB: this has the consequence that the background estimate is not subjected to dark and flat-field corrections, potentially making it unsuitable
-                # for fits that are not specifically constructed to deal with uncorrected data.
-                bufferManager.bBuffer.calc_background(self.bgindices)
-                self.bg = bufferManager.bBuffer  # NB - GPUFIT flag means the fit can handle an asynchronous background calculation
-                
-                # TODO - due to the way the GPU fits in warpDrive works (undoing our flatfielding corrections), it would make sense to have a special case 
-                # before the data correction 
-            else:
-                # the "normal" way - calculate the background for this frame and correct this for camera characteristics
-                self.bg = cameraMaps.correctImage(md, bufferManager.bBuffer.getBackground(self.bgindices)).reshape(self.data.shape)
 
-        #calculate noise
+        if 'GPU_PREFIT' in dir(self.fitMod):
+            if len(self.bgindices) != 0:  # asynchronously calculate background
+                bufferManager.bBuffer.calc_background(self.bgindices)
+                self.bg = bufferManager.bBuffer
+            # fit module does its own prefit steps on the GPU
+            self.data = self.data.squeeze()
+            ff = self.fitMod.FitFactory(self.data, md, background=self.bg, noiseSigma=None)
+            self.res = ff.FindAndFit(self.threshold, cameraMaps=cameraMaps, gui=gui)
+            return fitResult(self, self.res, [])
+
+        # squash 4th dimension
+        # NOTE: correctImage now subtracts ADOffset
+        self.data = cameraMaps.correctImage(md, self.data.squeeze()).reshape((self.data.shape[0], self.data.shape[1],1))
+        # calculate noise
         self.sigma = self.calcSigma(md, self.data)
+        if len(self.bgindices) != 0:
+            # calculate the background for this frame and correct this for camera characteristics
+            self.bg = cameraMaps.correctImage(md, bufferManager.bBuffer.getBackground(self.bgindices)).reshape(self.data.shape)
 
         #if logger.isEnabledFor(logging.DEBUG):
         #    logger.debug('data_mean: %3.2f, bg: %3.2f, sigma: %3.2f' % (self.data.mean(), self.sigma.mean(), self.bg.mean()))
@@ -454,7 +453,7 @@ class fitTask(taskDef.Task):
             
         if 'MULTIFIT' in dir(self.fitMod):
             #fit module does it's own object finding
-            ff = self.fitMod.FitFactory(self.data, md, background = self.bg, noiseSigma=self.sigma)
+            ff = self.fitMod.FitFactory(self.data, md, background=self.bg, noiseSigma=self.sigma)
             self.res = ff.FindAndFit(self.threshold, gui=gui, cameraMaps=cameraMaps)
             return fitResult(self, self.res, [])
             

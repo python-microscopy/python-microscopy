@@ -61,10 +61,10 @@ def test_AstigGaussGPUFitFR():
     actual fit performance.
     """
     try:
-        import warpDrive
+        import warpdrive
     except ImportError:
         print("PYME warp drive GPU fitting not installed")
-        pytest.skip('"warpDrive" GPU fitting module not installed')
+        pytest.skip('"warpdrive" GPU fitting module not installed')
         return
     
     from PYME.localization.FitFactories import AstigGaussGPUFitFR
