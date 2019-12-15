@@ -143,28 +143,23 @@ class GaussianFitFactory:
 
         global _warpdrive  # One instance for each process, re-used for subsequent fits.
 
-        # get flatmap [unitless]
+        # get darkmap [ADU]
         self.darkmap = cameraMaps.getDarkMap(self.metadata)
         if np.isscalar(self.darkmap):
             self.darkmap = self.darkmap * np.ones_like(self.data)
 
         # get flatmap [unitless]
-        flatmap = cameraMaps.getFlatfieldMap(self.metadata)
-        if not np.isscalar(flatmap):
-            self.flatmap = flatmap.astype(np.float32)
-        else:
-            self.flatmap = flatmap * np.ones_like(self.data)
+        self.flatmap = cameraMaps.getFlatfieldMap(self.metadata)
+        if np.isscalar(self.flatmap):
+            self.flatmap = self.flatmap * np.ones_like(self.data)
 
         # get varmap [e-^2]
-        varmap = cameraMaps.getVarianceMap(self.metadata)
-        if not np.isscalar(varmap):
-            self.varmap = varmap.astype(np.float32)  # np.ascontiguousarray(varmap)
-        else:
-            if varmap == 0:
+        self.varmap = cameraMaps.getVarianceMap(self.metadata)
+        if np.isscalar(self.varmap):
+            if self.varmap == 0:
                 self.varmap = np.ones_like(self.data)
                 logger.error('Variance map not found and read noise defaulted to 0; changing to 1 to avoid x/0.')
-            else:
-                self.varmap = varmap*np.ones_like(self.data)
+            self.varmap = self.varmap*np.ones_like(self.data)
 
         if isinstance(self.background, np.ndarray):  # flatfielding is done on CPU-calculated backgrounds
             # fixme - do we change this control flow in remfitbuf by doing our own sigma calc?
