@@ -23,7 +23,8 @@
 
 def test():
     import numpy as np
-    from pylab import cm, rand
+    from matplotlib import cm
+    #from pylab import cm, rand
     
     from PYME.DSView.LUT import lut
     
@@ -31,7 +32,7 @@ def test():
     print((lut1.shape))
     
     def testLut():
-        d = (100*rand(5,5)).astype('uint16')
+        d = (100*np.random.rand(5,5)).astype('uint16')
         o = np.zeros((5,5,3), 'uint8')
         
         lut.applyLUTu8(d.astype('uint8'), .01, 0,lut1, o)

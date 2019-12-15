@@ -22,7 +22,7 @@
 ##################
 
 import numpy as np
-import wx
+#import wx
 import datetime
 import time
 
@@ -70,6 +70,7 @@ class ccdCalibrator:
         self.emgain = self.cam.GetEMGain()
 
         if abs(self.cam.GetCCDTemp() - self.cam.GetCCDTempSetPoint()) >=4:
+            import wx
             wx.MessageBox('Error ...', 'CCD Temperature has not settled', wx.OK|wx.ICON_HAND)
             return 
 
@@ -92,6 +93,7 @@ class ccdCalibrator:
 
 
     def finish(self):
+        import wx
         print('Disconnecting')
         self.pa.onFrame.disconnect(self.tick)
         self.cam.SetEMGain(self.emgain)
@@ -121,6 +123,7 @@ class ccdCalibrator:
         #self.pa.start()
 
     def tick(self, sender, frameData, **kwargs):
+        import wx
         if self.frameN < 3:
             self.frameN +=1
             return
