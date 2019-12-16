@@ -219,7 +219,7 @@ class ClusterAnalyser:
                                                      searchRadius=searchRadius, minClumpSize=minClumpSize))
 
 
-        rec.namespace['input'] = self.pipeline #do it before configuring so that we already have the channe; names populated
+        rec.namespace['input'] = self.pipeline.output #do it before configuring so that we already have the channe; names populated
         if not rec.configure_traits(view=rec.pipeline_view, kind='modal'):
             return #handle cancel
 
@@ -272,7 +272,7 @@ class ClusterAnalyser:
         distogram.add_module(measurement.PairwiseDistanceHistogram(distogram, inputPositions='chan0',
                                                                    inputPositions2='chan1', outputName='output'))
 
-        distogram.namespace['input'] = self.pipeline #do before configuring so that we already have the channel names populated
+        distogram.namespace['input'] = self.pipeline.output #do before configuring so that we already have the channel names populated
         #configure parameters
         if not distogram.configure_traits(view=distogram.pipeline_view, kind='modal'):
             return #handle cancel
@@ -306,7 +306,7 @@ class ClusterAnalyser:
         rec.add_module(localisations.ClusterCountVsImagingTime(rec, inputName='chan0', stepSize=3000, outputName='output'))
 
 
-        rec.namespace['input'] = self.pipeline #do before configuring so that we already have the channel names populated
+        rec.namespace['input'] = self.pipeline.output #do before configuring so that we already have the channel names populated
         #configure parameters
         if not rec.configure_traits(view=rec.pipeline_view, kind='modal'):
             return #handle cancel
@@ -344,7 +344,7 @@ class ClusterAnalyser:
         measrec.add_module(localisations.MeasureClusters3D(measrec, inputName='input', labelsKey='dbscanClustered',
                                                        outputName='output'))
 
-        measrec.namespace['input'] = self.pipeline
+        measrec.namespace['input'] = self.pipeline.output
         #configure parameters
         if not measrec.configure_traits(view=measrec.pipeline_view, kind='modal'):
             return  # handle cancel
