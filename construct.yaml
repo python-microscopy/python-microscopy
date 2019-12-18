@@ -1,6 +1,6 @@
 # name and version (required)
 name: python-microscopy
-version: 19.08.04
+version: 19.12.17
 
 # channels to pull packages from
 channels: &id1
@@ -15,7 +15,8 @@ specs:
   - python-microscopy
   - conda
   - wxpython <3.9
-  - numpy=1.11
+  - numpy=1.14
+  - pillow
   #- console_shortcut [win]
   - menuinst [win]
   #- sample                            [osx]

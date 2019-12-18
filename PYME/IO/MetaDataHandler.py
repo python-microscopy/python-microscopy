@@ -112,7 +112,6 @@ def get_camera_roi_origin(mdh):
     ROIOriginX, ROIOriginY
 
     """
-    
     if 'Camera.ROIOriginX' in mdh.getEntryNames():
         return mdh['Camera.ROIOriginX'], mdh['Camera.ROIOriginY']
     elif 'Camera.ROIPosX' in mdh.getEntryNames():

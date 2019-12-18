@@ -843,6 +843,11 @@ class MultiviewCameraMixin(object):
                 This should be the class of the camera you want to inherit from. The MultiviewCamera class needs to know
                 this so we can clobber the inherited ExtractColor method and still be able to pull raw frames from the
                 camera using camera_class.ExtractColor
+
+            Notes
+            -----
+            For now, the 0th multiview ROI should be the upper-left most multiview ROI, in order to properly spoof the
+            position to match up with the stage. See PYME.IO.MetaDataHandler.get_camera_roi_origin.
             """
             self.camera_class = camera_class
             self.multiview_info = multiview_info

@@ -164,12 +164,12 @@ class CameraInfoManager(object):
         """retrive a map, with a given name. First try and get it from the Queue,
         then try finding it locally"""
         try:
-            varmap = md.taskQueue.getQueueData(md.dataSourceID, 'MAP',  mapName)
+            map = md.taskQueue.getQueueData(md.dataSourceID, 'MAP',  mapName)
         except:
             fn = getFullExistingFilename(mapName)
-            varmap = ImageStack(filename=fn, haveGUI=False).data[:,:,0].squeeze() #this should handle .tif, .h5, and a few others
+            map = ImageStack(filename=fn, haveGUI=False).data[:,:,0].squeeze() #this should handle .tif, .h5, and a few others
 
-        return varmap
+        return map
 
     def _getMap(self, md, mapName):
         """Returns the map specified, from cache if possible"""

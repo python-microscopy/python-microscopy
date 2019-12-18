@@ -168,12 +168,12 @@ class GaussianFitFactory:
             small_filter_size = self.metadata.getEntry('Analysis.DetectionFilterSize')
             large_filter_size = 2 * small_filter_size
             _warpdrive = warpdrive.detector(small_filter_size, large_filter_size, guess_psf_sigma_pix)
-            _warpdrive.allocate_memory(np.shape(self.data), self.data.dtype.itemsize)
+            _warpdrive.allocate_memory(np.shape(self.data))
             _warpdrive.prepare_maps(self.darkmap, self.varmap, self.flatmap, self.metadata['Camera.ElectronsPerCount'],
                                     self.metadata['Camera.NoiseFactor'], self.metadata['Camera.TrueEMGain'])
 
         # If the data is coming from a different region of the camera, reallocate
-        elif _warpdrive.data.shape == self.data.shape:
+        elif _warpdrive.varmap.shape == self.varmap.shape:
             # check if both corners are the same
             topLeft = np.array_equal(self.varmap[:20, :20], _warpdrive.varmap[:20, :20])
             botRight = np.array_equal(self.varmap[-20:, -20:], _warpdrive.varmap[-20:, -20:])
@@ -182,7 +182,7 @@ class GaussianFitFactory:
                                         self.metadata['Camera.ElectronsPerCount'], self.metadata['Camera.NoiseFactor'],
                                         self.metadata['Camera.TrueEMGain'])
         else:  # data is a different shape - we know that we need to re-allocate and prepvar
-            _warpdrive.allocate_memory(np.shape(self.data), self.data.dtype.itemsize)
+            _warpdrive.allocate_memory(np.shape(self.data))
             _warpdrive.prepare_maps(self.darkmap, self.varmap, self.flatmap,
                                     self.metadata['Camera.ElectronsPerCount'], self.metadata['Camera.NoiseFactor'],
                                     self.metadata['Camera.TrueEMGain'])
