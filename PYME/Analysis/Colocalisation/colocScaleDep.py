@@ -40,28 +40,29 @@ def rendS(imR, imG, x, y, w):
 
 
 def corrScale(s, imR, imG):
-    from pylab import *
+    import matplotlib.pyplot as plt
+    #from pylab import *
     
     bR = ndimage.gaussian_filter(imR, s)
     bG = ndimage.gaussian_filter(imG, s)
-    figure(2)
-    clf()
-    imshow(concatenate([bR[:,:,None]/bR.max(), bG[:,:,None]/bG.max(), zeros(imR.shape)[:,:,None]], 2))
-    savefig(DIRNAME + 'blurred_%dnm.pdf' % (2.35*s))
-    Image.fromarray((concatenate([bR[:,:,None]/bR.max(), bG[:,:,None]/bG.max(), zeros(imR.shape)[:,:,None]], 2)*255).astype('uint8')).save(DIRNAME + 'blurred_%dnm.tif' % (2.35*s))
+    plt.figure(2)
+    plt.clf()
+    plt.imshow(np.concatenate([bR[:,:,None]/bR.max(), bG[:,:,None]/bG.max(), np.zeros(imR.shape)[:,:,None]], 2))
+    plt.savefig(DIRNAME + 'blurred_%dnm.pdf' % (2.35*s))
+    Image.fromarray((np.concatenate([bR[:,:,None]/bR.max(), bG[:,:,None]/bG.max(), np.zeros(imR.shape)[:,:,None]], 2)*255).astype('uint8')).save(DIRNAME + 'blurred_%dnm.tif' % (2.35*s))
 
     ps = correlationCoeffs.pearson(bR, bG)
     md1, md2 = correlationCoeffs.thresholdedManders(bR, bG, bR.max()/2, bG.max()/2)
 
     bn, bm, bins = edtColoc.imageDensityAtDistance(bR, bG > bG.max()/2, bins=np.arange(-200, 200, 5) + .01)
-    figure(3)
-    clf()
-    bar(bins[:-1], bm, 5)
-    ylim(0, .25)
-    xlim(-50, 200)
-    xlabel('Distance from edge of A [nm]')
-    ylabel('Density of B')
-    savefig(DIRNAME + 'dist_dense_%dnm.pdf' % (2.35*s))
+    plt.figure(3)
+    plt.clf()
+    plt.bar(bins[:-1], bm, 5)
+    plt.ylim(0, .25)
+    plt.xlim(-50, 200)
+    plt.xlabel('Distance from edge of A [nm]')
+    plt.ylabel('Density of B')
+    plt.savefig(DIRNAME + 'dist_dense_%dnm.pdf' % (2.35*s))
 
     return ps, md1, md2, bm, bins
 
@@ -92,29 +93,30 @@ def genImR2(size=500, w=30):
     return imR, imG
 
 def genPlots():
-    from pylab import *
+    import matplotlib.pyplot as plt
+    #from pylab import *
     imR, imG = genIm()
 
-    close('all')
+    plt.close('all')
 
-    figure()
-    imshow(concatenate([imR[:,:,None], imG[:,:,None], zeros(imR.shape)[:,:,None]], 2))
-    xlabel('Position [nm]')
-    ylabel('Position [nm]')
-    savefig(DIRNAME + 'object.pdf')
+    plt.figure()
+    plt.imshow(np.concatenate([imR[:,:,None], imG[:,:,None], np.zeros(imR.shape)[:,:,None]], 2))
+    plt.xlabel('Position [nm]')
+    plt.ylabel('Position [nm]')
+    plt.savefig(DIRNAME + 'object.pdf')
 
-    figure()
+    plt.figure()
 
-    sca = arange(0, 100, 5)
+    sca = np.arange(0, 100, 5)
     cfs = [corrScale(s, imR, imG) for s in sca]
-    cfa = array([c[:-2] for c in cfs])
+    cfa = np.array([c[:-2] for c in cfs])
 
-    figure()
-    plot(2.35*sca, cfa[:,0], lw=2)
-    ylim(0, 1)
-    xlabel('Resolution (FWHM) [nm]')
-    ylabel('Pearson Correlation Coefficient')
-    savefig(DIRNAME + 'pearsons.pdf')
+    plt.figure()
+    plt.plot(2.35*sca, cfa[:,0], lw=2)
+    plt.ylim(0, 1)
+    plt.xlabel('Resolution (FWHM) [nm]')
+    plt.ylabel('Pearson Correlation Coefficient')
+    plt.savefig(DIRNAME + 'pearsons.pdf')
 
 
 

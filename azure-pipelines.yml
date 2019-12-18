@@ -1,0 +1,42 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+strategy:
+    matrix:
+      Python27:
+        python.version: '2.7'
+      Python36:
+        python.version: '3.6'
+      #Python37:
+      #  python.version: '3.7'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '$(python.version)'
+  displayName: 'Use Python $(python.version)'
+
+- script: |
+    python -m pip install --upgrade pip
+    pip install -r test_requirements.txt
+    pip install git+https://github.com/olivierverdier/dispatch.git
+    pip install git+https://github.com/python-microscopy/pymecompress
+  displayName: 'Install dependencies'
+
+- script: |
+    python setup.py develop
+  displayName: 'build'
+
+- script: |
+    pip install pytest pytest-azurepipelines pytest-cov pytest-html
+    cd tests
+    pytest -v --html=report.html . --cov ../PYME --cov-report html --cov-report xml
+  displayName: 'pytest'

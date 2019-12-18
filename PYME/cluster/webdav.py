@@ -132,7 +132,7 @@ class FileMember(Member):
 
     def sendData(self, wfile,bpoint=0,epoint=0):
         """Send the file to the client. Literally."""
-        data = clusterIO.getFile(self.fsname)
+        data = clusterIO.get_file(self.fsname)
         f_size = len(data)
         #st = clusterIO.stat(self.fsname)
         #with open(self.fsname, 'rb') as f:
@@ -349,7 +349,7 @@ class DirCollection(FileMember, Collection):
                     break
         
         logger.debug('ClusterIO put: %s' % fname)
-        clusterIO.putFile(fname, f.getvalue())
+        clusterIO.put_file(fname, f.getvalue())
         
         f.close()
 

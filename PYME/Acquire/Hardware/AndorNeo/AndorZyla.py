@@ -36,37 +36,15 @@ except ImportError:
     
 import time
 import traceback
-from PYME.IO.FileUtils import nameUtils
-
 from PYME.misc.aligned_array import create_aligned_array
-
 from PYME.IO import MetaDataHandler
 from PYME.Acquire import eventLog
+from PYME.Acquire.Hardware.Camera import CameraMapMixin, MultiviewCameraMixin
 
 logger = logging.getLogger(__name__)
 
-def check_mapexists(mdh, type = 'dark'):
-    import os
-    import PYME.Analysis.gen_sCMOS_maps as gmaps
-    
-    if type == 'dark':
-        id = 'Camera.DarkMapID'
-    elif type == 'variance':
-        id = 'Camera.VarianceMapID'
-    elif type == 'flatfield':
-        id = 'Camera.FlatfieldMapID'
-    else:
-        raise RuntimeError('unknown map type %s' % type)
-        
-    mapPath = gmaps.mkDefaultPath(type,mdh,create=False)
-    if os.path.exists(mapPath):
-        mdh[id] = mapPath
-        return mapPath
-    else:
-        return None
 
-
-class AndorBase(SDK3Camera):
+class AndorBase(SDK3Camera, CameraMapMixin):
     numpy_frames=1
     #MODE_CONTINUOUS = 1
     #MODE_SINGLE_SHOT = 0
@@ -696,22 +674,8 @@ class AndorBase(SDK3Camera):
             #if not realEMGain == None:
             mdh.setEntry('Camera.TrueEMGain', 1)
             
-            itime = int(1000*self.GetIntegTime())
-
-            #find and record calibration paths FIXME - make this work for cluster analysis
-            calpath = nameUtils.getCalibrationDir(self.GetSerialNumber())
-
-            dkfn = os.path.join(calpath, 'dark_%dms.tif'%itime)
-            logger.debug("looking for darkmap at %s" % dkfn)
-            if os.path.exists(dkfn):
-                mdh['Camera.DarkMapID'] = dkfn
-
-            varfn = os.path.join(calpath, 'variance_%dms.tif'%itime)
-            logger.debug("looking for variancemap at %s" % varfn)
-            if os.path.exists(varfn):
-                mdh['Camera.VarianceMapID'] = varfn
-
-            check_mapexists(mdh,type='flatfield')
+            self.fill_camera_map_metadata(mdh)
+            
 
             if  self.StaticBlemishCorrection.isImplemented():
                 mdh.setEntry('Camera.StaticBlemishCorrection', self.StaticBlemishCorrection.getValue())
@@ -810,7 +774,11 @@ class AndorSim(AndorBase):
         self.AOIVbin = ATInt()
         
         AndorBase.__init__(self,camNum)
-        
-        
-        
-        
+
+
+class MultiviewZyla(MultiviewCameraMixin, AndorZyla):
+    def __init__(self, camNum, multiview_info):
+        AndorZyla.__init__(self, camNum)
+        # default to the whole chip
+        default_roi = dict(xi=0, xf=2048, yi=0, yf=2048)
+        MultiviewCameraMixin.__init__(self, multiview_info, default_roi, AndorZyla)

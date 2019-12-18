@@ -13,7 +13,7 @@ def file(request, filename):
     type = request.GET.get('type', 'raw')
     #print 'file'
     if type == 'raw':
-        return HttpResponse(clusterIO.getFile(filename, use_file_cache=False), content_type='')
+        return HttpResponse(clusterIO.get_file(filename, use_file_cache=False), content_type='')
     elif type in  ['tiff', 'h5']:
         from PYME.IO import image
         import tempfile
@@ -122,7 +122,7 @@ def upload_files(request, directory):
 
     for file in files:
         targetFilename = directory + file.name
-        clusterIO.putFile(targetFilename, file.read())
+        clusterIO.put_file(targetFilename, file.read())
 
     return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
@@ -138,6 +138,6 @@ def mkdir(request, basedir):
     if clusterIO.exists(newDirectory) or clusterIO.exists(newDirectory[:-1]):
         return HttpResponseForbidden('Directory already exists')
 
-    clusterIO.putFile(newDirectory, '')
+    clusterIO.put_file(newDirectory, '')
 
     return HttpResponse(newDirectory)

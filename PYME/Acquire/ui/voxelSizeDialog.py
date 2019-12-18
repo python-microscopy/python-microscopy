@@ -117,7 +117,7 @@ class VoxelSizeDialog(wx.Dialog):
             ch.Clear()
 
         for ID, name, x, y in voxelsizes:
-            compName = '%s - (%3.2f, %3.2f)' % (name, x, y)
+            compName = '%s - (%3.3f, %3.3f)' % (name, x, y)
 
             voxIDs.append(ID)
             self.voxNames[compName] = name

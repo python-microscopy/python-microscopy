@@ -69,6 +69,40 @@ class TileServer(object):
         self.roi_locations.append(Location(x=float(x), y=float(y)))
         
         raise cherrypy.HTTPRedirect('/roi_list')
+    
+    @cherrypy.expose
+    def toggle_roi(self, x, y, hit_radius=10):
+        """
+        Add an ROI if no ROI exists within hit_radius of the supplied position, otherwise delete the first ROI that is
+        found within hit_radius.
+        
+        Parameters
+        ----------
+        x : x position (in um)
+        y : y position (in um)
+        hit_radius : radius around current point to use when looking for existing ROIS (um)
+        
+        Notes
+        -----
+        We remove the first ROI found, not the closest. This is easier to code and will give better performance, but
+        might be a little more unwieldy in the UI (if you want to remove one of two overlapping ROIs then you might
+        remove the wrong one on the first attempt, meaning that you have to remove both and then add one back in).
+
+        """
+        
+        # Hit-testing is currently a bit crude and requires iterating the roi_locations list.
+        # TODO - check performance
+        
+        hr2 = hit_radius**2
+        
+        for l in self.roi_locations:
+            if ((l.x - x)**2 + (l.y - y)**2) < hr2:
+                #found a hit, remove and redirect
+                self.roi_locations.remove(l)
+                raise cherrypy.HTTPRedirect('/roi_list')
+            
+        # didn't find a hit, add ROI
+        self.add_roi(x, y)
         
     @cherrypy.expose
     def roi_list(self):

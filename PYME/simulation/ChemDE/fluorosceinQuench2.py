@@ -151,7 +151,7 @@ def emod(p, t):
     return A*exp(-t/tau)
 
 def stateLifetimes(spec, concs):
-    from PYME.Analysis._fithelpers import * 
+    from PYME.Analysis._fithelpers import FitModel
 
     figure()
 
@@ -312,7 +312,7 @@ def dyeConc2(concs):
     plot(concs, rates['T1']/concs)
 
 def dyeConc(concs):
-    from PYME.Analysis._fithelpers import *
+    from PYME.Analysis._fithelpers import FitModel
 
     figure()
 

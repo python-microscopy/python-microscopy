@@ -85,6 +85,8 @@ class SpoolController(object):
 
         self._analysis_launchers = queue.Queue(3)
         
+        self.compressionSettings=HTTPSpooler.defaultCompSettings
+        
     @property
     def _sep(self):
         if self.spoolType == 'Cluster':
@@ -182,9 +184,12 @@ class SpoolController(object):
 
 
     def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize,
-                      compressionSettings=HTTPSpooler.defaultCompSettings, cluster_h5 = False):
+                      compressionSettings=None, cluster_h5 = False):
         """Start spooling
         """
+        
+        if compressionSettings is None:
+            compressionSettings = self.compressionSettings
 
         if fn in ['', None]:
             fn = self.seriesName

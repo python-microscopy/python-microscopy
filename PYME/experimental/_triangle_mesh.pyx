@@ -1179,7 +1179,12 @@ cdef class TriangleMesh(TrianglesBase):
         _next = curr_edge.next
 
         # Grab the new vertex position
-        _vertex = 0.5*(self._vertices['position'][curr_edge.vertex, :] + self._vertices['position'][self._chalfedges[_prev].vertex, :])
+        # _vertex = 0.5*(self._vertices['position'][curr_edge.vertex, :] + self._vertices['position'][self._chalfedges[_prev].vertex, :])
+        x0 = self._vertices['position'][curr_edge.vertex, :]
+        x1 = self._vertices['position'][self._chalfedges[_prev].vertex, :]
+        n0 = self._vertices['normal'][curr_edge.vertex, :]
+        n1 = self._vertices['normal'][self._chalfedges[_prev].vertex, :]
+        _vertex = 0.5*(x0+x1) + 0.125*(n0-n1)
         _, _vertex_idx = self._new_vertex(_vertex)
 
         _twin = curr_edge.twin

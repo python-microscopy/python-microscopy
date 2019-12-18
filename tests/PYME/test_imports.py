@@ -1,6 +1,16 @@
 """ This just trys importing all the modules. Should cause test failures for py3k syntax errors (e.g. print statements)"""
 
+import pytest
 
+
+# mark some tests as expected to fail if we are testing on a headless system
+try:
+    import wx
+    HAVE_WX = True
+except ImportError:
+    HAVE_WX = False
+
+@pytest.mark.xfail(not HAVE_WX, reason="Depends on wx, which is not installed on this platform")
 def test_IO_imports():
     from PYME.IO import buffer_helpers, buffers
     from PYME.IO import clusterExport, clusterGlob
@@ -11,6 +21,7 @@ def test_IO_imports():
     
     #from PYME.IO import clusterDuplication #Known failure due to dependence on pyro
     
+@pytest.mark.xfail(not HAVE_WX, reason="Depends on wx, which is not installed on this platform")
 def test_DSView_imports():
     from PYME.DSView import arrayViewPanel, displayOptions, displaySettingsPanel, DisplayOptionsPanel
     from PYME.DSView import dsviewer, eventLogViewer, fitInfo, logparser, overlays, OverlaysPanel
@@ -18,6 +29,7 @@ def test_DSView_imports():
     
     from PYME.DSView import htmlServe # known fail due to cherrypy changes
 
+@pytest.mark.xfail(not HAVE_WX, reason="Depends on wx, which is not installed on this platform")
 def test_DSView_modules_imports():
     from PYME.DSView import modules
 
@@ -35,7 +47,7 @@ def test_c_imports():
     from PYME.Analysis.points.astigmatism.astiglookup import astig_lookup
     from PYME.Analysis.points.DistHist.distHist import distanceHistogram, distanceHistogram3D, distanceProduct
     
-    
+@pytest.mark.xfail(not HAVE_WX, reason="Depends on wx, which is not installed on this platform")
 def test_LMVis_imports():
     from PYME.LMVis import pipeline, renderers, gl_render3D_shaders
     from PYME.LMVis import visCore, visHelpers

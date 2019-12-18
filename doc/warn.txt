@@ -89,8 +89,6 @@ Distributing analysis over multiple computers
 [31;01m/Users/david/python-microscopy/PYME/Acquire/microscope.py:docstring of PYME.Acquire.microscope.microscope:22: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.satCheck'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Acquire/microscope.py:docstring of PYME.Acquire.microscope.microscope:22: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.startFrameWrangler'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Acquire/microscope.py:docstring of PYME.Acquire.microscope.microscope:22: WARNING: toctree references unknown document u'api/PYME.Acquire.microscope.microscope.turnAllLasersOff'[39;49;00m
-[31;01mWARNING: invalid signature for automodule (u'PYME.Acquire.pymeconf-template')[39;49;00m
-[31;01mWARNING: don't know which module to import for autodocumenting u'PYME.Acquire.pymeconf-template' (try placing a "module" or "currentmodule" directive in the document, or giving an explicit module name)[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'sampleInformationDjangoDirect' from module u'PYME.Acquire'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
@@ -120,6 +118,8 @@ Traceback (most recent call last):
 ImproperlyConfigured: Error loading MySQLdb module: No module named MySQLdb
 [39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Acquire/stackSettings.py:docstring of PYME.Acquire.stackSettings.StackSettings:19: WARNING: toctree references unknown document u'api/PYME.Acquire.stackSettings.StackSettings.SetDirection'[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'tweeter' from module u'PYME.Acquire'; the following exception was raised:
+No module named tweepy[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Acquire/ui/HDFSpoolFrame.py:docstring of PYME.Acquire.ui.HDFSpoolFrame.PanSpool:19: WARNING: toctree references unknown document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Acquire/ui/HDFSpoolFrame.py:docstring of PYME.Acquire.ui.HDFSpoolFrame.PanSpool:19: WARNING: toctree references unknown document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBSetSpoolDirButton'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Acquire/ui/HDFSpoolFrame.py:docstring of PYME.Acquire.ui.HDFSpoolFrame.PanSpool:19: WARNING: toctree references unknown document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStartSpoolButton'[39;49;00m
@@ -134,6 +134,7 @@ ImproperlyConfigured: Error loading MySQLdb module: No module named MySQLdb
 [31;01m/Users/david/python-microscopy/PYME/Acquire/ui/HDFSpoolFrame.py:docstring of PYME.Acquire.ui.HDFSpoolFrame.PanSpool:74: WARNING: toctree references unknown document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Acquire/ui/HDFSpoolFrame.py:docstring of PYME.Acquire.ui.HDFSpoolFrame.PanSpool:74: WARNING: toctree references unknown document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.Tick'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Acquire/ui/HDFSpoolFrame.py:docstring of PYME.Acquire.ui.HDFSpoolFrame.PanSpool:74: WARNING: toctree references unknown document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.UpdateFreeSpace'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/Acquire/ui/multiview_select.py:docstring of PYME.Acquire.ui.multiview_select.MultiviewSelect:18: WARNING: toctree references unknown document u'api/PYME.Acquire.ui.multiview_select.MultiviewSelect.on_toggle'[39;49;00m
 [31m/Users/david/python-microscopy/PYME/Analysis/BleachProfile/rawIntensity.py:docstring of PYME.Analysis.BleachProfile.rawIntensity.dyedyemod:4: WARNING: Unexpected indentation.[39;49;00m
 [31m/Users/david/python-microscopy/PYME/Analysis/BleachProfile/rawIntensity.py:docstring of PYME.Analysis.BleachProfile.rawIntensity.dyedyemod2:4: WARNING: Unexpected indentation.[39;49;00m
 [31m/Users/david/python-microscopy/PYME/Analysis/BleachProfile/rawIntensity.py:docstring of PYME.Analysis.BleachProfile.rawIntensity.dyedyemod3:4: WARNING: Unexpected indentation.[39;49;00m
@@ -151,6 +152,7 @@ ImproperlyConfigured: Error loading MySQLdb module: No module named MySQLdb
 [31;01m/Users/david/python-microscopy/PYME/Analysis/PSFGen/fourierHNA2.py:docstring of PYME.Analysis.PSFGen.fourierHNA2.FourierPropagatorHNA:36: WARNING: toctree references unknown document u'api/PYME.Analysis.PSFGen.fourierHNA2.FourierPropagatorHNA.propagate_r'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Analysis/Tracking/tracking.py:docstring of PYME.Analysis.Tracking.tracking.Tracker:18: WARNING: toctree references unknown document u'api/PYME.Analysis.Tracking.tracking.Tracker.calcLinkageMatrix'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Analysis/angleFilter.py:docstring of PYME.Analysis.angleFilter:5: WARNING: Inline emphasis start-string without end-string.[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/Analysis/density_filter.py:docstring of PYME.Analysis.density_filter.DensityFilter:18: WARNING: toctree references unknown document u'api/PYME.Analysis.density_filter.DensityFilter.__call__'[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'multicolourMeta' from module u'PYME.Analysis'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
@@ -189,6 +191,7 @@ No module named LatGaussFitFRTC[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Analysis/points/twoColour.py:docstring of PYME.Analysis.points.twoColour.lin3Model:20: WARNING: toctree references unknown document u'api/PYME.Analysis.points.twoColour.lin3Model.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Analysis/points/twoColour.py:docstring of PYME.Analysis.points.twoColour.lin3zModel:20: WARNING: toctree references unknown document u'api/PYME.Analysis.points.twoColour.lin3zModel.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Analysis/points/twoColour.py:docstring of PYME.Analysis.points.twoColour.linModel:20: WARNING: toctree references unknown document u'api/PYME.Analysis.points.twoColour.linModel.ev'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/Analysis/tile_pyramid.py:docstring of PYME.Analysis.tile_pyramid.ImagePyramid:22: WARNING: toctree references unknown document u'api/PYME.Analysis.tile_pyramid.ImagePyramid.get_oversize_tile'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/DSView/arrayViewPanel.py:docstring of PYME.DSView.arrayViewPanel.ArrayViewPanel:22: WARNING: toctree references unknown document u'api/PYME.DSView.arrayViewPanel.ArrayViewPanel.CopyImage'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/DSView/arrayViewPanel.py:docstring of PYME.DSView.arrayViewPanel.ArrayViewPanel:22: WARNING: toctree references unknown document u'api/PYME.DSView.arrayViewPanel.ArrayViewPanel.GrabPNGToBuffer'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/DSView/dsviewer.py:docstring of PYME.DSView.dsviewer.DSViewFrame:18: WARNING: toctree references unknown document u'api/PYME.DSView.dsviewer.DSViewFrame.LoadModule'[39;49;00m
@@ -205,8 +208,8 @@ cannot import name BaseEnum[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/DSView/modules/graphViewPanel.py:docstring of PYME.DSView.modules.graphViewPanel.MyNavigationToolbar:18: WARNING: toctree references unknown document u'api/PYME.DSView.modules.graphViewPanel.MyNavigationToolbar.draw_rubberband'[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'particleTracking' from module u'PYME.DSView.modules'; the following exception was raised:
 cannot import name BaseEnum[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/DSView/modules/psfExtraction.py:docstring of PYME.DSView.modules.psfExtraction.psfExtractor:18: WARNING: toctree references unknown document u'api/PYME.DSView.modules.psfExtraction.psfExtractor.OnCalibrateMultiview'[39;49;00m
-[31m/Users/david/python-microscopy/PYME/DSView/modules/psfExtraction.py:docstring of PYME.DSView.modules.psfExtraction.psfExtractor.OnCalibrateMultiview:5: WARNING: Unexpected indentation.[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/DSView/modules/psfExtraction.py:docstring of PYME.DSView.modules.psfExtraction.PsfExtractor:18: WARNING: toctree references unknown document u'api/PYME.DSView.modules.psfExtraction.PsfExtractor.OnCalibrateMultiview'[39;49;00m
+[31m/Users/david/python-microscopy/PYME/DSView/modules/psfExtraction.py:docstring of PYME.DSView.modules.psfExtraction.PsfExtractor.OnCalibrateMultiview:5: WARNING: Unexpected indentation.[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'psfGeneration' from module u'PYME.DSView.modules'; the following exception was raised:
 cannot import name Property[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/DSView/modules/pupilView.py:docstring of PYME.DSView.modules.pupilView.MyNavigationToolbar:18: WARNING: toctree references unknown document u'api/PYME.DSView.modules.pupilView.MyNavigationToolbar.draw_rubberband'[39;49;00m
@@ -215,6 +218,24 @@ cannot import name BaseEnum[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/DSView/modules/vis3D.py:docstring of PYME.DSView.modules.vis3D.visualiser:18: WARNING: toctree references unknown document u'api/PYME.DSView.modules.vis3D.visualiser.save_stl'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/DSView/modules/vis3D.py:docstring of PYME.DSView.modules.vis3D.visualiser:18: WARNING: toctree references unknown document u'api/PYME.DSView.modules.vis3D.visualiser.save_u3d'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/DSView/modules/vis3D.py:docstring of PYME.DSView.modules.vis3D.visualiser:18: WARNING: toctree references unknown document u'api/PYME.DSView.modules.vis3D.visualiser.save_x3d'[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'visgui' from module u'PYME.DSView.modules'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/DSView/modules/visgui.py", line 30, in <module>
+    from PYME.LMVis.gl_render3D_shaders import LMGLShaderCanvas
+  File "/Users/david/python-microscopy/PYME/LMVis/gl_render3D_shaders.py", line 29, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Deconv/dec.py:docstring of PYME.Deconv.dec.ClassicMappingFFTW:19: WARNING: toctree references unknown document u'api/PYME.Deconv.dec.ClassicMappingFFTW.Afunc'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Deconv/dec.py:docstring of PYME.Deconv.dec.ClassicMappingFFTW:19: WARNING: toctree references unknown document u'api/PYME.Deconv.dec.ClassicMappingFFTW.Ahfunc'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Deconv/dec.py:docstring of PYME.Deconv.dec.ClassicMappingFFTW:19: WARNING: toctree references unknown document u'api/PYME.Deconv.dec.ClassicMappingFFTW.Lfunc'[39;49;00m
@@ -259,9 +280,6 @@ cannot import name fftwWisdom[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Deconv/richardsonLucyMVM.py:docstring of PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy:25: WARNING: toctree references unknown document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Deconv/richardsonLucyMVM.py:docstring of PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy:25: WARNING: toctree references unknown document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.pd'[39;49;00m
 [31m/Users/david/python-microscopy/PYME/Deconv/richardsonLucyMVM.py:docstring of PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.deconv:8: WARNING: Unexpected indentation.[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/Deconv/richardsonLucyMVM2.py:docstring of PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy:25: WARNING: toctree references unknown document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/Deconv/richardsonLucyMVM2.py:docstring of PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy:25: WARNING: toctree references unknown document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.pd'[39;49;00m
-[31m/Users/david/python-microscopy/PYME/Deconv/richardsonLucyMVM2.py:docstring of PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.deconv:8: WARNING: Unexpected indentation.[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Deconv/wiener.py:docstring of PYME.Deconv.wiener.dec_wiener:19: WARNING: toctree references unknown document u'api/PYME.Deconv.wiener.dec_wiener.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Deconv/wiener.py:docstring of PYME.Deconv.wiener.dec_wiener:19: WARNING: toctree references unknown document u'api/PYME.Deconv.wiener.dec_wiener.psf_calc'[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'BGSDataSourceX' from module u'PYME.IO.DataSources'; the following exception was raised:
@@ -304,9 +322,9 @@ NameError: name 'resultsFilename' is not defined
 [31;01m/Users/david/python-microscopy/PYME/IO/image.py:docstring of PYME.IO.image.ImageStack:87: WARNING: toctree references unknown document u'api/PYME.IO.image.ImageStack.SetData'[39;49;00m
 [31m/Users/david/python-microscopy/PYME/IO/ragged.py:docstring of PYME.IO.ragged.RaggedVLArray:6: WARNING: Unexpected indentation.[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/IO/ragged.py:docstring of PYME.IO.ragged.RaggedVLArray:7: WARNING: Block quote ends without a blank line; unexpected unindent.[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/IO/tabular.py:docstring of PYME.IO.tabular.MappingFilter:25: WARNING: toctree references unknown document u'api/PYME.IO.tabular.MappingFilter.addColumn'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/IO/tabular.py:docstring of PYME.IO.tabular.MappingFilter:25: WARNING: toctree references unknown document u'api/PYME.IO.tabular.MappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/IO/tabular.py:docstring of PYME.IO.tabular.TabularBase:18: WARNING: toctree references unknown document u'api/PYME.IO.tabular.TabularBase.to_recarray'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/IO/tabular.py:docstring of PYME.IO.tabular.mappingFilter:25: WARNING: toctree references unknown document u'api/PYME.IO.tabular.mappingFilter.addColumn'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/IO/tabular.py:docstring of PYME.IO.tabular.mappingFilter:25: WARNING: toctree references unknown document u'api/PYME.IO.tabular.mappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/IO/testClusterSpooling.py:docstring of PYME.IO.testClusterSpooling:18: WARNING: Line block ends without a blank line.[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/IO/testClusterSpooling.py:docstring of PYME.IO.testClusterSpooling:28: WARNING: Line block ends without a blank line.[39;49;00m
 [31m/Users/david/python-microscopy/PYME/IO/unifiedIO.py:docstring of PYME.IO.unifiedIO.verbose_fix_name:6: WARNING: Unexpected indentation.[39;49;00m
@@ -316,32 +334,6 @@ NameError: name 'resultsFilename' is not defined
 [31;01m/Users/david/python-microscopy/PYME/LMVis/Extras/clusterAnalysis.py:docstring of PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser:18: WARNING: toctree references unknown document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnFindMixedClusters'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/LMVis/Extras/clusterAnalysis.py:docstring of PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser:18: WARNING: toctree references unknown document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnMeasureClusters'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/LMVis/Extras/clusterAnalysis.py:docstring of PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser:18: WARNING: toctree references unknown document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnNearestNeighbor'[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'extra_layers' from module u'PYME.LMVis.Extras'; the following exception was raised:
-Traceback (most recent call last):
-  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
-    __import__(modname)
-  File "/Users/david/python-microscopy/PYME/LMVis/Extras/extra_layers.py", line 2, in <module>
-    from PYME.LMVis.layers.octree import OctreeRenderLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
-    from .AxesOverlayLayer import AxesOverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/AxesOverlayLayer.py", line 21, in <module>
-    from PYME.LMVis.layers.OverlayLayer import OverlayLayer
-  File "/Users/david/python-microscopy/PYME/LMVis/layers/OverlayLayer.py", line 24, in <module>
-    from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
-  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/DefaultShaderProgram.py", line 24, in <module>
-    from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
-  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/GLProgram.py", line 22, in <module>
-    from OpenGL.GL import *
-  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
-    from OpenGL import error as _error
-  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
-    from OpenGL import platform, _configflags
-  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
-    _load()
-  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
-    plugin = plugin_class()
-TypeError: 'NoneType' object is not callable
-[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/LMVis/Extras/flagZMotionArtifacts.py:docstring of PYME.LMVis.Extras.flagZMotionArtifacts.motionFlagger:19: WARNING: toctree references unknown document u'api/PYME.LMVis.Extras.flagZMotionArtifacts.motionFlagger.OnIDTransient'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/LMVis/Extras/multiviewMapping.py:docstring of PYME.LMVis.Extras.multiviewMapping.MultiviewMapper:25: WARNING: toctree references unknown document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnCalibrateShifts'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/LMVis/Extras/multiviewMapping.py:docstring of PYME.LMVis.Extras.multiviewMapping.MultiviewMapper:25: WARNING: toctree references unknown document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnCheckAstigmatismCalibration'[39;49;00m
@@ -360,7 +352,7 @@ cannot import name BaseEnum[39;49;00m
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
-  File "/Users/david/python-microscopy/PYME/LMVis/Extras/snapshot.py", line 26, in <module>
+  File "/Users/david/python-microscopy/PYME/LMVis/Extras/snapshot.py", line 25, in <module>
     from OpenGL.GL import GL_LUMINANCE, GL_RGB
   File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
     from OpenGL import error as _error
@@ -372,8 +364,7 @@ Traceback (most recent call last):
     plugin = plugin_class()
 TypeError: 'NoneType' object is not callable
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'surface_fitting' from module u'PYME.LMVis.Extras'; the following exception was raised:
-cannot import name HasPrivateTraits[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/LMVis/Extras/surface_fitting.py:docstring of PYME.LMVis.Extras.surface_fitting.SurfaceFitter:18: WARNING: toctree references unknown document u'api/PYME.LMVis.Extras.surface_fitting.SurfaceFitter.OnFitQuadraticPatches'[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'VisGUI' from module u'PYME.LMVis'; the following exception was raised:
 cannot import name BaseEnum[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'gl_offScreenHandler' from module u'PYME.LMVis'; the following exception was raised:
@@ -431,6 +422,34 @@ Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
   File "/Users/david/python-microscopy/PYME/LMVis/gl_render3D_shaders.py", line 29, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'layer_panel' from module u'PYME.LMVis'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/layer_panel.py", line 6, in <module>
+    import PYME.ui.layerFoldPanel as lfp
+  File "/Users/david/python-microscopy/PYME/ui/layerFoldPanel.py", line 2, in <module>
+    from PYME.LMVis.layers import pointcloud, mesh
+  File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
+    from .AxesOverlayLayer import AxesOverlayLayer
+  File "/Users/david/python-microscopy/PYME/LMVis/layers/AxesOverlayLayer.py", line 21, in <module>
+    from PYME.LMVis.layers.OverlayLayer import OverlayLayer
+  File "/Users/david/python-microscopy/PYME/LMVis/layers/OverlayLayer.py", line 24, in <module>
+    from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/DefaultShaderProgram.py", line 24, in <module>
+    from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/GLProgram.py", line 22, in <module>
     from OpenGL.GL import *
   File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
     from OpenGL import error as _error
@@ -684,6 +703,54 @@ Traceback (most recent call last):
     plugin = plugin_class()
 TypeError: 'NoneType' object is not callable
 [39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'layers.image_layer' from module u'PYME.LMVis'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
+    from .AxesOverlayLayer import AxesOverlayLayer
+  File "/Users/david/python-microscopy/PYME/LMVis/layers/AxesOverlayLayer.py", line 21, in <module>
+    from PYME.LMVis.layers.OverlayLayer import OverlayLayer
+  File "/Users/david/python-microscopy/PYME/LMVis/layers/OverlayLayer.py", line 24, in <module>
+    from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/DefaultShaderProgram.py", line 24, in <module>
+    from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/GLProgram.py", line 22, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'layers.mesh' from module u'PYME.LMVis'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
+    from .AxesOverlayLayer import AxesOverlayLayer
+  File "/Users/david/python-microscopy/PYME/LMVis/layers/AxesOverlayLayer.py", line 21, in <module>
+    from PYME.LMVis.layers.OverlayLayer import OverlayLayer
+  File "/Users/david/python-microscopy/PYME/LMVis/layers/OverlayLayer.py", line 24, in <module>
+    from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/DefaultShaderProgram.py", line 24, in <module>
+    from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/GLProgram.py", line 22, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'layers.octree' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
@@ -732,7 +799,7 @@ Traceback (most recent call last):
     plugin = plugin_class()
 TypeError: 'NoneType' object is not callable
 [39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'layers.triangle_mesh' from module u'PYME.LMVis'; the following exception was raised:
+[31;01mWARNING: autodoc: failed to import module u'layers.tracks' from module u'PYME.LMVis'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
     __import__(modname)
@@ -832,6 +899,24 @@ Traceback (most recent call last):
 TypeError: 'NoneType' object is not callable
 [39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/LMVis/shader_programs/ShaderProgramFactory.py:docstring of PYME.LMVis.shader_programs.ShaderProgramFactory.ShaderProgramFactory:18: WARNING: toctree references unknown document u'api/PYME.LMVis.shader_programs.ShaderProgramFactory.ShaderProgramFactory.get_program'[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'TesselShaderProgram' from module u'PYME.LMVis.shader_programs'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/TesselShaderProgram.py", line 23, in <module>
+    from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glPolygonMode, \
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/GLProgram.py", line 22, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'WireFrameShaderProgram' from module u'PYME.LMVis.shader_programs'; the following exception was raised:
 Traceback (most recent call last):
   File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
@@ -934,34 +1019,6 @@ TypeError: 'NoneType' object is not callable
 [31;01m/Users/david/python-microscopy/PYME/ParallelTasks/HDFTaskQueue.py:docstring of PYME.ParallelTasks.HDFTaskQueue.HDFTaskQueue:19: WARNING: toctree references unknown document u'api/PYME.ParallelTasks.HDFTaskQueue.HDFTaskQueue.getQueueData'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/ParallelTasks/HDFTaskQueue.py:docstring of PYME.ParallelTasks.HDFTaskQueue.HDFTaskQueue:19: WARNING: toctree references unknown document u'api/PYME.ParallelTasks.HDFTaskQueue.HDFTaskQueue.getTask'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/ParallelTasks/HDFTaskQueue.py:docstring of PYME.ParallelTasks.HDFTaskQueue.HDFTaskQueue:19: WARNING: toctree references unknown document u'api/PYME.ParallelTasks.HDFTaskQueue.HDFTaskQueue.getTasks'[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'HTTPDataServer' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named HTTPDataServer[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'HTTPRulePusher' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named HTTPRulePusher[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'HTTPTaskPusher' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named HTTPTaskPusher[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYMEDistributor' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named PYMEDistributor[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYMENodeServer' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named PYMENodeServer[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYMERuleNodeServer' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named PYMERuleNodeServer[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'PYMERuleServer' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named PYMERuleServer[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'dataserver_wsgi' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named dataserver_wsgi[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'distribution' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named distribution[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'distributor' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named distributor[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'httpSpoolTarget' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named httpSpoolTarget[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'nodeserver' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named nodeserver[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'rulenodeserver' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named rulenodeserver[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'ruleserver' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named ruleserver[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/ParallelTasks/taskQueue.py:docstring of PYME.ParallelTasks.taskQueue.TaskQueue:18: WARNING: toctree references unknown document u'api/PYME.ParallelTasks.taskQueue.TaskQueue.getTask'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/ParallelTasks/taskQueue.py:docstring of PYME.ParallelTasks.taskQueue.TaskQueue:18: WARNING: toctree references unknown document u'api/PYME.ParallelTasks.taskQueue.TaskQueue.setPopFcn'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/ParallelTasks/taskQueue.py:docstring of PYME.ParallelTasks.taskQueue.TaskQueueWithData:18: WARNING: toctree references unknown document u'api/PYME.ParallelTasks.taskQueue.TaskQueueWithData.getQueueData'[39;49;00m
@@ -978,12 +1035,39 @@ No module named ruleserver[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/ParallelTasks/taskServerZC.py:docstring of PYME.ParallelTasks.taskServerZC.TaskQueueSet:18: WARNING: toctree references unknown document u'api/PYME.ParallelTasks.taskServerZC.TaskQueueSet.setQueueData'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/ParallelTasks/taskServerZC.py:docstring of PYME.ParallelTasks.taskServerZC.TaskQueueSet:18: WARNING: toctree references unknown document u'api/PYME.ParallelTasks.taskServerZC.TaskQueueSet.setQueueMetaData'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/ParallelTasks/taskServerZC.py:docstring of PYME.ParallelTasks.taskServerZC.TaskQueueSet:18: WARNING: toctree references unknown document u'api/PYME.ParallelTasks.taskServerZC.TaskQueueSet.setQueueMetaDataEntries'[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'taskWorkerHTTP' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named taskWorkerHTTP[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'webdav' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named webdav[39;49;00m
-[31;01mWARNING: autodoc: failed to import module u'webframework' from module u'PYME.ParallelTasks'; the following exception was raised:
-No module named webframework[39;49;00m
+/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer:6: WARNING: Unexpected section title.
+
+Security warning
+----------------
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.do_GET'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.list_directory'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_error'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_message'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_request'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.send_error'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:22: WARNING: toctree references unknown document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.send_head'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/dataserver_wsgi.py:docstring of PYME.cluster.dataserver_wsgi.dataserver:18: WARNING: toctree references unknown document u'api/PYME.cluster.dataserver_wsgi.dataserver.do_GET'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/dataserver_wsgi.py:docstring of PYME.cluster.dataserver_wsgi.dataserver:18: WARNING: toctree references unknown document u'api/PYME.cluster.dataserver_wsgi.dataserver.do_HEAD'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/dataserver_wsgi.py:docstring of PYME.cluster.dataserver_wsgi.dataserver:18: WARNING: toctree references unknown document u'api/PYME.cluster.dataserver_wsgi.dataserver.guess_type'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/dataserver_wsgi.py:docstring of PYME.cluster.dataserver_wsgi.dataserver:18: WARNING: toctree references unknown document u'api/PYME.cluster.dataserver_wsgi.dataserver.list_directory'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/dataserver_wsgi.py:docstring of PYME.cluster.dataserver_wsgi.dataserver:18: WARNING: toctree references unknown document u'api/PYME.cluster.dataserver_wsgi.dataserver.translate_path'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.IntegerIDRule:25: WARNING: toctree references unknown document u'api/PYME.cluster.ruleserver.IntegerIDRule.bid'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.IntegerIDRule:25: WARNING: toctree references unknown document u'api/PYME.cluster.ruleserver.IntegerIDRule.make_range_available'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/taskWorkerHTTP.py:docstring of PYME.cluster.taskWorkerHTTP.taskWorker:18: WARNING: toctree references unknown document u'api/PYME.cluster.taskWorkerHTTP.taskWorker.ioLoop'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DAVRequestHandler:18: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.DAVRequestHandler.path_elem'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DAVRequestHandler:18: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.DAVRequestHandler.path_elem_prev'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DAVRequestHandler:18: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.DAVRequestHandler.split_path'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DAVServer:18: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.DAVServer.finish_request'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DirCollection:18: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.DirCollection.findMember'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DirCollection:18: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.DirCollection.getMembers'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DirCollection:18: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.DirCollection.recvMember'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DirCollection:18: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.DirCollection.sendData'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.FileMember:18: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.FileMember.getProperties'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.FileMember:18: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.FileMember.sendData'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.Tag:18: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.Tag.addChild'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.TempDirCollection:21: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.TempDirCollection.getProperties'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.XMLDict_Parser:18: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.XMLDict_Parser.builddict'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.XMLDict_Parser:18: WARNING: toctree references unknown document u'api/PYME.cluster.webdav.XMLDict_Parser.processTag'[39;49;00m
 [31m/Users/david/python-microscopy/PYME/contrib/TextCtrlAutoComplete.py:docstring of PYME.contrib.TextCtrlAutoComplete:3: WARNING: Unexpected indentation.[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/contrib/TextCtrlAutoComplete.py:docstring of PYME.contrib.TextCtrlAutoComplete:5: WARNING: Block quote ends without a blank line; unexpected unindent.[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/contrib/TextCtrlAutoComplete.py:docstring of PYME.contrib.TextCtrlAutoComplete.TextCtrlAutoComplete:21: WARNING: toctree references unknown document u'api/PYME.contrib.TextCtrlAutoComplete.TextCtrlAutoComplete.GetSortImages'[39;49;00m
@@ -1075,6 +1159,7 @@ No module named webframework[39;49;00m
 [31;01mWARNING: missing attribute mentioned in :members: or __all__: module PYME.localization.FitFactories, attribute LatGaussFitlmR[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/FitFactories/AstigGaussFitFR.py:docstring of PYME.localization.FitFactories.AstigGaussFitFR.GaussianFitFactory:20: WARNING: toctree references unknown document u'api/PYME.localization.FitFactories.AstigGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/FitFactories/AstigGaussGPUFitFR.py:docstring of PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory:43: WARNING: toctree references unknown document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FindAndFit'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/localization/FitFactories/AstigGaussGPUFitFR.py:docstring of PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory:43: WARNING: toctree references unknown document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FromPoint'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/FitFactories/BeadConvolvedAstigGaussFit.py:docstring of PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitFactory:20: WARNING: toctree references unknown document u'api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/FitFactories/DumbellFitR.py:docstring of PYME.localization.FitFactories.DumbellFitR.DumbellFitFactory:20: WARNING: toctree references unknown document u'api/PYME.localization.FitFactories.DumbellFitR.DumbellFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/FitFactories/FFBase.py:docstring of PYME.localization.FitFactories.FFBase.FFBase:20: WARNING: toctree references unknown document u'api/PYME.localization.FitFactories.FFBase.FFBase.FromPoint'[39;49;00m
@@ -1135,10 +1220,23 @@ No module named levmar_gfit[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'ofind_xcorr_fw' from module u'PYME.localization'; the following exception was raised:
 cannot import name util[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.BufferManager:19: WARNING: toctree references unknown document u'api/PYME.localization.remFitBuf.BufferManager.updateBuffers'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.CameraInfoManager:19: WARNING: toctree references unknown document u'api/PYME.localization.remFitBuf.CameraInfoManager.correctImage'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.CameraInfoManager:19: WARNING: toctree references unknown document u'api/PYME.localization.remFitBuf.CameraInfoManager.getDarkMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.CameraInfoManager:19: WARNING: toctree references unknown document u'api/PYME.localization.remFitBuf.CameraInfoManager.getFlatfieldMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.CameraInfoManager:19: WARNING: toctree references unknown document u'api/PYME.localization.remFitBuf.CameraInfoManager.getVarianceMap'[39;49;00m
 [31m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.createFitTaskFromTaskDef:6: WARNING: Unexpected indentation.[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.fitTask:42: WARNING: toctree references unknown document u'api/PYME.localization.remFitBuf.fitTask.calcSigma'[39;49;00m
+[31m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.fitTask.calcSigma:6: WARNING: Unexpected indentation.[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.fitTask.calcSigma:7: WARNING: Block quote ends without a blank line; unexpected unindent.[39;49;00m
+[31m/Users/david/python-microscopy/PYME/localization/traveling_salesperson.py:docstring of PYME.localization.traveling_salesperson.reversal_swap:6: WARNING: Unexpected indentation.[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/localization/traveling_salesperson.py:docstring of PYME.localization.traveling_salesperson.reversal_swap:7: WARNING: Block quote ends without a blank line; unexpected unindent.[39;49;00m
+[31m/Users/david/python-microscopy/PYME/localization/traveling_salesperson.py:docstring of PYME.localization.traveling_salesperson.two_opt_swap:6: WARNING: Unexpected indentation.[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/localization/traveling_salesperson.py:docstring of PYME.localization.traveling_salesperson.two_opt_swap:7: WARNING: Block quote ends without a blank line; unexpected unindent.[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/localization/traveling_salesperson.py:docstring of PYME.localization.traveling_salesperson.two_opt_swap:11: WARNING: Definition list ends without a blank line; unexpected unindent.[39;49;00m
+/Users/david/python-microscopy/PYME/localization/traveling_salesperson.py:docstring of PYME.localization.traveling_salesperson.two_opt_swap:12: WARNING: Unexpected section title.
+
+Returns
+-------
 [31;01m/Users/david/python-microscopy/PYME/misc/TiffImagePlugin.py:docstring of PYME.misc.TiffImagePlugin.TiffImageFile:18: WARNING: toctree references unknown document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.seek'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/misc/TiffImagePlugin.py:docstring of PYME.misc.TiffImagePlugin.TiffImageFile:18: WARNING: toctree references unknown document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.tell'[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'VolProj' from module u'PYME.misc'; the following exception was raised:
@@ -1187,14 +1285,15 @@ No module named MySQLdb[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'tempLoggerDB' from module u'PYME.misc'; the following exception was raised:
 No module named MySQLdb[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.Filter:19: WARNING: toctree references unknown document u'api/PYME.recipes.base.Filter.dsviewer_plugin_callback'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleBase:40: WARNING: toctree references unknown document u'api/PYME.recipes.base.ModuleBase.apply'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleBase:40: WARNING: toctree references unknown document u'api/PYME.recipes.base.ModuleBase.apply_simple'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleBase:40: WARNING: toctree references unknown document u'api/PYME.recipes.base.ModuleBase.execute'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleBase:49: WARNING: toctree references unknown document u'api/PYME.recipes.base.ModuleBase.apply'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleBase:49: WARNING: toctree references unknown document u'api/PYME.recipes.base.ModuleBase.apply_simple'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleBase:49: WARNING: toctree references unknown document u'api/PYME.recipes.base.ModuleBase.execute'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleCollection:34: WARNING: toctree references unknown document u'api/PYME.recipes.base.ModuleCollection.gather_outputs'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleCollection:34: WARNING: toctree references unknown document u'api/PYME.recipes.base.ModuleCollection.loadInput'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleCollection:34: WARNING: toctree references unknown document u'api/PYME.recipes.base.ModuleCollection.save'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.OutputModule:18: WARNING: toctree references unknown document u'api/PYME.recipes.base.OutputModule.execute'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.OutputModule:18: WARNING: toctree references unknown document u'api/PYME.recipes.base.OutputModule.generate'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleCollection:34: WARNING: toctree references unknown document u'api/PYME.recipes.base.ModuleCollection.update_from_yaml'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.OutputModule:22: WARNING: toctree references unknown document u'api/PYME.recipes.base.OutputModule.execute'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.OutputModule:22: WARNING: toctree references unknown document u'api/PYME.recipes.base.OutputModule.generate'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/recipes/graphing.py:docstring of PYME.recipes.graphing.Plot:27: WARNING: toctree references unknown document u'api/PYME.recipes.graphing.Plot.as_html'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/recipes/graphing.py:docstring of PYME.recipes.graphing.Plot:27: WARNING: toctree references unknown document u'api/PYME.recipes.graphing.Plot.plot'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/recipes/graphing.py:docstring of PYME.recipes.graphing.Plot:64: WARNING: toctree references unknown document u'api/PYME.recipes.graphing.Plot.as_html'[39;49;00m
@@ -1223,6 +1322,7 @@ no content permitted.
 [31;01m/Users/david/python-microscopy/PYME/recipes/processing.py:docstring of PYME.recipes.processing.VectorfieldCurl:19: WARNING: Explicit markup ends without a blank line; unexpected unindent.[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'skfilters' from module u'PYME.recipes'; the following exception was raised:
 No module named filters[39;49;00m
+[31m/Users/david/python-microscopy/PYME/recipes/surface_fitting.py:docstring of PYME.recipes.surface_fitting.FitSurfaceWithPatches:28: WARNING: Unexpected indentation.[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/recipes/tracking.py:docstring of PYME.recipes.tracking.TrackFeatures:19: WARNING: toctree references unknown document u'api/PYME.recipes.tracking.TrackFeatures.Track'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/recipes/tracking.py:docstring of PYME.recipes.tracking.TrackFeatures:19: WARNING: toctree references unknown document u'api/PYME.recipes.tracking.TrackFeatures.TrackWithPipeline'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/ui/AUIFrame.py:docstring of PYME.ui.AUIFrame.AUIFrame:20: WARNING: toctree references unknown document u'api/PYME.ui.AUIFrame.AUIFrame.AddMenuItem'[39;49;00m
@@ -1234,6 +1334,32 @@ No module named filters[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/ui/MetadataTree.py:docstring of PYME.ui.MetadataTree.TextEditMixin:33: WARNING: toctree references unknown document u'api/PYME.ui.MetadataTree.TextEditMixin.OpenEditor'[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'custom_traits_editors' from module u'PYME.ui'; the following exception was raised:
 No module named editor[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'layerFoldPanel' from module u'PYME.ui'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/ui/layerFoldPanel.py", line 2, in <module>
+    from PYME.LMVis.layers import pointcloud, mesh
+  File "/Users/david/python-microscopy/PYME/LMVis/layers/__init__.py", line 22, in <module>
+    from .AxesOverlayLayer import AxesOverlayLayer
+  File "/Users/david/python-microscopy/PYME/LMVis/layers/AxesOverlayLayer.py", line 21, in <module>
+    from PYME.LMVis.layers.OverlayLayer import OverlayLayer
+  File "/Users/david/python-microscopy/PYME/LMVis/layers/OverlayLayer.py", line 24, in <module>
+    from PYME.LMVis.shader_programs.DefaultShaderProgram import DefaultShaderProgram
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/DefaultShaderProgram.py", line 24, in <module>
+    from PYME.LMVis.shader_programs.GLProgram import GLProgram, GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, glUseProgram, \
+  File "/Users/david/python-microscopy/PYME/LMVis/shader_programs/GLProgram.py", line 22, in <module>
+    from OpenGL.GL import *
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/GL/__init__.py", line 3, in <module>
+    from OpenGL import error as _error
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/error.py", line 12, in <module>
+    from OpenGL import platform, _configflags
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 35, in <module>
+    _load()
+  File "/Users/david/anaconda/lib/python2.7/site-packages/OpenGL/platform/__init__.py", line 29, in _load
+    plugin = plugin_class()
+TypeError: 'NoneType' object is not callable
+[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'install_dependencies' from module u'PYME.util'; the following exception was raised:
 No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/util/mProfile/colorize_db_t.py:docstring of PYME.util.mProfile.colorize_db_t.Parser:19: WARNING: toctree references unknown document u'api/PYME.util.mProfile.colorize_db_t.Parser.__call__'[39;49;00m
@@ -1241,10 +1367,27 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/util/mProfile/colorize_db_t.py:docstring of PYME.util.mProfile.colorize_db_t.Parser:45: WARNING: toctree references unknown document u'api/PYME.util.mProfile.colorize_db_t.Parser.__call__'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/util/mProfile/colorize_db_t.py:docstring of PYME.util.mProfile.colorize_db_t.Parser:45: WARNING: toctree references unknown document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
 [31m/Users/david/python-microscopy/PYME/util/mProfile/tProfile.py:docstring of PYME.util.mProfile.tProfile.get_profile_stats:4: WARNING: Unexpected indentation.[39;49;00m
+[31;01mWARNING: autodoc: failed to import module u'pymelauncher' from module u'PYME.util'; the following exception was raised:
+Traceback (most recent call last):
+  File "/Users/david/anaconda/lib/python2.7/site-packages/sphinx/ext/autodoc/importer.py", line 154, in import_module
+    __import__(modname)
+  File "/Users/david/python-microscopy/PYME/util/pymelauncher.py", line 46, in <module>
+    sys.exit(subprocess.call(args, env=env))
+  File "/Users/david/anaconda/lib/python2.7/subprocess.py", line 523, in call
+    return Popen(*popenargs, **kwargs).wait()
+  File "/Users/david/anaconda/lib/python2.7/subprocess.py", line 711, in __init__
+    errread, errwrite)
+  File "/Users/david/anaconda/lib/python2.7/subprocess.py", line 1343, in _execute_child
+    raise child_exception
+OSError: [Errno 2] No such file or directory
+[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/util/webframework.py:docstring of PYME.util.webframework.JSONAPIRequestHandler:18: WARNING: toctree references unknown document u'api/PYME.util.webframework.JSONAPIRequestHandler.log_request'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/cluster/cluster_install.rst:119: WARNING: Inline emphasis start-string without end-string.[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/Installation/Installation.rst: WARNING: document isn't included in any toctree[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/Installation/InstallationWithAnacondaNoConsole.rst: WARNING: document isn't included in any toctree[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/Technical.rst: WARNING: document isn't included in any toctree[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst: WARNING: document isn't included in any toctree[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.tileviewer.rst: WARNING: document isn't included in any toctree[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst: WARNING: document isn't included in any toctree[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/cluster/clusterFilesystem.rst: WARNING: document isn't included in any toctree[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/cluster/cluster_install.rst: WARNING: document isn't included in any toctree[39;49;00m
@@ -1270,6 +1413,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.Tick'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.UpdateFreeSpace'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.multiview_select.MultiviewSelect.on_toggle'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.QueueAction'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.Tick'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.QueueAction'[39;49;00m
@@ -1336,11 +1480,13 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3Model.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3zModel.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.linModel.ev'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.density_filter.DensityFilter.__call__'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.tile_pyramid.ImagePyramid.get_oversize_tile'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.OnApplyShiftmap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.RemapData'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.filtering.filterer.OnAverageFramesByStep'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.graphViewPanel.MyNavigationToolbar.draw_rubberband'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.psfExtractor.OnCalibrateMultiview'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.PsfExtractor.OnCalibrateMultiview'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.pupilView.MyNavigationToolbar.draw_rubberband'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_stl'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_u3d'[39;49;00m
@@ -1381,8 +1527,6 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.MultiviewRichardsonLucy.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.pd'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.pd'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.psf_calc'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getEvents'[39;49;00m
@@ -1406,9 +1550,9 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Load'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Save'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.SetData'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addColumn'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.TabularBase.to_recarray'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addColumn'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.animation.VideoPanel.on_edit'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnClumpDBSCAN'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnFindMixedClusters'[39;49;00m
@@ -1424,6 +1568,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnShiftCorrectFolded'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.objectMeasurements.ObjectMeasurer.OnGetIDs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.scaleBox.ScaleBoxPanel.pick_color'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.surface_fitting.SurfaceFitter.OnFitQuadraticPatches'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.ShaderProgramFactory.ShaderProgramFactory.get_program'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file_with_path'[39;49;00m
@@ -1566,6 +1711,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.LinearPInterpolatorP.LinearInterpolator.interp'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FindAndFit'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FromPoint'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.DumbellFitR.DumbellFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.FFBase.FFBase.FromPoint'[39;49;00m
@@ -1594,9 +1740,11 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_split.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_xcorr.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.BufferManager.updateBuffers'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.correctImage'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getDarkMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getFlatfieldMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getVarianceMap'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.fitTask.calcSigma'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.seek'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.tell'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.pyme_zeroconf.PatchedServiceInfo.request'[39;49;00m
@@ -1608,6 +1756,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.gather_outputs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.loadInput'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.save'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.update_from_yaml'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.execute'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.generate'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.as_html'[39;49;00m
@@ -1637,6 +1786,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.__call__'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.webframework.JSONAPIRequestHandler.log_request'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.MultiPointScanner.PointScanner.stop'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.pointScanner.PointScanner.stop'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.pointScanner.PointScanner3D.stop'[39;49;00m
@@ -1654,6 +1804,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.Tick'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.UpdateFreeSpace'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.multiview_select.MultiviewSelect.on_toggle'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.QueueAction'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.Tick'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.QueueAction'[39;49;00m
@@ -1842,6 +1993,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.ui.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.ui.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.Tick'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.ui.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.UpdateFreeSpace'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Acquire.ui.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.multiview_select.MultiviewSelect.on_toggle'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Acquire/ui/HDFSpoolFrame.py:docstring of PYME.Acquire.ui.HDFSpoolFrame.PanSpool:30:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBSetAqProtocolButton'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Acquire/ui/HDFSpoolFrame.py:docstring of PYME.Acquire.ui.HDFSpoolFrame.PanSpool:30:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBSetSpoolDirButton'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Acquire/ui/HDFSpoolFrame.py:docstring of PYME.Acquire.ui.HDFSpoolFrame.PanSpool:30:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStartSpoolButton'[39;49;00m
@@ -1870,6 +2022,8 @@ No module named apt[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.Tick'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.UpdateFreeSpace'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/Acquire/ui/multiview_select.py:docstring of PYME.Acquire.ui.multiview_select.MultiviewSelect:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.multiview_select.MultiviewSelect.on_toggle'[39;49;00m
+[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.multiview_select.MultiviewSelect.on_toggle'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.PSFGen.fourierHNA.FourierPropagatorClipHNA.propagate'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.PSFGen.fourierHNA.FourierPropagatorHNA.propagate'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.PSFGen.fourierHNA.FourierPropagatorHNA.propagate_r'[39;49;00m
@@ -1881,6 +2035,8 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3Model.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3zModel.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.linModel.ev'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.density_filter.DensityFilter.__call__'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.tile_pyramid.ImagePyramid.get_oversize_tile'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.PSFGen.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.PSFGen.fourierHNA.FourierPropagatorClipHNA.propagate'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.PSFGen.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.PSFGen.fourierHNA.FourierPropagatorHNA.propagate'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.PSFGen.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.PSFGen.fourierHNA.FourierPropagatorHNA.propagate_r'[39;49;00m
@@ -1902,6 +2058,8 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.Tracking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.Tracking.tracking.Tracker.calcLinkageMatrix'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Analysis/Tracking/tracking.py:docstring of PYME.Analysis.Tracking.tracking.Tracker:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.Tracking.tracking.Tracker.calcLinkageMatrix'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.Tracking.tracking.Tracker.calcLinkageMatrix'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/Analysis/density_filter.py:docstring of PYME.Analysis.density_filter.DensityFilter:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.density_filter.DensityFilter.__call__'[39;49;00m
+[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.density_filter.DensityFilter.__call__'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.points.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin2Model.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.points.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3Model.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Analysis.points.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3zModel.ev'[39;49;00m
@@ -1914,11 +2072,13 @@ No module named apt[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3Model.ev'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3zModel.ev'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.linModel.ev'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/Analysis/tile_pyramid.py:docstring of PYME.Analysis.tile_pyramid.ImagePyramid:27:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.tile_pyramid.ImagePyramid.get_oversize_tile'[39;49;00m
+[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.tile_pyramid.ImagePyramid.get_oversize_tile'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.OnApplyShiftmap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.RemapData'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.filtering.filterer.OnAverageFramesByStep'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.graphViewPanel.MyNavigationToolbar.draw_rubberband'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.psfExtractor.OnCalibrateMultiview'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.PsfExtractor.OnCalibrateMultiview'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.pupilView.MyNavigationToolbar.draw_rubberband'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_stl'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_u3d'[39;49;00m
@@ -1939,7 +2099,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.RemapData'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.filtering.filterer.OnAverageFramesByStep'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.graphViewPanel.MyNavigationToolbar.draw_rubberband'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.psfExtractor.OnCalibrateMultiview'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.PsfExtractor.OnCalibrateMultiview'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.pupilView.MyNavigationToolbar.draw_rubberband'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_stl'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.DSView.modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_u3d'[39;49;00m
@@ -1952,8 +2112,8 @@ No module named apt[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.filtering.filterer.OnAverageFramesByStep'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/DSView/modules/graphViewPanel.py:docstring of PYME.DSView.modules.graphViewPanel.MyNavigationToolbar:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.graphViewPanel.MyNavigationToolbar.draw_rubberband'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.graphViewPanel.MyNavigationToolbar.draw_rubberband'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/DSView/modules/psfExtraction.py:docstring of PYME.DSView.modules.psfExtraction.psfExtractor:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.psfExtractor.OnCalibrateMultiview'[39;49;00m
-[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.psfExtractor.OnCalibrateMultiview'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/DSView/modules/psfExtraction.py:docstring of PYME.DSView.modules.psfExtraction.PsfExtractor:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.PsfExtractor.OnCalibrateMultiview'[39;49;00m
+[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.PsfExtractor.OnCalibrateMultiview'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/DSView/modules/pupilView.py:docstring of PYME.DSView.modules.pupilView.MyNavigationToolbar:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.pupilView.MyNavigationToolbar.draw_rubberband'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.pupilView.MyNavigationToolbar.draw_rubberband'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/DSView/modules/vis3D.py:docstring of PYME.DSView.modules.vis3D.visualiser:25:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_stl'[39;49;00m
@@ -1994,8 +2154,6 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Deconv.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.MultiviewRichardsonLucy.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Deconv.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Deconv.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.pd'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.Deconv.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.Deconv.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.pd'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Deconv.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.Deconv.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.psf_calc'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Deconv/dec.py:docstring of PYME.Deconv.dec.ClassicMappingFFTW:28:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.dec.ClassicMappingFFTW.Afunc'[39;49;00m
@@ -2062,10 +2220,6 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Deconv/richardsonLucyMVM.py:docstring of PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy:31:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.pd'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.pd'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/Deconv/richardsonLucyMVM2.py:docstring of PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy:31:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/Deconv/richardsonLucyMVM2.py:docstring of PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy:31:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.pd'[39;49;00m
-[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
-[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.pd'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Deconv/wiener.py:docstring of PYME.Deconv.wiener.dec_wiener:24:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/Deconv/wiener.py:docstring of PYME.Deconv.wiener.dec_wiener:24:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.psf_calc'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.deconv'[39;49;00m
@@ -2091,9 +2245,9 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Load'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Save'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.SetData'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addColumn'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.TabularBase.to_recarray'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addColumn'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/PYME.IO.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.IO.DataSources.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getEvents'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.IO.DataSources.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getNumSlices'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.IO.DataSources.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getSlice'[39;49;00m
@@ -2140,12 +2294,12 @@ No module named apt[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Load'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Save'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.SetData'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/IO/tabular.py:docstring of PYME.IO.tabular.MappingFilter:31:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addColumn'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/IO/tabular.py:docstring of PYME.IO.tabular.MappingFilter:31:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/IO/tabular.py:docstring of PYME.IO.tabular.TabularBase:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.TabularBase.to_recarray'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/IO/tabular.py:docstring of PYME.IO.tabular.mappingFilter:31:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addColumn'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/IO/tabular.py:docstring of PYME.IO.tabular.mappingFilter:31:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addVariable'[39;49;00m
+[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addColumn'[39;49;00m
+[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addVariable'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.TabularBase.to_recarray'[39;49;00m
-[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addColumn'[39;49;00m
-[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.animation.VideoPanel.on_edit'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnClumpDBSCAN'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnFindMixedClusters'[39;49;00m
@@ -2161,6 +2315,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnShiftCorrectFolded'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.objectMeasurements.ObjectMeasurer.OnGetIDs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.scaleBox.ScaleBoxPanel.pick_color'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.surface_fitting.SurfaceFitter.OnFitQuadraticPatches'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.ShaderProgramFactory.ShaderProgramFactory.get_program'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file_with_path'[39;49;00m
@@ -2188,6 +2343,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnShiftCorrectFolded'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.objectMeasurements.ObjectMeasurer.OnGetIDs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.scaleBox.ScaleBoxPanel.pick_color'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.Extras.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.surface_fitting.SurfaceFitter.OnFitQuadraticPatches'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/LMVis/Extras/animation.py:docstring of PYME.LMVis.Extras.animation.VideoPanel:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.animation.VideoPanel.on_edit'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.animation.VideoPanel.on_edit'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/LMVis/Extras/clusterAnalysis.py:docstring of PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser:26:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnClumpDBSCAN'[39;49;00m
@@ -2218,6 +2374,8 @@ No module named apt[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.objectMeasurements.ObjectMeasurer.OnGetIDs'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/LMVis/Extras/scaleBox.py:docstring of PYME.LMVis.Extras.scaleBox.ScaleBoxPanel:25:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.scaleBox.ScaleBoxPanel.pick_color'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.scaleBox.ScaleBoxPanel.pick_color'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/LMVis/Extras/surface_fitting.py:docstring of PYME.LMVis.Extras.surface_fitting.SurfaceFitter:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.surface_fitting.SurfaceFitter.OnFitQuadraticPatches'[39;49;00m
+[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.surface_fitting.SurfaceFitter.OnFitQuadraticPatches'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.LMVis.dyeRatios.rst:10: WARNING: Could not lex literal_block as "json". Highlighting skipped.[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/LMVis/progGraph.py:docstring of PYME.LMVis.progGraph.progPanel:22:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.progGraph.progPanel.draw'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.progGraph.progPanel.draw'[39;49;00m
@@ -2338,6 +2496,64 @@ No module named apt[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.ParallelTasks.taskServerZC.TaskQueueSet.setQueueData'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.ParallelTasks.taskServerZC.TaskQueueSet.setQueueMetaData'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.ParallelTasks.taskServerZC.TaskQueueSet.setQueueMetaDataEntries'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.do_GET'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.list_directory'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_error'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_message'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_request'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.send_error'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.send_head'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.do_GET'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.do_HEAD'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.guess_type'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.list_directory'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.translate_path'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.bid'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.make_range_available'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.taskWorkerHTTP.taskWorker.ioLoop'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVRequestHandler.path_elem'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVRequestHandler.path_elem_prev'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVRequestHandler.split_path'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVServer.finish_request'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DirCollection.findMember'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DirCollection.getMembers'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DirCollection.recvMember'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DirCollection.sendData'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.FileMember.getProperties'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.FileMember.sendData'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.Tag.addChild'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.TempDirCollection.getProperties'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.XMLDict_Parser.builddict'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.XMLDict_Parser.processTag'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.do_GET'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.list_directory'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_error'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_message'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.log_request'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.send_error'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/HTTPDataServer.py:docstring of PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.HTTPDataServer.PYMEHTTPRequestHandler.send_head'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/dataserver_wsgi.py:docstring of PYME.cluster.dataserver_wsgi.dataserver:27:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.do_GET'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/dataserver_wsgi.py:docstring of PYME.cluster.dataserver_wsgi.dataserver:27:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.do_HEAD'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/dataserver_wsgi.py:docstring of PYME.cluster.dataserver_wsgi.dataserver:27:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.guess_type'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/dataserver_wsgi.py:docstring of PYME.cluster.dataserver_wsgi.dataserver:27:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.list_directory'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/dataserver_wsgi.py:docstring of PYME.cluster.dataserver_wsgi.dataserver:27:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.translate_path'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.IntegerIDRule:31:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.bid'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.IntegerIDRule:31:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.make_range_available'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/taskWorkerHTTP.py:docstring of PYME.cluster.taskWorkerHTTP.taskWorker:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.taskWorkerHTTP.taskWorker.ioLoop'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DAVRequestHandler:25:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVRequestHandler.path_elem'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DAVRequestHandler:25:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVRequestHandler.path_elem_prev'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DAVRequestHandler:25:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVRequestHandler.split_path'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DAVServer:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVServer.finish_request'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DirCollection:26:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DirCollection.findMember'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DirCollection:26:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DirCollection.getMembers'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DirCollection:26:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DirCollection.recvMember'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.DirCollection:26:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DirCollection.sendData'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.FileMember:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.FileMember.getProperties'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.FileMember:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.FileMember.sendData'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.Tag:22:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.Tag.addChild'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.TempDirCollection:26:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.TempDirCollection.getProperties'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.XMLDict_Parser:24:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.XMLDict_Parser.builddict'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/webdav.py:docstring of PYME.cluster.webdav.XMLDict_Parser:24:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.XMLDict_Parser.processTag'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.contrib.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.contrib.gohlke.czifile.CziFile.asarray'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.contrib.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.contrib.gohlke.czifile.CziFile.attachments'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.contrib.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.contrib.gohlke.czifile.CziFile.save_attachments'[39;49;00m
@@ -2640,6 +2856,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.LinearPInterpolatorP.LinearInterpolator.interp'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FindAndFit'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FromPoint'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.DumbellFitR.DumbellFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.FFBase.FFBase.FromPoint'[39;49;00m
@@ -2668,9 +2885,11 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_split.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_xcorr.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.BufferManager.updateBuffers'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.correctImage'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getDarkMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getFlatfieldMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getVarianceMap'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.fitTask.calcSigma'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CSInterpolator.CSInterpolator.getCoords'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CSInterpolator.CSInterpolator.interp'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.CSInterpolator.CSInterpolator.interpG'[39;49;00m
@@ -2685,6 +2904,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.LinearPInterpolatorP.LinearInterpolator.interp'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FindAndFit'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FromPoint'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.DumbellFitR.DumbellFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.FFBase.FFBase.FromPoint'[39;49;00m
@@ -2696,8 +2916,10 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.localization.FitFactories.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.LatGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/FitFactories/AstigGaussFitFR.py:docstring of PYME.localization.FitFactories.AstigGaussFitFR.GaussianFitFactory:25:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/localization/FitFactories/AstigGaussGPUFitFR.py:docstring of PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory:48:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FindAndFit'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/localization/FitFactories/AstigGaussGPUFitFR.py:docstring of PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory:49:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FindAndFit'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/localization/FitFactories/AstigGaussGPUFitFR.py:docstring of PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory:49:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FromPoint'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FindAndFit'[39;49;00m
+[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FromPoint'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/FitFactories/BeadConvolvedAstigGaussFit.py:docstring of PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitFactory:25:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/FitFactories/DumbellFitR.py:docstring of PYME.localization.FitFactories.DumbellFitR.DumbellFitFactory:25:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.DumbellFitR.DumbellFitFactory.evalModel'[39;49;00m
@@ -2801,13 +3023,17 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/ofind_xcorr.py:docstring of PYME.localization.ofind_xcorr.ObjectIdentifier:27:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_xcorr.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_xcorr.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.BufferManager:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.BufferManager.updateBuffers'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.CameraInfoManager:26:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.correctImage'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.CameraInfoManager:26:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getDarkMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.CameraInfoManager:26:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getFlatfieldMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.CameraInfoManager:26:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getVarianceMap'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/localization/remFitBuf.py:docstring of PYME.localization.remFitBuf.fitTask:47:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.fitTask.calcSigma'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.BufferManager.updateBuffers'[39;49;00m
+[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.correctImage'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getDarkMap'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getFlatfieldMap'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getVarianceMap'[39;49;00m
+[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.fitTask.calcSigma'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.misc.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.seek'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.misc.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.tell'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.misc.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.pyme_zeroconf.PatchedServiceInfo.request'[39;49;00m
@@ -2827,6 +3053,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.recipes.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.gather_outputs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.recipes.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.loadInput'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.recipes.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.save'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.recipes.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.update_from_yaml'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.recipes.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.execute'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.recipes.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.generate'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.recipes.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.as_html'[39;49;00m
@@ -2846,14 +3073,15 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.recipes.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.tracking.TrackFeatures.Track'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.recipes.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.tracking.TrackFeatures.TrackWithPipeline'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.Filter:24:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Filter.dsviewer_plugin_callback'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleBase:47:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleBase.apply'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleBase:47:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleBase.apply_simple'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleBase:47:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleBase.execute'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleCollection:41:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.gather_outputs'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleCollection:41:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.loadInput'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleCollection:41:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.save'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.OutputModule:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.execute'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.OutputModule:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.generate'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleBase:56:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleBase.apply'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleBase:56:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleBase.apply_simple'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleBase:56:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleBase.execute'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleCollection:42:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.gather_outputs'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleCollection:42:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.loadInput'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleCollection:42:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.save'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.ModuleCollection:42:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.update_from_yaml'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.OutputModule:27:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.execute'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/recipes/base.py:docstring of PYME.recipes.base.OutputModule:27:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.generate'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.Filter.dsviewer_plugin_callback'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleBase.apply'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleBase.apply_simple'[39;49;00m
@@ -2861,6 +3089,7 @@ No module named apt[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.gather_outputs'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.loadInput'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.save'[39;49;00m
+[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.update_from_yaml'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.execute'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.generate'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/recipes/graphing.py:docstring of PYME.recipes.graphing.Plot:33:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.as_html'[39;49;00m
@@ -2920,6 +3149,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.util.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.util.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.__call__'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.util.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.util.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.webframework.JSONAPIRequestHandler.log_request'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.util.mProfile.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.__call__'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.util.mProfile.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.util.mProfile.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.__call__'[39;49;00m
@@ -2932,6 +3162,8 @@ No module named apt[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.__call__'[39;49;00m
 [31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/util/webframework.py:docstring of PYME.util.webframework.JSONAPIRequestHandler:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.webframework.JSONAPIRequestHandler.log_request'[39;49;00m
+[31;01m<partial node>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.webframework.JSONAPIRequestHandler.log_request'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.MultiPointScanner.PointScanner.stop'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.pointScanner.PointScanner.stop'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.pointScanner.PointScanner3D.stop'[39;49;00m
@@ -2949,6 +3181,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.Tick'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.UpdateFreeSpace'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.multiview_select.MultiviewSelect.on_toggle'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.QueueAction'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.Tick'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.QueueAction'[39;49;00m
@@ -3015,11 +3248,13 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3Model.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3zModel.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.linModel.ev'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.density_filter.DensityFilter.__call__'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.tile_pyramid.ImagePyramid.get_oversize_tile'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.OnApplyShiftmap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.RemapData'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.filtering.filterer.OnAverageFramesByStep'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.graphViewPanel.MyNavigationToolbar.draw_rubberband'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.psfExtractor.OnCalibrateMultiview'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.PsfExtractor.OnCalibrateMultiview'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.pupilView.MyNavigationToolbar.draw_rubberband'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_stl'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_u3d'[39;49;00m
@@ -3060,8 +3295,6 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.MultiviewRichardsonLucy.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.pd'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.pd'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.psf_calc'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getEvents'[39;49;00m
@@ -3085,9 +3318,9 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Load'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Save'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.SetData'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addColumn'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.TabularBase.to_recarray'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addColumn'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.animation.VideoPanel.on_edit'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnClumpDBSCAN'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnFindMixedClusters'[39;49;00m
@@ -3103,6 +3336,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnShiftCorrectFolded'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.objectMeasurements.ObjectMeasurer.OnGetIDs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.scaleBox.ScaleBoxPanel.pick_color'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.surface_fitting.SurfaceFitter.OnFitQuadraticPatches'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.ShaderProgramFactory.ShaderProgramFactory.get_program'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file_with_path'[39;49;00m
@@ -3245,6 +3479,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.LinearPInterpolatorP.LinearInterpolator.interp'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FindAndFit'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FromPoint'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.DumbellFitR.DumbellFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.FFBase.FFBase.FromPoint'[39;49;00m
@@ -3273,9 +3508,11 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_split.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_xcorr.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.BufferManager.updateBuffers'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.correctImage'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getDarkMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getFlatfieldMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getVarianceMap'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.fitTask.calcSigma'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.seek'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.tell'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.pyme_zeroconf.PatchedServiceInfo.request'[39;49;00m
@@ -3287,6 +3524,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.gather_outputs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.loadInput'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.save'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.update_from_yaml'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.execute'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.generate'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.as_html'[39;49;00m
@@ -3316,6 +3554,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.__call__'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/modules.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.webframework.JSONAPIRequestHandler.log_request'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.MultiPointScanner.PointScanner.stop'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.pointScanner.PointScanner.stop'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.pointScanner.PointScanner3D.stop'[39;49;00m
@@ -3333,6 +3572,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.Tick'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.UpdateFreeSpace'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.multiview_select.MultiviewSelect.on_toggle'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.QueueAction'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.Tick'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.QueueAction'[39;49;00m
@@ -3399,11 +3639,13 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3Model.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3zModel.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.linModel.ev'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.density_filter.DensityFilter.__call__'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.tile_pyramid.ImagePyramid.get_oversize_tile'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.OnApplyShiftmap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.RemapData'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.filtering.filterer.OnAverageFramesByStep'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.graphViewPanel.MyNavigationToolbar.draw_rubberband'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.psfExtractor.OnCalibrateMultiview'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.PsfExtractor.OnCalibrateMultiview'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.pupilView.MyNavigationToolbar.draw_rubberband'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_stl'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_u3d'[39;49;00m
@@ -3444,8 +3686,6 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.MultiviewRichardsonLucy.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.pd'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.pd'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.psf_calc'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getEvents'[39;49;00m
@@ -3469,9 +3709,9 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Load'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Save'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.SetData'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addColumn'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.TabularBase.to_recarray'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addColumn'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.animation.VideoPanel.on_edit'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnClumpDBSCAN'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnFindMixedClusters'[39;49;00m
@@ -3487,6 +3727,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnShiftCorrectFolded'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.objectMeasurements.ObjectMeasurer.OnGetIDs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.scaleBox.ScaleBoxPanel.pick_color'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.surface_fitting.SurfaceFitter.OnFitQuadraticPatches'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.ShaderProgramFactory.ShaderProgramFactory.get_program'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file_with_path'[39;49;00m
@@ -3629,6 +3870,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.LinearPInterpolatorP.LinearInterpolator.interp'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FindAndFit'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FromPoint'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.DumbellFitR.DumbellFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.FFBase.FFBase.FromPoint'[39;49;00m
@@ -3657,9 +3899,11 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_split.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_xcorr.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.BufferManager.updateBuffers'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.correctImage'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getDarkMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getFlatfieldMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getVarianceMap'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.fitTask.calcSigma'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.seek'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.tell'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.pyme_zeroconf.PatchedServiceInfo.request'[39;49;00m
@@ -3671,6 +3915,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.gather_outputs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.loadInput'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.save'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.update_from_yaml'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.execute'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.generate'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.as_html'[39;49;00m
@@ -3700,6 +3945,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.__call__'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/hacking.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.webframework.JSONAPIRequestHandler.log_request'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.MultiPointScanner.PointScanner.stop'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.pointScanner.PointScanner.stop'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.Utils.pointScanner.PointScanner3D.stop'[39;49;00m
@@ -3717,6 +3963,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.OnBStopSpoolingButton'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.Tick'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.HDFSpoolFrame.PanSpool.UpdateFreeSpace'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ui.multiview_select.MultiviewSelect.on_toggle'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.QueueAction'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.Tick'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Acquire.ActionManager.ActionManager.QueueAction'[39;49;00m
@@ -3783,11 +4030,13 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3Model.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.lin3zModel.ev'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.points.twoColour.linModel.ev'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.density_filter.DensityFilter.__call__'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Analysis.tile_pyramid.ImagePyramid.get_oversize_tile'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.OnApplyShiftmap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.composite.compositor.RemapData'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.filtering.filterer.OnAverageFramesByStep'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.graphViewPanel.MyNavigationToolbar.draw_rubberband'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.psfExtractor.OnCalibrateMultiview'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.psfExtraction.PsfExtractor.OnCalibrateMultiview'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.pupilView.MyNavigationToolbar.draw_rubberband'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_stl'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.DSView.modules.vis3D.visualiser.save_u3d'[39;49;00m
@@ -3828,8 +4077,6 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMV.MultiviewRichardsonLucy.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM.MotionCompensatingRichardsonLucy.pd'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.deconv'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.richardsonLucyMVM2.MotionCompensatingRichardsonLucy.pd'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.deconv'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.Deconv.wiener.dec_wiener.psf_calc'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.DataSources.BaseDataSource.BaseDataSource.getEvents'[39;49;00m
@@ -3853,9 +4100,9 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Load'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.Save'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.image.ImageStack.SetData'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addColumn'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.MappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.TabularBase.to_recarray'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addColumn'[39;49;00m
-[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.IO.tabular.mappingFilter.addVariable'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.animation.VideoPanel.on_edit'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnClumpDBSCAN'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.clusterAnalysis.ClusterAnalyser.OnFindMixedClusters'[39;49;00m
@@ -3871,6 +4118,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.multiviewMapping.MultiviewMapper.OnShiftCorrectFolded'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.objectMeasurements.ObjectMeasurer.OnGetIDs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.scaleBox.ScaleBoxPanel.pick_color'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.Extras.surface_fitting.SurfaceFitter.OnFitQuadraticPatches'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.ShaderProgramFactory.ShaderProgramFactory.get_program'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.LMVis.shader_programs.shader_loader.ShaderLoader.read_file_with_path'[39;49;00m
@@ -4013,6 +4261,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.Interpolators.LinearPInterpolatorP.LinearInterpolator.interp'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussFitFR.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FindAndFit'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.AstigGaussGPUFitFR.GaussianFitFactory.FromPoint'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.BeadConvolvedAstigGaussFit.GaussianFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.DumbellFitR.DumbellFitFactory.evalModel'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.FitFactories.FFBase.FFBase.FromPoint'[39;49;00m
@@ -4041,9 +4290,11 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_split.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.ofind_xcorr.ObjectIdentifier.FindObjects'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.BufferManager.updateBuffers'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.correctImage'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getDarkMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getFlatfieldMap'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.CameraInfoManager.getVarianceMap'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.localization.remFitBuf.fitTask.calcSigma'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.seek'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.TiffImagePlugin.TiffImageFile.tell'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.misc.pyme_zeroconf.PatchedServiceInfo.request'[39;49;00m
@@ -4055,6 +4306,7 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.gather_outputs'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.loadInput'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.save'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.ModuleCollection.update_from_yaml'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.execute'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.base.OutputModule.generate'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.recipes.graphing.Plot.as_html'[39;49;00m
@@ -4084,3 +4336,4 @@ No module named apt[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.__call__'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.mProfile.colorize_db_t.Parser.format'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/index.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.util.webframework.JSONAPIRequestHandler.log_request'[39;49;00m

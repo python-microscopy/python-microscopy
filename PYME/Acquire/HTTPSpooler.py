@@ -101,8 +101,8 @@ QUEUE_MAX_SIZE = 200 # ~10k frames
 
 defaultCompSettings = {
     'compression' : PZFFormat.DATA_COMP_HUFFCODE,
-    'quantization' : PZFFormat.DATA_QUANT_SQRT,
-    'quantizationOffset' : 0.0,
+    'quantization' : PZFFormat.DATA_QUANT_NONE,
+    'quantizationOffset' : -1e6, # set to an unreasonable value so that we raise an error if default offset is used
     'quantizationScale' : 1.0
 }
 
@@ -156,6 +156,18 @@ class Spooler(sp.Spooler):
             self.compSettings.update(kwargs['compressionSettings'])
         except KeyError:
             pass
+        
+        if not self.compSettings['quantization'] == PZFFormat.DATA_QUANT_NONE:
+            # do some sanity checks on our quantization parameters
+            # note that these conversions will throw a ValueError if the settings are not numeric
+            offset = float(self.compSettings['quantizationOffset'])
+            scale = float(self.compSettings['quantizationScale'])
+            
+            # these are potentially a bit too permissive, but should catch an offset which has been left at the
+            # default value
+            assert(offset >= 0)
+            assert(scale >=.001)
+            assert(scale <= 100)
             
     def _queuePoll(self):
         while self._dPoll:
@@ -178,7 +190,7 @@ class Spooler(sp.Spooler):
                         files.append((fn, pzf))
 
                     if len(files) > 0:
-                        clusterIO.putFiles(files, serverfilter=self.clusterFilter)
+                        clusterIO.put_files(files, serverfilter=self.clusterFilter)
                         
                 except Exception as e:
                     self._last_thread_exception = e
@@ -212,9 +224,9 @@ class Spooler(sp.Spooler):
         logger.debug('Starting spooling: %s' %self.seriesName)
         
         if self._aggregate_h5:
-            clusterIO.putFile('__aggregate_h5/' + self.seriesName + '/metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
+            clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
         else:
-            clusterIO.putFile(self.seriesName  + '/metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
+            clusterIO.put_file(self.seriesName + '/metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
     
     def StopSpool(self):
         self._dPoll = False
@@ -223,20 +235,20 @@ class Spooler(sp.Spooler):
         logger.debug('Stopping spooling %s' % self.seriesName)
         
         if self._aggregate_h5:
-            clusterIO.putFile('__aggregate_h5/' + self.seriesName + '/final_metadata.json', self.md.to_JSON().encode(),
-                              serverfilter=self.clusterFilter)
+            clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/final_metadata.json', self.md.to_JSON().encode(),
+                               serverfilter=self.clusterFilter)
     
             #save the acquisition events as json - TODO - consider a binary format as the events
             #can be quite numerous
-            clusterIO.putFile('__aggregate_h5/' + self.seriesName + '/events.json', self.evtLogger.to_JSON().encode(),
-                              serverfilter=self.clusterFilter)
+            clusterIO.put_file('__aggregate_h5/' + self.seriesName + '/events.json', self.evtLogger.to_JSON().encode(),
+                               serverfilter=self.clusterFilter)
         
         else:
-            clusterIO.putFile(self.seriesName  + '/final_metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
+            clusterIO.put_file(self.seriesName + '/final_metadata.json', self.md.to_JSON().encode(), serverfilter=self.clusterFilter)
             
             #save the acquisition events as json - TODO - consider a binary format as the events
             #can be quite numerous
-            clusterIO.putFile(self.seriesName  + '/events.json', self.evtLogger.to_JSON().encode(), serverfilter=self.clusterFilter)
+            clusterIO.put_file(self.seriesName + '/events.json', self.evtLogger.to_JSON().encode(), serverfilter=self.clusterFilter)
         
         
     def OnFrame(self, sender, frameData, **kwargs):

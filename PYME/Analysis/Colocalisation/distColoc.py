@@ -11,6 +11,7 @@
 ##################
 
 from PYME.Analysis.points import DistHist
+import numpy as np
 
 #from PYME.Acquire.ExecTools import execBG
 
@@ -24,8 +25,9 @@ def rebin(a, fact):
     return b
 
 def calcDistCorr(cfilter, colourA, colourB, nbins=100, binsize=10):
-    from pylab import *
     '''Do pointwise / ripley based colocalisation between colourA and colourB'''
+    
+    import matplotlib.pyplot as plt
     #save current state of colour filter
     old_col = cfilter.currentColour
 
@@ -39,8 +41,8 @@ def calcDistCorr(cfilter, colourA, colourB, nbins=100, binsize=10):
     yB = cfilter['y']
 
     #generate randomly distributed x & y values with the same density as colourB
-    xR = (xB.max() - xB.min())*rand(len(xB)) + xB.min()
-    yR = (yB.max() - yB.min())*rand(len(xB)) + yB.min()
+    xR = (xB.max() - xB.min())*np.random.rand(len(xB)) + xB.min()
+    yR = (yB.max() - yB.min())*np.random.rand(len(xB)) + yB.min()
 
     hAA = DistHist.distanceHistogram(xA, yA, xA, yA, nbins, binsize)
     hAB = DistHist.distanceHistogram(xA, yA, xB, yB, nbins, binsize)
@@ -50,56 +52,56 @@ def calcDistCorr(cfilter, colourA, colourB, nbins=100, binsize=10):
     hAR = DistHist.distanceHistogram(xA, yA, xR, yR, nbins, binsize)
     hBR = DistHist.distanceHistogram(xB, yB, xR, yR, nbins, binsize)
     
-    d = binsize*arange(nbins)
+    d = binsize*np.arange(nbins)
 
-    figure()
+    plt.figure()
     #subplot(211)
-    plot(d, hAA/hAA.sum()-hAR/hAR.sum(), label='%s' % (colourA,), lw=2)
-    plot(d, hAB/hAB.sum()-hBR/hBR.sum(), label='%s' % (colourB,), lw=2)
-    plot(d, hAA/hAA.sum()-hAB/hAB.sum(), '--',label='%s - %s' % (colourA, colourB), lw=2)
+    plt.plot(d, hAA/hAA.sum()-hAR/hAR.sum(), label='%s' % (colourA,), lw=2)
+    plt.plot(d, hAB/hAB.sum()-hBR/hBR.sum(), label='%s' % (colourB,), lw=2)
+    plt.plot(d, hAA/hAA.sum()-hAB/hAB.sum(), '--',label='%s - %s' % (colourA, colourB), lw=2)
 
-    grid()
-    legend()
-    xlabel('Radius [nm] from %s' % colourA)
-    ylabel('Excess Labelling')
+    plt.grid()
+    plt.legend()
+    plt.xlabel('Radius [nm] from %s' % colourA)
+    plt.ylabel('Excess Labelling')
 
-    figure()
+    plt.figure()
     #subplot(211)
-    plot(d, hBB/hBB.sum()-hBR/hBR.sum(), label='%s' % (colourB,), lw=2)
-    plot(d, hBA/hBA.sum()-hAR/hAR.sum(), label='%s' % (colourA,), lw=2)
-    plot(d, hBB/hBB.sum()-hBA/hBA.sum(), '--',label='%s - %s' % (colourB, colourA), lw=2)
+    plt.plot(d, hBB/hBB.sum()-hBR/hBR.sum(), label='%s' % (colourB,), lw=2)
+    plt.plot(d, hBA/hBA.sum()-hAR/hAR.sum(), label='%s' % (colourA,), lw=2)
+    plt.plot(d, hBB/hBB.sum()-hBA/hBA.sum(), '--',label='%s - %s' % (colourB, colourA), lw=2)
 
-    grid()
-    legend()
-    xlabel('Radius [nm] from %s' % colourB)
-    ylabel('Excess Labelling')
+    plt.grid()
+    plt.legend()
+    plt.xlabel('Radius [nm] from %s' % colourB)
+    plt.ylabel('Excess Labelling')
 
     #subplot(212)
-    figure()
+    plt.figure()
 
-    corr = 1 - abs(hAB/hAB.sum()-hAA/hAA.sum()).sum()/abs(hAA/hAA.sum()-hAR/hAR.sum()).sum()
-
-    print('Correlation Factor: %3.2f' % corr)
-
-    ccorr = 1 - cumsum(abs(hAB/hAB.sum()-hAA/hAA.sum()))/cumsum(abs(hAA/hAA.sum()-hAR/hAR.sum()))
-    plot(d,ccorr)
-    ylim(-1,1)
-    grid()
-    ylabel('Correlation Factor')
-    xlabel('Radius [nm] from %s' % colourA)
-
-    figure()
-
-    corr = 1 - abs(hBA/hBA.sum()-hBB/hBB.sum()).sum()/abs(hBB/hBB.sum()-hBR/hBR.sum()).sum()
+    corr = 1 - np.abs(hAB/hAB.sum()-hAA/hAA.sum()).sum()/np.abs(hAA/hAA.sum()-hAR/hAR.sum()).sum()
 
     print('Correlation Factor: %3.2f' % corr)
 
-    ccorr = 1 - cumsum(abs(hBA/hBA.sum()-hBB/hBB.sum()))/cumsum(abs(hBB/hBB.sum()-hBR/hBR.sum()))
-    plot(d,ccorr)
-    ylim(-1,1)
-    grid()
-    ylabel('Correlation Factor')
-    xlabel('Radius [nm] from %s' % colourB)
+    ccorr = 1 - np.cumsum(np.abs(hAB/hAB.sum()-hAA/hAA.sum()))/np.cumsum(np.abs(hAA/hAA.sum()-hAR/hAR.sum()))
+    plt.plot(d,ccorr)
+    plt.ylim(-1,1)
+    plt.grid()
+    plt.ylabel('Correlation Factor')
+    plt.xlabel('Radius [nm] from %s' % colourA)
+
+    plt.figure()
+
+    corr = 1 - np.abs(hBA/hBA.sum()-hBB/hBB.sum()).sum()/np.abs(hBB/hBB.sum()-hBR/hBR.sum()).sum()
+
+    print('Correlation Factor: %3.2f' % corr)
+
+    ccorr = 1 - np.cumsum(np.abs(hBA/hBA.sum()-hBB/hBB.sum()))/np.cumsum(np.abs(hBB/hBB.sum()-hBR/hBR.sum()))
+    plt.plot(d,ccorr)
+    plt.ylim(-1,1)
+    plt.grid()
+    plt.ylabel('Correlation Factor')
+    plt.xlabel('Radius [nm] from %s' % colourB)
 
     #title('%s vs %s  - Correlation Factor = %3.2f' % (colourB, colourA, corr))
 

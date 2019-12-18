@@ -311,29 +311,33 @@ class Pipeline:
             
         #renderers.renderMetadataProviders.append(self.SaveMetadata)
             
+    @property
+    def output(self):
+        return self.colourFilter
+    
     def __getitem__(self, keys):
         """gets values from the 'tail' of the pipeline (ie the colourFilter)"""
         
-        return self.colourFilter[keys]
+        return self.output[keys]
 
     def keys(self):
-        return self.colourFilter.keys()
+        return self.output.keys()
     
     def __getattr__(self, item):
         try:
             #if 'colourFilter in '
-            if self.colourFilter is None:
+            if self.output is None:
                 raise AttributeError('colourFilter not yet created')
             
-            return self.colourFilter[item]
+            return self.output[item]
         except KeyError:
             raise AttributeError("'%s' has not attribute '%s'" % (self.__class__, item))
 
     def __dir__(self):
-        if self.colourFilter is None:
+        if self.output is None:
             return list(self.__dict__.keys()) + list(dir(type(self)))
         else:
-            return list(self.colourFilter.keys()) + list(self.__dict__.keys()) + list(dir(type(self)))
+            return list(self.output.keys()) + list(self.__dict__.keys()) + list(dir(type(self)))
     
     #compatibility redirects
     @property
@@ -431,7 +435,7 @@ class Pipeline:
         self.selectedDataSourceKey = dskey
 
         #remove any keys from the filter which are not present in the data
-        for k in self.filterKeys.keys():
+        for k in list(self.filterKeys.keys()):
             if not k in self.selectedDataSource.keys():
                 self.filterKeys.pop(k)
 

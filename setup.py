@@ -12,15 +12,17 @@
 import setuptools #to monkey-patch distutils for ms visualc for python
 from PYME.misc import cython_numpy_monkey
 
-def configuration(parent_package='',top_path=None):
-    from numpy.distutils.misc_util import Configuration
-    config = Configuration('PYME',parent_package,top_path)
-    config.add_subpackage('PYME')
-    
-    #config.make_svn_version_py()  # installs __svn_version__.py
-    #config.make_config_py()
-    config.get_version('PYME/version.py')
-    return config
+from PYME.setup import configuration
+
+# def configuration(parent_package='',top_path=None):
+#     from numpy.distutils.misc_util import Configuration
+#     config = Configuration('PYME',parent_package,top_path)
+#     config.add_subpackage('PYME')
+#
+#     #config.make_svn_version_py()  # installs __svn_version__.py
+#     #config.make_config_py()
+#     config.get_version('PYME/version.py')
+#     return config
 
 import yaml
 import os

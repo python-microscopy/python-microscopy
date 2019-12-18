@@ -33,6 +33,44 @@ import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
+def check_mapexists(mdh, type='dark'):
+    import os
+    from PYME.IO import clusterIO
+    from PYME.IO.FileUtils import nameUtils
+    from PYME.Analysis.gen_sCMOS_maps import map_filename
+
+    if type == 'dark':
+        id = 'Camera.DarkMapID'
+    elif type == 'variance':
+        id = 'Camera.VarianceMapID'
+    elif type == 'flatfield':
+        id = 'Camera.FlatfieldMapID'
+    else:
+        raise RuntimeError('unknown map type %s' % type)
+
+    mapfn = map_filename(mdh, type)
+
+    # find and record calibration paths
+    local_path = os.path.join(nameUtils.getCalibrationDir(mdh['Camera.SerialNumber']), mapfn)
+    cluster_path = 'CALIBRATION/%s/%s' % (mdh['Camera.SerialNumber'], mapfn)
+
+    if clusterIO.exists(cluster_path):
+        c_path = 'PYME-CLUSTER://%s/%s' % (clusterIO.local_serverfilter, cluster_path)
+        mdh[id] = c_path
+        return c_path
+    elif os.path.exists(local_path):
+        mdh[id] = local_path
+        return local_path
+    else:
+        return None
+
+
+class CameraMapMixin(object):
+    def fill_camera_map_metadata(self, mdh):
+        check_mapexists(mdh, type='dark')
+        check_mapexists(mdh, type='variance')
+        check_mapexists(mdh, type='flatfield')
+
 
 class Camera(object):
     # Frame format - PYME previously supported frames in a custom format, but numpy_frames should always be true for current code
@@ -630,14 +668,15 @@ class Camera(object):
 
         a dictionary with the following entries:
 
-        'ReadNoise' : camera read noise in electrons
-        'ElectronsPerCount' : AD conversion factor - how many electrons per camera count
-        'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS
+        'ReadNoise' : camera read noise as a standard deviation in units of ADU
+        'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
+        'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
+            doi: 10.1109/TED.2003.813462
 
         and optionally
-        'ADOffset' : the dark level (in counts)
+        'ADOffset' : the dark level (in ADU)
         'DefaultEMGain' : a sensible EM gain setting to use for localization recording
-        'SaturationThreshold' : the full well capacity (in counts)
+        'SaturationThreshold' : the full well capacity (in ADU)
 
         """
         raise NotImplementedError('Implement in derived class')
@@ -804,6 +843,11 @@ class MultiviewCameraMixin(object):
                 This should be the class of the camera you want to inherit from. The MultiviewCamera class needs to know
                 this so we can clobber the inherited ExtractColor method and still be able to pull raw frames from the
                 camera using camera_class.ExtractColor
+
+            Notes
+            -----
+            For now, the 0th multiview ROI should be the upper-left most multiview ROI, in order to properly spoof the
+            position to match up with the stage. See PYME.IO.MetaDataHandler.get_camera_roi_origin.
             """
             self.camera_class = camera_class
             self.multiview_info = multiview_info

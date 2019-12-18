@@ -39,3 +39,4 @@ test_report.html
 PYME/experimental/_treap.c
 PYME/experimental/_triangle_mesh.c
 PYME/IO/buffer_helpers.c
+PYME/Deconv/fftw_wisdom

@@ -55,7 +55,7 @@ class DataSource(BaseDataSource):
         #print mdfn
         
         self.mdh = MetaDataHandler.NestedClassMDHandler()
-        self.mdh.update(json.loads(clusterIO.getFile(mdfn, self.clusterfilter)))
+        self.mdh.update(json.loads(clusterIO.get_file(mdfn, self.clusterfilter)))
         
         self.fshape = None#(self.mdh['Camera.ROIWidth'],self.mdh['Camera.ROIHeight'])
         
@@ -68,7 +68,7 @@ class DataSource(BaseDataSource):
     
     def getSlice(self, ind):
         frameName = '%s/frame%05d.pzf' % (self.sequenceName, ind)
-        sl = PZFFormat.loads(clusterIO.getFile(frameName, self.clusterfilter))[0]
+        sl = PZFFormat.loads(clusterIO.get_file(frameName, self.clusterfilter))[0]
         
         #print sl.shape, sl.dtype
         return sl.squeeze()
@@ -93,7 +93,7 @@ class DataSource(BaseDataSource):
         import pandas as pd #defer pandas import for as long as possible
         try:
             #return json.loads(clusterIO.getFile(eventFileName, self.clusterfilter))
-            ev = pd.read_json(clusterIO.getFile(self.eventFileName, self.clusterfilter))
+            ev = pd.read_json(clusterIO.get_file(self.eventFileName, self.clusterfilter))
             if len(ev) == 0:
                 return []
             

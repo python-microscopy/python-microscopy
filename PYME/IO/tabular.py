@@ -493,8 +493,8 @@ class TextfileSource(TabularBase):
 class MatfileSource(TabularBase):
     _name = "Matlab Source"
     def __init__(self, filename, columnnames, varName='Orte'):
-        """ Input filter for use with matlab data. Need to provide a variable name
-        and a list of column names
+        """ Input filter for use with matlab data where all variables are in in one 2D array (variable).
+        Need to provide a variable name within the matfile to and a list of column names
         in the order that they appear in the file. Using 'x', 'y' and 'error_x'
         for the position data and it's error should ensure that this functions
         with the visualisation backends"""
@@ -502,11 +502,9 @@ class MatfileSource(TabularBase):
         import scipy.io
 
         self.res = scipy.io.loadmat(filename)[varName].astype('f4')  # TODO: evaluate why these are cast as floats
-        
         self.res = np.rec.fromarrays(self.res.T, dtype={'names' : columnnames,  'formats' :  ['f4' for i in range(len(columnnames))]})
 
         self._keys = list(columnnames)
-
 
 
     def keys(self):
@@ -516,7 +514,6 @@ class MatfileSource(TabularBase):
         key, sl = self._getKeySlice(key)
         if not key in self._keys:
             raise KeyError('Key (%s) not found' % key)
-
 
         return self.res[key][sl]
 
@@ -529,11 +526,10 @@ class MatfileColumnSource(TabularBase):
     _name = "Matlab Column Source"
     
     def __init__(self, filename):
-        """ Input filter for use with matlab data. Need to provide a variable name
-        and a list of column names
-        in the order that they appear in the file. Using 'x', 'y' and 'error_x'
-        for the position data and it's error should ensure that this functions
-        with the visualisation backends"""
+        """ Input filter for use with matlab data where the each column is in a separate variable.
+        Relies on variables having suitable column names - columns named x, y, z, t, and probe (if multi-colour) should
+        be present.
+        """
         
         import scipy.io
         

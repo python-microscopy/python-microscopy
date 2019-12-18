@@ -46,9 +46,9 @@ def duplicateFiles(targetNCopies=TARGETCOPIES, serverfilter=clusterIO.local_serv
     for top, dirs, files in clusterIO.walk('', serverfilter=serverfilter):
         for f in files:
             #print (top+f),len(clusterIO.locateFile(top + f)) 
-            if len(clusterIO.locateFile(top + f)) < targetNCopies:
+            if len(clusterIO.locate_file(top + f)) < targetNCopies:
                 print('Duplicating %s' % (top + f))
-                clusterIO.mirrorFile(top + f)
+                clusterIO.mirror_file(top + f)
                 ncopied += 1
                 
     print('%d files duplicated' % ncopied)

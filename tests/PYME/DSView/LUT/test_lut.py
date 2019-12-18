@@ -19,11 +19,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+import pytest
 
+# mark some tests as expected to fail if we are testing on a headless system
+try:
+    import wx
+    HAVE_WX = True
+except ImportError:
+    HAVE_WX = False
 
+@pytest.mark.xfail(not HAVE_WX, reason="Fails on a headless system as PYME.DSView.__init__ imports wx")
 def test():
     import numpy as np
-    from pylab import cm, rand
+    from matplotlib import cm
+    #from pylab import cm, rand
     
     from PYME.DSView.LUT import lut
     
@@ -31,7 +40,7 @@ def test():
     print((lut1.shape))
     
     def testLut():
-        d = (100*rand(5,5)).astype('uint16')
+        d = (100*np.random.rand(5,5)).astype('uint16')
         o = np.zeros((5,5,3), 'uint8')
         
         lut.applyLUTu8(d.astype('uint8'), .01, 0,lut1, o)

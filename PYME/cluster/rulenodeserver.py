@@ -81,12 +81,12 @@ class Rater(object):
             filename, serverfilter = clusterIO.parseURL(task['inputs']['frames'])
             filename = '/'.join([filename.lstrip('/'), 'frame%05d.pzf' % int(task['taskdef']['frameIndex'])])
         
-            if clusterIO.isLocal(filename, serverfilter):
+            if clusterIO.is_local(filename, serverfilter):
                 cost = .01
     
         elif task['type'] == 'recipe':
             for URL in task['inputs'].values():
-                if clusterIO.isLocal(*clusterIO.parseURL(URL)):
+                if clusterIO.is_local(*clusterIO.parseURL(URL)):
                     cost *= .2
                     
         return taskID, cost

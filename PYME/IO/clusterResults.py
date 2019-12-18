@@ -42,7 +42,7 @@ def fileFormattedResults(URI, data, mimetype=None, compression=True):
         if not sequenceName.startswith('/'):
             sequenceName = '/' + sequenceName
 
-        clusterIO.putFile(sequenceName, data, clusterfilter)
+        clusterIO.put_file(sequenceName, data, clusterfilter)
     elif URI.startswith('HTTP') or URI.startswith('http'):
         logging.debug('fileFormattedResults - URI: ' + URI)
         #logging.debug('data: ' + data)
@@ -87,7 +87,7 @@ def pickResultsServer(filename, serverfilter=clusterIO.local_serverfilter):
         #logging.debug('pickResultsServer - output[cached]: ' + loc + stub)
         return loc + stub
     except KeyError:
-        locs_ = clusterIO.locateFile(fn, serverfilter)
+        locs_ = clusterIO.locate_file(fn, serverfilter)
         locs = []
         for l, dt in locs_:
             parts = l.split('/')

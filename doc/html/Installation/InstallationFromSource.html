@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Installation for development or instrument control &mdash; PYME 19.08.06 documentation</title>
+  <title>Installation for development or instrument control &mdash; PYME 19.12.08 documentation</title>
   
 
   
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                19.08.06
+                19.12.08
               </div>
             
           
@@ -95,7 +95,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation for development or instrument control</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#step-1-installing-anaconda">STEP 1: Installing Anaconda</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-2-add-the-david-baddeley-channel-and-install-dependencies">STEP 2: Add the <code class="docutils literal notranslate"><span class="pre">david_baddeley</span></code> channel and install dependencies</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#step-3-install-mercurial">STEP 3: Install mercurial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-3-install-git">STEP 3: Install git</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-4-install-a-c-c-compiler">STEP 4: Install a c/c++ compiler</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-5-get-the-code">STEP 5: Get the code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-6-install">STEP 6: Install</a></li>
@@ -217,11 +217,10 @@ conda install pyme-depends
 </div>
 <p>This should download and install the required dependencies.</p>
 </div>
-<div class="section" id="step-3-install-mercurial">
-<h2>STEP 3: Install mercurial<a class="headerlink" href="#step-3-install-mercurial" title="Permalink to this headline">¶</a></h2>
-<p>We need to mercurial to pull the latest source from the repository. You can either get this through your platform
-repositories [linux], by downloading and installing <a class="reference external" href="http://tortoisehg.bitbucket.org/">TortoiseHG</a> [win/OSX], or by
-running <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">mercurial</span></code>.</p>
+<div class="section" id="step-3-install-git">
+<h2>STEP 3: Install git<a class="headerlink" href="#step-3-install-git" title="Permalink to this headline">¶</a></h2>
+<p>If you are contemplating a source install you probably don’t need explicit instructions here, and might well already
+have it, but as a fallback git is conda installable: <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span> <span class="pre">git</span></code>.</p>
 </div>
 <div class="section" id="step-4-install-a-c-c-compiler">
 <h2>STEP 4: Install a c/c++ compiler<a class="headerlink" href="#step-4-install-a-c-c-compiler" title="Permalink to this headline">¶</a></h2>
@@ -230,13 +229,12 @@ install XCode, and on windows download and install <a class="reference external"
 </div>
 <div class="section" id="step-5-get-the-code">
 <h2>STEP 5: Get the code<a class="headerlink" href="#step-5-get-the-code" title="Permalink to this headline">¶</a></h2>
-<p>The code is stored in a mercurial repository. Get the current copy by doing</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">hg</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">bitbucket</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="n">david_baddeley</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">microscopy</span>
+<p>The code is stored in a github repository. Get the current copy by doing</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">microscopy</span><span class="o">/</span><span class="n">python</span><span class="o">-</span><span class="n">microscopy</span>
 </pre></div>
 </div>
-<p>or the equivalent using a gui client (eg <a class="reference external" href="http://tortoisehg.bitbucket.org/">TortoiseHG</a>).</p>
 <p>If you are going to be doing significant development and plan on issuing pull requests, it might be reasonable to create
-a private fork on bitbucket at this point and clone from that (this is reasonably easy to set up later, so if you’re unsure
+a private fork on github at this point and clone from that (this is reasonably easy to set up later, so if you’re unsure
 just pull the code from the default repository and go from there).</p>
 </div>
 <div class="section" id="step-6-install">
@@ -255,6 +253,12 @@ just pull the code from the default repository and go from there).</p>
 non-framework build.</p>
 </div>
 <p>At this point you should have a functioning install.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Due to some slightly weird interplay between numpy distutils and setuptools <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">develop</span></code> works from
+the base directory of the repository, but if you want to run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">install</span></code> instead you’ll need to drop
+down one directory into the <cite>PYME</cite> directory first.</p>
+</div>
 </div>
 <div class="section" id="further-configuration-mostly-optional">
 <h2>Further configuration (mostly optional)<a class="headerlink" href="#further-configuration-mostly-optional" title="Permalink to this headline">¶</a></h2>

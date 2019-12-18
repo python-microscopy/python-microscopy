@@ -32,9 +32,17 @@ called Miniconda. We reccomend the later as it is less likely to result in depen
 `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ from https://docs.conda.io/en/latest/miniconda.html .
 Choose the **64 bit** version of **Python 2.7** for your prefered platform.
 
+.. note::
+
+    As of mid 2019, PYME will no longer install cleanly on top of a full anaconda install due to a broken dask package
+    in the default conda channels (see https://github.com/dask/dask/issues/4846 - this fix does not seem to have propagated
+    back to the anaconda default channels). We strongly recommend using miniconda instead (or a bare conda environment
+    which does not include dask). If you need scikits-image (which has dask as a dependency), install python-microscopy
+    first and then explicity install compatible versions of numpy, skimage, and dask.
+
 .. warning::
 
-    Anaconda is available in both Python 2.7 and Python 3.x flavours. PYME will **only** work with the Python 2.7 version.
+    Miniconda is available in both Python 2.7 and Python 3.x flavours. PYME will **only** work with the Python 2.7 version.
 
 
 
@@ -46,16 +54,15 @@ install additional packages. In addition to the main set of packages maintained
 by Continuim Analytics (the developers of anaconda) conda can install packages which
 members of the community have uploaded to **binstar.org**. The python-microscopy package 
 and a number of it's dependencies are available through the `david_baddeley` binstar channel. 
-To install PYME, we first need to tell conda to use the `david_baddeley` channel
-in addition to it's existing channels. We can simply tell conda to install the package
-named `python-microscopy`. If you are using miniconda rather than a full anaconda distribution, we also need to add
+To install PYME, we need to tell conda to use the `david_baddeley` channel in addition to it's existing channels.
+With miniconda (and potentially more recent versions of anaconda), we also need to add
 the `anaconda` channel, which should be added before the `david_baddeley` channel to ensure that the `david_baddeley`
-channel gets a higher priority and can over-ride the broken fftw package in the anaconda channel.
+channel gets a higher priority and can over-ride the broken fftw package in the anaconda channel. We can then tell
+conda to install the package named `python-microscopy`.
 
 This is accomplished by opening a terminal window (On OSX use spotlight to launch the **Terminal** 
 app, on Windows, launch the **Anaconda Command Prompt** from the "Anaconda" group in the 
-start menu) and running the following three commands (the first of which can be ommitted if starting from a
-full anaconda install):
+start menu) and running the following three commands:
 
 .. code-block:: bash
 	
@@ -67,12 +74,11 @@ This should download and install PYME, along with a number of it's dependencies.
 
 .. note::
 
-    **Troubleshooting:** There appears to be a dependency conflict between the `mayavi` (which we use for 3D
-    visualization) and `navigator-updater` packages in recent versions of Anaconda. As `navigator-updater`
-    is installed by default, this can prevent `python-microscopy` from installing. If the installation above fails
-    with an error message about dependencies, try running ``conda uninstall navigator-updater`` and then re-running
-    ``conda install python-microscopy``. This can also be avoided by starting with the stripped down miniconda distribution
-    instead.
+    **Troubleshooting:** Installing on top of a recent full anaconda distribution will likely fail due to dependency
+    conflicts. The easiest solution is to use miniconda instead, or alternatively install PYME into a clean conda
+    environment (e.g. ``conda create -n PYME python-microscopy``). Doing the latter will require you to activate the
+    environment (e.g. ``conda activate PYME``) before running any of the PYME commands. It might also break the GUI
+    shortcuts and file ascociations on windows.
 
     Other dependency issues can result in an old version of PYME being installed (most likely in older anaconda installs)
     A good sanity check is to look at what version conda wants to install when you run `conda install python-microscopy`.
@@ -99,14 +105,14 @@ installed as part of PYME.
 
 .. tabularcolumns:: |p{4.5cm}|p{11cm}|
 
-========================	==================================================================================================================
-``dh5view -t -m lite``		This is the data viewer for image files (also used to launch localization analysis). The **-t -m lite** options 
-							initiates a test mode which should display a image consisting of random noise. 
-
-``PYMEAcquire``				This is the data acquistion component, which when launched without any options will start with simulated hardware.
-
-``VisGUI``					This is a viewer for point data sets. When launched without any parameters it will show a large pink triangle.
-========================	==================================================================================================================
++------------------------+----------------------------------------------------------------------------------------------------------------------+
+| ``dh5view -t -m lite`` | This is the data viewer for image files (also used to launch localization analysis). The **-t -m lite** options      |
+|                        | initiates a test mode which should display a image consisting of random noise.                                       |
++------------------------+----------------------------------------------------------------------------------------------------------------------+
+| ``PYMEAcquire``        | This is the data acquistion component, which when launched without any options will start with simulated hardware.   |
++------------------------+----------------------------------------------------------------------------------------------------------------------+
+| ``VisGUI``             | This is a viewer for point data sets. When launched without any parameters it will show a large pink triangle.       |
++------------------------+----------------------------------------------------------------------------------------------------------------------+
 
 
 STEP 4: Setting up bioformats importing [optional]

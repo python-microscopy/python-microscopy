@@ -382,6 +382,12 @@ class microscope(object):
     def SetPos(self, **kwargs):
         state_updates = {'Positioning.%s' % k : v for k, v in kwargs.items()}
         self.state.setItems(state_updates)
+        
+    def centre_roi_on(self, x, y):
+        """Convenience function to center the ROI on a given location"""
+        dx, dy = self.get_roi_offset()
+        
+        self.SetPos(x=(x-dx), y=(y-dy))
             
     def GetPosRange(self):
         #Todo - fix to use positioning
@@ -918,6 +924,37 @@ class microscope(object):
         if self.cam is None:
             self.cam = cam
             cam.SetActive(True)
+            
+    def get_roi_offset(self):
+        """
+        Stage (positioning) coordinates are referenced to the (0,0) pixel of the primary camera. Return the offset to
+        the centre of the current ROI. Used when, e.g. moving the stage to centre the current view on a given set of
+        coordinates.
+        
+        Returns
+        -------
+        
+        roi_offset_x, roi_offset_y : float
+                                        offsets in um
+
+        """
+        from PYME.Acquire.Hardware.Camera import MultiviewCameraMixin
+        
+        x0, y0, _, _ = self.state['Camera.ROI']
+    
+        if isinstance(self.cam, MultiviewCameraMixin):
+            # fix multiview crazyness
+            if self.cam.multiview_enabled:
+                #always use the 0th ROI for determining relative position, regardless of which ROIs are active
+                x0, y0 = self.cam.view_origins[0]
+        
+            roi_offset_x = self.GetPixelSize()[0] * (x0 + 0.5 * self.cam.size_x)
+            roi_offset_y = self.GetPixelSize()[1] * (y0 + 0.5 * self.cam.size_y)
+        else:
+            roi_offset_x = self.GetPixelSize()[0] * (x0 + 0.5 * self.cam.GetPicWidth())
+            roi_offset_y = self.GetPixelSize()[1] * (y0 + 0.5 * self.cam.GetPicHeight())
+            
+        return roi_offset_x, roi_offset_y
 
     def __del__(self):
         self.settingsDB.close()

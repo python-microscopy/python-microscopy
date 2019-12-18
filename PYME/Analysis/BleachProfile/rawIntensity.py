@@ -23,6 +23,7 @@
 
 
 #from pylab import *
+import numpy as np
 from PYME.Analysis._fithelpers import *
 
 def dyedyemod(p, t):
@@ -113,9 +114,10 @@ def linMod(p, t):
     
 
 def processIntensityTrace(I, mdh, dt=1):
-    from pylab import *
+    #from pylab import *
+    import matplotlib.pyplot as plt
     
-    t = arange(len(I))*dt
+    t = np.arange(len(I))*dt
     dfb, dfe = mdh['Protocol.DarkFrameRange']
     dk_emgain = I[dfb:dfe].mean()
     
@@ -127,7 +129,7 @@ def processIntensityTrace(I, mdh, dt=1):
     dk_noem = min(I[pbe:be])
     
     #find real start of bleach curve by looking for the maximum of the bleach signal
-    bb += argmax(I[bb:be])
+    bb += np.argmax(I[bb:be])
     bb += 1
     
     init_bleach = mdh['Camera.TrueEMGain']*(I[bb:be] - dk_noem)
@@ -140,14 +142,14 @@ def processIntensityTrace(I, mdh, dt=1):
     
     
     
-    r0 = FitModel(linMod, [-1, -1, full_bleach[0],full_bleach[3] - init_bleach[-1]], hstack((init_bleach[-40:], full_bleach[5:40])), 
-                  hstack((t_init[-40:], t_full[5:40])) - t_init[-1])
+    r0 = FitModel(linMod, [-1, -1, full_bleach[0],full_bleach[3] - init_bleach[-1]], np.hstack((init_bleach[-40:], full_bleach[5:40])),
+                  np.hstack((t_init[-40:], t_full[5:40])) - t_init[-1])
     print((r0[0]))
     
-    figure()
-    t_ = hstack((t_init[-40:], t_full[5:40])) - t_init[-1]
-    plot(t_, hstack((init_bleach[-40:], full_bleach[5:40])))
-    plot(t_, linMod(r0[0], t_))
+    plt.figure()
+    t_ = np.hstack((t_init[-40:], t_full[5:40])) - t_init[-1]
+    plt.plot(t_, np.hstack((init_bleach[-40:], full_bleach[5:40])))
+    plt.plot(t_, linMod(r0[0], t_))
     
     init_bleach = init_bleach - r0[0][3]#full_bleach[5] - init_bleach[-1]
     
@@ -161,7 +163,7 @@ def processIntensityTrace(I, mdh, dt=1):
     
     #ds3 = t[ds] - t2[0]
     
-    r = FitModelWeighted(dyedyemod, [I2[0], 1., I2[-1]], I2, sqrt(I2)/4, t3)
+    r = FitModelWeighted(dyedyemod, [I2[0], 1., I2[-1]], I2, np.sqrt(I2)/4, t3)
     print((r[0]))
     
     #r2 = FitModel(dyedyemod2, [I2[0], 1., I2[-1], 0.], I2, t3, ds3)
@@ -180,39 +182,39 @@ def processIntensityTrace(I, mdh, dt=1):
     
     A0 = init_bleach[0] 
     print(A0)
-    r6 = FitModelWeighted(dyedyemodt, [A0, dt, full_bleach[-1], 1.], I2, sqrt(I2)/4, t3)
+    r6 = FitModelWeighted(dyedyemodt, [A0, dt, full_bleach[-1], 1.], I2, np.sqrt(I2)/4, t3)
     print((r6[0]))
     
-    figure()
-    plot(t_init, init_bleach)
-    plot(t_full, full_bleach)
+    plt.figure()
+    plt.plot(t_init, init_bleach)
+    plt.plot(t_full, full_bleach)
     
-    plot(t2, dyedyemod(r[0], t3))
+    plt.plot(t2, dyedyemod(r[0], t3))
     #plot(t2, dyedyemod2(r2[0], t3, ds3))
     
     #plot(t2, dyedyemod(r3[0], t3))
-    plot(t2, dyedyemod(r4[0], t3) )   
+    plt.plot(t2, dyedyemod(r4[0], t3) )
     
-    xlabel('Time [s]')
-    ylabel('Intensity')
+    plt.xlabel('Time [s]')
+    plt.ylabel('Intensity')
     #plot(t_init, init_bleach + full_bleach[0] - init_bleach[-1])
     
-    figure()
+    plt.figure()
     
-    loglog(t3 + dt, I2)
-    loglog(t3 + dt, dyedyemod(r[0], t3))
+    plt.loglog(t3 + dt, I2)
+    plt.loglog(t3 + dt, dyedyemod(r[0], t3))
     #loglog(t3, dyedyemod2(r2[0], t3, ds3))
     
     #loglog(t3, dyedyemod(r3[0], t3))
     #loglog(t3 + dt, dyedyemod(r4[0], t3))
     #loglog(t3, dyedyemoda(r5[0], t3))
-    loglog(t3+ dt, dyedyemodt(r6[0], t3))
+    plt.loglog(t3+ dt, dyedyemodt(r6[0], t3))
     #loglog(t3+ dt, dyedyemodt([dt,I2[-1]], t3, A0))
     
     
-    figtext(.3,.8, 'A0 = %3.0f, k = %3.4f, b = %3.1f' % tuple(r[0]), size=18, color='g')
+    plt.figtext(.3,.8, 'A0 = %3.0f, k = %3.4f, b = %3.1f' % tuple(r[0]), size=18, color='g')
     #figtext(.3,.75, 'A0 = %3.0f, k = %3.4f, b = %3.1f' % tuple(r4[0]), size=18, color='r')
-    figtext(.3,.75, 'A0 = %3.0f, k = %3.3f, b = %3.1f, exp = %3.3f' % tuple(r6[0]), size=18, color='r')
+    plt.figtext(.3,.75, 'A0 = %3.0f, k = %3.3f, b = %3.1f, exp = %3.3f' % tuple(r6[0]), size=18, color='r')
     #i2s = 
     #plot(t2[:-1], diff(convolve(I2, ones(20), 'same')))
     
