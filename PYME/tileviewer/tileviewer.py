@@ -78,9 +78,12 @@ class TileServer(object):
         
         Parameters
         ----------
-        x : x position (in um)
-        y : y position (in um)
-        hit_radius : radius around current point to use when looking for existing ROIS (um)
+        x : str
+            x position (in um)
+        y : str
+            y position (in um)
+        hit_radius : float
+            radius around current point to use when looking for existing ROIS (um)
         
         Notes
         -----
@@ -96,7 +99,7 @@ class TileServer(object):
         hr2 = hit_radius**2
         
         for l in self.roi_locations:
-            if ((l.x - x)**2 + (l.y - y)**2) < hr2:
+            if ((l.x - float(x))**2 + (l.y - float(y))**2) < hr2:
                 #found a hit, remove and redirect
                 self.roi_locations.remove(l)
                 raise cherrypy.HTTPRedirect('/roi_list')
