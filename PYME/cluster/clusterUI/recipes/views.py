@@ -22,7 +22,7 @@ def recipe_template(request):
 def get_input_glob(request):
     from PYME.IO import clusterIO
     
-    filepaths = clusterIO.cglob(request.GET.get('glob').encode().lstrip('/'))
+    filepaths = clusterIO.cglob(request.GET.get('glob').lstrip('/'))
     
     return render(request, 'recipes/input_list.html', {'filepaths' : filepaths,'serverfilter' : server_filter})
 
@@ -32,7 +32,7 @@ def run(request):
         from PYME.cluster.HTTPRulePusher import RecipePusher
     else:
         from PYME.cluster.HTTPTaskPusher import RecipePusher
-    recipeURI = ('pyme-cluster://%s/' % server_filter) + request.POST.get('recipeURL').encode().lstrip('/')
+    recipeURI = ('pyme-cluster://%s/' % server_filter) + request.POST.get('recipeURL').lstrip('/')
 
     pusher = RecipePusher(recipeURI=recipeURI)
 
@@ -54,15 +54,15 @@ def run_template(request):
     else:
         from PYME.cluster.HTTPTaskPusher import RecipePusher
         
-    recipeURI = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeURL').encode().lstrip('/'))
-    output_directory = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeOutputPath').encode().lstrip('/'))
+    recipeURI = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeURL').lstrip('/'))
+    output_directory = 'pyme-cluster://%s/%s' % (server_filter, request.POST.get('recipeOutputPath').lstrip('/'))
 
 
     recipe_text = unifiedIO.read(recipeURI)
     recipe = ModuleCollection.fromYAML(recipe_text)
     
     for file_input in recipe.file_inputs:
-        input_url = 'pyme-cluster://%s/%s' %(server_filter,  request.POST.get('%sURL' % file_input).encode().lstrip('/'))
+        input_url = 'pyme-cluster://%s/%s' %(server_filter,  request.POST.get('%sURL' % file_input).lstrip('/'))
         recipe_text = recipe_text.replace('{'+file_input +'}', input_url)
 
     pusher = RecipePusher(recipe=recipe_text, output_dir=output_directory)
@@ -78,7 +78,7 @@ def view_svg(request):
     from PYME.recipes.modules import ModuleCollection
     from PYME.recipes import recipeLayout
 
-    recipeURI = ('pyme-cluster://%s/' % server_filter) + request.GET.get('recipeURL').encode().lstrip('/')
+    recipeURI = ('pyme-cluster://%s/' % server_filter) + request.GET.get('recipeURL').lstrip('/')
 
     recipe = ModuleCollection.fromYAML(unifiedIO.read(recipeURI))
 
@@ -90,7 +90,7 @@ def extra_inputs(request):
     from PYME.IO import unifiedIO
     from PYME.recipes.modules import ModuleCollection
 
-    recipeURI = ('pyme-cluster://%s/' % server_filter) + request.GET.get('recipeURL').encode().lstrip('/')
+    recipeURI = ('pyme-cluster://%s/' % server_filter) + request.GET.get('recipeURL').lstrip('/')
 
     recipe = ModuleCollection.fromYAML(unifiedIO.read(recipeURI))
     
