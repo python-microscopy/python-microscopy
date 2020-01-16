@@ -122,7 +122,7 @@ def fourier_ring_correlation(imA, imB, voxelsize=[1.0, 1.0], window=False):
     R = np.sqrt(X ** 2 + Y ** 2)
     
     if window:
-        W =np.hanning(X.shape[0])[:,None]*np.hanning(X.shape[1])[:,None]
+        W =np.hanning(X.shape[0])[:,None]*np.hanning(X.shape[1])[None,:]
         imA = imA*W
         imB = imB*W
     

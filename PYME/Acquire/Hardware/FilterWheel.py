@@ -24,7 +24,6 @@
 #Boa:Frame:FiltFrame
 
 import wx
-from .fw102 import FW102B as filtWheel
 
 [wxID_FILTFRAME, wxID_FILTFRAMECHFILTWHEEL, wxID_FILTFRAMEPANEL1, 
 ] = [wx.NewId() for _init_ctrls in range(3)]
@@ -40,13 +39,28 @@ class WFilter:
         self.description = description
         self.OD = OD
         
-class FiltWheel(object):
-    def __init__(self, installedFilters, serPort='COM3', dichroic=None):
+class FilterWheelBase(object):
+    def __init__(self, installedFilters, dichroic=None):
+        """
+        Base class for filter wheels. Manages filter index -> name mappings and synchronization. Individual filter wheel
+        implementations should override `_set_physical_position()` and `_get_physical_position()`
+        
+        Parameters
+        ----------
+        installedFilters : list
+            A list of WFilter objects describing the contents of the filter wheel, and allowing name->index mapping. The
+            first filter in the list is the default (regardless of physical position in wheel.
+            
+        dichroic : dichroic object (optional)
+            If provided, the filter wheel will register itself with the "dichroic" and automatically update when the
+            dichroic is changed. This is useful when excitation filters are in a separate filter wheel to the dichroics
+            and emission filters, and is a somewhat special case.
+            
+        """
         """Create a filter wheel gui object. installedFilters should be a list of
         WFilter objects. The first item is the default"""
         self.installedFilters = installedFilters 
         
-        self.fw = filtWheel(serPort)
         if dichroic:
             self.dichroic = dichroic
             self.dichroic.wantChangeNotification.append(self.DichroicSync)
@@ -60,18 +74,18 @@ class FiltWheel(object):
         if not name is None:
             id = [n for n, f in enumerate(self.installedFilters) if f.name == name][0]
         elif id is None:
-            self.fw.setPos(pos)
+            self._set_physical_position(pos)
             return
             #id = [n for n, f in enumerate(self.installedFilters) if f.pos == pos][0]
             
-        self.fw.setPos(self.installedFilters[id].pos)
+        self._set_physical_position(self.installedFilters[id].pos)
         
         
     def GetFilterNames(self):
         return [f.name for f in self.installedFilters]
         
     def GetCurrentIndex(self):
-        p = self.fw.getPos()
+        p = self._get_physical_position()
         for i, f in enumerate(self.installedFilters):
             if f.pos == p:
                 return i
@@ -82,7 +96,51 @@ class FiltWheel(object):
             
             if dname in self.GetFilterNames():
                 self.SetFilterPos(name=dname)
+                
+    def _set_physical_position(self, pos):
+        """
+        Sets the physical position (index) of the filter wheel
         
+        Parameters
+        ----------
+        pos : int
+            The position index to move to. This is typically an integer starting at 0 and going to one less than the
+            number of positions in the wheel, but can be whatever the underlying implementation expects.
+
+        Returns
+        -------
+
+        """
+        raise NotImplementedError("Must be overridden in derived classes")
+    
+    def _get_physical_position(self):
+        """
+        Gets the physical position of the filter wheel
+         
+        Returns
+        -------
+        
+        pos : int
+            The position index to move to. This is typically an integer starting at 0 and going to one less than the
+            number of positions in the wheel, but can be whatever the underlying implementation expects.
+
+        """
+        raise NotImplementedError("Must be overridden in derived classes")
+
+class FW102B(FilterWheelBase):
+    def __init__(self, installedFilters, serPort='COM3', dichroic=None):
+        from .fw102 import FW102B as filtWheel
+        self.fw = filtWheel(ser_port=serPort)
+        
+        FilterWheelBase.__init__(self, installedFilters=installedFilters, dichroic=dichroic)
+        
+    def _set_physical_position(self, pos):
+        self.fw.setPos(pos)
+        
+    def _get_physical_position(self):
+        return self.fw.getPos()
+        
+FiltWheel=FW102B #alias for backwards compatibility
 
 class FiltFrame(wx.Panel):
     def _init_ctrls(self, prnt):
