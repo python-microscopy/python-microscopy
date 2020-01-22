@@ -554,15 +554,11 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
         
     def GrabPNGToBuffer(self, fullImage=True):
         '''Get PNG data in a buffer (rather than writing directly to file)'''
-        from PIL import Image
         from io import BytesIO
-        
-        img =self.GrabImage(fullImage)
-        im1 = Image.frombytes(mode='RGB', size=tuple(img.GetSize()), data=img.ConvertToImage().GetData())
-        
+
+        img = self.GrabImage(fullImage)
         out = BytesIO()
-        im1.save(out, format='PNG')
-        
+        img.ConvertToImage().SaveFile(out, wx.BITMAP_TYPE_PNG)
         return out.getvalue()
 
     def CopyImage(self, fullImage=True):
