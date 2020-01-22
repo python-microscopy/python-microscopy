@@ -198,7 +198,7 @@ class CameraInfoManager(object):
 
         if (mp is None):
             #default to uniform read noise
-            rn = float(md['Camera.ReadNoise'])*float(md['Camera.ElectronsPerCount'])
+            rn = float(md['Camera.ReadNoise'])
             return rn*rn
         else:
             return mp
