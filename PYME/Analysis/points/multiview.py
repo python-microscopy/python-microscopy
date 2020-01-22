@@ -140,7 +140,7 @@ def correlative_shift(x0, y0, which_channel, pix_size_nm=115.):
 
     # generate first channel histogram
     channels = iter(np.unique(which_channel))
-    first_chan = channels.next()
+    first_chan = next(channels)
     mask = which_channel == first_chan
     first_channel, r_bins, c_bins = np.histogram2d(x[mask], y[mask], bins=(bin_count, bin_count))
     first_channel = first_channel >= filters.threshold_otsu(first_channel)

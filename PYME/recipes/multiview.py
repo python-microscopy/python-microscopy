@@ -91,8 +91,9 @@ class ShiftCorrect(ModuleBase):
 
         try:  # try loading shift map as hdf file
             with unifiedIO.local_or_temp_filename(loc) as f:
-                shift_map_source = tabular.HDFSource(f, 'shift_map')
-                shift_map_source.mdh = HDFMDHandler(shift_map_source.h5f)
+                t = tables.open_file(f)
+                shift_map_source = tabular.HDFSource(t, 'shift_map')  # todo - is there a cleaner way to do this?
+                shift_map_source.mdh = HDFMDHandler(t)
 
             # build dict of dicts so we can easily rebuild shiftfield objects in multiview.calc_shifts_for_points
             shift_map = {'shiftModel': shift_map_source.mdh['Multiview.shift_map.model']}
@@ -100,6 +101,8 @@ class ShiftCorrect(ModuleBase):
             for l in legend.keys():
                 keys = shift_map_source.keys()
                 shift_map[l] = dict(zip(keys, [shift_map_source[k][legend[l]] for k in keys]))
+
+            t.close()
         except tables.HDF5ExtError:  # file is probably saved as json (legacy)
             s = unifiedIO.read(self.shift_map_path)
             shift_map = json.loads(s)

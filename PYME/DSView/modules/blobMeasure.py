@@ -36,7 +36,7 @@ def iGen():
 ig = iGen()
 
 def getNewID():
-    return ig.next()
+    return next(ig)
 
 
 class DataBlock(object):
