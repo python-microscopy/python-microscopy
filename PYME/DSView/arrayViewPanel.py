@@ -558,6 +558,8 @@ class ArrayViewPanel(scrolledImagePanel.ScrolledImagePanel):
 
         img = self.GrabImage(fullImage)
         out = BytesIO()
+        # NB - using wx functionality rather than pillow here as wxImage.GetData() returns a BytesArray object rather
+        # than a buffer on py3. This underlying problem may need to be revisited.
         img.ConvertToImage().SaveFile(out, wx.BITMAP_TYPE_PNG)
         return out.getvalue()
 
