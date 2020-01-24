@@ -2,29 +2,42 @@
 import numpy as np
 from PYME.Analysis.points.DeClump import pyDeClump
 
-def coalesce_dict_sorted(inD, assigned, keys, weights_by_key):  # , notKosher=None):
+def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, n_coalesced_key='n_coalesced'):
     """
-    Agregates clumps to a single event
-    Note that this will evaluate the lazy pipeline events and add them into the dict as an array, not a code
-    object.
-    Also note that copying a large dictionary can be rather slow, and a structured ndarray approach may be preferable.
-    DB - we should never have a 'large' dictionary (ie there will only ever be a handful of keys)
+    Aggregates clumps to a single event. Input dictionary should have every key sorted by the 'assigned' input. Output
+    dictionary will additionally have a key:value pair of the number of points used to produce each output point.
 
-    Args:
-        inD: input dictionary containing fit results
-        assigned: clump assignments to be coalesced
-        keys: list whose elements are strings corresponding to keys to be copied from the input to output dictionaries
-        weights_by_key: dictionary of weights.
+    Parameters
+    ----------
+        inD: dict
+            input dictionary containing fit results
+        assigned: 1darray, list
+            clump assignments to be coalesced
+        keys: list
+            list whose elements are strings corresponding to keys to be copied from the input to output dictionaries
+        weights_by_key: dict
+            dictionary of weights for each key as an array or weighting method ('min', 'sum', or 'mean').
+        n_coalesced_key: str
+            key to store the number of points coalesced to create each point in the output dictionary
 
-    Returns:
-        fres: output dictionary containing the coalesced results
+    Returns
+    -------
+        clumped: dict
+            output dictionary containing the coalesced results
+
+    Notes
+    -----
+    That this will evaluate the lazy pipeline events and add them into the dict as an array, not a code object.
 
     """
     from PYME.Analysis.points.DeClump import deClump
 
-    NClumps = int(np.max(assigned) + 1)  # len(np.unique(assigned))  #
-
     clumped = {}
+
+    NClumps = int(np.max(assigned) + 1)
+    # record number of points being coalesced for each clump
+    uni, counts = np.unique(assigned.astype(int), return_counts=True)
+    clumped[n_coalesced_key] = np.repeat(uni, counts)
 
     # loop through keys
     for rkey in keys:
@@ -40,7 +53,8 @@ def coalesce_dict_sorted(inD, assigned, keys, weights_by_key):  # , notKosher=No
             var = deClump.aggregateSum(NClumps, assigned.astype('i'), inD[rkey].astype('f'))
         else:
             # if weights is an array, take weighted average
-            var, errVec = deClump.aggregateWeightedMean(NClumps, assigned.astype('i'), inD[rkey].astype('f'), inD[weights].astype('f'))
+            var, errVec = deClump.aggregateWeightedMean(NClumps, assigned.astype('i'), inD[rkey].astype('f'),
+                                                        inD[weights].astype('f'))
             clumped[weights] = errVec
 
         clumped[rkey] = var
