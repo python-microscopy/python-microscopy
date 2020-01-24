@@ -393,6 +393,8 @@ def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
     all_keys += aggregation_weights.values()
 
     aggregation_weights['A'] = 'sum'
+    # don't mix multiviewChannel with an average. Use n_coalesced to determine if there was a merge.
+    aggregation_weights['multiviewChannel'] = 'min'
 
     I = np.argsort(datasource[labelKey])
     sorted_src = {k: datasource[k][I] for k in all_keys}
