@@ -26,6 +26,7 @@ Python microscope package <https://pypi.org/project/microscope/>.
 """
 
 import PYME.Acquire.Hardware.lasers
+import PYME.Acquire.Hardware.FilterWheel
 
 
 class MicroscopeLaser(PYME.Acquire.Hardware.lasers.Laser):
@@ -36,6 +37,9 @@ class MicroscopeLaser(PYME.Acquire.Hardware.lasers.Laser):
     ----------
         laser: an object, already initialized, implementing the
             `microscope.devices.LaserDevice` interface.
+        name: see :func:`PYME.Acquire.Hardware.lasers.Laser.__init__`
+        turnOn: see :func:`PYME.Acquire.Hardware.lasers.Laser.__init__`, [optional]
+        scopeState: see :func:`PYME.Acquire.Hardware.lasers.Laser.__init__`, [optional]
     """
     def __init__(self, laser, *args, **kwargs):
         # We can't call super() at the start because the parent class
@@ -60,3 +64,24 @@ class MicroscopeLaser(PYME.Acquire.Hardware.lasers.Laser):
 
     def GetPower(self):
         return self._laser.get_power_mw()
+
+
+class MicroscopeFilterWheel(PYME.Acquire.Hardware.FilterWheel.FilterWheelBase):
+    """Adapter for Python microscope filterwheel classes.
+
+    Parameters
+    ----------
+        fw: an object, already initialized, implementing the
+            `microscope.devices.FilterWheel` interface.
+        installedFilters: see :func:`PYME.Acquire.Hardware.FilterWheel.FilterWheelBase.__init__`
+        dichroic: see :func:`PYME.Acquire.Hardware.FilterWheel.FilterWheelBase.__init__`, [optional]
+    """
+    def __init__(self, fw, *args, **kwargs):
+        self._fw = fw
+        super().__init__(*args, **kwargs)
+
+    def _set_physical_position(self, pos):
+        self._fw.set_position(pos)
+
+    def _get_physical_position(self):
+        return self._fw.get_position(pos)
