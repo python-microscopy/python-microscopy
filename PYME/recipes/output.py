@@ -365,9 +365,9 @@ class UnifiedLoader(jinja2.BaseLoader):
         from PYME.IO import unifiedIO
         try:
             if os.path.exists(os.path.join(os.path.dirname(__file__), template)):
-                source = unifiedIO.read(os.path.join(os.path.dirname(__file__), template)).decode('utf-8')
+                source = unifiedIO.read(os.path.join(os.path.dirname(__file__), template))
             else:
-                source = unifiedIO.read(template).decode('utf-8')
+                source = unifiedIO.read(template)
         except:
             logger.exception('Error loading template')
             raise jinja2.TemplateNotFound
@@ -470,7 +470,7 @@ class ReportOutput(OutputModule):
             os.makedirs(out_dir)
 
         with open(out_filename, 'w') as f:
-            f.write(self.generate(namespace, recipe_context=context).encode('utf-8'))
+            f.write(self.generate(namespace, recipe_context=context))
 
 
 @register_module('ReportForEachOutput')
