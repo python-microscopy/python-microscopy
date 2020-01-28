@@ -198,7 +198,7 @@ def read(filename):
     filename = nameUtils.getFullExistingFilename(filename)
 
     if os.path.exists(filename):
-        with open(filename) as f:
+        with open(filename, 'rb') as f:
             s = f.read()
         return s
 
