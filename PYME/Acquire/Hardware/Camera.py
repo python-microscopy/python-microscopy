@@ -851,6 +851,7 @@ class MultiviewCameraMixin(object):
             """
             self.camera_class = camera_class
             self.multiview_info = multiview_info
+            self._channel_color = multiview_info['Multiview.ChannelColor']
 
             self.n_views = multiview_info['Multiview.NumROIs']
             self.view_origins = [multiview_info['Multiview.ROI%dOrigin' % i] for i in range(self.n_views)]
@@ -1035,6 +1036,7 @@ class MultiviewCameraMixin(object):
             if self.multiview_enabled:
                 mdh.setEntry('Multiview.NumROIs', self.n_views)
                 mdh.setEntry('Multiview.ROISize', [self.size_x, self.size_y])
+                mdh.setEntry('Multiview.ChannelColor', self._channel_color)
                 mdh.setEntry('Multiview.ActiveViews', self.active_views)
                 for ind in range(self.n_views):
                     mdh.setEntry('Multiview.ROI%dOrigin' % ind, self.view_origins[ind])
