@@ -159,7 +159,7 @@ class HTTPTaskPusher(object):
         self.taskQueueURI = _getTaskQueueURI()
 
         self.mdh = metadata
-        self.mdh['DataSourceID'] = self.dataSourceID  # for convenient linking after results files get downloaded/moved
+        self.mdh['Analysis.DataFileURI'] = self.dataSourceID  # for convenient linking after results files get downloaded/moved
 
         #load data source
         if dataSourceModule is None:
