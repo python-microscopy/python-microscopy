@@ -34,10 +34,10 @@ def coalesce_dict_sorted(inD, assigned, keys, weights_by_key, n_coalesced_key='n
 
     clumped = {}
 
-    NClumps = int(np.max(assigned) + 1)
     # record number of points being coalesced for each clump
     uni, counts = np.unique(assigned.astype(int), return_counts=True)
-    clumped[n_coalesced_key] = np.repeat(uni, counts)
+    NClumps = int(uni[-1] + 1)  # +1 for the zero clump
+    clumped[n_coalesced_key] = np.concatenate([[0], counts]) # the zero clump, unclumped, is not included in assigned
 
     # loop through keys
     for rkey in keys:
@@ -377,7 +377,7 @@ def find_clumps_within_channel(datasource, gap_tolerance, radius_scale, radius_o
     return datasource
 
 def merge_clumps(datasource, numChan, labelKey='clumpIndex'):
-    from PYME.IO.tabular import CachingResultsFilter, MappingFilter
+    from PYME.IO.tabular import MappingFilter
 
     keys_to_aggregate = ['x', 'y', 'z', 't', 'A', 'probe', 'tIndex', 'multiviewChannel', labelKey, 'focus', 'LLH']
     keys_to_aggregate += ['sigmax%d' % chan for chan in range(numChan)]
