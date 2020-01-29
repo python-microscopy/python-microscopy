@@ -2,6 +2,39 @@
 import numpy as np
 from PYME.Analysis.points.DeClump import pyDeClump
 
+def load_shiftmap(uri):
+    """
+    helper function to handle I/O of two versions of shiftmaps. Note that HDF is prefered
+    :param uri: str
+        path or url to shiftmap-containing file (hdf, or [less ideal] json)
+    :return: dict
+        shiftmap
+    """
+    from PYME.IO import unifiedIO, tabular
+    from PYME.IO.MetaDataHandler import HDFMDHandler
+    import tables
+    import json
+
+    try:  # try loading shift map as hdf file
+        with unifiedIO.local_or_temp_filename(uri) as f:
+            t = tables.open_file(f)
+            shift_map_source = tabular.HDFSource(t, 'shift_map')  # todo - is there a cleaner way to do this?
+            shift_map_source.mdh = HDFMDHandler(t)
+
+        # build dict of dicts so we can easily rebuild shiftfield objects in multiview.calc_shifts_for_points
+        shift_map = {'shiftModel': shift_map_source.mdh['Multiview.shift_map.model']}
+        legend = shift_map_source.mdh['Multiview.shift_map.legend']
+        for l in legend.keys():
+            keys = shift_map_source.keys()
+            shift_map[l] = dict(zip(keys, [shift_map_source[k][legend[l]] for k in keys]))
+
+        t.close()
+    except tables.HDF5ExtError:  # file is probably saved as json (legacy)
+        s = unifiedIO.read(uri)
+        shift_map = json.loads(s)
+
+    return shift_map
+
 def coalesce_dict_sorted(inD, assigned, keys, weights_by_key):  # , notKosher=None):
     """
     Agregates clumps to a single event
