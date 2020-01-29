@@ -53,12 +53,15 @@ import json
 import logging
 logger = logging.getLogger(__name__)
 
+import threading
+
 class EventLogger:
     def __init__(self, spool):#, scope):
         self.spooler = spool
         #self.scope = scope
           
         self._events = []
+        self._event_lock = threading.Lock()
     
     def logEvent(self, eventName, eventDescr = '', timestamp=None):
         if eventName == 'StartAq' and eventDescr == '':
@@ -67,7 +70,8 @@ class EventLogger:
         if timestamp is None:
             timestamp = sp.timeFcn()
             
-        self._events.append((eventName, eventDescr, timestamp))
+        with self._event_lock:
+            self._events.append((eventName, eventDescr, timestamp))
         
     def to_JSON(self):
         return json.dumps(self._events)
