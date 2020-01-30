@@ -31,6 +31,11 @@ overall template for a configuration directory is as follows: ::
       |     |
       |     |- recipes
       |           |- anothermodule.txt
+      |     |- reports
+      |     |     |- templates
+      |     |     |     |-somemodule.txt
+      |     |     |- filters
+      |     |     |     |-somemodule.yaml
       |
       |- protocols
       |     |- a_protocol.py
