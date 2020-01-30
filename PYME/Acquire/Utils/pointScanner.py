@@ -433,7 +433,6 @@ class CircleScanner(PointScanner):
     def __init__(self, scope, pixel_radius=10, pixelsize=0.1, dwelltime=1, background=0, avg=True, evtLog=False,
                  sync=False, trigger=False, stop_on_complete=False):
         self.scope = scope
-
         self.trigger = trigger
 
         self.dwellTime = dwelltime
@@ -480,3 +479,46 @@ class CircleScanner(PointScanner):
 
         self.nx = len(self.xp)
         self.ny = len(self.yp)
+        self.imsize = self.nx
+
+    def tick(self, frameData, **kwargs):
+        with self._rlock:
+            if not self.running:
+                return
+
+            try:
+                cam_trigger = self.scope.cam.GetAcquisitionMode() == self.scope.cam.MODE_SOFTWARE_TRIGGER
+            except AttributeError:
+                cam_trigger = False
+
+            if (self.callNum % self.dwellTime) == 0:
+                # record pixel in overview
+                callN = int(self.callNum / self.dwellTime)
+                if self.avg:
+                    self.image[callN % self.nx, int(
+                        (callN % (self.image.size)) / self.nx)] = self.scope.currentFrame.mean() - self.background
+                    self.view.Refresh()
+
+            if ((self.callNum + 1) % self.dwellTime) == 0:
+                # move piezo
+                callN = int((self.callNum + 1) / self.dwellTime)
+
+                ind = callN % self.nx
+
+                self.scope.state.setItems({'Positioning.x': self.xp[ind],
+                                           'Positioning.y': self.yp[ind]
+                                           }, stopCamera=not cam_trigger)
+
+                if self.evtLog:
+                    eventLog.logEvent('ScannerXPos', '%3.6f' % self.scope.state['Positioning.x'])
+                    eventLog.logEvent('ScannerYPos', '%3.6f' % self.scope.state['Positioning.y'])
+
+                if cam_trigger:
+                    self.scope.cam.FireSoftwareTrigger()
+                    eventLog.logEvent('StartAq', "")
+
+            if (int(self.callNum / self.dwellTime)) > self.imsize:
+                if self._stop_on_complete:
+                    self._stop()
+
+        self.callNum += 1
