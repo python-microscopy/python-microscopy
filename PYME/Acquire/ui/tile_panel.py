@@ -128,8 +128,8 @@ class CircularTilePanel(TilePanel):
 
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
         hsizer2.Add(wx.StaticText(self, -1, 'Scan radius [\u03BCm]:'), 0, wx.ALL, 2)
-        self.radius_um = wx.TextCtrl(self, -1, value='%f' % 250)
-        hsizer2.Add(self.tXTiles, 0, wx.ALL, 2)
+        self.radius_um = wx.TextCtrl(self, -1, value='%.1f' % 250)
+        hsizer2.Add(self.radius_um, 0, wx.ALL, 2)
         vsizer.Add(hsizer2)
 
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
@@ -163,7 +163,7 @@ class CircularTilePanel(TilePanel):
         trigger = hasattr(self.scope.cam, 'FireSoftwareTrigger')
 
         self.scope.tiler = tiler.CircularTiler(self.scope, tile_dir=self.tDestination.GetValue(),
-                                               max_radius_um=self.radius_um.GetValue(), trigger=trigger)
+                                               max_radius_um=float(self.radius_um.GetValue()), trigger=trigger)
 
         self.bStop.Enable()
         self.bGo.Disable()
