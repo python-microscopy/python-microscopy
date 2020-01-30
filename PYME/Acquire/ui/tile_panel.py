@@ -115,3 +115,59 @@ class TilePanel(wx.Panel):
             time.sleep(3)
             
         webbrowser.open('http://127.0.0.1:8979/')
+
+class CircularTilePanel(TilePanel):
+    def __init__(self, parent, scope):
+        wx.Panel.__init__(self, parent)
+
+        self.scope = scope
+
+        self._gui_proc = None
+
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer2.Add(wx.StaticText(self, -1, 'Scan radius [\u03BCm]:'), 0, wx.ALL, 2)
+        self.radius_um = wx.TextCtrl(self, -1, value='%f' % 250)
+        hsizer2.Add(self.tXTiles, 0, wx.ALL, 2)
+        vsizer.Add(hsizer2)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer2.Add(wx.StaticText(self, -1, 'Save to:'), 0, wx.ALL, 2)
+        self.tDestination = wx.TextCtrl(self, -1, value='')
+        hsizer2.Add(self.tDestination, 1, wx.ALL | wx.EXPAND, 2)
+        vsizer.Add(hsizer2, 0, wx.EXPAND, 0)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.pProgress = wx.Gauge(self, -1, range=100)
+        hsizer2.Add(self.pProgress, 1, wx.ALL | wx.EXPAND, 2)
+        vsizer.Add(hsizer2, 0, wx.EXPAND, 0)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        # self.bTest = wx.Button(self, -1, 'Test')
+        # self.bTest.Bind(wx.EVT_BUTTON, self.OnTest)
+        # self.bTest.Disable()
+        # hsizer2.Add(self.bTest, 0, wx.ALL, 2)
+        self.bGo = wx.Button(self, -1, 'Go')
+        self.bGo.Bind(wx.EVT_BUTTON, self.OnGo)
+        hsizer2.Add(self.bGo, 0, wx.ALL, 2)
+        self.bStop = wx.Button(self, -1, 'Stop')
+        self.bStop.Disable()
+        self.bStop.Bind(wx.EVT_BUTTON, self.OnStop)
+        hsizer2.Add(self.bStop, 0, wx.ALL, 2)
+        vsizer.Add(hsizer2)
+
+        self.SetSizerAndFit(vsizer)
+
+    def OnGo(self, event=None):
+        trigger = hasattr(self.scope.cam, 'FireSoftwareTrigger')
+
+        self.scope.tiler = tiler.CircularTiler(self.scope, tile_dir=self.tDestination.GetValue(),
+                                               max_radius_um=self.radius_um.GetValue(), trigger=trigger)
+
+        self.bStop.Enable()
+        self.bGo.Disable()
+
+        self.scope.tiler.on_stop.connect(self._on_stop)
+        self.scope.tiler.progress.connect(self._update)
+        self.scope.tiler.start()

@@ -5,6 +5,8 @@ import time
 from PYME.IO import MetaDataHandler
 import os
 import dispatch
+import logging
+logger = logging.getLogger(__name__)
 
 class Tiler(pointScanner.PointScanner):
     def __init__(self, scope, tile_dir, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=False,
@@ -100,3 +102,25 @@ class Tiler(pointScanner.PointScanner):
             
         self.on_stop.send(self)
         self.progress.send(self)
+
+class CircularTiler(pointScanner.CircleScanner, Tiler):
+    def __init__(self, scope, tile_dir, max_radius_um=100, tile_spacing=None, dwelltime=1, background=0, evtLog=False,
+                 trigger=False, base_tile_size=256):
+        if tile_spacing is None:
+            fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
+            # calculate tile spacing such that there is 20% overlap.
+            tile_spacing = 0.8 * fs * np.array(scope.GetPixelSize())
+        # take the pixel size to be the same or at least similar in both directions
+        pixel_radius = int(max_radius_um / tile_spacing.mean())
+        logger.debug('Circular tiler target radius in units of 20% overlapped FOVs: %d' % pixel_radius)
+        pointScanner.CircleScanner.__init__(self, scope, pixel_radius, tile_spacing, dwelltime, background, False,
+                                            evtLog, trigger=trigger, stop_on_complete=True)
+
+        self._tiledir = tile_dir
+        self._base_tile_size = base_tile_size
+        self._flat = None  # currently not used
+
+        self._last_update_time = 0
+
+        self.on_stop = dispatch.Signal()
+        self.progress = dispatch.Signal()

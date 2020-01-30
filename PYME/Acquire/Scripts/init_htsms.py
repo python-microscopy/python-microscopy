@@ -254,7 +254,7 @@ def tweeter(scope):
 def action_manager(MainFrame, scope):
     from PYME.Acquire.ui import tile_panel
 
-    ap = tile_panel.TilePanel(MainFrame, scope)
+    ap = tile_panel.CircularTilePanel(MainFrame, scope)
     MainFrame.aqPanels.append((ap, 'Tiling'))
 
 #must be here!!!
