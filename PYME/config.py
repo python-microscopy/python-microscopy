@@ -165,6 +165,7 @@ import yaml
 import os
 import shutil
 import sys
+import glob
 
 site_config_directory = '/etc/PYME'
 site_config_file = '/etc/PYME/config.yaml'
@@ -265,7 +266,6 @@ def get_plugins(application):
     list of fully resolved module paths
 
     """
-    import glob
     plugin_paths = []
 
     for config_dir in config_dirs:
@@ -283,6 +283,24 @@ def get_plugins(application):
     logger.debug('plugin paths: ' +  str(plugin_paths))
         
     return  list(set([p.strip() for p in plugin_paths if not p.strip() == '']))
+
+def get_plugin_filters():
+    """
+    Find (jinja2) filters registered as plugins
+
+    Returns
+    -------
+    filter_info: dict
+        keys are modules to import, and values are lists of functions/filters in that module
+    """
+    import yaml
+    filter_info = {}
+    for config_dir in config_dirs:
+        filter_glob = glob.glob(os.path.join(config_dir, 'plugins', 'reports', 'filters/*.yaml'))
+        for plugin_file in filter_glob:
+            with open(plugin_file) as f:
+                filter_info.update(yaml.safe_load(f))
+    return filter_info
 
 
 def get_custom_protocols():
