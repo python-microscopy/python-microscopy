@@ -109,11 +109,11 @@ class CircularTiler(Tiler, pointScanner.CircleScanner):
         self.scanner_class = pointScanner.CircleScanner
         if tile_spacing is None:
             fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
-            # calculate tile spacing such that there is 20% overlap.
-            tile_spacing = 0.8 * fs * np.array(scope.GetPixelSize())
+            # calculate tile spacing such that there is ~30% overlap.
+            tile_spacing = (1/np.sqrt(2)) * fs * np.array(scope.GetPixelSize())
         # take the pixel size to be the same or at least similar in both directions
         pixel_radius = int(max_radius_um / tile_spacing.mean())
-        logger.debug('Circular tiler target radius in units of 20 percent overlapped FOVs: %d' % pixel_radius)
+        logger.debug('Circular tiler target radius in units of ~30 percent overlapped FOVs: %d' % pixel_radius)
         self.scanner_class.__init__(self, scope, pixel_radius, tile_spacing, dwelltime, background, False,
                                     evtLog, trigger=trigger, stop_on_complete=True)
 
