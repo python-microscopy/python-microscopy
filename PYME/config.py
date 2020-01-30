@@ -303,6 +303,14 @@ def get_report_filters():
     return filter_info
 
 def get_report_templates():
+    """
+    Find (jinja2) templates registered as plugins
+
+    Returns
+    -------
+    templates: dict
+        keys are the filename + extension, e.g. template.html, and values are the full path
+    """
     templates = {}
     for config_dir in config_dirs:
         template_glob = glob.glob(os.path.join(config_dir, 'plugins', 'reports', 'templates/*.txt'))
