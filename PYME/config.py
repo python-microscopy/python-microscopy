@@ -284,7 +284,7 @@ def get_plugins(application):
         
     return  list(set([p.strip() for p in plugin_paths if not p.strip() == '']))
 
-def get_plugin_filters():
+def get_report_filters():
     """
     Find (jinja2) filters registered as plugins
 

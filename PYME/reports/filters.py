@@ -33,8 +33,13 @@ FILTERS['roundsf'] = round_sf
 # ------------ load filters from plugins
 
 def get_filters():
+    """
+    Load default PYME filters as well as filters declared in the config tree.
+    :return: dict
+        keys are filter names, values are the filter handles
+    """
     filters = FILTERS.copy()
-    plugin_filter_info = config.get_plugin_filters()
+    plugin_filter_info = config.get_report_filters()
     for m, filts in plugin_filter_info.items():
         try:
             logger.debug('Trying to import %s' % m)
