@@ -200,7 +200,7 @@ class piezo_e816(PiezoBase):
 import numpy as np
 class piezo_e816T(PiezoBase):
     def __init__(self, identifier=None, maxtravel=12.00, Osen=None, hasTrigger=False, target_tol=.002,
-                 update_rate=0.005):
+                 update_rate=0.005, spool_controller=None):
         """
 
         Parameters
@@ -221,6 +221,7 @@ class piezo_e816T(PiezoBase):
         self.units = 'um'
         self._target_tol = target_tol
         self._update_rate = update_rate
+        self._spool_controller = spool_controller
 
         self.lock = threading.Lock()
 
@@ -294,6 +295,9 @@ class piezo_e816T(PiezoBase):
                     # logging.debug('Moving piezo to target: %f' % (pos[0],))
 
                 if np.allclose(self.position, self.targetPosition, atol=self._target_tol):
+                    if not self.onTarget and self._spool_controller:
+                        self._spool_controller.spooler.evtLogger.logEvent(self, 'PiezoOnTarget',
+                                                                          '%.3f' % self.position[0], time.time())
                     self.onTarget = True
 
                 # check to see if we're on target
