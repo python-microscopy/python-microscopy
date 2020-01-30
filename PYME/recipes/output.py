@@ -429,7 +429,7 @@ class ReportOutput(OutputModule):
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
 
-        with open(out_filename, 'w') as f:
+        with open(out_filename, 'wb') as f:
             f.write(self.generate(namespace, recipe_context=context).encode('utf-8'))
 
 
