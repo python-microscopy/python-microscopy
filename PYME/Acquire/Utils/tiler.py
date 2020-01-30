@@ -43,7 +43,7 @@ class Tiler(pointScanner.PointScanner):
     def start(self):
         self._gen_weights()
         self.genCoords()
-        print('here')
+
         #metadata handling
         self.mdh = MetaDataHandler.NestedClassMDHandler()
         self.mdh.setEntry('StartTime', time.time())
@@ -64,10 +64,10 @@ class Tiler(pointScanner.PointScanner):
             
         x0 = self._x0 + self._pixel_size*x0_cam
         y0 = self._y0 + self._pixel_size*y0_cam
-        print('creating pyramid')
+
         self.P = tile_pyramid.ImagePyramid(self._tiledir, self._base_tile_size, x0=x0, y0=y0,
                                            pixel_size=self._pixel_size)
-        print('startingt scan')
+
         self.scanner_class.start(self)
         
     def tick(self, frameData, **kwargs):
