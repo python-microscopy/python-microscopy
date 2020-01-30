@@ -53,7 +53,7 @@ class Tiler(pointScanner.PointScanner):
         for mdgen in MetaDataHandler.provideStartMetadata:
             mdgen(self.mdh)
 
-        self._x0 = np.min(self.xp)  # get the upper left corner of the scan, regardless of shape/fill
+        self._x0 = np.min(self.xp)  # get the upper left corner of the scan, regardless of shape/fill/start
         self._y0 = np.min(self.yp)
         
         self._pixel_size = self.mdh.getEntry('voxelsize.x')
