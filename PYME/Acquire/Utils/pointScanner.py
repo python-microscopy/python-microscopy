@@ -146,7 +146,7 @@ class PointScanner(object):
         #    self.scope.frameWrangler.HardwareChecks.append(self.onTarget)
 
     def onTarget(self):
-        # fixme - is this safe?
+        # fixme - remove
         return self.xpiezo[0].onTarget
 
     def tick(self, frameData, **kwargs):
