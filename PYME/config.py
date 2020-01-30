@@ -302,6 +302,19 @@ def get_report_filters():
                 filter_info.update(yaml.safe_load(f))
     return filter_info
 
+def get_report_templates():
+    templates = {}
+    for config_dir in config_dirs:
+        template_glob = glob.glob(os.path.join(config_dir, 'plugins', 'reports', 'templates/*.txt'))
+
+        for fn in template_glob:
+            with open(fn, 'r') as f:
+                for directory_listed in f:
+                    found = glob.glob(os.path.join(directory_listed, '*.html'))
+                    for template in found:
+                        templates[os.path.split(template)[-1]] = template
+    return templates
+
 
 def get_custom_protocols():
     """
