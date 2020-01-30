@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-FILTERS = {}
+DEFAULT_FILTERS = {}
 
 # ---------- add some default filters
 from PYME.Analysis import graphing_filters
@@ -24,11 +24,11 @@ def round_sf(num, sf=3):
         fmt = '%' + ('.%d' % (sf - math.floor(math.log10(rnd)) - 1)) + 'f'
         return fmt % rnd
 
-FILTERS['movieplot'] = graphing_filters.movieplot2
-FILTERS['plot'] = graphing_filters.plot
-FILTERS['b64encode'] = base64.b64encode
-FILTERS['base64_image'] = rgb_image.base64_image
-FILTERS['roundsf'] = round_sf
+DEFAULT_FILTERS['movieplot'] = graphing_filters.movieplot2
+DEFAULT_FILTERS['plot'] = graphing_filters.plot
+DEFAULT_FILTERS['b64encode'] = base64.b64encode
+DEFAULT_FILTERS['base64_image'] = rgb_image.base64_image
+DEFAULT_FILTERS['roundsf'] = round_sf
 
 # ------------ load filters from plugins
 
@@ -38,7 +38,7 @@ def get_filters():
     :return: dict
         keys are filter names, values are the filter handles
     """
-    filters = FILTERS.copy()
+    filters = DEFAULT_FILTERS.copy()
     plugin_filter_info = config.get_report_filters()
     for m, filts in plugin_filter_info.items():
         try:
