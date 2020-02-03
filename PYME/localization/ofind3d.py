@@ -208,7 +208,6 @@ class ObjectIdentifier(list):
         if (self.numThresholdSteps == 0): #don't do threshold scan - just use lower threshold (faster)
             im = maskedFilteredData
             #View3D(im)
-            print(('Threshold: %3.2f' %self.lowerThreshold))
             (labeledPoints, nLabeled) = ndimage.label(im > self.lowerThreshold)
             
             objSlices = ndimage.find_objects(labeledPoints)
