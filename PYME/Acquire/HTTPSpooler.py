@@ -53,8 +53,6 @@ import json
 import logging
 logger = logging.getLogger(__name__)
 
-import threading
-
 class EventLogger:
     def __init__(self, spool):#, scope):
         self.spooler = spool
