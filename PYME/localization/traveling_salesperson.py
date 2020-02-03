@@ -243,8 +243,6 @@ def split_points_by_grid(positions, points_per_chunk):
     -------
     section: ndarray
         array of int denoting grid assignment
-    I: ndarray
-        array of int which can be used to sort an array by "section" id.
     n_sections: int
         number of sections in the grid
     """
@@ -265,12 +263,68 @@ def split_points_by_grid(positions, points_per_chunk):
     # keep all section numbers positive, starting at zero
     section -= section.min()
     n_sections = int(section.max() + 1)
-    I = np.argsort(section)
-    return section, I, n_sections
+    return section, n_sections
+
+def split_points_radially(positions, points_per_chunk, epsilon=10, first_point_index=None):
+    """
+    Greedily loop through points starting roughly at the center, putting the nearest `points_per_chunk` points into a
+    group, then starting the next group with the nearest neighbor
+
+    Parameters
+    ----------
+    positions: ndarray
+        positions, shape (n_points, 2), where n_points are just the positions for the tasks this call is responsible for
+    points_per_chunk: int
+        Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
+        ideal paths, but much larger computational complexity.
+    epsilon: float
+        Level of approximation in nearest neighbor queries. Matches units of positions. Scipy: "the k-th returned value
+        is guaranteed to be no further than (1+eps) times the distance to the real k-th nearest neighbor."
+    first_point_index: int
+        [optional] specifies index of point in positions to use as the first point in the first group.
+
+    Returns
+    -------
+    section: ndarray
+        array of int denoting grid assignment
+    I: ndarray
+        array of int which can be used to sort an array by "section" id.
+    n_sections: int
+        number of sections in the grid
+    """
+    from scipy.spatial import cKDTree
+    kdt = cKDTree(positions)
+
+    section = np.empty(positions.shape[0], dtype=int)
+
+    if first_point_index is None:
+        # find the center
+        # x_min, y_min = np.percentile(positions, 5, axis=0)
+        # x_max, y_max = np.percentile(positions, 95, axis=0)
+        x_sort, y_sort = np.sort(positions, axis=0)
+        ind_5, ind_95 = (np.array([0.05, 0.95]) * positions.shape[0]).astype(int)
+        x_start = 0.5 * (x_sort[ind_5] + x_sort[ind_95])
+        y_start = 0.5 * (y_sort[ind_5] + y_sort[ind_95])
+        first_point_index = kdt.query((x_start, y_start), k=1, eps=epsilon)[1]
+
+    indices = kdt.query(positions[first_point_index, :], k=positions.shape[0], eps=epsilon, n_jobs=-1)[1]
+    n_sections = int(positions.shape[0] / points_per_chunk)
+    start = 0
+    for ind in range(n_sections):
+        end = start + points_per_chunk
+        section[indices[start:end]] = ind
+        start = end
+    if positions.shape[0] % points_per_chunk:
+        # do the last loop
+        section[indices[start:]] = n_sections
+        n_sections += 1
+
+    return section, n_sections
 
 def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     # divide points spatially
-    section, I, n_sections = split_points_by_grid(positions, points_per_chunk)
+    section, n_sections = split_points_by_grid(positions, points_per_chunk)
+    I = np.argsort(section)
     section = section[I]
     positions = positions[I, :]
 
