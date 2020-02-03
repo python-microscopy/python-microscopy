@@ -227,8 +227,27 @@ def two_opt_section(positions, start_section, counts, n_tasks, epsilon, master_r
         start_route += counts[ti]
         start_pos += counts[ti]
 
+def split_points_by_grid(positions, points_per_chunk):
+    """
+    Assuming uniform density, separate points using a grid
 
-def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
+    Parameters
+    ----------
+    positions: ndarray
+        positions, shape (n_points, 2), where n_points are just the positions for the tasks this call is responsible for
+    points_per_chunk: Int
+        Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
+        ideal paths, but much larger computational complexity.
+
+    Returns
+    -------
+    section: ndarray
+        array of int denoting grid assignment
+    I: ndarray
+        array of int which can be used to sort an array by "section" id.
+    n_sections: int
+        number of sections in the grid
+    """
     # assume density is uniform
     x_min, y_min = positions.min(axis=0)
     x_max, y_max = positions.max(axis=0)
@@ -247,6 +266,11 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     section -= section.min()
     n_sections = int(section.max() + 1)
     I = np.argsort(section)
+    return section, I, n_sections
+
+def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
+    # divide points spatially
+    section, I, n_sections = split_points_by_grid(positions, points_per_chunk)
     section = section[I]
     positions = positions[I, :]
 
