@@ -225,11 +225,11 @@ def main():
     sensorSize = list(defaultSensorSize)
     try:
         sensorSize[0] = source.mdh['Camera.SensorWidth']
-    except AttributeError:
+    except KeyError:
         logger.warning('no valid sensor width in metadata - using default %d' % sensorSize[0])
     try:
         sensorSize[1] = source.mdh['Camera.SensorHeight']
-    except AttributeError:
+    except KeyError:
         logger.warning('no valid sensor height in metadata - using default %d' % sensorSize[1])
     
     if not ((source.mdh['Camera.ROIWidth'] == sensorSize[0]) and (source.mdh['Camera.ROIHeight'] == sensorSize[1])):
