@@ -15,6 +15,14 @@ def plot_path(positions, route):
     plt.show()
 
 def calculate_path_length(distances, route):
+    """
+    Parameters
+    ----------
+    distances: ndarray
+        distance array, for which distances[i, j] is the distance from the ith to the jth point
+    route: ndarray
+        array of indices defining the path
+    """
     return distances[route[:-1], route[1:]].sum()
 
 def two_opt_swap(route, i, k):
