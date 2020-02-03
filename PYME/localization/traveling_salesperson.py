@@ -301,10 +301,10 @@ def split_points_radially(positions, points_per_chunk, epsilon=10, first_point_i
         # find the center
         # x_min, y_min = np.percentile(positions, 5, axis=0)
         # x_max, y_max = np.percentile(positions, 95, axis=0)
-        x_sort, y_sort = np.sort(positions, axis=0)
+        p_sorted = np.sort(positions, axis=0)
         ind_5, ind_95 = (np.array([0.05, 0.95]) * positions.shape[0]).astype(int)
-        x_start = 0.5 * (x_sort[ind_5] + x_sort[ind_95])
-        y_start = 0.5 * (y_sort[ind_5] + y_sort[ind_95])
+        x_start = 0.5 * (p_sorted[ind_5, 0] + p_sorted[ind_95, 0])
+        y_start = 0.5 * (p_sorted[ind_5, 1] + p_sorted[ind_95, 1])
         first_point_index = kdt.query((x_start, y_start), k=1, eps=epsilon)[1]
 
     indices = kdt.query(positions[first_point_index, :], k=positions.shape[0], eps=epsilon, n_jobs=-1)[1]
@@ -400,7 +400,6 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     # plt.figure()
     # sorted_pos = positions[route, :]
     # plt.plot(positions[final_route, 0], positions[final_route, 1], color='k')
-    # plt.scatter(positions[final_route, 0][new_pivot_inds], positions[final_route, 1][new_pivot_inds], color='k')
     # for pi in range(len(section)):
     #     plt.scatter(sorted_pos[pi, 0], sorted_pos[pi, 1], marker='$' + str(section[pi]) + '$',
     #                 color=colors(section[pi]))
