@@ -229,6 +229,59 @@ def two_opt_section(positions, start_section, counts, n_tasks, epsilon, master_r
         start_route += counts[ti]
         start_pos += counts[ti]
 
+def split_points_by_greed(positions, points_per_chunk):
+    """
+    Not recommended as it leaves quite a few long connections, but it does have the advantage of equally distributing
+    the number of points to sort
+
+    Parameters
+    ----------
+    positions: ndarray
+        positions, shape (n_points, 2), where n_points are just the positions for the tasks this call is responsible for
+    points_per_chunk: Int
+        Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
+        ideal paths, but much larger computational complexity.
+
+    Returns
+    -------
+    section: ndarray
+        array of int denoting grid assignment
+    n_sections: int
+        number of sections in the grid
+    """
+    from scipy.spatial import cKDTree
+
+    section = np.zeros(positions.shape[0], dtype=int)
+    n_sections = int(np.ceil(positions.shape[0] / points_per_chunk))
+    unclaimed = np.ones(positions.shape[0], dtype=bool)
+    # do the 0th section
+    kdt = cKDTree(positions)
+
+    d, order = kdt.query(positions[np.argmin(positions[:, 0] + positions[:, 1]), :], k=points_per_chunk)
+    unclaimed[order] = False
+
+    for ind in range(1, n_sections - 1):
+        I = np.argwhere(unclaimed)
+        pos = positions[unclaimed, :]
+        kdt = cKDTree(pos)
+        d, order = kdt.query(pos[0, :], k=points_per_chunk)
+        section[I[order]] = ind
+        unclaimed[I[order]] = False
+    # do the last section
+    section[np.argwhere(unclaimed)] = ind + 1
+
+    # ----------- uncomment for plotting
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+    colors = cm.get_cmap('prism', n_sections)
+    plt.figure()
+    # plt.scatter(positions[final_route, 0][new_pivot_inds], positions[final_route, 1][new_pivot_inds], color='k')
+    for pi in range(len(section)):
+        plt.scatter(positions[pi, 0], positions[pi, 1], marker='$' + str(section[pi]) + '$',
+                    color=colors(section[pi]))
+
+    return section, n_sections
+
 def split_points_by_grid(positions, points_per_chunk):
     """
     Assuming uniform density, separate points using a grid
