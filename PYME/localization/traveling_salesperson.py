@@ -149,14 +149,10 @@ def calculate_length_with_reversal(order, reversals, positions):
         cumulative length _between_ sections
 
     """
-    length = 0
     porder = np.repeat(2 * order, 2) + np.concatenate([[1, 0] if rev else [0, 1] for rev in reversals])
     ordered_positions = positions[porder]
     # just do the links, need to offset by 1. Note len always even since we add sections with pairs of points
-    for ind in range(1, len(positions) - 1, 2):
-        length += calc_dist(ordered_positions[ind, :], ordered_positions[ind + 1, :])
-    return length
-    # return np.sqrt(((ordered_positions[::2] - ordered_positions[1::2]) ** 2).sum())
+    return np.sqrt(((ordered_positions[1:-2:2] - ordered_positions[2::2]) ** 2).sum(axis=1)).sum()
 
 def reversal_two_opt(section_ids, pivot_positions, epsilon):
     """
