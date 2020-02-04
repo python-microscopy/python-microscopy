@@ -434,6 +434,9 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     # for pi in range(len(section)):
     #     plt.scatter(sorted_pos[pi, 0], sorted_pos[pi, 1], marker='$' + str(section[pi]) + '$',
     #                 color=colors(section[pi]))
+    # fsp = positions[final_route, :]
+    # length = np.sqrt((fsp[1:, 0] - fsp[:-1, 0]) ** 2 + (fsp[1:, 1] - fsp[:-1, 1]) ** 2).sum()
+    # plt.title('length: %f' % length)
     # plt.show()
 
     # don't forget the final sort sorts the already section-sorted positions -> take care of that here
