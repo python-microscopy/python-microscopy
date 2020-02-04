@@ -325,6 +325,7 @@ def split_points_radially(positions, points_per_chunk, epsilon=10, first_point_i
 
 def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     # divide points spatially
+    positions = positions.astype(np.float32)
     section, n_sections = split_points_by_grid(positions, points_per_chunk)
     I = np.argsort(section)
     section = section[I]
@@ -335,7 +336,10 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     tasks = int(n_sections / n_cpu) * np.ones(n_cpu, 'i')
     tasks[:int(n_sections % n_cpu)] += 1
 
-    route = shmarray.zeros(positions.shape[0], dtype='i')
+    if positions.shape[0] < np.iinfo(np.uint16).max:
+        route = shmarray.zeros(positions.shape[0], dtype=np.uint16)
+    else:
+        route = shmarray.zeros(positions.shape[0], dtype='i')
 
     uni, counts = np.unique(section, return_counts=True)
     logger.debug('%d points total, section counts: %s' % (counts.sum(), (counts,)))
