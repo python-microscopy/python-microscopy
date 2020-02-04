@@ -52,7 +52,7 @@ def two_opt_swap(route, i, k):
 
 
 
-def two_opt(distances, epsilon, initial_route=None):
+def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False):
     """
 
     Solves the traveling salesperson problem (TSP) using two-opt swaps to untangle a route.
@@ -84,6 +84,8 @@ def two_opt(distances, epsilon, initial_route=None):
     # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
     route = initial_route if initial_route is not None else np.arange(distances.shape[0] - 1, -1, -1)
 
+    endpoint_offset = int(fixed_endpoint)
+
     og_distance = calculate_path_length(distances, route)
     # initialize values we'll be updating
     improvement = 1
@@ -91,7 +93,7 @@ def two_opt(distances, epsilon, initial_route=None):
     while improvement > epsilon:
         last_distance = best_distance
         for i in range(1, distances.shape[0] - 2):  # don't swap the first position
-            for k in range(i + 1, distances.shape[0]):  # allow the last position in the route to vary
+            for k in range(i + 1, distances.shape[0] - endpoint_offset):  # allow the last position in the route to vary
                 new_route = two_opt_swap(route, i, k)
                 new_distance = calculate_path_length(distances, new_route)
 
@@ -126,6 +128,9 @@ def calc_dist(p0, p1):
     # todo - sqrt is monotonic, so can we skip it?
     return np.sqrt((p0[0] - p1[0])**2 + (p0[1] - p1[1])**2)
 
+def calc_dist_squared(p0, p1):
+    return (p1[0] - p0[0]) ** 2 + (p1[1] - p0[1]) ** 2
+
 def calculate_length_with_reversal(order, reversals, positions):
     """
 
@@ -151,6 +156,7 @@ def calculate_length_with_reversal(order, reversals, positions):
     for ind in range(1, len(positions) - 1, 2):
         length += calc_dist(ordered_positions[ind, :], ordered_positions[ind + 1, :])
     return length
+    # return np.sqrt(((ordered_positions[::2] - ordered_positions[1::2]) ** 2).sum())
 
 def reversal_two_opt(section_ids, pivot_positions, epsilon):
     """
@@ -217,11 +223,11 @@ def two_opt_section(positions, start_section, counts, n_tasks, epsilon, master_r
         pos = positions[start_pos: start_pos + counts[ti]]
         distances = distance_matrix(pos, pos)
 
-        # start on a corner, rather than center
+        # start and on edges
         route = np.argsort(pos[:, 0] + pos[:, 1])
         # print('route %s' % (route,))
 
-        best_route, best_distance, og_distance = two_opt(distances, epsilon, route)
+        best_route, best_distance, og_distance = two_opt(distances, epsilon, route, fixed_endpoint=True)
         # print(best_route)
         master_route[start_route:start_route + counts[ti]] = start_route + best_route
         start_route += counts[ti]
@@ -369,14 +375,42 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
 
         # next we need to join our sections. Prepare for this while the other processes are executing
         pivot_indices = np.sort(np.concatenate([[0], cumcount[:-1], cumcount - 1]))  # get start/stop indices for each
+        # we fix start and end positions at the min and max of (x+y), get the other corners so we can link optimally
+        # ######### next bit for extra cuts
+        # other_corner_presort_indices = []
+        # start_stops = np.concatenate([[0], cumcount])
+        # for s_ind in range(n_sections):
+        #     cropped = positions[start_stops[s_ind]:start_stops[s_ind + 1], :]
+        #     sorted_indices = np.argsort(cropped[:, 0] - cropped[:, 1]) + start_stops[s_ind]
+        #     other_corner_presort_indices.extend([sorted_indices[0], sorted_indices[-1]])
+        # #########
 
         [p.join() for p in processes]
     print('Chunked TSPs finished after ~%.2f s, connecting chunks' % (time.time() - t))
 
-    # do a two-opt on just the section start/ends, with ability to reverse the section
-    # pivot positions won't be correct unless they're already sorted. No need to sort section because its the same
+    # ######### next bit for extra cuts
+    # # cut the sections at the other corners
+    # other_corners = np.argwhere(np.isin(route, other_corner_presort_indices)).squeeze()
+    # # gather all endpoints, adding the other corner neighbors
+    # endpoints = pivot_indices.tolist()  # fixme - a lot of list/array conversions in this loop
+    # for oc in other_corners:  # a cut takes two points, be careful not to cut with the same point twice
+    #     if not np.any(np.isin([oc - 1, oc, oc + 1], endpoints)):
+    #         endpoints.extend([oc, oc + 1])
+    # endpoints = np.sort(endpoints)
+    #
+    # # make new sections
+    # counts = np.zeros(int(len(endpoints) / 2), dtype=int)
+    # for ind, (ind_start, ind_stop) in enumerate(zip(endpoints[::2], endpoints[1::2])):
+    #     section[ind_start:ind_stop + 1] = ind
+    #     counts[ind] = ind_stop - ind_start
+    # cumcount = counts.cumsum()
+    # n_sections = section[-1]
+    #
+    # sorted_positions = positions[route, :]
+    # end_positions = sorted_positions[endpoints, :]
+    # section_order, reversals = reversal_two_opt(section[endpoints], end_positions, epsilon / 1e3)
+    ########
     pivot_positions = positions[route, :][pivot_indices]
-    # spike the exit criteria low since the cost is cheap and the gains are high
     section_order, reversals = reversal_two_opt(section[pivot_indices], pivot_positions, epsilon / 1e3)
 
     final_route = np.copy(route)
@@ -400,6 +434,7 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     # plt.figure()
     # sorted_pos = positions[route, :]
     # plt.plot(positions[final_route, 0], positions[final_route, 1], color='k')
+    # # plt.scatter(positions[final_route, 0][new_pivot_inds], positions[final_route, 1][new_pivot_inds], color='k')
     # for pi in range(len(section)):
     #     plt.scatter(sorted_pos[pi, 0], sorted_pos[pi, 1], marker='$' + str(section[pi]) + '$',
     #                 color=colors(section[pi]))
