@@ -184,11 +184,7 @@ def reversal_swap(reversals, ind):
     return new_reversals
 
 def calc_dist(p0, p1):
-    # todo - sqrt is monotonic, so can we skip it?
     return np.sqrt((p0[0] - p1[0])**2 + (p0[1] - p1[1])**2)
-
-def calc_dist_squared(p0, p1):
-    return (p1[0] - p0[0]) ** 2 + (p1[1] - p0[1]) ** 2
 
 def calculate_length_with_reversal(order, reversals, positions):
     """
@@ -322,16 +318,6 @@ def split_points_by_greed(positions, points_per_chunk):
     # do the last section
     section[np.argwhere(unclaimed)] = ind + 1
 
-    # ----------- uncomment for plotting
-    import matplotlib.pyplot as plt
-    from matplotlib import cm
-    colors = cm.get_cmap('prism', n_sections)
-    plt.figure()
-    # plt.scatter(positions[final_route, 0][new_pivot_inds], positions[final_route, 1][new_pivot_inds], color='k')
-    for pi in range(len(section)):
-        plt.scatter(positions[pi, 0], positions[pi, 1], marker='$' + str(section[pi]) + '$',
-                    color=colors(section[pi]))
-
     return section, n_sections
 
 def split_points_by_grid(positions, points_per_chunk):
@@ -405,9 +391,6 @@ def split_points_radially(positions, points_per_chunk, epsilon=10, first_point_i
     section = np.empty(positions.shape[0], dtype=int)
 
     if first_point_index is None:
-        # find the center
-        # x_min, y_min = np.percentile(positions, 5, axis=0)
-        # x_max, y_max = np.percentile(positions, 95, axis=0)
         p_sorted = np.sort(positions, axis=0)
         ind_5, ind_95 = (np.array([0.05, 0.95]) * positions.shape[0]).astype(int)
         x_start = 0.5 * (p_sorted[ind_5, 0] + p_sorted[ind_95, 0])
@@ -461,7 +444,6 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     t = time.time()
     if n_cpu == 1:
         two_opt_section(positions, 0, counts, tasks[0], epsilon, route)
-        pivot_indices = np.sort(np.concatenate([[0], cumcount[:-1], cumcount - 1]))  # get start/stop indices for each
     else:
         for ci in range(n_cpu):
             ind_task_end = cumtasks[ci]
@@ -479,63 +461,9 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
             ind_task_start = ind_task_end
             ind_pos_start = ind_pos_end
 
-        # next we need to join our sections. Prepare for this while the other processes are executing
-        pivot_indices = np.sort(np.concatenate([[0], cumcount[:-1], cumcount - 1]))  # get start/stop indices for each
-        # we fix start and end positions at the min and max of (x+y), get the other corners so we can link optimally
-        # ######### next bit for extra cuts
-        # other_corner_presort_indices = []
-        # start_stops = np.concatenate([[0], cumcount])
-        # for s_ind in range(n_sections):
-        #     cropped = positions[start_stops[s_ind]:start_stops[s_ind + 1], :]
-        #     sorted_indices = np.argsort(cropped[:, 0] - cropped[:, 1]) + start_stops[s_ind]
-        #     other_corner_presort_indices.extend([sorted_indices[0], sorted_indices[-1]])
-        # #########
-
         [p.join() for p in processes]
     print('Chunked TSPs finished after ~%.2f s, connecting chunks' % (time.time() - t))
 
-    # ######### next bit for extra cuts
-    # # cut the sections at the other corners
-    # other_corners = np.argwhere(np.isin(route, other_corner_presort_indices)).squeeze()
-    # # gather all endpoints, adding the other corner neighbors
-    # endpoints = pivot_indices.tolist()  # fixme - a lot of list/array conversions in this loop
-    # for oc in other_corners:  # a cut takes two points, be careful not to cut with the same point twice
-    #     if not np.any(np.isin([oc - 1, oc, oc + 1], endpoints)):
-    #         endpoints.extend([oc, oc + 1])
-    # endpoints = np.sort(endpoints)
-    #
-    # # make new sections
-    # counts = np.zeros(int(len(endpoints) / 2), dtype=int)
-    # for ind, (ind_start, ind_stop) in enumerate(zip(endpoints[::2], endpoints[1::2])):
-    #     section[ind_start:ind_stop + 1] = ind
-    #     counts[ind] = ind_stop - ind_start
-    # cumcount = counts.cumsum()
-    # n_sections = section[-1]
-    #
-    # sorted_positions = positions[route, :]
-    # end_positions = sorted_positions[endpoints, :]
-    # section_order, reversals = reversal_two_opt(section[endpoints], end_positions, epsilon / 1e3)
-    ########
-
-
-    # pivot_positions = positions[route, :][pivot_indices]
-    # section_order, reversals = reversal_two_opt(section[pivot_indices], pivot_positions, epsilon / 1e3)
-    #
-    # final_route = np.copy(route)
-    # start = cumcount[0]
-    # # new_pivot_inds = []  # uncomment for plotting
-    # for sind in range(1, n_sections):  # we got section 0 for free with the copy
-    #     cur_section = section_order[sind]
-    #     section_count = counts[cur_section]
-    #     if reversals[sind]:
-    #         final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]][::-1]
-    #     else:
-    #         final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]]
-    #     # new_pivot_inds.append(start)  # uncomment for plotting
-    #     # new_pivot_inds.append(start + section_count - 1)  # uncomment for plotting
-    #     start += section_count
-
-    #
     sorted_pos = positions[route, :]
     # make cuts at the corner of each section
     new_sections = np.empty_like(section)
@@ -552,10 +480,6 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
         for ci in range(3):
             new_sections[corners[ci]:corners[ci + 1] + 1] = n_new_sections
             n_new_sections += 1
-        # new_sections[corners[-1]:start + section_count] = n_new_sections
-        # n_new_sections += 1
-
-        # cut_positions.extend(np.concatenate([corners, corners - 1]))
 
         start += section_count
         # label_start +=
@@ -583,6 +507,20 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     return I[route][linked_route]
 
 def link_route(positions, cut_indices, sections, epsilon):
+    """
+    Optimize section order and direction with a two-opt + reversal swap algorithm
+
+    Parameters
+    ----------
+    positions: 2darray
+        Positions array, size n x 2
+    cut_indices: 1darray
+        first and last index for each section
+    sections: 1darray
+        denotes section assignment for each point in `positions`
+    epsilon: float
+        relative improvement exit criteria for two-opt
+    """
     route = np.arange(len(positions), dtype=int)
     uni, counts = np.unique(sections, return_counts=True)
     n_sections = len(uni)
