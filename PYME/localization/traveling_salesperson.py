@@ -192,7 +192,6 @@ def calc_dist_squared(p0, p1):
 
 def calculate_length_with_reversal(order, reversals, positions):
     """
-
     Parameters
     ----------
     order: ndarray
@@ -201,21 +200,17 @@ def calculate_length_with_reversal(order, reversals, positions):
         array of bool, forward (False) and reverse (True)
     positions: ndarray
         pivot positions, sorted such that [::2] yields the positions of one end of each section.
-
     Returns
     -------
     length: float
         cumulative length _between_ sections
-
     """
     porder = np.repeat(2 * order, 2) + np.concatenate([[1, 0] if rev else [0, 1] for rev in reversals])
     ordered_positions = positions[porder]
-    # just do the links, need to offset by 1. Note len always even since we add sections with pairs of points
     return np.sqrt(((ordered_positions[1:-2:2] - ordered_positions[2::2]) ** 2).sum(axis=1)).sum()
 
 def reversal_two_opt(section_ids, pivot_positions, epsilon):
     """
-
     Parameters
     ----------
     pivot_indices: ndarray
@@ -224,10 +219,8 @@ def reversal_two_opt(section_ids, pivot_positions, epsilon):
         same shape as pivot indices, encoding which section each pivot is in
     epsilon: float
         relative improvement exit criteria
-
     Returns
     -------
-
     """
     sections = np.unique(section_ids)
     n_sections = len(sections)
@@ -542,38 +535,166 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     #     # new_pivot_inds.append(start + section_count - 1)  # uncomment for plotting
     #     start += section_count
 
-    # two-opt with just the pivot points as the first switching indices
+    #
+    sorted_pos = positions[route, :]
+    new_route = np.arange(len(route), dtype=int)
     tspeciali = time.time()
-    from scipy.spatial import distance_matrix, cKDTree
-    distances = distance_matrix(positions, positions)
-    # get the nearest neighbor indices for the longest parts of the route
-    jumpers = np.argsort(distances[route[:-1], route[1:]])[:n_sections] - 1
-    # jumpers = np.clip(np.concatenate([jumpers, jumpers - 1]), 1, len(route) - 1)  # get both sides of the jumps
-    kdt = cKDTree(positions)
+    # make cuts at the corner of each section
+    new_sections = np.empty_like(section)
+    n_new_sections = 0
+    start = 0
+    cut_positions = []
+    for sind in range(n_sections):  # we got section 0 for free with the copy
+        section_count = counts[sind]
+        pos = sorted_pos[start: start + section_count]
+        corner0, corner1 = np.argsort(pos[:, 0] + pos[:, 1])[np.array([0, -1])] + start
+        corner2, corner3 = np.argsort(pos[:, 0] - pos[:, 1])[np.array([0, -1])] + start
+        corners = np.sort([corner0, corner1, corner2, corner3])
+        cut_positions.extend([corners[0], corners[1] - 1, corners[1], corners[2] - 1, corners[2], corners[3] - 1])
+        for ci in range(3):
+            new_sections[corners[ci]:corners[ci + 1] + 1] = n_new_sections
+            n_new_sections += 1
+        # new_sections[corners[-1]:start + section_count] = n_new_sections
+        # n_new_sections += 1
 
-    dists, swappers = kdt.query(positions[jumpers, :], k=10)
-    swappers = np.unique(swappers)
-    swappers = swappers[np.logical_and(swappers > 1, swappers < len(route - 1))]
-    final_route, best_distance, og_distance = two_opt_special_k(distances, epsilon, route, i_range=swappers,
-                                                                n_k_samples=int(points_per_chunk / 2))
-    print('linked in %.2f seconds' % (time.time() - tspeciali))
-    print('prelink: %.0f, postlink: %.0f' % (og_distance, best_distance))
+        # cut_positions.extend(np.concatenate([corners, corners - 1]))
 
-    # ----------- uncomment for plotting
+        start += section_count
+        # label_start +=
+    cut_positions[-1] += 1  # move the last corner end of whole thing
+    cut_positions = np.sort(cut_positions)
+    np.testing.assert_array_equal(new_sections[cut_positions], np.repeat(np.arange(n_new_sections), 2))
+    # import matplotlib.pyplot as plt
+    # plt.plot(sorted_pos[:, 0], sorted_pos[:, 1])
+    # plt.scatter(sorted_pos[cut_positions, 0], sorted_pos[cut_positions, 1], color='r')
+    t = time.time()
+    logging.debug('linking sections')
+    linked_route, link_indices = link_route(sorted_pos, cut_positions, new_sections, epsilon)
+    logging.debug('sections linked in %.2f s' % (time.time() - t))
+    # import matplotlib.pyplot as plt
+    # plt.plot(sorted_pos[linked_route, 0], sorted_pos[linked_route, 1])
+    # plt.scatter(sorted_pos[link_indices, 0], sorted_pos[link_indices, 1], color='r')
+
+    # # link with brute force
+    # from scipy.spatial import cKDTree
+    # kdt = cKDTree(sorted_pos[cut_positions])
+    # from itertools import permutations
+    # routes = permutations(new_sections[cut_positions][::2])
+    #
+    # distances = distance_matrix(sorted_pos[cut_positions], sorted_pos[cut_positions])
+    # # rail the cost for two ends of the same section to link to each other
+    # link_cost = np.finfo(distances.dtype).max * np.ones_like(distances)
+    # uppers = np.triu_indices_from(distances, k=2)
+    # lowers = np.tril_indices_from(distances, k=-2)
+    # link_cost[uppers] = distances[uppers]
+    # link_cost[lowers] = distances[lowers]
+    #
+    # # leave out the start and end points so we preserve these
+    # from scipy.optimize import linear_sum_assignment
+    # row_ind, col_ind = linear_sum_assignment(link_cost[1:-1, 1:-1])
+    # # og_link_dist = distances[row_ind, row_ind + 1].sum()  # might nto be right
+    # link_cost[row_ind, col_ind].sum()
+    # # plot it
+    # import matplotlib.pyplot as plt
+    # for ri, ci in zip(row_ind, col_ind):
+    #     plt.plot([sorted_pos[cut_positions[ri], 0], sorted_pos[cut_positions[ci], 0]],
+    #              [sorted_pos[cut_positions[ri], 1], sorted_pos[cut_positions[ci], 1]], 'r-')
+    #
+    # # add the start/ends back in
+    # row_ind += 1
+    # col_ind += 1
+    # rind = np.concatenate([[0], row_ind])
+    # cind = np.concatenate([[1], col_ind])
+    #
+    #
+    # # add the start/ends back in and rebuild the route
+    # final_route = list(range(cut_positions[1]))
+    # for li in range(1, len(cut_positions) - 1, 2):
+    #     start = cut_positions[row_ind[li]]
+    #     finish = cut_positions[col_ind[li]]
+    #     direction = 1 if finish > start else -1
+    #     final_route.extend(range(start, finish, direction))
+    #
+    # # sort the relevant cut_positions as necessary, we should be able to index with these ~directly if we're smart
+    # link_indices = np.copy(cut_positions)
+    # link_indices[1:-1] = cut_positions[1:-1][col_ind]
+    # link_section = new_sections[cut_positions[1:-1]]
+    #
+    # is_first = np.ones(len(link_section), dtype=bool)
+    # is_first[::2]
+    # # start off with the first section
+    # final_route = []
+    # final_route.extend(new_route[:cut_positions[1]])
+    #
+    # section_order, reversals = reversal_two_opt(new_sections[cut_positions], sorted_pos[cut_positions], epsilon / 1e3)
+    #
+    # uni, counts = np.unique(new_sections, return_counts=True)
+    # cumcount = counts.cumsum()
+    # final_route = np.copy(new_route)
+    # start = cumcount[0]
+    # # new_pivot_inds = []  # uncomment for plotting
+    # for sind in range(1, n_new_sections):  # we got section 0 for free with the copy
+    #     cur_section = section_order[sind]
+    #     section_count = counts[cur_section]
+    #     if reversals[sind]:
+    #         final_route[start: start + section_count] = new_route[cumcount[cur_section - 1]:cumcount[cur_section]][::-1]
+    #     else:
+    #         final_route[start: start + section_count] = new_route[cumcount[cur_section - 1]:cumcount[cur_section]]
+    #     # new_pivot_inds.append(start)  # uncomment for plotting
+    #     # new_pivot_inds.append(start + section_count - 1)  # uncomment for plotting
+    #     start += section_count
+    #
+    # print('linked in %.2f seconds' % (time.time() - tspeciali))
+    # print('prelink: %.0f, postlink: %.0f' % (og_distance, best_distance))
+    np.testing.assert_array_equal(sorted_pos[linked_route], positions[route][linked_route])
     import matplotlib.pyplot as plt
     from matplotlib import cm
-    colors = cm.get_cmap('prism', n_sections)
+    colors = cm.get_cmap('prism', n_new_sections)
     plt.figure()
-    sorted_pos = positions[route, :]
-    plt.plot(positions[final_route, 0], positions[final_route, 1], color='k')
-    # plt.scatter(positions[final_route, 0][new_pivot_inds], positions[final_route, 1][new_pivot_inds], color='k')
+    plt.plot(sorted_pos[linked_route, 0], sorted_pos[linked_route, 1], color='k')
     for pi in range(len(section)):
-        plt.scatter(sorted_pos[pi, 0], sorted_pos[pi, 1], marker='$' + str(section[pi]) + '$',
-                    color=colors(section[pi]))
-    fsp = positions[final_route, :]
-    length = np.sqrt((fsp[1:, 0] - fsp[:-1, 0]) ** 2 + (fsp[1:, 1] - fsp[:-1, 1]) ** 2).sum()
-    plt.title('length: %f' % length)
+        plt.scatter(sorted_pos[pi, 0], sorted_pos[pi, 1], marker='$' + str(new_sections[pi]) + '$',
+                    color=colors(new_sections[pi]))
     plt.show()
 
-    # don't forget the final sort sorts the already section-sorted positions -> take care of that here
-    return I[final_route]
+    # don't forget the linked route sorts the first-pass route, which sorts the section-sorted positions -> take care of that here
+    return I[route][linked_route]
+
+def link_route(positions, cut_indices, sections, epsilon):
+    route = np.arange(len(positions), dtype=int)
+    uni, counts = np.unique(sections, return_counts=True)
+    n_sections = len(uni)
+    cumcount = counts.cumsum()
+    section_order, reversals = reversal_two_opt(sections[cut_indices], positions[cut_indices], epsilon / 1e3)
+    # import matplotlib.pyplot as plt
+    # from matplotlib import cm
+    # colors = cm.get_cmap('prism', n_sections)
+    # plt.plot(positions[:, 0], positions[:, 1])
+    # section_edges = positions[cut_indices]
+    # for i_link in range(section_order - 1):
+    #     first = section_order[i_link]
+    #     second = section_order[i_link + 1]
+    #     plt.plot()
+    # for pi in range(len(sections)):
+    #     plt.scatter(positions[pi, 0], positions[pi, 1], marker='$' + str(sections[pi]) + '$',
+    #                 color=colors(sections[pi]))
+    # plt.scatter(positions[cut_indices[::2], 0], positions[cut_indices[::2], 1], color='g')
+    # plt.scatter(positions[cut_indices[1::2], 0], positions[cut_indices[1::2], 1], color='r')
+    # plt.show()
+    # plt.plot(positions[:, 0], positions[:, 1])
+
+    final_route = np.copy(route)
+    start = cumcount[0]
+    new_link_indices = []  # uncomment for plotting
+    for sind in range(1, n_sections):  # we got section 0 for free with the copy
+        cur_section = section_order[sind]
+        section_count = counts[cur_section]
+        if reversals[sind]:
+            final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]][::-1]
+        else:
+            final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]]
+        new_link_indices.append(start)  # uncomment for plotting
+        new_link_indices.append(start + section_count - 1)  # uncomment for plotting
+        start += section_count
+
+    return final_route, new_link_indices
