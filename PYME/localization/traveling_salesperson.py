@@ -52,7 +52,7 @@ def two_opt_swap(route, i, k):
 
 
 
-def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False):
+def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False, i_range=None):
     """
 
     Solves the traveling salesperson problem (TSP) using two-opt swaps to untangle a route.
@@ -90,12 +90,71 @@ def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False):
     # initialize values we'll be updating
     improvement = 1
     best_distance = og_distance
+    i_range = range(1, distances.shape[0] - 2) if i_range is None else i_range
     while improvement > epsilon:
         last_distance = best_distance
-        for i in range(1, distances.shape[0] - 2):  # don't swap the first position
+        for i in i_range:  # don't swap the first position
             for k in range(i + 1, distances.shape[0] - endpoint_offset):  # allow the last position in the route to vary
                 new_route = two_opt_swap(route, i, k)
                 new_distance = calculate_path_length(distances, new_route)
+
+                if new_distance < best_distance:
+                    route = new_route
+                    best_distance = new_distance
+        improvement = (last_distance - best_distance) / last_distance
+
+    return route, best_distance, og_distance
+
+def two_opt_special_k(distances, epsilon, initial_route=None, fixed_endpoint=False, i_range=None, n_k_samples=100):
+    """
+
+    Solves the traveling salesperson problem (TSP) using two-opt swaps to untangle a route.
+
+    Parameters
+    ----------
+    distances: ndarray
+        distance array, which distances[i, j] is the distance from the ith to the jth point
+    epsilon: float
+        exit tolerence on relative improvement. 0.01 corresponds to 1%
+    initial_route: ndarray
+        [optional] route to initialize search with. Note that the first position in the route is fixed, but all others
+        may vary. If no route is provided, the initial route is the same order the distances array was constructed with.
+
+    Returns
+    -------
+    route: ndarray
+        "solved" route
+    best_distance: float
+        distance of the route
+    og_distance: float
+        distance of the initial route.
+
+    Notes
+    -----
+    see https://en.wikipedia.org/wiki/2-opt for pseudo code
+
+    """
+    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
+    route = initial_route if initial_route is not None else np.arange(distances.shape[0] - 1, -1, -1)
+
+    endpoint_offset = int(fixed_endpoint)
+
+    og_distance = calculate_path_length(distances, route)
+    # initialize values we'll be updating
+    improvement = 1
+    best_distance = og_distance
+    i_range = range(1, distances.shape[0] - 2) if i_range is None else i_range
+    while improvement > epsilon:
+        last_distance = best_distance
+
+        for i in i_range:  # don't swap the first position
+            dist_to_i = calculate_path_length(distances, route[:i])
+            special_k = np.arange(i + 1, distances.shape[0] - endpoint_offset, dtype=int)
+            special_k = np.random.choice(special_k, min(n_k_samples, len(special_k)), replace=False)
+            for k in special_k:
+                new_route = two_opt_swap(route, i, k)
+                # new_distance = calculate_path_length(distances, new_route)
+                new_distance = calculate_path_length(distances, new_route[i-1:]) + dist_to_i
 
                 if new_distance < best_distance:
                     route = new_route
@@ -405,6 +464,7 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
 
     cumcount = counts.cumsum()
     cumtasks = tasks.cumsum()
+    print('%d tasks' % cumtasks[-1])
     t = time.time()
     if n_cpu == 1:
         two_opt_section(positions, 0, counts, tasks[0], epsilon, route)
@@ -463,38 +523,57 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     # end_positions = sorted_positions[endpoints, :]
     # section_order, reversals = reversal_two_opt(section[endpoints], end_positions, epsilon / 1e3)
     ########
-    pivot_positions = positions[route, :][pivot_indices]
-    section_order, reversals = reversal_two_opt(section[pivot_indices], pivot_positions, epsilon / 1e3)
 
-    final_route = np.copy(route)
-    start = cumcount[0]
-    # new_pivot_inds = []  # uncomment for plotting
-    for sind in range(1, n_sections):  # we got section 0 for free with the copy
-        cur_section = section_order[sind]
-        section_count = counts[cur_section]
-        if reversals[sind]:
-            final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]][::-1]
-        else:
-            final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]]
-        # new_pivot_inds.append(start)  # uncomment for plotting
-        # new_pivot_inds.append(start + section_count - 1)  # uncomment for plotting
-        start += section_count
+
+    # pivot_positions = positions[route, :][pivot_indices]
+    # section_order, reversals = reversal_two_opt(section[pivot_indices], pivot_positions, epsilon / 1e3)
+    #
+    # final_route = np.copy(route)
+    # start = cumcount[0]
+    # # new_pivot_inds = []  # uncomment for plotting
+    # for sind in range(1, n_sections):  # we got section 0 for free with the copy
+    #     cur_section = section_order[sind]
+    #     section_count = counts[cur_section]
+    #     if reversals[sind]:
+    #         final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]][::-1]
+    #     else:
+    #         final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]]
+    #     # new_pivot_inds.append(start)  # uncomment for plotting
+    #     # new_pivot_inds.append(start + section_count - 1)  # uncomment for plotting
+    #     start += section_count
+
+    # two-opt with just the pivot points as the first switching indices
+    tspeciali = time.time()
+    from scipy.spatial import distance_matrix, cKDTree
+    distances = distance_matrix(positions, positions)
+    # get the nearest neighbor indices for the longest parts of the route
+    jumpers = np.argsort(distances[route[:-1], route[1:]])[:n_sections] - 1
+    # jumpers = np.clip(np.concatenate([jumpers, jumpers - 1]), 1, len(route) - 1)  # get both sides of the jumps
+    kdt = cKDTree(positions)
+
+    dists, swappers = kdt.query(positions[jumpers, :], k=10)
+    swappers = np.unique(swappers)
+    swappers = swappers[np.logical_and(swappers > 1, swappers < len(route - 1))]
+    final_route, best_distance, og_distance = two_opt_special_k(distances, epsilon, route, i_range=swappers,
+                                                                n_k_samples=int(points_per_chunk / 2))
+    print('linked in %.2f seconds' % (time.time() - tspeciali))
+    print('prelink: %.0f, postlink: %.0f' % (og_distance, best_distance))
 
     # ----------- uncomment for plotting
-    # import matplotlib.pyplot as plt
-    # from matplotlib import cm
-    # colors = cm.get_cmap('prism', n_sections)
-    # plt.figure()
-    # sorted_pos = positions[route, :]
-    # plt.plot(positions[final_route, 0], positions[final_route, 1], color='k')
-    # # plt.scatter(positions[final_route, 0][new_pivot_inds], positions[final_route, 1][new_pivot_inds], color='k')
-    # for pi in range(len(section)):
-    #     plt.scatter(sorted_pos[pi, 0], sorted_pos[pi, 1], marker='$' + str(section[pi]) + '$',
-    #                 color=colors(section[pi]))
-    # fsp = positions[final_route, :]
-    # length = np.sqrt((fsp[1:, 0] - fsp[:-1, 0]) ** 2 + (fsp[1:, 1] - fsp[:-1, 1]) ** 2).sum()
-    # plt.title('length: %f' % length)
-    # plt.show()
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+    colors = cm.get_cmap('prism', n_sections)
+    plt.figure()
+    sorted_pos = positions[route, :]
+    plt.plot(positions[final_route, 0], positions[final_route, 1], color='k')
+    # plt.scatter(positions[final_route, 0][new_pivot_inds], positions[final_route, 1][new_pivot_inds], color='k')
+    for pi in range(len(section)):
+        plt.scatter(sorted_pos[pi, 0], sorted_pos[pi, 1], marker='$' + str(section[pi]) + '$',
+                    color=colors(section[pi]))
+    fsp = positions[final_route, :]
+    length = np.sqrt((fsp[1:, 0] - fsp[:-1, 0]) ** 2 + (fsp[1:, 1] - fsp[:-1, 1]) ** 2).sum()
+    plt.title('length: %f' % length)
+    plt.show()
 
     # don't forget the final sort sorts the already section-sorted positions -> take care of that here
     return I[final_route]
