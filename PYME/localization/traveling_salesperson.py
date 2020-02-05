@@ -224,6 +224,7 @@ def reversal_two_opt(section_ids, pivot_positions, epsilon):
     reversals = np.zeros_like(sections, dtype=bool)
     improvement = 1
     best_distance = calculate_length_with_reversal(section_order, reversals, pivot_positions)
+    og_distance = best_distance
     while improvement > epsilon:
         last_distance = best_distance
         for i in range(1, n_sections - 1):  # already know section 0 is first, and it is forward
@@ -237,7 +238,7 @@ def reversal_two_opt(section_ids, pivot_positions, epsilon):
                         reversals = new_reversals
                         best_distance = new_distance
         improvement = (last_distance - best_distance) / last_distance
-    return section_order, reversals
+    return section_order, reversals, og_distance, best_distance
 
 def two_opt_section(positions, start_section, counts, n_tasks, epsilon, master_route):
     """
@@ -319,6 +320,29 @@ def split_points_by_greed(positions, points_per_chunk):
     section[np.argwhere(unclaimed)] = ind + 1
 
     return section, n_sections
+
+def split_points_kmeans(positions, points_per_chunk):
+    """
+    Parameters
+    ----------
+    positions: ndarray
+        positions, shape (n_points, 2), where n_points are just the positions for the tasks this call is responsible for
+    points_per_chunk: Int
+        Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
+        ideal paths, but much larger computational complexity.
+
+    Returns
+    -------
+    section: ndarray
+        array of int denoting section assignment
+    n_sections: int
+        number of sections
+    """
+    from sklearn.cluster import KMeans
+    k = int(np.ceil(positions.shape[0] / points_per_chunk))
+    section = KMeans(k).fit_predict(positions)
+    return section, k
+
 
 def split_points_by_grid(positions, points_per_chunk):
     """
@@ -414,7 +438,7 @@ def split_points_radially(positions, points_per_chunk, epsilon=10, first_point_i
 def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     # divide points spatially
     positions = positions.astype(np.float32)
-    section, n_sections = split_points_by_grid(positions, points_per_chunk)
+    section, n_sections = split_points_kmeans(positions, points_per_chunk)
     I = np.argsort(section)
     section = section[I]
     positions = positions[I, :]
@@ -525,7 +549,9 @@ def link_route(positions, cut_indices, sections, epsilon):
     uni, counts = np.unique(sections, return_counts=True)
     n_sections = len(uni)
     cumcount = counts.cumsum()
-    section_order, reversals = reversal_two_opt(sections[cut_indices], positions[cut_indices], epsilon / 1e3)
+    section_order, reversals, og_distance, best_distance = reversal_two_opt(sections[cut_indices],
+                                                                            positions[cut_indices], epsilon / 1e3)
+    print('unoptimized linking distance: %.0f, optimized: %.0f' % (og_distance, best_distance))
 
     final_route = np.copy(route)
     start = cumcount[0]
