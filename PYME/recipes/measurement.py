@@ -975,7 +975,8 @@ class TravelingSalesperson(ModuleBase):
         distances = distance_matrix(positions, positions)
 
 
-        route, best_distance, og_distance = traveling_salesperson.two_opt(distances, self.epsilon)
+        route, ogd, gsd = traveling_salesperson.greedy_sort(positions, np.argmin(positions.sum(axis=1)), distances)
+        route, best_distance, og_distance = traveling_salesperson.two_opt(distances, self.epsilon, initial_route=route)
 
         # plot_path(positions, route)
         out = tabular.MappingFilter({'x_um': positions[:, 0][route],
