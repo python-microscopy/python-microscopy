@@ -26,6 +26,28 @@ def calculate_path_length(distances, route):
     return distances[route[:-1], route[1:]].sum()
 
 def greedy_sort(positions, start_index=0, distances=None):
+    """
+    Nearest-neighbors path optimization.
+
+    Parameters
+    ----------
+    positions: 2darray
+        Positions array, size n x 2
+    start_index: int
+        Index to start path from.
+    distances: ndarray
+        [optional] distance array, for which distances[i, j] is the distance from the ith to the jth point. Will be
+        calculated if not provided.
+
+    Returns
+    -------
+    route: 1darray
+        array of indices defining the path
+    og_distance: float
+        distance of path traversing positions in their original order
+    final_distance: float
+        final distance after path optimization
+    """
     if distances is None:
         from scipy.spatial import distance_matrix
         distances = distance_matrix(positions, positions)
@@ -361,7 +383,7 @@ def split_points_by_greed(positions, points_per_chunk):
     Parameters
     ----------
     positions: ndarray
-        positions, shape (n_points, 2), where n_points are just the positions for the tasks this call is responsible for
+        Positions array, size n x 2
     points_per_chunk: Int
         Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
         ideal paths, but much larger computational complexity.
@@ -401,7 +423,7 @@ def split_points_kmeans(positions, points_per_chunk):
     Parameters
     ----------
     positions: ndarray
-        positions, shape (n_points, 2), where n_points are just the positions for the tasks this call is responsible for
+        Positions array, size n x 2
     points_per_chunk: Int
         Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
         ideal paths, but much larger computational complexity.
@@ -431,7 +453,7 @@ def split_points_by_grid(positions, points_per_chunk):
     Parameters
     ----------
     positions: ndarray
-        positions, shape (n_points, 2), where n_points are just the positions for the tasks this call is responsible for
+        Positions array, size n x 2
     points_per_chunk: Int
         Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
         ideal paths, but much larger computational complexity.
@@ -470,7 +492,7 @@ def split_points_radially(positions, points_per_chunk, epsilon=10, first_point_i
     Parameters
     ----------
     positions: ndarray
-        positions, shape (n_points, 2), where n_points are just the positions for the tasks this call is responsible for
+        Positions array, size n x 2
     points_per_chunk: int
         Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
         ideal paths, but much larger computational complexity.
