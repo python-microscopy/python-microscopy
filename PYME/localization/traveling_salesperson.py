@@ -540,22 +540,6 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     linked_route = link_route(sorted_pos, cut_positions, new_sections, epsilon)
     print('sections linked in %.2f s' % (time.time() - t))
 
-    t = time.time()
-    print('smoothing big jumps')
-
-    from scipy.spatial import cKDTree, distance_matrix
-    distances = distance_matrix(sorted_pos, sorted_pos)
-    # get the nearest neighbor indices for the longest parts of the route
-    jumpers = np.argsort(distances[linked_route[:-1], linked_route[1:]])[:n_sections] - 1
-    kdt = cKDTree(sorted_pos)
-
-    dists, swappers = kdt.query(sorted_pos[jumpers, :], k=5)
-    swappers = np.unique(swappers)
-    swappers = swappers[np.logical_and(swappers > 1, swappers < len(route - 1))]
-    final_route, best_distance, og_distance = two_opt_special_k(distances, epsilon, linked_route, i_range=swappers,
-                                                                n_k_samples=int(points_per_chunk * 2))
-    linked_route = final_route
-    print('completed in %.2f s, og: %.0f, now: %.0f' % (time.time() - t, og_distance, best_distance))
     # np.testing.assert_array_equal(sorted_pos[linked_route], positions[route][linked_route])
     # import matplotlib.pyplot as plt
     # from matplotlib import cm
