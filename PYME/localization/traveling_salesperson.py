@@ -7,13 +7,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def plot_path(positions, route):
-    import matplotlib.pyplot as plt
-    ordered = positions[route]
-    plt.scatter(positions[:, 0], positions[:, 1])
-    plt.plot(ordered[:, 0], ordered[:, 1])
-    plt.show()
-
 def calculate_path_length(distances, route):
     """
     Parameters
@@ -202,64 +195,6 @@ def timeout_two_opt(distances, epsilon, timeout, initial_route=None):
 
     return route, best_distance, og_distance
 
-def two_opt_special_k(distances, epsilon, initial_route=None, fixed_endpoint=False, i_range=None, n_k_samples=100):
-    """
-
-    Solves the traveling salesperson problem (TSP) using two-opt swaps to untangle a route.
-
-    Parameters
-    ----------
-    distances: ndarray
-        distance array, which distances[i, j] is the distance from the ith to the jth point
-    epsilon: float
-        exit tolerence on relative improvement. 0.01 corresponds to 1%
-    initial_route: ndarray
-        [optional] route to initialize search with. Note that the first position in the route is fixed, but all others
-        may vary. If no route is provided, the initial route is the same order the distances array was constructed with.
-
-    Returns
-    -------
-    route: ndarray
-        "solved" route
-    best_distance: float
-        distance of the route
-    og_distance: float
-        distance of the initial route.
-
-    Notes
-    -----
-    see https://en.wikipedia.org/wiki/2-opt for pseudo code
-
-    """
-    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
-    route = initial_route if initial_route is not None else np.arange(distances.shape[0] - 1, -1, -1)
-
-    endpoint_offset = int(fixed_endpoint)
-
-    og_distance = calculate_path_length(distances, route)
-    # initialize values we'll be updating
-    improvement = 1
-    best_distance = og_distance
-    i_range = range(1, distances.shape[0] - 2) if i_range is None else i_range
-    while improvement > epsilon:
-        last_distance = best_distance
-
-        for i in i_range:  # don't swap the first position
-            dist_to_i = calculate_path_length(distances, route[:i])
-            special_k = np.arange(i + 1, distances.shape[0] - endpoint_offset, dtype=int)
-            special_k = np.random.choice(special_k, min(n_k_samples, len(special_k)), replace=False)
-            for k in special_k:
-                new_route = two_opt_swap(route, i, k)
-                # new_distance = calculate_path_length(distances, new_route)
-                new_distance = calculate_path_length(distances, new_route[i-1:]) + dist_to_i
-
-                if new_distance < best_distance:
-                    route = new_route
-                    best_distance = new_distance
-        improvement = (last_distance - best_distance) / last_distance
-
-    return route, best_distance, og_distance
-
 def reversal_swap(reversals, ind):
     """
     Flag a section as being reversed, returning a copy.
@@ -375,49 +310,6 @@ def two_opt_section(positions, start_section, counts, n_tasks, epsilon, master_r
         start_route += counts[ti]
         start_pos += counts[ti]
 
-def split_points_by_greed(positions, points_per_chunk):
-    """
-    Not recommended as it leaves quite a few long connections, but it does have the advantage of equally distributing
-    the number of points to sort
-
-    Parameters
-    ----------
-    positions: ndarray
-        Positions array, size n x 2
-    points_per_chunk: Int
-        Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
-        ideal paths, but much larger computational complexity.
-
-    Returns
-    -------
-    section: ndarray
-        array of int denoting grid assignment
-    n_sections: int
-        number of sections in the grid
-    """
-    from scipy.spatial import cKDTree
-
-    section = np.zeros(positions.shape[0], dtype=int)
-    n_sections = int(np.ceil(positions.shape[0] / points_per_chunk))
-    unclaimed = np.ones(positions.shape[0], dtype=bool)
-    # do the 0th section
-    kdt = cKDTree(positions)
-
-    d, order = kdt.query(positions[np.argmin(positions[:, 0] + positions[:, 1]), :], k=points_per_chunk)
-    unclaimed[order] = False
-
-    for ind in range(1, n_sections - 1):
-        I = np.argwhere(unclaimed)
-        pos = positions[unclaimed, :]
-        kdt = cKDTree(pos)
-        d, order = kdt.query(pos[0, :], k=points_per_chunk)
-        section[I[order]] = ind
-        unclaimed[I[order]] = False
-    # do the last section
-    section[np.argwhere(unclaimed)] = ind + 1
-
-    return section, n_sections
-
 def split_points_kmeans(positions, points_per_chunk):
     """
     Parameters
@@ -482,59 +374,6 @@ def split_points_by_grid(positions, points_per_chunk):
     # keep all section numbers positive, starting at zero
     section -= section.min()
     n_sections = int(section.max() + 1)
-    return section, n_sections
-
-def split_points_radially(positions, points_per_chunk, epsilon=10, first_point_index=None):
-    """
-    Greedily loop through points starting roughly at the center, putting the nearest `points_per_chunk` points into a
-    group, then starting the next group with the nearest neighbor
-
-    Parameters
-    ----------
-    positions: ndarray
-        Positions array, size n x 2
-    points_per_chunk: int
-        Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
-        ideal paths, but much larger computational complexity.
-    epsilon: float
-        Level of approximation in nearest neighbor queries. Matches units of positions. Scipy: "the k-th returned value
-        is guaranteed to be no further than (1+eps) times the distance to the real k-th nearest neighbor."
-    first_point_index: int
-        [optional] specifies index of point in positions to use as the first point in the first group.
-
-    Returns
-    -------
-    section: ndarray
-        array of int denoting grid assignment
-    I: ndarray
-        array of int which can be used to sort an array by "section" id.
-    n_sections: int
-        number of sections in the grid
-    """
-    from scipy.spatial import cKDTree
-    kdt = cKDTree(positions)
-
-    section = np.empty(positions.shape[0], dtype=int)
-
-    if first_point_index is None:
-        p_sorted = np.sort(positions, axis=0)
-        ind_5, ind_95 = (np.array([0.05, 0.95]) * positions.shape[0]).astype(int)
-        x_start = 0.5 * (p_sorted[ind_5, 0] + p_sorted[ind_95, 0])
-        y_start = 0.5 * (p_sorted[ind_5, 1] + p_sorted[ind_95, 1])
-        first_point_index = kdt.query((x_start, y_start), k=1, eps=epsilon)[1]
-
-    indices = kdt.query(positions[first_point_index, :], k=positions.shape[0], eps=epsilon, n_jobs=-1)[1]
-    n_sections = int(positions.shape[0] / points_per_chunk)
-    start = 0
-    for ind in range(n_sections):
-        end = start + points_per_chunk
-        section[indices[start:end]] = ind
-        start = end
-    if positions.shape[0] % points_per_chunk:
-        # do the last loop
-        section[indices[start:]] = n_sections
-        n_sections += 1
-
     return section, n_sections
 
 def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
