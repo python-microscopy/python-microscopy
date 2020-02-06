@@ -134,9 +134,11 @@ def timeout_two_opt(distances, epsilon, timeout, initial_route=None):
     # initialize values we'll be updating
     improvement = 1
     best_distance = og_distance
-    while improvement > epsilon and time.time() < abort_time:
+    while improvement > epsilon:
         last_distance = best_distance
         for i in range(1, distances.shape[0] - 2):  # don't swap the first position
+            if time.time() > abort_time:
+                return route, best_distance, og_distance
             for k in range(i + 1, distances.shape[0]):  # allow the last position in the route to vary
                 new_route = two_opt_swap(route, i, k)
                 new_distance = calculate_path_length(distances, new_route)
