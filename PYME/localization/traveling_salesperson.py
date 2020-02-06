@@ -15,7 +15,34 @@ def plot_path(positions, route):
     plt.show()
 
 def calculate_path_length(distances, route):
+    """
+    Parameters
+    ----------
+    distances: ndarray
+        distance array, for which distances[i, j] is the distance from the ith to the jth point
+    route: ndarray
+        array of indices defining the path
+    """
     return distances[route[:-1], route[1:]].sum()
+
+def greedy_sort(positions, start_index=0, distances=None):
+    if distances is None:
+        from scipy.spatial import distance_matrix
+        distances = distance_matrix(positions, positions)
+    route = np.arange(distances.shape[0], dtype=int)
+    og_distance = calculate_path_length(distances, route)
+    visited = np.zeros(distances.shape[0], dtype=bool)
+    maxf = np.finfo(float).max
+    for ind in range(distances.shape[0]):
+        visited[start_index] = True
+        next_index = np.argmin(distances[start_index, :] + visited * maxf)
+        # next_index += np.sum(~unvisited[:next_index])
+        route[ind] = start_index
+        start_index = next_index
+
+    final_distance = calculate_path_length(distances, route)
+    return route, og_distance, final_distance
+
 
 def two_opt_swap(route, i, k):
     """
@@ -44,7 +71,7 @@ def two_opt_swap(route, i, k):
 
 
 
-def two_opt(distances, epsilon, initial_route=None):
+def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False, i_range=None):
     """
 
     Solves the traveling salesperson problem (TSP) using two-opt swaps to untangle a route.
@@ -54,7 +81,7 @@ def two_opt(distances, epsilon, initial_route=None):
     distances: ndarray
         distance array, which distances[i, j] is the distance from the ith to the jth point
     epsilon: float
-        exit tolerance on relative improvement. 0.01 corresponds to 1%
+        exit tolerence on relative improvement. 0.01 corresponds to 1%
     initial_route: ndarray
         [optional] route to initialize search with. Note that the first position in the route is fixed, but all others
         may vary. If no route is provided, the initial route is the same order the distances array was constructed with.
@@ -73,17 +100,20 @@ def two_opt(distances, epsilon, initial_route=None):
     see https://en.wikipedia.org/wiki/2-opt for pseudo code
 
     """
-    # start route backwards if not predefined
+    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
     route = initial_route if initial_route is not None else np.arange(distances.shape[0] - 1, -1, -1)
+
+    endpoint_offset = int(fixed_endpoint)
 
     og_distance = calculate_path_length(distances, route)
     # initialize values we'll be updating
     improvement = 1
     best_distance = og_distance
+    i_range = range(1, distances.shape[0] - 2) if i_range is None else i_range
     while improvement > epsilon:
         last_distance = best_distance
-        for i in range(1, distances.shape[0] - 2):  # don't swap the first position
-            for k in range(i + 1, distances.shape[0]):  # allow the last position in the route to vary
+        for i in i_range:  # don't swap the first position
+            for k in range(i + 1, distances.shape[0] - endpoint_offset):  # allow the last position in the route to vary
                 new_route = two_opt_swap(route, i, k)
                 new_distance = calculate_path_length(distances, new_route)
 
@@ -150,6 +180,64 @@ def timeout_two_opt(distances, epsilon, timeout, initial_route=None):
 
     return route, best_distance, og_distance
 
+def two_opt_special_k(distances, epsilon, initial_route=None, fixed_endpoint=False, i_range=None, n_k_samples=100):
+    """
+
+    Solves the traveling salesperson problem (TSP) using two-opt swaps to untangle a route.
+
+    Parameters
+    ----------
+    distances: ndarray
+        distance array, which distances[i, j] is the distance from the ith to the jth point
+    epsilon: float
+        exit tolerence on relative improvement. 0.01 corresponds to 1%
+    initial_route: ndarray
+        [optional] route to initialize search with. Note that the first position in the route is fixed, but all others
+        may vary. If no route is provided, the initial route is the same order the distances array was constructed with.
+
+    Returns
+    -------
+    route: ndarray
+        "solved" route
+    best_distance: float
+        distance of the route
+    og_distance: float
+        distance of the initial route.
+
+    Notes
+    -----
+    see https://en.wikipedia.org/wiki/2-opt for pseudo code
+
+    """
+    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
+    route = initial_route if initial_route is not None else np.arange(distances.shape[0] - 1, -1, -1)
+
+    endpoint_offset = int(fixed_endpoint)
+
+    og_distance = calculate_path_length(distances, route)
+    # initialize values we'll be updating
+    improvement = 1
+    best_distance = og_distance
+    i_range = range(1, distances.shape[0] - 2) if i_range is None else i_range
+    while improvement > epsilon:
+        last_distance = best_distance
+
+        for i in i_range:  # don't swap the first position
+            dist_to_i = calculate_path_length(distances, route[:i])
+            special_k = np.arange(i + 1, distances.shape[0] - endpoint_offset, dtype=int)
+            special_k = np.random.choice(special_k, min(n_k_samples, len(special_k)), replace=False)
+            for k in special_k:
+                new_route = two_opt_swap(route, i, k)
+                # new_distance = calculate_path_length(distances, new_route)
+                new_distance = calculate_path_length(distances, new_route[i-1:]) + dist_to_i
+
+                if new_distance < best_distance:
+                    route = new_route
+                    best_distance = new_distance
+        improvement = (last_distance - best_distance) / last_distance
+
+    return route, best_distance, og_distance
+
 def reversal_swap(reversals, ind):
     """
     Flag a section as being reversed, returning a copy.
@@ -171,12 +259,10 @@ def reversal_swap(reversals, ind):
     return new_reversals
 
 def calc_dist(p0, p1):
-    # todo - sqrt is monotonic, so can we skip it?
     return np.sqrt((p0[0] - p1[0])**2 + (p0[1] - p1[1])**2)
 
 def calculate_length_with_reversal(order, reversals, positions):
     """
-
     Parameters
     ----------
     order: ndarray
@@ -185,24 +271,17 @@ def calculate_length_with_reversal(order, reversals, positions):
         array of bool, forward (False) and reverse (True)
     positions: ndarray
         pivot positions, sorted such that [::2] yields the positions of one end of each section.
-
     Returns
     -------
     length: float
         cumulative length _between_ sections
-
     """
-    length = 0
     porder = np.repeat(2 * order, 2) + np.concatenate([[1, 0] if rev else [0, 1] for rev in reversals])
     ordered_positions = positions[porder]
-    # just do the links, need to offset by 1. Note len always even since we add sections with pairs of points
-    for ind in range(1, len(positions) - 1, 2):
-        length += calc_dist(ordered_positions[ind, :], ordered_positions[ind + 1, :])
-    return length
+    return np.sqrt(((ordered_positions[1:-2:2] - ordered_positions[2::2]) ** 2).sum(axis=1)).sum()
 
 def reversal_two_opt(section_ids, pivot_positions, epsilon):
     """
-
     Parameters
     ----------
     pivot_indices: ndarray
@@ -211,10 +290,8 @@ def reversal_two_opt(section_ids, pivot_positions, epsilon):
         same shape as pivot indices, encoding which section each pivot is in
     epsilon: float
         relative improvement exit criteria
-
     Returns
     -------
-
     """
     sections = np.unique(section_ids)
     n_sections = len(sections)
@@ -222,6 +299,7 @@ def reversal_two_opt(section_ids, pivot_positions, epsilon):
     reversals = np.zeros_like(sections, dtype=bool)
     improvement = 1
     best_distance = calculate_length_with_reversal(section_order, reversals, pivot_positions)
+    og_distance = best_distance
     while improvement > epsilon:
         last_distance = best_distance
         for i in range(1, n_sections - 1):  # already know section 0 is first, and it is forward
@@ -235,7 +313,7 @@ def reversal_two_opt(section_ids, pivot_positions, epsilon):
                         reversals = new_reversals
                         best_distance = new_distance
         improvement = (last_distance - best_distance) / last_distance
-    return section_order, reversals
+    return section_order, reversals, og_distance, best_distance
 
 def two_opt_section(positions, start_section, counts, n_tasks, epsilon, master_route):
     """
@@ -269,14 +347,102 @@ def two_opt_section(positions, start_section, counts, n_tasks, epsilon, master_r
         route = np.argsort(pos[:, 0] + pos[:, 1])
         # print('route %s' % (route,))
 
-        best_route, best_distance, og_distance = two_opt(distances, epsilon, route)
+        best_route, best_distance, og_distance = two_opt(distances, epsilon, route, fixed_endpoint=True)
         # print(best_route)
         master_route[start_route:start_route + counts[ti]] = start_route + best_route
         start_route += counts[ti]
         start_pos += counts[ti]
 
+def split_points_by_greed(positions, points_per_chunk):
+    """
+    Not recommended as it leaves quite a few long connections, but it does have the advantage of equally distributing
+    the number of points to sort
 
-def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
+    Parameters
+    ----------
+    positions: ndarray
+        positions, shape (n_points, 2), where n_points are just the positions for the tasks this call is responsible for
+    points_per_chunk: Int
+        Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
+        ideal paths, but much larger computational complexity.
+
+    Returns
+    -------
+    section: ndarray
+        array of int denoting grid assignment
+    n_sections: int
+        number of sections in the grid
+    """
+    from scipy.spatial import cKDTree
+
+    section = np.zeros(positions.shape[0], dtype=int)
+    n_sections = int(np.ceil(positions.shape[0] / points_per_chunk))
+    unclaimed = np.ones(positions.shape[0], dtype=bool)
+    # do the 0th section
+    kdt = cKDTree(positions)
+
+    d, order = kdt.query(positions[np.argmin(positions[:, 0] + positions[:, 1]), :], k=points_per_chunk)
+    unclaimed[order] = False
+
+    for ind in range(1, n_sections - 1):
+        I = np.argwhere(unclaimed)
+        pos = positions[unclaimed, :]
+        kdt = cKDTree(pos)
+        d, order = kdt.query(pos[0, :], k=points_per_chunk)
+        section[I[order]] = ind
+        unclaimed[I[order]] = False
+    # do the last section
+    section[np.argwhere(unclaimed)] = ind + 1
+
+    return section, n_sections
+
+def split_points_kmeans(positions, points_per_chunk):
+    """
+    Parameters
+    ----------
+    positions: ndarray
+        positions, shape (n_points, 2), where n_points are just the positions for the tasks this call is responsible for
+    points_per_chunk: Int
+        Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
+        ideal paths, but much larger computational complexity.
+
+    Returns
+    -------
+    section: ndarray
+        array of int denoting section assignment
+    n_sections: int
+        number of sections
+    """
+    from sklearn.cluster import KMeans
+    k = int(np.ceil(positions.shape[0] / points_per_chunk))
+    section = KMeans(k).fit_predict(positions)
+    # put start section on lower left corner
+    llc_section = section[np.argmin(positions.sum(axis=1))]
+    llc_mask = section == llc_section
+    section[section == 0] = llc_section
+    section[llc_mask] = 0
+    return section, k
+
+
+def split_points_by_grid(positions, points_per_chunk):
+    """
+    Assuming uniform density, separate points using a grid
+
+    Parameters
+    ----------
+    positions: ndarray
+        positions, shape (n_points, 2), where n_points are just the positions for the tasks this call is responsible for
+    points_per_chunk: Int
+        Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
+        ideal paths, but much larger computational complexity.
+
+    Returns
+    -------
+    section: ndarray
+        array of int denoting grid assignment
+    n_sections: int
+        number of sections in the grid
+    """
     # assume density is uniform
     x_min, y_min = positions.min(axis=0)
     x_max, y_max = positions.max(axis=0)
@@ -294,6 +460,65 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     # keep all section numbers positive, starting at zero
     section -= section.min()
     n_sections = int(section.max() + 1)
+    return section, n_sections
+
+def split_points_radially(positions, points_per_chunk, epsilon=10, first_point_index=None):
+    """
+    Greedily loop through points starting roughly at the center, putting the nearest `points_per_chunk` points into a
+    group, then starting the next group with the nearest neighbor
+
+    Parameters
+    ----------
+    positions: ndarray
+        positions, shape (n_points, 2), where n_points are just the positions for the tasks this call is responsible for
+    points_per_chunk: int
+        Number of points desired to be in each chunk that a two-opt algorithm is run on. Larger chunks tend toward more
+        ideal paths, but much larger computational complexity.
+    epsilon: float
+        Level of approximation in nearest neighbor queries. Matches units of positions. Scipy: "the k-th returned value
+        is guaranteed to be no further than (1+eps) times the distance to the real k-th nearest neighbor."
+    first_point_index: int
+        [optional] specifies index of point in positions to use as the first point in the first group.
+
+    Returns
+    -------
+    section: ndarray
+        array of int denoting grid assignment
+    I: ndarray
+        array of int which can be used to sort an array by "section" id.
+    n_sections: int
+        number of sections in the grid
+    """
+    from scipy.spatial import cKDTree
+    kdt = cKDTree(positions)
+
+    section = np.empty(positions.shape[0], dtype=int)
+
+    if first_point_index is None:
+        p_sorted = np.sort(positions, axis=0)
+        ind_5, ind_95 = (np.array([0.05, 0.95]) * positions.shape[0]).astype(int)
+        x_start = 0.5 * (p_sorted[ind_5, 0] + p_sorted[ind_95, 0])
+        y_start = 0.5 * (p_sorted[ind_5, 1] + p_sorted[ind_95, 1])
+        first_point_index = kdt.query((x_start, y_start), k=1, eps=epsilon)[1]
+
+    indices = kdt.query(positions[first_point_index, :], k=positions.shape[0], eps=epsilon, n_jobs=-1)[1]
+    n_sections = int(positions.shape[0] / points_per_chunk)
+    start = 0
+    for ind in range(n_sections):
+        end = start + points_per_chunk
+        section[indices[start:end]] = ind
+        start = end
+    if positions.shape[0] % points_per_chunk:
+        # do the last loop
+        section[indices[start:]] = n_sections
+        n_sections += 1
+
+    return section, n_sections
+
+def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
+    # divide points spatially
+    positions = positions.astype(np.float32)
+    section, n_sections = split_points_kmeans(positions, points_per_chunk)
     I = np.argsort(section)
     section = section[I]
     positions = positions[I, :]
@@ -303,7 +528,10 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
     tasks = int(n_sections / n_cpu) * np.ones(n_cpu, 'i')
     tasks[:int(n_sections % n_cpu)] += 1
 
-    route = shmarray.zeros(positions.shape[0], dtype='i')
+    if positions.shape[0] < np.iinfo(np.uint16).max:
+        route = shmarray.zeros(positions.shape[0], dtype=np.uint16)
+    else:
+        route = shmarray.zeros(positions.shape[0], dtype='i')
 
     uni, counts = np.unique(section, return_counts=True)
     logger.debug('%d points total, section counts: %s' % (counts.sum(), (counts,)))
@@ -316,10 +544,10 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
 
     cumcount = counts.cumsum()
     cumtasks = tasks.cumsum()
+    print('%d tasks' % cumtasks[-1])
     t = time.time()
     if n_cpu == 1:
         two_opt_section(positions, 0, counts, tasks[0], epsilon, route)
-        pivot_indices = np.sort(np.concatenate([[0], cumcount[:-1], cumcount - 1]))  # get start/stop indices for each
     else:
         for ci in range(n_cpu):
             ind_task_end = cumtasks[ci]
@@ -337,21 +565,77 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
             ind_task_start = ind_task_end
             ind_pos_start = ind_pos_end
 
-        # next we need to join our sections. Prepare for this while the other processes are executing
-        pivot_indices = np.sort(np.concatenate([[0], cumcount[:-1], cumcount - 1]))  # get start/stop indices for each
-
         [p.join() for p in processes]
     print('Chunked TSPs finished after ~%.2f s, connecting chunks' % (time.time() - t))
 
-    # do a two-opt on just the section start/ends, with ability to reverse the section
-    # pivot positions won't be correct unless they're already sorted. No need to sort section because its the same
-    pivot_positions = positions[route, :][pivot_indices]
-    # spike the exit criteria low since the cost is cheap and the gains are high
-    section_order, reversals = reversal_two_opt(section[pivot_indices], pivot_positions, epsilon / 1e3)
+    sorted_pos = positions[route, :]
+    # make cuts at the corner of each section
+    new_sections = np.empty_like(section)
+    n_new_sections = 0
+    start = 0
+    cut_positions = []
+    for sind in range(n_sections):  # we got section 0 for free with the copy
+        section_count = counts[sind]
+        pos = sorted_pos[start: start + section_count]
+        corner0, corner1 = np.argsort(pos[:, 0] + pos[:, 1])[np.array([0, -1])] + start
+        corner2, corner3 = np.argsort(pos[:, 0] - pos[:, 1])[np.array([0, -1])] + start
+        corners = np.sort([corner0, corner1, corner2, corner3])
+        cut_positions.extend([corners[0], corners[1] - 1, corners[1], corners[2] - 1, corners[2], corners[3] - 1])
+        for ci in range(3):
+            new_sections[corners[ci]:corners[ci + 1] + 1] = n_new_sections
+            n_new_sections += 1
+
+        start += section_count
+        # label_start +=
+    cut_positions[-1] += 1  # move the last corner end of whole thing
+    cut_positions = np.sort(cut_positions)
+    # np.testing.assert_array_equal(new_sections[cut_positions], np.repeat(np.arange(n_new_sections), 2))
+
+    t = time.time()
+    print('linking sections')
+    linked_route = link_route(sorted_pos, cut_positions, new_sections, epsilon)
+    print('sections linked in %.2f s' % (time.time() - t))
+
+    # np.testing.assert_array_equal(sorted_pos[linked_route], positions[route][linked_route])
+    # import matplotlib.pyplot as plt
+    # from matplotlib import cm
+    # colors = cm.get_cmap('prism', n_new_sections)
+    # plt.figure()
+    # plt.plot(sorted_pos[linked_route, 0], sorted_pos[linked_route, 1], color='k')
+    # for pi in range(len(section)):
+    #     plt.scatter(sorted_pos[pi, 0], sorted_pos[pi, 1], marker='$' + str(new_sections[pi]) + '$',
+    #                 color=colors(new_sections[pi]))
+    # plt.show()
+
+    # don't forget the linked route sorts the first-pass route, which sorts the section-sorted positions -> take care of that here
+    return I[route][linked_route]
+
+def link_route(positions, cut_indices, sections, epsilon):
+    """
+    Optimize section order and direction with a two-opt + reversal swap algorithm
+
+    Parameters
+    ----------
+    positions: 2darray
+        Positions array, size n x 2
+    cut_indices: 1darray
+        first and last index for each section
+    sections: 1darray
+        denotes section assignment for each point in `positions`
+    epsilon: float
+        relative improvement exit criteria for two-opt
+    """
+    route = np.arange(len(positions), dtype=int)
+    uni, counts = np.unique(sections, return_counts=True)
+    n_sections = len(uni)
+    cumcount = counts.cumsum()
+    section_order, reversals, og_distance, best_distance = reversal_two_opt(sections[cut_indices],
+                                                                            positions[cut_indices], epsilon / 1e3)
+    print('unoptimized linking distance: %.0f, optimized: %.0f' % (og_distance, best_distance))
 
     final_route = np.copy(route)
     start = cumcount[0]
-    # new_pivot_inds = []  # uncomment for plotting
+    # new_link_indices = []  # uncomment for plotting
     for sind in range(1, n_sections):  # we got section 0 for free with the copy
         cur_section = section_order[sind]
         section_count = counts[cur_section]
@@ -359,22 +643,8 @@ def tsp_chunk_two_opt_multiproc(positions, epsilon, points_per_chunk, n_proc=1):
             final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]][::-1]
         else:
             final_route[start: start + section_count] = route[cumcount[cur_section - 1]:cumcount[cur_section]]
-        # new_pivot_inds.append(start)  # uncomment for plotting
-        # new_pivot_inds.append(start + section_count - 1)  # uncomment for plotting
+        # new_link_indices.append(start)  # uncomment for plotting
+        # new_link_indices.append(start + section_count - 1)  # uncomment for plotting
         start += section_count
 
-    # ----------- uncomment for plotting
-    # import matplotlib.pyplot as plt
-    # from matplotlib import cm
-    # colors = cm.get_cmap('prism', n_sections)
-    # plt.figure()
-    # sorted_pos = positions[route, :]
-    # plt.plot(positions[final_route, 0], positions[final_route, 1], color='k')
-    # plt.scatter(positions[final_route, 0][new_pivot_inds], positions[final_route, 1][new_pivot_inds], color='k')
-    # for pi in range(len(section)):
-    #     plt.scatter(sorted_pos[pi, 0], sorted_pos[pi, 1], marker='$' + str(section[pi]) + '$',
-    #                 color=colors(section[pi]))
-    # plt.show()
-
-    # don't forget the final sort sorts the already section-sorted positions -> take care of that here
-    return I[final_route]
+    return final_route  #, new_link_indices

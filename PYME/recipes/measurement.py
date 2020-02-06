@@ -941,8 +941,9 @@ class ChunkedTravelingSalesperson(ModuleBase):
 class TravelingSalesperson(ModuleBase):
     """
 
-    Optimize route visiting each position in an input dataset exactly once, starting from the last point in the input.
-    2-opt algorithm is used.
+    Optimize route visiting each position in an input dataset exactly once, starting from the 0th point or
+    the minimum x + y corner. A greedy sort is done first because it is quite fast and should for average case reduce
+    number of moves from O(nlog(n)) to O(n).
 
     Parameters
     ----------
@@ -951,6 +952,8 @@ class TravelingSalesperson(ModuleBase):
         e.g. 'x_um'
     epsilon: Float
         Relative improvement threshold used to stop algorithm when gains become negligible
+    start_from_corner: Bool
+        Flag to toggle starting from the min(x + y) point [True] or the 0th point in the input positions.
     output: Output
         PYME.IO.tabular
 
@@ -958,6 +961,7 @@ class TravelingSalesperson(ModuleBase):
     """
     input = Input('input')
     epsilon = Float(0.001)
+    start_from_corner = Bool(True)
     output = Output('sorted')
 
     def execute(self, namespace):
@@ -974,11 +978,12 @@ class TravelingSalesperson(ModuleBase):
 
         distances = distance_matrix(positions, positions)
 
+        start_index = 0 if not self.start_from_corner else np.argmin(positions.sum(axis=1))
 
-        route, best_distance, og_distance = traveling_salesperson.two_opt(distances, self.epsilon)
+        route, ogd, gsd = traveling_salesperson.greedy_sort(positions, start_index, distances)
+        route, best_distance, gsd = traveling_salesperson.two_opt(distances, self.epsilon, initial_route=route)
 
-        # plot_path(positions, route)
-        out = tabular.MappingFilter({'x_um': positions[:, 0][route],
+        out = tabular.DictSource({'x_um': positions[:, 0][route],
                                      'y_um': positions[:, 1][route]})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
         try:
@@ -986,7 +991,7 @@ class TravelingSalesperson(ModuleBase):
         except AttributeError:
             pass
         out.mdh['TravelingSalesperson.Distance'] = best_distance
-        out.mdh['TravelingSalesperson.OriginalDistance'] = og_distance
+        out.mdh['TravelingSalesperson.OriginalDistance'] = ogd
 
         namespace[self.output] = out
 
