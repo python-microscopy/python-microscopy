@@ -1,8 +1,8 @@
 from .base import register_module, ModuleBase, Filter
 from .traits import Input, Output, Float, CStr, Bool, Int, File
-
 import numpy as np
 from PYME.IO import tabular
+from PYME.Analysis.points import multiview
 
 
 @register_module('Fold')
@@ -33,7 +33,6 @@ class Fold(ModuleBase):
     output_name = Output('folded')
 
     def execute(self, namespace):
-        from PYME.Analysis.points import multiview
 
         inp = namespace[self.input_name]
 
@@ -72,11 +71,6 @@ class ShiftCorrect(ModuleBase):
     output_name = Output('registered')
 
     def execute(self, namespace):
-        from PYME.Analysis.points import multiview
-        from PYME.IO import unifiedIO
-        from PYME.IO.MetaDataHandler import HDFMDHandler
-        import tables
-        import json
 
         inp = namespace[self.input_name]
 
@@ -88,24 +82,7 @@ class ShiftCorrect(ModuleBase):
         else:
             loc = self.shift_map_path
 
-
-        try:  # try loading shift map as hdf file
-            with unifiedIO.local_or_temp_filename(loc) as f:
-                t = tables.open_file(f)
-                shift_map_source = tabular.HDFSource(t, 'shift_map')  # todo - is there a cleaner way to do this?
-                shift_map_source.mdh = HDFMDHandler(t)
-
-            # build dict of dicts so we can easily rebuild shiftfield objects in multiview.calc_shifts_for_points
-            shift_map = {'shiftModel': shift_map_source.mdh['Multiview.shift_map.model']}
-            legend = shift_map_source.mdh['Multiview.shift_map.legend']
-            for l in legend.keys():
-                keys = shift_map_source.keys()
-                shift_map[l] = dict(zip(keys, [shift_map_source[k][legend[l]] for k in keys]))
-
-            t.close()
-        except tables.HDF5ExtError:  # file is probably saved as json (legacy)
-            s = unifiedIO.read(self.shift_map_path)
-            shift_map = json.loads(s)
+        shift_map = multiview.load_shiftmap(self.shift_map_path)
 
         mapped = tabular.MappingFilter(inp)
 
