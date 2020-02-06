@@ -173,31 +173,65 @@ class ActionPanel(wx.Panel):
         self.actionManager.QueueAction(functionName, args, nice, timeout)
         
     
-    def _add_ROIs(self, rois):
+    def _add_ROIs(self, rois, greedy_queue_fraction=0.1):
         """
-        Add ROIs to queue, staggering their positioning and spooling actions
+        Add ROIs positioning and spooling actions to queue. The overall travel distance is minimized by first queueing
+        some of the ROIs (see greedy_queue_fraction) based on nearest-neighbors, then the remaining path is optimized
+        while the initial ROIs are imaged.
 
         Parameters
         ----------
         rois: list-like
             list of ROI (x, y) positions, or array of shape (n_roi, 2)
+        greedy_queue_fraction: float
+            fraction of ROIs to queue using nearest-neighbors sorting. This sorting is much faster than subsequent
+            sorting which will be performed while the first ROIs are being imaged with a timeout based on number of
+            queued frames and current camera frame rate.
 
         Returns
         -------
 
         """
-        
-        nice = float(self.tNice.GetValue())
-        timeout = float(self.tTimeout.GetValue()) #CHECKME - default here might be too short
+        from PYME.localization import traveling_salesperson as tsp
+        from scipy.spatial import distance_matrix
         
         # coordinates are for the centre of ROI, and are referenced to the 0,0 pixel of the camera,
         # correct this for a custom ROI.
         roi_offset_x, roi_offset_y = self.scope.get_roi_offset()
 
-        for x, y in rois:
-            args = {'state': {'Positioning.x': float(x) - roi_offset_x, 'Positioning.y': float(y) - roi_offset_y}}
+        # do a greedy sort relative to our stage position
+        positions = np.reshape(rois, (len(rois), 2)).astype(float) - np.array([roi_offset_x, roi_offset_y])[None, :]
+        scope_pos = self.scope.GetPos()
+        start_index = np.argmin(
+            np.sqrt((positions[:, 0] - scope_pos['x']) ** 2 + (positions[:, 1] - scope_pos['y']) ** 2)
+        )
+        greedy_route, unsorted_distance, greedy_distance = tsp.greedy_sort(positions, start_index=start_index)
+        positions = positions[greedy_route, :]
+
+        n_greedy = positions.shape[0] * greedy_queue_fraction
+
+        n_frames = int(self.tNumFrames.GetValue())
+        nice = float(self.tNice.GetValue())
+        time_per_task = n_frames * n_frames / self.scope.cam.GetFPS()
+        timeout = max(float(self.tTimeout.GetValue()), 1.25 * time_per_task)  # allow enough time for what we queue
+        for r_ind in range(n_greedy):
+            args = {'state': {'Positioning.x': positions[r_ind, 0], 'Positioning.y': positions[r_ind, 1]}}
             self.actionManager.QueueAction('state.update', args, nice, timeout)
-            args = {'maxFrames': int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
+            args = {'maxFrames': n_frames, 'stack': bool(self.rbZStepped.GetValue())}
+            self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
+
+        # optimize the rest of the path
+        positions = positions[n_greedy:, :]
+        distances = distance_matrix(positions, positions)
+        route = tsp.timeout_two_opt(distances, 0.01, timeout=0.8* n_greedy * time_per_task,
+                                    initial_route=np.arange(0, positions.shape[0], dtype=int))
+        positions = positions[route, :]
+
+        # queue remaining tasks
+        for r_ind in range(n_greedy):
+            args = {'state': {'Positioning.x': positions[r_ind, 0], 'Positioning.y': positions[r_ind, 1]}}
+            self.actionManager.QueueAction('state.update', args, nice, timeout)
+            args = {'maxFrames': n_frames, 'stack': bool(self.rbZStepped.GetValue())}
             self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
     
     def OnROIsFromFile(self, event):
