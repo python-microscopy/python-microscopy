@@ -25,6 +25,25 @@ def calculate_path_length(distances, route):
     """
     return distances[route[:-1], route[1:]].sum()
 
+def greedy_sort(positions, start_index=0, distances=None):
+    if distances is None:
+        from scipy.spatial import distance_matrix
+        distances = distance_matrix(positions, positions)
+    route = np.arange(distances.shape[0], dtype=int)
+    og_distance = calculate_path_length(distances, route)
+    visited = np.zeros(distances.shape[0], dtype=bool)
+    maxf = np.finfo(float).max
+    for ind in range(distances.shape[0]):
+        visited[start_index] = True
+        next_index = np.argmin(distances[start_index, :] + visited * maxf)
+        # next_index += np.sum(~unvisited[:next_index])
+        route[ind] = start_index
+        start_index = next_index
+
+    final_distance = calculate_path_length(distances, route)
+    return route, og_distance, final_distance
+
+
 def two_opt_swap(route, i, k):
     """
     Take everything the same up to i, then reverse i:k, then take k: normally.

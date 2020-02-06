@@ -64,6 +64,18 @@ def test_ChunkedTravelingSalesman():
     ordered = recipe.execute()
     assert ordered.mdh['TravelingSalesperson.Distance'] < ordered.mdh['TravelingSalesperson.OriginalDistance']
 
+def test_greedy():
+    from PYME.localization import traveling_salesperson as tsp
+    n = 500
+    x = np.random.rand(n) * 4e3
+    y = np.random.rand(n) * 4e3
+    positions = np.stack([x, y], axis=1)
+    start_ind = np.argmin(positions.sum(axis=1))
+    route, og_distance, final_distance = tsp.greedy_sort(positions, start_ind)
+    uni, counts = np.unique(route, return_counts=True)
+    np.testing.assert_array_equal(counts, 1)
+    assert final_distance < og_distance
+
 
 if __name__ == '__main__':
     import time
