@@ -1,4 +1,3 @@
-import pytest
 
 from PYME.IO import tabular
 from PYME.IO.MetaDataHandler import NestedClassMDHandler
@@ -37,7 +36,7 @@ def test_TravelingSalesperson():
     x = np.concatenate([x, r * np.cos(theta + 0.5 * dt)])
     y = np.concatenate([y, r * np.sin(theta + 0.5 * dt)])
 
-    points = tabular.MappingFilter({'x_um': np.concatenate([x, 1.1 * r * np.cos(theta)]),
+    points = tabular.DictSource({'x_um': np.concatenate([x, 1.1 * r * np.cos(theta)]),
                                     'y_um': np.concatenate([y, 1.1 * r * np.sin(theta)])})
 
     recipe = base.ModuleCollection()
@@ -54,11 +53,11 @@ def test_ChunkedTravelingSalesman():
     x = np.random.rand(n) * 4e3
     y = np.random.rand(n) * 4e3
 
-    points = tabular.MappingFilter({'x_um': x, 'y_um': y})
+    points = tabular.DictSource({'x_um': x, 'y_um': y})
 
     recipe = base.ModuleCollection()
     recipe.add_module(measurement.ChunkedTravelingSalesperson(output='output', epsilon=0.001,
-                                                              points_per_chunk=int(n / 20)))
+                                                              points_per_chunk=50))
     recipe.namespace['input'] = points
 
     ordered = recipe.execute()
@@ -83,7 +82,7 @@ if __name__ == '__main__':
     x = np.random.rand(n) * 4e3
     y = np.random.rand(n) * 4e3
 
-    points = tabular.MappingFilter({'x_um': x, 'y_um': y})
+    points = tabular.DictSource({'x_um': x, 'y_um': y})
 
     recipe = base.ModuleCollection()
     recipe.add_module(measurement.ChunkedTravelingSalesperson(output='output', epsilon=0.001,
