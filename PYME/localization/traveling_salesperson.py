@@ -54,7 +54,7 @@ def two_opt(distances, epsilon, initial_route=None):
     distances: ndarray
         distance array, which distances[i, j] is the distance from the ith to the jth point
     epsilon: float
-        exit tolerence on relative improvement. 0.01 corresponds to 1%
+        exit tolerance on relative improvement. 0.01 corresponds to 1%
     initial_route: ndarray
         [optional] route to initialize search with. Note that the first position in the route is fixed, but all others
         may vary. If no route is provided, the initial route is the same order the distances array was constructed with.
@@ -73,7 +73,7 @@ def two_opt(distances, epsilon, initial_route=None):
     see https://en.wikipedia.org/wiki/2-opt for pseudo code
 
     """
-    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
+    # start route backwards if not predefined
     route = initial_route if initial_route is not None else np.arange(distances.shape[0] - 1, -1, -1)
 
     og_distance = calculate_path_length(distances, route)
@@ -81,6 +81,60 @@ def two_opt(distances, epsilon, initial_route=None):
     improvement = 1
     best_distance = og_distance
     while improvement > epsilon:
+        last_distance = best_distance
+        for i in range(1, distances.shape[0] - 2):  # don't swap the first position
+            for k in range(i + 1, distances.shape[0]):  # allow the last position in the route to vary
+                new_route = two_opt_swap(route, i, k)
+                new_distance = calculate_path_length(distances, new_route)
+
+                if new_distance < best_distance:
+                    route = new_route
+                    best_distance = new_distance
+        improvement = (last_distance - best_distance) / last_distance
+
+    return route, best_distance, og_distance
+
+def timeout_two_opt(distances, epsilon, timeout, initial_route=None):
+    """
+
+    Solves the traveling salesperson problem (TSP) using two-opt swaps to untangle a route.
+
+    Parameters
+    ----------
+    distances: ndarray
+        distance array, which distances[i, j] is the distance from the ith to the jth point
+    epsilon: float
+        exit tolerance on relative improvement. 0.01 corresponds to 1%
+    timeout: float
+        number of seconds to allow computation
+    initial_route: ndarray
+        [optional] route to initialize search with. Note that the first position in the route is fixed, but all others
+        may vary. If no route is provided, the initial route is the same order the distances array was constructed with.
+
+    Returns
+    -------
+    route: ndarray
+        "solved" route
+    best_distance: float
+        distance of the route
+    og_distance: float
+        distance of the initial route.
+
+    Notes
+    -----
+    see https://en.wikipedia.org/wiki/2-opt for pseudo code
+
+    """
+    import time
+    abort_time = time.time() + timeout
+    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
+    route = initial_route if initial_route is not None else np.arange(distances.shape[0] - 1, -1, -1)
+
+    og_distance = calculate_path_length(distances, route)
+    # initialize values we'll be updating
+    improvement = 1
+    best_distance = og_distance
+    while improvement > epsilon and time.time() < abort_time:
         last_distance = best_distance
         for i in range(1, distances.shape[0] - 2):  # don't swap the first position
             for k in range(i + 1, distances.shape[0]):  # allow the last position in the route to vary
