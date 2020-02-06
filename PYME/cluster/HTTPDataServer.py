@@ -807,6 +807,7 @@ def main(protocol="HTTP/1.0"):
     default_server_filter = config.get('dataserver-filter', compName)
     op.add_option('-f', '--server-filter', dest='server_filter', help='Add a serverfilter for distinguishing between different clusters', default=default_server_filter)
     op.add_option('--timeout-test', dest='timeout_test', help='deliberately make requests timeout for testing error handling in calling modules', default=0)
+    op.add_option('--no-advertise', dest='advertise', action="store_false", default=True, help='do not advertise with zeroconf')
 
 
     options, args = op.parse_args()
@@ -842,8 +843,9 @@ def main(protocol="HTTP/1.0"):
         ip_addr = socket.gethostbyname(socket.gethostname() + '.local')
     
 
-    ns = pzc.getNS('_pyme-http')
-    ns.register_service('PYMEDataServer [%s]: ' % options.server_filter + procName, ip_addr, sa[1])
+    if options.advertise:
+        ns = pzc.getNS('_pyme-http')
+        ns.register_service('PYMEDataServer [%s]: ' % options.server_filter + procName, ip_addr, sa[1])
 
     status['IPAddress'] = ip_addr
     status['BindAddress'] = server_address
