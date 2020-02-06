@@ -77,7 +77,7 @@ DCAMPROP_TRIGGERSOURCE_SOFTWARE = 3
 
 DCAMCAP_START_SEQUENCE = ctypes.c_int32(int("-1",0))
 
-noiseProperties = {
+noise_properties = {
 '100233' : {
         'ReadNoise': 3.51,
         'ElectronsPerCount': 0.47,
@@ -107,7 +107,7 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
     def __init__(self, camNum):
         HamamatsuDCAM.__init__(self, camNum)
 
-        self.noiseProps = {}
+        self.noise_properties = {}
         self.waitopen = DCAMWAIT_OPEN()
         self.waitstart = DCAMWAIT_START()
         self.initialized = False
@@ -131,7 +131,7 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         logger.debug('Initializing Hamamatsu Orca')
         HamamatsuDCAM.Init(self)
         if self.camNum < camReg.maxCameras:
-            self.noiseProps = noiseProperties[self.GetSerialNumber()]
+            self.noise_properties = noise_properties[self.GetSerialNumber()]
             # Create a wait handle
             self.waitopen.size = ctypes.sizeof(self.waitopen)
             self.waitopen.hdcam = self.handle
@@ -382,7 +382,7 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         return self.initialized
     
     def GetNoiseProperties(self):
-        return self.noiseProps
+        return self.noise_properties
     
     def GetCCDTemp(self):
         # FIXME - actually read the CCD temperature
@@ -414,7 +414,7 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
         HamamatsuDCAM.GenStartMetadata(self, mdh)
         if self.active:
             self.fill_camera_map_metadata(mdh)
-            mdh.setEntry('Camera.ADOffset', self.noiseProps['ADOffset'])
+            mdh.setEntry('Camera.ADOffset', self.noise_properties['ADOffset'])
 
     def SetShutter(self, mode):
         """
