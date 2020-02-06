@@ -86,7 +86,7 @@ def two_opt_swap(route, i, k):
 
 
 
-def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False, i_range=None):
+def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False):
     """
 
     Solves the traveling salesperson problem (TSP) using two-opt swaps to untangle a route.
@@ -100,6 +100,8 @@ def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False, i_rang
     initial_route: ndarray
         [optional] route to initialize search with. Note that the first position in the route is fixed, but all others
         may vary. If no route is provided, the initial route is the same order the distances array was constructed with.
+    fixed_endpoint: bool
+        Flag to allow endpoint to be swapped or remain as defined in `initial_route` or default route.
 
     Returns
     -------
@@ -124,10 +126,9 @@ def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False, i_rang
     # initialize values we'll be updating
     improvement = 1
     best_distance = og_distance
-    i_range = range(1, distances.shape[0] - 2) if i_range is None else i_range
     while improvement > epsilon:
         last_distance = best_distance
-        for i in i_range:  # don't swap the first position
+        for i in range(1, distances.shape[0] - 2):  # don't swap the first position
             for k in range(i + 1, distances.shape[0] - endpoint_offset):  # allow the last position in the route to vary
                 new_route = two_opt_swap(route, i, k)
                 new_distance = calculate_path_length(distances, new_route)
