@@ -6,7 +6,7 @@ from scipy.spatial import distance_matrix
 
 def test_timeout_two_opt():
     n = 2000
-    timeout = 15
+    timeout = 5
     x = np.random.rand(n) * 4e3
     y = np.random.rand(n) * 4e3
     positions = np.stack([x, y], axis=1)
