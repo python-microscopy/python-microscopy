@@ -177,7 +177,7 @@ class ActionPanel(wx.Panel):
     
     def _add_ROIs(self, rois):
         """
-        Add ROIs positioning and spooling actions to queue.
+        Add ROI positioning and spooling actions to queue.
 
         Parameters
         ----------
@@ -228,7 +228,7 @@ class ActionPanel(wx.Panel):
 class PathMinimizingActionPanel(ActionPanel):
     def _add_ROIs(self, rois):
         """
-        Add ROIs positioning and spooling actions to queue. The overall travel distance is minimized before queuing if
+        Add ROI positioning and spooling actions to queue. The overall travel distance is minimized before queuing if
         self._minimize_path flag is True.
 
         Parameters
