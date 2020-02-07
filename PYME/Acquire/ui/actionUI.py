@@ -226,6 +226,16 @@ class ActionPanel(wx.Panel):
         self._add_ROIs(rois)
         
 class PathMinimizingActionPanel(ActionPanel):
+    def __init__(self, parent, actionManager, scope, sort_epsilon=0.01):
+        """
+        Parameters
+        ----------
+        sort_epsilon: float
+            Relative per-index exit tolerance for two-opt sorting. See traveling_salesperson.two_opt
+        """
+        ActionPanel.__init__(self, parent, actionManager, scope)
+        self._sort_epsilon = sort_epsilon
+
     def _add_ROIs(self, rois):
         """
         Add ROI positioning and spooling actions to queue. The overall travel distance is minimized before queuing if
