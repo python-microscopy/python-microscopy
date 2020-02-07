@@ -296,8 +296,12 @@ class piezo_e816T(PiezoBase):
 
                 if np.allclose(self.position, self.targetPosition, atol=self._target_tol):
                     if not self.onTarget and self._spool_controller:
-                        self._spool_controller.spooler.evtLogger.logEvent(self, 'PiezoOnTarget',
-                                                                          '%.3f' % self.position[0], time.time())
+                        try:
+                            self._spool_controller.spooler.evtLogger.logEvent('PiezoOnTarget',
+                                                                              '%.3f' % self.position[0], time.time())
+                        except AttributeError:
+                            # controller won't always have a spooler, and if that's the case we aren't logging anyway
+                            pass
                     self.onTarget = True
 
                 # check to see if we're on target
