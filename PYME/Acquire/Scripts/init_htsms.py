@@ -231,7 +231,7 @@ def focus_keys(MainFrame, scope):
 def action_manager(MainFrame, scope):
     from PYME.Acquire.ui import actionUI
 
-    ap = actionUI.PathMinimizingActionPanel(MainFrame, scope.actions, scope)
+    ap = actionUI.ActionPanel(MainFrame, scope.actions, scope)
     MainFrame.AddPage(ap, caption='Queued Actions')
 
 @init_hardware('tweeter')
@@ -253,7 +253,7 @@ def tweeter(scope):
 def action_manager(MainFrame, scope):
     from PYME.Acquire.ui import tile_panel
 
-    ap = tile_panel.CircularTilePanel(MainFrame, scope)
+    ap = tile_panel.TilePanel(MainFrame, scope)
     MainFrame.aqPanels.append((ap, 'Tiling'))
 
 #must be here!!!
