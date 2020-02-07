@@ -401,7 +401,7 @@ class PanSpool(afp.foldingPane):
             if q_offset == 'auto':
                 #FIXME - add getter to camera???
                 try:
-                    q_offset = self.scope.cam.noiseProps['ADOffset']
+                    q_offset = self.scope.cam.GetNoiseProperties()['ADOffset']
                 except AttributeError:
                     if ui_message_on_error:
                         ans = wx.MessageBox(
