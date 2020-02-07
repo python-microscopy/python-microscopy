@@ -6,6 +6,8 @@ Created on Sat May 28 23:55:50 2016
 """
 import wx
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 class ActionList(wx.ListCtrl):
     def __init__(self, parent, actionManager, pos=wx.DefaultPosition,
@@ -173,27 +175,16 @@ class ActionPanel(wx.Panel):
         self.actionManager.QueueAction(functionName, args, nice, timeout)
         
     
-    def _add_ROIs(self, rois, greedy_queue_fraction=0.1):
+    def _add_ROIs(self, rois):
         """
-        Add ROIs positioning and spooling actions to queue. The overall travel distance is minimized by first queueing
-        some of the ROIs (see greedy_queue_fraction) based on nearest-neighbors, then the remaining path is optimized
-        while the initial ROIs are imaged.
+        Add ROIs positioning and spooling actions to queue.
 
         Parameters
         ----------
         rois: list-like
-            list of ROI (x, y) positions, or array of shape (n_roi, 2)
-        greedy_queue_fraction: float
-            fraction of ROIs to queue using nearest-neighbors sorting. This sorting is much faster than subsequent
-            sorting which will be performed while the first ROIs are being imaged with a timeout based on number of
-            queued frames and current camera frame rate.
-
-        Returns
-        -------
+            list of ROI (x, y) positions, or array of shape (n_roi, 2). Units in micrometers.
 
         """
-        from PYME.localization import traveling_salesperson as tsp
-        from scipy.spatial import distance_matrix
         
         # coordinates are for the centre of ROI, and are referenced to the 0,0 pixel of the camera,
         # correct this for a custom ROI.
@@ -201,35 +192,13 @@ class ActionPanel(wx.Panel):
 
         # do a greedy sort relative to our stage position
         positions = np.reshape(rois, (len(rois), 2)).astype(float) - np.array([roi_offset_x, roi_offset_y])[None, :]
-        scope_pos = self.scope.GetPos()
-        start_index = np.argmin(
-            np.sqrt((positions[:, 0] - scope_pos['x']) ** 2 + (positions[:, 1] - scope_pos['y']) ** 2)
-        )
-        greedy_route, unsorted_distance, greedy_distance = tsp.greedy_sort(positions, start_index=start_index)
-        positions = positions[greedy_route, :]
-
-        n_greedy = positions.shape[0] * greedy_queue_fraction
 
         n_frames = int(self.tNumFrames.GetValue())
         nice = float(self.tNice.GetValue())
         time_per_task = n_frames * n_frames / self.scope.cam.GetFPS()
         timeout = max(float(self.tTimeout.GetValue()), 1.25 * time_per_task)  # allow enough time for what we queue
-        for r_ind in range(n_greedy):
-            args = {'state': {'Positioning.x': positions[r_ind, 0], 'Positioning.y': positions[r_ind, 1]}}
-            self.actionManager.QueueAction('state.update', args, nice, timeout)
-            args = {'maxFrames': n_frames, 'stack': bool(self.rbZStepped.GetValue())}
-            self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
-
-        # optimize the rest of the path
-        positions = positions[n_greedy:, :]
-        distances = distance_matrix(positions, positions)
-        route = tsp.timeout_two_opt(distances, 0.01, timeout=0.8* n_greedy * time_per_task,
-                                    initial_route=np.arange(0, positions.shape[0], dtype=int))
-        positions = positions[route, :]
-
-        # queue remaining tasks
-        for r_ind in range(n_greedy):
-            args = {'state': {'Positioning.x': positions[r_ind, 0], 'Positioning.y': positions[r_ind, 1]}}
+        for ri in range(positions.shape[0]):
+            args = {'state': {'Positioning.x': positions[ri, 0], 'Positioning.y': positions[ri, 1]}}
             self.actionManager.QueueAction('state.update', args, nice, timeout)
             args = {'maxFrames': n_frames, 'stack': bool(self.rbZStepped.GetValue())}
             self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
@@ -256,5 +225,47 @@ class ActionPanel(wx.Panel):
         print(rois.shape)
         self._add_ROIs(rois)
         
+class PathMinimizingActionPanel(ActionPanel):
+    def _add_ROIs(self, rois):
+        """
+        Add ROIs positioning and spooling actions to queue. The overall travel distance is minimized before queuing if
+        self._minimize_path flag is True.
 
+        Parameters
+        ----------
+        rois: list-like
+            list of ROI (x, y) positions, or array of shape (n_roi, 2). Units in micrometers
 
+        """
+        from PYME.localization import traveling_salesperson as tsp
+        from scipy.spatial import distance_matrix
+
+        # coordinates are for the centre of ROI, and are referenced to the 0,0 pixel of the camera,
+        # correct this for a custom ROI.
+        roi_offset_x, roi_offset_y = self.scope.get_roi_offset()
+        positions = np.reshape(rois, (len(rois), 2)).astype(float) - np.array([roi_offset_x, roi_offset_y])[None, :]
+
+        # do a greedy sort boot-strapped two-opt, starting from closest ROI to our current position
+        scope_pos = self.scope.GetPos()
+        start_index = np.argmin(
+            np.sqrt((positions[:, 0] - scope_pos['x']) ** 2 + (positions[:, 1] - scope_pos['y']) ** 2)
+        )
+        distances = distance_matrix(positions, positions)
+        greedy_route, unsorted_distance, greedy_distance = tsp.greedy_sort(positions, start_index, distances)
+        route, best_distance, greedy_distance = tsp.two_opt(distances, self._sort_epsilon, greedy_route)
+        logger.debug('Original path length: %.0f um, greedy: %.0f um, final: %.0f um. Improved %.1f-fold' %
+                     (unsorted_distance, greedy_distance, best_distance, unsorted_distance / best_distance))
+        # rearrange the positions
+        positions = positions[route, :]
+
+        # get queuing parameters
+        n_frames = int(self.tNumFrames.GetValue())
+        nice = float(self.tNice.GetValue())
+        time_per_task = n_frames * n_frames / self.scope.cam.GetFPS()
+        timeout = max(float(self.tTimeout.GetValue()), 1.25 * time_per_task)  # allow enough time for what we queue
+
+        for ri in range(positions.shape[0]):
+            args = {'state': {'Positioning.x': positions[ri, 0], 'Positioning.y': positions[ri, 1]}}
+            self.actionManager.QueueAction('state.update', args, nice, timeout)
+            args = {'maxFrames': n_frames, 'stack': bool(self.rbZStepped.GetValue())}
+            self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
