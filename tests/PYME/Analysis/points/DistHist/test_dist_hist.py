@@ -39,3 +39,23 @@ def test_single_point_3d():
 
     np.testing.assert_array_equal(hist,n_points)
 
+def test_threading_2d():
+    from PYME.Analysis.points import DistHist
+
+    x, y = np.random.rand(2,1000)
+    points = np.vstack([x,y]).T*1000
+    hist0 = DistHist.distanceHistogram(points[:,0], points[:,1], points[:,0], points[:,1], 1000, 1)
+    hist1 = DistHist.distanceHistogramThreaded(points[:,0], points[:,1], points[:,0], points[:,1], 1000, 1)
+
+    np.testing.assert_array_equal(hist0,hist1)
+
+def test_threading_3d():
+    from PYME.Analysis.points import DistHist
+
+    x, y, z = np.random.rand(3,1000)
+    points = np.vstack([x,y,z]).T*1000
+    hist0 = DistHist.distanceHistogram3D(points[:,0], points[:,1], points[:,2], points[:,0], points[:,1], points[:,2], 1000, 1)
+    hist1 = DistHist.distanceHistogram3DThreaded(points[:,0], points[:,1], points[:,2], points[:,0], points[:,1], points[:,2], 1000, 1)
+
+    np.testing.assert_array_equal(hist0,hist1)
+    
