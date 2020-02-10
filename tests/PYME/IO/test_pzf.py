@@ -77,7 +77,7 @@ def test_PZFFormat_lossy_uint16():
                                                      quantizationOffset=0, quantizationScale=1))
 
     #print result
-    test_quant = (np.floor(np.sqrt(test_data.astype('f')-.1)).astype('i'))**2
+    test_quant = (np.round(np.sqrt(test_data.astype('f'))).astype('i'))**2
 
     #print(test_quant.squeeze() - result.squeeze())
     #print(test_data.squeeze())
@@ -98,7 +98,7 @@ def test_PZFFormat_lossy_uint16_qs():
                                                      quantizationOffset=0, quantizationScale=qs))
 
     #print result
-    test_quant = ((np.floor(np.sqrt(test_data.astype('f')-.1)/qs).astype('i')*qs)**2).astype('i')
+    test_quant = ((np.round(np.sqrt(test_data.astype('f'))/qs).astype('i')*qs)**2).astype('i')
 
     
     print(test_data.min(), test_data.max(), result.min(), result.max(), test_quant.min(), test_quant.max())
