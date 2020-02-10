@@ -734,6 +734,12 @@ class uc480Camera(Camera):
 
     def GetADOffset(self):
         return self.baseProps['ADOffset']
+    
+    @property
+    def noise_properties(self):
+        return {'ElectronsPerCount': self.GetElectronsPerCount(),
+                'ReadNoise': self.GetReadNoise(),
+                'ADOffset': self.GetADOffset()}
 
     def GenStartMetadata(self, mdh):
         if self.active: #we are active -> write metadata
@@ -750,7 +756,7 @@ class uc480Camera(Camera):
             mdh.setEntry('Camera.HardwareGainFactor', self.GetGainFactor())
             mdh.setEntry('Camera.ElectronsPerCount', self.GetElectronsPerCount())
             mdh.setEntry('Camera.ADOffset', self.GetADOffset())
-            mdh.setEntry('Camera.ReadNoise',self.GetReadNoise()) # in units of e-
+            mdh.setEntry('Camera.ReadNoise',self.GetReadNoise()) # in units of e- #FIXME???
             mdh.setEntry('Camera.NoiseFactor', 1.0)
 
             mdh.setEntry('Camera.SensorWidth',self.GetCCDWidth())

@@ -401,7 +401,7 @@ class PanSpool(afp.foldingPane):
             if q_offset == 'auto':
                 #FIXME - add getter to camera???
                 try:
-                    q_offset = self.scope.cam.noiseProps['ADOffset']
+                    q_offset = self.scope.cam.noise_properties['ADOffset']
                 except AttributeError:
                     if ui_message_on_error:
                         ans = wx.MessageBox(
@@ -413,7 +413,7 @@ class PanSpool(afp.foldingPane):
         
             #quantization scale in GUI is in units of sigma, convert to ADU
             try:
-                q_scale = float(self.tQuantizeScale.GetValue()) / self.scope.cam.GetElectronsPerCount()
+                q_scale = float(self.tQuantizeScale.GetValue()) / self.scope.cam.noise_properties['ElectronsPerCount']
             except (AttributeError, NotImplementedError):
                 print("WARNING: Camera doesn't provide electrons per count, using qscale in units of ADUs instead")
                 q_scale = float(self.tQuantizeScale.GetValue())
