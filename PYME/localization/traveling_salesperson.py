@@ -124,62 +124,6 @@ def two_opt_test(route, i, k, distances, k_max):
     
     return added - removed
 
-
-
-def two_opt(distances, epsilon, initial_route=None, fixed_endpoint=False):
-    """
-
-    Solves the traveling salesperson problem (TSP) using two-opt swaps to untangle a route.
-
-    Parameters
-    ----------
-    distances: ndarray
-        distance array, which distances[i, j] is the distance from the ith to the jth point
-    epsilon: float
-        exit tolerence on relative improvement. 0.01 corresponds to 1%
-    initial_route: ndarray
-        [optional] route to initialize search with. Note that the first position in the route is fixed, but all others
-        may vary. If no route is provided, the initial route is the same order the distances array was constructed with.
-    fixed_endpoint: bool
-        Flag to allow endpoint to be swapped or remain as defined in `initial_route` or default route.
-
-    Returns
-    -------
-    route: ndarray
-        "solved" route
-    best_distance: float
-        distance of the route
-    og_distance: float
-        distance of the initial route.
-
-    Notes
-    -----
-    see https://en.wikipedia.org/wiki/2-opt for pseudo code
-
-    """
-    # start route backwards. Starting point will be fixed, and we want LIFO for fast microscope acquisition
-    route = initial_route if initial_route is not None else np.arange(distances.shape[0] - 1, -1, -1)
-
-    endpoint_offset = int(fixed_endpoint)
-
-    og_distance = calculate_path_length(distances, route)
-    # initialize values we'll be updating
-    improvement = 1
-    best_distance = og_distance
-    while improvement > epsilon:
-        last_distance = best_distance
-        for i in range(1, distances.shape[0] - 2):  # don't swap the first position
-            for k in range(i + 1, distances.shape[0] - endpoint_offset):  # allow the last position in the route to vary
-                new_route = two_opt_swap(route, i, k)
-                new_distance = calculate_path_length(distances, new_route)
-
-                if new_distance < best_distance:
-                    route = new_route
-                    best_distance = new_distance
-        improvement = (last_distance - best_distance) / last_distance
-
-    return route, best_distance, og_distance
-
 def timeout_two_opt(distances, epsilon, timeout, initial_route=None):
     """
 
@@ -305,9 +249,6 @@ def reversal_swap(reversals, ind):
     new_reversals = np.copy(reversals)
     new_reversals[ind] = ~new_reversals[ind]
     return new_reversals
-
-def calc_dist(p0, p1):
-    return np.sqrt((p0[0] - p1[0])**2 + (p0[1] - p1[1])**2)
 
 def calculate_length_with_reversal(order, reversals, positions):
     """
