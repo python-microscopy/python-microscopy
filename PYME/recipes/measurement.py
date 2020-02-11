@@ -912,7 +912,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
     output = Output('sorted')
 
     def execute(self, namespace):
-        from PYME.localization import traveling_salesperson
+        from PYME.Analysis.points.traveling_salesperson import sectioned_two_opt
 
         points = namespace[self.input]
 
@@ -921,7 +921,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
         except KeyError:
             positions = np.stack([points['x'], points['y']], axis=1) / 1e3
 
-        final_route = traveling_salesperson.tsp_chunk_two_opt_multiproc(positions, self.epsilon, self.points_per_chunk,
+        final_route = sectioned_two_opt.tsp_chunk_two_opt_multiproc(positions, self.epsilon, self.points_per_chunk,
                                                                         self.n_processes)
 
         # note that we sorted the positions / sections once before, need to propagate that through before sorting
@@ -976,8 +976,7 @@ class TravelingSalesperson(ModuleBase):
     output = Output('sorted')
 
     def execute(self, namespace):
-        from PYME.localization import traveling_salesperson
-        from scipy.spatial import distance_matrix
+        from PYME.Analysis.points.traveling_salesperson import traveling_salesperson as tsp
 
         points = namespace[self.input]
 
@@ -987,21 +986,18 @@ class TravelingSalesperson(ModuleBase):
             # units don't matter for these calculations, but we want to preserve them on the other side
             positions = np.stack([points['x'], points['y']], axis=1) / 1e3
 
-        distances = distance_matrix(positions, positions)
-
         start_index = 0 if not self.start_from_corner else np.argmin(positions.sum(axis=1))
 
-        route, ogd, gsd = traveling_salesperson.greedy_sort(positions, start_index, distances)
-        route, best_distance, gsd = traveling_salesperson.two_opt(distances, self.epsilon, initial_route=route)
+        positions, ogd, final_distance = tsp.tsp_sort(positions, start_index, self.epsilon, return_path_length=True)
 
-        out = tabular.DictSource({'x_um': positions[:, 0][route],
-                                     'y_um': positions[:, 1][route]})
+        out = tabular.DictSource({'x_um': positions[:, 0],
+                                     'y_um': positions[:, 1]})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
         try:
             out.mdh.copyEntriesFrom(points.mdh)
         except AttributeError:
             pass
-        out.mdh['TravelingSalesperson.Distance'] = best_distance
+        out.mdh['TravelingSalesperson.Distance'] = final_distance
         out.mdh['TravelingSalesperson.OriginalDistance'] = ogd
 
         namespace[self.output] = out
