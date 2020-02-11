@@ -976,7 +976,7 @@ class TravelingSalesperson(ModuleBase):
     output = Output('sorted')
 
     def execute(self, namespace):
-        from PYME.Analysis.points.traveling_salesperson import traveling_salesperson as tsp
+        from PYME.Analysis.points.traveling_salesperson import sort
 
         points = namespace[self.input]
 
@@ -988,7 +988,7 @@ class TravelingSalesperson(ModuleBase):
 
         start_index = 0 if not self.start_from_corner else np.argmin(positions.sum(axis=1))
 
-        positions, ogd, final_distance = tsp.tsp_sort(positions, start_index, self.epsilon, return_path_length=True)
+        positions, ogd, final_distance = sort.tsp_sort(positions, start_index, self.epsilon, return_path_length=True)
 
         out = tabular.DictSource({'x_um': positions[:, 0],
                                      'y_um': positions[:, 1]})

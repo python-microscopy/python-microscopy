@@ -63,7 +63,7 @@ def tsp_sort(positions, start=0, epsilon=0.01, return_path_length=False):
     from scipy.spatial import cKDTree
     kdt = cKDTree(positions)
     x_range, y_range = positions.max(axis=0) - positions.min(axis=0)
-    distances = kdt.sparse_distance_matrix(kdt, max_distance=np.sqrt(2) * (x_range + y_range), output_type='ndarray')
+    distances = kdt.sparse_distance_matrix(kdt, max_distance=np.sqrt(2) * (x_range + y_range))
 
     if np.isscalar(start):
         start_index = int(start)
