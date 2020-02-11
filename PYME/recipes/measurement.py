@@ -382,6 +382,7 @@ class PairwiseDistanceHistogram(ModuleBase):
     outputName = Output('distHist')
     nbins = Int(50)
     binSize = Float(50.)
+    threaded = Bool(False)
     
     def execute(self, namespace):
         from PYME.Analysis.points import DistHist
@@ -389,10 +390,17 @@ class PairwiseDistanceHistogram(ModuleBase):
         pos0 = namespace[self.inputPositions]
         pos1 = namespace[self.inputPositions2 if self.inputPositions2 is not '' else self.inputPositions]
         if np.count_nonzero(pos0['z']) == 0 and np.count_nonzero(pos1['z']) == 0:
-            res = DistHist.distanceHistogramThreaded(pos0['x'], pos0['y'], pos1['x'], pos1['y'], self.nbins, self.binSize)
+            if self.threaded:
+                res = DistHist.distanceHistogramThreaded(pos0['x'], pos0['y'], pos1['x'], pos1['y'], self.nbins, self.binSize)
+            else:
+                res = DistHist.distanceHistogram(pos0['x'], pos0['y'], pos1['x'], pos1['y'], self.nbins, self.binSize)
         else:
-            res = DistHist.distanceHistogram3DThreaded(pos0['x'], pos0['y'], pos0['z'],
-                                               pos1['x'], pos1['y'], pos1['z'], self.nbins, self.binSize)
+            if self.threaded:
+                res = DistHist.distanceHistogram3DThreaded(pos0['x'], pos0['y'], pos0['z'],
+                                                           pos1['x'], pos1['y'], pos1['z'], self.nbins, self.binSize)
+            else:
+                res = DistHist.distanceHistogram3D(pos0['x'], pos0['y'], pos0['z'],
+                                                   pos1['x'], pos1['y'], pos1['z'], self.nbins, self.binSize)
 
         d = self.binSize*np.arange(self.nbins)
 

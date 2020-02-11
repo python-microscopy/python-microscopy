@@ -2,13 +2,17 @@ import numpy as np
 import threading
 from .distHist import *
 
+import multiprocessing
+
+NUM_PROCS = multiprocessing.cpu_count()
+
 def _distanceHistogramThreadWrapper(x1, y1, x2, y2, nBins, binSize, hist):
     # Wrapper to deal with capturing the threading result, because we want this to work 
     # with Python 2. If we used Python 3 only, we could use concurrent.futures.ThreadPoolExecutor
     # as an executor for the pool of threads and results.
     hist += distanceHistogram(x1, y1, x2, y2, nBins, binSize)
 
-def distanceHistogramThreaded(x1, y1, x2, y2, nBins, binSize, split=12):
+def distanceHistogramThreaded(x1, y1, x2, y2, nBins, binSize, split=NUM_PROCS):
     """
     distHist.c distanceHistogram computed in # split parallel tasks
     """
