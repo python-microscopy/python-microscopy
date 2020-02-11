@@ -925,7 +925,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
                                                                         self.n_processes)
 
         # note that we sorted the positions / sections once before, need to propagate that through before sorting
-        out = tabular.MappingFilter({k: points[k][final_route] for k in points.keys()})
+        out = tabular.DictSource({k: points[k][final_route] for k in points.keys()})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
         try:
             out.mdh.copyEntriesFrom(points.mdh)
