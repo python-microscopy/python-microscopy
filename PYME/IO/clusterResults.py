@@ -14,7 +14,6 @@ except ImportError:
     #py3
     import pickle as cPickle
     
-import pandas as pd
 import os
 import logging
 import socket
@@ -124,6 +123,7 @@ def fileResults(URI, data_raw):
         elif isinstance(data_raw, str):
             data = data_raw.encode()
         else:
+            import pandas as pd
             df = pd.DataFrame(data_raw)
             data = df.to_csv()
 
@@ -134,6 +134,7 @@ def fileResults(URI, data_raw):
         elif isinstance(data_raw, str):
             data = data_raw.encode()
         else:
+            import pandas as pd
             df = pd.DataFrame(data_raw)
             data = df.to_json().encode()
 
