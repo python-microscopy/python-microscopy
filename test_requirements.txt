@@ -30,7 +30,7 @@ cherrypy
 zeroconf==0.17.7
 #zeroconf
 requests
-pandas==0.17.*
+pandas
 pyyaml
 psutil
 
