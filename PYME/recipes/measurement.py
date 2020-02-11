@@ -9,7 +9,7 @@ Created on Mon May 25 17:10:02 2015
 from .base import ModuleBase, register_module, Filter
 from .traits import Input, Output, Float, Enum, CStr, Bool, Int, List
 import numpy as np
-import pandas as pd
+#import pandas as pd
 from PYME.IO import tabular
 from PYME.IO import MetaDataHandler
 import os
@@ -28,6 +28,8 @@ class MultifitBlobs(ModuleBase):
     
     def execute(self, namespace):
         from PYME.localization.FitFactories import GaussMultifitSR
+        import pandas as pd
+        
         img = namespace[self.inputImage]
         
         img.mdh['Analysis.PSFSigma'] = self.blobSigma
@@ -41,6 +43,7 @@ class MultifitBlobs(ModuleBase):
         
             res.append(tabular.FitResultsSource(ff.FindAndFit(self.threshold)))
             
+        #FIXME - this shouldn't be a DataFrame
         res = pd.DataFrame(np.vstack(res))
         res.mdh = img.mdh
         
@@ -329,7 +332,7 @@ class MeanNeighbourDistances(ModuleBase):
         #find the average edge lengths leading away from a given point
         res = np.array(visHelpers.calcNeighbourDists(T))
         
-        res = pd.DataFrame({self.key:res})
+        res = tabular.DictSource({self.key:res})
         if 'mdh' in dir(pos):
             res.mdh = pos.mdh
         
@@ -368,7 +371,7 @@ class NearestNeighbourDistances(ModuleBase):
         else:
             d, i = kdt.query(p2, 1)
 
-        res = pd.DataFrame({self.key: d})
+        res = tabular.DictSource({self.key: d})
         if 'mdh' in dir(pos):
             res.mdh = pos.mdh
 
@@ -382,6 +385,7 @@ class PairwiseDistanceHistogram(ModuleBase):
     outputName = Output('distHist')
     nbins = Int(50)
     binSize = Float(50.)
+    threaded = Bool(False)
     
     def execute(self, namespace):
         from PYME.Analysis.points import DistHist
@@ -389,14 +393,21 @@ class PairwiseDistanceHistogram(ModuleBase):
         pos0 = namespace[self.inputPositions]
         pos1 = namespace[self.inputPositions2 if self.inputPositions2 is not '' else self.inputPositions]
         if np.count_nonzero(pos0['z']) == 0 and np.count_nonzero(pos1['z']) == 0:
-            res = DistHist.distanceHistogram(pos0['x'], pos0['y'], pos1['x'], pos1['y'], self.nbins, self.binSize)
+            if self.threaded:
+                res = DistHist.distanceHistogramThreaded(pos0['x'], pos0['y'], pos1['x'], pos1['y'], self.nbins, self.binSize)
+            else:
+                res = DistHist.distanceHistogram(pos0['x'], pos0['y'], pos1['x'], pos1['y'], self.nbins, self.binSize)
         else:
-            res = DistHist.distanceHistogram3D(pos0['x'], pos0['y'], pos0['z'],
-                                               pos1['x'], pos1['y'], pos1['z'], self.nbins, self.binSize)
+            if self.threaded:
+                res = DistHist.distanceHistogram3DThreaded(pos0['x'], pos0['y'], pos0['z'],
+                                                           pos1['x'], pos1['y'], pos1['z'], self.nbins, self.binSize)
+            else:
+                res = DistHist.distanceHistogram3D(pos0['x'], pos0['y'], pos0['z'],
+                                                   pos1['x'], pos1['y'], pos1['z'], self.nbins, self.binSize)
 
         d = self.binSize*np.arange(self.nbins)
 
-        res = pd.DataFrame({'bins': d, 'counts': res})
+        res = tabular.DictSource({'bins': d, 'counts': res})
 
         # propagate metadata, if present
         try:
@@ -428,7 +439,7 @@ class Histogram(ModuleBase):
         
         res = np.histogram(v, edges, normed=self.normalize)[0]
         
-        res = pd.DataFrame({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
+        res = tabular.DictSource({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
         if 'mdh' in dir(v):
             res.mdh = v.mdh
         
@@ -460,7 +471,7 @@ class ImageHistogram(ModuleBase):
         
         res = np.histogram(vals, edges, normed=self.normalize)[0]
         
-        res = pd.DataFrame({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
+        res = tabular.DictSource({'bins' : 0.5*(edges[:-1] + edges[1:]), 'counts' : res})
         if 'mdh' in dir(v):
             res.mdh = v.mdh
         
@@ -490,7 +501,7 @@ class ImageCumulativeHistogram(ModuleBase):
         
         #res = np.histogram(v, edges)[0]
         
-        res = pd.DataFrame({'bins' : xvals, 'counts' : yvals})
+        res = tabular.DictSource({'bins' : xvals, 'counts' : yvals})
         if 'mdh' in dir(v):
             res.mdh = v.mdh
         
@@ -532,7 +543,7 @@ class BinnedHistogram(ModuleBase):
 
         bn, bm, bs = binAvg.binAvg(binby, vals, edges)
 
-        res = pd.DataFrame({'bins': 0.5*(edges[:-1] + edges[1:]), 'counts': bn, 'means' : bm})
+        res = tabular.DictSource({'bins': 0.5*(edges[:-1] + edges[1:]), 'counts': bn, 'means' : bm})
         if 'mdh' in dir(v):
             res.mdh = v.mdh
 

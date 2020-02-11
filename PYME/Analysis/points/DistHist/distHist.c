@@ -151,6 +151,8 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
     px2o = px2;
     py2o = py2;
 
+    Py_BEGIN_ALLOW_THREADS
+
     for (i1 = 0; i1 < x1_len; i1++) //loop through the 1st set of points
       {            
         x1 = (float) px1[i1];
@@ -174,6 +176,7 @@ static PyObject * distanceHistogram(PyObject *self, PyObject *args, PyObject *ke
 	  }
       }
     
+    Py_END_ALLOW_THREADS
     
     Py_DECREF(ax1);
     Py_DECREF(ay1);
@@ -316,6 +319,8 @@ static PyObject * distanceHistogram3D(PyObject *self, PyObject *args, PyObject *
         res[j] = 0;
     }
 
+    Py_BEGIN_ALLOW_THREADS
+
     for (i1 = 0; i1 < x1_len; i1++) //loop through the 1st set of points
       {
         x1 = (float) px1[i1];
@@ -341,6 +346,7 @@ static PyObject * distanceHistogram3D(PyObject *self, PyObject *args, PyObject *
 	  }
       }
 
+    Py_END_ALLOW_THREADS
 
     Py_XDECREF(ax1);
     Py_XDECREF(ax2);

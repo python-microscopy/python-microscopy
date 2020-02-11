@@ -381,7 +381,8 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
     def CamReady(self):
         return self.initialized
     
-    def GetNoiseProperties(self):
+    @property
+    def noise_properties(self):
         return self.noiseProps
     
     def GetCCDTemp(self):
