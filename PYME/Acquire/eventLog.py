@@ -20,9 +20,54 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##################
+"""
+Log events from within PYMEAcquire.
+
+To log an event:
+ 
+ >>> from PYME.Acquire import eventLog
+ >>> eventLog.logEvent("eventName", "eventDescr") #NOTE - leave timestamp blank unless you are doing something funky
+ 
+To receive events:
+ 
+>>> from PYME.Acquire import eventLog
+>>> import time
+>>>
+>>> class MyReviever(object):
+>>>     def __init__(self, ...):
+>>>         #register as a receiver of events
+>>>         eventLog.WantEventNofication.append(self)
+>>>
+>>>     def eventLog(self, eventName, eventDescr = '', timestamp=None):
+>>>         # timestamp is usually not supplied, provide one
+>>>         if timestamp is None:
+>>>             timestamp = time.time() #this is the simplest thing you can do for a timestamp.
+>>>
+>>>         #your event handling logic here.
+ 
+ 
+TODO - Make this a bit saner by providing either an `EventReceiver` base class, or a `register_event_handler()` function
+"""
 
 WantEventNotification = []
 
 def logEvent(eventName, eventDescr = '', timestamp=None):
+    """
+    Log an event to all event receivers.
+    
+    Parameters
+    ----------
+    eventName : str
+        a name for the event
+    eventDescr : str
+        a description (optionally containing event data)
+    timestamp : float / None
+        a timestamp. Note that timestamps are usually handled in the spooler and the parameter should **not** be provided
+        unless you want to do something funky and spoof a timestamp that doesn't match the actual time.
+
+    Returns
+    -------
+
+    """
     for evl in WantEventNotification:
             evl.logEvent(eventName, eventDescr, timestamp = timestamp)
