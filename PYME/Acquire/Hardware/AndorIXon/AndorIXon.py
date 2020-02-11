@@ -689,6 +689,10 @@ class iXonCamera(Camera):
         hm = create_string_buffer(255)
         ac.GetHeadModel(hm)
         return hm.value
+    
+    @property
+    def noise_properties(self):
+        return self.noiseProps
 
     def GenStartMetadata(self, mdh):
         if self.active: #we are active -> write metadata

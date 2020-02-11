@@ -660,26 +660,29 @@ class Camera(object):
         raise NotImplementedError("Implemented in derived class.")
 
 
-    def GetNoiseProperties(self):
+    @property
+    def noise_properties(self):
         """
 
-        Returns
-        -------
+                Returns
+                -------
 
-        a dictionary with the following entries:
+                a dictionary with the following entries:
 
-        'ReadNoise' : camera read noise as a standard deviation in units of ADU
-        'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
-        'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
-            doi: 10.1109/TED.2003.813462
+                'ReadNoise' : camera read noise as a standard deviation in units of ADU
+                'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
+                'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
+                    doi: 10.1109/TED.2003.813462
 
-        and optionally
-        'ADOffset' : the dark level (in ADU)
-        'DefaultEMGain' : a sensible EM gain setting to use for localization recording
-        'SaturationThreshold' : the full well capacity (in ADU)
+                and optionally
+                'ADOffset' : the dark level (in ADU)
+                'DefaultEMGain' : a sensible EM gain setting to use for localization recording
+                'SaturationThreshold' : the full well capacity (in ADU)
 
-        """
-        raise NotImplementedError('Implement in derived class')
+                """
+        
+        raise AttributeError('Implement in derived class')
+        
 
     def GetStatus(self):
         """
@@ -744,7 +747,7 @@ class Camera(object):
             mdh.setEntry('Camera.TrueEMGain', self.GetTrueEMGain())
 
             # Noise
-            noiseProps = self.GetNoiseProperties()
+            noiseProps = self.noise_properties
             mdh.setEntry('Camera.ReadNoise', noiseProps['ReadNoise'])
             mdh.setEntry('Camera.NoiseFactor', noiseProps.get('NoiseFactor', 1))
             mdh.setEntry('Camera.ElectronsPerCount', noiseProps['ElectronsPerCount'])
