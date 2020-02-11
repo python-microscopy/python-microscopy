@@ -51,8 +51,7 @@ def pz(scope):
     from PYME.Acquire.Hardware.Piezos import piezo_e816_dll, offsetPiezoREST as opr
 
     # try and update the pifoc position roughly as often as the PID / camera, but a little faster if we can
-    scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100, target_tol=0.035, update_rate=0.002,
-                                              spool_controller=scope.spoolController)
+    scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100, target_tol=0.035, update_rate=0.002)
     scope.CleanupFunctions.append(scope._piFoc.close)
 
     scope.piFoc = opr.generate_offset_piezo_server(opr.TargetOwningOffsetPiezo)(scope._piFoc)
