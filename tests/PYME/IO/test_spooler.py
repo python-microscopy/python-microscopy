@@ -1,16 +1,14 @@
 import subprocess
-from PYME.IO import clusterIO
-from PYME.Acquire import HTTPSpooler
 from PYME.IO import testClusterSpooling
 import tempfile
 import os
 import shutil
 
-from PYME.IO.clusterExport import ImageFrameSource, MDSource
-from PYME.IO import MetaDataHandler
-#import unittest
 import time
 import sys
+
+import pytest
+pytestmark = pytest.mark.skip(reason='Suspected multi-threading issue with pzf compression')
 
 procs = []
 tmp_root = None
