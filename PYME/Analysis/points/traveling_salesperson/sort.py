@@ -60,14 +60,14 @@ def tsp_sort(positions, start=0, epsilon=0.01, return_path_length=False):
     sorted_positions: 2darray
         Positions array sorted by the optimized route, size n x 2
     """
-    from scipy.spatial import cKDTree
-    kdt = cKDTree(positions)
-    x_range, y_range = positions.max(axis=0) - positions.min(axis=0)
-    distances = kdt.sparse_distance_matrix(kdt, max_distance=np.sqrt(2) * (x_range + y_range))
+    from scipy.spatial import distance_matrix, cKDTree
+
+    distances = distance_matrix(positions, positions)
 
     if np.isscalar(start):
         start_index = int(start)
     else:
+        kdt = cKDTree(positions)
         d, start_index = kdt.query(start)
 
     # bootstrap with a greedy sort
