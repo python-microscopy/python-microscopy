@@ -95,9 +95,9 @@ class OffsetPiezo(PiezoBase):
         return self.basePiezo.OnTarget()
 
     @webframework.register_endpoint('/LogFocusCorrection', output_is_json=False)
-    def LogFocusCorrection(self,offset):
+    def LogFocusCorrection(self, offset):
         import wx
-        wx.CallAfter(eventLog.logEvent, 'update offset', '%3.4f' % float(offset))
+        wx.CallAfter(eventLog.logEvent, 'PiezoOffsetUpdate', '%3.4f' % float(offset))
 
 
 import requests
@@ -151,11 +151,10 @@ class OffsetPiezoClient(PiezoBase):
 
     def OnTarget(self):
         res = requests.get(self.urlbase + '/OnTarget')
-        return float(res.json())
+        return bool(res.json())
 
     def LogFocusCorrection(self, offset):
         res = requests.get(self.urlbase + '/LogFocusCorrection?offset=%3.3f' % (offset,))
-        return float(res.json())
 
 def generate_offset_piezo_server(offset_piezo_base_class):
     """

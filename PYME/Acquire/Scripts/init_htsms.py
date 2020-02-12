@@ -51,10 +51,8 @@ def pz(scope):
     from PYME.Acquire.Hardware.Piezos import piezo_e816_dll, offsetPiezoREST as opr
 
     # try and update the pifoc position roughly as often as the PID / camera, but a little faster if we can
-    scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100, target_tol=0.05, update_rate=0.002)
-    #scope.hardwareChecks.append(scope._piFoc.OnTarget)
+    scope._piFoc = piezo_e816_dll.piezo_e816T(maxtravel=100, target_tol=0.035, update_rate=0.002)
     scope.CleanupFunctions.append(scope._piFoc.close)
-    #scope.piFoc = scope._piFoc
 
     scope.piFoc = opr.generate_offset_piezo_server(opr.TargetOwningOffsetPiezo)(scope._piFoc)
     scope.register_piezo(scope.piFoc, 'z', needCamRestart=False)
@@ -149,7 +147,7 @@ def lasers(scope):
     scope.aotf = AAOptoMDS(aotf_calibration, 'COM14', 'AAOptoMDS', n_chans=4)
     scope.CleanupFunctions.append(scope.aotf.Close)
 
-    fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=30)  # pin 9
+    fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=25)  # pin 9
 
     l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turn_on=False)
     scope.CleanupFunctions.append(l405.Close)
