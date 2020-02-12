@@ -211,8 +211,8 @@ class ActionPanel(wx.Panel):
         # get queue parameters
         n_frames = int(self.tNumFrames.GetValue())
         nice = float(self.tNice.GetValue())
-        time_per_task = positions.shape[0] * n_frames / self.scope.cam.GetFPS()
-        timeout = max(float(self.tTimeout.GetValue()), 1.25 * time_per_task)  # allow enough time for what we queue
+        time_est = positions.shape[0] * n_frames / self.scope.cam.GetFPS()
+        timeout = max(float(self.tTimeout.GetValue()), 1.25 * time_est)  # allow enough time for what we queue
         for ri in range(positions.shape[0]):
             args = {'state': {'Positioning.x': positions[ri, 0], 'Positioning.y': positions[ri, 1]}}
             self.actionManager.QueueAction('state.update', args, nice, timeout)
