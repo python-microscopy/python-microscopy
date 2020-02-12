@@ -23,10 +23,10 @@
 
 #import serial
 import time
-
+import numpy as np
 import logging
 import threading
-
+from PYME.Acquire.eventLog import logEvent
 from .base_piezo import PiezoBase
 from PYME.Acquire.Hardware.GCS import gcs
 
@@ -197,10 +197,9 @@ class piezo_e816(PiezoBase):
     def GetTargetPos(self,iChannel=0):
         return self.lastPos
 
-import numpy as np
 class piezo_e816T(PiezoBase):
     def __init__(self, identifier=None, maxtravel=12.00, Osen=None, hasTrigger=False, target_tol=.002,
-                 update_rate=0.005, spool_controller=None):
+                 update_rate=0.005):
         """
 
         Parameters
@@ -221,7 +220,6 @@ class piezo_e816T(PiezoBase):
         self.units = 'um'
         self._target_tol = target_tol
         self._update_rate = update_rate
-        self._spool_controller = spool_controller
 
         self.lock = threading.Lock()
 
@@ -295,14 +293,9 @@ class piezo_e816T(PiezoBase):
                     # logging.debug('Moving piezo to target: %f' % (pos[0],))
 
                 if np.allclose(self.position, self.targetPosition, atol=self._target_tol):
-                    if not self.onTarget and self._spool_controller:
-                        try:
-                            self._spool_controller.spooler.evtLogger.logEvent('PiezoOnTarget',
-                                                                              '%.3f' % self.position[0], time.time())
-                        except AttributeError:
-                            # controller won't always have a spooler, and if that's the case we aren't logging anyway
-                            pass
-                    self.onTarget = True
+                    if not self.onTarget:
+                        logEvent('PiezoOnTarget', '%.3f' % self.position[0], time.time())
+                        self.onTarget = True
 
                 # check to see if we're on target
                 #self.ser_port.write('ONT? A\n')

@@ -6,6 +6,8 @@
 
 #include "triangle_mesh_utils.h"
 
+#define EPS 1e-12
+
 float norm(const float *pos)
 {
     float n = 0;
@@ -226,7 +228,7 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
         curr_vertex->valence = i;
 
         nn = norm(normal);
-        if (nn > 0) {
+        if (nn > EPS) {
             for (k = 0; k < VECTORSIZE; ++k)
                 (curr_vertex->normal)[k] = normal[k]/nn;
         } else {
@@ -243,7 +245,7 @@ static PyObject *update_vertex_neighbors(PyObject *self, PyObject *args)
 static PyObject *update_face_normals(PyObject *self, PyObject *args)
 {
     PyObject *f_idxs=0, *halfedges=0, *vertices=0, *faces=0;
-    int32_t j, k, f_idx, curr_idx, prev_idx, next_idx, n_idxs, *p_f_idxs;
+    int32_t j, k, f_idx, curr_idx, prev_idx, next_idx, n_idxs;
     float v1[VECTORSIZE], u[VECTORSIZE], v[VECTORSIZE], n[VECTORSIZE], nn;
     halfedge_t *curr_edge, *prev_edge, *next_edge, *p_halfedges;
     face_t *curr_face, *p_faces;
@@ -309,7 +311,7 @@ static PyObject *update_face_normals(PyObject *self, PyObject *args)
         nn = norm(n);
         curr_face->area = 0.5*nn;
 
-        if (nn > 0){
+        if (nn > EPS){
             for (k = 0; k < VECTORSIZE; ++k)
                 (curr_face->normal)[k] = n[k]/nn;
         } else {

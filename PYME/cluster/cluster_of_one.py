@@ -95,7 +95,7 @@ class ClusterOfOne(object):
             self.shutdown()
             
             
-def gui_main():
+def main():
     import wx
     import PYME.resources
     
@@ -150,6 +150,6 @@ def gui_main():
     
     
 if __name__ == '__main__':
-    gui_main()
+    main()
     
         

@@ -22,3 +22,4 @@
 ##################
 
 from .distHist import *
+from .distHistThreaded import *
