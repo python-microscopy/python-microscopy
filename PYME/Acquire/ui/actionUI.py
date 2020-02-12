@@ -6,6 +6,10 @@ Created on Sat May 28 23:55:50 2016
 """
 import wx
 import numpy as np
+import logging
+from PYME.Analysis.points.traveling_salesperson.sort import tsp_sort
+
+logger = logging.getLogger(__name__)
 
 class ActionList(wx.ListCtrl):
     def __init__(self, parent, actionManager, pos=wx.DefaultPosition,
@@ -41,6 +45,11 @@ class ActionList(wx.ListCtrl):
 ACTION_DEFAULTS = ['spoolController.StartSpooling',
                    'state.update',
                    ]
+
+SORT_FUNCTIONS = {
+    'None': lambda positions, scope_position: positions,
+    'TSP': tsp_sort,
+}
 
 class ActionPanel(wx.Panel):
     def __init__(self, parent, actionManager, scope):
@@ -111,6 +120,10 @@ class ActionPanel(wx.Panel):
         vsizer.Add(hsizer, 0, wx.EXPAND, 0)
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
 
+        hsizer.Add(wx.StaticText(self, -1, 'Sort Function:'), 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 2)
+        self.SortSelect = wx.ComboBox(self, -1, 'None', choices=list(SORT_FUNCTIONS.keys()), size=(150, -1))
+        hsizer.Add(self.SortSelect, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 2)
+
         self.bQueueROIsFromFile = wx.Button(self, -1, 'Queue ROIs from file')
         self.bQueueROIsFromFile.Bind(wx.EVT_BUTTON, self.OnROIsFromFile)
         hsizer.Add(self.bQueueROIsFromFile, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 2)
@@ -175,29 +188,35 @@ class ActionPanel(wx.Panel):
     
     def _add_ROIs(self, rois):
         """
-        Add ROIs to queue, staggering their positioning and spooling actions
+        Add ROI positioning and spooling actions to queue.
 
         Parameters
         ----------
         rois: list-like
-            list of ROI (x, y) positions, or array of shape (n_roi, 2)
-
-        Returns
-        -------
+            list of ROI (x, y) positions, or array of shape (n_roi, 2). Units in micrometers.
 
         """
-        
-        nice = float(self.tNice.GetValue())
-        timeout = float(self.tTimeout.GetValue()) #CHECKME - default here might be too short
         
         # coordinates are for the centre of ROI, and are referenced to the 0,0 pixel of the camera,
         # correct this for a custom ROI.
         roi_offset_x, roi_offset_y = self.scope.get_roi_offset()
 
-        for x, y in rois:
-            args = {'state': {'Positioning.x': float(x) - roi_offset_x, 'Positioning.y': float(y) - roi_offset_y}}
+        # subtract offset and reshape to N x 2 array
+        positions = np.reshape(rois, (len(rois), 2)).astype(float) - np.array([roi_offset_x, roi_offset_y])[None, :]
+
+        # apply sorting function
+        scope_pos = self.scope.GetPos()
+        positions = SORT_FUNCTIONS[self.SortSelect.GetValue()](positions, (scope_pos['x'], scope_pos['y']))
+
+        # get queue parameters
+        n_frames = int(self.tNumFrames.GetValue())
+        nice = float(self.tNice.GetValue())
+        time_per_task = positions.shape[0] * n_frames / self.scope.cam.GetFPS()
+        timeout = max(float(self.tTimeout.GetValue()), 1.25 * time_per_task)  # allow enough time for what we queue
+        for ri in range(positions.shape[0]):
+            args = {'state': {'Positioning.x': positions[ri, 0], 'Positioning.y': positions[ri, 1]}}
             self.actionManager.QueueAction('state.update', args, nice, timeout)
-            args = {'maxFrames': int(self.tNumFrames.GetValue()), 'stack': bool(self.rbZStepped.GetValue())}
+            args = {'maxFrames': n_frames, 'stack': bool(self.rbZStepped.GetValue())}
             self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
     
     def OnROIsFromFile(self, event):
@@ -221,6 +240,3 @@ class ActionPanel(wx.Panel):
         rois = np.array(resp.json())
         print(rois.shape)
         self._add_ROIs(rois)
-        
-
-

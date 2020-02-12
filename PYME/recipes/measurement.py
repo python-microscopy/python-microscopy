@@ -912,7 +912,7 @@ class ChunkedTravelingSalesperson(ModuleBase):
     output = Output('sorted')
 
     def execute(self, namespace):
-        from PYME.localization import traveling_salesperson
+        from PYME.Analysis.points.traveling_salesperson import sectioned_two_opt
 
         points = namespace[self.input]
 
@@ -921,11 +921,11 @@ class ChunkedTravelingSalesperson(ModuleBase):
         except KeyError:
             positions = np.stack([points['x'], points['y']], axis=1) / 1e3
 
-        final_route = traveling_salesperson.tsp_chunk_two_opt_multiproc(positions, self.epsilon, self.points_per_chunk,
+        final_route = sectioned_two_opt.tsp_chunk_two_opt_multiproc(positions, self.epsilon, self.points_per_chunk,
                                                                         self.n_processes)
 
         # note that we sorted the positions / sections once before, need to propagate that through before sorting
-        out = tabular.MappingFilter({k: points[k][final_route] for k in points.keys()})
+        out = tabular.DictSource({k: points[k][final_route] for k in points.keys()})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
         try:
             out.mdh.copyEntriesFrom(points.mdh)
@@ -952,8 +952,9 @@ class ChunkedTravelingSalesperson(ModuleBase):
 class TravelingSalesperson(ModuleBase):
     """
 
-    Optimize route visiting each position in an input dataset exactly once, starting from the last point in the input.
-    2-opt algorithm is used.
+    Optimize route visiting each position in an input dataset exactly once, starting from the 0th point or
+    the minimum x + y corner. A greedy sort is done first because it is quite fast and should for average case reduce
+    number of moves from O(nlog(n)) to O(n).
 
     Parameters
     ----------
@@ -962,6 +963,8 @@ class TravelingSalesperson(ModuleBase):
         e.g. 'x_um'
     epsilon: Float
         Relative improvement threshold used to stop algorithm when gains become negligible
+    start_from_corner: Bool
+        Flag to toggle starting from the min(x + y) point [True] or the 0th point in the input positions.
     output: Output
         PYME.IO.tabular
 
@@ -969,11 +972,11 @@ class TravelingSalesperson(ModuleBase):
     """
     input = Input('input')
     epsilon = Float(0.001)
+    start_from_corner = Bool(True)
     output = Output('sorted')
 
     def execute(self, namespace):
-        from PYME.localization import traveling_salesperson
-        from scipy.spatial import distance_matrix
+        from PYME.Analysis.points.traveling_salesperson import sort
 
         points = namespace[self.input]
 
@@ -983,21 +986,19 @@ class TravelingSalesperson(ModuleBase):
             # units don't matter for these calculations, but we want to preserve them on the other side
             positions = np.stack([points['x'], points['y']], axis=1) / 1e3
 
-        distances = distance_matrix(positions, positions)
+        start_index = 0 if not self.start_from_corner else np.argmin(positions.sum(axis=1))
 
+        positions, ogd, final_distance = sort.tsp_sort(positions, start_index, self.epsilon, return_path_length=True)
 
-        route, best_distance, og_distance = traveling_salesperson.two_opt(distances, self.epsilon)
-
-        # plot_path(positions, route)
-        out = tabular.MappingFilter({'x_um': positions[:, 0][route],
-                                     'y_um': positions[:, 1][route]})
+        out = tabular.DictSource({'x_um': positions[:, 0],
+                                     'y_um': positions[:, 1]})
         out.mdh = MetaDataHandler.NestedClassMDHandler()
         try:
             out.mdh.copyEntriesFrom(points.mdh)
         except AttributeError:
             pass
-        out.mdh['TravelingSalesperson.Distance'] = best_distance
-        out.mdh['TravelingSalesperson.OriginalDistance'] = og_distance
+        out.mdh['TravelingSalesperson.Distance'] = final_distance
+        out.mdh['TravelingSalesperson.OriginalDistance'] = ogd
 
         namespace[self.output] = out
 
