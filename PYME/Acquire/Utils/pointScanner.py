@@ -146,7 +146,24 @@ class PointScanner(object):
         #    self.scope.frameWrangler.HardwareChecks.append(self.onTarget)
 
     def onTarget(self):
+        #FIXME
         return self.xpiezo[0].onTarget
+    
+    def _position_for_index(self, callN):
+        # todo - precalculate ???
+        x_i = callN % self.nx
+        y_i = int((callN % (self.imsize)) / self.nx)
+    
+        # do a bidirectional scan(faster)
+        if ((y_i) % 2):
+            #scan in reverse direction on odd runs
+            new_x = self.xp[(len(self.xp) - 1) - x_i]
+        else:
+            new_x = self.xp[x_i]
+            
+        new_y = self.yp[y_i]
+        
+        return new_x, new_y
 
     def tick(self, frameData, **kwargs):
         with self._rlock:
@@ -171,24 +188,10 @@ class PointScanner(object):
             if ((self.callNum +1) % self.dwellTime) == 0:
                 #move piezo
                 callN = int((self.callNum+1)/self.dwellTime)
-
-                #self.xpiezo[0].MoveTo(self.xpiezo[1], self.xp[callN % self.nx])
-                #self.ypiezo[0].MoveTo(self.ypiezo[1], self.yp[(callN % (self.imsize))/self.nx])
-
-                #self.scope.SetPos(x=self.xp[callN % self.nx], y = self.yp[(callN % (self.imsize))/self.nx])
-                # todo - precalculate and move out of tick() ???
-                x_i = callN % self.nx
-                y_i = int((callN % (self.imsize))/self.nx)
-
-                # do a bidirectional scan(faster)
-                if ((y_i) % 2):
-                    #scan in reverse direction on odd runs
-                    new_x = self.xp[(len(self.xp) - 1) - x_i]
-                else:
-                    new_x = self.xp[x_i]
+                new_x, new_y = self._position_for_index(callN)
 
                 self.scope.state.setItems({'Positioning.x' : new_x,
-                                           'Positioning.y' : self.yp[y_i]
+                                           'Positioning.y' : new_y
                                            }, stopCamera = not cam_trigger)
 
                 #print 'SetP'
@@ -479,45 +482,7 @@ class CircleScanner(PointScanner):
         self.nx = len(self.xp)
         self.ny = len(self.yp)
         self.imsize = self.nx
-
-    def tick(self, frameData, **kwargs):
-        with self._rlock:
-            if not self.running:
-                return
-
-            try:
-                cam_trigger = self.scope.cam.GetAcquisitionMode() == self.scope.cam.MODE_SOFTWARE_TRIGGER
-            except AttributeError:
-                cam_trigger = False
-
-            if (self.callNum % self.dwellTime) == 0:
-                # record pixel in overview
-                callN = int(self.callNum / self.dwellTime)
-                if self.avg:
-                    self.image[callN % self.nx, int(
-                        (callN % (self.image.size)) / self.nx)] = self.scope.currentFrame.mean() - self.background
-                    self.view.Refresh()
-
-            if ((self.callNum + 1) % self.dwellTime) == 0:
-                # move piezo
-                callN = int((self.callNum + 1) / self.dwellTime)
-
-                ind = callN % self.nx
-
-                self.scope.state.setItems({'Positioning.x': self.xp[ind],
-                                           'Positioning.y': self.yp[ind]
-                                           }, stopCamera=not cam_trigger)
-
-                if self.evtLog:
-                    eventLog.logEvent('ScannerXPos', '%3.6f' % self.scope.state['Positioning.x'])
-                    eventLog.logEvent('ScannerYPos', '%3.6f' % self.scope.state['Positioning.y'])
-
-                if cam_trigger:
-                    self.scope.cam.FireSoftwareTrigger()
-                    eventLog.logEvent('StartAq', "")
-
-            if (int(self.callNum / self.dwellTime)) > self.imsize:
-                if self._stop_on_complete:
-                    self._stop()
-
-        self.callNum += 1
+        
+    def _position_for_index(self, callN):
+        ind = callN % self.nx
+        return self.xp[ind], self.yp[ind]
