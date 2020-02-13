@@ -5,6 +5,8 @@ import time
 from PYME.IO import MetaDataHandler
 import os
 import dispatch
+import logging
+logger = logging.getLogger(__name__)
 
 class Tiler(pointScanner.PointScanner):
     def __init__(self, scope, tile_dir, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=False,
@@ -51,8 +53,8 @@ class Tiler(pointScanner.PointScanner):
         for mdgen in MetaDataHandler.provideStartMetadata:
             mdgen(self.mdh)
 
-        self._x0 = self.xp[0]
-        self._y0 = self.yp[0]
+        self._x0 = np.min(self.xp)  # get the upper left corner of the scan, regardless of shape/fill/start
+        self._y0 = np.min(self.yp)
         
         self._pixel_size = self.mdh.getEntry('voxelsize.x')
         self.background = self.mdh.getOrDefault('Camera.ADOffset', self.background)
@@ -100,3 +102,51 @@ class Tiler(pointScanner.PointScanner):
             
         self.on_stop.send(self)
         self.progress.send(self)
+
+class CircularTiler(Tiler):
+    def __init__(self, scope, tile_dir, max_radius_um=100, tile_spacing=None, dwelltime=1, background=0, evtLog=False,
+                 trigger=False, base_tile_size=256):
+        
+        if tile_spacing is None:
+            fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
+            # calculate tile spacing such that there is ~30% overlap.
+            tile_spacing = (1/np.sqrt(2)) * fs * np.array(scope.GetPixelSize())
+        # take the pixel size to be the same or at least similar in both directions
+        self.pixel_radius = int(max_radius_um / tile_spacing.mean())
+        logger.debug('Circular tiler target radius in units of ~30 percent overlapped FOVs: %d' % self.pixel_radius)
+        
+        Tiler.__init__(self, scope, tile_dir, n_tiles=self.pixel_radius, tile_spacing=tile_spacing, dwelltime=dwelltime,
+                       background=background, evtLog=evtLog, trigger=trigger, base_tile_size=base_tile_size)
+
+    def genCoords(self):
+        """
+        Generate coordinates for square ROIs evenly distributed within a circle. Order them first by radius, and then
+        by increasing theta such that the initial position is scanned first, and then subsequent points are scanned in
+        an ~optimal order.
+        """
+        self.currPos = self.scope.GetPos()
+        logger.debug('Current positions: %s' % (self.currPos,))
+    
+        r, t = [0], [np.array([0])]
+        for r_ring in self.pixelsize[0] * np.arange(1, self.pixel_radius + 1):  # 0th ring is (0, 0)
+            # keep the rings spaced by pixel size and hope the overlap is enough
+            # 2 pi / (2 pi r / pixsize) = pixsize/r
+            thetas = np.arange(0, 2 * np.pi, self.pixelsize[0] / r_ring)
+            r.extend(r_ring * np.ones_like(thetas))
+            t.append(thetas)
+    
+        # convert to cartesian and add currPos offset
+        r = np.asarray(r)
+        t = np.concatenate(t)
+        self.xp = r * np.cos(t) + self.currPos['x']
+        self.yp = r * np.sin(t) + self.currPos['y']
+    
+        self.nx = len(self.xp)
+        self.ny = len(self.yp)
+        self.imsize = self.nx
+
+    def _position_for_index(self, callN):
+        ind = callN % self.nx
+        return self.xp[ind], self.yp[ind]
+
+        
