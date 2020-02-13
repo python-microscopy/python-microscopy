@@ -432,28 +432,15 @@ class PointScanner3D:
 
 
 class CircleScanner(PointScanner):
-    def __init__(self, scope, pixel_radius=10, pixelsize=0.1, dwelltime=1, background=0, avg=True, evtLog=False,
-                 sync=False, trigger=False, stop_on_complete=False):
-        self.scope = scope
-        self.trigger = trigger
-
-        self.dwellTime = dwelltime
-        self.background = background
-        self.avg = avg
-        self.pixel_radius = pixel_radius
-        self.pixelsize = pixelsize
-        self._stop_on_complete = stop_on_complete
-
-        if np.isscalar(pixelsize):
-            self.pixelsize = np.array([pixelsize, pixelsize])
-
-        self.evtLog = evtLog
-        self.sync = sync
-
-        self._rlock = threading.Lock()
-
-        self.running = False
-        self._uuid = uuid.uuid4()
+    def __init__(self, *args, **kwargs):
+        self.pixel_radius = kwargs.pop('pixel_radius', None)
+        PointScanner.__init__(self, *args, **kwargs)
+        
+        if self.pixel_radius is None:
+            #if we supplied pixel_radius as a positional, rather than keyword argument
+            # FIXME - this is rather a kludge to preserve the AEBs new arguments - is there any good reason for the two
+            # to have different signatures? Surely using self.pixels as the radius would be fine
+            self.pixel_radius = self.pixels
 
 
     def genCoords(self):
