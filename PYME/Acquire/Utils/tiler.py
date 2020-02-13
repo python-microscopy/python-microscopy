@@ -103,25 +103,50 @@ class Tiler(pointScanner.PointScanner):
         self.on_stop.send(self)
         self.progress.send(self)
 
-class CircularTiler(Tiler, pointScanner.CircleScanner):
+class CircularTiler(Tiler):
     def __init__(self, scope, tile_dir, max_radius_um=100, tile_spacing=None, dwelltime=1, background=0, evtLog=False,
                  trigger=False, base_tile_size=256):
-        self.scanner_class = pointScanner.CircleScanner
+        
         if tile_spacing is None:
             fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
             # calculate tile spacing such that there is ~30% overlap.
             tile_spacing = (1/np.sqrt(2)) * fs * np.array(scope.GetPixelSize())
         # take the pixel size to be the same or at least similar in both directions
-        pixel_radius = int(max_radius_um / tile_spacing.mean())
-        logger.debug('Circular tiler target radius in units of ~30 percent overlapped FOVs: %d' % pixel_radius)
-        self.scanner_class.__init__(self, scope, pixel_radius, tile_spacing, dwelltime, background, False,
-                                    evtLog, trigger=trigger, stop_on_complete=True)
+        self.pixel_radius = int(max_radius_um / tile_spacing.mean())
+        logger.debug('Circular tiler target radius in units of ~30 percent overlapped FOVs: %d' % self.pixel_radius)
+        
+        Tiler.__init__(self, scope, tile_dir, n_tiles=self.pixel_radius, tile_spacing=tile_spacing, dwelltime=dwelltime,
+                       background=background, evtLog=evtLog, trigger=trigger, base_tile_size=base_tile_size)
 
-        self._tiledir = tile_dir
-        self._base_tile_size = base_tile_size
-        self._flat = None  # currently not used
+    def genCoords(self):
+        """
+        Generate coordinates for square ROIs evenly distributed within a circle. Order them first by radius, and then
+        by increasing theta such that the initial position is scanned first, and then subsequent points are scanned in
+        an ~optimal order.
+        """
+        self.currPos = self.scope.GetPos()
+        logger.debug('Current positions: %s' % (self.currPos,))
+    
+        r, t = [0], [np.array([0])]
+        for r_ring in self.pixelsize[0] * np.arange(1, self.pixel_radius + 1):  # 0th ring is (0, 0)
+            # keep the rings spaced by pixel size and hope the overlap is enough
+            # 2 pi / (2 pi r / pixsize) = pixsize/r
+            thetas = np.arange(0, 2 * np.pi, self.pixelsize[0] / r_ring)
+            r.extend(r_ring * np.ones_like(thetas))
+            t.append(thetas)
+    
+        # convert to cartesian and add currPos offset
+        r = np.asarray(r)
+        t = np.concatenate(t)
+        self.xp = r * np.cos(t) + self.currPos['x']
+        self.yp = r * np.sin(t) + self.currPos['y']
+    
+        self.nx = len(self.xp)
+        self.ny = len(self.yp)
+        self.imsize = self.nx
 
-        self._last_update_time = 0
+    def _position_for_index(self, callN):
+        ind = callN % self.nx
+        return self.xp[ind], self.yp[ind]
 
-        self.on_stop = dispatch.Signal()
-        self.progress = dispatch.Signal()
+        
