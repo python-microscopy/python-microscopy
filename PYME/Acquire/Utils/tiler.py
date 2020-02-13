@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 class Tiler(pointScanner.PointScanner):
     def __init__(self, scope, tile_dir, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=False,
                  trigger=False, base_tile_size=256):
-        self.scanner_class = pointScanner.PointScanner
+        
         if tile_spacing is None:
             fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
             #calculate tile spacing such that there is 20% overlap.
             tile_spacing = 0.8*fs*np.array(scope.GetPixelSize())
             
-        self.scanner_class.__init__(self, scope=scope, pixels=n_tiles, pixelsize=tile_spacing,  dwelltime=dwelltime,
+        pointScanner.PointScanner.__init__(self, scope=scope, pixels=n_tiles, pixelsize=tile_spacing,  dwelltime=dwelltime,
                                            background =background, avg=False, evtLog=evtLog, trigger=trigger, stop_on_complete=True)
         
         self._tiledir = tile_dir
@@ -64,15 +64,15 @@ class Tiler(pointScanner.PointScanner):
             
         x0 = self._x0 + self._pixel_size*x0_cam
         y0 = self._y0 + self._pixel_size*y0_cam
-
+        
         self.P = tile_pyramid.ImagePyramid(self._tiledir, self._base_tile_size, x0=x0, y0=y0,
                                            pixel_size=self._pixel_size)
-
-        self.scanner_class.start(self)
+        
+        pointScanner.PointScanner.start(self)
         
     def tick(self, frameData, **kwargs):
         pos = self.scope.GetPos()
-        self.scanner_class.tick(self, frameData, **kwargs)
+        pointScanner.PointScanner.tick(self, frameData, **kwargs)
         
         d = frameData.astype('f').squeeze()
         if not self.background is None:
@@ -93,7 +93,7 @@ class Tiler(pointScanner.PointScanner):
             self.progress.send(self)
         
     def _stop(self):
-        self.scanner_class._stop(self)
+        pointScanner.PointScanner._stop(self)
         
         self.P.update_pyramid()
 
