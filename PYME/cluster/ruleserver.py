@@ -38,7 +38,7 @@ class IntegerIDRule(Rule):
     
     
     def __init__(self, ruleID, task_template, inputs_by_task = None,
-                 max_task_ID=100000, task_timeout=600, rule_timeout=3600):
+                 max_task_ID=100000, task_timeout=600, rule_timeout=3600, on_completion=None):
         """
         Create a new rule which generates tasks based on a template.
         
@@ -111,18 +111,20 @@ class IntegerIDRule(Rule):
              1 : {"recipe_input_0" : "input_0_URI_1","recipe_input_1" : "input_1_URI_1"},
              2 : {"recipe_input_0" : "input_0_URI_2","recipe_input_1" : "input_1_URI_2"},
              }
+             
+        Alternatively the inputs dictionary can be supplied directly (without relying on the taskInputs substitution).
         
         Rule Chaining
         -------------
         
         Rules may also define a chained rule, to be run on completion of the original rule. This is accomplished by
-        adding an "on_completion" section to the rule template. The format or the on-completion section follows that of
-        the initial rules, with two caveats:
-        a) the "id" section should be omitted FIXME???, to avoid the follow on rule being substituted with the same ID
-        b) the "inputs" section should be hard coded (i.e. not rely on substitution of {{taskInputs}}
+        supplying an "on_completion" dictionary. This is a dictionary, {'template' : <template>, 'max_tasks' : max_tasks,
+        'rule_timeout' : timeout, 'on_completion' : {...}}, with the template following the format above and everything
+        but the template being optional (max_tasks defaults to 1). Follow on / chained rules are slightly more restricted
+        than standard rules in that recipe "inputs" must be hardcoded (no {{taskInputs}} substitution).
         
         Chained rules will only execute if a max_task_ID is specified when creating the original rule, and will be
-        created when `nCompleted` >= max_task_ID.
+        created when `nCompleted` >= max_task_ID. All tasks for the chained rule will be released immediately.
         
         """
         self.ruleID = ruleID
@@ -148,6 +150,8 @@ class IntegerIDRule(Rule):
         self.nFailed = 0
         
         self._n_max = max_task_ID
+        
+        self.on_completion = on_completion
         
         self.avCost = 0
         
@@ -281,9 +285,6 @@ class IntegerIDRule(Rule):
     def finished(self):
         return self.nCompleted >= self._n_max
     
-    def get_follow_on(self):
-        return None
-    
     def info(self):
         return {'tasksPosted': self.nTotal,
                   'tasksRunning': self.nAssigned,
@@ -369,14 +370,16 @@ class RuleServer(object):
                     with self._rule_lock:
                         r = self._rules.pop(qn)
                         
-                    follow_on = r.get_follow_on()
+                    follow_on = r.on_completion
                     if follow_on is not None:
                         # if a follow on rule is defined, add it
-                        template, n_tasks, timeout = follow_on
+                        template = follow_on['template']
+                        n_tasks = follow_on.get('max_tasks', 1)
+                        timeout = follow_on.get('rule_timeout', 3600.)
                         ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
     
-                        rule = IntegerIDRule(ruleID, follow_on, max_task_ID=int(n_tasks),
-                                             rule_timeout=float(timeout))
+                        rule = IntegerIDRule(ruleID, template, max_task_ID=int(n_tasks),
+                                             rule_timeout=float(timeout), on_completion=follow_on.get('on_completion', None))
     
                         rule.make_range_available(0, int(n_tasks))
     
@@ -466,8 +469,10 @@ class RuleServer(object):
             How long this rule should live for, in seconds. Defaults to an hour.
         body : str
             A json dictionary  {'template' : "<rule template>", 'inputsByTask' : [list of URIs]}. See `IntegerIDRule`
-            for the format of the rule template. The 'inputsByTask' parameter is only used for recipes, and can be ommitted
-            for localisation analysis.
+            for the format of the rule template. The 'inputsByTask' parameter is only used for recipes, and can be omitted
+            for localisation analysis, or for recipe tasks using a hard coded "inputs" dictionary. An optional additional
+            parameter, "on_completion" parameter may be given, itself consisting of a new
+            {'template': <template>, 'on_completion': {...}} dictionary.
 
         Returns
         -------
@@ -479,7 +484,7 @@ class RuleServer(object):
             ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
         
         rule = IntegerIDRule(ruleID, rule_info['template'], max_task_ID=int(max_tasks), rule_timeout=float(timeout),
-                             inputs_by_task=rule_info.get('inputsByTask', None))
+                             inputs_by_task=rule_info.get('inputsByTask', None), on_completion=rule_info.get('on_completion', None))
         
         #print rule._inputs_by_task
         if not release_start is None:
