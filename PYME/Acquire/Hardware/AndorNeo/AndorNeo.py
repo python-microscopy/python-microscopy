@@ -590,7 +590,8 @@ class AndorBase(SDK3Camera):
     def __getattr__(self, name):
         if name in self.noiseProps.keys():
             return self.noiseProps[name]
-        else:  raise AttributeError, name  # <<< DON'T FORGET THIS LINE !!
+        else:
+            raise AttributeError(name)
 
 
 
