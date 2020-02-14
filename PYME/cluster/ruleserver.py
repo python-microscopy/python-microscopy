@@ -57,8 +57,8 @@ class IntegerIDRule(Rule):
             the node executing it has fallen over and we retry on a different node (up to a maximum number of times
             set by the 'ruleserver-retries` config option).
         rule_timeout : float
-            A timeout in seconds after which we assume that any rule tasks will have completed and we can dispose of the
-            rule (to keep memory down in a long-term usage scenario).
+            A timeout in seconds from the last task we processed after which we assume that no more tasks are coming and
+             we can delete the rule (to keep memory down in a long-term usage scenario).
             
         Templates
         ---------
@@ -112,6 +112,18 @@ class IntegerIDRule(Rule):
              2 : {"recipe_input_0" : "input_0_URI_2","recipe_input_1" : "input_1_URI_2"},
              }
         
+        Rule Chaining
+        -------------
+        
+        Rules may also define a chained rule, to be run on completion of the original rule. This is accomplished by
+        adding an "on_completion" section to the rule template. The format or the on-completion section follows that of
+        the initial rules, with two caveats:
+        a) the "id" section should be omitted FIXME???, to avoid the follow on rule being substituted with the same ID
+        b) the "inputs" section should be hard coded (i.e. not rely on substitution of {{taskInputs}}
+        
+        Chained rules will only execute if a max_task_ID is specified when creating the original rule, and will be
+        created when `nCompleted` >= max_task_ID.
+        
         """
         self.ruleID = ruleID
         
@@ -134,6 +146,8 @@ class IntegerIDRule(Rule):
         self.nAvailable = 0
         self.nCompleted = 0
         self.nFailed = 0
+        
+        self._n_max = max_task_ID
         
         self.avCost = 0
         
@@ -263,6 +277,13 @@ class IntegerIDRule(Rule):
     def expired(self):
         return (self.nAvailable == 0) and (self.nAssigned == 0) and (time.time() > self.expiry)
     
+    @property
+    def finished(self):
+        return self.nCompleted >= self._n_max
+    
+    def get_follow_on(self):
+        return None
+    
     def info(self):
         return {'tasksPosted': self.nTotal,
                   'tasksRunning': self.nAssigned,
@@ -343,12 +364,33 @@ class RuleServer(object):
             for qn in list(self._rules.keys()):
                 self._rules[qn].poll_timeouts()
                 
+                # look for rules that have processed all tasks
+                if self._rules[qn].finished:
+                    with self._rule_lock:
+                        r = self._rules.pop(qn)
+                        
+                    follow_on = r.get_follow_on()
+                    if follow_on is not None:
+                        # if a follow on rule is defined, add it
+                        template, n_tasks, timeout = follow_on
+                        ruleID = '%06d-%s' % (self._rule_n, uuid.uuid4().hex)
+    
+                        rule = IntegerIDRule(ruleID, follow_on, max_task_ID=int(n_tasks),
+                                             rule_timeout=float(timeout))
+    
+                        rule.make_range_available(0, int(n_tasks))
+    
+                        with self._rule_lock:
+                            self._rules[ruleID] = rule
+    
+                        self._rule_n += 1
+                    
+                
                 #remore queue if expired (no activity for an hour) to free up memory
                 if self._rules[qn].expired:
                     with self._rule_lock:
                         r = self._rules.pop(qn)
                         
-                    #r.on_complete()
             
             time.sleep(5)
     
