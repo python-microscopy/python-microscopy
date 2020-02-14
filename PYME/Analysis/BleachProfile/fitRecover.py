@@ -24,10 +24,9 @@ from . import intensProf
 from . import kinModels
 
 from PYME.Analysis._fithelpers import *
-
+from pylab import *
 
 def FitTrace(tr, mdh):
-    from pylab import *
     #tr = (ds - mdh.getEntry('Camera.ADOffset')).sum(1).sum(0)
 
     cycTime = mdh.getEntry('Camera.CycleTime')
