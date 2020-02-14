@@ -68,7 +68,7 @@ class piezoOffsetProxy(PiezoBase, Pyro.core.ObjBase):
 
     def LogFocusCorrection(self,offset):
         import wx
-        wx.CallAfter(eventLog.logEvent, 'update offset', '%3.4f' %offset)
+        wx.CallAfter(eventLog.logEvent, 'PiezoOffsetUpdate', '%3.4f' %offset)
 
     # @property
     # def lastPos(self):

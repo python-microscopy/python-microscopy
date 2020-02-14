@@ -190,8 +190,9 @@ class ReflectedLinePIDFocusLock(PID):
 
     @webframework.register_endpoint('/DisableLock', output_is_json=False)
     def DisableLock(self):
-        logger.debug('Disabling focus lock')
         self.set_auto_mode(False)
+        logger.debug('Disabling focus lock')
+        self.piezo.LogFocusCorrection(self.piezo.GetOffset())
 
     def register(self):
         if self.mode == 'time':
