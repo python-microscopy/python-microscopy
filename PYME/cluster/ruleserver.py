@@ -1,10 +1,24 @@
 """
-ruleserver.py defines a RESTful HTTP server which manages task distribution across a cluster through the use of rules.
+This module defines a RESTful HTTP server which manages task distribution across a cluster through the use of rules.
 Rules are essentially a json template which defines how tasks may be generated (by substitution into the template on the
-client side). Generation of tasks on the client has the dual benefits of a) reducing the CPU load and memory requirements
- the server and b) dramatically decreasing the network bandwidth used for task distribution.
+client side). Generation of individual tasks on the client has the dual benefits of a) reducing the CPU load and memory
+requirements on the server and b) dramatically decreasing the network bandwidth used for task distribution.
  
- 
+The exposed REST API is as follows:
+
+============================================================= ====== ========================================
+Endpoint                                                      Verb   Brief Description
+============================================================= ====== ========================================
+:meth:`/add_integer_id_rule <RuleServer.add_integer_id_rule>` POST   Add a new rule
+:meth:`/release_rule_tasks <RuleServer.release_rule_tasks>`   POST   Release tasks IDs associated with a rule
+:meth:`/task_advertisments <RuleServer.task_advertisements>`  GET    Retrieve a list of advertisements
+:meth:`/bid_on_tasks <RuleServer.bid_on_tasks>`               POST   Submit bids on advertised tasks
+:meth:`/handin <RuleServer.handin>`                           POST   Advise rule server of task completion
+:meth:`/distributor/queues <Ruleserver.get_queues>`           GET    Get status information
+============================================================= ====== ========================================
+
+Implementation details follow. The json format and parameters for the REST calls are defined in the docstrings of the
+python functions defining that method (linked from the table above).
 """
 import cherrypy
 import threading
@@ -200,15 +214,25 @@ class IntegerIDRule(Rule):
             self._cached_advert = None
             
     def bid(self, bid):
-        '''Bid on tasks (and return any that match). Note the current implementation is very naive and expects doesn't
-        check bid cost
+        """Bid on tasks (and return any that match). Note the current implementation is very naive and doesn't
+        check bid cost - i.e. the first bid gets the task. This works if (and only if) the clients are well behaved
+        and preferentially bid on tasks which have a lowest cost for them.
         
         Parameters
         ----------
         
-        bid : dictionary containing the following items: ruleID, taskIDs, taskCosts
+        bid : dict
+            A dictionary containing the ruleID, the IDs of the tasks to bid on, and their costs
+            ``{"ruleID" : str ,"taskIDs" : [list of int],"taskCosts" : [list of float]}``
         
-        '''
+        Returns
+        -------
+        
+        successful_bids: dict
+            A dictionary containing the ruleID, the IDs of the tasks awarded, and the rule template
+            ``{"ruleID" : ruleID, "taskIDs": [list of int], "template" : "<rule template>"}``
+        
+        """
         
         taskIDs = np.array(bid['taskIDs'], 'i')
         costs = np.array(bid['costs'], 'f4')
@@ -249,6 +273,13 @@ class IntegerIDRule(Rule):
             
     @property
     def advert(self):
+        """ The task advertisment.
+        
+        If the rule has tasks available, a dictionary of the form:
+        ``{"ruleID" : str, "taskTemplate" : str, "availableTaskIDs" : [list of int], "inputsByTask" : [optional] dict mapping task IDs to inputs}``
+        
+        "inputsByTask" is only provided for some recipe tasks.
+        """
         with self._advert_lock:
             if not self._cached_advert:
                 availableTasks = np.where(self._task_info['status'] == STATUS_AVAILABLE)[0].tolist()
@@ -286,13 +317,26 @@ class IntegerIDRule(Rule):
     
     @property
     def expired(self):
+        """ Whether the rule has expired (no available tasks, no tasks assigned, and time > expiry) and can be removed"""
         return (self.nAvailable == 0) and (self.nAssigned == 0) and (time.time() > self.expiry)
     
     @property
     def finished(self):
+        """ Whether the rule has finished (completed the maximum number of tasks that could be assigned)"""
         return self.nCompleted >= self._n_max
     
     def info(self):
+        """
+        Get information / status about this rule
+        
+        Returns
+        -------
+        
+        status : dict
+            A status dictionary of the form:
+            ``{'tasksPosted': int, 'tasksRunning': int, 'tasksCompleted': int, 'tasksFailed' : int, 'averageExecutionCost' : float}``
+
+        """
         return {'tasksPosted': self.nTotal,
                   'tasksRunning': self.nAssigned,
                   'tasksCompleted': self.nCompleted,
@@ -412,6 +456,19 @@ class RuleServer(object):
             
     @webframework.register_endpoint('/task_advertisements')
     def task_advertisements(self):
+        """
+        HTTP endpoint (GET) for retrieving task advertisements.
+        
+        Note - by default, a limited number of advertisements are posted at any given time (to limit bandwidth). This
+        should be enough to keep all the workers busy, with new adverts being posted once tasks are assigned to workers.
+        
+        Returns
+        -------
+        
+        adverts : json str
+            List of advertisements. See :attr:`IntegerIDRule.advert`
+
+        """
         with self._advert_lock:
             t = time.time()
             if (t > self._cached_advert_expiry):
@@ -437,6 +494,24 @@ class RuleServer(object):
         
     @webframework.register_endpoint('/bid_on_tasks')
     def bid_on_tasks(self, body=''):
+        """
+        HTTP endpoint (POST) for bidding on tasks.
+        
+        Parameters
+        ----------
+        body : json list of bids
+            A list of bids, each of which is a dictionary of the form
+            ``{"ruleID" : str ,"taskIDs" : [list of int],"taskCosts" : [list of float]}``
+            see :meth:`IntegerIDRule.Bid` for details.
+
+        Returns
+        -------
+        assignments: json str
+            A json formatted list of task assignments, each of which has the form:
+            ``{"ruleID" : ruleID, "taskIDs": [list of int], "template" : "<rule template>"}``
+            See :meth:`IntegerIDTask.bid`
+
+        """
         bids = json.loads(body)
         
         succesfull_bids = []
@@ -456,6 +531,8 @@ class RuleServer(object):
     @webframework.register_endpoint('/add_integer_id_rule')
     def add_integer_id_rule(self, max_tasks= 1e6, release_start=None, release_end = None, ruleID = None, timeout=3600, body=''):
         """
+        HTTP endpoint (POST) for adding a new rule.
+        
         Add a rule that generates tasks based on an integer ID, such as a frame number (localization) or an index into
         a list of inputs (recipes). By default, tasks are not released on creation, but later with
         :func:`release_rule_tasks()`. This allows for the creation of a rule before a series has finished spooling.
@@ -482,6 +559,10 @@ class RuleServer(object):
 
         Returns
         -------
+        
+        result : json str
+            The result of adding the rule. A dict of the form:
+            ``{"ok" : "True", 'ruleID' : str}``
 
         """
         rule_info = json.loads(body)
@@ -505,6 +586,29 @@ class RuleServer(object):
 
     @webframework.register_endpoint('/release_rule_tasks')
     def release_rule_tasks(self, ruleID, release_start, release_end, body=''):
+        """
+        HTTP Endpoint (POST or GET ) for releasing tasks associated with a rule.
+        
+        When performing spooling data analysis we typically have one rule per series and one task per frame.
+        This method allows for the tasks associated with a particular frame (or range of frames) to be released as they
+        become available.
+        
+        Parameters
+        ----------
+        ruleID : str
+            The rule ID
+        release_start, release_end: int
+            The range of tasks IDs to release
+        body : str, empty
+            Needed for interface compatibility, ignored
+
+        Returns
+        -------
+        
+        success : json str
+            ``{"ok" : "True"}`` if successful.
+
+        """
         rule = self._rules[ruleID]
     
         rule.make_range_available(int(release_start), int(release_end))
@@ -514,6 +618,22 @@ class RuleServer(object):
     
     @webframework.register_endpoint('/handin')
     def handin(self, body):
+        """
+        HTTP Endpoint (POST) to mark tasks as having been completed
+        
+        Parameters
+        ----------
+        body : json list
+            A list of entries of the format XXX
+
+        Returns
+        -------
+        
+        success : json str
+            ``{"ok" : "True"}`` if successful.
+        
+
+        """
         
         #logger.debug('Handing in tasks...')
         for handin in json.loads(body):
@@ -529,6 +649,16 @@ class RuleServer(object):
     
     @webframework.register_endpoint('/distributor/queues')
     def get_queues(self):
+        """
+        HTTP Endpoint (GET) - visible at "distributor/queues" - for querying ruleserver status.
+        
+        Returns
+        -------
+        
+        status: json str
+            A dictionary of the form ``{"ok" : True, "result" : {ruleID0 : rule0.info(), ruleID1 : rule1.info()}}``
+            See :meth:`IntegerIDRule.info`.
+        """
         with self._info_lock:
             t = time.time()
             if (t > self._cached_info_expiry):

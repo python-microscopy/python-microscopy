@@ -698,8 +698,14 @@ Traceback (most recent call last):
 TypeError: 'NoneType' object is not callable
 [39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.IntegerIDRule:117: WARNING: toctree references unknown document u'api/PYME.cluster.ruleserver.IntegerIDRule.bid'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.IntegerIDRule:117: WARNING: toctree references unknown document u'api/PYME.cluster.ruleserver.IntegerIDRule.info'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.IntegerIDRule:117: WARNING: toctree references unknown document u'api/PYME.cluster.ruleserver.IntegerIDRule.make_range_available'[39;49;00m
 [31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.RuleServer:18: WARNING: toctree references unknown document u'api/PYME.cluster.ruleserver.RuleServer.add_integer_id_rule'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.RuleServer:18: WARNING: toctree references unknown document u'api/PYME.cluster.ruleserver.RuleServer.bid_on_tasks'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.RuleServer:18: WARNING: toctree references unknown document u'api/PYME.cluster.ruleserver.RuleServer.get_queues'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.RuleServer:18: WARNING: toctree references unknown document u'api/PYME.cluster.ruleserver.RuleServer.handin'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.RuleServer:18: WARNING: toctree references unknown document u'api/PYME.cluster.ruleserver.RuleServer.release_rule_tasks'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.RuleServer:18: WARNING: toctree references unknown document u'api/PYME.cluster.ruleserver.RuleServer.task_advertisements'[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'LatGaussFitlmR' from module u'PYME.localization.FitFactories'; the following exception was raised:
 No module named levmar_gfit[39;49;00m
 [31;01mWARNING: autodoc: failed to import module u'ofind_xcorr_fw' from module u'PYME.localization'; the following exception was raised:
@@ -962,8 +968,14 @@ OSError: [Errno 2] No such file or directory
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.list_directory'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.dataserver_wsgi.dataserver.translate_path'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.bid'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.info'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.make_range_available'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.RuleServer.add_integer_id_rule'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.RuleServer.bid_on_tasks'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.RuleServer.get_queues'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.RuleServer.handin'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.RuleServer.release_rule_tasks'[39;49;00m
+[31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.RuleServer.task_advertisements'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.taskWorkerHTTP.taskWorker.ioLoop'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVRequestHandler.path_elem'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.DAVRequestHandler.path_elem_prev'[39;49;00m
@@ -979,9 +991,15 @@ OSError: [Errno 2] No such file or directory
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.TempDirCollection.getProperties'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.XMLDict_Parser.builddict'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.rst:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.webdav.XMLDict_Parser.processTag'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.IntegerIDRule:123:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.bid'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.IntegerIDRule:123:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.make_range_available'[39;49;00m
-[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.RuleServer:23:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.RuleServer.add_integer_id_rule'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.IntegerIDRule:124:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.bid'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.IntegerIDRule:124:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.info'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.IntegerIDRule:124:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.IntegerIDRule.make_range_available'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.RuleServer:28:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.RuleServer.add_integer_id_rule'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.RuleServer:28:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.RuleServer.bid_on_tasks'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.RuleServer:28:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.RuleServer.get_queues'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.RuleServer:28:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.RuleServer.handin'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.RuleServer:28:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.RuleServer.release_rule_tasks'[39;49;00m
+[31;01m/Users/david/python-microscopy/PYME/cluster/ruleserver.py:docstring of PYME.cluster.ruleserver.RuleServer:28:<autosummary>:: WARNING: toctree contains reference to nonexisting document u'api/PYME.cluster.ruleserver.RuleServer.task_advertisements'[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.ruleserver.rst:44: WARNING: Could not lex literal_block as "json". Highlighting skipped.[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.ruleserver.rst:58: WARNING: Could not lex literal_block as "json". Highlighting skipped.[39;49;00m
 [31;01m/Users/david/python-microscopy/doc/api/PYME.cluster.ruleserver.rst:70: WARNING: Could not lex literal_block as "json". Highlighting skipped.[39;49;00m
