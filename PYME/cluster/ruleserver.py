@@ -1,5 +1,5 @@
 """
-This module defines a RESTful HTTP server which manages task distribution across a cluster through the use of rules.
+This module defines a RESTful HTTP server, the PYME Rule Server, which manages task distribution across a cluster through the use of rules.
 Rules are essentially a json template which defines how tasks may be generated (by substitution into the template on the
 client side). Generation of individual tasks on the client has the dual benefits of a) reducing the CPU load and memory
 requirements on the server and b) dramatically decreasing the network bandwidth used for task distribution.
@@ -18,7 +18,9 @@ Endpoint                                                      Verb   Brief Descr
 ============================================================= ====== ========================================
 
 Implementation details follow. The json format and parameters for the REST calls are defined in the docstrings of the
-python functions defining that method (linked from the table above).
+python functions defining that method (linked from the table above). The server is launched by the ``PYMERuleServer``
+command (see :mod:`PYME.cluster.PYMERuleServer`) which loads this in a separate thread and takes care of logging and zeroconf
+registration, rather than by directly running this file.
 """
 import cherrypy
 import threading
@@ -257,6 +259,21 @@ class IntegerIDRule(Rule):
         return {'ruleID': bid['ruleID'], 'taskIDs':successful_bid_ids.tolist(), 'template' : self._template}
     
     def mark_complete(self, info):
+        """
+        Mark a set of tasks as completed and/or failed
+        
+        Parameters
+        ----------
+        info : dict
+            A dictionary of the form: ``{"ruleID": str, "taskIDs" : [list of int], "status" : [list of int]}``
+            
+            There should be an entry in status for each entry in taskIDs, the valid values of status being
+            ``STATUS_COMPLETE=3`` or ``STATUS_FAILED=4``.
+
+        Returns
+        -------
+
+        """
         taskIDs = np.array(info['taskIDs'], 'i')
         status = np.array(info['status'], 'uint8')
         
@@ -624,7 +641,9 @@ class RuleServer(object):
         Parameters
         ----------
         body : json list
-            A list of entries of the format XXX
+            A list of entries of the form ``{"ruleID": str, "taskIDs" : [list of int], "status" : [list of int]}``
+            where status has the same length as taskIDs with each entry being either ``STATUS_COMPLETE`` or
+            ``STATUS_FAILED``. See :meth:`IntegerIDRule.mark_complete`.
 
         Returns
         -------
@@ -704,6 +723,12 @@ class RuleServer(object):
 
 
 class WFRuleServer(webframework.APIHTTPServer, RuleServer):
+    """
+    Combines the RuleServer with it's web framework.
+    
+    Largely an artifact of initial experiments using cherrypy (allowed quickly switching between cherrypy
+    and our internal webframework).
+    """
     def __init__(self, port):
         RuleServer.__init__(self)
         
@@ -741,12 +766,14 @@ class WFRuleServer(webframework.APIHTTPServer, RuleServer):
 import threading
 
 class ServerThread(threading.Thread):
+    """"""
     def __init__(self, port, profile=False):
         self.port = int(port)
         self._profile = profile
         threading.Thread.__init__(self)
         
     def run(self):
+        """"""
         import socket
         if self._profile:
             from PYME.util import mProfile
@@ -780,6 +807,7 @@ class ServerThread(threading.Thread):
 
 
 def on_SIGHUP(signum, frame):
+    """"""
     from PYME.util import mProfile
     mProfile.report(False, profiledir=profileOutDir)
     raise RuntimeError('Recieved SIGHUP')
