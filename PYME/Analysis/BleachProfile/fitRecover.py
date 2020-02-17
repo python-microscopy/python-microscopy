@@ -20,14 +20,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ################
-from . import intensProf
-from . import kinModels
 
-from PYME.Analysis._fithelpers import *
-import numpy as np
-import matplotlib.pyplot as plt
 
 def FitTrace(tr, mdh):
+    from . import intensProf
+    from . import kinModels
+    from PYME.Analysis import _fithelpers
+    import numpy as np
+    import matplotlib.pyplot as plt
     #tr = (ds - mdh.getEntry('Camera.ADOffset')).sum(1).sum(0)
 
     cycTime = mdh.getEntry('Camera.CycleTime')
@@ -39,19 +39,19 @@ def FitTrace(tr, mdh):
     yp = -.1*tr.max()
 
     y1 = tr[61:80]
-    r1 = FitModel(kinModels.e3mod, [y1[0], 1.0, 0], y1, cycTime*np.arange(len(y1)))
+    r1 = _fithelpers.FitModel(kinModels.e3mod, [y1[0], 1.0, 0], y1, cycTime*np.arange(len(y1)))
 
     plt.plot(t[61:80], kinModels.e3mod(r1[0], cycTime*np.arange(len(y1))), lw=2)
     plt.text(t[65], yp, '%3.2fs'%r1[0][1])
 
     y2 = tr[81:1500]
-    r2 = FitModel(intensProf.eMod5, [y2[-1], -50, 50], y2, cycTime*np.arange(len(y2)))
+    r2 = _fithelpers.FitModel(intensProf.eMod5, [y2[-1], -50, 50], y2, cycTime*np.arange(len(y2)))
 
     plt.plot(t[81:1500], intensProf.eMod5(r2[0], cycTime*np.arange(len(y2))), lw=2)
     plt.text(t[700], yp, '%3.2fs'%r2[0][2])
 
     y3 = tr[1501:1600]
-    r3 = FitModel(kinModels.e3mod, [y3[0], 1.0, 0], y3, cycTime*np.arange(len(y3)))
+    r3 = _fithelpers.FitModel(kinModels.e3mod, [y3[0], 1.0, 0], y3, cycTime*np.arange(len(y3)))
 
     plt.plot(t[1501:1600], kinModels.e3mod(r3[0], cycTime*np.arange(len(y3))), lw=2)
     plt.text(t[1520], yp, '%3.2fs'%r3[0][1])
@@ -63,13 +63,13 @@ def FitTrace(tr, mdh):
 #    text(t[1900], yp, '$\\tau = %3.2fs$'%r4[0][2])
 
     y5 = tr[2502:2600]
-    r5 = FitModel(kinModels.e3mod, [y5[0], 1.0, 0], y5, cycTime*np.arange(len(y5)))
+    r5 = _fithelpers.FitModel(kinModels.e3mod, [y5[0], 1.0, 0], y5, cycTime*np.arange(len(y5)))
 
     plt.plot(t[2502:2600], kinModels.e3mod(r5[0], cycTime*np.arange(len(y5))), lw=2)
     plt.text(t[2520], yp, '%3.2fs'%r5[0][1])
     
     y6 = tr[3502:3600]
-    r6 = FitModel(kinModels.e3mod, [y6[0], 1.0, 0], y6, cycTime*np.arange(len(y6)))
+    r6 = _fithelpers.FitModel(kinModels.e3mod, [y6[0], 1.0, 0], y6, cycTime*np.arange(len(y6)))
 
     plt.plot(t[3502:3600], kinModels.e3mod(r6[0], cycTime*np.arange(len(y6))), lw=2)
     plt.text(t[3520], yp, '%3.2fs'%r6[0][1])
