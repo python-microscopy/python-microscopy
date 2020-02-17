@@ -30,10 +30,12 @@ overall template for a configuration directory is as follows: ::
       |     |     |- somemodule.txt
       |     |
       |     |- recipes
-      |           |- anothermodule.txt
+      |     |      |- anothermodule.txt
+      |     |
       |     |- reports
       |     |     |- templates
       |     |     |     |-somemodule.txt
+      |     |     |
       |     |     |- filters
       |     |     |     |-somemodule.yaml
       |
@@ -78,16 +80,41 @@ parameter values are supported using standard yaml notation.
     h5f-flush_interval: 1
     PYMEAcquire-extra_init_dir: "C:/pyme-init-scripts"
 
-plugins/visgui/PYME.txt
+plugins/visgui/<plugin_name>.txt, plugins/dsview/<plugin_name>.txt, plugins/recipes/<plugin_name>.txt
 -----------------------
-If we were to use the plugin architecture to register some of the native plugins (rather than using explicit knowledge
-of their locations), the registration file would look something like this. Each line is a fully qualified module import
-path.
+If we were to use the plugin architecture to register some of the native visgui plugins (rather than using explicit
+knowledge of their locations), the registration file would look something like this. Each line is a fully qualified
+module import path.
 
 ::
 
     PYME.LMVis.Extras.photophysics
     PYME.LMVis.Extras.particleTracking
+
+The same structure holds for dh5view plugins and dsview/<plugin_name>.txt and recipes/<plugin_name>.txt
+
+plugins/reports/templates/<plugin_name>.txt
+-----------------------
+jinja2 templates can be used to generate reports via absolute path, or using the plugin architecture. Each line of a
+templates/<plugin_name>.txt file should be a relative path to the template from plugin_name directory. You must be able
+to call `import plugin_name`. For example, a nep-fitting report template at
+nep-fitting/nep_fitting/reports/templates/my-report.html could be discovered by a templates/nep_fitting.txt of
+
+::
+
+    reports/templates/my-report.html
+    reports/templates/my-other-report.xhtml
+
+plugins/reports/filters/<plugin_name>.yaml
+-----------------------
+jinja2 filters can be plugged-in using a yaml file, where the keys are fully qualified module import paths and the
+values are the function names of the filters. Were they not laoded by default, the filters/<plugin_name>.yaml file for
+one of the default PYME filters would be
+
+::
+
+    PYME.Analysis.graphing_filters:
+        plot
 
 In addition to the configuration derived from config.yaml, a few legacy environment variables are recognized. Subpackages
 are also permitted to save configuration files in the ``.PYME`` directory.
@@ -305,25 +332,34 @@ def get_report_filters():
                     filter_info.update(content)
     return filter_info
 
-def get_report_templates():
+def get_plugin_report_templates():
     """
     Find (jinja2) templates registered as plugins
 
     Returns
     -------
     templates: dict
-        keys are the filename + extension, e.g. template.html, and values are the full path
+        keys: mock relative path to the template of the format 'plugin_name/report_filename.extension'. Note the front-
+            slash is used in the key, not necessarily the OS path split.
+        values: full path to the template, as informed by the content of 'plugin_name.txt' in the config tree.
     """
+    import importlib
     templates = {}
     for config_dir in config_dirs:
         template_glob = glob.glob(os.path.join(config_dir, 'plugins', 'reports', 'templates/*.txt'))
 
         for fn in template_glob:
+            plugin_name = os.path.split(fn)[-1].strip('.txt')
+            try:
+                plugin_mod = importlib.import_module(plugin_name)
+            except ImportError:
+                logger.error('Searching for report templates. Cannot import %s' % plugin_name)
+                continue
+            plugin_dir = os.path.dirname(plugin_mod.__file__)
             with open(fn, 'r') as f:
-                for directory_listed in f:
-                    found = glob.glob(os.path.join(directory_listed, '*.html'))
-                    for template in found:
-                        templates[os.path.split(template)[-1]] = template
+                for template in f:
+                    template_name = os.path.split(template)[-1]
+                    templates[plugin_name + '/' + template_name] = os.path.join(plugin_dir, template)
     return templates
 
 

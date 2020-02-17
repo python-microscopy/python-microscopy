@@ -1,7 +1,7 @@
 
 import jinja2
 import os
-from PYME.config import get_report_templates
+from PYME.config import get_plugin_report_templates
 import logging
 
 logger = logging.getLogger(__name__)
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class UnifiedLoader(jinja2.BaseLoader):
     def get_source(self, environment, template):
         from PYME.IO import unifiedIO
-        templates = get_report_templates()  # get templates from plugins
+        templates = get_plugin_report_templates()  # get templates from plugins
         try:
             if template in templates.keys():
                 source = unifiedIO.read(templates[template]).decode('utf-8')
