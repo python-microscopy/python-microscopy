@@ -299,7 +299,10 @@ def get_report_filters():
         filter_glob = glob.glob(os.path.join(config_dir, 'plugins', 'reports', 'filters/*.yaml'))
         for plugin_file in filter_glob:
             with open(plugin_file) as f:
-                filter_info.update(yaml.safe_load(f))
+                #  empty yaml will break the dict update, check for content first
+                content = yaml.safe_load(f)
+                if content is not None:
+                    filter_info.update(content)
     return filter_info
 
 def get_report_templates():
