@@ -130,7 +130,10 @@ class CircularTilePanel(TilePanel):
         hsizer2.Add(wx.StaticText(self, -1, 'Scan radius [\u03BCm]:'), 0, wx.ALL, 2)
         self.radius_um = wx.TextCtrl(self, -1, value='%.1f' % 250)
         hsizer2.Add(self.radius_um, 0, wx.ALL, 2)
-        self.return_home_checkbox = wx.CheckBox(self, -1, 'Return Home')
+        vsizer.Add(hsizer2)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.return_home_checkbox = wx.CheckBox(self, -1, 'Return to start on completion')
         hsizer2.Add(self.return_home_checkbox, 0, wx.ALL, 2)
         vsizer.Add(hsizer2)
 
