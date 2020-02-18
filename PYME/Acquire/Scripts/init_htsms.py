@@ -147,7 +147,7 @@ def lasers(scope):
     scope.aotf = AAOptoMDS(aotf_calibration, 'COM14', 'AAOptoMDS', n_chans=4)
     scope.CleanupFunctions.append(scope.aotf.Close)
 
-    fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=25)  # pin 9
+    fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=50)  # pin 9
 
     l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turn_on=False)
     scope.CleanupFunctions.append(l405.Close)
