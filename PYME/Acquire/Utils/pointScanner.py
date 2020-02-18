@@ -32,7 +32,11 @@ logger = logging.getLogger(__name__)
 
 class PointScanner(object):
     def __init__(self, scope, pixels = 10, pixelsize=0.1, dwelltime = 1, background=0, avg=True, evtLog=False, sync=False,
-                 trigger=False, stop_on_complete=False):
+                 trigger=False, stop_on_complete=False, return_to_start=True):
+        """
+        :param return_to_start: bool
+            Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
+        """
         self.scope = scope
         #self.xpiezo = xpiezo
         #self.ypiezo = ypiezo
@@ -45,6 +49,7 @@ class PointScanner(object):
         self.pixels = pixels
         self.pixelsize = pixelsize
         self._stop_on_complete = stop_on_complete
+        self._return_to_start = return_to_start
 
         if np.isscalar(pixelsize):
             self.pixelsize = np.array([pixelsize, pixelsize])
@@ -235,9 +240,12 @@ class PointScanner(object):
         logger.debug('Returning home : %s' % self.currPos)
     
         self.scope.frameWrangler.stop()
-        self.scope.state.setItems({'Positioning.x': self.currPos['x'],
-                                   'Positioning.y': self.currPos['y'],
-                                   }, stopCamera=True)
+        if self._return_to_start:
+            self.scope.state.setItems({'Positioning.x': self.currPos['x'],
+                                       'Positioning.y': self.currPos['y'],
+                                       }, stopCamera=True)
+        else:
+            self.scope.state.setItems({}, stopCamera=True)  # fake it to prepare the frameWrangler
         self.scope.turnAllLasersOff()
     
         if self.trigger:
