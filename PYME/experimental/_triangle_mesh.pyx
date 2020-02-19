@@ -2347,7 +2347,7 @@ cdef class TriangleMesh(TrianglesBase):
         dt = np.dtype([('normal', '3f4'), ('vertex0', '3f4'), ('vertex1', '3f4'), 
                        ('vertex2', '3f4'), ('attrib', 'u2')])
 
-        triangles_stl = np.zeros(self.face_normals.shape[0], dtype=dt)
+        triangles_stl = np.zeros(self.faces.shape[0], dtype=dt)
         triangles_stl['vertex0'] = self.vertices[self.faces[:, 0]]
         triangles_stl['vertex1'] = self.vertices[self.faces[:, 1]]
         triangles_stl['vertex2'] = self.vertices[self.faces[:, 2]]

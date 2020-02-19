@@ -410,3 +410,32 @@ def test_snap_faces():
     mesh._snap_faces(_h0,_h1)
 
     assert _test_topology(mesh, POST_SNAP_H_VERTEX, POST_SNAP_H_FACE, POST_SNAP_H_TWIN, POST_SNAP_H_NEXT, POST_SNAP_H_PREV)
+
+def test_load_save_stl():
+    import os
+
+    tris = _generate_test_sphere()
+    mesh = triangle_mesh.TriangleMesh.from_np_stl(tris)
+    test_fn = 'test_sphere.stl'
+    mesh.to_stl(test_fn)
+    mesh2 = triangle_mesh.TriangleMesh.from_stl(test_fn)
+
+    os.remove(test_fn)
+
+    # Weak check, but better than nothing
+    np.testing.assert_array_almost_equal(mesh._vertices['position'], mesh2._vertices['position'])
+
+def test_load_save_ply():
+    import os
+
+    tris = _generate_test_sphere()
+    mesh = triangle_mesh.TriangleMesh.from_np_stl(tris)
+    test_fn = 'test_sphere.ply'
+    mesh.to_ply(test_fn)
+    mesh2 = triangle_mesh.TriangleMesh.from_ply(test_fn)
+
+    os.remove(test_fn)
+    
+    # Weak check, but better than nothing
+    np.testing.assert_array_almost_equal(mesh._vertices['position'], mesh2._vertices['position'])
+    
