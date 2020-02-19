@@ -130,9 +130,6 @@ def _test_topology(mesh, _vertex, _face, _twin, _next, _prev):
     prev_vert_eq = (mesh._halfedges['vertex'][mesh._halfedges['prev']][m] == _vertex[_prev])
     prev_face_eq = (mesh._halfedges['face'][mesh._halfedges['prev']][m] == _face[_prev])
 
-    print(mesh._halfedges['vertex'][mesh._halfedges['twin']][m])
-    print(_vertex[_twin])
-
     return (np.all(twin_vert_eq & twin_face_eq & next_vert_eq & next_face_eq & prev_vert_eq & prev_face_eq) & _test_halfedges(mesh))
 
 def _test_halfedges(mesh):
@@ -229,7 +226,12 @@ def test_missing_halfedges():
 
 def test_edge_flip_topology():
 
-    vertices = _generate_vertices(4)
+    # vertices = _generate_vertices(4)
+    # There's a concavity check in edge_flip, so we just stick with fixed, convex vertices
+    vertices = np.array([[0.8233384 , 0.04200047, 0.9175104 ],
+                         [0.12197538, 0.3638311 , 0.20577249],
+                         [0.63744223, 0.55602515, 0.61852   ],
+                         [0.8490536 , 0.721189  , 0.2788919 ]])
     mesh = triangle_mesh.TriangleMesh(vertices, PRE_FLIP_FACES)
     mesh._vertices['valence'][:] = 12  # cheat our manifold checks
 
@@ -237,7 +239,7 @@ def test_edge_flip_topology():
 
     mesh.edge_flip(flip_idx)
 
-    assert _test_topology(mesh, POST_FLIP_H_VERTEX, POST_FLIP_H_FACE, POST_FLIP_H_TWIN, POST_FLIP_H_NEXT, POST_FLIP_H_PREV)
+    assert(_test_topology(mesh, POST_FLIP_H_VERTEX, POST_FLIP_H_FACE, POST_FLIP_H_TWIN, POST_FLIP_H_NEXT, POST_FLIP_H_PREV))
 
 # def test_edge_flip_normals():
 
@@ -438,4 +440,3 @@ def test_load_save_ply():
     
     # Weak check, but better than nothing
     np.testing.assert_array_almost_equal(mesh._vertices['position'], mesh2._vertices['position'])
-    
