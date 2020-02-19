@@ -133,6 +133,11 @@ class CircularTilePanel(TilePanel):
         vsizer.Add(hsizer2)
 
         hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        self.return_home_checkbox = wx.CheckBox(self, -1, 'Return to start on completion')
+        hsizer2.Add(self.return_home_checkbox, 0, wx.ALL, 2)
+        vsizer.Add(hsizer2)
+
+        hsizer2 = wx.BoxSizer(wx.HORIZONTAL)
         hsizer2.Add(wx.StaticText(self, -1, 'Save to:'), 0, wx.ALL, 2)
         self.tDestination = wx.TextCtrl(self, -1, value='')
         hsizer2.Add(self.tDestination, 1, wx.ALL | wx.EXPAND, 2)
@@ -163,7 +168,8 @@ class CircularTilePanel(TilePanel):
         trigger = hasattr(self.scope.cam, 'FireSoftwareTrigger')
 
         self.scope.tiler = tiler.CircularTiler(self.scope, tile_dir=self.tDestination.GetValue(),
-                                               max_radius_um=float(self.radius_um.GetValue()), trigger=trigger)
+                                               max_radius_um=float(self.radius_um.GetValue()), trigger=trigger,
+                                               return_to_start=self.return_home_checkbox.GetValue())
 
         self.bStop.Enable()
         self.bGo.Disable()

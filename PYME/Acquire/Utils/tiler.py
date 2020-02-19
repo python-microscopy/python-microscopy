@@ -10,15 +10,20 @@ logger = logging.getLogger(__name__)
 
 class Tiler(pointScanner.PointScanner):
     def __init__(self, scope, tile_dir, n_tiles = 10, tile_spacing=None, dwelltime = 1, background=0, evtLog=False,
-                 trigger=False, base_tile_size=256):
+                 trigger=False, base_tile_size=256, return_to_start=True):
+        """
+        :param return_to_start: bool
+            Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
+        """
         
         if tile_spacing is None:
             fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
             #calculate tile spacing such that there is 20% overlap.
             tile_spacing = 0.8*fs*np.array(scope.GetPixelSize())
             
-        pointScanner.PointScanner.__init__(self, scope=scope, pixels=n_tiles, pixelsize=tile_spacing,  dwelltime=dwelltime,
-                                           background =background, avg=False, evtLog=evtLog, trigger=trigger, stop_on_complete=True)
+        pointScanner.PointScanner.__init__(self, scope=scope, pixels=n_tiles, pixelsize=tile_spacing,
+                                           dwelltime=dwelltime, background=background, avg=False, evtLog=evtLog,
+                                           trigger=trigger, stop_on_complete=True, return_to_start=return_to_start)
         
         self._tiledir = tile_dir
         self._base_tile_size = base_tile_size
@@ -105,8 +110,11 @@ class Tiler(pointScanner.PointScanner):
 
 class CircularTiler(Tiler):
     def __init__(self, scope, tile_dir, max_radius_um=100, tile_spacing=None, dwelltime=1, background=0, evtLog=False,
-                 trigger=False, base_tile_size=256):
-        
+                 trigger=False, base_tile_size=256, return_to_start=True):
+        """
+        :param return_to_start: bool
+            Flag to toggle returning home at the end of the scan. False leaves scope position as-is on scan completion.
+        """
         if tile_spacing is None:
             fs = np.array(scope.frameWrangler.currentFrame.shape[:2])
             # calculate tile spacing such that there is ~30% overlap.
@@ -116,7 +124,8 @@ class CircularTiler(Tiler):
         logger.debug('Circular tiler target radius in units of ~30 percent overlapped FOVs: %d' % self.pixel_radius)
         
         Tiler.__init__(self, scope, tile_dir, n_tiles=self.pixel_radius, tile_spacing=tile_spacing, dwelltime=dwelltime,
-                       background=background, evtLog=evtLog, trigger=trigger, base_tile_size=base_tile_size)
+                       background=background, evtLog=evtLog, trigger=trigger, base_tile_size=base_tile_size,
+                       return_to_start=return_to_start)
 
     def genCoords(self):
         """

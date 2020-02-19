@@ -79,10 +79,10 @@ def orca_cam(scope):
         'Multiview.ChannelColor': [0, 1, 1, 0],
         'Multiview.DefaultROISize': (size, size),
         'Multiview.ROISizeOptions': [128, 240, 256, 304, 352, 384],
-        'Multiview.ROI0Origin': (292 - half_size, 1024 - half_size),
-        'Multiview.ROI1Origin': (856 - half_size, 1024 - half_size),
-        'Multiview.ROI2Origin': (1256 - half_size, 1024 - half_size),
-        'Multiview.ROI3Origin': (1796 - half_size, 1024 - half_size),
+        'Multiview.ROI0Origin': (308 - half_size, 1024 - half_size),
+        'Multiview.ROI1Origin': (872 - half_size, 1024 - half_size),
+        'Multiview.ROI2Origin': (1272 - half_size, 1024 - half_size),
+        'Multiview.ROI3Origin': (1812 - half_size, 1024 - half_size),
     }
     cam = MultiviewOrca(0, multiview_info)
     cam.Init()
@@ -147,7 +147,7 @@ def lasers(scope):
     scope.aotf = AAOptoMDS(aotf_calibration, 'COM14', 'AAOptoMDS', n_chans=4)
     scope.CleanupFunctions.append(scope.aotf.Close)
 
-    fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=25)  # pin 9
+    fiber_shaker = ServoFiberShaker('COM9', channel=9, on_value=50)  # pin 9
 
     l405 = OBIS.CoherentOBISLaser('COM10', name='OBIS405', turn_on=False)
     scope.CleanupFunctions.append(l405.Close)
