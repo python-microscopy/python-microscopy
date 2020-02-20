@@ -1959,3 +1959,103 @@ class StatisticsByFrame(ModuleBase):
             pass
             
         namespace[self.output_name] = res
+
+@register_module('DarkAndVarianceMap')
+class DarkAndVarianceMap(ModuleBase):
+    input = Input('input')
+    output_variance = Output('variance')
+    output_dark = Output('dark')
+    dark_threshold = Float(10000)  # this really should depend on the gain mode (12bit vs 16 bit etc)
+    variance_threshold = Float(90000)  # again this is currently picked fairly arbitrarily
+    start = Int(0)
+    end = Int(0)
+    uniform = Bool(False)  # simulate a uniform map
+
+    def execute(self, namespace):
+        from PYME.IO.MetaDataHandler import NestedClassMDHandler
+        from PYME.Analysis import gen_sCMOS_maps
+
+        logging.basicConfig() # without it got 'No handlers could be found for logger...'
+
+        default_sensor_size = (2048,2048) # we currently assume this is correct but could be chosen based
+                                # on camera model in meta data TODO - add CCD size to camera metadata
+        blemish_variance = 1e8  # clipping factor for broken pixels (super high variance)
+
+        image = namespace[self.input]
+
+        # pre-checks before calculations to minimise the pain
+        sensor_size = list(default_sensor_size)
+        try:
+            sensor_size[0] = image.mdh['Camera.SensorWidth']
+        except (KeyError, AttributeError):
+            logger.warning('no valid sensor width in metadata - using default %d' % sensor_size[0])
+        try:
+            sensor_size[1] = image.mdh['Camera.SensorHeight']
+        except (KeyError, AttributeError):
+            logger.warning('no valid sensor height in metadata - using default %d' % sensor_size[1])
+
+        self.start = np.minimum(np.maximum(self.start, 0),image.data.shape[2])
+
+        if self.end > 0:
+            self.end = np.minimum(self.end, image.data.shape[2])
+        if self.end <= 0:
+            self.end = image.data.shape[2]
+
+        if self.start >= self.end:
+            logger.warning('Messed up boundaries, defaulting to beginning and end of stack.')
+            self.start = 0
+            self.end = image.data.shape[2]
+
+        if not ((image.mdh['Camera.ROIWidth'] == sensor_size[0]) and (image.mdh['Camera.ROIHeight'] == sensor_size[1])):
+            logger.warning('Generating a map from data with ROI set. Use with EXTREME caution.\nMaps should be calculated from the whole chip.')
+
+        logger.info('Calculating mean and variance...')
+
+        m, ve = (None,None)
+        if not self.uniform:
+            m, v = gen_sCMOS_maps._meanvards(image.dataSource, start = self.start, end=self.end)
+            e_per_adu = image.mdh['Camera.ElectronsPerCount']
+            ve = v*e_per_adu*e_per_adu
+            # occasionally the cameras seem to have completely unusable pixels
+            # one example was dark being 65535 (i.e. max value for 16 bit)
+            if m.max() > self.dark_threshold:
+                ve[m > self.dark_threshold] = blemish_variance
+            if ve.max() > self.variance_threshold:
+                ve[ve > self.variance_threshold] = blemish_variance
+            n_bad = np.sum((m > self.dark_threshold)*(ve > self.variance_threshold))
+        else:
+            logger.warning('Simulating uniform maps - use with care')
+            n_bad = 0
+
+        # if the uniform flag is set, then m and ve are passed as None
+        # which makes sure that just the uniform defaults from meta data are used
+        mfull, vefull, base_mdh = gen_sCMOS_maps.insert_into_full_map(m, ve, image.mdh, sensor_size=sensor_size)
+
+        common_md = NestedClassMDHandler()
+        common_md.setEntry('Analysis.name', 'mean-variance')
+        common_md.setEntry('Analysis.start', self.start)
+        common_md.setEntry('Analysis.end', self.end)
+        common_md.setEntry('Analysis.SourceFilename', image.filename)
+        common_md.setEntry('Analysis.darkThreshold', self.dark_threshold)
+        common_md.setEntry('Analysis.varianceThreshold', self.variance_threshold)
+        common_md.setEntry('Analysis.blemishVariance', blemish_variance)
+        common_md.setEntry('Analysis.NBadPixels', n_bad)
+
+        if self.uniform:
+            common_md.setEntry('Analysis.isuniform', True)
+        
+        mmd = NestedClassMDHandler(base_mdh)
+        mmd.copyEntriesFrom(common_md)
+        mmd.setEntry('Analysis.resultname', 'mean')
+        mmd.setEntry('Analysis.units', 'ADU')
+
+        vmd = NestedClassMDHandler(base_mdh)
+        vmd.copyEntriesFrom(common_md)
+        vmd.setEntry('Analysis.resultname', 'variance')
+        vmd.setEntry('Analysis.units', 'electrons^2')
+
+        dark_map = ImageStack(mfull, mdh=mmd)
+        variance_map = ImageStack(vefull, mdh=vmd)
+
+        namespace[self.output_dark] = dark_map
+        namespace[self.output_variance] = variance_map

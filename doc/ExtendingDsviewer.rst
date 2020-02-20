@@ -51,7 +51,7 @@ item: ::
 
     def Plug(dsviewer):
         from PYME.recipes.XXX import YYY
-        dsviewer.AddMenuItem(menuName='Processing', itemName='Do Stuff', callback = lambda e : YYY.dsviewer_plugin_callback(dsviewer))
+        dsviewer.AddMenuItem(menuName='Processing', itemName='Do Stuff', itemCallback = lambda e : YYY.dsviewer_plugin_callback(dsviewer))
 
 
 Somewhat more complicated wrappings can build on the template below (which more or less captures the internals of
@@ -72,7 +72,7 @@ Somewhat more complicated wrappings can build on the template below (which more 
             ViewIm3D(namespace['output'], parent=parentWindow, glCanvas=glCanvas)
 
     def Plug(dsviewer):
-        dsviewer.AddMenuItem(menuName='Processing', itemName='Do Stuff', callback = lambda e : DoStuff(dsviewer.image, dsviewer, dsviewer.visgui))
+        dsviewer.AddMenuItem(menuName='Processing', itemName='Do Stuff', callback = lambda e : DoStuff(dsviewer.image, dsviewer, dsviewer.glCanvas))
 
 
 
