@@ -97,7 +97,7 @@ def insert_into_full_map(dark, variance, metadata, sensor_size=(2048, 2048)):
         darkmap for valid ROI, or None to generate a uniform, ~useless metadata map
     variance: ndarray
         variance for valid ROI, or None to generate a uniform, ~useless metadata map
-    metadata: dict-like
+    metadata: MetaDataHandler instance
         ROI informatrion and camera noise parameters to use when padding maps
     sensor_size: 2-int tuple
         x and y camera sensor size
@@ -112,14 +112,12 @@ def insert_into_full_map(dark, variance, metadata, sensor_size=(2048, 2048)):
         metadata handler to be associated with full maps while maintaining information about the original/valid ROI.
     """
 
-    mdh = NestedClassMDHandler()
-    mdh.copyEntriesFrom(metadata)
-    mdh.setEntry('Analysis.name', 'mean-variance')
+    mdh = NestedClassMDHandler(metadata)
     x_origin, y_origin = get_camera_roi_origin(mdh)
-    mdh.setEntry('Analysis.valid.ROIOriginX', x_origin)
-    mdh.setEntry('Analysis.valid.ROIOriginY', y_origin)
-    mdh.setEntry('Analysis.valid.ROIWidth', mdh['Camera.ROIWidth'])
-    mdh.setEntry('Analysis.valid.ROIHeight', mdh['Camera.ROIHeight'])
+    mdh.setEntry('CameraMap.ValidROI.ROIOriginX', x_origin)
+    mdh.setEntry('CameraMap.ValidROI.ROIOriginY', y_origin)
+    mdh.setEntry('CameraMap.ValidROI.ROIWidth', mdh['Camera.ROIWidth'])
+    mdh.setEntry('CameraMap.ValidROI.ROIHeight', mdh['Camera.ROIHeight'])
     mdh['Camera.ROIOriginX'], mdh['Camera.ROIOriginY'] = 0, 0
     mdh['Camera.ROIWidth'], mdh['Camera.ROIHeight'] = sensor_size
     mdh['Camera.ROI'] = (0, 0, sensor_size[0], sensor_size[1])
@@ -138,6 +136,8 @@ def insert_into_full_map(dark, variance, metadata, sensor_size=(2048, 2048)):
         logger.warning('Generating uniform maps')
         full_dark = mdh['Camera.ADOffset'] * np.ones(sensor_size)
         full_var = (mdh['Camera.ReadNoise'] ** 2) * np.ones(sensor_size)
+        
+        mdh['CamerMap.Uniform'] = True
 
     return full_dark, full_var, mdh
 
@@ -166,6 +166,8 @@ def install_map(filename):
     mapname = mkDefaultPath(maptype, source.mdh)
 
     source.Save(filename=mapname)
+    
+def generate_maps(filename, start_frame, end_frame):
 
 def main():
     logging.basicConfig() # without it got 'No handlers could be found for logger...'
@@ -213,11 +215,12 @@ def main():
         install_map(filename)
         sys.exit(0)
 
-    logger.info('Opening image series...')
-    source = ImageStack(filename=filename)
-
     start = args.start
     end = args.end
+
+    logger.info('Opening image series...')
+    source = ImageStack(filename=filename)
+    
     if end < 0:
         end = int(source.dataSource.getNumSlices() + end)
 
@@ -235,9 +238,6 @@ def main():
     if not ((source.mdh['Camera.ROIWidth'] == sensorSize[0]) and (source.mdh['Camera.ROIHeight'] == sensorSize[1])):
         logger.warning('Generating a map from data with ROI set. Use with EXTREME caution.\nMaps should be calculated from the whole chip.')
 
-        if args.dir is None:
-            logger.error('Maps with an ROI set cannot be stored to the default map directory\nPlease specify an output directory.')
-            sys.exit(-1)
 
     logger.info('Calculating mean and variance...')
 
@@ -252,6 +252,7 @@ def main():
             ve[m > darkthreshold] = blemishvariance
         if ve.max() > variancethreshold:
             ve[ve > variancethreshold] = blemishvariance
+            
         nbad = np.sum((m > darkthreshold)*(ve > variancethreshold))
     else:
         logger.warning('Simulating uniform maps - use with care')
@@ -263,46 +264,55 @@ def main():
 
     # if the uniform flag is set, then m and ve are passed as None
     # which makes sure that just the uniform defaults from meta data are used
-    mfull, vefull, basemdh = insert_into_full_map(m, ve, source.mdh, sensor_size=sensorSize)
+    mfull, vefull, mapmdh = insert_into_full_map(m, ve, source.mdh, sensor_size=sensorSize)
 
+    mapmdh['CameraMap.StartFrame'] = start
+    mapmdh['CameraMap.EndFrame'] = end
+    mapmdh['CameraMap.SourceFilename'] = filename
+    mapmdh['CameraMap.DarkThreshold'] = darkthreshold
+    mapmdh['CameraMap.VarianceThreshold'] = variancethreshold
+    mapmdh['CameraMap.BlemishVariance'] = blemishvariance
+    mapmdh['CameraMap.NBadPixels'] = nbad
+
+    if args.uniform:
+        mapmdh['CameraMap.Uniform'] = True
+    
+    mmd = NestedClassMDHandler(mapmdh)
+    mmd['CameraMap.Type'] = 'mean'
+    mmd['CameraMap.Units'] = 'ADU'
+
+    vmd = NestedClassMDHandler(mapmdh)
+    vmd['CameraMap.Type'] = 'variance'
+    vmd['CameraMap.Units'] = 'electrons^2'
+
+    im_dark = ImageStack(mfull, mdh=mmd)
+    im_variance = ImageStack(vefull, mdh=vmd)
+
+    
     logger.info('Saving results...')
 
     if args.dir is None:
         logger.info('installing in standard location...')
-        mname = mkDefaultPath('dark',source.mdh)
-        vname = mkDefaultPath('variance',source.mdh)
+        
+        if not ((source.mdh['Camera.ROIWidth'] == sensorSize[0]) and (source.mdh['Camera.ROIHeight'] == sensorSize[1])):
+            logger.error('Maps with an ROI set cannot be stored to the default map directory\nPlease specify an output directory.')
+            sys.exit(-1)
+            
+        if im_dark.mdh.get('CameraMap.Uniform', False) or im_variance.mdh.get('CameraMap.Uniform', False):
+            logger.error('Uniform maps cannot be stored to the default map directory\nPlease specify an output directory.')
+            sys.exit(-1)
+            
+        mname = mkDefaultPath('dark', source.mdh)
+        vname = mkDefaultPath('variance', source.mdh)
     else:
-        mname = mkDestPath(args.dir,prefix+'dark',source.mdh)
-        vname = mkDestPath(args.dir,prefix+'variance',source.mdh)
+        mname = mkDestPath(args.dir, prefix + 'dark', source.mdh)
+        vname = mkDestPath(args.dir, prefix + 'variance', source.mdh)
 
     logger.info('dark map -> %s...' % mname)
     logger.info('var  map -> %s...' % vname)
-
-    commonMD = NestedClassMDHandler()
-    commonMD.setEntry('Analysis.name', 'mean-variance')
-    commonMD.setEntry('Analysis.start', start)
-    commonMD.setEntry('Analysis.end', end)
-    commonMD.setEntry('Analysis.SourceFilename', filename)
-    commonMD.setEntry('Analysis.darkThreshold', darkthreshold)
-    commonMD.setEntry('Analysis.varianceThreshold', variancethreshold)
-    commonMD.setEntry('Analysis.blemishVariance', blemishvariance)
-    commonMD.setEntry('Analysis.NBadPixels', nbad)
-
-    if args.uniform:
-        commonMD.setEntry('Analysis.isuniform', True)
     
-    mmd = NestedClassMDHandler(basemdh)
-    mmd.copyEntriesFrom(commonMD)
-    mmd.setEntry('Analysis.resultname', 'mean')
-    mmd.setEntry('Analysis.units', 'ADU')
-
-    vmd = NestedClassMDHandler(basemdh)
-    vmd.copyEntriesFrom(commonMD)
-    vmd.setEntry('Analysis.resultname', 'variance')
-    vmd.setEntry('Analysis.units', 'electrons^2')
-
-    ImageStack(mfull, mdh=mmd).Save(filename=mname)
-    ImageStack(vefull, mdh=vmd).Save(filename=vname)
+    im_dark.Save(filename=mname)
+    im_variance.Save(filename=vname)
 
 
 
