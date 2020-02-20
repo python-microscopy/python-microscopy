@@ -214,7 +214,7 @@ class ZStackTaskListProtocol(TaskListProtocol):
 
     def OnFrame(self, frameNum):
         if frameNum > self.startFrame:
-            fn = int(floor((frameNum - self.startFrame)/self.dwellTime) % len(self.zPoss))
+            fn = int((frameNum - self.startFrame)/self.dwellTime) % len(self.zPoss)
             if not fn == self.pos:
                 self.pos = fn
                 #self.piezo.MoveTo(self.piezoChan, self.zPoss[self.pos])
