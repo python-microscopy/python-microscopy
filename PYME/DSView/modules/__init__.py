@@ -48,7 +48,7 @@ def allmodules():
 
 
 basemodules = ['shell', 'metadataView', 'eventView', 'deconvolution', 'tiling', 'recipes']
-liteModules = ['filtering', 'cropping','composite', 'profilePlotting', 'splitter', 'synchronise', 'camera_maps']
+liteModules = ['filtering', 'cropping','composite', 'profilePlotting', 'splitter', 'synchronise']
 
 modeModules = {
 'lite': ['arrayView'] + liteModules,
