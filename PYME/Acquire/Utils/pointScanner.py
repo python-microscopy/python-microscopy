@@ -237,15 +237,14 @@ class PointScanner(object):
         except:
             logger.exception('Could not disconnect pointScanner tick from frameWrangler.onFrame')
     
-        logger.debug('Returning home : %s' % self.currPos)
-    
         self.scope.frameWrangler.stop()
+        
         if self._return_to_start:
+            logger.debug('Returning home : %s' % self.currPos)
             self.scope.state.setItems({'Positioning.x': self.currPos['x'],
                                        'Positioning.y': self.currPos['y'],
                                        }, stopCamera=True)
-        else:
-            self.scope.state.setItems({}, stopCamera=True)  # fake it to prepare the frameWrangler
+        
         self.scope.turnAllLasersOff()
     
         if self.trigger:
