@@ -1972,7 +1972,6 @@ class DarkAndVarianceMap(ModuleBase):
     end = Int(-1)
 
     def execute(self, namespace):
-        from PYME.IO.MetaDataHandler import NestedClassMDHandler
         from PYME.Analysis import gen_sCMOS_maps
 
         image = namespace[self.input]
