@@ -39,7 +39,7 @@ Camera.TrueEMGain         The calibrated electron multiplying gain (1 for
 Camera.NoiseFactor        EM excess noise factor (1.41 for EMCCDs, 1 for
                           standard CCDs / sCMOS). See doi:10.1109/TED.2003.813462
 Camera.ElectronsPerCount  Number of photo-electrons per camera count (ADU)
-Camera.ReadNoise          Read out noise (standard deviation) in ADU.
+Camera.ReadNoise          Read out noise (standard deviation) in photoelectrons (e-).
 Camera.ADOffset           Analog to digital offset (dark level, or average value of camera
                           pixels when no light is incident) in ADU. Not strictly
                           required as PYME will try and guess this from dark frames

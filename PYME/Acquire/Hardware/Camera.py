@@ -669,7 +669,7 @@ class Camera(object):
 
                 a dictionary with the following entries:
 
-                'ReadNoise' : camera read noise as a standard deviation in units of ADU
+                'ReadNoise' : camera read noise as a standard deviation in units of photoelectrons (e-)
                 'ElectronsPerCount' : AD conversion factor - how many electrons per ADU
                 'NoiseFactor' : excess (multiplicative) noise factor 1.44 for EMCCD, 1 for standard CCD/sCMOS. See
                     doi: 10.1109/TED.2003.813462

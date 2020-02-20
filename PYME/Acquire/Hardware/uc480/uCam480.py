@@ -157,12 +157,12 @@ class uc480Camera(Camera):
             #    All other gain factors are higher than that. This means, the system gain of 0.125 DN
             #    per electron, as specified in the camera test sheet, is the smallest possible value.
             'ElectronsPerCount'  : 7.97,
-            'ReadNoiseElectrons' : 6.0,
+            'ReadNoise' : 6.0,
             'ADOffset' : 10
         },
         'default' : { # fairly arbitrary values
             'ElectronsPerCount'  : 10,
-            'ReadNoiseElectrons' : 20,
+            'ReadNoise' : 20,
             'ADOffset' : 10
         }
     }
@@ -730,7 +730,7 @@ class uc480Camera(Camera):
         return (self.baseProps['ElectronsPerCount']/self.GetGainFactor())
 
     def GetReadNoise(self): # readnoise in e-
-        return (self.baseProps['ReadNoiseElectrons'])
+        return (self.baseProps['ReadNoise'])
 
     def GetADOffset(self):
         return self.baseProps['ADOffset']
@@ -756,7 +756,7 @@ class uc480Camera(Camera):
             mdh.setEntry('Camera.HardwareGainFactor', self.GetGainFactor())
             mdh.setEntry('Camera.ElectronsPerCount', self.GetElectronsPerCount())
             mdh.setEntry('Camera.ADOffset', self.GetADOffset())
-            mdh.setEntry('Camera.ReadNoise',self.GetReadNoise()) # in units of e- #FIXME???
+            mdh.setEntry('Camera.ReadNoise',self.GetReadNoise()) # in units of e-
             mdh.setEntry('Camera.NoiseFactor', 1.0)
 
             mdh.setEntry('Camera.SensorWidth',self.GetCCDWidth())

@@ -181,7 +181,7 @@ an example `.md` file is shown below:
     md['Camera.ROIWidth'] = 511
     md['Camera.ElectronsPerCount'] = 4.9900000000000002
     md['Camera.Model'] = 'DU897_BV'
-    md['Camera.ReadNoise'] = 88.099999999999994           # the read noise in counts / ADUs
+    md['Camera.ReadNoise'] = 88.099999999999994           # the read noise in photoelectrons (e-)
     md['Camera.NoiseFactor'] = 1.4099999999999999         # the excess noise factor for the multiplcation step 1.4 for EMCCD, 1.0 for sCMOS
     md['Camera.IntegrationTime'] = 0.05000000074505806
     md['Camera.Name'] = 'Andor IXon DV97'
