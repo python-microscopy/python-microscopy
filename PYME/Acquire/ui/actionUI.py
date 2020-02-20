@@ -216,7 +216,7 @@ class ActionPanel(wx.Panel):
         for ri in range(positions.shape[0]):
             args = {'state': {'Positioning.x': positions[ri, 0], 'Positioning.y': positions[ri, 1]}}
             self.actionManager.QueueAction('state.update', args, nice, timeout)
-            args = {'maxFrames': n_frames, 'stack': bool(self.rbZStepped.GetValue())}
+            args = {'maxFrames': n_frames, 'stack': bool(self.rbZStepped.GetValue()), 'check_file_exists': False}
             self.actionManager.QueueAction('spoolController.StartSpooling', args, nice, timeout)
     
     def OnROIsFromFile(self, event):

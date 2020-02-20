@@ -184,8 +184,8 @@ class SpoolController(object):
         return self._sep.join([self.dirname.rstrip(self._sep), fn + ext])
 
 
-    def StartSpooling(self, fn=None, stack=False, compLevel = 2, zDwellTime = None, doPreflightCheck=True, maxFrames = sys.maxsize,
-                      compressionSettings=None, cluster_h5 = False):
+    def StartSpooling(self, fn=None, stack=False, compLevel=2, zDwellTime=None, doPreflightCheck=True,
+                      maxFrames=sys.maxsize, compressionSettings=None, cluster_h5=False, check_file_exists=True):
         """Start spooling
         """
         
@@ -201,7 +201,7 @@ class SpoolController(object):
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
 
-        if self._checkOutputExists(fn): #check to see if data with the same name exists
+        if check_file_exists and self._checkOutputExists(fn): #check to see if data with the same name exists
             self.seriesCounter +=1
             self.seriesName = self._GenSeriesName()
             
