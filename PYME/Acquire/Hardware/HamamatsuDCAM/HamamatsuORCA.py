@@ -79,7 +79,7 @@ DCAMCAP_START_SEQUENCE = ctypes.c_int32(int("-1",0))
 
 noiseProperties = {
 '100233' : {
-        'ReadNoise': 3.51, #FIXME - should be in photoelectrons
+        'ReadNoise': 1.65, #CHECKME - converted from an ADU value of 3.51
         'ElectronsPerCount': 0.47,
         'NGainStages': 0,
         'ADOffset': 100,
@@ -87,7 +87,7 @@ noiseProperties = {
         'SaturationThreshold': (2**16 - 1)
         },
 '720795' : {
-        'ReadNoise': 2.3940335559897847,  # rn is sqrt(var) in units of ADU. Median of varmap is 0.9947778 [e-^2] #FIXME - should be in photoelectrons
+        'ReadNoise': 0.997,  # rn is sqrt(var) in units of electrons. Median of varmap is 0.9947778 [e-^2] #CHECKME - converted from 2.394 ADU
         'ElectronsPerCount': 0.416613,
         'NGainStages': 0,
         'ADOffset': 101.753685,
