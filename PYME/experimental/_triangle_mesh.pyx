@@ -1262,7 +1262,7 @@ cdef class TriangleMesh(TrianglesBase):
             return
         _prev = curr_edge.prev
         _next = curr_edge.next
-        
+
         twin_edge = &self._chalfedges[_twin]
         _twin_prev = twin_edge.prev
         _twin_next = twin_edge.next
@@ -1351,7 +1351,6 @@ cdef class TriangleMesh(TrianglesBase):
             # Update face and vertex normals
             self._update_face_normals([curr_edge.face, twin_edge.face])
             self._update_vertex_neighbors([curr_edge.vertex, twin_edge.vertex, self._chalfedges[_next].vertex, self._chalfedges[_twin_next].vertex])
-
             self._faces_by_vertex = None
             self._H = None
             self._K = None
@@ -1413,9 +1412,9 @@ cdef class TriangleMesh(TrianglesBase):
 
 
         # Update vertex valences
-        self._cvertices[_v0].valence += self._cvertices[_v3].valence
-        self._cvertices[_v1].valence += self._cvertices[_v5].valence
-        self._cvertices[_v2].valence += self._cvertices[_v4].valence
+        self._cvertices[_v0].valence += self._cvertices[_v3].valence-2
+        self._cvertices[_v1].valence += self._cvertices[_v5].valence-2
+        self._cvertices[_v2].valence += self._cvertices[_v4].valence-2
 
         # Delete the dead vertices
         self._vertices[_v3] = -1
