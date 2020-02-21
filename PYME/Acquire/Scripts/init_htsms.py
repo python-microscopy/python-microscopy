@@ -86,6 +86,7 @@ def orca_cam(scope):
     }
     cam = MultiviewOrca(0, multiview_info)
     cam.Init()
+    cam.prefill_camera_map_cache(0.00125)
 
     # flip and rotate on primary camera should always be false - make the stage match the camera reference frame instead
     # as it's much easier

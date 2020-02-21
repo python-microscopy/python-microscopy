@@ -53,6 +53,17 @@ class CameraMapMixin(object):
         self._camera_map_fields = map_fields
         self._camera_map_cache = {}
 
+    def prefill_camera_map_cache(self, integration_time):
+        """
+        Search the cluster / local camera map directories and pre-fill the camera map cache for a given integration time
+
+        Parameters
+        ----------
+        integration_time: float
+            integration time in milliseconds
+        """
+        self.fill_camera_map_metadata({'Camera.IntegrationTime': integration_time})
+
     def fill_camera_map_metadata(self, mdh):
         """
         Store camera map locations in the input metadata. The results (including camera-map does not exist) are cached.
