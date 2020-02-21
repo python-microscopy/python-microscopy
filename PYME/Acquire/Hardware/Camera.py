@@ -62,7 +62,8 @@ class CameraMapMixin(object):
         integration_time: float
             integration time in milliseconds
         """
-        self.fill_camera_map_metadata({'Camera.IntegrationTime': integration_time})
+        self.fill_camera_map_metadata({'Camera.IntegrationTime': integration_time,
+                                       'Camera.SerialNumber': self.GetSerialNumber()})
 
     def fill_camera_map_metadata(self, mdh):
         """
