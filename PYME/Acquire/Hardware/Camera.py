@@ -66,10 +66,40 @@ def check_mapexists(mdh, type='dark'):
 
 
 class CameraMapMixin(object):
+    def __init__(self, map_fields=('dark', 'variance', 'flatfield'),
+                 cache_prefill=None):
+        self.map_fields = map_fields
+        if cache_prefill:
+            self._cache = cache_prefill
+        else:
+            self._cache = {}
+
     def fill_camera_map_metadata(self, mdh):
-        check_mapexists(mdh, type='dark')
-        check_mapexists(mdh, type='variance')
-        check_mapexists(mdh, type='flatfield')
+        from PYME.Analysis.gen_sCMOS_maps import map_filename, STEM_TO_MDH
+        import os
+        from PYME.IO import clusterIO
+        from PYME.IO.FileUtils import nameUtils
+        for map in self.map_fields:
+            map_fn = map_filename(mdh, map)
+            if map_fn in self._cache.keys():
+                map_location = self._cache[map_fn]
+                if map_location is not None:  # don't write field if we're just faking it
+                    mdh[STEM_TO_MDH[map]] = map_location
+            else:
+                local_path = os.path.join(nameUtils.getCalibrationDir(mdh['Camera.SerialNumber']), map_fn)
+                cluster_path = 'CALIBRATION/%s/%s' % (mdh['Camera.SerialNumber'], map_fn)
+                if clusterIO.exists(cluster_path):
+                    c_path = 'PYME-CLUSTER://%s/%s' % (clusterIO.local_serverfilter, cluster_path)
+                    self._cache[map_fn] = c_path
+                    mdh[STEM_TO_MDH[map]] = c_path
+                elif os.path.exists(local_path):
+                    self._cache[map_fn] = local_path
+                    mdh[STEM_TO_MDH[map]] = local_path
+                else:  # map doesn't exist, negative cache it so we don't keep checking
+                    self._cache[map_fn] = None
+
+    def reset_cache(self):
+        self._cache = {}
 
 
 class Camera(object):
