@@ -191,7 +191,8 @@ class Spooler:
             
 
     def doStartLog(self):
-        """Record pertinant information to metadata at start of acquisition.
+        """
+        Record pertinent information to metadata at start of acquisition.
         
         Loops through all registered sources of start metadata and adds their entries.
         
@@ -204,23 +205,18 @@ class Spooler:
         self.dtStart = dt
         
         self.tStart = time.time()
-          
-        mdt = MetaDataHandler.NestedClassMDHandler()
-          
-        mdt.setEntry('StartTime', self.tStart)
 
-        #loop over all providers of metadata
+        # loop over all providers of start-metadata
         for mdgen in MetaDataHandler.provideStartMetadata:
-            mdgen(mdt)
-            
-        self.md.copyEntriesFrom(mdt)
+            mdgen(self.md)
+        self.md.setEntry('StartTime', self.tStart)
        
 
     def doStopLog(self):
         """Record information to metadata at end of acquisition"""
         self.md.setEntry('EndTime', time.time())
         
-        #loop over all providers of metadata
+        #loop over all providers of stop-metadata
         for mdgen in MetaDataHandler.provideStopMetadata:
            mdgen(self.md)
 
