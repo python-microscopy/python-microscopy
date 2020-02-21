@@ -1959,3 +1959,28 @@ class StatisticsByFrame(ModuleBase):
             pass
             
         namespace[self.output_name] = res
+
+@register_module('DarkAndVarianceMap')
+class DarkAndVarianceMap(ModuleBase):
+    input = Input('input')
+    output_variance = Output('variance')
+    output_dark = Output('dark')
+    dark_threshold = Float(1e4)  # this really should depend on the gain mode (12bit vs 16 bit etc)
+    variance_threshold = Float(300**2)  # again this is currently picked fairly arbitrarily
+    blemish_variance = Float(1e8) #set broken pixels to super high variance)
+    start = Int(0)
+    end = Int(-1)
+
+    def execute(self, namespace):
+        from PYME.IO.MetaDataHandler import NestedClassMDHandler
+        from PYME.Analysis import gen_sCMOS_maps
+
+        image = namespace[self.input]
+        
+        dark_map, variance_map = gen_sCMOS_maps.generate_maps(image, self.start, self.end,
+                                                              darkthreshold=self.dark_threshold,
+                                                              variancethreshold=self.variance_threshold,
+                                                              blemishvariance=self.blemish_variance)
+
+        namespace[self.output_dark] = dark_map
+        namespace[self.output_variance] = variance_map
