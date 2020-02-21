@@ -111,6 +111,7 @@ class EngineLayer(BaseLayer):
     Base class for layers who delegate their rendering to an engine.
     """
     engine = Instance(BaseEngine)
+    show_lut = Bool(True)
 
     def render(self, gl_canvas):
         if self.visible:
