@@ -106,6 +106,7 @@ class HamamatsuORCA(HamamatsuDCAM, CameraMapMixin):
 
     def __init__(self, camNum):
         HamamatsuDCAM.__init__(self, camNum)
+        CameraMapMixin.__init__(self)
 
         self.noiseProps = {}
         self.waitopen = DCAMWAIT_OPEN()
