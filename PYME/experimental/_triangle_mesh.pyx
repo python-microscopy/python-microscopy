@@ -1892,7 +1892,6 @@ cdef class TriangleMesh(TrianglesBase):
         _faces = np.where((self._faces['component'] != max_com))[0]
         # Delete vertices
         self._vertices[_vertices] = -1
-        self._vertex_vacancies.extend(list(_vertices.ravel()))
         _kept_edges = self._halfedges['twin'][_edges_with_twins]
         self._halfedges['twin'][_kept_edges] = -1
         self._halfedges[_edges] = -1
