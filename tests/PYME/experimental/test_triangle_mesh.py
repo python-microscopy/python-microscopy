@@ -70,6 +70,24 @@ POST_SPLIT_H_NEXT = np.array([2,11,8,4,9,6,10,1,0,3,5,7])
 POST_SPLIT_H_PREV = np.array([8,7,0,9,3,10,5,11,2,4,6,1])
 POST_SPLIT_NEIGHBORS = np.array([[1,3,4],[0,2,4],[1,3,4],[0,2,4],[0,1,2,3]])
 
+PRE_SNAP_FACES = np.array([[2,0,1],[1,0,3],[2,1,4],[5,0,2],[8,6,7],[7,6,9],[8,7,10],[11,6,8]])
+                            # 0,1, 2,3, 4, 5,6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+PRE_SNAP_H_VERTEX = np.array([0,0, 0,1, 1, 1,2, 2, 2, 3, 4, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9,10,11])
+PRE_SNAP_H_FACE =   np.array([0,1, 3,0, 1, 2,0, 2, 3, 1, 2, 3, 4, 5, 7, 4, 5, 6, 4, 6, 7, 5, 6, 7])
+PRE_SNAP_H_TWIN =   np.array([8,3,-1,1,-1, 6,5,-1, 0,-1,-1,-1,20,15,-1,13,-1,18,17,-1,12,-1,-1,-1])
+PRE_SNAP_H_NEXT =   np.array([3,9, 8,6, 1,10,0, 5,11, 4, 7, 2,15,21,20,18,13,22,12,17,23,16,19,14])
+PRE_SNAP_H_PREV =   np.array([6,4,11,0, 9, 7,3,10, 2, 1, 5, 8,18,16,23,12,21,19,15,22,14,13,17,20])
+PRE_SNAP_H_NEIGHBORS = np.array([[1,2,3,5],[0,3,2,4],[0,1,4,5],[0,1],[1,2],[0,2],[7,8,9,11],[6,8,9,10],[6,7,10,11],[6,7],[7,8],[6,8]])
+
+POST_SNAP_FACES = np.array([[1,0,3],[2,1,4],[5,0,2],[7,6,9],[8,7,10],[11,6,8]])
+                            #  0,  1,  2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17
+POST_SNAP_H_VERTEX = np.array([0,  0,  1, 1, 2, 2, 3, 4, 5, 0, 0, 2, 2, 1, 1, 9,10,11])
+POST_SNAP_H_FACE =   np.array([1,  3,  1, 2, 2, 3, 1, 2, 3, 5, 7, 5, 6, 6, 7, 5, 6, 7])
+POST_SNAP_H_TWIN =   np.array([14,-1, -1,12,-1, 9,-1,-1,-1, 5,-1,-1, 3,-1, 0,-1,-1,-1])
+POST_SNAP_H_NEXT =   np.array([6,  5,  0, 7, 3, 8, 2, 4, 1,15,14, 9,16,12,17,11,13,10])
+POST_SNAP_H_PREV =   np.array([2,  8,  6, 4, 7, 1, 0, 3, 5,11,17,15,13,16,10, 9,12,14])
+POST_SNAP_H_NEIGHBORS = np.array([[1,2,3,5],[ 0,3,2,4],[0,1,4,5],[0,1],[1,2],[0,2],[7,8,9,11],[6,8,9,10],[6,7,10,11],[6,7],[7,8],[6,8]])
+
 def _generate_vertices(num=4):
     """
     Generate a set of num random vertices (for use in
@@ -208,7 +226,12 @@ def test_missing_halfedges():
 
 def test_edge_flip_topology():
 
-    vertices = _generate_vertices(4)
+    # vertices = _generate_vertices(4)
+    # There's a concavity check in edge_flip, so we just stick with fixed, convex vertices
+    vertices = np.array([[0.8233384 , 0.04200047, 0.9175104 ],
+                         [0.12197538, 0.3638311 , 0.20577249],
+                         [0.63744223, 0.55602515, 0.61852   ],
+                         [0.8490536 , 0.721189  , 0.2788919 ]])
     mesh = triangle_mesh.TriangleMesh(vertices, PRE_FLIP_FACES)
     mesh._vertices['valence'][:] = 12  # cheat our manifold checks
 
@@ -216,7 +239,7 @@ def test_edge_flip_topology():
 
     mesh.edge_flip(flip_idx)
 
-    assert _test_topology(mesh, POST_FLIP_H_VERTEX, POST_FLIP_H_FACE, POST_FLIP_H_TWIN, POST_FLIP_H_NEXT, POST_FLIP_H_PREV)
+    assert(_test_topology(mesh, POST_FLIP_H_VERTEX, POST_FLIP_H_FACE, POST_FLIP_H_TWIN, POST_FLIP_H_NEXT, POST_FLIP_H_PREV))
 
 # def test_edge_flip_normals():
 
@@ -378,3 +401,42 @@ def test_resize():
     ax1_true = np.all(_vertices[:, 0:3] == mesh.vertices) & np.all(_vertices[:,3:] == -1)
 
     assert(test_vec_true & test_vec_true_2 & ax0_true & ax1_true)
+
+def test_snap_faces():
+    vertices = _generate_vertices(12)
+    mesh = triangle_mesh.TriangleMesh(vertices, PRE_SNAP_FACES)
+
+    _h0 = np.where((mesh._halfedges['vertex'] == 0) & (mesh._halfedges['face'] == 0))[0][0]
+    _h1 = np.where((mesh._halfedges['vertex'] == 6) & (mesh._halfedges['face'] == 4))[0][0]
+
+    mesh._snap_faces(_h0,_h1)
+
+    assert _test_topology(mesh, POST_SNAP_H_VERTEX, POST_SNAP_H_FACE, POST_SNAP_H_TWIN, POST_SNAP_H_NEXT, POST_SNAP_H_PREV)
+
+def test_load_save_stl():
+    import os
+
+    tris = _generate_test_sphere()
+    mesh = triangle_mesh.TriangleMesh.from_np_stl(tris)
+    test_fn = 'test_sphere.stl'
+    mesh.to_stl(test_fn)
+    mesh2 = triangle_mesh.TriangleMesh.from_stl(test_fn)
+
+    os.remove(test_fn)
+
+    # Weak check, but better than nothing
+    np.testing.assert_array_almost_equal(mesh._vertices['position'], mesh2._vertices['position'])
+
+def test_load_save_ply():
+    import os
+
+    tris = _generate_test_sphere()
+    mesh = triangle_mesh.TriangleMesh.from_np_stl(tris)
+    test_fn = 'test_sphere.ply'
+    mesh.to_ply(test_fn)
+    mesh2 = triangle_mesh.TriangleMesh.from_ply(test_fn)
+
+    os.remove(test_fn)
+    
+    # Weak check, but better than nothing
+    np.testing.assert_array_almost_equal(mesh._vertices['position'], mesh2._vertices['position'])
